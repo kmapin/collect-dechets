@@ -206,7 +206,7 @@ import { User, UserRole } from '../../models/user.model';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 80px;
+      height: 50px;
     }
 
     /* Brand */
@@ -227,8 +227,8 @@ import { User, UserRole } from '../../models/user.model';
     }
 
     .brand-icon {
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       border-radius: 12px;
       display: flex;

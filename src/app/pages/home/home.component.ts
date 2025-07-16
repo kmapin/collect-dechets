@@ -206,7 +206,7 @@ import { Agency } from '../../models/agency.model';
             <div *ngFor="let agency of searchResults" class="agency-card">
               <div class="agency-header">
                 <div class="agency-logo">
-                  <img [src]="agency.logo || '/assets/default-agency.png'" 
+                  <img [src]="agency.logo || 'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" 
                        [alt]="agency.name">
                   <div class="logo-glow"></div>
                 </div>
@@ -1313,7 +1313,7 @@ import { Agency } from '../../models/agency.model';
 
     .feature-number {
       position: absolute;
-      top: -15px;
+      top: 15px;
       right: 20px;
       width: 40px;
       height: 40px;
