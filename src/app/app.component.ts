@@ -31,7 +31,6 @@ import { NotificationComponent } from './components/notification/notification.co
       display: flex;
       flex-direction: column;
       margin: 0 auto;
-      background-color:red;
     }
 
     .main-content {
