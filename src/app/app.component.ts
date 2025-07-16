@@ -18,7 +18,7 @@ import { NotificationComponent } from './components/notification/notification.co
   template: `
     <div class="app">
       <app-header></app-header>
-      <main class="main-content" style="width: 100%;">
+      <main class="main-content" style="min-width: 100%;">
         <router-outlet></router-outlet>
       </main>
       <app-footer></app-footer>
@@ -30,13 +30,13 @@ import { NotificationComponent } from './components/notification/notification.co
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      width: 100%;
       margin: 0 auto;
+      background-color:red;
     }
 
     .main-content {
       flex: 1;
-      width: 100%;
+      min-width: 100%;
       display: flex;
       flex-direction: column;
     }

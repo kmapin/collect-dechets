@@ -434,10 +434,10 @@ import { Agency } from '../../models/agency.model';
     }
 
     .container {
-      max-width: 1400px;
+      max-width: 100%;
       margin: 0 auto;
       padding: 0 24px;
-      width: 100%;
+      min-width: 100%;
     }
 
     /* Hero Section Moderne */

@@ -177,8 +177,10 @@ import { User, UserRole } from '../../models/user.model';
   `,
   styles: [`
     .navbar {
+      /* background-color: red;*/
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
+      min-width: 99vw;
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
       position: sticky;
@@ -194,12 +196,13 @@ import { User, UserRole } from '../../models/user.model';
     }
 
     .container {
-      max-width: 1400px;
+      max-width: 100%;
       margin: 0 auto;
       padding: 0 24px;
     }
 
     .navbar-content {
+      width:100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
