@@ -212,7 +212,7 @@ import { FormsModule } from '@angular/forms';
               </div>
               <div class="contact-info">
                 <span class="contact-label">Email</span>
-                <a href="mailto:contact&#64;wastemanager.fr" class="contact-value">contact&#64;wastemanager.fr</a>
+                <a href="mailto:contact&#64;wastemanager.bf" class="contact-value">contact&#64;wastemanager.bf</a>
               </div>
             </div>
             
@@ -222,7 +222,7 @@ import { FormsModule } from '@angular/forms';
               </div>
               <div class="contact-info">
                 <span class="contact-label">Siège social</span>
-                <span class="contact-value">Paris, France</span>
+                <span class="contact-value">Ouagadougou, Burkina Faso</span>
               </div>
             </div>
             
