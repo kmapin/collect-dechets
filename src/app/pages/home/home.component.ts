@@ -25,7 +25,7 @@ import { Agency } from '../../models/agency.model';
             <div class="hero-main">
               <div class="hero-badge">
                 <i class="material-icons">eco</i>
-                <span>Solution #1 en France</span>
+                <span>Solution #1 au Burkina Faso</span>
                 <div class="badge-glow"></div>
               </div>
               

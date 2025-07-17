@@ -289,12 +289,14 @@ import { User, UserRole } from '../../models/user.model';
       background: rgba(0, 188, 212, 0.08);
       color: var(--primary-color);
       transform: translateY(-1px);
+      height: 40px;
     }
 
     .nav-link.active {
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       color: white;
-      box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+      box-shadow: 0 2px 12px rgba(0, 188, 212, 0.3);
+      height: 40px;
     }
 
     .nav-link i {
