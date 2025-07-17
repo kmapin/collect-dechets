@@ -52,7 +52,7 @@ export interface Employee {
   avatar?: string;
 }
 
-export enum EmployeeRole {
+export enum  EmployeeRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
   COLLECTOR = 'collector'
