@@ -296,7 +296,7 @@ import { User, UserRole } from '../../models/user.model';
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       color: white;
       box-shadow: 0 2px 12px rgba(0, 188, 212, 0.3);
-      height: 40px;
+      height: 35px;
     }
 
     .nav-link i {
@@ -317,6 +317,7 @@ import { User, UserRole } from '../../models/user.model';
     .nav-cta {
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       color: white;
+      height: 35px;
       padding: 12px 24px;
       border-radius: 25px;
       font-weight: 600;
