@@ -177,8 +177,10 @@ import { User, UserRole } from '../../models/user.model';
   `,
   styles: [`
     .navbar {
+      /* background-color: red;*/
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
+      min-width: 99vw;
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
       position: sticky;
@@ -194,16 +196,17 @@ import { User, UserRole } from '../../models/user.model';
     }
 
     .container {
-      max-width: 1400px;
+      max-width: 100%;
       margin: 0 auto;
       padding: 0 24px;
     }
 
     .navbar-content {
+      width:100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 80px;
+      height: 50px;
     }
 
     /* Brand */
@@ -224,8 +227,8 @@ import { User, UserRole } from '../../models/user.model';
     }
 
     .brand-icon {
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       border-radius: 12px;
       display: flex;
@@ -286,12 +289,14 @@ import { User, UserRole } from '../../models/user.model';
       background: rgba(0, 188, 212, 0.08);
       color: var(--primary-color);
       transform: translateY(-1px);
+      height: 40px;
     }
 
     .nav-link.active {
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       color: white;
-      box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+      box-shadow: 0 2px 12px rgba(0, 188, 212, 0.3);
+      height: 40px;
     }
 
     .nav-link i {

@@ -25,7 +25,7 @@ import { Agency } from '../../models/agency.model';
             <div class="hero-main">
               <div class="hero-badge">
                 <i class="material-icons">eco</i>
-                <span>Solution #1 en France</span>
+                <span>Solution #1 au Burkina Faso</span>
                 <div class="badge-glow"></div>
               </div>
               
@@ -206,7 +206,7 @@ import { Agency } from '../../models/agency.model';
             <div *ngFor="let agency of searchResults" class="agency-card">
               <div class="agency-header">
                 <div class="agency-logo">
-                  <img [src]="agency.logo || '/assets/default-agency.png'" 
+                  <img [src]="agency.logo || 'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" 
                        [alt]="agency.name">
                   <div class="logo-glow"></div>
                 </div>
@@ -434,10 +434,10 @@ import { Agency } from '../../models/agency.model';
     }
 
     .container {
-      max-width: 1400px;
+      max-width: 100%;
       margin: 0 auto;
       padding: 0 24px;
-      width: 100%;
+      min-width: 100%;
     }
 
     /* Hero Section Moderne */
@@ -1313,7 +1313,7 @@ import { Agency } from '../../models/agency.model';
 
     .feature-number {
       position: absolute;
-      top: -15px;
+      top: 15px;
       right: 20px;
       width: 40px;
       height: 40px;
