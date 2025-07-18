@@ -39,11 +39,12 @@ export class AuthService {
     );
   }
   //Login add
-  loginUser(email: string, password: string): Observable<any> {
-    return this.http.post(`https://projectwise.onrender.com/api/auth/login`, { email, password }).pipe(
+  loginUser(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
+    return this.http.post<{ success: true, data: any }>(`https://projectwise.onrender.com/api/auth/login`, { email, password }).pipe(
       map((response: any) => {
+        console.log("API > LoginUser :", response)
         if (response.userId) {
-          localStorage.setItem('currentUser', JSON.stringify(response));
+          localStorage.setItem('currentUser', JSON.stringify({ success: true , data: response}));
           // this.currentUserSubject.next(response);
           // this.isAuthenticatedSubject.next(true);
         }
