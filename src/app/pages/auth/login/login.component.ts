@@ -589,9 +589,11 @@ export class LoginComponent implements OnInit {
     }
 
     this.isLoading = true;
-    
-    this.authService.login(this.credentials.email, this.credentials.password).subscribe({
+    console.log('this.credentials', this.credentials);
+    // this.authService.login(this.credentials.email, this.credentials.password).subscribe({
+    this.authService.loginUser(this.credentials.email, this.credentials.password).subscribe({
       next: (response) => {
+        console.log('response login', response);
         this.isLoading = false;
         if (response.success && response.user) {
           this.notificationService.showSuccess('Connexion réussie', `Bienvenue ${response.user.firstName} !`);

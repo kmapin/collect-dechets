@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { delay, map } from 'rxjs/operators';
 import { User, UserRole } from '../models/user.model';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,7 @@ export class AuthService {
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-  constructor() {
+  constructor( private httpClient: HttpClient) {
     // Check for stored user on service initialization
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -27,6 +28,19 @@ export class AuthService {
     return of({ success: true, user: this.mockUser(email) }).pipe(
       delay(1000),
       map(response => {
+        if (response.success && response.user) {
+          localStorage.setItem('currentUser', JSON.stringify(response.user));
+          this.currentUserSubject.next(response.user);
+          this.isAuthenticatedSubject.next(true);
+        }
+        return response;
+      })
+    );
+  }
+  //Login add
+  loginUser(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
+    return this.httpClient.post(`https://projectwise.onrender.com/api/auth/login`, { email, password }).pipe(
+      map((response: any) => {
         if (response.success && response.user) {
           localStorage.setItem('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
