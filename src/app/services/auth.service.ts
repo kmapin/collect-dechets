@@ -38,6 +38,19 @@ export class AuthService {
       })
     );
   }
+  //Login add
+  loginUser(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
+    return this.httpClient.post(`https://projectwise.onrender.com/api/auth/login`, { email, password }).pipe(
+      map((response: any) => {
+        if (response.success && response.user) {
+          localStorage.setItem('currentUser', JSON.stringify(response.user));
+          this.currentUserSubject.next(response.user);
+          this.isAuthenticatedSubject.next(true);
+        }
+        return response;
+      })
+    );
+  }
 
   register(userData: any): Observable<{ success: boolean; user?: User; error?: string }> {
     if (userData.role === 'client') {
