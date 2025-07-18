@@ -103,12 +103,18 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    return this.http.post(`${environment.apiUrl}/auth/logout`,{ }).pipe(
-      map((response) => {
+    return this.http.post(`${environment.apiUrl}/auth/logout`, {}).pipe(
+      map((response: any) => {
         console.log("API > Logout :", response);
-        localStorage.removeItem('currentUser');
-        this.currentUserSubject.next(null);
-        this.isAuthenticatedSubject.next(false);
+        if (response) {
+          localStorage.removeItem('currentUser');
+          this.currentUserSubject.next(null);
+          this.isAuthenticatedSubject.next(false);
+          return response;
+        } else {
+          return { success: false, error: response?.error};
+        }
+
       })
     );
   }
