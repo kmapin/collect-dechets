@@ -64,7 +64,7 @@ import { User, UserRole } from '../../models/user.model';
                        [alt]="currentUser.firstName">
                 </div>
                 <div class="user-info">
-                  <span class="user-name">{{ currentUser.firstName }}</span>
+                  <span class="user-name">{{ currentUser.email }}</span>
                   <span class="user-role">{{ getRoleLabel(currentUser.role) }}</span>
                 </div>
                 <i class="material-icons dropdown-icon" 
@@ -146,7 +146,7 @@ import { User, UserRole } from '../../models/user.model';
                        [alt]="currentUser.firstName">
                 </div>
                 <div class="mobile-user-details">
-                  <strong>{{ currentUser.firstName }} {{ currentUser.lastName }}</strong>
+                  <strong>{{ currentUser.email }} {{ currentUser.lastName }}</strong>
                   <span>{{ getRoleLabel(currentUser.role) }}</span>
                 </div>
               </div>

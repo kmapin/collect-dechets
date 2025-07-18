@@ -17,11 +17,11 @@ export class AuthService {
 
   constructor(private http: HttpClient) {
     // Check for stored user on service initialization
-    // const storedUser = localStorage.getItem('currentUser');
-    // if (storedUser) {
-    //   this.currentUserSubject.next(JSON.parse(storedUser));
-    //   this.isAuthenticatedSubject.next(true);
-    // }
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      this.currentUserSubject.next(JSON.parse(storedUser));
+      this.isAuthenticatedSubject.next(true);
+    }
   }
 
   login(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
@@ -44,9 +44,9 @@ export class AuthService {
       map((response: any) => {
         console.log("API > LoginUser :", response)
         if (response.userId) {
-          localStorage.setItem('currentUser', JSON.stringify({ success: true , data: response}));
-          // this.currentUserSubject.next(response);
-          // this.isAuthenticatedSubject.next(true);
+          localStorage.setItem('currentUser', JSON.stringify(response));
+          this.currentUserSubject.next(response);
+          this.isAuthenticatedSubject.next(true);
         }
         return response;
       })
