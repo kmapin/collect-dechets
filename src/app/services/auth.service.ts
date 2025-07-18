@@ -19,7 +19,7 @@ export class AuthService {
     // Check for stored user on service initialization
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
-      this.currentUserSubject.next(JSON.parse(storedUser));
+      this.currentUserSubject.next(JSON.parse(storedUser)?.user);
       this.isAuthenticatedSubject.next(true);
     }
   }
@@ -40,12 +40,12 @@ export class AuthService {
   }
   //Login add
   loginUser(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
-    return this.http.post<{ success: true, data: any }>(`https://projectwise.onrender.com/api/auth/login`, { email, password }).pipe(
+    return this.http.post<{ success: true, data: any }>(`${environment.apiUrl}/auth/login`, { email, password }).pipe(
       map((response: any) => {
         console.log("API > LoginUser :", response)
-        if (response.userId) {
+        if (response.user) {
           localStorage.setItem('currentUser', JSON.stringify(response));
-          this.currentUserSubject.next(response);
+          this.currentUserSubject.next(response?.user);
           this.isAuthenticatedSubject.next(true);
         }
         return response;
@@ -102,12 +102,26 @@ export class AuthService {
     );
   }
 
-  logout(): void {
-    localStorage.removeItem('currentUser');
-    this.currentUserSubject.next(null);
-    this.isAuthenticatedSubject.next(false);
+  logout(): Observable<void> {
+    return this.http.post(`${environment.apiUrl}/auth/logout`,{ }).pipe(
+      map((response) => {
+        console.log("API > Logout :", response);
+        localStorage.removeItem('currentUser');
+        this.currentUserSubject.next(null);
+        this.isAuthenticatedSubject.next(false);
+      })
+    );
   }
 
+  /**Update client */
+  updateClient(userId: string, userData: any): Observable<any> {
+    return this.http.patch(`${environment.apiUrl}/clients/${userId}`, userData).pipe(
+      map((response) => {
+        console.log("API > UpdateClient :", response);
+        return response;
+      })
+    );
+  }
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
   }

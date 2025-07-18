@@ -23,9 +23,9 @@ import { User } from '../../models/user.model';
         <div class="profile-content" *ngIf="user">
           <div class="profile-card card">
             <div class="profile-header">
-              <div class="avatar">
+              <!--<div class="avatar">
                 <img [src]="user.avatar || '/assets/default-avatar.png'" [alt]="user.firstName">
-              </div>
+              </div> -->
               <div class="user-info">
                 <h2>{{ user.firstName }} {{ user.lastName }}</h2>
                 <p>{{ user.email }}</p>
@@ -190,12 +190,13 @@ import { User } from '../../models/user.model';
   `]
 })
 export class ProfileComponent implements OnInit {
-  user: User | null = null;
+  user: any;
 
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   ngOnInit(): void {
     this.user = this.authService.getCurrentUser();
+    console.log('Current user:', this.user);
   }
 
   getRoleLabel(role: string): string {
@@ -209,7 +210,21 @@ export class ProfileComponent implements OnInit {
   }
 
   onSave(): void {
-    console.log('Profile saved:', this.user);
+    const userEdit = {
+      email: this.user.email,
+      firstName: this.user.firstName,
+      lastName: this.user.lastName,
+      phone: this.user.phone
+    }
+    console.log('Profile saved:', userEdit);
+    this.authService.updateClient(this.user?.id, userEdit).subscribe(
+      response => {
+        console.log('Profile updated successfully:', response);
+      },
+      error => {
+        console.error('Error updating profile:', error);
+      }
+    );
     // Handle profile save
   }
 }

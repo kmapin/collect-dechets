@@ -64,7 +64,7 @@ import { User, UserRole } from '../../models/user.model';
                        [alt]="currentUser.firstName">
                 </div>
                 <div class="user-info">
-                  <span class="user-name">{{ currentUser.email }}</span>
+                  <span class="user-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
                   <span class="user-role">{{ getRoleLabel(currentUser.role) }}</span>
                 </div>
                 <i class="material-icons dropdown-icon" 
@@ -749,8 +749,10 @@ export class HeaderComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/']);
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/']);
+    });
+    
   }
 
   toggleMobileMenu(): void {

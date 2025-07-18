@@ -595,8 +595,8 @@ export class LoginComponent implements OnInit {
       next: (response: any) => {
         console.log('response login', response);
         this.isLoading = false;
-        if (response?.userId) {
-          this.notificationService.showSuccess('Connexion réussie', `Bienvenue ${response?.email} !`);
+        if (response?.user) {
+          this.notificationService.showSuccess('Connexion réussie', `Bienvenue ${response?.user?.firstName} ${response?.user?.lastName} !`);
           this.redirectToDashboard(response.role);
         } else {
           this.notificationService.showError('Erreur de connexion', response.error || 'Identifiants incorrects');
