@@ -355,7 +355,7 @@ import { UserRole } from '../../../models/user.model';
               <label class="checkbox-label">
                 <input 
                   type="checkbox" 
-                  [(ngModel)]="userData.termsAccepted"
+                  [(ngModel)]="userData.acceptTerms"
                   name="termsAccepted"
                   required>
                 <span class="checkmark"></span>
@@ -376,7 +376,7 @@ import { UserRole } from '../../../models/user.model';
             <button 
               type="submit" 
               class="btn btn-primary btn-full"
-              [disabled]="isLoading || registerForm.invalid || !userData.termsAccepted || userData.password !== userData.confirmPassword">
+              [disabled]="isLoading || registerForm.invalid || !userData.acceptTerms || userData.password !== userData.confirmPassword">
               <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
               <i class="material-icons" *ngIf="!isLoading">person_add</i>
               {{ isLoading ? 'Création...' : 'Créer mon compte' }}
@@ -732,7 +732,7 @@ export class RegisterComponent implements OnInit {
     },
     agencyName: '',
     agencyDescription: '',
-    termsAccepted: false,
+    acceptTerms: false,
     receiveOffers: false
   };
 
@@ -792,7 +792,7 @@ export class RegisterComponent implements OnInit {
         quartier: this.userData.address.neighborhood,
         ville: this.userData.address.city,
         codePostal: this.userData.address.postalCode,
-        termsAccepted: this.userData.termsAccepted,
+        acceptTerms: this.userData.acceptTerms,
         receiveOffers: this.userData.receiveOffers
       };
       console.log('[DEBUG] Body envoyé à registerClient:', body);
@@ -868,7 +868,7 @@ export class RegisterComponent implements OnInit {
       return false;
     }
 
-    if (!this.userData.termsAccepted) {
+    if (!this.userData.acceptTerms) {
       this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
       return false;
     }

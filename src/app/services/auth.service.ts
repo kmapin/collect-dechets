@@ -87,7 +87,7 @@ export class AuthService {
    * Inscription d'un client via l'API réelle
    */
   registerClient(userData: any): Observable<{ success: boolean; user?: User; error?: string; message?: string }> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/register/client`, userData).pipe(
+    return this.http.post<any>(`${environment.apiUrl}/auth/register`, userData).pipe(
       map(response => {
         console.log("API > ClientRegister :", response)
         if (response && response.user) {
