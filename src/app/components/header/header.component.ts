@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { User, UserRole } from '../../models/user.model';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-header',
@@ -64,7 +65,7 @@ import { User, UserRole } from '../../models/user.model';
                        [alt]="currentUser.firstName">
                 </div>
                 <div class="user-info">
-                  <span class="user-name">{{ currentUser.email }}</span>
+                  <span class="user-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
                   <span class="user-role">{{ getRoleLabel(currentUser.role) }}</span>
                 </div>
                 <i class="material-icons dropdown-icon" 
@@ -703,8 +704,9 @@ export class HeaderComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private notificationService: NotificationService
+  ) { }
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
@@ -723,7 +725,7 @@ export class HeaderComponent implements OnInit {
 
   getDashboardRoute(): string {
     if (!this.currentUser) return '/';
-    
+
     switch (this.currentUser.role) {
       case UserRole.CLIENT:
         return '/dashboard/client';
@@ -749,8 +751,19 @@ export class HeaderComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/']);
+    this.authService.logout().subscribe({
+      next: (response: any) => {
+        if (response?.message) {
+          console.log('deconnexion', response);
+          this.router.navigate(['/']);
+          this.notificationService.showSuccess(`${response?.message} !`,'Au revoir, à bientoît !' );
+
+        } else {
+          this.notificationService.showError('Erreur de connexion', response.error);
+        }
+      }
+    });
+
   }
 
   toggleMobileMenu(): void {

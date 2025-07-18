@@ -1,4 +1,4 @@
-import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
+import {HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export const authInterceptorInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<HttpEvent<unknown>>  => {
@@ -9,5 +9,7 @@ export const authInterceptorInterceptor: HttpInterceptorFn = (req: HttpRequest<u
       headers: req.headers.set('Authorization', `Bearer ${parsedUser?.token}`),
     });
   }
-  return next(req);
+  return next(req).pipe(
+    
+  );
 };
