@@ -38,7 +38,7 @@ export class AuthService {
     );
   }
   //Login add
-  loginUser(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
+  loginUser(email: string, password: string): Observable<any> {
     return this.httpClient.post(`https://projectwise.onrender.com/api/auth/login`, { email, password }).pipe(
       map((response: any) => {
         if (response.success && response.user) {
