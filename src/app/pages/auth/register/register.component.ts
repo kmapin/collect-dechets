@@ -376,7 +376,7 @@ import { UserRole } from '../../../models/user.model';
             <button 
               type="submit" 
               class="btn btn-primary btn-full"
-              [disabled]="isLoading || registerForm.invalid || !acceptTerms || userData.password !== userData.confirmPassword">
+              [disabled]="isLoading || registerForm.invalid || !userData.termsAccepted || userData.password !== userData.confirmPassword">
               <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
               <i class="material-icons" *ngIf="!isLoading">person_add</i>
               {{ isLoading ? 'Création...' : 'Créer mon compte' }}
@@ -721,7 +721,7 @@ export class RegisterComponent implements OnInit {
     phone: '',
     password: '',
     confirmPassword: '',
-    arrondissement: '', // <-- Ajouté
+    arrondissement: '',
     address: {
       street: '',
       doorNumber: '',
@@ -732,13 +732,11 @@ export class RegisterComponent implements OnInit {
     },
     agencyName: '',
     agencyDescription: '',
-    termsAccepted: false, // <-- Ajouté
-    receiveOffers: false  // <-- Ajouté
+    termsAccepted: false,
+    receiveOffers: false
   };
 
   showPassword = false;
-  acceptTerms = false;
-  acceptNewsletter = false;
   isLoading = false;
 
   constructor(
@@ -815,7 +813,7 @@ export class RegisterComponent implements OnInit {
         error: (error) => {
           this.isLoading = false;
           console.error('[DEBUG] Erreur API registerClient:', error);
-          this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la création du compte');
+          this.notificationService.showError('Erreur', error?.error?.error || error?.error?.message || 'Une erreur est survenue lors de la création du compte');
         }
       });
       return;
@@ -849,6 +847,13 @@ export class RegisterComponent implements OnInit {
       return false;
     }
 
+    // Validation du format d'email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.userData.email)) {
+      this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
+      return false;
+    }
+
     if (this.userData.password !== this.userData.confirmPassword) {
       this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
       return false;
@@ -864,11 +869,20 @@ export class RegisterComponent implements OnInit {
       return false;
     }
 
+    if (!this.userData.arrondissement) {
+      this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
+      return false;
+    }
+
     if (this.userData.role === 'client') {
       if (!this.userData.address.street || !this.userData.address.doorNumber || 
           !this.userData.address.neighborhood || !this.userData.address.city || 
           !this.userData.address.postalCode) {
         this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
+        return false;
+      }
+      if (!this.userData.address.doorColor) {
+        this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
         return false;
       }
     }
