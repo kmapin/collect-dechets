@@ -128,7 +128,8 @@ import { Agency } from '../../models/agency.model';
                 Top Rated
               </div>
             </div>
-
+ 
+            
             <div class="agency-content">
               <h3 class="agency-name">{{ agency.name }}</h3>
               <p class="agency-description">{{ agency.description }}</p>
