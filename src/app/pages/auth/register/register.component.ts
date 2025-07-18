@@ -797,23 +797,27 @@ export class RegisterComponent implements OnInit {
       };
       console.log('[DEBUG] Body envoyé à registerClient:', body);
       this.authService.registerClient(body).subscribe({
-        next: (response) => {
+        next: (response: { success: boolean; user?: any; error?: string; message?: string }) => {
           console.log('[DEBUG] Réponse API registerClient:', response);
           this.isLoading = false;
           if (response.success && response.user) {
-            this.notificationService.showSuccess(
-              'Compte créé avec succès', 
-              `Bienvenue ${response.user.firstName} ! Votre compte a été créé.`
-            );
-            this.redirectToDashboard(response.user.role);
+            const message = "utilisateur créé avec succes";
+            // const message = this.getFriendlyMessage(response.message, true);
+            this.notificationService.showSuccess('Succès', message);
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
           } else {
-            this.notificationService.showError('Erreur', response.error || 'Erreur lors de la création du compte');
+            const errorMsg = "Erreur lors de la creation du client";
+            // const errorMsg = this.getFriendlyMessage(response.error || response.message, false);
+            this.notificationService.showError('Erreur', errorMsg);
           }
         },
         error: (error) => {
           this.isLoading = false;
           console.error('[DEBUG] Erreur API registerClient:', error);
-          this.notificationService.showError('Erreur', error?.error?.error || error?.error?.message || 'Une erreur est survenue lors de la création du compte');
+          const errorMsg = this.getFriendlyMessage(error?.error?.error || error?.error?.message || error?.message, false);
+          this.notificationService.showError('Erreur', errorMsg);
         }
       });
       return;
@@ -893,6 +897,33 @@ export class RegisterComponent implements OnInit {
     }
 
     return true;
+  }
+
+  /**
+   * Convertit les messages techniques du backend en messages conviviaux pour l'utilisateur
+   */
+  private getFriendlyMessage(raw: string, isSuccess: boolean = false): string {
+    if (!raw) {
+      return isSuccess
+        ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+        : "Une erreur est survenue. Veuillez réessayer.";
+    }
+    const map: { [key: string]: string } = {
+      "Email already exists": "Cette adresse email est déjà utilisée.",
+      "Invalid email or password": "Email ou mot de passe invalide.",
+      "User created successfully": "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+      "Missing required fields": "Veuillez remplir tous les champs obligatoires.",
+      "Password too short": "Le mot de passe est trop court.",
+      "Invalid phone number": "Le numéro de téléphone est invalide.",
+      // Ajoute d'autres correspondances ici si besoin
+    };
+    if (map[raw]) return map[raw];
+    for (const key in map) {
+      if (raw.toLowerCase().includes(key.toLowerCase())) return map[key];
+    }
+    return isSuccess
+      ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+      : raw;
   }
 
   private redirectToDashboard(role: string): void {

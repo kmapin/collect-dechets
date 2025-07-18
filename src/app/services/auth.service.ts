@@ -86,7 +86,7 @@ export class AuthService {
   /**
    * Inscription d'un client via l'API réelle
    */
-  registerClient(userData: any): Observable<{ success: boolean; user?: User; error?: string }> {
+  registerClient(userData: any): Observable<{ success: boolean; user?: User; error?: string; message?: string }> {
     return this.http.post<any>(`${environment.apiUrl}/auth/register/client`, userData).pipe(
       map(response => {
         console.log("API > ClientRegister :", response)
@@ -94,9 +94,9 @@ export class AuthService {
           localStorage.setItem('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
           this.isAuthenticatedSubject.next(true);
-          return { success: true, user: response.user };
+          return { success: true, user: response.user, message: response.message };
         } else {
-          return { success: false, error: response?.error || 'Erreur lors de la création du compte' };
+          return { success: false, error: response?.error || 'Erreur lors de la création du compte', message: response?.message };
         }
       })
     );
