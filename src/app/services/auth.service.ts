@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { delay, map } from 'rxjs/operators';
 import { User, UserRole } from '../models/user.model';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +15,7 @@ export class AuthService {
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-  constructor() {
+  constructor(private http: HttpClient) {
     // Check for stored user on service initialization
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -38,16 +40,50 @@ export class AuthService {
   }
 
   register(userData: any): Observable<{ success: boolean; user?: User; error?: string }> {
-    // Simulate API call
-    return of({ success: true, user: this.mockUser(userData.email) }).pipe(
-      delay(1000),
+    if (userData.role === 'client') {
+      return this.http.post<any>(`${environment.apiUrl}/auth/register/client`, userData).pipe(
+        map(response => {
+          if (response && response.user) {
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
+            this.currentUserSubject.next(response.user);
+            this.isAuthenticatedSubject.next(true);
+            return { success: true, user: response.user };
+          } else {
+            return { success: false, error: response?.error || 'Erreur lors de la création du compte' };
+          }
+        })
+      );
+    } else {
+      // Simulate API call for other roles
+      return of({ success: true, user: this.mockUser(userData.email) }).pipe(
+        delay(1000),
+        map(response => {
+          if (response.success && response.user) {
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
+            this.currentUserSubject.next(response.user);
+            this.isAuthenticatedSubject.next(true);
+          }
+          return response;
+        })
+      );
+    }
+  }
+
+  /**
+   * Inscription d'un client via l'API réelle
+   */
+  registerClient(userData: any): Observable<{ success: boolean; user?: User; error?: string }> {
+    return this.http.post<any>(`${environment.apiUrl}/auth/register/client`, userData).pipe(
       map(response => {
-        if (response.success && response.user) {
+        console.log("API > ClientRegister :", response)
+        if (response && response.user) {
           localStorage.setItem('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
           this.isAuthenticatedSubject.next(true);
+          return { success: true, user: response.user };
+        } else {
+          return { success: false, error: response?.error || 'Erreur lors de la création du compte' };
         }
-        return response;
       })
     );
   }

@@ -138,6 +138,21 @@ import { UserRole } from '../../../models/user.model';
                   Le numéro de téléphone est requis
                 </div>
               </div>
+
+              <div class="form-group">
+                <label class="form-label" for="arrondissement">
+                  <i class="material-icons">map</i>
+                  Arrondissement *
+                </label>
+                <input 
+                  type="text" 
+                  id="arrondissement"
+                  name="arrondissement"
+                  [(ngModel)]="userData.arrondissement"
+                  class="form-control"
+                  placeholder="5"
+                  required>
+              </div>
             </div>
 
             <!-- Adresse (pour les clients) -->
@@ -340,8 +355,8 @@ import { UserRole } from '../../../models/user.model';
               <label class="checkbox-label">
                 <input 
                   type="checkbox" 
-                  [(ngModel)]="acceptTerms"
-                  name="acceptTerms"
+                  [(ngModel)]="userData.termsAccepted"
+                  name="termsAccepted"
                   required>
                 <span class="checkmark"></span>
                 J'accepte les <a routerLink="/terms" target="_blank">conditions d'utilisation</a> 
@@ -351,8 +366,8 @@ import { UserRole } from '../../../models/user.model';
               <label class="checkbox-label">
                 <input 
                   type="checkbox" 
-                  [(ngModel)]="acceptNewsletter"
-                  name="acceptNewsletter">
+                  [(ngModel)]="userData.receiveOffers"
+                  name="receiveOffers">
                 <span class="checkmark"></span>
                 Je souhaite recevoir les actualités et offres par email
               </label>
@@ -706,6 +721,7 @@ export class RegisterComponent implements OnInit {
     phone: '',
     password: '',
     confirmPassword: '',
+    arrondissement: '', // <-- Ajouté
     address: {
       street: '',
       doorNumber: '',
@@ -715,7 +731,9 @@ export class RegisterComponent implements OnInit {
       postalCode: ''
     },
     agencyName: '',
-    agencyDescription: ''
+    agencyDescription: '',
+    termsAccepted: false, // <-- Ajouté
+    receiveOffers: false  // <-- Ajouté
   };
 
   showPassword = false;
@@ -759,7 +777,53 @@ export class RegisterComponent implements OnInit {
 
     this.isLoading = true;
 
-    this.authService.register(this.userData).subscribe({
+    let body: any;
+    if (this.userData.role === 'client') {
+      body = {
+        firstName: this.userData.firstName,
+        lastName: this.userData.lastName,
+        email: this.userData.email,
+        phone: this.userData.phone,
+        password: this.userData.password,
+        confirmPassword: this.userData.confirmPassword,
+        role: this.userData.role,
+        arrondissement: this.userData.arrondissement,
+        rue: this.userData.address.street,
+        numero: this.userData.address.doorNumber,
+        couleurPorte: this.userData.address.doorColor,
+        quartier: this.userData.address.neighborhood,
+        ville: this.userData.address.city,
+        codePostal: this.userData.address.postalCode,
+        termsAccepted: this.userData.termsAccepted,
+        receiveOffers: this.userData.receiveOffers
+      };
+      console.log('[DEBUG] Body envoyé à registerClient:', body);
+      this.authService.registerClient(body).subscribe({
+        next: (response) => {
+          console.log('[DEBUG] Réponse API registerClient:', response);
+          this.isLoading = false;
+          if (response.success && response.user) {
+            this.notificationService.showSuccess(
+              'Compte créé avec succès', 
+              `Bienvenue ${response.user.firstName} ! Votre compte a été créé.`
+            );
+            this.redirectToDashboard(response.user.role);
+          } else {
+            this.notificationService.showError('Erreur', response.error || 'Erreur lors de la création du compte');
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          console.error('[DEBUG] Erreur API registerClient:', error);
+          this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la création du compte');
+        }
+      });
+      return;
+    }
+
+    // Autres rôles : ancien comportement
+    body = { ...this.userData };
+    this.authService.register(body).subscribe({
       next: (response) => {
         this.isLoading = false;
         if (response.success && response.user) {
@@ -795,7 +859,7 @@ export class RegisterComponent implements OnInit {
       return false;
     }
 
-    if (!this.acceptTerms) {
+    if (!this.userData.termsAccepted) {
       this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
       return false;
     }
