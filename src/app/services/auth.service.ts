@@ -17,11 +17,11 @@ export class AuthService {
 
   constructor(private http: HttpClient) {
     // Check for stored user on service initialization
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      this.currentUserSubject.next(JSON.parse(storedUser));
-      this.isAuthenticatedSubject.next(true);
-    }
+    // const storedUser = localStorage.getItem('currentUser');
+    // if (storedUser) {
+    //   this.currentUserSubject.next(JSON.parse(storedUser));
+    //   this.isAuthenticatedSubject.next(true);
+    // }
   }
 
   login(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
@@ -42,10 +42,10 @@ export class AuthService {
   loginUser(email: string, password: string): Observable<any> {
     return this.http.post(`https://projectwise.onrender.com/api/auth/login`, { email, password }).pipe(
       map((response: any) => {
-        if (response.success && response.user) {
-          localStorage.setItem('currentUser', JSON.stringify(response.user));
-          this.currentUserSubject.next(response.user);
-          this.isAuthenticatedSubject.next(true);
+        if (response.userId) {
+          localStorage.setItem('currentUser', JSON.stringify(response));
+          // this.currentUserSubject.next(response);
+          // this.isAuthenticatedSubject.next(true);
         }
         return response;
       })
