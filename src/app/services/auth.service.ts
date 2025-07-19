@@ -148,6 +148,18 @@ export class AuthService {
       })
     );
   }
+
+  /**
+   * Abonnement d'un utilisateur à une agence
+   */
+  subscribeToAgency(userId: string, agencyId: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/auth/agences/${userId}/status`, { agencyId }).pipe(
+      map((response: any) => {
+        console.log("API > SubscribeToAgency :", response);
+        return response;
+      })
+    );
+  }
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
   }

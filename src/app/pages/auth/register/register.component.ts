@@ -837,24 +837,22 @@ export class RegisterComponent implements OnInit {
       console.log('[DEBUG] Body envoyé à registerClient:', body);
       this.authService.registerClient(body).subscribe({
         next: (response: { success: boolean; user?: any; error?: string; message?: string }) => {
-          console.log('[DEBUG] Réponse API registerClient:', response);
           this.isLoading = false;
           if (response.success && response.user) {
-            const message = "utilisateur créé avec succes";
-            this.notificationService.showSuccess('Succès', message);
+            this.notificationService.showSuccess('Inscription réussie',
+              'Votre compte client a été créé avec succès ! Vous pouvez maintenant vous connecter.');
             setTimeout(() => {
               this.router.navigate(['/login']);
             }, 2000);
           } else {
-            const errorMsg = "Erreur lors de la creation du client";
-            this.notificationService.showError('Erreur', errorMsg);
+            const errorMsg = this.getFriendlyMessage(( response?.message || response?.error || ''), false);
+            this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
           }
         },
         error: (error) => {
           this.isLoading = false;
-          console.error('[DEBUG] Erreur API registerClient:', error);
-          const errorMsg = this.getFriendlyMessage(error?.error?.error || error?.error?.message || error?.message, false);
-          this.notificationService.showError('Erreur', errorMsg);
+          const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
+          this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
         }
       });
       return;
@@ -868,9 +866,10 @@ export class RegisterComponent implements OnInit {
         phone: this.userData.phone,
         password: this.userData.password,
         confirmPassword: this.userData.confirmPassword,
-        termsAccepted: this.userData.termsAccepted,
+        acceptTerms: this.userData.acceptTerms, // renommé
+        termsAccepted: this.userData.acceptTerms,
         receiveOffers: this.userData.receiveOffers,
-        name: this.userData.agencyName,
+        agencyName: this.userData.agencyName,
         description: this.userData.agencyDescription
       };
       console.log('[DEBUG] Body envoyé à registerAgency:', body);
@@ -878,18 +877,21 @@ export class RegisterComponent implements OnInit {
         next: (response) => {
           this.isLoading = false;
           if (response.success && response.agence) {
-            this.notificationService.showSuccess('Succès', "Agence créée avec succès");
+            this.notificationService.showSuccess('Inscription agence réussie',
+              'Votre agence a été créée avec succès ! Vous pouvez maintenant vous connecter.');
             setTimeout(() => {
               this.router.navigate(['/login']);
             }, 2000);
           } else {
-            this.notificationService.showError('Erreur', "Erreur lors de la creation de l'agence");
+            const errorMsg = this.getFriendlyMessage((response?.error || response?.message || ''), false);
+            this.notificationService.showError('Erreur lors de l\'inscription agence', errorMsg);
           }
         },
         error: (error) => {
           this.isLoading = false;
-          const errorMsg = this.getFriendlyMessage(error?.error?.error || error?.error?.message || error?.message, false);
-          this.notificationService.showError('Erreur', errorMsg);
+          const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
+          // const errorMsg = this.getFriendlyMessage((error?.error?.error || error?.error?.message || error?.message || ''), false);
+          this.notificationService.showError('Erreur lors de l\'inscription agence', errorMsg);
         }
       });
       return;
