@@ -4,6 +4,7 @@ import { delay, map } from 'rxjs/operators';
 import { User, UserRole } from '../models/user.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { Agency } from '../models/agency.model';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,6 @@ import { environment } from '../../environments/environment';
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
-
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
@@ -125,6 +125,26 @@ export class AuthService {
       map((response) => {
         console.log("API > UpdateClient :", response);
         return response;
+      })
+    );
+  }
+
+  
+  /**
+   * Inscription d'une agence via l'API réelle
+   */
+  registerAgency$(agencyData: any): Observable<{ success: boolean; agence?: Agency; error?: string; message?: string }> {
+    return this.http.post<any>(`${environment.apiUrl}/auth/register`, agencyData).pipe(
+      map(response => {
+        console.log("API > agenceRegister :", response)
+        if (response && response.agence) {
+          localStorage.setItem('currentagence', JSON.stringify(response.agence));
+          this.currentUserSubject.next(response.agence);
+          this.isAuthenticatedSubject.next(true);
+          return { success: true, agence: response.agence, message: response.message };
+        } else {
+          return { success: false, error: response?.error || 'Erreur lors de la création du compte', message: response?.message };
+        }
       })
     );
   }
