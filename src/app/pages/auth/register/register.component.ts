@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 import { UserRole } from '../../../models/user.model';
+import { Agency } from '../../../models/agency.model';
 
 @Component({
   selector: 'app-register',
@@ -139,25 +140,27 @@ import { UserRole } from '../../../models/user.model';
                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="arrondissement">
-                  <i class="material-icons">map</i>
-                  Arrondissement *
-                </label>
-                <input 
-                  type="text" 
-                  id="arrondissement"
-                  name="arrondissement"
-                  [(ngModel)]="userData.arrondissement"
-                  class="form-control"
-                  placeholder="5"
-                  required>
-              </div>
             </div>
-
+            
             <!-- Adresse (pour les clients) -->
             <div class="form-section" *ngIf="userData.role === 'client'">
               <h3>Adresse de collecte</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="arrondissement">
+                    <i class="material-icons">map</i>
+                    Arrondissement *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="arrondissement"
+                    name="arrondissement"
+                    [(ngModel)]="userData.arrondissement"
+                    class="form-control"
+                    placeholder="5"
+                    required>
+                </div>
+              </div>
               
               <div class="form-row">
                 <div class="form-group">
@@ -355,7 +358,7 @@ import { UserRole } from '../../../models/user.model';
               <label class="checkbox-label">
                 <input 
                   type="checkbox" 
-                  [(ngModel)]="userData.acceptTerms"
+                  [(ngModel)]="userData.termsAccepted"
                   name="termsAccepted"
                   required>
                 <span class="checkmark"></span>
@@ -376,7 +379,7 @@ import { UserRole } from '../../../models/user.model';
             <button 
               type="submit" 
               class="btn btn-primary btn-full"
-              [disabled]="isLoading || registerForm.invalid || !userData.acceptTerms || userData.password !== userData.confirmPassword">
+              [disabled]="isLoading || registerForm.invalid || !userData.termsAccepted || userData.password !== userData.confirmPassword">
               <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
               <i class="material-icons" *ngIf="!isLoading">person_add</i>
               {{ isLoading ? 'Création...' : 'Créer mon compte' }}
@@ -712,9 +715,11 @@ import { UserRole } from '../../../models/user.model';
     }
   `]
 })
+
 export class RegisterComponent implements OnInit {
+
   userData = {
-    role: 'client' as UserRole,
+    role: UserRole.CLIENT as UserRole | null,
     firstName: '',
     lastName: '',
     email: '',
@@ -732,9 +737,34 @@ export class RegisterComponent implements OnInit {
     },
     agencyName: '',
     agencyDescription: '',
+    termsAccepted: false,
     acceptTerms: true,
     receiveOffers: false
   };
+
+  //  userRoleAgence = {
+  //     role: UserRole.AGENCY, 
+  //     firstName: '',
+  //     lastName: '',
+  //     email: '',
+  //     phone: '',
+  //     password: '',
+  //     confirmPassword: '',
+  //     arrondissement: '',
+  //     //  address: {
+  //     //   street: '',
+  //     //   doorNumber: '',
+  //     //   doorColor: '',
+  //     //   neighborhood: '',
+  //     //   city: '',
+  //     //   postalCode: ''
+  //     // },
+  //    name: '',
+  //   Description: '',
+  //     termsAccepted: false,
+  //     receiveOffers: false
+  //   };
+
 
   showPassword = false;
   isLoading = false;
@@ -743,9 +773,9 @@ export class RegisterComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private notificationService: NotificationService
-  ) {}
+  ) { }
 
-  ngOnInit(): void {}
+  ngOnInit(): void { }
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
@@ -776,7 +806,7 @@ export class RegisterComponent implements OnInit {
     this.isLoading = true;
 
     let body: any;
-    if (this.userData.role === 'client') {
+    if (this.userData.role === UserRole.CLIENT) {
       body = {
         role: this.userData.role,
         firstName: this.userData.firstName,
@@ -828,43 +858,120 @@ export class RegisterComponent implements OnInit {
         }
       });
       return;
-    }
+    } else if (this.userData.role === UserRole.AGENCY) {
 
-    // Autres rôles : ancien comportement
-    body = { ...this.userData };
-    this.authService.register(body).subscribe({
-      next: (response) => {
-        this.isLoading = false;
-        if (response.success && response.user) {
-          this.notificationService.showSuccess(
-            'Compte créé avec succès', 
-            `Bienvenue ${response.user.firstName} ! Votre compte a été créé.`
-          );
-          this.redirectToDashboard(response.user.role);
-        } else {
-          this.notificationService.showError('Erreur', response.error || 'Erreur lors de la création du compte');
+      body = {
+        role: this.userData.role,
+        firstName: this.userData.firstName,
+        lastName: this.userData.lastName,
+        email: this.userData.email,
+        phone: this.userData.phone,
+        password: this.userData.password,
+        confirmPassword: this.userData.confirmPassword,
+        termsAccepted: this.userData.termsAccepted,
+        receiveOffers: this.userData.receiveOffers,
+        name: this.userData.agencyName,
+        description: this.userData.agencyDescription
+      };
+      console.log('[DEBUG] Body envoyé à registerAgency:', body);
+      this.authService.registerAgency$(body).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          if (response.success && response.agence) {
+            this.notificationService.showSuccess('Succès', "Agence créée avec succès");
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          } else {
+            this.notificationService.showError('Erreur', "Erreur lors de la creation de l'agence");
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          const errorMsg = this.getFriendlyMessage(error?.error?.error || error?.error?.message || error?.message, false);
+          this.notificationService.showError('Erreur', errorMsg);
         }
-      },
-      error: (error) => {
-        this.isLoading = false;
-        this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la création du compte');
-      }
-    });
+      });
+      return;
+    }
   }
 
+
+
+  // private validateForm(): boolean {
+  //   if (!this.userData.firstName || !this.userData.lastName || !this.userData.email || !this.userData.phone) {
+  //     this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
+  //     return false;
+  //   }
+
+  //   // Validation du format d'email
+  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //   if (!emailRegex.test(this.userData.email)) {
+  //     this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
+  //     return false;
+  //   }
+
+  //   if (this.userData.password !== this.userData.confirmPassword) {
+  //     this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
+  //     return false;
+  //   }
+
+  //   if (this.userData.password.length < 8) {
+  //     this.notificationService.showError('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
+  //     return false;
+  //   }
+
+  //   if (!this.userData.acceptTerms) {
+  //     this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
+  //     return false;
+  //   }
+
+  //   if (!this.userData.arrondissement) {
+  //     this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
+  //     return false;
+  //   }
+
+  //   if (this.userData.role === 'client') {
+  //     if (!this.userData.address.street || !this.userData.address.doorNumber || 
+  //         !this.userData.address.neighborhood || !this.userData.address.city || 
+  //         !this.userData.address.postalCode) {
+  //       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
+  //       return false;
+  //     }
+  //     if (!this.userData.address.doorColor) {
+  //       this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
+  //       return false;
+  //     }
+  //   }
+
+  //   if (this.userData.role === 'agency' && !this.userData.agencyName) {
+  //     this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+  //     return false;
+  //   }
+
+  //   return true;
+  // }
   private validateForm(): boolean {
+    // Vérifier que le rôle est bien sélectionné
+    if (!this.userData.role) {
+      this.notificationService.showError('Erreur', 'Veuillez sélectionner un rôle');
+      return false;
+    }
+
+    // Champs communs obligatoires
     if (!this.userData.firstName || !this.userData.lastName || !this.userData.email || !this.userData.phone) {
       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
       return false;
     }
 
-    // Validation du format d'email
+    // Validation format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.userData.email)) {
       this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
       return false;
     }
 
+    // Validation mot de passe
     if (this.userData.password !== this.userData.confirmPassword) {
       this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
       return false;
@@ -875,34 +982,43 @@ export class RegisterComponent implements OnInit {
       return false;
     }
 
-    if (!this.userData.acceptTerms) {
+    // Validation acceptation des conditions
+    if (!this.userData.termsAccepted) {
       this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
       return false;
     }
 
-    if (!this.userData.arrondissement) {
-      this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
-      return false;
-    }
+    // Validation arrondissement obligatoire
+    // if (!this.userData.arrondissement) {
+    //   this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
+    //   return false;
+    // }
 
-    if (this.userData.role === 'client') {
-      if (!this.userData.address.street || !this.userData.address.doorNumber || 
-          !this.userData.address.neighborhood || !this.userData.address.city || 
-          !this.userData.address.postalCode) {
-        this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
-        return false;
-      }
-      if (!this.userData.address.doorColor) {
+    // Validation spécifique selon le rôle
+    if (this.userData.role === UserRole.CLIENT) {
+     
+      const address = this.userData.address;
+      // if (!address.street || !address.doorNumber || !address.neighborhood || !address.city || !address.postalCode) {
+      //   this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
+      //   return false;
+      // }
+      if (!address.doorColor) {
         this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
         return false;
       }
-    }
-
-    if (this.userData.role === 'agency' && !this.userData.agencyName) {
-      this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+    } else if (this.userData.role === UserRole.AGENCY) {
+      // Validation agence
+      if (!this.userData.agencyName) {
+        this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+        return false;
+      }
+    } else {
+      // Cas improbable, mais au cas où
+      this.notificationService.showError('Erreur', 'Rôle utilisateur invalide');
       return false;
     }
 
+    // Si tout est ok
     return true;
   }
 
