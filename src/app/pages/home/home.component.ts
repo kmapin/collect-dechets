@@ -1947,24 +1947,24 @@ export class HomeComponent implements OnInit {
   testimonials = [
     {
       text: 'WasteManager a complètement transformé notre gestion des déchets. Simple, efficace et écologique !',
-      name: 'Marie Dubois',
-      role: 'Particulier, Paris',
+      name: 'GANGO Siméon',
+      role: 'Particulier, Kossodo',
       rating: 5,
-      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?w=100&h=100&fit=crop&crop=face'
+      avatar: 'https://drive.google.com/drive/folders/1-zkhOCP4zNAMlClgm1CHn7uP-CElGFgK'
     },
     {
       text: 'Une plateforme intuitive qui nous fait gagner un temps précieux. Le service client est exceptionnel.',
-      name: 'Pierre Martin',
-      role: 'Gérant d\'entreprise, Lyon',
+      name: 'W.Paulin GUIGMA',
+      role: 'Gérant d\'entreprise, Ouagadougou',
       rating: 5,
-      avatar: 'https://images.pexels.com/photos/697509/pexels-photo-697509.jpeg?w=100&h=100&fit=crop&crop=face'
+      avatar: 'https://drive.google.com/drive/folders/1-zkhOCP4zNAMlClgm1CHn7uP-CElGFgK'
     },
     {
       text: 'Grâce à WasteManager, nous avons amélioré notre tri et réduit nos coûts de 30%. Parfait !',
-      name: 'Sophie Leroy',
-      role: 'Responsable RSE, Marseille',
+      name: 'Rimvie OUEDRAOGO',
+      role: 'Responsable RSE, Tampouy',
       rating: 5,
-      avatar: 'https://images.pexels.com/photos/712513/pexels-photo-712513.jpeg?w=100&h=100&fit=crop&crop=face'
+      avatar: 'https://drive.google.com/drive/folders/1-zkhOCP4zNAMlClgm1CHn7uP-CElGFgK'
     }
   ];
 
@@ -1974,12 +1974,40 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadFeaturedAgencies();
+    this.loadFeaturedAgenciesFromApi();
   }
 
-  loadFeaturedAgencies(): void {
-    this.agencyService.getAgencies().subscribe(agencies => {
-      this.searchResults = agencies.slice(0, 4);
+  /**
+   * Transforme une agence API en objet compatible avec le template
+   */
+  private mapApiAgency(apiAgency: any): Agency {
+    return {
+      id: apiAgency._id || apiAgency.id || '',
+      name: apiAgency.name || '',
+      description: apiAgency.description || '',
+      logo: apiAgency.logo || '',
+      email: apiAgency.email || '',
+      phone: apiAgency.phone || '',
+      address: apiAgency.address || { city: '', neighborhood: '' },
+      serviceZones: apiAgency.serviceZones || apiAgency.zones || [],
+      services: apiAgency.services || [],
+      employees: apiAgency.employees || apiAgency.collectors || [],
+      schedule: apiAgency.schedule || [],
+      rating: apiAgency.rating || 0,
+      totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+      isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
+      createdAt: apiAgency.createdAt ? new Date(apiAgency.createdAt) : new Date(),
+      updatedAt: apiAgency.updatedAt ? new Date(apiAgency.updatedAt) : new Date()
+    };
+  }
+
+  /**
+   * Charge les agences depuis l'API backend et affiche les 4 premières en vedette
+   */
+  loadFeaturedAgenciesFromApi(): void {
+    this.agencyService.getAllAgenciesFromApi().subscribe((response: any) => {
+      this.searchResults = (response.data || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
+      console.log('[DEBUG] searchResults:', this.searchResults);
     });
   }
 
@@ -2039,6 +2067,7 @@ export class HomeComponent implements OnInit {
   }
 
   playDemo(): void {
-    window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
+    // window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank');
+    window.open('#');
   }
 }

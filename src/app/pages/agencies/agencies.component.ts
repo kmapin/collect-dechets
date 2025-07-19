@@ -144,26 +144,26 @@ import { Agency } from '../../models/agency.model';
               <div class="agency-info">
                 <div class="info-item">
                   <i class="material-icons">location_on</i>
-                  <span>{{ agency.address.city }}, {{ agency.address.neighborhood }}</span>
+                  <span>{{ agency.address.city || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
                 </div>
                 <div class="info-item">
                   <i class="material-icons">people</i>
-                  <span>{{ agency.totalClients }} clients</span>
+                  <span>{{ agency.totalClients || 0 }} clients</span>
                 </div>
                 <div class="info-item">
                   <i class="material-icons">build</i>
-                  <span>{{ agency.services.length }} services</span>
+                  <span>{{ agency.services.length || 0 }} services</span>
                 </div>
               </div>
 
               <div class="services-preview">
                 <h4>Services principaux</h4>
                 <div class="services-tags">
-                  <span *ngFor="let service of agency.services.slice(0, 3)" class="service-tag">
+                  <span *ngFor="let service of (agency.services || []).slice(0, 3)" class="service-tag">
                     {{ service.name }} - {{ service.price }}€
                   </span>
-                  <span *ngIf="agency.services.length > 3" class="service-tag more">
-                    +{{ agency.services.length - 3 }} autres
+                  <span *ngIf="(agency.services || []).length > 3" class="service-tag more">
+                    +{{ (agency.services || []).length - 3 }} autres
                   </span>
                 </div>
               </div>
@@ -210,11 +210,11 @@ import { Agency } from '../../models/agency.model';
               <div class="agency-list-details">
                 <div class="detail-item">
                   <i class="material-icons">location_on</i>
-                  <span>{{ agency.address.city }}, {{ agency.address.neighborhood }}</span>
+                  <span>{{ agency.address.city || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
                 </div>
                 <div class="detail-item">
                   <i class="material-icons">people</i>
-                  <span>{{ agency.totalClients }} clients</span>
+                  <span>{{ agency.totalClients || 0 }} clients</span>
                 </div>
                 <div class="detail-item">
                   <i class="material-icons">schedule</i>
@@ -248,12 +248,12 @@ import { Agency } from '../../models/agency.model';
             <div class="map-agency-list">
               <div *ngFor="let agency of filteredAgencies" class="map-agency-item">
                 <h4>{{ agency.name }}</h4>
-                <p>{{ agency.address.city }}</p>
+                <p>{{ agency.address.city || '-' }}</p>
                 <div class="agency-rating">
                   <div class="stars">
-                    <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
+                    <i *ngFor="let star of getStars(agency.rating || 0)" class="material-icons star">star</i>
                   </div>
-                  <span>{{ agency.rating }}/5</span>
+                  <span>{{ agency.rating || 0 }}/5</span>
                 </div>
                 <button class="btn btn-primary btn-small" [routerLink]="['/agencies', agency.id]">
                   Voir
@@ -808,13 +808,48 @@ export class AgenciesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadAgencies();
+    this.loadAgenciesFromApi();
   }
 
   loadAgencies(): void {
     this.agencyService.getAgencies().subscribe(agencies => {
       this.agencies = agencies;
       this.filteredAgencies = agencies;
+    });
+  }
+
+  /**
+   * Transforme une agence API en objet compatible avec le template
+   */
+  private mapApiAgency(apiAgency: any): Agency {
+    return {
+      id: apiAgency._id || apiAgency.id || '',
+      name: apiAgency.name || '',
+      description: apiAgency.description || '',
+      logo: apiAgency.logo || '',
+      email: apiAgency.email || '',
+      phone: apiAgency.phone || '',
+      address: apiAgency.address || { city: '', neighborhood: '' },
+      serviceZones: apiAgency.serviceZones || apiAgency.zones || [],
+      services: apiAgency.services || [],
+      employees: apiAgency.employees || apiAgency.collectors || [],
+      schedule: apiAgency.schedule || [],
+      rating: apiAgency.rating || 0,
+      totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+      isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
+      createdAt: apiAgency.createdAt ? new Date(apiAgency.createdAt) : new Date(),
+      updatedAt: apiAgency.updatedAt ? new Date(apiAgency.updatedAt) : new Date()
+    };
+  }
+
+  /**
+   * Charge les agences depuis l'API backend et remplace les données locales
+   */
+  loadAgenciesFromApi(): void {
+    this.agencyService.getAllAgenciesFromApi().subscribe((response: any) => {
+      this.agencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
+      this.filteredAgencies = this.agencies;
+      this.applyFilters();
     });
   }
 

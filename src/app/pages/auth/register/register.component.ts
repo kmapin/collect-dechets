@@ -732,7 +732,7 @@ export class RegisterComponent implements OnInit {
     },
     agencyName: '',
     agencyDescription: '',
-    acceptTerms: false,
+    acceptTerms: true,
     receiveOffers: false
   };
 
@@ -778,22 +778,31 @@ export class RegisterComponent implements OnInit {
     let body: any;
     if (this.userData.role === 'client') {
       body = {
+        role: this.userData.role,
         firstName: this.userData.firstName,
         lastName: this.userData.lastName,
         email: this.userData.email,
         phone: this.userData.phone,
         password: this.userData.password,
         confirmPassword: this.userData.confirmPassword,
-        role: this.userData.role,
+        acceptTerms: this.userData.acceptTerms, // renommé
+        termsAccepted: this.userData.acceptTerms, // renommé
+        receiveOffers: this.userData.receiveOffers,
         arrondissement: this.userData.arrondissement,
-        rue: this.userData.address.street,
-        numero: this.userData.address.doorNumber,
-        couleurPorte: this.userData.address.doorColor,
-        quartier: this.userData.address.neighborhood,
-        ville: this.userData.address.city,
-        codePostal: this.userData.address.postalCode,
-        acceptTerms: this.userData.acceptTerms,
-        receiveOffers: this.userData.receiveOffers
+        // rue: this.userData.address.street,
+        // quartier: this.userData.address.neighborhood,
+        // numero: this.userData.address.doorNumber,
+        // couleurPorte: this.userData.address.doorColor,
+        // ville: this.userData.address.city,
+        // codePostal: this.userData.address.postalCode,
+        address: {
+          street: this.userData.address.street,
+          doorNumber: this.userData.address.doorNumber,
+          doorColor: this.userData.address.doorColor,
+          neighborhood: this.userData.address.neighborhood,
+          city: this.userData.address.city,
+          postalCode: this.userData.address.postalCode
+        },
       };
       console.log('[DEBUG] Body envoyé à registerClient:', body);
       this.authService.registerClient(body).subscribe({
@@ -802,14 +811,12 @@ export class RegisterComponent implements OnInit {
           this.isLoading = false;
           if (response.success && response.user) {
             const message = "utilisateur créé avec succes";
-            // const message = this.getFriendlyMessage(response.message, true);
             this.notificationService.showSuccess('Succès', message);
             setTimeout(() => {
               this.router.navigate(['/login']);
             }, 2000);
           } else {
             const errorMsg = "Erreur lors de la creation du client";
-            // const errorMsg = this.getFriendlyMessage(response.error || response.message, false);
             this.notificationService.showError('Erreur', errorMsg);
           }
         },

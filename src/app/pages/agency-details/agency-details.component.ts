@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { AgencyService } from '../../services/agency.service';
 import { Agency } from '../../models/agency.model';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-agency-details',
@@ -1213,16 +1214,57 @@ export class AgencyDetailsComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private agencyService: AgencyService
+    private agencyService: AgencyService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.agencyService.getAgencyById(id).subscribe(agency => {
-        this.agency = agency || null;
-      });
+      this.loadAgencyFromApi(id);
     }
+  }
+
+  /**
+   * Transforme une agence API en objet compatible avec le template
+   */
+  private mapApiAgency(apiAgency: any): Agency {
+    return {
+      id: apiAgency._id || apiAgency.id || '',
+      name: apiAgency.name || '',
+      description: apiAgency.description || '',
+      logo: apiAgency.logo || '',
+      email: apiAgency.email || '',
+      phone: apiAgency.phone || '',
+      address: apiAgency.address || { doorNumber: '', street: '', neighborhood: '', city: '', postalCode: '' },
+      serviceZones: apiAgency.serviceZones || apiAgency.zones || [],
+      services: apiAgency.services || [],
+      employees: apiAgency.employees || apiAgency.collectors || [],
+      schedule: apiAgency.schedule || [],
+      rating: apiAgency.rating || 0,
+      totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+      isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
+      createdAt: apiAgency.createdAt ? new Date(apiAgency.createdAt) : new Date(),
+      updatedAt: apiAgency.updatedAt ? new Date(apiAgency.updatedAt) : new Date()
+    };
+  }
+
+  /**
+   * Charge les détails d'une agence depuis l'API backend
+   */
+  loadAgencyFromApi(id: string): void {
+    this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
+      if (response.success && response.data) {
+        this.agency = this.mapApiAgency(response.data);
+        console.log('[DEBUG] Agency details:', this.agency);
+      } else {
+        console.error('Erreur lors du chargement de l\'agence');
+        // Fallback vers les données mockées si l'API échoue
+        this.agencyService.getAgencyById(id).subscribe(agency => {
+          this.agency = agency || null;
+        });
+      }
+    });
   }
 
   getStars(rating: number): number[] {
@@ -1260,8 +1302,30 @@ export class AgencyDetailsComponent implements OnInit {
   }
 
   subscribeToAgency(): void {
-    // Logique d'abonnement
-    console.log('Subscribe to agency:', this.agency?.id);
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      alert('Vous devez être connecté pour vous abonner à une agence');
+      return;
+    }
+
+    if (!this.agency) {
+      alert('Erreur: Agence non trouvée');
+      return;
+    }
+
+    this.authService.subscribeToAgency(currentUser.id, this.agency.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          alert('Abonnement réussi ! Vous êtes maintenant abonné à cette agence.');
+        } else {
+          alert('Erreur lors de l\'abonnement: ' + (response.message || 'Erreur inconnue'));
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'abonnement:', error);
+        alert('Erreur lors de l\'abonnement. Veuillez réessayer.');
+      }
+    });
   }
 
   contactAgency(): void {
