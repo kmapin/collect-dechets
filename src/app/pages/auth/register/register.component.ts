@@ -143,8 +143,9 @@ import { Agency } from '../../../models/agency.model';
             </div>
             
             <!-- Adresse (pour les clients) -->
-            <div class="form-section" *ngIf="userData.role === 'client'">
-              <h3>Adresse de collecte</h3>
+            <!-- <div class="form-section" *ngIf="userData.role === 'client'"> -->
+            <div class="form-section">
+              <h3>Adresse de localisation</h3>
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" for="arrondissement">
@@ -155,9 +156,24 @@ import { Agency } from '../../../models/agency.model';
                     type="text" 
                     id="arrondissement"
                     name="arrondissement"
-                    [(ngModel)]="userData.arrondissement"
+                    [(ngModel)]="userData.address.arrondissement"
                     class="form-control"
                     placeholder="5"
+                    required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="sector">
+                    <i class="material-icons">location_city</i>
+                    Secteur *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="sector"
+                    name="sector"
+                    [(ngModel)]="userData.address.sector"
+                    class="form-control"
+                    placeholder="Nom du secteur"
                     required>
                 </div>
               </div>
@@ -178,10 +194,10 @@ import { Agency } from '../../../models/agency.model';
                     required>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" *ngIf="userData.role !== 'agency'">
                   <label class="form-label" for="doorNumber">
                     <i class="material-icons">home</i>
-                    Numéro *
+                    Numéro Porte *
                   </label>
                   <input 
                     type="text" 
@@ -193,7 +209,7 @@ import { Agency } from '../../../models/agency.model';
                     required>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" *ngIf="userData.role !== 'agency'">
                   <label class="form-label" for="doorColor">
                     <i class="material-icons">palette</i>
                     Couleur porte
@@ -726,14 +742,17 @@ export class RegisterComponent implements OnInit {
     phone: '',
     password: '',
     confirmPassword: '',
-    arrondissement: '',
     address: {
+      arrondissement: '',
+      sector: '',
       street: '',
       doorNumber: '',
       doorColor: '',
       neighborhood: '',
       city: '',
-      postalCode: ''
+      postalCode: '',
+      // latitude: '',
+      // longitude: ''
     },
     agencyName: '',
     agencyDescription: '',
@@ -742,28 +761,7 @@ export class RegisterComponent implements OnInit {
     receiveOffers: false
   };
 
-  //  userRoleAgence = {
-  //     role: UserRole.AGENCY, 
-  //     firstName: '',
-  //     lastName: '',
-  //     email: '',
-  //     phone: '',
-  //     password: '',
-  //     confirmPassword: '',
-  //     arrondissement: '',
-  //     //  address: {
-  //     //   street: '',
-  //     //   doorNumber: '',
-  //     //   doorColor: '',
-  //     //   neighborhood: '',
-  //     //   city: '',
-  //     //   postalCode: ''
-  //     // },
-  //    name: '',
-  //   Description: '',
-  //     termsAccepted: false,
-  //     receiveOffers: false
-  //   };
+
 
 
   showPassword = false;
@@ -818,7 +816,6 @@ export class RegisterComponent implements OnInit {
         acceptTerms: this.userData.acceptTerms, // renommé
         termsAccepted: this.userData.acceptTerms, // renommé
         receiveOffers: this.userData.receiveOffers,
-        arrondissement: this.userData.arrondissement,
         // rue: this.userData.address.street,
         // quartier: this.userData.address.neighborhood,
         // numero: this.userData.address.doorNumber,
@@ -826,12 +823,16 @@ export class RegisterComponent implements OnInit {
         // ville: this.userData.address.city,
         // codePostal: this.userData.address.postalCode,
         address: {
+          arrondissement: this.userData.address.arrondissement,
+          sector: this.userData.address.sector,
           street: this.userData.address.street,
           doorNumber: this.userData.address.doorNumber,
           doorColor: this.userData.address.doorColor,
           neighborhood: this.userData.address.neighborhood,
           city: this.userData.address.city,
-          postalCode: this.userData.address.postalCode
+          postalCode: this.userData.address.postalCode,
+          // latitude: this.userData.address.latitude,
+          // longitude: this.userData.address.postalCode
         },
       };
       console.log('[DEBUG] Body envoyé à registerClient:', body);
@@ -869,6 +870,18 @@ export class RegisterComponent implements OnInit {
         acceptTerms: this.userData.acceptTerms, // renommé
         termsAccepted: this.userData.acceptTerms,
         receiveOffers: this.userData.receiveOffers,
+        address: {
+          arrondissement: this.userData.address.arrondissement,
+          sector: this.userData.address.sector,
+          street: this.userData.address.street,
+          doorNumber: this.userData.address.doorNumber,
+          doorColor: this.userData.address.doorColor,
+          neighborhood: this.userData.address.neighborhood,
+          city: this.userData.address.city,
+          postalCode: this.userData.address.postalCode,
+          // latitude: this.userData.address.latitude,
+          // longitude: this.userData.address.postalCode
+        },
         agencyName: this.userData.agencyName,
         description: this.userData.agencyDescription
       };
