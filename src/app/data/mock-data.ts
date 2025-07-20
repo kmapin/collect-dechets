@@ -12,277 +12,116 @@ export interface QuartierData {
     {
       arrondissement: "Arrondissement 1",
       secteurs: [
-        {
-          secteur: "Bilbalogo",
-          quartiers: ["Saint Léon", "Oscar Yaar", "Zone Commerciale", "Dapoya1", "Quartiers Saints"]
-        },
-        {
-          secteur: "Koulouba",
-          quartiers: ["Rotonde", "Université de Ouagadougou", "Zone Ministères et Ambassades"]
-        },
-        {
-          secteur: "Kamsonghin",
-          quartiers: ["Cité An II", "Zone ZACA (Aéroport)", "Boince Yaar", "Zangouettin"]
-        },
-        {
-          secteur: "Samadin",
-          quartiers: ["Kouritenga", "Mankoudougou"]
-        },
-        {
-          secteur: "Goughin sud",
-          quartiers: ["Gandin (Petit Paris)"]
-        }
+        { secteur: "1", quartiers: ["Bilbalogo"] },
+        { secteur: "2", quartiers: ["Saint Léon", "Oscar Yaar", "Zone Commerciale", "Dapoya1", "Quartiers Saints"] },
+        { secteur: "3", quartiers: ["Koulouba", "Rotonde", "Université de Ouagadougou", "Zone Ministères et Ambassades"] },
+        { secteur: "4", quartiers: ["Kamsonghin", "Cité An II", "Zone ZACA (Aéroport)", "Boince Yaar", "Zangouettin"] },
+        { secteur: "5", quartiers: ["Samadin", "Kouritenga", "Mankoudougou"] }
       ]
     },
     {
       arrondissement: "Arrondissement 2",
       secteurs: [
-        {
-          secteur: "Goughin nord",
-          quartiers: ["Baoghin"]
-        },
-        {
-          secteur: "Hamdalaye",
-          quartiers: ["Larlé", "Marché du 10"]
-        },
-        {
-          secteur: "Baskuy Yaar",
-          quartiers: ["Kolog-Naba", "Ouidi"]
-        },
-        {
-          secteur: "Cité An III",
-          quartiers: ["Sankariaré", "Paspanga", "Niogsin"]
-        },
-        {
-          secteur: "Dapoya II",
-          quartiers: ["Nemnin"]
-        }
+        { secteur: "6", quartiers: ["Goughin sud", "Gandin (Petit Paris)"] },
+        { secteur: "7", quartiers: ["Goughin nord", "Baoghin"] },
+        { secteur: "8", quartiers: ["Hamdalaye", "Larlé", "Marché du 10"] },
+        { secteur: "9", quartiers: ["Baskuy Yaar", "Kolog-Naba", "Ouidi"] },
+        { secteur: "10", quartiers: ["Cité An III", "Sankariaré", "Paspanga", "Niogsin"] }
       ]
     },
     {
       arrondissement: "Arrondissement 3",
       secteurs: [
-        {
-          secteur: "Camp militaire",
-          quartiers: ["Naab Pougo"]
-        },
-        {
-          secteur: "Yaoghin",
-          quartiers: ["Zongho"]
-        },
-        {
-          secteur: "Noncin",
-          quartiers: ["Rimkiéta"]
-        },
-        {
-          secteur: "Toécin",
-          quartiers: ["Kilwin"]
-        },
-        {
-          secteur: "Tampouy",
-          quartiers: []
-        }
+        { secteur: "11", quartiers: ["Dapoya II", "Nemnin"] },
+        { secteur: "12", quartiers: ["Camp militaire", "Naab Pougo"] },
+        { secteur: "13", quartiers: ["Yaoghin", "Zongho"] },
+        { secteur: "14", quartiers: ["Noncin", "Rimkiéta"] },
+        { secteur: "15", quartiers: ["Toécin", "Kilwin"] }
       ]
     },
     {
       arrondissement: "Arrondissement 4",
       secteurs: [
-        {
-          secteur: "Koulweoghin",
-          quartiers: ["Tanghin"]
-        },
-        {
-          secteur: "Somgandé",
-          quartiers: ["Sambin barrage"]
-        },
-        {
-          secteur: "Zone industrielle Kossodo",
-          quartiers: ["Toudoubwéogo"]
-        },
-        {
-          secteur: "Sogdin",
-          quartiers: ["Polesgo", "Tabtenga"]
-        }
+        { secteur: "16", quartiers: ["Tampouy"] },
+        { secteur: "17", quartiers: ["Koulweoghin", "Tanghin"] },
+        { secteur: "18", quartiers: ["Somgandé", "Sambin barrage"] },
+        { secteur: "19", quartiers: ["Zone industrielle Kossodo", "Toudoubwéogo"] }
       ]
     },
     {
       arrondissement: "Arrondissement 5",
       secteurs: [
-        {
-          secteur: "ENAREF Cogeb",
-          quartiers: ["Wayalghin"]
-        },
-        {
-          secteur: "Zone du Bois",
-          quartiers: ["Zogona"]
-        },
-        {
-          secteur: "1200 Logement",
-          quartiers: ["Dagnoin", "Wemtenga"]
-        },
-        {
-          secteur: "Ronsin (1200 logements)",
-          quartiers: ["Kalgodin", "Ouaga Inter", "SIAO", "Silmissin", "Toeyibin"]
-        }
+        { secteur: "20", quartiers: ["Sogdin", "Polesgo", "Tabtenga"] },
+        { secteur: "21", quartiers: ["ENAREF Cogeb", "Wayalghin"] },
+        { secteur: "22", quartiers: ["Zone du Bois", "Zogona"] },
+        { secteur: "23", quartiers: ["1200 Logement", "Dagnoin", "Wemtenga"] }
       ]
     },
     {
       arrondissement: "Arrondissement 6",
       secteurs: [
-        {
-          secteur: "Pagalayiri",
-          quartiers: []
-        },
-        {
-          secteur: "Cissin",
-          quartiers: ["Pissy"]
-        },
-        {
-          secteur: "Bongnaam",
-          quartiers: []
-        },
-        {
-          secteur: "Kouritenga",
-          quartiers: ["Sonré"]
-        },
-        {
-          secteur: "Song-Naaba",
-          quartiers: ["Kouritenga", "Azimo/Socogib"]
-        }
+        { secteur: "24", quartiers: ["Ronsin (1200 logements)", "Kalgodin", "Ouaga Inter", "SIAO", "Silmissin", "Toeyibin"] },
+        { secteur: "25", quartiers: ["Pagalayiri"] },
+        { secteur: "26", quartiers: ["Cissin", "Pissy"] },
+        { secteur: "27", quartiers: ["Bongnaam"] },
+        { secteur: "28", quartiers: ["Kouritenga", "Sonré"] },
+        { secteur: "29", quartiers: ["Song-Naaba", "Kouritenga", "Azimo/Socogib"] },
       ]
     },
     {
       arrondissement: "Arrondissement 7",
       secteurs: [
-        {
-          secteur: "Nagrin",
-          quartiers: []
-        },
-        {
-          secteur: "Yaoghin",
-          quartiers: ["Bonheur-Ville", "Waa-Paasi", "Belle-Ville"]
-        },
-        {
-          secteur: "Sandogo",
-          quartiers: ["Boassa", "Kankamsin"]
-        },
-        {
-          secteur: "Zagtouli sud",
-          quartiers: []
-        }
+        { secteur: "30", quartiers: ["Nagrin"] },
+        { secteur: "31", quartiers: ["Yaoghin", "Bonheur-Ville", "Waa-Paasi", "Belle-Ville"] },
+        { secteur: "32", quartiers: ["Sandogo", "Boassa", "Kankamsin"] },
+        { secteur: "33", quartiers: ["Zagtouli sud"] },
       ]
     },
     {
       arrondissement: "Arrondissement 8",
       secteurs: [
-        {
-          secteur: "Zagtouli nord",
-          quartiers: ["Darsalam", "Zongo", "Nabitenga"]
-        },
-        {
-          secteur: "Nonghin",
-          quartiers: ["Bassinko/Basseko", "Sogpelcé"]
-        },
-        {
-          secteur: "Bissighin",
-          quartiers: ["Silmiougou", "Gantin", "Silmiyiri"]
-        }
+        { secteur: "34", quartiers: ["Zagtouli nord", "Darsalam", "Zongo", "Nabitenga"] },
+        { secteur: "35", quartiers: ["Nonghin", "Bassinko/Basseko", "Sogpelcé"] },
+        { secteur: "36", quartiers: ["Bissighin", "Silmiougou", "Gantin", "Silmiyiri"] },
       ]
     },
     {
       arrondissement: "Arrondissement 9",
       secteurs: [
-        {
-          secteur: "Marcoussis",
-          quartiers: ["Bissighin", "Yagma"]
-        },
-        {
-          secteur: "Ouapassi",
-          quartiers: ["Kamboincé", "Zoodnoma", "Watinonma", "Kossoghin", "Silmiyiri"]
-        },
-        {
-          secteur: "Bangpooré",
-          quartiers: ["Wobriguéré", "Babouang Rouanga", "Toudweogo"]
-        },
-        {
-          secteur: "Kamboissin",
-          quartiers: ["Dapaweoghin", "Toeghin", "Sakoula"]
-        }
+        { secteur: "37", quartiers: ["Marcoussis", "Bissighin", "Yagma"] },
+        { secteur: "38", quartiers: ["Ouapassi", "Kamboincé", "Zoodnoma", "Watinonma", "Kossoghin", "Silmiyiri"] },
+        { secteur: "39", quartiers: ["Bangpooré", "Wobriguéré", "Babouang Rouanga", "Toudweogo"] },
+        { secteur: "40", quartiers: ["Kamboissin", "Dapaweoghin", "Toeghin", "Sakoula"] },
       ]
     },
     {
       arrondissement: "Arrondissement 10",
       secteurs: [
-        {
-          secteur: "Kossodo",
-          quartiers: ["Nioko II"]
-        },
-        {
-          secteur: "Bendogo",
-          quartiers: ["Wayalghin", "Nioko I", "Godin"]
-        },
-        {
-          secteur: "Dassasgho",
-          quartiers: ["Goundrin"]
-        },
-        {
-          secteur: "Quatorze-Yaar",
-          quartiers: []
-        },
-        {
-          secteur: "Djikof",
-          quartiers: ["Taabtenga"]
-        }
+        { secteur: "41", quartiers: ["Kossodo", "Nioko II"] },
+        { secteur: "42", quartiers: ["Bendogo", "Wayalghin", "Nioko I", "Godin"] },
+        { secteur: "43", quartiers: ["Dassasgho", "Goundrin"] },
+        { secteur: "44", quartiers: ["Quatorze-Yaar"] },
+        { secteur: "45", quartiers: ["Djikof", "Taabtenga"] },
       ]
     },
     {
       arrondissement: "Arrondissement 11",
       secteurs: [
-        {
-          secteur: "Zone une",
-          quartiers: ["Katr-yaar"]
-        },
-        {
-          secteur: "Rayongo",
-          quartiers: ["Yamtenga", "Ouidtenga"]
-        },
-        {
-          secteur: "Kaparla non loti/Dayongo",
-          quartiers: []
-        },
-        {
-          secteur: "Balkuy",
-          quartiers: []
-        },
-        {
-          secteur: "Lanoayiri",
-          quartiers: []
-        },
-        {
-          secteur: "Karpala",
-          quartiers: ["Sanyiri"]
-        }
+        { secteur: "46", quartiers: ["Zone une", "Katr-yaar"] },
+        { secteur: "47", quartiers: ["Rayongo", "Yamtenga", "Ouidtenga"] },
+        { secteur: "48", quartiers: ["Kaparla non loti/Dayongo"] },
+        { secteur: "49", quartiers: ["Balkuy"] },
+        { secteur: "50", quartiers: ["Lanoayiri"] },
+        { secteur: "51", quartiers: ["Karpala", "Sanyiri"] },
       ]
     },
     {
       arrondissement: "Arrondissement 12",
       secteurs: [
-        {
-          secteur: "Patte d’Oie",
-          quartiers: []
-        },
-        {
-          secteur: "Trame d’Accueil",
-          quartiers: ["Ouaga 2000 (Côté ambassade USA)"]
-        },
-        {
-          secteur: "Ouaga 2000",
-          quartiers: ["Côté Libya hôtel"]
-        },
-        {
-          secteur: "Kossyam",
-          quartiers: []
-        }
+        { secteur: "52", quartiers: ["Patte d’Oie"] },
+        { secteur: "53", quartiers: ["Trame d’Accueil", "Ouaga 2000 (Côté ambassade USA)"] },
+        { secteur: "54", quartiers: ["Ouaga 2000", "Côté Libya hôtel"] },
+        { secteur: "55", quartiers: ["Kossyam"] }
       ]
     }
   ];
