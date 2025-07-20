@@ -13,7 +13,7 @@ import { Collection, CollectionStatus } from '../../../models/collection.model';
 interface Client {
   id: string;
   name: string;
-  email: string;
+    email: string;
   phone: string;
   address: string;
   subscriptionStatus: 'active' | 'suspended' | 'cancelled';
@@ -54,7 +54,7 @@ interface Statistics {
           <div class="header-content">
             <div class="welcome-section">
               <h1 class="page-title">Tableau de Bord Agence</h1>
-              <p class="page-subtitle">{{ agency?.name }} - Gestion complète de votre agence de collecte</p>
+              <p class="page-subtitle">{{ agency?.agencyName }} - Gestion complète de votre agence de collecte</p>
             </div>
             <div class="quick-actions">
               <button class="btn btn-primary" (click)="showAddEmployeeModal = true">
@@ -1951,12 +1951,12 @@ export class AgencyDashboardComponent implements OnInit {
 
   loadAgencyData(): void {
     // Charger les données de l'agence
-    this.loadCollections();
-    this.loadEmployees();
-    this.loadServiceZones();
-    this.loadSchedules();
-    this.loadClients();
-    this.loadReports();
+            this.loadCollections();
+            this.loadEmployees();
+            this.loadServiceZones();
+            this.loadSchedules();
+            this.loadClients();
+            this.loadReports();
   }
 
   loadCollections(): void {
@@ -2044,7 +2044,7 @@ export class AgencyDashboardComponent implements OnInit {
         joinDate: new Date('2023-06-15')
       }
     ];
-    this.filteredClients = [...this.clients];
+      this.filteredClients = [...this.clients];
   }
 
   loadReports(): void {

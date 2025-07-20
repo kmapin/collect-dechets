@@ -153,9 +153,22 @@ export class AuthService {
    * Abonnement d'un utilisateur à une agence
    */
   subscribeToAgency(userId: string, agencyId: string): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/auth/agences/${userId}/status`, { agencyId }).pipe(
+    console.log('[DEBUG] Service > subscribeToAgency appelé avec:', { userId, agencyId });
+    
+    return this.http.post(`${environment.apiUrl}/clients/subscribe`, { agencyId }).pipe(
       map((response: any) => {
-        console.log("API > SubscribeToAgency :", response);
+        console.log('[DEBUG] Service > Réponse API subscribeToAgency:', response);
+        
+        // Normaliser la réponse pour s'assurer qu'elle a la bonne structure
+        if (response && typeof response === 'object') {
+          return {
+            success: response.success || response.status === 'success' || false,
+            message: response.message || response.msg || '',
+            error: response.error || '',
+            data: response.data || response
+          };
+        }
+        
         return response;
       })
     );

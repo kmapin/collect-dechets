@@ -6,6 +6,7 @@ import { AuthService } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 import { UserRole } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
+import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
 
 @Component({
   selector: 'app-register',
@@ -132,7 +133,7 @@ import { Agency } from '../../../models/agency.model';
                   name="phone"
                   [(ngModel)]="userData.phone"
                   class="form-control"
-                  placeholder="+33 1 23 45 67 89"
+                  placeholder="+226 XX XX XX XX"
                   required
                   #phoneInput="ngModel">
                 <div class="form-error" *ngIf="phoneInput.invalid && phoneInput.touched">
@@ -146,35 +147,69 @@ import { Agency } from '../../../models/agency.model';
             <!-- <div class="form-section" *ngIf="userData.role === 'client'"> -->
             <div class="form-section">
               <h3>Adresse de localisation</h3>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="city">
+                    <i class="material-icons">location_city</i>
+                    Ville *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="city"
+                    name="city"
+                    [(ngModel)]="userData.address.city"
+                    class="form-control"
+                    placeholder="Nom de la ville"
+                    required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="postalCode">
+                    <i class="material-icons">markunread_mailbox</i>
+                    Code postal *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="postalCode"
+                    name="postalCode"
+                    [(ngModel)]="userData.address.postalCode"
+                    class="form-control"
+                    placeholder="75001"
+                    required>
+                </div>
+              </div>
+
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" for="arrondissement">
                     <i class="material-icons">map</i>
-                    Arrondissement *
+                     Arrondiss... *
                   </label>
-                  <input 
-                    type="text" 
-                    id="arrondissement"
-                    name="arrondissement"
-                    [(ngModel)]="userData.address.arrondissement"
-                    class="form-control"
-                    placeholder="5"
-                    required>
+                  <select id="arrondissement" name="arrondissement" [(ngModel)]="userData.address.arrondissement" (change)="onArrondissementChange(userData.address.arrondissement)" class="form-control" required>
+                    <option value="">Sélectionner</option>
+                    <option *ngFor="let arr of arrondissements" [value]="arr.arrondissement">{{ arr.arrondissement }}</option>
+                  </select>
                 </div>
-
                 <div class="form-group">
                   <label class="form-label" for="sector">
                     <i class="material-icons">location_city</i>
                     Secteur *
                   </label>
-                  <input 
-                    type="text" 
-                    id="sector"
-                    name="sector"
-                    [(ngModel)]="userData.address.sector"
-                    class="form-control"
-                    placeholder="Nom du secteur"
-                    required>
+                  <select id="sector" name="sector" [(ngModel)]="userData.address.sector" (change)="onSecteurChange(userData.address.sector)" class="form-control" [disabled]="!secteurs.length" required>
+                    <option value="">Sélectionner</option>
+                    <option *ngFor="let s of secteurs" [value]="s.secteur">{{ s.secteur }}</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="neighborhood">
+                    <i class="material-icons">location_city</i>
+                    Quartier *
+                  </label>
+                  <select id="neighborhood" name="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control" [disabled]="!quartiers.length" required>
+                    <option value="">Sélectionner</option>
+                    <option *ngFor="let q of quartiers" [value]="q">{{ q }}</option>
+                  </select>
                 </div>
               </div>
               
@@ -231,52 +266,7 @@ import { Agency } from '../../../models/agency.model';
                 </div>
               </div>
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label" for="neighborhood">
-                    <i class="material-icons">location_city</i>
-                    Quartier *
-                  </label>
-                  <input 
-                    type="text" 
-                    id="neighborhood"
-                    name="neighborhood"
-                    [(ngModel)]="userData.address.neighborhood"
-                    class="form-control"
-                    placeholder="Nom du quartier"
-                    required>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label" for="city">
-                    <i class="material-icons">location_city</i>
-                    Ville *
-                  </label>
-                  <input 
-                    type="text" 
-                    id="city"
-                    name="city"
-                    [(ngModel)]="userData.address.city"
-                    class="form-control"
-                    placeholder="Nom de la ville"
-                    required>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label" for="postalCode">
-                    <i class="material-icons">markunread_mailbox</i>
-                    Code postal *
-                  </label>
-                  <input 
-                    type="text" 
-                    id="postalCode"
-                    name="postalCode"
-                    [(ngModel)]="userData.address.postalCode"
-                    class="form-control"
-                    placeholder="75001"
-                    required>
-                </div>
-              </div>
+              
             </div>
 
             <!-- Informations agence -->
@@ -761,8 +751,9 @@ export class RegisterComponent implements OnInit {
     receiveOffers: false
   };
 
-
-
+  arrondissements: QuartierData[] = OUAGA_DATA;
+  secteurs: { secteur: string; quartiers: string[] }[] = [];
+  quartiers: string[] = [];
 
   showPassword = false;
   isLoading = false;
@@ -837,16 +828,26 @@ export class RegisterComponent implements OnInit {
       };
       console.log('[DEBUG] Body envoyé à registerClient:', body);
       this.authService.registerClient(body).subscribe({
-        next: (response: { success: boolean; user?: any; error?: string; message?: string }) => {
+        next: (response: { success: boolean; user?: any; error?: string; message?: string; status?: string }) => {
           this.isLoading = false;
-          if (response.success && response.user) {
+          console.log('[DEBUG] Réponse inscription client:', response);
+          const isSuccess =
+            response.success ||
+            response.status === 'success' ||
+            (typeof response.message === 'string' && (
+              response.message.toLowerCase().includes('succès') ||
+              response.message.toLowerCase().includes('réussi')
+            )) ||
+            !!response.user;
+
+          if (isSuccess) {
             this.notificationService.showSuccess('Inscription réussie',
               'Votre compte client a été créé avec succès ! Vous pouvez maintenant vous connecter.');
             setTimeout(() => {
               this.router.navigate(['/login']);
             }, 2000);
           } else {
-            const errorMsg = this.getFriendlyMessage(( response?.message || response?.error || ''), false);
+            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
             this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
           }
         },
@@ -889,14 +890,25 @@ export class RegisterComponent implements OnInit {
       this.authService.registerAgency$(body).subscribe({
         next: (response) => {
           this.isLoading = false;
-          if (response.success && response.agence) {
+          console.log('[DEBUG] Réponse inscription agence:', response);
+          const res: any = response;
+          const isSuccess =
+            response.success ||
+            res.status === 'success' ||
+            (typeof response.message === 'string' && (
+              response.message.toLowerCase().includes('succès') ||
+              response.message.toLowerCase().includes('réussi')
+            )) ||
+            !!response.agence;
+
+          if (isSuccess) {
             this.notificationService.showSuccess('Inscription agence réussie',
               'Votre agence a été créée avec succès ! Vous pouvez maintenant vous connecter.');
             setTimeout(() => {
               this.router.navigate(['/login']);
             }, 2000);
           } else {
-            const errorMsg = this.getFriendlyMessage((response?.error || response?.message || ''), false);
+            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
             this.notificationService.showError('Erreur lors de l\'inscription agence', errorMsg);
           }
         },
@@ -911,61 +923,20 @@ export class RegisterComponent implements OnInit {
     }
   }
 
+  onArrondissementChange(arrondissement: string) {
+    const arr = this.arrondissements.find(a => a.arrondissement === arrondissement);
+    this.secteurs = arr ? arr.secteurs : [];
+    this.quartiers = [];
+    this.userData.address.sector = '';
+    this.userData.address.neighborhood = '';
+  }
 
+  onSecteurChange(secteur: string) {
+    const secteurObj = this.secteurs.find(s => s.secteur === secteur);
+    this.quartiers = secteurObj ? secteurObj.quartiers : [];
+    this.userData.address.neighborhood = '';
+  }
 
-  // private validateForm(): boolean {
-  //   if (!this.userData.firstName || !this.userData.lastName || !this.userData.email || !this.userData.phone) {
-  //     this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
-  //     return false;
-  //   }
-
-  //   // Validation du format d'email
-  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  //   if (!emailRegex.test(this.userData.email)) {
-  //     this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
-  //     return false;
-  //   }
-
-  //   if (this.userData.password !== this.userData.confirmPassword) {
-  //     this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
-  //     return false;
-  //   }
-
-  //   if (this.userData.password.length < 8) {
-  //     this.notificationService.showError('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
-  //     return false;
-  //   }
-
-  //   if (!this.userData.acceptTerms) {
-  //     this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
-  //     return false;
-  //   }
-
-  //   if (!this.userData.arrondissement) {
-  //     this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
-  //     return false;
-  //   }
-
-  //   if (this.userData.role === 'client') {
-  //     if (!this.userData.address.street || !this.userData.address.doorNumber || 
-  //         !this.userData.address.neighborhood || !this.userData.address.city || 
-  //         !this.userData.address.postalCode) {
-  //       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
-  //       return false;
-  //     }
-  //     if (!this.userData.address.doorColor) {
-  //       this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
-  //       return false;
-  //     }
-  //   }
-
-  //   if (this.userData.role === 'agency' && !this.userData.agencyName) {
-  //     this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
-  //     return false;
-  //   }
-
-  //   return true;
-  // }
   private validateForm(): boolean {
     // Vérifier que le rôle est bien sélectionné
     if (!this.userData.role) {
@@ -1011,7 +982,7 @@ export class RegisterComponent implements OnInit {
 
     // Validation spécifique selon le rôle
     if (this.userData.role === UserRole.CLIENT) {
-     
+
       const address = this.userData.address;
       // if (!address.street || !address.doorNumber || !address.neighborhood || !address.city || !address.postalCode) {
       //   this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');

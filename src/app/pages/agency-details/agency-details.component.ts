@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { AgencyService } from '../../services/agency.service';
 import { Agency } from '../../models/agency.model';
 import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-agency-details',
@@ -22,7 +23,7 @@ import { AuthService } from '../../services/auth.service';
             <i class="material-icons breadcrumb-separator">chevron_right</i>
             <a routerLink="/agencies" class="breadcrumb-item">Agences</a>
             <i class="material-icons breadcrumb-separator">chevron_right</i>
-            <span class="breadcrumb-item active">{{ agency.name }}</span>
+            <span class="breadcrumb-item active">{{ agency.agencyName }}</span>
           </nav>
         </div>
       </div>
@@ -33,11 +34,11 @@ import { AuthService } from '../../services/auth.service';
           <div class="agency-header-content">
             <div class="agency-main-info">
               <div class="agency-logo">
-                <img [src]="agency.logo || 'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.name">
+                <img src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" [alt]="agency.agencyName">
               </div>
               <div class="agency-details">
-                <h1 class="agency-name">{{ agency.name }}</h1>
-                <p class="agency-description">{{ agency.description }}</p>
+                <h1 class="agency-name">{{ agency.agencyName }}</h1>
+                <p class="agency-description">{{ agency.agencyDescription }}</p>
                 <div class="agency-meta">
                   <div class="agency-rating">
                     <div class="stars">
@@ -212,15 +213,6 @@ import { AuthService } from '../../services/auth.service';
                   </h3>
                 </div>
                 <div class="contact-content">
-                  <div class="contact-item">
-                    <div class="contact-icon">
-                      <i class="material-icons">email</i>
-                    </div>
-                    <div class="contact-info">
-                      <span class="contact-label">Email</span>
-                      <a href="mailto:{{ agency.email }}" class="contact-value">{{ agency.email }}</a>
-                    </div>
-                  </div>
                   <div class="contact-item">
                     <div class="contact-icon">
                       <i class="material-icons">phone</i>
@@ -1215,7 +1207,8 @@ export class AgencyDetailsComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private agencyService: AgencyService,
-    private authService: AuthService
+    private authService: AuthService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -1230,22 +1223,37 @@ export class AgencyDetailsComponent implements OnInit {
    */
   private mapApiAgency(apiAgency: any): Agency {
     return {
-      id: apiAgency._id || apiAgency.id || '',
-      name: apiAgency.name || '',
-      description: apiAgency.description || '',
-      logo: apiAgency.logo || '',
-      email: apiAgency.email || '',
+      _id: apiAgency._id || '',
+      userId: apiAgency.userId || '',
+      firstName: apiAgency.firstName || '',
+      lastName: apiAgency.lastName || '',
+      agencyName: apiAgency.agencyName || '',
+      agencyDescription: apiAgency.agencyDescription || '',
       phone: apiAgency.phone || '',
-      address: apiAgency.address || { doorNumber: '', street: '', neighborhood: '', city: '', postalCode: '' },
-      serviceZones: apiAgency.serviceZones || apiAgency.zones || [],
+      address: apiAgency.address || { 
+        street: '', 
+        arrondissement: '', 
+        sector: '', 
+        neighborhood: '', 
+        city: '', 
+        postalCode: '' 
+      },
+      licenseNumber: apiAgency.licenseNumber || '',
+      members: apiAgency.members || [],
+      serviceZones: apiAgency.serviceZones || [],
       services: apiAgency.services || [],
-      employees: apiAgency.employees || apiAgency.collectors || [],
+      employees: apiAgency.employees || [],
       schedule: apiAgency.schedule || [],
+      collectors: apiAgency.collectors || [],
+      clients: apiAgency.clients || [],
       rating: apiAgency.rating || 0,
       totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+      acceptTerms: apiAgency.acceptTerms || false,
+      receiveOffers: apiAgency.receiveOffers || false,
       isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
-      createdAt: apiAgency.createdAt ? new Date(apiAgency.createdAt) : new Date(),
-      updatedAt: apiAgency.updatedAt ? new Date(apiAgency.updatedAt) : new Date()
+      createdAt: apiAgency.createdAt || '',
+      updatedAt: apiAgency.updatedAt || '',
+      __v: apiAgency.__v || 0
     };
   }
 
@@ -1283,47 +1291,56 @@ export class AgencyDetailsComponent implements OnInit {
 
   getYearsInService(): number {
     if (!this.agency) return 0;
-    const years = new Date().getFullYear() - this.agency.createdAt.getFullYear();
+    const years = new Date().getFullYear() - new Date(this.agency.createdAt).getFullYear();
     return Math.max(1, years);
   }
 
   shareAgency(): void {
     if (navigator.share) {
       navigator.share({
-        title: this.agency?.name,
-        text: this.agency?.description,
+        title: this.agency?.agencyName,
+        text: this.agency?.agencyDescription,
         url: window.location.href
       });
     } else {
       // Fallback pour les navigateurs qui ne supportent pas l'API Web Share
       navigator.clipboard.writeText(window.location.href);
-      alert('Lien copié dans le presse-papiers !');
+      this.notificationService.showSuccess('Lien copié', 'Le lien de l\'agence a été copié dans le presse-papiers !');
     }
   }
 
   subscribeToAgency(): void {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      alert('Vous devez être connecté pour vous abonner à une agence');
+      this.notificationService.showError('Connexion requise', 'Vous devez être connecté pour vous abonner à une agence');
       return;
     }
 
     if (!this.agency) {
-      alert('Erreur: Agence non trouvée');
+      this.notificationService.showError('Erreur', 'Agence non trouvée');
       return;
     }
 
-    this.authService.subscribeToAgency(currentUser.id, this.agency.id).subscribe({
+    console.log('[DEBUG] Tentative d\'abonnement:', { userId: currentUser.id, agencyId: this.agency._id });
+
+    this.authService.subscribeToAgency(currentUser.id, this.agency._id).subscribe({
       next: (response) => {
-        if (response.success) {
-          alert('Abonnement réussi ! Vous êtes maintenant abonné à cette agence.');
+        console.log('[DEBUG] Réponse abonnement:', response);
+        
+        // Vérifier différentes structures de réponse possibles
+        const isSuccess = response.success || response.status === 'success' || response.message?.includes('succès') || response.message?.includes('réussi');
+        
+        if (isSuccess) {
+          this.notificationService.showSuccess('Abonnement réussi', 'Vous êtes maintenant abonné à cette agence !');
         } else {
-          alert('Erreur lors de l\'abonnement: ' + (response.message || 'Erreur inconnue'));
+          const errorMessage = response.message || response.error || 'Erreur inconnue lors de l\'abonnement';
+          this.notificationService.showError('Erreur lors de l\'abonnement', errorMessage);
         }
       },
       error: (error) => {
-        console.error('Erreur lors de l\'abonnement:', error);
-        alert('Erreur lors de l\'abonnement. Veuillez réessayer.');
+        console.error('[DEBUG] Erreur lors de l\'abonnement:', error);
+        const errorMessage = error?.error?.message || error?.message || 'Erreur lors de l\'abonnement. Veuillez réessayer.';
+        this.notificationService.showError('Erreur', errorMessage);
       }
     });
   }
