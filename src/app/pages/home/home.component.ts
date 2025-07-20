@@ -206,8 +206,8 @@ import { Agency } from '../../models/agency.model';
             <div *ngFor="let agency of searchResults" class="agency-card">
               <div class="agency-header">
                 <div class="agency-logo">
-                  <img [src]="agency.logo || 'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" 
-                       [alt]="agency.name">
+                  <img src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" 
+                       [alt]="agency.agencyName">
                   <div class="logo-glow"></div>
                 </div>
                 <div class="agency-badge" *ngIf="agency.rating >= 4.5">
@@ -217,8 +217,8 @@ import { Agency } from '../../models/agency.model';
               </div>
               
               <div class="agency-content">
-                <h3 class="agency-name">{{ agency.name }}</h3>
-                <p class="agency-description">{{ agency.description }}</p>
+                <h3 class="agency-name">{{ agency.agencyName }}</h3>
+                <p class="agency-description">{{ agency.agencyDescription }}</p>
                 
                 <div class="agency-rating">
                   <div class="stars">
@@ -259,11 +259,11 @@ import { Agency } from '../../models/agency.model';
               </div>
 
               <div class="agency-actions">
-                <button class="btn btn-secondary" (click)="viewAgencyDetails(agency.id)">
+                <button class="btn btn-secondary" (click)="viewAgencyDetails(agency._id)">
                   <i class="material-icons">info</i>
                   Voir détails
                 </button>
-                <button class="btn btn-primary" (click)="subscribeToAgency(agency.id)">
+                <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
                   <i class="material-icons">add</i>
                   S'abonner
                 </button>
@@ -1982,22 +1982,37 @@ export class HomeComponent implements OnInit {
    */
   private mapApiAgency(apiAgency: any): Agency {
     return {
-      id: apiAgency._id || apiAgency.id || '',
-      name: apiAgency.name || '',
-      description: apiAgency.description || '',
-      logo: apiAgency.logo || '',
-      email: apiAgency.email || '',
+      _id: apiAgency._id || '',
+      userId: apiAgency.userId || '',
+      firstName: apiAgency.firstName || '',
+      lastName: apiAgency.lastName || '',
+      agencyName: apiAgency.agencyName || '',
+      agencyDescription: apiAgency.agencyDescription || '',
       phone: apiAgency.phone || '',
-      address: apiAgency.address || { city: '', neighborhood: '' },
-      serviceZones: apiAgency.serviceZones || apiAgency.zones || [],
+      address: apiAgency.address || { 
+        street: '', 
+        arrondissement: '', 
+        sector: '', 
+        neighborhood: '', 
+        city: '', 
+        postalCode: '' 
+      },
+      licenseNumber: apiAgency.licenseNumber || '',
+      members: apiAgency.members || [],
+      serviceZones: apiAgency.serviceZones || [],
       services: apiAgency.services || [],
-      employees: apiAgency.employees || apiAgency.collectors || [],
+      employees: apiAgency.employees || [],
       schedule: apiAgency.schedule || [],
+      collectors: apiAgency.collectors || [],
+      clients: apiAgency.clients || [],
       rating: apiAgency.rating || 0,
       totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+      acceptTerms: apiAgency.acceptTerms || false,
+      receiveOffers: apiAgency.receiveOffers || false,
       isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
-      createdAt: apiAgency.createdAt ? new Date(apiAgency.createdAt) : new Date(),
-      updatedAt: apiAgency.updatedAt ? new Date(apiAgency.updatedAt) : new Date()
+      createdAt: apiAgency.createdAt || '',
+      updatedAt: apiAgency.updatedAt || '',
+      __v: apiAgency.__v || 0
     };
   }
 

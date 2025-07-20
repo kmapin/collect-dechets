@@ -1,20 +1,65 @@
 export interface Agency {
-  id: string;
-  name: string;
-  description: string;
-  logo?: string;
-  email: string;
+  _id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  agencyName: string;
+  agencyDescription: string;
   phone: string;
   address: Address;
+  licenseNumber: string;
+  members: AgencyMember[];
   serviceZones: ServiceZone[];
   services: WasteService[];
   employees: Employee[];
   schedule: CollectionSchedule[];
+  collectors: any[];
+  clients: AgencyClient[];
   rating: number;
   totalClients: number;
+  acceptTerms: boolean;
+  receiveOffers: boolean;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface AgencyMember {
+  user: string;
+  role: string;
+  _id: string;
+}
+
+export interface AgencyClient {
+  _id: string;
+  userId: {
+    _id: string;
+    email: string;
+    role: string;
+    isActive: boolean;
+    createdAt: string;
+  };
+  firstName: string;
+  lastName: string;
+  phone: string;
+  agencyId: string[];
+  address: Address;
+  subscriptionStatus: 'pending' | 'active' | 'inactive';
+  acceptTerms: boolean;
+  receiveOffers: boolean;
+  subscriptionHistory: SubscriptionHistory[];
+  paymentHistory: any[];
+  nonPassageReports: any[];
+  createdAt: string;
+  subscribedAgencyId: string;
+}
+
+export interface SubscriptionHistory {
+  date: string;
+  status: string;
+  offer: string;
+  _id: string;
 }
 
 export interface ServiceZone {
@@ -93,8 +138,10 @@ export interface Coordinate {
 
 export interface Address {
   street: string;
-  doorNumber: string;
+  doorNumber?: string;
   doorColor?: string;
+  arrondissement: string;
+  sector: string;
   neighborhood: string;
   city: string;
   postalCode: string;

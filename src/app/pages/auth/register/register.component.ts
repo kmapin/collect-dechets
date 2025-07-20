@@ -837,9 +837,19 @@ export class RegisterComponent implements OnInit {
       };
       console.log('[DEBUG] Body envoyé à registerClient:', body);
       this.authService.registerClient(body).subscribe({
-        next: (response: { success: boolean; user?: any; error?: string; message?: string }) => {
+        next: (response: { success: boolean; user?: any; error?: string; message?: string; status?: string }) => {
           this.isLoading = false;
-          if (response.success && response.user) {
+          console.log('[DEBUG] Réponse inscription client:', response);
+          const isSuccess =
+            response.success ||
+            response.status === 'success' ||
+            (typeof response.message === 'string' && (
+              response.message.toLowerCase().includes('succès') ||
+              response.message.toLowerCase().includes('réussi')
+            )) ||
+            !!response.user;
+
+          if (isSuccess) {
             this.notificationService.showSuccess('Inscription réussie',
               'Votre compte client a été créé avec succès ! Vous pouvez maintenant vous connecter.');
             setTimeout(() => {
@@ -889,14 +899,25 @@ export class RegisterComponent implements OnInit {
       this.authService.registerAgency$(body).subscribe({
         next: (response) => {
           this.isLoading = false;
-          if (response.success && response.agence) {
+          console.log('[DEBUG] Réponse inscription agence:', response);
+          const res: any = response;
+          const isSuccess =
+            response.success ||
+            res.status === 'success' ||
+            (typeof response.message === 'string' && (
+              response.message.toLowerCase().includes('succès') ||
+              response.message.toLowerCase().includes('réussi')
+            )) ||
+            !!response.agence;
+
+          if (isSuccess) {
             this.notificationService.showSuccess('Inscription agence réussie',
               'Votre agence a été créée avec succès ! Vous pouvez maintenant vous connecter.');
             setTimeout(() => {
               this.router.navigate(['/login']);
             }, 2000);
           } else {
-            const errorMsg = this.getFriendlyMessage((response?.error || response?.message || ''), false);
+            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
             this.notificationService.showError('Erreur lors de l\'inscription agence', errorMsg);
           }
         },
@@ -913,59 +934,7 @@ export class RegisterComponent implements OnInit {
 
 
 
-  // private validateForm(): boolean {
-  //   if (!this.userData.firstName || !this.userData.lastName || !this.userData.email || !this.userData.phone) {
-  //     this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
-  //     return false;
-  //   }
-
-  //   // Validation du format d'email
-  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  //   if (!emailRegex.test(this.userData.email)) {
-  //     this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
-  //     return false;
-  //   }
-
-  //   if (this.userData.password !== this.userData.confirmPassword) {
-  //     this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
-  //     return false;
-  //   }
-
-  //   if (this.userData.password.length < 8) {
-  //     this.notificationService.showError('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
-  //     return false;
-  //   }
-
-  //   if (!this.userData.acceptTerms) {
-  //     this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
-  //     return false;
-  //   }
-
-  //   if (!this.userData.arrondissement) {
-  //     this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
-  //     return false;
-  //   }
-
-  //   if (this.userData.role === 'client') {
-  //     if (!this.userData.address.street || !this.userData.address.doorNumber || 
-  //         !this.userData.address.neighborhood || !this.userData.address.city || 
-  //         !this.userData.address.postalCode) {
-  //       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
-  //       return false;
-  //     }
-  //     if (!this.userData.address.doorColor) {
-  //       this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
-  //       return false;
-  //     }
-  //   }
-
-  //   if (this.userData.role === 'agency' && !this.userData.agencyName) {
-  //     this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
-  //     return false;
-  //   }
-
-  //   return true;
-  // }
+  
   private validateForm(): boolean {
     // Vérifier que le rôle est bien sélectionné
     if (!this.userData.role) {

@@ -121,7 +121,7 @@ import { Agency } from '../../models/agency.model';
           <div *ngFor="let agency of filteredAgencies" class="agency-card card">
             <div class="agency-header">
               <div class="agency-logo">
-                <img [src]="agency.logo || 'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.name">
+                <img [src]="'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.agencyName">
               </div>
               <div class="agency-badge" *ngIf="agency.rating >= 4.5">
                 <i class="material-icons">star</i>
@@ -131,8 +131,8 @@ import { Agency } from '../../models/agency.model';
  
             
             <div class="agency-content">
-              <h3 class="agency-name">{{ agency.name }}</h3>
-              <p class="agency-description">{{ agency.description }}</p>
+              <h3 class="agency-name">{{ agency.agencyName }}</h3>
+              <p class="agency-description">{{ agency.agencyDescription }}</p>
               
               <div class="agency-rating">
                 <div class="stars">
@@ -170,11 +170,11 @@ import { Agency } from '../../models/agency.model';
             </div>
 
             <div class="agency-actions">
-              <button class="btn btn-secondary" [routerLink]="['/agencies', agency.id]">
+              <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
                 <i class="material-icons">info</i>
                 Voir détails
               </button>
-              <button class="btn btn-primary" (click)="subscribeToAgency(agency.id)">
+              <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
                 <i class="material-icons">add</i>
                 S'abonner
               </button>
@@ -188,10 +188,10 @@ import { Agency } from '../../models/agency.model';
             <div class="agency-list-content">
               <div class="agency-list-header">
                 <div class="agency-logo-small">
-                  <img [src]="agency.logo || 'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.name">
+                  <img src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" [alt]="agency.agencyName">
                 </div>
                 <div class="agency-list-info">
-                  <h3 class="agency-name">{{ agency.name }}</h3>
+                  <h3 class="agency-name">{{ agency.agencyName }}</h3>
                   <div class="agency-rating">
                     <div class="stars">
                       <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
@@ -205,7 +205,7 @@ import { Agency } from '../../models/agency.model';
                 </div>
               </div>
               
-              <p class="agency-description">{{ agency.description }}</p>
+              <p class="agency-description">{{ agency.agencyDescription }}</p>
               
               <div class="agency-list-details">
                 <div class="detail-item">
@@ -224,10 +224,10 @@ import { Agency } from '../../models/agency.model';
             </div>
 
             <div class="agency-list-actions">
-              <button class="btn btn-secondary" [routerLink]="['/agencies', agency.id]">
+              <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
                 Voir détails
               </button>
-              <button class="btn btn-primary" (click)="subscribeToAgency(agency.id)">
+              <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
                 S'abonner
               </button>
             </div>
@@ -247,7 +247,7 @@ import { Agency } from '../../models/agency.model';
             <h3>Agences sur la carte</h3>
             <div class="map-agency-list">
               <div *ngFor="let agency of filteredAgencies" class="map-agency-item">
-                <h4>{{ agency.name }}</h4>
+                <h4>{{ agency.agencyName }}</h4>
                 <p>{{ agency.address.city || '-' }}</p>
                 <div class="agency-rating">
                   <div class="stars">
@@ -255,7 +255,7 @@ import { Agency } from '../../models/agency.model';
                   </div>
                   <span>{{ agency.rating || 0 }}/5</span>
                 </div>
-                <button class="btn btn-primary btn-small" [routerLink]="['/agencies', agency.id]">
+                <button class="btn btn-primary btn-small" [routerLink]="['/agencies', agency._id]">
                   Voir
                 </button>
               </div>
@@ -823,22 +823,37 @@ export class AgenciesComponent implements OnInit {
    */
   private mapApiAgency(apiAgency: any): Agency {
     return {
-      id: apiAgency._id || apiAgency.id || '',
-      name: apiAgency.name || '',
-      description: apiAgency.description || '',
-      logo: apiAgency.logo || '',
-      email: apiAgency.email || '',
+      _id: apiAgency._id || '',
+      userId: apiAgency.userId || '',
+      firstName: apiAgency.firstName || '',
+      lastName: apiAgency.lastName || '',
+      agencyName: apiAgency.agencyName || '',
+      agencyDescription: apiAgency.agencyDescription || '',
       phone: apiAgency.phone || '',
-      address: apiAgency.address || { city: '', neighborhood: '' },
-      serviceZones: apiAgency.serviceZones || apiAgency.zones || [],
+      address: apiAgency.address || { 
+        street: '', 
+        arrondissement: '', 
+        sector: '', 
+        neighborhood: '', 
+        city: '', 
+        postalCode: '' 
+      },
+      licenseNumber: apiAgency.licenseNumber || '',
+      members: apiAgency.members || [],
+      serviceZones: apiAgency.serviceZones || [],
       services: apiAgency.services || [],
-      employees: apiAgency.employees || apiAgency.collectors || [],
+      employees: apiAgency.employees || [],
       schedule: apiAgency.schedule || [],
+      collectors: apiAgency.collectors || [],
+      clients: apiAgency.clients || [],
       rating: apiAgency.rating || 0,
       totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+      acceptTerms: apiAgency.acceptTerms || false,
+      receiveOffers: apiAgency.receiveOffers || false,
       isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
-      createdAt: apiAgency.createdAt ? new Date(apiAgency.createdAt) : new Date(),
-      updatedAt: apiAgency.updatedAt ? new Date(apiAgency.updatedAt) : new Date()
+      createdAt: apiAgency.createdAt || '',
+      updatedAt: apiAgency.updatedAt || '',
+      __v: apiAgency.__v || 0
     };
   }
 
@@ -860,7 +875,7 @@ export class AgenciesComponent implements OnInit {
   applyFilters(): void {
     this.filteredAgencies = this.agencies.filter(agency => {
       const matchesSearch = !this.searchQuery || 
-        agency.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        agency.agencyName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
         agency.address.city.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
         agency.address.neighborhood.toLowerCase().includes(this.searchQuery.toLowerCase());
 
@@ -884,7 +899,7 @@ export class AgenciesComponent implements OnInit {
     this.filteredAgencies.sort((a, b) => {
       switch (this.sortBy) {
         case 'name':
-          return a.name.localeCompare(b.name);
+          return a.agencyName.localeCompare(b.agencyName);
         case 'rating':
           return b.rating - a.rating;
         case 'price':
