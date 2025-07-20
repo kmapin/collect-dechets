@@ -1,14 +1,19 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { delay, map } from 'rxjs/operators';
 import { Agency, ServiceZone, WasteService, Employee } from '../models/agency.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { User } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AgencyService {
+    private currentServiceZoneSubject = new BehaviorSubject<ServiceZone | null>(null);
+    public currentUser$ = this.currentServiceZoneSubject.asObservable();
+    private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
+    public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
   private agencies: Agency[] = [
     {
       id: '1',
@@ -248,4 +253,25 @@ export class AgencyService {
   getAgencyByIdFromApi(id: string): Observable<{ success: boolean; data: Agency }> {
     return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
   }
+
+  
+    
+    /**
+     * la creation d une zone via l'API réelle
+     */
+    registerZone$(zonesData: any): Observable<{ success: boolean; zone?: ServiceZone; error?: string; message?: string }> {
+      return this.http.post<any>(`${environment.apiUrl}/zones/register`, zonesData).pipe(
+        map(response => {
+          console.log("API > zones :", response)
+          if (response && response.zone) {
+            localStorage.setItem('currentagence', JSON.stringify(response.zone));
+            this.currentServiceZoneSubject.next(response.zone);
+            this.isAuthenticatedSubject.next(true);
+            return { success: true, zone: response.zone, message: response.message };
+          } else {
+            return { success: false, error: response?.error || 'Erreur lors de la zone', message: response?.message };
+          }
+        })
+      );
+    }
 }

@@ -1906,6 +1906,20 @@ export class AgencyDashboardComponent implements OnInit {
     endTime: '',
     collectorId: ''
   };
+//model pour la creation d une zone 
+ zoneData = {
+  name: '',
+  description: '',
+  boundaries: [
+    {
+      latitude: null as number | null,
+      longitude: null as number | null
+    }
+  ],
+  neighborhoods: [] as string[],
+  cities: [] as string[],
+  assignedCollectors: [] as string[]
+};
 
   citiesInput = '';
   neighborhoodsInput = '';
@@ -2342,38 +2356,80 @@ export class AgencyDashboardComponent implements OnInit {
     }
   }
 
-  saveZone(): void {
-    if (this.newZone.name && this.citiesInput) {
-      this.newZone.cities = this.citiesInput.split(',').map(city => city.trim());
-      this.newZone.neighborhoods = this.neighborhoodsInput.split(',').map(n => n.trim()).filter(n => n);
+  // saveZone(): void {
+  //   if (this.newZone.name && this.citiesInput) {
+  //     this.newZone.cities = this.citiesInput.split(',').map(city => city.trim());
+  //     this.newZone.neighborhoods = this.neighborhoodsInput.split(',').map(n => n.trim()).filter(n => n);
 
-      if (this.editingZone) {
-        const index = this.serviceZones.findIndex(z => z.id === this.newZone.id);
-        if (index !== -1) {
-          this.serviceZones[index] = { ...this.newZone };
+  //     if (this.editingZone) {
+  //       const index = this.serviceZones.findIndex(z => z.id === this.newZone.id);
+  //       if (index !== -1) {
+  //         this.serviceZones[index] = { ...this.newZone };
+  //       }
+  //       this.notificationService.showSuccess('Modifié', 'Zone modifiée avec succès');
+  //     } else {
+  //       const zone: ServiceZone = {
+  //         id: Math.random().toString(36).substr(2, 9),
+  //         name: this.newZone.name,
+  //         description: this.newZone.description,
+  //         boundaries: [],
+  //         neighborhoods: this.newZone.neighborhoods,
+  //         cities: this.newZone.cities,
+  //         isActive: this.newZone.isActive
+  //       };
+  //       this.serviceZones.push(zone);
+  //       this.notificationService.showSuccess('Ajouté', 'Zone ajoutée avec succès');
+  //     }
+
+  //     this.showZoneModal = false;
+  //     this.editingZone = false;
+  //     this.newZone = { name: '', description: '', cities: [], neighborhoods: [], isActive: true };
+  //     this.citiesInput = '';
+  //     this.neighborhoodsInput = '';
+  //   }
+  // }
+saveZone(): void {
+  if (this.newZone.name && this.citiesInput) {
+    this.newZone.cities = this.citiesInput.split(',').map(city => city.trim());
+    this.newZone.neighborhoods = this.neighborhoodsInput.split(',').map(n => n.trim()).filter(n => n);
+let body: any;
+    // Construction de la zone prête à envoyer
+  body = {
+  name: this.zoneData.name,
+  description: this.zoneData.description,
+  boundaries: this.zoneData.boundaries.map(b => ({
+    latitude: b.latitude,
+    longitude: b.longitude
+  })),
+  neighborhoods: this.zoneData.neighborhoods,
+  cities: this.zoneData.cities,
+  assignedCollectors: this.zoneData.assignedCollectors
+};
+    this.agencyService.registerZone$(body).subscribe({
+      next: (response) => {
+        if (response.success && response.zone) {
+          this.serviceZones.push(response.zone);
+          this.notificationService.showSuccess('Ajouté', 'Zone ajoutée avec succès');
+        } else {
+          this.notificationService.showError('Erreur', response.message || 'Échec lors de l’ajout de la zone.');
         }
-        this.notificationService.showSuccess('Modifié', 'Zone modifiée avec succès');
-      } else {
-        const zone: ServiceZone = {
-          id: Math.random().toString(36).substr(2, 9),
-          name: this.newZone.name,
-          description: this.newZone.description,
-          boundaries: [],
-          neighborhoods: this.newZone.neighborhoods,
-          cities: this.newZone.cities,
-          isActive: this.newZone.isActive
-        };
-        this.serviceZones.push(zone);
-        this.notificationService.showSuccess('Ajouté', 'Zone ajoutée avec succès');
+        this.resetZoneForm();
+      },
+      error: (err) => {
+        this.notificationService.showError('Erreur', 'Impossible d’ajouter la zone.');
+        console.error(err);
+        this.resetZoneForm();
       }
-
-      this.showZoneModal = false;
-      this.editingZone = false;
-      this.newZone = { name: '', description: '', cities: [], neighborhoods: [], isActive: true };
-      this.citiesInput = '';
-      this.neighborhoodsInput = '';
-    }
+    });
   }
+}
+resetZoneForm(): void {
+  this.showZoneModal = false;
+  this.editingZone = false;
+  this.newZone = { name: '', description: '', cities: [], neighborhoods: [], isActive: true };
+  this.citiesInput = '';
+  this.neighborhoodsInput = '';
+}
 
   addSchedule(): void {
     if (this.newSchedule.zoneId && this.newSchedule.dayOfWeek && this.newSchedule.startTime && this.newSchedule.endTime && this.newSchedule.collectorId) {
