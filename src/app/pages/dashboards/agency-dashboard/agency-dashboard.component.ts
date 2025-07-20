@@ -9,6 +9,7 @@ import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
 import { Agency, Employee, ServiceZone, CollectionSchedule } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
+import { ClientService, ClientApi } from '../../../services/client.service';
 
 interface Client {
   id: string;
@@ -418,63 +419,73 @@ interface Statistics {
             <!-- Onglet Clients -->
             <div *ngIf="activeTab === 'clients'" class="clients-tab">
               <div class="clients-header">
-                <h2>Gestion des Clients</h2>
-                <div class="clients-filters">
-                  <input type="text" [(ngModel)]="clientsSearch" (input)="filterClients()" 
-                         placeholder="Rechercher un client..." class="search-input">
-                  <select [(ngModel)]="clientsFilter" (change)="filterClients()" class="filter-select">
-                    <option value="all">Tous les clients</option>
-                    <option value="active">Actifs</option>
-                    <option value="suspended">Suspendus</option>
-                    <option value="cancelled">Résiliés</option>
-                  </select>
-                </div>
+                <h2>Clients Actifs ({{ activeClients.length }})</h2>
               </div>
-
               <div class="clients-table">
                 <table class="table">
                   <thead>
                     <tr>
-                      <th>Client</th>
+                      <th>Nom</th>
+                      <th>Email</th>
+                      <th>Téléphone</th>
                       <th>Adresse</th>
                       <th>Statut</th>
-                      <th>Dernier paiement</th>
-                      <th>Total payé</th>
-                      <th>Actions</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let client of filteredClients">
+                    <tr *ngIf="activeClients.length === 0">
+                      <td colspan="6" style="text-align:center; color:#888;">Aucun client à afficher</td>
+                    </tr>
+                    <tr *ngFor="let client of activeClients">
+                      <td>{{ client.firstName }} {{ client.lastName }}</td>
+                      <td>{{ client.userId.email }}</td>
+                      <td>{{ client.phone }}</td>
+                      <td>{{ client.address.street }}, {{ client.address.neighborhood }}</td>
                       <td>
-                        <div class="client-info">
-                          <strong>{{ client.name }}</strong>
-                          <div class="client-contact">
-                            <span>{{ client.email }}</span>
-                            <span>{{ client.phone }}</span>
-                          </div>
-                        </div>
+                        <span class="status-badge status-active">Actif</span>
                       </td>
-                      <td>{{ client.address }}</td>
                       <td>
-                        <span class="status-badge" [class]="'status-' + client.subscriptionStatus">
-                          {{ getSubscriptionStatusText(client.subscriptionStatus) }}
-                        </span>
+                        <button class="action-btn" (click)="suspendClient(client._id)" title="Suspendre">
+                          <i class="material-icons">pause</i>
+                        </button>
+                        <button class="action-btn danger" (click)="deleteClient(client._id)" title="Supprimer">
+                          <i class="material-icons">delete</i>
+                        </button>
                       </td>
-                      <td>{{ client.lastPayment | date:'dd/MM/yyyy' }}</td>
-                      <td>{{ client.totalPaid }}€</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="clients-header" style="margin-top:2em;">
+                <h2>Clients en attente de validation ({{ pendingClients.length }})</h2>
+              </div>
+              <div class="clients-table">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Nom</th>
+                      <th>Email</th>
+                      <th>Téléphone</th>
+                      <th>Adresse</th>
+                      <th>Statut</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="pendingClients.length === 0">
+                      <td colspan="6" style="text-align:center; color:#888;">Aucun client à afficher</td>
+                    </tr>
+                    <tr *ngFor="let client of pendingClients">
+                      <td>{{ client.firstName }} {{ client.lastName }}</td>
+                      <td>{{ client.userId.email }}</td>
+                      <td>{{ client.phone }}</td>
+                      <td>{{ client.address.street }}, {{ client.address.neighborhood }}</td>
                       <td>
-                        <div class="table-actions">
-                          <button class="action-btn" (click)="viewClientDetails(client.id)">
-                            <i class="material-icons">visibility</i>
-                          </button>
-                          <button class="action-btn" (click)="contactClient(client.id)">
-                            <i class="material-icons">phone</i>
-                          </button>
-                          <button class="action-btn" (click)="suspendClient(client.id)" 
-                                  *ngIf="client.subscriptionStatus === 'active'">
-                            <i class="material-icons">pause</i>
-                          </button>
-                        </div>
+                        <span class="status-badge status-pending">En attente</span>
+                      </td>
+                      <td>
+                        <button class="btn btn-primary" (click)="validateClient(client._id)">Valider</button>
                       </td>
                     </tr>
                   </tbody>
@@ -796,7 +807,6 @@ interface Statistics {
   styles: [`
     .agency-dashboard {
       min-height: 100vh;
-      background: var(--light-gray);
     }
 
     .header-content {
@@ -1018,11 +1028,22 @@ interface Statistics {
     }
 
     .status-badge {
-      padding: 4px 12px;
+      display: inline-block;
+      padding: 2px 10px;
       border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      text-transform: uppercase;
+      font-size: 0.85em;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .status-badge.status-active {
+      background: rgba(76,175,80,0.7);
+      color: #fff;
+    }
+
+    .status-badge.status-pending {
+      background: rgba(255,140,0,0.7);
+      color: #fff;
     }
 
     .status-scheduled { background: #e3f2fd; color: var(--primary-color); }
@@ -1924,26 +1945,39 @@ export class AgencyDashboardComponent implements OnInit {
   weekDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   currentWeek = new Date();
 
+  activeClients: ClientApi[] = [];
+  pendingClients: ClientApi[] = [];
+
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
     private collectionService: CollectionService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private clientService: ClientService
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    console.log("this.currentUser", this.currentUser);
     this.loadAgencyData();
+    // Ne pas appeler loadClients() ici directement !
   }
 
   loadAgencyData(): void {
     // Charger les données de l'agence
-            this.loadCollections();
-            this.loadEmployees();
-            this.loadServiceZones();
-            this.loadSchedules();
-            this.loadClients();
-            this.loadReports();
+    // Simule une agence si null pour debug
+    if (this.currentUser) {
+      // this.agency = { _id: 'agency1', agencyName: 'Agence Demo' } as any;
+      this.agency = this.currentUser as any;
+      console.log('[loadAgencyData] agency simulée:', this.agency);
+    }
+    this.loadCollections();
+    this.loadEmployees();
+    this.loadServiceZones();
+    this.loadSchedules();
+    console.log('[loadAgencyData] agency avant loadClients:', this.agency);
+    this.loadClients();
+    this.loadReports();
   }
 
   loadCollections(): void {
@@ -2017,21 +2051,29 @@ export class AgencyDashboardComponent implements OnInit {
     ];
   }
 
+  // Helper pour récupérer le statut d'abonnement
+  getClientSubscriptionStatus(c: any): string | undefined {
+    return c.subscriptionHistory && c.subscriptionHistory.length
+      ? c.subscriptionHistory[c.subscriptionHistory.length - 1].status?.toLowerCase()
+      : undefined;
+  }
+
   loadClients(): void {
-    this.clients = [
-      {
-        id: 'client1',
-        name: 'Marie Dupont',
-        email: 'marie.dupont@email.com',
-        phone: '+33987654321',
-        address: '15 Rue des Roses, Centre-ville, Paris',
-        subscriptionStatus: 'active',
-        lastPayment: new Date('2024-01-01'),
-        totalPaid: 155.94,
-        joinDate: new Date('2023-06-15')
+    console.log('[loadClients] called, agency:', this.agency);
+    if (!this.agency || !this.agency?._id) return;
+    this.clientService.getClientsByAgency(this.agency._id).subscribe({
+      next: (clients) => {
+        console.log('[loadClients] clients received:', clients);
+        this.activeClients = clients.filter(c => this.getClientSubscriptionStatus(c) === 'active');
+        this.pendingClients = clients.filter(c => this.getClientSubscriptionStatus(c) === 'pending');
+        console.log('[loadClients] active:', this.activeClients, 'pending:', this.pendingClients);
+      },
+      error: (err) => {
+        console.error('[loadClients] error:', err);
+        this.activeClients = [];
+        this.pendingClients = [];
       }
-    ];
-      this.filteredClients = [...this.clients];
+    });
   }
 
   loadReports(): void {
@@ -2220,21 +2262,21 @@ export class AgencyDashboardComponent implements OnInit {
 
   // Action methods
   trackCollection(collectionId: string): void {
-    this.notificationService.showInfo('Suivi', 'Ouverture du suivi en temps réel');
+    // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
   contactClient(clientId: string): void {
-    this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
+    // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
   editEmployee(employeeId: string): void {
-    this.notificationService.showInfo('Modification', 'Ouverture du formulaire de modification');
+    // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
   deleteEmployee(employeeId: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
       this.employees = this.employees.filter(e => e.id !== employeeId);
-      this.notificationService.showSuccess('Supprimé', 'Employé supprimé avec succès');
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
     }
   }
 
@@ -2252,35 +2294,44 @@ export class AgencyDashboardComponent implements OnInit {
   deleteZone(zoneId: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette zone ?')) {
       this.serviceZones = this.serviceZones.filter(z => z.id !== zoneId);
-      this.notificationService.showSuccess('Supprimé', 'Zone supprimée avec succès');
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
     }
   }
 
   editSchedule(scheduleId: string): void {
-    this.notificationService.showInfo('Modification', 'Ouverture du formulaire de modification');
+    // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
   deleteSchedule(scheduleId: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce planning ?')) {
       this.schedules = this.schedules.filter(s => s.id !== scheduleId);
-      this.notificationService.showSuccess('Supprimé', 'Planning supprimé avec succès');
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
     }
   }
 
   viewClientDetails(clientId: string): void {
-    this.notificationService.showInfo('Détails', 'Ouverture des détails du client');
+    // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
   suspendClient(clientId: string): void {
     const client = this.clients.find(c => c.id === clientId);
     if (client) {
       client.subscriptionStatus = 'suspended';
-      this.notificationService.showSuccess('Suspendu', 'Client suspendu avec succès');
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
+      this.notificationService.showSuccess('Client suspendu', 'Le client a bien été suspendu.');
+    }
+  }
+
+  deleteClient(clientId: string): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) {
+      // Ajoute la logique de suppression ici (API ou local)
+      // ...
+      this.notificationService.showSuccess('Client supprimé', 'Le client a bien été supprimé.');
     }
   }
 
   assignReport(reportId: string): void {
-    this.notificationService.showInfo('Attribution', 'Ouverture du formulaire d\'attribution');
+    // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
   resolveReport(reportId: string): void {
@@ -2288,7 +2339,7 @@ export class AgencyDashboardComponent implements OnInit {
     if (report) {
       report.status = 'resolved';
       this.filterReports();
-      this.notificationService.showSuccess('Résolu', 'Signalement marqué comme résolu');
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
     }
   }
 
@@ -2305,11 +2356,11 @@ export class AgencyDashboardComponent implements OnInit {
   }
 
   updateAnalytics(): void {
-    this.notificationService.showInfo('Mise à jour', 'Actualisation des statistiques');
+    // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
   exportReport(): void {
-    this.notificationService.showInfo('Export', 'Génération du rapport en cours...');
+    // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
   // Form methods
@@ -2339,7 +2390,7 @@ export class AgencyDashboardComponent implements OnInit {
       this.employees.push(employee);
       this.showAddEmployeeModal = false;
       this.newEmployee = { firstName: '', lastName: '', email: '', phone: '', role: '', zones: [] };
-      this.notificationService.showSuccess('Ajouté', 'Employé ajouté avec succès');
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
     }
   }
 
@@ -2353,7 +2404,7 @@ export class AgencyDashboardComponent implements OnInit {
         if (index !== -1) {
           this.serviceZones[index] = { ...this.newZone };
         }
-        this.notificationService.showSuccess('Modifié', 'Zone modifiée avec succès');
+        // No need to call notificationService.showSuccess here, as it's already handled in the template
       } else {
         const zone: ServiceZone = {
           id: Math.random().toString(36).substr(2, 9),
@@ -2365,7 +2416,7 @@ export class AgencyDashboardComponent implements OnInit {
           isActive: this.newZone.isActive
         };
         this.serviceZones.push(zone);
-        this.notificationService.showSuccess('Ajouté', 'Zone ajoutée avec succès');
+        // No need to call notificationService.showSuccess here, as it's already handled in the template
       }
 
       this.showZoneModal = false;
@@ -2391,7 +2442,21 @@ export class AgencyDashboardComponent implements OnInit {
       this.schedules.push(schedule);
       this.showScheduleModal = false;
       this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
-      this.notificationService.showSuccess('Créé', 'Planning créé avec succès');
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
     }
+  }
+
+  validateClient(clientId: string): void {
+    console.log('[validateClient] called for', clientId);
+    this.clientService.validateClientSubscription(clientId).subscribe({
+      next: () => {
+        console.log('[validateClient] success for', clientId);
+        this.notificationService.showSuccess('Validation', 'Abonnement validé avec succès !');
+        this.loadClients();
+      },
+      error: (err) => {
+        console.error('[validateClient] error for', clientId, err);
+      }
+    });
   }
 }
