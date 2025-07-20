@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 import { UserRole } from '../../../models/user.model';
+import { Agency } from '../../../models/agency.model';
 
 @Component({
   selector: 'app-register',
@@ -139,25 +140,43 @@ import { UserRole } from '../../../models/user.model';
                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="arrondissement">
-                  <i class="material-icons">map</i>
-                  Arrondissement *
-                </label>
-                <input 
-                  type="text" 
-                  id="arrondissement"
-                  name="arrondissement"
-                  [(ngModel)]="userData.arrondissement"
-                  class="form-control"
-                  placeholder="5"
-                  required>
-              </div>
             </div>
-
+            
             <!-- Adresse (pour les clients) -->
-            <div class="form-section" *ngIf="userData.role === 'client'">
-              <h3>Adresse de collecte</h3>
+            <!-- <div class="form-section" *ngIf="userData.role === 'client'"> -->
+            <div class="form-section">
+              <h3>Adresse de localisation</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="arrondissement">
+                    <i class="material-icons">map</i>
+                    Arrondissement *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="arrondissement"
+                    name="arrondissement"
+                    [(ngModel)]="userData.address.arrondissement"
+                    class="form-control"
+                    placeholder="5"
+                    required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="sector">
+                    <i class="material-icons">location_city</i>
+                    Secteur *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="sector"
+                    name="sector"
+                    [(ngModel)]="userData.address.sector"
+                    class="form-control"
+                    placeholder="Nom du secteur"
+                    required>
+                </div>
+              </div>
               
               <div class="form-row">
                 <div class="form-group">
@@ -175,10 +194,10 @@ import { UserRole } from '../../../models/user.model';
                     required>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" *ngIf="userData.role !== 'agency'">
                   <label class="form-label" for="doorNumber">
                     <i class="material-icons">home</i>
-                    Numéro *
+                    Numéro Porte *
                   </label>
                   <input 
                     type="text" 
@@ -190,7 +209,7 @@ import { UserRole } from '../../../models/user.model';
                     required>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" *ngIf="userData.role !== 'agency'">
                   <label class="form-label" for="doorColor">
                     <i class="material-icons">palette</i>
                     Couleur porte
@@ -712,29 +731,38 @@ import { UserRole } from '../../../models/user.model';
     }
   `]
 })
+
 export class RegisterComponent implements OnInit {
+
   userData = {
-    role: 'client' as UserRole,
+    role: UserRole.CLIENT as UserRole | null,
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
-    arrondissement: '',
     address: {
+      arrondissement: '',
+      sector: '',
       street: '',
       doorNumber: '',
       doorColor: '',
       neighborhood: '',
       city: '',
-      postalCode: ''
+      postalCode: '',
+      // latitude: '',
+      // longitude: ''
     },
     agencyName: '',
     agencyDescription: '',
     termsAccepted: false,
+    acceptTerms: true,
     receiveOffers: false
   };
+
+
+
 
   showPassword = false;
   isLoading = false;
@@ -743,9 +771,9 @@ export class RegisterComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private notificationService: NotificationService
-  ) {}
+  ) { }
 
-  ngOnInit(): void {}
+  ngOnInit(): void { }
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
@@ -776,84 +804,189 @@ export class RegisterComponent implements OnInit {
     this.isLoading = true;
 
     let body: any;
-    if (this.userData.role === 'client') {
+    if (this.userData.role === UserRole.CLIENT) {
       body = {
+        role: this.userData.role,
         firstName: this.userData.firstName,
         lastName: this.userData.lastName,
         email: this.userData.email,
         phone: this.userData.phone,
         password: this.userData.password,
         confirmPassword: this.userData.confirmPassword,
-        role: this.userData.role,
-        arrondissement: this.userData.arrondissement,
-        rue: this.userData.address.street,
-        numero: this.userData.address.doorNumber,
-        couleurPorte: this.userData.address.doorColor,
-        quartier: this.userData.address.neighborhood,
-        ville: this.userData.address.city,
-        codePostal: this.userData.address.postalCode,
-        termsAccepted: this.userData.termsAccepted,
-        receiveOffers: this.userData.receiveOffers
+        acceptTerms: this.userData.acceptTerms, // renommé
+        termsAccepted: this.userData.acceptTerms, // renommé
+        receiveOffers: this.userData.receiveOffers,
+        // rue: this.userData.address.street,
+        // quartier: this.userData.address.neighborhood,
+        // numero: this.userData.address.doorNumber,
+        // couleurPorte: this.userData.address.doorColor,
+        // ville: this.userData.address.city,
+        // codePostal: this.userData.address.postalCode,
+        address: {
+          arrondissement: this.userData.address.arrondissement,
+          sector: this.userData.address.sector,
+          street: this.userData.address.street,
+          doorNumber: this.userData.address.doorNumber,
+          doorColor: this.userData.address.doorColor,
+          neighborhood: this.userData.address.neighborhood,
+          city: this.userData.address.city,
+          postalCode: this.userData.address.postalCode,
+          // latitude: this.userData.address.latitude,
+          // longitude: this.userData.address.postalCode
+        },
       };
       console.log('[DEBUG] Body envoyé à registerClient:', body);
       this.authService.registerClient(body).subscribe({
-        next: (response) => {
-          console.log('[DEBUG] Réponse API registerClient:', response);
+        next: (response: { success: boolean; user?: any; error?: string; message?: string }) => {
           this.isLoading = false;
           if (response.success && response.user) {
-            this.notificationService.showSuccess(
-              'Compte créé avec succès', 
-              `Bienvenue ${response.user.firstName} ! Votre compte a été créé.`
-            );
-            this.redirectToDashboard(response.user.role);
+            this.notificationService.showSuccess('Inscription réussie',
+              'Votre compte client a été créé avec succès ! Vous pouvez maintenant vous connecter.');
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
           } else {
-            this.notificationService.showError('Erreur', response.error || 'Erreur lors de la création du compte');
+            const errorMsg = this.getFriendlyMessage(( response?.message || response?.error || ''), false);
+            this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
           }
         },
         error: (error) => {
           this.isLoading = false;
-          console.error('[DEBUG] Erreur API registerClient:', error);
-          this.notificationService.showError('Erreur', error?.error?.error || error?.error?.message || 'Une erreur est survenue lors de la création du compte');
+          const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
+          this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
+        }
+      });
+      return;
+    } else if (this.userData.role === UserRole.AGENCY) {
+
+      body = {
+        role: this.userData.role,
+        firstName: this.userData.firstName,
+        lastName: this.userData.lastName,
+        email: this.userData.email,
+        phone: this.userData.phone,
+        password: this.userData.password,
+        confirmPassword: this.userData.confirmPassword,
+        acceptTerms: this.userData.acceptTerms, // renommé
+        termsAccepted: this.userData.acceptTerms,
+        receiveOffers: this.userData.receiveOffers,
+        address: {
+          arrondissement: this.userData.address.arrondissement,
+          sector: this.userData.address.sector,
+          street: this.userData.address.street,
+          doorNumber: this.userData.address.doorNumber,
+          doorColor: this.userData.address.doorColor,
+          neighborhood: this.userData.address.neighborhood,
+          city: this.userData.address.city,
+          postalCode: this.userData.address.postalCode,
+          // latitude: this.userData.address.latitude,
+          // longitude: this.userData.address.postalCode
+        },
+        agencyName: this.userData.agencyName,
+        description: this.userData.agencyDescription
+      };
+      console.log('[DEBUG] Body envoyé à registerAgency:', body);
+      this.authService.registerAgency$(body).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          if (response.success && response.agence) {
+            this.notificationService.showSuccess('Inscription agence réussie',
+              'Votre agence a été créée avec succès ! Vous pouvez maintenant vous connecter.');
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          } else {
+            const errorMsg = this.getFriendlyMessage((response?.error || response?.message || ''), false);
+            this.notificationService.showError('Erreur lors de l\'inscription agence', errorMsg);
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
+          // const errorMsg = this.getFriendlyMessage((error?.error?.error || error?.error?.message || error?.message || ''), false);
+          this.notificationService.showError('Erreur lors de l\'inscription agence', errorMsg);
         }
       });
       return;
     }
-
-    // Autres rôles : ancien comportement
-    body = { ...this.userData };
-    this.authService.register(body).subscribe({
-      next: (response) => {
-        this.isLoading = false;
-        if (response.success && response.user) {
-          this.notificationService.showSuccess(
-            'Compte créé avec succès', 
-            `Bienvenue ${response.user.firstName} ! Votre compte a été créé.`
-          );
-          this.redirectToDashboard(response.user.role);
-        } else {
-          this.notificationService.showError('Erreur', response.error || 'Erreur lors de la création du compte');
-        }
-      },
-      error: (error) => {
-        this.isLoading = false;
-        this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la création du compte');
-      }
-    });
   }
 
+
+
+  // private validateForm(): boolean {
+  //   if (!this.userData.firstName || !this.userData.lastName || !this.userData.email || !this.userData.phone) {
+  //     this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
+  //     return false;
+  //   }
+
+  //   // Validation du format d'email
+  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //   if (!emailRegex.test(this.userData.email)) {
+  //     this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
+  //     return false;
+  //   }
+
+  //   if (this.userData.password !== this.userData.confirmPassword) {
+  //     this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
+  //     return false;
+  //   }
+
+  //   if (this.userData.password.length < 8) {
+  //     this.notificationService.showError('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
+  //     return false;
+  //   }
+
+  //   if (!this.userData.acceptTerms) {
+  //     this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
+  //     return false;
+  //   }
+
+  //   if (!this.userData.arrondissement) {
+  //     this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
+  //     return false;
+  //   }
+
+  //   if (this.userData.role === 'client') {
+  //     if (!this.userData.address.street || !this.userData.address.doorNumber || 
+  //         !this.userData.address.neighborhood || !this.userData.address.city || 
+  //         !this.userData.address.postalCode) {
+  //       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
+  //       return false;
+  //     }
+  //     if (!this.userData.address.doorColor) {
+  //       this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
+  //       return false;
+  //     }
+  //   }
+
+  //   if (this.userData.role === 'agency' && !this.userData.agencyName) {
+  //     this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+  //     return false;
+  //   }
+
+  //   return true;
+  // }
   private validateForm(): boolean {
+    // Vérifier que le rôle est bien sélectionné
+    if (!this.userData.role) {
+      this.notificationService.showError('Erreur', 'Veuillez sélectionner un rôle');
+      return false;
+    }
+
+    // Champs communs obligatoires
     if (!this.userData.firstName || !this.userData.lastName || !this.userData.email || !this.userData.phone) {
       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
       return false;
     }
 
-    // Validation du format d'email
+    // Validation format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.userData.email)) {
       this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
       return false;
     }
 
+    // Validation mot de passe
     if (this.userData.password !== this.userData.confirmPassword) {
       this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
       return false;
@@ -864,35 +997,71 @@ export class RegisterComponent implements OnInit {
       return false;
     }
 
+    // Validation acceptation des conditions
     if (!this.userData.termsAccepted) {
       this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
       return false;
     }
 
-    if (!this.userData.arrondissement) {
-      this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
-      return false;
-    }
+    // Validation arrondissement obligatoire
+    // if (!this.userData.arrondissement) {
+    //   this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
+    //   return false;
+    // }
 
-    if (this.userData.role === 'client') {
-      if (!this.userData.address.street || !this.userData.address.doorNumber || 
-          !this.userData.address.neighborhood || !this.userData.address.city || 
-          !this.userData.address.postalCode) {
-        this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
-        return false;
-      }
-      if (!this.userData.address.doorColor) {
+    // Validation spécifique selon le rôle
+    if (this.userData.role === UserRole.CLIENT) {
+     
+      const address = this.userData.address;
+      // if (!address.street || !address.doorNumber || !address.neighborhood || !address.city || !address.postalCode) {
+      //   this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
+      //   return false;
+      // }
+      if (!address.doorColor) {
         this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
         return false;
       }
-    }
-
-    if (this.userData.role === 'agency' && !this.userData.agencyName) {
-      this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+    } else if (this.userData.role === UserRole.AGENCY) {
+      // Validation agence
+      if (!this.userData.agencyName) {
+        this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+        return false;
+      }
+    } else {
+      // Cas improbable, mais au cas où
+      this.notificationService.showError('Erreur', 'Rôle utilisateur invalide');
       return false;
     }
 
+    // Si tout est ok
     return true;
+  }
+
+  /**
+   * Convertit les messages techniques du backend en messages conviviaux pour l'utilisateur
+   */
+  private getFriendlyMessage(raw: string, isSuccess: boolean = false): string {
+    if (!raw) {
+      return isSuccess
+        ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+        : "Une erreur est survenue. Veuillez réessayer.";
+    }
+    const map: { [key: string]: string } = {
+      "Email already exists": "Cette adresse email est déjà utilisée.",
+      "Invalid email or password": "Email ou mot de passe invalide.",
+      "User created successfully": "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+      "Missing required fields": "Veuillez remplir tous les champs obligatoires.",
+      "Password too short": "Le mot de passe est trop court.",
+      "Invalid phone number": "Le numéro de téléphone est invalide.",
+      // Ajoute d'autres correspondances ici si besoin
+    };
+    if (map[raw]) return map[raw];
+    for (const key in map) {
+      if (raw.toLowerCase().includes(key.toLowerCase())) return map[key];
+    }
+    return isSuccess
+      ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+      : raw;
   }
 
   private redirectToDashboard(role: string): void {

@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { Agency, ServiceZone, WasteService, Employee } from '../models/agency.model';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -109,6 +111,8 @@ export class AgencyService {
       updatedAt: new Date()
     }
   ];
+
+  constructor(private http: HttpClient) {}
 
   getAgencies(): Observable<Agency[]> {
     return of(this.agencies).pipe(delay(500));
@@ -229,5 +233,19 @@ export class AgencyService {
       }
     }
     return of(false).pipe(delay(500));
+  }
+
+  /**
+   * Récupère toutes les agences depuis l'API backend
+   */
+  getAllAgenciesFromApi(): Observable<{ success: boolean; count: number; data: Agency[] }> {
+    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agences/recuperation`);
+  }
+
+  /**
+   * Récupère une agence spécifique depuis l'API backend
+   */
+  getAgencyByIdFromApi(id: string): Observable<{ success: boolean; data: Agency }> {
+    return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
   }
 }
