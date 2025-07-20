@@ -6,6 +6,7 @@ import { AuthService } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 import { UserRole } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
+import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
 
 @Component({
   selector: 'app-register',
@@ -132,7 +133,7 @@ import { Agency } from '../../../models/agency.model';
                   name="phone"
                   [(ngModel)]="userData.phone"
                   class="form-control"
-                  placeholder="+33 1 23 45 67 89"
+                  placeholder="+226 XX XX XX XX"
                   required
                   #phoneInput="ngModel">
                 <div class="form-error" *ngIf="phoneInput.invalid && phoneInput.touched">
@@ -146,35 +147,69 @@ import { Agency } from '../../../models/agency.model';
             <!-- <div class="form-section" *ngIf="userData.role === 'client'"> -->
             <div class="form-section">
               <h3>Adresse de localisation</h3>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="city">
+                    <i class="material-icons">location_city</i>
+                    Ville *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="city"
+                    name="city"
+                    [(ngModel)]="userData.address.city"
+                    class="form-control"
+                    placeholder="Nom de la ville"
+                    required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="postalCode">
+                    <i class="material-icons">markunread_mailbox</i>
+                    Code postal *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="postalCode"
+                    name="postalCode"
+                    [(ngModel)]="userData.address.postalCode"
+                    class="form-control"
+                    placeholder="75001"
+                    required>
+                </div>
+              </div>
+
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" for="arrondissement">
                     <i class="material-icons">map</i>
-                    Arrondissement *
+                     Arrondiss... *
                   </label>
-                  <input 
-                    type="text" 
-                    id="arrondissement"
-                    name="arrondissement"
-                    [(ngModel)]="userData.address.arrondissement"
-                    class="form-control"
-                    placeholder="5"
-                    required>
+                  <select id="arrondissement" name="arrondissement" [(ngModel)]="userData.address.arrondissement" (change)="onArrondissementChange(userData.address.arrondissement)" class="form-control" required>
+                    <option value="">Sélectionner</option>
+                    <option *ngFor="let arr of arrondissements" [value]="arr.arrondissement">{{ arr.arrondissement }}</option>
+                  </select>
                 </div>
-
                 <div class="form-group">
                   <label class="form-label" for="sector">
                     <i class="material-icons">location_city</i>
                     Secteur *
                   </label>
-                  <input 
-                    type="text" 
-                    id="sector"
-                    name="sector"
-                    [(ngModel)]="userData.address.sector"
-                    class="form-control"
-                    placeholder="Nom du secteur"
-                    required>
+                  <select id="sector" name="sector" [(ngModel)]="userData.address.sector" (change)="onSecteurChange(userData.address.sector)" class="form-control" [disabled]="!secteurs.length" required>
+                    <option value="">Sélectionner</option>
+                    <option *ngFor="let s of secteurs" [value]="s.secteur">{{ s.secteur }}</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="neighborhood">
+                    <i class="material-icons">location_city</i>
+                    Quartier *
+                  </label>
+                  <select id="neighborhood" name="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control" [disabled]="!quartiers.length" required>
+                    <option value="">Sélectionner</option>
+                    <option *ngFor="let q of quartiers" [value]="q">{{ q }}</option>
+                  </select>
                 </div>
               </div>
               
@@ -231,52 +266,7 @@ import { Agency } from '../../../models/agency.model';
                 </div>
               </div>
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label" for="neighborhood">
-                    <i class="material-icons">location_city</i>
-                    Quartier *
-                  </label>
-                  <input 
-                    type="text" 
-                    id="neighborhood"
-                    name="neighborhood"
-                    [(ngModel)]="userData.address.neighborhood"
-                    class="form-control"
-                    placeholder="Nom du quartier"
-                    required>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label" for="city">
-                    <i class="material-icons">location_city</i>
-                    Ville *
-                  </label>
-                  <input 
-                    type="text" 
-                    id="city"
-                    name="city"
-                    [(ngModel)]="userData.address.city"
-                    class="form-control"
-                    placeholder="Nom de la ville"
-                    required>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label" for="postalCode">
-                    <i class="material-icons">markunread_mailbox</i>
-                    Code postal *
-                  </label>
-                  <input 
-                    type="text" 
-                    id="postalCode"
-                    name="postalCode"
-                    [(ngModel)]="userData.address.postalCode"
-                    class="form-control"
-                    placeholder="75001"
-                    required>
-                </div>
-              </div>
+              
             </div>
 
             <!-- Informations agence -->
@@ -761,8 +751,9 @@ export class RegisterComponent implements OnInit {
     receiveOffers: false
   };
 
-
-
+  arrondissements: QuartierData[] = OUAGA_DATA;
+  secteurs: { secteur: string; quartiers: string[] }[] = [];
+  quartiers: string[] = [];
 
   showPassword = false;
   isLoading = false;
@@ -856,7 +847,7 @@ export class RegisterComponent implements OnInit {
               this.router.navigate(['/login']);
             }, 2000);
           } else {
-            const errorMsg = this.getFriendlyMessage(( response?.message || response?.error || ''), false);
+            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
             this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
           }
         },
@@ -932,9 +923,20 @@ export class RegisterComponent implements OnInit {
     }
   }
 
+  onArrondissementChange(arrondissement: string) {
+    const arr = this.arrondissements.find(a => a.arrondissement === arrondissement);
+    this.secteurs = arr ? arr.secteurs : [];
+    this.quartiers = [];
+    this.userData.address.sector = '';
+    this.userData.address.neighborhood = '';
+  }
 
+  onSecteurChange(secteur: string) {
+    const secteurObj = this.secteurs.find(s => s.secteur === secteur);
+    this.quartiers = secteurObj ? secteurObj.quartiers : [];
+    this.userData.address.neighborhood = '';
+  }
 
-  
   private validateForm(): boolean {
     // Vérifier que le rôle est bien sélectionné
     if (!this.userData.role) {
@@ -980,7 +982,7 @@ export class RegisterComponent implements OnInit {
 
     // Validation spécifique selon le rôle
     if (this.userData.role === UserRole.CLIENT) {
-     
+
       const address = this.userData.address;
       // if (!address.street || !address.doorNumber || !address.neighborhood || !address.city || !address.postalCode) {
       //   this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
