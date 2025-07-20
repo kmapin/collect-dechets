@@ -597,7 +597,7 @@ export class LoginComponent implements OnInit {
         this.isLoading = false;
         if (response?.user) {
           this.notificationService.showSuccess('Connexion réussie', `Bienvenue ${response?.user?.firstName} ${response?.user?.lastName} !`);
-          this.redirectToDashboard(response.role);
+          this.redirectToDashboard(response?.user?.role);
         } else {
           this.notificationService.showError('Erreur de connexion', response.error || 'Identifiants incorrects');
         }

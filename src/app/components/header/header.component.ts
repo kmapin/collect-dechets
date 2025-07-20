@@ -756,7 +756,7 @@ export class HeaderComponent implements OnInit {
         if (response?.message) {
           console.log('deconnexion', response);
           this.router.navigate(['/']);
-          this.notificationService.showSuccess(`${response?.message} !`,'Au revoir, à bientoît !' );
+          this.notificationService.showSuccess(`${response?.message} !`,'Au revoir, à bientoît !');
 
         } else {
           this.notificationService.showError('Erreur de connexion', response.error);
