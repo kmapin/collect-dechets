@@ -15,4 +15,6 @@
 2==> email: adamaagency@gmail.com pwd:07WasteManagerAdamaAgency01
 2==> email: aicha.t@sahelys.com pwd:WISEclean1234
 
+## SUPER ADMIN
+1==> email: admin.waste@gmail.com pwd:Wise2024
 
