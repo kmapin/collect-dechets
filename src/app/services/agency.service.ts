@@ -10,126 +10,126 @@ import { environment } from '../../environments/environment';
 })
 export class AgencyService {
   private agencies: Agency[] = [
-    {
-      _id: '1',
-      userId: 'user1',
-      firstName: 'Jean',
-      lastName: 'Dupont',
-      agencyName: 'EcoCollect Pro',
-      agencyDescription: 'Service de collecte écologique et professionnel',
-      phone: '+33123456789',
-      address: {
-        street: 'Avenue des Champs',
-        arrondissement: '8',
-        sector: 'Centre',
-        neighborhood: 'Champs-Élysées',
-        city: 'Paris',
-        postalCode: '75008',
-        latitude: 48.8698,
-        longitude: 2.3077
-      },
-      licenseNumber: 'LIC-001',
-      members: [],
-      serviceZones: [
-        {
-          id: '1',
-          name: 'Zone Nord',
-          description: 'Quartiers nord de la ville',
-          boundaries: [
-            { latitude: 48.8698, longitude: 2.3077 },
-            { latitude: 48.8639, longitude: 2.2978 },
-            { latitude: 48.8662, longitude: 2.3120 }
-          ],
-          neighborhoods: ['Champs-Élysées', 'Madeleine'],
-          cities: ['Paris'],
-          isActive: true
-        }
-      ],
-      services: [
-        {
-          id: '1',
-          name: 'Collecte Standard',
-          description: 'Collecte hebdomadaire de déchets ménagers',
-          wasteTypes: [],
-          frequency: 'weekly' as any,
-          price: 29.99,
-          currency: 'EUR',
-          isActive: true
-        }
-      ],
-      employees: [],
-      schedule: [],
-      collectors: [],
-      clients: [],
-      rating: 4.5,
-      totalClients: 1250,
-      acceptTerms: true,
-      receiveOffers: true,
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
-      __v: 0
-    },
-    {
-      _id: '2',
-      userId: 'user2',
-      firstName: 'Marie',
-      lastName: 'Martin',
-      agencyName: 'GreenWaste Solutions',
-      agencyDescription: 'Solutions durables pour la gestion des déchets',
-      phone: '+33987654321',
-      address: {
-        street: 'Rue de la Paix',
-        arrondissement: '5',
-        sector: 'Sud',
-        neighborhood: 'Quartier Latin',
-        city: 'Paris',
-        postalCode: '75005',
-        latitude: 48.8499,
-        longitude: 2.3447
-      },
-      licenseNumber: 'LIC-002',
-      members: [],
-      serviceZones: [
-        {
-          id: '2',
-          name: 'Zone Sud',
-          description: 'Quartiers sud de la ville',
-          boundaries: [
-            { latitude: 48.8499, longitude: 2.3447 },
-            { latitude: 48.8439, longitude: 2.3378 },
-            { latitude: 48.8462, longitude: 2.3520 }
-          ],
-          neighborhoods: ['Saint-Germain', 'Montparnasse'],
-          cities: ['Paris'],
-          isActive: true
-        }
-      ],
-      services: [
-        {
-          id: '2',
-          name: 'Collecte Premium',
-          description: 'Collecte bi-hebdomadaire avec tri sélectif',
-          wasteTypes: [],
-          frequency: 'biweekly' as any,
-          price: 45.99,
-          currency: 'EUR',
-          isActive: true
-        }
-      ],
-      employees: [],
-      schedule: [],
-      collectors: [],
-      clients: [],
-      rating: 4.2,
-      totalClients: 850,
-      acceptTerms: true,
-      receiveOffers: true,
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
-      __v: 0
-    }
+    // {
+    //   _id: '1',
+    //   userId: 'user1',
+    //   firstName: 'Jean',
+    //   lastName: 'Dupont',
+    //   agencyName: 'EcoCollect Pro',
+    //   agencyDescription: 'Service de collecte écologique et professionnel',
+    //   phone: '+33123456789',
+    //   address: {
+    //     street: 'Avenue des Champs',
+    //     arrondissement: '8',
+    //     sector: 'Centre',
+    //     neighborhood: 'Champs-Élysées',
+    //     city: 'Paris',
+    //     postalCode: '75008',
+    //     latitude: 48.8698,
+    //     longitude: 2.3077
+    //   },
+    //   licenseNumber: 'LIC-001',
+    //   members: [],
+    //   serviceZones: [
+    //     {
+    //       id: '1',
+    //       name: 'Zone Nord',
+    //       description: 'Quartiers nord de la ville',
+    //       boundaries: [
+    //         { latitude: 48.8698, longitude: 2.3077 },
+    //         { latitude: 48.8639, longitude: 2.2978 },
+    //         { latitude: 48.8662, longitude: 2.3120 }
+    //       ],
+    //       neighborhoods: ['Champs-Élysées', 'Madeleine'],
+    //       cities: ['Paris'],
+    //       isActive: true
+    //     }
+    //   ],
+    //   services: [
+    //     {
+    //       id: '1',
+    //       name: 'Collecte Standard',
+    //       description: 'Collecte hebdomadaire de déchets ménagers',
+    //       wasteTypes: [],
+    //       frequency: 'weekly' as any,
+    //       price: 29.99,
+    //       currency: 'EUR',
+    //       isActive: true
+    //     }
+    //   ],
+    //   employees: [],
+    //   schedule: [],
+    //   collectors: [],
+    //   clients: [],
+    //   rating: 4.5,
+    //   totalClients: 1250,
+    //   acceptTerms: true,
+    //   receiveOffers: true,
+    //   isActive: true,
+    //   createdAt: '2024-01-01T00:00:00.000Z',
+    //   updatedAt: '2024-01-01T00:00:00.000Z',
+    //   __v: 0
+    // },
+    // {
+    //   _id: '2',
+    //   userId: 'user2',
+    //   firstName: 'Marie',
+    //   lastName: 'Martin',
+    //   agencyName: 'GreenWaste Solutions',
+    //   agencyDescription: 'Solutions durables pour la gestion des déchets',
+    //   phone: '+33987654321',
+    //   address: {
+    //     street: 'Rue de la Paix',
+    //     arrondissement: '5',
+    //     sector: 'Sud',
+    //     neighborhood: 'Quartier Latin',
+    //     city: 'Paris',
+    //     postalCode: '75005',
+    //     latitude: 48.8499,
+    //     longitude: 2.3447
+    //   },
+    //   licenseNumber: 'LIC-002',
+    //   members: [],
+    //   serviceZones: [
+    //     {
+    //       id: '2',
+    //       name: 'Zone Sud',
+    //       description: 'Quartiers sud de la ville',
+    //       boundaries: [
+    //         { latitude: 48.8499, longitude: 2.3447 },
+    //         { latitude: 48.8439, longitude: 2.3378 },
+    //         { latitude: 48.8462, longitude: 2.3520 }
+    //       ],
+    //       neighborhoods: ['Saint-Germain', 'Montparnasse'],
+    //       cities: ['Paris'],
+    //       isActive: true
+    //     }
+    //   ],
+    //   services: [
+    //     {
+    //       id: '2',
+    //       name: 'Collecte Premium',
+    //       description: 'Collecte bi-hebdomadaire avec tri sélectif',
+    //       wasteTypes: [],
+    //       frequency: 'biweekly' as any,
+    //       price: 45.99,
+    //       currency: 'EUR',
+    //       isActive: true
+    //     }
+    //   ],
+    //   employees: [],
+    //   schedule: [],
+    //   collectors: [],
+    //   clients: [],
+    //   rating: 4.2,
+    //   totalClients: 850,
+    //   acceptTerms: true,
+    //   receiveOffers: true,
+    //   isActive: true,
+    //   createdAt: '2024-01-01T00:00:00.000Z',
+    //   updatedAt: '2024-01-01T00:00:00.000Z',
+    //   __v: 0
+    // }
   ];
 
   constructor(private http: HttpClient) {}
@@ -188,7 +188,12 @@ export class AgencyService {
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      __v: 0
+      __v: 0,
+      arrondissement: '',
+      secteur: '',
+      quartier: '',
+      collections: 0,
+      incidents: 0
     };
     
     this.agencies.push(newAgency);
@@ -276,5 +281,22 @@ export class AgencyService {
    */
   getAgencyByIdFromApi(id: string): Observable<{ success: boolean; data: Agency }> {
     return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
+  }
+
+  getAgenceStats() {
+    return [
+      { agencies: 5, clients: 3200, collections: 145, coverage: 98, incidents: 2 },
+      { agencies: 4, clients: 2800, collections: 125, coverage: 92, incidents: 3 },
+      { agencies: 3, clients: 2100, collections: 95, coverage: 88, incidents: 1 },
+      { agencies: 3, clients: 1800, collections: 85, coverage: 75, incidents: 2 },
+      { agencies: 2, clients: 1500, collections: 75, coverage: 70, incidents: 0 },
+      { agencies: 4, clients: 2400, collections: 105, coverage: 82, incidents: 1 },
+      { agencies: 3, clients: 2000, collections: 90, coverage: 85, incidents: 2 },
+      { agencies: 2, clients: 1700, collections: 80, coverage: 78, incidents: 1 },
+      { agencies: 3, clients: 1800, collections: 83, coverage: 80, incidents: 0 },
+      { agencies: 3, clients: 1900, collections: 88, coverage: 77, incidents: 2 },
+      { agencies: 2, clients: 1400, collections: 70, coverage: 73, incidents: 0 },
+      { agencies: 3, clients: 1600, collections: 76, coverage: 75, incidents: 1 },
+    ];
   }
 }

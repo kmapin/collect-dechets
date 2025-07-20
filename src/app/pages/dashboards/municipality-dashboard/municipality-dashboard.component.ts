@@ -9,6 +9,7 @@ import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
+import { OUAGA_DATA } from '../../../data/mock-data'; // chemin à adapter
 
 interface MunicipalityStatistics {
   totalAgencies: number;
@@ -258,7 +259,7 @@ interface Communication {
                     <i class="material-icons">map</i>
                     Couverture Territoriale
                   </h3>
-                  <div class="territory-stats">
+                  <div class="territory-stats scrollable-container">
                     <div *ngFor="let zone of zoneStatistics" class="zone-item">
                       <div class="zone-header">
                         <h4>{{ zone.name }}</h4>
@@ -963,6 +964,25 @@ interface Communication {
       font-weight: 600;
       color: var(--text-primary);
     }
+
+.scrollable-container {
+  max-height: 430px; 
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.zone-item {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.zone-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 
     .coverage-badge {
       padding: 4px 8px;
@@ -2012,6 +2032,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
 
+  
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
@@ -2021,127 +2042,139 @@ export class MunicipalityDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    this.loadMunicipalityData();
-  }
-
-  loadMunicipalityData(): void {
-    this.loadAgencyAudits();
-    this.loadWasteStatistics();
     this.loadZoneStatistics();
-    this.loadIncidents();
-    this.loadCommunications();
   }
 
-  loadAgencyAudits(): void {
-    this.agencyAudits = [
-      {
-        id: '1',
-        name: 'EcoClean Services',
-        status: 'active',
-        clients: 1250,
-        collectors: 8,
-        zones: 3,
-        collectionsToday: 45,
-        completionRate: 96,
-        rating: 4.5,
-        revenue: 32450,
-        lastAudit: new Date('2024-01-10'),
-        complianceScore: 95,
-        issues: []
-      },
-      {
-        id: '2',
-        name: 'GreenWaste Solutions',
-        status: 'active',
-        clients: 850,
-        collectors: 6,
-        zones: 2,
-        collectionsToday: 32,
-        completionRate: 88,
-        rating: 4.2,
-        revenue: 22100,
-        lastAudit: new Date('2024-01-08'),
-        complianceScore: 82,
-        issues: ['Retards fréquents', 'Signalements clients']
-      },
-      {
-        id: '3',
-        name: 'WasteManager Pro',
-        status: 'suspended',
-        clients: 450,
-        collectors: 3,
-        zones: 1,
-        collectionsToday: 0,
-        completionRate: 0,
-        rating: 3.8,
-        revenue: 0,
-        lastAudit: new Date('2024-01-05'),
-        complianceScore: 65,
-        issues: ['Non-conformité réglementaire', 'Licence expirée']
-      }
-    ];
-    this.filteredAgencies = [...this.agencyAudits];
-  }
+loadZoneStatistics(): void {
+  const stats = this.agencyService.getAgenceStats(); 
+  this.zoneStatistics = OUAGA_DATA.map((zone, index) => ({
+    name: zone.arrondissement,
+    agencies: stats[index]?.agencies || 0,
+    clients: stats[index]?.clients || 0,
+    collections: stats[index]?.collections || 0,
+    coverage: stats[index]?.coverage || 0,
+    incidents: stats[index]?.incidents || 0
+  }));
+}
 
-  loadWasteStatistics(): void {
-    this.wasteStatistics = [
-      { type: 'Déchets ménagers', quantity: 1250, percentage: 45, trend: 'stable', color: '#4caf50' },
-      { type: 'Recyclables', quantity: 850, percentage: 30, trend: 'up', color: '#2196f3' },
-      { type: 'Organiques', quantity: 425, percentage: 15, trend: 'up', color: '#8bc34a' },
-      { type: 'Verre', quantity: 280, percentage: 10, trend: 'stable', color: '#00bcd4' }
-    ];
-  }
+  // loadMunicipalityData(): void {
+  //   this.loadAgencyAudits();
+  //   this.loadWasteStatistics();
+  //   this.loadZoneStatistics();
+  //   this.loadIncidents();
+  //   this.loadCommunications();
+  // }
 
-  loadZoneStatistics(): void {
-    this.zoneStatistics = [
-      { name: 'Centre-ville', agencies: 5, clients: 3200, collections: 145, coverage: 98, incidents: 2 },
-      { name: 'Quartiers Nord', agencies: 4, clients: 2800, collections: 125, coverage: 92, incidents: 3 },
-      { name: 'Quartiers Sud', agencies: 3, clients: 2100, collections: 95, coverage: 88, incidents: 1 },
-      { name: 'Périphérie', agencies: 3, clients: 1800, collections: 85, coverage: 75, incidents: 2 }
-    ];
-  }
+  // loadAgencyAudits(): void {
+  //   this.agencyAudits = [
+  //     {
+  //       id: '1',
+  //       name: 'EcoClean Services',
+  //       status: 'active',
+  //       clients: 1250,
+  //       collectors: 8,
+  //       zones: 3,
+  //       collectionsToday: 45,
+  //       completionRate: 96,
+  //       rating: 4.5,
+  //       revenue: 32450,
+  //       lastAudit: new Date('2024-01-10'),
+  //       complianceScore: 95,
+  //       issues: []
+  //     },
+  //     {
+  //       id: '2',
+  //       name: 'GreenWaste Solutions',
+  //       status: 'active',
+  //       clients: 850,
+  //       collectors: 6,
+  //       zones: 2,
+  //       collectionsToday: 32,
+  //       completionRate: 88,
+  //       rating: 4.2,
+  //       revenue: 22100,
+  //       lastAudit: new Date('2024-01-08'),
+  //       complianceScore: 82,
+  //       issues: ['Retards fréquents', 'Signalements clients']
+  //     },
+  //     {
+  //       id: '3',
+  //       name: 'WasteManager Pro',
+  //       status: 'suspended',
+  //       clients: 450,
+  //       collectors: 3,
+  //       zones: 1,
+  //       collectionsToday: 0,
+  //       completionRate: 0,
+  //       rating: 3.8,
+  //       revenue: 0,
+  //       lastAudit: new Date('2024-01-05'),
+  //       complianceScore: 65,
+  //       issues: ['Non-conformité réglementaire', 'Licence expirée']
+  //     }
+  //   ];
+  //   this.filteredAgencies = [...this.agencyAudits];
+  // }
 
-  loadIncidents(): void {
-    this.incidents = [
-      {
-        id: '1',
-        agencyId: '2',
-        agencyName: 'GreenWaste Solutions',
-        type: 'missed_collection',
-        description: 'Collecte manquée dans le secteur Nord',
-        severity: 'medium',
-        date: new Date(),
-        status: 'open'
-      },
-      {
-        id: '2',
-        agencyId: '3',
-        agencyName: 'WasteManager Pro',
-        type: 'compliance_issue',
-        description: 'Non-respect des horaires réglementaires',
-        severity: 'high',
-        date: new Date(Date.now() - 86400000),
-        status: 'investigating',
-        assignedTo: 'Inspecteur Martin'
-      }
-    ];
-    this.filteredIncidents = [...this.incidents];
-  }
+  // loadWasteStatistics(): void {
+  //   this.wasteStatistics = [
+  //     { type: 'Déchets ménagers', quantity: 1250, percentage: 45, trend: 'stable', color: '#4caf50' },
+  //     { type: 'Recyclables', quantity: 850, percentage: 30, trend: 'up', color: '#2196f3' },
+  //     { type: 'Organiques', quantity: 425, percentage: 15, trend: 'up', color: '#8bc34a' },
+  //     { type: 'Verre', quantity: 280, percentage: 10, trend: 'stable', color: '#00bcd4' }
+  //   ];
+  // }
 
-  loadCommunications(): void {
-    this.communications = [
-      {
-        id: '1',
-        type: 'directive',
-        title: 'Nouvelle réglementation tri sélectif',
-        message: 'Application des nouvelles consignes de tri à partir du 1er février',
-        recipients: ['1', '2'],
-        priority: 'high',
-        sentAt: new Date(Date.now() - 3600000),
-        readBy: ['1']
-      }
-    ];
-  }
+  // loadZoneStatistics(): void {
+  //   this.zoneStatistics = [
+  //     { name: 'Centre-ville', agencies: 5, clients: 3200, collections: 145, coverage: 98, incidents: 2 },
+  //     { name: 'Quartiers Nord', agencies: 4, clients: 2800, collections: 125, coverage: 92, incidents: 3 },
+  //     { name: 'Quartiers Sud', agencies: 3, clients: 2100, collections: 95, coverage: 88, incidents: 1 },
+  //     { name: 'Périphérie', agencies: 3, clients: 1800, collections: 85, coverage: 75, incidents: 2 }
+  //   ];
+  // }
+
+  // loadIncidents(): void {
+  //   this.incidents = [
+  //     {
+  //       id: '1',
+  //       agencyId: '2',
+  //       agencyName: 'GreenWaste Solutions',
+  //       type: 'missed_collection',
+  //       description: 'Collecte manquée dans le secteur Nord',
+  //       severity: 'medium',
+  //       date: new Date(),
+  //       status: 'open'
+  //     },
+  //     {
+  //       id: '2',
+  //       agencyId: '3',
+  //       agencyName: 'WasteManager Pro',
+  //       type: 'compliance_issue',
+  //       description: 'Non-respect des horaires réglementaires',
+  //       severity: 'high',
+  //       date: new Date(Date.now() - 86400000),
+  //       status: 'investigating',
+  //       assignedTo: 'Inspecteur Martin'
+  //     }
+  //   ];
+  //   this.filteredIncidents = [...this.incidents];
+  // }
+
+  // loadCommunications(): void {
+  //   this.communications = [
+  //     {
+  //       id: '1',
+  //       type: 'directive',
+  //       title: 'Nouvelle réglementation tri sélectif',
+  //       message: 'Application des nouvelles consignes de tri à partir du 1er février',
+  //       recipients: ['1', '2'],
+  //       priority: 'high',
+  //       sentAt: new Date(Date.now() - 3600000),
+  //       readBy: ['1']
+  //     }
+  //   ];
+  // }
 
   // Utility methods
   getAgencyStatusText(status?: string): string {

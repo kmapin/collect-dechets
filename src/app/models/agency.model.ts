@@ -4,6 +4,11 @@ export interface Agency {
   firstName: string;
   lastName: string;
   agencyName: string;
+  arrondissement: string;
+  secteur: string;
+  quartier: string;
+  collections: number;
+  incidents: number;
   agencyDescription: string;
   phone: string;
   address: Address;
