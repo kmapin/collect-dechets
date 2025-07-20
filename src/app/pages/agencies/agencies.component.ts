@@ -822,40 +822,45 @@ export class AgenciesComponent implements OnInit {
    * Transforme une agence API en objet compatible avec le template
    */
   private mapApiAgency(apiAgency: any): Agency {
-    return {
-      _id: apiAgency._id || '',
-      userId: apiAgency.userId || '',
-      firstName: apiAgency.firstName || '',
-      lastName: apiAgency.lastName || '',
-      agencyName: apiAgency.agencyName || '',
-      agencyDescription: apiAgency.agencyDescription || '',
-      phone: apiAgency.phone || '',
-      address: apiAgency.address || { 
-        street: '', 
-        arrondissement: '', 
-        sector: '', 
-        neighborhood: '', 
-        city: '', 
-        postalCode: '' 
-      },
-      licenseNumber: apiAgency.licenseNumber || '',
-      members: apiAgency.members || [],
-      serviceZones: apiAgency.serviceZones || [],
-      services: apiAgency.services || [],
-      employees: apiAgency.employees || [],
-      schedule: apiAgency.schedule || [],
-      collectors: apiAgency.collectors || [],
-      clients: apiAgency.clients || [],
-      rating: apiAgency.rating || 0,
-      totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
-      acceptTerms: apiAgency.acceptTerms || false,
-      receiveOffers: apiAgency.receiveOffers || false,
-      isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
-      createdAt: apiAgency.createdAt || '',
-      updatedAt: apiAgency.updatedAt || '',
-      __v: apiAgency.__v || 0
-    };
-  }
+  return {
+    _id: apiAgency._id || '',
+    userId: apiAgency.userId || '',
+    firstName: apiAgency.firstName || '',
+    lastName: apiAgency.lastName || '',
+    agencyName: apiAgency.agencyName || '',
+    agencyDescription: apiAgency.agencyDescription || '',
+    phone: apiAgency.phone || '',
+    address: apiAgency.address || { 
+      street: '', 
+      arrondissement: '', 
+      sector: '', 
+      neighborhood: '', 
+      city: '', 
+      postalCode: '' 
+    },
+    arrondissement: apiAgency.arrondissement || '',
+    secteur: apiAgency.secteur || '',
+    quartier: apiAgency.quartier || '',
+    licenseNumber: apiAgency.licenseNumber || '',
+    members: apiAgency.members || [],
+    serviceZones: apiAgency.serviceZones || [],
+    services: apiAgency.services || [],
+    employees: apiAgency.employees || [],
+    schedule: apiAgency.schedule || [],
+    collectors: apiAgency.collectors || [],
+    clients: apiAgency.clients || [],
+    collections: apiAgency.collections || [],
+    incidents: apiAgency.incidents || [],
+    rating: apiAgency.rating || 0,
+    totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+    acceptTerms: apiAgency.acceptTerms || false,
+    receiveOffers: apiAgency.receiveOffers || false,
+    isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
+    createdAt: apiAgency.createdAt || '',
+    updatedAt: apiAgency.updatedAt || '',
+    __v: apiAgency.__v || 0
+  };
+}
 
   /**
    * Charge les agences depuis l'API backend et remplace les données locales
