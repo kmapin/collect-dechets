@@ -565,7 +565,7 @@ export class LoginComponent implements OnInit {
     email: '',
     password: ''
   };
-  
+
   showPassword = false;
   rememberMe = false;
   isLoading = false;
@@ -574,9 +574,9 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private notificationService: NotificationService
-  ) {}
+  ) { }
 
-  ngOnInit(): void {}
+  ngOnInit(): void { }
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
