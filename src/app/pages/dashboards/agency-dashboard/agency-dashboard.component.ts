@@ -1882,15 +1882,24 @@ export class AgencyDashboardComponent implements OnInit {
   editingZone = false;
 
   // Forms
-  newEmployee: any = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    role: '',
-    zones: []
-  };
+  // newEmployee: any = {
+  //   firstName: '',
+  //   lastName: '',
+  //   email: '',
+  //   phone: '',
+  //   role: '',
+  //   zones: []
+  // };
 
+ 
+newEmployee={
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  role: "",
+  zones: []
+}
   // newZone: any = {
   //   name: '',
   //   description: '',
@@ -2329,33 +2338,33 @@ export class AgencyDashboardComponent implements OnInit {
   // Form methods
   toggleZoneAssignment(zoneId: string, event: any): void {
     if (event.target.checked) {
-      this.newEmployee.zones.push(zoneId);
+      this.newEmployee.zones.push();
     } else {
       this.newEmployee.zones = this.newEmployee.zones.filter((id: string) => id !== zoneId);
     }
   }
 
-  addEmployee(): void {
-    if (this.newEmployee.firstName && this.newEmployee.lastName && this.newEmployee.email && this.newEmployee.role) {
-      const employee: Employee = {
-        id: Math.random().toString(36).substr(2, 9),
-        userId: Math.random().toString(36).substr(2, 9),
-        firstName: this.newEmployee.firstName,
-        lastName: this.newEmployee.lastName,
-        email: this.newEmployee.email,
-        phone: this.newEmployee.phone,
-        role: this.newEmployee.role,
-        zones: this.newEmployee.zones,
-        isActive: true,
-        hiredAt: new Date()
-      };
+  // addEmployee(): void {
+  //   if (this.newEmployee.firstName && this.newEmployee.lastName && this.newEmployee.email && this.newEmployee.role) {
+  //     const employee: Employee = {
+  //       id: Math.random().toString(36).substr(2, 9),
+  //       userId: Math.random().toString(36).substr(2, 9),
+  //       firstName: this.newEmployee.firstName,
+  //       lastName: this.newEmployee.lastName,
+  //       email: this.newEmployee.email,
+  //       phone: this.newEmployee.phone,
+  //       role: this.newEmployee.role,
+  //       zones: this.newEmployee.zones,
+  //       isActive: true,
+  //       hiredAt: new Date()
+  //     };
 
-      this.employees.push(employee);
-      this.showAddEmployeeModal = false;
-      this.newEmployee = { firstName: '', lastName: '', email: '', phone: '', role: '', zones: [] };
-      this.notificationService.showSuccess('Ajouté', 'Employé ajouté avec succès');
-    }
-  }
+  //     this.employees.push(employee);
+  //     this.showAddEmployeeModal = false;
+  //     this.newEmployee = { firstName: '', lastName: '', email: '', phone: '', role: '', zones: [] };
+  //     this.notificationService.showSuccess('Ajouté', 'Employé ajouté avec succès');
+  //   }
+  // }
 
   // saveZone(): void {
   //   if (this.newZone.name && this.citiesInput) {
@@ -2389,6 +2398,8 @@ export class AgencyDashboardComponent implements OnInit {
   //     this.neighborhoodsInput = '';
   //   }
   // }
+
+
 saveZone(): void {
   if (this.newZone.name && this.citiesInput) {
     this.newZone.cities = this.citiesInput.split(',').map(city => city.trim());
@@ -2417,12 +2428,47 @@ const agencyId = this.currentUser?._id;
         } else {
           this.notificationService.showError('Erreur', response.message || 'Échec lors de l’ajout de la zone.');
         }
-        this.resetZoneForm();
+       
       },
       error: (err) => {
         this.notificationService.showError('Erreur', 'Impossible d’ajouter la zone.');
         console.error(err);
-        this.resetZoneForm();
+       
+      }
+    });
+  }
+}
+addEmployee(): void {
+  if (this.newEmployee.firstName && this.newEmployee.lastName && this.newEmployee.email && this.newEmployee.role) {
+  
+let collectionneurData: any;
+const agencyId = this.currentUser?._id;
+    // Construction du collectionneur prête à envoyer
+  collectionneurData = {
+    firstName: this.newEmployee.firstName,
+      lastName: this.newEmployee.lastName,
+      email: this.newEmployee.email,
+      phone: this.newEmployee.phone,
+      role: this.newEmployee.role,
+      zones: this.newEmployee.zones,
+ 
+};
+console.log('voici mon objet envoyer:',collectionneurData)
+    this.agencyService.registerCollectionneur$(collectionneurData).subscribe({
+      next: (response) => {
+        if (response.success && response.collectionneur) {
+          this.employees.push(response.collectionneur);
+          this.notificationService.showSuccess('Ajouté', 'employer creer');
+          console.log('voici mon objet envoyer:',collectionneurData)
+        } else {
+          this.notificationService.showError('Erreur', response.message || 'Échec lors de l’ajout de l employe');
+        }
+     
+      },
+      error: (err) => {
+        this.notificationService.showError('Erreur', 'Impossible d’ajouter l employe.');
+        console.error(err);
+
       }
     });
   }

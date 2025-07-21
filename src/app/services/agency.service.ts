@@ -11,6 +11,7 @@ import { User } from '../models/user.model';
 })
 export class AgencyService {
     private currentServiceZoneSubject = new BehaviorSubject<ServiceZone | null>(null);
+       private currentcollectionneurSubject = new BehaviorSubject<ServiceZone | null>(null);
     public currentUser$ = this.currentServiceZoneSubject.asObservable();
     private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
     public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
@@ -306,13 +307,12 @@ export class AgencyService {
     /**
      * la creation d un collectionneur via l'API réelle
      */
-    registerCollectionneur$(collectionneurData: any): Observable<{ success: boolean; zone?: Employee; error?: string; message?: string }> {
-      return this.http.post<any>(`${environment.apiUrl}/agences/employés  `, collectionneurData).pipe(
+   registerCollectionneur$(collectionneurData: any): Observable<{ success: boolean; collectionneur?: Employee; error?: string; message?: string }> {
+      return this.http.post<any>(`${environment.apiUrl}/agences/employés`, collectionneurData).pipe(
         map(response => {
-          console.log("API > collectionneurs :", response)
           if (response && response.collectionneur) {
-            localStorage.setItem('currentagence', JSON.stringify(response.collectionneur));
-            this.currentServiceZoneSubject.next(response.collectionneur);
+         localStorage.setItem('currentagence', JSON.stringify(response.zone));
+            this.currentcollectionneurSubject.next(response.zone);
             this.isAuthenticatedSubject.next(true);
             return { success: true, collectionneur: response.collectionneur, message: response.message };
           } else {
