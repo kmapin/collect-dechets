@@ -303,4 +303,22 @@ export class AgencyService {
         })
       );
     }
+    /**
+     * la creation d un collectionneur via l'API réelle
+     */
+    registerCollectionneur$(collectionneurData: any): Observable<{ success: boolean; zone?: Employee; error?: string; message?: string }> {
+      return this.http.post<any>(`${environment.apiUrl}/agences/employés  `, collectionneurData).pipe(
+        map(response => {
+          console.log("API > collectionneurs :", response)
+          if (response && response.collectionneur) {
+            localStorage.setItem('currentagence', JSON.stringify(response.collectionneur));
+            this.currentServiceZoneSubject.next(response.collectionneur);
+            this.isAuthenticatedSubject.next(true);
+            return { success: true, collectionneur: response.collectionneur, message: response.message };
+          } else {
+            return { success: false, error: response?.error || 'Erreur lors de la zone', message: response?.message };
+          }
+        })
+      );
+    }
 }

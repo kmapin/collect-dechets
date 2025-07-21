@@ -709,13 +709,13 @@ interface Statistics {
                      placeholder="Centre-ville, Quartier Latin...">
               <small>Séparez les quartiers par des virgules</small>
             </div>
-            <div class="form-group">
+            <!-- <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" [(ngModel)]="newZone.isActive" name="isActive">
                 <span class="checkmark"></span>
                 Zone active
               </label>
-            </div>
+            </div> -->
             <div class="form-actions">
               <button type="button" class="btn btn-secondary" (click)="showZoneModal = false">
                 Annuler
@@ -1891,13 +1891,13 @@ export class AgencyDashboardComponent implements OnInit {
     zones: []
   };
 
-  newZone: any = {
-    name: '',
-    description: '',
-    cities: [],
-    neighborhoods: [],
-    isActive: true
-  };
+  // newZone: any = {
+  //   name: '',
+  //   description: '',
+  //   cities: [],
+  //   neighborhoods: [],
+  //   isActive: true
+  // };
 
   newSchedule: any = {
     zoneId: '',
@@ -1907,7 +1907,7 @@ export class AgencyDashboardComponent implements OnInit {
     collectorId: ''
   };
 //model pour la creation d une zone 
- zoneData = {
+ newZone = {
   name: '',
   description: '',
   boundaries: [
@@ -1947,6 +1947,7 @@ export class AgencyDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadAgencyData();
+    console.log('Current User:', this.currentUser);
   }
 
   loadAgencyData(): void {
@@ -2254,7 +2255,7 @@ export class AgencyDashboardComponent implements OnInit {
   editZone(zoneId: string): void {
     const zone = this.serviceZones.find(z => z.id === zoneId);
     if (zone) {
-      this.newZone = { ...zone };
+      // this.newZone = { ...zone };
       this.citiesInput = zone.cities.join(', ');
       this.neighborhoodsInput = zone.neighborhoods.join(', ');
       this.editingZone = true;
@@ -2393,17 +2394,20 @@ saveZone(): void {
     this.newZone.cities = this.citiesInput.split(',').map(city => city.trim());
     this.newZone.neighborhoods = this.neighborhoodsInput.split(',').map(n => n.trim()).filter(n => n);
 let body: any;
+const agencyId = this.currentUser?._id;
     // Construction de la zone prête à envoyer
   body = {
-  name: this.zoneData.name,
-  description: this.zoneData.description,
-  boundaries: this.zoneData.boundaries.map(b => ({
-    latitude: b.latitude,
-    longitude: b.longitude
-  })),
-  neighborhoods: this.zoneData.neighborhoods,
-  cities: this.zoneData.cities,
-  assignedCollectors: this.zoneData.assignedCollectors
+  agencyId: agencyId,
+  name: this.newZone.name,
+  description: this.newZone.description,
+  // boundaries: this.newZone.boundaries.map(b => ({
+  //   latitude: b.latitude,
+  //   longitude: b.longitude
+  // })),
+  neighborhoods: this.newZone.neighborhoods,
+  cities: this.newZone.cities,
+  assignedCollectors: this.newZone.assignedCollectors,
+ 
 };
     this.agencyService.registerZone$(body).subscribe({
       next: (response) => {
@@ -2426,7 +2430,7 @@ let body: any;
 resetZoneForm(): void {
   this.showZoneModal = false;
   this.editingZone = false;
-  this.newZone = { name: '', description: '', cities: [], neighborhoods: [], isActive: true };
+  // this.newZone = { name: '', description: '', cities: [], neighborhoods: [], isActive: true };
   this.citiesInput = '';
   this.neighborhoodsInput = '';
 }
