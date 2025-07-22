@@ -283,6 +283,14 @@ export class AgencyService {
     return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
   }
 
+// getAgenceStats(): Observable<
+//   { agencies: number; clients: number; collections: number; coverage: number; incidents: number }[]
+// > {
+//   return this.http.get<
+//     { agencies: number; clients: number; collections: number; coverage: number; incidents: number }[]
+//   >(`${environment.apiUrl}/agences/stats`);
+// }
+
   getAgenceStats() {
     return [
       { agencies: 5, clients: 3200, collections: 145, coverage: 98, incidents: 2 },
