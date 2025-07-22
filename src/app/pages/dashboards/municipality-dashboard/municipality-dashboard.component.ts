@@ -2043,27 +2043,17 @@ export class MunicipalityDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadZoneStatistics();
+     this.loadMunicipalityData()
   }
 
-loadZoneStatistics(): void {
-  const stats = this.agencyService.getAgenceStats(); 
-  this.zoneStatistics = OUAGA_DATA.map((zone, index) => ({
-    name: zone.arrondissement,
-    agencies: stats[index]?.agencies || 0,
-    clients: stats[index]?.clients || 0,
-    collections: stats[index]?.collections || 0,
-    coverage: stats[index]?.coverage || 0,
-    incidents: stats[index]?.incidents || 0
-  }));
-}
 
-  // loadMunicipalityData(): void {
-  //   this.loadAgencyAudits();
-  //   this.loadWasteStatistics();
-  //   this.loadZoneStatistics();
-  //   this.loadIncidents();
-  //   this.loadCommunications();
-  // }
+  loadMunicipalityData(): void {
+    // this.loadAgencyAudits();
+    this.loadWasteStatistics();
+    this.loadZoneStatistics();
+    this.loadIncidents();
+    // this.loadCommunications();
+  }
 
   // loadAgencyAudits(): void {
   //   this.agencyAudits = [
@@ -2116,50 +2106,54 @@ loadZoneStatistics(): void {
   //   this.filteredAgencies = [...this.agencyAudits];
   // }
 
-  // loadWasteStatistics(): void {
-  //   this.wasteStatistics = [
-  //     { type: 'Déchets ménagers', quantity: 1250, percentage: 45, trend: 'stable', color: '#4caf50' },
-  //     { type: 'Recyclables', quantity: 850, percentage: 30, trend: 'up', color: '#2196f3' },
-  //     { type: 'Organiques', quantity: 425, percentage: 15, trend: 'up', color: '#8bc34a' },
-  //     { type: 'Verre', quantity: 280, percentage: 10, trend: 'stable', color: '#00bcd4' }
-  //   ];
-  // }
+  loadWasteStatistics(): void {
+    this.wasteStatistics = [
+      { type: 'Déchets ménagers', quantity: 1250, percentage: 45, trend: 'stable', color: '#4caf50' },
+      { type: 'Recyclables', quantity: 850, percentage: 30, trend: 'up', color: '#2196f3' },
+      { type: 'Organiques', quantity: 425, percentage: 15, trend: 'up', color: '#8bc34a' },
+      { type: 'Verre', quantity: 280, percentage: 10, trend: 'stable', color: '#00bcd4' }
+    ];
+  }
 
-  // loadZoneStatistics(): void {
-  //   this.zoneStatistics = [
-  //     { name: 'Centre-ville', agencies: 5, clients: 3200, collections: 145, coverage: 98, incidents: 2 },
-  //     { name: 'Quartiers Nord', agencies: 4, clients: 2800, collections: 125, coverage: 92, incidents: 3 },
-  //     { name: 'Quartiers Sud', agencies: 3, clients: 2100, collections: 95, coverage: 88, incidents: 1 },
-  //     { name: 'Périphérie', agencies: 3, clients: 1800, collections: 85, coverage: 75, incidents: 2 }
-  //   ];
-  // }
+ loadZoneStatistics(): void {
+  const stats = this.agencyService.getAgenceStats(); 
+  this.zoneStatistics = OUAGA_DATA.map((zone, index) => ({
+    name: zone.arrondissement,
+    agencies: stats[index]?.agencies || 0,
+    clients: stats[index]?.clients || 0,
+    collections: stats[index]?.collections || 0,
+    coverage: stats[index]?.coverage || 0,
+    incidents: stats[index]?.incidents || 0
+  }));
+}
 
-  // loadIncidents(): void {
-  //   this.incidents = [
-  //     {
-  //       id: '1',
-  //       agencyId: '2',
-  //       agencyName: 'GreenWaste Solutions',
-  //       type: 'missed_collection',
-  //       description: 'Collecte manquée dans le secteur Nord',
-  //       severity: 'medium',
-  //       date: new Date(),
-  //       status: 'open'
-  //     },
-  //     {
-  //       id: '2',
-  //       agencyId: '3',
-  //       agencyName: 'WasteManager Pro',
-  //       type: 'compliance_issue',
-  //       description: 'Non-respect des horaires réglementaires',
-  //       severity: 'high',
-  //       date: new Date(Date.now() - 86400000),
-  //       status: 'investigating',
-  //       assignedTo: 'Inspecteur Martin'
-  //     }
-  //   ];
-  //   this.filteredIncidents = [...this.incidents];
-  // }
+
+  loadIncidents(): void {
+    this.incidents = [
+      {
+        id: '1',
+        agencyId: '2',
+        agencyName: 'GreenWaste Solutions',
+        type: 'missed_collection',
+        description: 'Collecte manquée dans le secteur Nord',
+        severity: 'medium',
+        date: new Date(),
+        status: 'open'
+      },
+      {
+        id: '2',
+        agencyId: '3',
+        agencyName: 'WasteManager Pro',
+        type: 'compliance_issue',
+        description: 'Non-respect des horaires réglementaires',
+        severity: 'high',
+        date: new Date(Date.now() - 86400000),
+        status: 'investigating',
+        assignedTo: 'Inspecteur Martin'
+      }
+    ];
+    this.filteredIncidents = [...this.incidents];
+  }
 
   // loadCommunications(): void {
   //   this.communications = [

@@ -1262,7 +1262,6 @@ private mapApiAgency(apiAgency: any): Agency {
   };
 }
 
-
   /**
    * Charge les détails d'une agence depuis l'API backend
    */

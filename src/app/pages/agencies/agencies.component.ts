@@ -862,7 +862,6 @@ private mapApiAgency(apiAgency: any): Agency {
   };
 }
 
-
   /**
    * Charge les agences depuis l'API backend et remplace les données locales
    */
