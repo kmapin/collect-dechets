@@ -116,6 +116,18 @@ interface Communication {
                 <i class="material-icons">business</i>
               </div>
               <div class="stat-info">
+                <h3>Mairies</h3>
+                <p class="stat-value">{{ statistics.activeAgencies }}/{{ statistics.totalAgencies }}</p>
+                <span class="stat-trend" [class.positive]="statistics.activeAgencies === statistics.totalAgencies">
+                  {{ getAgencyStatusText() }}
+                </span>
+              </div>
+            </div>
+            <div class="stat-card card">
+              <div class="stat-icon agencies">
+                <i class="material-icons">business</i>
+              </div>
+              <div class="stat-info">
                 <h3>Agences</h3>
                 <p class="stat-value">{{ statistics.activeAgencies }}/{{ statistics.totalAgencies }}</p>
                 <span class="stat-trend" [class.positive]="statistics.activeAgencies === statistics.totalAgencies">
