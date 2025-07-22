@@ -7,7 +7,7 @@ import { AgencyService } from '../../../services/agency.service';
 import { CollectionService } from '../../../services/collection.service';
 import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
-import { Agency, Employee, Employees, ServiceZone, ServiceZones,  CollectionSchedule } from '../../../models/agency.model';
+import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { ClientService, ClientApi } from '../../../services/client.service';
 
@@ -82,8 +82,8 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Clients actifs</h3>
-                <p class="stat-value">{{ statistics.totalClients }}</p>
-                <span class="stat-trend positive">+12 ce mois</span>
+                <p class="stat-value">{{ clientNbrs }}</p>
+                <span class="stat-trend positive">+2 ce mois</span>
               </div>
             </div>
 
@@ -157,6 +157,7 @@ interface Statistics {
                     (click)="activeTab = tab.id">
               <i class="material-icons">{{ tab.icon }}</i>
               {{ tab.label }}
+              <!-- <span *ngIf="tab.label === 'Clients' && tab.badge" class="tab-badge">{{ activeClientNbr }}</span> -->
               <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
             </button>
           </div>
@@ -1865,7 +1866,7 @@ export class AgencyDashboardComponent implements OnInit {
   currentUser: User | null = null;
   agency: Agency | null = null;
   activeTab = 'collections';
-  
+
   // Data
   statistics: Statistics = {
     totalClients: 1250,
@@ -1932,7 +1933,15 @@ export class AgencyDashboardComponent implements OnInit {
   };
 
   citiesInput = '';
+
   neighborhoodsInput = '';
+  activeClients: ClientApi[] = [];
+  activeClientNbrs!: number;
+  pendingClients: ClientApi[] = [];
+  isLoading: boolean = false;
+  // get activeClientNbr(): number {
+  //   return this.activeClients.length;
+  // }
 
   tabs = [
     { id: 'collections', label: 'Collectes', icon: 'local_shipping', badge: null },
@@ -1947,9 +1956,7 @@ export class AgencyDashboardComponent implements OnInit {
   weekDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   currentWeek = new Date();
 
-  activeClients: ClientApi[] = [];
-  pendingClients: ClientApi[] = [];
-  isLoading: boolean = false;
+
 
   constructor(
     private authService: AuthService,
@@ -1957,14 +1964,32 @@ export class AgencyDashboardComponent implements OnInit {
     private collectionService: CollectionService,
     private notificationService: NotificationService,
     private clientService: ClientService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyData();
     // Ne pas appeler loadClients() ici directement !
+
   }
+
+  // updateTabs(): void {
+  //   this.tabs = [
+  //     { id: 'collections', label: 'Collectes', icon: 'local_shipping', badge: null },
+  //     { id: 'employees', label: 'Employés', icon: 'people', badge: null },
+  //     { id: 'zones', label: 'Zones', icon: 'map', badge: null },
+  //     { id: 'schedules', label: 'Plannings', icon: 'schedule', badge: null },
+  //     { id: 'clients', label: 'Clients', icon: 'person', badge: this.activeClientNbrs },
+  //     { id: 'reports', label: 'Signalements', icon: 'report_problem', badge: 3 },
+  //     { id: 'analytics', label: 'Rapports', icon: 'analytics', badge: null }
+  //   ];
+
+  // }
+  // activeClientNbr() {
+  //   return this.activeClients.length;
+  // }
+
 
   loadAgencyData(): void {
     // Charger les données de l'agence
@@ -1981,6 +2006,8 @@ export class AgencyDashboardComponent implements OnInit {
     console.log('[loadAgencyData] agency avant loadClients:', this.agency);
     this.loadClients();
     this.loadReports();
+    //this.activeClientNbrs = this.activeClientNbr(); // Mettez à jour le nombre d'actifs
+    //this.updateTabs(); // Mettez à jour les tabs après avoir récupéré les clients
   }
 
   loadCollections(): void {
@@ -2009,21 +2036,10 @@ export class AgencyDashboardComponent implements OnInit {
     this.filteredCollections = [...this.collections];
   }
 
+  employeesNbrs!:number;
+  activesEmployeesNbrs!:number;
   loadEmployees(currentUser: any): void {
-    // this.employees = [
-    //   {
-    //     id: '1',
-    //     userId: 'user1',
-    //     firstName: 'Jean',
-    //     lastName: 'Dupont',
-    //     email: 'jean.dupont@agency.com',
-    //     phone: '+33123456789',
-    //     role: 'collector' as any,
-    //     zones: ['zone1'],
-    //     isActive: true,
-    //     hiredAt: new Date('2023-01-15')
-    //   }
-    // ];
+
     if (currentUser?._id) {
       this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe(
         (employees) => {
@@ -2076,15 +2092,38 @@ export class AgencyDashboardComponent implements OnInit {
       : undefined;
   }
 
+  clientNbrs!: number;
+
   loadClients(): void {
     console.log('[loadClients] called, agency:', this.agency);
     if (!this.agency || !this.agency?._id) return;
     this.clientService.getClientsByAgency(this.agency._id).subscribe({
       next: (clients) => {
-        console.log('[loadClients] clients received:', clients);
+
+        console.log('[loadClients] clients number:', this.activeClientNbrs, clients.length);
         this.activeClients = clients.filter(c => this.getClientSubscriptionStatus(c) === 'active');
         this.pendingClients = clients.filter(c => this.getClientSubscriptionStatus(c) === 'pending');
         console.log('[loadClients] active:', this.activeClients, 'pending:', this.pendingClients);
+
+
+        if (clients) {
+          this.clientNbrs = clients.length;
+          console.log('[loadClients] clients received:', this.clientNbrs);
+          // Vérifiez si activeClients est défini et mettez à jour le nombre d'actifs
+          if (this.activeClients) {
+            this.activeClientNbrs = this.activeClients.length; // Directement obtenir le nombre d'actifs
+            // Trouver l'onglet "Clients" et mettre à jour son badge
+            const clientsTab = this.tabs.find(tab => tab.label === 'Clients');
+            if (clientsTab) {
+              clientsTab.badge = this.clientNbrs; // Mettre à jour le badge
+              console.log("badge >>", clientsTab.badge);
+              console.log("activeClientNbrs >>", this.activeClientNbrs);
+            } else {
+              console.warn("L'onglet 'Clients' n'a pas été trouvé.");
+            }
+          }
+        }
+
       },
       error: (err) => {
         console.error('[loadClients] error:', err);
@@ -2220,7 +2259,7 @@ export class AgencyDashboardComponent implements OnInit {
     startOfWeek.setDate(this.currentWeek.getDate() - this.currentWeek.getDay() + 1);
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
-    
+
     return `${startOfWeek.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - ${endOfWeek.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`;
   }
 
@@ -2262,7 +2301,7 @@ export class AgencyDashboardComponent implements OnInit {
 
   filterClients(): void {
     this.filteredClients = this.clients.filter(client => {
-      const searchMatch = !this.clientsSearch || 
+      const searchMatch = !this.clientsSearch ||
         client.name.toLowerCase().includes(this.clientsSearch.toLowerCase()) ||
         client.email.toLowerCase().includes(this.clientsSearch.toLowerCase());
       const statusMatch = this.clientsFilter === 'all' || client.subscriptionStatus === this.clientsFilter;
