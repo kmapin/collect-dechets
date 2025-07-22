@@ -7,14 +7,14 @@ import { AgencyService } from '../../../services/agency.service';
 import { CollectionService } from '../../../services/collection.service';
 import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
-import { Agency, Employee, ServiceZone, CollectionSchedule } from '../../../models/agency.model';
+import { Agency, Employee, Employees, ServiceZone, ServiceZones,  CollectionSchedule } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { ClientService, ClientApi } from '../../../services/client.service';
 
 interface Client {
   id: string;
   name: string;
-    email: string;
+  email: string;
   phone: string;
   address: string;
   subscriptionStatus: 'active' | 'suspended' | 'cancelled';
@@ -247,7 +247,7 @@ interface Statistics {
               </div>
 
               <div class="employees-grid">
-                <div *ngFor="let employee of employees" class="employee-card card">
+                <div *ngFor="let employee of allEmployees" class="employee-card card">
                   <div class="employee-header">
                     <div class="employee-avatar">
                       <img [src]="employee.avatar || '/assets/default-avatar.png'" [alt]="employee.firstName">
@@ -259,14 +259,14 @@ interface Statistics {
                         {{ employee.isActive ? 'Actif' : 'Inactif' }}
                       </p>
                     </div>
-                    <div class="employee-actions">
+                    <!-- <div class="employee-actions">
                       <button class="action-btn" (click)="editEmployee(employee.id)">
                         <i class="material-icons">edit</i>
                       </button>
                       <button class="action-btn danger" (click)="deleteEmployee(employee.id)">
                         <i class="material-icons">delete</i>
                       </button>
-                    </div>
+                    </div> -->
                   </div>
 
                   <div class="employee-details">
@@ -288,16 +288,16 @@ interface Statistics {
                     </div>
                   </div>
 
-                  <div class="employee-stats" *ngIf="employee.role === 'collector'">
+                  <!-- <div class="employee-stats" *ngIf="employee.role === 'collector'">
                     <div class="stat-item">
                       <span class="stat-label">Collectes aujourd'hui</span>
-                      <span class="stat-value">{{ getEmployeeCollections(employee.id) }}</span>
+                      <span class="stat-value">{{ getEmployeeCollections(employee._id) }}</span>
                     </div>
                     <div class="stat-item">
                       <span class="stat-label">Note moyenne</span>
-                      <span class="stat-value">{{ getEmployeeRating(employee.id) }}/5</span>
+                      <span class="stat-value">{{ getEmployeeRating(employee._id) }}/5</span>
                     </div>
-                  </div>
+                  </div> -->
                 </div>
               </div>
             </div>
@@ -1880,7 +1880,9 @@ export class AgencyDashboardComponent implements OnInit {
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
   employees: Employee[] = [];
+  allEmployees: Employees[] = [];
   serviceZones: ServiceZone[] = [];
+  serviceZoness: ServiceZones[] = []; //from API
   schedules: CollectionSchedule[] = [];
   clients: Client[] = [];
   filteredClients: Client[] = [];
@@ -1947,6 +1949,7 @@ export class AgencyDashboardComponent implements OnInit {
 
   activeClients: ClientApi[] = [];
   pendingClients: ClientApi[] = [];
+  isLoading: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -1970,9 +1973,9 @@ export class AgencyDashboardComponent implements OnInit {
       // this.agency = { _id: 'agency1', agencyName: 'Agence Demo' } as any;
       this.agency = this.currentUser as any;
       console.log('[loadAgencyData] agency simulée:', this.agency);
+      this.loadEmployees(this.currentUser);
     }
     this.loadCollections();
-    this.loadEmployees();
     this.loadServiceZones();
     this.loadSchedules();
     console.log('[loadAgencyData] agency avant loadClients:', this.agency);
@@ -2006,21 +2009,36 @@ export class AgencyDashboardComponent implements OnInit {
     this.filteredCollections = [...this.collections];
   }
 
-  loadEmployees(): void {
-    this.employees = [
-      {
-        id: '1',
-        userId: 'user1',
-        firstName: 'Jean',
-        lastName: 'Dupont',
-        email: 'jean.dupont@agency.com',
-        phone: '+33123456789',
-        role: 'collector' as any,
-        zones: ['zone1'],
-        isActive: true,
-        hiredAt: new Date('2023-01-15')
-      }
-    ];
+  loadEmployees(currentUser: any): void {
+    // this.employees = [
+    //   {
+    //     id: '1',
+    //     userId: 'user1',
+    //     firstName: 'Jean',
+    //     lastName: 'Dupont',
+    //     email: 'jean.dupont@agency.com',
+    //     phone: '+33123456789',
+    //     role: 'collector' as any,
+    //     zones: ['zone1'],
+    //     isActive: true,
+    //     hiredAt: new Date('2023-01-15')
+    //   }
+    // ];
+    if (currentUser?.userId) {
+      this.agencyService.getAgencyAllEmployees(currentUser?.userId).subscribe(
+        (employees) => {
+          this.allEmployees = employees; // Assurez-vous que allEmployees est bien typé
+          console.error("loadEmployees > :", this.allEmployees);
+
+        },
+        (error) => {
+          console.error("Erreur lors du chargement des employés :", error);
+          // Vous pouvez également gérer l'affichage d'un message d'erreur à l'utilisateur ici
+        }
+      );
+    } else {
+      console.warn("Aucun ID d'utilisateur courant disponible.");
+    }
   }
 
   loadServiceZones(): void {
@@ -2280,6 +2298,8 @@ export class AgencyDashboardComponent implements OnInit {
     }
   }
 
+
+  // Zone Side 
   editZone(zoneId: string): void {
     const zone = this.serviceZones.find(z => z.id === zoneId);
     if (zone) {
@@ -2372,11 +2392,38 @@ export class AgencyDashboardComponent implements OnInit {
     }
   }
 
+  /**
+   * Convertit les messages techniques du backend en messages conviviaux pour l'utilisateur
+   */
+  private getFriendlyMessage(raw: string, isSuccess: boolean = false): string {
+    if (!raw) {
+      return isSuccess
+        ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+        : "Une erreur est survenue. Veuillez réessayer.";
+    }
+    const map: { [key: string]: string } = {
+      "Email already exists": "Cette adresse email est déjà utilisée.",
+      "Invalid email or password": "Email ou mot de passe invalide.",
+      "User created successfully": "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+      "Missing required fields": "Veuillez remplir tous les champs obligatoires.",
+      "Password too short": "Le mot de passe est trop court.",
+      "Invalid phone number": "Le numéro de téléphone est invalide.",
+      // Ajoute d'autres correspondances ici si besoin
+    };
+    if (map[raw]) return map[raw];
+    for (const key in map) {
+      if (raw.toLowerCase().includes(key.toLowerCase())) return map[key];
+    }
+    return isSuccess
+      ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+      : raw;
+  }
+
   addEmployee(): void {
     if (this.newEmployee.firstName && this.newEmployee.lastName && this.newEmployee.email && this.newEmployee.role) {
-      const employee: Employee = {
-        id: Math.random().toString(36).substr(2, 9),
-        userId: Math.random().toString(36).substr(2, 9),
+      const employee: Employees = {
+        // id: Math.random().toString(36).substr(2, 9),
+        // userId: Math.random().toString(36).substr(2, 9),
         firstName: this.newEmployee.firstName,
         lastName: this.newEmployee.lastName,
         email: this.newEmployee.email,
@@ -2387,7 +2434,36 @@ export class AgencyDashboardComponent implements OnInit {
         hiredAt: new Date()
       };
 
-      this.employees.push(employee);
+      this.agencyService.addEmployee(employee).subscribe({
+        next: (response: any) => {
+          this.isLoading = false;
+          console.log('[DEBUG] Réponse inscription collector:', response);
+          const isSuccess =
+            response.success ||
+            response.status === 'success' ||
+            (typeof response.message === 'string' && (
+              response.message.toLowerCase().includes('succès') ||
+              response.message.toLowerCase().includes('réussi')
+            )) ||
+            !!response;
+
+          if (isSuccess) {
+            this.notificationService.showSuccess('Inscription réussie',
+              'Le collaborateur a été créé avec succès ! Vous pouvez maintenant vous connecter.');
+            // setTimeout(() => {
+            //   this.router.navigate(['/login']);
+            // }, 2000);
+          } else {
+            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
+            this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
+          this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
+        }
+      });
       this.showAddEmployeeModal = false;
       this.newEmployee = { firstName: '', lastName: '', email: '', phone: '', role: '', zones: [] };
       // No need to call notificationService.showSuccess here, as it's already handled in the template
@@ -2406,16 +2482,18 @@ export class AgencyDashboardComponent implements OnInit {
         }
         // No need to call notificationService.showSuccess here, as it's already handled in the template
       } else {
-        const zone: ServiceZone = {
-          id: Math.random().toString(36).substr(2, 9),
+        const zone: ServiceZones = {
+          // id: Math.random().toString(36).substr(2, 9),
           name: this.newZone.name,
           description: this.newZone.description,
           boundaries: [],
           neighborhoods: this.newZone.neighborhoods,
           cities: this.newZone.cities,
+          assignedCollectors: this.newZone.assignedCollectors,
           isActive: this.newZone.isActive
         };
-        this.serviceZones.push(zone);
+        // this.agencyService.
+        this.serviceZoness.push(zone);
         // No need to call notificationService.showSuccess here, as it's already handled in the template
       }
 

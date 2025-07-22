@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
-import { Agency, ServiceZone, WasteService, Employee } from '../models/agency.model';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, delay, map } from 'rxjs/operators';
+import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones } from '../models/agency.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
@@ -218,16 +218,51 @@ export class AgencyService {
     return of(false).pipe(delay(500));
   }
 
+  getAllAgenciesFromApi(): Observable<{ success: boolean; count: number; data: Agency[] }> {
+    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agences/recuperation?limit=25`);
+  }
+
+
+  /**
+   * Récupère une agence spécifique depuis l'API backend
+   */
+  getAgencyByIdFromApi(id: string): Observable<{ success: boolean; data: Agency }> {
+    return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
+  }
+
   getAgencyEmployees(agencyId: string): Observable<Employee[]> {
     const agency = this.agencies.find(a => a._id === agencyId);
     return of(agency?.employees || []).pipe(delay(300));
   }
+  // From API 
+  getAgencyAllEmployees(agencyId: string): Observable<Employees[]> {
+    const agency = this.agencies.find(a => a._id === agencyId);
+    return this.http.get<Employees[]>(`${environment.apiUrl}/agences/${agencyId}/employees`);
 
-  addEmployee(agencyId: string, employee: Partial<Employee>): Observable<Employee> {
-    const newEmployee: Employee = {
-      id: Math.random().toString(36).substr(2, 9),
-      userId: Math.random().toString(36).substr(2, 9),
-       firstName: employee.firstName || '',
+  }
+
+  // addEmployee(agencyId: string, employee: Partial<Employee>): Observable<Employee> {
+  //   const newEmployee: Employee = {
+  //     id: Math.random().toString(36).substr(2, 9),
+  //     userId: Math.random().toString(36).substr(2, 9),
+  //      firstName: employee.firstName || '',
+  //     lastName: employee.lastName || '',
+  //     email: employee.email || '',
+  //     phone: employee.phone || '',
+  //     role: employee.role || 'collector' as any,
+  //     zones: employee.zones || [],
+  //     isActive: true,
+  //     hiredAt: new Date()
+  //   };
+  
+  private currentUserSubject = new BehaviorSubject<Employees | null>(null);
+  getCurrentUser(): Employees | null {
+    return this.currentUserSubject.value;
+  }
+
+  addEmployee(employee: Partial<Employees>): Observable<Employees | null> {
+    const newEmployee: Employees = {
+      firstName: employee.firstName || '',
       lastName: employee.lastName || '',
       email: employee.email || '',
       phone: employee.phone || '',
@@ -236,13 +271,16 @@ export class AgencyService {
       isActive: true,
       hiredAt: new Date()
     };
-
-    const agency = this.agencies.find(a => a._id === agencyId);
-    if (agency) {
-      agency.employees.push(newEmployee);
-    }
-
-    return of(newEmployee).pipe(delay(1000));
+    return this.http.post<Employees>(`${environment.apiUrl}/agences/employees`, newEmployee).pipe(
+      map((response: Employees) => {
+        console.log("API > collectorRegister :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de l'ajout de l'employé :", error);
+        return of(null); // Gérer l'erreur de manière appropriée
+      })
+    );
   }
 
   updateEmployee(agencyId: string, employeeId: string, updates: Partial<Employee>): Observable<Employee> {
@@ -269,19 +307,32 @@ export class AgencyService {
     return of(false).pipe(delay(500));
   }
 
-  /**
-   * Récupère toutes les agences depuis l'API backend
-   */
-  getAllAgenciesFromApi(): Observable<{ success: boolean; count: number; data: Agency[] }> {
-    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agences/recuperation`);
+  // Zone side Api 
+  getZones(agencyId: string): Observable<ServiceZones[]> {
+    return this.http.get<ServiceZones[]>(`${environment.apiUrl}/agences/${agencyId}/zones`);
+  }
+
+  saveZone(zone: ServiceZones): Observable<ServiceZones | null> {
+    return this.http.post<ServiceZones>(`${environment.apiUrl}/zones/register`, zone).pipe(
+      map((response: ServiceZones) => {
+        console.log("API > saveZone :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de l'enregistrement de la zone :", error);
+        return of(null); // Gérer l'erreur de manière appropriée
+      })
+    );
   }
 
   /**
-   * Récupère une agence spécifique depuis l'API backend
+   * Récupère toutes les agences depuis l'API backend
    */
-  getAgencyByIdFromApi(id: string): Observable<{ success: boolean; data: Agency }> {
-    return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
-  }
+  
+  /**
+   * Récupère toutes les agences depuis l'API backend
+   */
+  
 
   getAgenceStats() {
     return [

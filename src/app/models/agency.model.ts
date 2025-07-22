@@ -74,6 +74,18 @@ export interface ServiceZone {
   boundaries: Coordinate[];
   neighborhoods: string[];
   cities: string[];
+  // assignedCollectors: string[];
+  isActive: boolean;
+}
+
+export interface ServiceZones {
+  // id: string;
+  name: string;
+  description: string;
+  boundaries: Coordinate[];
+  neighborhoods: string[];
+  cities: string[];
+  assignedCollectors: string[];
   isActive: boolean;
 }
 
@@ -91,6 +103,19 @@ export interface WasteService {
 export interface Employee {
   id: string;
   userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: EmployeeRole;
+  zones: string[];
+  isActive: boolean;
+  hiredAt: Date;
+  avatar?: string;
+}
+export interface Employees {
+  // id: string;
+  // userId: string;
   firstName: string;
   lastName: string;
   email: string;

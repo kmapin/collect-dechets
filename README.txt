@@ -14,6 +14,7 @@
 ## AGENCES
 1==> email: adamaagency@gmail.com pwd:07WasteManagerAdamaAgency01       Nom: Adama Service
 2==> email: aicha.t@sahelys.com pwd:WISEclean1234
+2==> email: aicha.t@sahelys.com pwd:WISEclean1234
 
 ## SUPER ADMIN.
 1==> email: admin.waste@gmail.com pwd:Wise2024
