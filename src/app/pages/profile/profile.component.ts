@@ -36,7 +36,19 @@ import { User } from '../../models/user.model';
             <form class="profile-form" (ngSubmit)="onSave()">
               <div class="form-section">
                 <h3>Informations personnelles</h3>
-                
+                <ng-container *ngIf="user.role === 'super_admin'; else otherRole">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="firstName">Prénom</label>
+                    <input type="text" id="firstName" [(ngModel)]="user.firstname" name="firstName">
+                  </div>
+                  <div class="form-group">
+                    <label for="lastName">Nom</label>
+                    <input type="text" id="lastName" [(ngModel)]="user.lastname" name="lastName">
+                  </div>
+                </div>
+                </ng-container>
+                <ng-template    #otherRole>
                 <div class="form-row">
                   <div class="form-group">
                     <label for="firstName">Prénom</label>
@@ -47,7 +59,7 @@ import { User } from '../../models/user.model';
                     <input type="text" id="lastName" [(ngModel)]="user.lastName" name="lastName">
                   </div>
                 </div>
-
+                </ng-template>
                 <div class="form-group">
                   <label for="email">Email</label>
                   <input type="email" id="email" [(ngModel)]="user.email" name="email">
