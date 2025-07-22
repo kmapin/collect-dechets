@@ -231,6 +231,8 @@ export class AuthService {
       id: Math.random().toString(36).substr(2, 9),
       email: email,
       firstName: 'John',
+      firstname: 'John',
+      lastname: 'Doe',
       lastName: 'Doe',
       phone: '+1234567890',
       role: role,

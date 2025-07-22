@@ -65,7 +65,7 @@ import { NotificationService } from '../../services/notification.service';
                        [alt]="currentUser.firstName">
                 </div>
                 <div class="user-info">
-                  <span class="user-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
+                  <span class="user-name">{{ currentUser.firstName ? currentUser.firstName : currentUser.firstname }} {{ currentUser.lastName? currentUser.lastName : currentUser.lastname }}</span>
                   <span class="user-role">{{ getRoleLabel(currentUser.role) }}</span>
                 </div>
                 <i class="material-icons dropdown-icon" 
@@ -75,7 +75,7 @@ import { NotificationService } from '../../services/notification.service';
               <div class="user-dropdown" [class.show]="showUserMenu">
                 <div class="dropdown-header">
                   <div class="user-details">
-                    <strong>{{ currentUser.firstName }} {{ currentUser.lastName }}</strong>
+                    <strong>{{ currentUser.firstName ? currentUser.firstName : currentUser.firstname }} {{ currentUser.lastName ? currentUser.lastName : currentUser.lastname }}</strong>
                     <span>{{ currentUser.email }}</span>
                   </div>
                 </div>
@@ -735,6 +735,8 @@ export class HeaderComponent implements OnInit {
         return '/dashboard/collector';
       case UserRole.MUNICIPALITY:
         return '/dashboard/municipality';
+      case UserRole.SUPER_ADMIN:
+        return '/dashboard/admin';
       default:
         return '/';
     }

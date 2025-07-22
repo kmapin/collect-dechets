@@ -629,7 +629,8 @@ export class LoginComponent implements OnInit {
       client: '/dashboard/client',
       agency: '/dashboard/agency',
       collector: '/dashboard/collector',
-      municipality: '/dashboard/municipality'
+      municipality: '/dashboard/municipality',
+      super_admin: '/dashboard/admin'
     };
 
     const route = dashboardRoutes[role as keyof typeof dashboardRoutes] || '/';

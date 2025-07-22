@@ -2,7 +2,9 @@ export interface User {
   id: string;
   email: string;
   firstName: string;
+  firstname: string;
   lastName: string;
+  lastname: string;
   phone: string;
   role: UserRole;
   createdAt: Date;
@@ -15,7 +17,8 @@ export enum UserRole {
   CLIENT = 'client',
   AGENCY = 'agency',
   COLLECTOR = 'collector',
-  MUNICIPALITY = 'municipality'
+  MUNICIPALITY = 'municipality',
+  SUPER_ADMIN = 'super_admin'
 }
 
 export interface ClientUser extends User {
