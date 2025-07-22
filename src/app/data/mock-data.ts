@@ -70,6 +70,7 @@ export interface QuartierData {
     },
     {
       arrondissement: "Arrondissement 7",
+      
       secteurs: [
         { secteur: "30", quartiers: ["Nagrin"] },
         { secteur: "31", quartiers: ["Yaoghin", "Bonheur-Ville", "Waa-Paasi", "Belle-Ville"] },
