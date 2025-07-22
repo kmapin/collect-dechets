@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay, map } from 'rxjs/operators';
+import { delay, map, tap } from 'rxjs/operators';
 import { User, UserRole } from '../models/user.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
@@ -121,18 +121,57 @@ export class AuthService {
   }
 
 
-    // ------------------------------------------------------------- Verify code 
+  // ------------------------------------------------------------- Verify code 
 
 
-  verifyCode$(email: string, code: string): Observable<{ success: boolean; message?: string; error?: string }> {
+  verifyCode$(email: string, code: string): Observable<{ success: boolean; message?: string; error?: string; resetToken?: string }> {
     return this.http.post<any>(`${environment.apiUrl}/auth/verifyCode`, { email, code }).pipe(
       map(response => {
         console.log('API > VerifyCode:', response);
-        if (response?.success) {
-          return { success: true, message: response.message };
+        if (response?.resetToken) {
+          return {
+            success: true,
+            message: response.message,
+            resetToken: response.resetToken
+          };
         } else {
-          return { success: false, error: response?.error || 'Code invalide' };
+          return {
+            success: false,
+            error: response?.error || 'Code invalide'
+          };
         }
+      })
+    );
+  }
+
+
+  // ------------------------------------------------------------- new password
+
+  newPassword$(
+    newPassword: string,
+    confirmNewPassword: string,
+    token: string
+  ): Observable<{ success: boolean; message?: string; error?: string }> {
+
+    console.log('Envoi à API :', {
+      newPassword,
+      confirmNewPassword,
+      tokenUrl: `${environment.apiUrl}/auth/resetPassword/${token}`
+    });
+    return this.http.post<any>(`${environment.apiUrl}/auth/resetPassword/${token}`, {
+      newPassword,
+      confirmNewPassword
+    }).pipe(
+      tap(response => {
+        console.log('Response de l`\'API:', response);
+      }),
+      map(response => {
+        const parsed = {
+          success: response?.success !== false,
+          message: response?.message,
+          error: response?.error
+        };
+        return parsed;
       })
     );
   }
