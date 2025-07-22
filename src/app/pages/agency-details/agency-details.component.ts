@@ -1221,7 +1221,7 @@ export class AgencyDetailsComponent implements OnInit {
   /**
    * Transforme une agence API en objet compatible avec le template
    */
-  private mapApiAgency(apiAgency: any): Agency {
+private mapApiAgency(apiAgency: any): Agency {
   return {
     _id: apiAgency._id || '',
     userId: apiAgency.userId || '',

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay, map } from 'rxjs/operators';
+import { delay, map, tap } from 'rxjs/operators';
 import { User, UserRole } from '../models/user.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
@@ -102,6 +102,83 @@ export class AuthService {
     );
   }
 
+
+
+  // ------------------------------------------------------------- Forgot password 
+
+  forgotPassword$(email: string): Observable<{ success: boolean; message?: string; error?: string }> {
+    return this.http.post<any>(`${environment.apiUrl}/auth/forgotPassword`, { email }).pipe(
+      map(response => {
+        console.log('API > ForgotPassword:', response);
+
+        if (response?.success || response?.message) {
+          return { success: true, message: response.message || 'Code envoyé avec succès' };
+        } else {
+          return { success: false, error: response?.error || 'Erreur lors de la réinitialisation du mot de passe' };
+        }
+      })
+    );
+  }
+
+
+  // ------------------------------------------------------------- Verify code 
+
+
+  verifyCode$(email: string, code: string): Observable<{ success: boolean; message?: string; error?: string; resetToken?: string }> {
+    return this.http.post<any>(`${environment.apiUrl}/auth/verifyCode`, { email, code }).pipe(
+      map(response => {
+        console.log('API > VerifyCode:', response);
+        if (response?.resetToken) {
+          return {
+            success: true,
+            message: response.message,
+            resetToken: response.resetToken
+          };
+        } else {
+          return {
+            success: false,
+            error: response?.error || 'Code invalide'
+          };
+        }
+      })
+    );
+  }
+
+
+  // ------------------------------------------------------------- new password
+
+  newPassword$(
+    newPassword: string,
+    confirmNewPassword: string,
+    token: string
+  ): Observable<{ success: boolean; message?: string; error?: string }> {
+
+    console.log('Envoi à API :', {
+      newPassword,
+      confirmNewPassword,
+      tokenUrl: `${environment.apiUrl}/auth/resetPassword/${token}`
+    });
+    return this.http.post<any>(`${environment.apiUrl}/auth/resetPassword/${token}`, {
+      newPassword,
+      confirmNewPassword
+    }).pipe(
+      tap(response => {
+        console.log('Response de l`\'API:', response);
+      }),
+      map(response => {
+        const parsed = {
+          success: response?.success !== false,
+          message: response?.message,
+          error: response?.error
+        };
+        return parsed;
+      })
+    );
+  }
+
+
+
+
   logout(): Observable<void> {
     return this.http.post(`${environment.apiUrl}/auth/logout`, {}).pipe(
       map((response: any) => {
@@ -112,7 +189,7 @@ export class AuthService {
           this.isAuthenticatedSubject.next(false);
           return response;
         } else {
-          return { success: false, error: response?.error};
+          return { success: false, error: response?.error };
         }
 
       })
@@ -129,7 +206,7 @@ export class AuthService {
     );
   }
 
-  
+
   /**
    * Inscription d'une agence via l'API réelle
    */
@@ -154,11 +231,11 @@ export class AuthService {
    */
   subscribeToAgency(userId: string, agencyId: string): Observable<any> {
     console.log('[DEBUG] Service > subscribeToAgency appelé avec:', { userId, agencyId });
-    
+
     return this.http.post(`${environment.apiUrl}/clients/subscribe`, { agencyId }).pipe(
       map((response: any) => {
         console.log('[DEBUG] Service > Réponse API subscribeToAgency:', response);
-        
+
         // Normaliser la réponse pour s'assurer qu'elle a la bonne structure
         if (response && typeof response === 'object') {
           return {
@@ -168,7 +245,7 @@ export class AuthService {
             data: response.data || response
           };
         }
-        
+
         return response;
       })
     );

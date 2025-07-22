@@ -19,6 +19,7 @@ import { AgencyDetailsComponent } from './pages/agency-details/agency-details.co
 import { SubscriptionComponent } from './pages/subscription/subscription.component';
 import { ScheduleComponent } from './pages/schedule/schedule.component';
 import { ReportComponent } from './pages/report/report.component';
+import { ForgotPassword } from './pages/auth/forgot-password/forgot-password';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -28,6 +29,7 @@ export const routes: Routes = [
   { path: 'faq', component: FaqComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'forgot-password', component: ForgotPassword },
   { path: 'about', component: AboutComponent },
   { path: 'contact', component: ContactComponent },
   { path: 'help', component: HelpComponent },
