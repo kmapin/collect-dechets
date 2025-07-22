@@ -2024,8 +2024,8 @@ export class AgencyDashboardComponent implements OnInit {
     //     hiredAt: new Date('2023-01-15')
     //   }
     // ];
-    if (currentUser?.userId) {
-      this.agencyService.getAgencyAllEmployees(currentUser?.userId).subscribe(
+    if (currentUser?._id) {
+      this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe(
         (employees) => {
           this.allEmployees = employees; // Assurez-vous que allEmployees est bien typé
           console.error("loadEmployees > :", this.allEmployees);
