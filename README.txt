@@ -30,3 +30,35 @@
 Email : guigmawendindapaulin@gmail.com          Mot de passe : 5e86f7dfe4a5
 
 
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                
+                                ////// TO DO
+        # Profile
+1==> Améliorer l'IHM profile => OK
+2==> Afficher le juste en dessous du block "profile-left" un card des informations du user. 
+3==> Placer un bouton modifier qui ouvre le form de modification au click
+4==>
+
+        #Client
+1==> 
+1==> 
+1==> 
+1==> 
+1==> 
+1==> 
+1==> 
+
+
+        #Agence
+1==> 
+1==> 
+1==> 
+1==> 
+1==> 
+1==> 
+1==> 
