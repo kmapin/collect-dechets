@@ -9,6 +9,7 @@ import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
+import { Admin } from '../../../services/admin';
 
 
 interface AdminStatistics {
@@ -117,9 +118,9 @@ interface Communication {
               </div>
               <div class="stat-info">
                 <h3>Mairies</h3>
-                <p class="stat-value">{{ statistics.activeAgencies }}/{{ statistics.totalAgencies }}</p>
-                <span class="stat-trend" [class.positive]="statistics.activeAgencies === statistics.totalAgencies">
-                  {{ getAgencyStatusText() }}
+                <p class="stat-value">{{ statisticsAdmin?.totalMunicipalities }}</p>
+                <span class="stat-trend" [class.positive]="statisticsAdmin?.totalMunicipalities === statisticsAdmin?.totalMunicipalities">
+                  {{ getMunicipalityStatusText() }}
                 </span>
               </div>
             </div>
@@ -129,21 +130,35 @@ interface Communication {
               </div>
               <div class="stat-info">
                 <h3>Agences</h3>
-                <p class="stat-value">{{ statistics.activeAgencies }}/{{ statistics.totalAgencies }}</p>
-                <span class="stat-trend" [class.positive]="statistics.activeAgencies === statistics.totalAgencies">
+                <p class="stat-value">{{ statisticsAdmin?.activeAgencies }}/{{ statisticsAdmin?.totalAgencies }}</p>
+                <span class="stat-trend" [class.positive]="statisticsAdmin?.activeAgencies === statisticsAdmin?.totalAgencies">
                   {{ getAgencyStatusText() }}
                 </span>
               </div>
             </div>
-
+            <div class="stat-card card">
+              <div class="stat-icon agencies">
+                <i class="material-icons">business</i>
+              </div>
+              <div class="stat-info">
+                <h3>Collecteurs totaux</h3>
+                <p class="stat-value">{{ statisticsAdmin?.totalCollectors }}</p>
+                <span class="stat-trend" [class.positive]="statisticsAdmin?.totalCollectors === statisticsAdmin?.totalCollectors">
+                  {{ getCollectorStatusText() }}
+                </span>
+              </div>
+            </div>
             <div class="stat-card card">
               <div class="stat-icon clients">
                 <i class="material-icons">people</i>
               </div>
               <div class="stat-info">
                 <h3>Clients totaux</h3>
-                <p class="stat-value">{{ statistics.totalClients | number }}</p>
-                <span class="stat-trend positive">+{{ getClientGrowth() }}% ce mois</span>
+                <p class="stat-value">{{ statisticsAdmin?.totalClients | number }}</p>
+                <p><span class="stat-trend positive">+{{ getClientGrowth() }}% ce mois</span> |
+                <span class="stat-trend" [class.positive]="statisticsAdmin?.totalClients === statisticsAdmin?.activeClients">
+                  {{ getClientStatusText() }}
+                </span> </p>
               </div>
             </div>
 
@@ -153,7 +168,7 @@ interface Communication {
               </div>
               <div class="stat-info">
                 <h3>Collectes aujourd'hui</h3>
-                <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
+                <p class="stat-value">{{ statisticsAdmin?.completeCollections }}/{{ statisticsAdmin?.totalCollections }}</p>
                 <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
                   {{ getCollectionRate() }}% réalisées
                 </span>
@@ -2086,7 +2101,7 @@ interface Communication {
     }
   `]
 })
-export class AdminDashboard  implements OnInit {
+export class AdminDashboard implements OnInit {
   currentUser: User | null = null;
   activeTab = 'overview';
 
@@ -2146,12 +2161,14 @@ export class AdminDashboard  implements OnInit {
     private authService: AuthService,
     private agencyService: AgencyService,
     private collectionService: CollectionService,
+    private adminService: Admin,
     private notificationService: NotificationService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadMunicipalityData();
+    this.showAdminStatistics();
   }
 
   loadMunicipalityData(): void {
@@ -2163,54 +2180,77 @@ export class AdminDashboard  implements OnInit {
   }
 
   loadAgencyAudits(): void {
-    this.agencyAudits = [
-      {
-        id: '1',
-        name: 'EcoClean Services',
-        status: 'active',
-        clients: 1250,
-        collectors: 8,
-        zones: 3,
-        collectionsToday: 45,
-        completionRate: 96,
-        rating: 4.5,
-        revenue: 32450,
-        lastAudit: new Date('2024-01-10'),
-        complianceScore: 95,
-        issues: []
-      },
-      {
-        id: '2',
-        name: 'GreenWaste Solutions',
-        status: 'active',
-        clients: 850,
-        collectors: 6,
-        zones: 2,
-        collectionsToday: 32,
-        completionRate: 88,
-        rating: 4.2,
-        revenue: 22100,
-        lastAudit: new Date('2024-01-08'),
-        complianceScore: 82,
-        issues: ['Retards fréquents', 'Signalements clients']
-      },
-      {
-        id: '3',
-        name: 'WasteManager Pro',
-        status: 'suspended',
-        clients: 450,
-        collectors: 3,
-        zones: 1,
-        collectionsToday: 0,
-        completionRate: 0,
-        rating: 3.8,
-        revenue: 0,
-        lastAudit: new Date('2024-01-05'),
-        complianceScore: 65,
-        issues: ['Non-conformité réglementaire', 'Licence expirée']
+    this.agencyService.getAllAgenciesFromApi().subscribe({
+      next: (agencies) => {
+        this.agencyAudits = agencies.data.map((agency) => ({
+          id: agency?._id,
+          name: agency?.agencyName,
+          status: agency?.isActive ? "active" : "inactive",
+          clients: agency?.clients?.length || 0,
+          collectors: agency?.employees?.length || 0,
+          zones: 0,
+          collectionsToday: 0,
+          completionRate: 0,
+          rating: 0,
+          revenue: 0,
+          lastAudit: new Date(),
+          complianceScore: 0,
+          issues: []
+        }));
+        this.filteredAgencies = [...this.agencyAudits];
+        console.log(' this.agencyAudits',this.agencyAudits);
+        console.log(' this.agencies',agencies);
       }
-    ];
-    this.filteredAgencies = [...this.agencyAudits];
+      
+    });
+    // this.agencyAudits = [
+    //   {
+    //     id: '1',
+    //     name: 'EcoClean Services',
+    //     status: 'active',
+    //     clients: 1250,
+    //     collectors: 8,
+    //     zones: 3,
+    //     collectionsToday: 45,
+    //     completionRate: 96,
+    //     rating: 4.5,
+    //     revenue: 32450,
+    //     lastAudit: new Date('2024-01-10'),
+    //     complianceScore: 95,
+    //     issues: []
+    //   },
+    //   {
+    //     id: '2',
+    //     name: 'GreenWaste Solutions',
+    //     status: 'active',
+    //     clients: 850,
+    //     collectors: 6,
+    //     zones: 2,
+    //     collectionsToday: 32,
+    //     completionRate: 88,
+    //     rating: 4.2,
+    //     revenue: 22100,
+    //     lastAudit: new Date('2024-01-08'),
+    //     complianceScore: 82,
+    //     issues: ['Retards fréquents', 'Signalements clients']
+    //   },
+    //   {
+    //     id: '3',
+    //     name: 'WasteManager Pro',
+    //     status: 'suspended',
+    //     clients: 450,
+    //     collectors: 3,
+    //     zones: 1,
+    //     collectionsToday: 0,
+    //     completionRate: 0,
+    //     rating: 3.8,
+    //     revenue: 0,
+    //     lastAudit: new Date('2024-01-05'),
+    //     complianceScore: 65,
+    //     issues: ['Non-conformité réglementaire', 'Licence expirée']
+    //   }
+    // ];
+    
   }
 
   loadWasteStatistics(): void {
@@ -2276,7 +2316,18 @@ export class AdminDashboard  implements OnInit {
   // Utility methods
   getAgencyStatusText(status?: string): string {
     if (!status) {
-      return `${this.statistics.activeAgencies} actives`;
+      return `${this.statisticsAdmin?.activeAgencies} actives`;
+    }
+    const statusTexts = {
+      'active': 'Active',
+      'inactive': 'Inactive',
+      'suspended': 'Suspendue'
+    };
+    return statusTexts[status as keyof typeof statusTexts] || status;
+  }
+  getMunicipalityStatusText(status?: string): string {
+    if (!status) {
+      return `${this.statisticsAdmin?.totalMunicipalities} actives`;
     }
     const statusTexts = {
       'active': 'Active',
@@ -2286,8 +2337,31 @@ export class AdminDashboard  implements OnInit {
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
 
+  getCollectorStatusText(status?: string): string {
+    if (!status) {
+      return `${this.statisticsAdmin?.totalCollectors} actives`;
+    }
+    const statusTexts = {
+      'active': 'Active',
+      'inactive': 'Inactive',
+      'suspended': 'Suspendue'
+    };
+    return statusTexts[status as keyof typeof statusTexts] || status;
+  }
+  getClientStatusText(status?: string): string {
+    if (!status) {
+      return `${this.statisticsAdmin?.activeClients} actives`;
+    }
+    const statusTexts = {
+      'active': 'Active',
+      'inactive': 'Inactive',
+      'suspended': 'Suspendue'
+    };
+    return statusTexts[status as keyof typeof statusTexts] || status;
+  }
   getClientGrowth(): number {
-    return Math.floor(Math.random() * 10) + 5;
+    // return Math.floor(Math.random() * 10) + 5;
+    return 5;
   }
 
   getCollectionRate(): number {
@@ -2431,7 +2505,7 @@ export class AdminDashboard  implements OnInit {
     this.filteredAgencies = this.agencyAudits.filter(agency => {
       const statusMatch = this.agenciesFilter === 'all' || agency.status === this.agenciesFilter;
       let complianceMatch = true;
-      
+
       if (this.complianceFilter === 'excellent') {
         complianceMatch = agency.complianceScore >= 95;
       } else if (this.complianceFilter === 'good') {
@@ -2439,7 +2513,7 @@ export class AdminDashboard  implements OnInit {
       } else if (this.complianceFilter === 'poor') {
         complianceMatch = agency.complianceScore < 85;
       }
-      
+
       return statusMatch && complianceMatch;
     });
   }
@@ -2523,9 +2597,9 @@ export class AdminDashboard  implements OnInit {
   }
 
   sendCommunication(): void {
-    if (this.newCommunication.type && this.newCommunication.title && 
-        this.newCommunication.message && this.newCommunication.recipients.length > 0) {
-      
+    if (this.newCommunication.type && this.newCommunication.title &&
+      this.newCommunication.message && this.newCommunication.recipients.length > 0) {
+
       const communication: Communication = {
         id: Math.random().toString(36).substr(2, 9),
         type: this.newCommunication.type,
@@ -2543,4 +2617,16 @@ export class AdminDashboard  implements OnInit {
       this.notificationService.showSuccess('Envoyé', 'Communication envoyée avec succès');
     }
   }
+
+  statisticsAdmin: any;
+  showAdminStatistics(): void {
+    this.adminService.getAllStatistics().subscribe({
+      next: (statistics: any) => {
+        this.statisticsAdmin = statistics;
+        console.log(this.statisticsAdmin);
+      }
+
+    })
+  }
+
 }
