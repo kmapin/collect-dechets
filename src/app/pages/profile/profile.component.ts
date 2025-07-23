@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
 import { OUAGA_DATA, QuartierData } from '../../data/mock-data';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-profile',
@@ -127,11 +128,11 @@ import { OUAGA_DATA, QuartierData } from '../../data/mock-data';
             <div class="form-row-modern">
               <div class="form-group-modern">
                 <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.name" name="name" required>
+                <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
               </div>
               <div class="form-group-modern">
                 <label for="agencyDescription"><i class="material-icons">description</i> Description</label>
-                <textarea id="agencyDescription" [(ngModel)]="user.description" name="description" rows="2"></textarea>
+                <textarea id="agencyDescription" [(ngModel)]="user.agencyDescription" name="description" rows="2"></textarea>
               </div>
             </div>
             <div class="form-row-modern">
@@ -139,10 +140,10 @@ import { OUAGA_DATA, QuartierData } from '../../data/mock-data';
                 <label for="agencyPhone"><i class="material-icons">phone</i> Téléphone</label>
                 <input type="tel" id="agencyPhone" [(ngModel)]="user.phone" name="phone" required>
               </div>
-              <div class="form-group-modern">
+              <!-- <div class="form-group-modern">
                 <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
                 <input type="email" id="agencyEmail" [(ngModel)]="user.email" name="email" required>
-              </div>
+              </div> -->
             </div>
             <div class="form-row-modern">
               <div class="form-group-modern">
@@ -445,10 +446,11 @@ export class ProfileComponent implements OnInit {
   ];
   allSecteurs: { secteur: string; quartiers: string[] }[] = [];
 
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService, private notificationService: NotificationService) { }
 
   ngOnInit(): void {
     this.user = this.authService.getCurrentUser();
+    console.log("loggedUser::>",this.user);
     // Sécurise l'accès à address
     if (!this.user.address) {
       this.user.address = {};
@@ -511,19 +513,18 @@ export class ProfileComponent implements OnInit {
         termsAccepted: !!this.user.termsAccepted,
         receiveOffers: !!this.user.receiveOffers
       };
-      console.log('Profile saved (client):', userEdit);
       this.authService.updateClient(this.user?.id, userEdit).subscribe(
         response => {
-          console.log('Profile updated successfully:', response);
+          this.notificationService.showSuccess('Modification réussie', 'Votre profil a été mis à jour avec succès.');
         },
         error => {
-          console.error('Error updating profile:', error);
+          this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la modification du profil.');
         }
       );
     } else if (this.user.role === 'agency') {
       const agencyEdit = {
-        name: this.user.name,
-        description: this.user.description,
+        agencyName: this.user.agencyName,
+        agencyDescription: this.user.agencyDescription,
         phone: this.user.phone,
         email: this.user.email,
         serviceZones: this.user.serviceZones || [],
@@ -531,13 +532,12 @@ export class ProfileComponent implements OnInit {
         termsAccepted: !!this.user.termsAccepted,
         receiveOffers: !!this.user.receiveOffers
       };
-      console.log('Profile saved (agency):', agencyEdit);
       this.authService.updateClient(this.user?.id, agencyEdit).subscribe(
         response => {
-          console.log('Agency profile updated successfully:', response);
+          this.notificationService.showSuccess('Modification réussie', 'Le profil de l’agence a été mis à jour avec succès.');
         },
         error => {
-          console.error('Error updating agency profile:', error);
+          this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la modification du profil agence.');
         }
       );
     }
