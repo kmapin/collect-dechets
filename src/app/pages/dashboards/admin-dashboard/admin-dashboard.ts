@@ -17,7 +17,11 @@ interface AdminStatistics {
   activeAgencies: number;
   totalClients: number;
   totalCollectors: number;
+  activeClients: number;
+  totalCollections: number;
   todayCollections: number;
+  completeCollections: number;
+  totalMunicipalities: number;
   completedCollections: number;
   totalRevenue: number;
   averageRating: number;
@@ -2110,9 +2114,13 @@ export class AdminDashboard implements OnInit {
     totalAgencies: 15,
     activeAgencies: 14,
     totalClients: 12500,
+    activeClients: 12000,
     totalCollectors: 85,
     todayCollections: 450,
     completedCollections: 425,
+    completeCollections: 425,
+    totalMunicipalities: 25,
+    totalCollections: 425,
     totalRevenue: 485000,
     averageRating: 4.2,
     pendingReports: 8,
@@ -2145,13 +2153,13 @@ export class AdminDashboard implements OnInit {
     message: '',
     recipients: []
   };
-
+  statisticsAdmin: AdminStatistics | null = null;
   tabs = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'dashboard', badge: null },
     { id: 'municipalities', label: 'Audit Municipalités', icon: 'business', badge: null },
     { id: 'agencies', label: 'Audit Agences', icon: 'business', badge: null },
     { id: 'collectors', label: 'Audit Collecteurs', icon: 'business', badge: null },
-    { id: 'clients', label: 'Audit Clients', icon: 'business', badge: +120000 },
+    { id: 'clients', label: 'Audit Clients', icon: 'business', badge: null},
     { id: 'statistics', label: 'Statistiques', icon: 'analytics', badge: null },
     { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
@@ -2163,7 +2171,7 @@ export class AdminDashboard implements OnInit {
     private collectionService: CollectionService,
     private adminService: Admin,
     private notificationService: NotificationService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
@@ -2618,7 +2626,7 @@ export class AdminDashboard implements OnInit {
     }
   }
 
-  statisticsAdmin: any;
+
   showAdminStatistics(): void {
     this.adminService.getAllStatistics().subscribe({
       next: (statistics: any) => {
