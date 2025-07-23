@@ -198,7 +198,7 @@ export class AuthService {
 
   /**Update client */
   updateClient(userId: string, userData: any): Observable<any> {
-    return this.http.patch(`${environment.apiUrl}/clients/${userId}`, userData).pipe(
+    return this.http.put(`${environment.apiUrl}/profile/${userId}`, userData).pipe(
       map((response) => {
         console.log("API > UpdateClient :", response);
         return response;
