@@ -7,6 +7,9 @@ import { NotificationService } from '../../../services/notification.service';
 import { AuthService } from '../../../services/auth.service';
 import { Collection, CollectionStatus, CollectionRoute } from '../../../models/collection.model';
 import { User } from '../../../models/user.model';
+import { ZXingScannerModule } from '@zxing/ngx-scanner';
+import { BarcodeFormat } from '@zxing/library';
+import { ClientService, ClientApi } from '../../../services/client.service';
 
 interface CollectionPoint {
   id: string;
@@ -45,7 +48,7 @@ interface IncidentReport {
 @Component({
   selector: 'app-collector-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ZXingScannerModule],
   template: `
     <div class="collector-dashboard">
       <div class="page-header">
@@ -63,6 +66,10 @@ interface IncidentReport {
               <button class="btn btn-secondary" (click)="showIncidentModal = true">
                 <i class="material-icons">report_problem</i>
                 Signaler un incident
+              </button>
+              <button class="btn btn-secondary qr-btn" (click)="showQrScanner = !showQrScanner">
+                <i class="material-icons">qr_code</i>
+                Scanner QR
               </button>
             </div>
           </div>
@@ -474,6 +481,53 @@ interface IncidentReport {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- Modal QR Scanner -->
+      <div class="modal-overlay" *ngIf="showQrScanner" (click)="showQrScanner = !showQrScanner">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Scanner un QR Code</h3>
+            <button class="close-btn" (click)="showQrScanner = !showQrScanner">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <div class="scanner-container">
+            <zxing-scanner
+              [formats]="qrFormats"
+              (scanSuccess)="onQrCodeResult($event)"
+              [torch]="false"
+              [tryHarder]="true"
+              [device]="selectedDevice"
+              [autostart]="true"
+              [previewFitMode]="'cover'"
+            ></zxing-scanner>
+          </div>
+          <div class="scanner-controls">
+            <button class="btn btn-secondary" (click)="showQrScanner = !showQrScanner">Fermer</button>
+          </div>
+        </div>
+      </div>
+      <!-- Modal infos client scanné -->
+      <div class="modal-overlay" *ngIf="showClientModal" (click)="showClientModal = false">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Informations du client</h3>
+            <button class="close-btn" (click)="showClientModal = false">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <div *ngIf="scannedClient">
+            <p><strong>Nom :</strong> {{ scannedClient.firstName }} {{ scannedClient.lastName }}</p>
+            <p><strong>Téléphone :</strong> {{ scannedClient.phone }}</p>
+            <p><strong>Statut :</strong> {{ scannedClient.subscriptionStatus }}</p>
+            <p><strong>Adresse :</strong> {{ scannedClient.address.doorNumber }} {{ scannedClient.address.street }}, {{ scannedClient.address.neighborhood }}, {{ scannedClient.address.city }}</p>
+            <p><strong>Couleur porte :</strong> {{ scannedClient.address.doorColor }}</p>
+            <p><strong>Arrondissement :</strong> {{ scannedClient.address.arrondissement }}</p>
+            <p><strong>Secteur :</strong> {{ scannedClient.address.sector }}</p>
+            <p><strong>Code postal :</strong> {{ scannedClient.address.postalCode }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -1470,6 +1524,30 @@ interface IncidentReport {
       margin-top: 16px;
     }
 
+    .btn-secondary.qr-btn {
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      color: var(--white);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+    .btn-secondary.qr-btn .material-icons {
+      vertical-align: middle;
+    }
+    .btn-secondary.qr-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -75%;
+      width: 50%; height: 100%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.6) 60%, rgba(255,255,255,0.2) 100%);
+      transform: skewX(-20deg);
+      transition: left 0.5s;
+    }
+    .btn-secondary.qr-btn:hover::before {
+      left: 120%;
+      transition: left 0.5s;
+    }
+
     @media (max-width: 1024px) {
       .main-content {
         grid-template-columns: 1fr;
@@ -1520,6 +1598,12 @@ export class CollectorDashboardComponent implements OnInit {
   routeStarted = false;
   locationEnabled = false;
   showIncidentModal = false;
+  showQrScanner = false;
+  lastQrResult: string | null = null;
+  selectedDevice: any = null;
+  qrFormats = [BarcodeFormat.QR_CODE];
+  scannedClient: ClientApi | null = null;
+  showClientModal = false;
 
   // Collections data
   collectionPoints: CollectionPoint[] = [];
@@ -1556,7 +1640,8 @@ export class CollectorDashboardComponent implements OnInit {
   constructor(
     private collectionService: CollectionService,
     private notificationService: NotificationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private clientService: ClientService
   ) {}
 
   ngOnInit(): void {
@@ -1820,6 +1905,23 @@ export class CollectorDashboardComponent implements OnInit {
       'other': 'Autre'
     };
     return texts[type as keyof typeof texts] || type;
+  }
+
+  onQrCodeResult(result: string) {
+    this.lastQrResult = result;
+    this.showQrScanner = false;
+    this.notificationService.showSuccess('QR Code détecté', result);
+    // Appel API pour récupérer le client
+    this.clientService.getClientById(result).subscribe({
+      next: (client) => {
+        this.scannedClient = client;
+        console.log("Scanned client :>", this.scannedClient);
+        this.showClientModal = true;
+      },
+      error: () => {
+        this.notificationService.showError('Erreur', 'Aucun client trouvé pour ce QR code.');
+      }
+    });
   }
 
   // Utilitaires

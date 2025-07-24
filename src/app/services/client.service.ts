@@ -64,4 +64,7 @@ export class ClientService {
       })
     );
   }
+  getClientById(id: string): Observable<ClientApi> {
+    return this.http.get<ClientApi>(`${environment.apiUrl}/clients/${id}`);
+  }
 }

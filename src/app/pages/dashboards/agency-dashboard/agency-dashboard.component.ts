@@ -7,7 +7,7 @@ import { AgencyService } from '../../../services/agency.service';
 import { CollectionService } from '../../../services/collection.service';
 import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
-import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule } from '../../../models/agency.model';
+import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule, EmployeeRole } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { ClientService, ClientApi } from '../../../services/client.service';
 
@@ -783,14 +783,14 @@ interface Statistics {
               </div>
             </div>
             <div class="form-group">
-              <label>Collecteur *</label>
-              <select [(ngModel)]="newSchedule.collectorId" name="collectorId" required>
-                <option value="">Sélectionner un collecteur</option>
-                <option *ngFor="let collector of getCollectors()" [value]="collector.id">
-                  {{ collector.firstName }} {{ collector.lastName }}
-                </option>
-              </select>
-            </div>
+  <label>Collecteur *</label>
+  <select [(ngModel)]="newSchedule.collectorId" name="collectorId" required>
+    <option value="">Sélectionner un collecteur</option>
+    <option *ngFor="let collector of collectors" >
+      {{ collector.firstName }} {{ collector.lastName }}
+    </option>
+  </select>
+</div>
             <div class="form-actions">
               <button type="button" class="btn btn-secondary" (click)="showScheduleModal = false">
                 Annuler
@@ -1866,7 +1866,8 @@ export class AgencyDashboardComponent implements OnInit {
   currentUser: User | null = null;
   agency: Agency | null = null;
   activeTab = 'collections';
-
+collectors: Employees[] = [];
+manager: Employees[] = [];
   // Data
   statistics: Statistics = {
     totalClients: 1250,
@@ -1970,6 +1971,8 @@ export class AgencyDashboardComponent implements OnInit {
     this.currentUser = this.authService.getCurrentUser();
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyData();
+ this.loadCollectors(this.currentUser);
+ 
     // Ne pas appeler loadClients() ici directement !
 
   }
@@ -2009,7 +2012,31 @@ export class AgencyDashboardComponent implements OnInit {
     //this.activeClientNbrs = this.activeClientNbr(); // Mettez à jour le nombre d'actifs
     //this.updateTabs(); // Mettez à jour les tabs après avoir récupéré les clients
   }
-
+loadCollectors(currentUser: any): void {
+  if (currentUser?._id) {
+    this.agencyService.getAgencyEmployeesByRole(currentUser._id, EmployeeRole.COLLECTOR).subscribe(
+      (employee) => {
+        this.collectors = employee;
+        console.log("Collecteurs chargés via l api service  :", this.collectors);
+      },
+      (error) => {
+        console.error("Erreur lors du chargement des collecteurs :", error);
+       ;
+      }
+    );
+  } else {
+      this.agencyService.getAgencyEmployeesByRole(currentUser._id, EmployeeRole.MANAGER).subscribe(
+      (manager) => {
+        this.collectors = manager;
+        console.log("Collecteurs chargés via l api service  :", this.collectors);
+      },
+      (error) => {
+        console.error("Erreur lors du chargement des collecteurs :", error);
+    
+      }
+    );
+  }
+}
   loadCollections(): void {
     // Simuler les collectes
     this.collections = [
@@ -2056,7 +2083,24 @@ export class AgencyDashboardComponent implements OnInit {
       console.warn("Aucun ID d'utilisateur courant disponible.");
     }
   }
+//  loadEmployeesByRole(currentUser: any, role:EmployeeRole ): void {
 
+//     if (currentUser?._id && role) {
+//       this.agencyService.getAgencyEmployeesByRole(currentUser?._id,role).subscribe(
+//         (employees) => {
+//           this.allEmployees = employees; // Assurez-vous que allEmployees est bien typé
+//           console.error("loadEmployeesjggghh > :", this.allEmployees);
+
+//         },
+//         (error) => {
+//           console.error("Erreur lors du chargement des employés :", error);
+//           // Vous pouvez également gérer l'affichage d'un message d'erreur à l'utilisateur ici
+//         }
+//       );
+//     } else {
+//       console.warn("Aucun ID d'utilisateur courant disponible.");
+//     }
+//   }
   loadServiceZones(): void {
     this.serviceZones = [
       {
@@ -2074,13 +2118,13 @@ export class AgencyDashboardComponent implements OnInit {
   loadSchedules(): void {
     this.schedules = [
       {
-        id: '1',
+        // id: '1',
         zoneId: 'zone1',
         dayOfWeek: 1,
         startTime: '08:00',
         endTime: '12:00',
         collectorId: '1',
-        isActive: true
+        // isActive: true
       }
     ];
   }
@@ -2270,6 +2314,9 @@ export class AgencyDashboardComponent implements OnInit {
   getCollectors(): Employee[] {
     return this.employees.filter(e => e.role === 'collector');
   }
+  
+  
+
 
   getCollectorPerformance(): any[] {
     return this.employees
@@ -2363,7 +2410,7 @@ export class AgencyDashboardComponent implements OnInit {
 
   deleteSchedule(scheduleId: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce planning ?')) {
-      this.schedules = this.schedules.filter(s => s.id !== scheduleId);
+      // this.schedules = this.schedules.filter(s => s.id !== scheduleId);
       // No need to call notificationService.showSuccess here, as it's already handled in the template
     }
   }
@@ -2544,24 +2591,23 @@ export class AgencyDashboardComponent implements OnInit {
     }
   }
 
-  addSchedule(): void {
-    if (this.newSchedule.zoneId && this.newSchedule.dayOfWeek && this.newSchedule.startTime && this.newSchedule.endTime && this.newSchedule.collectorId) {
-      const schedule: CollectionSchedule = {
-        id: Math.random().toString(36).substr(2, 9),
-        zoneId: this.newSchedule.zoneId,
-        dayOfWeek: parseInt(this.newSchedule.dayOfWeek),
-        startTime: this.newSchedule.startTime,
-        endTime: this.newSchedule.endTime,
-        collectorId: this.newSchedule.collectorId,
-        isActive: true
-      };
+  // addSchedule(): void {
+  //   if (this.newSchedule.zoneId && this.newSchedule.dayOfWeek && this.newSchedule.startTime && this.newSchedule.endTime && this.newSchedule.collectorId) {
+  //     const schedule: CollectionSchedule = {
+  //       id: Math.random().toString(36).substr(2, 9),
+  //       zoneId: this.newSchedule.zoneId,
+  //       dayOfWeek: parseInt(this.newSchedule.dayOfWeek),
+  //       startTime: this.newSchedule.startTime,
+  //       endTime: this.newSchedule.endTime,
+  //       collectorId: this.newSchedule.collectorId,
+  //       isActive: true
+  //     };
 
-      this.schedules.push(schedule);
-      this.showScheduleModal = false;
-      this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
-    }
-  }
+  //     this.schedules.push(schedule);
+  //     this.showScheduleModal = false;
+  //     this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
+  //   }
+  // }
 
   validateClient(clientId: string): void {
     console.log('[validateClient] called for', clientId);
@@ -2576,4 +2622,27 @@ export class AgencyDashboardComponent implements OnInit {
       }
     });
   }
+   addSchedule(): void {
+    if (this.newSchedule.zoneId && this.newSchedule.dayOfWeek && this.newSchedule.startTime && this.newSchedule.endTime && this.newSchedule.collectorId) {
+      const schedule = {
+        zoneId: this.newSchedule.zoneId,
+      dayOfWeek: this.newSchedule.dayOfWeek ? Number(this.newSchedule.dayOfWeek) : 0,
+
+        startTime: this.newSchedule.startTime,
+        endTime: this.newSchedule.endTime,
+        collectorId: this.newSchedule.collectorId
+      };
+
+      this.agencyService.addSchedule$(schedule).subscribe({
+        next: () => {
+          console.log('Horaire envoyé avec succès');
+          this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
+        },
+        error: (err) => {
+          console.error('Erreur lors de l\'envoi', err);
+        }
+      });
+    }
+  }
+
 }
