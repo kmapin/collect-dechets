@@ -55,4 +55,8 @@ export class ClientService {
   validateClientSubscription(clientId: string): Observable<any> {
     return this.http.put(`${environment.apiUrl}/agences/clients/${clientId}/validate`, {});
   }
+
+  getClientById(id: string): Observable<ClientApi> {
+    return this.http.get<ClientApi>(`${environment.apiUrl}/clients/${id}`);
+  }
 }
