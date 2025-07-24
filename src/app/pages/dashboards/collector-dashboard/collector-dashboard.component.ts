@@ -1602,7 +1602,8 @@ export class CollectorDashboardComponent implements OnInit {
   lastQrResult: string | null = null;
   selectedDevice: any = null;
   qrFormats = [BarcodeFormat.QR_CODE];
-  scannedClient: ClientApi | null = null;
+  // scannedClient: ClientApi | null = null;
+  scannedClient: any | null = null;
   showClientModal = false;
 
   // Collections data

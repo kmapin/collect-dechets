@@ -56,7 +56,7 @@ export class ClientService {
     return this.http.put(`${environment.apiUrl}/agences/clients/${clientId}/validate`, {});
   }
 
-  getClientById(id: string): Observable<ClientApi> {
-    return this.http.get<ClientApi>(`${environment.apiUrl}/clients/${id}`);
+  getClientById(id: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/clients/${id}`);
   }
 }
