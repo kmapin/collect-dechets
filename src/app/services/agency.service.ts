@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, delay, map } from 'rxjs/operators';
-import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones } from '../models/agency.model';
+import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole } from '../models/agency.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
@@ -132,7 +132,7 @@ export class AgencyService {
     // }
   ];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAgencies(): Observable<Agency[]> {
     return of(this.agencies).pipe(delay(500));
@@ -195,7 +195,7 @@ export class AgencyService {
       collections: 0,
       incidents: 0
     };
-    
+
     this.agencies.push(newAgency);
     return of(newAgency).pipe(delay(1000));
   }
@@ -240,6 +240,13 @@ export class AgencyService {
     return this.http.get<Employees[]>(`${environment.apiUrl}/agences/${agencyId}/employees`);
 
   }
+  // recupereles employees en fonction de leur role
+getAgencyEmployeesByRole(agencyId: string, role:EmployeeRole): Observable<Employees[]> {
+    const agency = this.agencies.find(a => a._id === agencyId);
+  return this.http.get<Employees[]>(`${environment.apiUrl}/agences/${agencyId}/employees/role/${role}`);
+ 
+}
+
 
   // addEmployee(agencyId: string, employee: Partial<Employee>): Observable<Employee> {
   //   const newEmployee: Employee = {
@@ -254,7 +261,7 @@ export class AgencyService {
   //     isActive: true,
   //     hiredAt: new Date()
   //   };
-  
+
   private currentUserSubject = new BehaviorSubject<Employees | null>(null);
   getCurrentUser(): Employees | null {
     return this.currentUserSubject.value;
@@ -324,23 +331,53 @@ export class AgencyService {
       })
     );
   }
+  //ajouter une planification
+  addSchedule$(schedule: CollectionSchedule): Observable<CollectionSchedule | null> {
+    return this.http.post<CollectionSchedule>(`${environment.apiUrl}/zones/planification`, schedule).pipe(
+      map((response: CollectionSchedule) => {
+        console.log("API > planification enregistre :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de l'enregistrement de la planification:", error);
+        return of(null); // Gérer l'erreur de manière appropriée
+      })
+    );
+
+  }
+
+  //recupere les employees  d une agence en fonction de leur role 
+getEmployeesByRole(agencyId: string, role: string): Observable<Employee[] | null> {
+  const url = `${environment.apiUrl}/agences/${agencyId}/employés/role/${role}`;
+  
+  return this.http.get<Employee[]>(url).pipe(
+    map((response: Employee[]) => {
+      console.log("API > getEmployeesByRole :", response);
+      return response;
+    }),
+    catchError(error => {
+      console.error("Erreur lors de la récupération des employés :", error);
+      return of(null); 
+    })
+  );
+}
 
   /**
    * Récupère toutes les agences depuis l'API backend
    */
-  
+
   /**
    * Récupère toutes les agences depuis l'API backend
    */
-  
 
-// getAgenceStats(): Observable<
-//   { agencies: number; clients: number; collections: number; coverage: number; incidents: number }[]
-// > {
-//   return this.http.get<
-//     { agencies: number; clients: number; collections: number; coverage: number; incidents: number }[]
-//   >(`${environment.apiUrl}/agences/stats`);
-// }
+
+  // getAgenceStats(): Observable<
+  //   { agencies: number; clients: number; collections: number; coverage: number; incidents: number }[]
+  // > {
+  //   return this.http.get<
+  //     { agencies: number; clients: number; collections: number; coverage: number; incidents: number }[]
+  //   >(`${environment.apiUrl}/agences/stats`);
+  // }
 
   getAgenceStats() {
     return [

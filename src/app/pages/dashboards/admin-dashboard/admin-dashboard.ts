@@ -10,7 +10,9 @@ import { User } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { Admin } from '../../../services/admin';
-
+import { MatCardModule } from '@angular/material/card';
+import { ClientService } from '../../../services/client.service';
+import { SharedService } from '../../../services/shared-service';
 
 interface AdminStatistics {
   totalAgencies: number;
@@ -88,7 +90,7 @@ interface Communication {
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, MatCardModule],
   template: `
     <div class="admin-dashboard">
       <div class="page-header">
@@ -548,6 +550,143 @@ interface Communication {
               </div>
             </div>
 
+            <!-- Onglet Audit des Clients -->
+            <div *ngIf="activeTab === 'clients'" class="agencies-tab">
+              <div class="agencies-header">
+                <h2>Audit des Clients</h2>
+                <div class="agencies-filters">
+                  <select [(ngModel)]="clientsFilter" (change)="filterClients()" class="filter-select">
+                    <option value="all">Toutes les Clients</option>
+                    <option value="active">Abonnement actif</option>
+                    <option value="pending">Abonnement en attente</option>
+                    <option value="cancelled">Abonnement annulé</option>
+                  </select>
+                  <select [(ngModel)]="complianceFilter" (change)="filterClients()" class="filter-select">
+                    <option value="all">Tous niveaux</option>
+                    <option value="excellent">Excellent (95%+)</option>
+                    <option value="good">Bon (85-94%)</option>
+                    <option value="poor">Faible (<85%)</option>
+                  </select>
+                </div>
+              </div>
+
+
+              <div class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+                <div class="col" *ngFor="let client of filteredClients">
+                  <mat-card class=" client-audit-card client-card">
+                    <mat-card-header>
+                      <mat-card-title-group class="w-100 pb-3">
+                        <mat-card-title>{{client.firstName}} {{client.lastName}}</mat-card-title>
+                        <mat-card-subtitle >Abonnement: <span class="status-badge" [class]="client.subscriptionStatus ? 'status-' + client.subscriptionStatus : 'status-inconnu'">{{getClientSubscriptionText(client.subscriptionStatus)}}</span></mat-card-subtitle>
+                        <ng-container *ngIf="client?.avatar; else noImage">
+                          <img mat-card-md-image class="rounded" src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" alt="Image of a Shiba Inu">
+                        </ng-container>
+                        <ng-template #noImage>
+                          <div class="rounded-circle text-white font-bold uppercase"
+                            [style.background-color]="getRandomColor(client)">
+                            {{ getInitials(client?.firstName+' '+client?.lastName) }}
+                          </div>
+                        </ng-template>
+                      </mat-card-title-group>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div *ngIf="client?.serviceAddress?.ville">
+                        <h4 class="text-center"> Ville/Quartier : {{client?.serviceAddress?.ville}}/{{client?.serviceAddress?.quartier}}</h4>
+                      </div>
+                      <div ><h5 class="text-center">Tel: {{client?.phone}}</h5></div>
+                      <div class="agency-actions d-flex justify-content-end align-items">
+                        <button class="btn btn-secondary" (click)="viewClientDetails(client._id)">
+                          <i class="material-icons">visibility</i>
+                          Détails
+                        </button>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div><!--end row-->
+              <div class="agencies-grid">
+
+                <!--<div *ngFor="let agency of filteredAgencies" class="agency-audit-card card">
+                  <div class="agency-audit-header">
+                    <div class="agency-basic-info">
+                      <h4>{{ agency.name }}</h4>
+                      <span class="status-badge" [class]="'status-' + agency.status">
+                        {{ getAgencyStatusText(agency.status) }}
+                      </span>
+                    </div>
+                    <div class="agency-compliance">
+                      <div class="compliance-score" [class]="getComplianceClass(agency.complianceScore)">
+                        {{ agency.complianceScore }}%
+                      </div>
+                      <div class="compliance-label">Conformité</div>
+                    </div>
+                  </div>
+
+                  <div class="agency-metrics">
+                    <div class="metric-row">
+                      <div class="metric">
+                        <i class="material-icons">people</i>
+                        <span>{{ agency.clients }} clients</span>
+                      </div>
+                      <div class="metric">
+                        <i class="material-icons">person</i>
+                        <span>{{ agency.collectors }} collecteurs</span>
+                      </div>
+                      <div class="metric">
+                        <i class="material-icons">map</i>
+                        <span>{{ agency.zones }} zones</span>
+                      </div>
+                    </div>
+                    <div class="metric-row">
+                      <div class="metric">
+                        <i class="material-icons">local_shipping</i>
+                        <span>{{ agency.collectionsToday }} collectes</span>
+                      </div>
+                      <div class="metric">
+                        <i class="material-icons">check_circle</i>
+                        <span>{{ agency.completionRate }}% réalisées</span>
+                      </div>
+                      <div class="metric">
+                        <i class="material-icons">star</i>
+                        <span>{{ agency.rating }}/5</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="agency-issues" *ngIf="agency.issues.length > 0">
+                    <h5>Problèmes identifiés</h5>
+                    <div class="issues-list">
+                      <div *ngFor="let issue of agency.issues" class="issue-item">
+                        <i class="material-icons">warning</i>
+                        <span>{{ issue }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="agency-actions">
+                    <button class="btn btn-secondary" (click)="viewAgencyDetails(agency.id)">
+                      <i class="material-icons">visibility</i>
+                      Détails
+                    </button>
+                    <button class="btn btn-primary" (click)="auditAgency(agency.id)">
+                      <i class="material-icons">fact_check</i>
+                      Auditer
+                    </button>
+                    <button class="btn btn-accent" (click)="contactAgency(agency.id)">
+                      <i class="material-icons">message</i>
+                      Contacter
+                    </button>
+                  </div>
+
+                  <div class="agency-footer">
+                    <span class="last-audit">Dernier audit: {{ agency.lastAudit | date:'dd/MM/yyyy' }}</span>
+                    <span class="revenue">{{ agency.revenue | number:'1.0-0' }}€/mois</span>
+                  </div>
+                </div>-->
+              </div>
+            </div>
+
+
             <!-- Onglet Statistiques -->
             <div *ngIf="activeTab === 'statistics'" class="statistics-tab">
               <div class="statistics-header">
@@ -869,6 +1008,10 @@ interface Communication {
       padding: 20px;
       transition: all 0.3s ease;
     }
+    .client-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+    }
 
     .stat-card:hover {
       transform: translateY(-2px);
@@ -1155,7 +1298,20 @@ interface Communication {
       max-height: 300px;
       overflow-y: auto;
     }
-
+    .rounded-circle{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      font-weight: bold;
+      color: white;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 4px 16px rgba(0, 188, 212, 0.12);
+      margin-bottom: 8px;
+    }
     .alert-item {
       display: flex;
       align-items: center;
@@ -1219,7 +1375,10 @@ interface Communication {
     .status-open { background: #ffebee; color: var(--error-color); }
     .status-investigating { background: #fff3e0; color: #f57c00; }
     .status-resolved { background: #e8f5e8; color: var(--success-color); }
-
+    .status-pending { background: #fff3e0; color: #f57c00; }
+    .status-inconnu { background: #fff3e0; color: #f5000070; }
+    .status-cancelled { background: #ffb9b9ff; color: #eb0b0bff; }
+    
     .agencies-header,
     .statistics-header,
     .incidents-header,
@@ -1264,6 +1423,9 @@ interface Communication {
       border-left: 4px solid var(--primary-color);
     }
 
+    .client-audit-card {
+      border-left: 4px solid var(--primary-color);
+    }
     .agency-audit-header {
       display: flex;
       justify-content: space-between;
@@ -2108,7 +2270,9 @@ interface Communication {
 export class AdminDashboard implements OnInit {
   currentUser: User | null = null;
   activeTab = 'overview';
-
+  longText = `The Shiba Inu is the smallest of the six original and distinct spitz breeds of dog
+    from Japan. A small, agile dog that copes very well with mountainous terrain, the Shiba Inu was
+    originally bred for hunting.`;
   // Data
   statistics: AdminStatistics = {
     totalAgencies: 15,
@@ -2128,7 +2292,9 @@ export class AdminDashboard implements OnInit {
   };
 
   agencyAudits: AgencyAudit[] = [];
+  clientsAudits: any[] = [];
   filteredAgencies: AgencyAudit[] = [];
+  filteredClients: any[] = [];
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: ZoneStatistic[] = [];
   incidents: Incident[] = [];
@@ -2137,6 +2303,7 @@ export class AdminDashboard implements OnInit {
 
   // Filters
   agenciesFilter = 'all';
+  clientsFilter = 'all';
   complianceFilter = 'all';
   statisticsPeriod = 'month';
   incidentsFilter = 'all';
@@ -2153,13 +2320,18 @@ export class AdminDashboard implements OnInit {
     message: '',
     recipients: []
   };
+  //Statistics for admin
   statisticsAdmin: AdminStatistics | null = null;
+
+  //List all clients for admin dashboard
+  clients: any;
+
   tabs = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'dashboard', badge: null },
     { id: 'municipalities', label: 'Audit Municipalités', icon: 'business', badge: null },
     { id: 'agencies', label: 'Audit Agences', icon: 'business', badge: null },
     { id: 'collectors', label: 'Audit Collecteurs', icon: 'business', badge: null },
-    { id: 'clients', label: 'Audit Clients', icon: 'business', badge: null},
+    { id: 'clients', label: 'Audit Clients', icon: 'business', badge: null },
     { id: 'statistics', label: 'Statistiques', icon: 'analytics', badge: null },
     { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
@@ -2170,21 +2342,24 @@ export class AdminDashboard implements OnInit {
     private agencyService: AgencyService,
     private collectionService: CollectionService,
     private adminService: Admin,
-    private notificationService: NotificationService
-  ) {}
+    private clientService: ClientService,
+    private notificationService: NotificationService,
+    private sharedService: SharedService
+  ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    this.loadMunicipalityData();
+    this.loadAdminData();
     this.showAdminStatistics();
   }
 
-  loadMunicipalityData(): void {
+  loadAdminData(): void {
     this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
     this.loadIncidents();
     this.loadCommunications();
+    this.showAdminClients()
   }
 
   loadAgencyAudits(): void {
@@ -2206,10 +2381,10 @@ export class AdminDashboard implements OnInit {
           issues: []
         }));
         this.filteredAgencies = [...this.agencyAudits];
-        console.log(' this.agencyAudits',this.agencyAudits);
-        console.log(' this.agencies',agencies);
+        console.log(' this.agencyAudits', this.agencyAudits);
+        console.log(' this.agencies', agencies);
       }
-      
+
     });
     // this.agencyAudits = [
     //   {
@@ -2258,7 +2433,7 @@ export class AdminDashboard implements OnInit {
     //     issues: ['Non-conformité réglementaire', 'Licence expirée']
     //   }
     // ];
-    
+
   }
 
   loadWasteStatistics(): void {
@@ -2355,6 +2530,17 @@ export class AdminDashboard implements OnInit {
       'suspended': 'Suspendue'
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
+  }
+  getClientSubscriptionText(status?: string): string {
+    if (!status) {
+      return `Pas d'abonnement`;
+    }
+    const statusClientTexts = {
+      'active': 'Actif',
+      'pending': 'En attente',
+      'cancelled': 'Annulé'
+    };
+    return statusClientTexts[status as keyof typeof statusClientTexts] || status;
   }
   getClientStatusText(status?: string): string {
     if (!status) {
@@ -2525,7 +2711,22 @@ export class AdminDashboard implements OnInit {
       return statusMatch && complianceMatch;
     });
   }
+  filterClients(): void {
+    this.filteredClients = this.clientsAudits.filter(client => {
+      const statusMatch = this.clientsFilter === 'all' || client.subscriptionStatus === this.clientsFilter;
+      let complianceMatch = true;
 
+      // if (this.complianceFilter === 'excellent') {
+      //   complianceMatch = client.complianceScore >= 95;
+      // } else if (this.complianceFilter === 'good') {
+      //   complianceMatch = client.complianceScore >= 85 && client.complianceScore < 95;
+      // } else if (this.complianceFilter === 'poor') {
+      //   complianceMatch = client.complianceScore < 85;
+      // }
+
+      return statusMatch;
+    });
+  }
   filterIncidents(): void {
     this.filteredIncidents = this.incidents.filter(incident => {
       const statusMatch = this.incidentsFilter === 'all' || incident.status === this.incidentsFilter;
@@ -2542,7 +2743,9 @@ export class AdminDashboard implements OnInit {
   viewAgencyDetails(agencyId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails de l\'agence');
   }
-
+  viewClientDetails(clientId: string): void {
+    this.notificationService.showInfo('Détails', 'Ouverture des détails du client');
+  }
   auditAgency(agencyId: string): void {
     this.notificationService.showInfo('Audit', 'Lancement de l\'audit de l\'agence');
   }
@@ -2626,7 +2829,7 @@ export class AdminDashboard implements OnInit {
     }
   }
 
-
+  // Statistics
   showAdminStatistics(): void {
     this.adminService.getAllStatistics().subscribe({
       next: (statistics: any) => {
@@ -2637,4 +2840,24 @@ export class AdminDashboard implements OnInit {
     })
   }
 
+  //clients
+
+  showAdminClients(): void {
+    this.clientService.getAllClients().subscribe({
+      next: (response: any) => {
+        this.clientsAudits = response?.data;
+        this.filteredClients = [...this.clientsAudits];
+        console.log('clients in dashboard', this.filteredClients);
+      }
+    })
+  }
+
+
+  getInitials(fullName: string){
+    return this.sharedService.getInitials(fullName);
+  }
+
+  getRandomColor(item: any): string {
+    return this.sharedService.getRandomColor(item);
+  }
 }

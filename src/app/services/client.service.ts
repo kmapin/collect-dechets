@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface ClientApi {
@@ -56,7 +56,15 @@ export class ClientService {
     return this.http.put(`${environment.apiUrl}/agences/clients/${clientId}/validate`, {});
   }
 
-  getClientById(id: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/clients/${id}`);
+  getAllClients(): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/clients`).pipe(
+      map((response: any) => {
+        console.log('API > getAllClients:', response);
+        return response;
+      })
+    );
+  }
+  getClientById(id: string): Observable<ClientApi> {
+    return this.http.get<ClientApi>(`${environment.apiUrl}/clients/${id}`);
   }
 }
