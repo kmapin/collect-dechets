@@ -19,4 +19,13 @@ export class Admin {
     );
 
   }
+
+  getAllEmployees(role: string) {
+    return this.http.get(`${environment.apiUrl}/auth/employees/${role}`).pipe(
+      map((response: any) =>{
+        console.log('API > getAllEmployees:', response);
+        return response;
+      })
+    );
+  }
 }

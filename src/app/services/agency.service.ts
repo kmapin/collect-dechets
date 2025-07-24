@@ -230,6 +230,14 @@ export class AgencyService {
     return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
   }
 
+    getAgencyById1(id: string): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/agences/recuperation/${id}`).pipe(
+      map((response: any) => {
+        console.log('API > getAgencyById:', response);
+        return response;
+      })
+    );
+  }
   getAgencyEmployees(agencyId: string): Observable<Employee[]> {
     const agency = this.agencies.find(a => a._id === agencyId);
     return of(agency?.employees || []).pipe(delay(300));
