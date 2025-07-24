@@ -134,13 +134,13 @@ export enum  EmployeeRole {
 }
 
 export interface CollectionSchedule {
-  id: string;
+  // id: string;
   zoneId: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
   collectorId: string;
-  isActive: boolean;
+  // isActive: boolean;
 }
 
 export interface WasteType {
