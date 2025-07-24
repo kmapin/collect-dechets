@@ -254,6 +254,11 @@ getAgencyEmployeesByRole(agencyId: string, role:EmployeeRole): Observable<Employ
   return this.http.get<Employees[]>(`${environment.apiUrl}/agences/${agencyId}/employees/role/${role}`);
  
 }
+//recupere les zones d une agence
+getAgencyZones(agencyId: string): Observable<ServiceZone[]> {
+  return this.http.get<ServiceZone[]>(`${environment.apiUrl}/zones/agence/${agencyId}`);
+}
+
 
 
   // addEmployee(agencyId: string, employee: Partial<Employee>): Observable<Employee> {

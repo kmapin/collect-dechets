@@ -756,7 +756,7 @@ interface Statistics {
               <label>Zone *</label>
               <select [(ngModel)]="newSchedule.zoneId" name="zoneId" required>
                 <option value="">Sélectionner une zone</option>
-                <option *ngFor="let zone of serviceZones" [value]="zone.id">{{ zone.name }}</option>
+                <option *ngFor="let zone of zonesAgency" [value]="zone.id">{{ zone.name }}</option>
               </select>
             </div>
             <div class="form-group">
@@ -1867,6 +1867,7 @@ export class AgencyDashboardComponent implements OnInit {
   agency: Agency | null = null;
   activeTab = 'collections';
 collectors: Employees[] = [];
+  zonesAgency: ServiceZone[] = [];
 manager: Employees[] = [];
   // Data
   statistics: Statistics = {
@@ -1972,6 +1973,7 @@ manager: Employees[] = [];
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyData();
  this.loadCollectors(this.currentUser);
+ this.loadZonesForAgency(this.currentUser);
  
     // Ne pas appeler loadClients() ici directement !
 
@@ -2083,24 +2085,23 @@ loadCollectors(currentUser: any): void {
       console.warn("Aucun ID d'utilisateur courant disponible.");
     }
   }
-//  loadEmployeesByRole(currentUser: any, role:EmployeeRole ): void {
 
-//     if (currentUser?._id && role) {
-//       this.agencyService.getAgencyEmployeesByRole(currentUser?._id,role).subscribe(
-//         (employees) => {
-//           this.allEmployees = employees; // Assurez-vous que allEmployees est bien typé
-//           console.error("loadEmployeesjggghh > :", this.allEmployees);
+// fonction to load zones for the current agency
+loadZonesForAgency(currentUser: any): void {
+       if (currentUser?._id) {
+      this.agencyService.getAgencyZones(currentUser?._id).subscribe({
+        next: (zonesAgency) => {
+          this.zonesAgency = zonesAgency;
+        },
+        error: (err) => {
+          console.error('Erreur lors du chargement des zones de l agence', err);
+        },
+      });
+    } else {
+      console.error("Aucun agencyId trouvé dans le stockage local.");
+    }
+  }
 
-//         },
-//         (error) => {
-//           console.error("Erreur lors du chargement des employés :", error);
-//           // Vous pouvez également gérer l'affichage d'un message d'erreur à l'utilisateur ici
-//         }
-//       );
-//     } else {
-//       console.warn("Aucun ID d'utilisateur courant disponible.");
-//     }
-//   }
   loadServiceZones(): void {
     this.serviceZones = [
       {
