@@ -644,11 +644,11 @@ import { Agency } from '../../models/agency.model';
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
       border-radius: 24px;
-      padding: 28px;
+      padding: 10px;
       box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.2);
       width: 100%;
-      max-width: 600px;
+      max-width: 70%;
       animation: dashboardFloat 6s ease-in-out infinite;
     }
 
@@ -812,6 +812,8 @@ import { Agency } from '../../models/agency.model';
 
     @keyframes fillBar {
       0% { width: 0%; }
+      50% { width: 50%; }
+      100% { width: 100%; }
     }
 
     @keyframes shimmer {
@@ -1856,7 +1858,7 @@ import { Agency } from '../../models/agency.model';
 
     .dashboard-carousel-vertical {
       position: relative;
-      height: 320px;
+      height: 600px;
       overflow: hidden;
       width: 100%;
       margin: 0 auto;
@@ -1870,18 +1872,20 @@ import { Agency } from '../../models/agency.model';
     .carousel-track {
       display: flex;
       flex-direction: column;
+      gap: 0;
       animation: vertical-scroll infinite linear;
     }
     .carousel-item {
-      height: 300px;
+      height: 500px;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 10px 0;
+      padding: 1px 0;
     }
     .carousel-item img {
-      max-height: 280px;
-      max-width: 98%;
+      max-height: 350px;
+      max-width: 100%%;
       border-radius: 12px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.10);
       object-fit: cover;
@@ -1889,7 +1893,7 @@ import { Agency } from '../../models/agency.model';
     }
     @keyframes vertical-scroll {
       0% { transform: translateY(0); }
-      50% { transform: translateY(-400px); }
+      /* 50% { transform: translateY(-400px); } */
       100% { transform: translateY(-800px); }
     }
   `]
@@ -1968,7 +1972,7 @@ export class HomeComponent implements OnInit {
       name: 'GANGO Siméon',
       role: 'Particulier, Kossodo',
       rating: 5,
-      avatar: 'https://drive.google.com/drive/folders/1-zkhOCP4zNAMlClgm1CHn7uP-CElGFgK'
+      avatar: 'https://drive.google.com/file/d/1zfWZZD-sRxV3xaTd4lL4H16dCKD1zlpA/view?usp=drive_link'
     },
     {
       text: 'Une plateforme intuitive qui nous fait gagner un temps précieux. Le service client est exceptionnel.',
@@ -1987,13 +1991,14 @@ export class HomeComponent implements OnInit {
   ];
 
   carouselImages = [
-    { src: 'https://images.pexels.com/photos/193338/pexels-photo-193338.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Collecte de déchets' },
-    { src: 'https://images.pexels.com/photos/1260072/pexels-photo-1260072.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Tri sélectif' },
-    { src: 'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Recyclage' },
-    { src: 'https://images.pexels.com/photos/3816805/pexels-photo-3816805.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Camion de collecte' },
-    { src: 'https://images.pexels.com/photos/1303086/pexels-photo-1303086.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Sensibilisation environnement' }
+    // { src: 'https://images.pexels.com/photos/193338/pexels-photo-193338.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Collecte de déchets' },
+    { src: 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', alt: 'Tri sélectif' },
+    // { src: 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', alt: 'Tri sélectif' },
+    { src: 'https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', alt: 'Recyclage' },
+    { src: 'https://images.unsplash.com/photo-1740635313618-35636018c870?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', alt: 'Camion de collecte' },
+    { src: 'https://i.pinimg.com/736x/25/85/0b/25850b6dac3595a04de4aa307397d122.jpg', alt: 'Sensibilisation environnement' }
   ];
-  carouselDuration = 12;
+  carouselDuration = 20;
 
   constructor(
     private agencyService: AgencyService,
