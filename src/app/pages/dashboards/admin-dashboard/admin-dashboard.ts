@@ -2314,10 +2314,10 @@ export class AdminDashboard implements OnInit {
 
   tabs = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'dashboard', badge: null },
-    { id: 'municipalities', label: 'Audit Municipalités', icon: 'business', badge: null },
-    { id: 'agencies', label: 'Audit Agences', icon: 'business', badge: null },
-    { id: 'collectors', label: 'Audit Collecteurs', icon: 'business', badge: null },
-    { id: 'clients', label: 'Audit Clients', icon: 'business', badge: null },
+    { id: 'municipalities', label: 'Municipalités', icon: 'business', badge: null },
+    { id: 'agencies', label: 'Agences', icon: 'business', badge: null },
+    { id: 'collectors', label: 'Collecteurs', icon: 'business', badge: null },
+    { id: 'clients', label: 'Clients', icon: 'business', badge: null },
     { id: 'statistics', label: 'Statistiques', icon: 'analytics', badge: null },
     { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
