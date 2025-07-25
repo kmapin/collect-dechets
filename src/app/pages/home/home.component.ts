@@ -47,10 +47,10 @@ import { Agency } from '../../models/agency.model';
                   <span>Commencer gratuitement</span>
                   <div class="btn-shine"></div>
                 </a>
-                <button class="btn btn-secondary btn-hero" (click)="playDemo()">
+                <!-- <button class="btn btn-secondary btn-hero" (click)="playDemo()">
                   <i class="material-icons">play_circle</i>
                   <span>Voir la démo</span>
-                </button>
+                </button> -->
               </div>
 
               <div class="hero-trust">
@@ -80,36 +80,15 @@ import { Agency } from '../../models/agency.model';
                   </div>
                   <div class="dashboard-title">Tableau de bord</div>
                 </div>
-                
-                <div class="dashboard-content">
-                  <div class="dashboard-card success">
-                    <div class="card-icon">
-                      <i class="material-icons">check_circle</i>
+                <!-- Carrousel vertical -->
+                <div class="dashboard-carousel-vertical">
+                  <div class="carousel-track" [style.animation-duration]="carouselDuration + 's'">
+                    <div class="carousel-item" *ngFor="let img of carouselImages">
+                      <img [src]="img.src" [alt]="img.alt">
                     </div>
-                    <div class="card-info">
-                      <div class="card-title">Collecte réalisée</div>
-                      <div class="card-subtitle">Aujourd'hui à 9h30</div>
-                    </div>
-                    <div class="card-pulse"></div>
-                  </div>
-                  
-                  <div class="dashboard-card pending">
-                    <div class="card-icon">
-                      <i class="material-icons">schedule</i>
-                    </div>
-                    <div class="card-info">
-                      <div class="card-title">Prochaine collecte</div>
-                      <div class="card-subtitle">Demain à 8h00</div>
-                    </div>
-                  </div>
-                  
-                  <div class="dashboard-stats">
-                    <div class="stat-header">
-                      <span>Tri correct ce mois</span>
-                      <span class="stat-percentage">85%</span>
-                    </div>
-                    <div class="stat-bar">
-                      <div class="stat-fill" style="width: 85%"></div>
+                    <!-- Duplique pour boucle infinie -->
+                    <div class="carousel-item" *ngFor="let img of carouselImages">
+                      <img [src]="img.src" [alt]="img.alt">
                     </div>
                   </div>
                 </div>
@@ -669,7 +648,7 @@ import { Agency } from '../../models/agency.model';
       box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.2);
       width: 100%;
-      max-width: 420px;
+      max-width: 600px;
       animation: dashboardFloat 6s ease-in-out infinite;
     }
 
@@ -1874,6 +1853,45 @@ import { Agency } from '../../models/agency.model';
         padding: 0 16px;
       }
     }
+
+    .dashboard-carousel-vertical {
+      position: relative;
+      height: 320px;
+      overflow: hidden;
+      width: 100%;
+      margin: 0 auto;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      background: #f8f9fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .carousel-track {
+      display: flex;
+      flex-direction: column;
+      animation: vertical-scroll infinite linear;
+    }
+    .carousel-item {
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 0;
+    }
+    .carousel-item img {
+      max-height: 280px;
+      max-width: 98%;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      object-fit: cover;
+      background: #fff;
+    }
+    @keyframes vertical-scroll {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-400px); }
+      100% { transform: translateY(-800px); }
+    }
   `]
 })
 export class HomeComponent implements OnInit {
@@ -1967,6 +1985,15 @@ export class HomeComponent implements OnInit {
       avatar: 'https://drive.google.com/drive/folders/1-zkhOCP4zNAMlClgm1CHn7uP-CElGFgK'
     }
   ];
+
+  carouselImages = [
+    { src: 'https://images.pexels.com/photos/193338/pexels-photo-193338.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Collecte de déchets' },
+    { src: 'https://images.pexels.com/photos/1260072/pexels-photo-1260072.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Tri sélectif' },
+    { src: 'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Recyclage' },
+    { src: 'https://images.pexels.com/photos/3816805/pexels-photo-3816805.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Camion de collecte' },
+    { src: 'https://images.pexels.com/photos/1303086/pexels-photo-1303086.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Sensibilisation environnement' }
+  ];
+  carouselDuration = 12;
 
   constructor(
     private agencyService: AgencyService,
