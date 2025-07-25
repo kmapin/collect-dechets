@@ -578,7 +578,8 @@ interface Communication {
                     <mat-card-header>
                       <mat-card-title-group class="w-100 pb-3">
                         <mat-card-title>{{client.firstName}} {{client.lastName}}</mat-card-title>
-                        <mat-card-subtitle >Abonnement: <span class="status-badge" [class]="client.subscriptionStatus ? 'status-' + client.subscriptionStatus : 'status-inconnu'">{{getClientSubscriptionText(client.subscriptionStatus)}}</span></mat-card-subtitle>
+                        <!--<mat-card-subtitle >Abonnement: <span class="status-badge" [class]="client.subscriptionStatus ? 'status-' + client.subscriptionStatus : 'status-inconnu'">{{getClientSubscriptionText(client.subscriptionStatus)}}</span></mat-card-subtitle>-->
+                        <mat-card-subtitle >Abonnement: <span class="status-badge" [class]="client.subscriptionStatus ? 'status-' + client.subscriptionStatus : 'status-inconnu'">{{client?.subscriptionHistory?.length}}</span></mat-card-subtitle>
                         <ng-container *ngIf="client?.avatar; else noImage">
                           <img mat-card-md-image class="rounded" src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" alt="Image of a Shiba Inu">
                         </ng-container>
@@ -591,8 +592,8 @@ interface Communication {
                       </mat-card-title-group>
                     </mat-card-header>
                     <mat-card-content>
-                      <div *ngIf="client?.serviceAddress?.ville">
-                        <h4 class="text-center"> Ville/Quartier : {{client?.serviceAddress?.ville}}/{{client?.serviceAddress?.quartier}}</h4>
+                      <div *ngIf="client?.address?.city">
+                        <h4 class="text-center"> Ville/Quartier : {{client?.address?.city}}/{{client?.address?.neighborhood}}</h4>
                       </div>
                       <div ><h5 class="text-center">Tel: {{client?.phone}}</h5></div>
                       <div class="agency-actions d-flex justify-content-end align-items">
@@ -616,7 +617,7 @@ interface Communication {
                 <h2>Audit des Collecteurs</h2>
                 <div class="agencies-filters">
                   <select [(ngModel)]="collectorsFilter" (change)="filterCollectors()" class="filter-select">
-                    <option value="all">Toutes les Clients</option>
+                    <option value="all">Toutes les Collecteurs</option>
                     <option value="active">actif</option>
                     <option value="inactive">Inactif</option>
                   </select>
