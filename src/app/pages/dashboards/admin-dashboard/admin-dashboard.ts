@@ -13,6 +13,7 @@ import { Admin } from '../../../services/admin';
 import { MatCardModule } from '@angular/material/card';
 import { ClientService } from '../../../services/client.service';
 import { SharedService } from '../../../services/shared-service';
+import { forkJoin, map, of } from 'rxjs';
 
 interface AdminStatistics {
   totalAgencies: number;
@@ -605,87 +606,68 @@ interface Communication {
                 </div>
               </div><!--end row-->
               <div class="agencies-grid">
-
-                <!--<div *ngFor="let agency of filteredAgencies" class="agency-audit-card card">
-                  <div class="agency-audit-header">
-                    <div class="agency-basic-info">
-                      <h4>{{ agency.name }}</h4>
-                      <span class="status-badge" [class]="'status-' + agency.status">
-                        {{ getAgencyStatusText(agency.status) }}
-                      </span>
-                    </div>
-                    <div class="agency-compliance">
-                      <div class="compliance-score" [class]="getComplianceClass(agency.complianceScore)">
-                        {{ agency.complianceScore }}%
-                      </div>
-                      <div class="compliance-label">Conformité</div>
-                    </div>
-                  </div>
-
-                  <div class="agency-metrics">
-                    <div class="metric-row">
-                      <div class="metric">
-                        <i class="material-icons">people</i>
-                        <span>{{ agency.clients }} clients</span>
-                      </div>
-                      <div class="metric">
-                        <i class="material-icons">person</i>
-                        <span>{{ agency.collectors }} collecteurs</span>
-                      </div>
-                      <div class="metric">
-                        <i class="material-icons">map</i>
-                        <span>{{ agency.zones }} zones</span>
-                      </div>
-                    </div>
-                    <div class="metric-row">
-                      <div class="metric">
-                        <i class="material-icons">local_shipping</i>
-                        <span>{{ agency.collectionsToday }} collectes</span>
-                      </div>
-                      <div class="metric">
-                        <i class="material-icons">check_circle</i>
-                        <span>{{ agency.completionRate }}% réalisées</span>
-                      </div>
-                      <div class="metric">
-                        <i class="material-icons">star</i>
-                        <span>{{ agency.rating }}/5</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="agency-issues" *ngIf="agency.issues.length > 0">
-                    <h5>Problèmes identifiés</h5>
-                    <div class="issues-list">
-                      <div *ngFor="let issue of agency.issues" class="issue-item">
-                        <i class="material-icons">warning</i>
-                        <span>{{ issue }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="agency-actions">
-                    <button class="btn btn-secondary" (click)="viewAgencyDetails(agency.id)">
-                      <i class="material-icons">visibility</i>
-                      Détails
-                    </button>
-                    <button class="btn btn-primary" (click)="auditAgency(agency.id)">
-                      <i class="material-icons">fact_check</i>
-                      Auditer
-                    </button>
-                    <button class="btn btn-accent" (click)="contactAgency(agency.id)">
-                      <i class="material-icons">message</i>
-                      Contacter
-                    </button>
-                  </div>
-
-                  <div class="agency-footer">
-                    <span class="last-audit">Dernier audit: {{ agency.lastAudit | date:'dd/MM/yyyy' }}</span>
-                    <span class="revenue">{{ agency.revenue | number:'1.0-0' }}€/mois</span>
-                  </div>
-                </div>-->
               </div>
             </div>
 
+
+            <!-- Onglet Audit des Collecteurs -->
+            <div *ngIf="activeTab === 'collectors'" class="agencies-tab">
+              <div class="agencies-header">
+                <h2>Audit des Collecteurs</h2>
+                <div class="agencies-filters">
+                  <select [(ngModel)]="collectorsFilter" (change)="filterCollectors()" class="filter-select">
+                    <option value="all">Toutes les Clients</option>
+                    <option value="active">actif</option>
+                    <option value="inactive">Inactif</option>
+                  </select>
+                  <select [(ngModel)]="complianceFilter" (change)="filterCollectors()" class="filter-select">
+                    <option value="all">Tous niveaux</option>
+                    <option value="excellent">Excellent (95%+)</option>
+                    <option value="good">Bon (85-94%)</option>
+                    <option value="poor">Faible (<85%)</option>
+                  </select>
+                </div>
+              </div>
+
+
+              <div class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+                <div class="col" *ngFor="let collector of filteredCollectors">
+                  <mat-card class=" client-audit-card client-card">
+                    <mat-card-header>
+                      <mat-card-title-group class="w-100 pb-3">
+                        <mat-card-title>{{collector.firstName}} {{collector.lastName}} <span class="status-badge" [class]="'status-' + collector.isActive">{{getCollectorSubscriptionText(collector.isActive)}}</span></mat-card-title>
+                        <mat-card-subtitle ><span class="status-pending">{{collector.email}}</span></mat-card-subtitle>
+                        <ng-container *ngIf="collector?.avatar; else noImage">
+                          <img mat-card-md-image class="rounded" src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" alt="Image of a Shiba Inu">
+                        </ng-container>
+                        <ng-template #noImage>
+                          <div class="rounded-circle text-white font-bold uppercase"
+                            [style.background-color]="getRandomColor(collector)">
+                            {{ getInitials(collector?.firstName+' '+collector?.lastName) }}
+                          </div>
+                        </ng-template>
+                      </mat-card-title-group>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div ><h5 class="text-center">Tel: {{collector?.phone}}</h5></div>
+                      <div ><h5 class="text-center">Agence: {{collector?.agency?.agencyName}}</h5></div>
+                      <!-- <div *ngIf="collector?.agency?.agencyId"></div> -->
+                      <div>
+                        <h5 class="text-center">Ville/Quartier: {{collector?.agency?.address?.city}}/{{collector?.agency?.address?.quartier}}</h5>
+                      </div>
+                      <div class="agency-actions d-flex justify-content-end align-items">
+                        <button class="btn btn-secondary" (click)="viewCollectorDetails(collector._id)">
+                          <i class="material-icons">visibility</i>
+                          Détails
+                        </button>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div><!--end row-->
+              <div class="agencies-grid">
+              </div>
+            </div>
 
             <!-- Onglet Statistiques -->
             <div *ngIf="activeTab === 'statistics'" class="statistics-tab">
@@ -1302,7 +1284,7 @@ interface Communication {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
+      font-size: 35px;
       font-weight: bold;
       color: white;
       width: 70px;
@@ -2293,8 +2275,10 @@ export class AdminDashboard implements OnInit {
 
   agencyAudits: AgencyAudit[] = [];
   clientsAudits: any[] = [];
+  collectorsAudits: any[] = [];
   filteredAgencies: AgencyAudit[] = [];
   filteredClients: any[] = [];
+  filteredCollectors: any[] = [];
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: ZoneStatistic[] = [];
   incidents: Incident[] = [];
@@ -2304,6 +2288,7 @@ export class AdminDashboard implements OnInit {
   // Filters
   agenciesFilter = 'all';
   clientsFilter = 'all';
+  collectorsFilter = 'all';
   complianceFilter = 'all';
   statisticsPeriod = 'month';
   incidentsFilter = 'all';
@@ -2349,6 +2334,10 @@ export class AdminDashboard implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    this.getAllAgenciesIDs()
+    // if(this.agencies.length > 0){
+    //   this.loadAllCollectors();
+    // } 
     this.loadAdminData();
     this.showAdminStatistics();
   }
@@ -2359,7 +2348,9 @@ export class AdminDashboard implements OnInit {
     this.loadZoneStatistics();
     this.loadIncidents();
     this.loadCommunications();
-    this.showAdminClients()
+    this.showAdminClients();
+    
+    
   }
 
   loadAgencyAudits(): void {
@@ -2539,6 +2530,17 @@ export class AdminDashboard implements OnInit {
       'active': 'Actif',
       'pending': 'En attente',
       'cancelled': 'Annulé'
+    };
+    return statusClientTexts[status as keyof typeof statusClientTexts] || status;
+  }
+
+  getCollectorSubscriptionText(status?: string): string {
+    if (!status) {
+      return `${this.filteredCollectors?.length} actives`;
+    }
+    const statusClientTexts = {
+      'active': 'Active',
+      'inactive': 'Inactive',
     };
     return statusClientTexts[status as keyof typeof statusClientTexts] || status;
   }
@@ -2727,6 +2729,23 @@ export class AdminDashboard implements OnInit {
       return statusMatch;
     });
   }
+
+  filterCollectors(): void {
+    this.filteredCollectors = this.collectorsAudits.filter(client => {
+      const statusMatch = this.collectorsFilter === 'all' || client.isActive == this.collectorsFilter;
+      let complianceMatch = true;
+
+      // if (this.complianceFilter === 'excellent') {
+      //   complianceMatch = client.complianceScore >= 95;
+      // } else if (this.complianceFilter === 'good') {
+      //   complianceMatch = client.complianceScore >= 85 && client.complianceScore < 95;
+      // } else if (this.complianceFilter === 'poor') {
+      //   complianceMatch = client.complianceScore < 85;
+      // }
+
+      return statusMatch;
+    });
+  }
   filterIncidents(): void {
     this.filteredIncidents = this.incidents.filter(incident => {
       const statusMatch = this.incidentsFilter === 'all' || incident.status === this.incidentsFilter;
@@ -2745,6 +2764,9 @@ export class AdminDashboard implements OnInit {
   }
   viewClientDetails(clientId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails du client');
+  }
+  viewCollectorDetails(clientId: string): void {
+    this.notificationService.showInfo('Détails', 'Ouverture des détails du collecteur');
   }
   auditAgency(agencyId: string): void {
     this.notificationService.showInfo('Audit', 'Lancement de l\'audit de l\'agence');
@@ -2853,11 +2875,82 @@ export class AdminDashboard implements OnInit {
   }
 
 
-  getInitials(fullName: string){
+  agencies: any[] = [];
+  getAllAgenciesIDs(): void {
+    this.agencyService.getAllAgenciesFromApi().subscribe({
+      next: (response: any) => {
+        this.agencies = response?.data.map((a: any) => a._id);
+        console.log('agencies in dashboard', response, this.agencies);
+        this.loadAllCollectors();
+      }
+    })
+  }
+  loadAllCollectors(): void {
+    this.adminService.getAllEmployees('collector').subscribe({
+      next: (response: any) => {
+        const collectors = response?.employees || [];
+        
+        const collectorsWithAgencies$ = collectors.map((employee: any) => {
+          const agency$ = this.agencies.includes(employee.agencyId)
+            ? this.agencyService.getAgencyById1(employee.agencyId)
+            : of({ data: { agencyName: '' } });
+
+          return agency$.pipe(
+            map((agencyResponse: any) => {
+              console.log('agencyResponse', agencyResponse);
+              return {
+                agency: {
+                  agencyName: agencyResponse?.data?.agencyName || '',
+                  agencyId: agencyResponse?.data?._id || '',
+                  address: {
+                    city: agencyResponse?.data?.address?.city|| '',
+                    quartier: agencyResponse?.data?.address?.neighborhood || '',
+                    postalCode: agencyResponse?.data?.address?.postalCode || '',
+                    sector: agencyResponse?.data?.address?.sector || '',
+                    street: agencyResponse?.data?.address?.street || ''
+                  }
+                },
+                createdAt: employee?.createdAt || '',
+                email: employee?.email || '',
+                firstName: employee?.firstName || '',
+                hiredAt: employee?.hiredAt || '',
+                isActive: employee?.isActive ? 'active' : 'inactive',
+                lastName: employee?.lastName || '',
+                phone: employee?.phone || '',
+                role: employee?.role || '',
+                updatedAt: employee?.updatedAt || '',
+                userId: employee?.userId || '',
+                zones: employee?.zones || []
+              };
+            })
+          );
+        });
+
+        forkJoin(collectorsWithAgencies$).subscribe((result: any) => {
+          this.collectorsAudits = result;
+          this.filteredCollectors = [...this.collectorsAudits];
+          console.log('collectors in dashboard', this.filteredCollectors);
+        });
+      }
+    });
+  }
+  getInitials(fullName: string) {
     return this.sharedService.getInitials(fullName);
   }
 
   getRandomColor(item: any): string {
     return this.sharedService.getRandomColor(item);
   }
+
+  //Agencies
+
+  // getAgencyById(id: string) {
+  //   return this.agencyService.getAgencyByIdFromApi(id).subscribe({
+  //     next: (response: any) => {
+  //       if (response.success) {
+  //         console.log('agencies in dashboard', response?.data?.agencyName);
+  //       }
+  //     }
+  //   });
+  // }
 }

@@ -230,6 +230,14 @@ export class AgencyService {
     return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
   }
 
+    getAgencyById1(id: string): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/agences/recuperation/${id}`).pipe(
+      map((response: any) => {
+        console.log('API > getAgencyById:', response);
+        return response;
+      })
+    );
+  }
   getAgencyEmployees(agencyId: string): Observable<Employee[]> {
     const agency = this.agencies.find(a => a._id === agencyId);
     return of(agency?.employees || []).pipe(delay(300));
@@ -246,6 +254,11 @@ getAgencyEmployeesByRole(agencyId: string, role:EmployeeRole): Observable<Employ
   return this.http.get<Employees[]>(`${environment.apiUrl}/agences/${agencyId}/employees/role/${role}`);
  
 }
+//recupere les zones d une agence
+getAgencyZones(agencyId: string): Observable<ServiceZone[]> {
+  return this.http.get<ServiceZone[]>(`${environment.apiUrl}/zones/agence/${agencyId}`);
+}
+
 
 
   // addEmployee(agencyId: string, employee: Partial<Employee>): Observable<Employee> {
