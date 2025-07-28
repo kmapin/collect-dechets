@@ -54,7 +54,28 @@ import { NotificationService } from '../../services/notification.service';
                 <span>S'inscrire</span>
               </a>
             </div>
+<div class="notification-bell" *ngIf="isAuthenticated" (click)="toggleNotifications()" >
+  <i class="material-icons">notifications</i>
+  <span class="badge" *ngIf="notifications.length">{{ notifications.length }}</span>
 
+  <div class="notifications-dropdown" [class.show]="showNotifications">
+    <div class="dropdown-header">
+      <strong>Notifications</strong>
+      <button class="clear-btn" (click)="markAllAsRead($event)">
+        Tout marquer comme lu
+      </button>
+    </div>
+    <div class="notifications-list">
+      <div *ngIf="notifications.length === 0" class="empty-notification">
+        Aucune notification
+      </div>
+      <div *ngFor="let notif of notifications" class="notification-item">
+        <div class="notif-content">{{ notif.message }}</div>
+        <div class="notif-date">{{ notif.date | date:'short' }}</div>
+      </div>
+    </div>
+  </div>
+</div>
             <!-- Menu utilisateur connecté -->
             <div class="user-menu" *ngIf="isAuthenticated && currentUser" 
                  (mouseenter)="showUserMenu = true" 
@@ -364,6 +385,103 @@ import { NotificationService } from '../../services/notification.service';
       object-fit: cover;
     }
 
+.notification-bell {
+  position: relative;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--text-primary);
+  border-radius: 12px;
+  transition: color 0.3s ease, background-color 0.3s ease;}
+
+
+.notification-bell:hover {
+  background: rgba(0, 188, 212, 0.08); 
+  color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.notification-bell .badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--error-color);
+  color: white;
+  font-size: 0.7rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 300px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.notifications-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--medium-gray);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clear-btn {
+  font-size: 0.8rem;
+  color: var(--primary-color);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+
+}
+
+.clear-btn:hover {
+  background: rgba(0, 188, 212, 0.1);
+}
+
+.notifications-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--medium-gray);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.notification-item:hover {
+  background: var(--light-gray);
+}
+
+.empty-notification {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}
     .user-info {
       display: flex;
       flex-direction: column;
@@ -701,7 +819,8 @@ export class HeaderComponent implements OnInit {
   showUserMenu = false;
   isMobileMenuOpen = false;
   isScrolled = false;
-
+showNotifications = false;
+notifications: any[] = []; 
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -751,7 +870,14 @@ export class HeaderComponent implements OnInit {
     };
     return roleLabels[role] || role;
   }
+toggleNotifications(): void {
+  this.showNotifications = !this.showNotifications;
+}
 
+markAllAsRead(event: Event): void {
+  event.stopPropagation();
+  // La logique viendra plus tard
+}
   logout(): void {
     this.authService.logout().subscribe({
       next: (response: any) => {

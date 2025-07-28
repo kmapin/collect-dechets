@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { AgencyService } from '../../services/agency.service';
-import { Agency } from '../../models/agency.model';
+import { Agency, WasteService } from '../../models/agency.model';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { User } from '../../models/user.model';
 
 @Component({
   selector: 'app-agency-details',
@@ -159,7 +160,47 @@ import { NotificationService } from '../../services/notification.service';
                   <p>Cette agence ne propose actuellement aucun service.</p>
                 </div>
               </section>
-
+<!-- Section Tarifs de l'agence -->
+<section class="tariffs-section card" *ngIf="tarifs.length > 0">
+  <div class="section-header">
+    <h2>
+      <i class="material-icons">euro_symbol</i>
+      Tarifs de l'agence
+    </h2>
+    <span class="section-count">{{ tarifs.length }} tarif(s)</span>
+  </div>
+  <table class="tariffs-table">
+    <thead>
+      <tr>
+        <th>Service</th>
+        <th>Description</th>
+        <th>Fréquence</th>
+        <th>Prix</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let t of tarifs">
+        <td>{{ t.name }}</td>
+        <td>{{ t.description }}</td>
+        <td>{{ getFrequencyText(t.frequency) }}</td>
+        <td>
+          <span class="price">{{ t.price | number:'1.2-2' }} {{ t.currency }}</span>
+        </td>
+        <td>
+          <span [class.active]="t.isActive" [class.inactive]="!t.isActive">
+            {{ t.isActive ? 'Disponible' : 'Indisponible' }}
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+<div *ngIf="tarifs.length === 0" class="empty-state">
+  <i class="material-icons">euro_symbol</i>
+  <h3>Aucun tarif disponible</h3>
+  <p>Cette agence n'a pas encore défini ses tarifs.</p>
+</div>
               <!-- Coverage Zones Section -->
               <section class="zones-section card">
                 <div class="section-header">
@@ -367,6 +408,33 @@ import { NotificationService } from '../../services/notification.service';
       padding: 0 24px;
       width: 100%;
     }
+    /* Ajoute ceci dans styles: [] de ton composant */
+.tariffs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+.tariffs-table th, .tariffs-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--medium-gray);
+  text-align: left;
+}
+.tariffs-table th {
+  background: var(--light-gray);
+  font-weight: 600;
+}
+.price {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+.active {
+  color: var(--success-color);
+  font-weight: 600;
+}
+.inactive {
+  color: var(--error-color);
+  font-weight: 600;
+}
 
     .breadcrumb-section {
       background: var(--white);
@@ -1203,7 +1271,8 @@ import { NotificationService } from '../../services/notification.service';
 })
 export class AgencyDetailsComponent implements OnInit {
   agency: Agency | null = null;
-
+ tarifs: WasteService[] = [];
+    currentUser: User | null = null;
   constructor(
     private route: ActivatedRoute,
     private agencyService: AgencyService,
@@ -1212,12 +1281,30 @@ export class AgencyDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+       this.currentUser = this.authService.getCurrentUser();
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadAgencyFromApi(id);
     }
-  }
 
+    
+  }
+// chargement des tarifs liee a une agence 
+ loadTariffs(agencyId: string): void {
+    if (agencyId) {
+      this.agencyService.getAgencyTariffs$(agencyId).subscribe({
+        next: (data) => {
+          this.tarifs = data;
+          console.log('Tarifs récupérés :', this.tarifs);
+        },
+        error: (err) => {
+          console.error('Erreur lors de la récupération des tarifs :', err);
+        }
+      });
+    } else {
+      console.warn('Aucun ID d’agence fourni.');
+    }
+  }
   /**
    * Transforme une agence API en objet compatible avec le template
    */
@@ -1265,20 +1352,27 @@ private mapApiAgency(apiAgency: any): Agency {
   /**
    * Charge les détails d'une agence depuis l'API backend
    */
-  loadAgencyFromApi(id: string): void {
-    this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
-      if (response.success && response.data) {
-        this.agency = this.mapApiAgency(response.data);
-        console.log('[DEBUG] Agency details:', this.agency);
-      } else {
-        console.error('Erreur lors du chargement de l\'agence');
-        // Fallback vers les données mockées si l'API échoue
-        this.agencyService.getAgencyById(id).subscribe(agency => {
-          this.agency = agency || null;
-        });
+loadAgencyFromApi(id: string): void {
+  this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
+    if (response.success && response.data) {
+      this.agency = this.mapApiAgency(response.data);
+      console.log('[DEBUG] Agency details:', this.agency);
+      // Ajoute cet appel ici pour charger les tarifs dynamiquement
+      if (this.agency && this.agency._id) {
+        this.loadTariffs(this.agency._id);
       }
-    });
-  }
+    } else {
+      console.error('Erreur lors du chargement de l\'agence');
+      // Fallback vers les données mockées si l'API échoue
+      this.agencyService.getAgencyById(id).subscribe(agency => {
+        this.agency = agency || null;
+        if (this.agency) {
+          this.loadTariffs(this.agency._id);
+        }
+      });
+    }
+  });
+}
 
   getStars(rating: number): number[] {
     return new Array(Math.floor(rating)).fill(0);

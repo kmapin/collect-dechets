@@ -495,7 +495,7 @@ interface Statistics {
             </div>
 
             <!-- Onglet Signalements -->
-            <div *ngIf="activeTab === 'reports'" class="reports-tab">
+            <!-- <div *ngIf="activeTab === 'reports'" class="reports-tab">
               <div class="reports-header">
                 <h2>Traitement des Signalements</h2>
                 <div class="reports-filters">
@@ -556,8 +556,20 @@ interface Statistics {
                   </div>
                 </div>
               </div>
-            </div>
-
+            </div> -->
+<div *ngIf="activeTab === 'reports'" class="reports-tab">
+  <div class="reports-header">
+    <h2>Signalements</h2>
+  </div>
+  <div class="reports-list">
+    <div *ngFor="let report of agencyReports" class="report-card card">
+      <h4>{{ report.clientName }} </h4>
+      <p>Type : {{ report.type }}</p>
+      <p>Description : {{ report.description }}</p>
+      <p>Date : {{ report.date | date:'dd/MM/yyyy HH:mm' }}</p>
+    </div>
+  </div>
+</div>
             <!-- Onglet Rapports -->
             <div *ngIf="activeTab === 'analytics'" class="analytics-tab">
               <div class="analytics-header">
@@ -1864,6 +1876,7 @@ interface Statistics {
 })
 export class AgencyDashboardComponent implements OnInit {
   currentUser: User | null = null;
+  agencyReports: Report[] = [];
   agency: Agency | null = null;
   activeTab = 'collections';
 collectors: Employees[] = [];
@@ -1978,8 +1991,10 @@ newTarif: any = {
     this.currentUser = this.authService.getCurrentUser();
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyData();
+   
  this.loadCollectors(this.currentUser);
  this.loadZonesForAgency(this.currentUser);
+this.loadAgencyReports(this.currentUser);
 
  
     // Ne pas appeler loadClients() ici directement !
@@ -2042,7 +2057,7 @@ newTarif: any = {
   }
 loadCollectors(currentUser: any): void {
   if (currentUser?._id) {
-    this.agencyService.getAgencyEmployeesByRole(currentUser._id, EmployeeRole.COLLECTOR).subscribe(
+    this.agencyService.getAgencyEmployeesByRole$(currentUser._id, EmployeeRole.COLLECTOR).subscribe(
       (employee) => {
         this.collectors = employee;
         console.log("Collecteurs chargés via l api service  :", this.collectors);
@@ -2053,7 +2068,7 @@ loadCollectors(currentUser: any): void {
       }
     );
   } else {
-      this.agencyService.getAgencyEmployeesByRole(currentUser._id, EmployeeRole.MANAGER).subscribe(
+      this.agencyService.getAgencyEmployeesByRole$(currentUser._id, EmployeeRole.MANAGER).subscribe(
       (manager) => {
         this.collectors = manager;
         console.log("Collecteurs chargés via l api service  :", this.collectors);
@@ -2093,10 +2108,9 @@ loadCollectors(currentUser: any): void {
 
   employeesNbrs!:number;
   activesEmployeesNbrs!:number;
-  loadEmployees(currentUser: any): void {
-
-    if (currentUser?._id) {
-     this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({
+ loadEmployees(currentUser: any): void {
+  if (currentUser?._id) {
+    this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({
       next: (employees) => {
         this.allEmployees = employees;
         console.log("loadEmployees > :", this.allEmployees); // Changed from error to log
@@ -2112,12 +2126,12 @@ loadCollectors(currentUser: any): void {
   } else {
     console.warn("Aucun ID d'utilisateur courant disponible.");
   }
-  }
+}
 
 // fonction to load zones for the current agency
 loadZonesForAgency(currentUser: any): void {
        if (currentUser?._id) {
-      this.agencyService.getAgencyZones(currentUser?._id).subscribe({
+      this.agencyService.getAgencyZones$(currentUser?._id).subscribe({
         next: (zonesAgency) => {
           this.zonesAgency = zonesAgency;
         },
@@ -2129,6 +2143,27 @@ loadZonesForAgency(currentUser: any): void {
       console.error("Aucun agencyId trouvé dans le stockage local.");
     }
   }
+//chargement des signalements
+loadAgencyReports(currentUser: any): void {
+  if (currentUser && currentUser._id) {
+    const agencyId = currentUser._id; 
+    this.agencyService.getAgencyReports$(agencyId).subscribe({
+      next: (reports) => {
+        this.agencyReports = reports;
+        console.log("Signalements chargés >>>>>> :", this.agencyReports);
+      },
+      error: (error) => {
+        console.error("Erreur lors du chargement des signalements :", error);
+        this.notificationService.showError(
+          'Erreur',
+          'Impossible de charger les signalements. Veuillez réessayer.'
+        );
+      }
+    });
+  } else {
+    console.warn("Aucun ID d'utilisateur courant disponible.");
+  }
+}
 
   loadServiceZones(): void {
     this.serviceZones = [
