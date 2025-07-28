@@ -7,7 +7,7 @@ import { AgencyService } from '../../../services/agency.service';
 import { CollectionService } from '../../../services/collection.service';
 import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
-import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule, EmployeeRole } from '../../../models/agency.model';
+import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule, EmployeeRole, WasteService } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { ClientService, ClientApi } from '../../../services/client.service';
 
@@ -784,12 +784,12 @@ interface Statistics {
             </div>
             <div class="form-group">
   <label>Collecteur *</label>
-  <select [(ngModel)]="newSchedule.collectorId" name="collectorId" required>
-    <option value="">Sélectionner un collecteur</option>
-    <option *ngFor="let collector of collectors" >
-      {{ collector.firstName }} {{ collector.lastName }}
-    </option>
-  </select>
+<select [(ngModel)]="newSchedule.collectorId" name="collectorId" required>
+  <option value="">Sélectionner un collecteur</option>
+  <option *ngFor="let collector of collectors" >
+    {{ collector.firstName }} {{ collector.lastName }}
+  </option>
+</select>
 </div>
             <div class="form-actions">
               <button type="button" class="btn btn-secondary" (click)="showScheduleModal = false">
@@ -1907,7 +1907,13 @@ manager: Employees[] = [];
   showZoneModal = false;
   showScheduleModal = false;
   editingZone = false;
-
+newTarif: any = {
+  agencyId: "",
+  type: "",
+  price: 0,
+  description: "",
+  nbPassages: 0
+}
   // Forms
   newEmployee: any = {
     firstName: '',
@@ -1935,7 +1941,7 @@ manager: Employees[] = [];
   };
 
   citiesInput = '';
-
+ 
   neighborhoodsInput = '';
   activeClients: ClientApi[] = [];
   activeClientNbrs!: number;
@@ -1974,6 +1980,7 @@ manager: Employees[] = [];
     this.loadAgencyData();
  this.loadCollectors(this.currentUser);
  this.loadZonesForAgency(this.currentUser);
+
  
     // Ne pas appeler loadClients() ici directement !
 
@@ -1995,6 +2002,25 @@ manager: Employees[] = [];
   //   return this.activeClients.length;
   // }
 
+// loadTariffsForAgency(): void {
+//     const userString = localStorage.getItem('currentUser');
+//     if (userString) {
+//       const currentUser = JSON.parse(userString);
+//       const agencyId = currentUser._id;
+
+//       this.agencyService.getAgencyTariffs(agencyId).subscribe({
+//         next: (tariffs) => {
+//           this.agencyTariffs = tariffs;
+//           console.log('Tarifs récupérés :', tariffs);
+//         },
+//         error: (err) => {
+//           console.error("Erreur lors du chargement des tarifs de l'agence", err);
+//         }
+//       });
+//     } else {
+//       console.error("Aucun utilisateur trouvé dans le stockage local.");
+//     }
+//   }
 
   loadAgencyData(): void {
     // Charger les données de l'agence
@@ -2070,20 +2096,22 @@ loadCollectors(currentUser: any): void {
   loadEmployees(currentUser: any): void {
 
     if (currentUser?._id) {
-      this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe(
-        (employees) => {
-          this.allEmployees = employees; // Assurez-vous que allEmployees est bien typé
-          console.error("loadEmployees > :", this.allEmployees);
-
-        },
-        (error) => {
-          console.error("Erreur lors du chargement des employés :", error);
-          // Vous pouvez également gérer l'affichage d'un message d'erreur à l'utilisateur ici
-        }
-      );
-    } else {
-      console.warn("Aucun ID d'utilisateur courant disponible.");
-    }
+     this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({
+      next: (employees) => {
+        this.allEmployees = employees;
+        console.log("loadEmployees > :", this.allEmployees); // Changed from error to log
+      },
+      error: (error) => {
+        console.error("Erreur lors du chargement des employés :", error);
+        this.notificationService.showError(
+          'Erreur', 
+          'Impossible de charger les employés. Veuillez réessayer.'
+        );
+      }
+    });
+  } else {
+    console.warn("Aucun ID d'utilisateur courant disponible.");
+  }
   }
 
 // fonction to load zones for the current agency
@@ -2637,7 +2665,9 @@ loadZonesForAgency(currentUser: any): void {
       this.agencyService.addSchedule$(schedule).subscribe({
         next: () => {
           console.log('Horaire envoyé avec succès');
-          this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
+        this.loadSchedules(); 
+        this.showScheduleModal = false;
+        this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
         },
         error: (err) => {
           console.error('Erreur lors de l\'envoi', err);

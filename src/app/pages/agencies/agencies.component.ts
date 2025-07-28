@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
-import { Agency } from '../../models/agency.model';
+import { Agency, WasteService } from '../../models/agency.model';
 
 @Component({
   selector: 'app-agencies',
@@ -799,13 +799,13 @@ export class AgenciesComponent implements OnInit {
   minRating = '';
   sortBy = 'name';
   viewMode: 'grid' | 'list' | 'map' = 'grid';
-  
+  agencyTariffs: WasteService[] = [];
   cities: string[] = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 'Montpellier'];
 
   constructor(
     private agencyService: AgencyService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadAgenciesFromApi();
@@ -821,46 +821,46 @@ export class AgenciesComponent implements OnInit {
   /**
    * Transforme une agence API en objet compatible avec le template
    */
-private mapApiAgency(apiAgency: any): Agency {
-  return {
-    _id: apiAgency._id || '',
-    userId: apiAgency.userId || '',
-    firstName: apiAgency.firstName || '',
-    lastName: apiAgency.lastName || '',
-    agencyName: apiAgency.agencyName || '',
-    agencyDescription: apiAgency.agencyDescription || '',
-    phone: apiAgency.phone || '',
-    address: apiAgency.address || { 
-      street: '', 
-      arrondissement: '', 
-      sector: '', 
-      neighborhood: '', 
-      city: '', 
-      postalCode: '' 
-    },
-    arrondissement: apiAgency.arrondissement || '',
-    secteur: apiAgency.secteur || '',
-    quartier: apiAgency.quartier || '',
-    licenseNumber: apiAgency.licenseNumber || '',
-    members: apiAgency.members || [],
-    serviceZones: apiAgency.serviceZones || [],
-    services: apiAgency.services || [],
-    employees: apiAgency.employees || [],
-    schedule: apiAgency.schedule || [],
-    collectors: apiAgency.collectors || [],
-    clients: apiAgency.clients || [],
-    collections: apiAgency.collections || [],
-    incidents: apiAgency.incidents || [],
-    rating: apiAgency.rating || 0,
-    totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
-    acceptTerms: apiAgency.acceptTerms || false,
-    receiveOffers: apiAgency.receiveOffers || false,
-    isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
-    createdAt: apiAgency.createdAt || '',
-    updatedAt: apiAgency.updatedAt || '',
-    __v: apiAgency.__v || 0
-  };
-}
+  private mapApiAgency(apiAgency: any): Agency {
+    return {
+      _id: apiAgency._id || '',
+      userId: apiAgency.userId || '',
+      firstName: apiAgency.firstName || '',
+      lastName: apiAgency.lastName || '',
+      agencyName: apiAgency.agencyName || '',
+      agencyDescription: apiAgency.agencyDescription || '',
+      phone: apiAgency.phone || '',
+      address: apiAgency.address || {
+        street: '',
+        arrondissement: '',
+        sector: '',
+        neighborhood: '',
+        city: '',
+        postalCode: ''
+      },
+      arrondissement: apiAgency.arrondissement || '',
+      secteur: apiAgency.secteur || '',
+      quartier: apiAgency.quartier || '',
+      licenseNumber: apiAgency.licenseNumber || '',
+      members: apiAgency.members || [],
+      serviceZones: apiAgency.serviceZones || [],
+      services: apiAgency.services || [],
+      employees: apiAgency.employees || [],
+      schedule: apiAgency.schedule || [],
+      collectors: apiAgency.collectors || [],
+      clients: apiAgency.clients || [],
+      collections: apiAgency.collections || [],
+      incidents: apiAgency.incidents || [],
+      rating: apiAgency.rating || 0,
+      totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+      acceptTerms: apiAgency.acceptTerms || false,
+      receiveOffers: apiAgency.receiveOffers || false,
+      isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
+      createdAt: apiAgency.createdAt || '',
+      updatedAt: apiAgency.updatedAt || '',
+      __v: apiAgency.__v || 0
+    };
+  }
 
   /**
    * Charge les agences depuis l'API backend et remplace les données locales
@@ -879,17 +879,17 @@ private mapApiAgency(apiAgency: any): Agency {
 
   applyFilters(): void {
     this.filteredAgencies = this.agencies.filter(agency => {
-      const matchesSearch = !this.searchQuery || 
+      const matchesSearch = !this.searchQuery ||
         agency.agencyName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
         agency.address.city.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
         agency.address.neighborhood.toLowerCase().includes(this.searchQuery.toLowerCase());
 
       const matchesCity = !this.selectedCity || agency.address.city === this.selectedCity;
-      
-      const matchesService = !this.selectedService || 
+
+      const matchesService = !this.selectedService ||
         agency.services.some(service => service.name.toLowerCase().includes(this.selectedService));
 
-      const matchesPrice = !this.maxPrice || 
+      const matchesPrice = !this.maxPrice ||
         agency.services.some(service => service.price <= parseFloat(this.maxPrice));
 
       const matchesRating = !this.minRating || agency.rating >= parseFloat(this.minRating);
@@ -945,4 +945,26 @@ private mapApiAgency(apiAgency: any): Agency {
   subscribeToAgency(agencyId: string): void {
     this.router.navigate(['/agencies', agencyId]);
   }
+
+  // recuperation des tarif a partir du web service
+  // loadTariffsForAgency(): void {
+  //   const userString = localStorage.getItem('currentUser');
+  //   if (userString) {
+  //     const currentUser = JSON.parse(userString);
+
+
+  //     this.agencyService.getAgencyTariffs().subscribe({
+  //       next: (tariffs) => {
+  //         this.agencyTariffs = tariffs;
+  //         console.log('Tarifs récupérés :', tariffs);
+  //       },
+  //       error: (err) => {
+  //         console.error("Erreur lors du chargement des tarifs de l'agence", err);
+  //       }
+  //     });
+  //   } else {
+  //     console.error("Aucun utilisateur trouvé dans le stockage local.");
+  //   }
+  // }
+
 }
