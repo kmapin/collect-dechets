@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -82,19 +82,22 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Clients actifs</h3>
-                <p class="stat-value">{{ clientNbrs }}</p>
+                <p class="stat-value">{{ statistics.totalClients  }}</p>
                 <span class="stat-trend positive">+2 ce mois</span>
               </div>
             </div>
-
+    <!-- totalite des collecteurs au sein de l agence -->
+     
             <div class="stat-card card">
               <div class="stat-icon collectors">
                 <i class="material-icons">local_shipping</i>
               </div>
               <div class="stat-info">
                 <h3>Collecteurs actifs</h3>
-                <p class="stat-value">{{ statistics.activeCollectors }}</p>
-                <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span>
+                <!-- <p class="stat-value">{{ statistics.activeCollectors }}</p>
+                <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span> -->
+<p class="stat-value">{{ statistics.activeCollectors }}</p>
+<span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span>
               </div>
             </div>
 
@@ -104,10 +107,14 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Collectes aujourd'hui</h3>
-                <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
+                <!-- <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
                 <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
                   {{ getCollectionRate() }}% réalisées
-                </span>
+                </span> -->
+                <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
+<span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
+  {{ getCollectionRate() }}% réalisées
+</span>
               </div>
             </div>
 
@@ -117,8 +124,10 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Revenus du mois</h3>
+                <!-- <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
+                <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
                 <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
-                <span class="stat-trend positive">+8.5% vs mois dernier</span>
+<span class="stat-trend positive">+8.5% vs mois dernier</span>
               </div>
             </div>
 
@@ -623,6 +632,8 @@ interface Statistics {
                       </div>
                     </div>
                   </div>
+               
+                  
 
                   <div class="analytics-card card">
                     <h3>Répartition par Zone</h3>
@@ -1877,22 +1888,31 @@ interface Statistics {
 export class AgencyDashboardComponent implements OnInit {
   currentUser: User | null = null;
   agencyReports: Report[] = [];
+  
   agency: Agency | null = null;
   activeTab = 'collections';
 collectors: Employees[] = [];
   zonesAgency: ServiceZone[] = [];
 manager: Employees[] = [];
   // Data
-  statistics: Statistics = {
-    totalClients: 1250,
-    activeCollectors: 8,
-    todayCollections: 45,
-    completedCollections: 38,
-    monthlyRevenue: 32450,
-    averageRating: 4.3,
-    pendingReports: 3
-  };
-
+  // statistics: Statistics = {
+  //   totalClients: 1250,
+  //   activeCollectors: 8,
+  //   todayCollections: 45,
+  //   completedCollections: 38,
+  //   monthlyRevenue: 32450,
+  //   averageRating: 4.3,
+  //   pendingReports: 3
+  // };
+statistics: Statistics = {
+  totalClients: 0,
+  activeCollectors: 0,
+  todayCollections: 0,
+  completedCollections: 0,
+  monthlyRevenue: 0,
+  averageRating: 0,
+  pendingReports: 0
+};
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
   employees: Employee[] = [];
@@ -1984,18 +2004,22 @@ newTarif: any = {
     private agencyService: AgencyService,
     private collectionService: CollectionService,
     private notificationService: NotificationService,
-    private clientService: ClientService
+    private clientService: ClientService,
+     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     console.log("this.currentUser", this.currentUser);
+    this.loadAgencyStatistics(this.currentUser);
     this.loadAgencyData();
+     
    
  this.loadCollectors(this.currentUser);
  this.loadZonesForAgency(this.currentUser);
 this.loadAgencyReports(this.currentUser);
 
+ this.cdr.detectChanges();
  
     // Ne pas appeler loadClients() ici directement !
 
@@ -2165,6 +2189,56 @@ loadAgencyReports(currentUser: any): void {
   }
 }
 
+//recuperations des statistiques de l'agence
+  loadAgencyStatistics(currentUser: any): void {
+    if (currentUser && currentUser._id) {
+      const agencyId = currentUser._id; 
+      this.agencyService.getAgencyStats$(agencyId).subscribe({
+        next: (statistics) => {
+          this.statistics = statistics;
+          console.log("Statistiques de l'agence chargées :", this.statistics);
+           this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement des statistiques de l'agence :", error);
+          this.notificationService.showError(
+            'Erreur',
+            'Impossible de charger les statistiques de l\'agence. Veuillez réessayer.'
+          );
+        }
+      });
+    } else {
+      console.warn("Aucun ID d'utilisateur courant disponible.");
+    }
+  }
+// loadAgencyStatistics(currentUser: any): void {
+//   if (currentUser && currentUser._id) {
+//     const agencyId = currentUser._id; 
+//     this.agencyService.getAgencyStats$(agencyId).subscribe({
+//       next: (data) => {
+//         this.statistics = {
+//           totalClients: data.totalClients || 0,
+//           activeCollectors: data.activeCollectors || 0,
+//           todayCollections: data.todayCollections || 0,
+//           completedCollections: data.completedCollections || 0,
+//           monthlyRevenue: data.monthlyRevenue || 0,
+//           averageRating: data.averageRating || 0,
+//           pendingReports: data.pendingReports || 0
+//         };
+//         console.log("Statistiques de l'agence chargées :", this.statistics);
+//       },
+//       error: (error) => {
+//         console.error("Erreur lors du chargement des statistiques de l'agence :", error);
+//         this.notificationService.showError(
+//           'Erreur',
+//           'Impossible de charger les statistiques de l\'agence. Veuillez réessayer.'
+//         );
+//       }
+//     });
+//   } else {
+//     console.warn("Aucun ID d'utilisateur courant disponible.");
+//   }
+// }
   loadServiceZones(): void {
     this.serviceZones = [
       {
@@ -2266,9 +2340,16 @@ loadAgencyReports(currentUser: any): void {
     return Math.round((this.statistics.completedCollections / this.statistics.todayCollections) * 100);
   }
 
+  // getStars(rating: number): number[] {
+  //   return new Array(Math.floor(rating)).fill(0);
+  // }
   getStars(rating: number): number[] {
-    return new Array(Math.floor(rating)).fill(0);
+    // console.log('Rating reçu dans getStars:', rating);
+  if (!rating || rating < 0) {
+    return [];
   }
+  return new Array(Math.floor(rating)).fill(0);
+}
 
   getStatusText(status: CollectionStatus): string {
     const statusTexts = {

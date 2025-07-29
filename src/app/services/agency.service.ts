@@ -277,6 +277,22 @@ getAgencyReports$(agencyId: string): Observable<any[]> {
     })
   );
 }
+//recuperation des statistique liee a une agence 
+getAgencyStats$(agencyId: string): Observable<any> {
+  return this.http.get<any>(`${environment.apiUrl}/agences/${agencyId}/statistiques`).pipe(
+    map((response) => { 
+      console.log("Statistiques récupérées :", response);
+      return response;
+    }),
+    catchError((error) => {
+      console.error("Erreur lors de la récupération des statistiques :", error);
+      return of({'totalClients':'undefind', 'totalCollections': 'undefind', 'totalIncidents': 'undefind' }); // Gérer l'erreur de manière appropriée
+    })
+  );
+
+}
+
+
 
   // addEmployee(agencyId: string, employee: Partial<Employee>): Observable<Employee> {
   //   const newEmployee: Employee = {
@@ -370,7 +386,7 @@ getAgencyReports$(agencyId: string): Observable<any[]> {
       }),
       catchError(error => {
         console.error("Erreur lors de l'enregistrement de la planification:", error);
-        return of(null); // Gérer l'erreur de manière appropriée
+        return of(null); 
       })
     );
 
@@ -390,6 +406,12 @@ getEmployeesByRole(agencyId: string, role: string): Observable<Employee[] | null
       return of(null); 
     })
   );
+}
+//recuperation des suggestion de recherche
+getSuggestions(query: string, limit: number = 5): Observable<any[]> {
+  return this.http.get<any[]>(`/api/agences/suggestions`, {
+    params: { q: query, limit: limit.toString() }
+  });
 }
 
   /**

@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
 import { Agency, WasteService } from '../../models/agency.model';
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
 @Component({
   selector: 'app-agencies',
@@ -33,6 +34,12 @@ import { Agency, WasteService } from '../../models/agency.model';
                 (input)="onSearch()"
                 placeholder="Rechercher par nom, ville, quartier..."
                 class="search-input">
+                    <!-- Ajout de la liste des suggestions -->
+    <ul class="suggestions-list" *ngIf="suggestions.length > 0">
+  <li *ngFor="let suggestion of suggestions" (click)="applySuggestion(suggestion)">
+    {{ suggestion.name }}
+  </li>
+</ul>
             </div>
           </div>
 
@@ -291,6 +298,27 @@ import { Agency, WasteService } from '../../models/agency.model';
       padding: 0 24px;
       width: 100%;
     }
+    .suggestions-list {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.suggestions-list li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.suggestions-list li:hover {
+  background: #f0f0f0;
+}
 
     .filters-section {
       margin-bottom: 32px;
@@ -801,14 +829,22 @@ export class AgenciesComponent implements OnInit {
   viewMode: 'grid' | 'list' | 'map' = 'grid';
   agencyTariffs: WasteService[] = [];
   cities: string[] = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 'Montpellier'];
-
+suggestions: any[] = [];
+ private searchSubject = new Subject<string>();
   constructor(
     private agencyService: AgencyService,
     private router: Router
   ) { }
 
   ngOnInit(): void {
+   
     this.loadAgenciesFromApi();
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged() 
+    ).subscribe((query) => {
+      this.fetchSuggestions(query);
+    })
   }
 
   loadAgencies(): void {
@@ -966,5 +1002,30 @@ export class AgenciesComponent implements OnInit {
   //     console.error("Aucun utilisateur trouvé dans le stockage local.");
   //   }
   // }
+//recuperation des suggestions venqnt de la base de donnese pour l utilisateur connecté
+  onSearchInput(): void {
+    this.searchSubject.next(this.searchQuery); // Émet la valeur saisie
+  }
+private fetchSuggestions(query: string): void {
+    if (query.length > 2) {
+      this.agencyService.getSuggestions(query).subscribe({
+        next: (response) => {
+          console.log('Suggestions reçues :', response);
+          this.suggestions = response || [];
+        },
+        error: (err) => {
+          console.error('Erreur lors de la récupération des suggestions :', err);
+        }
+      });
+    } else {
+      this.suggestions = [];
+    }
+  }
 
+//application des suggestion
+applySuggestion(suggestion: any): void {
+  this.searchQuery = suggestion.name;
+  this.suggestions = [];
+  this.applyFilters();
+}
 }
