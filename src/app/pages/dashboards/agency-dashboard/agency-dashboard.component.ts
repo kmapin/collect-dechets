@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +7,7 @@ import { AgencyService } from '../../../services/agency.service';
 import { CollectionService } from '../../../services/collection.service';
 import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
-import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule, EmployeeRole } from '../../../models/agency.model';
+import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule, EmployeeRole, WasteService } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { ClientService, ClientApi } from '../../../services/client.service';
 
@@ -30,8 +30,12 @@ interface Report {
   type: 'missed_collection' | 'incomplete_collection' | 'damage' | 'complaint';
   description: string;
   date: Date;
+  createdAt: Date;
   status: 'open' | 'in_progress' | 'resolved';
   assignedTo?: string;
+  reportType?: string;
+  photos?: string[];
+
 }
 
 interface Statistics {
@@ -73,6 +77,7 @@ interface Statistics {
       
 
       <div class="container">
+        
         <div class="dashboard-content">
           <!-- Statistiques principales -->
           <div class="stats-grid">
@@ -82,19 +87,22 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Clients actifs</h3>
-                <p class="stat-value">{{ clientNbrs }}</p>
+                <p class="stat-value">{{activeClients.length }}</p>
                 <span class="stat-trend positive">+2 ce mois</span>
               </div>
             </div>
-
+    
+     
             <div class="stat-card card">
               <div class="stat-icon collectors">
                 <i class="material-icons">local_shipping</i>
               </div>
               <div class="stat-info">
                 <h3>Collecteurs actifs</h3>
-                <p class="stat-value">{{ statistics.activeCollectors }}</p>
-                <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span>
+                <!-- <p class="stat-value">{{ statistics.activeCollectors }}</p>
+                <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span> -->
+<p class="stat-value">{{ statistics.activeCollectors }}</p>
+<span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span>
               </div>
             </div>
 
@@ -104,10 +112,14 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Collectes aujourd'hui</h3>
-                <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
+                <!-- <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
                 <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
                   {{ getCollectionRate() }}% réalisées
-                </span>
+                </span> -->
+                <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
+<span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
+  {{ getCollectionRate() }}% réalisées
+</span>
               </div>
             </div>
 
@@ -117,8 +129,10 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Revenus du mois</h3>
+                <!-- <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
+                <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
                 <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
-                <span class="stat-trend positive">+8.5% vs mois dernier</span>
+<span class="stat-trend positive">+8.5% vs mois dernier</span>
               </div>
             </div>
 
@@ -259,6 +273,7 @@ interface Statistics {
                       <p class="employee-status" [class]="employee.isActive ? 'active' : 'inactive'">
                         {{ employee.isActive ? 'Actif' : 'Inactif' }}
                       </p>
+     
                     </div>
                     <!-- <div class="employee-actions">
                       <button class="action-btn" (click)="editEmployee(employee.id)">
@@ -288,7 +303,14 @@ interface Statistics {
                       <span>Embauché le {{ employee.hiredAt | date:'dd/MM/yyyy' }}</span>
                     </div>
                   </div>
-
+                 <div class="employee-actions">
+      <button class="action-btn" >
+        <i class="material-icons">edit</i>
+      </button>
+     <button class="action-btn danger" >
+  <i class="material-icons">delete</i>
+</button>
+    </div>
                   <!-- <div class="employee-stats" *ngIf="employee.role === 'collector'">
                     <div class="stat-item">
                       <span class="stat-label">Collectes aujourd'hui</span>
@@ -495,7 +517,7 @@ interface Statistics {
             </div>
 
             <!-- Onglet Signalements -->
-            <div *ngIf="activeTab === 'reports'" class="reports-tab">
+            <!-- <div *ngIf="activeTab === 'reports'" class="reports-tab">
               <div class="reports-header">
                 <h2>Traitement des Signalements</h2>
                 <div class="reports-filters">
@@ -556,10 +578,33 @@ interface Statistics {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> -->
+<div *ngIf="activeTab === 'reports'" class="reports-tab">
+  <div class="reports-header">
+    <h2>Signalements</h2>
+  </div>
+  <div class="reports-list">
+  <div *ngFor="let report of agencyReports" class="report-card card">
+    <h4>{{ report.clientName }}</h4>
+    
+    <p>Type : {{ report.reportType }}</p>
+    <p>Description : {{ report.description }}</p>
+    <p>Date : {{ report.createdAt }}</p>
+
+    <!-- Affichage des photos -->
+    <div *ngIf="report.photos && report.photos.length">
+      <div *ngFor="let photo of report.photos">
+        <img [src]="photo" alt="Photo du signalement" class="report-photo" />
+      </div>
+    </div>
+    <div *ngIf="!report.photos || !report.photos.length">
+      <p><em>Aucune photo associée</em></p>
+    </div>
+  </div>
+</div>
 
             <!-- Onglet Rapports -->
-            <div *ngIf="activeTab === 'analytics'" class="analytics-tab">
+            <div  class="analytics-tab">
               <div class="analytics-header">
                 <h2>Rapports et Statistiques</h2>
                 <div class="analytics-filters">
@@ -611,7 +656,6 @@ interface Statistics {
                       </div>
                     </div>
                   </div>
-
                   <div class="analytics-card card">
                     <h3>Répartition par Zone</h3>
                     <div class="zone-stats">
@@ -784,12 +828,12 @@ interface Statistics {
             </div>
             <div class="form-group">
   <label>Collecteur *</label>
-  <select [(ngModel)]="newSchedule.collectorId" name="collectorId" required>
-    <option value="">Sélectionner un collecteur</option>
-    <option *ngFor="let collector of collectors" >
-      {{ collector.firstName }} {{ collector.lastName }}
-    </option>
-  </select>
+<select [(ngModel)]="newSchedule.collectorId" name="collectorId" required>
+  <option value="">Sélectionner un collecteur</option>
+  <option *ngFor="let collector of collectors" >
+    {{ collector.firstName }} {{ collector.lastName }}
+  </option>
+</select>
 </div>
             <div class="form-actions">
               <button type="button" class="btn btn-secondary" (click)="showScheduleModal = false">
@@ -1864,22 +1908,32 @@ interface Statistics {
 })
 export class AgencyDashboardComponent implements OnInit {
   currentUser: User | null = null;
+  agencyReports: Report[] = [];
+
   agency: Agency | null = null;
   activeTab = 'collections';
-collectors: Employees[] = [];
+  collectors: Employees[] = [];
   zonesAgency: ServiceZone[] = [];
-manager: Employees[] = [];
+  manager: Employees[] = [];
   // Data
+  // statistics: Statistics = {
+  //   totalClients: 1250,
+  //   activeCollectors: 8,
+  //   todayCollections: 45,
+  //   completedCollections: 38,
+  //   monthlyRevenue: 32450,
+  //   averageRating: 4.3,
+  //   pendingReports: 3
+  // };
   statistics: Statistics = {
-    totalClients: 1250,
-    activeCollectors: 8,
-    todayCollections: 45,
-    completedCollections: 38,
-    monthlyRevenue: 32450,
-    averageRating: 4.3,
-    pendingReports: 3
+    totalClients: 0,
+    activeCollectors: 0,
+    todayCollections: 0,
+    completedCollections: 0,
+    monthlyRevenue: 0,
+    averageRating: 0,
+    pendingReports: 0
   };
-
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
   employees: Employee[] = [];
@@ -1891,7 +1945,7 @@ manager: Employees[] = [];
   filteredClients: Client[] = [];
   reports: Report[] = [];
   filteredReports: Report[] = [];
-
+  isDeleting: boolean = false;
   // Filters
   collectionsFilter = 'all';
   selectedZone = '';
@@ -1907,7 +1961,13 @@ manager: Employees[] = [];
   showZoneModal = false;
   showScheduleModal = false;
   editingZone = false;
-
+  newTarif: any = {
+    agencyId: "",
+    type: "",
+    price: 0,
+    description: "",
+    nbPassages: 0
+  }
   // Forms
   newEmployee: any = {
     firstName: '',
@@ -1965,16 +2025,23 @@ manager: Employees[] = [];
     private agencyService: AgencyService,
     private collectionService: CollectionService,
     private notificationService: NotificationService,
-    private clientService: ClientService
+    private clientService: ClientService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     console.log("this.currentUser", this.currentUser);
+    this.loadAgencyStatistics(this.currentUser);
     this.loadAgencyData();
- this.loadCollectors(this.currentUser);
- this.loadZonesForAgency(this.currentUser);
- 
+
+
+    this.loadCollectors(this.currentUser);
+    this.loadZonesForAgency(this.currentUser);
+    this.loadAgencyReports(this.currentUser);
+
+    this.cdr.detectChanges();
+
     // Ne pas appeler loadClients() ici directement !
 
   }
@@ -1995,6 +2062,25 @@ manager: Employees[] = [];
   //   return this.activeClients.length;
   // }
 
+  // loadTariffsForAgency(): void {
+  //     const userString = localStorage.getItem('currentUser');
+  //     if (userString) {
+  //       const currentUser = JSON.parse(userString);
+  //       const agencyId = currentUser._id;
+
+  //       this.agencyService.getAgencyTariffs(agencyId).subscribe({
+  //         next: (tariffs) => {
+  //           this.agencyTariffs = tariffs;
+  //           console.log('Tarifs récupérés :', tariffs);
+  //         },
+  //         error: (err) => {
+  //           console.error("Erreur lors du chargement des tarifs de l'agence", err);
+  //         }
+  //       });
+  //     } else {
+  //       console.error("Aucun utilisateur trouvé dans le stockage local.");
+  //     }
+  //   }
 
   loadAgencyData(): void {
     // Charger les données de l'agence
@@ -2014,31 +2100,56 @@ manager: Employees[] = [];
     //this.activeClientNbrs = this.activeClientNbr(); // Mettez à jour le nombre d'actifs
     //this.updateTabs(); // Mettez à jour les tabs après avoir récupéré les clients
   }
-loadCollectors(currentUser: any): void {
-  if (currentUser?._id) {
-    this.agencyService.getAgencyEmployeesByRole(currentUser._id, EmployeeRole.COLLECTOR).subscribe(
-      (employee) => {
-        this.collectors = employee;
-        console.log("Collecteurs chargés via l api service  :", this.collectors);
-      },
-      (error) => {
-        console.error("Erreur lors du chargement des collecteurs :", error);
-       ;
-      }
-    );
-  } else {
-      this.agencyService.getAgencyEmployeesByRole(currentUser._id, EmployeeRole.MANAGER).subscribe(
-      (manager) => {
-        this.collectors = manager;
-        console.log("Collecteurs chargés via l api service  :", this.collectors);
-      },
-      (error) => {
-        console.error("Erreur lors du chargement des collecteurs :", error);
-    
-      }
-    );
+  loadCollectors(currentUser: any): void {
+    if (currentUser?._id) {
+      this.agencyService.getAgencyEmployeesByRole$(currentUser._id, EmployeeRole.COLLECTOR).subscribe(
+        (employee) => {
+          this.collectors = employee;
+          console.log("Collecteurs chargés via l api service  :", this.collectors);
+        },
+        (error) => {
+          console.error("Erreur lors du chargement des collecteurs :", error);
+          ;
+        }
+      );
+    } else {
+      this.agencyService.getAgencyEmployeesByRole$(currentUser._id, EmployeeRole.MANAGER).subscribe(
+        (manager) => {
+          this.collectors = manager;
+          console.log("Collecteurs chargés via l api service  :", this.collectors);
+        },
+        (error) => {
+          console.error("Erreur lors du chargement des collecteurs :", error);
+
+        }
+      );
+    }
   }
-}
+  //suppression d un employé
+  deleteEmployee(currentUser: any, employeeId: any): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+      this.isDeleting = true;
+
+      if (currentUser?._id) {
+        this.agencyService.deleteEmployee$(currentUser._id, employeeId).subscribe(
+          () => {
+            this.notificationService.showSuccess('Succès', 'Employé supprimé avec succès.');
+            this.loadEmployees(currentUser);
+            this.isDeleting = false;
+          },
+          (error) => {
+            console.error('Erreur lors de la suppression de l\'employé :', error);
+            this.notificationService.showError('Erreur', 'Impossible de supprimer l\'employé. Veuillez réessayer.');
+            this.isDeleting = false;
+          }
+        );
+      } else {
+        console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
+        this.isDeleting = false;
+      }
+    }
+  }
+
   loadCollections(): void {
     // Simuler les collectes
     this.collections = [
@@ -2065,31 +2176,32 @@ loadCollectors(currentUser: any): void {
     this.filteredCollections = [...this.collections];
   }
 
-  employeesNbrs!:number;
-  activesEmployeesNbrs!:number;
+  employeesNbrs!: number;
+  activesEmployeesNbrs!: number;
   loadEmployees(currentUser: any): void {
-
     if (currentUser?._id) {
-      this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe(
-        (employees) => {
-          this.allEmployees = employees; // Assurez-vous que allEmployees est bien typé
-          console.error("loadEmployees > :", this.allEmployees);
-
+      this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({
+        next: (employees) => {
+          this.allEmployees = employees;
+          console.log("loadEmployees > :", this.allEmployees); // Changed from error to log
         },
-        (error) => {
+        error: (error) => {
           console.error("Erreur lors du chargement des employés :", error);
-          // Vous pouvez également gérer l'affichage d'un message d'erreur à l'utilisateur ici
+          this.notificationService.showError(
+            'Erreur',
+            'Impossible de charger les employés. Veuillez réessayer.'
+          );
         }
-      );
+      });
     } else {
       console.warn("Aucun ID d'utilisateur courant disponible.");
     }
   }
 
-// fonction to load zones for the current agency
-loadZonesForAgency(currentUser: any): void {
-       if (currentUser?._id) {
-      this.agencyService.getAgencyZones(currentUser?._id).subscribe({
+  // fonction to load zones for the current agency
+  loadZonesForAgency(currentUser: any): void {
+    if (currentUser?._id) {
+      this.agencyService.getAgencyZones$(currentUser?._id).subscribe({
         next: (zonesAgency) => {
           this.zonesAgency = zonesAgency;
         },
@@ -2101,7 +2213,78 @@ loadZonesForAgency(currentUser: any): void {
       console.error("Aucun agencyId trouvé dans le stockage local.");
     }
   }
+  //chargement des signalements
+  loadAgencyReports(currentUser: any): void {
+    if (currentUser && currentUser._id) {
+      const agencyId = currentUser._id;
+      this.agencyService.getAgencyReports$(agencyId).subscribe({
+        next: (reports) => {
+          this.agencyReports = reports;
+          console.log("Signalements chargés >>>>>> :", this.agencyReports);
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement des signalements :", error);
+          this.notificationService.showError(
+            'Erreur',
+            'Impossible de charger les signalements. Veuillez réessayer.'
+          );
+        }
+      });
+    } else {
+      console.warn("Aucun ID d'utilisateur courant disponible.");
+    }
+  }
 
+  //recuperations des statistiques de l'agence
+  loadAgencyStatistics(currentUser: any): void {
+    if (currentUser && currentUser._id) {
+      const agencyId = currentUser._id;
+      this.agencyService.getAgencyStats$(agencyId).subscribe({
+        next: (statistics) => {
+          this.statistics = statistics;
+          console.log("Statistiques de l'agence chargées :", this.statistics);
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement des statistiques de l'agence :", error);
+          this.notificationService.showError(
+            'Erreur',
+            'Impossible de charger les statistiques de l\'agence. Veuillez réessayer.'
+          );
+        }
+      });
+    } else {
+      console.warn("Aucun ID d'utilisateur courant disponible.");
+    }
+  }
+  // loadAgencyStatistics(currentUser: any): void {
+  //   if (currentUser && currentUser._id) {
+  //     const agencyId = currentUser._id; 
+  //     this.agencyService.getAgencyStats$(agencyId).subscribe({
+  //       next: (data) => {
+  //         this.statistics = {
+  //           totalClients: data.totalClients || 0,
+  //           activeCollectors: data.activeCollectors || 0,
+  //           todayCollections: data.todayCollections || 0,
+  //           completedCollections: data.completedCollections || 0,
+  //           monthlyRevenue: data.monthlyRevenue || 0,
+  //           averageRating: data.averageRating || 0,
+  //           pendingReports: data.pendingReports || 0
+  //         };
+  //         console.log("Statistiques de l'agence chargées :", this.statistics);
+  //       },
+  //       error: (error) => {
+  //         console.error("Erreur lors du chargement des statistiques de l'agence :", error);
+  //         this.notificationService.showError(
+  //           'Erreur',
+  //           'Impossible de charger les statistiques de l\'agence. Veuillez réessayer.'
+  //         );
+  //       }
+  //     });
+  //   } else {
+  //     console.warn("Aucun ID d'utilisateur courant disponible.");
+  //   }
+  // }
   loadServiceZones(): void {
     this.serviceZones = [
       {
@@ -2188,6 +2371,7 @@ loadZonesForAgency(currentUser: any): void {
         description: 'La collecte n\'a pas eu lieu à l\'heure prévue',
         date: new Date(),
         status: 'open',
+        createdAt: new Date(),
         assignedTo: undefined
       }
     ];
@@ -2203,7 +2387,14 @@ loadZonesForAgency(currentUser: any): void {
     return Math.round((this.statistics.completedCollections / this.statistics.todayCollections) * 100);
   }
 
+  // getStars(rating: number): number[] {
+  //   return new Array(Math.floor(rating)).fill(0);
+  // }
   getStars(rating: number): number[] {
+    // console.log('Rating reçu dans getStars:', rating);
+    if (!rating || rating < 0) {
+      return [];
+    }
     return new Array(Math.floor(rating)).fill(0);
   }
 
@@ -2315,8 +2506,8 @@ loadZonesForAgency(currentUser: any): void {
   getCollectors(): Employee[] {
     return this.employees.filter(e => e.role === 'collector');
   }
-  
-  
+
+
 
 
   getCollectorPerformance(): any[] {
@@ -2378,12 +2569,12 @@ loadZonesForAgency(currentUser: any): void {
     // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
-  deleteEmployee(employeeId: string): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
-      this.employees = this.employees.filter(e => e.id !== employeeId);
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
-    }
-  }
+  // deleteEmployee(employeeId: string): void {
+  //   if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+  //     this.employees = this.employees.filter(e => e.id !== employeeId);
+
+  //   }
+  // }
 
 
   // Zone Side 
@@ -2623,11 +2814,11 @@ loadZonesForAgency(currentUser: any): void {
       }
     });
   }
-   addSchedule(): void {
+  addSchedule(): void {
     if (this.newSchedule.zoneId && this.newSchedule.dayOfWeek && this.newSchedule.startTime && this.newSchedule.endTime && this.newSchedule.collectorId) {
       const schedule = {
         zoneId: this.newSchedule.zoneId,
-      dayOfWeek: this.newSchedule.dayOfWeek ? Number(this.newSchedule.dayOfWeek) : 0,
+        dayOfWeek: this.newSchedule.dayOfWeek ? Number(this.newSchedule.dayOfWeek) : 0,
 
         startTime: this.newSchedule.startTime,
         endTime: this.newSchedule.endTime,
@@ -2637,6 +2828,8 @@ loadZonesForAgency(currentUser: any): void {
       this.agencyService.addSchedule$(schedule).subscribe({
         next: () => {
           console.log('Horaire envoyé avec succès');
+          this.loadSchedules();
+          this.showScheduleModal = false;
           this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
         },
         error: (err) => {

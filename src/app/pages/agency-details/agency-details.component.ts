@@ -5,6 +5,7 @@ import { AgencyService } from '../../services/agency.service';
 import { Agency } from '../../models/agency.model';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { User } from '../../models/user.model';
 
 @Component({
   selector: 'app-agency-details',
@@ -57,6 +58,16 @@ import { NotificationService } from '../../services/notification.service';
               </div>
             </div>
             <div class="agency-actions">
+              <button class="btn btn-accent" (click)="activateAgency(agency.userId)" *ngIf="currentUser?.role === 'super_admin'">
+                <ng-container *ngIf="!agency.isActive ; else activeBtn">
+                  <i class="material-icons">check</i>
+                  Activer
+                </ng-container>
+                <ng-template #activeBtn>
+                  <i class="material-icons">lock_open</i> 
+                  Desactiver
+                </ng-template>
+              </button>
               <button class="btn btn-secondary" (click)="shareAgency()">
                 <i class="material-icons">share</i>
                 Partager
@@ -1203,7 +1214,8 @@ import { NotificationService } from '../../services/notification.service';
 })
 export class AgencyDetailsComponent implements OnInit {
   agency: Agency | null = null;
-
+  agencyId: string | null = null;
+  currentUser: User | null = null;
   constructor(
     private route: ActivatedRoute,
     private agencyService: AgencyService,
@@ -1212,10 +1224,14 @@ export class AgencyDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.loadAgencyFromApi(id);
+       this.currentUser = this.authService.getCurrentUser();
+    this.agencyId = this.route.snapshot.paramMap.get('id');
+    if (this.agencyId) {
+      this.loadAgencyFromApi(this.agencyId);
     }
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
   }
 
   /**
@@ -1265,7 +1281,7 @@ private mapApiAgency(apiAgency: any): Agency {
   /**
    * Charge les détails d'une agence depuis l'API backend
    */
-  loadAgencyFromApi(id: string): void {
+  loadAgencyFromApi(id: string | null): void {
     this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
       if (response.success && response.data) {
         this.agency = this.mapApiAgency(response.data);
@@ -1357,6 +1373,25 @@ private mapApiAgency(apiAgency: any): Agency {
     }
   }
 
+  //Activer ou desactiver une agence 
+    activateAgency(id: string) {
+    this.agencyService.activateAgency(id).subscribe({
+      next: (response: any) => {
+        console.log('agency activated  in dashboard', response);
+        if (response.message) {
+          this.notificationService.showSuccess('Activation', response.message);
+          this.loadAgencyFromApi(this.agencyId);
+        } else {
+          this.notificationService.showError('Activation', 'Erreur lors de l\'activation de l\'agence');
+        }
+      },
+      error: (error: any) => {
+        console.error('Error activating agency:', error);
+        const msg= error?.error?.message || 'Error activating agency';
+        this.notificationService.showSuccess('Activation', msg);
+      }
+    });
+  }
   openDirections(): void {
     if (this.agency?.address) {
       const address = `${this.agency.address.doorNumber} ${this.agency.address.street}, ${this.agency.address.city}`;
