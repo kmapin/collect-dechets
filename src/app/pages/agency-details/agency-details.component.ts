@@ -1379,7 +1379,7 @@ private mapApiAgency(apiAgency: any): Agency {
       next: (response: any) => {
         console.log('agency activated  in dashboard', response);
         if (response.message) {
-          this.notificationService.showSuccess('Activation', 'Agence activée avec succès');
+          this.notificationService.showSuccess('Activation', response.message);
           this.loadAgencyFromApi(this.agencyId);
         } else {
           this.notificationService.showError('Activation', 'Erreur lors de l\'activation de l\'agence');
