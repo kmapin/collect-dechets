@@ -78,7 +78,7 @@ import { Agency } from '../../models/agency.model';
                     <div class="nav-dot"></div>
                     <div class="nav-dot"></div>
                   </div>
-                  <div class="dashboard-title">Tableau de bord</div>
+                  <div class="dashboard-title">#collecte #sensibilisation #trie #plannification</div>
                 </div>
                 <!-- Carrousel vertical -->
                 <div class="dashboard-carousel-vertical">
@@ -1718,7 +1718,7 @@ import { Agency } from '../../models/agency.model';
     @media (max-width: 1024px) {
       .hero-content {
         grid-template-columns: 1fr;
-        gap: 40px;
+        gap: 10px;
         text-align: center;
       }
 
