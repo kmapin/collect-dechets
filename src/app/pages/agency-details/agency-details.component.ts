@@ -1224,6 +1224,7 @@ export class AgencyDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+       this.currentUser = this.authService.getCurrentUser();
     this.agencyId = this.route.snapshot.paramMap.get('id');
     if (this.agencyId) {
       this.loadAgencyFromApi(this.agencyId);

@@ -249,15 +249,62 @@ export class AgencyService {
 
   }
   // recupereles employees en fonction de leur role
-getAgencyEmployeesByRole(agencyId: string, role:EmployeeRole): Observable<Employees[]> {
+getAgencyEmployeesByRole$(agencyId: string, role:EmployeeRole): Observable<Employees[]> {
     const agency = this.agencies.find(a => a._id === agencyId);
   return this.http.get<Employees[]>(`${environment.apiUrl}/agences/${agencyId}/employees/role/${role}`);
  
 }
 //recupere les zones d une agence
-getAgencyZones(agencyId: string): Observable<ServiceZone[]> {
+getAgencyZones$(agencyId: string): Observable<ServiceZone[]> {
   return this.http.get<ServiceZone[]>(`${environment.apiUrl}/zones/agence/${agencyId}`);
 }
+//recupere des tarifs liee a une agence
+getAgencyTariffs$(agencyId: string): Observable<WasteService[]> {
+  return this.http.get<WasteService[]>(`${environment.apiUrl}/agences/${agencyId}/tarifs`);
+}
+
+//recuperation des signalement liee a une agence
+getAgencyReports$(agencyId: string): Observable<any[]> {
+  const url = `${environment.apiUrl}/agences/${agencyId}/clients/signalements`;
+  return this.http.get<any[]>(url).pipe(
+    map((response) => {
+      console.log("Signalements récupérés :", response);
+      return response;
+    }),
+    catchError((error) => {
+      console.error("Erreur lors de la récupération des signalements :", error);
+      return of(['Aucun signalement trouvé']); 
+    })
+  );
+}
+//recuperation des statistique liee a une agence 
+getAgencyStats$(agencyId: string): Observable<any> {
+  return this.http.get<any>(`${environment.apiUrl}/agences/${agencyId}/statistiques`).pipe(
+    map((response) => { 
+      console.log("Statistiques récupérées :", response);
+      return response;
+    }),
+    catchError((error) => {
+      console.error("Erreur lors de la récupération des statistiques :", error);
+      return of({'totalClients':'undefind', 'totalCollections': 'undefind', 'totalIncidents': 'undefind' }); // Gérer l'erreur de manière appropriée
+    })
+  );
+
+}
+//suppression d un employé d une agence
+deleteEmployee$(agencyId: string, employeeId: string): Observable<any> {
+  return this.http.delete<any>(`${environment.apiUrl}/agences/${agencyId}/employés/${employeeId}`).pipe(
+    map((response) => { 
+      console.log("Employé supprimé :", response);
+      return response;
+    }),
+    catchError((error) => {
+      console.error("Erreur lors de la suppression de l'employé :", error);
+          return of({ success: false, message: 'Erreur lors de la suppression' });
+    })
+  );
+}
+ 
 
 
 //Activer ou desactiver une agence 
@@ -356,7 +403,7 @@ getAgencyZones(agencyId: string): Observable<ServiceZone[]> {
       }),
       catchError(error => {
         console.error("Erreur lors de l'enregistrement de la planification:", error);
-        return of(null); // Gérer l'erreur de manière appropriée
+        return of(null); 
       })
     );
 
@@ -376,6 +423,12 @@ getEmployeesByRole(agencyId: string, role: string): Observable<Employee[] | null
       return of(null); 
     })
   );
+}
+//recuperation des suggestion de recherche
+getSuggestions(query: string, limit: number = 5): Observable<any[]> {
+  return this.http.get<any[]>(`/api/agences/suggestions`, {
+    params: { q: query, limit: limit.toString() }
+  });
 }
 
   /**
