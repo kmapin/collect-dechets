@@ -30,8 +30,12 @@ interface Report {
   type: 'missed_collection' | 'incomplete_collection' | 'damage' | 'complaint';
   description: string;
   date: Date;
+  createdAt: Date;
   status: 'open' | 'in_progress' | 'resolved';
   assignedTo?: string;
+  reportType?: string;
+  photos?: string[];
+
 }
 
 interface Statistics {
@@ -73,6 +77,7 @@ interface Statistics {
       
 
       <div class="container">
+        
         <div class="dashboard-content">
           <!-- Statistiques principales -->
           <div class="stats-grid">
@@ -82,11 +87,11 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Clients actifs</h3>
-                <p class="stat-value">{{ statistics.totalClients  }}</p>
+                <p class="stat-value">{{activeClients.length }}</p>
                 <span class="stat-trend positive">+2 ce mois</span>
               </div>
             </div>
-    <!-- totalite des collecteurs au sein de l agence -->
+    
      
             <div class="stat-card card">
               <div class="stat-icon collectors">
@@ -268,6 +273,7 @@ interface Statistics {
                       <p class="employee-status" [class]="employee.isActive ? 'active' : 'inactive'">
                         {{ employee.isActive ? 'Actif' : 'Inactif' }}
                       </p>
+     
                     </div>
                     <!-- <div class="employee-actions">
                       <button class="action-btn" (click)="editEmployee(employee.id)">
@@ -297,7 +303,14 @@ interface Statistics {
                       <span>Embauché le {{ employee.hiredAt | date:'dd/MM/yyyy' }}</span>
                     </div>
                   </div>
-
+                 <div class="employee-actions">
+      <button class="action-btn" >
+        <i class="material-icons">edit</i>
+      </button>
+     <button class="action-btn danger" >
+  <i class="material-icons">delete</i>
+</button>
+    </div>
                   <!-- <div class="employee-stats" *ngIf="employee.role === 'collector'">
                     <div class="stat-item">
                       <span class="stat-label">Collectes aujourd'hui</span>
@@ -571,16 +584,27 @@ interface Statistics {
     <h2>Signalements</h2>
   </div>
   <div class="reports-list">
-    <div *ngFor="let report of agencyReports" class="report-card card">
-      <h4>{{ report.clientName }} </h4>
-      <p>Type : {{ report.type }}</p>
-      <p>Description : {{ report.description }}</p>
-      <p>Date : {{ report.date | date:'dd/MM/yyyy HH:mm' }}</p>
+  <div *ngFor="let report of agencyReports" class="report-card card">
+    <h4>{{ report.clientName }}</h4>
+    
+    <p>Type : {{ report.reportType }}</p>
+    <p>Description : {{ report.description }}</p>
+    <p>Date : {{ report.createdAt }}</p>
+
+    <!-- Affichage des photos -->
+    <div *ngIf="report.photos && report.photos.length">
+      <div *ngFor="let photo of report.photos">
+        <img [src]="photo" alt="Photo du signalement" class="report-photo" />
+      </div>
+    </div>
+    <div *ngIf="!report.photos || !report.photos.length">
+      <p><em>Aucune photo associée</em></p>
     </div>
   </div>
 </div>
+
             <!-- Onglet Rapports -->
-            <div *ngIf="activeTab === 'analytics'" class="analytics-tab">
+            <div  class="analytics-tab">
               <div class="analytics-header">
                 <h2>Rapports et Statistiques</h2>
                 <div class="analytics-filters">
@@ -632,9 +656,6 @@ interface Statistics {
                       </div>
                     </div>
                   </div>
-               
-                  
-
                   <div class="analytics-card card">
                     <h3>Répartition par Zone</h3>
                     <div class="zone-stats">
@@ -1888,12 +1909,12 @@ interface Statistics {
 export class AgencyDashboardComponent implements OnInit {
   currentUser: User | null = null;
   agencyReports: Report[] = [];
-  
+
   agency: Agency | null = null;
   activeTab = 'collections';
-collectors: Employees[] = [];
+  collectors: Employees[] = [];
   zonesAgency: ServiceZone[] = [];
-manager: Employees[] = [];
+  manager: Employees[] = [];
   // Data
   // statistics: Statistics = {
   //   totalClients: 1250,
@@ -1904,15 +1925,15 @@ manager: Employees[] = [];
   //   averageRating: 4.3,
   //   pendingReports: 3
   // };
-statistics: Statistics = {
-  totalClients: 0,
-  activeCollectors: 0,
-  todayCollections: 0,
-  completedCollections: 0,
-  monthlyRevenue: 0,
-  averageRating: 0,
-  pendingReports: 0
-};
+  statistics: Statistics = {
+    totalClients: 0,
+    activeCollectors: 0,
+    todayCollections: 0,
+    completedCollections: 0,
+    monthlyRevenue: 0,
+    averageRating: 0,
+    pendingReports: 0
+  };
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
   employees: Employee[] = [];
@@ -1924,7 +1945,7 @@ statistics: Statistics = {
   filteredClients: Client[] = [];
   reports: Report[] = [];
   filteredReports: Report[] = [];
-
+  isDeleting: boolean = false;
   // Filters
   collectionsFilter = 'all';
   selectedZone = '';
@@ -1940,13 +1961,13 @@ statistics: Statistics = {
   showZoneModal = false;
   showScheduleModal = false;
   editingZone = false;
-newTarif: any = {
-  agencyId: "",
-  type: "",
-  price: 0,
-  description: "",
-  nbPassages: 0
-}
+  newTarif: any = {
+    agencyId: "",
+    type: "",
+    price: 0,
+    description: "",
+    nbPassages: 0
+  }
   // Forms
   newEmployee: any = {
     firstName: '',
@@ -1974,7 +1995,7 @@ newTarif: any = {
   };
 
   citiesInput = '';
- 
+
   neighborhoodsInput = '';
   activeClients: ClientApi[] = [];
   activeClientNbrs!: number;
@@ -2005,7 +2026,7 @@ newTarif: any = {
     private collectionService: CollectionService,
     private notificationService: NotificationService,
     private clientService: ClientService,
-     private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -2013,14 +2034,14 @@ newTarif: any = {
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyStatistics(this.currentUser);
     this.loadAgencyData();
-     
-   
- this.loadCollectors(this.currentUser);
- this.loadZonesForAgency(this.currentUser);
-this.loadAgencyReports(this.currentUser);
 
- this.cdr.detectChanges();
- 
+
+    this.loadCollectors(this.currentUser);
+    this.loadZonesForAgency(this.currentUser);
+    this.loadAgencyReports(this.currentUser);
+
+    this.cdr.detectChanges();
+
     // Ne pas appeler loadClients() ici directement !
 
   }
@@ -2041,25 +2062,25 @@ this.loadAgencyReports(this.currentUser);
   //   return this.activeClients.length;
   // }
 
-// loadTariffsForAgency(): void {
-//     const userString = localStorage.getItem('currentUser');
-//     if (userString) {
-//       const currentUser = JSON.parse(userString);
-//       const agencyId = currentUser._id;
+  // loadTariffsForAgency(): void {
+  //     const userString = localStorage.getItem('currentUser');
+  //     if (userString) {
+  //       const currentUser = JSON.parse(userString);
+  //       const agencyId = currentUser._id;
 
-//       this.agencyService.getAgencyTariffs(agencyId).subscribe({
-//         next: (tariffs) => {
-//           this.agencyTariffs = tariffs;
-//           console.log('Tarifs récupérés :', tariffs);
-//         },
-//         error: (err) => {
-//           console.error("Erreur lors du chargement des tarifs de l'agence", err);
-//         }
-//       });
-//     } else {
-//       console.error("Aucun utilisateur trouvé dans le stockage local.");
-//     }
-//   }
+  //       this.agencyService.getAgencyTariffs(agencyId).subscribe({
+  //         next: (tariffs) => {
+  //           this.agencyTariffs = tariffs;
+  //           console.log('Tarifs récupérés :', tariffs);
+  //         },
+  //         error: (err) => {
+  //           console.error("Erreur lors du chargement des tarifs de l'agence", err);
+  //         }
+  //       });
+  //     } else {
+  //       console.error("Aucun utilisateur trouvé dans le stockage local.");
+  //     }
+  //   }
 
   loadAgencyData(): void {
     // Charger les données de l'agence
@@ -2079,31 +2100,56 @@ this.loadAgencyReports(this.currentUser);
     //this.activeClientNbrs = this.activeClientNbr(); // Mettez à jour le nombre d'actifs
     //this.updateTabs(); // Mettez à jour les tabs après avoir récupéré les clients
   }
-loadCollectors(currentUser: any): void {
-  if (currentUser?._id) {
-    this.agencyService.getAgencyEmployeesByRole$(currentUser._id, EmployeeRole.COLLECTOR).subscribe(
-      (employee) => {
-        this.collectors = employee;
-        console.log("Collecteurs chargés via l api service  :", this.collectors);
-      },
-      (error) => {
-        console.error("Erreur lors du chargement des collecteurs :", error);
-       ;
-      }
-    );
-  } else {
+  loadCollectors(currentUser: any): void {
+    if (currentUser?._id) {
+      this.agencyService.getAgencyEmployeesByRole$(currentUser._id, EmployeeRole.COLLECTOR).subscribe(
+        (employee) => {
+          this.collectors = employee;
+          console.log("Collecteurs chargés via l api service  :", this.collectors);
+        },
+        (error) => {
+          console.error("Erreur lors du chargement des collecteurs :", error);
+          ;
+        }
+      );
+    } else {
       this.agencyService.getAgencyEmployeesByRole$(currentUser._id, EmployeeRole.MANAGER).subscribe(
-      (manager) => {
-        this.collectors = manager;
-        console.log("Collecteurs chargés via l api service  :", this.collectors);
-      },
-      (error) => {
-        console.error("Erreur lors du chargement des collecteurs :", error);
-    
-      }
-    );
+        (manager) => {
+          this.collectors = manager;
+          console.log("Collecteurs chargés via l api service  :", this.collectors);
+        },
+        (error) => {
+          console.error("Erreur lors du chargement des collecteurs :", error);
+
+        }
+      );
+    }
   }
-}
+  //suppression d un employé
+  deleteEmployee(currentUser: any, employeeId: any): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+      this.isDeleting = true;
+
+      if (currentUser?._id) {
+        this.agencyService.deleteEmployee$(currentUser._id, employeeId).subscribe(
+          () => {
+            this.notificationService.showSuccess('Succès', 'Employé supprimé avec succès.');
+            this.loadEmployees(currentUser);
+            this.isDeleting = false;
+          },
+          (error) => {
+            console.error('Erreur lors de la suppression de l\'employé :', error);
+            this.notificationService.showError('Erreur', 'Impossible de supprimer l\'employé. Veuillez réessayer.');
+            this.isDeleting = false;
+          }
+        );
+      } else {
+        console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
+        this.isDeleting = false;
+      }
+    }
+  }
+
   loadCollections(): void {
     // Simuler les collectes
     this.collections = [
@@ -2130,31 +2176,31 @@ loadCollectors(currentUser: any): void {
     this.filteredCollections = [...this.collections];
   }
 
-  employeesNbrs!:number;
-  activesEmployeesNbrs!:number;
- loadEmployees(currentUser: any): void {
-  if (currentUser?._id) {
-    this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({
-      next: (employees) => {
-        this.allEmployees = employees;
-        console.log("loadEmployees > :", this.allEmployees); // Changed from error to log
-      },
-      error: (error) => {
-        console.error("Erreur lors du chargement des employés :", error);
-        this.notificationService.showError(
-          'Erreur', 
-          'Impossible de charger les employés. Veuillez réessayer.'
-        );
-      }
-    });
-  } else {
-    console.warn("Aucun ID d'utilisateur courant disponible.");
+  employeesNbrs!: number;
+  activesEmployeesNbrs!: number;
+  loadEmployees(currentUser: any): void {
+    if (currentUser?._id) {
+      this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({
+        next: (employees) => {
+          this.allEmployees = employees;
+          console.log("loadEmployees > :", this.allEmployees); // Changed from error to log
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement des employés :", error);
+          this.notificationService.showError(
+            'Erreur',
+            'Impossible de charger les employés. Veuillez réessayer.'
+          );
+        }
+      });
+    } else {
+      console.warn("Aucun ID d'utilisateur courant disponible.");
+    }
   }
-}
 
-// fonction to load zones for the current agency
-loadZonesForAgency(currentUser: any): void {
-       if (currentUser?._id) {
+  // fonction to load zones for the current agency
+  loadZonesForAgency(currentUser: any): void {
+    if (currentUser?._id) {
       this.agencyService.getAgencyZones$(currentUser?._id).subscribe({
         next: (zonesAgency) => {
           this.zonesAgency = zonesAgency;
@@ -2167,37 +2213,37 @@ loadZonesForAgency(currentUser: any): void {
       console.error("Aucun agencyId trouvé dans le stockage local.");
     }
   }
-//chargement des signalements
-loadAgencyReports(currentUser: any): void {
-  if (currentUser && currentUser._id) {
-    const agencyId = currentUser._id; 
-    this.agencyService.getAgencyReports$(agencyId).subscribe({
-      next: (reports) => {
-        this.agencyReports = reports;
-        console.log("Signalements chargés >>>>>> :", this.agencyReports);
-      },
-      error: (error) => {
-        console.error("Erreur lors du chargement des signalements :", error);
-        this.notificationService.showError(
-          'Erreur',
-          'Impossible de charger les signalements. Veuillez réessayer.'
-        );
-      }
-    });
-  } else {
-    console.warn("Aucun ID d'utilisateur courant disponible.");
+  //chargement des signalements
+  loadAgencyReports(currentUser: any): void {
+    if (currentUser && currentUser._id) {
+      const agencyId = currentUser._id;
+      this.agencyService.getAgencyReports$(agencyId).subscribe({
+        next: (reports) => {
+          this.agencyReports = reports;
+          console.log("Signalements chargés >>>>>> :", this.agencyReports);
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement des signalements :", error);
+          this.notificationService.showError(
+            'Erreur',
+            'Impossible de charger les signalements. Veuillez réessayer.'
+          );
+        }
+      });
+    } else {
+      console.warn("Aucun ID d'utilisateur courant disponible.");
+    }
   }
-}
 
-//recuperations des statistiques de l'agence
+  //recuperations des statistiques de l'agence
   loadAgencyStatistics(currentUser: any): void {
     if (currentUser && currentUser._id) {
-      const agencyId = currentUser._id; 
+      const agencyId = currentUser._id;
       this.agencyService.getAgencyStats$(agencyId).subscribe({
         next: (statistics) => {
           this.statistics = statistics;
           console.log("Statistiques de l'agence chargées :", this.statistics);
-           this.cdr.detectChanges();
+          this.cdr.detectChanges();
         },
         error: (error) => {
           console.error("Erreur lors du chargement des statistiques de l'agence :", error);
@@ -2211,34 +2257,34 @@ loadAgencyReports(currentUser: any): void {
       console.warn("Aucun ID d'utilisateur courant disponible.");
     }
   }
-// loadAgencyStatistics(currentUser: any): void {
-//   if (currentUser && currentUser._id) {
-//     const agencyId = currentUser._id; 
-//     this.agencyService.getAgencyStats$(agencyId).subscribe({
-//       next: (data) => {
-//         this.statistics = {
-//           totalClients: data.totalClients || 0,
-//           activeCollectors: data.activeCollectors || 0,
-//           todayCollections: data.todayCollections || 0,
-//           completedCollections: data.completedCollections || 0,
-//           monthlyRevenue: data.monthlyRevenue || 0,
-//           averageRating: data.averageRating || 0,
-//           pendingReports: data.pendingReports || 0
-//         };
-//         console.log("Statistiques de l'agence chargées :", this.statistics);
-//       },
-//       error: (error) => {
-//         console.error("Erreur lors du chargement des statistiques de l'agence :", error);
-//         this.notificationService.showError(
-//           'Erreur',
-//           'Impossible de charger les statistiques de l\'agence. Veuillez réessayer.'
-//         );
-//       }
-//     });
-//   } else {
-//     console.warn("Aucun ID d'utilisateur courant disponible.");
-//   }
-// }
+  // loadAgencyStatistics(currentUser: any): void {
+  //   if (currentUser && currentUser._id) {
+  //     const agencyId = currentUser._id; 
+  //     this.agencyService.getAgencyStats$(agencyId).subscribe({
+  //       next: (data) => {
+  //         this.statistics = {
+  //           totalClients: data.totalClients || 0,
+  //           activeCollectors: data.activeCollectors || 0,
+  //           todayCollections: data.todayCollections || 0,
+  //           completedCollections: data.completedCollections || 0,
+  //           monthlyRevenue: data.monthlyRevenue || 0,
+  //           averageRating: data.averageRating || 0,
+  //           pendingReports: data.pendingReports || 0
+  //         };
+  //         console.log("Statistiques de l'agence chargées :", this.statistics);
+  //       },
+  //       error: (error) => {
+  //         console.error("Erreur lors du chargement des statistiques de l'agence :", error);
+  //         this.notificationService.showError(
+  //           'Erreur',
+  //           'Impossible de charger les statistiques de l\'agence. Veuillez réessayer.'
+  //         );
+  //       }
+  //     });
+  //   } else {
+  //     console.warn("Aucun ID d'utilisateur courant disponible.");
+  //   }
+  // }
   loadServiceZones(): void {
     this.serviceZones = [
       {
@@ -2325,6 +2371,7 @@ loadAgencyReports(currentUser: any): void {
         description: 'La collecte n\'a pas eu lieu à l\'heure prévue',
         date: new Date(),
         status: 'open',
+        createdAt: new Date(),
         assignedTo: undefined
       }
     ];
@@ -2345,11 +2392,11 @@ loadAgencyReports(currentUser: any): void {
   // }
   getStars(rating: number): number[] {
     // console.log('Rating reçu dans getStars:', rating);
-  if (!rating || rating < 0) {
-    return [];
+    if (!rating || rating < 0) {
+      return [];
+    }
+    return new Array(Math.floor(rating)).fill(0);
   }
-  return new Array(Math.floor(rating)).fill(0);
-}
 
   getStatusText(status: CollectionStatus): string {
     const statusTexts = {
@@ -2459,8 +2506,8 @@ loadAgencyReports(currentUser: any): void {
   getCollectors(): Employee[] {
     return this.employees.filter(e => e.role === 'collector');
   }
-  
-  
+
+
 
 
   getCollectorPerformance(): any[] {
@@ -2522,12 +2569,12 @@ loadAgencyReports(currentUser: any): void {
     // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
-  deleteEmployee(employeeId: string): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
-      this.employees = this.employees.filter(e => e.id !== employeeId);
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
-    }
-  }
+  // deleteEmployee(employeeId: string): void {
+  //   if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+  //     this.employees = this.employees.filter(e => e.id !== employeeId);
+
+  //   }
+  // }
 
 
   // Zone Side 
@@ -2767,11 +2814,11 @@ loadAgencyReports(currentUser: any): void {
       }
     });
   }
-   addSchedule(): void {
+  addSchedule(): void {
     if (this.newSchedule.zoneId && this.newSchedule.dayOfWeek && this.newSchedule.startTime && this.newSchedule.endTime && this.newSchedule.collectorId) {
       const schedule = {
         zoneId: this.newSchedule.zoneId,
-      dayOfWeek: this.newSchedule.dayOfWeek ? Number(this.newSchedule.dayOfWeek) : 0,
+        dayOfWeek: this.newSchedule.dayOfWeek ? Number(this.newSchedule.dayOfWeek) : 0,
 
         startTime: this.newSchedule.startTime,
         endTime: this.newSchedule.endTime,
@@ -2781,9 +2828,9 @@ loadAgencyReports(currentUser: any): void {
       this.agencyService.addSchedule$(schedule).subscribe({
         next: () => {
           console.log('Horaire envoyé avec succès');
-        this.loadSchedules(); 
-        this.showScheduleModal = false;
-        this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
+          this.loadSchedules();
+          this.showScheduleModal = false;
+          this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
         },
         error: (err) => {
           console.error('Erreur lors de l\'envoi', err);

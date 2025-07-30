@@ -291,6 +291,20 @@ getAgencyStats$(agencyId: string): Observable<any> {
   );
 
 }
+//suppression d un employé d une agence
+deleteEmployee$(agencyId: string, employeeId: string): Observable<any> {
+  return this.http.delete<any>(`${environment.apiUrl}/agences/${agencyId}/employés/${employeeId}`).pipe(
+    map((response) => { 
+      console.log("Employé supprimé :", response);
+      return response;
+    }),
+    catchError((error) => {
+      console.error("Erreur lors de la suppression de l'employé :", error);
+          return of({ success: false, message: 'Erreur lors de la suppression' });
+    })
+  );
+}
+ 
 
 
 
