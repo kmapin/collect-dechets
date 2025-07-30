@@ -455,10 +455,6 @@ interface Communication {
             <div *ngIf="activeTab === 'agencies'" class="agencies-tab">
               <div class="agencies-header">
                 <h2>Audit des Agences</h2>
-                <button class="btn btn-secondary">
-                  <i class="material-icons">visibility</i>
-                    Afficher les agences en attente d'activation
-                </button>
                 <div class="agencies-filters">
                   <select [(ngModel)]="agenciesFilter" (change)="filterAgencies()" class="filter-select">
                     <option value="all">Toutes les Agences</option>
