@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { AgencyService } from '../../../services/agency.service';
@@ -46,6 +46,7 @@ interface AgencyAudit {
   lastAudit: Date;
   complianceScore: number;
   issues: string[];
+  userId: string;
 }
 
 interface WasteStatistic {
@@ -529,18 +530,27 @@ interface Communication {
                   </div>
 
                   <div class="agency-actions">
+
                     <button class="btn btn-secondary" (click)="viewAgencyDetails(agency.id)">
                       <i class="material-icons">visibility</i>
                       Détails
                     </button>
-                    <button class="btn btn-primary" (click)="auditAgency(agency.id)">
-                      <i class="material-icons">fact_check</i>
-                      Auditer
-                    </button>
-                    <button class="btn btn-accent" (click)="contactAgency(agency.id)">
-                      <i class="material-icons">message</i>
-                      Contacter
-                    </button>
+                    <ng-container *ngIf="agency?.status ==='active' ; else activation">
+                      <button class="btn btn-primary" (click)="auditAgency(agency.id)">
+                        <i class="material-icons">fact_check</i>
+                        Auditer
+                      </button>
+                      <button class="btn btn-accent" (click)="contactAgency(agency.id)">
+                        <i class="material-icons">message</i>
+                        Contacter
+                      </button>
+                    </ng-container>
+                    <ng-template #activation>
+                      <button class="btn btn-accent" (click)="activateAgency(agency.userId)"> 
+                        <i class="material-icons">check</i>
+                          Activer
+                      </button>
+                    </ng-template>
                   </div>
 
                   <div class="agency-footer">
@@ -573,39 +583,47 @@ interface Communication {
 
 
               <div class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
-                <div class="col" *ngFor="let client of filteredClients">
-                  <mat-card class=" client-audit-card client-card">
-                    <mat-card-header>
-                      <mat-card-title-group class="w-100 pb-3">
-                        <mat-card-title>{{client.firstName}} {{client.lastName}}</mat-card-title>
-                        <!--<mat-card-subtitle >Abonnement: <span class="status-badge" [class]="client.subscriptionStatus ? 'status-' + client.subscriptionStatus : 'status-inconnu'">{{getClientSubscriptionText(client.subscriptionStatus)}}</span></mat-card-subtitle>-->
-                        <mat-card-subtitle >Abonnement: <span class="status-badge" [class]="client.subscriptionStatus ? 'status-' + client.subscriptionStatus : 'status-inconnu'">{{client?.subscriptionHistory?.length}}</span></mat-card-subtitle>
-                        <ng-container *ngIf="client?.avatar; else noImage">
-                          <img mat-card-md-image class="rounded" src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" alt="Image of a Shiba Inu">
-                        </ng-container>
-                        <ng-template #noImage>
-                          <div class="rounded-circle text-white font-bold uppercase"
-                            [style.background-color]="getRandomColor(client)">
-                            {{ getInitials(client?.firstName+' '+client?.lastName) }}
-                          </div>
-                        </ng-template>
-                      </mat-card-title-group>
-                    </mat-card-header>
-                    <mat-card-content>
-                      <div *ngIf="client?.address?.city">
-                        <h4 class="text-center"> Ville/Quartier : {{client?.address?.city}}/{{client?.address?.neighborhood}}</h4>
-                      </div>
-                      <div ><h5 class="text-center">Tel: {{client?.phone}}</h5></div>
-                      <div class="agency-actions d-flex justify-content-end align-items">
-                        <button class="btn btn-secondary" (click)="viewClientDetails(client._id)">
-                          <i class="material-icons">visibility</i>
-                          Détails
-                        </button>
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
-                </div>
+                <ng-container *ngIf="filteredClients.length > 0; else noClients">
+                  <div class="col" *ngFor="let client of filteredClients">
+                    <mat-card class=" client-audit-card client-card">
+                      <mat-card-header>
+                        <mat-card-title-group class="w-100 pb-3">
+                          <mat-card-title>{{client?.data?.firstName}} {{client?.data?.lastName}}</mat-card-title>
+                          <!--<mat-card-subtitle >Abonnement: <span class="status-badge" [class]="client?.data?.subscriptionStatus ? 'status-' + client?.data?.subscriptionStatus : 'status-inconnu'">{{getClientSubscriptionText(client?.data?.subscriptionStatus)}}</span></mat-card-subtitle>-->
+                          <mat-card-subtitle >Abonnement actif: <span class="subscription-badge" [class]="Math.round(client?.active_subscription?.length / client?.data?.subscriptionHistory?.length * 100)>50 ? 'status-success' : 'status-inconnu'">{{client?.active_subscription?.length}}/{{client?.data?.subscriptionHistory?.length}}</span></mat-card-subtitle>
+                          <ng-container *ngIf="client?.data?.avatar; else noImage">
+                            <img mat-card-md-image class="rounded" src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" alt="Image of a Shiba Inu">
+                          </ng-container>
+                          <ng-template #noImage>
+                            <div class="rounded-circle text-white font-bold uppercase"
+                              [style.background-color]="getRandomColor(client.data)">
+                              {{ getInitials(client?.data?.firstName+' '+client?.data?.lastName) }}
+                            </div>
+                          </ng-template>
+                        </mat-card-title-group>
+                      </mat-card-header>
+                      <mat-card-content>
+                        <div *ngIf="client?.data?.address?.city">
+                          <h4 class="text-center"> Ville/Quartier : {{client?.data?.address?.city}}/{{client?.data?.address?.neighborhood}}</h4>
+                        </div>
+                        <div ><h5 class="text-center">Tel: {{client?.data?.phone}}</h5></div>
+                        <div class="agency-actions d-flex justify-content-end align-items">
+                          <button class="btn btn-secondary" (click)="viewClientDetails(client?._id)">
+                            <i class="material-icons">visibility</i>
+                            Détails
+                          </button>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+                  </div>
+                </ng-container>
+                <ng-template #noClients>
+                    <div>
+                      <h4 class="text-center">Aucun Client</h4>
+                    </div>
+                </ng-template>
               </div><!--end row-->
+
               <div class="agencies-grid">
               </div>
             </div>
@@ -1351,7 +1369,12 @@ interface Communication {
       font-weight: 500;
       text-transform: uppercase;
     }
-
+    .subscription-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
     .status-active { background: #e8f5e8; color: var(--success-color); }
     .status-inactive { background: #f5f5f5; color: var(--text-secondary); }
     .status-suspended { background: #fff3e0; color: #f57c00; }
@@ -2252,6 +2275,7 @@ interface Communication {
 })
 export class AdminDashboard implements OnInit {
   currentUser: User | null = null;
+  Math: any = Math;
   activeTab = 'overview';
   longText = `The Shiba Inu is the smallest of the six original and distinct spitz breeds of dog
     from Japan. A small, agile dog that copes very well with mountainous terrain, the Shiba Inu was
@@ -2330,7 +2354,8 @@ export class AdminDashboard implements OnInit {
     private adminService: Admin,
     private clientService: ClientService,
     private notificationService: NotificationService,
-    private sharedService: SharedService
+    private sharedService: SharedService,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -2364,6 +2389,7 @@ export class AdminDashboard implements OnInit {
           clients: agency?.clients?.length || 0,
           collectors: agency?.employees?.length || 0,
           zones: 0,
+          userId: agency?.userId,
           collectionsToday: 0,
           completionRate: 0,
           rating: 0,
@@ -2716,7 +2742,7 @@ export class AdminDashboard implements OnInit {
   }
   filterClients(): void {
     this.filteredClients = this.clientsAudits.filter(client => {
-      const statusMatch = this.clientsFilter === 'all' || client.subscriptionStatus === this.clientsFilter;
+      const statusMatch = this.clientsFilter === 'all' || client?.active_subscription.map((sub : any)=> sub.status).includes(this.clientsFilter);
       let complianceMatch = true;
 
       // if (this.complianceFilter === 'excellent') {
@@ -2762,6 +2788,7 @@ export class AdminDashboard implements OnInit {
 
   viewAgencyDetails(agencyId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails de l\'agence');
+    this.router.navigate(['/agencies', agencyId]);
   }
   viewClientDetails(clientId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails du client');
@@ -2868,7 +2895,13 @@ export class AdminDashboard implements OnInit {
   showAdminClients(): void {
     this.clientService.getAllClients().subscribe({
       next: (response: any) => {
-        this.clientsAudits = response?.data;
+        this.clientsAudits = response?.data.map((client: any) =>{
+          return {
+            _id: client._id,
+            data: client,
+            active_subscription: client?.subscriptionHistory.filter((s: any) => s.status === 'active'),
+          }
+        });
         this.filteredClients = [...this.clientsAudits];
         console.log('clients in dashboard', this.filteredClients);
       }
@@ -2898,7 +2931,6 @@ export class AdminDashboard implements OnInit {
 
           return agency$.pipe(
             map((agencyResponse: any) => {
-              console.log('agencyResponse', agencyResponse);
               return {
                 agency: {
                   agencyName: agencyResponse?.data?.agencyName || '',
@@ -2954,4 +2986,21 @@ export class AdminDashboard implements OnInit {
   //     }
   //   });
   // }
+
+  activateAgency(id: string) {
+    this.agencyService.activateAgency(id).subscribe({
+      next: (response: any) => {
+        console.log('agency activated  in dashboard', response);
+        if (response.message) {
+          this.notificationService.showSuccess('Activation', 'Agence activée avec succès');
+          this.loadAgencyAudits();
+        }
+      },
+      error: (error: any) => {
+        console.error('Error activating agency:', error);
+        const msg= error?.error?.message || 'Error activating agency';
+        this.notificationService.showSuccess('Activation', msg);
+      }
+    });
+  }
 }

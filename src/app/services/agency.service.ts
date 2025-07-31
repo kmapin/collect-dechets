@@ -138,7 +138,7 @@ export class AgencyService {
     return of(this.agencies).pipe(delay(500));
   }
 
-  getAgencyById(id: string): Observable<Agency | undefined> {
+  getAgencyById(id: string|null): Observable<Agency | undefined> {
     return of(this.agencies.find(agency => agency._id === id)).pipe(delay(300));
   }
 
@@ -226,7 +226,7 @@ export class AgencyService {
   /**
    * Récupère une agence spécifique depuis l'API backend
    */
-  getAgencyByIdFromApi(id: string): Observable<{ success: boolean; data: Agency }> {
+  getAgencyByIdFromApi(id: string|null): Observable<{ success: boolean; data: Agency }> {
     return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
   }
 
@@ -333,7 +333,10 @@ deleteEmployee$(employeeId: string): Observable<boolean> {
  
 
 
-
+//Activer ou desactiver une agence 
+  activateAgency(id: string): Observable<any> {
+    return this.http.patch(`${environment.apiUrl}/auth/agences/${id}/status`, {});
+  }
   // addEmployee(agencyId: string, employee: Partial<Employee>): Observable<Employee> {
   //   const newEmployee: Employee = {
   //     id: Math.random().toString(36).substr(2, 9),
