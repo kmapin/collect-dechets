@@ -1,13 +1,13 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { AgencyService } from '../../../services/agency.service';
 import { CollectionService } from '../../../services/collection.service';
 import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
-import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule, EmployeeRole, WasteService } from '../../../models/agency.model';
+import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule, EmployeeRole, WasteService, tarif } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { ClientService, ClientApi } from '../../../services/client.service';
 
@@ -40,6 +40,7 @@ interface Report {
 
 interface Statistics {
   totalClients: number;
+  totalEmployees: number;
   activeCollectors: number;
   todayCollections: number;
   completedCollections: number;
@@ -66,16 +67,15 @@ interface Statistics {
                 <i class="material-icons">person_add</i>
                 Ajouter Employé
               </button>
+      
               <button class="btn btn-secondary" (click)="showZoneModal = true">
                 <i class="material-icons">map</i>
-                Gérer Zones
+                creer un tarif
               </button>
             </div>
           </div>
         </div>
       </div>
-      
-
       <div class="container">
         
         <div class="dashboard-content">
@@ -87,7 +87,7 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Clients actifs</h3>
-                <p class="stat-value">{{activeClients.length }}</p>
+                <p class="stat-value">{{activeClients.length}}</p>
                 <span class="stat-trend positive">+2 ce mois</span>
               </div>
             </div>
@@ -101,7 +101,7 @@ interface Statistics {
                 <h3>Collecteurs actifs</h3>
                 <!-- <p class="stat-value">{{ statistics.activeCollectors }}</p>
                 <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span> -->
-<p class="stat-value">{{ statistics.activeCollectors }}</p>
+<p class="stat-value">{{ statistics.totalEmployees }}</p>
 <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span>
               </div>
             </div>
@@ -196,7 +196,6 @@ interface Statistics {
                   </select>
                 </div>
               </div>
-
               <div class="collections-grid">
                 <div *ngFor="let collection of filteredCollections" class="collection-card card">
                   <div class="collection-header">
@@ -216,8 +215,7 @@ interface Statistics {
                       </button>
                     </div>
                   </div>
-                  
-                  <div class="collection-info">
+                    <div class="collection-info">
                     <h4>{{ getClientName(collection.clientId) }}</h4>
                     <p class="collection-address">
                       <i class="material-icons">location_on</i>
@@ -260,6 +258,7 @@ interface Statistics {
                   </button>
                 </div>
               </div>
+         
 
               <div class="employees-grid">
                 <div *ngFor="let employee of allEmployees" class="employee-card card">
@@ -304,10 +303,10 @@ interface Statistics {
                     </div>
                   </div>
                  <div class="employee-actions">
-      <button class="action-btn" >
+      <button class="action-btn" (click)="showAddEmployeeModal = true">
         <i class="material-icons">edit</i>
       </button>
-     <button class="action-btn danger" >
+<button class="action-btn danger" (click)="deleteEmployee(currentUser, employee)">
   <i class="material-icons">delete</i>
 </button>
     </div>
@@ -323,6 +322,7 @@ interface Statistics {
                   </div> -->
                 </div>
               </div>
+              
             </div>
 
             <!-- Onglet Gestion des Zones -->
@@ -330,10 +330,10 @@ interface Statistics {
               <div class="zones-header">
                 <h2>Gestion des Zones de Couverture</h2>
                 <div class="zones-actions">
-                  <button class="btn btn-primary" (click)="showZoneModal = true">
+                  <!-- <button class="btn btn-primary" (click)="showZoneModal = true">
                     <i class="material-icons">add_location</i>
-                    Ajouter Zone
-                  </button>
+                    Ajouter un tarif
+                  </button> -->
                 </div>
               </div>
 
@@ -589,7 +589,8 @@ interface Statistics {
     
     <p>Type : {{ report.reportType }}</p>
     <p>Description : {{ report.description }}</p>
-    <p>Date : {{ report.createdAt }}</p>
+    <p>Date : {{ report.createdAt | date:'dd/MM/yyyy' }}</p>
+    <p>Heure : {{ report.createdAt | date:'HH:mm:ss' }}</p>
 
     <!-- Affichage des photos -->
     <div *ngIf="report.photos && report.photos.length">
@@ -600,7 +601,29 @@ interface Statistics {
     <div *ngIf="!report.photos || !report.photos.length">
       <p><em>Aucune photo associée</em></p>
     </div>
+      <div class="incident-actions">
+                    <button class="btn btn-secondary" (click)="assignIncident()" 
+                           >
+                      <i class="material-icons">assignment_ind</i>
+                      Assigner
+                    </button>
+                    <!-- <button class="btn btn-primary" (click)="investigateIncident()" 
+                            >
+                      <i class="material-icons">search</i>
+                      Enquêter
+                    </button> -->
+                    <button class="btn btn-success" (click)="resolveIncident()" 
+                        >
+                      <i class="material-icons">check</i>
+                      Résoudre
+                    </button>
+                    <button class="btn btn-accent" (click)="contactAgencyForIncident()">
+                      <i class="material-icons">phone</i>
+                      Contacter Agence
+                    </button>
+                  </div>
   </div>
+  
 </div>
 
             <!-- Onglet Rapports -->
@@ -735,12 +758,70 @@ interface Statistics {
           </form>
         </div>
       </div>
-
+ <!-- Modal update Employé -->
+   <div class="modal-overlay" *ngIf="showAddEmployeeModal" (click)="showAddEmployeeModal = false">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Modifier un Employé</h3>
+            <button class="close-btn" (click)="showAddEmployeeModal = false">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <form class="employee-form" >
+            <div class="form-row">
+              <div class="form-group"> 
+                <label>Prénom *</label>
+                <input type="text" [(ngModel)]="newEmployee.firstName" name="firstName" required>
+              </div>
+              <div class="form-group">
+                <label>Nom *</label>
+                <input type="text" [(ngModel)]="newEmployee.lastName" name="lastName" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" [(ngModel)]="newEmployee.email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label>Téléphone *</label>
+              <input type="tel" [(ngModel)]="newEmployee.phone" name="phone" required>
+            </div>
+            <div class="form-group">
+              <label>Rôle *</label>
+              <select [(ngModel)]="newEmployee.role" name="role" required>
+                <option value="">Sélectionner un rôle</option>
+                <option value="manager">Manager</option>
+                <option value="collector">Collecteur</option>
+              </select>
+            </div>
+            <div class="form-group" *ngIf="newEmployee.role === 'collector'">
+              <label>Zones assignées</label>
+              <div class="zones-checkboxes">
+                <label *ngFor="let zone of serviceZones" class="checkbox-label">
+                  <input type="checkbox" [value]="zone.id" 
+                         (change)="toggleZoneAssignment(zone.id, $event)">
+                  <span class="checkmark"></span>
+                  {{ zone.name }}
+                </label>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="showAddEmployeeModal = false">
+                Annuler
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="material-icons">person_add</i>
+               modifier
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
       <!-- Modal Gestion Zone -->
       <div class="modal-overlay" *ngIf="showZoneModal" (click)="showZoneModal = false">
         <div class="modal-content zone-modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3>{{ editingZone ? 'Modifier' : 'Ajouter' }} une Zone</h3>
+            <h3>{{ editingZone ? 'Modifier' : 'Ajouter' }} un tarif</h3>
             <button class="close-btn" (click)="showZoneModal = false">
               <i class="material-icons">close</i>
             </button>
@@ -1907,6 +1988,7 @@ interface Statistics {
   `]
 })
 export class AgencyDashboardComponent implements OnInit {
+
   currentUser: User | null = null;
   agencyReports: Report[] = [];
 
@@ -1925,8 +2007,12 @@ export class AgencyDashboardComponent implements OnInit {
   //   averageRating: 4.3,
   //   pendingReports: 3
   // };
+    incidentsFilter = 'all';
+  severityFilter = 'all';
+  filteredIncidents: any[] = [];
   statistics: Statistics = {
     totalClients: 0,
+    totalEmployees: 0,
     activeCollectors: 0,
     todayCollections: 0,
     completedCollections: 0,
@@ -1937,6 +2023,9 @@ export class AgencyDashboardComponent implements OnInit {
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
   employees: Employee[] = [];
+  tarif: tarif[] = [];
+editingEmployeeId: string | null = null;
+isEditing: boolean = false;
   allEmployees: Employees[] = [];
   serviceZones: ServiceZone[] = [];
   serviceZoness: ServiceZones[] = []; //from API
@@ -2026,20 +2115,22 @@ export class AgencyDashboardComponent implements OnInit {
     private collectionService: CollectionService,
     private notificationService: NotificationService,
     private clientService: ClientService,
-    private cdr: ChangeDetectorRef
-  ) { }
+    private cdr: ChangeDetectorRef,
+    private fb: FormBuilder,
+
+  ) {
+ 
+   }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyStatistics(this.currentUser);
     this.loadAgencyData();
-
-
     this.loadCollectors(this.currentUser);
-    this.loadZonesForAgency(this.currentUser);
+    // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
-
     this.cdr.detectChanges();
 
     // Ne pas appeler loadClients() ici directement !
@@ -2126,29 +2217,50 @@ export class AgencyDashboardComponent implements OnInit {
     }
   }
   //suppression d un employé
-  deleteEmployee(currentUser: any, employeeId: any): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
-      this.isDeleting = true;
+deleteEmployee(currentUser: any, employeeId: any): void {
+  this.isDeleting = true;
 
-      if (currentUser?._id) {
-        this.agencyService.deleteEmployee$(currentUser._id, employeeId).subscribe(
-          () => {
-            this.notificationService.showSuccess('Succès', 'Employé supprimé avec succès.');
-            this.loadEmployees(currentUser);
-            this.isDeleting = false;
-          },
-          (error) => {
-            console.error('Erreur lors de la suppression de l\'employé :', error);
-            this.notificationService.showError('Erreur', 'Impossible de supprimer l\'employé. Veuillez réessayer.');
-            this.isDeleting = false;
-          }
+  if (currentUser?._id && employeeId?.userId?._id) {
+    this.agencyService.deleteEmployee$( employeeId.userId._id).subscribe(
+      () => {
+        this.notificationService.showSuccess(
+          'Succès',
+          'L\'employé a été supprimé avec succès.'
         );
-      } else {
-        console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
+        this.loadEmployees(currentUser);
+        this.isDeleting = false;
+      },
+      (error) => {
+        this.notificationService.showError(
+          'Erreur',
+          'Impossible de supprimer l\'employé. Veuillez réessayer.'
+        );
+        console.error("Erreur lors de la suppression de l'employé :", error);
         this.isDeleting = false;
       }
-    }
+    );
+  } else {
+    console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
+    this.isDeleting = false;
   }
+}
+  assignIncident(): void {
+    this.notificationService.showInfo('Attribution', 'Ouverture du formulaire d\'attribution');
+    return
+  }
+// onEditEmployee(emp: any) {
+//   this.editingEmployeeId = emp._id;
+//   this.editForm.patchValue({
+//     firstname: emp.firstname,
+//     lastname: emp.lastname,
+//     email: emp.email,
+//     phone: emp.phone,
+//     role: emp.role
+//   });
+//   this.isEditing = true;
+// }
+
+
 
   loadCollections(): void {
     // Simuler les collectes
@@ -2199,20 +2311,20 @@ export class AgencyDashboardComponent implements OnInit {
   }
 
   // fonction to load zones for the current agency
-  loadZonesForAgency(currentUser: any): void {
-    if (currentUser?._id) {
-      this.agencyService.getAgencyZones$(currentUser?._id).subscribe({
-        next: (zonesAgency) => {
-          this.zonesAgency = zonesAgency;
-        },
-        error: (err) => {
-          console.error('Erreur lors du chargement des zones de l agence', err);
-        },
-      });
-    } else {
-      console.error("Aucun agencyId trouvé dans le stockage local.");
-    }
-  }
+  // loadZonesForAgency(currentUser: any): void {
+  //   if (currentUser?._id) {
+  //     this.agencyService.getAgencyZones$(currentUser?._id).subscribe({
+  //       next: (zonesAgency) => {
+  //         this.zonesAgency = zonesAgency;
+  //       },
+  //       error: (err) => {
+  //         console.error('Erreur lors du chargement des zones de l agence', err);
+  //       },
+  //     });
+  //   } else {
+  //     console.error("Aucun agencyId trouvé dans le stockage local.");
+  //   }
+  // }
   //chargement des signalements
   loadAgencyReports(currentUser: any): void {
     if (currentUser && currentUser._id) {
@@ -2748,6 +2860,9 @@ export class AgencyDashboardComponent implements OnInit {
     }
   }
 
+  //creation d un tarif 
+
+
   saveZone(): void {
     if (this.newZone.name && this.citiesInput) {
       this.newZone.cities = this.citiesInput.split(',').map(city => city.trim());
@@ -2838,5 +2953,40 @@ export class AgencyDashboardComponent implements OnInit {
       });
     }
   }
+  investigateIncident(): void {
+    // const incident = this.incidents.find(i => i.id === incidentId);
+    // if (incident) {
+    //   incident.status = 'investigating';
+    //   incident.assignedTo = 'Inspecteur Municipal';
+    //   this.filterIncidents();
+    //   this.notificationService.showSuccess('Enquête', 'Incident pris en charge pour enquête');
+    // }
+  }
+  filterIncidents(): void {
+    // this.filteredIncidents = this.incidents.filter(incident => {
+    //   const statusMatch = this.incidentsFilter === 'all' || incident.status === this.incidentsFilter;
+    //   const severityMatch = this.severityFilter === 'all' || incident.severity === this.severityFilter;
+    //   return statusMatch && severityMatch;
+    // });
+  }
+    resolveIncident(): void {
+    // const incident = this.incidents.find(i => i.id === incidentId);
+    // if (incident) {
+    //   incident.status = 'resolved';
+      this.filterIncidents();
+      this.statistics.pendingReports--;
+      this.notificationService.showSuccess('Résolu', 'Incident marqué comme résolu');
+    // }
+  }
+   contactAgencyForIncident(): void {
+    this.contactAgency();
+  }
+  
+  contactAgency(): void {
+    this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
+  }
+
+
+
 
 }

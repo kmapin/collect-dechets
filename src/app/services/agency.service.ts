@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, delay, map } from 'rxjs/operators';
-import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole } from '../models/agency.model';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { catchError, delay, map, tap } from 'rxjs/operators';
+import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif } from '../models/agency.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
@@ -291,19 +291,45 @@ getAgencyStats$(agencyId: string): Observable<any> {
   );
 
 }
-//suppression d un employé d une agence
-deleteEmployee$(agencyId: string, employeeId: string): Observable<any> {
-  return this.http.delete<any>(`${environment.apiUrl}/agences/${agencyId}/employés/${employeeId}`).pipe(
-    map((response) => { 
-      console.log("Employé supprimé :", response);
+
+//creation d un tarif 
+addTarif$(payload: tarif): Observable<tarif | null> {
+  return this.http.post<tarif>(`${environment.apiUrl}/agences/tarif`, payload).pipe(
+    map(response => {
+      console.log("API > addTarif :", response);
       return response;
     }),
-    catchError((error) => {
-      console.error("Erreur lors de la suppression de l'employé :", error);
-          return of({ success: false, message: 'Erreur lors de la suppression' });
+    catchError(error => {
+      console.error("Erreur lors de la création du tarif :", error);
+      return of(null);
     })
   );
 }
+deleteEmployee$(employeeId: string): Observable<boolean> {
+  return this.http.delete(`${environment.apiUrl}/agences/employees/${employeeId}`).pipe(
+    map(() => {
+      console.log(`Employé ${employeeId} supprimé avec succès`);
+      return true;
+    }),
+    catchError(error => {
+      console.error(`Erreur lors de la suppression de l'employé ${employeeId} :`, error);
+      return of(false); // Retourne false en cas d'erreur
+    })
+  );
+}
+
+// updateEmployee$(employeeId: string, updatedData: any): Observable<any> {
+//   return this.http.put<any>(
+//     `${environment.apiUrl}/agences/employees/${employeeId}`,
+//     updatedData
+//   ).pipe(
+//     tap((response) => console.log('Employé mis à jour :', response)),
+//     catchError((error) => {
+//       console.error("Erreur lors de la mise à jour :", error);
+//       return throwError(() => error);
+//     })
+//   );
+// }
  
 
 
@@ -345,7 +371,7 @@ deleteEmployee$(agencyId: string, employeeId: string): Observable<any> {
       }),
       catchError(error => {
         console.error("Erreur lors de l'ajout de l'employé :", error);
-        return of(null); // Gérer l'erreur de manière appropriée
+        return of(null); 
       })
     );
   }
@@ -373,25 +399,27 @@ deleteEmployee$(agencyId: string, employeeId: string): Observable<any> {
     }
     return of(false).pipe(delay(500));
   }
+  //updqte employee
+
 
   // Zone side Api 
   getZones(agencyId: string): Observable<ServiceZones[]> {
     return this.http.get<ServiceZones[]>(`${environment.apiUrl}/agences/${agencyId}/zones`);
   }
 
-  saveZone(zone: ServiceZones): Observable<ServiceZones | null> {
-    return this.http.post<ServiceZones>(`${environment.apiUrl}/zones/register`, zone).pipe(
-      map((response: ServiceZones) => {
-        console.log("API > saveZone :", response);
-        return response;
-      }),
-      catchError(error => {
-        console.error("Erreur lors de l'enregistrement de la zone :", error);
-        return of(null); // Gérer l'erreur de manière appropriée
-      })
-    );
-  }
-  //ajouter une planification
+  // saveZone(zone: ServiceZones): Observable<ServiceZones | null> {
+  //   return this.http.post<ServiceZones>(`${environment.apiUrl}/zones/register`, zone).pipe(
+  //     map((response: ServiceZones) => {
+  //       console.log("API > saveZone :", response);
+  //       return response;
+  //     }),
+  //     catchError(error => {
+  //       console.error("Erreur lors de l'enregistrement de la zone :", error);
+  //       return of(null); // Gérer l'erreur de manière appropriée
+  //     })
+  //   );
+  // }
+  // //ajouter une planification
   addSchedule$(schedule: CollectionSchedule): Observable<CollectionSchedule | null> {
     return this.http.post<CollectionSchedule>(`${environment.apiUrl}/zones/planification`, schedule).pipe(
       map((response: CollectionSchedule) => {

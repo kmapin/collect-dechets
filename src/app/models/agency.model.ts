@@ -100,6 +100,17 @@ export interface WasteService {
   isActive: boolean;
 }
 
+export interface tarif {
+  id?: string;
+  agencyId: string;
+  type: string;
+  description: string;
+  price: number;
+  nbPassages?: number;
+  Active: boolean;
+}
+
+
 export interface Employee {
   id: string;
   userId: string;
@@ -177,4 +188,11 @@ export interface Address {
   postalCode: string;
   latitude?: number;
   longitude?: number;
+}
+export interface Statistics {
+  totalEmployees: number;
+  totalClients: number;
+  totalZones: number;
+  message?: string;
+  success?: boolean;
 }
