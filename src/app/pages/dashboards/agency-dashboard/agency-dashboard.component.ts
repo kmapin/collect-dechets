@@ -303,7 +303,7 @@ interface Statistics {
                     </div>
                   </div>
                  <div class="employee-actions">
-      <button class="action-btn" (click)="showAddEmployeeModal = true">
+      <button class="action-btn" (click)="showUpdateEmployeeModal = true">
         <i class="material-icons">edit</i>
       </button>
 <button class="action-btn danger" (click)="deleteEmployee(currentUser, employee)">
@@ -759,11 +759,11 @@ interface Statistics {
         </div>
       </div>
  <!-- Modal update Employé -->
-   <div class="modal-overlay" *ngIf="showAddEmployeeModal" (click)="showAddEmployeeModal = false">
+   <div class="modal-overlay" *ngIf="showUpdateEmployeeModal" (click)="showUpdateEmployeeModal = false">
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h3>Modifier un Employé</h3>
-            <button class="close-btn" (click)="showAddEmployeeModal = false">
+            <button class="close-btn" (click)="showUpdateEmployeeModal = false">
               <i class="material-icons">close</i>
             </button>
           </div>
@@ -2047,6 +2047,7 @@ isEditing: boolean = false;
 
   // Modals
   showAddEmployeeModal = false;
+  showUpdateEmployeeModal = false;
   showZoneModal = false;
   showScheduleModal = false;
   editingZone = false;
