@@ -354,6 +354,12 @@ interface Communication {
               <div class="agencies-header">
                 <h2>Audit des Municipalités</h2>
                 <div class="agencies-filters">
+                  <div class="nav-actions">
+                    <a routerLink="/register" class="btn btn-primary nav-cta">
+                      <i class="material-icons">person_add</i>
+                      <span>Créer une Municipalité</span>
+                    </a>
+                  </div>
                   <select [(ngModel)]="agenciesFilter" (change)="filterAgencies()" class="filter-select">
                     <option value="all">Toutes les Municipalités</option>
                     <option value="active">Actives</option>
@@ -2271,6 +2277,23 @@ interface Communication {
         gap: 8px;
       }
     }
+
+    /*Create municipalities button css**/
+    .nav-cta {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      height: 35px;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 188, 212, 0.4);
+    }
   `]
 })
 export class AdminDashboard implements OnInit {
@@ -2375,8 +2398,8 @@ export class AdminDashboard implements OnInit {
     this.loadIncidents();
     this.loadCommunications();
     this.showAdminClients();
-    
-    
+
+
   }
 
   loadAgencyAudits(): void {
@@ -2742,7 +2765,7 @@ export class AdminDashboard implements OnInit {
   }
   filterClients(): void {
     this.filteredClients = this.clientsAudits.filter(client => {
-      const statusMatch = this.clientsFilter === 'all' || client?.active_subscription.map((sub : any)=> sub.status).includes(this.clientsFilter);
+      const statusMatch = this.clientsFilter === 'all' || client?.active_subscription.map((sub: any) => sub.status).includes(this.clientsFilter);
       let complianceMatch = true;
 
       // if (this.complianceFilter === 'excellent') {
@@ -2895,7 +2918,7 @@ export class AdminDashboard implements OnInit {
   showAdminClients(): void {
     this.clientService.getAllClients().subscribe({
       next: (response: any) => {
-        this.clientsAudits = response?.data.map((client: any) =>{
+        this.clientsAudits = response?.data.map((client: any) => {
           return {
             _id: client._id,
             data: client,
@@ -2923,7 +2946,7 @@ export class AdminDashboard implements OnInit {
     this.adminService.getAllEmployees('collector').subscribe({
       next: (response: any) => {
         const collectors = response?.employees || [];
-        
+
         const collectorsWithAgencies$ = collectors.map((employee: any) => {
           const agency$ = this.agencies.includes(employee.agencyId)
             ? this.agencyService.getAgencyById1(employee.agencyId)
@@ -2936,7 +2959,7 @@ export class AdminDashboard implements OnInit {
                   agencyName: agencyResponse?.data?.agencyName || '',
                   agencyId: agencyResponse?.data?._id || '',
                   address: {
-                    city: agencyResponse?.data?.address?.city|| '',
+                    city: agencyResponse?.data?.address?.city || '',
                     quartier: agencyResponse?.data?.address?.neighborhood || '',
                     postalCode: agencyResponse?.data?.address?.postalCode || '',
                     sector: agencyResponse?.data?.address?.sector || '',
@@ -2998,7 +3021,7 @@ export class AdminDashboard implements OnInit {
       },
       error: (error: any) => {
         console.error('Error activating agency:', error);
-        const msg= error?.error?.message || 'Error activating agency';
+        const msg = error?.error?.message || 'Error activating agency';
         this.notificationService.showSuccess('Activation', msg);
       }
     });
