@@ -1046,7 +1046,7 @@ export class RegisterComponent implements OnInit {
             this.notificationService.showSuccess('Inscription mairie réussie',
               'Votre agence a été créée avec succès ! Vous pouvez maintenant vous connecter.');
             setTimeout(() => {
-              this.router.navigate(['/login']);
+              this.router.navigate(['/dashboard/admin']);
             }, 2000);
           } else {
             const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);

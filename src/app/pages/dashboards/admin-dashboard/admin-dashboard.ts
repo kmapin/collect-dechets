@@ -2369,6 +2369,8 @@ export class AdminDashboard implements OnInit {
     { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
+  municipalitiesAudits: any;
+  filteredMunicipalities: any[] = [];
 
   constructor(
     private authService: AuthService,
@@ -2389,6 +2391,7 @@ export class AdminDashboard implements OnInit {
     // } 
     this.loadAdminData();
     this.showAdminStatistics();
+    this.loadAllMunipalities();
   }
 
   loadAdminData(): void {
@@ -3028,6 +3031,22 @@ export class AdminDashboard implements OnInit {
     });
   }
 
+  loadAllMunipalities(){
+    this.adminService.getAllMunicipalities().subscribe({
+      next: (response: any) => {
+        // this.municipalitiesAudits = response?.data.map((municipality: any) => {
+        //   return {
+        //     _id: municipality._id,
+        //     data: municipality,
+        //     active_subscription: municipality?.subscriptionHistory.filter((s: any) => s.status === 'active'),
+        //   }
+        // });
+        // this.filteredMunicipalities = [...this.municipalitiesAudits];
+        console.log('municipalities in response', response);
+        // console.log('municipalities in dashboard', this.filteredMunicipalities);
+      }
+    })
+  }
 
   //naviguate to add Municipality
   navigateToAddMunicipality() {

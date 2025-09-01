@@ -58,7 +58,7 @@ export class Admin {
     }
 
         /**
-       * Inscription d'une agence via l'API réelle
+       * Inscription d'une mairie via l'API réelle
        */
       registerMunicipality$(municipalityData: any): Observable<{ success: boolean; municipality?:Municipality; error?: string; message?: string }> {
         return this.http.post<any>(`${environment.apiUrl}/auth/municipality`, municipalityData).pipe(
@@ -75,4 +75,14 @@ export class Admin {
           })
         );
       }
+
+
+  getAllMunicipalities() {
+    return this.http.get(`${environment.apiUrl}/auth/municipality`).pipe(
+      map((response: any) =>{
+        console.log('API > getAllMunicipalities:', response);
+        return response;
+      })
+    );
+  }
 }
