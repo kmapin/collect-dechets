@@ -124,6 +124,7 @@ export interface Employee {
   hiredAt: Date;
   avatar?: string;
 }
+
 export interface Employees {
   // id: string;
   // userId: string;
@@ -137,7 +138,16 @@ export interface Employees {
   hiredAt: Date;
   avatar?: string;
 }
-
+export interface Tariff {
+    agencyId: string;
+  type: TariffType;       
+  price: number;           
+  description?: string;    
+  nbPassages: number;     
+  createdAt: Date;         
+  updatedAt?: Date;        
+}
+export type TariffType = 'standard' | 'premium' | 'vip';
 export enum  EmployeeRole {
   ADMIN = 'admin',
   MANAGER = 'manager',

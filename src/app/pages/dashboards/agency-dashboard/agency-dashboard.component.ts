@@ -7,7 +7,7 @@ import { AgencyService } from '../../../services/agency.service';
 import { CollectionService } from '../../../services/collection.service';
 import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
-import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule, EmployeeRole, WasteService, tarif } from '../../../models/agency.model';
+import { Agency, Employee, Employees, ServiceZone, ServiceZones, CollectionSchedule, EmployeeRole, WasteService, tarif, Tariff } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { ClientService, ClientApi } from '../../../services/client.service';
 
@@ -516,69 +516,7 @@ interface Statistics {
               </div>
             </div>
 
-            <!-- Onglet Signalements -->
-            <!-- <div *ngIf="activeTab === 'reports'" class="reports-tab">
-              <div class="reports-header">
-                <h2>Traitement des Signalements</h2>
-                <div class="reports-filters">
-                  <select [(ngModel)]="reportsFilter" (change)="filterReports()" class="filter-select">
-                    <option value="all">Tous les signalements</option>
-                    <option value="open">Ouverts</option>
-                    <option value="in_progress">En cours</option>
-                    <option value="resolved">Résolus</option>
-                  </select>
-                  <select [(ngModel)]="reportsTypeFilter" (change)="filterReports()" class="filter-select">
-                    <option value="all">Tous les types</option>
-                    <option value="missed_collection">Collecte manquée</option>
-                    <option value="incomplete_collection">Collecte incomplète</option>
-                    <option value="damage">Dommage</option>
-                    <option value="complaint">Réclamation</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="reports-list">
-                <div *ngFor="let report of filteredReports" class="report-card card">
-                  <div class="report-header">
-                    <div class="report-info">
-                      <h4>{{ report.clientName }}</h4>
-                      <p class="report-type">{{ getReportTypeText(report.type) }}</p>
-                      <p class="report-date">{{ report.date | date:'dd/MM/yyyy HH:mm' }}</p>
-                    </div>
-                    <div class="report-status">
-                      <span class="status-badge" [class]="'status-' + report.status">
-                        {{ getReportStatusText(report.status) }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="report-content">
-                    <p class="report-description">{{ report.description }}</p>
-                    <div class="report-assignment" *ngIf="report.assignedTo">
-                      <i class="material-icons">person</i>
-                      <span>Assigné à {{ getEmployeeName(report.assignedTo) }}</span>
-                    </div>
-                  </div>
-
-                  <div class="report-actions">
-                    <button class="btn btn-secondary" (click)="assignReport(report.id)" 
-                            *ngIf="report.status === 'open'">
-                      <i class="material-icons">assignment_ind</i>
-                      Assigner
-                    </button>
-                    <button class="btn btn-primary" (click)="resolveReport(report.id)" 
-                            *ngIf="report.status !== 'resolved'">
-                      <i class="material-icons">check</i>
-                      Résoudre
-                    </button>
-                    <button class="btn btn-secondary" (click)="contactReportClient(report.clientId)">
-                      <i class="material-icons">phone</i>
-                      Contacter
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div> -->
+           
 <div *ngIf="activeTab === 'reports'" class="reports-tab">
   <div class="reports-header">
     <h2>Signalements</h2>
@@ -623,6 +561,9 @@ interface Statistics {
                     </button>
                   </div>
   </div>
+  
+</div>
+
   
 </div>
 
@@ -818,7 +759,7 @@ interface Statistics {
         </div>
       </div>
       <!-- Modal Gestion Zone -->
-      <div class="modal-overlay" *ngIf="showZoneModal" (click)="showZoneModal = false">
+      <!-- <div class="modal-overlay" *ngIf="showZoneModal" (click)="showZoneModal = false">
         <div class="modal-content zone-modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h3>{{ editingZone ? 'Modifier' : 'Ajouter' }} un tarif</h3>
@@ -865,7 +806,58 @@ interface Statistics {
             </div>
           </form>
         </div>
+      </div> -->
+
+      <div class="modal-overlay" *ngIf="showZoneModal" (click)="showZoneModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Ajouter un Tarif</h3>
+      <button class="close-btn" (click)="showZoneModal = false">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+
+    <form class="tariff-form" (ngSubmit)="addTariff()">
+      <!-- Type -->
+      <div class="form-group">
+        <label>Type *</label>
+        <select [(ngModel)]="newTariff.type" name="type" required>
+          <option value="standard">Standard</option>
+          <option value="premium">Premium</option>
+          <option value="vip">VIP</option>
+        </select>
       </div>
+
+      <!-- Prix -->
+      <div class="form-group">
+        <label>Prix *</label>
+        <input type="number" [(ngModel)]="newTariff.price" name="price" min="0" required>
+      </div>
+
+      <!-- Nombre de passages -->
+      <div class="form-group">
+        <label>Nombre de passages *</label>
+        <input type="number" [(ngModel)]="newTariff.nbPassages" name="nbPassages" min="0" required>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label>Description</label>
+        <textarea [(ngModel)]="newTariff.description" name="description" rows="3"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="showZoneModal = false">
+          Annuler
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="material-icons">add_circle</i>
+          Ajouter
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
       <!-- Modal Planning -->
       <div class="modal-overlay" *ngIf="showScheduleModal" (click)="showScheduleModal = false">
@@ -2027,6 +2019,7 @@ export class AgencyDashboardComponent implements OnInit {
 editingEmployeeId: string | null = null;
 isEditing: boolean = false;
   allEmployees: Employees[] = [];
+   allTarif: Tariff[] = [];
   serviceZones: ServiceZone[] = [];
   serviceZoness: ServiceZones[] = []; //from API
   schedules: CollectionSchedule[] = [];
@@ -2051,13 +2044,7 @@ isEditing: boolean = false;
   showZoneModal = false;
   showScheduleModal = false;
   editingZone = false;
-  newTarif: any = {
-    agencyId: "",
-    type: "",
-    price: 0,
-    description: "",
-    nbPassages: 0
-  }
+
   // Forms
   newEmployee: any = {
     firstName: '',
@@ -2067,6 +2054,14 @@ isEditing: boolean = false;
     role: '',
     zones: []
   };
+newTariff: any = {
+    // agencyId: "",
+    type: "",
+    price: "",
+    description: "",
+    nbPassages:  ""
+  }
+ 
 
   newZone: any = {
     name: '',
@@ -2095,15 +2090,15 @@ isEditing: boolean = false;
   //   return this.activeClients.length;
   // }
 
-  tabs = [
-    { id: 'collections', label: 'Collectes', icon: 'local_shipping', badge: null },
-    { id: 'employees', label: 'Employés', icon: 'people', badge: null },
-    { id: 'zones', label: 'Zones', icon: 'map', badge: null },
-    { id: 'schedules', label: 'Plannings', icon: 'schedule', badge: null },
-    { id: 'clients', label: 'Clients', icon: 'person', badge: null },
-    { id: 'reports', label: 'Signalements', icon: 'report_problem', badge: 3 },
-    { id: 'analytics', label: 'Rapports', icon: 'analytics', badge: null }
-  ];
+tabs = [
+  { id: 'collections', label: 'Collectes', icon: 'local_shipping', badge: null },
+  { id: 'employees', label: 'Employés', icon: 'people', badge: null },
+  { id: 'zones', label: 'Zones', icon: 'map', badge: null },
+  { id: 'schedules', label: 'Plannings', icon: 'schedule', badge: null },
+  { id: 'clients', label: 'Clients', icon: 'person', badge: null },
+  { id: 'reports', label: 'Signalements', icon: 'report_problem', badge: 3 },
+  { id: 'analytics', label: 'Rapports', icon: 'analytics', badge: null }
+];
 
   weekDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   currentWeek = new Date();
@@ -2133,8 +2128,9 @@ isEditing: boolean = false;
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
     this.cdr.detectChanges();
-
-    // Ne pas appeler loadClients() ici directement !
+    this.loadTariffs();
+  
+   
 
   }
 
@@ -2370,34 +2366,6 @@ deleteEmployee(currentUser: any, employeeId: any): void {
       console.warn("Aucun ID d'utilisateur courant disponible.");
     }
   }
-  // loadAgencyStatistics(currentUser: any): void {
-  //   if (currentUser && currentUser._id) {
-  //     const agencyId = currentUser._id; 
-  //     this.agencyService.getAgencyStats$(agencyId).subscribe({
-  //       next: (data) => {
-  //         this.statistics = {
-  //           totalClients: data.totalClients || 0,
-  //           activeCollectors: data.activeCollectors || 0,
-  //           todayCollections: data.todayCollections || 0,
-  //           completedCollections: data.completedCollections || 0,
-  //           monthlyRevenue: data.monthlyRevenue || 0,
-  //           averageRating: data.averageRating || 0,
-  //           pendingReports: data.pendingReports || 0
-  //         };
-  //         console.log("Statistiques de l'agence chargées :", this.statistics);
-  //       },
-  //       error: (error) => {
-  //         console.error("Erreur lors du chargement des statistiques de l'agence :", error);
-  //         this.notificationService.showError(
-  //           'Erreur',
-  //           'Impossible de charger les statistiques de l\'agence. Veuillez réessayer.'
-  //         );
-  //       }
-  //     });
-  //   } else {
-  //     console.warn("Aucun ID d'utilisateur courant disponible.");
-  //   }
-  // }
   loadServiceZones(): void {
     this.serviceZones = [
       {
@@ -2862,6 +2830,115 @@ deleteEmployee(currentUser: any, employeeId: any): void {
   }
 
   //creation d un tarif 
+addTariff(): void {
+  if (this.newTariff.type && this.newTariff.price !== undefined) {
+    const agencyId = this.currentUser?.id;
+    const tariff: Tariff = {
+     agencyId : agencyId || '',
+      type: this.newTariff.type,
+      price: this.newTariff.price,
+      description: this.newTariff.description,
+      nbPassages: this.newTariff.nbPassages,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    this.agencyService.addTariff(tariff).subscribe({
+      next: (response: any) => {
+        this.isLoading = false;
+        console.log('[DEBUG] Réponse ajout tarif:', response);
+
+        const isSuccess =
+          response?.success ||
+          response?.status === 'success' ||
+          (typeof response?.message === 'string' &&
+            (response.message.toLowerCase().includes('succès') ||
+             response.message.toLowerCase().includes('réussi'))) ||
+          !!response;
+
+        if (isSuccess) {
+          this.notificationService.showSuccess(
+            'Ajout réussi',
+            'Le tarif a été créé avec succès !'
+          );
+        } else {
+          const errorMsg = this.getFriendlyMessage(
+            (response?.message || response?.error || ''),
+            false
+          );
+          this.notificationService.showError(
+            'Erreur lors de l’ajout du tarif',
+            errorMsg
+          );
+        }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        const errorMsg = this.getFriendlyMessage(
+          (error?.error?.message || error?.error || ''),
+          false
+        );
+        this.notificationService.showError(
+          'Erreur lors de l’ajout du tarif',
+          errorMsg
+        );
+      }
+    });
+  }
+}
+// recuperations des tarifs liee a une agences
+tariffs: Tariff[] = [];
+ loadTariffs(): void {
+  this.isLoading = true;
+  const agencyId = this.currentUser?.id; 
+  if (!agencyId) {
+    console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
+    this.isLoading = false;
+    return;
+  }
+
+  this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
+    next: (data: Tariff[]) => {
+      this.tariffs = data;
+      console.log('Tarifs récupérés :', this.tariffs);
+      this.isLoading = false;
+    },
+    error: (error) => {
+      console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
+      this.isLoading = false;
+    }
+  });
+}
+
+
+// supprimer un tarif
+deleteTariff(currentUser: any, tarifId: any): void {
+  this.isDeleting = true;
+
+  if (currentUser?._id && tarifId?.userId?._id) {
+    this.agencyService.deleteTariff$( tarifId.userId._id).subscribe(
+      () => {
+        this.notificationService.showSuccess(
+          'Succès',
+          'L\'tarif été supprimé avec succès.'
+        );
+        // this.loadEmployees(currentUser);
+        this.isDeleting = false;
+      },
+      (error) => {
+        this.notificationService.showError(
+          'Erreur',
+          'Impossible de supprimer l\'tarif. Veuillez réessayer.'
+        );
+        console.error("Erreur lors de la suppression de l'tarif :", error);
+        this.isDeleting = false;
+      }
+    );
+  } else {
+    console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
+    this.isDeleting = false;
+  }
+}
 
 
   saveZone(): void {
