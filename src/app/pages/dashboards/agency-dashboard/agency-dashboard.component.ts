@@ -169,10 +169,10 @@ interface Statistics {
                     class="tab-btn"
                     [class.active]="activeTab === tab.id"
                     (click)="activeTab = tab.id">
-              <i class="material-icons">{{ tab.icon }}</i>
-              {{ tab.label }}
+                <i class="material-icons">{{ tab.icon }}</i>
+    {{ tab.label }}
               <!-- <span *ngIf="tab.label === 'Clients' && tab.badge" class="tab-badge">{{ activeClientNbr }}</span> -->
-              <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
+            <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
             </button>
           </div>
 
@@ -246,6 +246,7 @@ interface Statistics {
                 <p>Aucune collecte ne correspond aux filtres sélectionnés</p>
               </div>
             </div>
+            
 
             <!-- Onglet Gestion des Employés -->
             <div *ngIf="activeTab === 'employees'" class="employees-tab">
@@ -636,7 +637,8 @@ interface Statistics {
                 </div>
               </div>
             </div>
-          </div>
+ 
+           
         </div>
       </div>
 
@@ -2127,8 +2129,9 @@ tabs = [
     this.loadCollectors(this.currentUser);
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
+       this.loadTariffs();
     this.cdr.detectChanges();
-    this.loadTariffs();
+ 
   
    
 
@@ -2213,31 +2216,89 @@ tabs = [
       );
     }
   }
+
+  
   //suppression d un employé
+// deleteEmployee(currentUser: any, employeeId: any): void {
+//   this.isDeleting = true;
+
+//   if (currentUser?._id && employeeId?.userId?._id) {
+//     this.agencyService.deleteEmployee$( employeeId.userId._id).subscribe(
+//       () => {
+//         this.notificationService.showSuccess(
+//           'Succès',
+//           'L\'employé a été supprimé avec succès.'
+//         );
+//         this.loadEmployees(currentUser);
+//         this.isDeleting = false;
+//       },
+//       (error) => {
+//         this.notificationService.showError(
+//           'Erreur',
+//           'Impossible de supprimer l\'employé. Veuillez réessayer.'
+//         );
+//         console.error("Erreur lors de la suppression de l'employé :", error);
+//         this.isDeleting = false;
+//       }
+//     );
+//   } else {
+//     console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
+//     this.isDeleting = false;
+//   }
+// }
 deleteEmployee(currentUser: any, employeeId: any): void {
   this.isDeleting = true;
 
-  if (currentUser?._id && employeeId?.userId?._id) {
-    this.agencyService.deleteEmployee$( employeeId.userId._id).subscribe(
-      () => {
-        this.notificationService.showSuccess(
-          'Succès',
-          'L\'employé a été supprimé avec succès.'
-        );
-        this.loadEmployees(currentUser);
+  // Vérification des IDs nécessaires
+  if (!currentUser?._id || !employeeId?.userId?._id) {
+    this.notificationService.showError(
+      'Erreur',
+      'Impossible d\'identifier l\'employé à supprimer'
+    );
+    this.isDeleting = false;
+    return;
+  }
+
+  // Demander confirmation avant suppression
+  if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+    this.agencyService.deleteEmployee$(employeeId.userId._id).subscribe({
+      next: (response) => {
+        // Vérifier si la réponse indique un succès
+        if (response) {
+          this.notificationService.showSuccess(
+            'Succès',
+            'L\'employé a été supprimé avec succès.'
+          );
+          // Recharger la liste des employés
+          this.loadEmployees(currentUser);
+          
+          // Mettre à jour le badge du nombre d'employés
+          const employeesTab = this.tabs.find(tab => tab.id === 'employees');
+          if (employeesTab && this.allEmployees) {
+            employeesTab.badge = this.allEmployees.length - 1;
+          }
+        } else {
+          this.notificationService.showError(
+            'Erreur',
+            'La suppression a échoué. Veuillez réessayer.'
+          );
+        }
         this.isDeleting = false;
       },
-      (error) => {
+      error: (error) => {
+        console.error("Erreur lors de la suppression de l'employé :", error);
         this.notificationService.showError(
           'Erreur',
-          'Impossible de supprimer l\'employé. Veuillez réessayer.'
+          'Impossible de supprimer l\'employé. ' + 
+          (error.error?.message || 'Veuillez réessayer.')
         );
-        console.error("Erreur lors de la suppression de l'employé :", error);
+        this.isDeleting = false;
+      },
+      complete: () => {
         this.isDeleting = false;
       }
-    );
+    });
   } else {
-    console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
     this.isDeleting = false;
   }
 }
@@ -2293,6 +2354,11 @@ deleteEmployee(currentUser: any, employeeId: any): void {
         next: (employees) => {
           this.allEmployees = employees;
           console.log("loadEmployees > :", this.allEmployees); // Changed from error to log
+                  const employeesTab = this.tabs.find(tab => tab.id === 'employees');
+              if (employeesTab) {
+          employeesTab.badge = employees.length;
+          this.cdr.detectChanges(); // Force la détection des changements
+        }    
         },
         error: (error) => {
           console.error("Erreur lors du chargement des employés :", error);
@@ -2330,6 +2396,12 @@ deleteEmployee(currentUser: any, employeeId: any): void {
         next: (reports) => {
           this.agencyReports = reports;
           console.log("Signalements chargés >>>>>> :", this.agencyReports);
+           // Mise à jour du badge des Signalements
+        const SignalementsTab = this.tabs.find(tab => tab.id === 'reports');
+        if (SignalementsTab) {
+          SignalementsTab.badge = reports.length;
+          this.cdr.detectChanges(); // Force la détection des changements
+        }
         },
         error: (error) => {
           console.error("Erreur lors du chargement des signalements :", error);
@@ -2821,6 +2893,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
           this.isLoading = false;
           const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
           this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
+             this.loadEmployees(this.currentUser);
         }
       });
       this.showAddEmployeeModal = false;
@@ -2870,6 +2943,15 @@ addTariff(): void {
             'Erreur lors de l’ajout du tarif',
             errorMsg
           );
+          this.newTariff = {
+          agencyId: '',
+             type: '',
+             price: 0,
+             description: '',
+             nbPassages: 0,
+             createdAt: new Date(),
+        
+        };
         }
       },
       error: (error) => {
@@ -2908,6 +2990,64 @@ tariffs: Tariff[] = [];
       this.isLoading = false;
     }
   });
+}
+tariffToUpdate: Tariff | null = null;
+//update un tarif via l api
+updateTariff(tariffId: string): void {
+  if (this.tariffToUpdate && this.tariffToUpdate.type && this.tariffToUpdate.price !== undefined) {
+    this.isLoading = true;
+
+    const payload = {
+      type: this.tariffToUpdate.type,
+      price: this.tariffToUpdate.price,
+      description: this.tariffToUpdate.description,
+      nbPassages: this.tariffToUpdate.nbPassages,
+      updatedAt: new Date()
+    };
+
+    this.agencyService.getUpdateTarifs$(tariffId, payload).subscribe({
+      next: (response: any) => {
+        this.isLoading = false;
+        console.log('[DEBUG] Réponse modification tarif:', response);
+
+        const isSuccess =
+          response?.success ||
+          response?.status === 'success' ||
+          (typeof response?.message === 'string' &&
+            (response.message.toLowerCase().includes('succès') ||
+             response.message.toLowerCase().includes('réussi'))) ||
+          !!response;
+
+        if (isSuccess) {
+          this.notificationService.showSuccess(
+            'Modification réussie',
+            'Le tarif a été modifié avec succès !'
+          );
+          // this.loadTariffs(this.currentUser?.id!); // recharger la liste après update
+        } else {
+          const errorMsg = this.getFriendlyMessage(
+            (response?.message || response?.error || ''),
+            false
+          );
+          this.notificationService.showError(
+            'Erreur lors de la modification du tarif',
+            errorMsg
+          );
+        }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        const errorMsg = this.getFriendlyMessage(
+          (error?.error?.message || error?.error || ''),
+          false
+        );
+        this.notificationService.showError(
+          'Erreur lors de la modification du tarif',
+          errorMsg
+        );
+      }
+    });
+  }
 }
 
 
