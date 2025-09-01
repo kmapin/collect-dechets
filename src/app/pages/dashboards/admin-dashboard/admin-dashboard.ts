@@ -355,7 +355,7 @@ interface Communication {
                 <h2>Audit des Municipalités</h2>
                 <div class="agencies-filters">
                   <div class="nav-actions">
-                    <a routerLink="/register" class="btn btn-primary nav-cta">
+                    <a (click)="navigateToAddMunicipality()" class="btn btn-primary nav-cta">
                       <i class="material-icons">person_add</i>
                       <span>Créer une Municipalité</span>
                     </a>
@@ -2369,6 +2369,8 @@ export class AdminDashboard implements OnInit {
     { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
+  municipalitiesAudits: any;
+  filteredMunicipalities: any[] = [];
 
   constructor(
     private authService: AuthService,
@@ -2389,6 +2391,7 @@ export class AdminDashboard implements OnInit {
     // } 
     this.loadAdminData();
     this.showAdminStatistics();
+    this.loadAllMunipalities();
   }
 
   loadAdminData(): void {
@@ -2401,6 +2404,7 @@ export class AdminDashboard implements OnInit {
 
 
   }
+
 
   loadAgencyAudits(): void {
     this.agencyService.getAllAgenciesFromApi().subscribe({
@@ -3025,5 +3029,28 @@ export class AdminDashboard implements OnInit {
         this.notificationService.showSuccess('Activation', msg);
       }
     });
+  }
+
+  loadAllMunipalities(){
+    this.adminService.getAllMunicipalities().subscribe({
+      next: (response: any) => {
+        // this.municipalitiesAudits = response?.data.map((municipality: any) => {
+        //   return {
+        //     _id: municipality._id,
+        //     data: municipality,
+        //     active_subscription: municipality?.subscriptionHistory.filter((s: any) => s.status === 'active'),
+        //   }
+        // });
+        // this.filteredMunicipalities = [...this.municipalitiesAudits];
+        console.log('municipalities in response', response);
+        // console.log('municipalities in dashboard', this.filteredMunicipalities);
+      }
+    })
+  }
+
+  //naviguate to add Municipality
+  navigateToAddMunicipality() {
+    this.router.navigate(['/register']);
+    this.adminService.setData('municipality');
   }
 }

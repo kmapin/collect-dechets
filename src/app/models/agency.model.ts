@@ -29,7 +29,37 @@ export interface Agency {
   updatedAt: string;
   __v: number;
 }
-
+export interface Municipality {
+  _id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  agencyName: string;
+  arrondissement: string;
+  secteur: string;
+  quartier: string;
+  collections: number;
+  incidents: number;
+  agencyDescription: string;
+  phone: string;
+  address: Address;
+  licenseNumber: string;
+  members: AgencyMember[];
+  serviceZones: ServiceZone[];
+  services: WasteService[];
+  employees: Employee[];
+  schedule: CollectionSchedule[];
+  collectors: any[];
+  clients: AgencyClient[];
+  rating: number;
+  totalClients: number;
+  acceptTerms: boolean;
+  receiveOffers: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
 export interface AgencyMember {
   user: string;
   role: string;

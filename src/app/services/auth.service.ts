@@ -4,7 +4,7 @@ import { delay, map, tap } from 'rxjs/operators';
 import { User, UserRole } from '../models/user.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { Agency } from '../models/agency.model';
+import { Agency, Municipality } from '../models/agency.model';
 
 @Injectable({
   providedIn: 'root'
@@ -185,6 +185,7 @@ export class AuthService {
         console.log("API > Logout :", response);
         if (response) {
           localStorage.removeItem('currentUser');
+          localStorage.removeItem('userRole');
           this.currentUserSubject.next(null);
           this.isAuthenticatedSubject.next(false);
           return response;
@@ -225,6 +226,7 @@ export class AuthService {
       })
     );
   }
+
 
   /**
    * Abonnement d'un utilisateur à une agence
