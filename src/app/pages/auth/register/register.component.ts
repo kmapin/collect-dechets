@@ -143,7 +143,67 @@ import { Admin } from '../../../services/admin';
               </div>
 
             </div>
-            
+            <div class="form-section" *ngIf="userData.role==='municipality'">
+              <h3>Informations de la commune</h3>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="region">
+                    <i class="material-icons">markunread_mailbox</i>
+                    Region *
+                  </label>
+                  <select
+                    type="text" 
+                    id="region"
+                    name="region"
+                    [(ngModel)]="userData.commune.region"
+                    class="form-control"
+                    placeholder="Nom de la region"
+                    required>
+                    <option value="">Sélectionner</option>
+                    <option value="region du centre">Region du centre</option>
+                    <option value="region du nord">Region du nord</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="province">
+                    <i class="material-icons">location_city</i>
+                    Province *
+                  </label>
+                  <select 
+                    type="text" 
+                    id="province"
+                    name="province"
+                    [(ngModel)]="userData.commune.province"
+                    class="form-control"
+                    placeholder="Nom de la commune"
+                    required>
+                    <option value="">Sélectionner</option>
+                    <option value="province 1">Province 1</option>
+                  </select>
+                </div>
+                
+              </div>
+              <div class="form-group">
+                  <label class="form-label" for="communeName">
+                    <i class="material-icons">location_city</i>
+                    Commune *
+                  </label>
+                  <select 
+                    type="text" 
+                    id="communeName"
+                    name="communeName"
+                    [(ngModel)]="userData.commune.name"
+                    class="form-control"
+                    placeholder="Nom de la commune"
+                    required>
+                    <option value="">Sélectionner</option>
+                    <option value="ouagadoudou">Ouagadoudou</option>
+                  </select>
+                </div>
+
+
+            </div>
             <!-- Adresse (pour les clients) -->
             <!-- <div class="form-section" *ngIf="userData.role === 'client'"> -->
             <div class="form-section">
@@ -749,7 +809,12 @@ export class RegisterComponent implements OnInit {
     agencyDescription: '',
     termsAccepted: false,
     acceptTerms: true,
-    receiveOffers: false
+    receiveOffers: false,
+    commune :{
+      name: '',
+      region: '',
+      province: ''
+    }
   };
 
 
@@ -940,9 +1005,9 @@ export class RegisterComponent implements OnInit {
           email: this.userData.email,
           name: this.userData.firstName + ' ' + this.userData.lastName,
           commune: {
-            region: "",
-            province:"" ,
-            name: "Ouagadougou"
+            region: this.userData.commune.region,
+            province: this.userData.commune.province,
+            name: this.userData.commune.name
           },
           managedZones: [
             {
