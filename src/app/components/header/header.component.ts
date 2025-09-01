@@ -881,12 +881,14 @@ markAllAsRead(event: Event): void {
   logout(): void {
     this.authService.logout().subscribe({
       next: (response: any) => {
+        console.log('deconnexion', response);
         if (response?.message) {
           console.log('deconnexion', response);
           this.router.navigate(['/']);
           this.notificationService.showSuccess(`${response?.message} !`,'Au revoir, à bientoît !');
 
         } else {
+          console.log('deconnexion', response);
           this.notificationService.showError('Erreur de connexion', response.error);
         }
       }

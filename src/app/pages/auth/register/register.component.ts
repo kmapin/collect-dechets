@@ -7,6 +7,7 @@ import { NotificationService } from '../../../services/notification.service';
 import { UserRole } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
 import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
+import { Admin } from '../../../services/admin';
 
 @Component({
   selector: 'app-register',
@@ -28,7 +29,7 @@ import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
           </div>
 
           <!-- Sélection du type de compte -->
-          <div class="account-type-section">
+          <div class="account-type-section" *ngIf="userData.role!=='municipality'">
             <h3>Type de compte</h3>
             <div class="account-types">
               <label class="account-type-option">
@@ -229,7 +230,7 @@ import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
                     required>
                 </div>
 
-                <div class="form-group" *ngIf="userData.role !== 'agency'">
+                <div class="form-group" *ngIf="userData.role !== 'agency' && userData.role !== 'municipality'">
                   <label class="form-label" for="doorNumber">
                     <i class="material-icons">home</i>
                     Numéro Porte *
@@ -244,7 +245,7 @@ import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
                     required>
                 </div>
 
-                <div class="form-group" *ngIf="userData.role !== 'agency'">
+                <div class="form-group" *ngIf="userData.role !== 'agency'  && userData.role !== 'municipality'">
                   <label class="form-label" for="doorColor">
                     <i class="material-icons">palette</i>
                     Couleur porte
@@ -751,6 +752,8 @@ export class RegisterComponent implements OnInit {
     receiveOffers: false
   };
 
+
+
   arrondissements: QuartierData[] = OUAGA_DATA;
   secteurs: { secteur: string; quartiers: string[] }[] = [];
   quartiers: string[] = [];
@@ -758,13 +761,20 @@ export class RegisterComponent implements OnInit {
   showPassword = false;
   isLoading = false;
 
+  roleMunicipality :string= '';
   constructor(
     private authService: AuthService,
     private router: Router,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private adminService: Admin
   ) { }
 
-  ngOnInit(): void { }
+  ngOnInit(): void { 
+    // this.roleMunicipality = this.adminService.getData()?.userRole || '';
+    this.roleMunicipality = localStorage.getItem('userRole') || '';
+    if(this.roleMunicipality === 'municipality') this.userData.role = UserRole.MUNICIPALITY
+    console.log(this.roleMunicipality);
+  }
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
@@ -920,6 +930,73 @@ export class RegisterComponent implements OnInit {
         }
       });
       return;
+    } else if (this.userData.role === UserRole.MUNICIPALITY) {
+      body={
+          role: this.userData.role,
+          agencyId: [ ],
+          firstName: this.userData.firstName,
+          lastName: this.userData.lastName,
+          phone: this.userData.phone,
+          email: this.userData.email,
+          name: this.userData.firstName + ' ' + this.userData.lastName,
+          commune: {
+            region: "",
+            province:"" ,
+            name: "Ouagadougou"
+          },
+          managedZones: [
+            {
+              arrondissement: this.userData.address.arrondissement,
+              secteur: this.userData.address.sector,
+              quartier: this.userData.address.neighborhood,
+              village:this.userData.address.city,
+            }
+          ],
+          position: {
+            
+          },
+          password: this.userData.password,
+          confirmPassword: this.userData.confirmPassword,
+          acceptTerms: this.userData.acceptTerms, // renommé
+          termsAccepted: this.userData.acceptTerms,
+      }
+      console.log('[DEBUG] Body envoyé à registerMunicipality:', body);
+      this.adminService.registerMunicipality$(body).subscribe({
+        next: (response) => {
+          localStorage.removeItem('userRole');
+          this.isLoading = false;
+          this.adminService.cleanData();
+          console.log('[DEBUG] Réponse inscription municipal:', response);
+          const res: any = response;
+          const isSuccess =
+            response.success ||
+            res.status === 'success' ||
+            (typeof response.message === 'string' && (
+              response.message.toLowerCase().includes('succès') ||
+              response.message.toLowerCase().includes('réussi')
+            )) ||
+            !!response.municipality;
+
+          if (isSuccess) {
+            this.notificationService.showSuccess('Inscription mairie réussie',
+              'Votre agence a été créée avec succès ! Vous pouvez maintenant vous connecter.');
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          } else {
+            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
+            this.notificationService.showError('Erreur lors de l\'inscription mairie', errorMsg);
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.adminService.cleanData();
+          const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
+          // const errorMsg = this.getFriendlyMessage((error?.error?.error || error?.error?.message || error?.message || ''), false);
+          this.notificationService.showError('Erreur lors de l\'inscription mairie', errorMsg);
+        }
+      });
+      return;
     }
   }
 
@@ -998,6 +1075,12 @@ export class RegisterComponent implements OnInit {
         this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
         return false;
       }
+    }else if (this.userData.role === UserRole.MUNICIPALITY) {
+      // Validation agence
+      // if (!this.userData.agencyName) {
+      //   this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+      //   return false;
+      // }
     } else {
       // Cas improbable, mais au cas où
       this.notificationService.showError('Erreur', 'Rôle utilisateur invalide');

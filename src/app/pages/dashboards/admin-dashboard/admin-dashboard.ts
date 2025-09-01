@@ -355,7 +355,7 @@ interface Communication {
                 <h2>Audit des Municipalités</h2>
                 <div class="agencies-filters">
                   <div class="nav-actions">
-                    <a routerLink="/register" class="btn btn-primary nav-cta">
+                    <a (click)="navigateToAddMunicipality()" class="btn btn-primary nav-cta">
                       <i class="material-icons">person_add</i>
                       <span>Créer une Municipalité</span>
                     </a>
@@ -2402,6 +2402,7 @@ export class AdminDashboard implements OnInit {
 
   }
 
+
   loadAgencyAudits(): void {
     this.agencyService.getAllAgenciesFromApi().subscribe({
       next: (agencies) => {
@@ -3025,5 +3026,12 @@ export class AdminDashboard implements OnInit {
         this.notificationService.showSuccess('Activation', msg);
       }
     });
+  }
+
+
+  //naviguate to add Municipality
+  navigateToAddMunicipality() {
+    this.router.navigate(['/register']);
+    this.adminService.setData('municipality');
   }
 }
