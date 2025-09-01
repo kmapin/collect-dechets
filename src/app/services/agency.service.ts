@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, delay, map, tap } from 'rxjs/operators';
-import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif } from '../models/agency.model';
+import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tariff } from '../models/agency.model';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
@@ -131,7 +131,9 @@ export class AgencyService {
     //   __v: 0
     // }
   ];
-
+  private tariffs: Agency[] = [
+ 
+  ];
   constructor(private http: HttpClient) { }
 
   getAgencies(): Observable<Agency[]> {
@@ -305,6 +307,12 @@ addTarif$(payload: tarif): Observable<tarif | null> {
     })
   );
 }
+//recuperation des tarifs liee a une agence
+  getAgencyAllTarifs$(agencyId: string): Observable<Tariff[]> {
+    const agency = this.agencies.find(a => a._id === agencyId);
+    return this.http.get<Tariff[]>(`${environment.apiUrl}/agences/${agencyId}/tarif`);
+
+  }
 deleteEmployee$(employeeId: string): Observable<boolean> {
   return this.http.delete(`${environment.apiUrl}/agences/employees/${employeeId}`).pipe(
     map(() => {
@@ -402,8 +410,45 @@ deleteEmployee$(employeeId: string): Observable<boolean> {
     }
     return of(false).pipe(delay(500));
   }
-  //updqte employee
+  //ajouter un tarifs 
+  addTariff(tariff: Partial<Tariff>): Observable<Tariff | null> {
+const newTariff: Tariff = {
+  agencyId: tariff.agencyId || '',
+  type: tariff.type || 'standard',
+  price: tariff.price || 0,
+  description: tariff.description || '',
+  nbPassages: tariff.nbPassages || 0,
+  createdAt: new Date(),
+  updatedAt: new Date()
+};
 
+  return this.http.post<Tariff>(`${environment.apiUrl}/agences/tarif`, newTariff).pipe(
+    map((response: Tariff) => {
+      console.log("API > addTariff :", response);
+      return response;
+    }),
+    catchError(error => {
+      console.error("Erreur lors de l'ajout du tarif :", error);
+      return of(null);
+    })
+  );
+}
+
+deleteTariff$(tarifId: string): Observable<boolean> {
+  return this.http.delete(`${environment.apiUrl}/agences/tarif/${tarifId}`).pipe(
+    map(() => {
+      console.log(`Tarif ${tarifId} supprimé avec succès`);
+      return true;
+    }),
+    catchError(error => {
+      console.error(`Erreur lors de la suppression du tarif ${tarifId} :`, error);
+      return of(false);
+    })
+  );
+}
+
+
+ 
 
   // Zone side Api 
   getZones(agencyId: string): Observable<ServiceZones[]> {
