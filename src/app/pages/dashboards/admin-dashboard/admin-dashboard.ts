@@ -376,81 +376,39 @@ interface Communication {
               </div>
 
               <div class="agencies-grid">
-                <div *ngFor="let agency of filteredAgencies" class="agency-audit-card card">
+                <div *ngFor="let municipality of filteredMunicipalities" class="agency-audit-card card">
                   <div class="agency-audit-header">
                     <div class="agency-basic-info">
-                      <h4>{{ agency.name }}</h4>
-                      <span class="status-badge" [class]="'status-' + agency.status">
-                        {{ getAgencyStatusText(agency.status) }}
+                      <h4>{{ municipality.position }}</h4>
+                      <span class="status-badge" [class]="'status-' + municipality.status">
+                        {{ getAgencyStatusText(municipality.status) }}
                       </span>
                     </div>
-                    <div class="agency-compliance">
-                      <div class="compliance-score" [class]="getComplianceClass(agency.complianceScore)">
-                        {{ agency.complianceScore }}%
-                      </div>
-                      <div class="compliance-label">Conformité</div>
-                    </div>
+                  
                   </div>
 
-                  <div class="agency-metrics">
-                    <div class="metric-row">
-                      <div class="metric">
-                        <i class="material-icons">people</i>
-                        <span>{{ agency.clients }} clients</span>
-                      </div>
-                      <div class="metric">
-                        <i class="material-icons">person</i>
-                        <span>{{ agency.collectors }} collecteurs</span>
-                      </div>
-                      <div class="metric">
-                        <i class="material-icons">map</i>
-                        <span>{{ agency.zones }} zones</span>
-                      </div>
-                    </div>
-                    <div class="metric-row">
-                      <div class="metric">
-                        <i class="material-icons">local_shipping</i>
-                        <span>{{ agency.collectionsToday }} collectes</span>
-                      </div>
-                      <div class="metric">
-                        <i class="material-icons">check_circle</i>
-                        <span>{{ agency.completionRate }}% réalisées</span>
-                      </div>
-                      <div class="metric">
-                        <i class="material-icons">star</i>
-                        <span>{{ agency.rating }}/5</span>
-                      </div>
-                    </div>
-                  </div>
+  
 
-                  <div class="agency-issues" *ngIf="agency.issues.length > 0">
-                    <h5>Problèmes identifiés</h5>
-                    <div class="issues-list">
-                      <div *ngFor="let issue of agency.issues" class="issue-item">
-                        <i class="material-icons">warning</i>
-                        <span>{{ issue }}</span>
-                      </div>
-                    </div>
-                  </div>
+                  
 
                   <div class="agency-actions">
-                    <button class="btn btn-secondary" (click)="viewAgencyDetails(agency.id)">
+                    <button class="btn btn-secondary" (click)="viewMunicipalityDetails(municipality.id)">
                       <i class="material-icons">visibility</i>
                       Détails
                     </button>
-                    <button class="btn btn-primary" (click)="auditAgency(agency.id)">
+                    <button class="btn btn-primary" (click)="auditMunicipality(municipality.id)">
                       <i class="material-icons">fact_check</i>
                       Auditer
                     </button>
-                    <button class="btn btn-accent" (click)="contactAgency(agency.id)">
+                    <button class="btn btn-accent" (click)="contactMunicipality(municipality.id)">
                       <i class="material-icons">message</i>
                       Contacter
                     </button>
                   </div>
 
                   <div class="agency-footer">
-                    <span class="last-audit">Dernier audit: {{ agency.lastAudit | date:'dd/MM/yyyy' }}</span>
-                    <span class="revenue">{{ agency.revenue | number:'1.0-0' }}€/mois</span>
+                    <span class="last-audit">Dernier audit: {{ municipality.lastAudit | date:'dd/MM/yyyy' }}</span>
+                    <span class="revenue">{{ municipality.revenue | number:'1.0-0' }}€/mois</span>
                   </div>
                 </div>
               </div>
@@ -2812,7 +2770,10 @@ export class AdminDashboard implements OnInit {
   generateGlobalReport(): void {
     this.notificationService.showInfo('Rapport', 'Génération du rapport global en cours...');
   }
-
+  viewMunicipalityDetails(municipalityId: string): void {
+    this.notificationService.showInfo('Détails', 'Ouverture des détails de la mairie');
+    this.router.navigate(['/municipalities', municipalityId]);
+  }
   viewAgencyDetails(agencyId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails de l\'agence');
     this.router.navigate(['/agencies', agencyId]);
@@ -2823,10 +2784,16 @@ export class AdminDashboard implements OnInit {
   viewCollectorDetails(clientId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails du collecteur');
   }
+  auditMunicipality(municipalityId: string): void {
+    this.notificationService.showInfo('Audit', 'Lancement de l\'audit de l\'agence');
+  }
   auditAgency(agencyId: string): void {
     this.notificationService.showInfo('Audit', 'Lancement de l\'audit de l\'agence');
   }
 
+  contactMunicipality(municipalityId: string): void {
+    this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
+  }
   contactAgency(agencyId: string): void {
     this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
@@ -3034,16 +3001,15 @@ export class AdminDashboard implements OnInit {
   loadAllMunipalities(){
     this.adminService.getAllMunicipalities().subscribe({
       next: (response: any) => {
-        // this.municipalitiesAudits = response?.data.map((municipality: any) => {
-        //   return {
-        //     _id: municipality._id,
-        //     data: municipality,
-        //     active_subscription: municipality?.subscriptionHistory.filter((s: any) => s.status === 'active'),
-        //   }
-        // });
-        // this.filteredMunicipalities = [...this.municipalitiesAudits];
+        this.municipalitiesAudits = response.map((municipality: any) => {
+          return {
+            _id: municipality._id,
+            data: municipality,
+          }
+        });
+        this.filteredMunicipalities = [...this.municipalitiesAudits];
         console.log('municipalities in response', response);
-        // console.log('municipalities in dashboard', this.filteredMunicipalities);
+        console.log('municipalities in dashboard', this.filteredMunicipalities);
       }
     })
   }
