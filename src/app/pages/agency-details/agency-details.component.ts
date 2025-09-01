@@ -2,10 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { AgencyService } from '../../services/agency.service';
-import { Agency } from '../../models/agency.model';
+import { Agency, Tariff } from '../../models/agency.model';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { User } from '../../models/user.model';
+
 
 @Component({
   selector: 'app-agency-details',
@@ -168,6 +169,46 @@ import { User } from '../../models/user.model';
                   <i class="material-icons">build</i>
                   <h3>Aucun service disponible</h3>
                   <p>Cette agence ne propose actuellement aucun service.</p>
+                </div>
+              </section>
+
+              <!-- Tarifs Section -->
+              <section class="tariffs-section card">
+                <div class="section-header">
+                  <h2>
+                    <i class="material-icons">receipt_long</i>
+                    Tarifs d'abonnement
+                  </h2>
+                  <span class="section-count">{{ tariffs.length }} tarif(s)</span>
+                </div>
+                <div class="tariffs-grid">
+                  <div *ngFor="let tariff of tariffs" class="tariff-card">
+                    <div class="tariff-header">
+                      <h3>{{ tariff.type }}</h3>
+                      <div class="tariff-price">
+                        <span class="price-amount">{{ tariff.price | currency:'EUR' }}</span>
+                        <span class="price-period">/mois</span>
+                      </div>
+                    </div>
+                    <p class="tariff-description">{{ tariff.description }}</p>
+                    <div class="tariff-details">
+                      <div class="tariff-passages">
+                        <i class="material-icons">loop</i>
+                        <span>{{ tariff.nbPassages }} passages inclus</span>
+                      </div>
+                    </div>
+                    <div class="tariff-actions">
+                      <button class="btn btn-primary btn-small">
+                        <i class="material-icons">add_shopping_cart</i>
+                        Choisir ce tarif
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="tariffs.length === 0 && !isLoading" class="empty-state">
+                  <i class="material-icons">receipt_long</i>
+                  <h3>Aucun tarif disponible</h3>
+                  <p>Cette agence ne propose actuellement aucun tarif d'abonnement.</p>
                 </div>
               </section>
 
@@ -1228,6 +1269,7 @@ export class AgencyDetailsComponent implements OnInit {
     this.agencyId = this.route.snapshot.paramMap.get('id');
     if (this.agencyId) {
       this.loadAgencyFromApi(this.agencyId);
+      this.loadTariffs();
     }
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
@@ -1398,5 +1440,28 @@ private mapApiAgency(apiAgency: any): Agency {
       const encodedAddress = encodeURIComponent(address);
       window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
     }
+  }
+  // recuperations des tarifs liee a une agences
+    isLoading: boolean = false;
+  tariffs: Tariff[] = [];
+   loadTariffs(): void {
+    this.isLoading = true;
+    if (!this.agencyId) {
+      console.error('[DEBUG] Aucun ID d\'agence trouvé pour charger les tarifs.');
+      this.isLoading = false;
+      return;
+    }
+  
+    this.agencyService.getAgencyAllTarifs$(this.agencyId).subscribe({
+      next: (data: Tariff[]) => {
+        this.tariffs = data;
+        console.log('Tarifs récupérés :', this.tariffs);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
+        this.isLoading = false;
+      }
+    });
   }
 }

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
-import { Agency, WasteService } from '../../models/agency.model';
+import { Agency, Tariff, WasteService } from '../../models/agency.model';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
 @Component({

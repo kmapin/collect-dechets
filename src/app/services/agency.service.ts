@@ -260,10 +260,7 @@ getAgencyEmployeesByRole$(agencyId: string, role:EmployeeRole): Observable<Emplo
 getAgencyZones$(agencyId: string): Observable<ServiceZone[]> {
   return this.http.get<ServiceZone[]>(`${environment.apiUrl}/zones/agence/${agencyId}`);
 }
-//recupere des tarifs liee a une agence
-getAgencyTariffs$(agencyId: string): Observable<WasteService[]> {
-  return this.http.get<WasteService[]>(`${environment.apiUrl}/agences/${agencyId}/tarifs`);
-}
+
 
 //recuperation des signalement liee a une agence
 getAgencyReports$(agencyId: string): Observable<any[]> {
@@ -311,8 +308,16 @@ addTarif$(payload: tarif): Observable<tarif | null> {
   getAgencyAllTarifs$(agencyId: string): Observable<Tariff[]> {
     const agency = this.agencies.find(a => a._id === agencyId);
     return this.http.get<Tariff[]>(`${environment.apiUrl}/agences/${agencyId}/tarif`);
-
   }
+   //update d un tarif par une agence
+     public  getUpdateTarifs$(tarifId: string, payload: any): Observable<any> {
+        let url = (`${environment.apiUrl}/agences/tarif/${tarifId}`);
+        return this.http.put<any>(url, payload).pipe(
+            tap((data) => console.log('[API] tarifUpdate$ > tap :', data)),
+            // catchError(this.newGlobalErrorHandler)
+        );
+    }
+    //suppression d un tarif par une agence
 deleteEmployee$(employeeId: string): Observable<boolean> {
   return this.http.delete(`${environment.apiUrl}/agences/employees/${employeeId}`).pipe(
     map(() => {
