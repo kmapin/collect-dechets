@@ -37,9 +37,13 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTreeModule } from '@angular/material/tree';
 
+
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 import { authInterceptorInterceptor } from './app/auth-interceptor-interceptor';
+import { MessageService } from 'primeng/api';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeuix/themes/aura';
 
 bootstrapApplication(AppComponent, {
   providers: [
@@ -49,6 +53,11 @@ bootstrapApplication(AppComponent, {
       withInterceptors([
         authInterceptorInterceptor
       ])),
+     providePrimeNG({
+            theme: {
+                preset: Aura
+            }
+        }),
     importProvidersFrom([
       BrowserAnimationsModule,
       MatIconModule,
@@ -84,6 +93,7 @@ bootstrapApplication(AppComponent, {
       MatStepperModule,
       MatTooltipModule,
       MatTreeModule
-    ])
+    ]),
+    MessageService
   ]
 }).catch(err => console.error(err));
