@@ -245,6 +245,10 @@ interface Statistics {
                 <h3>Aucune collecte</h3>
                 <p>Aucune collecte ne correspond aux filtres sélectionnés</p>
               </div>
+              <div class="collections-grid">
+  
+</div>
+
             </div>
             
 
@@ -636,9 +640,58 @@ interface Statistics {
                   </div>
                 </div>
               </div>
-            </div>
- 
            
+
+                </div>
+            </div>
+ <!-- Onglet tarif -->
+            <div class="analytics-tab">
+  <div class="analytics-header">
+   
+  </div>
+
+  <div class="analytics-content">
+    <div class="analytics-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      
+      <!-- Boucle sur les tarifs -->
+      <div *ngFor="let tariff of tariffs" class="analytics-card card p-4">
+        <div class="tariff-header flex justify-between items-center border-b pb-2 mb-3">
+          <h4 class="text-lg font-semibold text-gray-800">
+            {{ tariff.price | number:'1.0-0' }} FCFA
+          </h4>
+          <span class="type-chip bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-sm flex items-center gap-1">
+            <i class="material-icons text-sm">category</i>
+            {{ tariff.type }}
+          </span>
+        </div>
+
+        <p class="text-gray-600 mb-2">
+          <i class="material-icons text-sm align-middle">info</i>
+          {{ tariff.description }}
+        </p>
+
+        <!-- Boutons d’action -->
+        <div class="flex justify-end gap-2 mt-3">
+          <button class="btn btn-warning flex items-center gap-1"
+                 >
+            <i class="material-icons text-base">edit</i>
+            Renommer
+          </button>
+          <button class="btn btn-danger flex items-center gap-1"
+           onclick="deleteTarif(tariff._id)">       >
+            <i class="material-icons text-base">delete</i>
+            Supprimer
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+                
+        
         </div>
       </div>
 
@@ -826,8 +879,7 @@ interface Statistics {
         <select [(ngModel)]="newTariff.type" name="type" required>
           <option value="standard">Standard</option>
           <option value="premium">Premium</option>
-          <option value="vip">VIP</option>
-        </select>
+                </select>
       </div>
 
       <!-- Prix -->
@@ -2970,27 +3022,27 @@ addTariff(): void {
 }
 // recuperations des tarifs liee a une agences
 tariffs: Tariff[] = [];
- loadTariffs(): void {
-  this.isLoading = true;
-  const agencyId = this.currentUser?.id; 
-  if (!agencyId) {
-    console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
-    this.isLoading = false;
-    return;
-  }
-
-  this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
-    next: (data: Tariff[]) => {
-      this.tariffs = data;
-      console.log('Tarifs récupérés :', this.tariffs);
+  loadTariffs(): void {
+    this.isLoading = true;
+    const agencyId = this.currentUser?.id; 
+    if (!agencyId) {
+      console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
       this.isLoading = false;
-    },
-    error: (error) => {
-      console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
-      this.isLoading = false;
+      return;
     }
-  });
-}
+
+    this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
+      next: (data: Tariff[]) => {
+        this.tariffs = data;
+        console.log('Tarifs récupérés :', this.tariffs);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
+        this.isLoading = false;
+      }
+    });
+  }
 tariffToUpdate: Tariff | null = null;
 //update un tarif via l api
 updateTariff(tariffId: string): void {
@@ -3052,10 +3104,10 @@ updateTariff(tariffId: string): void {
 
 
 // supprimer un tarif
-deleteTariff(currentUser: any, tarifId: any): void {
+deleteTariff( tarifId: any): void {
   this.isDeleting = true;
 
-  if (currentUser?._id && tarifId?.userId?._id) {
+  if (tarifId?.userId?._id) {
     this.agencyService.deleteTariff$( tarifId.userId._id).subscribe(
       () => {
         this.notificationService.showSuccess(

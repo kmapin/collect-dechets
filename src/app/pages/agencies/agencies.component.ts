@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
 import { Agency, Tariff, WasteService } from '../../models/agency.model';
@@ -833,7 +833,8 @@ suggestions: any[] = [];
  private searchSubject = new Subject<string>();
   constructor(
     private agencyService: AgencyService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
@@ -845,6 +846,8 @@ suggestions: any[] = [];
     ).subscribe((query) => {
       this.fetchSuggestions(query);
     })
+     const id = this.route.snapshot.paramMap.get('id'); 
+  console.log('ID récupéré :', id);
   }
 
   loadAgencies(): void {
@@ -1028,4 +1031,29 @@ applySuggestion(suggestion: any): void {
   this.suggestions = [];
   this.applyFilters();
 }
+// recuperations des tarifs liee a une agences
+tariffs: Tariff[] = [];
+  isLoading: boolean = false;
+ loadTariffs(): void {
+  this.isLoading = true;
+  const agencyId = this.route.snapshot.paramMap.get('id'); 
+  if (!agencyId) {
+    console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
+    this.isLoading = false;
+    return;
+  }
+
+  this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
+    next: (data: Tariff[]) => {
+      this.tariffs = data;
+      console.log('Tarifs récupérés :', this.tariffs);
+      this.isLoading = false;
+    },
+    error: (error) => {
+      console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
+      this.isLoading = false;
+    }
+  });
+}
+ 
 }
