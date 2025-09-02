@@ -386,21 +386,17 @@ interface Communication {
                     </div>
                   
                   </div>
-
-  
-
                   
-
                   <div class="agency-actions">
-                    <button class="btn btn-secondary" (click)="viewMunicipalityDetails(municipality.id)">
+                    <button class="btn btn-secondary" (click)="viewMunicipalityDetails(municipality._id)">
                       <i class="material-icons">visibility</i>
                       Détails
                     </button>
-                    <button class="btn btn-primary" (click)="auditMunicipality(municipality.id)">
+                    <button class="btn btn-primary" (click)="auditMunicipality(municipality._id)">
                       <i class="material-icons">fact_check</i>
                       Auditer
                     </button>
-                    <button class="btn btn-accent" (click)="contactMunicipality(municipality.id)">
+                    <button class="btn btn-accent" (click)="contactMunicipality(municipality._id)">
                       <i class="material-icons">message</i>
                       Contacter
                     </button>
@@ -2772,7 +2768,7 @@ export class AdminDashboard implements OnInit {
   }
   viewMunicipalityDetails(municipalityId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails de la mairie');
-    this.router.navigate(['/municipalities', municipalityId]);
+    this.router.navigate(['/municipality', municipalityId]);
   }
   viewAgencyDetails(agencyId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails de l\'agence');

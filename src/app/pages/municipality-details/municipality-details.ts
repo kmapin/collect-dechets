@@ -82,7 +82,7 @@ interface Campaign {
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
       <header class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center py-4">
             <div class="flex items-center space-x-4">
               <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -98,16 +98,16 @@ interface Campaign {
       </header>
 
       <!-- Main Content -->
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main class="min-h-screen mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <p-tabs value="0">
           <p-tablist>
-            <p-tab value="0" icon="pi pi-info-circle">Informations Générales</p-tab>
-            <p-tab value="1" icon="pi pi-map">Zone de Couverture</p-tab>
-            <p-tab value="2" icon="pi pi-truck">Services de Collecte</p-tab>
-            <p-tab value="3" icon="pi pi-chart-bar">Suivi & Statistiques</p-tab>
-            <p-tab value="4" icon="pi pi-exclamation-triangle">Signalements Citoyens</p-tab>
-            <p-tab value="5" icon="pi pi-calendar">Événements & Sensibilisation</p-tab>
-            <p-tab value="6" icon="pi pi-file">Documents & Ressources</p-tab>
+            <p-tab value="0"><i class="pi pi-info-circle"></i> Informations Générales</p-tab>
+            <p-tab value="1"><i class="pi pi-map"></i> Zone de Couverture</p-tab>
+            <p-tab value="2"><i class="pi pi-truck"></i> Services de Collecte</p-tab>
+            <p-tab value="3"><i class="pi pi-chart-bar"></i> Suivi & Statistiques</p-tab>
+            <p-tab value="4"><i class="pi pi-exclamation-triangle"></i> Signalements Citoyens</p-tab>
+            <p-tab value="5"><i class="pi pi-calendar"></i> Événements & Sensibilisation</p-tab>
+            <p-tab value="6"><i class="pi pi-file"></i> Documents & Ressources</p-tab>
           </p-tablist>
 
           <p-tabpanels>
