@@ -1268,9 +1268,9 @@ export class AgencyDetailsComponent implements OnInit {
        this.currentUser = this.authService.getCurrentUser();
     this.agencyId = this.route.snapshot.paramMap.get('id');
     if (this.agencyId) {
-      this.loadAgencyFromApi(this.agencyId);
-      this.loadTariffs();
+      this.loadAgencyFromApi(this.agencyId);     
     }
+     this.loadTariffs();
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
@@ -1441,27 +1441,27 @@ private mapApiAgency(apiAgency: any): Agency {
       window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
     }
   }
-  // recuperations des tarifs liee a une agences
-    isLoading: boolean = false;
-  tariffs: Tariff[] = [];
-   loadTariffs(): void {
-    this.isLoading = true;
-    if (!this.agencyId) {
-      console.error('[DEBUG] Aucun ID d\'agence trouvé pour charger les tarifs.');
-      this.isLoading = false;
-      return;
-    }
-  
-    this.agencyService.getAgencyAllTarifs$(this.agencyId).subscribe({
-      next: (data: Tariff[]) => {
-        this.tariffs = data;
-        console.log('Tarifs récupérés :', this.tariffs);
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
-        this.isLoading = false;
-      }
-    });
+tariffs: Tariff[] = [];
+  isLoading: boolean = false;
+ loadTariffs(): void {
+  this.isLoading = true;
+  const agencyId = this.route.snapshot.paramMap.get('id'); 
+  if (!agencyId) {
+    console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
+    this.isLoading = false;
+    return;
   }
+
+  this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
+    next: (data: Tariff[]) => {
+      this.tariffs = data;
+      console.log('Tarifs récupérés :', this.tariffs);
+      this.isLoading = false;
+    },
+    error: (error) => {
+      console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
+      this.isLoading = false;
+    }
+  });
+}
 }

@@ -317,7 +317,14 @@ addTarif$(payload: tarif): Observable<tarif | null> {
             // catchError(this.newGlobalErrorHandler)
         );
     }
-    //suppression d un tarif par une agence
+    //delete d un tarif par une agence
+  public deleteTarif$(tarifId: string): Observable<any> {
+    const url = `${environment.apiUrl}/agences/tarif/${tarifId}`;
+    return this.http.delete<any>(url).pipe(
+        tap(data => console.log('[API] deleteTarif$ > tap :', data)),
+        // catchError(this.newGlobalErrorHandler) // Décommente si tu as un gestionnaire d'erreurs global
+    );
+}
 deleteEmployee$(employeeId: string): Observable<boolean> {
   return this.http.delete(`${environment.apiUrl}/agences/employees/${employeeId}`).pipe(
     map(() => {
