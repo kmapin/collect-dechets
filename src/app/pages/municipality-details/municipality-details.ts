@@ -66,15 +66,15 @@ interface Campaign {
     FormsModule,
     CardModule,
     ButtonModule,
-    TabsModule,        // ✅ Remplace TabViewModule
+    TabsModule,   
     TableModule,
     BadgeModule,
     ChipModule,
     ProgressBarModule,
-    DatePickerModule,  // ✅ Remplace CalendarModule
+    DatePickerModule, 
     DialogModule,
-    TextareaModule,    // ✅ Remplace InputTextareaModule
-    SelectModule,      // ✅ Remplace DropdownModule
+    TextareaModule, 
+    SelectModule,  
     ToastModule,
   ],
   providers: [MessageService],
@@ -459,35 +459,37 @@ interface Campaign {
         [style]="{width: '500px'}"
         [closable]="true">
         <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium mb-2">Type de problème</label>
-            <p-select 
-              [options]="reportTypes" 
-              [(ngModel)]="newReport.type" 
-              placeholder="Sélectionner un type"
-              class="w-full">
-            </p-select>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium mb-2">Localisation</label>
-            <input 
-              type="text" 
-              pInputText 
-              [(ngModel)]="newReport.location" 
-              placeholder="Adresse ou point de repère"
-              class="w-full">
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium mb-2">Description</label>
-            <p-textarea 
-              [(ngModel)]="newReport.description" 
-              rows="4" 
-              placeholder="Décrivez le problème..."
-              class="w-full">
-            </p-textarea>
-          </div>
+          <form>
+            <div>
+              <label class="block text-sm font-medium mb-2">Type de problème</label>
+              <p-select 
+                [options]="reportTypes" 
+                [(ngModel)]="newReport.type" 
+                placeholder="Sélectionner un type"
+                class="w-full">
+              </p-select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Localisation</label>
+              <input 
+                type="text" 
+                pInputText 
+                [(ngModel)]="newReport.location" 
+                placeholder="Adresse ou point de repère"
+                class="w-full">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-2">Description</label>
+              <p-textarea 
+                [(ngModel)]="newReport.description" 
+                rows="4" 
+                placeholder="Décrivez le problème..."
+                class="w-full">
+              </p-textarea>
+            </div>
+          </form>
         </div>
         
         <ng-template pTemplate="footer">
