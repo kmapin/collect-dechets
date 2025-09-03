@@ -31,6 +31,11 @@ Email : guigmawendindapaulin@gmail.com          Mot de passe : 5e86f7dfe4a5
 
 
 
+##############################################################################################################################
+## COLLECTEUR
+
+Email : teste@gmail.com          Mot de passe : Wise1234
+Email : gangosmeo@gmail.com          Mot de passe : Wise1234
 
 
 
