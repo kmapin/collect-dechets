@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -163,7 +163,7 @@ interface Communication {
               <div class="stat-info">
                 <h3>Clients totaux</h3>
                 <p class="stat-value">{{ statisticsAdmin?.totalClients | number }}</p>
-                <p><span class="stat-trend positive">+{{ getClientGrowth() }}% ce mois</span> |
+                <p><span class="stat-trend positive">+{{ clientGrowth }}% ce mois</span> |
                 <span class="stat-trend" [class.positive]="statisticsAdmin?.totalClients === statisticsAdmin?.activeClients">
                   {{ getClientStatusText() }}
                 </span> </p>
@@ -386,7 +386,7 @@ interface Communication {
                     </div>
                   
                   </div>
-                  
+
                   <div class="agency-actions">
                     <button class="btn btn-secondary" (click)="viewMunicipalityDetails(municipality._id)">
                       <i class="material-icons">visibility</i>
@@ -2325,6 +2325,7 @@ export class AdminDashboard implements OnInit {
   ];
   municipalitiesAudits: any;
   filteredMunicipalities: any[] = [];
+  clientGrowth: number= 0;
 
   constructor(
     private authService: AuthService,
@@ -2334,7 +2335,8 @@ export class AdminDashboard implements OnInit {
     private clientService: ClientService,
     private notificationService: NotificationService,
     private sharedService: SharedService,
-    private router: Router
+    private router: Router,
+    private cd: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -2346,6 +2348,7 @@ export class AdminDashboard implements OnInit {
     this.loadAdminData();
     this.showAdminStatistics();
     this.loadAllMunipalities();
+    this.getClientGrowth();
   }
 
   loadAdminData(): void {
@@ -2563,9 +2566,11 @@ export class AdminDashboard implements OnInit {
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
-  getClientGrowth(): number {
+  getClientGrowth(){
     // return Math.floor(Math.random() * 10) + 5;
-    return 5;
+    this.clientGrowth= Math.floor(Math.random() * 10) + 5
+    this.cd.detectChanges();
+    // return 5;
   }
 
   getCollectionRate(): number {
