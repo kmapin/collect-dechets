@@ -203,7 +203,6 @@ import { NotificationService } from '../../services/notification.service';
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
       min-width: 99vw;
-      height: 300px
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
       position: sticky;
@@ -780,14 +779,6 @@ import { NotificationService } from '../../services/notification.service';
     }
 
     @media (max-width: 768px) {
-      .navbar-content {
-        height: 80px;
-      }
-      
-      .container {
-        padding: 0 16px;
-        height: 80px;
-      }
 
       .brand-icon {
         width: 40px;
@@ -811,6 +802,21 @@ import { NotificationService } from '../../services/notification.service';
       .mobile-menu-content {
         padding: 16px;
       }
+    }
+
+    @media (min-width: 768px) {
+      .navbar {
+        height:80px
+      }
+      .navbar-content {
+        height: 80px;
+      }
+      
+      .container {
+        padding: 0 16px;
+        height: 80px;
+      }
+
     }
   `]
 })
