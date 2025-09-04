@@ -17,7 +17,7 @@ import { NotificationComponent } from './components/notification/notification.co
   ],
   template: `
     <div class="app">
-      <div class="page-header" style="min-width: 100%;">
+      <div class="page-header">
         <app-header></app-header>
       </div>
       
@@ -45,6 +45,12 @@ import { NotificationComponent } from './components/notification/notification.co
       display: flex;
       flex-direction: column;
       margin-top: 50px;
+    }
+
+    @media screen and (max-width: 768px) {
+      .main-content {
+        margin-top: 80px;
+      }
     }
   `]
 })

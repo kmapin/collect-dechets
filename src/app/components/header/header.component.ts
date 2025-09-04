@@ -54,28 +54,28 @@ import { NotificationService } from '../../services/notification.service';
                 <span>S'inscrire</span>
               </a>
             </div>
-<div class="notification-bell" *ngIf="isAuthenticated" (click)="toggleNotifications()" >
-  <i class="material-icons">notifications</i>
-  <span class="badge" *ngIf="notifications.length">{{ notifications.length }}</span>
+            <div class="notification-bell" *ngIf="isAuthenticated" (click)="toggleNotifications()" >
+              <i class="material-icons">notifications</i>
+              <span class="badge" *ngIf="notifications.length">{{ notifications.length }}</span>
 
-  <div class="notifications-dropdown" [class.show]="showNotifications">
-    <div class="dropdown-header">
-      <strong>Notifications</strong>
-      <button class="clear-btn" (click)="markAllAsRead($event)">
-        Tout marquer comme lu
-      </button>
-    </div>
-    <div class="notifications-list">
-      <div *ngIf="notifications.length === 0" class="empty-notification">
-        Aucune notification
-      </div>
-      <div *ngFor="let notif of notifications" class="notification-item">
-        <div class="notif-content">{{ notif.message }}</div>
-        <div class="notif-date">{{ notif.date | date:'short' }}</div>
-      </div>
-    </div>
-  </div>
-</div>
+              <div class="notifications-dropdown" [class.show]="showNotifications">
+                <div class="dropdown-header">
+                  <strong>Notifications</strong>
+                  <button class="clear-btn" (click)="markAllAsRead($event)">
+                    Tout marquer comme lu
+                  </button>
+                </div>
+                <div class="notifications-list">
+                  <div *ngIf="notifications.length === 0" class="empty-notification">
+                    Aucune notification
+                  </div>
+                  <div *ngFor="let notif of notifications" class="notification-item">
+                    <div class="notif-content">{{ notif.message }}</div>
+                    <div class="notif-date">{{ notif.date | date:'short' }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <!-- Menu utilisateur connecté -->
             <div class="user-menu" *ngIf="isAuthenticated && currentUser" 
                  (mouseenter)="showUserMenu = true" 
@@ -199,10 +199,11 @@ import { NotificationService } from '../../services/notification.service';
   `,
   styles: [`
     .navbar {
-      /* background-color: red;*/
+      background-color: red;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
       min-width: 99vw;
+      height: 300px
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
       position: sticky;
@@ -780,11 +781,12 @@ import { NotificationService } from '../../services/notification.service';
 
     @media (max-width: 768px) {
       .navbar-content {
-        height: 70px;
+        height: 80px;
       }
-
+      
       .container {
         padding: 0 16px;
+        height: 80px;
       }
 
       .brand-icon {
@@ -802,11 +804,10 @@ import { NotificationService } from '../../services/notification.service';
       }
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 400px) {
       .brand-text {
         display: none;
       }
-
       .mobile-menu-content {
         padding: 16px;
       }
