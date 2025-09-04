@@ -49,10 +49,10 @@ import { NotificationComponent } from './components/notification/notification.co
 
     @media screen and (min-width: 768px) {
       .page-header {
-        height: 80px;
+        height: 200px;
       }
       .main-content {
-        margin-top: 80px;
+        margin-top: 200px;
       }
     }
   `]

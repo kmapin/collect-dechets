@@ -806,15 +806,15 @@ import { NotificationService } from '../../services/notification.service';
 
     @media (min-width: 768px) {
       .navbar {
-        height:80px
+        height:200px
       }
       .navbar-content {
-        height: 80px;
+        height: 200px;
       }
       
       .container {
         padding: 0 16px;
-        height: 80px;
+        height: 200px;
       }
 
     }
