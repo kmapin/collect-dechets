@@ -777,33 +777,6 @@ import { NotificationService } from '../../services/notification.service';
         display: flex;
       }
     }
-
-    @media (max-width: 768px) {
-
-      .brand-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-      }
-
-      .brand-name {
-        font-size: 1.3rem;
-      }
-
-      .brand-tagline {
-        font-size: 0.7rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .brand-text {
-        display: none;
-      }
-      .mobile-menu-content {
-        padding: 16px;
-      }
-    }
-
     @media (max-width: 768px) {
       .navbar {
         height: 200px;
@@ -818,6 +791,12 @@ import { NotificationService } from '../../services/notification.service';
       .brand-icon > .material-icons {
         font-size: 150px;
       }
+      .brand-name {
+        font-size: 1.3rem;
+      }
+      .brand-tagline {
+        font-size: 0.7rem;
+      }
       .container {
         padding: 0 16px;
         height: 200px;
@@ -829,6 +808,17 @@ import { NotificationService } from '../../services/notification.service';
         padding: 0;
       }
     }
+
+
+    @media (max-width: 480px) {
+      .brand-text {
+        display: none;
+      }
+      .mobile-menu-content {
+        padding: 16px;
+      }
+    }
+
 
   `]
 })
