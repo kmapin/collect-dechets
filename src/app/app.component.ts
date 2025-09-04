@@ -47,7 +47,7 @@ import { NotificationComponent } from './components/notification/notification.co
       margin-top: 50px;
     }
 
-    @media screen and (min-width: 768px) {
+    @media screen and (max-width: 768px) {
       .page-header {
         height: 200px;
       }

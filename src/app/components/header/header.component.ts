@@ -795,7 +795,7 @@ import { NotificationService } from '../../services/notification.service';
       }
     }
 
-    @media (max-width: 400px) {
+    @media (max-width: 480px) {
       .brand-text {
         display: none;
       }
@@ -804,20 +804,32 @@ import { NotificationService } from '../../services/notification.service';
       }
     }
 
-    @media (min-width: 768px) {
+    @media (max-width: 768px) {
       .navbar {
-        height:200px
+        height: 200px;
       }
       .navbar-content {
         height: 200px;
       }
-      
+      .brand-icon {
+        width: 150px;
+        height: 150px;
+      }
+      .brand-icon > .material-icons {
+        font-size: 150px;
+      }
       .container {
         padding: 0 16px;
         height: 200px;
       }
-
+      .mobile-menu-toggle {
+        border: 1px solid var(--surface-400);
+        width: 150px;
+        height: 150px;
+        padding: 0;
+      }
     }
+
   `]
 })
 export class HeaderComponent implements OnInit {
