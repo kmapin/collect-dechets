@@ -228,7 +228,7 @@ import { NotificationService } from '../../services/notification.service';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 50px;
+      height: 64px;
     }
 
     /* Brand */
@@ -257,7 +257,7 @@ import { NotificationService } from '../../services/notification.service';
       align-items: center;
       justify-content: center;
       color: white;
-      font-size: 24px;
+      font-size: 30px;
       box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
     }
 
@@ -778,33 +778,17 @@ import { NotificationService } from '../../services/notification.service';
       }
     }
     @media (max-width: 768px) {
-      .navbar {
-        height: 200px;
-      }
-      .navbar-content {
-        height: 200px;
-      }
-      .brand-icon {
-        width: 150px;
-        height: 150px;
-      }
-      .brand-icon > .material-icons {
-        font-size: 150px;
-      }
+
       .brand-name {
         font-size: 1.3rem;
       }
       .brand-tagline {
-        font-size: 0.7rem;
-      }
-      .container {
-        padding: 0 16px;
-        height: 200px;
+        font-size: 0.9rem;
       }
       .mobile-menu-toggle {
         border: 1px solid var(--surface-400);
-        width: 150px;
-        height: 150px;
+        width: 50px;
+        height: 50px;
         padding: 0;
       }
     }
