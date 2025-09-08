@@ -357,7 +357,7 @@ interface Communication {
                   <div class="nav-actions">
                     <a (click)="navigateToAddMunicipality()" class="btn btn-primary nav-cta">
                       <i class="material-icons">person_add</i>
-                      <span>Créer une Municipalité</span>
+                      <span>Ajouter un agent de mairie</span>
                     </a>
                   </div>
                   <select [(ngModel)]="agenciesFilter" (change)="filterAgencies()" class="filter-select">
