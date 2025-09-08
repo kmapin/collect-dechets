@@ -44,7 +44,7 @@ import { NotificationComponent } from './components/notification/notification.co
       min-width: 100%;
       display: flex;
       flex-direction: column;
-      margin-top: 50px;
+      margin-top: 64px;
     }
   `]
 })

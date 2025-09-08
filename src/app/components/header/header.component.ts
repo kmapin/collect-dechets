@@ -25,7 +25,6 @@ import { NotificationService } from '../../services/notification.service';
               </div>
             </a>
           </div>
-
           <!-- Navigation Desktop -->
           <nav class="navbar-nav desktop-nav">
             <div class="nav-group">
@@ -207,7 +206,7 @@ import { NotificationService } from '../../services/notification.service';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 50px;
+      height: 64px;
     }
 
     /* Brand */
