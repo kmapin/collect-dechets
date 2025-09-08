@@ -759,7 +759,7 @@ interface Communication {
                 </div>
               </div>
 
-              <div class="incidents-list">
+              <div class="incidents-list grid-2">
                 <div *ngFor="let incident of filteredIncidents" class="incident-card card">
                   <div class="incident-header">
                     <div class="incident-severity" [class]="'severity-' + incident.severity">
@@ -1647,12 +1647,13 @@ interface Communication {
     }
 
     .incidents-list {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
       gap: 16px;
       max-height: 600px;
       overflow-y: auto;
     }
+    
 
     .incident-card {
       padding: 20px;
@@ -2244,6 +2245,16 @@ interface Communication {
     .nav-cta:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(0, 188, 212, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      .incidents-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 600px;
+        overflow-y: auto;
+      }
     }
   `]
 })
