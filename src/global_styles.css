@@ -142,7 +142,10 @@ body {
   background: #388e3c;
   transform: translateY(-1px);
 }
-
+.btn-success {
+  background: var(--success-color);
+  color: var(--white);
+}
 .btn-accent {
   background: var(--accent-color);
   color: var(--white);

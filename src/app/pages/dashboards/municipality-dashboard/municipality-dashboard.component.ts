@@ -1389,10 +1389,9 @@ interface Communication {
       background: var(--error-color);
       transition: width 0.3s ease;
     }
-
     .incidents-list {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
       gap: 16px;
       max-height: 600px;
       overflow-y: auto;
@@ -1975,6 +1974,16 @@ interface Communication {
       .zone-metrics {
         flex-direction: column;
         gap: 8px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .incidents-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 600px;
+        overflow-y: auto;
       }
     }
   `]

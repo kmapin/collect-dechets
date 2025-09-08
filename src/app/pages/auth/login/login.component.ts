@@ -94,7 +94,7 @@ import { NotificationService } from '../../../services/notification.service';
               {{ isLoading ? 'Connexion...' : 'Se connecter' }}
             </button>
           </form>
-<!------------------------------------ Comptes de démonstration  
+          <!------------------------------------ Comptes de démonstration  
           <div class="login-divider">
             <span>ou</span>
           </div>
