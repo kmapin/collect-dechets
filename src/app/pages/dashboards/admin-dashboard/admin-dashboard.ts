@@ -379,10 +379,9 @@ interface Communication {
                 <div *ngFor="let municipality of filteredMunicipalities" class="agency-audit-card card">
                   <div class="agency-audit-header">
                     <div class="agency-basic-info">
-                      <h4>{{ municipality.position }}</h4>
-                      <span class="status-badge" [class]="'status-' + municipality.status">
-                        {{ getAgencyStatusText(municipality.status) }}
-                      </span>
+                      <h4> Mairie centrale de Ouagadougou</h4>
+                      <span class="municipality-name">Administrateur: <h6>{{ municipality?.data?.name }}</h6></span>
+                      <span class="municipality-name">Telephone: <h5>{{ municipality?.data?.phone }}</h5></span>
                     </div>
                   
                   </div>
@@ -1580,7 +1579,10 @@ interface Communication {
       font-size: 0.9rem;
       color: var(--text-primary);
     }
-
+    .municipality-name {
+      display: flex;
+      gap: 8px;
+    }
     .performance-bar-container {
       flex: 1;
       height: 20px;
@@ -2109,11 +2111,6 @@ interface Communication {
         gap: 8px;
       }
 
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-
       .chart-placeholder {
         height: 150px;
       }
@@ -2173,7 +2170,7 @@ interface Communication {
       }
 
       .btn {
-        padding: 12px 16px;
+        padding: 5px;
         font-size: 0.9rem;
       }
 
