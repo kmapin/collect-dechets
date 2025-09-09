@@ -63,15 +63,15 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
               </select>
             </div>
 
-            <div class="filter-group">
+            <!-- <div class="filter-group">
               <label class="filter-label">Prix maximum</label>
               <select [(ngModel)]="maxPrice" (change)="applyFilters()" class="filter-select">
                 <option value="">Tous les prix</option>
-                <option value="30">Jusqu'à 30€</option>
-                <option value="50">Jusqu'à 50€</option>
-                <option value="100">Jusqu'à 100€</option>
+                <option value="30">Standard</option>
+                <option value="50">Prenuim</option>
+               
               </select>
-            </div>
+            </div> -->
 
             <div class="filter-group">
               <label class="filter-label">Note minimum</label>
@@ -828,7 +828,7 @@ export class AgenciesComponent implements OnInit {
   sortBy = 'name';
   viewMode: 'grid' | 'list' | 'map' = 'grid';
   agencyTariffs: WasteService[] = [];
-  cities: string[] = ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 'Montpellier'];
+  cities: string[] = ['Ouagadougou', 'Bobo-Dioulasso'];
 suggestions: any[] = [];
  private searchSubject = new Subject<string>();
   constructor(
