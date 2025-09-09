@@ -94,11 +94,11 @@ import { NotificationService } from '../../../services/notification.service';
               {{ isLoading ? 'Connexion...' : 'Se connecter' }}
             </button>
           </form>
-
+          <!------------------------------------ Comptes de démonstration  
           <div class="login-divider">
             <span>ou</span>
           </div>
-
+          
           <div class="demo-accounts">
             <h3>Comptes de démonstration</h3>
             <div class="demo-buttons">
@@ -140,7 +140,7 @@ import { NotificationService } from '../../../services/notification.service';
               </button>
             </div>
           </div>
-
+            -->
           <div class="login-footer">
             <p>
               Pas encore de compte ? 
