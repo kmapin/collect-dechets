@@ -481,7 +481,7 @@ deleteTariff$(tarifId: string): Observable<boolean> {
   // }
   // //ajouter une planification
   addSchedule$(schedule: CollectionSchedule): Observable<CollectionSchedule | null> {
-    return this.http.post<CollectionSchedule>(`${environment.apiUrl}/zones/planification`, schedule).pipe(
+    return this.http.post<CollectionSchedule>(`${environment.apiUrl}/zones/planifications`, schedule).pipe(
       map((response: CollectionSchedule) => {
         console.log("API > planification enregistre :", response);
         return response;

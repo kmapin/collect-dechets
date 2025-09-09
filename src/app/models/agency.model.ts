@@ -184,14 +184,21 @@ export enum  EmployeeRole {
   COLLECTOR = 'collector'
 }
 
-export interface CollectionSchedule {
-  // id: string;
+// export interface CollectionSchedule {
+//   id: string;
+//   zoneId: string;
+//   dayOfWeek: number;
+//   startTime: string;
+//   endTime: string;
+//   collectorId: string;
+//   isActive: boolean;
+// }
+ export interface CollectionSchedule {
   zoneId: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
   collectorId: string;
-  // isActive: boolean;
 }
 
 export interface WasteType {
