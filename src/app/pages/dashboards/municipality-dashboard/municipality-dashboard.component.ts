@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { AgencyService } from '../../../services/agency.service';
@@ -2041,79 +2041,106 @@ export class MunicipalityDashboardComponent implements OnInit {
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
 
-  
+
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
     private collectionService: CollectionService,
-    private notificationService: NotificationService
-  ) {}
+    private notificationService: NotificationService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    this.loadMunicipalityData()
     this.loadZoneStatistics();
-     this.loadMunicipalityData()
+
   }
 
 
   loadMunicipalityData(): void {
-    // this.loadAgencyAudits();
+    this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
     this.loadIncidents();
     // this.loadCommunications();
   }
 
-  // loadAgencyAudits(): void {
-  //   this.agencyAudits = [
-  //     {
-  //       id: '1',
-  //       name: 'EcoClean Services',
-  //       status: 'active',
-  //       clients: 1250,
-  //       collectors: 8,
-  //       zones: 3,
-  //       collectionsToday: 45,
-  //       completionRate: 96,
-  //       rating: 4.5,
-  //       revenue: 32450,
-  //       lastAudit: new Date('2024-01-10'),
-  //       complianceScore: 95,
-  //       issues: []
-  //     },
-  //     {
-  //       id: '2',
-  //       name: 'GreenWaste Solutions',
-  //       status: 'active',
-  //       clients: 850,
-  //       collectors: 6,
-  //       zones: 2,
-  //       collectionsToday: 32,
-  //       completionRate: 88,
-  //       rating: 4.2,
-  //       revenue: 22100,
-  //       lastAudit: new Date('2024-01-08'),
-  //       complianceScore: 82,
-  //       issues: ['Retards fréquents', 'Signalements clients']
-  //     },
-  //     {
-  //       id: '3',
-  //       name: 'WasteManager Pro',
-  //       status: 'suspended',
-  //       clients: 450,
-  //       collectors: 3,
-  //       zones: 1,
-  //       collectionsToday: 0,
-  //       completionRate: 0,
-  //       rating: 3.8,
-  //       revenue: 0,
-  //       lastAudit: new Date('2024-01-05'),
-  //       complianceScore: 65,
-  //       issues: ['Non-conformité réglementaire', 'Licence expirée']
-  //     }
-  //   ];
-  //   this.filteredAgencies = [...this.agencyAudits];
-  // }
+  loadAgencyAudits(): void {
+    this.agencyService.getAllAgenciesFromApi().subscribe({
+      next: (agencies) => {
+        this.agencyAudits = agencies.data.map((agency) => ({
+          id: agency?._id,
+          name: agency?.agencyName,
+          status: agency?.isActive ? "active" : "inactive",
+          clients: agency?.clients?.length || 0,
+          collectors: agency?.employees?.length || 0,
+          zones: 0,
+          userId: agency?.userId,
+          collectionsToday: 0,
+          completionRate: 0,
+          rating: 0,
+          revenue: 0,
+          lastAudit: new Date(),
+          complianceScore: 0,
+          issues: []
+        }));
+        this.filteredAgencies = [...this.agencyAudits];
+        console.log(' this.agencyAudits', this.agencyAudits);
+        console.log(' this.agencies', agencies);
+      }
+
+    });
+
+    //   this.agencyAudits = [
+    //     {
+    //       id: '1',
+    //       name: 'EcoClean Services',
+    //       status: 'active',
+    //       clients: 1250,
+    //       collectors: 8,
+    //       zones: 3,
+    //       collectionsToday: 45,
+    //       completionRate: 96,
+    //       rating: 4.5,
+    //       revenue: 32450,
+    //       lastAudit: new Date('2024-01-10'),
+    //       complianceScore: 95,
+    //       issues: []
+    //     },
+    //     {
+    //       id: '2',
+    //       name: 'GreenWaste Solutions',
+    //       status: 'active',
+    //       clients: 850,
+    //       collectors: 6,
+    //       zones: 2,
+    //       collectionsToday: 32,
+    //       completionRate: 88,
+    //       rating: 4.2,
+    //       revenue: 22100,
+    //       lastAudit: new Date('2024-01-08'),
+    //       complianceScore: 82,
+    //       issues: ['Retards fréquents', 'Signalements clients']
+    //     },
+    //     {
+    //       id: '3',
+    //       name: 'WasteManager Pro',
+    //       status: 'suspended',
+    //       clients: 450,
+    //       collectors: 3,
+    //       zones: 1,
+    //       collectionsToday: 0,
+    //       completionRate: 0,
+    //       rating: 3.8,
+    //       revenue: 0,
+    //       lastAudit: new Date('2024-01-05'),
+    //       complianceScore: 65,
+    //       issues: ['Non-conformité réglementaire', 'Licence expirée']
+    //     }
+    //   ];
+   
+  }
 
   loadWasteStatistics(): void {
     this.wasteStatistics = [
@@ -2124,17 +2151,17 @@ export class MunicipalityDashboardComponent implements OnInit {
     ];
   }
 
- loadZoneStatistics(): void {
-  const stats = this.agencyService.getAgenceStats(); 
-  this.zoneStatistics = OUAGA_DATA.map((zone, index) => ({
-    name: zone.arrondissement,
-    agencies: stats[index]?.agencies || 0,
-    clients: stats[index]?.clients || 0,
-    collections: stats[index]?.collections || 0,
-    coverage: stats[index]?.coverage || 0,
-    incidents: stats[index]?.incidents || 0
-  }));
-}
+  loadZoneStatistics(): void {
+    const stats = this.agencyService.getAgenceStats();
+    this.zoneStatistics = OUAGA_DATA.map((zone, index) => ({
+      name: zone.arrondissement,
+      agencies: stats[index]?.agencies || 0,
+      clients: stats[index]?.clients || 0,
+      collections: stats[index]?.collections || 0,
+      coverage: stats[index]?.coverage || 0,
+      incidents: stats[index]?.incidents || 0
+    }));
+  }
 
 
   loadIncidents(): void {
@@ -2337,7 +2364,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     this.filteredAgencies = this.agencyAudits.filter(agency => {
       const statusMatch = this.agenciesFilter === 'all' || agency.status === this.agenciesFilter;
       let complianceMatch = true;
-      
+
       if (this.complianceFilter === 'excellent') {
         complianceMatch = agency.complianceScore >= 95;
       } else if (this.complianceFilter === 'good') {
@@ -2345,7 +2372,7 @@ export class MunicipalityDashboardComponent implements OnInit {
       } else if (this.complianceFilter === 'poor') {
         complianceMatch = agency.complianceScore < 85;
       }
-      
+
       return statusMatch && complianceMatch;
     });
   }
@@ -2365,6 +2392,7 @@ export class MunicipalityDashboardComponent implements OnInit {
 
   viewAgencyDetails(agencyId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails de l\'agence');
+    this.router.navigate(['/agencies', agencyId]);
   }
 
   auditAgency(agencyId: string): void {
@@ -2429,9 +2457,9 @@ export class MunicipalityDashboardComponent implements OnInit {
   }
 
   sendCommunication(): void {
-    if (this.newCommunication.type && this.newCommunication.title && 
-        this.newCommunication.message && this.newCommunication.recipients.length > 0) {
-      
+    if (this.newCommunication.type && this.newCommunication.title &&
+      this.newCommunication.message && this.newCommunication.recipients.length > 0) {
+
       const communication: Communication = {
         id: Math.random().toString(36).substr(2, 9),
         type: this.newCommunication.type,
