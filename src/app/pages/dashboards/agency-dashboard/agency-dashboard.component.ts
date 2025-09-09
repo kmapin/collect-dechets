@@ -2387,7 +2387,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
           doorNumber: '15',
           doorColor: 'blue',
           neighborhood: 'Centre-ville',
-          city: 'Paris',
+          city: 'Oouagadougou',
           postalCode: '75001'
         },
         wasteTypes: [{ id: '1', name: 'Déchets ménagers', description: '', icon: 'delete', color: '#4caf50', instructions: [], acceptedItems: [], rejectedItems: [] }],
