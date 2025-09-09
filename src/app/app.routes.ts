@@ -21,7 +21,6 @@ import { ScheduleComponent } from './pages/schedule/schedule.component';
 import { ReportComponent } from './pages/report/report.component';
 import { ForgotPassword } from './pages/auth/forgot-password/forgot-password';
 import { AdminDashboard } from './pages/dashboards/admin-dashboard/admin-dashboard';
-import { MunicipalityDetails } from './pages/municipality-details/municipality-details';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -45,7 +44,6 @@ export const routes: Routes = [
   { path: 'dashboard/agency', component: AgencyDashboardComponent },
   { path: 'dashboard/collector', component: CollectorDashboardComponent },
   { path: 'dashboard/municipality', component: MunicipalityDashboardComponent },
-  {path: 'municipality/:id', component: MunicipalityDetails },
   {path: 'dashboard/admin', component: AdminDashboard},
   { path: '**', redirectTo: '' }
 ];

@@ -385,7 +385,7 @@ interface Communication {
                     </div>
                   
                   </div>
-
+                  <!--
                   <div class="agency-actions">
                     <button class="btn btn-secondary" (click)="viewMunicipalityDetails(municipality._id)">
                       <i class="material-icons">visibility</i>
@@ -400,7 +400,7 @@ interface Communication {
                       Contacter
                     </button>
                   </div>
-
+                  -->
                   <div class="agency-footer">
                     <span class="last-audit">Dernier audit: {{ municipality.lastAudit | date:'dd/MM/yyyy' }}</span>
                     <span class="revenue">{{ municipality.revenue | number:'1.0-0' }}€/mois</span>
