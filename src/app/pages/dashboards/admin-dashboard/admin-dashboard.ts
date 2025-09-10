@@ -68,6 +68,10 @@ interface ZoneStatistic {
 
 interface Incident {
   id: string;
+  agency?:{
+    id?: string,
+    agencyName?: string
+  }
   agencyId: string;
   agencyName: string;
   type: 'missed_collection' | 'compliance_issue' | 'complaint' | 'technical_issue';
@@ -336,7 +340,7 @@ interface Communication {
                       </div>
                       <div class="alert-content">
                         <div class="alert-title">{{ getIncidentTypeText(incident.type) }}</div>
-                        <div class="alert-agency">{{ incident.agencyName }}</div>
+                        <div class="alert-agency">{{ incident?.agency?.agencyName }}</div>
                         <div class="alert-time">{{ incident.date | date:'dd/MM HH:mm' }}</div>
                       </div>
                       <div class="alert-status">
@@ -764,7 +768,7 @@ interface Communication {
                   <div class="incident-header">
                     <div class="incident-severity" [class]="'severity-' + incident.severity">
                       <i class="material-icons">{{ getSeverityIcon(incident.severity) }}</i>
-                      <span>{{ getSeverityText(incident.severity) }}</span>
+                      <span>{{ getSeverityText(incident.severity)? getSeverityText(incident.severity) : "Faible" }}</span>
                     </div>
                     <div class="incident-status">
                       <span class="status-badge" [class]="'status-' + incident.status">
@@ -775,7 +779,7 @@ interface Communication {
 
                   <div class="incident-content">
                     <h4>{{ getIncidentTypeText(incident.type) }}</h4>
-                    <p class="incident-agency">Agence: {{ incident.agencyName }}</p>
+                    <p class="incident-agency">Agence: {{ incident?.agency?.agencyName }}</p>
                     <p class="incident-description">{{ incident.description }}</p>
                     <p class="incident-date">{{ incident.date | date:'dd/MM/yyyy HH:mm' }}</p>
                   </div>
@@ -2328,12 +2332,14 @@ export class AdminDashboard implements OnInit {
     { id: 'collectors', label: 'Collecteurs', icon: 'business', badge: null },
     { id: 'clients', label: 'Clients', icon: 'business', badge: null },
     { id: 'statistics', label: 'Statistiques', icon: 'analytics', badge: null },
-    { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
+    { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: null },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
   municipalitiesAudits: any;
   filteredMunicipalities: any[] = [];
   clientGrowth: number= 0;
+  signalementsAudits: any;
+  filteredSignalements: any[]=[];
 
   constructor(
     private authService: AuthService,
@@ -2363,11 +2369,10 @@ export class AdminDashboard implements OnInit {
     this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
-    this.loadIncidents();
+    // this.loadIncidents();
     this.loadCommunications();
     this.showAdminClients();
-
-
+    this.loasdAllSignalements();
   }
 
 
@@ -2464,7 +2469,7 @@ export class AdminDashboard implements OnInit {
     ];
   }
 
-  loadIncidents(): void {
+  loadIncidents1(): void {
     this.incidents = [
       {
         id: '1',
@@ -2645,7 +2650,8 @@ export class AdminDashboard implements OnInit {
       'missed_collection': 'Collecte manquée',
       'compliance_issue': 'Non-conformité',
       'complaint': 'Réclamation',
-      'technical_issue': 'Problème technique'
+      'technical_issue': 'Problème technique',
+      'problem': 'Collecte manquée'
     };
     return types[type as keyof typeof types] || type;
   }
@@ -2653,7 +2659,7 @@ export class AdminDashboard implements OnInit {
   getIncidentStatusText(status: string): string {
     const statuses = {
       'open': 'Ouvert',
-      'investigating': 'En cours',
+      'pending': 'En cours',
       'resolved': 'Résolu'
     };
     return statuses[status as keyof typeof statuses] || status;
@@ -3022,7 +3028,19 @@ export class AdminDashboard implements OnInit {
       }
     })
   }
-
+  /**Listes des signalements des users */
+  loasdAllSignalements() {
+    this .adminService.getAllReports().subscribe({
+      next: (response: any) => {
+        this.incidents = response.map((signalement: any) => {
+          return signalement;
+        });
+        this.filteredIncidents = [...this.incidents];
+        console.log('signalements in response', response);
+        console.log('signalements in dashboard', this.filteredIncidents);
+      }
+    })
+  }
   //naviguate to add Municipality
   navigateToAddMunicipality() {
     this.router.navigate(['/register']);
