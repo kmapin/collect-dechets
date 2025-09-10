@@ -874,6 +874,8 @@ markAllAsRead(event: Event): void {
   logout(): void {
     this.authService.logout().subscribe({
       next: (response: any) => {
+        
+        localStorage.removeItem('currentUser');
         console.log('deconnexion', response);
         if (response?.message) {
           console.log('deconnexion', response);
