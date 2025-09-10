@@ -88,7 +88,7 @@ interface Statistics {
               <div class="stat-info">
                 <h3>Clients actifs</h3>
                 <p class="stat-value">{{activeClients.length}}</p>
-                <span class="stat-trend positive">+2 ce mois</span>
+                <!-- <span class="stat-trend positive">+2 ce mois</span> -->
               </div>
             </div>
     
@@ -677,11 +677,11 @@ interface Statistics {
             <i class="material-icons text-base">edit</i>
             Renommer
           </button>
-          <button class="btn btn-danger flex items-center gap-1"
-           onclick="deleteTarif(tariff._id)">       >
-            <i class="material-icons text-base">delete</i>
-            Supprimer
-          </button>
+         <button class="btn btn-danger flex items-center gap-1"
+        (click)="deleteTariff(tariff)">
+  <i class="material-icons text-base">delete</i>
+  Supprimer
+</button>
         </div>
       </div>
 
@@ -2296,7 +2296,7 @@ tabs = [
     this.cdr.detectChanges();
  
   
-  //  const testTarifId = '68b58e9d7043b4d7dccbe4c3';
+  //  const testTarifId = '68c01057353dc713770656c9';
 
   //   this.agencyService.deleteTariff$(testTarifId).subscribe(result => {
   //     if (result) {
@@ -3173,6 +3173,7 @@ tariffs: Tariff[] = [];
       }
     });
   }
+
 tariffToUpdate: Tariff | null = null;
 //update un tarif via l api
 updateTariff(tariffId: string): void {
@@ -3234,11 +3235,12 @@ updateTariff(tariffId: string): void {
 
 
 // supprimer un tarif
-deleteTariff( tarifId: any): void {
+deleteTariff( tariff: any): void {
   this.isDeleting = true;
+  const tariffId = tariff._id;
 
-  if (tarifId?.userId?._id) {
-    this.agencyService.deleteTariff$( tarifId.userId._id).subscribe(
+  if (tariffId) {
+    this.agencyService.deleteTariff$(tariffId ).subscribe(
       () => {
         this.notificationService.showSuccess(
           'Succès',
@@ -3246,6 +3248,7 @@ deleteTariff( tarifId: any): void {
         );
         // this.loadEmployees(currentUser);
         this.isDeleting = false;
+        this.loadTariffs();
       },
       (error) => {
         this.notificationService.showError(
