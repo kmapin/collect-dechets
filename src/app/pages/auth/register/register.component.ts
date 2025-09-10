@@ -105,7 +105,7 @@ import { AgencyService } from '../../../services/agency.service';
                 </div>
               </div>
 
-              <div class="form-group">
+              <div class="form-group" *ngIf="userData.role !== 'agency'">
                 <label class="form-label" for="email">
                   <i class="material-icons">email</i>
                   Adresse email *
@@ -366,100 +366,110 @@ import { AgencyService } from '../../../services/agency.service';
             </div>
 
             <!-- Mot de passe -->
-            <div class="form-section">
-              <h3>Sécurité</h3>
-              
-              <div class="form-group">
-                <label class="form-label" for="password">
-                  <i class="material-icons">lock</i>
-                  Mot de passe *
-                </label>
-                <div class="password-input">
+            <ng-container  *ngIf="userData.role !== 'agency'">
+              <div class="form-section">
+                <h3>Sécurité</h3>
+                
+                <div class="form-group">
+                  <label class="form-label" for="password">
+                    <i class="material-icons">lock</i>
+                    Mot de passe *
+                  </label>
+                  <div class="password-input">
+                    <input 
+                      [type]="showPassword ? 'text' : 'password'"
+                      id="password"
+                      name="password"
+                      [(ngModel)]="userData.password"
+                      class="form-control"
+                      placeholder="Minimum 8 caractères"
+                      required
+                      minlength="8"
+                      #passwordInput="ngModel">
+                    <button 
+                      type="button" 
+                      class="password-toggle"
+                      (click)="togglePassword()">
+                      <i class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
+                    </button>
+                  </div>
+                  <div class="password-strength">
+                    <div class="strength-bar" [class]="getPasswordStrength()"></div>
+                    <span class="strength-text">{{ getPasswordStrengthText() }}</span>
+                  </div>
+                  <div class="form-error" *ngIf="passwordInput.invalid && passwordInput.touched">
+                    Le mot de passe doit contenir au moins 8 caractères
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="confirmPassword">
+                    <i class="material-icons">lock</i>
+                    Confirmer le mot de passe *
+                  </label>
                   <input 
-                    [type]="showPassword ? 'text' : 'password'"
-                    id="password"
-                    name="password"
-                    [(ngModel)]="userData.password"
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    [(ngModel)]="userData.confirmPassword"
                     class="form-control"
-                    placeholder="Minimum 8 caractères"
+                    placeholder="Répétez votre mot de passe"
                     required
-                    minlength="8"
-                    #passwordInput="ngModel">
-                  <button 
-                    type="button" 
-                    class="password-toggle"
-                    (click)="togglePassword()">
-                    <i class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
-                  </button>
-                </div>
-                <div class="password-strength">
-                  <div class="strength-bar" [class]="getPasswordStrength()"></div>
-                  <span class="strength-text">{{ getPasswordStrengthText() }}</span>
-                </div>
-                <div class="form-error" *ngIf="passwordInput.invalid && passwordInput.touched">
-                  Le mot de passe doit contenir au moins 8 caractères
+                    #confirmPasswordInput="ngModel">
+                  <div class="form-error" *ngIf="confirmPasswordInput.touched && userData.password !== userData.confirmPassword">
+                    Les mots de passe ne correspondent pas
+                  </div>
                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="confirmPassword">
-                  <i class="material-icons">lock</i>
-                  Confirmer le mot de passe *
+              <!-- Conditions -->
+              <div class="form-section">
+                <label class="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    [(ngModel)]="userData.termsAccepted"
+                    name="termsAccepted"
+                    required>
+                  <span class="checkmark"></span>
+                  J'accepte les <a routerLink="/terms" target="_blank">conditions d'utilisation</a> 
+                  et la <a routerLink="/privacy" target="_blank">politique de confidentialité</a>
                 </label>
-                <input 
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  [(ngModel)]="userData.confirmPassword"
-                  class="form-control"
-                  placeholder="Répétez votre mot de passe"
-                  required
-                  #confirmPasswordInput="ngModel">
-                <div class="form-error" *ngIf="confirmPasswordInput.touched && userData.password !== userData.confirmPassword">
-                  Les mots de passe ne correspondent pas
-                </div>
+
+                <label class="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    [(ngModel)]="userData.receiveOffers"
+                    name="receiveOffers">
+                  <span class="checkmark"></span>
+                  Je souhaite recevoir les actualités et offres par email
+                </label>
               </div>
-            </div>
-
-            <!-- Conditions -->
-            <div class="form-section">
-              <label class="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  [(ngModel)]="userData.termsAccepted"
-                  name="termsAccepted"
-                  required>
-                <span class="checkmark"></span>
-                J'accepte les <a routerLink="/terms" target="_blank">conditions d'utilisation</a> 
-                et la <a routerLink="/privacy" target="_blank">politique de confidentialité</a>
-              </label>
-
-              <label class="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  [(ngModel)]="userData.receiveOffers"
-                  name="receiveOffers">
-                <span class="checkmark"></span>
-                Je souhaite recevoir les actualités et offres par email
-              </label>
-            </div>
-
+            </ng-container>
             <button 
               type="submit" 
+               *ngIf="userData.role !== 'agency'"
               class="btn btn-primary btn-full"
               [disabled]="isLoading || registerForm.invalid || !userData.termsAccepted || userData.password !== userData.confirmPassword">
               <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
               <i class="material-icons" *ngIf="!isLoading">person_add</i>
               {{ isLoading ? 'Création...' : 'Créer mon compte' }}
             </button>
+            <button 
+              type="submit" 
+              class="btn btn-primary btn-full" *ngIf="userData.role === 'agency'">
+              <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+              <i class="material-icons" *ngIf="!isLoading">person_add</i>
+              {{ isLoading ? 'Création...' : 'Modifier le compte' }}
+            </button>
           </form>
-
-          <div class="register-footer">
-            <p>
-              Déjà un compte ? 
-              <a routerLink="/login" class="login-link">Se connecter</a>
-            </p>
-          </div>
+          <ng-container *ngIf="userData.role !== 'agency'">
+            <div class="register-footer">
+              <p>
+                Déjà un compte ? 
+                <a routerLink="/login" class="login-link">Se connecter</a>
+              </p>
+            </div>
+          </ng-container>
         </div>
       </div>
     </div>
