@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
@@ -8,6 +8,7 @@ import { UserRole } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
 import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
 import { Admin } from '../../../services/admin';
+import { AgencyService } from '../../../services/agency.service';
 
 @Component({
   selector: 'app-register',
@@ -786,6 +787,7 @@ import { Admin } from '../../../services/admin';
 export class RegisterComponent implements OnInit {
 
   userData = {
+    _id: '',  
     role: UserRole.CLIENT as UserRole | null,
     firstName: '',
     lastName: '',
@@ -810,7 +812,7 @@ export class RegisterComponent implements OnInit {
     termsAccepted: false,
     acceptTerms: true,
     receiveOffers: false,
-    commune :{
+    commune: {
       name: '',
       region: '',
       province: ''
@@ -822,22 +824,30 @@ export class RegisterComponent implements OnInit {
   arrondissements: QuartierData[] = OUAGA_DATA;
   secteurs: { secteur: string; quartiers: string[] }[] = [];
   quartiers: string[] = [];
-
+  agencyId: string = '';
   showPassword = false;
   isLoading = false;
 
-  roleMunicipality :string= '';
+  roleMunicipality: string = '';
+  agency: any;
   constructor(
     private authService: AuthService,
     private router: Router,
     private notificationService: NotificationService,
-    private adminService: Admin
+    private adminService: Admin,
+    private activatedRoute: ActivatedRoute,
+    private agencyService: AgencyService
   ) { }
 
-  ngOnInit(): void { 
+  ngOnInit(): void {
+    const agencyId = this.activatedRoute.snapshot.params['id'];
+    if (agencyId) {
+      this.loadAgencyFromApi(agencyId);
+    }
+    console.log("L'id de l'agence est ", agencyId);
     // this.roleMunicipality = this.adminService.getData()?.userRole || '';
     this.roleMunicipality = localStorage.getItem('userRole') || '';
-    if(this.roleMunicipality === 'municipality') this.userData.role = UserRole.MUNICIPALITY
+    if (this.roleMunicipality === 'municipality') this.userData.role = UserRole.MUNICIPALITY
     console.log(this.roleMunicipality);
   }
 
@@ -861,7 +871,88 @@ export class RegisterComponent implements OnInit {
     };
     return texts[strength as keyof typeof texts] || '';
   }
+  loadAgencyFromApi(id: string | null): void {
+    this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
+      if (response.success && response.data) {
+        console.log('[DEBUG] Agency data:', response);
+        this.agency = this.mapApiAgency(response.data);
+        console.log('[DEBUG] Agency details:', this.agency);
+        this.userData._id = this.agency._id;
+        this.userData.role = this.agency.role;
+        this.userData.firstName = this.agency.firstName;
+        this.userData.lastName = this.agency.lastName;
+        this.userData.email = this.agency.email;
+        this.userData.phone = this.agency.phone;
+        // this.userData.password;
+        // this.userData.confirmPassword;
+        this.userData.acceptTerms = this.agency.termsAccepted; // renommé
+        this.userData.acceptTerms = this.agency.termsAccepted; // renommé
+        this.userData.receiveOffers = this.agency.receiveOffers;
+        this.userData.address.arrondissement = this.agency.address.arrondissement;
+        this.userData.address.sector = this.agency.address.sector;
+        this.userData.address.street = this.agency.address.street;
+        this.userData.address.doorNumber = this.agency.address.doorNumber;
+        this.userData.address.doorColor = this.agency.address.doorColor;
+        this.userData.address.neighborhood = this.agency.address.neighborhood;
+        this.userData.address.city = this.agency.address.city;
+        this.userData.address.postalCode = this.agency.address.postalCode;
+        // latitude: this.userData.address.latitude;
+        // longitude: this.userData.address.postalCode
 
+        this.userData.agencyName = this.agency.agencyName;
+        this.userData.agencyDescription = this.agency.agencyDescription
+
+
+      } else {
+        console.error('Erreur lors du chargement de l\'agence');
+        // Fallback vers les données mockées si l'API échoue
+        this.agencyService.getAgencyById(id).subscribe(agency => {
+          this.agency = agency || null;
+        });
+      }
+    });
+  }
+  private mapApiAgency(apiAgency: any): Agency {
+    return {
+      _id: apiAgency._id || '',
+      userId: apiAgency.userId || '',
+      role: apiAgency.role || UserRole.AGENCY,
+      firstName: apiAgency.firstName || '',
+      lastName: apiAgency.lastName || '',
+      agencyName: apiAgency.agencyName || '',
+      agencyDescription: apiAgency.agencyDescription || '',
+      phone: apiAgency.phone || '',
+      address: apiAgency.address || {
+        street: '',
+        arrondissement: '',
+        sector: '',
+        neighborhood: '',
+        city: '',
+        postalCode: ''
+      },
+      arrondissement: apiAgency.arrondissement || '',
+      secteur: apiAgency.secteur || '',
+      quartier: apiAgency.quartier || '',
+      licenseNumber: apiAgency.licenseNumber || '',
+      members: apiAgency.members || [],
+      serviceZones: apiAgency.serviceZones || [],
+      services: apiAgency.services || [],
+      employees: apiAgency.employees || [],
+      schedule: apiAgency.schedule || [],
+      collectors: apiAgency.collectors || [],
+      clients: apiAgency.clients || [],
+      collections: apiAgency.collections || [],
+      incidents: apiAgency.incidents || [],
+      rating: apiAgency.rating || 0,
+      totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+      acceptTerms: apiAgency.acceptTerms || false,
+      receiveOffers: apiAgency.receiveOffers || false,
+      isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
+      createdAt: apiAgency.createdAt || '',
+      updatedAt: apiAgency.updatedAt || '',
+      __v: apiAgency.__v || 0
+    };
+  }
   onRegister(): void {
     if (!this.validateForm()) {
       return;
@@ -936,6 +1027,7 @@ export class RegisterComponent implements OnInit {
     } else if (this.userData.role === UserRole.AGENCY) {
 
       body = {
+        _id: this.userData._id,
         role: this.userData.role,
         firstName: this.userData.firstName,
         lastName: this.userData.lastName,
@@ -996,34 +1088,34 @@ export class RegisterComponent implements OnInit {
       });
       return;
     } else if (this.userData.role === UserRole.MUNICIPALITY) {
-      body={
-          role: this.userData.role,
-          agencyId: [ ],
-          firstName: this.userData.firstName,
-          lastName: this.userData.lastName,
-          phone: this.userData.phone,
-          email: this.userData.email,
-          name: this.userData.firstName + ' ' + this.userData.lastName,
-          commune: {
-            region: this.userData.commune.region,
-            province: this.userData.commune.province,
-            name: this.userData.commune.name
-          },
-          managedZones: [
-            {
-              arrondissement: this.userData.address.arrondissement,
-              secteur: this.userData.address.sector,
-              quartier: this.userData.address.neighborhood,
-              village:this.userData.address.city,
-            }
-          ],
-          position: {
-            
-          },
-          password: this.userData.password,
-          confirmPassword: this.userData.confirmPassword,
-          acceptTerms: this.userData.acceptTerms, // renommé
-          termsAccepted: this.userData.acceptTerms,
+      body = {
+        role: this.userData.role,
+        agencyId: [],
+        firstName: this.userData.firstName,
+        lastName: this.userData.lastName,
+        phone: this.userData.phone,
+        email: this.userData.email,
+        name: this.userData.firstName + ' ' + this.userData.lastName,
+        commune: {
+          region: this.userData.commune.region,
+          province: this.userData.commune.province,
+          name: this.userData.commune.name
+        },
+        managedZones: [
+          {
+            arrondissement: this.userData.address.arrondissement,
+            secteur: this.userData.address.sector,
+            quartier: this.userData.address.neighborhood,
+            village: this.userData.address.city,
+          }
+        ],
+        position: {
+
+        },
+        password: this.userData.password,
+        confirmPassword: this.userData.confirmPassword,
+        acceptTerms: this.userData.acceptTerms, // renommé
+        termsAccepted: this.userData.acceptTerms,
       }
       console.log('[DEBUG] Body envoyé à registerMunicipality:', body);
       this.adminService.registerMunicipality$(body).subscribe({
@@ -1065,7 +1157,7 @@ export class RegisterComponent implements OnInit {
     }
   }
 
-  onArrondissementChange(arrondissement: string) {
+  onArrondissementChange(arrondissement?: string) {
     const arr = this.arrondissements.find(a => a.arrondissement === arrondissement);
     this.secteurs = arr ? arr.secteurs : [];
     this.quartiers = [];
@@ -1076,7 +1168,7 @@ export class RegisterComponent implements OnInit {
   onSecteurChange(secteur: string) {
     const secteurObj = this.secteurs.find(s => s.secteur === secteur);
     this.quartiers = secteurObj ? secteurObj.quartiers : [];
-    this.userData.address.neighborhood = '';
+    this.userData.address.neighborhood =this.userData.address.neighborhood ||  '';
   }
 
   private validateForm(): boolean {
@@ -1140,7 +1232,7 @@ export class RegisterComponent implements OnInit {
         this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
         return false;
       }
-    }else if (this.userData.role === UserRole.MUNICIPALITY) {
+    } else if (this.userData.role === UserRole.MUNICIPALITY) {
       // Validation agence
       // if (!this.userData.agencyName) {
       //   this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');

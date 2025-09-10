@@ -44,6 +44,7 @@ export const routes: Routes = [
   { path: 'dashboard/agency', component: AgencyDashboardComponent },
   { path: 'dashboard/collector', component: CollectorDashboardComponent },
   { path: 'dashboard/municipality', component: MunicipalityDashboardComponent },
+  {path: 'edit-agency/:id', component: RegisterComponent},
   {path: 'dashboard/admin', component: AdminDashboard},
   { path: '**', redirectTo: '' }
 ];
