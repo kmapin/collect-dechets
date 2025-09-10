@@ -23,7 +23,7 @@ import { AgencyService } from '../../../services/agency.service';
               <i class="material-icons">recycling</i>
               <span>WasteManager</span>
             </div>
-            <h1 class="register-title">Créer un compte</h1>
+            <h1 class="register-title"> {{  agencyId ? 'Modifier un compte' : 'Créer un compte'}}</h1>
             <p class="register-subtitle">
               Rejoignez notre plateforme pour une gestion intelligente de vos déchets
             </p>
