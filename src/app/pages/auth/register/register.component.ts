@@ -105,7 +105,7 @@ import { AgencyService } from '../../../services/agency.service';
                 </div>
               </div>
 
-              <div class="form-group" *ngIf="userData.role !== 'agency'">
+              <div class="form-group" *ngIf="!agencyId">
                 <label class="form-label" for="email">
                   <i class="material-icons">email</i>
                   Adresse email *
@@ -366,7 +366,7 @@ import { AgencyService } from '../../../services/agency.service';
             </div>
 
             <!-- Mot de passe -->
-            <ng-container  *ngIf="userData.role !== 'agency'">
+            <ng-container  *ngIf="!agencyId">
               <div class="form-section">
                 <h3>Sécurité</h3>
                 
@@ -447,7 +447,7 @@ import { AgencyService } from '../../../services/agency.service';
             </ng-container>
             <button 
               type="submit" 
-               *ngIf="userData.role !== 'agency'"
+               *ngIf="!agencyId"
               class="btn btn-primary btn-full"
               [disabled]="isLoading || registerForm.invalid || !userData.termsAccepted || userData.password !== userData.confirmPassword">
               <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
@@ -456,13 +456,13 @@ import { AgencyService } from '../../../services/agency.service';
             </button>
             <button 
               type="submit" 
-              class="btn btn-primary btn-full" *ngIf="userData.role === 'agency'">
+              class="btn btn-primary btn-full" *ngIf="agencyId">
               <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
               <i class="material-icons" *ngIf="!isLoading">person_add</i>
               {{ isLoading ? 'Création...' : 'Modifier le compte' }}
             </button>
           </form>
-          <ng-container *ngIf="userData.role !== 'agency'">
+          <ng-container *ngIf="!agencyId">
             <div class="register-footer">
               <p>
                 Déjà un compte ? 
@@ -850,11 +850,11 @@ export class RegisterComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    const agencyId = this.activatedRoute.snapshot.params['id'];
-    if (agencyId) {
-      this.loadAgencyFromApi(agencyId);
+    this.agencyId = this.activatedRoute.snapshot.params['id'];
+    if (this.agencyId) {
+      this.loadAgencyFromApi(this.agencyId);
     }
-    console.log("L'id de l'agence est ", agencyId);
+    console.log("L'id de l'agence est ", this.agencyId);
     // this.roleMunicipality = this.adminService.getData()?.userRole || '';
     this.roleMunicipality = localStorage.getItem('userRole') || '';
     if (this.roleMunicipality === 'municipality') this.userData.role = UserRole.MUNICIPALITY
