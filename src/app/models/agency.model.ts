@@ -12,6 +12,7 @@ export interface Agency {
   agencyDescription: string;
   phone: string;
   address: Address;
+  role?: string;
   licenseNumber: string;
   members: AgencyMember[];
   serviceZones: ServiceZone[];
