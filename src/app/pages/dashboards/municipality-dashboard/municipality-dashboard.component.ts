@@ -10,6 +10,7 @@ import { User } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { OUAGA_DATA } from '../../../data/mock-data'; // chemin à adapter
+import { Admin } from '../../../services/admin';
 
 interface MunicipalityStatistics {
   totalAgencies: number;
@@ -59,6 +60,10 @@ interface ZoneStatistic {
 
 interface Incident {
   id: string;
+  agency?:{
+    id?: string,
+    agencyName?: string
+  }
   agencyId: string;
   agencyName: string;
   type: 'missed_collection' | 'compliance_issue' | 'complaint' | 'technical_issue';
@@ -520,7 +525,7 @@ interface Communication {
                   <div class="incident-header">
                     <div class="incident-severity" [class]="'severity-' + incident.severity">
                       <i class="material-icons">{{ getSeverityIcon(incident.severity) }}</i>
-                      <span>{{ getSeverityText(incident.severity) }}</span>
+                      <span>{{ getSeverityText(incident.severity) ?getSeverityText(incident.severity):"Faible" }}</span>
                     </div>
                     <div class="incident-status">
                       <span class="status-badge" [class]="'status-' + incident.status">
@@ -531,7 +536,7 @@ interface Communication {
 
                   <div class="incident-content">
                     <h4>{{ getIncidentTypeText(incident.type) }}</h4>
-                    <p class="incident-agency">Agence: {{ incident.agencyName }}</p>
+                    <p class="incident-agency">Agence: {{ incident?.agency?.agencyName }}</p>
                     <p class="incident-description">{{ incident.description }}</p>
                     <p class="incident-date">{{ incident.date | date:'dd/MM/yyyy HH:mm' }}</p>
                   </div>
@@ -1087,12 +1092,16 @@ interface Communication {
       text-transform: uppercase;
     }
 
-    .status-active { background: #e8f5e8; color: var(--success-color); }
+   .status-active { background: #e8f5e8; color: var(--success-color); }
     .status-inactive { background: #f5f5f5; color: var(--text-secondary); }
     .status-suspended { background: #fff3e0; color: #f57c00; }
     .status-open { background: #ffebee; color: var(--error-color); }
     .status-investigating { background: #fff3e0; color: #f57c00; }
     .status-resolved { background: #e8f5e8; color: var(--success-color); }
+    .status-pending { background: #fff3e0; color: #f57c00; }
+    .status-inconnu { background: #fff3e0; color: #f5000070; }
+    .status-cancelled { background: #ffb9b9ff; color: #eb0b0bff; }
+    
 
     .agencies-header,
     .statistics-header,
@@ -2040,11 +2049,13 @@ export class MunicipalityDashboardComponent implements OnInit {
     { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
+  statisticsAdmin: any;
 
 
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
+    private adminService: Admin,
     private collectionService: CollectionService,
     private notificationService: NotificationService,
     private router: Router
@@ -2062,7 +2073,9 @@ export class MunicipalityDashboardComponent implements OnInit {
     this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
-    this.loadIncidents();
+    this.loadAllSignalements();
+    this.showAdminStatistics();
+    // this.loadIncidents();
     // this.loadCommunications();
   }
 
@@ -2163,6 +2176,19 @@ export class MunicipalityDashboardComponent implements OnInit {
     }));
   }
 
+ /**Listes des signalements des users */
+  loadAllSignalements() {
+    this .adminService.getAllReports().subscribe({
+      next: (response: any) => {
+        this.incidents = response.map((signalement: any) => {
+          return signalement;
+        });
+        this.filteredIncidents = [...this.incidents];
+        console.log('signalements in response', response);
+        console.log('signalements in dashboard', this.filteredIncidents);
+      }
+    })
+  }
 
   loadIncidents(): void {
     this.incidents = [
@@ -2285,6 +2311,7 @@ export class MunicipalityDashboardComponent implements OnInit {
   getIncidentTypeText(type: string): string {
     const types = {
       'missed_collection': 'Collecte manquée',
+      'problem': 'Collecte manquée',
       'compliance_issue': 'Non-conformité',
       'complaint': 'Réclamation',
       'technical_issue': 'Problème technique'
@@ -2295,7 +2322,7 @@ export class MunicipalityDashboardComponent implements OnInit {
   getIncidentStatusText(status: string): string {
     const statuses = {
       'open': 'Ouvert',
-      'investigating': 'En cours',
+      'pending': 'En cours',
       'resolved': 'Résolu'
     };
     return statuses[status as keyof typeof statuses] || status;
@@ -2357,6 +2384,17 @@ export class MunicipalityDashboardComponent implements OnInit {
   getAgencyName(agencyId: string): string {
     const agency = this.agencyAudits.find(a => a.id === agencyId);
     return agency ? agency.name : 'Agence inconnue';
+  }
+
+// Statistics
+  showAdminStatistics(): void {
+    this.adminService.getAllStatistics().subscribe({
+      next: (statistics: any) => {
+        this.statisticsAdmin = statistics;
+        console.log(this.statisticsAdmin);
+      }
+
+    })
   }
 
   // Filter methods

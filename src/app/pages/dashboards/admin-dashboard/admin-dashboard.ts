@@ -2372,7 +2372,7 @@ export class AdminDashboard implements OnInit {
     // this.loadIncidents();
     this.loadCommunications();
     this.showAdminClients();
-    this.loasdAllSignalements();
+    this.loadAllSignalements();
   }
 
 
@@ -3029,7 +3029,7 @@ export class AdminDashboard implements OnInit {
     })
   }
   /**Listes des signalements des users */
-  loasdAllSignalements() {
+  loadAllSignalements() {
     this .adminService.getAllReports().subscribe({
       next: (response: any) => {
         this.incidents = response.map((signalement: any) => {
