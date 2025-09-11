@@ -238,9 +238,19 @@ export interface Address {
   longitude?: number;
 }
 export interface Statistics {
-  totalEmployees: number;
   totalClients: number;
+  totalEmployees: number;
   totalZones: number;
+  totalCollectors: number;
+  totalSignalements: number;
+  activeCollectors: number;
+  todayCollections: number;
+  completedCollections: number;
+  monthlyRevenue: number;
+  averageRating: number;
+  pendingReports: number;
+  totalpendingSignalements: number; // ← AJOUTE cette ligne
   message?: string;
   success?: boolean;
 }
+
