@@ -810,7 +810,7 @@ interface Communication {
                       <i class="material-icons">check</i>
                       Résoudre
                     </button>
-                    <button class="btn btn-accent" (click)="contactAgencyForIncident(incident.agencyId)">
+                    <button class="btn btn-accent" (click)="contactAgencyForIncident(incident?.agency?.id)">
                       <i class="material-icons">phone</i>
                       Contacter Agence
                     </button>
@@ -2815,8 +2815,9 @@ export class AdminDashboard implements OnInit {
   contactMunicipality(municipalityId: string): void {
     this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
-  contactAgency(agencyId: string): void {
+  contactAgency(agencyId?: string): void {
     this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
+    this.router.navigate(['/agencies', agencyId]);
   }
 
   updateStatistics(): void {
@@ -2851,7 +2852,7 @@ export class AdminDashboard implements OnInit {
     }
   }
 
-  contactAgencyForIncident(agencyId: string): void {
+  contactAgencyForIncident(agencyId?: string ): void {
     this.contactAgency(agencyId);
   }
 
@@ -3039,7 +3040,9 @@ export class AdminDashboard implements OnInit {
     this.adminService.getAllReports().subscribe({
       next: (response: any) => {
         this.incidents = response.map((signalement: any) => {
-          return signalement;
+          return {
+            id: signalement._id,
+            ... signalement};
         });
         this.filteredIncidents = [...this.incidents];
         console.log('signalements in response', response);
