@@ -51,9 +51,10 @@ interface Statistics {
   totalZones: number;
   totalCollectors: number;
   totalSignalements: number;
+  resolvedSignalements?: number;
   activeCollectors: number;
   todayCollections: number;
-  totalpendingSignalements: number;
+  pendingSignalements: number;
   completedCollections: number;
   monthlyRevenue: number;
   averageRating: number;
@@ -166,11 +167,10 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Signalements</h3>
-                              <p class="stat-value">{{statistics.totalpendingSignalements}}</p>
-<span>  En attente de traitement</span>
-                <!-- <span class="stat-trend" [class.negative]="statistics.totalpendingSignalements"> -->
-                
-                <!-- </span> -->
+                <p class="stat-value">{{statistics.pendingSignalements}}</p>
+                <span class="stat-trend" [class.negative]="statistics.totalSignalements">
+                  en attente
+                </span>
               </div>
             </div>
           </div>
@@ -2220,11 +2220,12 @@ export class AgencyDashboardComponent implements OnInit {
     totalSignalements: 0,
     activeCollectors: 0,
     todayCollections: 0,
+    resolvedSignalements: 0,
     completedCollections: 0,
     monthlyRevenue: 0,
     averageRating: 0,
     pendingReports: 0,
-    totalpendingSignalements: 0,
+    pendingSignalements: 0,
   };
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
