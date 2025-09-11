@@ -1920,7 +1920,7 @@ export class CollectorDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadCollectorData();
-    // this.onQrCodeResult("d58ae925a27f0c108234c015");
+    // this.onQrCodeResult("68c293329b9e68227034e973");
   }
 
   loadCollectorData(): void {
@@ -2220,12 +2220,15 @@ export class CollectorDashboardComponent implements OnInit {
     return texts[type as keyof typeof texts] || type;
   }
 
-  onQrCodeResult(result: string) {
-    this.lastQrResult = result;
+  onQrCodeResult(result: any) {
+    // S'assurer que nous avons bien une chaîne
+    const qrCodeValue = typeof result === 'string' ? result : result?.toString() || '';
+    
+    this.lastQrResult = qrCodeValue;
     this.showQrScanner = false;
-    this.notificationService.showSuccess("QR Code détecté", result);
+    this.notificationService.showSuccess("QR Code détecté", qrCodeValue);
     // Appel API pour récupérer le client
-    this.clientService.getClientById(result).subscribe({
+    this.clientService.getClientById(qrCodeValue).subscribe({
       next: (client) => {
         this.scannedClient = client?.data;
         console.log("Scanned client :>", this.scannedClient);
