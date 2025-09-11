@@ -25,6 +25,7 @@ export const authInterceptorInterceptor: HttpInterceptorFn = (req: HttpRequest<u
       if (error.status === 401 || error.status === 403) {
         notificationService.showSuccess("Deconnexion","Votre session a expiré, Vous allez être déconnecté dans quelques instants");
         setTimeout(() => {
+          localStorage.removeItem('currentUser');
           authService.logout();
           window.location.reload();
           router.navigate(['/login']);
