@@ -2542,11 +2542,11 @@ deleteEmployee(currentUser: any, employeeId: any): void {
       this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({
         next: (employees) => {
           this.allEmployees = employees;
-          console.log("loadEmployees > :", this.allEmployees); // Changed from error to log
+          console.log("loadEmployees > :", this.allEmployees); 
                   const employeesTab = this.tabs.find(tab => tab.id === 'employees');
               if (employeesTab) {
           employeesTab.badge = employees.length;
-          this.cdr.detectChanges(); // Force la détection des changements
+          this.cdr.detectChanges(); 
         }    
         },
         error: (error) => {

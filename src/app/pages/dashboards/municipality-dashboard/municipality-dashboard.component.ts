@@ -2052,9 +2052,9 @@ export class MunicipalityDashboardComponent implements OnInit {
 
   tabs = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'dashboard', badge: null },
-    { id: 'agencies', label: 'Audit Agences', icon: 'business', badge: null },
+    { id: 'agencies', label: 'Audit Agences', icon: 'business', badge:0 },
     { id: 'statistics', label: 'Statistiques', icon: 'analytics', badge: null },
-    { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: null },
+    { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 0},
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
   statisticsAdmin: any;
@@ -2114,6 +2114,12 @@ export class MunicipalityDashboardComponent implements OnInit {
         this.filteredAgencies = [...this.agencyAudits];
         console.log(' this.agencyAudits', this.agencyAudits);
         console.log(' this.agencies', agencies);
+         const auditTab = this.tabs.find(tab => tab.id === 'agencies');
+           if (auditTab ) {
+          auditTab.badge = this.agencyAudits.length;
+          this.cd.detectChanges();
+          
+        }
       }
 
     });
@@ -2199,6 +2205,12 @@ export class MunicipalityDashboardComponent implements OnInit {
         this.filteredIncidents = [...this.incidents];
         console.log('signalements in response', response);
         console.log('signalements in dashboard', this.filteredIncidents);
+         const incidentsTab = this.tabs.find(tab => tab.id === 'incidents');
+           if (incidentsTab ) {
+          incidentsTab.badge = this.incidents.length;
+          this.cd.detectChanges();
+          
+        }
       }
     })
   }
