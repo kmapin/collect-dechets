@@ -69,7 +69,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="firstName">
                     <i class="material-icons">person</i>
-                    Prénom *
+                    Prénom <span class="required">*</span>
                   </label>
                   <input 
                     type="text" 
@@ -88,7 +88,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="lastName">
                     <i class="material-icons">person</i>
-                    Nom *
+                    Nom <span class="required">*</span>
                   </label>
                   <input 
                     type="text" 
@@ -108,7 +108,7 @@ import { AgencyService } from '../../../services/agency.service';
               <div class="form-group" *ngIf="!agencyId">
                 <label class="form-label" for="email">
                   <i class="material-icons">email</i>
-                  Adresse email *
+                  Adresse email <span class="required">*</span>
                 </label>
                 <input 
                   type="email" 
@@ -127,7 +127,7 @@ import { AgencyService } from '../../../services/agency.service';
               <div class="form-group">
                 <label class="form-label" for="phone">
                   <i class="material-icons">phone</i>
-                  Téléphone *
+                  Téléphone <span class="required">*</span>
                 </label>
                 <input 
                   type="tel" 
@@ -151,7 +151,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="region">
                     <i class="material-icons">markunread_mailbox</i>
-                    Region *
+                    Region <span class="required">*</span>
                   </label>
                   <select
                     type="text" 
@@ -169,7 +169,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="province">
                     <i class="material-icons">location_city</i>
-                    Province *
+                    Province <span class="required">*</span>
                   </label>
                   <select 
                     type="text" 
@@ -188,7 +188,7 @@ import { AgencyService } from '../../../services/agency.service';
               <div class="form-group">
                   <label class="form-label" for="communeName">
                     <i class="material-icons">location_city</i>
-                    Commune *
+                    Commune <span class="required">*</span>
                   </label>
                   <select 
                     type="text" 
@@ -214,7 +214,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="city">
                     <i class="material-icons">location_city</i>
-                    Ville *
+                    Ville <span class="required">*</span>
                   </label>
                   <input 
                     type="text" 
@@ -229,7 +229,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="postalCode">
                     <i class="material-icons">markunread_mailbox</i>
-                    Code postal *
+                    Code postal <span class="required">*</span>
                   </label>
                   <input 
                     type="text" 
@@ -246,7 +246,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="arrondissement">
                     <i class="material-icons">map</i>
-                     Arrondiss... *
+                     Arrondiss... <span class="required">*</span>
                   </label>
                   <select id="arrondissement" name="arrondissement" [(ngModel)]="userData.address.arrondissement" (change)="onArrondissementChange(userData.address.arrondissement)" class="form-control" required>
                     <option value="">Sélectionner</option>
@@ -256,7 +256,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="sector">
                     <i class="material-icons">location_city</i>
-                    Secteur *
+                    Secteur <span class="required">*</span>
                   </label>
                   <select id="sector" name="sector" [(ngModel)]="userData.address.sector" (change)="onSecteurChange(userData.address.sector)" class="form-control" [disabled]="!secteurs.length" required>
                     <option value="">Sélectionner</option>
@@ -266,7 +266,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="neighborhood">
                     <i class="material-icons">location_city</i>
-                    Quartier *
+                    Quartier <span class="required">*</span>
                   </label>
                   <select id="neighborhood" name="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control" [disabled]="!quartiers.length" required>
                     <option value="">Sélectionner</option>
@@ -279,7 +279,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="street">
                     <i class="material-icons">location_on</i>
-                    Rue *
+                    Rue <span class="required">*</span>
                   </label>
                   <input 
                     type="text" 
@@ -294,7 +294,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group" *ngIf="userData.role !== 'agency' && userData.role !== 'municipality'">
                   <label class="form-label" for="doorNumber">
                     <i class="material-icons">home</i>
-                    Numéro Porte *
+                    Numéro Porte <span class="required">*</span>
                   </label>
                   <input 
                     type="text" 
@@ -338,7 +338,7 @@ import { AgencyService } from '../../../services/agency.service';
               <div class="form-group">
                 <label class="form-label" for="agencyName">
                   <i class="material-icons">business</i>
-                  Nom de l'agence *
+                  Nom de l'agence <span class="required">*</span>
                 </label>
                 <input 
                   type="text" 
@@ -373,7 +373,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="password">
                     <i class="material-icons">lock</i>
-                    Mot de passe *
+                    Mot de passe <span class="required">*</span>
                   </label>
                   <div class="password-input">
                     <input 
@@ -405,7 +405,7 @@ import { AgencyService } from '../../../services/agency.service';
                 <div class="form-group">
                   <label class="form-label" for="confirmPassword">
                     <i class="material-icons">lock</i>
-                    Confirmer le mot de passe *
+                    Confirmer le mot de passe <span class="required">*</span>
                   </label>
                   <input 
                     type="password"
@@ -619,7 +619,9 @@ import { AgencyService } from '../../../services/agency.service';
       font-weight: 500;
       color: var(--text-primary);
     }
-
+    .required{
+      color: red;
+    }
     .form-control {
       width: 100%;
       padding: 16px;
