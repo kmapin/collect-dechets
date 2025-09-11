@@ -54,28 +54,28 @@ import { NotificationService } from '../../services/notification.service';
                 <span>S'inscrire</span>
               </a>
             </div>
-<div class="notification-bell" *ngIf="isAuthenticated" (click)="toggleNotifications()" >
-  <i class="material-icons">notifications</i>
-  <span class="badge" *ngIf="notifications.length">{{ notifications.length }}</span>
+            <div class="notification-bell" *ngIf="isAuthenticated" (click)="toggleNotifications()" >
+              <i class="material-icons">notifications</i>
+              <span class="badge" *ngIf="notifications.length">{{ notifications.length }}</span>
 
-  <div class="notifications-dropdown" [class.show]="showNotifications">
-    <div class="dropdown-header">
-      <strong>Notifications</strong>
-      <button class="clear-btn" (click)="markAllAsRead($event)">
-        Tout marquer comme lu
-      </button>
-    </div>
-    <div class="notifications-list">
-      <div *ngIf="notifications.length === 0" class="empty-notification">
-        Aucune notification
-      </div>
-      <div *ngFor="let notif of notifications" class="notification-item">
-        <div class="notif-content">{{ notif.message }}</div>
-        <div class="notif-date">{{ notif.date | date:'short' }}</div>
-      </div>
-    </div>
-  </div>
-</div>
+              <div class="notifications-dropdown" [class.show]="showNotifications">
+                <div class="dropdown-header">
+                  <strong>Notifications</strong>
+                  <button class="clear-btn" (click)="markAllAsRead($event)">
+                    Tout marquer comme lu
+                  </button>
+                </div>
+                <div class="notifications-list">
+                  <div *ngIf="notifications.length === 0" class="empty-notification">
+                    Aucune notification
+                  </div>
+                  <div *ngFor="let notif of notifications" class="notification-item">
+                    <div class="notif-content">{{ notif.message }}</div>
+                    <div class="notif-date">{{ notif.date | date:'short' }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <!-- Menu utilisateur connecté -->
             <div class="user-menu" *ngIf="isAuthenticated && currentUser" 
                  (mouseenter)="showUserMenu = true" 
@@ -199,7 +199,7 @@ import { NotificationService } from '../../services/notification.service';
   `,
   styles: [`
     .navbar {
-      /* background-color: red;*/
+      background-color: red;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
       min-width: 99vw;
@@ -228,7 +228,7 @@ import { NotificationService } from '../../services/notification.service';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 50px;
+      height: 64px;
     }
 
     /* Brand */
@@ -257,7 +257,7 @@ import { NotificationService } from '../../services/notification.service';
       align-items: center;
       justify-content: center;
       color: white;
-      font-size: 24px;
+      font-size: 30px;
       box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
     }
 
@@ -777,40 +777,33 @@ import { NotificationService } from '../../services/notification.service';
         display: flex;
       }
     }
-
     @media (max-width: 768px) {
-      .navbar-content {
-        height: 70px;
-      }
-
-      .container {
-        padding: 0 16px;
-      }
-
-      .brand-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-      }
 
       .brand-name {
         font-size: 1.3rem;
       }
-
       .brand-tagline {
-        font-size: 0.7rem;
+        font-size: 0.9rem;
+      }
+      .mobile-menu-toggle {
+        border: 1px solid var(--surface-400);
+        width: 50px;
+        height: 50px;
+        padding: 0;
       }
     }
+
 
     @media (max-width: 480px) {
       .brand-text {
         display: none;
       }
-
       .mobile-menu-content {
         padding: 16px;
       }
     }
+
+
   `]
 })
 export class HeaderComponent implements OnInit {
@@ -881,6 +874,8 @@ markAllAsRead(event: Event): void {
   logout(): void {
     this.authService.logout().subscribe({
       next: (response: any) => {
+        
+        localStorage.removeItem('currentUser');
         console.log('deconnexion', response);
         if (response?.message) {
           console.log('deconnexion', response);

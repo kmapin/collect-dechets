@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { AgencyService } from '../../../services/agency.service';
@@ -10,6 +10,7 @@ import { User } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { OUAGA_DATA } from '../../../data/mock-data'; // chemin à adapter
+import { Admin } from '../../../services/admin';
 
 interface MunicipalityStatistics {
   totalAgencies: number;
@@ -59,6 +60,10 @@ interface ZoneStatistic {
 
 interface Incident {
   id: string;
+  agency?:{
+    id?: string,
+    agencyName?: string
+  }
   agencyId: string;
   agencyName: string;
   type: 'missed_collection' | 'compliance_issue' | 'complaint' | 'technical_issue';
@@ -520,7 +525,7 @@ interface Communication {
                   <div class="incident-header">
                     <div class="incident-severity" [class]="'severity-' + incident.severity">
                       <i class="material-icons">{{ getSeverityIcon(incident.severity) }}</i>
-                      <span>{{ getSeverityText(incident.severity) }}</span>
+                      <span>{{ getSeverityText(incident.severity) ?getSeverityText(incident.severity):"Faible" }}</span>
                     </div>
                     <div class="incident-status">
                       <span class="status-badge" [class]="'status-' + incident.status">
@@ -531,7 +536,7 @@ interface Communication {
 
                   <div class="incident-content">
                     <h4>{{ getIncidentTypeText(incident.type) }}</h4>
-                    <p class="incident-agency">Agence: {{ incident.agencyName }}</p>
+                    <p class="incident-agency">Agence: {{ incident?.agency?.agencyName }}</p>
                     <p class="incident-description">{{ incident.description }}</p>
                     <p class="incident-date">{{ incident.date | date:'dd/MM/yyyy HH:mm' }}</p>
                   </div>
@@ -1087,12 +1092,16 @@ interface Communication {
       text-transform: uppercase;
     }
 
-    .status-active { background: #e8f5e8; color: var(--success-color); }
+   .status-active { background: #e8f5e8; color: var(--success-color); }
     .status-inactive { background: #f5f5f5; color: var(--text-secondary); }
     .status-suspended { background: #fff3e0; color: #f57c00; }
     .status-open { background: #ffebee; color: var(--error-color); }
     .status-investigating { background: #fff3e0; color: #f57c00; }
     .status-resolved { background: #e8f5e8; color: var(--success-color); }
+    .status-pending { background: #fff3e0; color: #f57c00; }
+    .status-inconnu { background: #fff3e0; color: #f5000070; }
+    .status-cancelled { background: #ffb9b9ff; color: #eb0b0bff; }
+    
 
     .agencies-header,
     .statistics-header,
@@ -1389,10 +1398,9 @@ interface Communication {
       background: var(--error-color);
       transition: width 0.3s ease;
     }
-
     .incidents-list {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
       gap: 16px;
       max-height: 600px;
       overflow-y: auto;
@@ -1977,6 +1985,16 @@ interface Communication {
         gap: 8px;
       }
     }
+
+    @media (max-width: 768px) {
+      .incidents-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 600px;
+        overflow-y: auto;
+      }
+    }
   `]
 })
 export class MunicipalityDashboardComponent implements OnInit {
@@ -2031,80 +2049,111 @@ export class MunicipalityDashboardComponent implements OnInit {
     { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
+  statisticsAdmin: any;
 
-  
+
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
+    private adminService: Admin,
     private collectionService: CollectionService,
-    private notificationService: NotificationService
-  ) {}
+    private notificationService: NotificationService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    this.loadMunicipalityData()
     this.loadZoneStatistics();
-     this.loadMunicipalityData()
+
   }
 
 
   loadMunicipalityData(): void {
-    // this.loadAgencyAudits();
+    this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
-    this.loadIncidents();
+    this.loadAllSignalements();
+    this.showAdminStatistics();
+    // this.loadIncidents();
     // this.loadCommunications();
   }
 
-  // loadAgencyAudits(): void {
-  //   this.agencyAudits = [
-  //     {
-  //       id: '1',
-  //       name: 'EcoClean Services',
-  //       status: 'active',
-  //       clients: 1250,
-  //       collectors: 8,
-  //       zones: 3,
-  //       collectionsToday: 45,
-  //       completionRate: 96,
-  //       rating: 4.5,
-  //       revenue: 32450,
-  //       lastAudit: new Date('2024-01-10'),
-  //       complianceScore: 95,
-  //       issues: []
-  //     },
-  //     {
-  //       id: '2',
-  //       name: 'GreenWaste Solutions',
-  //       status: 'active',
-  //       clients: 850,
-  //       collectors: 6,
-  //       zones: 2,
-  //       collectionsToday: 32,
-  //       completionRate: 88,
-  //       rating: 4.2,
-  //       revenue: 22100,
-  //       lastAudit: new Date('2024-01-08'),
-  //       complianceScore: 82,
-  //       issues: ['Retards fréquents', 'Signalements clients']
-  //     },
-  //     {
-  //       id: '3',
-  //       name: 'WasteManager Pro',
-  //       status: 'suspended',
-  //       clients: 450,
-  //       collectors: 3,
-  //       zones: 1,
-  //       collectionsToday: 0,
-  //       completionRate: 0,
-  //       rating: 3.8,
-  //       revenue: 0,
-  //       lastAudit: new Date('2024-01-05'),
-  //       complianceScore: 65,
-  //       issues: ['Non-conformité réglementaire', 'Licence expirée']
-  //     }
-  //   ];
-  //   this.filteredAgencies = [...this.agencyAudits];
-  // }
+  loadAgencyAudits(): void {
+    this.agencyService.getAllAgenciesFromApi().subscribe({
+      next: (agencies) => {
+        this.agencyAudits = agencies.data.map((agency) => ({
+          id: agency?._id,
+          name: agency?.agencyName,
+          status: agency?.isActive ? "active" : "inactive",
+          clients: agency?.clients?.length || 0,
+          collectors: agency?.employees?.length || 0,
+          zones: 0,
+          userId: agency?.userId,
+          collectionsToday: 0,
+          completionRate: 0,
+          rating: 0,
+          revenue: 0,
+          lastAudit: new Date(),
+          complianceScore: 0,
+          issues: []
+        }));
+        this.filteredAgencies = [...this.agencyAudits];
+        console.log(' this.agencyAudits', this.agencyAudits);
+        console.log(' this.agencies', agencies);
+      }
+
+    });
+
+    //   this.agencyAudits = [
+    //     {
+    //       id: '1',
+    //       name: 'EcoClean Services',
+    //       status: 'active',
+    //       clients: 1250,
+    //       collectors: 8,
+    //       zones: 3,
+    //       collectionsToday: 45,
+    //       completionRate: 96,
+    //       rating: 4.5,
+    //       revenue: 32450,
+    //       lastAudit: new Date('2024-01-10'),
+    //       complianceScore: 95,
+    //       issues: []
+    //     },
+    //     {
+    //       id: '2',
+    //       name: 'GreenWaste Solutions',
+    //       status: 'active',
+    //       clients: 850,
+    //       collectors: 6,
+    //       zones: 2,
+    //       collectionsToday: 32,
+    //       completionRate: 88,
+    //       rating: 4.2,
+    //       revenue: 22100,
+    //       lastAudit: new Date('2024-01-08'),
+    //       complianceScore: 82,
+    //       issues: ['Retards fréquents', 'Signalements clients']
+    //     },
+    //     {
+    //       id: '3',
+    //       name: 'WasteManager Pro',
+    //       status: 'suspended',
+    //       clients: 450,
+    //       collectors: 3,
+    //       zones: 1,
+    //       collectionsToday: 0,
+    //       completionRate: 0,
+    //       rating: 3.8,
+    //       revenue: 0,
+    //       lastAudit: new Date('2024-01-05'),
+    //       complianceScore: 65,
+    //       issues: ['Non-conformité réglementaire', 'Licence expirée']
+    //     }
+    //   ];
+   
+  }
 
   loadWasteStatistics(): void {
     this.wasteStatistics = [
@@ -2115,18 +2164,31 @@ export class MunicipalityDashboardComponent implements OnInit {
     ];
   }
 
- loadZoneStatistics(): void {
-  const stats = this.agencyService.getAgenceStats(); 
-  this.zoneStatistics = OUAGA_DATA.map((zone, index) => ({
-    name: zone.arrondissement,
-    agencies: stats[index]?.agencies || 0,
-    clients: stats[index]?.clients || 0,
-    collections: stats[index]?.collections || 0,
-    coverage: stats[index]?.coverage || 0,
-    incidents: stats[index]?.incidents || 0
-  }));
-}
+  loadZoneStatistics(): void {
+    const stats = this.agencyService.getAgenceStats();
+    this.zoneStatistics = OUAGA_DATA.map((zone, index) => ({
+      name: zone.arrondissement,
+      agencies: stats[index]?.agencies || 0,
+      clients: stats[index]?.clients || 0,
+      collections: stats[index]?.collections || 0,
+      coverage: stats[index]?.coverage || 0,
+      incidents: stats[index]?.incidents || 0
+    }));
+  }
 
+ /**Listes des signalements des users */
+  loadAllSignalements() {
+    this .adminService.getAllReports().subscribe({
+      next: (response: any) => {
+        this.incidents = response.map((signalement: any) => {
+          return signalement;
+        });
+        this.filteredIncidents = [...this.incidents];
+        console.log('signalements in response', response);
+        console.log('signalements in dashboard', this.filteredIncidents);
+      }
+    })
+  }
 
   loadIncidents(): void {
     this.incidents = [
@@ -2249,6 +2311,7 @@ export class MunicipalityDashboardComponent implements OnInit {
   getIncidentTypeText(type: string): string {
     const types = {
       'missed_collection': 'Collecte manquée',
+      'problem': 'Collecte manquée',
       'compliance_issue': 'Non-conformité',
       'complaint': 'Réclamation',
       'technical_issue': 'Problème technique'
@@ -2259,7 +2322,7 @@ export class MunicipalityDashboardComponent implements OnInit {
   getIncidentStatusText(status: string): string {
     const statuses = {
       'open': 'Ouvert',
-      'investigating': 'En cours',
+      'pending': 'En cours',
       'resolved': 'Résolu'
     };
     return statuses[status as keyof typeof statuses] || status;
@@ -2323,12 +2386,23 @@ export class MunicipalityDashboardComponent implements OnInit {
     return agency ? agency.name : 'Agence inconnue';
   }
 
+// Statistics
+  showAdminStatistics(): void {
+    this.adminService.getAllStatistics().subscribe({
+      next: (statistics: any) => {
+        this.statisticsAdmin = statistics;
+        console.log(this.statisticsAdmin);
+      }
+
+    })
+  }
+
   // Filter methods
   filterAgencies(): void {
     this.filteredAgencies = this.agencyAudits.filter(agency => {
       const statusMatch = this.agenciesFilter === 'all' || agency.status === this.agenciesFilter;
       let complianceMatch = true;
-      
+
       if (this.complianceFilter === 'excellent') {
         complianceMatch = agency.complianceScore >= 95;
       } else if (this.complianceFilter === 'good') {
@@ -2336,7 +2410,7 @@ export class MunicipalityDashboardComponent implements OnInit {
       } else if (this.complianceFilter === 'poor') {
         complianceMatch = agency.complianceScore < 85;
       }
-      
+
       return statusMatch && complianceMatch;
     });
   }
@@ -2356,6 +2430,7 @@ export class MunicipalityDashboardComponent implements OnInit {
 
   viewAgencyDetails(agencyId: string): void {
     this.notificationService.showInfo('Détails', 'Ouverture des détails de l\'agence');
+    this.router.navigate(['/agencies', agencyId]);
   }
 
   auditAgency(agencyId: string): void {
@@ -2420,9 +2495,9 @@ export class MunicipalityDashboardComponent implements OnInit {
   }
 
   sendCommunication(): void {
-    if (this.newCommunication.type && this.newCommunication.title && 
-        this.newCommunication.message && this.newCommunication.recipients.length > 0) {
-      
+    if (this.newCommunication.type && this.newCommunication.title &&
+      this.newCommunication.message && this.newCommunication.recipients.length > 0) {
+
       const communication: Communication = {
         id: Math.random().toString(36).substr(2, 9),
         type: this.newCommunication.type,

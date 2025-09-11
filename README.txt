@@ -50,7 +50,7 @@ Email : gangosmeo@gmail.com          Mot de passe : Wise1234
 4==>
 
         #Client
-1==> 
+1==> Email: client@gmail.com    MPD : 12345678
 1==> 
 1==> 
 1==> 

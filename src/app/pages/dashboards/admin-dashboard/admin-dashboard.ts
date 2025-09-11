@@ -68,6 +68,10 @@ interface ZoneStatistic {
 
 interface Incident {
   id: string;
+  agency?:{
+    id?: string,
+    agencyName?: string
+  }
   agencyId: string;
   agencyName: string;
   type: 'missed_collection' | 'compliance_issue' | 'complaint' | 'technical_issue';
@@ -336,7 +340,7 @@ interface Communication {
                       </div>
                       <div class="alert-content">
                         <div class="alert-title">{{ getIncidentTypeText(incident.type) }}</div>
-                        <div class="alert-agency">{{ incident.agencyName }}</div>
+                        <div class="alert-agency">{{ incident?.agency?.agencyName }}</div>
                         <div class="alert-time">{{ incident.date | date:'dd/MM HH:mm' }}</div>
                       </div>
                       <div class="alert-status">
@@ -357,7 +361,7 @@ interface Communication {
                   <div class="nav-actions">
                     <a (click)="navigateToAddMunicipality()" class="btn btn-primary nav-cta">
                       <i class="material-icons">person_add</i>
-                      <span>Créer une Municipalité</span>
+                      <span>Ajouter un agent de mairie</span>
                     </a>
                   </div>
                   <select [(ngModel)]="agenciesFilter" (change)="filterAgencies()" class="filter-select">
@@ -379,14 +383,13 @@ interface Communication {
                 <div *ngFor="let municipality of filteredMunicipalities" class="agency-audit-card card">
                   <div class="agency-audit-header">
                     <div class="agency-basic-info">
-                      <h4>{{ municipality.position }}</h4>
-                      <span class="status-badge" [class]="'status-' + municipality.status">
-                        {{ getAgencyStatusText(municipality.status) }}
-                      </span>
+                      <h4> Mairie centrale de Ouagadougou</h4>
+                      <span class="municipality-name">Administrateur: <h6>{{ municipality?.data?.name }}</h6></span>
+                      <span class="municipality-name">Telephone: <h5>{{ municipality?.data?.phone }}</h5></span>
                     </div>
                   
                   </div>
-
+                  <!--
                   <div class="agency-actions">
                     <button class="btn btn-secondary" (click)="viewMunicipalityDetails(municipality._id)">
                       <i class="material-icons">visibility</i>
@@ -401,7 +404,7 @@ interface Communication {
                       Contacter
                     </button>
                   </div>
-
+                  -->
                   <div class="agency-footer">
                     <span class="last-audit">Dernier audit: {{ municipality.lastAudit | date:'dd/MM/yyyy' }}</span>
                     <span class="revenue">{{ municipality.revenue | number:'1.0-0' }}€/mois</span>
@@ -760,12 +763,12 @@ interface Communication {
                 </div>
               </div>
 
-              <div class="incidents-list">
+              <div class="incidents-list grid-2">
                 <div *ngFor="let incident of filteredIncidents" class="incident-card card">
                   <div class="incident-header">
                     <div class="incident-severity" [class]="'severity-' + incident.severity">
                       <i class="material-icons">{{ getSeverityIcon(incident.severity) }}</i>
-                      <span>{{ getSeverityText(incident.severity) }}</span>
+                      <span>{{ getSeverityText(incident.severity)? getSeverityText(incident.severity) : "Faible" }}</span>
                     </div>
                     <div class="incident-status">
                       <span class="status-badge" [class]="'status-' + incident.status">
@@ -776,7 +779,7 @@ interface Communication {
 
                   <div class="incident-content">
                     <h4>{{ getIncidentTypeText(incident.type) }}</h4>
-                    <p class="incident-agency">Agence: {{ incident.agencyName }}</p>
+                    <p class="incident-agency">Agence: {{ incident?.agency?.agencyName }}</p>
                     <p class="incident-description">{{ incident.description }}</p>
                     <p class="incident-date">{{ incident.date | date:'dd/MM/yyyy HH:mm' }}</p>
                   </div>
@@ -1580,7 +1583,10 @@ interface Communication {
       font-size: 0.9rem;
       color: var(--text-primary);
     }
-
+    .municipality-name {
+      display: flex;
+      gap: 8px;
+    }
     .performance-bar-container {
       flex: 1;
       height: 20px;
@@ -1645,12 +1651,13 @@ interface Communication {
     }
 
     .incidents-list {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
       gap: 16px;
       max-height: 600px;
       overflow-y: auto;
     }
+    
 
     .incident-card {
       padding: 20px;
@@ -2109,11 +2116,6 @@ interface Communication {
         gap: 8px;
       }
 
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-
       .chart-placeholder {
         height: 150px;
       }
@@ -2173,7 +2175,7 @@ interface Communication {
       }
 
       .btn {
-        padding: 12px 16px;
+        padding: 5px;
         font-size: 0.9rem;
       }
 
@@ -2248,6 +2250,16 @@ interface Communication {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(0, 188, 212, 0.4);
     }
+
+    @media (max-width: 768px) {
+      .incidents-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 600px;
+        overflow-y: auto;
+      }
+    }
   `]
 })
 export class AdminDashboard implements OnInit {
@@ -2320,12 +2332,14 @@ export class AdminDashboard implements OnInit {
     { id: 'collectors', label: 'Collecteurs', icon: 'business', badge: null },
     { id: 'clients', label: 'Clients', icon: 'business', badge: null },
     { id: 'statistics', label: 'Statistiques', icon: 'analytics', badge: null },
-    { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
+    { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: null },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
   municipalitiesAudits: any;
   filteredMunicipalities: any[] = [];
   clientGrowth: number= 0;
+  signalementsAudits: any;
+  filteredSignalements: any[]=[];
 
   constructor(
     private authService: AuthService,
@@ -2355,11 +2369,10 @@ export class AdminDashboard implements OnInit {
     this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
-    this.loadIncidents();
+    // this.loadIncidents();
     this.loadCommunications();
     this.showAdminClients();
-
-
+    this.loadAllSignalements();
   }
 
 
@@ -2456,7 +2469,7 @@ export class AdminDashboard implements OnInit {
     ];
   }
 
-  loadIncidents(): void {
+  loadIncidents1(): void {
     this.incidents = [
       {
         id: '1',
@@ -2637,7 +2650,8 @@ export class AdminDashboard implements OnInit {
       'missed_collection': 'Collecte manquée',
       'compliance_issue': 'Non-conformité',
       'complaint': 'Réclamation',
-      'technical_issue': 'Problème technique'
+      'technical_issue': 'Problème technique',
+      'problem': 'Collecte manquée'
     };
     return types[type as keyof typeof types] || type;
   }
@@ -2645,7 +2659,7 @@ export class AdminDashboard implements OnInit {
   getIncidentStatusText(status: string): string {
     const statuses = {
       'open': 'Ouvert',
-      'investigating': 'En cours',
+      'pending': 'En cours',
       'resolved': 'Résolu'
     };
     return statuses[status as keyof typeof statuses] || status;
@@ -3014,7 +3028,19 @@ export class AdminDashboard implements OnInit {
       }
     })
   }
-
+  /**Listes des signalements des users */
+  loadAllSignalements() {
+    this .adminService.getAllReports().subscribe({
+      next: (response: any) => {
+        this.incidents = response.map((signalement: any) => {
+          return signalement;
+        });
+        this.filteredIncidents = [...this.incidents];
+        console.log('signalements in response', response);
+        console.log('signalements in dashboard', this.filteredIncidents);
+      }
+    })
+  }
   //naviguate to add Municipality
   navigateToAddMunicipality() {
     this.router.navigate(['/register']);

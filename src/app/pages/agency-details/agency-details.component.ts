@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AgencyService } from '../../services/agency.service';
 import { Agency, Tariff } from '../../models/agency.model';
 import { AuthService } from '../../services/auth.service';
@@ -59,16 +59,22 @@ import { User } from '../../models/user.model';
               </div>
             </div>
             <div class="agency-actions">
-              <button class="btn btn-accent" (click)="activateAgency(agency.userId)" *ngIf="currentUser?.role === 'super_admin'">
-                <ng-container *ngIf="!agency.isActive ; else activeBtn">
-                  <i class="material-icons">check</i>
-                  Activer
-                </ng-container>
-                <ng-template #activeBtn>
-                  <i class="material-icons">lock_open</i> 
-                  Desactiver
-                </ng-template>
-              </button>
+              <ng-container *ngIf="currentUser?.role === 'super_admin'">
+                <button class="btn btn-success" (click)="editAgency()" >
+                  <i class="material-icons">edit</i>
+                  Modifier
+                </button>
+                <button class="btn btn-accent" (click)="activateAgency(agency.userId)">
+                  <ng-container *ngIf="!agency.isActive ; else activeBtn">
+                    <i class="material-icons">check</i>
+                    Activer
+                  </ng-container>
+                  <ng-template #activeBtn>
+                    <i class="material-icons">lock_open</i> 
+                    Desactiver
+                  </ng-template>
+                </button>
+              </ng-container>
               <button class="btn btn-secondary" (click)="shareAgency()">
                 <i class="material-icons">share</i>
                 Partager
@@ -1261,7 +1267,8 @@ export class AgencyDetailsComponent implements OnInit {
     private route: ActivatedRoute,
     private agencyService: AgencyService,
     private authService: AuthService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -1296,6 +1303,7 @@ private mapApiAgency(apiAgency: any): Agency {
       city: '', 
       postalCode: '' 
     },
+    
     arrondissement: apiAgency.arrondissement || '',
     secteur: apiAgency.secteur || '',
     quartier: apiAgency.quartier || '',
@@ -1414,7 +1422,9 @@ private mapApiAgency(apiAgency: any): Agency {
       window.open(`tel:${this.agency.phone}`);
     }
   }
-
+  editAgency() {
+    this.router.navigate(['/edit-agency', this.agencyId]);
+  }
   //Activer ou desactiver une agence 
     activateAgency(id: string) {
     this.agencyService.activateAgency(id).subscribe({

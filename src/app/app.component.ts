@@ -17,11 +17,11 @@ import { NotificationComponent } from './components/notification/notification.co
   ],
   template: `
     <div class="app">
-      <div class="page-header" style="min-width: 100%;">
+      <div class="page-header">
         <app-header></app-header>
       </div>
       
-      <main class="main-content" style="min-width: 100%;">
+      <main class="main-content">
         <router-outlet></router-outlet>
       </main>
       <app-footer></app-footer>
@@ -37,6 +37,7 @@ import { NotificationComponent } from './components/notification/notification.co
     }
     .page-header {
       position: fixed;
+      min-width: 100%;
       z-index: 1000;
     }
     .main-content {
@@ -44,7 +45,7 @@ import { NotificationComponent } from './components/notification/notification.co
       min-width: 100%;
       display: flex;
       flex-direction: column;
-      margin-top: 50px;
+      margin-top: 64px;
     }
   `]
 })

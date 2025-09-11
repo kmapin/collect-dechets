@@ -88,7 +88,7 @@ interface Statistics {
               <div class="stat-info">
                 <h3>Clients actifs</h3>
                 <p class="stat-value">{{activeClients.length}}</p>
-                <span class="stat-trend positive">+2 ce mois</span>
+                <!-- <span class="stat-trend positive">+2 ce mois</span> -->
               </div>
             </div>
     
@@ -677,11 +677,11 @@ interface Statistics {
             <i class="material-icons text-base">edit</i>
             Renommer
           </button>
-          <button class="btn btn-danger flex items-center gap-1"
-           onclick="deleteTarif(tariff._id)">       >
-            <i class="material-icons text-base">delete</i>
-            Supprimer
-          </button>
+         <button class="btn btn-danger flex items-center gap-1"
+        (click)="deleteTariff(tariff)">
+  <i class="material-icons text-base">delete</i>
+  Supprimer
+</button>
         </div>
       </div>
 
@@ -911,6 +911,8 @@ interface Statistics {
       </div>
     </form>
   </div>
+
+  
 </div>
 
       <!-- Modal Planning -->
@@ -922,7 +924,7 @@ interface Statistics {
               <i class="material-icons">close</i>
             </button>
           </div>
-          <form class="schedule-form" (ngSubmit)="addSchedule()">
+          <!-- <form class="schedule-form" (ngSubmit)="addSchedule()">
             <div class="form-group">
               <label>Zone *</label>
               <select [(ngModel)]="newSchedule.zoneId" name="zoneId" required>
@@ -971,7 +973,95 @@ interface Statistics {
                 Créer Planning
               </button>
             </div>
-          </form>
+          </form> -->
+          <form class="schedule-form" (ngSubmit)="addSchedule()">
+  <div class="form-group">
+    <label>Zone *</label>
+    <select [(ngModel)]="newSchedule.zoneId" name="zoneId" required>
+      <option value="">Sélectionner une zone</option>
+      <option *ngFor="let zone of zonesAgency" [value]="zone.id">
+        {{ zone.name }}
+      </option>
+    </select>
+    <small class="error-message" *ngIf="formErrors.zoneId">
+      {{ formErrors.zoneId }}
+    </small>
+  </div>
+
+  <div class="form-group">
+    <label>Jour de la semaine *</label>
+    <select [(ngModel)]="newSchedule.dayOfWeek" name="dayOfWeek" required>
+      <option value="">Sélectionner un jour</option>
+      <option value="1">Lundi</option>
+      <option value="2">Mardi</option>
+      <option value="3">Mercredi</option>
+      <option value="4">Jeudi</option>
+      <option value="5">Vendredi</option>
+      <option value="6">Samedi</option>
+      <option value="7">Dimanche</option>
+    </select>
+    <small class="error-message" *ngIf="formErrors.dayOfWeek">
+      {{ formErrors.dayOfWeek }}
+    </small>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>Heure de début *</label>
+      <input type="time" 
+             [(ngModel)]="newSchedule.startTime" 
+             name="startTime" 
+             required>
+      <small class="error-message" *ngIf="formErrors.startTime">
+        {{ formErrors.startTime }}
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label>Heure de fin *</label>
+      <input type="time" 
+             [(ngModel)]="newSchedule.endTime" 
+             name="endTime" 
+             required>
+      <small class="error-message" *ngIf="formErrors.endTime">
+        {{ formErrors.endTime }}
+      </small>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Collecteur *</label>
+    <select [(ngModel)]="newSchedule.collectorId" 
+            name="collectorId" 
+            required>
+      <option value="">Sélectionner un collecteur</option>
+      <option *ngFor="let collector of collectors" >
+        {{ collector.firstName }} {{ collector.lastName }}
+      </option>
+    </select>
+    <small class="error-message" *ngIf="formErrors.collectorId">
+      {{ formErrors.collectorId }}
+    </small>
+  </div>
+
+  <div class="form-actions">
+    <button type="button" 
+            class="btn btn-secondary" 
+            (click)="showScheduleModal = false">
+      Annuler
+    </button>
+    <button type="submit" 
+            class="btn btn-primary"
+            [disabled]="!newSchedule.zoneId || 
+                       !newSchedule.dayOfWeek || 
+                       !newSchedule.startTime || 
+                       !newSchedule.endTime || 
+                       !newSchedule.collectorId">
+      <i class="material-icons">schedule</i>
+      Créer Planning
+    </button>
+  </div>
+</form>
         </div>
       </div>
     </div>
@@ -1813,7 +1903,22 @@ interface Statistics {
       margin-bottom: 16px;
       opacity: 0.5;
     }
+.error-message {
+  color: var(--error-color);
+  font-size: 0.8rem;
+  margin-top: 4px;
+  display: block;
+}
 
+.form-group input.ng-invalid.ng-touched,
+.form-group select.ng-invalid.ng-touched {
+  border-color: var(--error-color);
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
     .empty-state h3 {
       font-size: 1.3rem;
       margin-bottom: 8px;
@@ -2132,7 +2237,13 @@ newTariff: any = {
     endTime: '',
     collectorId: ''
   };
-
+formErrors = {
+  zoneId: '',
+  dayOfWeek: '',
+  startTime: '', 
+  endTime: '',
+  collectorId: ''
+};
   citiesInput = '';
 
   neighborhoodsInput = '';
@@ -2185,9 +2296,19 @@ tabs = [
     this.cdr.detectChanges();
  
   
-   
+  //  const testTarifId = '68c01057353dc713770656c9';
 
-  }
+  //   this.agencyService.deleteTariff$(testTarifId).subscribe(result => {
+  //     if (result) {
+  //       console.log(' Suppression réussie !');
+  //     } else {
+  //       console.log(' Échec de la suppression');
+  //     }
+  //   });
+
+      }
+
+
 
   // updateTabs(): void {
   //   this.tabs = [
@@ -2387,7 +2508,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
           doorNumber: '15',
           doorColor: 'blue',
           neighborhood: 'Centre-ville',
-          city: 'Paris',
+          city: 'Oouagadougou',
           postalCode: '75001'
         },
         wasteTypes: [{ id: '1', name: 'Déchets ménagers', description: '', icon: 'delete', color: '#4caf50', instructions: [], acceptedItems: [], rejectedItems: [] }],
@@ -2982,10 +3103,18 @@ addTariff(): void {
           !!response;
 
         if (isSuccess) {
+        // La condition de succès est simplifiée. Si la réponse de l'API n'est pas nulle, on considère que c'est un succès.
+        // Votre service `addTariff` retourne `null` en cas d'erreur.
+        if (response) {
           this.notificationService.showSuccess(
             'Ajout réussi',
             'Le tarif a été créé avec succès !'
           );
+          this.showZoneModal = false; 
+          this.showZoneModal = false; // Fermeture de la modale
+          this.loadTariffs(); // Rechargement de la liste des tarifs
+          // Réinitialisation du formulaire pour une nouvelle saisie
+          this.newTariff = { type: "", price: "", description: "", nbPassages: "" };
         } else {
           const errorMsg = this.getFriendlyMessage(
             (response?.message || response?.error || ''),
@@ -3004,6 +3133,7 @@ addTariff(): void {
              createdAt: new Date(),
         
         };
+            };
         }
       },
       error: (error) => {
@@ -3043,6 +3173,7 @@ tariffs: Tariff[] = [];
       }
     });
   }
+
 tariffToUpdate: Tariff | null = null;
 //update un tarif via l api
 updateTariff(tariffId: string): void {
@@ -3104,11 +3235,12 @@ updateTariff(tariffId: string): void {
 
 
 // supprimer un tarif
-deleteTariff( tarifId: any): void {
+deleteTariff( tariff: any): void {
   this.isDeleting = true;
+  const tariffId = tariff._id;
 
-  if (tarifId?.userId?._id) {
-    this.agencyService.deleteTariff$( tarifId.userId._id).subscribe(
+  if (tariffId) {
+    this.agencyService.deleteTariff$(tariffId ).subscribe(
       () => {
         this.notificationService.showSuccess(
           'Succès',
@@ -3116,6 +3248,7 @@ deleteTariff( tarifId: any): void {
         );
         // this.loadEmployees(currentUser);
         this.isDeleting = false;
+        this.loadTariffs();
       },
       (error) => {
         this.notificationService.showError(
@@ -3199,30 +3332,131 @@ deleteTariff( tarifId: any): void {
       }
     });
   }
+  // addSchedule(): void {
+  //   if (this.newSchedule.zoneId && this.newSchedule.dayOfWeek && this.newSchedule.startTime && this.newSchedule.endTime && this.newSchedule.collectorId) {
+  //     const schedule = {
+  //       zoneId: this.newSchedule.zoneId,
+  //       dayOfWeek: this.newSchedule.dayOfWeek ? Number(this.newSchedule.dayOfWeek) : 0,
+
+  //       startTime: this.newSchedule.startTime,
+  //       endTime: this.newSchedule.endTime,
+  //       collectorId: this.newSchedule.collectorId
+  //     };
+
+  //     this.agencyService.addSchedule$(schedule).subscribe({
+  //       next: () => {
+  //         console.log('Horaire envoyé avec succès');
+  //         this.loadSchedules();
+  //         this.showScheduleModal = false;
+  //         this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
+  //       },
+  //       error: (err) => {
+  //         console.error('Erreur lors de l\'envoi', err);
+  //       }
+  //     });
+  //   }
+  // }
+
   addSchedule(): void {
-    if (this.newSchedule.zoneId && this.newSchedule.dayOfWeek && this.newSchedule.startTime && this.newSchedule.endTime && this.newSchedule.collectorId) {
-      const schedule = {
-        zoneId: this.newSchedule.zoneId,
-        dayOfWeek: this.newSchedule.dayOfWeek ? Number(this.newSchedule.dayOfWeek) : 0,
-
-        startTime: this.newSchedule.startTime,
-        endTime: this.newSchedule.endTime,
-        collectorId: this.newSchedule.collectorId
-      };
-
-      this.agencyService.addSchedule$(schedule).subscribe({
-        next: () => {
-          console.log('Horaire envoyé avec succès');
-          this.loadSchedules();
-          this.showScheduleModal = false;
-          this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
-        },
-        error: (err) => {
-          console.error('Erreur lors de l\'envoi', err);
-        }
-      });
+  // Réinitialiser les erreurs
+  this.formErrors = {
+    zoneId: '',
+    dayOfWeek: '',
+    startTime: '',
+    endTime: '',
+    collectorId: ''
+  };
+    let isValid = true;
+  if (!this.newSchedule.zoneId) {
+    this.formErrors.zoneId = 'Veuillez sélectionner une zone';
+    isValid = false;
+  }
+  if (!this.newSchedule.dayOfWeek) {
+    this.formErrors.dayOfWeek = 'Veuillez sélectionner un jour';
+    isValid = false;
+  }
+  if (!this.newSchedule.startTime) {
+    this.formErrors.startTime = 'Veuillez définir une heure de début';
+    isValid = false;
+  }
+  if (!this.newSchedule.endTime) {
+    this.formErrors.endTime = 'Veuillez définir une heure de fin';
+    isValid = false;
+  }
+  if (!this.newSchedule.collectorId) {
+    this.formErrors.collectorId = 'Veuillez sélectionner un collecteur';
+    isValid = false;
+  }
+  if (this.newSchedule.startTime && this.newSchedule.endTime) {
+    const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
+    const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
+        if (end <= start) {
+      this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
+      isValid = false;
     }
   }
+
+  if (!isValid) {
+    this.notificationService.showError(
+      'Erreur de validation',
+      'Veuillez corriger les erreurs dans le formulaire'
+    );
+    return;
+  }
+  // Création de l'objet planning
+  const schedule: CollectionSchedule = {
+    zoneId: this.newSchedule.zoneId,
+    dayOfWeek: Number(this.newSchedule.dayOfWeek),
+    startTime: this.newSchedule.startTime,
+    endTime: this.newSchedule.endTime,
+    collectorId: this.newSchedule.collectorId
+  };
+
+  // Envoi au service
+  this.agencyService.addSchedule$(schedule).subscribe({
+    next: (response) => {
+      this.notificationService.showSuccess(
+        'Succès',
+        'Le planning a été créé avec succès'
+      );
+      this.showScheduleModal = false;
+      this.loadSchedules();
+      // Réinitialisation du formulaire
+      this.newSchedule = {
+        zoneId: '',
+        dayOfWeek: '',
+        startTime: '',
+        endTime: '',
+        collectorId: ''
+      };
+    },
+    error: (error) => {
+      let errorMessage = 'Une erreur est survenue lors de la création du planning';
+      
+      // Gestion des erreurs spécifiques
+      if (error.error?.message) {
+        switch(error.error.message) {
+          case 'COLLECTOR_NOT_AVAILABLE':
+            errorMessage = 'Le collecteur n\'est pas disponible sur ce créneau';
+            break;
+          case 'ZONE_NOT_FOUND':
+            errorMessage = 'La zone sélectionnée n\'existe pas';
+            break;
+          case 'TIME_CONFLICT':
+            errorMessage = 'Il existe déjà un planning sur ce créneau horaire';
+            break;
+          default:
+            errorMessage = error.error.message;
+        }
+      }
+      
+      this.notificationService.showError(
+        'Erreur',
+        errorMessage
+      );
+    }
+  });
+}
   investigateIncident(): void {
     // const incident = this.incidents.find(i => i.id === incidentId);
     // if (incident) {
