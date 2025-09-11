@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -66,7 +66,7 @@ interface ZoneStatistic {
 interface Incident {
   id: string;
   agency?:{
-    id?: string,
+    id: string,
     agencyName?: string
   }
   agencyId: string;
@@ -139,9 +139,12 @@ interface Communication {
                 <i class="material-icons">people</i>
               </div>
               <div class="stat-info">
-                <h3>Clients totaux</h3>
-                <p class="stat-value">{{statisticsAdmin?.totalClients | number }}</p>
-                <span class="stat-trend positive">+{{ getClientGrowth() }}% ce mois</span>
+               <h3>Clients totaux</h3>
+                <p class="stat-value">{{ statisticsAdmin?.totalClients | number }}</p>
+                <p><span class="stat-trend positive">+{{ clientGrowth }}% ce mois</span> |
+                <span class="stat-trend" [class.positive]="statisticsAdmin?.totalClients === statisticsAdmin?.activeClients">
+                  {{ getClientStatusText() }}
+                </span> </p>
               </div>
             </div>
 
@@ -2055,6 +2058,8 @@ export class MunicipalityDashboardComponent implements OnInit {
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
   statisticsAdmin: any;
+  clientGrowth: number = 0;
+
 
 
   constructor(
@@ -2063,13 +2068,16 @@ export class MunicipalityDashboardComponent implements OnInit {
     private adminService: Admin,
     private collectionService: CollectionService,
     private notificationService: NotificationService,
-    private router: Router
+    private router: Router,
+     private cd: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadMunicipalityData()
     this.loadZoneStatistics();
+     this.getClientGrowth();
+      this.showAdminStatistics();
 
   }
 
@@ -2250,8 +2258,22 @@ export class MunicipalityDashboardComponent implements OnInit {
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
 
-  getClientGrowth(): number {
-    return Math.floor(Math.random() * 10) + 5;
+  getClientStatusText(status?: string): string {
+    if (!status) {
+      return `${this.statisticsAdmin?.activeClients} actives`;
+    }
+    const statusTexts = {
+      'active': 'Active',
+      'inactive': 'Inactive',
+      'suspended': 'Suspendue'
+    };
+    return statusTexts[status as keyof typeof statusTexts] || status;
+  }
+
+  getClientGrowth() {
+    // return Math.floor(Math.random() * 10) + 5;
+     this.clientGrowth = Math.floor(Math.random() * 10) + 5
+    this.cd.detectChanges();
   }
 
   getCollectionRate(): number {

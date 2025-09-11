@@ -41,8 +41,12 @@ interface Report {
 interface Statistics {
   totalClients: number;
   totalEmployees: number;
+  totalZones: number;
+  totalCollectors: number;
+  totalSignalements: number;
   activeCollectors: number;
   todayCollections: number;
+  totalpendingSignalements: number; 
   completedCollections: number;
   monthlyRevenue: number;
   averageRating: number;
@@ -87,7 +91,7 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Clients actifs</h3>
-                <p class="stat-value">{{activeClients.length}}</p>
+                <p class="stat-value">{{statistics.totalClients}}</p>
                 <!-- <span class="stat-trend positive">+2 ce mois</span> -->
               </div>
             </div>
@@ -98,7 +102,7 @@ interface Statistics {
                 <i class="material-icons">local_shipping</i>
               </div>
               <div class="stat-info">
-                <h3>Collecteurs actifs</h3>
+                <h3>Employés</h3>
                 <!-- <p class="stat-value">{{ statistics.activeCollectors }}</p>
                 <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span> -->
 <p class="stat-value">{{ statistics.totalEmployees }}</p>
@@ -111,28 +115,28 @@ interface Statistics {
                 <i class="material-icons">check_circle</i>
               </div>
               <div class="stat-info">
-                <h3>Collectes aujourd'hui</h3>
+                <h3>zones</h3>
                 <!-- <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
                 <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
                   {{ getCollectionRate() }}% réalisées
                 </span> -->
-                <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
+                <p class="stat-value">{{ statistics.totalZones}}</p>
 <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
-  {{ getCollectionRate() }}% réalisées
+  <!-- {{ getCollectionRate() }}% réalisées -->
 </span>
               </div>
             </div>
 
             <div class="stat-card card">
               <div class="stat-icon revenue">
-                <i class="material-icons">euro</i>
+                <i class="material-icons">perso</i>
               </div>
               <div class="stat-info">
-                <h3>Revenus du mois</h3>
+                <h3>Collecteurs</h3>
                 <!-- <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
                 <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
-                <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
-<span class="stat-trend positive">+8.5% vs mois dernier</span>
+                <p class="stat-value">{{statistics.totalCollectors}}</p>
+<!-- <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
               </div>
             </div>
 
@@ -142,7 +146,7 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Note moyenne</h3>
-                <p class="stat-value">{{ statistics.averageRating }}/5</p>
+                <p class="stat-value"></p>
                 <div class="rating-stars">
                   <i *ngFor="let star of getStars(statistics.averageRating)" class="material-icons star">star</i>
                 </div>
@@ -155,10 +159,11 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Signalements</h3>
-                <p class="stat-value">{{ statistics.pendingReports }}</p>
-                <span class="stat-trend" [class.negative]="statistics.pendingReports > 5">
-                  En attente de traitement
-                </span>
+                              <p class="stat-value">{{statistics.totalpendingSignalements}}</p>
+<span>  En attente de traitement</span>
+                <!-- <span class="stat-trend" [class.negative]="statistics.totalpendingSignalements"> -->
+                
+                <!-- </span> -->
               </div>
             </div>
           </div>
@@ -290,10 +295,10 @@ interface Statistics {
                   </div>
 
                   <div class="employee-details">
-                    <div class="detail-item">
+                    <!-- <div class="detail-item">
                       <i class="material-icons">email</i>
-                      <span>{{ employee.email }}</span>
-                    </div>
+                      <span>{{ employee.userId.email}}</span>
+                    </div> -->
                     <div class="detail-item">
                       <i class="material-icons">phone</i>
                       <span>{{ employee.phone }}</span>
@@ -2163,13 +2168,17 @@ export class AgencyDashboardComponent implements OnInit {
   filteredIncidents: any[] = [];
   statistics: Statistics = {
     totalClients: 0,
-    totalEmployees: 0,
-    activeCollectors: 0,
-    todayCollections: 0,
+      totalEmployees: 0,
+      totalZones: 0,
+      totalCollectors: 0,
+      totalSignalements: 0,
+       activeCollectors: 0,
+       todayCollections: 0,
     completedCollections: 0,
     monthlyRevenue: 0,
     averageRating: 0,
-    pendingReports: 0
+    pendingReports: 0,
+      totalpendingSignalements: 0, 
   };
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
@@ -2295,16 +2304,23 @@ tabs = [
        this.loadTariffs();
     this.cdr.detectChanges();
  
-  
-  //  const testTarifId = '68c01057353dc713770656c9';
+  const testTarifId = '687cc316091944da1fc7c2c5';
+const role = EmployeeRole.COLLECTOR;
 
-  //   this.agencyService.deleteTariff$(testTarifId).subscribe(result => {
-  //     if (result) {
-  //       console.log(' Suppression réussie !');
-  //     } else {
-  //       console.log(' Échec de la suppression');
-  //     }
-  //   });
+this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(response => {
+  if (response.success && response.data.length > 0) {
+    console.log('Liste des collecteurs :');
+    response.data.forEach(employee => {
+      console.log(`- ${employee} (${employee.id})`);
+    });
+  } else {
+    console.log('Aucun collecteur trouvé ou erreur de requête.');
+  }
+});
+
+
+
+
 
       }
 
@@ -3034,6 +3050,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
         phone: this.newEmployee.phone,
         role: this.newEmployee.role,
         zones: this.newEmployee.zones,
+        
         isActive: true,
         hiredAt: new Date()
       };

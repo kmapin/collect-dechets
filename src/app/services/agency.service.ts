@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, delay, map, tap } from 'rxjs/operators';
 import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tariff } from '../models/agency.model';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -264,7 +264,7 @@ getAgencyZones$(agencyId: string): Observable<ServiceZone[]> {
 
 //recuperation des signalement liee a une agence
 getAgencyReports$(agencyId: string): Observable<any[]> {
-  const url = `${environment.apiUrl}/agences/${agencyId}/clients/signalements`;
+  const url = `${environment.apiUrl}/reports/agency/${agencyId}`;
   return this.http.get<any[]>(url).pipe(
     map((response) => {
       console.log("Signalements récupérés :", response);
@@ -325,6 +325,7 @@ addTarif$(payload: tarif): Observable<tarif | null> {
         // catchError(this.newGlobalErrorHandler) // Décommente si tu as un gestionnaire d'erreurs global
     );
 }
+
 deleteEmployee$(employeeId: string): Observable<boolean> {
   return this.http.delete(`${environment.apiUrl}/agences/employees/${employeeId}`).pipe(
     map(() => {
@@ -337,6 +338,14 @@ deleteEmployee$(employeeId: string): Observable<boolean> {
     })
   );
 }
+//recupere les employees d une agence en fonction de leur role
+getEmployeesByAgencyAndRole$(agencyId: string, role: string): Observable<{ success: boolean; count: number; data: Employee[] }> {
+  const url = `${environment.apiUrl}/agences/${agencyId}/employes/role/${role}`;
+  const params = new HttpParams().set('role', role);
+
+  return this.http.get<{ success: boolean; count: number; data: Employee[] }>(url, { params });
+}
+
 
 // updateEmployee$(employeeId: string, updatedData: any): Observable<any> {
 //   return this.http.put<any>(
