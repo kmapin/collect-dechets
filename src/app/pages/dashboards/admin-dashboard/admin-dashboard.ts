@@ -74,7 +74,7 @@ interface ZoneStatistic {
 interface Incident {
   id: string;
   agency?: {
-    id?: string,
+    id: string,
     agencyName?: string
   }
   agencyId: string;
@@ -810,7 +810,7 @@ interface Communication {
                       <i class="material-icons">check</i>
                       Résoudre
                     </button>
-                    <button class="btn btn-accent" (click)="contactAgencyForIncident(incident?.agency?.id)">
+                    <button class="btn btn-accent" (click)="contactAgencyForIncident(incident?.agencyId)">
                       <i class="material-icons">phone</i>
                       Contacter Agence
                     </button>
@@ -2816,8 +2816,8 @@ export class AdminDashboard implements OnInit {
     this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
   contactAgency(agencyId?: string): void {
-    this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
     this.router.navigate(['/agencies', agencyId]);
+    this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
 
   updateStatistics(): void {
@@ -3041,7 +3041,7 @@ export class AdminDashboard implements OnInit {
       next: (response: any) => {
         this.incidents = response.map((signalement: any) => {
           return {
-            id: signalement._id,
+            agencyId: signalement.agency._id,
             ... signalement};
         });
         this.filteredIncidents = [...this.incidents];
