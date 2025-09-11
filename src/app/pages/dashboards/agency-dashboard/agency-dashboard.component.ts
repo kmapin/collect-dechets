@@ -27,6 +27,13 @@ interface Report {
   id: string;
   clientId: string;
   clientName: string;
+  client?:{
+    _id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+  },
+  severity: 'critical' | 'high' | 'medium' | 'low';
   type: 'missed_collection' | 'incomplete_collection' | 'damage' | 'complaint';
   description: string;
   date: Date;
@@ -41,8 +48,12 @@ interface Report {
 interface Statistics {
   totalClients: number;
   totalEmployees: number;
+  totalZones: number;
+  totalCollectors: number;
+  totalSignalements: number;
   activeCollectors: number;
   todayCollections: number;
+  totalpendingSignalements: number; 
   completedCollections: number;
   monthlyRevenue: number;
   averageRating: number;
@@ -87,7 +98,7 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Clients actifs</h3>
-                <p class="stat-value">{{activeClients.length}}</p>
+                <p class="stat-value">{{statistics.totalClients}}</p>
                 <!-- <span class="stat-trend positive">+2 ce mois</span> -->
               </div>
             </div>
@@ -98,7 +109,7 @@ interface Statistics {
                 <i class="material-icons">local_shipping</i>
               </div>
               <div class="stat-info">
-                <h3>Collecteurs actifs</h3>
+                <h3>Employés</h3>
                 <!-- <p class="stat-value">{{ statistics.activeCollectors }}</p>
                 <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span> -->
 <p class="stat-value">{{ statistics.totalEmployees }}</p>
@@ -111,28 +122,28 @@ interface Statistics {
                 <i class="material-icons">check_circle</i>
               </div>
               <div class="stat-info">
-                <h3>Collectes aujourd'hui</h3>
+                <h3>zones</h3>
                 <!-- <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
                 <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
                   {{ getCollectionRate() }}% réalisées
                 </span> -->
-                <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
+                <p class="stat-value">{{ statistics.totalZones}}</p>
 <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
-  {{ getCollectionRate() }}% réalisées
+  <!-- {{ getCollectionRate() }}% réalisées -->
 </span>
               </div>
             </div>
 
             <div class="stat-card card">
               <div class="stat-icon revenue">
-                <i class="material-icons">euro</i>
+                <i class="material-icons">perso</i>
               </div>
               <div class="stat-info">
-                <h3>Revenus du mois</h3>
+                <h3>Collecteurs</h3>
                 <!-- <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
                 <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
-                <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
-<span class="stat-trend positive">+8.5% vs mois dernier</span>
+                <p class="stat-value">{{statistics.totalCollectors}}</p>
+<!-- <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
               </div>
             </div>
 
@@ -142,7 +153,7 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Note moyenne</h3>
-                <p class="stat-value">{{ statistics.averageRating }}/5</p>
+                <p class="stat-value"></p>
                 <div class="rating-stars">
                   <i *ngFor="let star of getStars(statistics.averageRating)" class="material-icons star">star</i>
                 </div>
@@ -155,10 +166,11 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Signalements</h3>
-                <p class="stat-value">{{ statistics.pendingReports }}</p>
-                <span class="stat-trend" [class.negative]="statistics.pendingReports > 5">
-                  En attente de traitement
-                </span>
+                              <p class="stat-value">{{statistics.totalpendingSignalements}}</p>
+<span>  En attente de traitement</span>
+                <!-- <span class="stat-trend" [class.negative]="statistics.totalpendingSignalements"> -->
+                
+                <!-- </span> -->
               </div>
             </div>
           </div>
@@ -290,10 +302,10 @@ interface Statistics {
                   </div>
 
                   <div class="employee-details">
-                    <div class="detail-item">
+                    <!-- <div class="detail-item">
                       <i class="material-icons">email</i>
-                      <span>{{ employee.email }}</span>
-                    </div>
+                      <span>{{ employee.userId.email}}</span>
+                    </div> -->
                     <div class="detail-item">
                       <i class="material-icons">phone</i>
                       <span>{{ employee.phone }}</span>
@@ -522,175 +534,183 @@ interface Statistics {
             </div>
 
            
-<div *ngIf="activeTab === 'reports'" class="reports-tab">
-  <div class="reports-header">
-    <h2>Signalements</h2>
-  </div>
-  <div class="reports-list">
-  <div *ngFor="let report of agencyReports" class="report-card card">
-    <h4>{{ report.clientName }}</h4>
-    
-    <p>Type : {{ report.reportType }}</p>
-    <p>Description : {{ report.description }}</p>
-    <p>Date : {{ report.createdAt | date:'dd/MM/yyyy' }}</p>
-    <p>Heure : {{ report.createdAt | date:'HH:mm:ss' }}</p>
-
-    <!-- Affichage des photos -->
-    <div *ngIf="report.photos && report.photos.length">
-      <div *ngFor="let photo of report.photos">
-        <img [src]="photo" alt="Photo du signalement" class="report-photo" />
-      </div>
-    </div>
-    <div *ngIf="!report.photos || !report.photos.length">
-      <p><em>Aucune photo associée</em></p>
-    </div>
-      <div class="incident-actions">
-                    <button class="btn btn-secondary" (click)="assignIncident()" 
-                           >
-                      <i class="material-icons">assignment_ind</i>
-                      Assigner
-                    </button>
-                    <!-- <button class="btn btn-primary" (click)="investigateIncident()" 
-                            >
-                      <i class="material-icons">search</i>
-                      Enquêter
-                    </button> -->
-                    <button class="btn btn-success" (click)="resolveIncident()" 
-                        >
-                      <i class="material-icons">check</i>
-                      Résoudre
-                    </button>
-                    <button class="btn btn-accent" (click)="contactAgencyForIncident()">
-                      <i class="material-icons">phone</i>
-                      Contacter Agence
-                    </button>
-                  </div>
-  </div>
-  
-</div>
-
-  
-</div>
-
-            <!-- Onglet Rapports -->
-            <div  class="analytics-tab">
-              <div class="analytics-header">
-                <h2>Rapports et Statistiques</h2>
-                <div class="analytics-filters">
-                  <select [(ngModel)]="analyticsPeriod" (change)="updateAnalytics()" class="filter-select">
-                    <option value="week">Cette semaine</option>
-                    <option value="month">Ce mois</option>
-                    <option value="quarter">Ce trimestre</option>
-                    <option value="year">Cette année</option>
-                  </select>
-                  <button class="btn btn-secondary" (click)="exportReport()">
-                    <i class="material-icons">download</i>
-                    Exporter
-                  </button>
-                </div>
-              </div>
-
-              <div class="analytics-content">
-                <div class="analytics-cards">
-                  <div class="analytics-card card">
-                    <h3>Performance des Collectes</h3>
-                    <div class="chart-placeholder">
-                      <i class="material-icons">bar_chart</i>
-                      <p>Graphique des collectes réalisées vs programmées</p>
-                    </div>
-                  </div>
-
-                  <div class="analytics-card card">
-                    <h3>Évolution du Chiffre d'Affaires</h3>
-                    <div class="chart-placeholder">
-                      <i class="material-icons">trending_up</i>
-                      <p>Courbe d'évolution des revenus</p>
-                    </div>
-                  </div>
-
-                  <div class="analytics-card card">
-                    <h3>Performance par Collecteur</h3>
-                    <div class="performance-list">
-                      <div *ngFor="let collector of getCollectorPerformance()" class="performance-item">
-                        <div class="collector-info">
-                          <strong>{{ collector.name }}</strong>
-                          <span>{{ collector.collectionsCount }} collectes</span>
-                        </div>
-                        <div class="performance-score">
-                          <div class="score-bar">
-                            <div class="score-fill" [style.width]="collector.score + '%'"></div>
-                          </div>
-                          <span>{{ collector.score }}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="analytics-card card">
-                    <h3>Répartition par Zone</h3>
-                    <div class="zone-stats">
-                      <div *ngFor="let zoneStat of getZoneStatistics()" class="zone-stat">
-                        <div class="zone-name">{{ zoneStat.name }}</div>
-                        <div class="zone-metrics">
-                          <span>{{ zoneStat.clients }} clients</span>
-                          <span>{{ zoneStat.collections }} collectes</span>
-                          <span>{{ zoneStat.revenue }}€</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-           
-
-                </div>
+          <div *ngIf="activeTab === 'reports'" class="reports-tab">
+            <div class="reports-header">
+              <h2>Signalements</h2>
             </div>
- <!-- Onglet tarif -->
-            <div class="analytics-tab">
-  <div class="analytics-header">
-   
-  </div>
+            <div class="reports-list">
+            <div *ngFor="let report of agencyReports" class="report-card card">
+              <div class="incident-header">
+                <div class="incident-severity" [class]="'severity-' + report?.severity">
+                  <i class="material-icons">{{ getSeverityIcon(report.severity) }}</i>
+                  <span>{{ getSeverityText(report.severity)? getSeverityText(report.severity) : "Faible" }}</span>
+                </div>
+                <div class="incident-status">
+                  <span class="status-badge" [class]="'status-' + report.status">
+                    {{ getIncidentStatusText(report.status) }}
+                  </span>
+                </div>
+              </div>
+              <h4>{{ report?.client?.firstName }} {{ report?.client?.lastName }}</h4>
+              <div class="incident-content">
+                <h4>{{ getIncidentTypeText(report.type) }}</h4>
+                <p class="incident-description">{{ report.description }}</p>
+                <p class="incident-date">Date : {{ report.date | date:'dd/MM/yyyy' }}</p>
+                <p class="incident-date">Heure : {{ report.date | date:'HH:mm:ss' }}</p>
+              </div>
+              <!-- Affichage des photos -->
+              <div *ngIf="report.photos && report.photos.length">
+                <div *ngFor="let photo of report.photos">
+                  <img [src]="photo" alt="Photo du signalement" class="report-photo" />
+                </div>
+              </div>
+              <div *ngIf="!report.photos || !report.photos.length">
+                <p><em>Aucune photo associée</em></p>
+              </div>
+              <div class="incident-actions">
+                  <button class="btn btn-accent" (click)="assignIncident()" >
+                    <i class="material-icons">assignment_ind</i>
+                    Assigner
+                  </button>
+                  <!-- <button class="btn btn-primary" (click)="investigateIncident()" >
+                    <i class="material-icons">search</i>
+                    Enquêter
+                  </button> -->
+                  <button class="btn btn-success" (click)="resolveIncident()" >
+                    <i class="material-icons">check</i>
+                    Résoudre
+                  </button>
+                  <!--<button class="btn btn-accent" (click)="contactAgencyForIncident()">
+                    <i class="material-icons">phone</i>
+                                Contacter Agence
+                  </button>-->
+              </div>
+            </div>
+            
+          </div>
 
-  <div class="analytics-content">
-    <div class="analytics-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-      
-      <!-- Boucle sur les tarifs -->
-      <div *ngFor="let tariff of tariffs" class="analytics-card card p-4">
-        <div class="tariff-header flex justify-between items-center border-b pb-2 mb-3">
-          <h4 class="text-lg font-semibold text-gray-800">
-            {{ tariff.price | number:'1.0-0' }} FCFA
-          </h4>
-          <span class="type-chip bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-sm flex items-center gap-1">
-            <i class="material-icons text-sm">category</i>
-            {{ tariff.type }}
-          </span>
-        </div>
+            
+          </div>
 
-        <p class="text-gray-600 mb-2">
-          <i class="material-icons text-sm align-middle">info</i>
-          {{ tariff.description }}
-        </p>
+                      <!-- Onglet Rapports -->
+                      <div  class="analytics-tab">
+                        <div class="analytics-header">
+                          <h2>Rapports et Statistiques</h2>
+                          <div class="analytics-filters">
+                            <select [(ngModel)]="analyticsPeriod" (change)="updateAnalytics()" class="filter-select">
+                              <option value="week">Cette semaine</option>
+                              <option value="month">Ce mois</option>
+                              <option value="quarter">Ce trimestre</option>
+                              <option value="year">Cette année</option>
+                            </select>
+                            <button class="btn btn-secondary" (click)="exportReport()">
+                              <i class="material-icons">download</i>
+                              Exporter
+                            </button>
+                          </div>
+                        </div>
 
-        <!-- Boutons d’action -->
-        <div class="flex justify-end gap-2 mt-3">
-          <button class="btn btn-warning flex items-center gap-1"
-                 >
-            <i class="material-icons text-base">edit</i>
-            Renommer
-          </button>
-         <button class="btn btn-danger flex items-center gap-1"
-        (click)="deleteTariff(tariff)">
-  <i class="material-icons text-base">delete</i>
-  Supprimer
-</button>
-        </div>
-      </div>
+                        <div class="analytics-content">
+                          <div class="analytics-cards">
+                            <div class="analytics-card card">
+                              <h3>Performance des Collectes</h3>
+                              <div class="chart-placeholder">
+                                <i class="material-icons">bar_chart</i>
+                                <p>Graphique des collectes réalisées vs programmées</p>
+                              </div>
+                            </div>
 
-    </div>
-  </div>
-</div>
+                            <div class="analytics-card card">
+                              <h3>Évolution du Chiffre d'Affaires</h3>
+                              <div class="chart-placeholder">
+                                <i class="material-icons">trending_up</i>
+                                <p>Courbe d'évolution des revenus</p>
+                              </div>
+                            </div>
 
+                            <div class="analytics-card card">
+                              <h3>Performance par Collecteur</h3>
+                              <div class="performance-list">
+                                <div *ngFor="let collector of getCollectorPerformance()" class="performance-item">
+                                  <div class="collector-info">
+                                    <strong>{{ collector.name }}</strong>
+                                    <span>{{ collector.collectionsCount }} collectes</span>
+                                  </div>
+                                  <div class="performance-score">
+                                    <div class="score-bar">
+                                      <div class="score-fill" [style.width]="collector.score + '%'"></div>
+                                    </div>
+                                    <span>{{ collector.score }}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="analytics-card card">
+                              <h3>Répartition par Zone</h3>
+                              <div class="zone-stats">
+                                <div *ngFor="let zoneStat of getZoneStatistics()" class="zone-stat">
+                                  <div class="zone-name">{{ zoneStat.name }}</div>
+                                  <div class="zone-metrics">
+                                    <span>{{ zoneStat.clients }} clients</span>
+                                    <span>{{ zoneStat.collections }} collectes</span>
+                                    <span>{{ zoneStat.revenue }}€</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                    
 
+                          </div>
+                      </div>
+          <!-- Onglet tarif -->
+                      <div class="analytics-tab">
+            <div class="analytics-header">
+            
+            </div>
+
+            <div class="analytics-content">
+              <div class="analytics-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 
+                <!-- Boucle sur les tarifs -->
+                <div *ngFor="let tariff of tariffs" class="analytics-card card p-4">
+                  <div class="tariff-header flex justify-between items-center border-b pb-2 mb-3">
+                    <h4 class="text-lg font-semibold text-gray-800">
+                      {{ tariff.price | number:'1.0-0' }} FCFA
+                    </h4>
+                    <span class="type-chip bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-sm flex items-center gap-1">
+                      <i class="material-icons text-sm">category</i>
+                      {{ tariff.type }}
+                    </span>
+                  </div>
+
+                  <p class="text-gray-600 mb-2">
+                    <i class="material-icons text-sm align-middle">info</i>
+                    {{ tariff.description }}
+                  </p>
+
+                  <!-- Boutons d’action -->
+                  <div class="flex justify-end gap-2 mt-3">
+                    <button class="btn btn-warning flex items-center gap-1"
+                          >
+                      <i class="material-icons text-base">edit</i>
+                      Renommer
+                    </button>
+                  <button class="btn btn-danger flex items-center gap-1"
+                  (click)="deleteTariff(tariff)">
+            <i class="material-icons text-base">delete</i>
+            Supprimer
+          </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+
+                          
         
         </div>
       </div>
@@ -1325,10 +1345,20 @@ interface Statistics {
       color: var(--text-secondary);
       font-weight: 500;
     }
-
+    .incident-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     .collection-actions {
       display: flex;
       gap: 8px;
+    }
+    .incident-severity {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
     }
 
     .action-btn {
@@ -1723,11 +1753,24 @@ interface Statistics {
     }
 
     .reports-list {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
       gap: 16px;
+      max-height: 600px;
+      overflow-y: auto;
     }
 
+    .incident-content h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .incident-description,
+    .incident-date {
+      margin: 4px 0;
+      color: var(--text-secondary);
+    }
     .report-card {
       padding: 20px;
       border-left: 4px solid var(--error-color);
@@ -1850,7 +1893,11 @@ interface Statistics {
       align-items: center;
       gap: 12px;
     }
-
+    .incident-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
     .score-bar {
       width: 100px;
       height: 6px;
@@ -2117,7 +2164,11 @@ button:disabled {
         flex-direction: column;
         align-items: stretch;
       }
-
+      .reports-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
       .form-row {
         grid-template-columns: 1fr;
       }
@@ -2163,13 +2214,17 @@ export class AgencyDashboardComponent implements OnInit {
   filteredIncidents: any[] = [];
   statistics: Statistics = {
     totalClients: 0,
-    totalEmployees: 0,
-    activeCollectors: 0,
-    todayCollections: 0,
+      totalEmployees: 0,
+      totalZones: 0,
+      totalCollectors: 0,
+      totalSignalements: 0,
+       activeCollectors: 0,
+       todayCollections: 0,
     completedCollections: 0,
     monthlyRevenue: 0,
     averageRating: 0,
-    pendingReports: 0
+    pendingReports: 0,
+      totalpendingSignalements: 0, 
   };
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
@@ -2295,16 +2350,23 @@ tabs = [
        this.loadTariffs();
     this.cdr.detectChanges();
  
-  
-  //  const testTarifId = '68c01057353dc713770656c9';
+  const testTarifId = '687cc316091944da1fc7c2c5';
+const role = EmployeeRole.COLLECTOR;
 
-  //   this.agencyService.deleteTariff$(testTarifId).subscribe(result => {
-  //     if (result) {
-  //       console.log(' Suppression réussie !');
-  //     } else {
-  //       console.log(' Échec de la suppression');
-  //     }
-  //   });
+this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(response => {
+  if (response.success && response.data.length > 0) {
+    console.log('Liste des collecteurs :');
+    response.data.forEach(employee => {
+      console.log(`- ${employee} (${employee.id})`);
+    });
+  } else {
+    console.log('Aucun collecteur trouvé ou erreur de requête.');
+  }
+});
+
+
+
+
 
       }
 
@@ -2526,11 +2588,11 @@ deleteEmployee(currentUser: any, employeeId: any): void {
       this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({
         next: (employees) => {
           this.allEmployees = employees;
-          console.log("loadEmployees > :", this.allEmployees); // Changed from error to log
+          console.log("loadEmployees > :", this.allEmployees); 
                   const employeesTab = this.tabs.find(tab => tab.id === 'employees');
               if (employeesTab) {
           employeesTab.badge = employees.length;
-          this.cdr.detectChanges(); // Force la détection des changements
+          this.cdr.detectChanges(); 
         }    
         },
         error: (error) => {
@@ -2566,8 +2628,8 @@ deleteEmployee(currentUser: any, employeeId: any): void {
     if (currentUser && currentUser._id) {
       const agencyId = currentUser._id;
       this.agencyService.getAgencyReports$(agencyId).subscribe({
-        next: (reports) => {
-          this.agencyReports = reports;
+        next: (reports: any) => {
+          this.agencyReports = reports?.reports;
           console.log("Signalements chargés >>>>>> :", this.agencyReports);
            // Mise à jour du badge des Signalements
         const SignalementsTab = this.tabs.find(tab => tab.id === 'reports');
@@ -2697,6 +2759,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
         description: 'La collecte n\'a pas eu lieu à l\'heure prévue',
         date: new Date(),
         status: 'open',
+        severity: 'medium',
         createdAt: new Date(),
         assignedTo: undefined
       }
@@ -3034,6 +3097,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
         phone: this.newEmployee.phone,
         role: this.newEmployee.role,
         zones: this.newEmployee.zones,
+        
         isActive: true,
         hiredAt: new Date()
       };
@@ -3491,6 +3555,45 @@ deleteTariff( tariff: any): void {
   }
 
 
+  getSeverityText(severity: string): string {
+    const texts = {
+      'critical': 'Critique',
+      'high': 'Élevée',
+      'medium': 'Moyenne',
+      'low': 'Faible'
+    };
+    return texts[severity as keyof typeof texts] || severity;
+  }
+
+  getIncidentTypeText(type: string): string {
+    const types = {
+      'missed_collection': 'Collecte manquée',
+      'compliance_issue': 'Non-conformité',
+      'complaint': 'Réclamation',
+      'technical_issue': 'Problème technique',
+      'problem': 'Collecte manquée'
+    };
+    return types[type as keyof typeof types] || type;
+  }
+  
+  getSeverityIcon(severity: string): string {
+    const icons = {
+      'critical': 'error',
+      'high': 'warning',
+      'medium': 'info',
+      'low': 'help'
+    };
+    return icons[severity as keyof typeof icons] || 'help';
+  }
+
+  getIncidentStatusText(status: string): string {
+    const statuses = {
+      'open': 'Ouvert',
+      'pending': 'En cours',
+      'resolved': 'Résolu'
+    };
+    return statuses[status as keyof typeof statuses] || status;
+  }
 
 
 }
