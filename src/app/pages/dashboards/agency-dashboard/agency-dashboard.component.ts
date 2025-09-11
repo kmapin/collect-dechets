@@ -568,7 +568,7 @@ interface Statistics {
                 <p><em>Aucune photo associée</em></p>
               </div>
               <div class="incident-actions">
-                  <button class="btn btn-secondary" (click)="assignIncident()" >
+                  <button class="btn btn-accent" (click)="assignIncident()" >
                     <i class="material-icons">assignment_ind</i>
                     Assigner
                   </button>
