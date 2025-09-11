@@ -20,7 +20,7 @@
 
 
 ## AGENCES
-1==> email: adamaagency@gmail.com pwd:07WasteManagerAdamaAgency01       Nom: Adama Service
+1==> email: adamaagency@gmail.com pwd:07WasteManagerAdamaAgency01      Nom: Adama Service
 2==> email: aicha.t@sahelys.com pwd:WISEclean1234
 2==> email: aicha.t@sahelys.com pwd:WISEclean1234
 
@@ -60,9 +60,21 @@ Email : gangosmeo@gmail.com          Mot de passe : Wise1234
 
 
         #Agence
+1==> Etablir le planning / Zone(en secteur).
+1==> Suivre les collectes en temps réelle lorsqu'un collecteur valide
 1==> 
 1==> 
 1==> 
+1==> 
+1==> 
+
+
+        #Collector
+1==> Récuperer les infos du client lorsque le Collector scan son QR code
+1==> Confirmer une collecte manuellement
+1==> Signaler à l'agence de la collecte bien faite chez X client
+1==> Recueperer le planning de la journée.
+        Declarer un incident
 1==> 
 1==> 
 1==> 
