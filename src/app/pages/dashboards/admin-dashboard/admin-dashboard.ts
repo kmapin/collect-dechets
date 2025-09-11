@@ -221,7 +221,7 @@ interface Communication {
                 <i class="material-icons">report_problem</i>
               </div>
              <div class="stat-info">
-                <h3>Incidents</h3>
+                <h3>Incidents non resolus</h3>
                 <p class="stat-value">{{ statisticsAdmin?.reportsFromClients?.pending ?? 0 }}</p>
                 <span class="stat-trend"[class.negative]="(statisticsAdmin?.reportsFromClients?.pending ?? 0) > 10">
                   {{ getIncidentSeverity() }}
