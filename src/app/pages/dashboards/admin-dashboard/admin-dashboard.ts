@@ -23,6 +23,11 @@ interface AdminStatistics {
   activeClients: number;
   totalCollections: number;
   todayCollections: number;
+  reportsFromClients?: {
+    total: number;
+    resolved: number;
+    pending: number;
+  }
   completeCollections: number;
   totalMunicipalities: number;
   completedCollections: number;
@@ -68,8 +73,8 @@ interface ZoneStatistic {
 
 interface Incident {
   id: string;
-  agency?:{
-    id?: string,
+  agency?: {
+    id: string,
     agencyName?: string
   }
   agencyId: string;
@@ -215,10 +220,10 @@ interface Communication {
               <div class="stat-icon incidents">
                 <i class="material-icons">report_problem</i>
               </div>
-              <div class="stat-info">
+             <div class="stat-info">
                 <h3>Incidents</h3>
-                <p class="stat-value">{{ statistics.pendingReports }}</p>
-                <span class="stat-trend" [class.negative]="statistics.pendingReports > 10">
+                <p class="stat-value">{{ statisticsAdmin?.reportsFromClients?.pending ?? 0 }}</p>
+                <span class="stat-trend"[class.negative]="(statisticsAdmin?.reportsFromClients?.pending ?? 0) > 10">
                   {{ getIncidentSeverity() }}
                 </span>
               </div>
@@ -805,7 +810,7 @@ interface Communication {
                       <i class="material-icons">check</i>
                       Résoudre
                     </button>
-                    <button class="btn btn-accent" (click)="contactAgencyForIncident(incident.agencyId)">
+                    <button class="btn btn-accent" (click)="contactAgencyForIncident(incident?.agencyId)">
                       <i class="material-icons">phone</i>
                       Contacter Agence
                     </button>
@@ -2321,7 +2326,6 @@ export class AdminDashboard implements OnInit {
   };
   //Statistics for admin
   statisticsAdmin: AdminStatistics | null = null;
-
   //List all clients for admin dashboard
   clients: any;
 
@@ -2337,9 +2341,9 @@ export class AdminDashboard implements OnInit {
   ];
   municipalitiesAudits: any;
   filteredMunicipalities: any[] = [];
-  clientGrowth: number= 0;
+  clientGrowth: number = 0;
   signalementsAudits: any;
-  filteredSignalements: any[]=[];
+  filteredSignalements: any[] = [];
 
   constructor(
     private authService: AuthService,
@@ -2579,9 +2583,9 @@ export class AdminDashboard implements OnInit {
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
-  getClientGrowth(){
+  getClientGrowth() {
     // return Math.floor(Math.random() * 10) + 5;
-    this.clientGrowth= Math.floor(Math.random() * 10) + 5
+    this.clientGrowth = Math.floor(Math.random() * 10) + 5
     this.cd.detectChanges();
     // return 5;
   }
@@ -2597,10 +2601,12 @@ export class AdminDashboard implements OnInit {
   }
 
   getIncidentSeverity(): string {
-    if (this.statistics.pendingReports <= 5) return 'Faible';
-    if (this.statistics.pendingReports <= 10) return 'Modéré';
+    const pending = this.statisticsAdmin?.reportsFromClients?.pending ?? 0;
+    if (pending <= 5) return 'Faible';
+    if (pending <= 10) return 'Modéré';
     return 'Élevé';
   }
+
 
   getStars(rating: number): number[] {
     return new Array(Math.floor(rating)).fill(0);
@@ -2809,7 +2815,8 @@ export class AdminDashboard implements OnInit {
   contactMunicipality(municipalityId: string): void {
     this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
-  contactAgency(agencyId: string): void {
+  contactAgency(agencyId?: string): void {
+    this.router.navigate(['/agencies', agencyId]);
     this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
 
@@ -2845,7 +2852,7 @@ export class AdminDashboard implements OnInit {
     }
   }
 
-  contactAgencyForIncident(agencyId: string): void {
+  contactAgencyForIncident(agencyId?: string ): void {
     this.contactAgency(agencyId);
   }
 
@@ -3013,7 +3020,7 @@ export class AdminDashboard implements OnInit {
     });
   }
 
-  loadAllMunipalities(){
+  loadAllMunipalities() {
     this.adminService.getAllMunicipalities().subscribe({
       next: (response: any) => {
         this.municipalitiesAudits = response.map((municipality: any) => {
@@ -3030,10 +3037,12 @@ export class AdminDashboard implements OnInit {
   }
   /**Listes des signalements des users */
   loadAllSignalements() {
-    this .adminService.getAllReports().subscribe({
+    this.adminService.getAllReports().subscribe({
       next: (response: any) => {
         this.incidents = response.map((signalement: any) => {
-          return signalement;
+          return {
+            agencyId: signalement.agency._id,
+            ... signalement};
         });
         this.filteredIncidents = [...this.incidents];
         console.log('signalements in response', response);
