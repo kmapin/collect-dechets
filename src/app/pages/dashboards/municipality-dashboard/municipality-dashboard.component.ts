@@ -2286,16 +2286,6 @@ export class MunicipalityDashboardComponent implements OnInit {
     return 'À améliorer';
   }
 
-//   getIncidentSeverity(): string {
-//   if (!this.statisticsAdmin || this.statisticsAdmin.pendingReports == null) return 'Aucun incident';
-  
-//   const count = this.statisticsAdmin.pendingReports;
-
-//   if (count <= 5) return `Faible (${count})`;
-//   if (count <= 10) return `Modéré (${count})`;
-//   return `Élevé (${count})`;
-// }
-
   // getIncidentSeverity(): string {
   //   if (this.statisticsAdmin.pendingReports <= 5) return 'Faible';
   //   if (this.statisticsAdmin.pendingReports <= 10) return 'Modéré';
