@@ -1920,6 +1920,7 @@ export class CollectorDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadCollectorData();
+    // this.onQrCodeResult("d58ae925a27f0c108234c015");
   }
 
   loadCollectorData(): void {
@@ -2226,9 +2227,12 @@ export class CollectorDashboardComponent implements OnInit {
     // Appel API pour récupérer le client
     this.clientService.getClientById(result).subscribe({
       next: (client) => {
-        this.scannedClient = client;
+        this.scannedClient = client?.data;
         console.log("Scanned client :>", this.scannedClient);
-        this.showClientModal = true;
+        if(this.scannedClient){
+
+          this.showClientModal = true;
+        }
       },
       error: () => {
         this.notificationService.showError(
