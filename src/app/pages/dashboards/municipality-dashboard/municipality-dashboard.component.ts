@@ -18,7 +18,12 @@ interface MunicipalityStatistics {
   totalClients: number;
   totalCollectors: number;
   todayCollections: number;
-  completedCollections: number;
+   reportsFromClients?: {
+    total: number;
+    resolved: number;
+    pending: number;
+  }
+  completeCollections: number;
   totalRevenue: number;
   averageRating: number;
   pendingReports: number;
@@ -122,8 +127,8 @@ interface Communication {
               </div>
               <div class="stat-info">
                 <h3>Agences</h3>
-                <p class="stat-value">{{ statistics.activeAgencies }}/{{ statistics.totalAgencies }}</p>
-                <span class="stat-trend" [class.positive]="statistics.activeAgencies === statistics.totalAgencies">
+                <p class="stat-value">{{ statisticsAdmin?.activeAgencies }}/{{statisticsAdmin?.totalAgencies }}</p>
+                <span class="stat-trend" [class.positive]="statisticsAdmin?.activeAgencies === statisticsAdmin?.totalAgencies">
                   {{ getAgencyStatusText() }}
                 </span>
               </div>
@@ -135,7 +140,7 @@ interface Communication {
               </div>
               <div class="stat-info">
                 <h3>Clients totaux</h3>
-                <p class="stat-value">{{ statistics.totalClients | number }}</p>
+                <p class="stat-value">{{statisticsAdmin?.totalClients | number }}</p>
                 <span class="stat-trend positive">+{{ getClientGrowth() }}% ce mois</span>
               </div>
             </div>
@@ -146,7 +151,7 @@ interface Communication {
               </div>
               <div class="stat-info">
                 <h3>Collectes aujourd'hui</h3>
-                <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
+                <p class="stat-value">{{ statisticsAdmin?.completeCollections }}/{{ statisticsAdmin?.totalCollections }}</p>
                 <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
                   {{ getCollectionRate() }}% réalisées
                 </span>
@@ -183,8 +188,8 @@ interface Communication {
               </div>
               <div class="stat-info">
                 <h3>Incidents</h3>
-                <p class="stat-value">{{ statistics.pendingReports }}</p>
-                <span class="stat-trend" [class.negative]="statistics.pendingReports > 10">
+               <p class="stat-value">{{ statisticsAdmin?.reportsFromClients?.pending ?? 0 }}</p>
+               <span class="stat-trend"[class.negative]="(statisticsAdmin?.reportsFromClients?.pending ?? 0) > 10">
                   {{ getIncidentSeverity() }}
                 </span>
               </div>
@@ -2008,7 +2013,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     totalClients: 12500,
     totalCollectors: 85,
     todayCollections: 450,
-    completedCollections: 425,
+    completeCollections: 425,
     totalRevenue: 485000,
     averageRating: 4.2,
     pendingReports: 8,
@@ -2046,7 +2051,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'dashboard', badge: null },
     { id: 'agencies', label: 'Audit Agences', icon: 'business', badge: null },
     { id: 'statistics', label: 'Statistiques', icon: 'analytics', badge: null },
-    { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: 8 },
+    { id: 'incidents', label: 'Incidents', icon: 'report_problem', badge: null },
     { id: 'communications', label: 'Communications', icon: 'campaign', badge: null }
   ];
   statisticsAdmin: any;
@@ -2235,7 +2240,7 @@ export class MunicipalityDashboardComponent implements OnInit {
   // Utility methods
   getAgencyStatusText(status?: string): string {
     if (!status) {
-      return `${this.statistics.activeAgencies} actives`;
+      return `${this.statisticsAdmin?.activeAgencies} actives`;
     }
     const statusTexts = {
       'active': 'Active',
@@ -2250,7 +2255,7 @@ export class MunicipalityDashboardComponent implements OnInit {
   }
 
   getCollectionRate(): number {
-    return Math.round((this.statistics.completedCollections / this.statistics.todayCollections) * 100);
+    return Math.round((this.statistics.completeCollections / this.statistics.todayCollections) * 100);
   }
 
   getComplianceText(): string {
@@ -2259,9 +2264,26 @@ export class MunicipalityDashboardComponent implements OnInit {
     return 'À améliorer';
   }
 
+//   getIncidentSeverity(): string {
+//   if (!this.statisticsAdmin || this.statisticsAdmin.pendingReports == null) return 'Aucun incident';
+  
+//   const count = this.statisticsAdmin.pendingReports;
+
+//   if (count <= 5) return `Faible (${count})`;
+//   if (count <= 10) return `Modéré (${count})`;
+//   return `Élevé (${count})`;
+// }
+
+  // getIncidentSeverity(): string {
+  //   if (this.statisticsAdmin.pendingReports <= 5) return 'Faible';
+  //   if (this.statisticsAdmin.pendingReports <= 10) return 'Modéré';
+  //   return 'Élevé';
+  // }
+
   getIncidentSeverity(): string {
-    if (this.statistics.pendingReports <= 5) return 'Faible';
-    if (this.statistics.pendingReports <= 10) return 'Modéré';
+    const pending = this.statisticsAdmin?.reportsFromClients?.pending ?? 0;
+    if (pending <= 5) return 'Faible';
+    if (pending <= 10) return 'Modéré';
     return 'Élevé';
   }
 
@@ -2393,7 +2415,6 @@ export class MunicipalityDashboardComponent implements OnInit {
         this.statisticsAdmin = statistics;
         console.log(this.statisticsAdmin);
       }
-
     })
   }
 
