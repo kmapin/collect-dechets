@@ -10,7 +10,7 @@ export const authInterceptorInterceptor: HttpInterceptorFn = (req: HttpRequest<u
   const router = inject(Router);
   const authService = inject(AuthService);
   const currentUser = localStorage.getItem('currentUser');
-  const NOTIFICATION_DURATION = 5 * 1000;
+  const NOTIFICATION_DURATION = 1 * 1000;
   if (currentUser) {
     const parsedUser = JSON.parse(currentUser);
     req = req.clone({
@@ -22,11 +22,11 @@ export const authInterceptorInterceptor: HttpInterceptorFn = (req: HttpRequest<u
       console.error("[JWTI-ERROR] ", error)
 
       // if (error.status === 408 || error.status === 401 || error.status === 403) {
-      if (error.status === 401 || error.status === 403) {
+      if (error.status === 401) {
         notificationService.showSuccess("Deconnexion","Votre session a expiré, Vous allez être déconnecté dans quelques instants");
         setTimeout(() => {
-          localStorage.removeItem('currentUser');
           authService.logout();
+          localStorage.removeItem('currentUser');
           window.location.reload();
           router.navigate(['/login']);
         }, NOTIFICATION_DURATION);
