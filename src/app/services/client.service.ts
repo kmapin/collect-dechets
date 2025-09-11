@@ -65,6 +65,11 @@ export class ClientService {
     );
   }
   getClientById(id: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/clients/${id}`);
+    return this.http.get<any>(`${environment.apiUrl}/clients/${id}`).pipe(
+      map((response: any) => {
+        console.log('API > getClientById:', response);
+        return response;
+      })
+    );
   }
 }
