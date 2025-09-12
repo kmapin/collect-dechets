@@ -2014,6 +2014,8 @@ export class CollectorDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    console.log("this.currentUser", this.currentUser);
+
     this.loadCollectorData();
     this.onQrCodeResult(
       "https://projectwise.onrender.com/api/collecte/scan?id=687fe508693b96642442a30b&ts=1757606939990"
