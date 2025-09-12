@@ -7,6 +7,8 @@ import { CollectionService } from '../../../services/collection.service';
 import { NotificationService } from '../../../services/notification.service';
 import { User } from '../../../models/user.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
+import { ClientService } from '../../../services/client.service';
+import { map } from 'rxjs';
 
 interface PaymentHistory {
   id: string;
@@ -383,21 +385,33 @@ interface Subscription {
               <label>Type de problème</label>
               <select [(ngModel)]="reportData.type" name="type" required>
                 <option value="">Sélectionnez</option>
-                <option value="missed">Collecte manquée</option>
-                <option value="incomplete">Collecte incomplète</option>
-                <option value="damage">Dommage au bac</option>
+                <option value="missed_collection">Collecte manquée</option>
+                <option value="compliance_issue">Non-conformité</option>
+                <option value="technical_issue">Problème technique</option>
+                <option value="complaint">Réclamation</option>
                 <option value="other">Autre</option>
               </select>
             </div>
+            
             <div class="form-group">
               <label>Description</label>
               <textarea [(ngModel)]="reportData.description" name="description" 
                         rows="4" placeholder="Décrivez le problème..." required></textarea>
+            </div> <div class="form-group">
+              <label>Etat du problème</label>
+              <select [(ngModel)]="reportData.severity" name="severity" required>
+                <option value="">Sélectionnez</option>
+                <option value="low">Faible</option>
+                <option value="medium">Moyen</option>
+                <option value="high">Elevé</option>
+                <option value="critical">Critique</option>
+                <option value="other">Autre</option>
+              </select>
             </div>
-            <div class="form-group">
+            <!--<div class="form-group">
               <label>Date du problème</label>
               <input type="date" [(ngModel)]="reportData.date" name="date" required>
-            </div>
+            </div>-->
             <div class="form-actions">
               <button type="button" class="btn btn-secondary" (click)="showReportModal = false">
                 Annuler
@@ -1114,17 +1128,21 @@ export class ClientDashboardComponent implements OnInit {
   reportData = {
     type: '',
     description: '',
-    date: ''
+    severity: '',
+    clientId: '',
+    agencyId: ''
   };
 
   constructor(
     private authService: AuthService,
     private collectionService: CollectionService,
+    private clientService: ClientService,
     private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    console.log("Current User",this.currentUser);
     this.loadDashboardData();
   }
 
@@ -1341,10 +1359,28 @@ export class ClientDashboardComponent implements OnInit {
   }
 
   submitReport(): void {
-    if (this.reportData.type && this.reportData.description && this.reportData.date) {
-      this.notificationService.showSuccess('Signalement envoyé', 'Votre signalement a été transmis à l\'agence');
-      this.showReportModal = false;
-      this.reportData = { type: '', description: '', date: '' };
+      const data = {
+        type: this.reportData.type,
+        description: this.reportData.description,
+        severity: this.reportData.severity,
+        clientId: this.currentUser?._id,
+        agencyId: this.currentUser?.subscribedAgencyId
+      }
+    if (this.reportData.type && this.reportData.description && this.reportData.clientId &&this.reportData.agencyId ||   this.reportData.severity) {
+      console.log('Signalement envoyé:', this.reportData);
+      this.clientService.reportClientIncident(data).subscribe({
+        next: (response :any) => {
+          console.log('API > reportClientIncident:', response);
+          this.notificationService.showSuccess('Signalement envoyé', 'Votre signalement a été transmis à l\'agence');
+          this.showReportModal = false;
+          this.reportData = { type: '', description: '',severity: '', clientId: '', agencyId: '' };
+        },
+        error: (error: any) => {
+          console.error('API > reportClientIncident:', error);
+          this.notificationService.showError('Signalement non envoyé', 'Une erreur s\'est produite lors de l\'envoi du signalement');
+        }
+      });
+      
     }
   }
 

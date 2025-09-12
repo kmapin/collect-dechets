@@ -72,4 +72,13 @@ export class ClientService {
       })
     );
   }
+
+  reportClientIncident(data: any) {
+    return this.http.post(`${environment.apiUrl}/reports`, data).pipe(
+      map((response: any) => {
+        console.log('API > reportClientIncident:', response);
+        return response;
+      })
+    );
+  }
 }
