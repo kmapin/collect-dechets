@@ -2224,11 +2224,18 @@ export class CollectorDashboardComponent implements OnInit {
     // S'assurer que nous avons bien une chaîne
     const qrCodeValue = typeof result === 'string' ? result : result?.toString() || '';
     
-    this.lastQrResult = qrCodeValue;
+    // Extraire l'ID de l'URL si c'est une URL complète
+    let clientId = qrCodeValue;
+    if (qrCodeValue.includes('/api/collecte/scan?id=')) {
+      const urlParams = new URLSearchParams(qrCodeValue.split('?')[1]);
+      clientId = urlParams.get('id') || qrCodeValue;
+    }
+    
+    this.lastQrResult = clientId;
     this.showQrScanner = false;
-    this.notificationService.showSuccess("QR Code détecté", qrCodeValue);
+    this.notificationService.showSuccess("QR Code détecté", clientId);
     // Appel API pour récupérer le client
-    this.clientService.getClientById(qrCodeValue).subscribe({
+    this.clientService.getClientById(clientId).subscribe({
       next: (client) => {
         this.scannedClient = client?.data;
         console.log("Scanned client :>", this.scannedClient);
