@@ -2356,7 +2356,7 @@ formErrors = {
     { id: 'zones', label: 'Zones', icon: 'map', badge: null },
     { id: 'schedules', label: 'Plannings', icon: 'schedule', badge: null },
     { id: 'clients', label: 'Clients', icon: 'person', badge: null },
-    { id: 'reports', label: 'Signalements', icon: 'report_problem', badge: 3 },
+    { id: 'reports', label: 'Signalements', icon: 'report_problem', badge: 0 },
     { id: 'analytics', label: 'Rapports', icon: 'analytics', badge: null }
   ];
 
@@ -2679,6 +2679,11 @@ formErrors = {
           if (SignalementsTab) {
             SignalementsTab.badge = reports.length;
             this.cdr.detectChanges(); // Force la détection des changements
+          }
+            const repportTab = this.tabs.find(tab => tab.id === 'reports');
+          if (repportTab) {
+            repportTab.badge =this.agencyReports.length;
+            this.cdr.detectChanges(); 
           }
         },
         error: (error) => {
@@ -3502,14 +3507,14 @@ addSchedule(): void {
     this.formErrors.endDate = 'Veuillez définir une date de fin';
     isValid = false;
   }
-  if (this.newSchedule.startTime && this.newSchedule.endTime) {
-    const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
-    const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
-    if (end <= start) {
-      this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
-      isValid = false;
-    }
-  }
+  // if (this.newSchedule.startTime && this.newSchedule.endTime) {
+  //   const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
+  //   const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
+  //   if (end <= start) {
+  //     this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
+  //     isValid = false;
+  //   }
+  // }
 
   if (!isValid) {
     this.notificationService.showError(
