@@ -436,11 +436,15 @@ interface Statistics {
                   </div>
                   
                   <div class="calendar-content">
-                    <div *ngFor="let day of weekDays; let i = index" class="day-column">
+                     <div *ngFor="let day of weekDays; let i = index" class="day-column">
+                      
                       <div *ngFor="let schedule of getSchedulesForDay(i)" class="schedule-item">
-                        <div class="schedule-time">{{ schedule.startTime }} - {{ schedule.endTime }}</div>
-                        <div class="schedule-zone">{{ getZoneName(schedule.zoneId) }}</div>
-                        <div class="schedule-collector">{{ getCollectorName(schedule.collectorId) }}</div>
+                              <div class="schedule-time">{{ schedule.startTime }} - {{ schedule.endTime }}</div>
+                              <div class="schedule-zone">{{ getZoneName(schedule.zoneId) }}</div>
+                         <div class="schedule-collector">{{ getCollectorName(schedule.collectorId) }}</div>
+                        <!-- <div class="schedule-time">{{ schedule.startTime }} - {{ schedule.endTime }}</div> -->
+                        <!-- <div class="schedule-zone">{{ getZoneName(schedule.zoneId) }}</div> -->
+                        <!-- <div class="schedule-collector">{{ getCollectorName(schedule.collectorId) }}</div> -->
                         <div class="schedule-actions">
                           <button class="action-btn" (click)="editSchedule(schedule.id)">
                             <i class="material-icons">edit</i>
@@ -568,7 +572,7 @@ interface Statistics {
                 <p><em>Aucune photo associée</em></p>
               </div>
               <div class="incident-actions">
-                  <button class="btn btn-accent" (click)="assignIncident()" >
+                  <button class="btn btn-accent" (click)="openAssignModal(report._id)" >
                     <i class="material-icons">assignment_ind</i>
                     Assigner
                   </button>
@@ -1113,6 +1117,31 @@ interface Statistics {
 </form>
         </div>
       </div>
+      <div class="modal-overlay" *ngIf="showAssignModal" (click)="showAssignModal = false">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Assigner des employés</h3>
+      <button class="close-btn" (click)="showAssignModal = false">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label>Employés disponibles :</label>
+      <div *ngFor="let employee of allEmployees" class="checkbox-group">
+        <input
+          type="checkbox"
+          [value]="employee._id"
+          (change)="toggleEmployeeSelection(employee._id, $event)"
+        />
+        {{ employee.firstName }} {{ employee.lastName }}
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="showAssignModal = false">Annuler</button>
+      <button class="btn btn-primary" (click)="assignEmployeesToReport()">soumettre</button>
+    </div>
+  </div>
+</div>
     </div>
   `,
   styles: [`
@@ -2272,6 +2301,10 @@ export class AgencyDashboardComponent implements OnInit {
   reports: Report[] = [];
   filteredReports: Report[] = [];
   isDeleting: boolean = false;
+  // assigner un planning à un collecteur
+  showAssignModal: boolean = false;
+selectedReportId: string | null = null;
+selectedEmployees: string[] = [];
   // Filters
   collectionsFilter = 'all';
   selectedZone = '';
@@ -2414,8 +2447,40 @@ formErrors = {
 
   }
 
+openAssignModal(reportId: string): void {
+  this.selectedReportId = reportId;
+  this.selectedEmployees = []; // Réinitialiser les employés sélectionnés
+  this.showAssignModal = true;
+}
+assignEmployeesToReport(): void {
+  // if (this.selectedReportId && this.selectedEmployees.length > 0) {
+  //   const payload = {
+  //     reportId: this.selectedReportId,
+  //     assignedEmployees: this.selectedEmployees,
+  //   };
 
-
+  //   this.agencyService.assignEmployeesToReport$(payload).subscribe({
+  //     next: () => {
+  //       this.notificationService.showSuccess('Succès', 'Les employés ont été assignés au signalement.');
+  //       this.showAssignModal = false;
+  //       this.loadAgencyReports(this.currentUser); // Recharger les signalements
+  //     },
+  //     error: (err) => {
+  //       console.error('Erreur lors de l\'assignation des employés :', err);
+  //       this.notificationService.showError('Erreur', 'Impossible d\'assigner les employés.');
+  //     },
+  //   });
+  // } else {
+  //   this.notificationService.showError('Erreur', 'Veuillez sélectionner au moins un employé.');
+  // }
+}
+toggleEmployeeSelection(employeeId: string, event: any): void {
+  if (event.target.checked) {
+    this.selectedEmployees.push(employeeId);
+  } else {
+    this.selectedEmployees = this.selectedEmployees.filter(id => id !== employeeId);
+  }
+}
   // updateTabs(): void {
   //   this.tabs = [
   //     { id: 'collections', label: 'Collectes', icon: 'local_shipping', badge: null },
@@ -2937,10 +3002,23 @@ formErrors = {
     return `${startOfWeek.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - ${endOfWeek.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`;
   }
 
-  getSchedulesForDay(dayIndex: number): any[] {
-    return this.schedules.filter(s => s.dayOfWeek === dayIndex + 1);
-  }
+  // getSchedulesForDay(dayIndex: number): any[] {
+  //   return this.schedules.filter(s => s.dayOfWeek === dayIndex + 1);
+  // }
+getSchedulesForDay(dayIndex: number): any[] {
+  const startOfWeek = new Date(this.currentWeek);
+  startOfWeek.setDate(this.currentWeek.getDate() - this.currentWeek.getDay() + 1); // Lundi
+  const targetDate = new Date(startOfWeek);
+  targetDate.setDate(startOfWeek.getDate() + dayIndex);
 
+  return this.plannings.filter(schedule => {
+    const scheduleDate = new Date(schedule.startDate);
+    return (
+      scheduleDate.toDateString() === targetDate.toDateString() &&
+      schedule.dayOfWeek === dayIndex + 1
+    );
+  });
+}
   getCollectors(): Employee[] {
     return this.employees.filter(e => e.role === 'collector');
   }
