@@ -997,7 +997,7 @@ interface Statistics {
           <form class="schedule-form" (ngSubmit)="addSchedule()">
   <div class="form-group">
     <label>Zone *</label>
-    <select [(ngModel)]="newSchedule.zoneId" name="zoneId" required>
+    <!-- <select [(ngModel)]="newSchedule.zoneId" name="zoneId" required>
       <option value="">Sélectionner une zone</option>
       <option *ngFor="let zone of zonesAgency" [value]="zone.id">
         {{ zone.name }}
@@ -1005,10 +1005,17 @@ interface Statistics {
     </select>
     <small class="error-message" *ngIf="formErrors.zoneId">
       {{ formErrors.zoneId }}
-    </small>
-  </div>
+    </small> -->
+      <!-- <input type="text" [(ngModel)]="newSchedule.zoneId" name="zoneId" required placeholder="Entrez votre zone" /> -->
+        <select [(ngModel)]="newSchedule.zoneId" name="zoneId" required>
+      <option value="">Sélectionner un jour</option>
+      <option value="1">Tampuy</option>
+      <option value="2">kilwin</option>
+      <option value="3">dassohgho</option>
+    </select>
 
-  <div class="form-group">
+  </div>
+   <div class="form-group">
     <label>Jour de la semaine *</label>
     <select [(ngModel)]="newSchedule.dayOfWeek" name="dayOfWeek" required>
       <option value="">Sélectionner un jour</option>
@@ -1023,6 +1030,30 @@ interface Statistics {
     <small class="error-message" *ngIf="formErrors.dayOfWeek">
       {{ formErrors.dayOfWeek }}
     </small>
+  </div>
+  <!-- ✅ Nouvelle section pour les dates -->
+  <div class="form-row">
+    <div class="form-group">
+      <label>Date de début *</label>
+      <input type="date"
+             [(ngModel)]="newSchedule.startDate"
+             name="startDate"
+             required>
+      <!-- <small class="error-message" *ngIf="formErrors.startDate">
+        {{ formErrors.startDate }}
+      </small> -->
+    </div>
+
+    <div class="form-group">
+      <label>Date de fin *</label>
+      <input type="date"
+             [(ngModel)]="newSchedule.endDate"
+             name="endDate"
+             required>
+      <small class="error-message" *ngIf="formErrors.endDate">
+        {{ formErrors.endDate }}
+      </small>
+    </div>
   </div>
 
   <div class="form-row">
@@ -1050,15 +1081,13 @@ interface Statistics {
   </div>
 
   <div class="form-group">
-    <label>Collecteur *</label>
-    <select [(ngModel)]="newSchedule.collectorId" 
-            name="collectorId" 
-            required>
-      <option value="">Sélectionner un collecteur</option>
-      <option *ngFor="let collector of collectors" >
-        {{ collector.firstName }} {{ collector.lastName }}
-      </option>
-    </select>
+  <label>Collecteur </label>
+<select [(ngModel)]="newSchedule.collectorId" name="collectorId" required>
+  <option value="">Sélectionner un collecteur</option>
+  <option *ngFor="let collector of collectors" [value]="collector._id">
+ {{ collector.firstName }} {{ collector.lastName }}
+  </option>
+</select>
     <small class="error-message" *ngIf="formErrors.collectorId">
       {{ formErrors.collectorId }}
     </small>
@@ -2290,14 +2319,17 @@ newTariff: any = {
     dayOfWeek: '',
     startTime: '',
     endTime: '',
-    collectorId: ''
+    collectorId: '',
+      endDate: '',   
   };
 formErrors = {
   zoneId: '',
   dayOfWeek: '',
   startTime: '', 
   endTime: '',
-  collectorId: ''
+  collectorId: '',
+    endDate: '',     
+
 };
   citiesInput = '';
 
@@ -2350,8 +2382,8 @@ tabs = [
        this.loadTariffs();
     this.cdr.detectChanges();
  
-  const testTarifId = '687cc316091944da1fc7c2c5';
-const role = EmployeeRole.COLLECTOR;
+  const testTarifId = '687cc316091944da1fc7c2c7';
+const role = EmployeeRole.MANAGER;
 
 this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(response => {
   if (response.success && response.data.length > 0) {
@@ -2419,7 +2451,7 @@ this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(res
     }
     this.loadCollections();
     this.loadServiceZones();
-    this.loadSchedules();
+    // this.loadSchedules();
     console.log('[loadAgencyData] agency avant loadClients:', this.agency);
     this.loadClients();
     this.loadReports();
@@ -2687,19 +2719,19 @@ deleteEmployee(currentUser: any, employeeId: any): void {
     ];
   }
 
-  loadSchedules(): void {
-    this.schedules = [
-      {
-        // id: '1',
-        zoneId: 'zone1',
-        dayOfWeek: 1,
-        startTime: '08:00',
-        endTime: '12:00',
-        collectorId: '1',
-        // isActive: true
-      }
-    ];
-  }
+  // loadSchedules(): void {
+  //   this.schedules = [
+  //     {
+  //       // id: '1',
+  //       zoneId: 'zone1',
+  //       dayOfWeek: 1,
+  //       startTime: '08:00',
+  //       endTime: '12:00',
+  //       collectorId: '1',
+  //       // isActive: true
+  //     }
+  //   ];
+  // }
 
   // Helper pour récupérer le statut d'abonnement
   getClientSubscriptionStatus(c: any): string | undefined {
@@ -3089,7 +3121,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
   addEmployee(): void {
     if (this.newEmployee.firstName && this.newEmployee.lastName && this.newEmployee.email && this.newEmployee.role) {
       const employee: Employees = {
-        // id: Math.random().toString(36).substr(2, 9),
+        _id: Math.random().toString(36).substr(2, 9),
         // userId: Math.random().toString(36).substr(2, 9),
         firstName: this.newEmployee.firstName,
         lastName: this.newEmployee.lastName,
@@ -3423,12 +3455,16 @@ deleteTariff( tariff: any): void {
 
   addSchedule(): void {
   // Réinitialiser les erreurs
+  const uuid=this.currentUser?._id || '';
+  console.log("UUID AGENCE >>>",uuid);
   this.formErrors = {
     zoneId: '',
-    dayOfWeek: '',
-    startTime: '',
-    endTime: '',
-    collectorId: ''
+  dayOfWeek: '',
+  // startDate: '',   
+  endDate: '',  
+  startTime: '',
+  endTime: '',
+  collectorId: ''
   };
     let isValid = true;
   if (!this.newSchedule.zoneId) {
@@ -3468,13 +3504,17 @@ deleteTariff( tariff: any): void {
     return;
   }
   // Création de l'objet planning
-  const schedule: CollectionSchedule = {
-    zoneId: this.newSchedule.zoneId,
-    dayOfWeek: Number(this.newSchedule.dayOfWeek),
-    startTime: this.newSchedule.startTime,
-    endTime: this.newSchedule.endTime,
-    collectorId: this.newSchedule.collectorId
-  };
+const schedule: CollectionSchedule = {
+   agencyId: uuid,
+  zoneId: this.newSchedule.zoneId,
+  dayOfWeek: Number(this.newSchedule.dayOfWeek),
+  startDate: this.newSchedule.startDate,   
+  endDate: this.newSchedule.endDate,       
+  startTime: this.newSchedule.startTime,
+  endTime: this.newSchedule.endTime,
+  collectorId: this.newSchedule.collectorId,
+  
+};
 
   // Envoi au service
   this.agencyService.addSchedule$(schedule).subscribe({
@@ -3484,14 +3524,16 @@ deleteTariff( tariff: any): void {
         'Le planning a été créé avec succès'
       );
       this.showScheduleModal = false;
-      this.loadSchedules();
+      // this.loadSchedules();
       // Réinitialisation du formulaire
       this.newSchedule = {
         zoneId: '',
         dayOfWeek: '',
         startTime: '',
         endTime: '',
-        collectorId: ''
+        collectorId: '',
+          endDate: '',     
+ 
       };
     },
     error: (error) => {

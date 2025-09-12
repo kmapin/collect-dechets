@@ -387,6 +387,7 @@ getEmployeesByAgencyAndRole$(agencyId: string, role: string): Observable<{ succe
 
   addEmployee(employee: Partial<Employees>): Observable<Employees | null> {
     const newEmployee: Employees = {
+      _id: Math.random().toString(36).substr(2, 9),
       firstName: employee.firstName || '',
       lastName: employee.lastName || '',
       email: employee.email || '',
