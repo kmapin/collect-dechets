@@ -183,6 +183,14 @@ export enum  EmployeeRole {
   COLLECTOR = 'collector'
 }
 
+// export enum  UserRole {
+//   ADMIN = 'admin',
+//   MANAGER = 'manager',
+//   COLLECTOR = 'collector',
+//   CLIENT = 'client',
+//   AGENCY = 'agence'
+// }
+
 // export interface CollectionSchedule {
 //   id: string;
 //   zoneId: string;

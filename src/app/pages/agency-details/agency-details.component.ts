@@ -1426,7 +1426,7 @@ private mapApiAgency(apiAgency: any): Agency {
     this.router.navigate(['/edit-agency', this.agencyId]);
   }
   //Activer ou desactiver une agence 
-    activateAgency(id: string) {
+  activateAgency(id: string) {
     this.agencyService.activateAgency(id).subscribe({
       next: (response: any) => {
         console.log('agency activated  in dashboard', response);

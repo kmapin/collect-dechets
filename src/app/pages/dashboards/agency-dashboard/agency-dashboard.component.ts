@@ -24,10 +24,10 @@ interface Client {
 }
 
 interface Report {
-  id: string;
+  _id: string;
   clientId: string;
   clientName: string;
-  client?:{
+  client?: {
     _id: string;
     firstName: string;
     lastName: string;
@@ -51,9 +51,10 @@ interface Statistics {
   totalZones: number;
   totalCollectors: number;
   totalSignalements: number;
+  resolvedSignalements?: number;
   activeCollectors: number;
   todayCollections: number;
-  totalpendingSignalements: number; 
+  pendingSignalements: number;
   completedCollections: number;
   monthlyRevenue: number;
   averageRating: number;
@@ -166,11 +167,10 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>Signalements</h3>
-                              <p class="stat-value">{{statistics.totalpendingSignalements}}</p>
-<span>  En attente de traitement</span>
-                <!-- <span class="stat-trend" [class.negative]="statistics.totalpendingSignalements"> -->
-                
-                <!-- </span> -->
+                <p class="stat-value">{{statistics.pendingSignalements}}</p>
+                <span class="stat-trend" [class.negative]="statistics.totalSignalements">
+                  en attente
+                </span>
               </div>
             </div>
           </div>
@@ -576,7 +576,7 @@ interface Statistics {
                     <i class="material-icons">search</i>
                     Enquêter
                   </button> -->
-                  <button class="btn btn-success" (click)="resolveIncident()" >
+                  <button class="btn btn-success" (click)="resolveIncident(report._id)" >
                     <i class="material-icons">check</i>
                     Résoudre
                   </button>
@@ -2238,31 +2238,32 @@ export class AgencyDashboardComponent implements OnInit {
   //   averageRating: 4.3,
   //   pendingReports: 3
   // };
-    incidentsFilter = 'all';
+  incidentsFilter = 'all';
   severityFilter = 'all';
   filteredIncidents: any[] = [];
   statistics: Statistics = {
     totalClients: 0,
-      totalEmployees: 0,
-      totalZones: 0,
-      totalCollectors: 0,
-      totalSignalements: 0,
-       activeCollectors: 0,
-       todayCollections: 0,
+    totalEmployees: 0,
+    totalZones: 0,
+    totalCollectors: 0,
+    totalSignalements: 0,
+    activeCollectors: 0,
+    todayCollections: 0,
+    resolvedSignalements: 0,
     completedCollections: 0,
     monthlyRevenue: 0,
     averageRating: 0,
     pendingReports: 0,
-      totalpendingSignalements: 0, 
+    pendingSignalements: 0,
   };
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
   employees: Employee[] = [];
   tarif: tarif[] = [];
-editingEmployeeId: string | null = null;
-isEditing: boolean = false;
+  editingEmployeeId: string | null = null;
+  isEditing: boolean = false;
   allEmployees: Employees[] = [];
-   allTarif: Tariff[] = [];
+  allTarif: Tariff[] = [];
   serviceZones: ServiceZone[] = [];
   serviceZoness: ServiceZones[] = []; //from API
   schedules: CollectionSchedule[] = [];
@@ -2297,14 +2298,14 @@ isEditing: boolean = false;
     role: '',
     zones: []
   };
-newTariff: any = {
+  newTariff: any = {
     // agencyId: "",
     type: "",
     price: "",
     description: "",
-    nbPassages:  ""
+    nbPassages: ""
   }
- 
+
 
   newZone: any = {
     name: '',
@@ -2321,6 +2322,13 @@ newTariff: any = {
     endTime: '',
     collectorId: '',
       endDate: '',   
+  };
+  formErrors = {
+    zoneId: '',
+    dayOfWeek: '',
+    startTime: '',
+    endTime: '',
+    collectorId: ''
   };
 formErrors = {
   zoneId: '',
@@ -2342,15 +2350,15 @@ formErrors = {
   //   return this.activeClients.length;
   // }
 
-tabs = [
-  { id: 'collections', label: 'Collectes', icon: 'local_shipping', badge: null },
-  { id: 'employees', label: 'Employés', icon: 'people', badge: null },
-  { id: 'zones', label: 'Zones', icon: 'map', badge: null },
-  { id: 'schedules', label: 'Plannings', icon: 'schedule', badge: null },
-  { id: 'clients', label: 'Clients', icon: 'person', badge: null },
-  { id: 'reports', label: 'Signalements', icon: 'report_problem', badge: 3 },
-  { id: 'analytics', label: 'Rapports', icon: 'analytics', badge: null }
-];
+  tabs = [
+    { id: 'collections', label: 'Collectes', icon: 'local_shipping', badge: null },
+    { id: 'employees', label: 'Employés', icon: 'people', badge: null },
+    { id: 'zones', label: 'Zones', icon: 'map', badge: null },
+    { id: 'schedules', label: 'Plannings', icon: 'schedule', badge: null },
+    { id: 'clients', label: 'Clients', icon: 'person', badge: null },
+    { id: 'reports', label: 'Signalements', icon: 'report_problem', badge: 3 },
+    { id: 'analytics', label: 'Rapports', icon: 'analytics', badge: null }
+  ];
 
   weekDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
   currentWeek = new Date();
@@ -2367,8 +2375,8 @@ tabs = [
     private fb: FormBuilder,
 
   ) {
- 
-   }
+
+  }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
@@ -2379,28 +2387,31 @@ tabs = [
     this.loadCollectors(this.currentUser);
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
-       this.loadTariffs();
+    this.loadTariffs();
     this.cdr.detectChanges();
  
   const testTarifId = '687cc316091944da1fc7c2c7';
 const role = EmployeeRole.MANAGER;
 
-this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(response => {
-  if (response.success && response.data.length > 0) {
-    console.log('Liste des collecteurs :');
-    response.data.forEach(employee => {
-      console.log(`- ${employee} (${employee.id})`);
-    });
-  } else {
-    console.log('Aucun collecteur trouvé ou erreur de requête.');
-  }
-});
+    const testTarifId = '687cc316091944da1fc7c2c5';
+    const role = EmployeeRole.COLLECTOR;
 
-
-
-
-
+    this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(response => {
+      if (response.success && response.data.length > 0) {
+        console.log('Liste des collecteurs :');
+        response.data.forEach(employee => {
+          console.log(`- ${employee} (${employee.id})`);
+        });
+      } else {
+        console.log('Aucun collecteur trouvé ou erreur de requête.');
       }
+    });
+
+
+
+
+
+  }
 
 
 
@@ -2484,106 +2495,106 @@ this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(res
     }
   }
 
-  
+
   //suppression d un employé
-// deleteEmployee(currentUser: any, employeeId: any): void {
-//   this.isDeleting = true;
+  // deleteEmployee(currentUser: any, employeeId: any): void {
+  //   this.isDeleting = true;
 
-//   if (currentUser?._id && employeeId?.userId?._id) {
-//     this.agencyService.deleteEmployee$( employeeId.userId._id).subscribe(
-//       () => {
-//         this.notificationService.showSuccess(
-//           'Succès',
-//           'L\'employé a été supprimé avec succès.'
-//         );
-//         this.loadEmployees(currentUser);
-//         this.isDeleting = false;
-//       },
-//       (error) => {
-//         this.notificationService.showError(
-//           'Erreur',
-//           'Impossible de supprimer l\'employé. Veuillez réessayer.'
-//         );
-//         console.error("Erreur lors de la suppression de l'employé :", error);
-//         this.isDeleting = false;
-//       }
-//     );
-//   } else {
-//     console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
-//     this.isDeleting = false;
-//   }
-// }
-deleteEmployee(currentUser: any, employeeId: any): void {
-  this.isDeleting = true;
+  //   if (currentUser?._id && employeeId?.userId?._id) {
+  //     this.agencyService.deleteEmployee$( employeeId.userId._id).subscribe(
+  //       () => {
+  //         this.notificationService.showSuccess(
+  //           'Succès',
+  //           'L\'employé a été supprimé avec succès.'
+  //         );
+  //         this.loadEmployees(currentUser);
+  //         this.isDeleting = false;
+  //       },
+  //       (error) => {
+  //         this.notificationService.showError(
+  //           'Erreur',
+  //           'Impossible de supprimer l\'employé. Veuillez réessayer.'
+  //         );
+  //         console.error("Erreur lors de la suppression de l'employé :", error);
+  //         this.isDeleting = false;
+  //       }
+  //     );
+  //   } else {
+  //     console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
+  //     this.isDeleting = false;
+  //   }
+  // }
+  deleteEmployee(currentUser: any, employeeId: any): void {
+    this.isDeleting = true;
 
-  // Vérification des IDs nécessaires
-  if (!currentUser?._id || !employeeId?.userId?._id) {
-    this.notificationService.showError(
-      'Erreur',
-      'Impossible d\'identifier l\'employé à supprimer'
-    );
-    this.isDeleting = false;
-    return;
-  }
+    // Vérification des IDs nécessaires
+    if (!currentUser?._id || !employeeId?.userId?._id) {
+      this.notificationService.showError(
+        'Erreur',
+        'Impossible d\'identifier l\'employé à supprimer'
+      );
+      this.isDeleting = false;
+      return;
+    }
 
-  // Demander confirmation avant suppression
-  if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
-    this.agencyService.deleteEmployee$(employeeId.userId._id).subscribe({
-      next: (response) => {
-        // Vérifier si la réponse indique un succès
-        if (response) {
-          this.notificationService.showSuccess(
-            'Succès',
-            'L\'employé a été supprimé avec succès.'
-          );
-          // Recharger la liste des employés
-          this.loadEmployees(currentUser);
-          
-          // Mettre à jour le badge du nombre d'employés
-          const employeesTab = this.tabs.find(tab => tab.id === 'employees');
-          if (employeesTab && this.allEmployees) {
-            employeesTab.badge = this.allEmployees.length - 1;
+    // Demander confirmation avant suppression
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+      this.agencyService.deleteEmployee$(employeeId.userId._id).subscribe({
+        next: (response) => {
+          // Vérifier si la réponse indique un succès
+          if (response) {
+            this.notificationService.showSuccess(
+              'Succès',
+              'L\'employé a été supprimé avec succès.'
+            );
+            // Recharger la liste des employés
+            this.loadEmployees(currentUser);
+
+            // Mettre à jour le badge du nombre d'employés
+            const employeesTab = this.tabs.find(tab => tab.id === 'employees');
+            if (employeesTab && this.allEmployees) {
+              employeesTab.badge = this.allEmployees.length - 1;
+            }
+          } else {
+            this.notificationService.showError(
+              'Erreur',
+              'La suppression a échoué. Veuillez réessayer.'
+            );
           }
-        } else {
+          this.isDeleting = false;
+        },
+        error: (error) => {
+          console.error("Erreur lors de la suppression de l'employé :", error);
           this.notificationService.showError(
             'Erreur',
-            'La suppression a échoué. Veuillez réessayer.'
+            'Impossible de supprimer l\'employé. ' +
+            (error.error?.message || 'Veuillez réessayer.')
           );
+          this.isDeleting = false;
+        },
+        complete: () => {
+          this.isDeleting = false;
         }
-        this.isDeleting = false;
-      },
-      error: (error) => {
-        console.error("Erreur lors de la suppression de l'employé :", error);
-        this.notificationService.showError(
-          'Erreur',
-          'Impossible de supprimer l\'employé. ' + 
-          (error.error?.message || 'Veuillez réessayer.')
-        );
-        this.isDeleting = false;
-      },
-      complete: () => {
-        this.isDeleting = false;
-      }
-    });
-  } else {
-    this.isDeleting = false;
+      });
+    } else {
+      this.isDeleting = false;
+    }
   }
-}
   assignIncident(): void {
     this.notificationService.showInfo('Attribution', 'Ouverture du formulaire d\'attribution');
     return
   }
-// onEditEmployee(emp: any) {
-//   this.editingEmployeeId = emp._id;
-//   this.editForm.patchValue({
-//     firstname: emp.firstname,
-//     lastname: emp.lastname,
-//     email: emp.email,
-//     phone: emp.phone,
-//     role: emp.role
-//   });
-//   this.isEditing = true;
-// }
+  // onEditEmployee(emp: any) {
+  //   this.editingEmployeeId = emp._id;
+  //   this.editForm.patchValue({
+  //     firstname: emp.firstname,
+  //     lastname: emp.lastname,
+  //     email: emp.email,
+  //     phone: emp.phone,
+  //     role: emp.role
+  //   });
+  //   this.isEditing = true;
+  // }
 
 
 
@@ -2621,11 +2632,11 @@ deleteEmployee(currentUser: any, employeeId: any): void {
         next: (employees) => {
           this.allEmployees = employees;
           console.log("loadEmployees > :", this.allEmployees); 
-                  const employeesTab = this.tabs.find(tab => tab.id === 'employees');
-              if (employeesTab) {
-          employeesTab.badge = employees.length;
-          this.cdr.detectChanges(); 
-        }    
+          const employeesTab = this.tabs.find(tab => tab.id === 'employees');
+          if (employeesTab) {
+            employeesTab.badge = employees.length;
+            this.cdr.detectChanges(); 
+          }
         },
         error: (error) => {
           console.error("Erreur lors du chargement des employés :", error);
@@ -2663,12 +2674,12 @@ deleteEmployee(currentUser: any, employeeId: any): void {
         next: (reports: any) => {
           this.agencyReports = reports?.reports;
           console.log("Signalements chargés >>>>>> :", this.agencyReports);
-           // Mise à jour du badge des Signalements
-        const SignalementsTab = this.tabs.find(tab => tab.id === 'reports');
-        if (SignalementsTab) {
-          SignalementsTab.badge = reports.length;
-          this.cdr.detectChanges(); // Force la détection des changements
-        }
+          // Mise à jour du badge des Signalements
+          const SignalementsTab = this.tabs.find(tab => tab.id === 'reports');
+          if (SignalementsTab) {
+            SignalementsTab.badge = reports.length;
+            this.cdr.detectChanges(); // Force la détection des changements
+          }
         },
         error: (error) => {
           console.error("Erreur lors du chargement des signalements :", error);
@@ -2784,7 +2795,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
   loadReports(): void {
     this.reports = [
       {
-        id: '1',
+        _id: '1',
         clientId: 'client1',
         clientName: 'Marie Dupont',
         type: 'missed_collection',
@@ -3054,7 +3065,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
   }
 
   resolveReport(reportId: string): void {
-    const report = this.reports.find(r => r.id === reportId);
+    const report = this.reports.find(r => r._id === reportId);
     if (report) {
       report.status = 'resolved';
       this.filterReports();
@@ -3129,7 +3140,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
         phone: this.newEmployee.phone,
         role: this.newEmployee.role,
         zones: this.newEmployee.zones,
-        
+
         isActive: true,
         hiredAt: new Date()
       };
@@ -3162,7 +3173,7 @@ deleteEmployee(currentUser: any, employeeId: any): void {
           this.isLoading = false;
           const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
           this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
-             this.loadEmployees(this.currentUser);
+          this.loadEmployees(this.currentUser);
         }
       });
       this.showAddEmployeeModal = false;
@@ -3172,85 +3183,85 @@ deleteEmployee(currentUser: any, employeeId: any): void {
   }
 
   //creation d un tarif 
-addTariff(): void {
-  if (this.newTariff.type && this.newTariff.price !== undefined) {
-    const agencyId = this.currentUser?.id;
-    const tariff: Tariff = {
-     agencyId : agencyId || '',
-      type: this.newTariff.type,
-      price: this.newTariff.price,
-      description: this.newTariff.description,
-      nbPassages: this.newTariff.nbPassages,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+  addTariff(): void {
+    if (this.newTariff.type && this.newTariff.price !== undefined) {
+      const agencyId = this.currentUser?.id;
+      const tariff: Tariff = {
+        agencyId: agencyId || '',
+        type: this.newTariff.type,
+        price: this.newTariff.price,
+        description: this.newTariff.description,
+        nbPassages: this.newTariff.nbPassages,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-    this.agencyService.addTariff(tariff).subscribe({
-      next: (response: any) => {
-        this.isLoading = false;
-        console.log('[DEBUG] Réponse ajout tarif:', response);
+      this.agencyService.addTariff(tariff).subscribe({
+        next: (response: any) => {
+          this.isLoading = false;
+          console.log('[DEBUG] Réponse ajout tarif:', response);
 
-        const isSuccess =
-          response?.success ||
-          response?.status === 'success' ||
-          (typeof response?.message === 'string' &&
-            (response.message.toLowerCase().includes('succès') ||
-             response.message.toLowerCase().includes('réussi'))) ||
-          !!response;
+          const isSuccess =
+            response?.success ||
+            response?.status === 'success' ||
+            (typeof response?.message === 'string' &&
+              (response.message.toLowerCase().includes('succès') ||
+                response.message.toLowerCase().includes('réussi'))) ||
+            !!response;
 
-        if (isSuccess) {
-        // La condition de succès est simplifiée. Si la réponse de l'API n'est pas nulle, on considère que c'est un succès.
-        // Votre service `addTariff` retourne `null` en cas d'erreur.
-        if (response) {
-          this.notificationService.showSuccess(
-            'Ajout réussi',
-            'Le tarif a été créé avec succès !'
-          );
-          this.showZoneModal = false; 
-          this.showZoneModal = false; // Fermeture de la modale
-          this.loadTariffs(); // Rechargement de la liste des tarifs
-          // Réinitialisation du formulaire pour une nouvelle saisie
-          this.newTariff = { type: "", price: "", description: "", nbPassages: "" };
-        } else {
+          if (isSuccess) {
+            // La condition de succès est simplifiée. Si la réponse de l'API n'est pas nulle, on considère que c'est un succès.
+            // Votre service `addTariff` retourne `null` en cas d'erreur.
+            if (response) {
+              this.notificationService.showSuccess(
+                'Ajout réussi',
+                'Le tarif a été créé avec succès !'
+              );
+              this.showZoneModal = false;
+              this.showZoneModal = false; // Fermeture de la modale
+              this.loadTariffs(); // Rechargement de la liste des tarifs
+              // Réinitialisation du formulaire pour une nouvelle saisie
+              this.newTariff = { type: "", price: "", description: "", nbPassages: "" };
+            } else {
+              const errorMsg = this.getFriendlyMessage(
+                (response?.message || response?.error || ''),
+                false
+              );
+              this.notificationService.showError(
+                'Erreur lors de l’ajout du tarif',
+                errorMsg
+              );
+              this.newTariff = {
+                agencyId: '',
+                type: '',
+                price: 0,
+                description: '',
+                nbPassages: 0,
+                createdAt: new Date(),
+
+              };
+            };
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
           const errorMsg = this.getFriendlyMessage(
-            (response?.message || response?.error || ''),
+            (error?.error?.message || error?.error || ''),
             false
           );
           this.notificationService.showError(
             'Erreur lors de l’ajout du tarif',
             errorMsg
           );
-          this.newTariff = {
-          agencyId: '',
-             type: '',
-             price: 0,
-             description: '',
-             nbPassages: 0,
-             createdAt: new Date(),
-        
-        };
-            };
         }
-      },
-      error: (error) => {
-        this.isLoading = false;
-        const errorMsg = this.getFriendlyMessage(
-          (error?.error?.message || error?.error || ''),
-          false
-        );
-        this.notificationService.showError(
-          'Erreur lors de l’ajout du tarif',
-          errorMsg
-        );
-      }
-    });
+      });
+    }
   }
-}
-// recuperations des tarifs liee a une agences
-tariffs: Tariff[] = [];
+  // recuperations des tarifs liee a une agences
+  tariffs: Tariff[] = [];
   loadTariffs(): void {
     this.isLoading = true;
-    const agencyId = this.currentUser?.id; 
+    const agencyId = this.currentUser?.id;
     if (!agencyId) {
       console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
       this.isLoading = false;
@@ -3270,42 +3281,54 @@ tariffs: Tariff[] = [];
     });
   }
 
-tariffToUpdate: Tariff | null = null;
-//update un tarif via l api
-updateTariff(tariffId: string): void {
-  if (this.tariffToUpdate && this.tariffToUpdate.type && this.tariffToUpdate.price !== undefined) {
-    this.isLoading = true;
+  tariffToUpdate: Tariff | null = null;
+  //update un tarif via l api
+  updateTariff(tariffId: string): void {
+    if (this.tariffToUpdate && this.tariffToUpdate.type && this.tariffToUpdate.price !== undefined) {
+      this.isLoading = true;
 
-    const payload = {
-      type: this.tariffToUpdate.type,
-      price: this.tariffToUpdate.price,
-      description: this.tariffToUpdate.description,
-      nbPassages: this.tariffToUpdate.nbPassages,
-      updatedAt: new Date()
-    };
+      const payload = {
+        type: this.tariffToUpdate.type,
+        price: this.tariffToUpdate.price,
+        description: this.tariffToUpdate.description,
+        nbPassages: this.tariffToUpdate.nbPassages,
+        updatedAt: new Date()
+      };
 
-    this.agencyService.getUpdateTarifs$(tariffId, payload).subscribe({
-      next: (response: any) => {
-        this.isLoading = false;
-        console.log('[DEBUG] Réponse modification tarif:', response);
+      this.agencyService.getUpdateTarifs$(tariffId, payload).subscribe({
+        next: (response: any) => {
+          this.isLoading = false;
+          console.log('[DEBUG] Réponse modification tarif:', response);
 
-        const isSuccess =
-          response?.success ||
-          response?.status === 'success' ||
-          (typeof response?.message === 'string' &&
-            (response.message.toLowerCase().includes('succès') ||
-             response.message.toLowerCase().includes('réussi'))) ||
-          !!response;
+          const isSuccess =
+            response?.success ||
+            response?.status === 'success' ||
+            (typeof response?.message === 'string' &&
+              (response.message.toLowerCase().includes('succès') ||
+                response.message.toLowerCase().includes('réussi'))) ||
+            !!response;
 
-        if (isSuccess) {
-          this.notificationService.showSuccess(
-            'Modification réussie',
-            'Le tarif a été modifié avec succès !'
-          );
-          // this.loadTariffs(this.currentUser?.id!); // recharger la liste après update
-        } else {
+          if (isSuccess) {
+            this.notificationService.showSuccess(
+              'Modification réussie',
+              'Le tarif a été modifié avec succès !'
+            );
+            // this.loadTariffs(this.currentUser?.id!); // recharger la liste après update
+          } else {
+            const errorMsg = this.getFriendlyMessage(
+              (response?.message || response?.error || ''),
+              false
+            );
+            this.notificationService.showError(
+              'Erreur lors de la modification du tarif',
+              errorMsg
+            );
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
           const errorMsg = this.getFriendlyMessage(
-            (response?.message || response?.error || ''),
+            (error?.error?.message || error?.error || ''),
             false
           );
           this.notificationService.showError(
@@ -3313,53 +3336,41 @@ updateTariff(tariffId: string): void {
             errorMsg
           );
         }
-      },
-      error: (error) => {
-        this.isLoading = false;
-        const errorMsg = this.getFriendlyMessage(
-          (error?.error?.message || error?.error || ''),
-          false
-        );
-        this.notificationService.showError(
-          'Erreur lors de la modification du tarif',
-          errorMsg
-        );
-      }
-    });
+      });
+    }
   }
-}
 
 
-// supprimer un tarif
-deleteTariff( tariff: any): void {
-  this.isDeleting = true;
-  const tariffId = tariff._id;
+  // supprimer un tarif
+  deleteTariff(tariff: any): void {
+    this.isDeleting = true;
+    const tariffId = tariff._id;
 
-  if (tariffId) {
-    this.agencyService.deleteTariff$(tariffId ).subscribe(
-      () => {
-        this.notificationService.showSuccess(
-          'Succès',
-          'L\'tarif été supprimé avec succès.'
-        );
-        // this.loadEmployees(currentUser);
-        this.isDeleting = false;
-        this.loadTariffs();
-      },
-      (error) => {
-        this.notificationService.showError(
-          'Erreur',
-          'Impossible de supprimer l\'tarif. Veuillez réessayer.'
-        );
-        console.error("Erreur lors de la suppression de l'tarif :", error);
-        this.isDeleting = false;
-      }
-    );
-  } else {
-    console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
-    this.isDeleting = false;
+    if (tariffId) {
+      this.agencyService.deleteTariff$(tariffId).subscribe(
+        () => {
+          this.notificationService.showSuccess(
+            'Succès',
+            'L\'tarif été supprimé avec succès.'
+          );
+          // this.loadEmployees(currentUser);
+          this.isDeleting = false;
+          this.loadTariffs();
+        },
+        (error) => {
+          this.notificationService.showError(
+            'Erreur',
+            'Impossible de supprimer l\'tarif. Veuillez réessayer.'
+          );
+          console.error("Erreur lors de la suppression de l'tarif :", error);
+          this.isDeleting = false;
+        }
+      );
+    } else {
+      console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
+      this.isDeleting = false;
+    }
   }
-}
 
 
   saveZone(): void {
@@ -3454,47 +3465,43 @@ deleteTariff( tariff: any): void {
   // }
 
   addSchedule(): void {
-  // Réinitialiser les erreurs
-  const uuid=this.currentUser?._id || '';
-  console.log("UUID AGENCE >>>",uuid);
-  this.formErrors = {
-    zoneId: '',
-  dayOfWeek: '',
-  // startDate: '',   
-  endDate: '',  
-  startTime: '',
-  endTime: '',
-  collectorId: ''
-  };
+    // Réinitialiser les erreurs
+    this.formErrors = {
+      zoneId: '',
+      dayOfWeek: '',
+      startTime: '',
+      endTime: '',
+      collectorId: ''
+    };
     let isValid = true;
-  if (!this.newSchedule.zoneId) {
-    this.formErrors.zoneId = 'Veuillez sélectionner une zone';
-    isValid = false;
-  }
-  if (!this.newSchedule.dayOfWeek) {
-    this.formErrors.dayOfWeek = 'Veuillez sélectionner un jour';
-    isValid = false;
-  }
-  if (!this.newSchedule.startTime) {
-    this.formErrors.startTime = 'Veuillez définir une heure de début';
-    isValid = false;
-  }
-  if (!this.newSchedule.endTime) {
-    this.formErrors.endTime = 'Veuillez définir une heure de fin';
-    isValid = false;
-  }
-  if (!this.newSchedule.collectorId) {
-    this.formErrors.collectorId = 'Veuillez sélectionner un collecteur';
-    isValid = false;
-  }
-  if (this.newSchedule.startTime && this.newSchedule.endTime) {
-    const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
-    const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
-        if (end <= start) {
-      this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
+    if (!this.newSchedule.zoneId) {
+      this.formErrors.zoneId = 'Veuillez sélectionner une zone';
       isValid = false;
     }
-  }
+    if (!this.newSchedule.dayOfWeek) {
+      this.formErrors.dayOfWeek = 'Veuillez sélectionner un jour';
+      isValid = false;
+    }
+    if (!this.newSchedule.startTime) {
+      this.formErrors.startTime = 'Veuillez définir une heure de début';
+      isValid = false;
+    }
+    if (!this.newSchedule.endTime) {
+      this.formErrors.endTime = 'Veuillez définir une heure de fin';
+      isValid = false;
+    }
+    if (!this.newSchedule.collectorId) {
+      this.formErrors.collectorId = 'Veuillez sélectionner un collecteur';
+      isValid = false;
+    }
+    if (this.newSchedule.startTime && this.newSchedule.endTime) {
+      const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
+      const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
+      if (end <= start) {
+        this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
+        isValid = false;
+      }
+    }
 
   if (!isValid) {
     this.notificationService.showError(
@@ -3579,19 +3586,19 @@ const schedule: CollectionSchedule = {
     //   return statusMatch && severityMatch;
     // });
   }
-    resolveIncident(): void {
+  resolveIncident1(): void {
     // const incident = this.incidents.find(i => i.id === incidentId);
     // if (incident) {
     //   incident.status = 'resolved';
-      this.filterIncidents();
-      this.statistics.pendingReports--;
-      this.notificationService.showSuccess('Résolu', 'Incident marqué comme résolu');
+    this.filterIncidents();
+    this.statistics.pendingReports--;
+    this.notificationService.showSuccess('Résolu', 'Incident marqué comme résolu');
     // }
   }
-   contactAgencyForIncident(): void {
+  contactAgencyForIncident(): void {
     this.contactAgency();
   }
-  
+
   contactAgency(): void {
     this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
@@ -3617,7 +3624,7 @@ const schedule: CollectionSchedule = {
     };
     return types[type as keyof typeof types] || type;
   }
-  
+
   getSeverityIcon(severity: string): string {
     const icons = {
       'critical': 'error',
@@ -3636,6 +3643,30 @@ const schedule: CollectionSchedule = {
     };
     return statuses[status as keyof typeof statuses] || status;
   }
-
+  resolveIncident(id: string) {
+    const body = {
+      status:"resolved" 
+      // status:"pending" 
+    };
+    console.log('Status envoyé :', body);
+    this.agencyService.resolveIncident$(id,body).subscribe({
+      
+      next: (response: any) => {
+        console.log("[DEBUG] Réponse de resolution d'incidant:", response);
+        if (response.message) {
+          this.notificationService.showSuccess('Resolu', response.message);
+           this.loadAgencyReports(this.currentUser);
+          // this.notificationService.showSuccess('Résolu', 'Incident marqué comme résolu');
+        } else {
+          this.notificationService.showError('Activation', 'Erreur lors de l\'activation de l\'agence');
+        }
+      },
+      error: (error: any) => {
+        console.error('Error activating agency:', error);
+        const msg = error?.error?.message || 'Error activating agency';
+        this.notificationService.showSuccess('Activation', msg);
+      }
+    });
+  }
 
 }
