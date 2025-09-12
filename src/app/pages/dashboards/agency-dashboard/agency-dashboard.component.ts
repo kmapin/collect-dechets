@@ -2323,13 +2323,13 @@ export class AgencyDashboardComponent implements OnInit {
     collectorId: '',
       endDate: '',   
   };
-  formErrors = {
-    zoneId: '',
-    dayOfWeek: '',
-    startTime: '',
-    endTime: '',
-    collectorId: ''
-  };
+  // formErrors = {
+  //   zoneId: '',
+  //   dayOfWeek: '',
+  //   startTime: '',
+  //   endTime: '',
+  //   collectorId: ''
+  // };
 formErrors = {
   zoneId: '',
   dayOfWeek: '',
@@ -2390,22 +2390,22 @@ formErrors = {
     this.loadTariffs();
     this.cdr.detectChanges();
  
-  const testTarifId = '687cc316091944da1fc7c2c7';
-const role = EmployeeRole.MANAGER;
+//   const testTarifId = '687cc316091944da1fc7c2c7';
+// const role = EmployeeRole.MANAGER;
 
-    const testTarifId = '687cc316091944da1fc7c2c5';
-    const role = EmployeeRole.COLLECTOR;
+//     const testTarifId = '687cc316091944da1fc7c2c5';
+//     const role = EmployeeRole.COLLECTOR;
 
-    this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(response => {
-      if (response.success && response.data.length > 0) {
-        console.log('Liste des collecteurs :');
-        response.data.forEach(employee => {
-          console.log(`- ${employee} (${employee.id})`);
-        });
-      } else {
-        console.log('Aucun collecteur trouvé ou erreur de requête.');
-      }
-    });
+//     this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(response => {
+//       if (response.success && response.data.length > 0) {
+//         console.log('Liste des collecteurs :');
+//         response.data.forEach(employee => {
+//           console.log(`- ${employee} (${employee.id})`);
+//         });
+//       } else {
+//         console.log('Aucun collecteur trouvé ou erreur de requête.');
+//       }
+//     });
 
 
 
@@ -3464,44 +3464,52 @@ const role = EmployeeRole.MANAGER;
   //   }
   // }
 
-  addSchedule(): void {
-    // Réinitialiser les erreurs
-    this.formErrors = {
-      zoneId: '',
-      dayOfWeek: '',
-      startTime: '',
-      endTime: '',
-      collectorId: ''
-    };
-    let isValid = true;
-    if (!this.newSchedule.zoneId) {
-      this.formErrors.zoneId = 'Veuillez sélectionner une zone';
+addSchedule(): void {
+  // Réinitialiser les erreurs
+  this.formErrors = {
+    zoneId: '',
+    dayOfWeek: '',
+    startTime: '',
+    endTime: '',
+    collectorId: '',
+    endDate: '', // Ajout de cette ligne
+  };
+
+  let isValid = true;
+
+
+  if (!this.newSchedule.zoneId) {
+    this.formErrors.zoneId = 'Veuillez sélectionner une zone';
+    isValid = false;
+  }
+  if (!this.newSchedule.dayOfWeek) {
+    this.formErrors.dayOfWeek = 'Veuillez sélectionner un jour';
+    isValid = false;
+  }
+  if (!this.newSchedule.startTime) {
+    this.formErrors.startTime = 'Veuillez définir une heure de début';
+    isValid = false;
+  }
+  if (!this.newSchedule.endTime) {
+    this.formErrors.endTime = 'Veuillez définir une heure de fin';
+    isValid = false;
+  }
+  if (!this.newSchedule.collectorId) {
+    this.formErrors.collectorId = 'Veuillez sélectionner un collecteur';
+    isValid = false;
+  }
+  if (!this.newSchedule.endDate) {
+    this.formErrors.endDate = 'Veuillez définir une date de fin';
+    isValid = false;
+  }
+  if (this.newSchedule.startTime && this.newSchedule.endTime) {
+    const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
+    const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
+    if (end <= start) {
+      this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
       isValid = false;
     }
-    if (!this.newSchedule.dayOfWeek) {
-      this.formErrors.dayOfWeek = 'Veuillez sélectionner un jour';
-      isValid = false;
-    }
-    if (!this.newSchedule.startTime) {
-      this.formErrors.startTime = 'Veuillez définir une heure de début';
-      isValid = false;
-    }
-    if (!this.newSchedule.endTime) {
-      this.formErrors.endTime = 'Veuillez définir une heure de fin';
-      isValid = false;
-    }
-    if (!this.newSchedule.collectorId) {
-      this.formErrors.collectorId = 'Veuillez sélectionner un collecteur';
-      isValid = false;
-    }
-    if (this.newSchedule.startTime && this.newSchedule.endTime) {
-      const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
-      const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
-      if (end <= start) {
-        this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
-        isValid = false;
-      }
-    }
+  }
 
   if (!isValid) {
     this.notificationService.showError(
@@ -3510,18 +3518,18 @@ const role = EmployeeRole.MANAGER;
     );
     return;
   }
+
   // Création de l'objet planning
-const schedule: CollectionSchedule = {
-   agencyId: uuid,
-  zoneId: this.newSchedule.zoneId,
-  dayOfWeek: Number(this.newSchedule.dayOfWeek),
-  startDate: this.newSchedule.startDate,   
-  endDate: this.newSchedule.endDate,       
-  startTime: this.newSchedule.startTime,
-  endTime: this.newSchedule.endTime,
-  collectorId: this.newSchedule.collectorId,
-  
-};
+  const schedule: CollectionSchedule = {
+    zoneId: this.newSchedule.zoneId,
+    dayOfWeek: Number(this.newSchedule.dayOfWeek),
+    startTime: this.newSchedule.startTime,
+    endTime: this.newSchedule.endTime,
+    collectorId: this.newSchedule.collectorId,
+    startDate: this.newSchedule.startDate,
+    endDate: this.newSchedule.endDate, 
+    agencyId: this.currentUser?._id || '', 
+  };
 
   // Envoi au service
   this.agencyService.addSchedule$(schedule).subscribe({
@@ -3531,7 +3539,6 @@ const schedule: CollectionSchedule = {
         'Le planning a été créé avec succès'
       );
       this.showScheduleModal = false;
-      // this.loadSchedules();
       // Réinitialisation du formulaire
       this.newSchedule = {
         zoneId: '',
@@ -3539,16 +3546,16 @@ const schedule: CollectionSchedule = {
         startTime: '',
         endTime: '',
         collectorId: '',
-          endDate: '',     
- 
+        startDate: '', // Ajout de cette ligne
+        endDate: '', // Ajout de cette ligne
       };
     },
     error: (error) => {
       let errorMessage = 'Une erreur est survenue lors de la création du planning';
-      
+
       // Gestion des erreurs spécifiques
       if (error.error?.message) {
-        switch(error.error.message) {
+        switch (error.error.message) {
           case 'COLLECTOR_NOT_AVAILABLE':
             errorMessage = 'Le collecteur n\'est pas disponible sur ce créneau';
             break;
@@ -3562,7 +3569,7 @@ const schedule: CollectionSchedule = {
             errorMessage = error.error.message;
         }
       }
-      
+
       this.notificationService.showError(
         'Erreur',
         errorMessage
