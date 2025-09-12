@@ -387,6 +387,7 @@ export class AgencyService {
 
   addEmployee(employee: Partial<Employees>): Observable<Employees | null> {
     const newEmployee: Employees = {
+      _id: Math.random().toString(36).substr(2, 9),
       firstName: employee.firstName || '',
       lastName: employee.lastName || '',
       email: employee.email || '',
@@ -501,6 +502,11 @@ export class AgencyService {
       })
     );
 
+  }
+    //recupere les planing d une agence
+    getAllPlaningAgency$(agencyId: string): Observable<any[]> {
+    const agency = this.agencies.find(a => a._id === agencyId);
+    return this.http.get<Tariff[]>(`${environment.apiUrl}/zone/plannings/agency/${agencyId}`);
   }
 
   //recupere les employees  d une agence en fonction de leur role 

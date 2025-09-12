@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, ViewChild, ElementRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterModule } from "@angular/router";
@@ -83,7 +83,7 @@ interface IncidentReport {
               </button>
               <button
                 class="btn btn-secondary qr-btn"
-                (click)="showQrScanner = !showQrScanner"
+                (click)="openQrScanner()"
               >
                 <i class="material-icons">qr_code</i>
                 Scanner QR
@@ -695,12 +695,34 @@ interface IncidentReport {
             <zxing-scanner
               [formats]="qrFormats"
               (scanSuccess)="onQrCodeResult($event)"
+              (scanError)="onScanError($event)"
+              (camerasFound)="onCamerasFound($event)"
               [torch]="false"
               [tryHarder]="true"
               [device]="selectedDevice"
               [autostart]="true"
               [previewFitMode]="'cover'"
+              *ngIf="!cameraError"
             ></zxing-scanner>
+            
+            <!-- Message d'erreur de caméra -->
+            <div class="camera-error" *ngIf="cameraError">
+              <div class="error-content">
+                <i class="material-icons error-icon">videocam_off</i>
+                <h3>Caméra inaccessible</h3>
+                <p>{{ cameraErrorMessage }}</p>
+                <div class="error-actions">
+                  <button class="btn btn-primary" (click)="retryCamera()">
+                    <i class="material-icons">refresh</i>
+                    Réessayer
+                  </button>
+                  <button class="btn btn-secondary" (click)="useFileImport()">
+                    <i class="material-icons">upload_file</i>
+                    Importer une image
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="scanner-controls">
             <button
@@ -709,7 +731,19 @@ interface IncidentReport {
             >
               Fermer
             </button>
+            <button class="btn btn-info btn-full" (click)="importQrFromFile()">
+              <i class="material-icons">upload_file</i>
+              Importer QR Code
+            </button>
           </div>
+          <!-- Input file caché pour l'import de QR code -->
+          <input
+            #fileInput
+            type="file"
+            accept="image/*"
+            style="display: none"
+            (change)="onFileSelected($event)"
+          />
         </div>
       </div>
       <!-- Modal infos client scanné -->
@@ -764,6 +798,13 @@ interface IncidentReport {
             >
               <i class="material-icons">check_circle</i>
               Confirmer la collecte
+            </button>
+            <button
+              class="btn btn-secondary btn-full"
+              (click)="cancelCollection()"
+            >
+              <i class="material-icons">cancel</i>
+              Annuler
             </button>
           </div>
         </div>
@@ -1376,6 +1417,51 @@ interface IncidentReport {
         height: 300px;
       }
 
+      .camera-error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 300px;
+        background: #f5f5f5;
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .error-content {
+        text-align: center;
+        color: #666;
+      }
+
+      .error-icon {
+        font-size: 48px;
+        color: #ff6b6b;
+        margin-bottom: 16px;
+      }
+
+      .error-content h3 {
+        margin: 0 0 8px 0;
+        color: #333;
+        font-size: 18px;
+      }
+
+      .error-content p {
+        margin: 0 0 20px 0;
+        line-height: 1.4;
+        max-width: 300px;
+      }
+
+      .error-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .error-actions .btn {
+        min-width: 140px;
+      }
+
       .scanner-overlay {
         position: absolute;
         top: 0;
@@ -1878,6 +1964,15 @@ export class CollectorDashboardComponent implements OnInit {
   scannedClient: any | null = null;
   showClientModal = false;
 
+  // File input pour l'import de QR code
+  @ViewChild("fileInput", { static: false })
+  fileInput!: ElementRef<HTMLInputElement>;
+
+  // Gestion des erreurs de caméra
+  cameraError = false;
+  cameraErrorMessage = '';
+  availableCameras: any[] = [];
+
   // Collections data
   collectionPoints: CollectionPoint[] = [];
   currentCollectionIndex = 0;
@@ -1919,8 +2014,12 @@ export class CollectorDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    console.log("this.currentUser", this.currentUser);
+
     this.loadCollectorData();
-    // this.onQrCodeResult("d58ae925a27f0c108234c015");
+    this.onQrCodeResult(
+      "https://projectwise.onrender.com/api/collecte/scan?id=687fe508693b96642442a30b&ts=1757606939990"
+    );
   }
 
   loadCollectorData(): void {
@@ -2221,16 +2320,25 @@ export class CollectorDashboardComponent implements OnInit {
   }
 
   onQrCodeResult(result: string) {
-    this.lastQrResult = result;
+    // S'assurer que nous avons bien une chaîne
+    const qrCodeValue = result ?? "";
+
+    // Extraire l'ID de l'URL si c'est une URL complète
+    let clientId = qrCodeValue;
+    if (qrCodeValue.includes("/api/collecte/scan?id=")) {
+      const urlParams = new URLSearchParams(qrCodeValue.split("?")[1]);
+      clientId = urlParams.get("id") || qrCodeValue;
+    }
+
+    this.lastQrResult = clientId;
     this.showQrScanner = false;
-    this.notificationService.showSuccess("QR Code détecté", result);
+    this.notificationService.showSuccess("QR Code détecté", clientId);
     // Appel API pour récupérer le client
-    this.clientService.getClientById(result).subscribe({
+    this.clientService.getClientById(clientId).subscribe({
       next: (client) => {
         this.scannedClient = client?.data;
         console.log("Scanned client :>", this.scannedClient);
-        if(this.scannedClient){
-
+        if (this.scannedClient) {
           this.showClientModal = true;
         }
       },
@@ -2241,6 +2349,22 @@ export class CollectorDashboardComponent implements OnInit {
         );
       },
     });
+  }
+
+  // Méthode helper pour extraire une string de l'événement
+  private extractStringFromEvent(event: any): string {
+    // Si c'est déjà une string, on la retourne
+    if (typeof event === 'string') {
+      return event;
+    }
+    
+    // Si c'est un objet avec une propriété text ou data
+    if (event && typeof event === 'object') {
+      return event.text || event.data || event.toString() || '';
+    }
+    
+    // Sinon, on convertit en string
+    return event?.toString() || '';
   }
 
   // Utilitaires
@@ -2282,5 +2406,168 @@ export class CollectorDashboardComponent implements OnInit {
 
   getOpenIncidents(): number {
     return this.todayIncidents.filter((i) => i.status === "open").length;
+  }
+
+  // Nouvelles méthodes pour les boutons
+  cancelCollection(): void {
+    this.showClientModal = false;
+    this.scannedClient = null;
+    this.lastQrResult = null;
+    this.notificationService.showInfo("Annulé", "Collecte annulée");
+  }
+
+  importQrFromFile(): void {
+    this.fileInput.nativeElement.click();
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      // Vérifier que c'est bien une image
+      if (!file.type.startsWith("image/")) {
+        this.notificationService.showError(
+          "Erreur",
+          "Veuillez sélectionner une image valide"
+        );
+        return;
+      }
+
+      // Créer un FileReader pour lire l'image
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const imageData = e.target.result;
+        this.processImageForQrCode(imageData);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  private processImageForQrCode(imageData: string): void {
+    // Créer un élément image temporaire
+    const img = new Image();
+    img.onload = () => {
+      // Créer un canvas pour traiter l'image
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        this.notificationService.showError(
+          "Erreur",
+          "Impossible de traiter l'image"
+        );
+        return;
+      }
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      // Pour une solution simple, on va utiliser une approche basique
+      // Dans un vrai projet, tu devrais utiliser une librairie comme jsQR ou qrcode-reader
+      this.notificationService.showInfo(
+        "Info",
+        "Fonctionnalité d'import en cours de développement. Veuillez utiliser le scanner en direct."
+      );
+
+      // Réinitialiser l'input file
+      this.fileInput.nativeElement.value = "";
+    };
+    img.src = imageData;
+  }
+
+  // Méthodes pour la gestion des erreurs de caméra
+  onScanError(error: any): void {
+    console.error('Erreur de scan:', error);
+    this.cameraError = true;
+    
+    if (error.name === 'NotReadableError' || error.name === 'NotAllowedError') {
+      this.cameraErrorMessage = 'Permission de caméra refusée. Veuillez autoriser l\'accès à la caméra dans les paramètres de votre navigateur.';
+    } else if (error.name === 'NotFoundError') {
+      this.cameraErrorMessage = 'Aucune caméra trouvée. Veuillez connecter une caméra ou utiliser l\'import d\'image.';
+    } else {
+      this.cameraErrorMessage = 'Erreur d\'accès à la caméra. Veuillez réessayer ou utiliser l\'import d\'image.';
+    }
+    
+    this.notificationService.showError('Erreur Caméra', this.cameraErrorMessage);
+  }
+
+  onCamerasFound(cameras: any[]): void {
+    this.availableCameras = cameras;
+    console.log('Caméras disponibles:', cameras);
+    
+    if (cameras.length === 0) {
+      this.cameraError = true;
+      this.cameraErrorMessage = 'Aucune caméra détectée sur cet appareil.';
+      this.notificationService.showError('Erreur Caméra', 'Aucune caméra détectée');
+    }
+  }
+
+  retryCamera(): void {
+    this.cameraError = false;
+    this.cameraErrorMessage = '';
+    
+    // Réinitialiser le scanner
+    this.showQrScanner = false;
+    setTimeout(() => {
+      this.showQrScanner = true;
+    }, 100);
+    
+    this.notificationService.showInfo('Info', 'Tentative de reconnexion à la caméra...');
+  }
+
+  useFileImport(): void {
+    this.showQrScanner = false;
+    this.importQrFromFile();
+  }
+
+  // Méthode pour ouvrir le scanner QR avec vérification des permissions
+  async openQrScanner(): Promise<void> {
+    try {
+      // Vérifier si le navigateur supporte la caméra
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.notificationService.showError(
+          'Erreur', 
+          'Votre navigateur ne supporte pas l\'accès à la caméra. Veuillez utiliser l\'import d\'image.'
+        );
+        return;
+      }
+
+      // Vérifier les permissions
+      const hasPermission = await this.checkCameraPermissions();
+      if (!hasPermission) {
+        this.notificationService.showError(
+          'Permission refusée', 
+          'Veuillez autoriser l\'accès à la caméra dans les paramètres de votre navigateur.'
+        );
+        return;
+      }
+
+      // Réinitialiser l'état d'erreur et ouvrir le scanner
+      this.cameraError = false;
+      this.cameraErrorMessage = '';
+      this.showQrScanner = true;
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'ouverture du scanner:', error);
+      this.notificationService.showError(
+        'Erreur', 
+        'Impossible d\'accéder à la caméra. Veuillez utiliser l\'import d\'image.'
+      );
+    }
+  }
+
+  // Méthode pour vérifier les permissions de caméra
+  async checkCameraPermissions(): Promise<boolean> {
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop());
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Erreur de permission caméra:', error);
+      return false;
+    }
   }
 }

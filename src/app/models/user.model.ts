@@ -1,4 +1,5 @@
 export interface User {
+  _id?: string;
   id: string;
   email: string;
   firstName: string;
@@ -16,11 +17,11 @@ export interface User {
 }
 
 export enum UserRole {
-  CLIENT = 'client',
-  AGENCY = 'agency',
-  COLLECTOR = 'collector',
-  MUNICIPALITY = 'municipality',
-  SUPER_ADMIN = 'super_admin'
+  CLIENT = "client",
+  AGENCY = "agency",
+  COLLECTOR = "collector",
+  MUNICIPALITY = "municipality",
+  SUPER_ADMIN = "super_admin",
 }
 
 export interface ClientUser extends User {
@@ -58,7 +59,7 @@ export interface Address {
 
 export interface PaymentMethod {
   id: string;
-  type: 'card' | 'bank_transfer' | 'mobile_money';
+  type: "card" | "bank_transfer" | "mobile_money";
   isDefault: boolean;
   lastFour?: string;
   expiryDate?: string;

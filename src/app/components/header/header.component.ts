@@ -109,7 +109,7 @@ import { NotificationService } from '../../services/notification.service';
                   <i class="material-icons">person</i>
                   <span>Mon profil</span>
                 </a>
-                <a routerLink="/subscription" class="dropdown-item">
+                <a *ngIf="currentUser?.role !== 'collector'" routerLink="/subscription" class="dropdown-item">
                   <i class="material-icons">card_membership</i>
                   <span>Mon abonnement</span>
                 </a>
@@ -180,6 +180,10 @@ import { NotificationService } from '../../services/notification.service';
                 <a routerLink="/profile" class="mobile-nav-link" (click)="closeMobileMenu()">
                   <i class="material-icons">person</i>
                   <span>Mon profil</span>
+                </a>
+                <a *ngIf="currentUser?.role !== 'collector'" routerLink="/subscription" class="dropdown-item">
+                  <i class="material-icons">card_membership</i>
+                  <span>Mon abonnement</span>
                 </a>
                 <button (click)="logout(); closeMobileMenu()" class="mobile-nav-link logout-mobile">
                   <i class="material-icons">logout</i>
@@ -824,6 +828,8 @@ notifications: any[] = [];
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
+    this.currentUser = this.authService.getCurrentUser();
+    console.log("this.currentUser", this.currentUser);
 
     this.authService.isAuthenticated$.subscribe(isAuth => {
       this.isAuthenticated = isAuth;
