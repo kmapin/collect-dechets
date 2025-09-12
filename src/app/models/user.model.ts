@@ -13,7 +13,6 @@ export interface User {
   isActive: boolean;
   avatar?: string;
   subscribedAgencyId?: string;
-  _id?: string
 }
 
 export enum UserRole {
