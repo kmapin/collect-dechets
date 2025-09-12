@@ -2388,6 +2388,7 @@ formErrors = {
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
     this.loadTariffs();
+    this.loadPlannings();
     this.cdr.detectChanges();
  
 //   const testTarifId = '687cc316091944da1fc7c2c7';
@@ -3268,12 +3269,12 @@ formErrors = {
     this.isLoading = true;
     const agencyId = this.currentUser?.id;
     if (!agencyId) {
-      console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
+      console.error('[DEBUG] Aucun planning trouvé pour cette agence');
       this.isLoading = false;
       return;
     }
 
-    this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
+    this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
       next: (data: Tariff[]) => {
         this.tariffs = data;
         console.log('Tarifs récupérés :', this.tariffs);
@@ -3281,6 +3282,30 @@ formErrors = {
       },
       error: (error) => {
         console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
+        this.isLoading = false;
+      }
+    });
+  }
+    //recupere les planning d une agence
+  plannings: any[] = [];
+
+     loadPlannings(): void {
+    this.isLoading = true;
+    const agencyId = this.currentUser?.id;
+    if (!agencyId) {
+      console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
+      this.isLoading = false;
+      return;
+    }
+
+    this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
+      next: (data: any[]) => {
+        this.plannings = data;
+        console.log('Plannings récupérés :', this.plannings);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('[DEBUG] Erreur lors du chargement des plannings :', error);
         this.isLoading = false;
       }
     });

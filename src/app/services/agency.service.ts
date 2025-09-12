@@ -503,6 +503,11 @@ export class AgencyService {
     );
 
   }
+    //recupere les planing d une agence
+    getAllPlaningAgency$(agencyId: string): Observable<any[]> {
+    const agency = this.agencies.find(a => a._id === agencyId);
+    return this.http.get<Tariff[]>(`${environment.apiUrl}/zone/plannings/agency/${agencyId}`);
+  }
 
   //recupere les employees  d une agence en fonction de leur role 
   getEmployeesByRole(agencyId: string, role: string): Observable<Employee[] | null> {
