@@ -3841,7 +3841,7 @@ export class AgencyDashboardComponent implements OnInit {
 
   loadPlannings(): void {
     this.isLoading = true;
-    const agencyId = this.currentUser?.id;
+    const agencyId = this.currentUser?._id;
     if (!agencyId) {
       console.error("[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant");
       this.isLoading = false;
