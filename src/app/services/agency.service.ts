@@ -491,7 +491,7 @@ export class AgencyService {
   // }
   // //ajouter une planification
   addSchedule$(schedule: CollectionSchedule): Observable<CollectionSchedule | null> {
-    return this.http.post<CollectionSchedule>(`${environment.apiUrl}/zones/planifications`, schedule).pipe(
+    return this.http.post<CollectionSchedule>(`${environment.apiUrl}/zones/plannings`, schedule).pipe(
       map((response: CollectionSchedule) => {
         console.log("API > planification enregistre :", response);
         return response;
@@ -506,9 +506,21 @@ export class AgencyService {
     //recupere les planing d une agence
     getAllPlaningAgency$(agencyId: string): Observable<any[]> {
     const agency = this.agencies.find(a => a._id === agencyId);
-    return this.http.get<Tariff[]>(`${environment.apiUrl}/zone/plannings/agency/${agencyId}`);
+    return this.http.get<Tariff[]>(`${environment.apiUrl}/zones/plannings/agency/${agencyId}`);
   }
-
+   //supprimer un  planing d une agence
+  deletePlanning$(planningId: string): Observable<boolean> {
+    return this.http.delete(`${environment.apiUrl}/agences/tarif/${planningId}`).pipe(
+      map(() => {
+        console.log(`planning ${planningId} supprimé avec succès`);
+        return true;
+      }),
+      catchError(error => {
+        console.error(`Erreur lors de la suppression du planning ${planningId} :`, error);
+        return of(false);
+      })
+    );
+  }
   //recupere les employees  d une agence en fonction de leur role 
   getEmployeesByRole(agencyId: string, role: string): Observable<Employee[] | null> {
     const url = `${environment.apiUrl}/agences/${agencyId}/employés/role/${role}`;
