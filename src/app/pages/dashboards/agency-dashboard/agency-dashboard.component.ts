@@ -3824,7 +3824,7 @@ export class AgencyDashboardComponent implements OnInit {
       return;
     }
 
-    this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
+    this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
       next: (data: Tariff[]) => {
         this.tariffs = data;
         console.log("Tarifs récupérés :", this.tariffs);
