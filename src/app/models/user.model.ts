@@ -12,6 +12,7 @@ export interface User {
   updatedAt: Date;
   isActive: boolean;
   avatar?: string;
+  subscribedAgencyId?: string;
 }
 
 export enum UserRole {
