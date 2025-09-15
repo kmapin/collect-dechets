@@ -2733,7 +2733,7 @@ export class MunicipalityDashboardComponent implements OnInit {
       critical: "dangerous",
       high: "priority_high",
       medium: "warning",
-      low: "info",
+      low: "info"
     };
     return icons[severity as keyof typeof icons] || "i";
   }
@@ -2741,8 +2741,8 @@ export class MunicipalityDashboardComponent implements OnInit {
   getSeverityText(severity: string): string {
     const texts = {
       critical: "Critique",
-      high: "Élevée",
-      medium: "Moyenne",
+      high: "Élevé",
+      medium: "Moyen",
       low: "Faible",
     };
     return texts[severity as keyof typeof texts] || severity;

@@ -1300,11 +1300,11 @@ interface Communication {
       color: var(--white);
     }
 
-    .severity-critical {
+     .severity-critical {
         display: flex;
         align-items: center;
         padding: 10px 12px;
-        background: #f9561bff;
+        background: #f42c2cff;
         border-radius: 5px;
         font-size: 17px;
       }
@@ -1313,7 +1313,7 @@ interface Communication {
         display: flex;
         align-items: center;
         padding: 10px 12px;
-        background: #f1a582ff;
+        background: #ef692bff;
         border-radius: 5px;
         font-size: 17px;
       }
@@ -1322,7 +1322,7 @@ interface Communication {
         display: flex;
         align-items: center;
         padding: 10px 12px;
-        background: #ec7023ff;
+        background: #f5ab57ff;
         border-radius: 5px;
         font-size: 17px;
       }
@@ -1335,7 +1335,6 @@ interface Communication {
         border-radius: 5px;
         font-size: 17px;
       }
-
 
     .alert-content {
       flex: 1;
@@ -2665,10 +2664,10 @@ export class AdminDashboard implements OnInit {
 
   getSeverityIcon(severity: string): string {
     const icons = {
-      'critical': 'error',
-      'high': 'warning',
-      'medium': 'info',
-      'low': 'help'
+      critical: "dangerous",
+      high: "priority_high",
+      medium: "warning",
+      low: "info"
     };
     return icons[severity as keyof typeof icons] || 'help';
   }
@@ -2676,8 +2675,8 @@ export class AdminDashboard implements OnInit {
   getSeverityText(severity: string): string {
     const texts = {
       'critical': 'Critique',
-      'high': 'Élevée',
-      'medium': 'Moyenne',
+      'high': 'Élevé',
+      'medium': 'Moyen',
       'low': 'Faible'
     };
     return texts[severity as keyof typeof texts] || severity;

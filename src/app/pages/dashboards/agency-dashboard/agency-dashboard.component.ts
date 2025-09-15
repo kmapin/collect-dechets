@@ -1780,6 +1780,44 @@ interface Statistics {
         font-weight: 500;
       }
 
+
+      
+      .severity-critical {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f42c2cff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-high {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #ef692bff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-medium {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f5ab57ff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-low {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f8e962ff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
       .action-btn {
         width: 32px;
         height: 32px;
@@ -4225,8 +4263,8 @@ export class AgencyDashboardComponent implements OnInit {
   getSeverityText(severity: string): string {
     const texts = {
       critical: "Critique",
-      high: "Élevée",
-      medium: "Moyenne",
+      high: "Élevé",
+      medium: "Moyen",
       low: "Faible",
     };
     return texts[severity as keyof typeof texts] || severity;
@@ -4245,10 +4283,10 @@ export class AgencyDashboardComponent implements OnInit {
 
   getSeverityIcon(severity: string): string {
     const icons = {
-      critical: "error",
-      high: "warning",
-      medium: "info",
-      low: "help",
+     critical: "dangerous",
+      high: "priority_high",
+      medium: "warning",
+      low: "info"
     };
     return icons[severity as keyof typeof icons] || "help";
   }
