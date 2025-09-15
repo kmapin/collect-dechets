@@ -144,7 +144,6 @@ export interface tarif {
 
 export interface Employee {
   id: string;
-  userId: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -157,8 +156,7 @@ export interface Employee {
 }
 
 export interface Employees {
-  // id: string;
-  // userId: string;
+   _id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -185,6 +183,14 @@ export enum  EmployeeRole {
   COLLECTOR = 'collector'
 }
 
+// export enum  UserRole {
+//   ADMIN = 'admin',
+//   MANAGER = 'manager',
+//   COLLECTOR = 'collector',
+//   CLIENT = 'client',
+//   AGENCY = 'agence'
+// }
+
 // export interface CollectionSchedule {
 //   id: string;
 //   zoneId: string;
@@ -195,11 +201,14 @@ export enum  EmployeeRole {
 //   isActive: boolean;
 // }
  export interface CollectionSchedule {
-  zoneId: string;
+  zone: string;
   dayOfWeek: number;
   startTime: string;
+   date: string;  
+  // endDate: string; 
   endTime: string;
   collectorId: string;
+    agencyId: string; 
 }
 
 export interface WasteType {
