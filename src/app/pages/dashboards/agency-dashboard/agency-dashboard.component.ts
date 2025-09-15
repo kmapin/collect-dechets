@@ -532,8 +532,10 @@ interface Statistics {
 
                 <div class="calendar-grid">
                   <div class="calendar-days">
+                    
                     <div *ngFor="let day of weekDays" class="day-header">
                       {{ day }}
+                      
                     </div>
                   </div>
 
@@ -546,8 +548,10 @@ interface Statistics {
                         *ngFor="let schedule of getSchedulesForDay(i)"
                         class="schedule-item"
                       >
+
+
                         <div class="schedule-time">
-                          {{ schedule.startTime }} - {{ schedule.endTime }}
+                          {{ schedule.startTime }} 
                         </div>
                         <div class="schedule-zone">
                           {{ getZoneName(schedule.zone) }}
@@ -555,9 +559,9 @@ interface Statistics {
                         <div class="schedule-collector">
                           {{ getCollectorName(schedule.collectorId) }}
                         </div>
-                        <!-- <div class="schedule-time">{{ schedule.startTime }} - {{ schedule.endTime }}</div> -->
-                        <!-- <div class="schedule-zone">{{ getZoneName(schedule.zone) }}</div> -->
-                        <!-- <div class="schedule-collector">{{ getCollectorName(schedule.collectorId) }}</div> -->
+                        <div class="schedule-time">{{ schedule.startTime }} - {{ schedule.endTime }}</div>
+                        <div class="schedule-zone">{{ getZoneName(schedule.zone) }}</div>
+                        <div class="schedule-collector">{{ getCollectorName(schedule.collectorId) }}</div>
                         <div class="schedule-actions">
                           <button
                             class="action-btn"
@@ -2793,6 +2797,7 @@ export class AgencyDashboardComponent implements OnInit {
     this.loadAgencyReports(this.currentUser);
     this.loadTariffs();
     this.loadPlannings();
+    this.loadCollectorPlannings(),
     this.cdr.detectChanges();
 
     //   const testTarifId = '687cc316091944da1fc7c2c7';
@@ -3427,22 +3432,25 @@ export class AgencyDashboardComponent implements OnInit {
   // getSchedulesForDay(dayIndex: number): any[] {
   //   return this.schedules.filter(s => s.dayOfWeek === dayIndex + 1);
   // }
-  getSchedulesForDay(dayIndex: number): any[] {
-    const startOfWeek = new Date(this.currentWeek);
-    startOfWeek.setDate(
-      this.currentWeek.getDate() - this.currentWeek.getDay() + 1
-    ); // Lundi
-    const targetDate = new Date(startOfWeek);
-    targetDate.setDate(startOfWeek.getDate() + dayIndex);
+  // getSchedulesForDay(dayIndex: number): any[] {
+  //   const startOfWeek = new Date(this.currentWeek);
+  //   startOfWeek.setDate(
+  //     this.currentWeek.getDate() - this.currentWeek.getDay() + 1
+  //   ); // Lundi
+  //   const targetDate = new Date(startOfWeek);
+  //   targetDate.setDate(startOfWeek.getDate() + dayIndex);
 
-    return this.plannings.filter((schedule) => {
-      const scheduleDate = new Date(schedule.date);
-      return (
-        scheduleDate.toDateString() === targetDate.toDateString() &&
-        schedule.dayOfWeek === dayIndex + 1
-      );
-    });
-  }
+  //   return this.plannings.filter((schedule) => {
+  //     const scheduleDate = new Date(schedule.date);
+  //     return (
+  //       scheduleDate.toDateString() === targetDate.toDateString() &&
+  //       schedule.dayOfWeek === dayIndex + 1
+  //     );
+  //   });
+  // }
+  getSchedulesForDay(dayIndex: number): any[] {
+  return this.plannings.filter(schedule => schedule.dayOfWeek === dayIndex + 1);
+}
   getCollectors(): Employee[] {
     return this.employees.filter((e) => e.role === "collector");
   }
@@ -3730,7 +3738,7 @@ export class AgencyDashboardComponent implements OnInit {
         role: "",
         zones: [],
       };
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
+  
     }
   }
 
@@ -3770,9 +3778,9 @@ export class AgencyDashboardComponent implements OnInit {
                 "Le tarif a été créé avec succès !"
               );
               this.showZoneModal = false;
-              this.showZoneModal = false; // Fermeture de la modale
-              this.loadTariffs(); // Rechargement de la liste des tarifs
-              // Réinitialisation du formulaire pour une nouvelle saisie
+              this.showZoneModal = false; 
+              this.loadTariffs(); // 
+      
               this.newTariff = {
                 type: "",
                 price: "",
@@ -3847,7 +3855,6 @@ export class AgencyDashboardComponent implements OnInit {
       this.isLoading = false;
       return;
     }
-
     this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
       next: (data: any[]) => {
         this.plannings = data;
@@ -3863,19 +3870,45 @@ export class AgencyDashboardComponent implements OnInit {
       },
     });
   }
+  // recuperation des planning d un colector 
+  collectorplannings: any[] = [];
+  loadCollectorPlannings(): void {
+    this.isLoading = true;
+    const collectorId = this.currentUser?.id;
+    if (!collectorId) {
+      console.error("[DEBUG] Aucun collectorId trouvé ");
+      this.isLoading = false;
+      return;
+    }
+    this.agencyService. getPlaningCollectory$(collectorId).subscribe({
+      next: (data: any[]) => {
+        this.collectorplannings = data;
+        console.log("Plannings récupérés pour le collecteur :", this.collectorplannings);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error(
+          "[DEBUG] Erreur lors du chargement des plannings du collecteur :",
+          error
+        );
+        this.isLoading = false;
+      },
+    });
+  }
+    
  // supprimer un tarif
   deletePlanning(planning: any): void {
     this.isDeleting = true;
-    const tariffId = planning._id;
+    const planningId = planning._id;
 
-    if (tariffId) {
-      this.agencyService.deletePlanning$(tariffId).subscribe(
+    if (planningId) {
+      this.agencyService.deletePlanning$(planningId).subscribe(
         () => {
           this.notificationService.showSuccess(
             "Succès",
             "Planning a été supprimé avec succès."
           );
-          // this.loadEmployees(currentUser);
+       this.loadPlannings();
           this.isDeleting = false;
           // this.load();
         },
@@ -3893,7 +3926,6 @@ export class AgencyDashboardComponent implements OnInit {
       this.isDeleting = false;
     }
   }
-
   tariffToUpdate: Tariff | null = null;
   //update un tarif via l api
   updateTariff(tariffId: string): void {
