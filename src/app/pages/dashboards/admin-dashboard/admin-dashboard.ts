@@ -74,7 +74,7 @@ interface ZoneStatistic {
 interface Incident {
   id: string;
   agency?: {
-    id: string,
+    id?: string,
     agencyName?: string
   }
   agencyId: string;
@@ -221,7 +221,7 @@ interface Communication {
                 <i class="material-icons">report_problem</i>
               </div>
              <div class="stat-info">
-                <h3>Incidents non resolus</h3>
+                <h3>Incidents</h3>
                 <p class="stat-value">{{ statisticsAdmin?.reportsFromClients?.pending ?? 0 }}</p>
                 <span class="stat-trend"[class.negative]="(statisticsAdmin?.reportsFromClients?.pending ?? 0) > 10">
                   {{ getIncidentSeverity() }}
@@ -810,7 +810,7 @@ interface Communication {
                       <i class="material-icons">check</i>
                       Résoudre
                     </button>
-                    <button class="btn btn-accent" (click)="contactAgencyForIncident(incident?.agencyId)">
+                    <button class="btn btn-accent" (click)="contactAgencyForIncident(incident.agencyId)">
                       <i class="material-icons">phone</i>
                       Contacter Agence
                     </button>
@@ -1300,10 +1300,41 @@ interface Communication {
       color: var(--white);
     }
 
-    .severity-critical { background: var(--error-color); }
-    .severity-high { background: #ff7043; }
-    .severity-medium { background: var(--warning-color); color: var(--text-primary); }
-    .severity-low { background: var(--text-secondary); }
+     .severity-critical {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f42c2cff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-high {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #ef692bff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-medium {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f5ab57ff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-low {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f8e962ff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
 
     .alert-content {
       flex: 1;
@@ -1398,7 +1429,7 @@ interface Communication {
     }
 
     .client-audit-card {
-      border-left: 4px solid var(--primary-color);
+      /*border-left: 4px solid var(--primary-color);*/
     }
     .agency-audit-header {
       display: flex;
@@ -2633,10 +2664,10 @@ export class AdminDashboard implements OnInit {
 
   getSeverityIcon(severity: string): string {
     const icons = {
-      'critical': 'error',
-      'high': 'warning',
-      'medium': 'info',
-      'low': 'help'
+      critical: "dangerous",
+      high: "priority_high",
+      medium: "warning",
+      low: "info"
     };
     return icons[severity as keyof typeof icons] || 'help';
   }
@@ -2644,8 +2675,8 @@ export class AdminDashboard implements OnInit {
   getSeverityText(severity: string): string {
     const texts = {
       'critical': 'Critique',
-      'high': 'Élevée',
-      'medium': 'Moyenne',
+      'high': 'Élevé',
+      'medium': 'Moyen',
       'low': 'Faible'
     };
     return texts[severity as keyof typeof texts] || severity;
@@ -2815,8 +2846,7 @@ export class AdminDashboard implements OnInit {
   contactMunicipality(municipalityId: string): void {
     this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
-  contactAgency(agencyId?: string): void {
-    this.router.navigate(['/agencies', agencyId]);
+  contactAgency(agencyId: string): void {
     this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
 
@@ -2852,7 +2882,7 @@ export class AdminDashboard implements OnInit {
     }
   }
 
-  contactAgencyForIncident(agencyId?: string ): void {
+  contactAgencyForIncident(agencyId: string): void {
     this.contactAgency(agencyId);
   }
 
@@ -3040,9 +3070,7 @@ export class AdminDashboard implements OnInit {
     this.adminService.getAllReports().subscribe({
       next: (response: any) => {
         this.incidents = response.map((signalement: any) => {
-          return {
-            agencyId: signalement.agency._id,
-            ... signalement};
+          return signalement;
         });
         this.filteredIncidents = [...this.incidents];
         console.log('signalements in response', response);

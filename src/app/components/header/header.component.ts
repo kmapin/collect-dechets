@@ -20,8 +20,8 @@ import { NotificationService } from '../../services/notification.service';
                 <i class="material-icons">eco</i>
               </div>
               <div class="brand-text">
-                <span class="brand-name">WasteManager</span>
-                <span class="brand-tagline">Gestion Intelligente</span>
+                <span class="brand-name">ZéroDéchet+</span>
+                <span class="brand-tagline">Collecter aujourd’hui, préserver demain.</span>
               </div>
             </a>
           </div>
@@ -203,7 +203,7 @@ import { NotificationService } from '../../services/notification.service';
   `,
   styles: [`
     .navbar {
-      background-color: red;
+      /* background-color: red; */
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
       min-width: 99vw;
@@ -224,6 +224,8 @@ import { NotificationService } from '../../services/notification.service';
     .container {
       max-width: 100%;
       margin: 0 auto;
+      background-color: red;
+      
       padding: 0 24px;
     }
 
@@ -784,16 +786,65 @@ import { NotificationService } from '../../services/notification.service';
     @media (max-width: 768px) {
 
       .brand-name {
-        font-size: 1.3rem;
+        font-size: 1.8rem;
       }
       .brand-tagline {
-        font-size: 0.9rem;
+        font-size: 1.1rem;
+      }
+      .brand-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 34px;
+      }
+      .navbar-content {
+        height: 84px;
+      }
+      .container {
+        padding: 0 16px;
+        max-height: 120px;
+      }
+      .material-icons {
+        font-size: 22px;
+      }
+      .nav-link span,
+      .login-link span,
+      .nav-cta span {
+        font-size: 1rem;
       }
       .mobile-menu-toggle {
         border: 1px solid var(--surface-400);
         width: 50px;
         height: 50px;
         padding: 0;
+      }
+
+      /* Mobile menu block: bigger, more touch-friendly */
+      .mobile-menu-content {
+        padding: 20px;
+      }
+      .mobile-nav-link,
+      .mobile-auth-link {
+        padding: 18px;
+        font-size: 1.1rem;
+      }
+      .mobile-nav-link .material-icons,
+      .mobile-auth-link .material-icons,
+      .mobile-cta .material-icons {
+        font-size: 24px;
+      }
+      .mobile-cta {
+        padding: 18px;
+        font-size: 1.1rem;
+      }
+      .mobile-user-avatar {
+        width: 56px;
+        height: 56px;
+      }
+      .mobile-user-details strong {
+        font-size: 1rem;
+      }
+      .mobile-user-details span {
+        font-size: 0.95rem;
       }
     }
 
@@ -802,8 +853,35 @@ import { NotificationService } from '../../services/notification.service';
       .brand-text {
         display: none;
       }
+      .navbar-content {
+        height: 92px;
+      }
       .mobile-menu-content {
-        padding: 16px;
+        padding: 20px;
+      }
+      .mobile-nav-link,
+      .mobile-auth-link {
+        padding: 20px;
+        font-size: 1.2rem;
+      }
+      .mobile-nav-link .material-icons,
+      .mobile-auth-link .material-icons,
+      .mobile-cta .material-icons {
+        font-size: 26px;
+      }
+      .mobile-cta {
+        padding: 20px;
+        font-size: 1.15rem;
+      }
+      .mobile-user-avatar {
+        width: 60px;
+        height: 60px;
+      }
+      .mobile-user-details strong {
+        font-size: 1.05rem;
+      }
+      .mobile-user-details span {
+        font-size: 1rem;
       }
     }
 
@@ -878,6 +956,7 @@ markAllAsRead(event: Event): void {
   // La logique viendra plus tard
 }
   logout(): void {
+    localStorage.removeItem('currentUser');
     this.authService.logout().subscribe({
       next: (response: any) => {
         

@@ -350,6 +350,7 @@ interface Statistics {
                 <div
                   *ngFor="let employee of allEmployees"
                   class="employee-card card"
+                  [ngClass]="employee.role ? 'client-audit-card-' + employee.role : 'client-audit-card'"
                 >
                   <div class="employee-header">
                     <div class="employee-avatar">
@@ -1784,6 +1785,44 @@ interface Statistics {
         font-weight: 500;
       }
 
+
+      
+      .severity-critical {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f42c2cff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-high {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #ef692bff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-medium {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f5ab57ff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-low {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f8e962ff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
       .action-btn {
         width: 32px;
         height: 32px;
@@ -2410,7 +2449,18 @@ interface Statistics {
         justify-content: center;
         z-index: 1000;
       }
-
+      .client-audit-card {
+        border-left: 4px solid var(--error-color);
+      }
+      .client-audit-card-manager {
+        border-left: 4px solid var(--primary-color);
+      }
+      .client-audit-card-client {
+        border-left: 4px solid var(--accent-color);
+      }
+      .client-audit-card-collector {
+        border-left: 4px solid var(--success-color);
+      }
       .modal-content {
         background: var(--white);
         border-radius: 12px;
@@ -4257,8 +4307,8 @@ export class AgencyDashboardComponent implements OnInit {
   getSeverityText(severity: string): string {
     const texts = {
       critical: "Critique",
-      high: "Élevée",
-      medium: "Moyenne",
+      high: "Élevé",
+      medium: "Moyen",
       low: "Faible",
     };
     return texts[severity as keyof typeof texts] || severity;
@@ -4277,10 +4327,10 @@ export class AgencyDashboardComponent implements OnInit {
 
   getSeverityIcon(severity: string): string {
     const icons = {
-      critical: "error",
-      high: "warning",
-      medium: "info",
-      low: "help",
+     critical: "dangerous",
+      high: "priority_high",
+      medium: "warning",
+      low: "info"
     };
     return icons[severity as keyof typeof icons] || "help";
   }
