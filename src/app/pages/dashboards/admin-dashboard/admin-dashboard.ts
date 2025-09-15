@@ -1290,21 +1290,51 @@ interface Communication {
       border-radius: 8px;
     }
 
-    .alert-severity {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--white);
-    }
+     .alert-severity {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+      }
 
-    .severity-critical { background: var(--error-color); }
-    .severity-high { background: #ff7043; }
-    .severity-medium { background: var(--warning-color); color: var(--text-primary); }
-    .severity-low { background: var(--text-secondary); }
+      .severity-critical {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f42c2cff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
 
+      .severity-high {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #ef692bff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-medium {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f5ab57ff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-low {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f8e962ff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
     .alert-content {
       flex: 1;
     }
