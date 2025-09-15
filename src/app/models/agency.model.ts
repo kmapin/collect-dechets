@@ -201,11 +201,11 @@ export enum  EmployeeRole {
 //   isActive: boolean;
 // }
  export interface CollectionSchedule {
-  zoneId: string;
+  zone: string;
   dayOfWeek: number;
   startTime: string;
-   startDate: string;  
-  endDate: string; 
+   date: string;  
+  // endDate: string; 
   endTime: string;
   collectorId: string;
     agencyId: string; 
