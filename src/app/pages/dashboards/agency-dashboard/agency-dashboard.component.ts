@@ -350,6 +350,7 @@ interface Statistics {
                 <div
                   *ngFor="let employee of allEmployees"
                   class="employee-card card"
+                  [ngClass]="employee.role ? 'client-audit-card-' + employee.role : 'client-audit-card'"
                 >
                   <div class="employee-header">
                     <div class="employee-avatar">
@@ -2406,7 +2407,18 @@ interface Statistics {
         justify-content: center;
         z-index: 1000;
       }
-
+      .client-audit-card {
+        border-left: 4px solid var(--error-color);
+      }
+      .client-audit-card-manager {
+        border-left: 4px solid var(--primary-color);
+      }
+      .client-audit-card-client {
+        border-left: 4px solid var(--accent-color);
+      }
+      .client-audit-card-collector {
+        border-left: 4px solid var(--success-color);
+      }
       .modal-content {
         background: var(--white);
         border-radius: 12px;

@@ -1398,7 +1398,7 @@ interface Communication {
     }
 
     .client-audit-card {
-      border-left: 4px solid var(--primary-color);
+      /*border-left: 4px solid var(--primary-color);*/
     }
     .agency-audit-header {
       display: flex;
