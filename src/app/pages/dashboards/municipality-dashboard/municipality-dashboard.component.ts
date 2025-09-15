@@ -779,7 +779,7 @@ interface Communication {
                     </button>
                     <button
                       class="btn btn-accent"
-                      (click)="contactAgencyForIncident(incident.agencyId)"
+                      (click)="contactAgencyForIncident(incident?.agencyId)"
                     >
                       <i class="material-icons">phone</i>
                       Contacter Agence
@@ -2891,11 +2891,9 @@ export class MunicipalityDashboardComponent implements OnInit {
     );
   }
 
-  contactAgency(agencyId: string): void {
-    this.notificationService.showInfo(
-      "Contact",
-      "Ouverture des informations de contact"
-    );
+  contactAgency(agencyId?: string): void {
+    this.router.navigate(['/agencies', agencyId]);
+    this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
   }
 
   updateStatistics(): void {
@@ -2945,7 +2943,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     }
   }
 
-  contactAgencyForIncident(agencyId: string): void {
+  contactAgencyForIncident(agencyId?: string): void {
     this.contactAgency(agencyId);
   }
 
