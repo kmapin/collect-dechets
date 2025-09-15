@@ -3498,9 +3498,23 @@ export class AgencyDashboardComponent implements OnInit {
   //     );
   //   });
   // }
-  getSchedulesForDay(dayIndex: number): any[] {
-  return this.plannings.filter(schedule => schedule.dayOfWeek === dayIndex + 1);
-}
+
+  getSchedulesForDay(dayIndex: number): any[] { // dayIndex: 0 for Monday, 6 for Sunday
+    const startOfWeek = new Date(this.currentWeek);
+    const day = this.currentWeek.getDay(); // 0 for Sunday, 1 for Monday, etc.
+    const diff = this.currentWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const targetDate = new Date(startOfWeek);
+    targetDate.setDate(startOfWeek.getDate() + dayIndex);
+
+    return this.plannings.filter(schedule => {
+        const scheduleDate = new Date(schedule.date);
+        scheduleDate.setHours(0, 0, 0, 0);
+        return scheduleDate.getTime() === targetDate.getTime();
+    });
+  }
   getCollectors(): Employee[] {
     return this.employees.filter((e) => e.role === "collector");
   }
