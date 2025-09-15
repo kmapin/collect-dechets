@@ -1360,7 +1360,7 @@ interface Communication {
         display: flex;
         align-items: center;
         padding: 10px 12px;
-        background: #fa2008ff;
+        background: #f42c2cff;
         border-radius: 5px;
         font-size: 17px;
       }
@@ -1369,7 +1369,7 @@ interface Communication {
         display: flex;
         align-items: center;
         padding: 10px 12px;
-        background: #f2a07aff;
+        background: #ef692bff;
         border-radius: 5px;
         font-size: 17px;
       }
@@ -1378,7 +1378,7 @@ interface Communication {
         display: flex;
         align-items: center;
         padding: 10px 12px;
-        background: #f18407ff;
+        background: #f5ab57ff;
         border-radius: 5px;
         font-size: 17px;
       }
@@ -2730,8 +2730,8 @@ export class MunicipalityDashboardComponent implements OnInit {
 
   getSeverityIcon(severity: string): string {
     const icons = {
-      critical: "priority_high",
-      high: "block",
+      critical: "dangerous",
+      high: "priority_high",
       medium: "warning",
       low: "info",
     };
