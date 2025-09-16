@@ -200,17 +200,16 @@ export enum  EmployeeRole {
 //   collectorId: string;
 //   isActive: boolean;
 // }
- export interface CollectionSchedule {
-    _id?: string;
-  zone: string;
-  dayOfWeek: number;
+export interface CollectionSchedule {
+  _id?: string;
+  zone: string[]; 
+  date: string;
   startTime: string;
-   date: string;  
-  // endDate: string; 
   endTime: string;
   collectorId: string;
-    agencyId: string; 
+  agencyId: string;
 }
+
 
 export interface WasteType {
   id: string;
