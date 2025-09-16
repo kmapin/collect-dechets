@@ -9,6 +9,8 @@ import { Agency } from '../../../models/agency.model';
 import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
 import { Admin } from '../../../services/admin';
 import { AgencyService } from '../../../services/agency.service';
+import { CountriesOrgMockService } from '../../../services/countries-org-mock.service';
+import { Arrondissement, City, Quartier, Sector } from '../../../models/countries-org.model';
 
 @Component({
   selector: 'app-register',
@@ -216,16 +218,11 @@ import { AgencyService } from '../../../services/agency.service';
                     <i class="material-icons">location_city</i>
                     Ville <span class="required">*</span>
                   </label>
-                  <input 
-                    type="text" 
-                    id="city"
-                    name="city"
-                    [(ngModel)]="userData.address.city"
-                    class="form-control"
-                    placeholder="Nom de la ville"
-                    required>
+                  <select id="city" name="city" [(ngModel)]="userData.address.city" class="form-control" (change)="onCityChange(userData.address.city)" required>
+                    <option value="">Sélectionner</option>
+                    <option *ngFor="let city of cities" [value]="city.name">{{ city.name }}</option>
+                  </select>
                 </div>
-
                 <div class="form-group">
                   <label class="form-label" for="postalCode">
                     <i class="material-icons">markunread_mailbox</i>
@@ -248,9 +245,9 @@ import { AgencyService } from '../../../services/agency.service';
                     <i class="material-icons">map</i>
                      Arrondiss... <span class="required">*</span>
                   </label>
-                  <select id="arrondissement" name="arrondissement" [(ngModel)]="userData.address.arrondissement" (change)="onArrondissementChange(userData.address.arrondissement)" class="form-control" required>
+                  <select id="arrondissement" name="arrondissement" [(ngModel)]="userData.address.arrondissement" (change)="onArrondissementChange(userData.address.arrondissement)" class="form-control" [disabled]="!arrondissementss.length" required>
                     <option value="">Sélectionner</option>
-                    <option *ngFor="let arr of arrondissements" [value]="arr.arrondissement">{{ arr.arrondissement }}</option>
+                    <option *ngFor="let arr of arrondissementss" [value]="arr.name">{{ arr.name }}</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -258,9 +255,9 @@ import { AgencyService } from '../../../services/agency.service';
                     <i class="material-icons">location_city</i>
                     Secteur <span class="required">*</span>
                   </label>
-                  <select id="sector" name="sector" [(ngModel)]="userData.address.sector" (change)="onSecteurChange(userData.address.sector)" class="form-control" [disabled]="!secteurs.length" required>
+                  <select id="sector" name="sector" [(ngModel)]="userData.address.sector" (change)="onSecteurChange(userData.address.sector)" class="form-control" [disabled]="!secteurss.length" required>
                     <option value="">Sélectionner</option>
-                    <option *ngFor="let s of secteurs" [value]="s.secteur">{{ s.secteur }}</option>
+                    <option *ngFor="let secteur of secteurss" [value]="secteur.name">{{ secteur.name }}</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -268,9 +265,9 @@ import { AgencyService } from '../../../services/agency.service';
                     <i class="material-icons">location_city</i>
                     Quartier <span class="required">*</span>
                   </label>
-                  <select id="neighborhood" name="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control" [disabled]="!quartiers.length" required>
+                  <select id="neighborhood" name="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control" [disabled]="!quartierss.length" required>
                     <option value="">Sélectionner</option>
-                    <option *ngFor="let q of quartiers" [value]="q">{{ q }}</option>
+                    <option *ngFor="let quartier of quartierss" [value]="quartier.name">{{ quartier.name }}</option>
                   </select>
                 </div>
               </div>
@@ -799,7 +796,7 @@ import { AgencyService } from '../../../services/agency.service';
 export class RegisterComponent implements OnInit {
 
   userData = {
-    _id: '',  
+    _id: '',
     role: UserRole.CLIENT as UserRole | null,
     firstName: '',
     lastName: '',
@@ -834,8 +831,12 @@ export class RegisterComponent implements OnInit {
 
 
   arrondissements: QuartierData[] = OUAGA_DATA;
+  arrondissementss: Arrondissement[] = [];
+  cities: City[] = [];
+  secteurss: Sector[] = [];
   secteurs: { secteur: string; quartiers: string[] }[] = [];
   quartiers: string[] = [];
+  quartierss: Quartier[] = [];
   agencyId: string = '';
   showPassword = false;
   isLoading = false;
@@ -848,10 +849,12 @@ export class RegisterComponent implements OnInit {
     private notificationService: NotificationService,
     private adminService: Admin,
     private activatedRoute: ActivatedRoute,
-    private agencyService: AgencyService
+    private agencyService: AgencyService,
+    private countriesOrgMockService: CountriesOrgMockService
   ) { }
 
   ngOnInit(): void {
+    this.formCountriesDataInit();
     this.agencyId = this.activatedRoute.snapshot.params['id'];
     if (this.agencyId) {
       this.loadAgencyFromApi(this.agencyId);
@@ -861,8 +864,13 @@ export class RegisterComponent implements OnInit {
     this.roleMunicipality = localStorage.getItem('userRole') || '';
     if (this.roleMunicipality === 'municipality') this.userData.role = UserRole.MUNICIPALITY
     console.log(this.roleMunicipality);
+
   }
 
+  formCountriesDataInit() {
+    this.getAllCountries();
+    this.test();
+  }
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
@@ -1170,19 +1178,45 @@ export class RegisterComponent implements OnInit {
   }
 
   onArrondissementChange(arrondissement?: string) {
-    const arr = this.arrondissements.find(a => a.arrondissement === arrondissement);
-    this.secteurs = arr ? arr.secteurs : [];
-    this.quartiers = [];
-    this.userData.address.sector = '';
-    this.userData.address.neighborhood = '';
+    if (arrondissement) {
+      const sectorObj = this.arrondissementss.find(a => a.name === arrondissement);
+      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(sectorObj?.id || '');
+      this.secteurss = sectors ? sectors : [];
+      console.log("Secteurs  ==> ", this.secteurss);
+      this.quartiers = [];
+      this.userData.address.sector = '';
+      this.userData.address.neighborhood = '';
+    }
   }
 
   onSecteurChange(secteur: string) {
+    if (secteur) {
+      const secteurObj = this.secteurss.find(s => s.name === secteur);
+      const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(secteurObj?.id || '');
+      console.log("Quartiers  ==> ", quartiers);
+      this.quartierss = quartiers;
+      this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+    }
     const secteurObj = this.secteurs.find(s => s.secteur === secteur);
     this.quartiers = secteurObj ? secteurObj.quartiers : [];
-    this.userData.address.neighborhood =this.userData.address.neighborhood ||  '';
+    this.userData.address.neighborhood = this.userData.address.neighborhood || '';
   }
 
+  onCityChange(city: string) {
+    if (city) {
+      const cityObj = this.cities.find(c => c.name === city);
+      console.log("City Object ==> ", cityObj);
+      const arr = this.countriesOrgMockService.getArrondissementsByCity(cityObj?.id || '');
+      this.arrondissementss = arr ? arr : [];
+      console.log("Arrondissements  ==> ", this.arrondissementss);
+      this.secteurs = [];
+      this.quartiers = [];
+      this.userData.address.arrondissement = '';
+      this.userData.address.sector = '';
+      this.userData.address.neighborhood = '';
+    };
+
+  }
   private validateForm(): boolean {
     // Vérifier que le rôle est bien sélectionné
     if (!this.userData.role) {
@@ -1297,5 +1331,14 @@ export class RegisterComponent implements OnInit {
 
     const route = dashboardRoutes[role as keyof typeof dashboardRoutes] || '/';
     this.router.navigate([route]);
+  }
+
+  test() {
+    console.log("All sectors ==> ", this.countriesOrgMockService.getSectorsByArrondissement("1"));
+  }
+
+  getAllCountries() {
+    console.log("All cities ==> ", this.countriesOrgMockService.getCitiesByCountry("1"));
+    this.cities = this.countriesOrgMockService.getCitiesByCountry("1");
   }
 }
