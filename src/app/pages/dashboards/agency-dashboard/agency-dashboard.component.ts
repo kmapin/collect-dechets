@@ -2712,7 +2712,7 @@ export class AgencyDashboardComponent implements OnInit {
   allTarif: Tariff[] = [];
   serviceZones: ServiceZone[] = [];
   serviceZoness: ServiceZones[] = []; //from API
-  schedules: CollectionSchedule[] = [];
+  // schedules: CollectionSchedule[] = [];
   clients: Client[] = [];
   filteredClients: Client[] = [];
   reports: Report[] = [];
@@ -2846,6 +2846,7 @@ export class AgencyDashboardComponent implements OnInit {
     this.loadTariffs();
     this.loadPlannings();
     this.loadCollectorPlannings(),
+    this.supprimerPlanningStatique(),
     this.cdr.detectChanges();
 
     //   const testTarifId = '687cc316091944da1fc7c2c7';
@@ -3507,7 +3508,7 @@ export class AgencyDashboardComponent implements OnInit {
     const targetDate = new Date(startOfWeek);
     targetDate.setDate(startOfWeek.getDate() + dayIndex);
 
-    return this.plannings.filter(schedule => {
+    return this.schedules.filter(schedule => {
         const scheduleDate = new Date(schedule.date);
         scheduleDate.setHours(0, 0, 0, 0);
         return scheduleDate.getTime() === targetDate.getTime();
@@ -3907,7 +3908,7 @@ export class AgencyDashboardComponent implements OnInit {
     });
   }
   //recupere les planning d une agence
-  plannings: any[] = [];
+  schedules: CollectionSchedule[] = [];
 
 loadPlannings(): void {
   this.isLoading = true;
@@ -3921,13 +3922,13 @@ loadPlannings(): void {
 
   this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
     next: (data: any[]) => {
-      this.plannings = data;
-      console.log("Plannings récupérés :", this.plannings);
+      this.schedules = data;
+      console.log("Plannings récupérés :", this.schedules);
 
       // 🔥 Mise à jour du badge
       const schedulesTab = this.tabs.find(tab => tab.id === "schedules");
       if (schedulesTab) {
-        schedulesTab.badge = this.plannings.length;
+        schedulesTab.badge = this.schedules.length;
       }
 
       this.isLoading = false;
@@ -3965,36 +3966,34 @@ loadPlannings(): void {
   }
     
  // supprimer un tarif
-  deletePlanning(planning: any): void {
-    this.isDeleting = true;
-    const planningId = planning._id;
-  
+deletePlanning(schedulesId: string): void {
+  this.isDeleting = true;
 
-    if (planningId) {
-      this.agencyService.deletePlanning$(planningId).subscribe(
-        () => {
-          this.notificationService.showSuccess(
-            "Succès",
-            "Planning a été supprimé avec succès."
-          );
-       this.loadPlannings();
-          this.isDeleting = false;
-          // this.load();
-        },
-        (error) => {
-          this.notificationService.showError(
-            "Erreur",
-            "Impossible de supprimer le planning. Veuillez réessayer."
-          );
-          console.error("Erreur lors de la suppression de le planning :", error);
-          this.isDeleting = false;
-        }
-      );
-    } else {
-      console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
-      this.isDeleting = false;
-    }
+  if (schedulesId) {
+    this.agencyService.deletePlanning$(schedulesId).subscribe(
+      () => {
+        this.notificationService.showSuccess(
+          "Succès",
+          "Planning a été supprimé avec succès."
+        );
+        this.loadPlannings();
+        this.isDeleting = false;
+      },
+      (error) => {
+        this.notificationService.showError(
+          "Erreur",
+          "Impossible de supprimer le planning. Veuillez réessayer."
+        );
+        console.error("Erreur lors de la suppression du planning :", error);
+        this.isDeleting = false;
+      }
+    );
+  } else {
+    console.warn("Aucun ID de planning fourni.");
+    this.isDeleting = false;
   }
+}
+
   tariffToUpdate: Tariff | null = null;
   //update un tarif via l api
   updateTariff(tariffId: string): void {
@@ -4389,4 +4388,16 @@ loadPlannings(): void {
       },
     });
   }
+
+  supprimerPlanningStatique(): void {
+  const planningId = '68c5aab02aa27a38df57a702'; 
+
+  this.agencyService.deletePlanning$(planningId).subscribe(success => {
+    if (success) {
+      console.log('Suppression du planning statique réussie');
+    } else {
+      console.warn('Échec de la suppression du planning statique');
+    }
+  });
+}
 }

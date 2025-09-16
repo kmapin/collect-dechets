@@ -201,6 +201,7 @@ export enum  EmployeeRole {
 //   isActive: boolean;
 // }
  export interface CollectionSchedule {
+    _id?: string;
   zone: string;
   dayOfWeek: number;
   startTime: string;
