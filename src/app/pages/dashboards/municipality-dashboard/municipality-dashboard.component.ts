@@ -2592,7 +2592,9 @@ export class MunicipalityDashboardComponent implements OnInit {
     this.adminService.getAllReports().subscribe({
       next: (response: any) => {
         this.incidents = response.map((signalement: any) => {
-          return signalement;
+          return {
+            agencyId: signalement?.agency?._id,
+            ...signalement};
         });
         this.filteredIncidents = [...this.incidents];
         console.log("signalements in response", response);
