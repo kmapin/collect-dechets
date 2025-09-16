@@ -9,8 +9,9 @@ import { NotificationService } from "../../../services/notification.service";
 import { User } from "../../../models/user.model";
 import { Agency } from "../../../models/agency.model";
 import { Collection, CollectionStatus } from "../../../models/collection.model";
-import { OUAGA_DATA } from "../../../data/mock-data"; // chemin à adapter
+import { OUAGA_DATA } from "../../../data/mock-data"; 
 import { Admin } from "../../../services/admin";
+import { MOCK_CITIES, MOCK_ARRONDISSEMENTS } from '../../../data/countries-org.mock';
 
 interface MunicipalityStatistics {
   totalAgencies: number;
