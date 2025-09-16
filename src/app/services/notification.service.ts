@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { HttpClient } from '@angular/common/http';
 
 export interface Notification {
   id: string;
@@ -21,6 +23,7 @@ export interface NotificationAction {
 export class NotificationService {
   private notificationSubject = new Subject<Notification>();
   public notifications$ = this.notificationSubject.asObservable();
+  constructor(private http: HttpClient) { }
 
   showSuccess(title: string, message: string, duration = 5000): void {
     this.show('success', title, message, duration);
@@ -61,5 +64,22 @@ export class NotificationService {
     };
 
     this.notificationSubject.next(notification);
+  }
+      getAllNotificationsAgency$(userId: string): Observable<any[]> {
+      const url=`${environment.apiUrl}/notifications/${userId}`;
+      console.log("URL de la requête :", url); 
+      return this.http.get<any[]>(url);
+  
+    }
+    //marquer un message comme lu 
+       markNotificationAsRead$(notificationId: string): Observable<any> {
+        const url = `${environment.apiUrl}/notifications/${notificationId}/read`;
+        return this.http.put(url, {});
+    }
+
+    //suppressin d une notification
+    deleteNotification$(notificationId: string): Observable<any> {
+      const url = `${environment.apiUrl}/notifications/${notificationId}`;
+      return this.http.delete(url);
   }
 }

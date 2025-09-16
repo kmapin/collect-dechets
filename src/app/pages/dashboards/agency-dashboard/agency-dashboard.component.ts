@@ -1,3 +1,4 @@
+import { map } from 'rxjs';
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
@@ -26,6 +27,7 @@ import {
 } from "../../../models/agency.model";
 import { Collection, CollectionStatus } from "../../../models/collection.model";
 import { ClientService, ClientApi } from "../../../services/client.service";
+import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
 
 interface Client {
   id: string;
@@ -1281,16 +1283,7 @@ interface Statistics {
           <form class="schedule-form" (ngSubmit)="addSchedule()">
             <div class="form-group">
               <label>Zone *</label>
-              <!-- <select [(ngModel)]="newSchedule.zone" name="zone" required>
-      <option value="">Sélectionner une zone</option>
-      <option *ngFor="let zone of zonesAgency" [value]="zone.id">
-        {{ zone.name }}
-      </option>
-    </select>
-    <small class="error-message" *ngIf="formErrors.zone">
-      {{ formErrors.zone }}
-    </small> -->
-              <!-- <input type="text" [(ngModel)]="newSchedule.zone" name="zone" required placeholder="Entrez votre zone" /> -->
+           
               <select [(ngModel)]="newSchedule.zone" name="zone" required>
                 <option value="">Sélectionner un jour</option>
                 <option value="1">Tampuy</option>
@@ -2668,7 +2661,7 @@ interface Statistics {
 export class AgencyDashboardComponent implements OnInit {
   currentUser: User | null = null;
   agencyReports: Report[] = [];
-
+  ouagaData: QuartierData[] = OUAGA_DATA;
   agency: Agency | null = null;
   activeTab = "collections";
   collectors: Employees[] = [];
@@ -2846,8 +2839,7 @@ export class AgencyDashboardComponent implements OnInit {
     this.loadTariffs();
     this.loadPlannings();
     this.loadCollectorPlannings(),
-    this.supprimerPlanningStatique(),
-    this.cdr.detectChanges();
+      this.cdr.detectChanges();
 
     //   const testTarifId = '687cc316091944da1fc7c2c7';
     // const role = EmployeeRole.MANAGER;
@@ -3902,7 +3894,7 @@ export class AgencyDashboardComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
+        // console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
         this.isLoading = false;
       },
     });
@@ -3943,7 +3935,7 @@ loadPlannings(): void {
   collectorplannings: any[] = [];
   loadCollectorPlannings(): void {
     this.isLoading = true;
-    const collectorId = this.currentUser?.id;
+    const collectorId = "68c3f853a00747732407d946";
     if (!collectorId) {
       console.error("[DEBUG] Aucun collectorId trouvé ");
       this.isLoading = false;
@@ -3956,10 +3948,10 @@ loadPlannings(): void {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error(
-          "[DEBUG] Erreur lors du chargement des plannings du collecteur :",
-          error
-        );
+        // console.error(
+        //   "[DEBUG] Erreur lors du chargement des plannings du collecteur :",
+        //   error
+        // );
         this.isLoading = false;
       },
     });
@@ -4236,7 +4228,6 @@ deletePlanning(schedulesId: string): void {
       // endDate: this.newSchedule.endDate,
       agencyId: this.currentUser?._id || "",
     };
-
     // Envoi au service
     this.agencyService.addSchedule$(schedule).subscribe({
       next: (response) => {
@@ -4389,15 +4380,6 @@ deletePlanning(schedulesId: string): void {
     });
   }
 
-  supprimerPlanningStatique(): void {
-  const planningId = '68c5aab02aa27a38df57a702'; 
 
-  this.agencyService.deletePlanning$(planningId).subscribe(success => {
-    if (success) {
-      console.log('Suppression du planning statique réussie');
-    } else {
-      console.warn('Échec de la suppression du planning statique');
-    }
-  });
-}
+
 }
