@@ -513,7 +513,7 @@ export class AgencyService {
   }
    //supprimer un  planing d une agence
   deletePlanning$(planningId: string): Observable<boolean> {
-    return this.http.delete(`${environment.apiUrl}/zones/taplannings/${planningId}`).pipe(
+    return this.http.delete(`${environment.apiUrl}/zones/plannings/${planningId}`).pipe(
       map(() => {
         console.log(`planning ${planningId} supprimé avec succès`);
         return true;
