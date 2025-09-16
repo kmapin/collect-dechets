@@ -79,7 +79,7 @@ interface Incident {
   description: string;
   severity: "low" | "medium" | "high" | "critical";
   date: Date;
-  status: "open" | "investigating" | "resolved";
+  status: "open" | "pending" | "resolved";
   assignedTo?: string;
 }
 
@@ -111,13 +111,13 @@ interface Communication {
               </p>
             </div>
             <div class="quick-actions">
-              <button
+              <!-- <button
                 class="btn btn-primary"
                 (click)="showCommunicationModal = true"
               >
                 <i class="material-icons">campaign</i>
                 Nouvelle Communication
-              </button>
+              </button> -->
               <button
                 class="btn btn-secondary"
                 (click)="generateGlobalReport()"
@@ -753,7 +753,7 @@ interface Communication {
                   </div>
 
                   <div class="incident-actions">
-                    <button
+                    <!-- <button
                       class="btn btn-secondary"
                       (click)="assignIncident(incident.id)"
                       *ngIf="incident.status === 'open'"
@@ -764,7 +764,7 @@ interface Communication {
                     <button
                       class="btn btn-primary"
                       (click)="investigateIncident(incident.id)"
-                      *ngIf="incident.status === 'open'"
+                      *ngIf="incident.status === 'pending'"
                     >
                       <i class="material-icons">search</i>
                       Enquêter
@@ -772,11 +772,11 @@ interface Communication {
                     <button
                       class="btn btn-success"
                       (click)="resolveIncident(incident.id)"
-                      *ngIf="incident.status === 'investigating'"
+                      *ngIf="incident.status === 'resolved'"
                     >
                       <i class="material-icons">check</i>
                       Résoudre
-                    </button>
+                    </button> -->
                     <button
                       class="btn btn-accent"
                       (click)="contactAgencyForIncident(incident?.agencyId)"
@@ -790,7 +790,7 @@ interface Communication {
             </div>
 
             <!-- Onglet Communications -->
-            <div
+            <!-- <div
               *ngIf="activeTab === 'communications'"
               class="communications-tab"
             >
@@ -856,10 +856,10 @@ interface Communication {
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
 
-      <!-- Modal Communication -->
-      <div
+            <!-- Modal Communication -->
+            <!-- <div
         class="modal-overlay"
         *ngIf="showCommunicationModal"
         (click)="showCommunicationModal = false"
@@ -953,6 +953,10 @@ interface Communication {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div> -->
+          </div>
         </div>
       </div>
     </div>
@@ -2405,8 +2409,9 @@ export class MunicipalityDashboardComponent implements OnInit {
   agenciesFilter = "all";
   complianceFilter = "all";
   statisticsPeriod = "month";
-  incidentsFilter = "all";
-  severityFilter = "all";
+  // incidentsFilter = "all";
+  incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
+  severityFilter: "all" | "low" | "medium" | "high" | "critical" = "all";
 
   // Modals
   showCommunicationModal = false;
@@ -2451,6 +2456,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     this.loadZoneStatistics();
     this.getClientGrowth();
     this.showAdminStatistics();
+    this.filterIncidents();
   }
 
   loadMunicipalityData(): void {
@@ -2575,6 +2581,15 @@ export class MunicipalityDashboardComponent implements OnInit {
     ];
   }
 
+  //  loadZoneStatistics(): void {
+  //     this.zoneStatistics = [
+  //       { name: 'Centre-ville', agencies: 5, clients: 3200, collections: 145, coverage: 98, incidents: 2 },
+  //       { name: 'Quartiers Nord', agencies: 4, clients: 2800, collections: 125, coverage: 92, incidents: 3 },
+  //       { name: 'Quartiers Sud', agencies: 3, clients: 2100, collections: 95, coverage: 88, incidents: 1 },
+  //       { name: 'Périphérie', agencies: 3, clients: 1800, collections: 85, coverage: 75, incidents: 2 }
+  //     ];
+  //   }
+
   loadZoneStatistics(): void {
     const stats = this.agencyService.getAgenceStats();
     this.zoneStatistics = OUAGA_DATA.map((zone, index) => ({
@@ -2594,7 +2609,8 @@ export class MunicipalityDashboardComponent implements OnInit {
         this.incidents = response.map((signalement: any) => {
           return {
             agencyId: signalement?.agency?._id,
-            ...signalement};
+            ...signalement,
+          };
         });
         this.filteredIncidents = [...this.incidents];
         console.log("signalements in response", response);
@@ -2608,32 +2624,32 @@ export class MunicipalityDashboardComponent implements OnInit {
     });
   }
 
-  loadIncidents(): void {
-    this.incidents = [
-      {
-        id: "1",
-        agencyId: "2",
-        agencyName: "GreenWaste Solutions",
-        type: "missed_collection",
-        description: "Collecte manquée dans le secteur Nord",
-        severity: "medium",
-        date: new Date(),
-        status: "open",
-      },
-      {
-        id: "2",
-        agencyId: "3",
-        agencyName: "WasteManager Pro",
-        type: "compliance_issue",
-        description: "Non-respect des horaires réglementaires",
-        severity: "high",
-        date: new Date(Date.now() - 86400000),
-        status: "investigating",
-        assignedTo: "Inspecteur Martin",
-      },
-    ];
-    this.filteredIncidents = [...this.incidents];
-  }
+  // loadIncidents(): void {
+  //   this.incidents = [
+  //     {
+  //       id: "1",
+  //       agencyId: "2",
+  //       agencyName: "GreenWaste Solutions",
+  //       type: "missed_collection",
+  //       description: "Collecte manquée dans le secteur Nord",
+  //       severity: "medium",
+  //       date: new Date(),
+  //       status: "open",
+  //     },
+  //     {
+  //       id: "2",
+  //       agencyId: "3",
+  //       agencyName: "WasteManager Pro",
+  //       type: "compliance_issue",
+  //       description: "Non-respect des horaires réglementaires",
+  //       severity: "high",
+  //       date: new Date(Date.now() - 86400000),
+  //       status: "investigating",
+  //       assignedTo: "Inspecteur Martin",
+  //     },
+  //   ];
+  //   this.filteredIncidents = [...this.incidents];
+  // }
 
   // loadCommunications(): void {
   //   this.communications = [
@@ -2735,7 +2751,7 @@ export class MunicipalityDashboardComponent implements OnInit {
       critical: "dangerous",
       high: "priority_high",
       medium: "warning",
-      low: "info"
+      low: "info",
     };
     return icons[severity as keyof typeof icons] || "i";
   }
@@ -2743,8 +2759,8 @@ export class MunicipalityDashboardComponent implements OnInit {
   getSeverityText(severity: string): string {
     const texts = {
       critical: "Critique",
-      high: "Élevé",
-      medium: "Moyen",
+      high: "Élevée",
+      medium: "Moyenne",
       low: "Faible",
     };
     return texts[severity as keyof typeof texts] || severity;
@@ -2858,6 +2874,17 @@ export class MunicipalityDashboardComponent implements OnInit {
     });
   }
 
+  // filterIncidents(): void {
+  //   this.filteredIncidents = this.incidents.filter((incident) => {
+  //     const statusMatch =
+  //       this.incidentsFilter === "all" ||
+  //       incident.status === this.incidentsFilter;
+  //     const severityMatch =
+  //       this.severityFilter === "all" ||
+  //       incident.severity === this.severityFilter;
+  //     return statusMatch && severityMatch;
+  //   });
+  // }
   filterIncidents(): void {
     this.filteredIncidents = this.incidents.filter((incident) => {
       const statusMatch =
@@ -2894,8 +2921,11 @@ export class MunicipalityDashboardComponent implements OnInit {
   }
 
   contactAgency(agencyId?: string): void {
-    this.router.navigate(['/agencies', agencyId]);
-    this.notificationService.showInfo('Contact', 'Ouverture des informations de contact');
+    this.router.navigate(["/agencies", agencyId]);
+    this.notificationService.showInfo(
+      "Contact",
+      "Ouverture des informations de contact"
+    );
   }
 
   updateStatistics(): void {
@@ -2922,7 +2952,7 @@ export class MunicipalityDashboardComponent implements OnInit {
   investigateIncident(incidentId: string): void {
     const incident = this.incidents.find((i) => i.id === incidentId);
     if (incident) {
-      incident.status = "investigating";
+      incident.status = "pending";
       incident.assignedTo = "Inspecteur Municipal";
       this.filterIncidents();
       this.notificationService.showSuccess(
