@@ -547,10 +547,8 @@ interface Statistics {
                     >
                       <div
                         *ngFor="let schedule of getSchedulesForDay(i)"
-                        class="schedule-item"
+                        class="schedule-item" 
                       >
-
-
                         <div class="schedule-time">
                           {{ schedule.startTime }} 
                         </div>
@@ -564,15 +562,15 @@ interface Statistics {
                         <div class="schedule-zone">{{ getZoneName(schedule.zone) }}</div>
                         <div class="schedule-collector">{{ getCollectorName(schedule.collectorId) }}</div>
                         <div class="schedule-actions">
-                          <button
+                          <!-- <button
                             class="action-btn"
                             (click)="editSchedule(schedule.id)"
                           >
                             <i class="material-icons">edit</i>
-                          </button>
+                          </button> -->
                           <button
                             class="action-btn danger"
-                            (click)="deleteSchedule(schedule.id)"
+                            (click)="deletePlanning(schedule._id)"
                           >
                             <i class="material-icons">delete</i>
                           </button>
@@ -3498,9 +3496,23 @@ export class AgencyDashboardComponent implements OnInit {
   //     );
   //   });
   // }
-  getSchedulesForDay(dayIndex: number): any[] {
-  return this.plannings.filter(schedule => schedule.dayOfWeek === dayIndex + 1);
-}
+
+  getSchedulesForDay(dayIndex: number): any[] { // dayIndex: 0 for Monday, 6 for Sunday
+    const startOfWeek = new Date(this.currentWeek);
+    const day = this.currentWeek.getDay(); // 0 for Sunday, 1 for Monday, etc.
+    const diff = this.currentWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const targetDate = new Date(startOfWeek);
+    targetDate.setDate(startOfWeek.getDate() + dayIndex);
+
+    return this.plannings.filter(schedule => {
+        const scheduleDate = new Date(schedule.date);
+        scheduleDate.setHours(0, 0, 0, 0);
+        return scheduleDate.getTime() === targetDate.getTime();
+    });
+  }
   getCollectors(): Employee[] {
     return this.employees.filter((e) => e.role === "collector");
   }
@@ -3897,29 +3909,35 @@ export class AgencyDashboardComponent implements OnInit {
   //recupere les planning d une agence
   plannings: any[] = [];
 
-  loadPlannings(): void {
-    this.isLoading = true;
-    const agencyId = this.currentUser?._id;
-    if (!agencyId) {
-      console.error("[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant");
-      this.isLoading = false;
-      return;
-    }
-    this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
-      next: (data: any[]) => {
-        this.plannings = data;
-        console.log("Plannings récupérés :", this.plannings);
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error(
-          "[DEBUG] Erreur lors du chargement des plannings :",
-          error
-        );
-        this.isLoading = false;
-      },
-    });
+loadPlannings(): void {
+  this.isLoading = true;
+  const agencyId = this.currentUser?._id;
+
+  if (!agencyId) {
+    console.error("[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant");
+    this.isLoading = false;
+    return;
   }
+
+  this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
+    next: (data: any[]) => {
+      this.plannings = data;
+      console.log("Plannings récupérés :", this.plannings);
+
+      // 🔥 Mise à jour du badge
+      const schedulesTab = this.tabs.find(tab => tab.id === "schedules");
+      if (schedulesTab) {
+        schedulesTab.badge = this.plannings.length;
+      }
+
+      this.isLoading = false;
+    },
+    error: (error) => {
+      console.error("[DEBUG] Erreur lors du chargement des plannings :", error);
+      this.isLoading = false;
+    },
+  });
+}
   // recuperation des planning d un colector 
   collectorplannings: any[] = [];
   loadCollectorPlannings(): void {
@@ -3950,6 +3968,7 @@ export class AgencyDashboardComponent implements OnInit {
   deletePlanning(planning: any): void {
     this.isDeleting = true;
     const planningId = planning._id;
+  
 
     if (planningId) {
       this.agencyService.deletePlanning$(planningId).subscribe(
