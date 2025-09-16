@@ -119,13 +119,13 @@ interface Communication {
               </p>
             </div>
             <div class="quick-actions">
-              <button
+              <!-- <button
                 class="btn btn-primary"
                 (click)="showCommunicationModal = true"
               >
                 <i class="material-icons">campaign</i>
                 Nouvelle Communication
-              </button>
+              </button> -->
               <button
                 class="btn btn-secondary"
                 (click)="generateGlobalReport()"
@@ -147,7 +147,7 @@ interface Communication {
                 <i class="material-icons">business</i>
               </div>
               <div class="stat-info">
-                <h3>Mairies</h3>
+                <h3>Agents(s) de mairie</h3>
                 <p class="stat-value">
                   {{ statisticsAdmin?.totalMunicipalities }}
                 </p>
@@ -250,7 +250,7 @@ interface Communication {
               </div>
             </div>
 
-            <div class="stat-card card">
+            <!-- <div class="stat-card card">
               <div class="stat-icon revenue">
                 <i class="material-icons">euro</i>
               </div>
@@ -261,9 +261,9 @@ interface Communication {
                 </p>
                 <span class="stat-trend positive">+12.3% vs mois dernier</span>
               </div>
-            </div>
+            </div> -->
 
-            <div class="stat-card card">
+            <!-- <div class="stat-card card">
               <div class="stat-icon compliance">
                 <i class="material-icons">verified</i>
               </div>
@@ -278,7 +278,7 @@ interface Communication {
                   {{ getComplianceText() }}
                 </span>
               </div>
-            </div>
+            </div> -->
 
             <div class="stat-card card">
               <div class="stat-icon incidents">
@@ -352,16 +352,16 @@ interface Communication {
                       </div>
                     </div>
                     <div class="metric-item">
-                      <div class="metric-label">Conformité réglementaire</div>
+                      <!-- <div class="metric-label">Conformité réglementaire</div>
                       <div class="metric-value">
                         {{ statistics.complianceRate }}%
-                      </div>
-                      <div class="metric-bar">
+                      </div> -->
+                      <!-- <div class="metric-bar">
                         <div
                           class="metric-fill compliance"
                           [style.width]="statistics.complianceRate + '%'"
                         ></div>
-                      </div>
+                      </div> -->
                     </div>
                   </div>
                 </div>
@@ -1185,7 +1185,7 @@ interface Communication {
             </div>
 
             <!-- Onglet Communications -->
-            <div
+            <!-- <div
               *ngIf="activeTab === 'communications'"
               class="communications-tab"
             >
@@ -1251,10 +1251,10 @@ interface Communication {
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Modal Communication -->
-      <div
+      <!-- <div
         class="modal-overlay"
         *ngIf="showCommunicationModal"
         (click)="showCommunicationModal = false"
@@ -1350,7 +1350,7 @@ interface Communication {
           </form>
         </div>
       </div>
-    </div>
+    </div> -->
   `,
   styles: [
     `
@@ -2876,12 +2876,12 @@ export class AdminDashboard implements OnInit {
       icon: "report_problem",
       badge: null,
     },
-    {
-      id: "communications",
-      label: "Communications",
-      icon: "campaign",
-      badge: null,
-    },
+    // {
+    //   id: "communications",
+    //   label: "Communications",
+    //   icon: "campaign",
+    //   badge: null,
+    // },
   ];
   municipalitiesAudits: any;
   filteredMunicipalities: any[] = [];

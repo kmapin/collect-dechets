@@ -205,7 +205,7 @@ interface Communication {
               </div>
             </div>
 
-            <div class="stat-card card">
+            <!-- <div class="stat-card card">
               <div class="stat-icon revenue">
                 <i class="material-icons">euro</i>
               </div>
@@ -216,9 +216,9 @@ interface Communication {
                 </p>
                 <span class="stat-trend positive">+12.3% vs mois dernier</span>
               </div>
-            </div>
+            </div> -->
 
-            <div class="stat-card card">
+            <!-- <div class="stat-card card">
               <div class="stat-icon compliance">
                 <i class="material-icons">verified</i>
               </div>
@@ -233,7 +233,7 @@ interface Communication {
                   {{ getComplianceText() }}
                 </span>
               </div>
-            </div>
+            </div> -->
 
             <div class="stat-card card">
               <div class="stat-icon incidents">
@@ -477,7 +477,7 @@ interface Communication {
                         {{ getAgencyStatusText(agency.status) }}
                       </span>
                     </div>
-                    <div class="agency-compliance">
+                    <!-- <div class="agency-compliance">
                       <div
                         class="compliance-score"
                         [class]="getComplianceClass(agency.complianceScore)"
@@ -485,7 +485,7 @@ interface Communication {
                         {{ agency.complianceScore }}%
                       </div>
                       <div class="compliance-label">Conformité</div>
-                    </div>
+                    </div> -->
                   </div>
 
                   <div class="agency-metrics">
@@ -2430,12 +2430,12 @@ export class MunicipalityDashboardComponent implements OnInit {
     { id: "agencies", label: "Audit Agences", icon: "business", badge: 0 },
     { id: "statistics", label: "Statistiques", icon: "analytics", badge: null },
     { id: "incidents", label: "Incidents", icon: "report_problem", badge: 0 },
-    {
-      id: "communications",
-      label: "Communications",
-      icon: "campaign",
-      badge: null,
-    },
+    // {
+    //   id: "communications",
+    //   label: "Communications",
+    //   icon: "campaign",
+    //   badge: null,
+    // },
   ];
   statisticsAdmin: any;
   clientGrowth: number = 0;
@@ -2885,7 +2885,7 @@ export class MunicipalityDashboardComponent implements OnInit {
   //     return statusMatch && severityMatch;
   //   });
   // }
-  
+
   filterIncidents(): void {
     this.filteredIncidents = this.incidents.filter((incident) => {
       const statusMatch =
