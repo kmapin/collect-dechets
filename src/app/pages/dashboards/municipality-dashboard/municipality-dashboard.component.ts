@@ -688,7 +688,7 @@ interface Communication {
                   >
                     <option value="all">Tous les incidents</option>
                     <option value="open">Ouverts</option>
-                    <option value="investigating">En cours</option>
+                    <option value="pending">En cours</option>
                     <option value="resolved">Résolus</option>
                   </select>
                   <select
@@ -2885,6 +2885,7 @@ export class MunicipalityDashboardComponent implements OnInit {
   //     return statusMatch && severityMatch;
   //   });
   // }
+  
   filterIncidents(): void {
     this.filteredIncidents = this.incidents.filter((incident) => {
       const statusMatch =
