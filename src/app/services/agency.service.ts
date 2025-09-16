@@ -506,11 +506,14 @@ export class AgencyService {
     //recupere les planing d une agence
     getAllPlaningAgency$(agencyId: string): Observable<any[]> {
     const agency = this.agencies.find(a => a._id === agencyId);
-    return this.http.get<Tariff[]>(`${environment.apiUrl}/zones/plannings/agency/${agencyId}`);
+    const url=`${environment.apiUrl}/zones/plannings/agency/${agencyId}`;
+    console.log("URL de la requête :", url); // Debug: Affiche l'URL de la requête
+    return this.http.get<Tariff[]>(url);
+
   }
    //supprimer un  planing d une agence
   deletePlanning$(planningId: string): Observable<boolean> {
-    return this.http.delete(`${environment.apiUrl}/agences/tarif/${planningId}`).pipe(
+    return this.http.delete(`${environment.apiUrl}/zones/plannings/${planningId}`).pipe(
       map(() => {
         console.log(`planning ${planningId} supprimé avec succès`);
         return true;
@@ -520,6 +523,14 @@ export class AgencyService {
         return of(false);
       })
     );
+  }
+     //recupere les plannings d un collecteur
+         getPlaningCollectory$(collectorId: string): Observable<any[]> {
+    const collector = this.agencies.find(a => a._id === collectorId);
+    const url=`${environment.apiUrl}/zones/plannings/historique/agency/${collectorId}`;
+    console.log("URL de la requête :", url); // Debug: Affiche l'URL de la requête
+    return this.http.get<Tariff[]>(url);
+
   }
   //recupere les employees  d une agence en fonction de leur role 
   getEmployeesByRole(agencyId: string, role: string): Observable<Employee[] | null> {

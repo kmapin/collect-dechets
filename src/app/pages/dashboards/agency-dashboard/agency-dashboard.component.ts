@@ -1,3 +1,4 @@
+import { map } from 'rxjs';
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
@@ -5,6 +6,7 @@ import {
   FormBuilder,
   FormGroup,
   FormsModule,
+  ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
 import { AuthService } from "../../../services/auth.service";
@@ -26,6 +28,7 @@ import {
 } from "../../../models/agency.model";
 import { Collection, CollectionStatus } from "../../../models/collection.model";
 import { ClientService, ClientApi } from "../../../services/client.service";
+import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
 
 interface Client {
   id: string;
@@ -79,7 +82,7 @@ interface Statistics {
 @Component({
   selector: "app-agency-dashboard",
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule,ReactiveFormsModule],
   template: `
     <div class="agency-dashboard">
       <div class="page-header">
@@ -350,6 +353,7 @@ interface Statistics {
                 <div
                   *ngFor="let employee of allEmployees"
                   class="employee-card card"
+                  [ngClass]="employee.role ? 'client-audit-card-' + employee.role : 'client-audit-card'"
                 >
                   <div class="employee-header">
                     <div class="employee-avatar">
@@ -532,8 +536,10 @@ interface Statistics {
 
                 <div class="calendar-grid">
                   <div class="calendar-days">
+                    
                     <div *ngFor="let day of weekDays" class="day-header">
                       {{ day }}
+                      
                     </div>
                   </div>
 
@@ -544,10 +550,10 @@ interface Statistics {
                     >
                       <div
                         *ngFor="let schedule of getSchedulesForDay(i)"
-                        class="schedule-item"
+                        class="schedule-item" 
                       >
                         <div class="schedule-time">
-                          {{ schedule.startTime }} - {{ schedule.endTime }}
+                          {{ schedule.startTime }} 
                         </div>
                         <div class="schedule-zone">
                           {{ getZoneName(schedule.zone) }}
@@ -555,19 +561,19 @@ interface Statistics {
                         <div class="schedule-collector">
                           {{ getCollectorName(schedule.collectorId) }}
                         </div>
-                        <!-- <div class="schedule-time">{{ schedule.startTime }} - {{ schedule.endTime }}</div> -->
-                        <!-- <div class="schedule-zone">{{ getZoneName(schedule.zone) }}</div> -->
-                        <!-- <div class="schedule-collector">{{ getCollectorName(schedule.collectorId) }}</div> -->
+                        <div class="schedule-time">{{ schedule.startTime }} - {{ schedule.endTime }}</div>
+                        <div class="schedule-zone">{{ getZoneName(schedule.zone) }}</div>
+                        <div class="schedule-collector">{{ getCollectorName(schedule.collectorId) }}</div>
                         <div class="schedule-actions">
-                          <button
+                          <!-- <button
                             class="action-btn"
                             (click)="editSchedule(schedule.id)"
                           >
                             <i class="material-icons">edit</i>
-                          </button>
+                          </button> -->
                           <button
                             class="action-btn danger"
-                            (click)="deleteSchedule(schedule.id)"
+                            (click)="deletePlanning(schedule._id)"
                           >
                             <i class="material-icons">delete</i>
                           </button>
@@ -1089,55 +1095,6 @@ interface Statistics {
         </div>
       </div>
       <!-- Modal Gestion Zone -->
-      <!-- <div class="modal-overlay" *ngIf="showZoneModal" (click)="showZoneModal = false">
-        <div class="modal-content zone-modal" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>{{ editingZone ? 'Modifier' : 'Ajouter' }} un tarif</h3>
-            <button class="close-btn" (click)="showZoneModal = false">
-              <i class="material-icons">close</i>
-            </button>
-          </div>
-          <form class="zone-form" (ngSubmit)="saveZone()">
-            <div class="form-group">
-              <label>Nom de la zone *</label>
-              <input type="text" [(ngModel)]="newZone.name" name="name" required>
-            </div>
-            <div class="form-group">
-              <label>Description</label>
-              <textarea [(ngModel)]="newZone.description" name="description" rows="3"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Villes couvertes *</label>
-              <input type="text" [(ngModel)]="citiesInput" name="cities" 
-                     placeholder="Paris, Lyon, Marseille..." required>
-              <small>Séparez les villes par des virgules</small>
-            </div>
-            <div class="form-group">
-              <label>Quartiers</label>
-              <input type="text" [(ngModel)]="neighborhoodsInput" name="neighborhoods" 
-                     placeholder="Centre-ville, Quartier Latin...">
-              <small>Séparez les quartiers par des virgules</small>
-            </div>
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" [(ngModel)]="newZone.isActive" name="isActive">
-                <span class="checkmark"></span>
-                Zone active
-              </label>
-            </div>
-            <div class="form-actions">
-              <button type="button" class="btn btn-secondary" (click)="showZoneModal = false">
-                Annuler
-              </button>
-              <button type="submit" class="btn btn-primary">
-                <i class="material-icons">save</i>
-                {{ editingZone ? 'Modifier' : 'Ajouter' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div> -->
-
       <div
         class="modal-overlay"
         *ngIf="showZoneModal"
@@ -1225,198 +1182,79 @@ interface Statistics {
               <i class="material-icons">close</i>
             </button>
           </div>
-          <!-- <form class="schedule-form" (ngSubmit)="addSchedule()">
-            <div class="form-group">
-              <label>Zone *</label>
-              <select [(ngModel)]="newSchedule.zone" name="zone" required>
-                <option value="">Sélectionner une zone</option>
-                <option *ngFor="let zone of zonesAgency" [value]="zone.id">{{ zone.name }}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Jour de la semaine *</label>
-              <select [(ngModel)]="newSchedule.dayOfWeek" name="dayOfWeek" required>
-                <option value="">Sélectionner un jour</option>
-                <option value="1">Lundi</option>
-                <option value="2">Mardi</option>
-                <option value="3">Mercredi</option>
-                <option value="4">Jeudi</option>
-                <option value="5">Vendredi</option>
-                <option value="6">Samedi</option>
-                <option value="0">Dimanche</option>
-              </select>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Heure de début *</label>
-                <input type="time" [(ngModel)]="newSchedule.startTime" name="startTime" required>
-              </div>
-              <div class="form-group">
-                <label>Heure de fin *</label>
-                <input type="time" [(ngModel)]="newSchedule.endTime" name="endTime" required>
-              </div>
-            </div>
-            <div class="form-group">
-  <label>Collecteur *</label>
-<select [(ngModel)]="newSchedule.collectorId" name="collectorId" required>
-  <option value="">Sélectionner un collecteur</option>
-  <option *ngFor="let collector of collectors" >
-    {{ collector.firstName }} {{ collector.lastName }}
-  </option>
-</select>
-</div>
-            <div class="form-actions">
-              <button type="button" class="btn btn-secondary" (click)="showScheduleModal = false">
-                Annuler
-              </button>
-              <button type="submit" class="btn btn-primary">
-                <i class="material-icons">schedule</i>
-                Créer Planning
-              </button>
-            </div>
-          </form> -->
-          <form class="schedule-form" (ngSubmit)="addSchedule()">
-            <div class="form-group">
-              <label>Zone *</label>
-              <!-- <select [(ngModel)]="newSchedule.zone" name="zone" required>
+     
+      <form [formGroup]="scheduleForm" class="schedule-form" (ngSubmit)="addSchedule()">
+  <!-- Zone -->
+  <div class="form-group">
+    <label>Zone *</label>
+    <select formControlName="zone">
       <option value="">Sélectionner une zone</option>
-      <option *ngFor="let zone of zonesAgency" [value]="zone.id">
-        {{ zone.name }}
+      <option value="Tampuy">Tampuy</option>
+      <option value="Kilwin">Kilwin</option>
+      <option value="Dassohgho">Dassohgho</option>
+    </select>
+    <small class="error-message" *ngIf="scheduleForm.get('zone')?.invalid && scheduleForm.get('zone')?.touched">
+      Veuillez sélectionner une zone
+    </small>
+  </div>
+
+<!-- Date -->
+<div class="form-group">
+  <label>Date *</label>
+  <input type="date" formControlName="date" class="full-width" [min]="minDate"
+ />
+  <small class="error-message" *ngIf="scheduleForm.get('date')?.invalid && scheduleForm.get('date')?.touched">
+    Veuillez sélectionner une date
+  </small>
+</div>
+
+
+  <!-- Heures -->
+  <div class="form-row">
+    <div class="form-group">
+      <label>Heure de début *</label>
+      <input type="time" formControlName="startTime" />
+      <small class="error-message" *ngIf="scheduleForm.get('startTime')?.invalid && scheduleForm.get('startTime')?.touched">
+        Veuillez définir une heure de début
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label>Heure de fin *</label>
+      <input type="time" formControlName="endTime" />
+      <small class="error-message" *ngIf="scheduleForm.get('endTime')?.invalid && scheduleForm.get('endTime')?.touched">
+        Veuillez définir une heure de fin
+      </small>
+      <small class="error-message" *ngIf="scheduleForm.hasError('invalidTimeOrder')">
+        L'heure de fin doit être postérieure à l'heure de début
+      </small>
+    </div>
+  </div>
+
+  <!-- Collecteur -->
+  <div class="form-group">
+    <label>Collecteur *</label>
+    <select formControlName="collectorId">
+      <option value="">Sélectionner un collecteur</option>
+      <option *ngFor="let collector of collectors" [value]="collector._id">
+        {{ collector.firstName }} {{ collector.lastName }}
       </option>
     </select>
-    <small class="error-message" *ngIf="formErrors.zone">
-      {{ formErrors.zone }}
-    </small> -->
-              <!-- <input type="text" [(ngModel)]="newSchedule.zone" name="zone" required placeholder="Entrez votre zone" /> -->
-              <select [(ngModel)]="newSchedule.zone" name="zone" required>
-                <option value="">Sélectionner un jour</option>
-                <option value="1">Tampuy</option>
-                <option value="2">kilwin</option>
-                <option value="3">dassohgho</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Jour de la semaine *</label>
-              <select
-                [(ngModel)]="newSchedule.dayOfWeek"
-                name="dayOfWeek"
-                required
-              >
-                <option value="">Sélectionner un jour</option>
-                <option value="1">Lundi</option>
-                <option value="2">Mardi</option>
-                <option value="3">Mercredi</option>
-                <option value="4">Jeudi</option>
-                <option value="5">Vendredi</option>
-                <option value="6">Samedi</option>
-                <option value="7">Dimanche</option>
-              </select>
-              <small class="error-message" *ngIf="formErrors.dayOfWeek">
-                {{ formErrors.dayOfWeek }}
-              </small>
-            </div>
-            <!-- ✅ Nouvelle section pour les dates -->
-            <div class="form-row">
-              <div class="form-group">
-                <label>Date*</label>
-                <input
-                  type="date"
-                  [(ngModel)]="newSchedule.date"
-                  name="date"
-                  required
-                />
-                <!-- <small class="error-message" *ngIf="formErrors.date">
-        {{ formErrors.date }}
-      </small> -->
-              </div>
+    <small class="error-message" *ngIf="scheduleForm.get('collectorId')?.invalid && scheduleForm.get('collectorId')?.touched">
+      Veuillez sélectionner un collecteur
+    </small>
+  </div>
 
-              <!-- <div class="form-group">
-                <label>Date de fin *</label>
-                <input
-                  type="date"
-                  [(ngModel)]="newSchedule.endDate"
-                  name="endDate"
-                  required
-                />
-                <small class="error-message" *ngIf="formErrors.endDate">
-                  {{ formErrors.endDate }}
-                </small>
-              </div> -->
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Heure de début *</label>
-                <input
-                  type="time"
-                  [(ngModel)]="newSchedule.startTime"
-                  name="startTime"
-                  required
-                />
-                <small class="error-message" *ngIf="formErrors.startTime">
-                  {{ formErrors.startTime }}
-                </small>
-              </div>
-
-              <div class="form-group">
-                <label>Heure de fin *</label>
-                <input
-                  type="time"
-                  [(ngModel)]="newSchedule.endTime"
-                  name="endTime"
-                  required
-                />
-                <small class="error-message" *ngIf="formErrors.endTime">
-                  {{ formErrors.endTime }}
-                </small>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Collecteur </label>
-              <select
-                [(ngModel)]="newSchedule.collectorId"
-                name="collectorId"
-                required
-              >
-                <option value="">Sélectionner un collecteur</option>
-                <option
-                  *ngFor="let collector of collectors"
-                  [value]="collector._id"
-                >
-                  {{ collector.firstName }} {{ collector.lastName }}
-                </option>
-              </select>
-              <small class="error-message" *ngIf="formErrors.collectorId">
-                {{ formErrors.collectorId }}
-              </small>
-            </div>
-
-            <div class="form-actions">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                (click)="showScheduleModal = false"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="
-                  !newSchedule.zone ||
-                  !newSchedule.dayOfWeek ||
-                  !newSchedule.startTime ||
-                  !newSchedule.endTime ||
-                  !newSchedule.collectorId
-                "
-              >
-                <i class="material-icons">schedule</i>
-                Créer Planning
-              </button>
-            </div>
-          </form>
-        </div>
+  <!-- Actions -->
+  <div class="form-actions">
+    <button type="button" class="btn btn-secondary" (click)="showScheduleModal = false">
+      Annuler
+    </button>
+    <button type="submit" class="btn btn-primary" [disabled]="scheduleForm.invalid">
+      <i class="material-icons">schedule</i> Créer Planning
+    </button>
+  </div>
+</form>
       </div>
       <div
         class="modal-overlay"
@@ -1479,13 +1317,23 @@ interface Statistics {
         display: flex;
         gap: 12px;
       }
-
+.error-message {
+  color: red;
+  font-size: 0.85em;
+  margin-top: 4px;
+  display: block;
+}
       .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 20px;
         margin-bottom: 32px;
       }
+.full-width {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
 
       .stat-card {
         display: flex;
@@ -1778,6 +1626,44 @@ interface Statistics {
         align-items: center;
         gap: 8px;
         font-weight: 500;
+      }
+
+
+      
+      .severity-critical {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f42c2cff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-high {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #ef692bff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-medium {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f5ab57ff;
+        border-radius: 5px;
+        font-size: 17px;
+      }
+
+      .severity-low {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #f8e962ff;
+        border-radius: 5px;
+        font-size: 17px;
       }
 
       .action-btn {
@@ -2373,12 +2259,7 @@ interface Statistics {
         margin-bottom: 16px;
         opacity: 0.5;
       }
-      .error-message {
-        color: var(--error-color);
-        font-size: 0.8rem;
-        margin-top: 4px;
-        display: block;
-      }
+  
 
       .form-group input.ng-invalid.ng-touched,
       .form-group select.ng-invalid.ng-touched {
@@ -2406,7 +2287,18 @@ interface Statistics {
         justify-content: center;
         z-index: 1000;
       }
-
+      .client-audit-card {
+        border-left: 4px solid var(--error-color);
+      }
+      .client-audit-card-manager {
+        border-left: 4px solid var(--primary-color);
+      }
+      .client-audit-card-client {
+        border-left: 4px solid var(--accent-color);
+      }
+      .client-audit-card-collector {
+        border-left: 4px solid var(--success-color);
+      }
       .modal-content {
         background: var(--white);
         border-radius: 12px;
@@ -2614,9 +2506,11 @@ interface Statistics {
   ],
 })
 export class AgencyDashboardComponent implements OnInit {
+   scheduleForm: FormGroup;
+
   currentUser: User | null = null;
   agencyReports: Report[] = [];
-
+  ouagaData: QuartierData[] = OUAGA_DATA;
   agency: Agency | null = null;
   activeTab = "collections";
   collectors: Employees[] = [];
@@ -2660,7 +2554,7 @@ export class AgencyDashboardComponent implements OnInit {
   allTarif: Tariff[] = [];
   serviceZones: ServiceZone[] = [];
   serviceZoness: ServiceZones[] = []; //from API
-  schedules: CollectionSchedule[] = [];
+  // schedules: CollectionSchedule[] = [];
   clients: Client[] = [];
   filteredClients: Client[] = [];
   reports: Report[] = [];
@@ -2736,6 +2630,7 @@ export class AgencyDashboardComponent implements OnInit {
     // endDate: "",
   };
   citiesInput = "";
+minDate: string;
 
   neighborhoodsInput = "";
   activeClients: ClientApi[] = [];
@@ -2780,10 +2675,23 @@ export class AgencyDashboardComponent implements OnInit {
     private clientService: ClientService,
     private cdr: ChangeDetectorRef,
     private fb: FormBuilder
-  ) {}
+  ) {
+      const today = new Date();
+  this.minDate = today.toISOString().split('T')[0];
+     this.scheduleForm = this.fb.group({
+    zone: ['', Validators.required],
+    date: ['', Validators.required],
+    startTime: ['', Validators.required],
+    endTime: ['', Validators.required],
+    collectorId: ['', Validators.required],
+  }, {
+    validators: [this.validateTimeOrder]
+  });
+  }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+
 
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyStatistics(this.currentUser);
@@ -2793,7 +2701,10 @@ export class AgencyDashboardComponent implements OnInit {
     this.loadAgencyReports(this.currentUser);
     this.loadTariffs();
     this.loadPlannings();
-    this.cdr.detectChanges();
+    this.loadCollectorPlannings(),
+     
+
+      this.cdr.detectChanges();
 
     //   const testTarifId = '687cc316091944da1fc7c2c7';
     // const role = EmployeeRole.MANAGER;
@@ -2818,6 +2729,16 @@ export class AgencyDashboardComponent implements OnInit {
     this.selectedEmployees = []; // Réinitialiser les employés sélectionnés
     this.showAssignModal = true;
   }
+  validateTimeOrder(group: FormGroup) {
+  const start = group.get('startTime')?.value;
+  const end = group.get('endTime')?.value;
+
+  if (start && end && end <= start) {
+    return { invalidTimeOrder: true };
+  }
+  return null;
+}
+
   assignEmployeesToReport(): void {
     // if (this.selectedReportId && this.selectedEmployees.length > 0) {
     //   const payload = {
@@ -3427,20 +3348,37 @@ export class AgencyDashboardComponent implements OnInit {
   // getSchedulesForDay(dayIndex: number): any[] {
   //   return this.schedules.filter(s => s.dayOfWeek === dayIndex + 1);
   // }
-  getSchedulesForDay(dayIndex: number): any[] {
+  // getSchedulesForDay(dayIndex: number): any[] {
+  //   const startOfWeek = new Date(this.currentWeek);
+  //   startOfWeek.setDate(
+  //     this.currentWeek.getDate() - this.currentWeek.getDay() + 1
+  //   ); // Lundi
+  //   const targetDate = new Date(startOfWeek);
+  //   targetDate.setDate(startOfWeek.getDate() + dayIndex);
+
+  //   return this.plannings.filter((schedule) => {
+  //     const scheduleDate = new Date(schedule.date);
+  //     return (
+  //       scheduleDate.toDateString() === targetDate.toDateString() &&
+  //       schedule.dayOfWeek === dayIndex + 1
+  //     );
+  //   });
+  // }
+
+  getSchedulesForDay(dayIndex: number): any[] { // dayIndex: 0 for Monday, 6 for Sunday
     const startOfWeek = new Date(this.currentWeek);
-    startOfWeek.setDate(
-      this.currentWeek.getDate() - this.currentWeek.getDay() + 1
-    ); // Lundi
+    const day = this.currentWeek.getDay(); // 0 for Sunday, 1 for Monday, etc.
+    const diff = this.currentWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
     const targetDate = new Date(startOfWeek);
     targetDate.setDate(startOfWeek.getDate() + dayIndex);
 
-    return this.plannings.filter((schedule) => {
-      const scheduleDate = new Date(schedule.date);
-      return (
-        scheduleDate.toDateString() === targetDate.toDateString() &&
-        schedule.dayOfWeek === dayIndex + 1
-      );
+    return this.schedules.filter(schedule => {
+        const scheduleDate = new Date(schedule.date);
+        scheduleDate.setHours(0, 0, 0, 0);
+        return scheduleDate.getTime() === targetDate.getTime();
     });
   }
   getCollectors(): Employee[] {
@@ -3730,7 +3668,7 @@ export class AgencyDashboardComponent implements OnInit {
         role: "",
         zones: [],
       };
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
+  
     }
   }
 
@@ -3770,9 +3708,9 @@ export class AgencyDashboardComponent implements OnInit {
                 "Le tarif a été créé avec succès !"
               );
               this.showZoneModal = false;
-              this.showZoneModal = false; // Fermeture de la modale
-              this.loadTariffs(); // Rechargement de la liste des tarifs
-              // Réinitialisation du formulaire pour une nouvelle saisie
+              this.showZoneModal = false; 
+              this.loadTariffs(); // 
+      
               this.newTariff = {
                 type: "",
                 price: "",
@@ -3831,68 +3769,97 @@ export class AgencyDashboardComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
+        // console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
         this.isLoading = false;
       },
     });
   }
   //recupere les planning d une agence
-  plannings: any[] = [];
+  schedules: CollectionSchedule[] = [];
 
-  loadPlannings(): void {
+loadPlannings(): void {
+  this.isLoading = true;
+  const agencyId = this.currentUser?._id;
+
+  if (!agencyId) {
+    console.error("[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant");
+    this.isLoading = false;
+    return;
+  }
+
+  this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
+    next: (data: any[]) => {
+      this.schedules = data;
+      console.log("Plannings récupérés :", this.schedules);
+
+      // 🔥 Mise à jour du badge
+      const schedulesTab = this.tabs.find(tab => tab.id === "schedules");
+      if (schedulesTab) {
+        schedulesTab.badge = this.schedules.length;
+      }
+
+      this.isLoading = false;
+    },
+    error: (error) => {
+      console.error("[DEBUG] Erreur lors du chargement des plannings :", error);
+      this.isLoading = false;
+    },
+  });
+}
+  // recuperation des planning d un colector 
+  collectorplannings: any[] = [];
+  loadCollectorPlannings(): void {
     this.isLoading = true;
-    const agencyId = this.currentUser?._id;
-    if (!agencyId) {
-      console.error("[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant");
+    const collectorId = "68c3f853a00747732407d946";
+    if (!collectorId) {
+      console.error("[DEBUG] Aucun collectorId trouvé ");
       this.isLoading = false;
       return;
     }
-
-    this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
+    this.agencyService. getPlaningCollectory$(collectorId).subscribe({
       next: (data: any[]) => {
-        this.plannings = data;
-        console.log("Plannings récupérés :", this.plannings);
+        this.collectorplannings = data;
+        console.log("Plannings récupérés pour le collecteur :", this.collectorplannings);
         this.isLoading = false;
       },
       error: (error) => {
-        console.error(
-          "[DEBUG] Erreur lors du chargement des plannings :",
-          error
-        );
+        // console.error(
+        //   "[DEBUG] Erreur lors du chargement des plannings du collecteur :",
+        //   error
+        // );
         this.isLoading = false;
       },
     });
   }
+    
  // supprimer un tarif
-  deletePlanning(planning: any): void {
-    this.isDeleting = true;
-    const tariffId = planning._id;
+deletePlanning(schedulesId: string): void {
+  this.isDeleting = true;
 
-    if (tariffId) {
-      this.agencyService.deletePlanning$(tariffId).subscribe(
-        () => {
-          this.notificationService.showSuccess(
-            "Succès",
-            "Planning a été supprimé avec succès."
-          );
-          // this.loadEmployees(currentUser);
-          this.isDeleting = false;
-          // this.load();
-        },
-        (error) => {
-          this.notificationService.showError(
-            "Erreur",
-            "Impossible de supprimer le planning. Veuillez réessayer."
-          );
-          console.error("Erreur lors de la suppression de le planning :", error);
-          this.isDeleting = false;
-        }
-      );
-    } else {
-      console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
-      this.isDeleting = false;
-    }
+  if (schedulesId) {
+    this.agencyService.deletePlanning$(schedulesId).subscribe(
+      () => {
+        this.notificationService.showSuccess(
+          "Succès",
+          "Planning a été supprimé avec succès."
+        );
+        this.loadPlannings();
+        this.isDeleting = false;
+      },
+      (error) => {
+        this.notificationService.showError(
+          "Erreur",
+          "Impossible de supprimer le planning. Veuillez réessayer."
+        );
+        console.error("Erreur lors de la suppression du planning :", error);
+        this.isDeleting = false;
+      }
+    );
+  } else {
+    console.warn("Aucun ID de planning fourni.");
+    this.isDeleting = false;
   }
+}
 
   tariffToUpdate: Tariff | null = null;
   //update un tarif via l api
@@ -4036,23 +4003,7 @@ export class AgencyDashboardComponent implements OnInit {
     }
   }
 
-  // addSchedule(): void {
-  //   if (this.newSchedule.zoneId && this.newSchedule.dayOfWeek && this.newSchedule.startTime && this.newSchedule.endTime && this.newSchedule.collectorId) {
-  //     const schedule: CollectionSchedule = {
-  //       id: Math.random().toString(36).substr(2, 9),
-  //       zoneId: this.newSchedule.zoneId,
-  //       dayOfWeek: parseInt(this.newSchedule.dayOfWeek),
-  //       startTime: this.newSchedule.startTime,
-  //       endTime: this.newSchedule.endTime,
-  //       collectorId: this.newSchedule.collectorId,
-  //       isActive: true
-  //     };
 
-  //     this.schedules.push(schedule);
-  //     this.showScheduleModal = false;
-  //     this.newSchedule = { zoneId: '', dayOfWeek: '', startTime: '', endTime: '', collectorId: '' };
-  //   }
-  // }
 
   validateClient(clientId: string): void {
     console.log("[validateClient] called for", clientId);
@@ -4071,118 +4022,165 @@ export class AgencyDashboardComponent implements OnInit {
     });
   }
 
+  // addSchedule(): void {
+  //   // Réinitialiser les erreurs
+  //   this.formErrors = {
+  //     zone: "",
+  //     dayOfWeek: "",
+  //     startTime: "",
+  //     endTime: "",
+  //     collectorId: "",
+  //     // endDate: "", // Ajout de cette ligne
+  //   };
+
+  //   let isValid = true;
+
+  //   if (!this.newSchedule.zone) {
+  //     this.formErrors.zone = "Veuillez sélectionner une zone";
+  //     isValid = false;
+  //   }
+  //   if (!this.newSchedule.dayOfWeek) {
+  //     this.formErrors.dayOfWeek = "Veuillez sélectionner un jour";
+  //     isValid = false;
+  //   }
+  //   if (!this.newSchedule.startTime) {
+  //     this.formErrors.startTime = "Veuillez définir une heure de début";
+  //     isValid = false;
+  //   }
+  //   if (!this.newSchedule.endTime) {
+  //     this.formErrors.endTime = "Veuillez définir une heure de fin";
+  //     isValid = false;
+  //   }
+  //   if (!this.newSchedule.collectorId) {
+  //     this.formErrors.collectorId = "Veuillez sélectionner un collecteur";
+  //     isValid = false;
+  //   }
+  //   // if (!this.newSchedule.endDate) {
+  //   //   this.formErrors.endDate = "Veuillez définir une date de fin";
+  //   //   isValid = false;
+  //   // }
+  //   // if (this.newSchedule.startTime && this.newSchedule.endTime) {
+  //   //   const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
+  //   //   const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
+  //   //   if (end <= start) {
+  //   //     this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
+  //   //     isValid = false;
+  //   //   }
+  //   // }
+
+  //   if (!isValid) {
+  //     this.notificationService.showError(
+  //       "Erreur de validation",
+  //       "Veuillez corriger les erreurs dans le formulaire"
+  //     );
+  //     return;
+  //   }
+
+  //   // Création de l'objet planning
+  //   const schedule: CollectionSchedule = {
+  //     zone: this.newSchedule.zone,
+  //     dayOfWeek: Number(this.newSchedule.dayOfWeek),
+  //     startTime: this.newSchedule.startTime,
+  //     endTime: this.newSchedule.endTime,
+  //     collectorId: this.newSchedule.collectorId,
+  //     date: this.newSchedule.date,
+  //     // endDate: this.newSchedule.endDate,
+  //     agencyId: this.currentUser?._id || "",
+  //   };
+  //   // Envoi au service
+  //   this.agencyService.addSchedule$(schedule).subscribe({
+  //     next: (response) => {
+  //       this.notificationService.showSuccess(
+  //         "Succès",
+  //         "Le planning a été créé avec succès"
+  //       );
+  //       this.showScheduleModal = false;
+  //       // Réinitialisation du formulaire
+  //       this.newSchedule = {
+  //         zone: "",
+  //         dayOfWeek: "",
+  //         startTime: "",
+  //         endTime: "",
+  //         collectorId: "",
+  //         date: "", // Ajout de cette ligne
+  //         endDate: "", // Ajout de cette ligne
+  //       };
+  //     },
+  //     error: (error) => {
+  //       let errorMessage =
+  //         "Une erreur est survenue lors de la création du planning";
+
+  //       // Gestion des erreurs spécifiques
+  //       if (error.error?.message) {
+  //         switch (error.error.message) {
+  //           case "COLLECTOR_NOT_AVAILABLE":
+  //             errorMessage =
+  //               "Le collecteur n'est pas disponible sur ce créneau";
+  //             break;
+  //           case "ZONE_NOT_FOUND":
+  //             errorMessage = "La zone sélectionnée n'existe pas";
+  //             break;
+  //           case "TIME_CONFLICT":
+  //             errorMessage =
+  //               "Il existe déjà un planning sur ce créneau horaire";
+  //             break;
+  //           default:
+  //             errorMessage = error.error.message;
+  //         }
+  //       }
+
+  //       this.notificationService.showError("Erreur", errorMessage);
+  //     },
+  //   });
+  // }
   addSchedule(): void {
-    // Réinitialiser les erreurs
-    this.formErrors = {
-      zone: "",
-      dayOfWeek: "",
-      startTime: "",
-      endTime: "",
-      collectorId: "",
-      // endDate: "", // Ajout de cette ligne
-    };
-
-    let isValid = true;
-
-    if (!this.newSchedule.zone) {
-      this.formErrors.zone = "Veuillez sélectionner une zone";
-      isValid = false;
-    }
-    if (!this.newSchedule.dayOfWeek) {
-      this.formErrors.dayOfWeek = "Veuillez sélectionner un jour";
-      isValid = false;
-    }
-    if (!this.newSchedule.startTime) {
-      this.formErrors.startTime = "Veuillez définir une heure de début";
-      isValid = false;
-    }
-    if (!this.newSchedule.endTime) {
-      this.formErrors.endTime = "Veuillez définir une heure de fin";
-      isValid = false;
-    }
-    if (!this.newSchedule.collectorId) {
-      this.formErrors.collectorId = "Veuillez sélectionner un collecteur";
-      isValid = false;
-    }
-    // if (!this.newSchedule.endDate) {
-    //   this.formErrors.endDate = "Veuillez définir une date de fin";
-    //   isValid = false;
-    // }
-    // if (this.newSchedule.startTime && this.newSchedule.endTime) {
-    //   const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
-    //   const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
-    //   if (end <= start) {
-    //     this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
-    //     isValid = false;
-    //   }
-    // }
-
-    if (!isValid) {
-      this.notificationService.showError(
-        "Erreur de validation",
-        "Veuillez corriger les erreurs dans le formulaire"
-      );
-      return;
-    }
-
-    // Création de l'objet planning
-    const schedule: CollectionSchedule = {
-      zone: this.newSchedule.zone,
-      dayOfWeek: Number(this.newSchedule.dayOfWeek),
-      startTime: this.newSchedule.startTime,
-      endTime: this.newSchedule.endTime,
-      collectorId: this.newSchedule.collectorId,
-      date: this.newSchedule.date,
-      // endDate: this.newSchedule.endDate,
-      agencyId: this.currentUser?._id || "",
-    };
-
-    // Envoi au service
-    this.agencyService.addSchedule$(schedule).subscribe({
-      next: (response) => {
-        this.notificationService.showSuccess(
-          "Succès",
-          "Le planning a été créé avec succès"
-        );
-        this.showScheduleModal = false;
-        // Réinitialisation du formulaire
-        this.newSchedule = {
-          zone: "",
-          dayOfWeek: "",
-          startTime: "",
-          endTime: "",
-          collectorId: "",
-          date: "", // Ajout de cette ligne
-          endDate: "", // Ajout de cette ligne
-        };
-      },
-      error: (error) => {
-        let errorMessage =
-          "Une erreur est survenue lors de la création du planning";
-
-        // Gestion des erreurs spécifiques
-        if (error.error?.message) {
-          switch (error.error.message) {
-            case "COLLECTOR_NOT_AVAILABLE":
-              errorMessage =
-                "Le collecteur n'est pas disponible sur ce créneau";
-              break;
-            case "ZONE_NOT_FOUND":
-              errorMessage = "La zone sélectionnée n'existe pas";
-              break;
-            case "TIME_CONFLICT":
-              errorMessage =
-                "Il existe déjà un planning sur ce créneau horaire";
-              break;
-            default:
-              errorMessage = error.error.message;
-          }
-        }
-
-        this.notificationService.showError("Erreur", errorMessage);
-      },
-    });
+  if (this.scheduleForm.invalid) {
+    this.notificationService.showError(
+      'Erreur de validation',
+      'Veuillez corriger les erreurs dans le formulaire'
+    );
+    return;
   }
+
+  const formValues = this.scheduleForm.value;
+
+const schedule: CollectionSchedule = {
+  zone: [formValues.zone], 
+  date: formValues.date,
+  startTime: formValues.startTime,
+  endTime: formValues.endTime,
+  collectorId: formValues.collectorId,
+  agencyId: this.currentUser?._id || '',
+};
+
+
+  this.agencyService.addSchedule$(schedule).subscribe({
+    next: () => {
+      this.notificationService.showSuccess('Succès', 'Le planning a été créé avec succès');
+      this.showScheduleModal = false;
+      this.scheduleForm.reset();
+    },
+    error: (error) => {
+      let errorMessage = 'Une erreur est survenue lors de la création du planning';
+      if (error.error?.message) {
+        switch (error.error.message) {
+          case 'COLLECTOR_NOT_AVAILABLE':
+            errorMessage = 'Le collecteur n\'est pas disponible sur ce créneau';
+            break;
+          case 'ZONE_NOT_FOUND':
+            errorMessage = 'La zone sélectionnée n\'existe pas';
+            break;
+          case 'TIME_CONFLICT':
+            errorMessage = 'Il existe déjà un planning sur ce créneau horaire';
+            break;
+          default:
+            errorMessage = error.error.message;
+        }
+      }
+      this.notificationService.showError('Erreur', errorMessage);
+    },
+  });
+}
   investigateIncident(): void {
     // const incident = this.incidents.find(i => i.id === incidentId);
     // if (incident) {
@@ -4225,8 +4223,8 @@ export class AgencyDashboardComponent implements OnInit {
   getSeverityText(severity: string): string {
     const texts = {
       critical: "Critique",
-      high: "Élevée",
-      medium: "Moyenne",
+      high: "Élevé",
+      medium: "Moyen",
       low: "Faible",
     };
     return texts[severity as keyof typeof texts] || severity;
@@ -4245,10 +4243,10 @@ export class AgencyDashboardComponent implements OnInit {
 
   getSeverityIcon(severity: string): string {
     const icons = {
-      critical: "error",
-      high: "warning",
-      medium: "info",
-      low: "help",
+     critical: "dangerous",
+      high: "priority_high",
+      medium: "warning",
+      low: "info"
     };
     return icons[severity as keyof typeof icons] || "help";
   }
@@ -4288,4 +4286,7 @@ export class AgencyDashboardComponent implements OnInit {
       },
     });
   }
+
+
+
 }
