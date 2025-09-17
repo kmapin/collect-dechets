@@ -69,8 +69,7 @@ interface ZoneStatistic {
   incidents: number;
 }
 
-// Pour un pays avec ses villes
-export interface GroupedZoneStatistics {
+interface GroupedZoneStatistics {
   country: string;
   cities: ZoneStatistic[];
 }
@@ -399,14 +398,14 @@ interface Communication {
                             <i class="material-icons">people</i>
                             <span>{{ city.clients }} clients</span>
                           </div>
-                          <div class="zone-metric">
+                          <!-- <div class="zone-metric">
                             <i class="material-icons">local_shipping</i>
                             <span>{{ city.collections }} collectes</span>
                           </div>
                           <div class="zone-metric" *ngIf="city.incidents > 0">
                             <i class="material-icons">warning</i>
                             <span>{{ city.incidents }} incidents</span>
-                          </div>
+                          </div> -->
                         </div>
                       </div>
                     </div>
@@ -1268,11 +1267,11 @@ interface Communication {
       .territory-stats {
         display: flex;
         flex-direction: column;
-        gap: 24px; /* espace entre les pays */
+        gap: 24px; 
       }
 
       .country-block {
-        background: #ffffff; /* fond blanc pour le bloc pays */
+        background: #ffffff; 
         padding: 16px;
         border-radius: 10px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
@@ -1289,7 +1288,7 @@ interface Communication {
 
       .zone-item {
         padding: 12px 16px;
-        background: #f5f5f5; /* gris clair pour les villes */
+        background: #f5f5f5; 
         border-radius: 8px;
         margin-bottom: 12px;
         border: 1px solid #e0e0e0;
@@ -2640,7 +2639,6 @@ export class MunicipalityDashboardComponent implements OnInit {
 
   loadZoneStatistics(): void {
     const stats = this.agencyService.getAgenceStats();
-    // Groupement par pays
     const grouped: { [key: string]: any[] } = {};
 
     MOCK_CITIES.forEach((city, index) => {
@@ -2664,41 +2662,43 @@ export class MunicipalityDashboardComponent implements OnInit {
   }
 
   loadZoneStat(): void {
-  this.adminService.getAllStatisticCity().subscribe({
-    next: (response: any) => {
-      const stats = Array.isArray(response.statistics) ? response.statistics : [];
-      const grouped: { [key: string]: ZoneStatistic[] } = {};
+    this.adminService.getAllStatisticCity().subscribe({
+      next: (response: any) => {
+        const stats = Array.isArray(response.statistics)
+          ? response.statistics
+          : [];
+        const grouped: { [key: string]: ZoneStatistic[] } = {};
 
-      MOCK_CITIES.forEach(city => {
-        const country = city.country.name || 'Burkina Faso';
-        if (!grouped[country]) {
-          grouped[country] = [];
-        }
-        const cityStats = stats.find((s: any) => s.city === city.name);
+        MOCK_CITIES.forEach((city) => {
+          const country = city.country.name || "Burkina Faso";
+          if (!grouped[country]) {
+            grouped[country] = [];
+          }
+          const cityStats = stats.find((s: any) => s.city === city.name);
 
-        grouped[country].push({
-          country,
-          name: city.name,
-          agencies: cityStats?.agencies || 0,
-          clients: cityStats?.clients || 0,
-          collections: cityStats?.todayCollections || 0,
-          coverage: cityStats?.complianceRate || 0,
-          incidents: cityStats?.pendingReports || 0,
-          cities: []
+          grouped[country].push({
+            country,
+            name: city.name,
+            agencies: cityStats?.agencies || 0,
+            clients: cityStats?.clients || 0,
+            collections: cityStats?.todayCollections || 0,
+            coverage: cityStats?.complianceRate || 0,
+            incidents: cityStats?.pendingReports || 0,
+            cities: [],
+          });
         });
-      });
 
-      this.zoneStatistics = Object.keys(grouped).map(country => ({
-        country,
-        cities: grouped[country]
-      }));
-    },
-    error: (err) => {
-      console.error('Erreur lors de la récupération des villes:', err);
-      this.zoneStatistics = [];
-    }
-  });
-}
+        this.zoneStatistics = Object.keys(grouped).map((country) => ({
+          country,
+          cities: grouped[country],
+        }));
+      },
+      error: (err) => {
+        console.error("Erreur lors de la récupération des villes:", err);
+        this.zoneStatistics = [];
+      },
+    });
+  }
 
   /**Listes des signalements des users */
   loadAllSignalements() {
@@ -2721,33 +2721,6 @@ export class MunicipalityDashboardComponent implements OnInit {
       },
     });
   }
-
-  // loadIncidents(): void {
-  //   this.incidents = [
-  //     {
-  //       id: "1",
-  //       agencyId: "2",
-  //       agencyName: "GreenWaste Solutions",
-  //       type: "missed_collection",
-  //       description: "Collecte manquée dans le secteur Nord",
-  //       severity: "medium",
-  //       date: new Date(),
-  //       status: "open",
-  //     },
-  //     {
-  //       id: "2",
-  //       agencyId: "3",
-  //       agencyName: "WasteManager Pro",
-  //       type: "compliance_issue",
-  //       description: "Non-respect des horaires réglementaires",
-  //       severity: "high",
-  //       date: new Date(Date.now() - 86400000),
-  //       status: "investigating",
-  //       assignedTo: "Inspecteur Martin",
-  //     },
-  //   ];
-  //   this.filteredIncidents = [...this.incidents];
-  // }
 
   // loadCommunications(): void {
   //   this.communications = [

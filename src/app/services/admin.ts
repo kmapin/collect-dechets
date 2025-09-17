@@ -108,16 +108,6 @@ export class Admin {
   }
 
 // Les statistiques d'une ville
-
-//  getAllStatisticCity() {
-//     return this.http.get(`${environment.apiUrl}/auth/municipality/city`).pipe(
-//       map((response: any) => {
-//         console.log('API > getAllStatisticCity:', response);
-//         return response;
-//       })
-//     );
-//   }
-
  getAllStatisticCity(): Observable<MunicipalityStatistics[]> {
   return this.http.get<MunicipalityStatistics[]>(
     `${environment.apiUrl}/auth/city/municipality`,
