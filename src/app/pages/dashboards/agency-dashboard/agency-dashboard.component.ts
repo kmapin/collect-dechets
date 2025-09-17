@@ -692,6 +692,29 @@ interface Statistics {
             <div *ngIf="activeTab === 'reports'" class="reports-tab">
               <div class="reports-header">
                 <h2>Signalements</h2>
+                  <div class="incidents-filters">
+                  <select
+                    [(ngModel)]="incidentsFilter"
+                    (change)="filterIncidents()"
+                    class="filter-select"
+                  >
+                    <option value="all">Tous les incidents</option>
+                    <option value="open">Ouverts</option>
+                    <option value="pending">En cours</option>
+                    <option value="resolved">Résolus</option>
+                  </select>
+                  <select
+                    [(ngModel)]="severityFilter"
+                    (change)="filterIncidents()"
+                    class="filter-select"
+                  >
+                    <option value="all">Toutes gravités</option>
+                    <option value="critical">Critique</option>
+                    <option value="high">Élevée</option>
+                    <option value="medium">Moyenne</option>
+                    <option value="low">Faible</option>
+                  </select>
+                </div>
               </div>
               <div class="reports-list">
                 <div
@@ -1494,7 +1517,8 @@ interface Statistics {
       .collections-filters,
       .clients-filters,
       .reports-filters,
-      .analytics-filters {
+      .analytics-filters, 
+      .incidents-filters {
         display: flex;
         gap: 12px;
         align-items: center;
@@ -2702,9 +2726,8 @@ minDate: string;
     this.loadTariffs();
     this.loadPlannings();
     this.loadCollectorPlannings(),
-     
-
       this.cdr.detectChanges();
+      this.filterIncidents();
 
     //   const testTarifId = '687cc316091944da1fc7c2c7';
     // const role = EmployeeRole.MANAGER;
@@ -3441,6 +3464,7 @@ minDate: string;
     });
   }
 
+  
   // Action methods
   trackCollection(collectionId: string): void {
     // No need to call notificationService.showInfo here, as it's already handled in the template

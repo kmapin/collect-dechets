@@ -2876,18 +2876,6 @@ export class MunicipalityDashboardComponent implements OnInit {
     });
   }
 
-  // filterIncidents(): void {
-  //   this.filteredIncidents = this.incidents.filter((incident) => {
-  //     const statusMatch =
-  //       this.incidentsFilter === "all" ||
-  //       incident.status === this.incidentsFilter;
-  //     const severityMatch =
-  //       this.severityFilter === "all" ||
-  //       incident.severity === this.severityFilter;
-  //     return statusMatch && severityMatch;
-  //   });
-  // }
-
   filterIncidents(): void {
     this.filteredIncidents = this.incidents.filter((incident) => {
       const statusMatch =
