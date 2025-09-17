@@ -956,7 +956,7 @@ markAllAsRead(event: Event): void {
   // La logique viendra plus tard
 }
   logout(): void {
-    localStorage.removeItem('currentUser');
+    // localStorage.removeItem('currentUser');
     this.authService.logout().subscribe({
       next: (response: any) => {
         
