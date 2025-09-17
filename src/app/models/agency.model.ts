@@ -263,3 +263,6 @@ export interface Statistics {
   success?: boolean;
 }
 
+export interface PlanningResponse {
+  plannings: CollectionSchedule[];
+}

@@ -1015,7 +1015,7 @@ toggleNotifications(): void {
 
 // }
   logout(): void {
-    localStorage.removeItem('currentUser');
+    // localStorage.removeItem('currentUser');
     this.authService.logout().subscribe({
       next: (response: any) => {
         

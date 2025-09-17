@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, delay, map, tap } from 'rxjs/operators';
-import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tariff } from '../models/agency.model';
+import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tariff, PlanningResponse } from '../models/agency.model';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
@@ -504,13 +504,11 @@ export class AgencyService {
 
   }
     //recupere les planing d une agence
-    getAllPlaningAgency$(agencyId: string): Observable<any[]> {
-    const agency = this.agencies.find(a => a._id === agencyId);
-    const url=`${environment.apiUrl}/zones/plannings/agency/${agencyId}`;
-    console.log("URL de la requête :", url); // Debug: Affiche l'URL de la requête
-    return this.http.get<Tariff[]>(url);
+  getAllPlaningAgency$(agencyId: string): Observable<PlanningResponse> {
+  const url = `${environment.apiUrl}/zones/plannings/agency/${agencyId}`;
+  return this.http.get<PlanningResponse>(url);
+}
 
-  }
    //supprimer un  planing d une agence
   deletePlanning$(planningId: string): Observable<boolean> {
     return this.http.delete(`${environment.apiUrl}/zones/plannings/${planningId}`).pipe(

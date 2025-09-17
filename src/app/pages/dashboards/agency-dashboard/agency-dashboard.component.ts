@@ -125,6 +125,7 @@ interface Statistics {
                 <p class="stat-value">{{ statistics.totalClients }}</p>
                 <!-- <span class="stat-trend positive">+2 ce mois</span> -->
               </div>
+              
             </div>
 
             <div class="stat-card card">
@@ -1256,6 +1257,7 @@ interface Statistics {
 
   <!-- Collecteur -->
   <div class="form-group">
+   
     <label>Collecteur *</label>
     <select formControlName="collectorId">
       <option value="">Sélectionner un collecteur</option>
@@ -2725,26 +2727,10 @@ minDate: string;
     this.loadAgencyReports(this.currentUser);
     this.loadTariffs();
     this.loadPlannings();
-    this.loadCollectorPlannings(),
+    this.loadCollectorPlannings();
       this.cdr.detectChanges();
-      this.filterIncidents();
 
-    //   const testTarifId = '687cc316091944da1fc7c2c7';
-    // const role = EmployeeRole.MANAGER;
-
-    //     const testTarifId = '687cc316091944da1fc7c2c5';
-    //     const role = EmployeeRole.COLLECTOR;
-
-    //     this.agencyService.getEmployeesByAgencyAndRole$(testTarifId, role).subscribe(response => {
-    //       if (response.success && response.data.length > 0) {
-    //         console.log('Liste des collecteurs :');
-    //         response.data.forEach(employee => {
-    //           console.log(`- ${employee} (${employee.id})`);
-    //         });
-    //       } else {
-    //         console.log('Aucun collecteur trouvé ou erreur de requête.');
-    //       }
-    //     });
+ 
   }
 
   openAssignModal(reportId: string): void {
@@ -3388,25 +3374,27 @@ minDate: string;
   //   });
   // }
 
-  getSchedulesForDay(dayIndex: number): any[] { // dayIndex: 0 for Monday, 6 for Sunday
-    const startOfWeek = new Date(this.currentWeek);
-    const day = this.currentWeek.getDay(); // 0 for Sunday, 1 for Monday, etc.
-    const diff = this.currentWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
-    startOfWeek.setDate(diff);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const targetDate = new Date(startOfWeek);
-    targetDate.setDate(startOfWeek.getDate() + dayIndex);
-
-    return this.schedules.filter(schedule => {
-        const scheduleDate = new Date(schedule.date);
-        scheduleDate.setHours(0, 0, 0, 0);
-        return scheduleDate.getTime() === targetDate.getTime();
-    });
+ getSchedulesForDay(dayIndex: number): any[] {
+  if (!Array.isArray(this.schedules)) {
+    return []; 
   }
-  getCollectors(): Employee[] {
-    return this.employees.filter((e) => e.role === "collector");
-  }
+
+  const startOfWeek = new Date(this.currentWeek);
+  const day = this.currentWeek.getDay(); // 0 for Sunday, 1 for Monday, etc.
+  const diff = this.currentWeek.getDate() - day + (day === 0 ? -6 : 1);
+  startOfWeek.setDate(diff);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const targetDate = new Date(startOfWeek);
+  targetDate.setDate(startOfWeek.getDate() + dayIndex);
+
+  return this.schedules.filter(schedule => {
+    const scheduleDate = new Date(schedule.date);
+    scheduleDate.setHours(0, 0, 0, 0);
+    return scheduleDate.getTime() === targetDate.getTime();
+  });
+}
+
 
   getCollectorPerformance(): any[] {
     return this.employees
@@ -3812,11 +3800,10 @@ loadPlannings(): void {
   }
 
   this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
-    next: (data: any[]) => {
-      this.schedules = data;
+    next: (response: { plannings: CollectionSchedule[] }) => {
+      this.schedules = response.plannings;
       console.log("Plannings récupérés :", this.schedules);
 
-      // 🔥 Mise à jour du badge
       const schedulesTab = this.tabs.find(tab => tab.id === "schedules");
       if (schedulesTab) {
         schedulesTab.badge = this.schedules.length;
@@ -3830,6 +3817,7 @@ loadPlannings(): void {
     },
   });
 }
+
   // recuperation des planning d un colector 
   collectorplannings: any[] = [];
   loadCollectorPlannings(): void {
