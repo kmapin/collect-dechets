@@ -202,11 +202,11 @@ export enum  EmployeeRole {
 // }
 export interface CollectionSchedule {
   _id?: string;
-  zone: string[]; 
+  zone: string; 
   date: string;
   startTime: string;
   endTime: string;
-  collectorId: string;
+collectorId: string[];
   agencyId: string;
 }
 

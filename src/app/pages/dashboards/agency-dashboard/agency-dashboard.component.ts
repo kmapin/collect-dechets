@@ -2679,7 +2679,7 @@ minDate: string;
       const today = new Date();
   this.minDate = today.toISOString().split('T')[0];
      this.scheduleForm = this.fb.group({
-    zone: ['', Validators.required],
+    zone: [''],
     date: ['', Validators.required],
     startTime: ['', Validators.required],
     endTime: ['', Validators.required],
@@ -4145,11 +4145,13 @@ deletePlanning(schedulesId: string): void {
   const formValues = this.scheduleForm.value;
 
 const schedule: CollectionSchedule = {
-  zone: [formValues.zone], 
+  zone: formValues.zone, // si zone est aussi un tableau
   date: formValues.date,
   startTime: formValues.startTime,
   endTime: formValues.endTime,
-  collectorId: formValues.collectorId,
+  collectorId: Array.isArray(formValues.collectorId)
+    ? formValues.collectorId
+    : [formValues.collectorId], 
   agencyId: this.currentUser?._id || '',
 };
 
