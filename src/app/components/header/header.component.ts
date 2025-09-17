@@ -261,8 +261,8 @@ import { NotificationService } from '../../services/notification.service';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 94px;
-      font-size: 24px;
+      height: 74px;
+      /* font-size: 24px; */
     }
 
     /* Brand */

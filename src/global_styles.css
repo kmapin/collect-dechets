@@ -43,7 +43,7 @@ body {
   width: 100%;
   min-height: 100vh;
   height: auto;
-  font-size: 1.5em;
+  /* font-size: 1.2em; */
   font-family: 'Inter', sans-serif;
   line-height: 1.6;
   color: var(--text-primary);
@@ -57,7 +57,7 @@ body {
   /* min-width: 100%; */
   /* max-width: 1400px; */
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 10px 20px;
 }
 
 /* Amélioration pour les très grands écrans */
@@ -65,30 +65,30 @@ body {
   .container {
     max-width: 1600px;
    
-    padding: 0 40px;
+    padding: 10px 40px;
   }
 }
 
 @media (min-width: 1920px) {
   .container {
     max-width: 1;
-    padding: 0 60px;
+    padding: 10px 60px;
   }
 }
 
 /* Centrage global pour tous les écrans */
-body {
+/* body {
   margin: 0;
   padding: 0;
   width: 100%;
   min-height: 100vh;
-}
+} */
 
 .app {
   width: 100%;
   min-height: 100vh;
   display: flex;
-  font-size: 1.5em;
+  /* font-size: 1.5em; */
   flex-direction: column;
   align-items: center;
 }
@@ -189,8 +189,8 @@ body {
 .page-header {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: var(--white);
-  padding:0;
-  margin:0 0 40px 0;
+  padding: 0;
+  margin:0 0 0 0;
 }
 
 .page-title {
@@ -302,7 +302,7 @@ body {
   box-shadow: var(--shadow-light);
   position: sticky;
   top: 0;
-    font-size: 18px;
+    /* font-size: 18px; */
     z-index: 1000;
 }
 
