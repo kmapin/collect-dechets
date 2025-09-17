@@ -9,6 +9,9 @@ import { User } from '../../../models/user.model';
 import { Collection, CollectionStatus } from '../../../models/collection.model';
 import { ClientService } from '../../../services/client.service';
 import { map } from 'rxjs';
+import { MessagesService } from '../../../services/messages.service';
+import { AgencyService } from '../../../services/agency.service';
+import { Message } from '../../../models/message.model';
 
 interface PaymentHistory {
   id: string;
@@ -219,6 +222,97 @@ interface Subscription {
                   </div>
                 </div>
               </section>
+
+              <!-- Messages -->
+              <section class="collection-history card">
+                <div class="section-header">
+                  <h2>
+                    <i class="material-icons">message</i>
+                    Messagerie
+                  </h2>
+                  <div class="filter-controls">
+                    <span class="section-count">{{ unreadMessageCount}} message(s) non lu(s)</span>
+                  </div>
+                </div>
+
+                <div class="history-list">
+                  <div *ngFor="let message of receivedMessages" class="history-item">
+                    <div class="history-date">
+                      <div class="day">{{ message.timestamp | date:'dd' }}</div>
+                      <div class="month">{{ message.timestamp | date:'MMM' }}</div>
+                    </div>
+                    <div class="history-info">
+                      <h4>{{ message.content }}</h4>
+                      <p class="history-time">{{ message.timestamp | date:'HH:mm' }}</p>
+                      <p class="history-collector" *ngIf="message.sender!== currentUser?._id">
+                        Reçu de <span class="sender-name">{{  message.senderName  }}</span>
+                      </p>
+                      <p class="history-collector" *ngIf="message.sender=== currentUser?._id">
+                        Moi
+                      </p>
+                    </div>
+                    <div class="history-status">
+                      <span class="status-badge">
+                        {{ message.read === 'false' ? 'Non lu' : 'Lu' }}
+                      </span>
+                      <div class="history-rating" *ngIf="message.read === 'false'">
+                        <button class="rate-btn" (click)="readAndRespondMessage(message._id)" 
+                                *ngIf="!message.rating">
+                          Repondre
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div *ngIf="filteredHistory.length === 0" class="empty-state">
+                    <i class="material-icons">history</i>
+                    <h3>Aucun historique</h3>
+                    <p>Vos collectes passées apparaîtront ici</p>
+                  </div>
+                </div>
+              </section>
+              <!-- Message -->
+              <div class="modal-overlay" *ngIf="showMessageModal" (click)="showMessageModal = false">
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Décrivez nous votre besoins</h3>
+                    <button class="close-btn" (click)="showMessageModal = false">
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+                  <form class="report-form" >
+                    <!-- <div class="form-group">
+                      <label>Destinataire</label>
+                      <select [(ngModel)]="messageData.receiver" name="receiver" required>
+                        <option value="">Sélectionnez</option>
+                        <option value="missed_collection">Collecte manquée</option>
+                        <option value="compliance_issue">Non-conformité</option>
+                        <option value="technical_issue">Problème technique</option>
+                        <option value="complaint">Réclamation</option>
+                        <option value="other">Autre</option>
+                      </select>
+                    </div>-->
+                    
+                    <div class="form-group">
+                      <label>Message</label>
+                      <textarea [(ngModel)]="messageData.content" name="content" 
+                                rows="4" placeholder="Votre message..." required></textarea>
+                    </div>
+                    <div class="form-actions">
+                      <button type="button" class="btn btn-secondary" (click)="showMessageModal = false">
+                        Annuler
+                      </button>
+                      <button type="button" class="btn btn-primary" (click)="submitMessage() ; showMessageModal = false">
+                        <i class="material-icons">send</i>
+                        Envoyer
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+
+
             </div>
 
             <div class="right-column">
@@ -1120,11 +1214,11 @@ export class ClientDashboardComponent implements OnInit {
   filteredHistory: Collection[] = [];
   paymentHistory: PaymentHistory[] = [];
   subscription: Subscription | null = null;
-  
+
   historyFilter = 'all';
   showReportModal = false;
   showPaymentModal = false;
-  
+
   reportData = {
     type: '',
     description: '',
@@ -1132,17 +1226,27 @@ export class ClientDashboardComponent implements OnInit {
     clientId: '',
     agencyId: ''
   };
-
+  unreadMessageCount: any;
+  receivedMessages: any;
+  agency: any;
+  showMessageModal: boolean=false;
+  messageData: Message = {
+    sender: '',
+    receiver: '',
+    content: ''
+  };
   constructor(
     private authService: AuthService,
     private collectionService: CollectionService,
     private clientService: ClientService,
-    private notificationService: NotificationService
-  ) {}
+    private notificationService: NotificationService,
+    private messageService: MessagesService,
+    private agencyService: AgencyService
+  ) { }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    console.log("Current User",this.currentUser);
+    console.log("Current User", this.currentUser);
     this.loadDashboardData();
   }
 
@@ -1152,8 +1256,95 @@ export class ClientDashboardComponent implements OnInit {
     this.loadCollectionHistory();
     this.loadPaymentHistory();
     this.loadSubscription();
+    this.countUnreadMessages();
+    this.userMessages();
   }
 
+  /**Gestion des messages recus par le client connecté */
+  countUnreadMessages() {
+    this.messageService.getUserUnreadMessagesCount(this.currentUser?._id || '').subscribe({
+      next: (response: any) => {
+        if (response) {
+          console.log('API > getUserUnreadMessagesCount:', response);
+          this.unreadMessageCount = response.unreadCount || 0;
+        }
+      },
+      error: (error: any) => {
+        console.error('API > getUserUnreadMessagesCount:', error);
+      }
+    });
+  }
+
+
+  userMessages() {
+    this.messageService.getMessagesForUser(this.currentUser?._id || '').subscribe({
+      next: (response: any) => {
+        if (response) {
+          console.log('API > getMessagesForUser:', response);
+          this.receivedMessages = response.messages || [];
+          this.receivedMessages.forEach((message: any) => {
+            this.agencyService.getAgencyByIdFromApi(message.sender).subscribe((response: any) => {
+              if (response.success && response.data) {
+                this.agency = response.data;
+                message.read = message.read.toString();
+                message.senderName = this.agency.agencyName;
+              }
+            });
+          });
+
+        }
+      },
+      error: (error: any) => {
+        console.error('API > getMessagesForUser:', error);
+      }
+    });
+  }
+  readAndRespondMessage(messageId: string): void {
+    this.messageService.markMessagesAsRead(messageId).subscribe({
+      next: (response: any) => {
+        this.showMessageModal = true;
+        this.userMessages();
+        console.log('Lire et répondre au message:', messageId);
+      },
+      error: (error: any) => {
+        console.error('Erreur lors de la lecture du message:', error);
+      }
+    });
+  }
+  submitMessage() {
+    if (!this.currentUser) {
+      this.notificationService.showError('Connexion requise', 'Vous devez être connecté pour envoyer un message');
+      return;
+    }
+    if (!this.agency) {
+      this.notificationService.showError('Erreur', 'Agence non trouvée');
+      return;
+    }
+    this.messageData.sender = this.currentUser?._id || '';
+    this.messageData.receiver = this.currentUser?.subscribedAgencyId || '';
+    this.messageData.content = this.messageData.content.trim();
+    if (!this.messageData.content) {
+      this.notificationService.showError('Message vide', 'Le contenu du message ne peut pas être vide');
+      return;
+    }
+
+    console.log('Envoi du message:', this.messageData);
+    this.messageService.sendMessage(this.messageData).subscribe({
+      next: (response: any) => {
+        console.log('API > sendMessage:', response);
+        this.notificationService.showSuccess('Message envoyé', 'Votre message a bien été envoyé');
+        this.showReportModal = false;
+        this.userMessages();
+      },
+      error: (error: any) => {
+        console.error('API > sendMessage:', error);
+        this.notificationService.showError('Message non envoyé', 'Une erreur s\'est produite lors de l\'envoi du message');
+      }
+    });
+  }
+
+  /**Gestion des messages recus par le client connecté fin */
+  
   loadUpcomingCollections(): void {
     // Simuler les prochaines collectes
     this.upcomingCollections = [
@@ -1359,28 +1550,28 @@ export class ClientDashboardComponent implements OnInit {
   }
 
   submitReport(): void {
-      const data = {
-        type: this.reportData.type,
-        description: this.reportData.description,
-        severity: this.reportData.severity,
-        clientId: this.currentUser?._id,
-        agencyId: this.currentUser?.subscribedAgencyId
-      }
-    if (this.reportData.type && this.reportData.description && this.reportData.clientId &&this.reportData.agencyId ||   this.reportData.severity) {
+    const data = {
+      type: this.reportData.type,
+      description: this.reportData.description,
+      severity: this.reportData.severity,
+      clientId: this.currentUser?._id,
+      agencyId: this.currentUser?.subscribedAgencyId
+    }
+    if (this.reportData.type && this.reportData.description && this.reportData.clientId && this.reportData.agencyId || this.reportData.severity) {
       console.log('Signalement envoyé:', this.reportData);
       this.clientService.reportClientIncident(data).subscribe({
-        next: (response :any) => {
+        next: (response: any) => {
           console.log('API > reportClientIncident:', response);
           this.notificationService.showSuccess('Signalement envoyé', 'Votre signalement a été transmis à l\'agence');
           this.showReportModal = false;
-          this.reportData = { type: '', description: '',severity: '', clientId: '', agencyId: '' };
+          this.reportData = { type: '', description: '', severity: '', clientId: '', agencyId: '' };
         },
         error: (error: any) => {
           console.error('API > reportClientIncident:', error);
           this.notificationService.showError('Signalement non envoyé', 'Une erreur s\'est produite lors de l\'envoi du signalement');
         }
       });
-      
+
     }
   }
 

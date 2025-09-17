@@ -19,7 +19,7 @@ export class MessagesService {
   }
 
   getMessagesForUser(userId: string): Observable<Message[]> {
-    return this.http.get<Message[]>(`${environment.apiUrl}/messages/user/${userId}`);
+    return this.http.get<Message[]>(`${environment.apiUrl}/messages/${userId}`);
   }
 
   getUserUnreadMessagesCount(userId: string): Observable<number> {
@@ -27,7 +27,7 @@ export class MessagesService {
   }
 
   markMessagesAsRead(messageId: string): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/messages/${messageId}/mark-read`, {});
+    return this.http.put<void>(`${environment.apiUrl}/messages/${messageId}/mark-read`, {});
   }
 
 
