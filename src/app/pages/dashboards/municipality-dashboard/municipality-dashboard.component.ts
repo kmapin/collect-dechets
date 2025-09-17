@@ -1356,7 +1356,7 @@ interface Communication {
         flex-wrap: wrap;
         gap: 16px;
       }
-
+      /*
       // .zone-metric {
       //   display: flex;
       //   align-items: center;
@@ -1364,7 +1364,7 @@ interface Communication {
       //   font-size: 0.9rem;
       //   color: var(--text-secondary);
       // }
-
+      */
       .zone-metric i {
         font-size: 16px;
         color: var(--primary-color);
