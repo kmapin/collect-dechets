@@ -35,12 +35,12 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                 placeholder="Rechercher par nom, ville, quartier..."
                 class="search-input">
                     <!-- Ajout de la liste des suggestions -->
-    <ul class="suggestions-list" *ngIf="suggestions.length > 0">
-  <li *ngFor="let suggestion of suggestions" (click)="applySuggestion(suggestion)">
-    {{ suggestion.name }}
-  </li>
-</ul>
-            </div>
+            <ul class="suggestions-list" *ngIf="suggestions.length > 0">
+              <li *ngFor="let suggestion of suggestions" (click)="applySuggestion(suggestion)">
+                {{ suggestion.name }}
+              </li>
+            </ul>
+              </div>
           </div>
 
           <div class="filters-grid">

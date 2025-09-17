@@ -6,12 +6,15 @@ import { Agency, Tariff } from '../../models/agency.model';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { User } from '../../models/user.model';
+import { MessagesService } from '../../services/messages.service';
+import { Message } from '../../models/message.model';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 
 @Component({
   selector: 'app-agency-details',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule,FormsModule,ReactiveFormsModule],
   template: `
     <div class="agency-details-page" *ngIf="agency">
       <!-- Breadcrumb Navigation -->
@@ -110,7 +113,7 @@ import { User } from '../../models/user.model';
                     <i class="material-icons">build</i>
                   </div>
                   <div class="stat-info">
-                    <span class="stat-number">{{ agency.services.length }}</span>
+                    <span class="stat-number">{{ agency.services.length || 0 }}</span>
                     <span class="stat-label">Services</span>
                   </div>
                 </div>
@@ -119,7 +122,7 @@ import { User } from '../../models/user.model';
                     <i class="material-icons">map</i>
                   </div>
                   <div class="stat-info">
-                    <span class="stat-number">{{ agency.serviceZones.length }}</span>
+                    <span class="stat-number">{{ agency.serviceZones.length || 0 }}</span>
                     <span class="stat-label">Zones</span>
                   </div>
                 </div>
@@ -128,7 +131,7 @@ import { User } from '../../models/user.model';
                     <i class="material-icons">local_shipping</i>
                   </div>
                   <div class="stat-info">
-                    <span class="stat-number">{{ agency.employees.length }}</span>
+                    <span class="stat-number">{{ agency.employees.length || 0 }}</span>
                     <span class="stat-label">Employés</span>
                   </div>
                 </div>
@@ -141,7 +144,7 @@ import { User } from '../../models/user.model';
                     <i class="material-icons">build</i>
                     Services proposés
                   </h2>
-                  <span class="section-count">{{ agency.services.length }} service(s)</span>
+                  <span class="section-count">{{ agency.services.length || 0 }} service(s)</span>
                 </div>
                 <div class="services-grid">
                   <div *ngFor="let service of agency.services" class="service-card">
@@ -225,7 +228,7 @@ import { User } from '../../models/user.model';
                     <i class="material-icons">map</i>
                     Zones de couverture
                   </h2>
-                  <span class="section-count">{{ agency.serviceZones.length }} zone(s)</span>
+                  <span class="section-count">{{ agency.serviceZones.length || 0 }} zone(s)</span>
                 </div>
                 <div class="zones-grid">
                   <div *ngFor="let zone of agency.serviceZones" class="zone-card">
@@ -243,7 +246,7 @@ import { User } from '../../models/user.model';
                           <span *ngFor="let city of zone.cities" class="city-tag">{{ city }}</span>
                         </div>
                       </div>
-                      <div class="zone-neighborhoods" *ngIf="zone.neighborhoods.length > 0">
+                      <div class="zone-neighborhoods" *ngIf="zone && zone.neighborhoods && zone.neighborhoods.length > 0">
                         <strong>Quartiers :</strong>
                         <div class="neighborhoods-list">
                           <span *ngFor="let neighborhood of zone.neighborhoods" class="neighborhood-tag">{{ neighborhood }}</span>
@@ -252,7 +255,7 @@ import { User } from '../../models/user.model';
                     </div>
                   </div>
                 </div>
-                <div *ngIf="agency.serviceZones.length === 0" class="empty-state">
+                <div *ngIf="agency?.serviceZones?.length === 0" class="empty-state">
                   <i class="material-icons">map</i>
                   <h3>Aucune zone de couverture</h3>
                   <p>Cette agence n'a pas encore défini ses zones de couverture.</p>
@@ -298,6 +301,50 @@ import { User } from '../../models/user.model';
                     <i class="material-icons">phone</i>
                     Contacter l'agence
                   </button>
+                  <button class="btn btn-primary btn-full" (click)="showReportModal = true">
+                    <i class="material-icons">message</i>
+                    Envoyer message
+                  </button>
+                </div>
+              </div>
+
+              <!-- Message -->
+              <div class="modal-overlay" *ngIf="showReportModal" (click)="showReportModal = false">
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Décrivez nous votre besoins</h3>
+                    <button class="close-btn" (click)="showReportModal = false">
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+                  <form class="report-form" >
+                    <!-- <div class="form-group">
+                      <label>Destinataire</label>
+                      <select [(ngModel)]="messageData.receiver" name="receiver" required>
+                        <option value="">Sélectionnez</option>
+                        <option value="missed_collection">Collecte manquée</option>
+                        <option value="compliance_issue">Non-conformité</option>
+                        <option value="technical_issue">Problème technique</option>
+                        <option value="complaint">Réclamation</option>
+                        <option value="other">Autre</option>
+                      </select>
+                    </div>-->
+                    
+                    <div class="form-group">
+                      <label>Message</label>
+                      <textarea [(ngModel)]="messageData.content" name="content" 
+                                rows="4" placeholder="Votre message..." required></textarea>
+                    </div>
+                    <div class="form-actions">
+                      <button type="button" class="btn btn-secondary" (click)="showReportModal = false">
+                        Annuler
+                      </button>
+                      <button type="button" class="btn btn-primary" (click)="submitMessage() ; showReportModal = false">
+                        <i class="material-icons">send</i>
+                        Envoyer
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
 
@@ -412,6 +459,101 @@ import { User } from '../../models/user.model';
     </div>
   `,
   styles: [`
+    /* popup styles */
+          .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--medium-gray);
+    }
+
+    .modal-header h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .close-btn:hover {
+      background: var(--light-gray);
+    }
+
+    .report-form,
+    .payment-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 12px 16px;
+      border: 2px solid var(--medium-gray);
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+    /* popup styles end*/
     .agency-details-page {
       min-height: 100vh;
       background: var(--light-gray);
@@ -957,7 +1099,12 @@ import { User } from '../../models/user.model';
       padding: 20px;
       border-top: 1px solid var(--medium-gray);
     }
-
+    .contact-actions{
+      display: flex;
+      direction: column;
+      gap: 12px;
+    }
+     
     .map-container {
       padding: 20px;
     }
@@ -1263,70 +1410,107 @@ export class AgencyDetailsComponent implements OnInit {
   agency: Agency | null = null;
   agencyId: string | null = null;
   currentUser: User | null = null;
+  messageData: Message = {
+    sender: '',
+    receiver: '',
+    content: ''
+  };
+
+  showReportModal = false;
   constructor(
     private route: ActivatedRoute,
     private agencyService: AgencyService,
     private authService: AuthService,
     private notificationService: NotificationService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private messageService: MessagesService
+  ) { }
 
   ngOnInit(): void {
-       this.currentUser = this.authService.getCurrentUser();
+    this.currentUser = this.authService.getCurrentUser();
     this.agencyId = this.route.snapshot.paramMap.get('id');
     if (this.agencyId) {
-      this.loadAgencyFromApi(this.agencyId);     
+      this.loadAgencyFromApi(this.agencyId);
     }
-     this.loadTariffs();
+    this.loadTariffs();
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
   }
+  submitMessage() {
+    if (!this.currentUser) {
+      this.notificationService.showError('Connexion requise', 'Vous devez être connecté pour envoyer un message');
+      return;
+    }
+    if (!this.agency) {
+      this.notificationService.showError('Erreur', 'Agence non trouvée');
+      return;
+    }
+    this.messageData.sender = this.currentUser?._id || '';
+    this.messageData.receiver = this.agencyId || '';
+    this.messageData.content = this.messageData.content.trim();
+    if (!this.messageData.content) {
+      this.notificationService.showError('Message vide', 'Le contenu du message ne peut pas être vide');
+      return;
+    }
 
+    console.log('Envoi du message:', this.messageData);
+    this.messageService.sendMessage(this.messageData).subscribe({
+      next: (response: any) => {
+        console.log('API > sendMessage:', response);
+        this.notificationService.showSuccess('Message envoyé', 'Votre message a bien été envoyé');
+        this.showReportModal = false;
+      },
+      error: (error: any) => {
+        console.error('API > sendMessage:', error);
+        this.notificationService.showError('Message non envoyé', 'Une erreur s\'est produite lors de l\'envoi du message');
+      }
+    });
+  }
   /**
    * Transforme une agence API en objet compatible avec le template
    */
-private mapApiAgency(apiAgency: any): Agency {
-  return {
-    _id: apiAgency._id || '',
-    userId: apiAgency.userId || '',
-    firstName: apiAgency.firstName || '',
-    lastName: apiAgency.lastName || '',
-    agencyName: apiAgency.agencyName || '',
-    agencyDescription: apiAgency.agencyDescription || '',
-    phone: apiAgency.phone || '',
-    address: apiAgency.address || { 
-      street: '', 
-      arrondissement: '', 
-      sector: '', 
-      neighborhood: '', 
-      city: '', 
-      postalCode: '' 
-    },
-    
-    arrondissement: apiAgency.arrondissement || '',
-    secteur: apiAgency.secteur || '',
-    quartier: apiAgency.quartier || '',
-    licenseNumber: apiAgency.licenseNumber || '',
-    members: apiAgency.members || [],
-    serviceZones: apiAgency.serviceZones || [],
-    services: apiAgency.services || [],
-    employees: apiAgency.employees || [],
-    schedule: apiAgency.schedule || [],
-    collectors: apiAgency.collectors || [],
-    clients: apiAgency.clients || [],
-    collections: apiAgency.collections || [],
-    incidents: apiAgency.incidents || [],
-    rating: apiAgency.rating || 0,
-    totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
-    acceptTerms: apiAgency.acceptTerms || false,
-    receiveOffers: apiAgency.receiveOffers || false,
-    isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
-    createdAt: apiAgency.createdAt || '',
-    updatedAt: apiAgency.updatedAt || '',
-    __v: apiAgency.__v || 0
-  };
-}
+  private mapApiAgency(apiAgency: any): Agency {
+    return {
+      _id: apiAgency._id || '',
+      userId: apiAgency.userId || '',
+      firstName: apiAgency.firstName || '',
+      lastName: apiAgency.lastName || '',
+      agencyName: apiAgency.agencyName || '',
+      agencyDescription: apiAgency.agencyDescription || '',
+      phone: apiAgency.phone || '',
+      address: apiAgency.address || {
+        street: '',
+        arrondissement: '',
+        sector: '',
+        neighborhood: '',
+        city: '',
+        postalCode: ''
+      },
+
+      arrondissement: apiAgency.arrondissement || '',
+      secteur: apiAgency.secteur || '',
+      quartier: apiAgency.quartier || '',
+      licenseNumber: apiAgency.licenseNumber || '',
+      members: apiAgency.members || [],
+      serviceZones: apiAgency.serviceZones || [],
+      services: apiAgency.services || [],
+      employees: apiAgency.employees || [],
+      schedule: apiAgency.schedule || [],
+      collectors: apiAgency.collectors || [],
+      clients: apiAgency.clients || [],
+      collections: apiAgency.collections || [],
+      incidents: apiAgency.incidents || [],
+      rating: apiAgency.rating || 0,
+      totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency?.clients?.length : 0),
+      acceptTerms: apiAgency.acceptTerms || false,
+      receiveOffers: apiAgency.receiveOffers || false,
+      isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
+      createdAt: apiAgency.createdAt || '',
+      updatedAt: apiAgency.updatedAt || '',
+      __v: apiAgency.__v || 0
+    };
+  }
 
   /**
    * Charge les détails d'une agence depuis l'API backend
@@ -1397,10 +1581,10 @@ private mapApiAgency(apiAgency: any): Agency {
     this.authService.subscribeToAgency(currentUser.id, this.agency._id).subscribe({
       next: (response) => {
         console.log('[DEBUG] Réponse abonnement:', response);
-        
+
         // Vérifier différentes structures de réponse possibles
         const isSuccess = response.success || response.status === 'success' || response.message?.includes('succès') || response.message?.includes('réussi');
-        
+
         if (isSuccess) {
           this.notificationService.showSuccess('Abonnement réussi', 'Vous êtes maintenant abonné à cette agence !');
         } else {
@@ -1439,7 +1623,7 @@ private mapApiAgency(apiAgency: any): Agency {
       },
       error: (error: any) => {
         console.error('Error activating agency:', error);
-        const msg= error?.error?.message || 'Error activating agency';
+        const msg = error?.error?.message || 'Error activating agency';
         this.notificationService.showSuccess('Activation', msg);
       }
     });
@@ -1451,27 +1635,27 @@ private mapApiAgency(apiAgency: any): Agency {
       window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
     }
   }
-tariffs: Tariff[] = [];
+  tariffs: Tariff[] = [];
   isLoading: boolean = false;
- loadTariffs(): void {
-  this.isLoading = true;
-  const agencyId = this.route.snapshot.paramMap.get('id'); 
-  if (!agencyId) {
-    console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
-    this.isLoading = false;
-    return;
-  }
-
-  this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
-    next: (data: Tariff[]) => {
-      this.tariffs = data;
-      console.log('Tarifs récupérés :', this.tariffs);
+  loadTariffs(): void {
+    this.isLoading = true;
+    const agencyId = this.agencyId || this.route.snapshot.paramMap.get('id');
+    if (!agencyId) {
+      console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
       this.isLoading = false;
-    },
-    error: (error) => {
-      console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
-      this.isLoading = false;
+      return;
     }
-  });
-}
+
+    this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
+      next: (data: Tariff[]) => {
+        this.tariffs = data;
+        console.log('Tarifs récupérés :', this.tariffs);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
+        this.isLoading = false;
+      }
+    });
+  }
 }
