@@ -1,9 +1,17 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Municipality } from '../models/agency.model';
 import { User } from '../models/user.model';
+
+interface MunicipalityStatistics {
+  totalAgencies: number;
+  totalClients: number;
+  // totalCollectors: number;
+  // todayCollections: number;
+  // activeAgencies: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -98,4 +106,22 @@ export class Admin {
       })
     );
   }
+
+// Les statistiques d'une ville
+
+//  getAllStatisticCity() {
+//     return this.http.get(`${environment.apiUrl}/auth/municipality/city`).pipe(
+//       map((response: any) => {
+//         console.log('API > getAllStatisticCity:', response);
+//         return response;
+//       })
+//     );
+//   }
+
+ getAllStatisticCity(): Observable<MunicipalityStatistics[]> {
+  return this.http.get<MunicipalityStatistics[]>(
+    `${environment.apiUrl}/auth/city/municipality`,
+  );
+}
+
 }
