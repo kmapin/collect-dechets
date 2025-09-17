@@ -26,7 +26,7 @@ import { NotificationService } from '../../services/notification.service';
         <div class="profile-card-modern card">
           <!-- Formulaire CLIENT -->
           <form *ngIf="user.role === 'client'" class="profile-form-modern" (ngSubmit)="onSave()">
-            <h3>Informations personnelles</h3>
+            <h3>Informations personnelles du client</h3>
             <div class="form-row-modern">
               <div class="form-group-modern">
                 <label for="firstName"><i class="material-icons">person</i> Prénom</label>
@@ -180,6 +180,129 @@ import { NotificationService } from '../../services/notification.service';
               </button>
             </div>
           </form>
+
+          <!-- Formulaire SUPER_ADMIN -->
+          <form *ngIf="user.role === 'super_admin'" class="profile-form-modern" (ngSubmit)="onSave()">
+            <h3>Informations de l'administrateur</h3>
+            <div class="form-row-modern">
+              <!-- <div class="form-group-modern">
+                <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
+                <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
+              </div> -->
+              <div class="form-group-modern">
+                <label for="agencyName"><i class="material-icons">business</i> Nom</label>
+                <input type="text" id="agencyName" [(ngModel)]="user.firstname" name="firstname" required>
+              </div>
+              <div class="form-group-modern">
+                <label for="agencyName"><i class="material-icons">business</i> Prénom</label>
+                <input type="text" id="agencyName" [(ngModel)]="user.lastname" name="lastname" required>
+              </div>
+              <div class="form-group-modern">
+                <label for="agencyDescription"><i class="material-icons">description</i> Description</label>
+                <textarea id="agencyDescription" [(ngModel)]="user.agencyDescription" name="description" rows="2"></textarea>
+              </div>
+            </div>
+            <div class="form-row-modern">
+              <div class="form-group-modern">
+                <label for="agencyPhone"><i class="material-icons">phone</i> Téléphone</label>
+                <input type="tel" id="agencyPhone" [(ngModel)]="user.phone" name="phone" required>
+              </div>
+              <!-- <div class="form-group-modern">
+                <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
+                <input type="email" id="agencyEmail" [(ngModel)]="user.email" name="email" required>
+              </div> -->
+            </div>
+            
+            <!-- <div class="form-row-modern">
+              <div class="form-group-modern">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
+                  J'accepte les conditions générales d'utilisation
+                </label>
+              </div>
+              <div class="form-group-modern">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
+                  Je souhaite recevoir des offres et actualités
+                </label>
+              </div>
+            </div> -->
+            <div class="form-actions-modern">
+              <button type="submit" class="btn btn-primary">
+                <i class="material-icons">save</i>
+                Sauvegarder
+              </button>
+            </div>
+          </form>
+
+           <!-- Formulaire MUNICIPALITY -->
+          <form *ngIf="user.role === 'municipality'" class="profile-form-modern" (ngSubmit)="onSave()">
+            <h3>Informations Municipales</h3>
+            <div class="form-row-modern">
+              <!-- <div class="form-group-modern">
+                <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
+                <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
+              </div> -->
+              <div class="form-group-modern">
+                <label for="agencyName"><i class="material-icons">business</i> Nom</label>
+                <input type="text" id="agencyName" [(ngModel)]="user.name" name="fullName" required>
+              </div>
+              <div class="form-group-modern">
+                <label for="agencyName"><i class="material-icons">business</i> Statut</label>
+                <input type="text" id="agencyName" [(ngModel)]="user.position" name="position" required>
+              </div>
+              <div class="form-group-modern">
+                <label for="agencyDescription"><i class="material-icons">description</i> Description</label>
+                <textarea id="agencyDescription" [(ngModel)]="user.agencyDescription" name="description" rows="2"></textarea>
+              </div>
+            </div>
+            <div class="form-row-modern">
+              <div class="form-group-modern">
+                <label for="agencyPhone"><i class="material-icons">phone</i> Téléphone</label>
+                <input type="tel" id="agencyPhone" [(ngModel)]="user.phone" name="phone" required>
+              </div>
+              <!-- <div class="form-group-modern">
+                <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
+                <input type="email" id="agencyEmail" [(ngModel)]="user.email" name="email" required>
+              </div> -->
+            </div>
+             <div class="form-row-modern">
+              <div class="form-group-modern">
+                <label for="serviceZones">Zones de service (secteurs)</label>
+                <select id="serviceZones" [(ngModel)]="user.managedZones" name="serviceZones" multiple>
+                  <option *ngFor="let s of allSecteurs" [value]="s.secteur">Secteur {{ s.secteur }}</option>
+                </select>
+              </div>
+              <!-- <div class="form-group-modern">
+                <label for="services">Services proposés</label>
+                <select id="services" [(ngModel)]="user.services" name="services" multiple>
+                  <option *ngFor="let s of allServices" [value]="s">{{ s }}</option>
+                </select>
+              </div> -->
+            </div>
+            
+            <!-- <div class="form-row-modern">
+              <div class="form-group-modern">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
+                  J'accepte les conditions générales d'utilisation
+                </label>
+              </div>
+              <div class="form-group-modern">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
+                  Je souhaite recevoir des offres et actualités
+                </label>
+              </div>
+            </div> -->
+            <div class="form-actions-modern">
+              <button type="submit" class="btn btn-primary">
+                <i class="material-icons">save</i>
+                Sauvegarder
+              </button>
+            </div>
+          </form>
+
         </div>
       </div>
     </div>

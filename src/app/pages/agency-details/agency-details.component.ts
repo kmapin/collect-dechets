@@ -261,8 +261,49 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                   <p>Cette agence n'a pas encore défini ses zones de couverture.</p>
                 </div>
               </section>
+              <!-- Messagerie Section -->
+              <section class="zones-section card">
+                <div class="section-header">
+                  <h2>
+                    <i class="material-icons">map</i>
+                    Messagerie
+                  </h2>
+                  <span class="section-count">{{ unreadMessageCount}} message(s) non lu(s)</span>
+                </div>
+                <div class="zones-grid">
+                  <div *ngFor="let zone of agency.serviceZones" class="zone-card">
+                    <div class="zone-header">
+                      <h4>{{ zone.name }}</h4>
+                      <span class="zone-status" [class.active]="zone.isActive">
+                        {{ zone.isActive ? 'Active' : 'Inactive' }}
+                      </span>
+                    </div>
+                    <p class="zone-description">{{ zone.description }}</p>
+                    <div class="zone-details">
+                      <div class="zone-cities">
+                        <strong>Villes :</strong>
+                        <div class="cities-list">
+                          <span *ngFor="let city of zone.cities" class="city-tag">{{ city }}</span>
+                        </div>
+                      </div>
+                      <div class="zone-neighborhoods" *ngIf="zone && zone.neighborhoods && zone.neighborhoods.length > 0">
+                        <strong>Quartiers :</strong>
+                        <div class="neighborhoods-list">
+                          <span *ngFor="let neighborhood of zone.neighborhoods" class="neighborhood-tag">{{ neighborhood }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="agency?.serviceZones?.length === 0" class="empty-state">
+                  <i class="material-icons">map</i>
+                  <h3>Aucune zone de couverture</h3>
+                  <p>Cette agence n'a pas encore défini ses zones de couverture.</p>
+                </div>
+              </section>
             </div>
 
+            
             <!-- Right Column - Sidebar -->
             <div class="sidebar-column">
               <!-- Contact Card -->
@@ -1417,6 +1458,7 @@ export class AgencyDetailsComponent implements OnInit {
   };
 
   showReportModal = false;
+  unreadMessageCount: any;
   constructor(
     private route: ActivatedRoute,
     private agencyService: AgencyService,
@@ -1435,6 +1477,21 @@ export class AgencyDetailsComponent implements OnInit {
     this.loadTariffs();
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+    });
+    this.countUnreadMessages();
+  }
+
+  countUnreadMessages() {
+    this.messageService.getUserUnreadMessagesCount(this.currentUser?._id || '').subscribe({
+      next: (response: any) => {
+        if (response) { 
+          console.log('API > getUserUnreadMessagesCount:', response);
+          this.unreadMessageCount= response.unreadCount || 0;
+        }
+      },
+      error: (error: any) => {
+        console.error('API > getUserUnreadMessagesCount:', error);
+      }
     });
   }
   submitMessage() {

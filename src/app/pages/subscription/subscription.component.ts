@@ -1,5 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../services/auth.service';
+import { User, UserRole } from '../../models/user.model';
+
 
 @Component({
   selector: 'app-subscription',
@@ -79,5 +83,20 @@ import { CommonModule } from '@angular/common';
     }
   `]
 })
-export class SubscriptionComponent {
+export class SubscriptionComponent implements OnInit {
+    currentUser: User | null = null;
+  
+constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {}
+
+  ngOnInit() {
+    // Logic to fetch and display subscription details
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
+    this.currentUser = this.authService.getCurrentUser();
+    console.log("this.currentUser", this.currentUser);
+  }
 }

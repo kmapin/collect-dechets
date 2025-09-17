@@ -566,6 +566,22 @@ import { NotificationService } from '../../services/notification.service';
   text-align: center;
   color: var(--text-secondary);
 }
+
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* gap: 16px; */
+      /* padding: 16px; */
+      color: var(--text-secondary);
+      /* background: rgba(0, 188, 212, 0.05); */
+      border-radius: 12px;
+      /* margin-bottom: 16px; */
+    }
+
+
+
     .dropdown-icon {
       color: var(--text-secondary);
       transition: transform 0.3s ease;
@@ -771,6 +787,7 @@ import { NotificationService } from '../../services/notification.service';
       align-items: center;
       gap: 16px;
       padding: 16px;
+      color: var(--text-secondary);
       background: rgba(0, 188, 212, 0.05);
       border-radius: 12px;
       margin-bottom: 16px;
@@ -952,8 +969,8 @@ export class HeaderComponent implements OnInit {
   showUserMenu = false;
   isMobileMenuOpen = false;
   isScrolled = false;
-showNotifications = false;
-notifications: any[] = []; 
+  showNotifications = false;
+  notifications: any[] = [];
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -1006,25 +1023,25 @@ notifications: any[] = [];
     };
     return roleLabels[role] || role;
   }
-toggleNotifications(): void {
-  this.showNotifications = !this.showNotifications;
-}
+  toggleNotifications(): void {
+    this.showNotifications = !this.showNotifications;
+  }
 
-// markAllAsRead(event: Event): void {
-//   event.stopPropagation();
+  // markAllAsRead(event: Event): void {
+  //   event.stopPropagation();
 
-// }
+  // }
   logout(): void {
     // localStorage.removeItem('currentUser');
     this.authService.logout().subscribe({
       next: (response: any) => {
-        
+
         localStorage.removeItem('currentUser');
         console.log('deconnexion', response);
         if (response?.message) {
           console.log('deconnexion', response);
           this.router.navigate(['/']);
-          this.notificationService.showSuccess(`${response?.message} !`,'Au revoir, à bientoît !');
+          this.notificationService.showSuccess(`${response?.message} !`, 'Au revoir, à bientoît !');
 
         } else {
           console.log('deconnexion', response);
@@ -1042,81 +1059,81 @@ toggleNotifications(): void {
   closeMobileMenu(): void {
     this.isMobileMenuOpen = false;
   }
-loadNotifications(): void {
-  const userId = this.currentUser?.id;
-  if (!userId) {
-    console.warn('UUID utilisateur introuvable.');
-    return;
-  }
-this.notificationService.getAllNotificationsAgency$(userId).subscribe({
-  next: (data: any) => {
-    console.log('Notifications reçues :', data);
-    this.notifications = data.notifications; 
-  },
-  error: (err) => {
-    console.error('Erreur lors du chargement des notifications :', err);
-  }
-});
-
-}
-markAsRead(notif: any): void {
-  if (!notif.read) {
-    this.notificationService.markNotificationAsRead$(notif._id).subscribe({
-      next: () => {
-        notif.read = true;
+  loadNotifications(): void {
+    const userId = this.currentUser?.id;
+    if (!userId) {
+      console.warn('UUID utilisateur introuvable.');
+      return;
+    }
+    this.notificationService.getAllNotificationsAgency$(userId).subscribe({
+      next: (data: any) => {
+        console.log('Notifications reçues :', data);
+        this.notifications = data.notifications;
       },
       error: (err) => {
-        console.error(`Erreur lors du marquage comme lu de la notification ${notif._id} :`, err);
+        console.error('Erreur lors du chargement des notifications :', err);
       }
     });
+
   }
-}
-//  markAllAsRead(event: Event): void {
-//     event.stopPropagation(); 
-
-//     const unreadNotifications = this.notifications.filter(n => !n.read);
-
-//     unreadNotifications.forEach(notif => {
-//       this.notificationService.markNotificationAsRead$(notif.id).subscribe({
-//         next: () => {
-//           notif.read = true; 
-//         },
-//         error: (err) => {
-//           console.error(`Erreur pour la notif ${notif.id} :`, err);
-//         }
-//       });
-//     });
-//   }
-isDeleting = false;
-
-deleteNotification(notificationId: string): void {
-  this.isDeleting = true;
-
-  if (notificationId) {
-    this.notificationService.deleteNotification$(notificationId).subscribe(
-      () => {
-        this.notificationService.showSuccess(
-          "Succès",
-          "La notification a été supprimée avec succès."
-        );
-        this.loadNotifications(); 
-        this.isDeleting = false;
-      },
-      (error) => {
-        this.notificationService.showError(
-          "Erreur",
-          "Impossible de supprimer la notification. Veuillez réessayer."
-        );
-        console.error("Erreur lors de la suppression de la notification :", error);
-          this.loadNotifications(); 
-        this.isDeleting = false;
-      }
-    );
-  } else {
-    console.warn("Aucun ID de notification fourni.");
-    this.isDeleting = false;
+  markAsRead(notif: any): void {
+    if (!notif.read) {
+      this.notificationService.markNotificationAsRead$(notif._id).subscribe({
+        next: () => {
+          notif.read = true;
+        },
+        error: (err) => {
+          console.error(`Erreur lors du marquage comme lu de la notification ${notif._id} :`, err);
+        }
+      });
+    }
   }
-}
+  //  markAllAsRead(event: Event): void {
+  //     event.stopPropagation(); 
+
+  //     const unreadNotifications = this.notifications.filter(n => !n.read);
+
+  //     unreadNotifications.forEach(notif => {
+  //       this.notificationService.markNotificationAsRead$(notif.id).subscribe({
+  //         next: () => {
+  //           notif.read = true; 
+  //         },
+  //         error: (err) => {
+  //           console.error(`Erreur pour la notif ${notif.id} :`, err);
+  //         }
+  //       });
+  //     });
+  //   }
+  isDeleting = false;
+
+  deleteNotification(notificationId: string): void {
+    this.isDeleting = true;
+
+    if (notificationId) {
+      this.notificationService.deleteNotification$(notificationId).subscribe(
+        () => {
+          this.notificationService.showSuccess(
+            "Succès",
+            "La notification a été supprimée avec succès."
+          );
+          this.loadNotifications();
+          this.isDeleting = false;
+        },
+        (error) => {
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de supprimer la notification. Veuillez réessayer."
+          );
+          console.error("Erreur lors de la suppression de la notification :", error);
+          this.loadNotifications();
+          this.isDeleting = false;
+        }
+      );
+    } else {
+      console.warn("Aucun ID de notification fourni.");
+      this.isDeleting = false;
+    }
+  }
 
 
 
