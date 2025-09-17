@@ -252,8 +252,7 @@ import { NotificationService } from '../../services/notification.service';
     .container {
       max-width: 100%;
       margin: 0 auto;
-      background-color: red;
-      
+      /* background-color: red; */
       padding: 0 24px;
     }
 
@@ -262,7 +261,8 @@ import { NotificationService } from '../../services/notification.service';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 64px;
+      height: 74px;
+      /* font-size: 24px; */
     }
 
     /* Brand */
