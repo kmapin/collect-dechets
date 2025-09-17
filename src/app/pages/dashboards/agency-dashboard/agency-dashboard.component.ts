@@ -800,6 +800,98 @@ interface Statistics {
               </div>
             </div>
 
+            <!-- Onglet Messages -->
+            <div *ngIf="activeTab === 'messages'" class="reports-tab">
+              <div class="reports-header">
+                <h2>Messages</h2>
+                <div class="incidents-filters">
+                  <span> 5 message(s) non lu(s)</span>
+                </div>
+              </div>
+              <div class="reports-list">
+                <div
+                  *ngFor="let report of agencyReports"
+                  class="report-card card"
+                >
+                  <div class="incident-header">
+                    <div
+                      class="incident-severity"
+                      [class]="'severity-' + report?.severity"
+                    >
+                      <i class="material-icons">{{
+                        getSeverityIcon(report.severity)
+                      }}</i>
+                      <span>{{
+                        getSeverityText(report.severity)
+                          ? getSeverityText(report.severity)
+                          : "Faible"
+                      }}</span>
+                    </div>
+                    <div class="incident-status">
+                      <span
+                        class="status-badge"
+                        [class]="'status-' + report.status"
+                      >
+                        {{ getIncidentStatusText(report.status) }}
+                      </span>
+                    </div>
+                  </div>
+                  <h4>
+                    {{ report?.client?.firstName }}
+                    {{ report?.client?.lastName }}
+                  </h4>
+                  <div class="incident-content">
+                    <h4>{{ getIncidentTypeText(report.type) }}</h4>
+                    <p class="incident-description">{{ report.description }}</p>
+                    <p class="incident-date">
+                      Date : {{ report.date | date : "dd/MM/yyyy" }}
+                    </p>
+                    <p class="incident-date">
+                      Heure : {{ report.date | date : "HH:mm:ss" }}
+                    </p>
+                  </div>
+                  <!-- Affichage des photos -->
+                  <div *ngIf="report.photos && report.photos.length">
+                    <div *ngFor="let photo of report.photos">
+                      <img
+                        [src]="photo"
+                        alt="Photo du signalement"
+                        class="report-photo"
+                      />
+                    </div>
+                  </div>
+                  <div *ngIf="!report.photos || !report.photos.length">
+                    <p><em>Aucune photo associée</em></p>
+                  </div>
+                  <div class="incident-actions">
+                    <button
+                      class="btn btn-accent"
+                      (click)="openAssignModal(report._id)"
+                    >
+                      <i class="material-icons">assignment_ind</i>
+                      Assigner
+                    </button>
+                    <!-- <button class="btn btn-primary" (click)="investigateIncident()" >
+                    <i class="material-icons">search</i>
+                    Enquêter
+                  </button> -->
+                    <button
+                      class="btn btn-success"
+                      (click)="resolveIncident(report._id)"
+                    >
+                      <i class="material-icons">check</i>
+                      Résoudre
+                    </button>
+                    <!--<button class="btn btn-accent" (click)="contactAgencyForIncident()">
+                    <i class="material-icons">phone</i>
+                                Contacter Agence
+                  </button>-->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
             <!-- Onglet Rapports -->
             <div class="analytics-tab">
               <div class="analytics-header">
@@ -2679,6 +2771,7 @@ minDate: string;
     { id: "schedules", label: "Plannings", icon: "schedule", badge: null },
     { id: "clients", label: "Clients", icon: "person", badge: null },
     { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
+    { id: "messages", label: "Messages", icon: "message", badge: 0 },
     { id: "analytics", label: "Rapports", icon: "analytics", badge: null },
   ];
 
