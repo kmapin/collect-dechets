@@ -4145,7 +4145,7 @@ deletePlanning(schedulesId: string): void {
   const formValues = this.scheduleForm.value;
 
 const schedule: CollectionSchedule = {
-  zone: formValues.zone, // si zone est aussi un tableau
+  zone: formValues.zone, 
   date: formValues.date,
   startTime: formValues.startTime,
   endTime: formValues.endTime,
