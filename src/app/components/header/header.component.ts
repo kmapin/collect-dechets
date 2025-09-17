@@ -566,6 +566,22 @@ import { NotificationService } from '../../services/notification.service';
   text-align: center;
   color: var(--text-secondary);
 }
+
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* gap: 16px; */
+      /* padding: 16px; */
+      color: var(--text-secondary);
+      /* background: rgba(0, 188, 212, 0.05); */
+      border-radius: 12px;
+      /* margin-bottom: 16px; */
+    }
+
+
+
     .dropdown-icon {
       color: var(--text-secondary);
       transition: transform 0.3s ease;
@@ -771,6 +787,7 @@ import { NotificationService } from '../../services/notification.service';
       align-items: center;
       gap: 16px;
       padding: 16px;
+      color: var(--text-secondary);
       background: rgba(0, 188, 212, 0.05);
       border-radius: 12px;
       margin-bottom: 16px;
