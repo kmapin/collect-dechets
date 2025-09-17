@@ -3775,8 +3775,8 @@ loadPlannings(): void {
   }
 
   this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
-    next: (data: any[]) => {
-      this.schedules = data;
+    next: (response: { plannings: CollectionSchedule[] }) => {
+      this.schedules = response.plannings;
       console.log("Plannings récupérés :", this.schedules);
 
       const schedulesTab = this.tabs.find(tab => tab.id === "schedules");
@@ -3792,6 +3792,7 @@ loadPlannings(): void {
     },
   });
 }
+
   // recuperation des planning d un colector 
   collectorplannings: any[] = [];
   loadCollectorPlannings(): void {
