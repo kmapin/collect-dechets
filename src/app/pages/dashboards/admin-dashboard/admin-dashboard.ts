@@ -2968,16 +2968,18 @@ export class AdminDashboard implements OnInit {
     this.showAdminStatistics();
     this.loadAllMunipalities();
     this.getClientGrowth();
+     this.loadZoneStat();
   }
 
   loadAdminData(): void {
     this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
-    // this.loadIncidents();
+     this.loadZoneStat();
     this.loadCommunications();
     this.showAdminClients();
     this.loadAllSignalements();
+     // this.loadIncidents();
   }
 
   loadAgencyAudits(): void {
@@ -3306,8 +3308,8 @@ loadZoneStat(): void {
   }
 
   getCoverageBadgeClass(coverage: number): string {
-    if (coverage >= 95) return "coverage-excellent";
-    if (coverage >= 85) return "coverage-good";
+    if (coverage >= 75) return "coverage-excellent";
+    if (coverage >= 55) return "coverage-good";
     return "coverage-poor";
   }
 
