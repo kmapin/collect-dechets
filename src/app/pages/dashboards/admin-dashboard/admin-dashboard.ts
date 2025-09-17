@@ -1148,7 +1148,7 @@ interface Communication {
                   </div>
 
                   <div class="incident-actions">
-                    <button
+                    <!-- <button
                       class="btn btn-secondary"
                       (click)="assignIncident(incident.id)"
                       *ngIf="incident.status === 'open'"
@@ -1171,7 +1171,7 @@ interface Communication {
                     >
                       <i class="material-icons">check</i>
                       Résoudre
-                    </button>
+                    </button> -->
                     <button
                       class="btn btn-accent"
                       (click)="contactAgencyForIncident(incident?.agencyId)"
