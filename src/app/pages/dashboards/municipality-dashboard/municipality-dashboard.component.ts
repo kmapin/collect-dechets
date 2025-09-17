@@ -2592,16 +2592,17 @@ export class MunicipalityDashboardComponent implements OnInit {
   //   }
 
   loadZoneStatistics(): void {
-    const stats = this.agencyService.getAgenceStats();
-    this.zoneStatistics = OUAGA_DATA.map((zone, index) => ({
-      name: zone.arrondissement,
-      agencies: stats[index]?.agencies || 0,
-      clients: stats[index]?.clients || 0,
-      collections: stats[index]?.collections || 0,
-      coverage: stats[index]?.coverage || 0,
-      incidents: stats[index]?.incidents || 0,
-    }));
-  }
+  const stats = this.agencyService.getAgenceStats();
+  this.zoneStatistics = MOCK_CITIES.map((city, index) => ({
+    name: city.name,
+    agencies: stats[index]?.agencies || 0,
+    clients: stats[index]?.clients || 0,
+    collections: stats[index]?.collections || 0,
+    coverage: stats[index]?.coverage || 0,
+    incidents: stats[index]?.incidents || 0,
+  }));
+}
+
 
   /**Listes des signalements des users */
   loadAllSignalements() {
