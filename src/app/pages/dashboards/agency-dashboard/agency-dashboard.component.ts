@@ -2729,6 +2729,7 @@ minDate: string;
     this.loadPlannings();
     this.loadCollectorPlannings();
       this.cdr.detectChanges();
+      this.filterIncidents();
 
  
   }

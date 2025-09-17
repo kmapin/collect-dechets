@@ -9,9 +9,12 @@ import { NotificationService } from "../../../services/notification.service";
 import { User } from "../../../models/user.model";
 import { Agency } from "../../../models/agency.model";
 import { Collection, CollectionStatus } from "../../../models/collection.model";
-import { OUAGA_DATA } from "../../../data/mock-data"; 
+import { OUAGA_DATA } from "../../../data/mock-data";
 import { Admin } from "../../../services/admin";
-import { MOCK_CITIES, MOCK_ARRONDISSEMENTS } from '../../../data/countries-org.mock';
+import {
+  MOCK_CITIES,
+  MOCK_ARRONDISSEMENTS,
+} from "../../../data/countries-org.mock";
 
 interface MunicipalityStatistics {
   totalAgencies: number;
@@ -56,12 +59,20 @@ interface WasteStatistic {
 }
 
 interface ZoneStatistic {
+  cities: any;
+  country: any;
   name: string;
   agencies: number;
   clients: number;
   collections: number;
   coverage: number;
   incidents: number;
+}
+
+// Pour un pays avec ses villes
+export interface GroupedZoneStatistics {
+  country: string;
+  cities: ZoneStatistic[];
 }
 
 interface Incident {
@@ -353,39 +364,49 @@ interface Communication {
                     </div>
                   </div>
                 </div>
-
                 <div class="overview-section card">
                   <h3>
                     <i class="material-icons">map</i>
                     Couverture Territoriale
                   </h3>
+
                   <div class="territory-stats scrollable-container">
-                    <div *ngFor="let zone of zoneStatistics" class="zone-item">
-                      <div class="zone-header">
-                        <h4>{{ zone.name }}</h4>
-                        <span
-                          class="coverage-badge"
-                          [class]="getCoverageBadgeClass(zone.coverage)"
-                        >
-                          {{ zone.coverage }}% couvert
-                        </span>
-                      </div>
-                      <div class="zone-metrics">
-                        <div class="zone-metric">
-                          <i class="material-icons">business</i>
-                          <span>{{ zone.agencies }} agences</span>
+                    <!-- Boucle sur les pays -->
+                    <div
+                      *ngFor="let zone of zoneStatistics"
+                      class="country-block"
+                    >
+                      <h2 class="country-title">{{ zone.country }}</h2>
+
+                      <!-- Boucle sur les villes du pays -->
+                      <div *ngFor="let city of zone.cities" class="zone-item">
+                        <div class="zone-header">
+                          <h4>{{ city.name }}</h4>
+                          <span
+                            class="coverage-badge"
+                            [class]="getCoverageBadgeClass(city.coverage)"
+                          >
+                            {{ city.coverage }}% couvert
+                          </span>
                         </div>
-                        <div class="zone-metric">
-                          <i class="material-icons">people</i>
-                          <span>{{ zone.clients }} clients</span>
-                        </div>
-                        <div class="zone-metric">
-                          <i class="material-icons">local_shipping</i>
-                          <span>{{ zone.collections }} collectes</span>
-                        </div>
-                        <div class="zone-metric" *ngIf="zone.incidents > 0">
-                          <i class="material-icons">warning</i>
-                          <span>{{ zone.incidents }} incidents</span>
+
+                        <div class="zone-metrics">
+                          <div class="zone-metric">
+                            <i class="material-icons">business</i>
+                            <span>{{ city.agencies }} agences</span>
+                          </div>
+                          <div class="zone-metric">
+                            <i class="material-icons">people</i>
+                            <span>{{ city.clients }} clients</span>
+                          </div>
+                          <div class="zone-metric">
+                            <i class="material-icons">local_shipping</i>
+                            <span>{{ city.collections }} collectes</span>
+                          </div>
+                          <div class="zone-metric" *ngIf="city.incidents > 0">
+                            <i class="material-icons">warning</i>
+                            <span>{{ city.incidents }} incidents</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1247,64 +1268,87 @@ interface Communication {
       .territory-stats {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 24px; /* espace entre les pays */
+      }
+
+      .country-block {
+        background: #ffffff; /* fond blanc pour le bloc pays */
+        padding: 16px;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .country-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--primary-color, #2c3e50);
+        margin-bottom: 12px;
+        border-bottom: 2px solid var(--primary-color, #2c3e50);
+        padding-bottom: 4px;
       }
 
       .zone-item {
-        padding: 16px;
-        background: var(--light-gray);
+        padding: 12px 16px;
+        background: #f5f5f5; /* gris clair pour les villes */
         border-radius: 8px;
+        margin-bottom: 12px;
+        border: 1px solid #e0e0e0;
       }
 
       .zone-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
       }
 
       .zone-header h4 {
         font-size: 1.1rem;
         font-weight: 600;
-        color: var(--text-primary);
-      }
-
-      .scrollable-container {
-        max-height: 430px;
-        overflow-y: auto;
-        padding-right: 10px;
-      }
-
-      .zone-item {
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
-      }
-
-      .zone-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        color: var(--text-primary, #333);
       }
 
       .coverage-badge {
-        padding: 4px 8px;
+        padding: 4px 10px;
         border-radius: 12px;
         font-size: 0.8rem;
         font-weight: 500;
+        white-space: nowrap;
       }
 
       .coverage-excellent {
         background: #e8f5e8;
-        color: var(--success-color);
+        color: var(--success-color, #2e7d32);
       }
+
       .coverage-good {
         background: #fff3e0;
         color: #f57c00;
       }
+
       .coverage-poor {
         background: #ffebee;
-        color: var(--error-color);
+        color: var(--error-color, #e61313ff);
+      }
+
+      .zone-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .zone-metric {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+        color: var(--text-secondary, #555);
+      }
+
+      .scrollable-container {
+        max-height: 450px;
+        overflow-y: auto;
+        padding-right: 10px;
       }
 
       .zone-metrics {
@@ -1313,13 +1357,13 @@ interface Communication {
         gap: 16px;
       }
 
-      .zone-metric {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.9rem;
-        color: var(--text-secondary);
-      }
+      // .zone-metric {
+      //   display: flex;
+      //   align-items: center;
+      //   gap: 6px;
+      //   font-size: 0.9rem;
+      //   color: var(--text-secondary);
+      // }
 
       .zone-metric i {
         font-size: 16px;
@@ -2401,18 +2445,19 @@ export class MunicipalityDashboardComponent implements OnInit {
   agencyAudits: AgencyAudit[] = [];
   filteredAgencies: AgencyAudit[] = [];
   wasteStatistics: WasteStatistic[] = [];
-  zoneStatistics: ZoneStatistic[] = [];
+  zoneStatistics: GroupedZoneStatistics[] = [];
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
   communications: Communication[] = [];
+  // zoneStatistics: ZoneStatistic[] = [];
 
   // Filters
   agenciesFilter = "all";
   complianceFilter = "all";
   statisticsPeriod = "month";
-  // incidentsFilter = "all";
   incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
   severityFilter: "all" | "low" | "medium" | "high" | "critical" = "all";
+  // incidentsFilter = "all";
 
   // Modals
   showCommunicationModal = false;
@@ -2458,6 +2503,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     this.getClientGrowth();
     this.showAdminStatistics();
     this.filterIncidents();
+    this.loadZoneStat();
   }
 
   loadMunicipalityData(): void {
@@ -2466,6 +2512,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     this.loadZoneStatistics();
     this.loadAllSignalements();
     this.showAdminStatistics();
+    this.loadZoneStat();
     // this.loadIncidents();
     // this.loadCommunications();
   }
@@ -2592,17 +2639,66 @@ export class MunicipalityDashboardComponent implements OnInit {
   //   }
 
   loadZoneStatistics(): void {
-  const stats = this.agencyService.getAgenceStats();
-  this.zoneStatistics = MOCK_CITIES.map((city, index) => ({
-    name: city.name,
-    agencies: stats[index]?.agencies || 0,
-    clients: stats[index]?.clients || 0,
-    collections: stats[index]?.collections || 0,
-    coverage: stats[index]?.coverage || 0,
-    incidents: stats[index]?.incidents || 0,
-  }));
-}
+    const stats = this.agencyService.getAgenceStats();
+    // Groupement par pays
+    const grouped: { [key: string]: any[] } = {};
 
+    MOCK_CITIES.forEach((city, index) => {
+      const country = city.country.name;
+      if (!grouped[country]) {
+        grouped[country] = [];
+      }
+      grouped[country].push({
+        name: city.name,
+        agencies: stats[index]?.agencies || 0,
+        clients: stats[index]?.clients || 0,
+        collections: stats[index]?.collections || 0,
+        coverage: stats[index]?.coverage || 0,
+        incidents: stats[index]?.incidents || 0,
+      });
+    });
+    this.zoneStatistics = Object.keys(grouped).map((country) => ({
+      country,
+      cities: grouped[country],
+    }));
+  }
+
+  loadZoneStat(): void {
+  this.adminService.getAllStatisticCity().subscribe({
+    next: (response: any) => {
+      const stats = Array.isArray(response.statistics) ? response.statistics : [];
+      const grouped: { [key: string]: ZoneStatistic[] } = {};
+
+      MOCK_CITIES.forEach(city => {
+        const country = city.country.name || 'Burkina Faso';
+        if (!grouped[country]) {
+          grouped[country] = [];
+        }
+        const cityStats = stats.find((s: any) => s.city === city.name);
+
+        grouped[country].push({
+          country,
+          name: city.name,
+          agencies: cityStats?.agencies || 0,
+          clients: cityStats?.clients || 0,
+          collections: cityStats?.todayCollections || 0,
+          coverage: cityStats?.complianceRate || 0,
+          incidents: cityStats?.pendingReports || 0,
+          cities: []
+        });
+      });
+
+      this.zoneStatistics = Object.keys(grouped).map(country => ({
+        country,
+        cities: grouped[country]
+      }));
+    },
+    error: (err) => {
+      console.error('Erreur lors de la récupération des villes:', err);
+      this.zoneStatistics = [];
+    }
+  });
+}
 
   /**Listes des signalements des users */
   loadAllSignalements() {
@@ -2694,7 +2790,6 @@ export class MunicipalityDashboardComponent implements OnInit {
   }
 
   getClientGrowth() {
-    // return Math.floor(Math.random() * 10) + 5;
     this.clientGrowth = Math.floor(Math.random() * 10) + 5;
     this.cd.detectChanges();
   }
@@ -2739,8 +2834,8 @@ export class MunicipalityDashboardComponent implements OnInit {
   }
 
   getCoverageBadgeClass(coverage: number): string {
-    if (coverage >= 95) return "coverage-excellent";
-    if (coverage >= 85) return "coverage-good";
+    if (coverage >= 75) return "coverage-excellent";
+    if (coverage >= 55) return "coverage-good";
     return "coverage-poor";
   }
 
