@@ -10,14 +10,14 @@
         //***des comptes à supprimé***
 1==> Email : bile58@gmail.com          Mot de passe : Wise2024
 2==> Email : bamogo@gmail.com          Mot de passe : Wise2024
+3==> Email : gwendindapaulin@gmail.com         Mot de passe : 07zeroDechetgp01
+4==> Email : g2wpaulin@gmail.com         Mot de passe : 07ZeroDechetgp01
 
 ##############################################################################################################################
 
 
 ## AGENCES
-1==> email: adamaagency@gmail.com pwd:07WasteManagerAdamaAgency01      Nom: Adama Service
-2==> email: aicha.t@sahelys.com pwd:WISEclean1234
-2==> email: aicha.t@sahelys.com pwd:WISEclean1234
+1==> email: aicha.t@sahelys.com pwd:WISEclean1234
 
 ##############################################################################################################################
 ## COLLECTEUR
