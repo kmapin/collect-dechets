@@ -18,6 +18,7 @@
 
 ## AGENCES
 1==> email: aicha.t@sahelys.com pwd:WISEclean1234
+1==> email: guey@gmail.com pwd:motDePasseFort123
 
 ##############################################################################################################################
 ## COLLECTEUR
