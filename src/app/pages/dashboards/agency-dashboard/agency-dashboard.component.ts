@@ -82,7 +82,7 @@ interface Statistics {
 @Component({
   selector: "app-agency-dashboard",
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule,ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
   template: `
     <div class="agency-dashboard">
       <div class="page-header">
@@ -640,6 +640,7 @@ interface Statistics {
                   </tbody>
                 </table>
               </div>
+
               <div class="clients-header" style="margin-top:2em;">
                 <h2>
                   Clients en attente de validation ({{ pendingClients.length }})
@@ -2624,7 +2625,7 @@ interface Statistics {
   ],
 })
 export class AgencyDashboardComponent implements OnInit {
-   scheduleForm: FormGroup;
+  scheduleForm: FormGroup;
 
   currentUser: User | null = null;
   agencyReports: Report[] = [];
@@ -2748,7 +2749,7 @@ export class AgencyDashboardComponent implements OnInit {
     // endDate: "",
   };
   citiesInput = "";
-minDate: string;
+  minDate: string;
 
   neighborhoodsInput = "";
   activeClients: ClientApi[] = [];
@@ -2795,17 +2796,17 @@ minDate: string;
     private cdr: ChangeDetectorRef,
     private fb: FormBuilder
   ) {
-      const today = new Date();
-  this.minDate = today.toISOString().split('T')[0];
-     this.scheduleForm = this.fb.group({
-    zone: [''],
-    date: ['', Validators.required],
-    startTime: ['', Validators.required],
-    endTime: ['', Validators.required],
-    collectorId: ['', Validators.required],
-  }, {
-    validators: [this.validateTimeOrder]
-  });
+    const today = new Date();
+    this.minDate = today.toISOString().split('T')[0];
+    this.scheduleForm = this.fb.group({
+      zone: [''],
+      date: ['', Validators.required],
+      startTime: ['', Validators.required],
+      endTime: ['', Validators.required],
+      collectorId: ['', Validators.required],
+    }, {
+      validators: [this.validateTimeOrder]
+    });
   }
 
   ngOnInit(): void {
@@ -2821,10 +2822,10 @@ minDate: string;
     this.loadTariffs();
     this.loadPlannings();
     this.loadCollectorPlannings();
-      this.cdr.detectChanges();
-      this.filterIncidents();
+    this.cdr.detectChanges();
+    this.filterIncidents();
 
- 
+
   }
 
   openAssignModal(reportId: string): void {
@@ -2833,14 +2834,14 @@ minDate: string;
     this.showAssignModal = true;
   }
   validateTimeOrder(group: FormGroup) {
-  const start = group.get('startTime')?.value;
-  const end = group.get('endTime')?.value;
+    const start = group.get('startTime')?.value;
+    const end = group.get('endTime')?.value;
 
-  if (start && end && end <= start) {
-    return { invalidTimeOrder: true };
+    if (start && end && end <= start) {
+      return { invalidTimeOrder: true };
+    }
+    return null;
   }
-  return null;
-}
 
   assignEmployeesToReport(): void {
     // if (this.selectedReportId && this.selectedEmployees.length > 0) {
@@ -3034,7 +3035,7 @@ minDate: string;
           this.notificationService.showError(
             "Erreur",
             "Impossible de supprimer l'employé. " +
-              (error.error?.message || "Veuillez réessayer.")
+            (error.error?.message || "Veuillez réessayer.")
           );
           this.isDeleting = false;
         },
@@ -3234,8 +3235,8 @@ minDate: string;
   getClientSubscriptionStatus(c: any): string | undefined {
     return c.subscriptionHistory && c.subscriptionHistory.length
       ? c.subscriptionHistory[
-          c.subscriptionHistory.length - 1
-        ].status?.toLowerCase()
+        c.subscriptionHistory.length - 1
+      ].status?.toLowerCase()
       : undefined;
   }
 
@@ -3251,6 +3252,7 @@ minDate: string;
           this.activeClientNbrs,
           clients.length
         );
+        console.log('ALL Agency_clients', clients);
         this.activeClients = clients.filter(
           (c) => this.getClientSubscriptionStatus(c) === "active"
         );
@@ -3318,7 +3320,7 @@ minDate: string;
     return Math.round(
       (this.statistics.completedCollections /
         this.statistics.todayCollections) *
-        100
+      100
     );
   }
 
@@ -3468,26 +3470,26 @@ minDate: string;
   //   });
   // }
 
- getSchedulesForDay(dayIndex: number): any[] {
-  if (!Array.isArray(this.schedules)) {
-    return []; 
+  getSchedulesForDay(dayIndex: number): any[] {
+    if (!Array.isArray(this.schedules)) {
+      return [];
+    }
+
+    const startOfWeek = new Date(this.currentWeek);
+    const day = this.currentWeek.getDay(); // 0 for Sunday, 1 for Monday, etc.
+    const diff = this.currentWeek.getDate() - day + (day === 0 ? -6 : 1);
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const targetDate = new Date(startOfWeek);
+    targetDate.setDate(startOfWeek.getDate() + dayIndex);
+
+    return this.schedules.filter(schedule => {
+      const scheduleDate = new Date(schedule.date);
+      scheduleDate.setHours(0, 0, 0, 0);
+      return scheduleDate.getTime() === targetDate.getTime();
+    });
   }
-
-  const startOfWeek = new Date(this.currentWeek);
-  const day = this.currentWeek.getDay(); // 0 for Sunday, 1 for Monday, etc.
-  const diff = this.currentWeek.getDate() - day + (day === 0 ? -6 : 1);
-  startOfWeek.setDate(diff);
-  startOfWeek.setHours(0, 0, 0, 0);
-
-  const targetDate = new Date(startOfWeek);
-  targetDate.setDate(startOfWeek.getDate() + dayIndex);
-
-  return this.schedules.filter(schedule => {
-    const scheduleDate = new Date(schedule.date);
-    scheduleDate.setHours(0, 0, 0, 0);
-    return scheduleDate.getTime() === targetDate.getTime();
-  });
-}
 
 
   getCollectorPerformance(): any[] {
@@ -3546,7 +3548,7 @@ minDate: string;
     });
   }
 
-  
+
   // Action methods
   trackCollection(collectionId: string): void {
     // No need to call notificationService.showInfo here, as it's already handled in the template
@@ -3753,9 +3755,9 @@ minDate: string;
           this.isLoading = false;
           const errorMsg = this.getFriendlyMessage(
             error?.error?.message ||
-              error?.error?.message ||
-              error?.error ||
-              "",
+            error?.error?.message ||
+            error?.error ||
+            "",
             false
           );
           this.notificationService.showError(
@@ -3774,7 +3776,7 @@ minDate: string;
         role: "",
         zones: [],
       };
-  
+
     }
   }
 
@@ -3814,9 +3816,9 @@ minDate: string;
                 "Le tarif a été créé avec succès !"
               );
               this.showZoneModal = false;
-              this.showZoneModal = false; 
+              this.showZoneModal = false;
               this.loadTariffs(); // 
-      
+
               this.newTariff = {
                 type: "",
                 price: "",
@@ -3883,34 +3885,34 @@ minDate: string;
   //recupere les planning d une agence
   schedules: CollectionSchedule[] = [];
 
-loadPlannings(): void {
-  this.isLoading = true;
-  const agencyId = this.currentUser?._id;
+  loadPlannings(): void {
+    this.isLoading = true;
+    const agencyId = this.currentUser?._id;
 
-  if (!agencyId) {
-    console.error("[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant");
-    this.isLoading = false;
-    return;
+    if (!agencyId) {
+      console.error("[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant");
+      this.isLoading = false;
+      return;
+    }
+
+    this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
+      next: (response: { plannings: CollectionSchedule[] }) => {
+        this.schedules = response.plannings;
+        console.log("Plannings récupérés :", this.schedules);
+
+        const schedulesTab = this.tabs.find(tab => tab.id === "schedules");
+        if (schedulesTab) {
+          schedulesTab.badge = this.schedules.length;
+        }
+
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error("[DEBUG] Erreur lors du chargement des plannings :", error);
+        this.isLoading = false;
+      },
+    });
   }
-
-  this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
-    next: (response: { plannings: CollectionSchedule[] }) => {
-      this.schedules = response.plannings;
-      console.log("Plannings récupérés :", this.schedules);
-
-      const schedulesTab = this.tabs.find(tab => tab.id === "schedules");
-      if (schedulesTab) {
-        schedulesTab.badge = this.schedules.length;
-      }
-
-      this.isLoading = false;
-    },
-    error: (error) => {
-      console.error("[DEBUG] Erreur lors du chargement des plannings :", error);
-      this.isLoading = false;
-    },
-  });
-}
 
   // recuperation des planning d un colector 
   collectorplannings: any[] = [];
@@ -3922,7 +3924,7 @@ loadPlannings(): void {
       this.isLoading = false;
       return;
     }
-    this.agencyService. getPlaningCollectory$(collectorId).subscribe({
+    this.agencyService.getPlaningCollectory$(collectorId).subscribe({
       next: (data: any[]) => {
         this.collectorplannings = data;
         console.log("Plannings récupérés pour le collecteur :", this.collectorplannings);
@@ -3937,35 +3939,35 @@ loadPlannings(): void {
       },
     });
   }
-    
- // supprimer un tarif
-deletePlanning(schedulesId: string): void {
-  this.isDeleting = true;
 
-  if (schedulesId) {
-    this.agencyService.deletePlanning$(schedulesId).subscribe(
-      () => {
-        this.notificationService.showSuccess(
-          "Succès",
-          "Planning a été supprimé avec succès."
-        );
-        this.loadPlannings();
-        this.isDeleting = false;
-      },
-      (error) => {
-        this.notificationService.showError(
-          "Erreur",
-          "Impossible de supprimer le planning. Veuillez réessayer."
-        );
-        console.error("Erreur lors de la suppression du planning :", error);
-        this.isDeleting = false;
-      }
-    );
-  } else {
-    console.warn("Aucun ID de planning fourni.");
-    this.isDeleting = false;
+  // supprimer un tarif
+  deletePlanning(schedulesId: string): void {
+    this.isDeleting = true;
+
+    if (schedulesId) {
+      this.agencyService.deletePlanning$(schedulesId).subscribe(
+        () => {
+          this.notificationService.showSuccess(
+            "Succès",
+            "Planning a été supprimé avec succès."
+          );
+          this.loadPlannings();
+          this.isDeleting = false;
+        },
+        (error) => {
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de supprimer le planning. Veuillez réessayer."
+          );
+          console.error("Erreur lors de la suppression du planning :", error);
+          this.isDeleting = false;
+        }
+      );
+    } else {
+      console.warn("Aucun ID de planning fourni.");
+      this.isDeleting = false;
+    }
   }
-}
 
   tariffToUpdate: Tariff | null = null;
   //update un tarif via l api
@@ -4240,55 +4242,55 @@ deletePlanning(schedulesId: string): void {
   //   });
   // }
   addSchedule(): void {
-  if (this.scheduleForm.invalid) {
-    this.notificationService.showError(
-      'Erreur de validation',
-      'Veuillez corriger les erreurs dans le formulaire'
-    );
-    return;
-  }
+    if (this.scheduleForm.invalid) {
+      this.notificationService.showError(
+        'Erreur de validation',
+        'Veuillez corriger les erreurs dans le formulaire'
+      );
+      return;
+    }
 
-  const formValues = this.scheduleForm.value;
+    const formValues = this.scheduleForm.value;
 
-const schedule: CollectionSchedule = {
-  zone: formValues.zone, 
-  date: formValues.date,
-  startTime: formValues.startTime,
-  endTime: formValues.endTime,
-  collectorId: Array.isArray(formValues.collectorId)
-    ? formValues.collectorId
-    : [formValues.collectorId], 
-  agencyId: this.currentUser?._id || '',
-};
+    const schedule: CollectionSchedule = {
+      zone: formValues.zone,
+      date: formValues.date,
+      startTime: formValues.startTime,
+      endTime: formValues.endTime,
+      collectorId: Array.isArray(formValues.collectorId)
+        ? formValues.collectorId
+        : [formValues.collectorId],
+      agencyId: this.currentUser?._id || '',
+    };
 
 
-  this.agencyService.addSchedule$(schedule).subscribe({
-    next: () => {
-      this.notificationService.showSuccess('Succès', 'Le planning a été créé avec succès');
-      this.showScheduleModal = false;
-      this.scheduleForm.reset();
-    },
-    error: (error) => {
-      let errorMessage = 'Une erreur est survenue lors de la création du planning';
-      if (error.error?.message) {
-        switch (error.error.message) {
-          case 'COLLECTOR_NOT_AVAILABLE':
-            errorMessage = 'Le collecteur n\'est pas disponible sur ce créneau';
-            break;
-          case 'ZONE_NOT_FOUND':
-            errorMessage = 'La zone sélectionnée n\'existe pas';
-            break;
-          case 'TIME_CONFLICT':
-            errorMessage = 'Il existe déjà un planning sur ce créneau horaire';
-            break;
-          default:
-            errorMessage = error.error.message;
+    this.agencyService.addSchedule$(schedule).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Succès', 'Le planning a été créé avec succès');
+        this.showScheduleModal = false;
+        this.scheduleForm.reset();
+      },
+      error: (error) => {
+        let errorMessage = 'Une erreur est survenue lors de la création du planning';
+        if (error.error?.message) {
+          switch (error.error.message) {
+            case 'COLLECTOR_NOT_AVAILABLE':
+              errorMessage = 'Le collecteur n\'est pas disponible sur ce créneau';
+              break;
+            case 'ZONE_NOT_FOUND':
+              errorMessage = 'La zone sélectionnée n\'existe pas';
+              break;
+            case 'TIME_CONFLICT':
+              errorMessage = 'Il existe déjà un planning sur ce créneau horaire';
+              break;
+            default:
+              errorMessage = error.error.message;
+          }
         }
-      }
-      this.notificationService.showError('Erreur', errorMessage);
-    },
-  });
-}
+        this.notificationService.showError('Erreur', errorMessage);
+      },
+    });
+  }
   investigateIncident(): void {
     // const incident = this.incidents.find(i => i.id === incidentId);
     // if (incident) {
@@ -4351,7 +4353,7 @@ const schedule: CollectionSchedule = {
 
   getSeverityIcon(severity: string): string {
     const icons = {
-     critical: "dangerous",
+      critical: "dangerous",
       high: "priority_high",
       medium: "warning",
       low: "info"

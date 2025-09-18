@@ -49,7 +49,12 @@ export class ClientService {
   constructor(private http: HttpClient) {}
 
   getClientsByAgency(agencyId: string): Observable<ClientApi[]> {
-    return this.http.get<ClientApi[]>(`${environment.apiUrl}/clients/agency/${agencyId}`);
+    return this.http.get<ClientApi[]>(`${environment.apiUrl}/clients/agency/${agencyId}`).pipe(
+      map((response: any) => {
+        console.log('API > getClientsByAgency:', response);
+        return response;
+      })
+    );
   }
 
   validateClientSubscription(clientId: string): Observable<any> {
