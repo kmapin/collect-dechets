@@ -223,7 +223,7 @@ interface Statistics {
             >
               <i class="material-icons">{{ tab.icon }}</i>
               {{ tab.label }}
-              <!-- <span *ngIf="tab.label === 'Clients' && tab.badge" class="tab-badge">{{ activeClientNbr }}</span> -->
+              <span *ngIf="tab.label === 'Messages' && unreadMessageCount>=0" class="tab-badge">{{ unreadMessageCount }}</span>
               <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
             </button>
           </div>
