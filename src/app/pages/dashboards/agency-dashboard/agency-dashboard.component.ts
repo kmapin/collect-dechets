@@ -810,7 +810,7 @@ interface Statistics {
               <div class="reports-header">
                 <h2>Messages</h2>
                 <div class="incidents-filters">
-                  <span> 5 message(s) non lu(s)</span>
+                  <span>{{unreadMessageCount}} message(s) non lu(s)</span>
                 </div>
               </div>
               <div class="reports-list">
