@@ -14,6 +14,10 @@ import { MatCardModule } from "@angular/material/card";
 import { ClientService } from "../../../services/client.service";
 import { SharedService } from "../../../services/shared-service";
 import { forkJoin, map, of } from "rxjs";
+import {
+  MOCK_CITIES,
+  MOCK_ARRONDISSEMENTS,
+} from "../../../data/countries-org.mock";
 
 interface AdminStatistics {
   totalAgencies: number;
@@ -69,6 +73,14 @@ interface ZoneStatistic {
   collections: number;
   coverage: number;
   incidents: number;
+  country: string;
+   cities?: ZoneStatistic[];
+}
+
+
+interface GroupedZoneStatistics {
+  country: string;
+  cities: ZoneStatistic[];
 }
 
 interface Incident {
@@ -403,37 +415,48 @@ interface Communication {
                     <i class="material-icons">map</i>
                     Couverture Territoriale
                   </h3>
-                  <div class="territory-stats">
-                    <div *ngFor="let zone of zoneStatistics" class="zone-item">
-                      <div class="zone-header">
-                        <h4>{{ zone.name }}</h4>
-                        <span
-                          class="coverage-badge"
-                          [class]="getCoverageBadgeClass(zone.coverage)"
-                        >
-                          {{ zone.coverage }}% couvert
-                        </span>
-                      </div>
-                      <div class="zone-metrics">
-                        <div class="zone-metric">
-                          <i class="material-icons">business</i>
-                          <span>{{ zone.agencies }} agences</span>
+                <div class="territory-stats scrollable-container">
+                    <!-- Boucle sur les pays -->
+                    <div
+                      *ngFor="let zone of zoneStatistics"
+                      class="country-block"
+                    >
+                      <h2 class="country-title">{{ zone.country }}</h2>
+
+                      <!-- Boucle sur les villes du pays -->
+                      <div *ngFor="let city of zone.cities" class="zone-item">
+                        <div class="zone-header">
+                          <h4>{{ city.name }}</h4>
+                          <span
+                            class="coverage-badge"
+                            [class]="getCoverageBadgeClass(city.coverage)"
+                          >
+                            {{ city.coverage }}% couvert
+                          </span>
                         </div>
-                        <div class="zone-metric">
-                          <i class="material-icons">people</i>
-                          <span>{{ zone.clients }} clients</span>
-                        </div>
-                        <div class="zone-metric">
-                          <i class="material-icons">local_shipping</i>
-                          <span>{{ zone.collections }} collectes</span>
-                        </div>
-                        <div class="zone-metric" *ngIf="zone.incidents > 0">
-                          <i class="material-icons">warning</i>
-                          <span>{{ zone.incidents }} incidents</span>
+
+                        <div class="zone-metrics">
+                          <div class="zone-metric">
+                            <i class="material-icons">business</i>
+                            <span>{{ city.agencies }} agences</span>
+                          </div>
+                          <div class="zone-metric">
+                            <i class="material-icons">people</i>
+                            <span>{{ city.clients }} clients</span>
+                          </div>
+                          <!-- <div class="zone-metric">
+                            <i class="material-icons">local_shipping</i>
+                            <span>{{ city.collections }} collectes</span>
+                          </div>
+                          <div class="zone-metric" *ngIf="city.incidents > 0">
+                            <i class="material-icons">warning</i>
+                            <span>{{ city.incidents }} incidents</span>
+                          </div> -->
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
                 </div>
 
                 <div class="overview-section card">
@@ -1638,55 +1661,76 @@ interface Communication {
         color: var(--text-secondary);
       }
 
-      .territory-stats {
+     .territory-stats {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 24px; 
+      }
+
+      .country-block {
+        background: #ffffff; 
+        padding: 16px;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .country-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--primary-color, #2c3e50);
+        margin-bottom: 12px;
+        border-bottom: 2px solid var(--primary-color, #2c3e50);
+        padding-bottom: 4px;
       }
 
       .zone-item {
-        padding: 16px;
-        background: var(--light-gray);
+        padding: 12px 16px;
+        background: #f5f5f5; 
         border-radius: 8px;
+        margin-bottom: 12px;
+        border: 1px solid #e0e0e0;
       }
 
       .zone-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
       }
 
       .zone-header h4 {
         font-size: 1.1rem;
         font-weight: 600;
-        color: var(--text-primary);
+        color: var(--text-primary, #333);
       }
 
       .coverage-badge {
-        padding: 4px 8px;
+        padding: 4px 10px;
         border-radius: 12px;
         font-size: 0.8rem;
         font-weight: 500;
+        white-space: nowrap;
       }
 
       .coverage-excellent {
         background: #e8f5e8;
-        color: var(--success-color);
+        color: var(--success-color, #2e7d32);
       }
+
       .coverage-good {
         background: #fff3e0;
         color: #f57c00;
       }
+
       .coverage-poor {
         background: #ffebee;
-        color: var(--error-color);
+        color: var(--error-color, #e61313ff);
       }
 
       .zone-metrics {
         display: flex;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 12px;
       }
 
       .zone-metric {
@@ -1694,7 +1738,19 @@ interface Communication {
         align-items: center;
         gap: 6px;
         font-size: 0.9rem;
-        color: var(--text-secondary);
+        color: var(--text-secondary, #555);
+      }
+
+      .scrollable-container {
+        max-height: 450px;
+        overflow-y: auto;
+        padding-right: 10px;
+      }
+
+      .zone-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
       }
 
       .zone-metric i {
@@ -2828,10 +2884,11 @@ export class AdminDashboard implements OnInit {
   filteredClients: any[] = [];
   filteredCollectors: any[] = [];
   wasteStatistics: WasteStatistic[] = [];
-  zoneStatistics: ZoneStatistic[] = [];
+  zoneStatistics: GroupedZoneStatistics[] = [];
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
   communications: Communication[] = [];
+//  zoneStatistics: ZoneStatistic[] = [];
 
   // Filters
   agenciesFilter = "all";
@@ -2911,16 +2968,18 @@ export class AdminDashboard implements OnInit {
     this.showAdminStatistics();
     this.loadAllMunipalities();
     this.getClientGrowth();
+     this.loadZoneStat();
   }
 
   loadAdminData(): void {
     this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
-    // this.loadIncidents();
+     this.loadZoneStat();
     this.loadCommunications();
     this.showAdminClients();
     this.loadAllSignalements();
+     // this.loadIncidents();
   }
 
   loadAgencyAudits(): void {
@@ -3030,40 +3089,66 @@ export class AdminDashboard implements OnInit {
   }
 
   loadZoneStatistics(): void {
-    this.zoneStatistics = [
-      {
-        name: "Centre-ville",
-        agencies: 5,
-        clients: 3200,
-        collections: 145,
-        coverage: 98,
-        incidents: 2,
+      const stats = this.agencyService.getAgenceStats();
+      const grouped: { [key: string]: any[] } = {};
+  
+      MOCK_CITIES.forEach((city, index) => {
+        const country = city.country.name;
+        if (!grouped[country]) {
+          grouped[country] = [];
+        }
+        grouped[country].push({
+          name: city.name,
+          agencies: stats[index]?.agencies || 0,
+          clients: stats[index]?.clients || 0,
+          collections: stats[index]?.collections || 0,
+          coverage: stats[index]?.coverage || 0,
+          incidents: stats[index]?.incidents || 0,
+        });
+      });
+      this.zoneStatistics = Object.keys(grouped).map((country) => ({
+        country,
+        cities: grouped[country],
+      }));
+    }
+  
+loadZoneStat(): void {
+    this.adminService.getAllStatisticCity().subscribe({
+      next: (response: any) => {
+        const stats = Array.isArray(response.statistics)
+          ? response.statistics
+          : [];
+        const grouped: { [key: string]: ZoneStatistic[] } = {};
+
+        MOCK_CITIES.forEach((city) => {
+          const country = city.country.name || "Burkina Faso";
+          if (!grouped[country]) {
+            grouped[country] = [];
+          }
+          const cityStats = stats.find((s: any) => s.city === city.name);
+
+          grouped[country].push({
+            country,
+            name: city.name,
+            agencies: cityStats?.agencies || 0,
+            clients: cityStats?.clients || 0,
+            collections: cityStats?.todayCollections || 0,
+            coverage: cityStats?.complianceRate || 0,
+            incidents: cityStats?.pendingReports || 0,
+            cities: [],
+          });
+        });
+
+        this.zoneStatistics = Object.keys(grouped).map((country) => ({
+          country,
+          cities: grouped[country],
+        }));
       },
-      {
-        name: "Quartiers Nord",
-        agencies: 4,
-        clients: 2800,
-        collections: 125,
-        coverage: 92,
-        incidents: 3,
+      error: (err) => {
+        console.error("Erreur lors de la récupération des villes:", err);
+        this.zoneStatistics = [];
       },
-      {
-        name: "Quartiers Sud",
-        agencies: 3,
-        clients: 2100,
-        collections: 95,
-        coverage: 88,
-        incidents: 1,
-      },
-      {
-        name: "Périphérie",
-        agencies: 3,
-        clients: 1800,
-        collections: 85,
-        coverage: 75,
-        incidents: 2,
-      },
-    ];
+    });
   }
 
   loadIncidents1(): void {
@@ -3223,8 +3308,8 @@ export class AdminDashboard implements OnInit {
   }
 
   getCoverageBadgeClass(coverage: number): string {
-    if (coverage >= 95) return "coverage-excellent";
-    if (coverage >= 85) return "coverage-good";
+    if (coverage >= 75) return "coverage-excellent";
+    if (coverage >= 55) return "coverage-good";
     return "coverage-poor";
   }
 
