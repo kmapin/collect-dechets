@@ -817,6 +817,7 @@ interface Statistics {
                 <div
                   *ngFor="let message of receivedMessages"
                   class="report-card card"
+                  [ngClass]="'read-border-' + message.read"
                 >
                   <div class="incident-header">
                     <div
@@ -2435,6 +2436,14 @@ interface Statistics {
       }
       .client-audit-card-collector {
         border-left: 4px solid var(--success-color);
+      }
+      
+      .read-border-true {
+        border-left: 4px solid var(--success-color);
+      }
+      
+      .read-border-false {
+        border-left: 4px solid var(--error-color);
       }
       .modal-content {
         background: var(--white);
