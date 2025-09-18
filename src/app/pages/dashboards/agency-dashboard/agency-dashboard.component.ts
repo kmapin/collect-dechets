@@ -837,7 +837,7 @@ interface Statistics {
                     </div>
                   </div>
                   <h4>
-                    {{ message?.senderName ?? "Moi" }}
+                    envoyé par : {{ message?.senderName ?? "Moi" }}
                   </h4>
                   <div class="incident-content">
                     <h4>{{ getIncidentTypeText(message.type) }}</h4>
