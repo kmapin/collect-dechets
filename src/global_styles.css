@@ -229,7 +229,7 @@ body {
   text-transform: uppercase;
 }
 
-.status-success {
+.status-success{
   background: #e8f5e8;
   color: var(--success-color);
 }
@@ -238,7 +238,6 @@ body {
   background: #fff8e1;
   color: #f57c00;
 }
-
 .status-error {
   background: #ffebee;
   color: var(--error-color);

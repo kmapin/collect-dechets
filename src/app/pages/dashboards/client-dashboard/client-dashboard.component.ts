@@ -1283,10 +1283,10 @@ export class ClientDashboardComponent implements OnInit {
           console.log('API > getMessagesForUser:', response);
           this.receivedMessages = response.messages || [];
           this.receivedMessages.forEach((message: any) => {
+            message.read = message.read.toString();
             this.agencyService.getAgencyByIdFromApi(message.sender).subscribe((response: any) => {
               if (response.success && response.data) {
                 this.agency = response.data;
-                message.read = message.read.toString();
                 message.senderName = this.agency.agencyName;
               }
             });

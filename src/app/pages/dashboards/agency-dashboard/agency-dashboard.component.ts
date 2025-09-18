@@ -29,6 +29,8 @@ import {
 import { Collection, CollectionStatus } from "../../../models/collection.model";
 import { ClientService, ClientApi } from "../../../services/client.service";
 import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
+import { Message } from '../../../models/message.model';
+import { MessagesService } from '../../../services/messages.service';
 
 interface Client {
   id: string;
@@ -811,87 +813,99 @@ interface Statistics {
               </div>
               <div class="reports-list">
                 <div
-                  *ngFor="let report of agencyReports"
+                  *ngFor="let message of receivedMessages"
                   class="report-card card"
                 >
                   <div class="incident-header">
                     <div
-                      class="incident-severity"
-                      [class]="'severity-' + report?.severity"
+                      class="status-badge"
+                      [class]="'read-' + message.read"
                     >
-                      <i class="material-icons">{{
-                        getSeverityIcon(report.severity)
-                      }}</i>
-                      <span>{{
-                        getSeverityText(report.severity)
-                          ? getSeverityText(report.severity)
-                          : "Faible"
-                      }}</span>
+
+                      <span>{{message.sender===currentUser?._id ? "Envoyé" : "Reçu"}} </span>
                     </div>
                     <div class="incident-status">
                       <span
                         class="status-badge"
-                        [class]="'status-' + report.status"
+                        [class]="'read-'+message.read"
                       >
-                        {{ getIncidentStatusText(report.status) }}
+                      {{message.read ==="true" ? "lu" : "non lu"}} 
                       </span>
                     </div>
                   </div>
                   <h4>
-                    {{ report?.client?.firstName }}
-                    {{ report?.client?.lastName }}
+                    {{ message?.senderName ?? "Moi" }}
                   </h4>
                   <div class="incident-content">
-                    <h4>{{ getIncidentTypeText(report.type) }}</h4>
-                    <p class="incident-description">{{ report.description }}</p>
+                    <h4>{{ getIncidentTypeText(message.type) }}</h4>
+                    <p class="incident-description">{{ message.content }}</p>
                     <p class="incident-date">
-                      Date : {{ report.date | date : "dd/MM/yyyy" }}
+                      Date : {{ message.timestamp | date : "dd/MM/yyyy" }}
                     </p>
                     <p class="incident-date">
-                      Heure : {{ report.date | date : "HH:mm:ss" }}
+                      Heure : {{ message.timestamp | date : "HH:mm:ss" }}
                     </p>
-                  </div>
-                  <!-- Affichage des photos -->
-                  <div *ngIf="report.photos && report.photos.length">
-                    <div *ngFor="let photo of report.photos">
-                      <img
-                        [src]="photo"
-                        alt="Photo du signalement"
-                        class="report-photo"
-                      />
-                    </div>
-                  </div>
-                  <div *ngIf="!report.photos || !report.photos.length">
-                    <p><em>Aucune photo associée</em></p>
                   </div>
                   <div class="incident-actions">
                     <button
                       class="btn btn-accent"
-                      (click)="openAssignModal(report._id)"
+                      (click)="openAssignModal(message._id)"
+                      *ngIf="(message.sender===currentUser?._id || message.read === 'true')"
                     >
-                      <i class="material-icons">assignment_ind</i>
-                      Assigner
+                      <i class="material-icons">delete</i>
+                      Supprimer
                     </button>
-                    <!-- <button class="btn btn-primary" (click)="investigateIncident()" >
-                    <i class="material-icons">search</i>
-                    Enquêter
-                  </button> -->
                     <button
                       class="btn btn-success"
-                      (click)="resolveIncident(report._id)"
+                      (click)="readAndRespondMessage(message._id)"
+                      *ngIf="message.sender!==currentUser?._id && message.read === 'false'"
                     >
                       <i class="material-icons">check</i>
-                      Résoudre
+                      Repondre
                     </button>
-                    <!--<button class="btn btn-accent" (click)="contactAgencyForIncident()">
-                    <i class="material-icons">phone</i>
-                                Contacter Agence
-                  </button>-->
                   </div>
                 </div>
               </div>
             </div>
-
+              <!-- Message -->
+              <div class="modal-overlay" *ngIf="showMessageModal" (click)="showMessageModal = false">
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Décrivez nous votre besoins</h3>
+                    <button class="close-btn" (click)="showMessageModal = false">
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+                  <form class="report-form" >
+                    <!-- <div class="form-group">
+                      <label>Destinataire</label>
+                      <select [(ngModel)]="messageData.receiver" name="receiver" required>
+                        <option value="">Sélectionnez</option>
+                        <option value="missed_collection">Collecte manquée</option>
+                        <option value="compliance_issue">Non-conformité</option>
+                        <option value="technical_issue">Problème technique</option>
+                        <option value="complaint">Réclamation</option>
+                        <option value="other">Autre</option>
+                      </select>
+                    </div>-->
+                    
+                    <div class="form-group">
+                      <label>Message</label>
+                      <textarea [(ngModel)]="messageData.content" name="content" 
+                                rows="4" placeholder="Votre message..." required></textarea>
+                    </div>
+                    <div class="form-actions">
+                      <button type="button" class="btn btn-secondary" (click)="showMessageModal = false">
+                        Annuler
+                      </button>
+                      <button type="button" class="btn btn-primary" (click)="submitMessage() ; showMessageModal = false">
+                        <i class="material-icons">send</i>
+                        Envoyer
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
 
             <!-- Onglet Rapports -->
             <div class="analytics-tab">
@@ -1676,7 +1690,8 @@ interface Statistics {
         color: #fff;
       }
 
-      .status-badge.status-pending {
+      .status-badge.status-pending,
+      .status-badge.read-false {
         background: rgba(255, 140, 0, 0.7);
         color: #fff;
       }
@@ -1721,7 +1736,8 @@ interface Statistics {
         background: #fff3e0;
         color: #f57c00;
       }
-      .status-resolved {
+      .status-resolved,
+      .read-true {
         background: #e8f5e8;
         color: var(--success-color);
       }
@@ -2786,7 +2802,17 @@ export class AgencyDashboardComponent implements OnInit {
     "Dimanche",
   ];
   currentWeek = new Date();
-
+  unreadMessageCount: any;
+  receivedMessages: any;
+  
+  showMessageModal: boolean=false;
+  messageData: Message = {
+    sender: '',
+    receiver: '',
+    content: ''
+  };
+  client: any;
+  receivedId: string = '';
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
@@ -2794,7 +2820,8 @@ export class AgencyDashboardComponent implements OnInit {
     private notificationService: NotificationService,
     private clientService: ClientService,
     private cdr: ChangeDetectorRef,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private messageService: MessagesService
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split('T')[0];
@@ -2824,10 +2851,100 @@ export class AgencyDashboardComponent implements OnInit {
     this.loadCollectorPlannings();
     this.cdr.detectChanges();
     this.filterIncidents();
-
+    this.countUnreadMessages();
+    this.userMessages();
 
   }
 
+  
+  /**Gestion des messages recus par le client connecté */
+  countUnreadMessages() {
+    this.messageService.getUserUnreadMessagesCount(this.currentUser?._id || '').subscribe({
+      next: (response: any) => {
+        if (response) {
+          console.log('API > getUserUnreadMessagesCount:', response);
+          this.unreadMessageCount = response.unreadCount || 0;
+        }
+      },
+      error: (error: any) => {
+        console.error('API > getUserUnreadMessagesCount:', error);
+      }
+    });
+  }
+
+
+  userMessages() {
+    this.messageService.getMessagesForUser(this.currentUser?._id || '').subscribe({
+      next: (response: any) => {
+        if (response) {
+          console.log('API > getMessagesForUser:', response);
+          this.receivedMessages = response.messages || [];
+          this.receivedMessages.forEach((message: any) => {
+            message.read = message.read.toString();
+            this.clientService.getClientById(message.sender).subscribe((response: any) => {
+              if (response.success && response.data) {
+                this.client = response.data;
+                console.log('Client data:', this.client);
+                message.senderName = this.client.firstName + ' ' + this.client.lastName;
+              }
+            });
+            console.log('Message:', message);
+          });
+
+        }
+      },
+      error: (error: any) => {
+        console.error('API > getMessagesForUser:', error);
+      }
+    });
+  }
+  readAndRespondMessage(message: Message): void {
+    this.messageService.markMessagesAsRead(message._id || '').subscribe({
+      next: (response: any) => {
+        this.showMessageModal = true;
+        this.receivedId= message.sender;
+        this.userMessages();
+        console.log('Lire et répondre au message:', message._id);
+      },
+      error: (error: any) => {
+        console.error('Erreur lors de la lecture du message:', error);
+      }
+    });
+  }
+  submitMessage(): void {
+    if (!this.currentUser) {
+      this.notificationService.showError('Connexion requise', 'Vous devez être connecté pour envoyer un message');
+      return;
+    }
+    if (!this.agency) {
+      this.notificationService.showError('Erreur', 'Agence non trouvée');
+      return;
+    }
+    this.messageData.sender = this.currentUser?._id || '';
+    this.messageData.receiver = this.receivedId || '';
+    this.messageData.content = this.messageData.content.trim();
+    if (!this.messageData.content) {
+      this.notificationService.showError('Message vide', 'Le contenu du message ne peut pas être vide');
+      return;
+    }
+
+    console.log('Envoi du message:', this.messageData);
+    this.messageService.sendMessage(this.messageData).subscribe({
+      next: (response: any) => {
+        console.log('API > sendMessage:', response);
+        this.notificationService.showSuccess('Message envoyé', 'Votre message a bien été envoyé');
+        this.showMessageModal = false;
+        this.userMessages();
+      },
+      error: (error: any) => {
+        console.error('API > sendMessage:', error);
+        this.notificationService.showError('Message non envoyé', 'Une erreur s\'est produite lors de l\'envoi du message');
+      }
+    });
+  }
+
+  /**Gestion des messages recus par le client connecté fin */
+  
   openAssignModal(reportId: string): void {
     this.selectedReportId = reportId;
     this.selectedEmployees = []; // Réinitialiser les employés sélectionnés
