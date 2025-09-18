@@ -851,7 +851,7 @@ interface Statistics {
                   <div class="incident-actions">
                     <button
                       class="btn btn-accent"
-                      (click)="openAssignModal(message._id)"
+                      (click)="deleteMessage(message._id)"
                       *ngIf="(message.sender===currentUser?._id || message.read === 'true')"
                     >
                       <i class="material-icons">delete</i>
@@ -859,7 +859,7 @@ interface Statistics {
                     </button>
                     <button
                       class="btn btn-success"
-                      (click)="readAndRespondMessage(message._id)"
+                      (click)="readAndRespondMessage(message)"
                       *ngIf="message.sender!==currentUser?._id && message.read === 'false'"
                     >
                       <i class="material-icons">check</i>
@@ -2901,6 +2901,7 @@ export class AgencyDashboardComponent implements OnInit {
     });
   }
   readAndRespondMessage(message: Message): void {
+    console.log('Marquer le message comme lu:', message);
     this.messageService.markMessagesAsRead(message._id || '').subscribe({
       next: (response: any) => {
         this.showMessageModal = true;
@@ -2945,6 +2946,22 @@ export class AgencyDashboardComponent implements OnInit {
     });
   }
 
+  deleteMessage(messageId: string): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce message ?')) {
+      this.messageService.deleteMessage(messageId).subscribe({
+        next: (response: any) => {
+          console.log('API > deleteMessage:', response);
+          this.notificationService.showSuccess('Message supprimé', 'Le message a bien été supprimé');
+          this.showMessageModal = false;
+          this.userMessages();
+        },
+        error: (error: any) => {
+          console.error('API > deleteMessage:', error);
+          this.notificationService.showError('Message non supprimé', 'Une erreur s\'est produite lors de la suppression du message');
+        }
+      });
+    }
+  }
   /**Gestion des messages recus par le client connecté fin */
   
   openAssignModal(reportId: string): void {
