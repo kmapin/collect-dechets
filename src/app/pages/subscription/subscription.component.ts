@@ -25,7 +25,7 @@ import { AgencyService } from '../../services/agency.service';
       <div class="container">
         <div class="subscription-content">
           <div class="subscription-card card">
-            <h2>Abonnement Actuel</h2>
+            <h1 class="text-[28px] font-semibold text-[--primary-color]">Abonnement Actuel</h1>
             <!-- ...existing code... -->
             <div class="subscription-info" *ngIf="activeSubscription; else noSub">
               <div class="plan-summary">
@@ -47,17 +47,22 @@ import { AgencyService } from '../../services/agency.service';
                   {{ activeSubscription.status | titlecase }}
                 </span>
               </div>
-              <div class="info-item">
+              <div class="info-item-agencyName">
                 <strong>Agence:</strong>
-                <span>{{ activeSubscription.agencyId?.agencyName }}</span>
+                <span class="font-semibold text-[--primary-color]">{{ activeSubscription.agencyId?.agencyName }}</span>
               </div>
               <div class="info-item">
-                <strong>Localité:</strong>
-                <span>{{ activeSubscription.agencyId?.address?.city }} - {{ activeSubscription.agencyId?.address?.neighborhood }}</span>
+                <strong>Adresses:</strong>
+                <span>{{ activeSubscription.agencyId?.address?.city }} - {{ activeSubscription.agencyId?.address?.neighborhood }} - {{ activeSubscription.agencyId?.address?.sector }}</span>
+              </div>
+
+              <div class="info-item">
+                <strong>Code postal:</strong>
+                <span>{{ activeSubscription.agencyId?.address?.postalCode }}</span>
               </div>
               <div class="info-item">
                 <strong>Prix:</strong>
-                <span>{{ activeSubscription.amount | currency:'F CFA' }}</span>
+                <span class="text-[20px] font-semibold text-[--primary-color]">{{ activeSubscription.amount }} <sup class="tex-black">FCFA</sup>/ Mois</span>
               </div>
               <div class="info-item">
                 <strong>Début:</strong>
@@ -66,6 +71,10 @@ import { AgencyService } from '../../services/agency.service';
               <div class="info-item">
                 <strong>Fin:</strong>
                 <span>{{ activeSubscription.endDate | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="contact-info">
+                <strong>Contacts:</strong>
+                <span>{{ activeSubscription.agencyId?.phone }}</span>
               </div>
               <div class="actions">
                 <button class="btn btn-primary" (click)="renewSubscription()">Renouveler</button>
@@ -107,6 +116,22 @@ import { AgencyService } from '../../services/agency.service';
       justify-content: space-between;
       padding: 12px 0;
       border-bottom: 1px solid var(--medium-gray);
+    }
+    .info-item-agencyName {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 2px solid var(--primary-color);
+
+    }
+
+    .contact-info {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      color: var(--primary-color);
+      font-weight: 10;
+      border-bottom: 2px solid var(--primary-color);
     }
 
     .info-item:last-child {
