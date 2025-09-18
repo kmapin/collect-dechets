@@ -613,7 +613,7 @@ interface Statistics {
                     </tr>
                     <tr *ngFor="let client of activeClients">
                       <td>{{ client.firstName }} {{ client.lastName }}</td>
-                      <td>{{ client.userId.email }}</td>
+                      <td></td>
                       <td>{{ client.phone }}</td>
                       <td>
                         {{ client.address.street }},
@@ -668,7 +668,7 @@ interface Statistics {
                     </tr>
                     <tr *ngFor="let client of pendingClients">
                       <td>{{ client.firstName }} {{ client.lastName }}</td>
-                      <td>{{ client.userId.email }}</td>
+                      <td>paul&#64;gmail.com</td>
                       <td>{{ client.phone }}</td>
                       <td>
                         {{ client.address.street }},
@@ -693,6 +693,8 @@ interface Statistics {
               </div>
             </div>
 
+
+            <!-- Onglet Signalements -->
             <div *ngIf="activeTab === 'reports'" class="reports-tab">
               <div class="reports-header">
                 <h2>Signalements</h2>
@@ -4242,6 +4244,10 @@ export class AgencyDashboardComponent implements OnInit {
         this.loadClients();
       },
       error: (err) => {
+        this.notificationService.showError(
+          "Validation",
+          "Validation a échoué  ! " + err?.error?.error
+        );
         console.error("[validateClient] error for", clientId, err);
       },
     });
