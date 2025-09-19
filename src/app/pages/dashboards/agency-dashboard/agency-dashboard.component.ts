@@ -450,10 +450,10 @@ interface Statistics {
               <div class="zones-header">
                 <h2>Gestion des Zones de Couverture</h2>
                 <div class="zones-actions">
-                  <!-- <button class="btn btn-primary" (click)="showZoneModal = true">
-                    <i class="material-icons">add_location</i>
-                    Ajouter un tarif
-                  </button> -->
+                  <button class="btn btn-primary" (click)="openTariffsModal()">
+                    <i class="material-icons">visibility</i>
+                    Voir mes tarifs
+                  </button>
                 </div>
               </div>
 
@@ -558,8 +558,8 @@ interface Statistics {
                     >
                       <div
                         *ngFor="let schedule of getSchedulesForDay(i)"
-                        class="schedule-item"   (click)="openScheduleDetails(schedule)"
-
+                        class="schedule-item"
+                        (click)="openScheduleDetails(schedule)"
                       >
                         <div class="schedule-time">
                           <span class="schedule-time">Debut:</span>
@@ -570,10 +570,11 @@ interface Statistics {
                           {{ getZoneName(schedule.zone) }}
                         </div>
                         <div class="schedule-time">
-                        <span class="schedule-time">Heure:</span>  {{ schedule.startTime }} - {{ schedule.endTime }}
+                          <span class="schedule-time">Heure:</span>
+                          {{ schedule.startTime }} - {{ schedule.endTime }}
                         </div>
 
-                        <div  class="schedule-time">
+                        <div class="schedule-time">
                           <span class="schedule-time">Collecteur:</span>
                           {{ getCollectorName(schedule.collectorId) }}
                         </div>
@@ -781,10 +782,13 @@ interface Statistics {
                     <p><em>Aucune photo associée</em></p>
                   </div>
                   <div class="incident-actions">
-                 <button class="btn btn-accent" (click)="openAssignModal(report._id)">
-  <i class="material-icons">assignment_ind</i>
-  Assigner
-</button>
+                    <button
+                      class="btn btn-accent"
+                      (click)="openAssignModal(report._id)"
+                    >
+                      <i class="material-icons">assignment_ind</i>
+                      Assigner
+                    </button>
 
                     <!-- <button class="btn btn-primary" (click)="investigateIncident()" >
                     <i class="material-icons">search</i>
@@ -1025,533 +1029,621 @@ interface Statistics {
 
             <div class="analytics-content">
               <div
-                class="analytics-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+                class="modal-overlay"
+                *ngIf="showAddEmployeeModal"
+                (click)="showAddEmployeeModal = false"
               >
-                <!-- Boucle sur les tarifs -->
-                <div
-                  *ngFor="let tariff of tariffs"
-                  class="analytics-card card p-4"
-                >
-                  <div
-                    class="tariff-header flex justify-between items-center border-b pb-2 mb-3"
-                  >
-                    <h4 class="text-lg font-semibold text-gray-800">
-                      {{ tariff.price | number : "1.0-0" }} FCFA
-                    </h4>
-                    <span
-                      class="type-chip bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-sm flex items-center gap-1"
-                    >
-                      <i class="material-icons text-sm">category</i>
-                      {{ tariff.type }}
-                    </span>
-                  </div>
-
-                  <p class="text-gray-600 mb-2">
-                    <i class="material-icons text-sm align-middle">info</i>
-                    {{ tariff.description }}
-                  </p>
-
-                  <!-- Boutons d’action -->
-                  <div class="flex justify-end gap-2 mt-3">
-                    <button class="btn btn-warning flex items-center gap-1">
-                      <i class="material-icons text-base">edit</i>
-                      Renommer
-                    </button>
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Ajouter un Employé</h3>
                     <button
-                      class="btn btn-danger flex items-center gap-1"
-                      (click)="deleteTariff(tariff)"
+                      class="close-btn"
+                      (click)="showAddEmployeeModal = false"
                     >
-                      <i class="material-icons text-base">delete</i>
-                      Supprimer
+                      <i class="material-icons">close</i>
                     </button>
                   </div>
+                  <form class="employee-form" (ngSubmit)="addEmployee()">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Prénom *</label>
+                        <input
+                          type="text"
+                          [(ngModel)]="newEmployee.firstName"
+                          name="firstName"
+                          required
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Nom *</label>
+                        <input
+                          type="text"
+                          [(ngModel)]="newEmployee.lastName"
+                          name="lastName"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Email *</label>
+                      <input
+                        type="email"
+                        [(ngModel)]="newEmployee.email"
+                        name="email"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Téléphone *</label>
+                      <input
+                        type="tel"
+                        [(ngModel)]="newEmployee.phone"
+                        name="phone"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Rôle *</label>
+                      <select
+                        [(ngModel)]="newEmployee.role"
+                        name="role"
+                        required
+                      >
+                        <option value="">Sélectionner un rôle</option>
+                        <option value="manager">Manager</option>
+                        <option value="collector">Collecteur</option>
+                      </select>
+                    </div>
+                    <div
+                      class="form-group"
+                      *ngIf="newEmployee.role === 'collector'"
+                    >
+                      <label>Zones assignées</label>
+                      <div class="zones-checkboxes">
+                        <label
+                          *ngFor="let zone of serviceZones"
+                          class="checkbox-label"
+                        >
+                          <input
+                            type="checkbox"
+                            [value]="zone.id"
+                            (change)="toggleZoneAssignment(zone.id, $event)"
+                          />
+                          <span class="checkmark"></span>
+                          {{ zone.name }}
+                        </label>
+                      </div>
+                    </div>
+                    <div class="form-actions">
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        (click)="showAddEmployeeModal = false"
+                      >
+                        Annuler
+                      </button>
+                      <button type="submit" class="btn btn-primary">
+                        <i class="material-icons">person_add</i>
+                        Ajouter
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+              <!-- Modal update Employé -->
+              <div
+                class="modal-overlay"
+                *ngIf="showUpdateEmployeeModal"
+                (click)="showUpdateEmployeeModal = false"
+              >
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Modifier un Employé</h3>
+                    <button
+                      class="close-btn"
+                      (click)="showUpdateEmployeeModal = false"
+                    >
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+                  <form class="employee-form">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Prénom *</label>
+                        <input
+                          type="text"
+                          [(ngModel)]="newEmployee.firstName"
+                          name="firstName"
+                          required
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Nom *</label>
+                        <input
+                          type="text"
+                          [(ngModel)]="newEmployee.lastName"
+                          name="lastName"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label>Email *</label>
+                      <input
+                        type="email"
+                        [(ngModel)]="newEmployee.email"
+                        name="email"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Téléphone *</label>
+                      <input
+                        type="tel"
+                        [(ngModel)]="newEmployee.phone"
+                        name="phone"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Rôle *</label>
+                      <select
+                        [(ngModel)]="newEmployee.role"
+                        name="role"
+                        required
+                      >
+                        <option value="">Sélectionner un rôle</option>
+                        <option value="manager">Manager</option>
+                        <option value="collector">Collecteur</option>
+                      </select>
+                    </div>
+                    <div
+                      class="form-group"
+                      *ngIf="newEmployee.role === 'collector'"
+                    >
+                      <label>Zones assignées</label>
+                      <div class="zones-checkboxes">
+                        <label
+                          *ngFor="let zone of serviceZones"
+                          class="checkbox-label"
+                        >
+                          <input
+                            type="checkbox"
+                            [value]="zone.id"
+                            (change)="toggleZoneAssignment(zone.id, $event)"
+                          />
+                          <span class="checkmark"></span>
+                          {{ zone.name }}
+                        </label>
+                      </div>
+                    </div>
+                    <div class="form-actions">
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        (click)="showAddEmployeeModal = false"
+                      >
+                        Annuler
+                      </button>
+                      <button type="submit" class="btn btn-primary">
+                        <i class="material-icons">person_add</i>
+                        modifier
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+              <!-- Modal Gestion Zone -->
+              <div
+                class="modal-overlay"
+                *ngIf="showZoneModal"
+                (click)="showZoneModal = false"
+              >
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Ajouter un Tarif</h3>
+                    <button class="close-btn" (click)="showZoneModal = false">
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+
+                  <form class="tariff-form" (ngSubmit)="addTariff()">
+                    <!-- Type -->
+                    <div class="form-group">
+                      <label>Type *</label>
+                      <select [(ngModel)]="newTariff.type" name="type" required>
+                        <option value="standard">Standard</option>
+                        <option value="premium">Premium</option>
+                      </select>
+                    </div>
+
+                    <!-- Prix -->
+                    <div class="form-group">
+                      <label>Prix *</label>
+                      <input
+                        type="number"
+                        [(ngModel)]="newTariff.price"
+                        name="price"
+                        min="0"
+                        required
+                      />
+                    </div>
+
+                    <!-- Nombre de passages -->
+                    <div class="form-group">
+                      <label>Nombre de passages *</label>
+                      <input
+                        type="number"
+                        [(ngModel)]="newTariff.nbPassages"
+                        name="nbPassages"
+                        min="0"
+                        required
+                      />
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-group">
+                      <label>Description</label>
+                      <textarea
+                        [(ngModel)]="newTariff.description"
+                        name="description"
+                        rows="3"
+                      ></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        (click)="showZoneModal = false"
+                      >
+                        Annuler
+                      </button>
+                      <button type="submit" class="btn btn-primary">
+                        <i class="material-icons">add_circle</i>
+                        Ajouter
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Modal Planning -->
+              <div
+                class="modal-overlay"
+                *ngIf="showScheduleModal"
+                (click)="showScheduleModal = false"
+              >
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Nouveau Planning de Collecte</h3>
+                    <button
+                      class="close-btn"
+                      (click)="showScheduleModal = false"
+                    >
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+
+                  <form
+                    [formGroup]="scheduleForm"
+                    class="schedule-form"
+                    (ngSubmit)="addSchedule()"
+                  >
+                    <!-- Zone -->
+                    <div class="form-group">
+                      <label>Zone *</label>
+                      <select formControlName="zone">
+                        <option value="">Sélectionner une zone</option>
+                        <option
+                          value="Tampouy
+"
+                        >
+                          Tampouy
+                        </option>
+                        <option value="Kilwin">Kilwin</option>
+                        <option value="Dassohgho">Dassohgho</option>
+                      </select>
+                      <small
+                        class="error-message"
+                        *ngIf="
+                          scheduleForm.get('zone')?.invalid &&
+                          scheduleForm.get('zone')?.touched
+                        "
+                      >
+                        Veuillez sélectionner une zone
+                      </small>
+                    </div>
+
+                    <!-- Date -->
+                    <div class="form-group">
+                      <label>Date *</label>
+                      <input
+                        type="date"
+                        formControlName="date"
+                        class="full-width"
+                        [min]="minDate"
+                      />
+                      <small
+                        class="error-message"
+                        *ngIf="
+                          scheduleForm.get('date')?.invalid &&
+                          scheduleForm.get('date')?.touched
+                        "
+                      >
+                        Veuillez sélectionner une date
+                      </small>
+                    </div>
+
+                    <!-- Heures -->
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Heure de début *</label>
+                        <input type="time" formControlName="startTime" />
+                        <small
+                          class="error-message"
+                          *ngIf="
+                            scheduleForm.get('startTime')?.invalid &&
+                            scheduleForm.get('startTime')?.touched
+                          "
+                        >
+                          Veuillez définir une heure de début
+                        </small>
+                      </div>
+
+                      <div class="form-group">
+                        <label>Heure de fin *</label>
+                        <input type="time" formControlName="endTime" />
+                        <small
+                          class="error-message"
+                          *ngIf="
+                            scheduleForm.get('endTime')?.invalid &&
+                            scheduleForm.get('endTime')?.touched
+                          "
+                        >
+                          Veuillez définir une heure de fin
+                        </small>
+                        <small
+                          class="error-message"
+                          *ngIf="scheduleForm.hasError('invalidTimeOrder')"
+                        >
+                          L'heure de fin doit être postérieure à l'heure de
+                          début
+                        </small>
+                      </div>
+                    </div>
+
+                    <!-- Collecteur -->
+                    <div class="form-group">
+                      <label>Collecteur *</label>
+                      <select formControlName="collectorId">
+                        <option value="">Sélectionner un collecteur</option>
+                        <option
+                          *ngFor="let collector of collectors"
+                          [value]="collector._id"
+                        >
+                          {{ collector.firstName }} {{ collector.lastName }}
+                        </option>
+                      </select>
+                      <small
+                        class="error-message"
+                        *ngIf="
+                          scheduleForm.get('collectorId')?.invalid &&
+                          scheduleForm.get('collectorId')?.touched
+                        "
+                      >
+                        Veuillez sélectionner un collecteur
+                      </small>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="form-actions">
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        (click)="showScheduleModal = false"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="submit"
+                        class="btn btn-primary"
+                        [disabled]="scheduleForm.invalid"
+                      >
+                        <i class="material-icons">schedule</i> Créer Planning
+                      </button>
+                    </div>
+                  </form>
+                </div>
+                <div
+                  class="modal-overlay"
+                  *ngIf="showAssignModal"
+                  (click)="showAssignModal = false"
+                >
+                  <div class="modal-content" (click)="$event.stopPropagation()">
+                    <div class="modal-header">
+                      <h3>Assigner des employés</h3>
+                      <button
+                        class="close-btn"
+                        (click)="showAssignModal = false"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <label>Employés disponibles :</label>
+                      <div
+                        *ngFor="let employee of allEmployees"
+                        class="checkbox-group"
+                      >
+                        <input
+                          type="checkbox"
+                          [value]="employee._id"
+                          (change)="
+                            toggleEmployeeSelection(employee._id, $event)
+                          "
+                        />
+                        {{ employee.firstName }} {{ employee.lastName }}
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button
+                        class="btn btn-secondary"
+                        (click)="showAssignModal = false"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        class="btn btn-primary"
+                        (click)="assignEmployeesToReport()"
+                      >
+                        soumettre
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="modal-backdrop"
+              *ngIf="selectedSchedule"
+              (click)="closeModal()"
+            >
+              <div class="modal">
+                <h3>Détails du planning</h3>
+                <p>
+                  <strong>Date :</strong>
+                  {{ selectedSchedule.date | date : "fullDate" }}
+                </p>
+                <p><strong>Zone :</strong> {{ selectedSchedule.zone }}</p>
+                <p>
+                  <strong>Heure :</strong> {{ selectedSchedule.startTime }} -
+                  {{ selectedSchedule.endTime }}
+                </p>
+                <p>
+                  <strong>Collecteur(s) :</strong>
+                  <span *ngFor="let c of selectedSchedule.collectors">
+                    {{ c.firstName }} {{ c.lastName }} ({{ c.phone }})
+                  </span>
+                </p>
+                <!-- <button class="close-btn" (click)="selectedSchedule = null">Fermer</button> -->
+              </div>
+            </div>
+            <div
+              class="modal-backdrop"
+              *ngIf="showAssignModal"
+              (click)="closeAssignModal()"
+            >
+              <div class="modal" (click)="$event.stopPropagation()">
+                <h3>Assigner un signalement</h3>
+                <p><strong>Signalement ID :</strong> {{ selectedReportId }}</p>
+
+                <div
+                  *ngIf="
+                    allEmployees && allEmployees.length > 0;
+                    else noEmployees
+                  "
+                  class="employee-grid"
+                >
+                  <label
+                    *ngFor="let employee of allEmployees"
+                    class="employee-card"
+                  >
+                    <input
+                      type="checkbox"
+                      [value]="employee._id"
+                      (change)="onEmployeeToggle($event)"
+                    />
+                    <div class="employee-info">
+                      <span class="employee-name"
+                        >{{ employee.firstName }} {{ employee.lastName }}</span
+                      >
+                      <span class="employee-role">{{ employee.role }}</span>
+                    </div>
+                  </label>
+                </div>
+
+                <ng-template #noEmployees>
+                  <p>Aucun employé disponible.</p>
+                </ng-template>
+
+                <div class="modal-actions">
+                  <button class="btn btn-primary" (click)="assignReport()">
+                    Assigner
+                  </button>
+                  <button
+                    class="btn btn-secondary"
+                    (click)="closeAssignModal()"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Modal -->
+            <div class="tariffs-modal" *ngIf="showTariffsModal">
+              <div class="modal-backdrop" (click)="closeTariffsModal()"></div>
+
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h3>Mes Tarifs</h3>
+                  <button class="close-btn" (click)="closeTariffsModal()">
+                    <i class="material-icons">close</i>
+                  </button>
+                </div>
+
+                <div class="modal-body">
+                  <div
+                    class="tariff-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+                  >
+                    <div *ngFor="let tariff of tariffs" class="tariff-card">
+                      <div class="tariff-header">
+                        <h4 class="price">
+                          {{ tariff.price | number : "1.0-0" }} FCFA
+                        </h4>
+                        <span class="type-chip">
+                          <i class="material-icons text-sm">category</i>
+                          {{ tariff.type }}
+                        </span>
+                      </div>
+
+                      <p class="tariff-description">
+                        <i class="material-icons text-sm align-middle">info</i>
+                        {{ tariff.description }}
+                      </p>
+                      <!-- Boutons d’action dans le modal -->
+                      <div class="tariff-actions">
+                        <!-- <button class="btn btn-warning flex items-center gap-1">
+              <i class="material-icons text-base">edit</i>
+              Renommer
+            </button> -->
+                        <button
+                          class="btn btn-danger flex items-center gap-1"
+                          (click)="deleteTariff(tariff)"
+                        >
+                          <i class="material-icons text-base">delete</i>
+                          Supprimer
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="modal-footer">
+                  <button
+                    class="btn btn-secondary"
+                    (click)="closeTariffsModal()"
+                  >
+                    Fermer
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Modal Ajout Employé -->
-      <div
-        class="modal-overlay"
-        *ngIf="showAddEmployeeModal"
-        (click)="showAddEmployeeModal = false"
-      >
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>Ajouter un Employé</h3>
-            <button class="close-btn" (click)="showAddEmployeeModal = false">
-              <i class="material-icons">close</i>
-            </button>
-          </div>
-          <form class="employee-form" (ngSubmit)="addEmployee()">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Prénom *</label>
-                <input
-                  type="text"
-                  [(ngModel)]="newEmployee.firstName"
-                  name="firstName"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label>Nom *</label>
-                <input
-                  type="text"
-                  [(ngModel)]="newEmployee.lastName"
-                  name="lastName"
-                  required
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Email *</label>
-              <input
-                type="email"
-                [(ngModel)]="newEmployee.email"
-                name="email"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label>Téléphone *</label>
-              <input
-                type="tel"
-                [(ngModel)]="newEmployee.phone"
-                name="phone"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label>Rôle *</label>
-              <select [(ngModel)]="newEmployee.role" name="role" required>
-                <option value="">Sélectionner un rôle</option>
-                <option value="manager">Manager</option>
-                <option value="collector">Collecteur</option>
-              </select>
-            </div>
-            <div class="form-group" *ngIf="newEmployee.role === 'collector'">
-              <label>Zones assignées</label>
-              <div class="zones-checkboxes">
-                <label *ngFor="let zone of serviceZones" class="checkbox-label">
-                  <input
-                    type="checkbox"
-                    [value]="zone.id"
-                    (change)="toggleZoneAssignment(zone.id, $event)"
-                  />
-                  <span class="checkmark"></span>
-                  {{ zone.name }}
-                </label>
-              </div>
-            </div>
-            <div class="form-actions">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                (click)="showAddEmployeeModal = false"
-              >
-                Annuler
-              </button>
-              <button type="submit" class="btn btn-primary">
-                <i class="material-icons">person_add</i>
-                Ajouter
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-      <!-- Modal update Employé -->
-      <div
-        class="modal-overlay"
-        *ngIf="showUpdateEmployeeModal"
-        (click)="showUpdateEmployeeModal = false"
-      >
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>Modifier un Employé</h3>
-            <button class="close-btn" (click)="showUpdateEmployeeModal = false">
-              <i class="material-icons">close</i>
-            </button>
-          </div>
-          <form class="employee-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Prénom *</label>
-                <input
-                  type="text"
-                  [(ngModel)]="newEmployee.firstName"
-                  name="firstName"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label>Nom *</label>
-                <input
-                  type="text"
-                  [(ngModel)]="newEmployee.lastName"
-                  name="lastName"
-                  required
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Email *</label>
-              <input
-                type="email"
-                [(ngModel)]="newEmployee.email"
-                name="email"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label>Téléphone *</label>
-              <input
-                type="tel"
-                [(ngModel)]="newEmployee.phone"
-                name="phone"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label>Rôle *</label>
-              <select [(ngModel)]="newEmployee.role" name="role" required>
-                <option value="">Sélectionner un rôle</option>
-                <option value="manager">Manager</option>
-                <option value="collector">Collecteur</option>
-              </select>
-            </div>
-            <div class="form-group" *ngIf="newEmployee.role === 'collector'">
-              <label>Zones assignées</label>
-              <div class="zones-checkboxes">
-                <label *ngFor="let zone of serviceZones" class="checkbox-label">
-                  <input
-                    type="checkbox"
-                    [value]="zone.id"
-                    (change)="toggleZoneAssignment(zone.id, $event)"
-                  />
-                  <span class="checkmark"></span>
-                  {{ zone.name }}
-                </label>
-              </div>
-            </div>
-            <div class="form-actions">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                (click)="showAddEmployeeModal = false"
-              >
-                Annuler
-              </button>
-              <button type="submit" class="btn btn-primary">
-                <i class="material-icons">person_add</i>
-                modifier
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-      <!-- Modal Gestion Zone -->
-      <div
-        class="modal-overlay"
-        *ngIf="showZoneModal"
-        (click)="showZoneModal = false"
-      >
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>Ajouter un Tarif</h3>
-            <button class="close-btn" (click)="showZoneModal = false">
-              <i class="material-icons">close</i>
-            </button>
-          </div>
-
-          <form class="tariff-form" (ngSubmit)="addTariff()">
-            <!-- Type -->
-            <div class="form-group">
-              <label>Type *</label>
-              <select [(ngModel)]="newTariff.type" name="type" required>
-                <option value="standard">Standard</option>
-                <option value="premium">Premium</option>
-              </select>
-            </div>
-
-            <!-- Prix -->
-            <div class="form-group">
-              <label>Prix *</label>
-              <input
-                type="number"
-                [(ngModel)]="newTariff.price"
-                name="price"
-                min="0"
-                required
-              />
-            </div>
-
-            <!-- Nombre de passages -->
-            <div class="form-group">
-              <label>Nombre de passages *</label>
-              <input
-                type="number"
-                [(ngModel)]="newTariff.nbPassages"
-                name="nbPassages"
-                min="0"
-                required
-              />
-            </div>
-
-            <!-- Description -->
-            <div class="form-group">
-              <label>Description</label>
-              <textarea
-                [(ngModel)]="newTariff.description"
-                name="description"
-                rows="3"
-              ></textarea>
-            </div>
-
-            <div class="form-actions">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                (click)="showZoneModal = false"
-              >
-                Annuler
-              </button>
-              <button type="submit" class="btn btn-primary">
-                <i class="material-icons">add_circle</i>
-                Ajouter
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Modal Planning -->
-      <div
-        class="modal-overlay"
-        *ngIf="showScheduleModal"
-        (click)="showScheduleModal = false"
-      >
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>Nouveau Planning de Collecte</h3>
-            <button class="close-btn" (click)="showScheduleModal = false">
-              <i class="material-icons">close</i>
-            </button>
-          </div>
-
-          <form
-            [formGroup]="scheduleForm"
-            class="schedule-form"
-            (ngSubmit)="addSchedule()"
-          >
-            <!-- Zone -->
-            <div class="form-group">
-              <label>Zone *</label>
-              <select formControlName="zone">
-                <option value="">Sélectionner une zone</option>
-                <option value="Tampuy">Tampuy</option>
-                <option value="Kilwin">Kilwin</option>
-                <option value="Dassohgho">Dassohgho</option>
-              </select>
-              <small
-                class="error-message"
-                *ngIf="
-                  scheduleForm.get('zone')?.invalid &&
-                  scheduleForm.get('zone')?.touched
-                "
-              >
-                Veuillez sélectionner une zone
-              </small>
-            </div>
-
-            <!-- Date -->
-            <div class="form-group">
-              <label>Date *</label>
-              <input
-                type="date"
-                formControlName="date"
-                class="full-width"
-                [min]="minDate"
-              />
-              <small
-                class="error-message"
-                *ngIf="
-                  scheduleForm.get('date')?.invalid &&
-                  scheduleForm.get('date')?.touched
-                "
-              >
-                Veuillez sélectionner une date
-              </small>
-            </div>
-
-            <!-- Heures -->
-            <div class="form-row">
-              <div class="form-group">
-                <label>Heure de début *</label>
-                <input type="time" formControlName="startTime" />
-                <small
-                  class="error-message"
-                  *ngIf="
-                    scheduleForm.get('startTime')?.invalid &&
-                    scheduleForm.get('startTime')?.touched
-                  "
-                >
-                  Veuillez définir une heure de début
-                </small>
-              </div>
-
-              <div class="form-group">
-                <label>Heure de fin *</label>
-                <input type="time" formControlName="endTime" />
-                <small
-                  class="error-message"
-                  *ngIf="
-                    scheduleForm.get('endTime')?.invalid &&
-                    scheduleForm.get('endTime')?.touched
-                  "
-                >
-                  Veuillez définir une heure de fin
-                </small>
-                <small
-                  class="error-message"
-                  *ngIf="scheduleForm.hasError('invalidTimeOrder')"
-                >
-                  L'heure de fin doit être postérieure à l'heure de début
-                </small>
-              </div>
-            </div>
-
-            <!-- Collecteur -->
-            <div class="form-group">
-              <label>Collecteur *</label>
-              <select formControlName="collectorId">
-                <option value="">Sélectionner un collecteur</option>
-                <option
-                  *ngFor="let collector of collectors"
-                  [value]="collector._id"
-                >
-                  {{ collector.firstName }} {{ collector.lastName }}
-                </option>
-              </select>
-              <small
-                class="error-message"
-                *ngIf="
-                  scheduleForm.get('collectorId')?.invalid &&
-                  scheduleForm.get('collectorId')?.touched
-                "
-              >
-                Veuillez sélectionner un collecteur
-              </small>
-            </div>
-
-            <!-- Actions -->
-            <div class="form-actions">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                (click)="showScheduleModal = false"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="scheduleForm.invalid"
-              >
-                <i class="material-icons">schedule</i> Créer Planning
-              </button>
-            </div>
-          </form>
-        </div>
-        <div
-          class="modal-overlay"
-          *ngIf="showAssignModal"
-          (click)="showAssignModal = false"
-        >
-          <div class="modal-content" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h3>Assigner des employés</h3>
-              <button class="close-btn" (click)="showAssignModal = false">
-                <i class="material-icons">close</i>
-              </button>
-            </div>
-            <div class="modal-body">
-              <label>Employés disponibles :</label>
-              <div *ngFor="let employee of allEmployees" class="checkbox-group">
-                <input
-                  type="checkbox"
-                  [value]="employee._id"
-                  (change)="toggleEmployeeSelection(employee._id, $event)"
-                />
-                {{ employee.firstName }} {{ employee.lastName }}
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button
-                class="btn btn-secondary"
-                (click)="showAssignModal = false"
-              >
-                Annuler
-              </button>
-              <button
-                class="btn btn-primary"
-                (click)="assignEmployeesToReport()"
-              >
-                soumettre
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
-
-    <div class="modal-backdrop" *ngIf="selectedSchedule" (click)="closeModal()">
-  <div class="modal">
-    <h3>Détails du planning</h3>
-    <p><strong>Date :</strong> {{ selectedSchedule.date | date: 'fullDate' }}</p>
-    <p><strong>Zone :</strong> {{ selectedSchedule.zone }}</p>
-    <p><strong>Heure :</strong> {{ selectedSchedule.startTime }} - {{ selectedSchedule.endTime }}</p>
-    <p><strong>Collecteur(s) :</strong>
-      <span *ngFor="let c of selectedSchedule.collectors">
-        {{ c.firstName }} {{ c.lastName }} ({{ c.phone }})
-      </span>
-    </p>
-    <!-- <button class="close-btn" (click)="selectedSchedule = null">Fermer</button> -->
-  </div>
-</div>
-<div class="modal-backdrop" *ngIf="showAssignModal" (click)="closeAssignModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
-    <h3>Assigner un signalement</h3>
-    <p><strong>Signalement ID :</strong> {{ selectedReportId }}</p>
-
-    <div *ngIf="allEmployees && allEmployees.length > 0; else noEmployees" class="employee-grid">
-      <label *ngFor="let employee of allEmployees" class="employee-card">
-        <input
-          type="checkbox"
-          [value]="employee._id"
-          (change)="onEmployeeToggle($event)"
-        />
-        <div class="employee-info">
-          <span class="employee-name">{{ employee.firstName }} {{ employee.lastName }}</span>
-          <span class="employee-role">{{ employee.role }}</span>
-        </div>
-      </label>
-    </div>
-
-    <ng-template #noEmployees>
-      <p>Aucun employé disponible.</p>
-    </ng-template>
-
-    <div class="modal-actions">
-      <button class="btn btn-primary" (click)="assignReport()">Assigner</button>
-      <button class="btn btn-secondary" (click)="closeAssignModal()">Annuler</button>
-    </div>
-  </div>
-</div>
-
-
   `,
   styles: [
     `
@@ -1565,63 +1657,65 @@ interface Statistics {
         align-items: center;
         gap: 24px;
       }
-.employee-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* responsive */
-  gap: 15px;
-  margin: 20px 0;
-  max-height: 350px;
-  overflow-y: auto; /* scroll si trop d’employés */
-  padding-right: 5px;
-}
+      .employee-grid {
+        display: grid;
+        grid-template-columns: repeat(
+          auto-fill,
+          minmax(220px, 1fr)
+        ); /* responsive */
+        gap: 15px;
+        margin: 20px 0;
+        max-height: 350px;
+        overflow-y: auto; /* scroll si trop d’employés */
+        padding-right: 5px;
+      }
 
-.employee-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
+      .employee-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
 
-.employee-card:hover {
-  background: #edf6f9;
-  border-color: #38bdf8;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
+      .employee-card:hover {
+        background: #edf6f9;
+        border-color: #38bdf8;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      }
 
-.employee-card input[type="checkbox"] {
-  transform: scale(1.2);
-  cursor: pointer;
-}
+      .employee-card input[type="checkbox"] {
+        transform: scale(1.2);
+        cursor: pointer;
+      }
 
-.employee-info {
-  display: flex;
-  flex-direction: column;
-}
+      .employee-info {
+        display: flex;
+        flex-direction: column;
+      }
 
-.employee-name {
-  font-weight: 600;
-  font-size: 15px;
-  color: #111827;
-}
+      .employee-name {
+        font-weight: 600;
+        font-size: 15px;
+        color: #111827;
+      }
 
-.employee-role {
-  font-size: 13px;
-  color: #6b7280;
-}
+      .employee-role {
+        font-size: 13px;
+        color: #6b7280;
+      }
 
-.modal-actions {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
+      .modal-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
 
       .welcome-section h1 {
         color: var(--white);
@@ -1631,39 +1725,43 @@ interface Statistics {
       .welcome-section p {
         color: rgba(255, 255, 255, 0.9);
       }
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
 
-.modal {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-.modal {
-  transition: transform 0.2s ease, opacity 0.2s ease;
-  transform: scale(1);
-  opacity: 1;
-}
-.modal-backdrop {
-  animation: fadeIn 0.2s ease;
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+      .modal {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+      .modal {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        transform: scale(1);
+        opacity: 1;
+      }
+      .modal-backdrop {
+        animation: fadeIn 0.2s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
 
       .quick-actions {
         display: flex;
@@ -1742,6 +1840,198 @@ interface Statistics {
         font-weight: 700;
         margin: 0 0 4px 0;
         color: var(--text-primary);
+      }
+      /* Modal backdrop */
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+
+      /* Modal content */
+      /* Backdrop du modal */
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+
+      /* Contenu du modal */
+      .tariffs-modal .modal-content {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 800px; /* largeur maximale raisonnable */
+        width: 90%; /* responsive */
+        max-height: 80vh;
+        z-index: 1000;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* Header */
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #6b7280;
+        font-size: 1.5rem;
+        transition: color 0.3s ease;
+      }
+
+      .close-btn:hover {
+        color: #ef4444; /* Rouge pour fermer */
+      }
+
+      /* Body et cartes */
+      .modal-body {
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 8px;
+      }
+
+      .tariff-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 20px;
+      }
+
+      /* Carte */
+      .tariff-card {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .tariff-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        border-color: #3b82f6;
+      }
+
+      /* Header carte */
+      .tariff-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .price {
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #111827;
+      }
+
+      .type-chip {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: #bfdbfe;
+        color: #1e40af;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      /* Description */
+      .tariff-description {
+        font-size: 0.9rem;
+        color: #4b5563;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Boutons action */
+      .tariff-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .tariff-actions .btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .tariff-actions .btn-warning {
+        background: #fbbf24;
+        color: #ffffff;
+        border: none;
+      }
+
+      .tariff-actions .btn-warning:hover {
+        background: #f59e0b;
+      }
+
+      .tariff-actions .btn-danger {
+        background: #ef4444;
+        color: #ffffff;
+        border: none;
+      }
+
+      .tariff-actions .btn-danger:hover {
+        background: #dc2626;
+      }
+
+      /* Footer modal */
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 16px;
+      }
+
+      .modal-footer .btn-secondary {
+        background: #6b7280;
+        color: #ffffff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .modal-footer .btn-secondary:hover {
+        background: #4b5563;
       }
 
       .stat-trend {
@@ -3212,13 +3502,13 @@ export class AgencyDashboardComponent implements OnInit {
 
   openAssignModal(reportId: string): void {
     this.selectedReportId = reportId;
-    this.selectedEmployees = []; 
+    this.selectedEmployees = [];
     this.showAssignModal = true;
   }
   closeAssignModal(): void {
-  this.showAssignModal = false;
-  this.selectedEmployees = [];
-}
+    this.showAssignModal = false;
+    this.selectedEmployees = [];
+  }
 
   validateTimeOrder(group: FormGroup) {
     const start = group.get("startTime")?.value;
@@ -4014,8 +4304,6 @@ export class AgencyDashboardComponent implements OnInit {
     }
   }
 
-
-
   resolveReport(reportId: string): void {
     const report = this.reports.find((r) => r._id === reportId);
     if (report) {
@@ -4193,12 +4481,10 @@ export class AgencyDashboardComponent implements OnInit {
             !!response;
 
           if (isSuccess) {
-            // La condition de succès est simplifiée. Si la réponse de l'API n'est pas nulle, on considère que c'est un succès.
-            // Votre service `addTariff` retourne `null` en cas d'erreur.
             if (response) {
               this.notificationService.showSuccess(
-                "Ajout réussi",
-                "Le tarif a été créé avec succès !"
+                "Le tarif a été ajouté avec succès !",
+                "vous pouvez désormais le consulter dans la liste des tarifs, disponible dans la section Zones"
               );
               this.showZoneModal = false;
               this.showZoneModal = false;
@@ -4796,36 +5082,58 @@ export class AgencyDashboardComponent implements OnInit {
   }
   selectedSchedule: any = null;
 
-openScheduleDetails(schedule: any): void {
-  this.selectedSchedule = schedule;
-}
-closeModal(): void {
-  this.selectedSchedule = null;
-}
-onEmployeeToggle(event: any): void {
-  const employeeId = event.target.value;
-  if (event.target.checked) {
-    this.selectedEmployees.push(employeeId);
-  } else {
-    this.selectedEmployees = this.selectedEmployees.filter(id => id !== employeeId);
+  openScheduleDetails(schedule: any): void {
+    this.selectedSchedule = schedule;
   }
-}
-assignReport(): void {
-  if (!this.selectedReportId || this.selectedEmployees.length === 0) {
-    this.notificationService.showError("Erreur", "Veuillez sélectionner au moins un employé.");
-    return;
+  closeModal(): void {
+    this.selectedSchedule = null;
+  }
+  onEmployeeToggle(event: any): void {
+    const employeeId = event.target.value;
+    if (event.target.checked) {
+      this.selectedEmployees.push(employeeId);
+    } else {
+      this.selectedEmployees = this.selectedEmployees.filter(
+        (id) => id !== employeeId
+      );
+    }
+  }
+  assignReport(): void {
+    if (!this.selectedReportId || this.selectedEmployees.length === 0) {
+      this.notificationService.showError(
+        "Erreur",
+        "Veuillez sélectionner au moins un employé."
+      );
+      return;
+    }
+
+    this.agencyService
+      .assignReportToEmployees$(this.selectedReportId, this.selectedEmployees)
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess(
+            "Succès",
+            "Signalement assigné avec succès."
+          );
+          this.closeAssignModal();
+        },
+        error: (err) => {
+          console.error("Erreur assignation :", err);
+          this.notificationService.showError(
+            "Erreur",
+            "Échec de l'assignation."
+          );
+          this.closeAssignModal();
+        },
+      });
+  }
+  showTariffsModal = false;
+
+  openTariffsModal() {
+    this.showTariffsModal = true;
   }
 
-  this.agencyService.assignReportToEmployees$(this.selectedReportId, this.selectedEmployees).subscribe({
-    next: () => {
-      this.notificationService.showSuccess("Succès", "Signalement assigné avec succès.");
-      this.closeAssignModal();
-    },
-    error: (err) => {
-      console.error("Erreur assignation :", err);
-      this.notificationService.showError("Erreur", "Échec de l'assignation.");
-        this.closeAssignModal();
-    }
-  });
-}
+  closeTariffsModal() {
+    this.showTariffsModal = false;
+  }
 }
