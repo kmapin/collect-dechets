@@ -781,13 +781,11 @@ interface Statistics {
                     <p><em>Aucune photo associée</em></p>
                   </div>
                   <div class="incident-actions">
-                    <button
-                      class="btn btn-accent"
-                      (click)="openAssignModal(report._id)"
-                    >
-                      <i class="material-icons">assignment_ind</i>
-                      Assigner
-                    </button>
+                 <button class="btn btn-accent" (click)="openAssignModal(report._id)">
+  <i class="material-icons">assignment_ind</i>
+  Assigner
+</button>
+
                     <!-- <button class="btn btn-primary" (click)="investigateIncident()" >
                     <i class="material-icons">search</i>
                     Enquêter
@@ -1523,6 +1521,37 @@ interface Statistics {
     <!-- <button class="close-btn" (click)="selectedSchedule = null">Fermer</button> -->
   </div>
 </div>
+<div class="modal-backdrop" *ngIf="showAssignModal" (click)="closeAssignModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Assigner un signalement</h3>
+    <p><strong>Signalement ID :</strong> {{ selectedReportId }}</p>
+
+    <div *ngIf="allEmployees && allEmployees.length > 0; else noEmployees" class="employee-grid">
+      <label *ngFor="let employee of allEmployees" class="employee-card">
+        <input
+          type="checkbox"
+          [value]="employee._id"
+          (change)="onEmployeeToggle($event)"
+        />
+        <div class="employee-info">
+          <span class="employee-name">{{ employee.firstName }} {{ employee.lastName }}</span>
+          <span class="employee-role">{{ employee.role }}</span>
+        </div>
+      </label>
+    </div>
+
+    <ng-template #noEmployees>
+      <p>Aucun employé disponible.</p>
+    </ng-template>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" (click)="assignReport()">Assigner</button>
+      <button class="btn btn-secondary" (click)="closeAssignModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+
   `,
   styles: [
     `
@@ -1536,6 +1565,63 @@ interface Statistics {
         align-items: center;
         gap: 24px;
       }
+.employee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* responsive */
+  gap: 15px;
+  margin: 20px 0;
+  max-height: 350px;
+  overflow-y: auto; /* scroll si trop d’employés */
+  padding-right: 5px;
+}
+
+.employee-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.employee-card:hover {
+  background: #edf6f9;
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.employee-card input[type="checkbox"] {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+.employee-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.employee-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #111827;
+}
+
+.employee-role {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 
       .welcome-section h1 {
         color: var(--white);
@@ -3126,9 +3212,14 @@ export class AgencyDashboardComponent implements OnInit {
 
   openAssignModal(reportId: string): void {
     this.selectedReportId = reportId;
-    this.selectedEmployees = []; // Réinitialiser les employés sélectionnés
+    this.selectedEmployees = []; 
     this.showAssignModal = true;
   }
+  closeAssignModal(): void {
+  this.showAssignModal = false;
+  this.selectedEmployees = [];
+}
+
   validateTimeOrder(group: FormGroup) {
     const start = group.get("startTime")?.value;
     const end = group.get("endTime")?.value;
@@ -3923,9 +4014,7 @@ export class AgencyDashboardComponent implements OnInit {
     }
   }
 
-  assignReport(reportId: string): void {
-    // No need to call notificationService.showInfo here, as it's already handled in the template
-  }
+
 
   resolveReport(reportId: string): void {
     const report = this.reports.find((r) => r._id === reportId);
@@ -4712,5 +4801,31 @@ openScheduleDetails(schedule: any): void {
 }
 closeModal(): void {
   this.selectedSchedule = null;
+}
+onEmployeeToggle(event: any): void {
+  const employeeId = event.target.value;
+  if (event.target.checked) {
+    this.selectedEmployees.push(employeeId);
+  } else {
+    this.selectedEmployees = this.selectedEmployees.filter(id => id !== employeeId);
+  }
+}
+assignReport(): void {
+  if (!this.selectedReportId || this.selectedEmployees.length === 0) {
+    this.notificationService.showError("Erreur", "Veuillez sélectionner au moins un employé.");
+    return;
+  }
+
+  this.agencyService.assignReportToEmployees$(this.selectedReportId, this.selectedEmployees).subscribe({
+    next: () => {
+      this.notificationService.showSuccess("Succès", "Signalement assigné avec succès.");
+      this.closeAssignModal();
+    },
+    error: (err) => {
+      console.error("Erreur assignation :", err);
+      this.notificationService.showError("Erreur", "Échec de l'assignation.");
+        this.closeAssignModal();
+    }
+  });
 }
 }
