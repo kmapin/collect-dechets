@@ -81,11 +81,11 @@ import { NotificationService } from '../../services/notification.service';
             <button class="icon-btn delete-btn" title="Supprimer" (click)="deleteNotification(notif._id)">
   <i class="material-icons">delete</i>
 </button>
-    @if (!notif.read) {
+    <!-- @if (!notif.read) {
   <button class="icon-btn mark-btn" title="Marquer comme lu">
     <i class="material-icons">done</i>
   </button>
-}
+} -->
 
 
             </div>
