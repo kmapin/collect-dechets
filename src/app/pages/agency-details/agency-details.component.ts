@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AgencyService } from '../../services/agency.service';
@@ -14,7 +14,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 @Component({
   selector: 'app-agency-details',
   standalone: true,
-  imports: [CommonModule, RouterModule,FormsModule,ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
   template: `
     <div class="agency-details-page" *ngIf="agency">
       <!-- Breadcrumb Navigation -->
@@ -82,10 +82,13 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                 <i class="material-icons">share</i>
                 Partager
               </button>
-              <button class="btn btn-primary btn-large" (click)="subscribeToAgency()">
+              <!-- Buton of drawer to subscribe -->
+              <!-- <button class="btn btn-primary btn-large" (click)="subscribeToAgency()"> -->
+              <button (click)="showSubscriptionModal = true" class="btn btn-primary btn-large" type="button" data-drawer-target="drawer-contact" data-drawer-show="drawer-contact" aria-controls="drawer-contact">
                 <i class="material-icons">add</i>
                 S'abonner
               </button>
+
             </div>
           </div>
         </div>
@@ -229,46 +232,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                     Zones de couverture
                   </h2>
                   <span class="section-count">{{ agency.serviceZones.length || 0 }} zone(s)</span>
-                </div>
-                <div class="zones-grid">
-                  <div *ngFor="let zone of agency.serviceZones" class="zone-card">
-                    <div class="zone-header">
-                      <h4>{{ zone.name }}</h4>
-                      <span class="zone-status" [class.active]="zone.isActive">
-                        {{ zone.isActive ? 'Active' : 'Inactive' }}
-                      </span>
-                    </div>
-                    <p class="zone-description">{{ zone.description }}</p>
-                    <div class="zone-details">
-                      <div class="zone-cities">
-                        <strong>Villes :</strong>
-                        <div class="cities-list">
-                          <span *ngFor="let city of zone.cities" class="city-tag">{{ city }}</span>
-                        </div>
-                      </div>
-                      <div class="zone-neighborhoods" *ngIf="zone && zone.neighborhoods && zone.neighborhoods.length > 0">
-                        <strong>Quartiers :</strong>
-                        <div class="neighborhoods-list">
-                          <span *ngFor="let neighborhood of zone.neighborhoods" class="neighborhood-tag">{{ neighborhood }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div *ngIf="agency?.serviceZones?.length === 0" class="empty-state">
-                  <i class="material-icons">map</i>
-                  <h3>Aucune zone de couverture</h3>
-                  <p>Cette agence n'a pas encore défini ses zones de couverture.</p>
-                </div>
-              </section>
-              <!-- Messagerie Section -->
-              <section class="zones-section card">
-                <div class="section-header">
-                  <h2>
-                    <i class="material-icons">map</i>
-                    Messagerie
-                  </h2>
-                  <span class="section-count">{{ unreadMessageCount}} message(s) non lu(s)</span>
                 </div>
                 <div class="zones-grid">
                   <div *ngFor="let zone of agency.serviceZones" class="zone-card">
@@ -498,6 +461,59 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
         </div>
       </div>
     </div>
+
+     <!-- Modal Subscription -->
+      <div
+  class="modal-overlay"
+  *ngIf="showSubscriptionModal"
+  (click)="showSubscriptionModal = false"
+>
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>S'abonner à cette agence</h3>
+      <button class="close-btn" (click)="showSubscriptionModal = false">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <form class="subscription-form" (ngSubmit)="submitSubscription()">
+      <div class="form-group">
+        <label>Plan *</label>
+        <select [(ngModel)]="subscription.plan" name="plan" required (change)="updateAmount()">
+          <option value="">Sélectionner un plan</option>
+          <option value="basic">Basic</option>
+          <option value="standard">Standard</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Montant (€) *</label>
+        <input type="number" [(ngModel)]="subscription.amount" name="amount" required readonly />
+      </div>
+      <div class="form-group">
+        <label>Nombre de mois *</label>
+        <input type="number" [(ngModel)]="subscription.numberMonth" name="numberMonth" min="1" required (change)="updateEndDate()" />
+      </div>
+      <div class="form-group">
+        <label>Date de début *</label>
+        <input type="date" [(ngModel)]="subscription.startDate" name="startDate" required (change)="updateEndDate()" />
+      </div>
+      <div class="form-group">
+        <label>Date de fin *</label>
+        <input type="date" [(ngModel)]="subscription.endDate" name="endDate" required readonly />
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="showSubscriptionModal = false">
+          Annuler
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <i class="material-icons">person_add</i>
+          S'abonner
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+    
   `,
   styles: [`
     /* popup styles */
@@ -1457,6 +1473,8 @@ export class AgencyDetailsComponent implements OnInit {
     content: ''
   };
 
+  showSubscriptionModal = false;
+
   showReportModal = false;
   unreadMessageCount: any;
   constructor(
@@ -1481,12 +1499,58 @@ export class AgencyDetailsComponent implements OnInit {
     this.countUnreadMessages();
   }
 
+
+  // Client subscription 
+  subscription = {
+  userId: '',
+  agencyId: '',
+  plan: '',
+  amount: 0,
+  startDate: '',
+  endDate: '',
+  numberMonth: 1
+};
+
+planPrices: any = {
+  basic: 19.99,
+  standard: 29.99,
+  premium: 49.99
+};
+
+submitSubscription() {
+  this.subscription.userId = this.currentUser?.id || '';
+  this.subscription.agencyId = this.agency?._id || '';
+  // Appel API
+  this.agencyService.subscribeToAgencyPlan(this.subscription).subscribe({
+    next: (res) => {
+      this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
+      this.showSubscriptionModal = false;
+    },
+    error: (err) => {
+      this.notificationService.showError('Erreur', 'Impossible d\'enregistrer l\'abonnement.');
+    }
+  });
+}
+
+updateAmount() {
+  this.subscription.amount = this.planPrices[this.subscription.plan] || 0;
+  this.updateEndDate();
+}
+
+updateEndDate() {
+  if (this.subscription.startDate && this.subscription.numberMonth) {
+    const start = new Date(this.subscription.startDate);
+    start.setMonth(start.getMonth() + Number(this.subscription.numberMonth));
+    this.subscription.endDate = start.toISOString().slice(0, 10);
+  }
+}
+
   countUnreadMessages() {
     this.messageService.getUserUnreadMessagesCount(this.currentUser?._id || '').subscribe({
       next: (response: any) => {
-        if (response) { 
+        if (response) {
           console.log('API > getUserUnreadMessagesCount:', response);
-          this.unreadMessageCount= response.unreadCount || 0;
+          this.unreadMessageCount = response.unreadCount || 0;
         }
       },
       error: (error: any) => {

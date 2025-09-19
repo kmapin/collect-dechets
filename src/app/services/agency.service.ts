@@ -385,6 +385,22 @@ export class AgencyService {
     return this.currentUserSubject.value;
   }
 
+  // Subscribe to an agency 
+  subscribeToAgencyPlan(data: any) {
+    console.log("API, SubcriptionPayload ==>", data);
+      return this.http.post(`${environment.apiUrl}/subscriptions`, data);
+    }
+
+     //Get user Subscription from an agency 
+  getUserSubscription(userId: string): Observable<any[]> {
+      return this.http.get<any[]>(`${environment.apiUrl}/subscriptions/user/${userId}`).pipe(
+        map(response => {
+          console.log("API- Get subscriptions==>", response);
+          return response || [];
+        })
+      );
+    }
+
   addEmployee(employee: Partial<Employees>): Observable<Employees | null> {
     const newEmployee: Employees = {
       _id: Math.random().toString(36).substr(2, 9),

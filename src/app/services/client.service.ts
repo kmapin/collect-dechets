@@ -5,13 +5,14 @@ import { environment } from '../../environments/environment';
 
 export interface ClientApi {
   _id: string;
-  userId: {
-    _id: string;
-    email: string;
-    role: string;
-    isActive: boolean;
-    createdAt: string;
-  };
+  // userId: {
+  //   _id: string;
+  //   email: string;
+  //   role: string;
+  //   isActive: boolean;
+  //   createdAt: string;
+  // };
+  userId: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -60,6 +61,11 @@ export class ClientService {
   validateClientSubscription(clientId: string): Observable<any> {
     return this.http.put(`${environment.apiUrl}/agences/clients/${clientId}/validate`, {});
   }
+
+  subscribeToAgencyPlan(data: any) {
+    return this.http.post(`${environment.apiUrl}/agences/clients/subscription`, data);
+  }
+
 
   getAllClients(): Observable<any> {
     return this.http.get(`${environment.apiUrl}/clients`).pipe(
