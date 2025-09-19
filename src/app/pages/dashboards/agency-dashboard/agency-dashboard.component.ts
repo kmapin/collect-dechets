@@ -558,7 +558,8 @@ interface Statistics {
                     >
                       <div
                         *ngFor="let schedule of getSchedulesForDay(i)"
-                        class="schedule-item"
+                        class="schedule-item"   (click)="openScheduleDetails(schedule)"
+
                       >
                         <div class="schedule-time">
                           <span class="schedule-time">Debut:</span>
@@ -1507,6 +1508,21 @@ interface Statistics {
         </div>
       </div>
     </div>
+
+    <div class="modal-backdrop" *ngIf="selectedSchedule" (click)="closeModal()">
+  <div class="modal">
+    <h3>Détails du planning</h3>
+    <p><strong>Date :</strong> {{ selectedSchedule.date | date: 'fullDate' }}</p>
+    <p><strong>Zone :</strong> {{ selectedSchedule.zone }}</p>
+    <p><strong>Heure :</strong> {{ selectedSchedule.startTime }} - {{ selectedSchedule.endTime }}</p>
+    <p><strong>Collecteur(s) :</strong>
+      <span *ngFor="let c of selectedSchedule.collectors">
+        {{ c.firstName }} {{ c.lastName }} ({{ c.phone }})
+      </span>
+    </p>
+    <!-- <button class="close-btn" (click)="selectedSchedule = null">Fermer</button> -->
+  </div>
+</div>
   `,
   styles: [
     `
@@ -1529,6 +1545,39 @@ interface Statistics {
       .welcome-section p {
         color: rgba(255, 255, 255, 0.9);
       }
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+.modal {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  transform: scale(1);
+  opacity: 1;
+}
+.modal-backdrop {
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
       .quick-actions {
         display: flex;
@@ -4656,4 +4705,12 @@ export class AgencyDashboardComponent implements OnInit {
       },
     });
   }
+  selectedSchedule: any = null;
+
+openScheduleDetails(schedule: any): void {
+  this.selectedSchedule = schedule;
+}
+closeModal(): void {
+  this.selectedSchedule = null;
+}
 }
