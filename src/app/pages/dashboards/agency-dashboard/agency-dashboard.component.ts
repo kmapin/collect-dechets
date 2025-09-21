@@ -1342,6 +1342,9 @@ interface Statistics {
                           Tampouy
                         </option>
                         <option value="Kilwin">Kilwin</option>
+                        <option value="Darsalam">Darsalam</option>
+                        <option value="Cissin">Cissin</option>
+                        <option value="Zongho">Zongho</option>
                         <option value="Dassohgho">Dassohgho</option>
                          <option
                           value="Marcoussis
