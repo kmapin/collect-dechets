@@ -5123,7 +5123,12 @@ assignReport(): void {
         },
         error: (err) => {
           console.error("Erreur assignation :", err);
-          this.notificationService.showError("Erreur", "Échec de l'assignation.");
+            // si l'API renvoie un message d'erreur personnalisé
+      const message =
+        err?.error?.error || // ton backend envoie {"error": "..."}
+        err?.message || 
+        "Échec de l'assignation.";  
+          this.notificationService.showError("Erreur",message);
         }
       });
   });

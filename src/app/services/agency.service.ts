@@ -590,7 +590,7 @@ assignReportToEmployee$(reportId: string, employeeId: string): Observable<any> {
     }),
     catchError(error => {
       console.error("Erreur lors de l'assignation du rapport :", error);
-      return of(null);
+     return throwError(() => error);
     })
   );
 }
