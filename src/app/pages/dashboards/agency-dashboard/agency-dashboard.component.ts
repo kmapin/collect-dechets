@@ -5114,7 +5114,7 @@ assignReport(): void {
     return;
   }
 
-  // si plusieurs employés sélectionnés → on les assigne un par un
+
   this.selectedEmployee.forEach(employeeId => {
     this.agencyService.assignReportToEmployee$(this.selectedReportId, employeeId)
       .subscribe({
@@ -5123,9 +5123,9 @@ assignReport(): void {
         },
         error: (err) => {
           console.error("Erreur assignation :", err);
-            // si l'API renvoie un message d'erreur personnalisé
+          
       const message =
-        err?.error?.error || // ton backend envoie {"error": "..."}
+        err?.error?.error || 
         err?.message || 
         "Échec de l'assignation.";  
           this.notificationService.showError("Erreur",message);
