@@ -3218,8 +3218,9 @@ export class AgencyDashboardComponent implements OnInit {
   isDeleting: boolean = false;
   // assigner un planning à un collecteur
   showAssignModal: boolean = false;
-  selectedReportId: string | null = null;
-  selectedEmployees: string[] = [];
+selectedReportId: string = "";
+
+  selectedEmployee: string[] = [];
   // Filters
   collectionsFilter = "all";
   selectedZone = "";
@@ -3508,12 +3509,12 @@ export class AgencyDashboardComponent implements OnInit {
 
   openAssignModal(reportId: string): void {
     this.selectedReportId = reportId;
-    this.selectedEmployees = [];
+    this.selectedEmployee = [];
     this.showAssignModal = true;
   }
   closeAssignModal(): void {
     this.showAssignModal = false;
-    this.selectedEmployees = [];
+    this.selectedEmployee = [];
   }
 
   validateTimeOrder(group: FormGroup) {
@@ -3549,9 +3550,9 @@ export class AgencyDashboardComponent implements OnInit {
   }
   toggleEmployeeSelection(employeeId: string, event: any): void {
     if (event.target.checked) {
-      this.selectedEmployees.push(employeeId);
+      this.selectedEmployee.push(employeeId);
     } else {
-      this.selectedEmployees = this.selectedEmployees.filter(
+      this.selectedEmployee = this.selectedEmployee.filter(
         (id) => id !== employeeId
       );
     }
@@ -5097,42 +5098,37 @@ export class AgencyDashboardComponent implements OnInit {
   onEmployeeToggle(event: any): void {
     const employeeId = event.target.value;
     if (event.target.checked) {
-      this.selectedEmployees.push(employeeId);
+      this.selectedEmployee.push(employeeId);
     } else {
-      this.selectedEmployees = this.selectedEmployees.filter(
+      this.selectedEmployee = this.selectedEmployee.filter(
         (id) => id !== employeeId
       );
     }
   }
-  assignReport(): void {
-    if (!this.selectedReportId || this.selectedEmployees.length === 0) {
-      this.notificationService.showError(
-        "Erreur",
-        "Veuillez sélectionner au moins un employé."
-      );
-      return;
-    }
+assignReport(): void {
+  if (!this.selectedReportId || this.selectedEmployee.length === 0) {
+    this.notificationService.showError("Erreur", "Veuillez sélectionner au moins un employé.");
+    return;
+  }
 
-    this.agencyService
-      .assignReportToEmployees$(this.selectedReportId, this.selectedEmployees)
+  // si plusieurs employés sélectionnés → on les assigne un par un
+  this.selectedEmployee.forEach(employeeId => {
+    this.agencyService.assignReportToEmployee$(this.selectedReportId, employeeId)
       .subscribe({
         next: () => {
-          this.notificationService.showSuccess(
-            "Succès",
-            "Signalement assigné avec succès."
-          );
-          this.closeAssignModal();
+          this.notificationService.showSuccess("Succès", "Signalement assigné avec succès.");
         },
         error: (err) => {
           console.error("Erreur assignation :", err);
-          this.notificationService.showError(
-            "Erreur",
-            "Échec de l'assignation."
-          );
-          this.closeAssignModal();
-        },
+          this.notificationService.showError("Erreur", "Échec de l'assignation.");
+        }
       });
-  }
+  });
+
+  this.closeAssignModal();
+}
+
+
   showTariffsModal = false;
 
   openTariffsModal() {

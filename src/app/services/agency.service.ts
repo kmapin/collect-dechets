@@ -581,19 +581,20 @@ export class AgencyService {
     );
 
   }
-  assignReportToEmployees$(reportId: string, employeeIds: string[]): Observable<any> {
-    const payload = { employeeIds };
-    return this.http.patch<any>(`${environment.apiUrl}/reports/${reportId}/assign`, payload).pipe(
-      map((response: any) => {
-        console.log("API > assignReportToEmployees :", response);
-        return response;
-      }),
-      catchError(error => {
-        console.error("Erreur lors de l'assignation du rapport :", error);
-        return of(null);
-      })
-    );
-  }
+assignReportToEmployee$(reportId: string, employeeId: string): Observable<any> {
+  const payload = { employeeId };
+  return this.http.put<any>(`${environment.apiUrl}/reports/${reportId}/assign`, payload).pipe(
+    map((response: any) => {
+      console.log("API > assignReportToEmployee :", response);
+      return response;
+    }),
+    catchError(error => {
+      console.error("Erreur lors de l'assignation du rapport :", error);
+      return of(null);
+    })
+  );
+}
+
   /**
    * Récupère toutes les agences depuis l'API backend
    */
