@@ -542,7 +542,7 @@ export class AgencyService {
          getPlaningCollectory$(collectorId: string): Observable<any[]> {
     const collector = this.agencies.find(a => a._id === collectorId);
     const url=`${environment.apiUrl}/zones/plannings/historique/agency/${collectorId}`;
-    console.log("URL de la requête :", url); // Debug: Affiche l'URL de la requête
+    console.log("URL de la requête :", url); 
     return this.http.get<Tariff[]>(url);
 
   }

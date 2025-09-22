@@ -4544,7 +4544,7 @@ selectedReportId: string = "";
   tariffs: Tariff[] = [];
   loadTariffs(): void {
     this.isLoading = true;
-    const agencyId = this.currentUser?.id;
+    const agencyId = this.currentUser?._id;
     if (!agencyId) {
       console.error("[DEBUG] Aucun planning trouvé pour cette agence");
       this.isLoading = false;
