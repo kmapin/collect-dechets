@@ -3845,12 +3845,12 @@ selectedReportId: string = "";
           // Mise à jour du badge des Signalements
           const SignalementsTab = this.tabs.find((tab) => tab.id === "reports");
           if (SignalementsTab) {
-            SignalementsTab.badge = reports.length;
+            SignalementsTab.badge = this.statistics.pendingSignalements;
             this.cdr.detectChanges(); // Force la détection des changements
           }
           const repportTab = this.tabs.find((tab) => tab.id === "reports");
           if (repportTab) {
-            repportTab.badge = this.agencyReports.length;
+            repportTab.badge = this.statistics.pendingSignalements;
             this.cdr.detectChanges();
           }
         },
