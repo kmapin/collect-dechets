@@ -839,3 +839,9 @@ body {
   }
 }
 }
+
+/*Message history*/
+.history-message{
+  max-height: 800px;
+  overflow-y: auto;
+}
