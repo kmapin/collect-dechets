@@ -221,7 +221,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                     </div>
                     <div class="service-actions">
                        <button class="btn btn-primary btn-small"
-                (click)="submitSubscription(currentUser?.id, tariff?.agencyId, tariffSelectedMonths)">
+                (click)="submitSubscription(currentUser?.id, tariff?._id, tariffSelectedMonths)">
                         <i class="material-icons">add_shopping_cart</i>
                         Choisir ce tarif
                       </button>
@@ -1557,7 +1557,7 @@ export class AgencyDetailsComponent implements OnInit {
   tariffs: Tariff[] = [];
   loadTariffs(): void {
     this.isLoading = true;
-    const agency_id = this.agency?.userId;
+    const agency_id = this.agency?._id;
     console.log("AgenceId==>", agency_id);
     if (!agency_id) {
       console.error("[DEBUG] Aucun tarif trouvé pour cette agence");
