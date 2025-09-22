@@ -84,7 +84,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
               </button>
               <!-- Buton of drawer to subscribe -->
               <!-- <button class="btn btn-primary btn-large" (click)="subscribeToAgency()"> -->
-              <button (click)="showSubscriptionModal = true" class="btn btn-primary btn-large" type="button" data-drawer-target="drawer-contact" data-drawer-show="drawer-contact" aria-controls="drawer-contact">
+              <button *ngIf="currentUser?.role === 'client' && currentUser?.role === 'super_admin'" (click)="showSubscriptionModal = true" class="btn btn-primary btn-large" type="button" data-drawer-target="drawer-contact" data-drawer-show="drawer-contact" aria-controls="drawer-contact">
                 <i class="material-icons">add</i>
                 S'abonner
               </button>
@@ -116,8 +116,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                     <i class="material-icons">build</i>
                   </div>
                   <div class="stat-info">
-                    <span class="stat-number">{{ agency.services.length || 0 }}</span>
-                    <span class="stat-label">Services</span>
+                    <span class="stat-number">{{ tariffs.length || 0 }}</span>
+                    <span class="stat-label">Tarifs</span>
                   </div>
                 </div>
                 <div class="stat-item">
@@ -141,7 +141,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
               </section>
 
               <!-- Services Section -->
-              <section class="services-section card">
+              <!-- <section class="services-section card">
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">build</i>
@@ -182,10 +182,62 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                   <h3>Aucun service disponible</h3>
                   <p>Cette agence ne propose actuellement aucun service.</p>
                 </div>
-              </section>
+              </section> -->
 
               <!-- Tarifs Section -->
-              <section class="tariffs-section card">
+               <section class="services-section card">
+                <div class="section-header">
+                  <h2>
+                    <i class="material-icons">receipt_long</i>
+                    Tarifs d'abonnement
+                  </h2>
+                  <span class="section-count">{{ tariffs.length || 0 }} tarif(s)</span>
+                </div>
+                <div class="services-grid">
+                  <div *ngFor="let tariff of tariffs" class="service-card">
+                    <div class="service-header">
+                      <h3>{{ tariff.type }}</h3>
+                      <div class="service-price">
+                        <span class="price-amount">{{ tariff.price }}€</span>
+                        <span class="price-period">/mois</span>
+                      </div>
+                    </div>
+                    <p class="service-description">{{ tariff.description }}</p>
+                    <div class="service-details">
+                      <div class="service-frequency">
+                        <i class="material-icons">loop</i>
+                        <span>{{ tariff.nbPassages }} passages inclus</span>
+                      </div>
+                    </div>
+                    <div class="form-group" style="margin: 12px 0;">
+                      <!-- <label>Nombre de mois :</label> -->
+                      <span class="text-sm font-small text-[--primary-color]">Saisir le nombre de mois pour l'abonnement à ce service</span>
+                      <input type="number"
+                      min="1"
+                      max="12"
+                      [(ngModel)]="tariffSelectedMonths"
+                      [name]="'months_' + tariff?._id"
+                      style="width: 80px;"/>
+                    </div>
+                    <div class="service-actions">
+                       <button class="btn btn-primary btn-small"
+                (click)="submitSubscription(tariff._id, tariffSelectedMonths)">
+                        <i class="material-icons">add_shopping_cart</i>
+                        Choisir ce tarif
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                 <div *ngIf="tariffs.length === 0" class="empty-state">
+                  <i class="material-icons">receipt_long</i>
+                  <h3>Aucun tarif disponible</h3>
+                  <p>Cette agence ne propose actuellement aucun tarif d'abonnement.</p>
+                </div>
+              </section>
+
+
+
+              <!-- <section class="tariffs-section card">
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">receipt_long</i>
@@ -193,7 +245,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                   </h2>
                   <span class="section-count">{{ tariffs.length }} tarif(s)</span>
                 </div>
-                <div class="tariffs-grid">
+                <div class="tariffs-grid" *ngIf="tariffs.length > 0">
                   <div *ngFor="let tariff of tariffs" class="tariff-card">
                     <div class="tariff-header">
                       <h3>{{ tariff.type }}</h3>
@@ -217,12 +269,12 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                     </div>
                   </div>
                 </div>
-                <div *ngIf="tariffs.length === 0 && !isLoading" class="empty-state">
+                <div *ngIf="tariffs.length === 0" class="empty-state">
                   <i class="material-icons">receipt_long</i>
                   <h3>Aucun tarif disponible</h3>
                   <p>Cette agence ne propose actuellement aucun tarif d'abonnement.</p>
                 </div>
-              </section>
+              </section> -->
 
               <!-- Coverage Zones Section -->
               <section class="zones-section card">
@@ -503,7 +555,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
     </div>
 
      <!-- Modal Subscription -->
-      <div
+      <!-- <div
   class="modal-overlay"
   *ngIf="showSubscriptionModal"
   (click)="showSubscriptionModal = false"
@@ -552,7 +604,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
       </div>
     </form>
   </div>
-</div>
+</div> -->
     
   `,
   styles: [`
@@ -1506,6 +1558,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 export class AgencyDetailsComponent implements OnInit {
   agency: Agency | null = null;
   agencyId: string | null = null;
+  agencyIdd: string | null = null;
   currentUser: User | null = null;
   messageData: Message = {
     sender: '',
@@ -1532,11 +1585,37 @@ export class AgencyDetailsComponent implements OnInit {
     if (this.agencyId) {
       this.loadAgencyFromApi(this.agencyId);
     }
-    this.loadTariffs();
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
     this.countUnreadMessages();
+
+    // this.loadTariffs();
+  }
+
+  // recuperations des tarifs liee a une agences
+  tariffs: Tariff[] = [];
+  loadTariffs(): void {
+    this.isLoading = true;
+    const agency_id = this.agency?.userId;
+    console.log("AgenceId==>", agency_id);
+    if (!agency_id) {
+      console.error("[DEBUG] Aucun tarif trouvé pour cette agence");
+      this.isLoading = false;
+      return;
+    }
+
+    this.agencyService.getAgencyAllTarifs$(agency_id).subscribe({
+      next: (data: Tariff[]) => {
+        this.tariffs = data;
+        console.log("Tarifs récupérés :", this.tariffs);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        // console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
+        this.isLoading = false;
+      },
+    });
   }
 
 
@@ -1557,21 +1636,41 @@ planPrices: any = {
   premium: 49.99
 };
 
-submitSubscription() {
-  this.subscription.userId = this.currentUser?.id || '';
-  this.subscription.agencyId = this.agency?._id || '';
-  // Appel API
-  this.agencyService.subscribeToAgencyPlan(this.subscription).subscribe({
+// submitSubscription() {
+//   this.subscription.userId = this.currentUser?.id || '';
+//   this.subscription.agencyId = this.agency?._id || '';
+//   // Appel API
+//   this.agencyService.subscribeToAgencyPlan(this.subscription).subscribe({
+//     next: (res) => {
+//       this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
+//       this.showSubscriptionModal = false;
+//     },
+//     error: (err) => {
+//       this.notificationService.showError('Erreur', 'Impossible d\'enregistrer l\'abonnement.');
+//     }
+//   });
+// }
+
+tariffSelectedMonths: number = 1;
+
+submitSubscription(tariffId: string | undefined, numberMonth: number) {
+  const tariff_id : string | undefined = tariffId;
+  const numberm_month = numberMonth || 1;
+  // const payload = {
+  //   tariffId,
+  //   numberMonth: numberMonth || 1,
+  //   userId: this.currentUser?._id || this.currentUser?.id || '',
+  //   agencyId: this.agency?._id || '',
+  // };
+  this.agencyService.subscribeToAgencyPlan(tariff_id, numberm_month).subscribe({
     next: (res) => {
       this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
-      this.showSubscriptionModal = false;
     },
     error: (err) => {
       this.notificationService.showError('Erreur', 'Impossible d\'enregistrer l\'abonnement.');
     }
   });
 }
-
 updateAmount() {
   this.subscription.amount = this.planPrices[this.subscription.plan] || 0;
   this.updateEndDate();
@@ -1680,7 +1779,10 @@ updateEndDate() {
     this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
       if (response.success && response.data) {
         this.agency = this.mapApiAgency(response.data);
+        this.agencyIdd = this.agency?._id;
         console.log('[DEBUG] Agency details:', this.agency);
+        console.log('[DEBUG] AgencyID details:', this.agencyIdd);
+        this.loadTariffs();
       } else {
         console.error('Erreur lors du chargement de l\'agence');
         // Fallback vers les données mockées si l'API échoue
@@ -1796,27 +1898,27 @@ updateEndDate() {
       window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
     }
   }
-  tariffs: Tariff[] = [];
+  // tariffs: Tariff[] = [];
   isLoading: boolean = false;
-  loadTariffs(): void {
-    this.isLoading = true;
-    const agencyId = this.agencyId || this.route.snapshot.paramMap.get('id');
-    if (!agencyId) {
-      console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
-      this.isLoading = false;
-      return;
-    }
+  // loadTariffs(): void {
+  //   this.isLoading = true;
+  //   const agencyId = this.agencyId || this.route.snapshot.paramMap.get('id');
+  //   if (!agencyId) {
+  //     console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
+  //     this.isLoading = false;
+  //     return;
+  //   }
 
-    this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
-      next: (data: Tariff[]) => {
-        this.tariffs = data;
-        console.log('Tarifs récupérés :', this.tariffs);
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
-        this.isLoading = false;
-      }
-    });
-  }
+  //   this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
+  //     next: (data: Tariff[]) => {
+  //       this.tariffs = data;
+  //       console.log('Tarifs récupérés :', this.tariffs);
+  //       this.isLoading = false;
+  //     },
+  //     error: (error) => {
+  //       console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
+  //       this.isLoading = false;
+  //     }
+  //   });
+  // }
 }

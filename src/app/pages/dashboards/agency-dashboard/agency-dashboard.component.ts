@@ -4001,7 +4001,7 @@ export class AgencyDashboardComponent implements OnInit {
     this.isLoading = true;
     const agencyId = this.currentUser?.id;
     if (!agencyId) {
-      console.error("[DEBUG] Aucun planning trouvé pour cette agence");
+      console.error("[DEBUG] Aucun tarif trouvé pour cette agence");
       this.isLoading = false;
       return;
     }
