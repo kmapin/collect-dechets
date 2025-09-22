@@ -357,7 +357,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                     <i class="material-icons">phone</i>
                     Contacter l'agence
                   </button>
-                  <button class="btn btn-primary btn-full" (click)="showReportModal = true">
+                  <button class="btn btn-primary btn-full" *ngIf="currentUser?.role === 'client'" (click)="showReportModal = true">
                     <i class="material-icons">message</i>
                     Envoyer message
                   </button>
