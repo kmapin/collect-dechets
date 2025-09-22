@@ -1823,7 +1823,7 @@ updateEndDate() {
     });
   }
 
-
+/**Envoie un message par WhatsApp */
 defaultCountryCode = '226';
 
 private normalizePhoneForWhatsApp(raw: string): string {
