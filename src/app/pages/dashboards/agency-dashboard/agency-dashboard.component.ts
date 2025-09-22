@@ -3957,6 +3957,7 @@ selectedReportId: string = "";
 
         if (clients) {
           this.clientNbrs = clients.length;
+           this.activeClients = clients;
           console.log("[loadClients] clients received:", this.clientNbrs);
           // Vérifiez si activeClients est défini et mettez à jour le nombre d'actifs
           if (this.activeClients) {
