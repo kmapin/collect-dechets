@@ -130,7 +130,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
               <div class="agency-logo">
                 <img [src]="'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.agencyName">
               </div>
-              <div class="agency-badge" *ngIf="agency.rating >= 4.5">
+              <div class="agency-badge" *ngIf="agency.rating >= 3">
                 <i class="material-icons">star</i>
                 Top Rated
               </div>
@@ -139,7 +139,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
             
             <div class="agency-content">
               <h3 class="agency-name">{{ agency.agencyName }}</h3>
-              <p class="agency-description">{{ agency.agencyDescription }}</p>
+              <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
               
               <div class="agency-rating">
                 <div class="stars">
@@ -157,13 +157,13 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                   <i class="material-icons">people</i>
                   <span>{{ agency.totalClients || 0 }} clients</span>
                 </div>
-                <div class="info-item">
+                <!-- <div class="info-item">
                   <i class="material-icons">build</i>
                   <span>{{ agency.services.length || 0 }} services</span>
-                </div>
+                </div> -->
               </div>
 
-              <div class="services-preview">
+              <!-- <div class="services-preview">
                 <h4>Services principaux</h4>
                 <div class="services-tags">
                   <span *ngFor="let service of (agency.services || []).slice(0, 3)" class="service-tag">
@@ -173,7 +173,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                     +{{ (agency.services || []).length - 3 }} autres
                   </span>
                 </div>
-              </div>
+              </div> -->
             </div>
 
             <div class="agency-actions">
@@ -198,7 +198,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                   <img src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" [alt]="agency.agencyName">
                 </div>
                 <div class="agency-list-info">
-                  <h3 class="agency-name">{{ agency.agencyName }}</h3>
+                  <h3 class="agency-name text-[--primary-color]">{{ agency.agencyName }}</h3>
                   <div class="agency-rating">
                     <div class="stars">
                       <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
@@ -206,10 +206,10 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                     <span class="rating-text">{{ agency.rating }}/5</span>
                   </div>
                 </div>
-                <div class="agency-list-price">
+                <!-- <div class="agency-list-price">
                   <span class="price-from">À partir de</span>
                   <span class="price-value">{{ getMinPrice(agency) }}€</span>
-                </div>
+                </div> -->
               </div>
               
               <p class="agency-description">{{ agency.agencyDescription }}</p>
@@ -223,15 +223,16 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                   <i class="material-icons">people</i>
                   <span>{{ agency.totalClients || 0 }} clients</span>
                 </div>
-                <div class="detail-item">
+                <!-- <div class="detail-item">
                   <i class="material-icons">schedule</i>
                   <span>Collecte {{ getFrequencyText(agency) }}</span>
-                </div>
+                </div> -->
               </div>
             </div>
 
             <div class="agency-list-actions">
               <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
+                <i class="material-icons">info</i>
                 Voir détails
               </button>
               <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
@@ -509,7 +510,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
       font-size: 1.3rem;
       font-weight: 600;
       margin-bottom: 8px;
-      color: var(--text-primary);
+      color: var(--primary-color);
     }
 
     .agency-description {
@@ -854,6 +855,7 @@ suggestions: any[] = [];
     this.agencyService.getAgencies().subscribe(agencies => {
       this.agencies = agencies;
       this.filteredAgencies = agencies;
+      console.log("Agences chargées :", agencies);
     });
   }
 
@@ -908,6 +910,7 @@ suggestions: any[] = [];
     this.agencyService.getAllAgenciesFromApi().subscribe((response: any) => {
       this.agencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
       this.filteredAgencies = this.agencies;
+      console.log("Agences chargées :", this.filteredAgencies);
       this.applyFilters();
     });
   }

@@ -594,6 +594,7 @@ interface Statistics {
             </div>
 
             <!-- Onglet Clients -->
+             <!-- Clients Actifs  -->
             <div *ngIf="activeTab === 'clients'" class="clients-tab">
               <div class="clients-header">
                 <h2>Clients Actifs ({{ activeClients.length }})</h2>
@@ -648,7 +649,9 @@ interface Statistics {
                 </table>
               </div>
 
-              <div class="clients-header" style="margin-top:2em;">
+              <!-- Clients en attente de validation  -->
+              <!-- Clients en attente de validation  -->
+              <!-- <div class="clients-header" style="margin-top:2em;">
                 <h2>
                   Clients en attente de validation ({{ pendingClients.length }})
                 </h2>
@@ -695,7 +698,7 @@ interface Statistics {
                     </tr>
                   </tbody>
                 </table>
-              </div>
+              </div> -->
             </div>
 
             <!-- Onglet Signalements -->
