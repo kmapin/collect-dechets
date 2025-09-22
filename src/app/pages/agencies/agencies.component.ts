@@ -99,13 +99,13 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
               <i class="material-icons">view_list</i>
               Liste
             </button>
-            <button 
+            <!-- <button 
               class="view-btn" 
               [class.active]="viewMode === 'map'"
               (click)="viewMode = 'map'">
               <i class="material-icons">map</i>
               Carte
-            </button>
+            </button> -->
           </div>
         </div>
 
@@ -323,6 +323,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
     .filters-section {
       margin-bottom: 32px;
+      margin-top: 32px;
       padding: 24px;
       width: 100%;
     }
