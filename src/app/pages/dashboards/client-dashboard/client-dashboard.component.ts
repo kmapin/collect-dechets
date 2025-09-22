@@ -256,7 +256,7 @@ interface Subscription {
                         {{ message.read === 'false' ? 'Non lu' : 'Lu' }}
                       </span>
                       <div class="history-rating" *ngIf="message.read === 'false'">
-                        <button class="rate-btn" (click)="readAndRespondMessage(message._id)" 
+                        <button class="rate-btn" (click)="readAndRespondMessage(message)" 
                                 *ngIf="!message.rating">
                           Repondre
                         </button>
@@ -1230,6 +1230,7 @@ export class ClientDashboardComponent implements OnInit {
   receivedMessages: any;
   agency: any;
   showMessageModal: boolean=false;
+  receivedId: string = '';
   messageData: Message = {
     sender: '',
     receiver: '',
@@ -1299,12 +1300,13 @@ export class ClientDashboardComponent implements OnInit {
       }
     });
   }
-  readAndRespondMessage(messageId: string): void {
-    this.messageService.markMessagesAsRead(messageId).subscribe({
+  readAndRespondMessage(message: Message): void {
+    this.messageService.markMessagesAsRead(message._id || '').subscribe({
       next: (response: any) => {
         this.showMessageModal = true;
+        this.receivedId = message.sender;
         this.userMessages();
-        console.log('Lire et répondre au message:', messageId);
+        console.log('Lire et répondre au message:', message._id);
       },
       error: (error: any) => {
         console.error('Erreur lors de la lecture du message:', error);
@@ -1321,7 +1323,7 @@ export class ClientDashboardComponent implements OnInit {
       return;
     }
     this.messageData.sender = this.currentUser?._id || '';
-    this.messageData.receiver = this.currentUser?.subscribedAgencyId || '';
+    this.messageData.receiver = this.receivedId || '';
     this.messageData.content = this.messageData.content.trim();
     if (!this.messageData.content) {
       this.notificationService.showError('Message vide', 'Le contenu du message ne peut pas être vide');

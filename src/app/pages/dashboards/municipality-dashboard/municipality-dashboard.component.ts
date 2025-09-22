@@ -381,12 +381,12 @@ interface Communication {
                       <div *ngFor="let city of zone.cities" class="zone-item">
                         <div class="zone-header">
                           <h4>{{ city.name }}</h4>
-                          <span
+                          <!-- <span
                             class="coverage-badge"
                             [class]="getCoverageBadgeClass(city.coverage)"
                           >
                             {{ city.coverage }}% couvert
-                          </span>
+                          </span> -->
                         </div>
 
                         <div class="zone-metrics">
@@ -1152,6 +1152,11 @@ interface Communication {
         grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
         gap: 24px;
       }
+
+.overview-grid > :last-child {
+  grid-column: 1 / -1; 
+}
+
 
       .overview-section {
         padding: 24px;
@@ -2628,15 +2633,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     ];
   }
 
-  //  loadZoneStatistics(): void {
-  //     this.zoneStatistics = [
-  //       { name: 'Centre-ville', agencies: 5, clients: 3200, collections: 145, coverage: 98, incidents: 2 },
-  //       { name: 'Quartiers Nord', agencies: 4, clients: 2800, collections: 125, coverage: 92, incidents: 3 },
-  //       { name: 'Quartiers Sud', agencies: 3, clients: 2100, collections: 95, coverage: 88, incidents: 1 },
-  //       { name: 'Périphérie', agencies: 3, clients: 1800, collections: 85, coverage: 75, incidents: 2 }
-  //     ];
-  //   }
-
+  // Récupérer les différents pays et les villes
   loadZoneStatistics(): void {
     const stats = this.agencyService.getAgenceStats();
     const grouped: { [key: string]: any[] } = {};
@@ -2661,6 +2658,7 @@ export class MunicipalityDashboardComponent implements OnInit {
     }));
   }
 
+  // Récupérer les différentes statistiques des villes
   loadZoneStat(): void {
     this.adminService.getAllStatisticCity().subscribe({
       next: (response: any) => {
@@ -2769,7 +2767,8 @@ export class MunicipalityDashboardComponent implements OnInit {
 
   getCollectionRate(): number {
     return Math.round(
-      (this.statistics.completeCollections / this.statistics.todayCollections) *
+      (this.statistics.completeCollections /
+        this.statistics.todayCollections) *
         100
     );
   }
@@ -2779,12 +2778,6 @@ export class MunicipalityDashboardComponent implements OnInit {
     if (this.statistics.complianceRate >= 85) return "Bon";
     return "À améliorer";
   }
-
-  // getIncidentSeverity(): string {
-  //   if (this.statisticsAdmin.pendingReports <= 5) return 'Faible';
-  //   if (this.statisticsAdmin.pendingReports <= 10) return 'Modéré';
-  //   return 'Élevé';
-  // }
 
   getIncidentSeverity(): string {
     const pending = this.statisticsAdmin?.reportsFromClients?.pending ?? 0;
