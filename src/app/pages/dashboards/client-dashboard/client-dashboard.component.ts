@@ -224,7 +224,7 @@ interface Subscription {
               </section>
 
               <!-- Messages -->
-              <section class="collection-history card">
+              <section class="collection-message card">
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">message</i>
@@ -235,7 +235,7 @@ interface Subscription {
                   </div>
                 </div>
 
-                <div class="history-list">
+                <div class="history-list history-message">
                   <div *ngFor="let message of receivedMessages" class="history-item">
                     <div class="history-date">
                       <div class="day">{{ message.timestamp | date:'dd' }}</div>
@@ -697,6 +697,7 @@ interface Subscription {
       flex-direction: column;
       gap: 16px;
     }
+
 
     .collection-item,
     .history-item,

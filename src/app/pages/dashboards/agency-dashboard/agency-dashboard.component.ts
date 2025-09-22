@@ -178,7 +178,7 @@ interface Statistics {
               </div>
             </div>
 
-            <div class="stat-card card">
+            <!-- <div class="stat-card card">
               <div class="stat-icon rating">
                 <i class="material-icons">star</i>
               </div>
@@ -193,7 +193,7 @@ interface Statistics {
                   >
                 </div>
               </div>
-            </div>
+            </div> -->
 
             <div class="stat-card card">
               <div class="stat-icon reports">
@@ -3434,6 +3434,7 @@ selectedReportId: string = "";
       next: (response: any) => {
         this.showMessageModal = true;
         this.receivedId = message.sender;
+        this.countUnreadMessages()
         this.userMessages();
         console.log("Lire et répondre au message:", message._id);
       },
@@ -3496,6 +3497,7 @@ selectedReportId: string = "";
             "Le message a bien été supprimé"
           );
           this.showMessageModal = false;
+          this.countUnreadMessages()
           this.userMessages();
         },
         error: (error: any) => {
@@ -3843,12 +3845,12 @@ selectedReportId: string = "";
           // Mise à jour du badge des Signalements
           const SignalementsTab = this.tabs.find((tab) => tab.id === "reports");
           if (SignalementsTab) {
-            SignalementsTab.badge = reports.length;
+            SignalementsTab.badge = this.statistics.pendingSignalements;
             this.cdr.detectChanges(); // Force la détection des changements
           }
           const repportTab = this.tabs.find((tab) => tab.id === "reports");
           if (repportTab) {
-            repportTab.badge = this.agencyReports.length;
+            repportTab.badge = this.statistics.pendingSignalements;
             this.cdr.detectChanges();
           }
         },
@@ -4544,7 +4546,7 @@ selectedReportId: string = "";
   tariffs: Tariff[] = [];
   loadTariffs(): void {
     this.isLoading = true;
-    const agencyId = this.currentUser?.id;
+    const agencyId = this.currentUser?._id;
     if (!agencyId) {
       console.error("[DEBUG] Aucun tarif trouvé pour cette agence");
       this.isLoading = false;

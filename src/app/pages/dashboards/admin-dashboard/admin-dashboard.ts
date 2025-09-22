@@ -1015,28 +1015,7 @@ interface Communication {
                       </div>
                     </div>
                   </div>
-
-                  <div class="statistics-card card">
-                    <h3>Performance par Mairie</h3>
-                    <div class="performance-chart">
-                      <div
-                        *ngFor="let agency of getTopPerformingAgencies()"
-                        class="performance-bar"
-                      >
-                        <div class="agency-name">{{ agency.name }}</div>
-                        <div class="performance-bar-container">
-                          <div
-                            class="performance-bar-fill"
-                            [style.width]="agency.completionRate + '%'"
-                          ></div>
-                        </div>
-                        <div class="performance-value">
-                          {{ agency.completionRate }}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
+                  
                   <div class="statistics-card card">
                     <h3>Performance par Agence</h3>
                     <div class="performance-chart">
