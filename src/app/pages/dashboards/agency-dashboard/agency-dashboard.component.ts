@@ -178,7 +178,7 @@ interface Statistics {
               </div>
             </div>
 
-            <div class="stat-card card">
+            <!-- <div class="stat-card card">
               <div class="stat-icon rating">
                 <i class="material-icons">star</i>
               </div>
@@ -193,7 +193,7 @@ interface Statistics {
                   >
                 </div>
               </div>
-            </div>
+            </div> -->
 
             <div class="stat-card card">
               <div class="stat-icon reports">
