@@ -168,7 +168,8 @@ export interface Employees {
   avatar?: string;
 }
 export interface Tariff {
-    agencyId: string;
+  _id?: string;
+  agencyId: string;
   type: TariffType;       
   price: number;           
   description?: string;    

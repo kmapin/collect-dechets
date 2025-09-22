@@ -181,10 +181,10 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                 <i class="material-icons">info</i>
                 Voir détails
               </button>
-              <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
+              <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
                 <i class="material-icons">add</i>
                 S'abonner
-              </button>
+              </button> -->
             </div>
           </div>
         </div>
@@ -234,9 +234,9 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
               <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
                 Voir détails
               </button>
-              <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
+              <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
                 S'abonner
-              </button>
+              </button> -->
             </div>
           </div>
         </div>
