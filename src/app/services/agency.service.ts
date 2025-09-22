@@ -386,9 +386,9 @@ export class AgencyService {
   }
 
   // Subscribe to an agency 
-  subscribeToAgencyPlan(tariffId: string | undefined, numberMonths: number) {
+  subscribeToAgencyPlan(currentUser: string | undefined, tariffId: string | undefined, numberMonths: number) {
     console.log("API, SubcriptionPayload ==>", tariffId, numberMonths);
-      return this.http.post(`${environment.apiUrl}/subscriptions/${tariffId}/${ numberMonths }`, {});
+      return this.http.post(`${environment.apiUrl}/${currentUser}/subscriptions/${tariffId}/${ numberMonths }`, {});
     }
 
      //Get user Subscription from an agency 

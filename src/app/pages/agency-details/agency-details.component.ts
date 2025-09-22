@@ -221,7 +221,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                     </div>
                     <div class="service-actions">
                        <button class="btn btn-primary btn-small"
-                (click)="submitSubscription(tariff._id, tariffSelectedMonths)">
+                (click)="submitSubscription(currentUser?.id, tariff?.agencyId, tariffSelectedMonths)">
                         <i class="material-icons">add_shopping_cart</i>
                         Choisir ce tarif
                       </button>
@@ -1653,7 +1653,7 @@ planPrices: any = {
 
 tariffSelectedMonths: number = 1;
 
-submitSubscription(tariffId: string | undefined, numberMonth: number) {
+submitSubscription(currentUserId: string | undefined, tariffId: string | undefined, numberMonth: number) {
   const tariff_id : string | undefined = tariffId;
   const numberm_month = numberMonth || 1;
   // const payload = {
@@ -1662,7 +1662,7 @@ submitSubscription(tariffId: string | undefined, numberMonth: number) {
   //   userId: this.currentUser?._id || this.currentUser?.id || '',
   //   agencyId: this.agency?._id || '',
   // };
-  this.agencyService.subscribeToAgencyPlan(tariff_id, numberm_month).subscribe({
+  this.agencyService.subscribeToAgencyPlan(currentUserId, tariff_id, numberm_month).subscribe({
     next: (res) => {
       this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
     },
