@@ -3434,6 +3434,7 @@ selectedReportId: string = "";
       next: (response: any) => {
         this.showMessageModal = true;
         this.receivedId = message.sender;
+        this.countUnreadMessages()
         this.userMessages();
         console.log("Lire et répondre au message:", message._id);
       },
@@ -3496,6 +3497,7 @@ selectedReportId: string = "";
             "Le message a bien été supprimé"
           );
           this.showMessageModal = false;
+          this.countUnreadMessages()
           this.userMessages();
         },
         error: (error: any) => {
