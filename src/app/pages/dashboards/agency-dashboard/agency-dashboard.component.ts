@@ -4466,7 +4466,7 @@ selectedReportId: string = "";
   //creation d un tarif
   addTariff(): void {
     if (this.newTariff.type && this.newTariff.price !== undefined) {
-      const agencyId = this.currentUser?.id;
+      const agencyId = this.currentUser?._id;
       const tariff: Tariff = {
         agencyId: agencyId || "",
         type: this.newTariff.type,
