@@ -1823,12 +1823,30 @@ updateEndDate() {
     });
   }
 
-  contactAgency(): void {
-    // Logique de contact
-    if (this.agency?.phone) {
-      window.open(`tel:${this.agency.phone}`);
-    }
+
+defaultCountryCode = '226';
+
+private normalizePhoneForWhatsApp(raw: string): string {
+  if (!raw) return '';
+  let cleaned = raw.replace(/[\s().-]/g, '');
+  cleaned = cleaned.replace(/^\+/, '');
+  if (cleaned.length < 8 || !/^[1-9]/.test(cleaned)) {
+    cleaned = this.defaultCountryCode + cleaned;
   }
+  return cleaned;
+}
+
+contactAgency(): void {
+  if (!this.agency?.phone) return;
+  const phoneForWA = this.normalizePhoneForWhatsApp(this.agency.phone);
+  if (!phoneForWA) return;
+
+  const message = encodeURIComponent("Bonjour, je vous contacte au sujet de ...");
+  const url = `https://wa.me/${phoneForWA}?text=${message}`;
+
+  window.open(url, '_blank');
+}
+
   editAgency() {
     this.router.navigate(['/edit-agency', this.agencyId]);
   }
