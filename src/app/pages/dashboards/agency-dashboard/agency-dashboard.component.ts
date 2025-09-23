@@ -418,12 +418,12 @@ interface Statistics {
                     </div>
                   </div>
                   <div class="employee-actions">
-                    <button
+                    <!-- <button
                       class="action-btn"
                       (click)="showUpdateEmployeeModal = true"
                     >
                       <i class="material-icons">edit</i>
-                    </button>
+                    </button> -->
                     <button
                       class="action-btn danger"
                       (click)="deleteEmployee(currentUser, employee)"
