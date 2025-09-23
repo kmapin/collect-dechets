@@ -85,7 +85,7 @@ interface Subscription {
               </div>
             </div>
 
-            <div class="stat-card card">
+            <!-- <div class="stat-card card">
               <div class="stat-icon subscription">
                 <i class="material-icons">card_membership</i>
               </div>
@@ -94,7 +94,7 @@ interface Subscription {
                 <p class="stat-value">{{ subscription?.serviceName }}</p>
                 <span class="stat-detail">{{ subscription?.price }}€/mois</span>
               </div>
-            </div>
+            </div> -->
 
             <div class="stat-card card">
               <div class="stat-icon payment">
@@ -104,6 +104,20 @@ interface Subscription {
                 <h3>Prochain paiement</h3>
                 <p class="stat-value">{{ getNextPayment() }}</p>
                 <span class="stat-detail">{{ subscription?.price }}€</span>
+              </div>
+            </div>
+
+            <div class="stat-card card">
+              <div class="stat-icon collections">
+                <i class="material-icons">wallet</i>
+              </div>
+              <div class="stat-info">
+                <h3>Wallet</h3>
+                <p class="stat-value">25000 FCFA</p>
+                <button class="btn btn-secondary btn-small" (click)="showPaymentModal = true">
+                    <i class="material-icons">refresh</i>
+                    Recharger
+                  </button>
               </div>
             </div>
           </div>
@@ -325,34 +339,43 @@ interface Subscription {
                   </h2>
                   <button class="btn btn-secondary btn-small" routerLink="/subscription">
                     <i class="material-icons">edit</i>
-                    Modifier
+                    Changer de forfait
                   </button>
                 </div>
 
-                <div class="subscription-details" *ngIf="subscription">
+                <div class="subscription-details" *ngIf="activeSubscription; else noSub">
                   <div class="subscription-service">
-                    <h3>{{ subscription.serviceName }}</h3>
-                    <p>{{ subscription.agencyName }}</p>
+                    <h3>Collecte {{ activeSubscription.plan }}</h3>
+                    <p>{{ activeSubscription.agencyId?.agencyName }}</p>
                   </div>
 
                   <div class="subscription-pricing">
-                    <div class="price">{{ subscription.price }}€</div>
+                    <div class="price">{{ activeSubscription.amount }}€</div>
                     <div class="frequency">par mois</div>
                   </div>
 
                   <div class="subscription-status">
-                    <span class="status-badge" [class]="'status-' + subscription.status">
-                      {{ getSubscriptionStatusText(subscription.status) }}
+                    <span class="status-badge" [class]="'status-' + activeSubscription.status">
+                      {{ getSubscriptionStatusText(activeSubscription.status) }}
                     </span>
                   </div>
 
-                  <div class="subscription-actions">
+                  <!-- <div class="subscription-actions">
                     <button class="btn btn-primary btn-full" (click)="showPaymentModal = true">
                       <i class="material-icons">payment</i>
                       Payer maintenant
                     </button>
-                  </div>
+                    <button class="btn btn-secondary btn-small" routerLink="/subscription">
+                    <i class="material-icons">edit</i>
+                    Se réabonner
+                  </button>
+                  </div> -->
                 </div>
+                <ng-template #noSub>
+                  <div class="info-item">
+                    <span>Aucun abonnement actif.</span>
+                  </div>
+                </ng-template>
               </section>
 
               <!-- Paiement en ligne -->
@@ -1230,13 +1253,16 @@ export class ClientDashboardComponent implements OnInit {
   unreadMessageCount: any;
   receivedMessages: any;
   agency: any;
-  showMessageModal: boolean=false;
+  showMessageModal: boolean = false;
   receivedId: string = '';
   messageData: Message = {
     sender: '',
     receiver: '',
     content: ''
   };
+
+  subscriptions: any[] = [];
+  activeSubscription: any = null;
   constructor(
     private authService: AuthService,
     private collectionService: CollectionService,
@@ -1247,9 +1273,40 @@ export class ClientDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.currentUser = this.authService.getCurrentUser();
+    // this.currentUser = this.authService.getCurrentUser();
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      this.getUserSubscription();
+    });
     console.log("Current User", this.currentUser);
     this.loadDashboardData();
+  }
+
+
+  // Afficher abonnement 
+  getUserSubscription() {
+    const userID = this.currentUser?.id || '';
+    if (!userID) return;
+    this.agencyService.getUserSubscription(userID).subscribe({
+      next: (response: any[]) => {
+        this.subscriptions = response || [];
+        // Filtrer la subscription active
+        this.activeSubscription = this.subscriptions.find(sub => sub.status === 'active') || null;
+        console.log("Active subscription ==>", this.activeSubscription);
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des abonnements', err);
+      }
+    });
+  }
+
+  renewSubscription() {
+    // Logique pour renouveler l'abonnement
+    alert('Fonction de renouvellement d\'abonnement à implémenter.');
+  }
+  contactSupport() {
+    // Logique pour contacter le support
+    alert('Fonction de contact support à implémenter.');
   }
 
   loadDashboardData(): void {
@@ -1347,7 +1404,7 @@ export class ClientDashboardComponent implements OnInit {
   }
 
   /**Gestion des messages recus par le client connecté fin */
-  
+
   loadUpcomingCollections(): void {
     // Simuler les prochaines collectes
     this.upcomingCollections = [
