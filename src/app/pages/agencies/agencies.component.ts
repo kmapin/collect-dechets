@@ -212,7 +212,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                 </div> -->
               </div>
               
-              <p class="agency-description">{{ agency.agencyDescription }}</p>
+              <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
               
               <div class="agency-list-details">
                 <div class="detail-item">

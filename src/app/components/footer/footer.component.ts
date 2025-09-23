@@ -28,7 +28,7 @@ import { FormsModule } from '@angular/forms';
                   <i class="material-icons">eco</i>
                 </div>
                 <div class="brand-text">
-                  <span class="brand-name">WasteManager</span>
+                  <span class="brand-name">ZéroDéchet+</span>
                   <span class="brand-tagline">Gestion Intelligente</span>
                 </div>
               </div>
@@ -239,7 +239,7 @@ import { FormsModule } from '@angular/forms';
         </div>
 
         <!-- Section certifications -->
-        <div class="footer-certifications">
+        <!-- <div class="footer-certifications">
           <div class="certifications-content">
             <h4>Certifications & Partenaires</h4>
             <div class="certifications-grid">
@@ -269,13 +269,13 @@ import { FormsModule } from '@angular/forms';
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
 
         <!-- Footer bottom -->
         <div class="footer-bottom">
           <div class="footer-bottom-content">
             <div class="copyright">
-              <p>© 2024 WasteManager. Tous droits réservés.</p>
+              <p>© 2025 ZéroDéchet+. Tous droits réservés.</p>
               <p class="made-with">Fait avec <i class="material-icons heart">favorite</i> pour un monde plus propre</p>
             </div>
             

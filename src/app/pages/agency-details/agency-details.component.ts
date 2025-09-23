@@ -405,7 +405,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
               </div>
 
               <!-- Location Map -->
-              <div class="location-card card">
+              <!-- <div class="location-card card">
                 <div class="card-header">
                   <h3>
                     <i class="material-icons">place</i>
@@ -425,7 +425,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                     Obtenir l'itinéraire
                   </button>
                 </div>
-              </div>
+              </div> -->
 
               <!-- Agency Stats -->
               <div class="agency-stats-card card">

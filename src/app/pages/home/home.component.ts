@@ -30,20 +30,20 @@ import { Agency } from '../../models/agency.model';
               </div>
               
               <h1 class="hero-title">
-                Révolutionnez votre 
+                Faciliter votre 
                 <span class="highlight">gestion des déchets</span>
-                <span class="title-decoration">✨</span>
+                <!-- <span class="title-decoration">✨</span> -->
               </h1>
               
               <p class="hero-description">
-                Découvrez la première plateforme qui connecte intelligemment particuliers, 
+                Découvrez la première plateforme qui connecte facilement particuliers, 
                 entreprises et agences de collecte pour une gestion des déchets simple, 
                 écologique et efficace.
               </p>
 
               <div class="hero-cta">
                 <a routerLink="/register" class="btn btn-primary btn-hero">
-                  <i class="material-icons">rocket_launch</i>
+                  <!-- <i class="material-icons">rocket_launch</i> -->
                   <span>Commencer gratuitement</span>
                   <div class="btn-shine"></div>
                 </a>
@@ -78,7 +78,7 @@ import { Agency } from '../../models/agency.model';
                     <div class="nav-dot"></div>
                     <div class="nav-dot"></div>
                   </div>
-                  <div class="dashboard-title">#collecte #sensibilisation #trie #plannification</div>
+                  <div class="dashboard-title">#collecte #sensibilisation #tri #plannification</div>
                 </div>
                 <!-- Carrousel vertical -->
                 <div class="dashboard-carousel-vertical">
@@ -116,7 +116,7 @@ import { Agency } from '../../models/agency.model';
             <div class="search-header">
               <div class="section-badge">
                 <i class="material-icons">search</i>
-                <span>Recherche Intelligente</span>
+                <span>Recherchez ici</span>
               </div>
               <h2 class="search-title">Trouvez votre agence de collecte</h2>
               <p class="search-subtitle">
@@ -135,7 +135,7 @@ import { Agency } from '../../models/agency.model';
                       type="text" 
                       [(ngModel)]="searchQuery"
                       name="searchQuery"
-                      placeholder="Saisissez votre adresse complète..."
+                      placeholder="Saisissez la ville et le secteur ici .."
                       class="search-input">
                     <div class="input-glow"></div>
                   </div>
@@ -197,7 +197,7 @@ import { Agency } from '../../models/agency.model';
               
               <div class="agency-content">
                 <h3 class="agency-name">{{ agency.agencyName }}</h3>
-                <p class="agency-description">{{ agency.agencyDescription }}</p>
+                <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
                 
                 <div class="agency-rating">
                   <div class="stars">
@@ -217,13 +217,13 @@ import { Agency } from '../../models/agency.model';
                     <i class="material-icons">people</i>
                     <span>{{ agency.totalClients }} clients</span>
                   </div>
-                  <div class="info-item">
+                  <!-- <div class="info-item">
                     <i class="material-icons">build</i>
                     <span>{{ agency.services.length }} services</span>
-                  </div>
+                  </div> -->
                 </div>
 
-                <div class="services-preview">
+                <!-- <div class="services-preview">
                   <h4>Services proposés</h4>
                   <div class="services-tags">
                     <div *ngFor="let service of agency.services.slice(0, 3)" class="service-tag">
@@ -234,7 +234,7 @@ import { Agency } from '../../models/agency.model';
                       +{{ agency.services.length - 3 }} autres
                     </div>
                   </div>
-                </div>
+                </div> -->
               </div>
 
               <div class="agency-actions">
@@ -242,15 +242,27 @@ import { Agency } from '../../models/agency.model';
                   <i class="material-icons">info</i>
                   Voir détails
                 </button>
-                <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
+                <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
                   <i class="material-icons">add</i>
                   S'abonner
-                </button>
+                </button> -->
               </div>
               
               <div class="card-glow"></div>
             </div>
+            <!-- bouton voir plus  -->
           </div>
+          <div class="cta-actions mt-4">
+           <!-- <a routerLink="/register" class="btn btn-primary btn-large">
+             <i class="material-icons">person_add</i>
+             <span>Créer un compte gratuit</span>
+             <div class="btn-shine"></div>
+           </a> -->
+           <a routerLink="/agencies" class="btn btn-secondary btn-small mt-4">
+             <i class="material-icons">add</i>
+             <span>Voir plus d'agences</span>
+           </a>
+         </div>
         </div>
       </section>
 
@@ -336,7 +348,7 @@ import { Agency } from '../../models/agency.model';
             <h2 class="section-title">Ce que disent nos utilisateurs</h2>
             <p class="testimonials-subtitle">
               Découvrez pourquoi des milliers de personnes font confiance à 
-              WasteManager pour leur gestion des déchets au quotidien.
+              ZéroDéchet+ pour leur gestion des déchets au quotidien.
             </p>
           </div>
           
@@ -1147,7 +1159,7 @@ import { Agency } from '../../models/agency.model';
       font-size: 1.4rem;
       font-weight: 700;
       margin-bottom: 8px;
-      color: var(--text-primary);
+      color: var(--primary-color);
     }
 
     .agency-description {
@@ -1639,8 +1651,8 @@ import { Agency } from '../../models/agency.model';
       left: 0;
       right: 0;
       bottom: 0;
-      background-image: linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%), 
-                        linear-gradient(-45deg, rgba(255,255,255,0.05) 25%, transparent 25%);
+      /* background-image: linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%), 
+                        linear-gradient(-45deg, rgba(255,255,255,0.05) 25%, transparent 25%); */
       background-size: 60px 60px;
       animation: patternSlide 30s linear infinite;
     }
@@ -1910,7 +1922,7 @@ export class HomeComponent implements OnInit {
       description: 'Trouvez instantanément les agences de collecte qui desservent votre zone géographique avec notre moteur de recherche intelligent.',
       items: [
         'Recherche par adresse précise',
-        'Géolocalisation automatique',
+        // 'Géolocalisation automatique',
         'Filtres par type de service',
         'Résultats en temps réel'
       ]
@@ -1918,11 +1930,11 @@ export class HomeComponent implements OnInit {
     {
       icon: 'compare_arrows',
       title: '2. Comparer',
-      description: 'Analysez et comparez facilement les services, tarifs et évaluations des différentes agences pour faire le meilleur choix.',
+      description: 'Analysez et comparez facilement, tarifs et évaluations des différentes agences pour faire le meilleur choix.',
       items: [
         'Comparaison des tarifs',
-        'Évaluations clients vérifiées',
-        'Détails des services',
+        // 'Évaluations clients vérifiées',
+        // 'Détails des services',
         'Zones de couverture'
       ]
     },
@@ -1968,7 +1980,7 @@ export class HomeComponent implements OnInit {
 
   testimonials = [
     {
-      text: 'WasteManager a complètement transformé notre gestion des déchets. Simple, efficace et écologique !',
+      text: 'ZéroDéchet+ a complètement transformé notre gestion des déchets. Simple, efficace et écologique !',
       name: 'GANGO Siméon',
       role: 'Particulier, Kossodo',
       rating: 5,
@@ -1982,7 +1994,7 @@ export class HomeComponent implements OnInit {
       avatar: 'https://drive.google.com/drive/folders/1-zkhOCP4zNAMlClgm1CHn7uP-CElGFgK'
     },
     {
-      text: 'Grâce à WasteManager, nous avons amélioré notre tri et réduit nos coûts de 30%. Parfait !',
+      text: 'Grâce à ZéroDéchet+, nous avons amélioré notre tri et réduit nos coûts de 30%. Parfait !',
       name: 'Rimvie OUEDRAOGO',
       role: 'Responsable RSE, Tampouy',
       rating: 5,

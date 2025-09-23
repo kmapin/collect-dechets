@@ -137,7 +137,7 @@ import { NotificationService } from '../../services/notification.service';
                   <i class="material-icons">person</i>
                   <span>Mon profil</span>
                 </a>
-                <a *ngIf="currentUser?.role !== 'collector'" routerLink="/subscription" class="dropdown-item">
+                <a *ngIf="currentUser?.role === 'client'" routerLink="/subscription" class="dropdown-item">
                   <i class="material-icons">card_membership</i>
                   <span>Mon abonnement</span>
                 </a>
@@ -209,7 +209,7 @@ import { NotificationService } from '../../services/notification.service';
                   <i class="material-icons">person</i>
                   <span>Mon profil</span>
                 </a>
-                <a *ngIf="currentUser?.role !== 'collector'" routerLink="/subscription" class="dropdown-item">
+                <a *ngIf="currentUser?.role === 'client'" routerLink="/subscription" class="dropdown-item">
                   <i class="material-icons">card_membership</i>
                   <span>Mon abonnement</span>
                 </a>
