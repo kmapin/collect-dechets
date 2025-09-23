@@ -30,7 +30,7 @@ import { Agency } from '../../models/agency.model';
               </div>
               
               <h1 class="hero-title">
-                Faciliter  votre 
+                Faciliter votre 
                 <span class="highlight">gestion des déchets</span>
                 <!-- <span class="title-decoration">✨</span> -->
               </h1>
