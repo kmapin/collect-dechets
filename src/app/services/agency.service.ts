@@ -628,4 +628,14 @@ assignReportToEmployee$(reportId: string, employeeId: string): Observable<any> {
       { agencies: 3, clients: 1600, collections: 76, coverage: 75, incidents: 1 },
     ];
   }
+        //recupere les planing d une agence
+    getAllzones$(agencyId: string): Observable<any> {
+    const url = `${environment.apiUrl}/zones/${agencyId}`;
+    return this.http.get<any>(url).pipe(
+      catchError(error=>{
+    return throwError(() => error);
+      })
+    );
+  }
+  
 }

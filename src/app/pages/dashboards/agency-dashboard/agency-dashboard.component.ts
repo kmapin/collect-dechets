@@ -384,6 +384,9 @@ interface Statistics {
                         {{ employee.isActive ? "Actif" : "Inactif" }}
                       </p>
                     </div>
+                    <ng-template #noEmployees>
+  <p class="text-center text-gray-500">Aucun employé pour le moment.</p>
+</ng-template>
                     <!-- <div class="employee-actions">
                       <button class="action-btn" (click)="editEmployee(employee.id)">
                         <i class="material-icons">edit</i>
@@ -3380,9 +3383,12 @@ selectedReportId: string = "";
     this.loadPlannings();
     this.loadCollectorPlannings();
     this.cdr.detectChanges();
+    this. loadZones(this.currentUser)
     this.filterIncidents();
     this.countUnreadMessages();
-    this.userMessages();
+    this.userMessages(); 
+    
+      
   }
 
   /**Gestion des messages recus par le client connecté */
@@ -4427,6 +4433,8 @@ selectedReportId: string = "";
               "Inscription réussie",
               "Le collaborateur a été créé avec succès ! Vous pouvez maintenant vous connecter."
             );
+               // 🔄 Recharger la liste après ajout
+      this.loadEmployees(this.currentUser);
             // setTimeout(() => {
             //   this.router.navigate(['/login']);
             // }, 2000);
@@ -5151,5 +5159,28 @@ assignReport(): void {
 
   closeTariffsModal() {
     this.showTariffsModal = false;
+  }
+   zones: any[] = [];
+  //recuperation des zones 
+     loadZones(currentUser: any): void {
+      this.isLoading = true;
+    if (currentUser && currentUser._id) {
+      const agencyId = currentUser._id;
+      this.agencyService.getAllzones$(agencyId).subscribe({
+        next: (zones: any) => {
+          this.zones = zones;
+          console.log("zones charger >>>>>> :", this.zones); 
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement des Zones de l agence:", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Erreur lors du chargement des Zones de l agence."
+          );
+        },
+      });
+    } else {
+      console.warn("Aucun ID d'utilisateur courant disponible.");
+    }
   }
 }

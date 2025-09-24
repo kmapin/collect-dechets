@@ -1,14 +1,15 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { User, UserRole } from '../../models/user.model';
 import { NotificationService } from '../../services/notification.service';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, MatIconModule],
   template: `
     <header class="navbar" [class.scrolled]="isScrolled">
       <div class="container">
@@ -54,47 +55,39 @@ import { NotificationService } from '../../services/notification.service';
                 <span>S'inscrire</span>
               </a>
             </div>
-<div class="notification-bell" *ngIf="isAuthenticated" (click)="toggleNotifications()">
-  <i class="material-icons">notifications</i>
-  <span class="badge" *ngIf="notifications?.length">{{ notifications.length }}</span>
+<div class="notification-bell" *ngIf="isAuthenticated">
+  <i class="material-icons" (click)="toggleNotifications()">notifications</i>
+  <span class="badge" *ngIf="unreadCount() > 0">{{ unreadCount() }}</span>
 
-  <div class="notifications-dropdown" *ngIf="showNotifications" [class.show]="showNotifications">
+  <div class="dropdown-notification" [class.show]="showNotifications">
     <div class="dropdown-header">
       <strong>Notifications</strong>
     </div>
 
     <div class="notifications-list">
       <ng-container *ngIf="notifications && notifications.length > 0; else noNotif">
-        <div *ngFor="let notif of notifications" class="notification-item" [class.read]="notif.read"  (click)="markAsRead(notif)">
-          <div class="notification-main">
-            <div class="notification-info">
-              <div class="notif-header">
-                <span class="notif-type">{{ notif.type }}</span>
-                <span class="notif-date">{{ notif.createdAt | date:'short' }}</span>
-              </div>
-              <div class="notif-content">
-                {{ notif.message }}
-              </div>
-            </div>
-
-            <div class="notif-actions">
-            <button class="icon-btn delete-btn" title="Supprimer" (click)="deleteNotification(notif._id)">
-  <i class="material-icons">delete</i>
-</button>
-    <!-- @if (!notif.read) {
-  <button class="icon-btn mark-btn" title="Marquer comme lu">
-    <i class="material-icons">done</i>
-  </button>
-} -->
-
-
-            </div>
+        <div *ngFor="let notif of notifications" 
+             class="notification-item" 
+             [class.read]="notif.read" 
+             [class.unread]="!notif.read"
+             (click)="markAsRead(notif._id)">
+          
+          <div class="notification-content">
+            <span class="notification-title">{{ notif.type }}</span>
+            <span class="notification-date">{{ notif.createdAt | date:'short' }}</span>
+            <p class="notification-comment">{{ notif.message }}</p>
           </div>
 
-          <div class="read-indicator" *ngIf="notif.read">
-            <hr />
-            <hr />
+          <div class="notif-actions">
+            <button class="icon-btn delete-btn" title="Supprimer" (click)="deleteNotification(notif._id); $event.stopPropagation()">
+              <i class="material-icons">delete</i>
+            </button>
           </div>
+ <mat-icon *ngIf="notif.read" class="read-indicator"
+                    style="font-size: 18px;">done_all</mat-icon>
+          <!-- <div class="read-indicator" *ngIf="notif.read">
+           
+          </div> -->
         </div>
       </ng-container>
 
@@ -104,6 +97,8 @@ import { NotificationService } from '../../services/notification.service';
     </div>
   </div>
 </div>
+
+
             <!-- Menu utilisateur connecté -->
             <div class="user-menu" *ngIf="isAuthenticated && currentUser" 
                  (mouseenter)="showUserMenu = true" 
@@ -418,70 +413,197 @@ import { NotificationService } from '../../services/notification.service';
       height: 100%;
       object-fit: cover;
     }
+/* ====== Cloche et badge ====== */
 .notification-bell {
   position: relative;
-  padding: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  color: var(--text-primary);
-  border-radius: 12px;
-  transition: color 0.3s ease, background-color 0.3s ease, transform 0.3s ease;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: background 0.2s, transform 0.2s;
 }
+
 .notification-bell:hover {
   background: rgba(0, 188, 212, 0.08);
-  color: var(--primary-color);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
+.notification-bell .material-icons {
+  font-size: 28px;
+  color: #333;
+  transition: color 0.2s;
+}
+
+.notification-bell .material-icons:hover {
+  color: #2563eb;
+}
+
+/* Badge positionné au-dessus de la cloche */
 .notification-bell .badge {
   position: absolute;
-  top: 0;
-  right: 0;
-  background: var(--error-color);
+  top: -6px;
+  right: -6px;
+  background-color: #ef4444;
   color: white;
-  font-size: 0.7rem;
-  width: 18px;
-  height: 18px;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 3px 6px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  animation: pulse 1.5s infinite;
 }
 
-.notifications-dropdown {
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* ====== Dropdown notification ====== */
+.dropdown-notification {
   position: absolute;
-  top: calc(100% + 8px);
+  top: 50px; 
   right: 0;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  min-width: 320px;
-  max-height: 350px;
-  overflow-y: auto;
-  padding: 12px;
+  width: 300px;
+  max-height: 380px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+  border: 1px solid rgba(0,0,0,0.08);
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
-  transition: all 0.3s ease;
-  z-index: 100;
+  transition: all 0.25s ease;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 13px;
-   /* cacher la scrollbar */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  &::-webkit-scrollbar {
-    display: none;
-}
 }
 
-.notifications-dropdown.show {
+.dropdown-notification.show {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
+  animation: slideInFromTop 0.25s ease-out;
+}
+
+/* Header */
+.dropdown-header {
+  padding: 12px 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Liste scrollable sans scrollbar visible */
+.notifications-list {
+  overflow-y: auto;
+  max-height: 320px;
+  padding: 8px 0;
+  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;  /* IE 10+ */
+}
+.notifications-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Notification items */
+.notification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 12px;
+  margin: 4px 8px;
+  background-color: #f9fafb;
+  transition: background 0.3s, transform 0.2s;
+  gap: 8px;
+}
+
+.notification-item:hover {
+  background-color: #e0f2fe;
+  transform: translateX(1px);
+}
+
+.notification-item.read {
+  opacity: 0.8;
+  background-color: #f3f4f6;
+}
+
+/* Contenu de la notification sur une seule ligne */
+
+.notification-content {
+  flex: 1; /* prend tout l'espace restant */
+  font-size: 13px;
+  color: #111827;
+}
+
+/* Actions bouton delete et marquer comme lu */
+.notif-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notif-actions .icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: background 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-actions .icon-btn:hover {
+  background: #f0f0f0;
+  transform: scale(1.1);
+}
+
+.notif-actions .icon-btn i {
+  font-size: 16px;
+  color: #9ca3af;
+}
+
+.notif-actions .icon-btn:hover i {
+  color: #ef4444; /* rouge delete */
+}
+
+/* Indicateur lecture type WhatsApp */
+.read-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.read-indicator .trait {
+  width: 16px;
+  height: 2px;
+  background-color: #38bdf8; /* bleu */
+  border-radius: 2px;
+}
+
+/* Animation dropdown */
+@keyframes slideInFromTop {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Empty notification */
+.empty-notification {
+  padding: 12px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 12px;
+  font-style: italic;
 }
 
 .dropdown-header {
@@ -506,56 +628,8 @@ import { NotificationService } from '../../services/notification.service';
   background: rgba(0, 188, 212, 0.1);
 }
 
-.notifications-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.notification-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-    flex-direction: row;
-  justify-content: space-between;
-}
-
-.notification-item:hover {
-  background: #edf6f9;
-  border-color: #38bdf8;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-.notification-item.read {
-  background-color: #f5f5f5;
-}
-
-.notif-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
-  color: #6b7280;
-  width: 100%;
-}
 
 
-.notif-content {
-  font-size: 0.95rem;
-  color: #111827;
-  width: 100%;
-}
-
-.notif-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-  width: 100%;
-}
 .icon-btn {
   background: none;
   border: none;
@@ -569,26 +643,9 @@ import { NotificationService } from '../../services/notification.service';
 .icon-btn:hover {
   color: #38bdf8;
 }
-.read-indicator {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-}
 
-.read-indicator hr {
-  border: none;
-  height: 2px;
-  background-color: #38bdf8;
-  width: 100%;
-  margin: 0;
-}
 
-.empty-notification {
-  padding: 24px;
-  text-align: center;
-  color: #6b7280;
-}
+
 
 
     .user-info {
@@ -945,6 +1002,20 @@ import { NotificationService } from '../../services/notification.service';
         font-size: 0.95rem;
       }
     }
+.read-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 10px;
+  align-items: center;
+}
+
+.read-indicator .trait {
+  width: 16px;
+  height: 2px;
+  background-color: #38bdf8; /* couleur bleue */
+  border-radius: 2px;
+}
 
 
     @media (max-width: 480px) {
@@ -997,7 +1068,8 @@ export class HeaderComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private eRef: ElementRef
   ) { }
 
   ngOnInit(): void {
@@ -1099,18 +1171,26 @@ export class HeaderComponent implements OnInit {
     });
 
   }
-  markAsRead(notif: any): void {
-    if (!notif.read) {
-      this.notificationService.markNotificationAsRead$(notif._id).subscribe({
-        next: () => {
-          notif.read = true;
-        },
-        error: (err) => {
-          console.error(`Erreur lors du marquage comme lu de la notification ${notif._id} :`, err);
-        }
-      });
-    }
+unreadCount(): number {
+  return this.notifications.filter(n => !n.read).length;
+}
+
+markAsRead(notifId: string): void {
+  const notif = this.notifications.find(n => n._id === notifId);
+
+  if (notif && !notif.read) {
+    this.notificationService.markNotificationAsRead$(notifId).subscribe({
+      next: () => {
+        notif.read = true;
+      },
+      error: (err) => {
+        console.error(`Erreur lors du marquage comme lu de la notification ${notifId} :`, err);
+      }
+    });
   }
+}
+
+
   //  markAllAsRead(event: Event): void {
   //     event.stopPropagation(); 
 
@@ -1158,7 +1238,12 @@ export class HeaderComponent implements OnInit {
     }
   }
 
-
+  @HostListener('document:click', ['$event'])
+  clickOutside(event: Event) {
+    if (!this.eRef.nativeElement.contains(event.target)) {
+      this.showNotifications = false;
+    }
+  }
 
 }
 
