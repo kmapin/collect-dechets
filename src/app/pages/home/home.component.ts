@@ -110,7 +110,7 @@ import { Agency } from '../../models/agency.model';
       </section>
 
       <!-- Search Section Moderne -->
-      <section class="search-section">
+      <!-- <section class="search-section">
         <div class="container">
           <div class="search-content">
             <div class="search-header">
@@ -163,22 +163,23 @@ import { Agency } from '../../models/agency.model';
             </div>
           </div>
         </div>
-      </section>
+      </section> -->
 
       <!-- Search Results Moderne -->
       <section class="results-section" *ngIf="searchResults.length > 0">
         <div class="container">
           <div class="results-header">
-            <div class="results-badge">
-              <i class="material-icons">business</i>
-              <span>{{ searchResults.length }} Agences Trouvées</span>
-            </div>
-            <h2 class="section-title">Agences disponibles dans votre secteur</h2>
+            <h2 class="section-title">Quelques agences de collecte disponibles</h2>
             <p class="results-subtitle">
               Découvrez les meilleures agences de collecte près de chez vous. 
               Comparez leurs services, consultez les avis clients et choisissez 
               la solution parfaite pour vos besoins.
             </p>
+            <div class="results-badge">
+              <i class="material-icons">business</i>
+              <span>Ouagadougou</span>
+              <!-- <span>{{ searchResults.length }}Ouagadougou</span> -->
+            </div>
           </div>
           
           <div class="agencies-grid">
@@ -211,7 +212,7 @@ import { Agency } from '../../models/agency.model';
                 <div class="agency-info">
                   <div class="info-item">
                     <i class="material-icons">location_on</i>
-                    <span>{{ agency.address.city }}, {{ agency.address.neighborhood }}</span>
+                    <span>{{ agency.address.city }}, sect {{ agency.address.sector }}, {{ agency.address.neighborhood }}</span>
                   </div>
                   <div class="info-item">
                     <i class="material-icons">people</i>
