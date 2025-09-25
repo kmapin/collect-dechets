@@ -267,3 +267,10 @@ export interface Statistics {
 export interface PlanningResponse {
   plannings: CollectionSchedule[];
 }
+export interface PaginatedResponse<T> {
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+  data: T[];
+}

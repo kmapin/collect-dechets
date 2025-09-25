@@ -74,9 +74,8 @@ interface ZoneStatistic {
   coverage: number;
   incidents: number;
   country: string;
-   cities?: ZoneStatistic[];
+  cities?: ZoneStatistic[];
 }
-
 
 interface GroupedZoneStatistics {
   country: string;
@@ -364,16 +363,16 @@ interface Communication {
                       </div>
                     </div>
                     <div class="metric-item">
-                      <!-- <div class="metric-label">Conformité réglementaire</div>
+                      <div class="metric-label">Conformité réglementaire</div>
                       <div class="metric-value">
                         {{ statistics.complianceRate }}%
-                      </div> -->
-                      <!-- <div class="metric-bar">
+                      </div>
+                      <div class="metric-bar">
                         <div
                           class="metric-fill compliance"
                           [style.width]="statistics.complianceRate + '%'"
                         ></div>
-                      </div> -->
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -415,7 +414,7 @@ interface Communication {
                     <i class="material-icons">map</i>
                     Couverture Territoriale
                   </h3>
-                <div class="territory-stats scrollable-container">
+                  <div class="territory-stats scrollable-container">
                     <!-- Boucle sur les pays -->
                     <div
                       *ngFor="let zone of zoneStatistics"
@@ -444,58 +443,57 @@ interface Communication {
                             <i class="material-icons">people</i>
                             <span>{{ city.clients }} clients</span>
                           </div>
-                          <!-- <div class="zone-metric">
+                          <div class="zone-metric">
                             <i class="material-icons">local_shipping</i>
                             <span>{{ city.collections }} collectes</span>
                           </div>
                           <div class="zone-metric" *ngIf="city.incidents > 0">
                             <i class="material-icons">warning</i>
                             <span>{{ city.incidents }} incidents</span>
-                          </div> -->
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                </div>
+              </div>
 
-                <div class="overview-section card">
-                  <h3>
-                    <i class="material-icons">notifications</i>
-                    Alertes Récentes
-                  </h3>
-                  <div class="alerts-list">
+              <div class="overview-section card">
+                <h3>
+                  <i class="material-icons">notifications</i>
+                  Alertes Récentes
+                </h3>
+                <div class="alerts-list">
+                  <div
+                    *ngFor="let incident of getRecentIncidents()"
+                    class="alert-item"
+                  >
                     <div
-                      *ngFor="let incident of getRecentIncidents()"
-                      class="alert-item"
+                      class="alert-severity"
+                      [class]="'severity-' + incident.severity"
                     >
-                      <div
-                        class="alert-severity"
-                        [class]="'severity-' + incident.severity"
+                      <i class="material-icons">{{
+                        getSeverityIcon(incident.severity)
+                      }}</i>
+                    </div>
+                    <div class="alert-content">
+                      <div class="alert-title">
+                        {{ getIncidentTypeText(incident.type) }}
+                      </div>
+                      <div class="alert-agency">
+                        {{ incident?.agency?.agencyName }}
+                      </div>
+                      <div class="alert-time">
+                        {{ incident.date | date : "dd/MM HH:mm" }}
+                      </div>
+                    </div>
+                    <div class="alert-status">
+                      <span
+                        class="status-badge"
+                        [class]="'status-' + incident.status"
                       >
-                        <i class="material-icons">{{
-                          getSeverityIcon(incident.severity)
-                        }}</i>
-                      </div>
-                      <div class="alert-content">
-                        <div class="alert-title">
-                          {{ getIncidentTypeText(incident.type) }}
-                        </div>
-                        <div class="alert-agency">
-                          {{ incident?.agency?.agencyName }}
-                        </div>
-                        <div class="alert-time">
-                          {{ incident.date | date : "dd/MM HH:mm" }}
-                        </div>
-                      </div>
-                      <div class="alert-status">
-                        <span
-                          class="status-badge"
-                          [class]="'status-' + incident.status"
-                        >
-                          {{ getIncidentStatusText(incident.status) }}
-                        </span>
-                      </div>
+                        {{ getIncidentStatusText(incident.status) }}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -556,23 +554,32 @@ interface Communication {
                       >
                     </div>
                   </div>
-                  <!--
+
                   <div class="agency-actions">
-                    <button class="btn btn-secondary" (click)="viewMunicipalityDetails(municipality._id)">
+                    <button
+                      class="btn btn-secondary"
+                      (click)="viewMunicipalityDetails(municipality._id)"
+                    >
                       <i class="material-icons">visibility</i>
                       Détails
                     </button>
-                    <button class="btn btn-primary" (click)="auditMunicipality(municipality._id)">
+                    <!-- <button
+                      class="btn btn-primary"
+                      (click)="auditMunicipality(municipality._id)"
+                    >
                       <i class="material-icons">fact_check</i>
                       Auditer
-                    </button>
-                    <button class="btn btn-accent" (click)="contactMunicipality(municipality._id)">
+                    </button> -->
+                    <button
+                      class="btn btn-accent"
+                      (click)="contactMunicipality(municipality._id)"
+                    >
                       <i class="material-icons">message</i>
                       Contacter
                     </button>
                   </div>
-                  -->
-                  <div class="agency-footer">
+
+                  <!-- <div class="agency-footer">
                     <span class="last-audit"
                       >Dernier audit:
                       {{ municipality.lastAudit | date : "dd/MM/yyyy" }}</span
@@ -580,7 +587,7 @@ interface Communication {
                     <span class="revenue"
                       >{{ municipality.revenue | number : "1.0-0" }}€/mois</span
                     >
-                  </div>
+                  </div> -->
                 </div>
               </div>
             </div>
@@ -720,7 +727,7 @@ interface Communication {
                     </ng-template>
                   </div>
 
-                  <div class="agency-footer">
+                  <!-- <div class="agency-footer">
                     <span class="last-audit"
                       >Dernier audit:
                       {{ agency.lastAudit | date : "dd/MM/yyyy" }}</span
@@ -728,7 +735,7 @@ interface Communication {
                     <span class="revenue"
                       >{{ agency.revenue | number : "1.0-0" }}€/mois</span
                     >
-                  </div>
+                  </div> -->
                 </div>
               </div>
             </div>
@@ -773,7 +780,22 @@ interface Communication {
                             >{{ client?.data?.firstName }}
                             {{ client?.data?.lastName }}</mat-card-title
                           >
-                          <!--<mat-card-subtitle >Abonnement: <span class="status-badge" [class]="client?.data?.subscriptionStatus ? 'status-' + client?.data?.subscriptionStatus : 'status-inconnu'">{{getClientSubscriptionText(client?.data?.subscriptionStatus)}}</span></mat-card-subtitle>-->
+                          <mat-card-subtitle
+                            >Abonnement:
+                            <span
+                              class="status-badge"
+                              [class]="
+                                client?.data?.subscriptionStatus
+                                  ? 'status-' + client?.data?.subscriptionStatus
+                                  : 'status-inconnu'
+                              "
+                              >{{
+                                getClientSubscriptionText(
+                                  client?.data?.subscriptionStatus
+                                )
+                              }}</span
+                            ></mat-card-subtitle
+                          >
                           <mat-card-subtitle
                             >Abonnement actif:
                             <span
@@ -822,7 +844,7 @@ interface Communication {
                       </mat-card-header>
                       <mat-card-content>
                         <div *ngIf="client?.data?.address?.city">
-                          <h4 class="text-center">
+                          <h4 class="text-start">
                             Ville/Quartier :
                             {{ client?.data?.address?.city }}/{{
                               client?.data?.address?.neighborhood
@@ -830,7 +852,7 @@ interface Communication {
                           </h4>
                         </div>
                         <div>
-                          <h5 class="text-center">
+                          <h5 class="text-start">
                             Tel: {{ client?.data?.phone }}
                           </h5>
                         </div>
@@ -870,7 +892,7 @@ interface Communication {
                     (change)="filterCollectors()"
                     class="filter-select"
                   >
-                    <option value="all">Toutes les Collecteurs</option>
+                    <option value="all">les Collecteurs</option>
                     <option value="active">actif</option>
                     <option value="inactive">Inactif</option>
                   </select>
@@ -905,14 +927,18 @@ interface Communication {
                         <mat-card-subtitle
                           ><span class="status-pending">{{
                             collector.email
-                          }}</span></mat-card-subtitle
+                          }}</span>
+                          <div>
+                            <h5 class="text-start">Tel: {{ collector?.phone }}</h5>
+                          </div>
+                          </mat-card-subtitle
                         >
                         <ng-container *ngIf="collector?.avatar; else noImage">
                           <img
                             mat-card-md-image
                             class="rounded"
                             src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
-                            alt="Image of a Shiba Inu"
+                            alt="Image"
                           />
                         </ng-container>
                         <ng-template #noImage>
@@ -931,16 +957,13 @@ interface Communication {
                     </mat-card-header>
                     <mat-card-content>
                       <div>
-                        <h5 class="text-center">Tel: {{ collector?.phone }}</h5>
-                      </div>
-                      <div>
-                        <h5 class="text-center">
+                        <h5 class="text-start">
                           Agence: {{ collector?.agency?.agencyName }}
                         </h5>
                       </div>
-                      <!-- <div *ngIf="collector?.agency?.agencyId"></div> -->
+                      <div *ngIf="collector?.agency?.agencyId"></div>
                       <div>
-                        <h5 class="text-center">
+                        <h5 class="text-start">
                           Ville/Quartier:
                           {{ collector?.agency?.address?.city }}/{{
                             collector?.agency?.address?.quartier
@@ -1015,7 +1038,7 @@ interface Communication {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="statistics-card card">
                     <h3>Performance par Agence</h3>
                     <div class="performance-chart">
@@ -1150,7 +1173,7 @@ interface Communication {
                   </div>
 
                   <div class="incident-actions">
-                    <!-- <button
+                    <button
                       class="btn btn-secondary"
                       (click)="assignIncident(incident.id)"
                       *ngIf="incident.status === 'open'"
@@ -1158,15 +1181,15 @@ interface Communication {
                       <i class="material-icons">assignment_ind</i>
                       Assigner
                     </button>
-                    <button
+                    <!-- <button
                       class="btn btn-primary"
                       (click)="investigateIncident(incident.id)"
                       *ngIf="incident.status === 'pending'"
                     >
                       <i class="material-icons">search</i>
                       Enquêter
-                    </button>
-                    <button
+                    </button> -->
+                    <!-- <button
                       class="btn btn-success"
                       (click)="resolveIncident(incident.id)"
                       *ngIf="incident.status === 'resolved'"
@@ -1187,7 +1210,7 @@ interface Communication {
             </div>
 
             <!-- Onglet Communications -->
-            <!-- <div
+            <div
               *ngIf="activeTab === 'communications'"
               class="communications-tab"
             >
@@ -1253,10 +1276,10 @@ interface Communication {
             </div>
           </div>
         </div>
-      </div> -->
+      </div>
 
       <!-- Modal Communication -->
-      <!-- <div
+      <div
         class="modal-overlay"
         *ngIf="showCommunicationModal"
         (click)="showCommunicationModal = false"
@@ -1352,7 +1375,42 @@ interface Communication {
           </form>
         </div>
       </div>
-    </div> -->
+    </div>
+    <!-- Modal pour les détails du client -->
+<div
+  class="modal-overlay"
+  *ngIf="showClientDetailsModal"
+  (click)="closeClientDetailsModal()"
+>
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Détails du Client</h3>
+      <button class="close-btn" (click)="closeClientDetailsModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p><strong>Nom :</strong> {{ selectedClient?.firstName }} {{ selectedClient?.lastName }}</p>
+      <p><strong>Email :</strong> {{ selectedClient?.userId?.email }}</p>
+      <p><strong>Téléphone :</strong> {{ selectedClient?.phone }}</p>
+      <p><strong>Adresse :</strong> {{ selectedClient?.address?.street }}, {{ selectedClient?.address?.neighborhood }}</p>
+      <p><strong>Rôle :</strong> {{ selectedClient?.userId?.role }}</p>
+      <!-- <p><strong>Historique des abonnements :</strong></p> -->
+      <ul>
+        <span>Etat de son Abonement:</span>
+        <li *ngFor="let subscription of selectedClient?.subscriptionHistory">
+          {{ subscription.type }} - {{ subscription.status }}
+        </li>     
+      </ul>
+  
+
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeClientDetailsModal()">Fermer</button>
+    </div>
+  </div>
+</div>
   `,
   styles: [
     `
@@ -1360,7 +1418,95 @@ interface Communication {
         min-height: 100vh;
         background: var(--light-gray);
       }
+/* Overlay du modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
 
+/* Contenu du modal */
+.modal-content {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* En-tête du modal */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  font-size: 1.5rem;
+}
+
+.close-btn:hover {
+  color: #f44336;
+}
+
+/* Corps du modal */
+.modal-body p {
+  margin: 8px 0;
+  font-size: 1rem;
+  color: #555;
+}
+
+.modal-body ul {
+  padding-left: 20px;
+}
+
+.modal-body ul li {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Pied de page du modal */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.modal-footer .btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.modal-footer .btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: #e0e0e0;
+}
       .header-content {
         display: flex;
         justify-content: space-between;
@@ -1396,9 +1542,21 @@ interface Communication {
         padding: 20px;
         transition: all 0.3s ease;
       }
+      .client-card{
+        display: flex;
+        gap: 10px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
       .client-card:hover {
+        background: #edf6f9;
+        border-color: #38bdf8;
         transform: translateY(-2px);
-        box-shadow: var(--shadow-medium);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
       }
 
       .stat-card:hover {
@@ -1640,14 +1798,14 @@ interface Communication {
         color: var(--text-secondary);
       }
 
-     .territory-stats {
+      .territory-stats {
         display: flex;
         flex-direction: column;
-        gap: 24px; 
+        gap: 24px;
       }
 
       .country-block {
-        background: #ffffff; 
+        background: #ffffff;
         padding: 16px;
         border-radius: 10px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
@@ -1664,7 +1822,7 @@ interface Communication {
 
       .zone-item {
         padding: 12px 16px;
-        background: #f5f5f5; 
+        background: #f5f5f5;
         border-radius: 8px;
         margin-bottom: 12px;
         border: 1px solid #e0e0e0;
@@ -1938,9 +2096,9 @@ interface Communication {
         padding: 24px;
         border-left: 4px solid var(--primary-color);
       }
-
+      
       .client-audit-card {
-        border-left: 4px solid var(--primary-color);
+         border-left: 4px solid var(--primary-color);
       }
       .agency-audit-header {
         display: flex;
@@ -2867,7 +3025,7 @@ export class AdminDashboard implements OnInit {
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
   communications: Communication[] = [];
-//  zoneStatistics: ZoneStatistic[] = [];
+  //  zoneStatistics: ZoneStatistic[] = [];
 
   // Filters
   agenciesFilter = "all";
@@ -2947,18 +3105,18 @@ export class AdminDashboard implements OnInit {
     this.showAdminStatistics();
     this.loadAllMunipalities();
     this.getClientGrowth();
-     this.loadZoneStat();
+    this.loadZoneStat();
   }
 
   loadAdminData(): void {
     this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
-     this.loadZoneStat();
+    this.loadZoneStat();
     this.loadCommunications();
     this.showAdminClients();
     this.loadAllSignalements();
-     // this.loadIncidents();
+    // this.loadIncidents();
   }
 
   loadAgencyAudits(): void {
@@ -3068,30 +3226,30 @@ export class AdminDashboard implements OnInit {
   }
 
   loadZoneStatistics(): void {
-      const stats = this.agencyService.getAgenceStats();
-      const grouped: { [key: string]: any[] } = {};
-  
-      MOCK_CITIES.forEach((city, index) => {
-        const country = city.country.name;
-        if (!grouped[country]) {
-          grouped[country] = [];
-        }
-        grouped[country].push({
-          name: city.name,
-          agencies: stats[index]?.agencies || 0,
-          clients: stats[index]?.clients || 0,
-          collections: stats[index]?.collections || 0,
-          coverage: stats[index]?.coverage || 0,
-          incidents: stats[index]?.incidents || 0,
-        });
+    const stats = this.agencyService.getAgenceStats();
+    const grouped: { [key: string]: any[] } = {};
+
+    MOCK_CITIES.forEach((city, index) => {
+      const country = city.country.name;
+      if (!grouped[country]) {
+        grouped[country] = [];
+      }
+      grouped[country].push({
+        name: city.name,
+        agencies: stats[index]?.agencies || 0,
+        clients: stats[index]?.clients || 0,
+        collections: stats[index]?.collections || 0,
+        coverage: stats[index]?.coverage || 0,
+        incidents: stats[index]?.incidents || 0,
       });
-      this.zoneStatistics = Object.keys(grouped).map((country) => ({
-        country,
-        cities: grouped[country],
-      }));
-    }
-  
-loadZoneStat(): void {
+    });
+    this.zoneStatistics = Object.keys(grouped).map((country) => ({
+      country,
+      cities: grouped[country],
+    }));
+  }
+
+  loadZoneStat(): void {
     this.adminService.getAllStatisticCity().subscribe({
       next: (response: any) => {
         const stats = Array.isArray(response.statistics)
@@ -3485,12 +3643,23 @@ loadZoneStat(): void {
     );
     this.router.navigate(["/agencies", agencyId]);
   }
-  viewClientDetails(clientId: string): void {
-    this.notificationService.showInfo(
-      "Détails",
-      "Ouverture des détails du client"
-    );
-  }
+  selectedClient: any = null; 
+showClientDetailsModal: boolean = false;
+viewClientDetails(clientId: string): void {
+  this.notificationService.showInfo("Détails", "Récupération des détails du client...");
+  
+  this.adminService.getClientById(clientId).subscribe({
+    next: (client: any) => {
+      this.selectedClient = client.data; 
+      console.log('voici les details du client:',client)
+      this.showClientDetailsModal = true; 
+    },
+    error: (err: any) => {
+      console.error("Erreur lors de la récupération des détails du client :", err);
+      this.notificationService.showError("Erreur", "Impossible de récupérer les détails du client.");
+    }
+  });
+}
   viewCollectorDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",
@@ -3793,4 +3962,8 @@ loadZoneStat(): void {
     this.router.navigate(["/register"]);
     this.adminService.setData("municipality");
   }
+  closeClientDetailsModal(): void {
+  this.showClientDetailsModal = false;
+  this.selectedClient = null; 
+}
 }
