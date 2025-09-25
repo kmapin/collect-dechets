@@ -281,12 +281,12 @@ interface Statistics {
             >
               <i class="material-icons">location_on</i>
             </button>
-            <button
+            <!-- <button
               class="action-btn"
               (click)="contactClient(collecte.clientId)"
             >
-              <!-- <i class="material-icons">phone</i> -->
-            </button>
+              <i class="material-icons">phone</i>
+            </button> -->
           </div>
         </div>
 
