@@ -198,7 +198,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                     <div class="service-header">
                       <h3>{{ tariff.type }}</h3>
                       <div class="service-price">
-                        <span class="price-amount">{{ tariff.price }}€</span>
+                        <span class="price-amount">{{ tariff.price }} <sup>FCFA</sup></span>
                         <span class="price-period">/mois</span>
                       </div>
                     </div>

@@ -69,8 +69,10 @@ interface Subscription {
               </div>
               <div class="stat-info">
                 <h3>Prochaine collecte</h3>
-                <p class="stat-value">{{ getNextCollection() }}</p>
-                <span class="stat-detail">{{ getNextCollectionType() }}</span>
+                <p class="stat-value">{{ nextCollect?.date | date:'dd MMMM' : 'fr-FR' }}</p>
+                <!-- <p class="stat-value">{{ getNextCollectionTime(nextCollect?.date)  }}</p> -->
+                <!-- <span class="stat-detail">{{ getnextCollectionHour(nextCollect?.date) }}</span> -->
+                <span class="stat-detail">à {{ nextCollect?.startTime }}</span>
               </div>
             </div>
 
@@ -100,10 +102,10 @@ interface Subscription {
               <div class="stat-icon payment">
                 <i class="material-icons">payment</i>
               </div>
-              <div class="stat-info">
+              <div class="stat-info" *ngIf="activeSubscription">
                 <h3>Prochain paiement</h3>
-                <p class="stat-value">{{ getNextPayment() }}</p>
-                <span class="stat-detail">{{ subscription?.price }}€</span>
+                <p class="stat-value">{{ getNextPayment(activeSubscription?.endDate | date:'dd MMMM yyyy') }}</p>
+                <span class="stat-detail">{{ activeSubscription?.amount }} F CFA</span>
               </div>
             </div>
 
@@ -113,8 +115,8 @@ interface Subscription {
               </div>
               <div class="stat-info">
                 <h3>Wallet</h3>
-                <p class="stat-value">25000 FCFA</p>
-                <button class="btn btn-secondary btn-small" (click)="showPaymentModal = true">
+                <p class="stat-value">{{clientBalance | number}} FCFA</p>
+                <button class="btn btn-secondary btn-small" (click)="showRechargeModal = true">
                     <i class="material-icons">refresh</i>
                     Recharger
                   </button>
@@ -130,7 +132,7 @@ interface Subscription {
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">schedule</i>
-                    Prochains passages planifiés
+                    Prochains passages planifiés/semaine
                   </h2>
                   <button class="btn btn-secondary btn-small" (click)="refreshCollections()">
                     <i class="material-icons">refresh</i>
@@ -139,34 +141,36 @@ interface Subscription {
                 </div>
 
                 <div class="collections-list">
-                  <div *ngFor="let collection of upcomingCollections" class="collection-item">
+                  <div *ngFor="let collection of weeklySchedule" class="collection-item">
                     <div class="collection-date">
-                      <div class="day">{{ collection.scheduledDate | date:'dd' }}</div>
-                      <div class="month">{{ collection.scheduledDate | date:'MMM' }}</div>
+                      <div class="day">{{ collection.date | date:'dd' }}</div>
+                      <div class="month">{{ collection.date | date:'MMM' }}</div>
                     </div>
                     <div class="collection-info">
-                      <h4>{{ getWasteTypeName(collection.wasteTypes[0]) }}</h4>
+                      <!-- <h4>{{ getWasteTypeName(collection.wasteTypes[0]) }}</h4> -->
+                      <h4>Collecte standard</h4>
                       <p class="collection-time">
                         <i class="material-icons">access_time</i>
-                        {{ collection.scheduledDate | date:'HH:mm' }}
+                        {{ collection.startTime }}
+                        <!-- {{ collection.startTime | date:'HH:mm' }} -->
                       </p>
                       <p class="collection-address">
                         <i class="material-icons">location_on</i>
-                        {{ collection.address.doorNumber }} {{ collection.address.street }}
+                        {{ collection.zone }}
                       </p>
                     </div>
                     <div class="collection-status">
-                      <span class="status-badge" [class]="'status-' + collection.status">
-                        {{ getStatusText(collection.status) }}
+                      <span class="status-badge" [class]="'status-scheduled'">
+                        {{ getStatusText(collection.isActive) ? 'Active' : 'Inactif' }}
                       </span>
                       <div class="collection-actions">
-                        <button class="action-btn" (click)="trackCollection(collection.id)" 
-                                *ngIf="collection.status === 'in_progress'">
+                        <button class="action-btn" (click)="trackCollection(collection._id)" 
+                                *ngIf="collection.isActive === 'in_progress'">
                           <i class="material-icons">location_on</i>
                           Suivre
                         </button>
-                        <button class="action-btn" (click)="reportIssue(collection.id)"
-                                *ngIf="collection.status === 'scheduled'">
+                        <button class="action-btn" (click)="reportIssue(collection._id)"
+                                *ngIf="collection.isActive === true ">
                           <i class="material-icons">report</i>
                           Signaler
                         </button>
@@ -174,7 +178,7 @@ interface Subscription {
                     </div>
                   </div>
 
-                  <div *ngIf="upcomingCollections.length === 0" class="empty-state">
+                  <div *ngIf="weeklySchedule.length === 0" class="empty-state">
                     <i class="material-icons">event_available</i>
                     <h3>Aucune collecte programmée</h3>
                     <p>Vos prochaines collectes apparaîtront ici</p>
@@ -350,7 +354,7 @@ interface Subscription {
                   </div>
 
                   <div class="subscription-pricing">
-                    <div class="price">{{ activeSubscription.amount }}€</div>
+                    <div class="price">{{ activeSubscription.amount }} <sup>F CFA</sup></div>
                     <div class="frequency">par mois</div>
                   </div>
 
@@ -379,7 +383,7 @@ interface Subscription {
               </section>
 
               <!-- Paiement en ligne -->
-              <section class="payment-section card">
+              <!-- <section class="payment-section card">
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">payment</i>
@@ -387,11 +391,11 @@ interface Subscription {
                   </h2>
                 </div>
 
-                <div class="payment-info">
+                <div class="payment-info" *ngIf="activeSubscription">
                   <div class="next-payment">
                     <h4>Prochain paiement</h4>
-                    <p class="payment-date">{{ subscription?.nextPayment | date:'dd MMMM yyyy' }}</p>
-                    <p class="payment-amount">{{ subscription?.price }}€</p>
+                    <p class="payment-date">{{ getNextPayment(activeSubscription?.endDate) }}</p>
+                    <p class="payment-amount">{{ activeSubscription?.amount }} <sup>F CFA</sup></p>
                   </div>
 
                   <div class="payment-method">
@@ -403,7 +407,7 @@ interface Subscription {
                     </div>
                   </div>
                 </div>
-              </section>
+              </section> -->
 
               <!-- Historique des paiements -->
               <section class="payment-history card">
@@ -429,7 +433,7 @@ interface Subscription {
                       <p class="payment-method-text">{{ payment.method }}</p>
                     </div>
                     <div class="payment-amount">
-                      <span class="amount">{{ payment.amount }}€</span>
+                      <span class="amount">{{ payment.amount }} FCFA</span>
                       <span class="status-badge" [class]="'status-' + payment.status">
                         {{ getPaymentStatusText(payment.status) }}
                       </span>
@@ -445,13 +449,14 @@ interface Subscription {
               </section>
 
               <!-- Adresse de collecte -->
-              <section class="collection-address card">
+              <section class="collection-address flex flex-col card">
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">home</i>
                     Adresse de collecte
                   </h2>
-                  <button class="btn btn-secondary btn-small" (click)="editAddress()">
+                  <!-- <button class="btn btn-secondary btn-small" routerLink="/profile" (click)="editAddress()"> -->
+                  <button class="btn btn-secondary btn-small" routerLink="/profile">
                     <i class="material-icons">edit</i>
                     Modifier
                   </button>
@@ -476,13 +481,14 @@ interface Subscription {
                   </div>
                 </div>
 
-                <div class="address-map">
+                <!-- <div class="address-map">
                   <div class="map-placeholder">
                     <i class="material-icons">map</i>
                     <p>Localisation précise</p>
                   </div>
-                </div>
+                </div> -->
               </section>
+              
             </div>
           </div>
         </div>
@@ -542,6 +548,8 @@ interface Subscription {
         </div>
       </div>
 
+      
+
       <!-- Modal de paiement -->
       <div class="modal-overlay" *ngIf="showPaymentModal" (click)="showPaymentModal = false">
         <div class="modal-content payment-modal" (click)="$event.stopPropagation()">
@@ -592,6 +600,78 @@ interface Subscription {
           </div>
         </div>
       </div>
+
+      <!-- Modal de de recharge du wallet -->
+      <div class="modal-overlay" *ngIf="showRechargeModal" (click)="showRechargeModal = false">
+        <div class="modal-content payment-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Recharger mon compte</h3>
+            <button class="close-btn" (click)="showRechargeModal = false">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <div class="payment-form">
+
+            <div class="payment-methods">
+              <h4>Mode de paiement</h4>
+              <div class="payment-option">
+                <input type="radio" id="card" name="payment" value="card" checked>
+                <label for="card">
+                  <i class="material-icons">euro</i>
+                  Orange money
+                </label>
+              </div>
+              <div class="payment-option">
+                <label for="amount">Montant :</label>
+                 <input type="number" min="100" id="amount" name="amount" [(ngModel)]="rechargeAmount" placeholder="Entrez le montant en FCFA">
+              </div>
+
+              <!-- <div class="payment-option" >
+                <input type="radio" id="transfer" name="payment" value="transfer" [disabled]="true">
+                <label for="transfer">
+                  <i class="material-icons">account_balance</i>
+                  Virement bancaire
+                </label>
+              </div>
+              
+              <div class="payment-option">
+                <input type="radio" id="card" name="payment" value="card"  [disabled]="true">
+                <label for="card">
+                  <i class="material-icons">credit_card</i>
+                  Carte bancaire
+                </label>
+              </div> -->
+
+            </div>
+
+            <div class="payment-summary">
+              <h4>Récapitulatif</h4>
+              <div class="summary-item">
+                <span>Solde actuel</span>
+                <span>{{ clientBalance | number }} <sup>FCFA</sup></span>
+              </div>
+              <div class="summary-item">
+                <span>Ajout</span>
+                <span>{{ rechargeAmount | number }} <sup>FCFA</sup></span>
+              </div>
+              <div class="summary-total">
+                <span>Total</span>
+                <span>{{ clientBalance + rechargeAmount | number }} <sup>FCFA</sup></span>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="showRechargeModal = false">
+                Annuler
+              </button>
+              <button type="button" class="btn btn-primary" (click)="walletPayment()">
+                <i class="material-icons">lock</i>
+                Payer {{ rechargeAmount | number }} FCFA
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   `,
   styles: [`
@@ -1263,6 +1343,10 @@ export class ClientDashboardComponent implements OnInit {
 
   subscriptions: any[] = [];
   activeSubscription: any = null;
+  showRechargeModal : boolean = false;
+
+  // Montant de recharge
+  rechargeAmount: number = 0;
   constructor(
     private authService: AuthService,
     private collectionService: CollectionService,
@@ -1277,13 +1361,103 @@ export class ClientDashboardComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       this.getUserSubscription();
+      this.getClientWallet();
+      this.getWeeklySchedule();
+      this.loadPlanningHistory();
     });
     console.log("Current User", this.currentUser);
     this.loadDashboardData();
   }
 
+  //  GET CLIENT WALLET 
+  clientBalance!: number;
+  getClientWallet() {
+    const clientId = this.currentUser?.id || '';
+    if (!clientId) return;
+    this.clientService.getClientWallet(clientId).subscribe({
+      next: (response: any) => {
+        if (response && response.balance) {
+          this.clientBalance = response?.balance;
+          console.log('Client Wallet:', response.balance, this.clientBalance);
+        }
+        // return response?.balance;
+      },
+      error: (error: any) => {
+        console.error('Erreur lors de la récupération du portefeuille client:', error);
+      }
+    });
+  }
 
-  // Afficher abonnement 
+  // Virer dans le Wallet du client 
+  walletPayment() {
+    const clientId = this.currentUser?.id || '';
+    if (!clientId) return;
+
+    const paymentData = {
+      amount: this.rechargeAmount,
+      clientId: clientId
+    };
+    console.log('Données de paiement du wallet:', paymentData);
+    if (this.rechargeAmount < 100) {
+      this.notificationService.showError('Montant invalide', 'Le montant de recharge doit être au moins de 100 FCFA.');
+      return;
+    }
+
+    this.clientService.walletPayment(paymentData).subscribe({
+      next: (response: any) => {
+        console.log('Paiement effectué avec succès:', response?.wallet);
+        this.getClientWallet();
+        this.notificationService.showSuccess('Paiement réussi', 'Votre compte a été rechargé avec succès.');
+        this.showRechargeModal = false;
+        this.rechargeAmount = 0;
+      },
+      error: (error: any) => {
+        this.notificationService.showError('Erreur de paiement', 'Une erreur est survenue lors du paiement. Veuillez réessayer.');
+        console.error('Erreur lors du paiement:', error);
+      }
+    });
+  }
+
+  // recuperer le planning de collecte de la semaine du client
+  weeklySchedule: any[] = [];
+
+  nextCollect : any;
+  getWeeklySchedule() {
+    const clientId = this.currentUser?._id || '';
+    if (!clientId) return;
+
+    this.clientService.getClientPlanning(clientId).subscribe({
+      next: (response: any) => {
+        console.log('API > getClientPlanning:', response);
+        this.weeklySchedule = response?.plannings || [];
+        if(this.weeklySchedule.length) {
+
+          this.nextCollect = this.weeklySchedule[0];
+          console.log("Next collect ==> ", this.nextCollect);
+        }
+        // Traiter le planning récupéré
+      },
+      error: (error: any) => {
+        console.error('Erreur lors de la récupération du planning:', error);
+      }
+    });
+  }
+
+  // Recuperer l'historique des collectes déjà effectuées 
+  loadPlanningHistory(): void {
+    const clientId = this.currentUser?._id || '';
+    if (!clientId) return;
+    this.clientService.getClientPlanningHistory(clientId).subscribe({
+      next: (response: Collection[]) => {
+        this.collectionHistory = response || [];
+      },
+      error: (error: any) => {
+        console.error('Erreur lors de la récupération de l\'historique des collectes:', error);
+      }
+    });
+  }
+
+  // Afficher abonnement
   getUserSubscription() {
     const userID = this.currentUser?.id || '';
     if (!userID) return;
@@ -1291,7 +1465,8 @@ export class ClientDashboardComponent implements OnInit {
       next: (response: any[]) => {
         this.subscriptions = response || [];
         // Filtrer la subscription active
-        this.activeSubscription = this.subscriptions.find(sub => sub.status === 'active') || null;
+        // this.activeSubscription = this.subscriptions.find(sub => sub.status === 'active') || null;
+        this.activeSubscription = this.subscriptions.length ? this.subscriptions[this.subscriptions.length - 1] : null;
         console.log("Active subscription ==>", this.activeSubscription);
       },
       error: (err) => {
@@ -1539,10 +1714,30 @@ export class ClientDashboardComponent implements OnInit {
     return total > 0 ? Math.round((completed / total) * 100) : 100;
   }
 
-  getNextPayment(): string {
-    return this.subscription?.nextPayment.toLocaleDateString('fr-FR', {
+  getNextPayment(paiementDate: string | null): string {
+    paiementDate = paiementDate || this.activeSubscription?.endDate;
+    if (!paiementDate) return 'Aucun paiement prévu';
+    // return this.activeSubscription?.endDate.toLocaleDateString('fr-FR', {
+    return new Date(paiementDate).toLocaleDateString('fr-FR', {
       day: 'numeric',
-      month: 'long'
+      month: 'long',
+      
+    }) || '';
+  }
+  getNextCollectionTime(collection: string | null): string {
+    if (!collection) return '';
+    return new Date(collection).toLocaleTimeString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) || '';
+  }
+  getnextCollectionHour(collection: string | null): string {
+    if (!collection) return '';
+    return new Date(collection).toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
     }) || '';
   }
 
@@ -1586,6 +1781,7 @@ export class ClientDashboardComponent implements OnInit {
 
   refreshCollections(): void {
     this.loadUpcomingCollections();
+    this.loadCollectionHistory();
     this.notificationService.showSuccess('Actualisé', 'Les collectes ont été mises à jour');
   }
 
