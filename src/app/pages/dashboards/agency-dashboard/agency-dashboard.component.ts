@@ -31,6 +31,7 @@ import { ClientService, ClientApi } from "../../../services/client.service";
 import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
 import { Message } from "../../../models/message.model";
 import { MessagesService } from "../../../services/messages.service";
+import { SharedService } from "../../../services/shared-service";
 
 interface Client {
   id: string;
@@ -367,10 +368,26 @@ interface Statistics {
                 >
                   <div class="employee-header">
                     <div class="employee-avatar">
-                      <img
-                        [src]="employee.avatar || '/assets/default-avatar.png'"
-                        [alt]="employee.firstName"
-                      />
+                      <ng-container *ngIf="employee?.avatar; else noImage">
+                        <img
+                          [src]="
+                            employee.avatar || '/assets/default-avatar.png'
+                          "
+                          [alt]="employee.firstName"
+                        />
+                      </ng-container>
+                      <ng-template #noImage>
+                        <div
+                          class="rounded-circle text-white font-bold uppercase"
+                          [style.background-color]="getRandomColor(employee)"
+                        >
+                          {{
+                            getInitials(
+                              employee?.firstName + " " + employee?.lastName
+                            )
+                          }}
+                        </div>
+                      </ng-template>
                     </div>
                     <div class="employee-info">
                       <h4>{{ employee.firstName }} {{ employee.lastName }}</h4>
@@ -385,8 +402,10 @@ interface Statistics {
                       </p>
                     </div>
                     <ng-template #noEmployees>
-  <p class="text-center text-gray-500">Aucun employé pour le moment.</p>
-</ng-template>
+                      <p class="text-center text-gray-500">
+                        Aucun employé pour le moment.
+                      </p>
+                    </ng-template>
                     <!-- <div class="employee-actions">
                       <button class="action-btn" (click)="editEmployee(employee.id)">
                         <i class="material-icons">edit</i>
@@ -597,7 +616,7 @@ interface Statistics {
             </div>
 
             <!-- Onglet Clients -->
-             <!-- Clients Actifs  -->
+            <!-- Clients Actifs  -->
             <div *ngIf="activeTab === 'clients'" class="clients-tab">
               <div class="clients-header">
                 <h2>Clients Actifs ({{ activeClients.length }})</h2>
@@ -1352,7 +1371,7 @@ interface Statistics {
                         <option value="Cissin">Cissin</option>
                         <option value="Zongho">Zongho</option>
                         <option value="Dassohgho">Dassohgho</option>
-                         <option
+                        <option
                           value="Marcoussis
 "
                         >
@@ -2281,6 +2300,20 @@ interface Statistics {
         display: flex;
         gap: 8px;
       }
+      .rounded-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 35px;
+        font-weight: bold;
+        color: white;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(0, 188, 212, 0.12);
+        margin-bottom: 8px;
+      }
       .incident-severity {
         display: flex;
         align-items: center;
@@ -2407,8 +2440,8 @@ interface Statistics {
       }
 
       .employee-avatar {
-        width: 50px;
-        height: 50px;
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
         overflow: hidden;
       }
@@ -3227,7 +3260,7 @@ export class AgencyDashboardComponent implements OnInit {
   isDeleting: boolean = false;
   // assigner un planning à un collecteur
   showAssignModal: boolean = false;
-selectedReportId: string = "";
+  selectedReportId: string = "";
 
   selectedEmployee: string[] = [];
   // Filters
@@ -3352,7 +3385,8 @@ selectedReportId: string = "";
     private clientService: ClientService,
     private cdr: ChangeDetectorRef,
     private fb: FormBuilder,
-    private messageService: MessagesService
+    private messageService: MessagesService,
+    private sharedService: SharedService
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -3383,12 +3417,10 @@ selectedReportId: string = "";
     this.loadPlannings();
     this.loadCollectorPlannings();
     this.cdr.detectChanges();
-    this. loadZones(this.currentUser)
+    this.loadZones(this.currentUser);
     this.filterIncidents();
     this.countUnreadMessages();
-    this.userMessages(); 
-    
-      
+    this.userMessages();
   }
 
   /**Gestion des messages recus par le client connecté */
@@ -3443,7 +3475,7 @@ selectedReportId: string = "";
       next: (response: any) => {
         this.showMessageModal = true;
         this.receivedId = message.sender;
-        this.countUnreadMessages()
+        this.countUnreadMessages();
         this.userMessages();
         console.log("Lire et répondre au message:", message._id);
       },
@@ -3506,7 +3538,7 @@ selectedReportId: string = "";
             "Le message a bien été supprimé"
           );
           this.showMessageModal = false;
-          this.countUnreadMessages()
+          this.countUnreadMessages();
           this.userMessages();
         },
         error: (error: any) => {
@@ -3966,7 +3998,7 @@ selectedReportId: string = "";
 
         if (clients) {
           this.clientNbrs = clients.length;
-           this.activeClients = clients;
+          this.activeClients = clients;
           console.log("[loadClients] clients received:", this.clientNbrs);
           // Vérifiez si activeClients est défini et mettez à jour le nombre d'actifs
           if (this.activeClients) {
@@ -4433,8 +4465,8 @@ selectedReportId: string = "";
               "Inscription réussie",
               "Le collaborateur a été créé avec succès ! Vous pouvez maintenant vous connecter."
             );
-               // 🔄 Recharger la liste après ajout
-      this.loadEmployees(this.currentUser);
+            // 🔄 Recharger la liste après ajout
+            this.loadEmployees(this.currentUser);
             // setTimeout(() => {
             //   this.router.navigate(['/login']);
             // }, 2000);
@@ -5122,34 +5154,37 @@ selectedReportId: string = "";
       );
     }
   }
-assignReport(): void {
-  if (!this.selectedReportId || this.selectedEmployee.length === 0) {
-    this.notificationService.showError("Erreur", "Veuillez sélectionner au moins un employé.");
-    return;
+  assignReport(): void {
+    if (!this.selectedReportId || this.selectedEmployee.length === 0) {
+      this.notificationService.showError(
+        "Erreur",
+        "Veuillez sélectionner au moins un employé."
+      );
+      return;
+    }
+
+    this.selectedEmployee.forEach((employeeId) => {
+      this.agencyService
+        .assignReportToEmployee$(this.selectedReportId, employeeId)
+        .subscribe({
+          next: () => {
+            this.notificationService.showSuccess(
+              "Succès",
+              "Signalement assigné avec succès."
+            );
+          },
+          error: (err) => {
+            console.error("Erreur assignation :", err);
+
+            const message =
+              err?.error?.error || err?.message || "Échec de l'assignation.";
+            this.notificationService.showError("Erreur", message);
+          },
+        });
+    });
+
+    this.closeAssignModal();
   }
-
-
-  this.selectedEmployee.forEach(employeeId => {
-    this.agencyService.assignReportToEmployee$(this.selectedReportId, employeeId)
-      .subscribe({
-        next: () => {
-          this.notificationService.showSuccess("Succès", "Signalement assigné avec succès.");
-        },
-        error: (err) => {
-          console.error("Erreur assignation :", err);
-          
-      const message =
-        err?.error?.error || 
-        err?.message || 
-        "Échec de l'assignation.";  
-          this.notificationService.showError("Erreur",message);
-        }
-      });
-  });
-
-  this.closeAssignModal();
-}
-
 
   showTariffsModal = false;
 
@@ -5160,19 +5195,22 @@ assignReport(): void {
   closeTariffsModal() {
     this.showTariffsModal = false;
   }
-   zones: any[] = [];
-  //recuperation des zones 
-     loadZones(currentUser: any): void {
-      this.isLoading = true;
+  zones: any[] = [];
+  //recuperation des zones
+  loadZones(currentUser: any): void {
+    this.isLoading = true;
     if (currentUser && currentUser._id) {
       const agencyId = currentUser._id;
       this.agencyService.getAllzones$(agencyId).subscribe({
         next: (zones: any) => {
           this.zones = zones;
-          console.log("zones charger >>>>>> :", this.zones); 
+          console.log("zones charger >>>>>> :", this.zones);
         },
         error: (error) => {
-          console.error("Erreur lors du chargement des Zones de l agence:", error);
+          console.error(
+            "Erreur lors du chargement des Zones de l agence:",
+            error
+          );
           this.notificationService.showError(
             "Erreur",
             "Erreur lors du chargement des Zones de l agence."
@@ -5182,5 +5220,13 @@ assignReport(): void {
     } else {
       console.warn("Aucun ID d'utilisateur courant disponible.");
     }
+  }
+
+  getInitials(fullName: string) {
+    return this.sharedService.getInitials(fullName);
+  }
+
+  getRandomColor(item: any): string {
+    return this.sharedService.getRandomColor(item);
   }
 }

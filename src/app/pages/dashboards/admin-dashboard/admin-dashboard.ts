@@ -934,7 +934,7 @@ interface Communication {
                             mat-card-md-image
                             class="rounded"
                             src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
-                            alt="Image of a Shiba Inu"
+                            alt="Image"
                           />
                         </ng-container>
                         <ng-template #noImage>
