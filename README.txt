@@ -38,40 +38,9 @@ Email : gangosmeo@gmail.com          Mot de passe : Wise2024
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                 
-                                ////// TO DO
-        # Profile
-1==> Améliorer l'IHM profile => OK
-2==> Afficher le juste en dessous du block "profile-left" un card des informations du user. 
-3==> Placer un bouton modifier qui ouvre le form de modification au click
-4==>
-
-        #Client
-1==> Email: client@gmail.com    MPD : 12345678
-1==> 
-1==> 
-1==> 
-1==> 
-1==> 
-1==> 
-
-
-        #Agence
-1==> Etablir le planning / Zone(en secteur).
-1==> Suivre les collectes en temps réelle lorsqu'un collecteur valide
-1==> 
-1==> 
-1==> 
-1==> 
-1==> 
-
-
-        #Collector
-1==> Récuperer les infos du client lorsque le Collector scan son QR code
-1==> Confirmer une collecte manuellement
-1==> Signaler à l'agence de la collecte bien faite chez X client
-1==> Recueperer le planning de la journée.
-        Declarer un incident
-1==> 
-1==> 
-1==> 
-1==> 
+                                //////  DO in client dashboard
+Display client all weeklyscheduled of collection =>OK
+Display Client daily collection  ==>OK
+Display client wallet amount ==>OK
+Recharge client wallet ==>OK
+Client collections tracking ihm implemented ==>OK

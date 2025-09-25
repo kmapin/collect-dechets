@@ -213,7 +213,8 @@ constructor(
       next: (response: any[]) => {
         this.subscriptions = response || [];
         // Filtrer la subscription active
-        this.activeSubscription = this.subscriptions.find(sub => sub.status === 'active') || null;
+        // this.activeSubscription = this.subscriptions.find(sub => sub.status === 'active') || null;
+        this.activeSubscription = this.subscriptions.length ? this.subscriptions[this.subscriptions.length - 1] : null;
         console.log("Active subscription ==>", this.activeSubscription);
       },
       error: (err) => {

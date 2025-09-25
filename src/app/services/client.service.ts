@@ -84,6 +84,50 @@ export class ClientService {
     );
   }
 
+  getClientWallet(clientId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/users/${clientId}/wallet`).pipe(
+      map((response: any) => {
+        console.log('API > getClientWallet:', response);
+        return response;
+      })
+    );
+  }
+
+  walletPayment(data: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/users/${data.clientId}/wallet/${data.amount}`, {}).pipe(
+      map((response: any) => {
+        console.log('API > walletPayment:', response);
+        return response;
+      })
+    );
+  }
+  getClientPlanning(clientId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/zones/plannings/${clientId}`).pipe(
+      map((response: any) => {
+        console.log('API > getClientPlanning:', response);
+        return response;
+      })
+    );
+  }
+
+  getClientPlanningHistory(clientId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/zones/plannings/${clientId}/collecte`).pipe(
+      map((response: any) => {
+        console.log('API > getClientPlanningHistory:', response);
+        return response;
+      })
+    );
+  }
+
+  getClientPlanningForDate(clientId: string, date: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/zones/plannings/${clientId}/date/${date}`).pipe(
+      map((response: any) => {
+        console.log('API > getClientPlanningForDate:', response);
+        return response;
+      })
+    );
+  }
+
   reportClientIncident(data: any) {
     return this.http.post(`${environment.apiUrl}/reports`, data).pipe(
       map((response: any) => {

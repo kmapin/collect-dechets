@@ -201,7 +201,7 @@ interface WasteType {
               </div>
               <div class="regulation-content">
                 <h4>Sanctions Municipales</h4>
-                <p>Les infractions répétées peuvent faire l'objet d'amendes de 35€ à 150€ 
+                <p>Les infractions répétées peuvent faire l'objet d'amendes de 3000 fcfa à 5000 fcfa 
                    selon la gravité (dépôt sauvage, non-respect des horaires, etc.).</p>
               </div>
             </div>
