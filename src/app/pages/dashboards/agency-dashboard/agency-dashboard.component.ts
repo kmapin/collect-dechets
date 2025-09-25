@@ -285,7 +285,7 @@ interface Statistics {
               class="action-btn"
               (click)="contactClient(collecte.clientId)"
             >
-              <i class="material-icons">phone</i>
+              <!-- <i class="material-icons">phone</i> -->
             </button>
           </div>
         </div>
