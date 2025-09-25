@@ -440,12 +440,12 @@ interface Statistics {
                     </div>
                   </div>
                   <div class="employee-actions">
-                   <button
-  class="action-btn"
-  (click)="editEmployee(employee)"
->
-  <i class="material-icons">edit</i>
-</button>
+                    <button
+                        class="action-btn"
+                        (click)="editEmployee(employee)"
+                      >
+                        <i class="material-icons">edit</i>
+                    </button>
                     <button
                       class="action-btn danger"
                       (click)="deleteEmployee(currentUser, employee)"
@@ -909,8 +909,7 @@ interface Statistics {
                       class="btn btn-success"
                       (click)="readAndRespondMessage(message)"
                       *ngIf="
-                        message.sender !== currentUser?._id &&
-                        message.read === 'false'
+                        message.sender !== currentUser?._id
                       "
                     >
                       <i class="material-icons">check</i>
