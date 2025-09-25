@@ -258,6 +258,7 @@ interface Statistics {
 
       title="Voir l’historique des collectes"
       style="margin-left: 10px;"
+     (click)="openHistoryModal()"
      
     >
       <i class="material-icons">history</i>
@@ -806,6 +807,7 @@ interface Statistics {
                         [src]="photo"
                         alt="Photo du signalement"
                           class="report-photo circular-image"
+                             (click)="openImageModal(photo)"
                       />
                     </div>
                   </div>
@@ -1666,6 +1668,34 @@ subscriptionHistory
     </form>
   </div>
 </div>
+<div class="modal-overlay" *ngIf="selectedImage" (click)="closeImageModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <img [src]="selectedImage" alt="Image en plein écran" class="full-image" />
+        
+    <button class="close-btn" (click)="closeImageModal()">
+      <i class="material-icons">close</i>
+    </button>
+  </div>
+</div>
+<div class="modal-overlay" *ngIf="showHistoryModal" (click)="closeHistoryModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Historique des Collectes</h3>
+      <button class="close-btn" (click)="closeHistoryModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <ul>
+        <li *ngFor="let collecte of historyCollecte">
+          <p><strong>Date :</strong> {{ collecte.date | date: 'dd/MM/yyyy' }}</p>
+          <p><strong>Statut :</strong> {{ collecte.status }}</p>
+          <p><strong>Client :</strong> {{ collecte.clientName }}</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
   `,
   styles: [
     `
@@ -1679,6 +1709,42 @@ subscriptionHistory
         align-items: center;
         gap: 24px;
       }
+      .full-image {
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  border-radius: 8px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  position: relative;
+  background: transparent;
+  padding: 0;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
       .employee-grid {
         display: grid;
         grid-template-columns: repeat(
@@ -1703,7 +1769,22 @@ subscriptionHistory
         cursor: pointer;
         transition: all 0.3s ease;
       }
+.modal-body ul {
+  list-style: none;
+  padding: 0;
+}
 
+.modal-body ul li {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.modal-body ul li p {
+  margin: 4px 0;
+}
       .employee-card:hover {
         background: #edf6f9;
         border-color: #38bdf8;
@@ -5469,6 +5550,23 @@ next: (response) => {
     },
   });
 }
+selectedImage: string | null = null;
 
+openImageModal(imageUrl: string): void {
+  this.selectedImage = imageUrl;
+}
+
+closeImageModal(): void {
+  this.selectedImage = null;
+}
+showHistoryModal: boolean = false;
+openHistoryModal(): void {
+  this.showHistoryModal = true;
+}
+
+
+closeHistoryModal(): void {
+  this.showHistoryModal = false;
+}
 
 }
