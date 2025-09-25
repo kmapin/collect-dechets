@@ -285,7 +285,7 @@ export class AgencyService {
       }),
       catchError((error) => {
         console.error("Erreur lors de la récupération des statistiques :", error);
-        return of({ 'totalClients': 'undefind', 'totalCollections': 'undefind', 'totalIncidents': 'undefind' }); // Gérer l'erreur de manière appropriée
+        return of({ 'totalClients': 'undefind', 'totalCollections': 'undefind', 'totalIncidents': 'undefind' }); 
       })
     );
 
@@ -425,17 +425,17 @@ export class AgencyService {
     );
   }
 
-  updateEmployee(agencyId: string, employeeId: string, updates: Partial<Employee>): Observable<Employee> {
-    const agency = this.agencies.find(a => a._id === agencyId);
-    if (agency) {
-      const index = agency.employees.findIndex(e => e.id === employeeId);
-      if (index !== -1) {
-        agency.employees[index] = { ...agency.employees[index], ...updates };
-        return of(agency.employees[index]).pipe(delay(800));
-      }
-    }
-    throw new Error('Employee not found');
-  }
+  // updateEmployee(agencyId: string, employeeId: string, updates: Partial<Employee>): Observable<Employee> {
+  //   const agency = this.agencies.find(a => a._id === agencyId);
+  //   if (agency) {
+  //     const index = agency.employees.findIndex(e => e.id === employeeId);
+  //     if (index !== -1) {
+  //       agency.employees[index] = { ...agency.employees[index], ...updates };
+  //       return of(agency.employees[index]).pipe(delay(800));
+  //     }
+  //   }
+  //   throw new Error('Employee not found');
+  // }
 
   deleteEmployee(agencyId: string, employeeId: string): Observable<boolean> {
     const agency = this.agencies.find(a => a._id === agencyId);
@@ -637,5 +637,21 @@ assignReportToEmployee$(reportId: string, employeeId: string): Observable<any> {
       })
     );
   }
+updateEmployeeStatus(employeeId: string, payload: { agencyId: string; isActive: boolean }): Observable<{ message: string; employee: Employee }> {
+  const url = `${environment.apiUrl}/agences/employees/${employeeId}`;
+  return this.http.put<{ message: string; employee: Employee }>(url, payload);
+}
+ updateEmployee(id: number, employeeData: Employee): Observable<Employee> {
+  const url = `${environment.apiUrl}/agences/employees/${id}`;
+
+  return this.http.put<Employee>(url, employeeData).pipe(
+    catchError((error) => {
+      // log optionnel
+      console.error('Erreur backend:', error);
+      return throwError(() => error);
+    })
+  );
+}
+
   
 }
