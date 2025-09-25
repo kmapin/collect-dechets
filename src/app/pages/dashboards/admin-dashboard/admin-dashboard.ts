@@ -844,7 +844,7 @@ interface Communication {
                       </mat-card-header>
                       <mat-card-content>
                         <div *ngIf="client?.data?.address?.city">
-                          <h4 class="text-center">
+                          <h4 class="text-start">
                             Ville/Quartier :
                             {{ client?.data?.address?.city }}/{{
                               client?.data?.address?.neighborhood
@@ -852,7 +852,7 @@ interface Communication {
                           </h4>
                         </div>
                         <div>
-                          <h5 class="text-center">
+                          <h5 class="text-start">
                             Tel: {{ client?.data?.phone }}
                           </h5>
                         </div>
@@ -927,7 +927,11 @@ interface Communication {
                         <mat-card-subtitle
                           ><span class="status-pending">{{
                             collector.email
-                          }}</span></mat-card-subtitle
+                          }}</span>
+                          <div>
+                            <h5 class="text-start">Tel: {{ collector?.phone }}</h5>
+                          </div>
+                          </mat-card-subtitle
                         >
                         <ng-container *ngIf="collector?.avatar; else noImage">
                           <img
@@ -953,16 +957,13 @@ interface Communication {
                     </mat-card-header>
                     <mat-card-content>
                       <div>
-                        <h5 class="text-center">Tel: {{ collector?.phone }}</h5>
-                      </div>
-                      <div>
-                        <h5 class="text-center">
+                        <h5 class="text-start">
                           Agence: {{ collector?.agency?.agencyName }}
                         </h5>
                       </div>
                       <div *ngIf="collector?.agency?.agencyId"></div>
                       <div>
-                        <h5 class="text-center">
+                        <h5 class="text-start">
                           Ville/Quartier:
                           {{ collector?.agency?.address?.city }}/{{
                             collector?.agency?.address?.quartier
@@ -1418,9 +1419,21 @@ interface Communication {
         padding: 20px;
         transition: all 0.3s ease;
       }
+      .client-card{
+        display: flex;
+        gap: 10px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
       .client-card:hover {
+        background: #edf6f9;
+        border-color: #38bdf8;
         transform: translateY(-2px);
-        box-shadow: var(--shadow-medium);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
       }
 
       .stat-card:hover {
@@ -1960,9 +1973,9 @@ interface Communication {
         padding: 24px;
         border-left: 4px solid var(--primary-color);
       }
-
+      
       .client-audit-card {
-        border-left: 4px solid var(--primary-color);
+         border-left: 4px solid var(--primary-color);
       }
       .agency-audit-header {
         display: flex;
