@@ -233,113 +233,106 @@ interface Statistics {
           </div>
 
           <!-- Contenu des onglets -->
-          <div class="tab-content">
-            <!-- Onglet Suivi des Collectes -->
-            <div *ngIf="activeTab === 'collections'" class="collections-tab">
-              <div class="collections-header">
-                <h2>Suivi des Collectes en Temps Réel</h2>
-                <div class="collections-filters">
-                  <select
-                    [(ngModel)]="collectionsFilter"
-                    (change)="filterCollections()"
-                    class="filter-select"
-                  >
-                    <option value="all">Toutes les collectes</option>
-                    <option value="scheduled">Programmées</option>
-                    <option value="in_progress">En cours</option>
-                    <option value="completed">Terminées</option>
-                    <option value="missed">Manquées</option>
-                  </select>
-                  <select
-                    [(ngModel)]="selectedZone"
-                    (change)="filterCollections()"
-                    class="filter-select"
-                  >
-                    <option value="">Toutes les zones</option>
-                    <option *ngFor="let zone of serviceZones" [value]="zone.id">
-                      {{ zone.name }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-              <div class="collections-grid">
-                <div
-                  *ngFor="let collection of filteredCollections"
-                  class="collection-card card"
-                >
-                  <div class="collection-header">
-                    <div class="collection-status">
-                      <span
-                        class="status-badge"
-                        [class]="'status-' + collection.status"
-                      >
-                        {{ getStatusText(collection.status) }}
-                      </span>
-                      <span class="collection-time">{{
-                        collection.scheduledDate | date : "HH:mm"
-                      }}</span>
-                    </div>
-                    <div class="collection-actions">
-                      <button
-                        class="action-btn"
-                        (click)="trackCollection(collection.id)"
-                        *ngIf="collection.status === 'in_progress'"
-                      >
-                        <i class="material-icons">location_on</i>
-                      </button>
-                      <button
-                        class="action-btn"
-                        (click)="contactClient(collection.clientId)"
-                      >
-                        <i class="material-icons">phone</i>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="collection-info">
-                    <h4>{{ getClientName(collection.clientId) }}</h4>
-                    <p class="collection-address">
-                      <i class="material-icons">location_on</i>
-                      {{ collection.address.doorNumber }}
-                      {{ collection.address.street }},
-                      {{ collection.address.neighborhood }}
-                    </p>
-                    <p class="collection-waste">
-                      <i class="material-icons">delete</i>
-                      {{ getWasteTypeName(collection.wasteTypes[0]) }}
-                    </p>
-                    <p
-                      class="collection-collector"
-                      *ngIf="collection.collectorId"
-                    >
-                      <i class="material-icons">person</i>
-                      {{ collection }}
-                    </p>
-                  </div>
+  
+<div class="tab-content">
+  <!-- Onglet Suivi des Collectes -->
+  <div *ngIf="activeTab === 'collections'" class="collections-tab">
+    <div class="collections-header">
+      <h2>Suivi des Collectes en Temps Réel</h2>
+      <div class="collections-filters">
+        <select
+          [(ngModel)]="collectionsFilter"
+          (change)="filterCollections()"
+          class="filter-select"
+        >
+          <option value="all">Toutes les collectes</option>
+          <option value="scheduled">Programmées</option>
+          <option value="in_progress">En cours</option>
+          <option value="collected">Collectées</option>
+          <option value="missed">Manquées</option>
+        </select>
+           
+    <!-- Bouton historique -->
+    <button
+      class="action-btn"
 
-                  <div
-                    class="collection-progress"
-                    *ngIf="collection.status === 'in_progress'"
-                  >
-                    <div class="progress-bar">
-                      <div
-                        class="progress-fill"
-                        [style.width]="getCollectionProgress(collection) + '%'"
-                      ></div>
-                    </div>
-                    <span class="progress-text"
-                      >{{ getCollectionProgress(collection) }}% terminé</span
-                    >
-                  </div>
-                </div>
-              </div>
+      title="Voir l’historique des collectes"
+      style="margin-left: 10px;"
+     (click)="openHistoryModal()"
+     
+    >
+      <i class="material-icons">history</i>
+    </button>
+      </div>
+    </div>
 
-              <div *ngIf="filteredCollections.length === 0" class="empty-state">
-                <i class="material-icons">event_available</i>
-                <h3>Aucune collecte</h3>
-                <p>Aucune collecte ne correspond aux filtres sélectionnés</p>
-              </div>
-              <div class="collections-grid"></div>
-            </div>
+    <div class="collections-grid">
+      <div
+        *ngFor="let collecte of dayCollectes"
+        class="collection-card card"
+      >
+        <!-- Header -->
+        <div class="collection-header">
+          <div class="collection-status">
+            <span
+              class="status-badge"
+              [class]="'status-' + collecte.status"
+            >
+              {{ collecte.status }}
+            </span>
+            <span class="collection-time">
+              {{ collecte.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            </span>
+          </div>
+
+          <div class="collection-actions">
+            <button
+              class="action-btn"
+              (click)="trackCollection(collecte._id)"
+              *ngIf="collecte.status === 'in_progress'"
+            >
+              <i class="material-icons">location_on</i>
+            </button>
+            <!-- <button
+              class="action-btn"
+              (click)="contactClient(collecte.clientId)"
+            >
+              <i class="material-icons">phone</i>
+            </button> -->
+          </div>
+        </div>
+
+        <!-- Infos -->
+        <div class="collection-info">
+   
+                  <i class="material-icons">group</i>
+            {{collecte.clientId.firstName + " " + collecte.clientId.lastName }}
+          <p>
+            <i class="material-icons">person</i>
+            Collecteur : {{collecte.collectorId.firstName + " " + collecte.collectorId.lastName }}
+          </p>
+          <p>
+            <i class="material-icons">apartment</i>
+            Agence : {{ collecte.agencyId.agencyName
+ }}
+          </p>
+          <p>
+            <i class="material-icons">schedule</i>
+            Scannée à : {{ collecte.scannedAt | date: "dd/MM/yyyy HH:mm" }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- État vide -->
+    <div *ngIf="dayCollectes.length === 0" class="empty-state">
+      <i class="material-icons">event_available</i>
+      <h3>Aucune collecte</h3>
+      <p>Aucune collecte disponible pour l’instant</p>
+   
+    </div>
+  </div>
+
 
             <!-- Onglet Gestion des Employés -->
             <div *ngIf="activeTab === 'employees'" class="employees-tab">
@@ -813,7 +806,8 @@ interface Statistics {
                       <img
                         [src]="photo"
                         alt="Photo du signalement"
-                        class="report-photo"
+                          class="report-photo circular-image"
+                             (click)="openImageModal(photo)"
                       />
                     </div>
                   </div>
@@ -1673,6 +1667,36 @@ subscriptionHistory
     </form>
   </div>
 </div>
+<div class="modal-overlay" *ngIf="selectedImage" (click)="closeImageModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <img [src]="selectedImage" alt="Image en plein écran" class="full-image" />
+        
+    <button class="close-btn" (click)="closeImageModal()">
+      <i class="material-icons">close</i>
+    </button>
+  </div>
+</div>
+<div class="modal-overlay" *ngIf="showHistoryModal" (click)="closeHistoryModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Historique des Collectes</h3>
+      <button class="close-btn" (click)="closeHistoryModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <ul>
+        <li *ngFor="let collecte of historyCollecte">
+          <p><strong>Date :</strong> {{ collecte?.
+scannedAt
+ | date: 'dd/MM/yyyy' }}</p>
+          <p><strong>Statut :</strong> {{ collecte.status }}</p>
+          <p><strong>Client :</strong> {{ collecte?.clientId.firstName }} {{ collecte?.clientId.clientName }}</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
   `,
   styles: [
     `
@@ -1686,6 +1710,42 @@ subscriptionHistory
         align-items: center;
         gap: 24px;
       }
+      .full-image {
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  border-radius: 8px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  position: relative;
+  background: transparent;
+  padding: 0;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
       .employee-grid {
         display: grid;
         grid-template-columns: repeat(
@@ -1710,7 +1770,22 @@ subscriptionHistory
         cursor: pointer;
         transition: all 0.3s ease;
       }
+.modal-body ul {
+  list-style: none;
+  padding: 0;
+}
 
+.modal-body ul li {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.modal-body ul li p {
+  margin: 4px 0;
+}
       .employee-card:hover {
         background: #edf6f9;
         border-color: #38bdf8;
@@ -2297,6 +2372,36 @@ subscriptionHistory
         align-items: center;
         margin-bottom: 16px;
       }
+      .status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: #fff;
+}
+
+
+.status-collected {
+  background-color: #4caf50; /* Vert */
+}
+
+
+.status-in_progress {
+  background-color: #ff9800; /* Orange */
+}
+
+
+.status-scheduled {
+  background-color: #2196f3; /* Bleu */
+}
+
+
+.status-missed {
+  background-color: #f44336; /* Rouge */
+}
+
 
       .collection-status {
         display: flex;
@@ -3195,6 +3300,14 @@ subscriptionHistory
         display: none;
       }
 
+.circular-image {
+  width: 100px;
+  height: 100px; 
+  border-radius: 50%;
+  object-fit: cover; 
+  border: 2px solid #ccc; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+}
       .checkmark {
         width: 16px;
         height: 16px;
@@ -3429,7 +3542,7 @@ export class AgencyDashboardComponent implements OnInit {
       id: "collections",
       label: "Collectes",
       icon: "local_shipping",
-      badge: null,
+      badge: 0,
     },
     { id: "employees", label: "Employés", icon: "people", badge: null },
     { id: "zones", label: "Zones", icon: "map", badge: null },
@@ -3511,6 +3624,12 @@ export class AgencyDashboardComponent implements OnInit {
     this.loadCollectorPlannings();
     this.cdr.detectChanges();
     this.loadZones(this.currentUser);
+    this.loadCollectDay();
+    
+  setInterval(() => {
+    this.loadCollectDay();
+  }, 30000);
+    this.loadCollectHistory();
     this.filterIncidents();
     this.countUnreadMessages();
     this.userMessages();
@@ -5338,6 +5457,7 @@ viewClientDetails(clientId: string): void {
   this.selectedClient = null; 
 }
 editEmployee(employee: any): void {
+  this.notificationService.showInfo("Modification", "ouvert...");
     this.selectedEmployee = employee;
     this.employeeForm.patchValue(employee);
     this.showUpdateEmployeeModal = true;
@@ -5354,7 +5474,6 @@ updateEmployee(): void {
     this.notificationService.showError("Erreur", "Formulaire invalide.");
     return;
   }
-
   // On extrait uniquement les champs nécessaires
   const { _id, createdAt, updatedAt, agencyId, userId, ...employeeData } = {
     ...this.selectedEmployee,
@@ -5372,6 +5491,86 @@ updateEmployee(): void {
       this.notificationService.showError("Erreur", "Impossible de mettre à jour l'employé.");
     },
   });
+}
+
+  // recuperations des collecte par jour d une agences
+  dayCollectes: any[] = [];
+
+loadCollectDay(): void {
+  this.isLoading = true;
+  const agencyId = this.currentUser?._id;
+
+  if (!agencyId) {
+    console.error("[DEBUG] Aucune collecte trouvée pour cette agence en jour");
+    this.notificationService.showError("Erreur", "Aucune agence sélectionnée.");
+    this.isLoading = false;
+    return;
+  }
+  this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
+next: (response) => {
+  this.dayCollectes = response.data || [];
+    console.log("Collectes journalières récupérées :", this.dayCollectes);
+       const CollectesTab = this.tabs.find((tab) => tab.id === "collections");
+        if (CollectesTab) {
+          CollectesTab.badge = this.dayCollectes.length;
+        }
+  this.isLoading = false;
+},
+    error: (error) => {
+      console.error("Erreur récupération collectes :", error);
+      const message = error?.error?.message || "Impossible de récupérer les collectes.";
+      this.notificationService.showError("Erreur", message);
+
+      this.isLoading = false;
+    },
+  });
+}
+ // recuperations des tarifs liee a une agences
+  historyCollecte: any[] = [];
+
+loadCollectHistory(): void {
+  this.isLoading = true;
+  const agencyId = this.currentUser?._id;
+
+  if (!agencyId) {
+    console.error("[DEBUG] Aucune collecte trouvée pour cette agence en jour");
+    this.notificationService.showError("Erreur", "Aucune agence sélectionnée.");
+    this.isLoading = false;
+    return;
+  }
+
+  this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
+next: (response) => {
+  this.historyCollecte = response.data || [];
+  console.log("Historique des Collectes récupérées :", this.historyCollecte);
+  this.isLoading = false;
+},
+    error: (error) => {
+      console.error("Erreur récupération de l historique des collectes :", error);
+      const message = error?.error?.message || "Impossible de récupérer les collectes.";
+      this.notificationService.showError("Erreur", message);
+
+      this.isLoading = false;
+    },
+  });
+}
+selectedImage: string | null = null;
+
+openImageModal(imageUrl: string): void {
+  this.selectedImage = imageUrl;
+}
+
+closeImageModal(): void {
+  this.selectedImage = null;
+}
+showHistoryModal: boolean = false;
+openHistoryModal(): void {
+  this.showHistoryModal = true;
+}
+
+
+closeHistoryModal(): void {
+  this.showHistoryModal = false;
 }
 
 }

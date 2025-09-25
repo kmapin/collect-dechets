@@ -17,6 +17,9 @@ export class CountriesOrgMockService {
   getArrondissementsByCity(cityId: string): Arrondissement[] {
     return MOCK_ARRONDISSEMENTS.filter(arr => arr.city.id === cityId);
   }
+  getArrondissementsByCityLabel(cityId: string): Arrondissement[] {
+    return MOCK_ARRONDISSEMENTS.filter(arr => arr.city.name === cityId);
+  }
 
   getSectorsByArrondissement(arrondissementId: string): Sector[] {
     return MOCK_SECTORS.filter(sector => sector.arrondissement.id === arrondissementId);
@@ -25,6 +28,10 @@ export class CountriesOrgMockService {
   getNeighborhoodsBySector(sectorId: string): Quartier[] {
     return MOCK_QUARTIERS.filter(quartier => quartier.sector.id === sectorId);
   }
+  // getArrondissementsByCityLabel(cityLabel: string): Arrondissement[] {
+  //   const city = MOCK_CITIES.find(c => c.city.label === cityLabel);
+  //   return city ? this.getArrondissementsByCity(city.id) : [];
+  // }
 
   getCountryById(id: string): Country | undefined {
     return MOCK_COUNTRIES.find(country => country.id === id);
@@ -64,5 +71,15 @@ export class CountriesOrgMockService {
       city: quartier.sector.arrondissement.city,
       country: quartier.sector.arrondissement.city.country
     };
+  }
+
+  getAllArrondissementsByVille(villeId: string): Arrondissement[] {
+    return MOCK_ARRONDISSEMENTS.filter(arr => arr.city.name === villeId);
+  }
+  getAllSectorsByVille(villeId: string): Sector[] {
+    return MOCK_SECTORS.filter(secteur => secteur.arrondissement.city.name === villeId);
+  }
+  getAllNeighborhoodsByVille(villeId: string): Quartier[] {
+    return MOCK_QUARTIERS.filter(quartier => quartier.sector.arrondissement.city.name === villeId);
   }
 }

@@ -38,9 +38,10 @@ Email : gangosmeo@gmail.com          Mot de passe : Wise2024
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                 
-                                //////  DO in client dashboard
-Display client all weeklyscheduled of collection =>OK
-Display Client daily collection  ==>OK
-Display client wallet amount ==>OK
-Recharge client wallet ==>OK
-Client collections tracking ihm implemented ==>OK
+                                //////  TO DO in client dashboard
+1. Recuperer et afficher l'historique des collectes ==>(il me faut d'abord un QR code pour le collecteur afin qu'il puisse faire des collectes que je vais recuperer )
+2. Modifier un client, une agence, et meme ladmin ==>()==> 
+3.
+
+
+                                //////  TO DO in client dashboard

@@ -5,6 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
 import { Agency, Tariff, WasteService } from '../../models/agency.model';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { Arrondissement, Quartier, Sector } from '../../models/countries-org.model';
+import { CountriesOrgMockService } from '../../services/countries-org-mock.service';
+
 
 @Component({
   selector: 'app-agencies',
@@ -32,7 +35,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
                 type="text" 
                 [(ngModel)]="searchQuery"
                 (input)="onSearch()"
-                placeholder="Rechercher par nom, ville, quartier..."
+                placeholder="Rechercher par nom, ville, secteur, quartier..."
                 class="search-input">
                     <!-- Ajout de la liste des suggestions -->
             <ul class="suggestions-list" *ngIf="suggestions.length > 0">
@@ -44,45 +47,63 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
           </div>
 
           <div class="filters-grid">
-            <div class="filter-group">
-              <label class="filter-label">Ville</label>
-              <select [(ngModel)]="selectedCity" (change)="applyFilters()" class="filter-select">
-                <option value="">Toutes les villes</option>
-                <option *ngFor="let city of cities" [value]="city">{{ city }}</option>
-              </select>
-            </div>
+              <div class="filter-group">
+                <label class="filter-label">Ville</label>
+                <select [(ngModel)]="selectedCity" (change)="onCityChange(selectedCity)" class="filter-select">
+                  <option value="">Toutes les villes</option>
+                  <option *ngFor="let city of cities" [value]="city">{{ city }}</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label class="filter-label">Secteur</label>
+                <select [(ngModel)]="selectedSector"
+                        (change)="onSecteurChange(selectedSector)"
+                        class="filter-select"
+                        [disabled]="!selectedCity || !secteurss.length">
+                  <option value="">Tous les secteurs</option>
+                  <option *ngFor="let secteur of secteurss" [value]="secteur.name">{{ secteur.name }}</option>
+                </select>
+                <!-- <div *ngIf="!selectedCity"> -->
+                  <sub *ngIf="!selectedCity" class="text-small font-small text-[--error-color]">Sélectionnez d'abord une ville.</sub>
+                <!-- </div> -->
+              </div>
+              <div class="filter-group">
+                <label class="filter-label">Quartier</label>
+                <select [(ngModel)]="selectedNeighborhood"
+                        (change)="applyFilters()"
+                        class="filter-select"
+                        [disabled]="!selectedCity || !quartierss.length">
+                  <option value="">Tous les quartiers</option>
+                  <option *ngFor="let quartier of quartierss" [value]="quartier.name">{{ quartier.name }}</option>
+                </select>
+                  <sub *ngIf="!selectedCity" class="text-small font-small text-[--error-color]">Sélectionnez d'abord une ville.</sub>
 
-            <div class="filter-group">
-              <label class="filter-label">Services</label>
-              <select [(ngModel)]="selectedService" (change)="applyFilters()" class="filter-select">
-                <option value="">Tous les services</option>
-                <option value="standard">Collecte Standard</option>
-                <option value="premium">Collecte Premium</option>
-                <option value="recyclage">Recyclage</option>
-                <option value="organique">Déchets Organiques</option>
-              </select>
-            </div>
-
-            <!-- <div class="filter-group">
-              <label class="filter-label">Prix maximum</label>
-              <select [(ngModel)]="maxPrice" (change)="applyFilters()" class="filter-select">
-                <option value="">Tous les prix</option>
-                <option value="30">Standard</option>
-                <option value="50">Prenuim</option>
-               
-              </select>
-            </div> -->
-
-            <div class="filter-group">
-              <label class="filter-label">Note minimum</label>
-              <select [(ngModel)]="minRating" (change)="applyFilters()" class="filter-select">
-                <option value="">Toutes les notes</option>
-                <option value="3">3 étoiles et plus</option>
-                <option value="4">4 étoiles et plus</option>
-                <option value="4.5">4.5 étoiles et plus</option>
-              </select>
-            </div>
+              </div>
+              <!-- <div class="filter-group">
+                <label class="filter-label">Note minimum</label>
+                <select [(ngModel)]="minRating" (change)="applyFilters()" class="filter-select">
+                  <option value="">Toutes</option>
+                  <option value="3">3 étoiles et plus</option>
+                  <option value="4">4 étoiles et plus</option>
+                  <option value="4.5">4.5 étoiles et plus</option>
+                </select>
+              </div> -->
           </div>
+          <div class="filters-actions" style="text-align:right; margin-top:8px;">
+            <button class="btn  btn-small text-[--error-color] transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-xl  gap-2 font-medium text-sm" (click)="clearFilters()" title="Réinitialiser les filtres">
+              <i class="material-icons">restart_alt</i>
+                            <i class="fas fa-undo-alt group-hover:rotate-180 transition-transform duration-300"></i>
+               Réinitialiser
+            </button>
+          </div>
+          <!-- <div class="flex justify-center lg:justify-end">
+                        <button
+                            class="group px-4 py-2.5 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-2 font-medium text-sm"
+                            (click)="clearFilters()" title="Réinitialiser tous les filtres">
+                            <i class="fas fa-undo-alt group-hover:rotate-180 transition-transform duration-300"></i>
+                            Réinitialiser
+                        </button>
+                    </div> -->
 
           <div class="view-toggle">
             <button 
@@ -112,7 +133,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
         <!-- Résultats -->
         <div class="results-header">
           <h2>{{ filteredAgencies.length }} agence(s) trouvée(s)</h2>
-          <div class="sort-options">
+          <!-- <div class="sort-options">
             <label>Trier par:</label>
             <select [(ngModel)]="sortBy" (change)="sortAgencies()" class="sort-select">
               <option value="name">Nom</option>
@@ -120,7 +141,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
               <option value="price">Prix</option>
               <option value="clients">Nombre de clients</option>
             </select>
-          </div>
+          </div> -->
         </div>
 
         <!-- Vue grille -->
@@ -151,7 +172,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
               <div class="agency-info">
                 <div class="info-item">
                   <i class="material-icons">location_on</i>
-                  <span>{{ agency.address.city || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
+                  <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
                 </div>
                 <div class="info-item">
                   <i class="material-icons">people</i>
@@ -217,7 +238,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
               <div class="agency-list-details">
                 <div class="detail-item">
                   <i class="material-icons">location_on</i>
-                  <span>{{ agency.address.city || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
+                  <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
                 </div>
                 <div class="detail-item">
                   <i class="material-icons">people</i>
@@ -831,12 +852,64 @@ export class AgenciesComponent implements OnInit {
   viewMode: 'grid' | 'list' | 'map' = 'grid';
   agencyTariffs: WasteService[] = [];
   cities: string[] = ['Ouagadougou', 'Bobo-Dioulasso'];
-suggestions: any[] = [];
+  suggestions: any[] = [];
+
+// cities: string[] = [...];
+//sectors: string[] = [...]; // à remplir
+//neighborhoods: string[] = [...]; // à remplir
+
+// cities: City[] = [];
+arrondissementss: Arrondissement[] = [];
+secteurss: Sector[] = [];
+quartierss: Quartier[] = [];
+
+// selectedCity: string = '';
+selectedArrondissement: string = '';
+selectedSector: string = '';
+selectedNeighborhood: string = '';
+// minRating: string = '';
+
+onCityChange(city: string) {
+  const cityObj = this.cities.find(c => c === city);
+  // this.arrondissementss = cityObj ? this.countriesOrgMockService.getArrondissementsByCityLabel(cityObj) : [];
+  this.selectedArrondissement = '';
+  this.secteurss = [];
+  this.selectedSector = '';
+  this.quartierss = [];
+  this.selectedNeighborhood = '';
+  this.getCitiesContent(city);
+  this.applyFilters();
+}
+
+onArrondissementChange(arrondissement: string) {
+  const arrObj = this.arrondissementss.find(a => a.name === arrondissement);
+  // this.secteurss = arrObj ? this.countriesOrgMockService.getSectorsByArrondissement(arrObj.id) : [];
+  this.selectedSector = '';
+  this.quartierss = [];
+  this.selectedNeighborhood = '';
+  // this.applyFilters();
+}
+
+onSecteurChange(secteur: string) {
+  const secteurObj = this.secteurss.find(s => s.name === secteur);
+  // this.quartierss = secteurObj ? this.countriesOrgMockService.getNeighborhoodsBySector(secteurObj.id) : [];
+  this.selectedNeighborhood = '';
+  this.applyFilters();
+}
+
+// selectedCity: string = '';
+// selectedSector: string = '';
+// selectedNeighborhood: string = '';
+// minRating: string = '';
+// searchQuery: string = '';
+
  private searchSubject = new Subject<string>();
   constructor(
     private agencyService: AgencyService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private countriesOrgMockService: CountriesOrgMockService
+    
   ) { }
 
   ngOnInit(): void {
@@ -849,7 +922,16 @@ suggestions: any[] = [];
       this.fetchSuggestions(query);
     })
      const id = this.route.snapshot.paramMap.get('id'); 
-  console.log('ID récupéré :', id);
+    console.log('ID récupéré :', id);
+
+    // this.getCitiesContent(this.selectedCity);
+
+  }
+
+  getCitiesContent(ville: string){
+    this.arrondissementss = this.countriesOrgMockService.getAllArrondissementsByVille(ville);  
+    this.secteurss = this.countriesOrgMockService.getAllSectorsByVille(ville);
+    this.quartierss = this.countriesOrgMockService.getAllNeighborhoodsByVille(ville);
   }
 
   loadAgencies(): void {
@@ -920,28 +1002,33 @@ suggestions: any[] = [];
     this.applyFilters();
   }
 
-  applyFilters(): void {
-    this.filteredAgencies = this.agencies.filter(agency => {
-      const matchesSearch = !this.searchQuery ||
-        agency.agencyName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        agency.address.city.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        agency.address.neighborhood.toLowerCase().includes(this.searchQuery.toLowerCase());
+ // ...existing code...
 
-      const matchesCity = !this.selectedCity || agency.address.city === this.selectedCity;
+applyFilters(): void {
+  const payload: any = {
+    term: this.searchQuery || '',
+    city: this.selectedCity,
+    arrondissement: this.selectedArrondissement,
+    sector: this.selectedSector,
+    neighborhood: this.selectedNeighborhood,
+    rating: this.minRating ? parseFloat(this.minRating) : null
+    // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
+  };
 
-      const matchesService = !this.selectedService ||
-        agency.services.some(service => service.name.toLowerCase().includes(this.selectedService));
+  this.agencyService.searchAgencie(payload).subscribe({
+    next: (response: any) => {
+      this.filteredAgencies = (response.results || []).map((a: any) => this.mapApiAgency(a));
+      console.log("Agences filtrées :", this.filteredAgencies);
+      this.sortAgencies();
+    },
+    error: (err) => {
+      console.error('Erreur lors de la recherche des agences :', err);
+      this.filteredAgencies = [];
+    }
+  });
+}
 
-      const matchesPrice = !this.maxPrice ||
-        agency.services.some(service => service.price <= parseFloat(this.maxPrice));
-
-      const matchesRating = !this.minRating || agency.rating >= parseFloat(this.minRating);
-
-      return matchesSearch && matchesCity && matchesService && matchesPrice && matchesRating;
-    });
-
-    this.sortAgencies();
-  }
+// ...existing code...
 
   sortAgencies(): void {
     this.filteredAgencies.sort((a, b) => {
