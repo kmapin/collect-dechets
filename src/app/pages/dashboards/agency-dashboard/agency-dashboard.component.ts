@@ -5375,4 +5375,35 @@ updateEmployee(): void {
   });
 }
 
+  // recuperations des tarifs liee a une agences
+  dayCollectes: any[] = [];
+
+loadCollectDay(): void {
+  this.isLoading = true;
+  const agencyId = this.currentUser?._id;
+
+  if (!agencyId) {
+    console.error("[DEBUG] Aucune collecte trouvée pour cette agence en jour");
+    this.notificationService.showError("Erreur", "Aucune agence sélectionnée.");
+    this.isLoading = false;
+    return;
+  }
+
+  this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
+    next: (data: any[]) => {
+      this.dayCollectes = data;
+      console.log("Collectes journalières récupérées :", this.dayCollectes);
+      this.isLoading = false;
+    },
+    error: (error) => {
+      console.error("Erreur récupération collectes :", error);
+      const message = error?.error?.message || "Impossible de récupérer les collectes.";
+      this.notificationService.showError("Erreur", message);
+
+      this.isLoading = false;
+    },
+  });
+}
+
+
 }

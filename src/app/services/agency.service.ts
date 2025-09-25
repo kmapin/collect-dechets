@@ -656,6 +656,21 @@ updateEmployee$(id: string, employeeData: any): Observable<Employee> {
     const url = `${environment.apiUrl}/clients/${id}`;
     return this.http.get<any>(url);
   }
+  //recuperation  des collecte journalieres
+getAgencyAllCollectes$(agencyId: string): Observable<any[]> {
+  const url = `${environment.apiUrl}/agences/${agencyId}/collectes/journalieres`;
+
+  return this.http.get<any[]>(url).pipe(
+    map(response => {
+      console.log("API- Get collectes==>", response);
+      return response || [];
+    }),
+    catchError((error) => {
+      console.error("Erreur backend lors de la récupération des collectes :", error);
+      return throwError(() => error);
+    })
+  );
+}
 
   
 }
