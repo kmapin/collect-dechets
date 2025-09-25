@@ -964,7 +964,7 @@ interface Statistics {
             </div>
 
             <!-- Onglet Rapports -->
-            <div class="analytics-tab">
+            <!-- <div class="analytics-tab">
               <div class="analytics-header">
                 <h2>Rapports et Statistiques</h2>
                 <div class="analytics-filters">
@@ -1046,7 +1046,7 @@ interface Statistics {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> -->
           </div>
           <!-- Onglet tarif -->
           <div class="analytics-tab">
@@ -3353,7 +3353,7 @@ export class AgencyDashboardComponent implements OnInit {
     { id: "clients", label: "Clients", icon: "person", badge: null },
     { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
     { id: "messages", label: "Messages", icon: "message", badge: 0 },
-    { id: "analytics", label: "Rapports", icon: "analytics", badge: null },
+    // { id: "analytics", label: "Rapports", icon: "analytics", badge: null },
   ];
 
   weekDays = [
