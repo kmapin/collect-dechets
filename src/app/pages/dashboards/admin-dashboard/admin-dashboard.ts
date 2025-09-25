@@ -261,7 +261,7 @@ interface Communication {
               </div>
             </div>
 
-            <div class="stat-card card">
+            <!-- <div class="stat-card card">
               <div class="stat-icon revenue">
                 <i class="material-icons">euro</i>
               </div>
@@ -272,9 +272,9 @@ interface Communication {
                 </p>
                 <span class="stat-trend positive">+12.3% vs mois dernier</span>
               </div>
-            </div>
+            </div> -->
 
-            <div class="stat-card card">
+            <!-- <div class="stat-card card">
               <div class="stat-icon compliance">
                 <i class="material-icons">verified</i>
               </div>
@@ -289,7 +289,7 @@ interface Communication {
                   {{ getComplianceText() }}
                 </span>
               </div>
-            </div>
+            </div> -->
 
             <div class="stat-card card">
               <div class="stat-icon incidents">
