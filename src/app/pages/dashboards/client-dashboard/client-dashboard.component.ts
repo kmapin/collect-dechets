@@ -67,13 +67,14 @@ interface Subscription {
               <div class="stat-icon next-collection">
                 <i class="material-icons">event</i>
               </div>
-              <div class="stat-info">
+              <div class="stat-info" >
                 <h3>Prochaine collecte</h3>
                 <p class="stat-value">{{ nextCollect?.date | date:'dd MMMM' : 'fr-FR' }}</p>
                 <!-- <p class="stat-value">{{ getNextCollectionTime(nextCollect?.date)  }}</p> -->
                 <!-- <span class="stat-detail">{{ getnextCollectionHour(nextCollect?.date) }}</span> -->
-                <span class="stat-detail">à {{ nextCollect?.startTime }}</span>
+                <span class="stat-detail">entre {{ nextCollect?.startTime }} et {{ nextCollect?.endTime }} </span>
               </div>
+              
             </div>
 
             <div class="stat-card card">
@@ -82,8 +83,8 @@ interface Subscription {
               </div>
               <div class="stat-info">
                 <h3>Collectes ce mois</h3>
-                <p class="stat-value">{{ getMonthlyCollections() }}</p>
-                <span class="stat-detail">{{ getCollectionRate() }}% de réussite</span>
+                <!-- <p class="stat-value">{{ getMonthlyCollections() }}</p> -->
+                <!-- <span class="stat-detail">{{ getCollectionRate() }}% de réussite</span> -->
               </div>
             </div>
 
@@ -1702,17 +1703,17 @@ export class ClientDashboardComponent implements OnInit {
     return '';
   }
 
-  getMonthlyCollections(): string {
-    const completed = this.collectionHistory.filter(c => c.status === CollectionStatus.COMPLETED).length;
-    const total = this.collectionHistory.length + this.upcomingCollections.length;
-    return `${completed} / ${total}`;
-  }
+  // getMonthlyCollections(): string {
+  //   const completed = this.collectionHistory.filter(c => c.status === CollectionStatus.COMPLETED).length;
+  //   const total = this.collectionHistory.length + this.upcomingCollections.length;
+  //   return `${completed} / ${total}`;
+  // }
 
-  getCollectionRate(): number {
-    const completed = this.collectionHistory.filter(c => c.status === CollectionStatus.COMPLETED).length;
-    const total = this.collectionHistory.length;
-    return total > 0 ? Math.round((completed / total) * 100) : 100;
-  }
+  // getCollectionRate(): number {
+  //   const completed = this.collectionHistory.filter(c => c.status === CollectionStatus.COMPLETED).length;
+  //   const total = this.collectionHistory.length;
+  //   return total > 0 ? Math.round((completed / total) * 100) : 100;
+  // }
 
   getNextPayment(paiementDate: string | null): string {
     paiementDate = paiementDate || this.activeSubscription?.endDate;
