@@ -440,12 +440,12 @@ interface Statistics {
                     </div>
                   </div>
                   <div class="employee-actions">
-                    <!-- <button
-                      class="action-btn"
-                      (click)="showUpdateEmployeeModal = true"
-                    >
-                      <i class="material-icons">edit</i>
-                    </button> -->
+                   <button
+  class="action-btn"
+  (click)="editEmployee(employee)"
+>
+  <i class="material-icons">edit</i>
+</button>
                     <button
                       class="action-btn danger"
                       (click)="deleteEmployee(currentUser, employee)"
@@ -495,9 +495,9 @@ interface Statistics {
                     <div class="zone-header">
                       <h4>{{ zone.name }}</h4>
                       <div class="zone-actions">
-                        <button class="action-btn" (click)="editZone(zone.id)">
+                        <!-- <button class="action-btn" (click)="editZone(zone.id)">
                           <i class="material-icons">edit</i>
-                        </button>
+                        </button> -->
                         <button
                           class="action-btn danger"
                           (click)="deleteZone(zone.id)"
@@ -1169,109 +1169,7 @@ interface Statistics {
                   </form>
                 </div>
               </div>
-              <!-- Modal update Employé -->
-              <div
-                class="modal-overlay"
-                *ngIf="showUpdateEmployeeModal"
-                (click)="showUpdateEmployeeModal = false"
-              >
-                <div class="modal-content" (click)="$event.stopPropagation()">
-                  <div class="modal-header">
-                    <h3>Modifier un Employé</h3>
-                    <button
-                      class="close-btn"
-                      (click)="showUpdateEmployeeModal = false"
-                    >
-                      <i class="material-icons">close</i>
-                    </button>
-                  </div>
-                  <form class="employee-form">
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label>Prénom *</label>
-                        <input
-                          type="text"
-                          [(ngModel)]="newEmployee.firstName"
-                          name="firstName"
-                          required
-                        />
-                      </div>
-                      <div class="form-group">
-                        <label>Nom *</label>
-                        <input
-                          type="text"
-                          [(ngModel)]="newEmployee.lastName"
-                          name="lastName"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label>Email *</label>
-                      <input
-                        type="email"
-                        [(ngModel)]="newEmployee.email"
-                        name="email"
-                        required
-                      />
-                    </div>
-                    <div class="form-group">
-                      <label>Téléphone *</label>
-                      <input
-                        type="tel"
-                        [(ngModel)]="newEmployee.phone"
-                        name="phone"
-                        required
-                      />
-                    </div>
-                    <div class="form-group">
-                      <label>Rôle *</label>
-                      <select
-                        [(ngModel)]="newEmployee.role"
-                        name="role"
-                        required
-                      >
-                        <option value="">Sélectionner un rôle</option>
-                        <option value="manager">Manager</option>
-                        <option value="collector">Collecteur</option>
-                      </select>
-                    </div>
-                    <div
-                      class="form-group"
-                      *ngIf="newEmployee.role === 'collector'"
-                    >
-                      <label>Zones assignées</label>
-                      <div class="zones-checkboxes">
-                        <label
-                          *ngFor="let zone of serviceZones"
-                          class="checkbox-label"
-                        >
-                          <input
-                            type="checkbox"
-                            [value]="zone.id"
-                            (change)="toggleZoneAssignment(zone.id, $event)"
-                          />
-                          <span class="checkmark"></span>
-                          {{ zone.name }}
-                        </label>
-                      </div>
-                    </div>
-                    <div class="form-actions">
-                      <button
-                        type="button"
-                        class="btn btn-secondary"
-                        (click)="showAddEmployeeModal = false"
-                      >
-                        Annuler
-                      </button>
-                      <button type="submit" class="btn btn-primary">
-                        <i class="material-icons">person_add</i>
-                        modifier
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+             
               <!-- Modal Gestion Zone -->
               <div
                 class="modal-overlay"
@@ -1730,6 +1628,50 @@ subscriptionHistory
     <div class="modal-footer">
       <button class="btn btn-secondary" (click)="closeClientDetailsModal()">Fermer</button>
     </div>
+  </div>
+</div>
+<!-- Modal pour modifier un employé -->
+<div
+  class="modal-overlay"
+  *ngIf="showUpdateEmployeeModal"
+  (click)="closeUpdateEmployeeModal()"
+>
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Modifier un Employé</h3>
+      <button class="close-btn" (click)="closeUpdateEmployeeModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <form [formGroup]="employeeForm" (ngSubmit)="updateEmployee()">
+      <div class="form-group">
+        <label>Prénom</label>
+        <input formControlName="firstName" type="text" />
+      </div>
+      <div class="form-group">
+        <label>Nom</label>
+        <input formControlName="lastName" type="text" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input formControlName="email" type="email" />
+      </div>
+      <div class="form-group">
+        <label>Téléphone</label>
+        <input formControlName="phone" type="tel" />
+      </div>
+      <div class="form-group">
+        <label>Rôle</label>
+        <select formControlName="role">
+          <option value="manager">Manager</option>
+          <option value="collector">Collecteur</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeUpdateEmployeeModal()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="employeeForm.invalid">Enregistrer</button>
+      </div>
+    </form>
   </div>
 </div>
   `,
@@ -3518,8 +3460,10 @@ export class AgencyDashboardComponent implements OnInit {
     receiver: "",
     content: "",
   };
+  
   client: any;
   receivedId: string = "";
+    employeeForm: FormGroup;
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
@@ -3545,6 +3489,13 @@ export class AgencyDashboardComponent implements OnInit {
         validators: [this.validateTimeOrder],
       }
     );
+     this.employeeForm = this.fb.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', Validators.required],
+      role: ['', Validators.required],
+    });
   }
 
   ngOnInit(): void {
@@ -4433,9 +4384,7 @@ export class AgencyDashboardComponent implements OnInit {
     // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
-  editEmployee(employeeId: string): void {
-    // No need to call notificationService.showInfo here, as it's already handled in the template
-  }
+ 
 
   // deleteEmployee(employeeId: string): void {
   //   if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
@@ -5389,4 +5338,41 @@ viewClientDetails(clientId: string): void {
   this.showClientDetailsModal = false;
   this.selectedClient = null; 
 }
+editEmployee(employee: any): void {
+    this.selectedEmployee = employee;
+    this.employeeForm.patchValue(employee);
+    this.showUpdateEmployeeModal = true;
+  }
+
+  closeUpdateEmployeeModal(): void {
+    this.showUpdateEmployeeModal = false;
+    this.selectedEmployee = [];
+  }
+
+ 
+updateEmployee(): void {
+  if (this.employeeForm.invalid) {
+    this.notificationService.showError("Erreur", "Formulaire invalide.");
+    return;
+  }
+
+  // On extrait uniquement les champs nécessaires
+  const { _id, createdAt, updatedAt, agencyId, userId, ...employeeData } = {
+    ...this.selectedEmployee,
+    ...this.employeeForm.value,
+  };
+
+  this.agencyService.updateEmployee$(_id, employeeData).subscribe({
+    next: () => {
+      this.notificationService.showSuccess("Succès", "Employé mis à jour avec succès.");
+      this.showUpdateEmployeeModal = false;
+      this.loadEmployees(this.currentUser); // Recharge la liste
+    },
+    error: (err) => {
+      console.error("Erreur lors de la mise à jour :", err);
+      this.notificationService.showError("Erreur", "Impossible de mettre à jour l'employé.");
+    },
+  });
+}
+
 }

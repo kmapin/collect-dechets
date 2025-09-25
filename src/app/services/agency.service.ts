@@ -641,17 +641,17 @@ updateEmployeeStatus(employeeId: string, payload: { agencyId: string; isActive: 
   const url = `${environment.apiUrl}/agences/employees/${employeeId}`;
   return this.http.put<{ message: string; employee: Employee }>(url, payload);
 }
- updateEmployee(id: number, employeeData: Employee): Observable<Employee> {
+updateEmployee$(id: string, employeeData: any): Observable<Employee> {
   const url = `${environment.apiUrl}/agences/employees/${id}`;
-
   return this.http.put<Employee>(url, employeeData).pipe(
     catchError((error) => {
-      // log optionnel
-      console.error('Erreur backend:', error);
+      console.error("Erreur backend:", error);
       return throwError(() => error);
     })
   );
 }
+
+
   getClientById(id: string): Observable<any> {
     const url = `${environment.apiUrl}/clients/${id}`;
     return this.http.get<any>(url);
