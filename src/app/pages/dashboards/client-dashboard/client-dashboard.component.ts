@@ -2094,7 +2094,7 @@ export class ClientDashboardComponent implements OnInit {
       this.notificationService.showError("Erreur", "Agence non trouvée");
       return;
     }
-    this.messageData.sender = this.currentUser?._id || "";
+    this.messageData.sender = this.currentUser?.userId || "";
     this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
     if (!this.messageData.content) {
