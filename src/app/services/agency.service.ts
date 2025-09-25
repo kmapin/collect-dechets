@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, delay, map, tap } from 'rxjs/operators';
-import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tariff, PlanningResponse } from '../models/agency.model';
+import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tariff, PlanningResponse, PaginatedResponse } from '../models/agency.model';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
@@ -657,10 +657,10 @@ updateEmployee$(id: string, employeeData: any): Observable<Employee> {
     return this.http.get<any>(url);
   }
   //recuperation  des collecte journalieres
-getAgencyAllCollectes$(agencyId: string): Observable<any[]> {
-  const url = `${environment.apiUrl}/agences/${agencyId}/collectes/journalieres`;
+getAgencyAllCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
+  const url = `${environment.apiUrl}/collecte/${agencyId}/scan`;
 
-  return this.http.get<any[]>(url).pipe(
+  return this.http.get<PaginatedResponse<any>>(url).pipe(
     map(response => {
       console.log("API- Get collectes==>", response);
       return response || [];

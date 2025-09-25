@@ -233,113 +233,93 @@ interface Statistics {
           </div>
 
           <!-- Contenu des onglets -->
-          <div class="tab-content">
-            <!-- Onglet Suivi des Collectes -->
-            <div *ngIf="activeTab === 'collections'" class="collections-tab">
-              <div class="collections-header">
-                <h2>Suivi des Collectes en Temps Réel</h2>
-                <div class="collections-filters">
-                  <select
-                    [(ngModel)]="collectionsFilter"
-                    (change)="filterCollections()"
-                    class="filter-select"
-                  >
-                    <option value="all">Toutes les collectes</option>
-                    <option value="scheduled">Programmées</option>
-                    <option value="in_progress">En cours</option>
-                    <option value="completed">Terminées</option>
-                    <option value="missed">Manquées</option>
-                  </select>
-                  <select
-                    [(ngModel)]="selectedZone"
-                    (change)="filterCollections()"
-                    class="filter-select"
-                  >
-                    <option value="">Toutes les zones</option>
-                    <option *ngFor="let zone of serviceZones" [value]="zone.id">
-                      {{ zone.name }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-              <div class="collections-grid">
-                <div
-                  *ngFor="let collection of filteredCollections"
-                  class="collection-card card"
-                >
-                  <div class="collection-header">
-                    <div class="collection-status">
-                      <span
-                        class="status-badge"
-                        [class]="'status-' + collection.status"
-                      >
-                        {{ getStatusText(collection.status) }}
-                      </span>
-                      <span class="collection-time">{{
-                        collection.scheduledDate | date : "HH:mm"
-                      }}</span>
-                    </div>
-                    <div class="collection-actions">
-                      <button
-                        class="action-btn"
-                        (click)="trackCollection(collection.id)"
-                        *ngIf="collection.status === 'in_progress'"
-                      >
-                        <i class="material-icons">location_on</i>
-                      </button>
-                      <button
-                        class="action-btn"
-                        (click)="contactClient(collection.clientId)"
-                      >
-                        <i class="material-icons">phone</i>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="collection-info">
-                    <h4>{{ getClientName(collection.clientId) }}</h4>
-                    <p class="collection-address">
-                      <i class="material-icons">location_on</i>
-                      {{ collection.address.doorNumber }}
-                      {{ collection.address.street }},
-                      {{ collection.address.neighborhood }}
-                    </p>
-                    <p class="collection-waste">
-                      <i class="material-icons">delete</i>
-                      {{ getWasteTypeName(collection.wasteTypes[0]) }}
-                    </p>
-                    <p
-                      class="collection-collector"
-                      *ngIf="collection.collectorId"
-                    >
-                      <i class="material-icons">person</i>
-                      {{ collection }}
-                    </p>
-                  </div>
+  
+<div class="tab-content">
+  <!-- Onglet Suivi des Collectes -->
+  <div *ngIf="activeTab === 'collections'" class="collections-tab">
+    <div class="collections-header">
+      <h2>Suivi des Collectes en Temps Réel</h2>
+      <div class="collections-filters">
+        <select
+          [(ngModel)]="collectionsFilter"
+          (change)="filterCollections()"
+          class="filter-select"
+        >
+          <option value="all">Toutes les collectes</option>
+          <option value="scheduled">Programmées</option>
+          <option value="in_progress">En cours</option>
+          <option value="collected">Collectées</option>
+          <option value="missed">Manquées</option>
+        </select>
+      </div>
+    </div>
 
-                  <div
-                    class="collection-progress"
-                    *ngIf="collection.status === 'in_progress'"
-                  >
-                    <div class="progress-bar">
-                      <div
-                        class="progress-fill"
-                        [style.width]="getCollectionProgress(collection) + '%'"
-                      ></div>
-                    </div>
-                    <span class="progress-text"
-                      >{{ getCollectionProgress(collection) }}% terminé</span
-                    >
-                  </div>
-                </div>
-              </div>
+    <div class="collections-grid">
+      <div
+        *ngFor="let collecte of dayCollectes"
+        class="collection-card card"
+      >
+        <!-- Header -->
+        <div class="collection-header">
+          <div class="collection-status">
+            <span
+              class="status-badge"
+              [class]="'status-' + collecte.status"
+            >
+              {{ collecte.status }}
+            </span>
+            <span class="collection-time">
+              {{ collecte.createdAt | date: "dd/MM/yyyy HH:mm" }}
+            </span>
+          </div>
 
-              <div *ngIf="filteredCollections.length === 0" class="empty-state">
-                <i class="material-icons">event_available</i>
-                <h3>Aucune collecte</h3>
-                <p>Aucune collecte ne correspond aux filtres sélectionnés</p>
-              </div>
-              <div class="collections-grid"></div>
-            </div>
+          <div class="collection-actions">
+            <button
+              class="action-btn"
+              (click)="trackCollection(collecte._id)"
+              *ngIf="collecte.status === 'in_progress'"
+            >
+              <i class="material-icons">location_on</i>
+            </button>
+            <button
+              class="action-btn"
+              (click)="contactClient(collecte.clientId)"
+            >
+              <i class="material-icons">phone</i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Infos -->
+        <div class="collection-info">
+   
+                  <i class="material-icons">person</i>
+            {{collecte.clientId.firstName + " " + collecte.clientId.lastName }}
+          <p>
+            <i class="material-icons">person</i>
+            Collecteur : {{collecte.collectorId.firstName + " " + collecte.collectorId.lastName }}
+          </p>
+          <p>
+            <i class="material-icons">apartment</i>
+            Agence : {{ collecte.agencyId.agencyName
+ }}
+          </p>
+          <p>
+            <i class="material-icons">schedule</i>
+            Scannée à : {{ collecte.scannedAt | date: "dd/MM/yyyy HH:mm" }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- État vide -->
+    <div *ngIf="dayCollectes.length === 0" class="empty-state">
+      <i class="material-icons">event_available</i>
+      <h3>Aucune collecte</h3>
+      <p>Aucune collecte disponible pour l’instant</p>
+    </div>
+  </div>
+
 
             <!-- Onglet Gestion des Employés -->
             <div *ngIf="activeTab === 'employees'" class="employees-tab">
@@ -2298,6 +2278,36 @@ subscriptionHistory
         align-items: center;
         margin-bottom: 16px;
       }
+      .status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: #fff;
+}
+
+
+.status-collected {
+  background-color: #4caf50; /* Vert */
+}
+
+
+.status-in_progress {
+  background-color: #ff9800; /* Orange */
+}
+
+
+.status-scheduled {
+  background-color: #2196f3; /* Bleu */
+}
+
+
+.status-missed {
+  background-color: #f44336; /* Rouge */
+}
+
 
       .collection-status {
         display: flex;
@@ -3512,6 +3522,7 @@ export class AgencyDashboardComponent implements OnInit {
     this.loadCollectorPlannings();
     this.cdr.detectChanges();
     this.loadZones(this.currentUser);
+    this.loadCollectDay();
     this.filterIncidents();
     this.countUnreadMessages();
     this.userMessages();
@@ -5390,11 +5401,11 @@ loadCollectDay(): void {
   }
 
   this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
-    next: (data: any[]) => {
-      this.dayCollectes = data;
-      console.log("Collectes journalières récupérées :", this.dayCollectes);
-      this.isLoading = false;
-    },
+next: (response) => {
+  this.dayCollectes = response.data || [];
+  console.log("Collectes journalières récupérées :", this.dayCollectes);
+  this.isLoading = false;
+},
     error: (error) => {
       console.error("Erreur récupération collectes :", error);
       const message = error?.error?.message || "Impossible de récupérer les collectes.";
