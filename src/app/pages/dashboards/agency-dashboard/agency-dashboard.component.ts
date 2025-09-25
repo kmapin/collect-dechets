@@ -651,13 +651,20 @@ interface Statistics {
                         <span class="status-badge status-active">Actif</span>
                       </td>
                       <td>
-                        <button
+                        <!-- <button
                           class="action-btn"
                           (click)="suspendClient(client._id)"
                           title="Suspendre"
                         >
                           <i class="material-icons">pause</i>
-                        </button>
+                        </button> -->
+                        <button
+                          class="action-btn danger"
+                            (click)="viewClientDetails(client._id)"
+                          >
+                          <i class="material-icons">visibility</i>
+                          
+                          </button>
                         <button
                           class="action-btn danger"
                           (click)="deleteClient(client._id)"
@@ -665,6 +672,13 @@ interface Statistics {
                         >
                           <i class="material-icons">delete</i>
                         </button>
+                        <!-- <button
+                            class="btn btn-secondary"
+                            (click)="viewClientDetails(client?._id)"
+                          >
+                            <i class="material-icons">visibility</i>
+                            Détails
+                          </button> -->
                       </td>
                     </tr>
                   </tbody>
@@ -1678,6 +1692,46 @@ interface Statistics {
         </div>
       </div>
     </div>
+    <div
+  class="modal-overlay"
+  *ngIf="showClientDetailsModal"
+  (click)="closeClientDetailsModal()"
+>
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Détails du Client</h3>
+      <button class="close-btn" (click)="closeClientDetailsModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p><strong>Nom :</strong> {{ selectedClient?.firstName }} {{ selectedClient?.lastName }}</p>
+      <p><strong>Email :</strong> {{ selectedClient?.userId?.email }}</p>
+      <p><strong>Téléphone :</strong> {{ selectedClient?.phone }}</p>
+      <p><strong>Adresse :</strong> {{ selectedClient?.address?.street }}, {{ selectedClient?.address?.neighborhood }}</p>
+      <p><strong>Rôle :</strong> {{ selectedClient?.userId?.role }}</p>
+         <p><strong>Sigalement:</strong> {{selectedClient?.nonPassageReports.length}}</p>
+         <p><strong>Nombre de souscription:</strong> {{selectedClient?.
+subscriptionHistory
+.length}}</p>
+
+      <ul>
+        <!-- <span>Souscription:</span> -->
+        <!-- <li *ngFor="let subscription of selectedClient?.subscriptionHistory">
+          {{ subscription.type }} - {{ subscription.status }}
+        </li>  
+            -->
+      
+      </ul>
+  
+
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeClientDetailsModal()">Fermer</button>
+    </div>
+  </div>
+</div>
   `,
   styles: [
     `
@@ -1755,6 +1809,95 @@ interface Statistics {
         color: var(--white);
         margin-bottom: 8px;
       }
+      /* Overlay du modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Contenu du modal */
+.modal-content {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* En-tête du modal */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  font-size: 1.5rem;
+}
+
+.close-btn:hover {
+  color: #f44336;
+}
+
+/* Corps du modal */
+.modal-body p {
+  margin: 8px 0;
+  font-size: 1rem;
+  color: #555;
+}
+
+.modal-body ul {
+  padding-left: 20px;
+}
+
+.modal-body ul li {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Pied de page du modal */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.modal-footer .btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.modal-footer .btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: #e0e0e0;
+}
 
       .welcome-section p {
         color: rgba(255, 255, 255, 0.9);
@@ -4330,11 +4473,23 @@ export class AgencyDashboardComponent implements OnInit {
       // No need to call notificationService.showSuccess here, as it's already handled in the template
     }
   }
-
-  viewClientDetails(clientId: string): void {
-    // No need to call notificationService.showInfo here, as it's already handled in the template
-  }
-
+  selectedClient: any = null; 
+showClientDetailsModal: boolean = false;
+viewClientDetails(clientId: string): void {
+  this.notificationService.showInfo("Détails", "Récupération des détails du client...");
+  
+  this.agencyService.getClientById(clientId).subscribe({
+    next: (client: any) => {
+      this.selectedClient = client.data; 
+      console.log('voici les details du client:',client)
+      this.showClientDetailsModal = true; 
+    },
+    error: (err: any) => {
+      console.error("Erreur lors de la récupération des détails du client :", err);
+      this.notificationService.showError("Erreur", "Impossible de récupérer les détails du client.");
+    }
+  });
+}
   suspendClient(clientId: string): void {
     const client = this.clients.find((c) => c.id === clientId);
     if (client) {
@@ -5229,4 +5384,8 @@ export class AgencyDashboardComponent implements OnInit {
   getRandomColor(item: any): string {
     return this.sharedService.getRandomColor(item);
   }
+  closeClientDetailsModal(): void {
+  this.showClientDetailsModal = false;
+  this.selectedClient = null; 
+}
 }

@@ -652,6 +652,10 @@ updateEmployeeStatus(employeeId: string, payload: { agencyId: string; isActive: 
     })
   );
 }
+  getClientById(id: string): Observable<any> {
+    const url = `${environment.apiUrl}/clients/${id}`;
+    return this.http.get<any>(url);
+  }
 
   
 }
