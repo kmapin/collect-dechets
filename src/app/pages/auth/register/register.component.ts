@@ -1090,7 +1090,7 @@ export class RegisterComponent implements OnInit {
 
           if (isSuccess) {
             this.notificationService.showSuccess('Inscription agence réussie',
-              'Votre agence a été créée avec succès ! Vous pouvez maintenant vous connecter.');
+           'Votre agence a été créée avec succès ! Veuillez patienter pendant que l’administrateur active votre compte avant de pouvoir vous connecter.');
             setTimeout(() => {
               this.router.navigate(['/login']);
             }, 2000);

@@ -1,10 +1,11 @@
-import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { User, UserRole } from '../../models/user.model';
 import { NotificationService } from '../../services/notification.service';
 import { MatIconModule } from '@angular/material/icon';
+import { interval, Subscription, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-header',
@@ -1064,12 +1065,15 @@ export class HeaderComponent implements OnInit {
   isMobileMenuOpen = false;
   isScrolled = false;
   showNotifications = false;
+    private refreshSub!: Subscription;
   notifications: any[] = [];
   constructor(
     private authService: AuthService,
     private router: Router,
     private notificationService: NotificationService,
-    private eRef: ElementRef
+    private eRef: ElementRef,
+        private cdr: ChangeDetectorRef,
+    
   ) { }
 
   ngOnInit(): void {
@@ -1083,6 +1087,8 @@ export class HeaderComponent implements OnInit {
       this.isAuthenticated = isAuth;
     });
     this.loadNotifications();
+        // this.startAutoRefresh();
+           this.cdr.detectChanges();
   }
 
   @HostListener('window:scroll', [])
@@ -1182,6 +1188,7 @@ markAsRead(notifId: string): void {
     this.notificationService.markNotificationAsRead$(notifId).subscribe({
       next: () => {
         notif.read = true;
+         this.router.navigate(['/']);
       },
       error: (err) => {
         console.error(`Erreur lors du marquage comme lu de la notification ${notifId} :`, err);
@@ -1244,7 +1251,35 @@ markAsRead(notifId: string): void {
       this.showNotifications = false;
     }
   }
+   ngOnDestroy(): void {
+    // Arrêter le rafraîchissement pour éviter les fuites mémoire
+    if (this.refreshSub) {
+      this.refreshSub.unsubscribe();
+    }
+  }
 
+startAutoRefresh(): void {
+    const userId = this.currentUser?.id;
+    if (!userId) {
+      console.warn('UUID utilisateur introuvable.');
+      return;
+    }
+
+    // Rafraîchir toutes les  secondes
+    this.refreshSub = interval(5000)
+      .pipe(
+        switchMap(() => this.notificationService.getAllNotificationsAgency$(userId))
+      )
+      .subscribe({
+        next: (data: any) => {
+          console.log('Notifications reçues :', data);
+          this.notifications = data.notifications;
+        },
+        error: (err) => {
+          console.error('Erreur lors du chargement des notifications :', err);
+        }
+      });
+  }
 }
 
 
