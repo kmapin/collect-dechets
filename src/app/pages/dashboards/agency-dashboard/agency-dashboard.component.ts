@@ -293,7 +293,7 @@ interface Statistics {
         <!-- Infos -->
         <div class="collection-info">
    
-                  <i class="material-icons">person</i>
+                  <i class="material-icons">group</i>
             {{collecte.clientId.firstName + " " + collecte.clientId.lastName }}
           <p>
             <i class="material-icons">person</i>
