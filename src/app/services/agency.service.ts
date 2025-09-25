@@ -152,6 +152,16 @@ export class AgencyService {
     );
     return of(filtered).pipe(delay(500));
   }
+ searchAgencie(params: { term?: string; city?: string; sector?: string; rating?: string; neighborhood?: string; service?: string }) {
+  let httpParams = new HttpParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) httpParams = httpParams.set(key, value);
+  });
+
+  return this.http.get<any>(`${environment.apiUrl}/agences/search`, { params: httpParams }).pipe(
+    map(response => response || [])
+  );
+}
 
   getAgenciesByZone(latitude: number, longitude: number): Observable<Agency[]> {
     // Simple distance calculation for demo
