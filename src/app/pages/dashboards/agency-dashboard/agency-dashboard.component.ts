@@ -665,13 +665,13 @@ interface Statistics {
                           <i class="material-icons">visibility</i>
                           
                           </button>
-                        <button
+                        <!-- <button
                           class="action-btn danger"
-                          (click)="deleteClient(client._id)"
+                          (click)="deleteClient()"
                           title="Supprimer"
                         >
                           <i class="material-icons">delete</i>
-                        </button>
+                        </button> -->
                         <!-- <button
                             class="btn btn-secondary"
                             (click)="viewClientDetails(client?._id)"
@@ -4502,15 +4502,16 @@ viewClientDetails(clientId: string): void {
     }
   }
 
-  deleteClient(clientId: string): void {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce client ?")) {
+  deleteClient(): void {
+
       // Ajoute la logique de suppression ici (API ou local)
       // ...
       this.notificationService.showSuccess(
-        "Client supprimé",
-        "Le client a bien été supprimé."
+        "Désole",
+        "Suppression non autorisée"
+        
       );
-    }
+   
   }
 
   resolveReport(reportId: string): void {
