@@ -671,6 +671,20 @@ getAgencyAllCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
     })
   );
 }
+  //recuperation l historique  des collecte pour une agence
+getAgencyAllHistoryCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
+  const url = `${environment.apiUrl}/collecte/${agencyId}/scan`;
 
+  return this.http.get<PaginatedResponse<any>>(url).pipe(
+    map(response => {
+      console.log("API- Get collectes==>", response);
+      return response || [];
+    }),
+    catchError((error) => {
+      console.error("Erreur backend lors de la récupération des collectes :", error);
+      return throwError(() => error);
+    })
+  );
+}
   
 }

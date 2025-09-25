@@ -251,6 +251,17 @@ interface Statistics {
           <option value="collected">Collectées</option>
           <option value="missed">Manquées</option>
         </select>
+           
+    <!-- Bouton historique -->
+    <button
+      class="action-btn"
+
+      title="Voir l’historique des collectes"
+      style="margin-left: 10px;"
+     
+    >
+      <i class="material-icons">history</i>
+    </button>
       </div>
     </div>
 
@@ -317,6 +328,7 @@ interface Statistics {
       <i class="material-icons">event_available</i>
       <h3>Aucune collecte</h3>
       <p>Aucune collecte disponible pour l’instant</p>
+   
     </div>
   </div>
 
@@ -793,7 +805,7 @@ interface Statistics {
                       <img
                         [src]="photo"
                         alt="Photo du signalement"
-                        class="report-photo"
+                          class="report-photo circular-image"
                       />
                     </div>
                   </div>
@@ -3206,6 +3218,14 @@ subscriptionHistory
         display: none;
       }
 
+.circular-image {
+  width: 100px;
+  height: 100px; 
+  border-radius: 50%;
+  object-fit: cover; 
+  border: 2px solid #ccc; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+}
       .checkmark {
         width: 16px;
         height: 16px;
@@ -3523,6 +3543,11 @@ export class AgencyDashboardComponent implements OnInit {
     this.cdr.detectChanges();
     this.loadZones(this.currentUser);
     this.loadCollectDay();
+    
+  setInterval(() => {
+    this.loadCollectDay();
+  }, 30000);
+    this.loadCollectHistory();
     this.filterIncidents();
     this.countUnreadMessages();
     this.userMessages();
@@ -5350,6 +5375,7 @@ viewClientDetails(clientId: string): void {
   this.selectedClient = null; 
 }
 editEmployee(employee: any): void {
+  this.notificationService.showInfo("Modification", "ouvert...");
     this.selectedEmployee = employee;
     this.employeeForm.patchValue(employee);
     this.showUpdateEmployeeModal = true;
@@ -5366,7 +5392,6 @@ updateEmployee(): void {
     this.notificationService.showError("Erreur", "Formulaire invalide.");
     return;
   }
-
   // On extrait uniquement les champs nécessaires
   const { _id, createdAt, updatedAt, agencyId, userId, ...employeeData } = {
     ...this.selectedEmployee,
@@ -5386,7 +5411,7 @@ updateEmployee(): void {
   });
 }
 
-  // recuperations des tarifs liee a une agences
+  // recuperations des collecte par jour d une agences
   dayCollectes: any[] = [];
 
 loadCollectDay(): void {
@@ -5403,11 +5428,40 @@ loadCollectDay(): void {
   this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
 next: (response) => {
   this.dayCollectes = response.data || [];
-  console.log("Collectes journalières récupérées :", this.dayCollectes);
+    console.log("Collectes journalières récupérées :", this.dayCollectes);
   this.isLoading = false;
 },
     error: (error) => {
       console.error("Erreur récupération collectes :", error);
+      const message = error?.error?.message || "Impossible de récupérer les collectes.";
+      this.notificationService.showError("Erreur", message);
+
+      this.isLoading = false;
+    },
+  });
+}
+ // recuperations des tarifs liee a une agences
+  historyCollecte: any[] = [];
+
+loadCollectHistory(): void {
+  this.isLoading = true;
+  const agencyId = this.currentUser?._id;
+
+  if (!agencyId) {
+    console.error("[DEBUG] Aucune collecte trouvée pour cette agence en jour");
+    this.notificationService.showError("Erreur", "Aucune agence sélectionnée.");
+    this.isLoading = false;
+    return;
+  }
+
+  this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
+next: (response) => {
+  this.historyCollecte = response.data || [];
+  console.log("Historique des Collectes récupérées :", this.historyCollecte);
+  this.isLoading = false;
+},
+    error: (error) => {
+      console.error("Erreur récupération de l historique des collectes :", error);
       const message = error?.error?.message || "Impossible de récupérer les collectes.";
       this.notificationService.showError("Erreur", message);
 
