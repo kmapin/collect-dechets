@@ -1376,6 +1376,41 @@ interface Communication {
         </div>
       </div>
     </div>
+    <!-- Modal pour les détails du client -->
+<div
+  class="modal-overlay"
+  *ngIf="showClientDetailsModal"
+  (click)="closeClientDetailsModal()"
+>
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Détails du Client</h3>
+      <button class="close-btn" (click)="closeClientDetailsModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p><strong>Nom :</strong> {{ selectedClient?.firstName }} {{ selectedClient?.lastName }}</p>
+      <p><strong>Email :</strong> {{ selectedClient?.userId?.email }}</p>
+      <p><strong>Téléphone :</strong> {{ selectedClient?.phone }}</p>
+      <p><strong>Adresse :</strong> {{ selectedClient?.address?.street }}, {{ selectedClient?.address?.neighborhood }}</p>
+      <p><strong>Rôle :</strong> {{ selectedClient?.userId?.role }}</p>
+      <!-- <p><strong>Historique des abonnements :</strong></p> -->
+      <ul>
+        <span>Etat de son Abonement:</span>
+        <li *ngFor="let subscription of selectedClient?.subscriptionHistory">
+          {{ subscription.type }} - {{ subscription.status }}
+        </li>     
+      </ul>
+  
+
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeClientDetailsModal()">Fermer</button>
+    </div>
+  </div>
+</div>
   `,
   styles: [
     `
@@ -1383,7 +1418,95 @@ interface Communication {
         min-height: 100vh;
         background: var(--light-gray);
       }
+/* Overlay du modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
 
+/* Contenu du modal */
+.modal-content {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* En-tête du modal */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  font-size: 1.5rem;
+}
+
+.close-btn:hover {
+  color: #f44336;
+}
+
+/* Corps du modal */
+.modal-body p {
+  margin: 8px 0;
+  font-size: 1rem;
+  color: #555;
+}
+
+.modal-body ul {
+  padding-left: 20px;
+}
+
+.modal-body ul li {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Pied de page du modal */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.modal-footer .btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.modal-footer .btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: #e0e0e0;
+}
       .header-content {
         display: flex;
         justify-content: space-between;
@@ -3520,12 +3643,23 @@ export class AdminDashboard implements OnInit {
     );
     this.router.navigate(["/agencies", agencyId]);
   }
-  viewClientDetails(clientId: string): void {
-    this.notificationService.showInfo(
-      "Détails",
-      "Ouverture des détails du client"
-    );
-  }
+  selectedClient: any = null; 
+showClientDetailsModal: boolean = false;
+viewClientDetails(clientId: string): void {
+  this.notificationService.showInfo("Détails", "Récupération des détails du client...");
+  
+  this.adminService.getClientById(clientId).subscribe({
+    next: (client: any) => {
+      this.selectedClient = client.data; 
+      console.log('voici les details du client:',client)
+      this.showClientDetailsModal = true; 
+    },
+    error: (err: any) => {
+      console.error("Erreur lors de la récupération des détails du client :", err);
+      this.notificationService.showError("Erreur", "Impossible de récupérer les détails du client.");
+    }
+  });
+}
   viewCollectorDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",
@@ -3828,4 +3962,8 @@ export class AdminDashboard implements OnInit {
     this.router.navigate(["/register"]);
     this.adminService.setData("municipality");
   }
+  closeClientDetailsModal(): void {
+  this.showClientDetailsModal = false;
+  this.selectedClient = null; 
+}
 }
