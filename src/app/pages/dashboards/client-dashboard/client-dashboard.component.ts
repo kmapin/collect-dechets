@@ -326,7 +326,7 @@ interface Subscription {
 
                 <div class="history-list history-message">
                   <div
-                    *ngFor="let message of receivedMessages"
+                    *ngFor="let message of connectedUserMessages"
                     class="history-item"
                   >
                     <div class="history-date">
@@ -403,7 +403,7 @@ interface Subscription {
                 <div class="parent">
                   <!-- Header -->
                   <div class="chat-header-column">
-                    Vous discutez avec WISE Clean Azimmo
+                    Vous discutez avec {{ displayAgencyName }}
                   </div>
 
                   <div class="message-content">
@@ -416,36 +416,59 @@ interface Subscription {
                       </div>
 
                       <div class="chat-left-column-content">
-                        <div class="chat-left-column-content-item">
-                          WISE Clean Azimmo
-                        </div>
-                        <div class="chat-left-column-content-item">
-                          WISE Clean Azimmo
-                        </div>
-                        <div class="chat-left-column-content-item">
-                          WISE Clean Azimmo
-                        </div>
-                        <div class="chat-left-column-content-item">
-                          WISE Clean Azimmo
-                        </div>
+                        <ng-container *ngFor="let message of connectedUserMessages">
+                          <button
+                          class="chat-left-column-content-item"
+                          *ngIf="message.senderName"
+                          (click)="
+                            userAndAgencyConversation(
+                              message.sender,
+                              message.receiver
+                            )
+                          "
+                        >
+                          {{ message.senderName }}
+                        </button>
+                        </ng-container>
+                        
                       </div>
                     </div>
 
                     <!-- Messages + Input -->
                     <div class="chat-area">
                       <div class="chat-messages">
-                        <div class="received ">
-                          <div class="div5 chat-bubble">
-                            <span> Hello, how are you?</span>
-                            <span class="chat-time">reçu le 22/02/2023</span>
+                        <ng-container *ngFor="let message of receivedMessages">
+                          <div
+                            class="received "
+                            *ngIf="message.sender !== currentUser?._id"
+                          >
+                            <div class="div5 chat-bubble">
+                              <span> {{ message.content }}</span>
+                              <span class="chat-time"
+                                >reçu le
+                                {{
+                                  message.timestamp
+                                    | date : "dd/MMM/yyyy à HH:mm"
+                                }}</span
+                              >
+                            </div>
                           </div>
-                        </div>
-                        <div class="sent">
-                          <div class="div6 chat-bubble">
-                            <span>Hello, I'm good. How about you?</span>
-                            <span class="chat-time">envoyé le 22/02/2023</span>
+                          <div
+                            class="sent"
+                            *ngIf="message.sender === currentUser?._id"
+                          >
+                            <div class="div6 chat-bubble">
+                              <span> {{ message.content }}</span>
+                              <span class="chat-time"
+                                >envoyé le
+                                {{
+                                  message.timestamp
+                                    | date : "dd/MMM/yyyy  à HH:mm"
+                                }}</span
+                              >
+                            </div>
                           </div>
-                        </div>
+                        </ng-container>
                       </div>
 
                       <!-- Input fixé en bas -->
@@ -1762,11 +1785,13 @@ interface Subscription {
       /*Liste des discussions*/
       .chat-left-column-content {
         flex: 1;
-        overflow-y: auto; 
+        max-height: 500px;
+        overflow-y: auto;
       }
 
       .chat-left-column-content-item {
         padding: 12px 16px;
+        min-width: 100%;
         border-bottom: 1px solid #f0f0f0;
         cursor: pointer;
         background-color: var(--surface-300);
@@ -1778,7 +1803,7 @@ interface Subscription {
       }
 
       .chat-left-column-content-item.active {
-        background-color: #e6f4ea; 
+        background-color: #e6f4ea;
         font-weight: bold;
       }
       /** Grid messagerie end */
@@ -1842,6 +1867,7 @@ export class ClientDashboardComponent implements OnInit {
   };
   unreadMessageCount: any;
   receivedMessages: any;
+  connectedUserMessages: any;
   agency: any;
   showMessageModal: boolean = false;
   receivedId: string = "";
@@ -1857,6 +1883,7 @@ export class ClientDashboardComponent implements OnInit {
 
   // Montant de recharge
   rechargeAmount: number = 0;
+  displayAgencyName: any;
   constructor(
     private authService: AuthService,
     private collectionService: CollectionService,
@@ -2044,29 +2071,46 @@ export class ClientDashboardComponent implements OnInit {
         next: (response: any) => {
           if (response) {
             console.log("API > getMessagesForUser:", response);
-            this.receivedMessages = response.messages || [];
-            this.receivedMessages.forEach((message: any) => {
+            this.connectedUserMessages = response.messages || [];
+
+            this.connectedUserMessages.forEach((message: any) => {
               message.read = message.read.toString();
-              return this.agencyService
-                .getAgencyByIdFromApi(message.sender)
-                .subscribe((response: any) => {
-                  console.log("API > getAgencyByIdFromApi client:", response);
-                  if (response.success && response.data) {
-                    this.agency = response.data;
-                    console.log(
-                      "API > getAgencyByIdFromApi client:",
-                      this.agency
-                    );
-                    message.senderName = this.agency.agencyName;
+
+              this.agencyService
+                .getAgencyByIdFromApi(message.sender || message.receiver)
+                .subscribe((res: any) => {
+                  if (res.success && res.data) {
+                    message.senderName = res.data.agencyName;
                   }
+
+                  console.log(
+                    "Received messages (no duplicates):",
+                    this.connectedUserMessages
+                  );
                 });
             });
-            console.log("Received messages:", this.receivedMessages);
           }
         },
         error: (error: any) => {
           console.error("API > getMessagesForUser:", error);
         },
+      });
+  }
+
+  userAndAgencyConversation(cliendId: string, agencyId: string) {
+    this.clientService
+      .userAndAgencyConversation(cliendId, agencyId)
+      .subscribe((response: any) => {
+        console.log("API >userAndAgencyConversation:", response);
+        if (response) {
+          console.log("API >userAndAgencyConversation:", response);
+          this.receivedMessages = response.messages || [];
+
+          this.displayAgencyName = this.receivedMessages[0].senderName;
+          this.receivedMessages.forEach((message: any) => {
+            message.read = message.read.toString();
+          });
+        }
       });
   }
   readAndRespondMessage(message: Message): void {
@@ -2094,7 +2138,7 @@ export class ClientDashboardComponent implements OnInit {
       this.notificationService.showError("Erreur", "Agence non trouvée");
       return;
     }
-    this.messageData.sender = this.currentUser?.userId || "";
+    this.messageData.sender = this.currentUser?._id || "";
     this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
     if (!this.messageData.content) {
