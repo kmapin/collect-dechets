@@ -696,5 +696,21 @@ getAgencyAllHistoryCollectes$(agencyId: string): Observable<PaginatedResponse<an
     })
   );
 }
+// Mise à jour des zones de service pour une agence
+updateAgencyZones$(agencyId: string, zoneData: { name: string[]; description: string }): Observable<any> {
+  const url = `${environment.apiUrl}/zones/${agencyId}`;
+
+  return this.http.patch<any>(url, zoneData).pipe(
+    map(response => {
+      console.log("API - Zones mises à jour :", response);
+      return response;
+    }),
+    catchError(error => {
+      console.error("Erreur lors de la mise à jour des zones :", error);
+      return throwError(() => error);
+    })
+  );
+}
+
   
 }

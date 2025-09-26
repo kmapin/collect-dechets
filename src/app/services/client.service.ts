@@ -136,4 +136,13 @@ export class ClientService {
       })
     );
   }
+
+  userAndAgencyConversation(clientId: string, agencyId: string): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/messages/${clientId}/inbox/${agencyId}`).pipe(
+      map((response: any) => {
+        console.log('API > userAndAgencyConversation:', response);
+        return response;
+      })
+    );
+  }
 }

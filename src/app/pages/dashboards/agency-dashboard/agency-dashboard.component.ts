@@ -433,12 +433,12 @@ interface Statistics {
                   </div>
                   
                   <div class="employee-actions">
-                   <button
-  class="action-btn"
-  (click)="editEmployee(employee)"
->
-  <i class="material-icons">edit</i>
-</button>
+                    <button
+                        class="action-btn"
+                        (click)="editEmployee(employee)"
+                      >
+                        <i class="material-icons">edit</i>
+                    </button>
                     <button
                       class="action-btn danger"
                       (click)="deleteEmployee(currentUser, employee)"
@@ -903,8 +903,7 @@ interface Statistics {
                       class="btn btn-success"
                       (click)="readAndRespondMessage(message)"
                       *ngIf="
-                        message.sender !== currentUser?._id &&
-                        message.read === 'false'
+                        message.sender !== currentUser?._id
                       "
                     >
                       <i class="material-icons">check</i>
@@ -1688,9 +1687,11 @@ subscriptionHistory
     <div class="modal-body">
       <ul>
         <li *ngFor="let collecte of historyCollecte">
-          <p><strong>Date :</strong> {{ collecte.date | date: 'dd/MM/yyyy' }}</p>
+          <p><strong>Date :</strong> {{ collecte?.
+scannedAt
+ | date: 'dd/MM/yyyy' }}</p>
           <p><strong>Statut :</strong> {{ collecte.status }}</p>
-          <p><strong>Client :</strong> {{ collecte.clientName }}</p>
+          <p><strong>Client :</strong> {{ collecte?.clientId.firstName }} {{ collecte?.clientId.clientName }}</p>
         </li>
       </ul>
     </div>
@@ -3541,7 +3542,7 @@ export class AgencyDashboardComponent implements OnInit {
       id: "collections",
       label: "Collectes",
       icon: "local_shipping",
-      badge: null,
+      badge: 0,
     },
     { id: "employees", label: "Employés", icon: "people", badge: null },
     { id: "zones", label: "Zones", icon: "map", badge: null },
@@ -5515,11 +5516,14 @@ loadCollectDay(): void {
     this.isLoading = false;
     return;
   }
-
   this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
 next: (response) => {
   this.dayCollectes = response.data || [];
     console.log("Collectes journalières récupérées :", this.dayCollectes);
+       const CollectesTab = this.tabs.find((tab) => tab.id === "collections");
+        if (CollectesTab) {
+          CollectesTab.badge = this.dayCollectes.length;
+        }
   this.isLoading = false;
 },
     error: (error) => {

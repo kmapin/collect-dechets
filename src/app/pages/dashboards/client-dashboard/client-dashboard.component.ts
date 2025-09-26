@@ -1,23 +1,25 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../../services/auth.service';
-import { CollectionService } from '../../../services/collection.service';
-import { NotificationService } from '../../../services/notification.service';
-import { User } from '../../../models/user.model';
-import { Collection, CollectionStatus } from '../../../models/collection.model';
-import { ClientService } from '../../../services/client.service';
-import { map } from 'rxjs';
-import { MessagesService } from '../../../services/messages.service';
-import { AgencyService } from '../../../services/agency.service';
-import { Message } from '../../../models/message.model';
+import { BarcodeFormat } from "@zxing/library";
+import { Component, OnInit } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { RouterModule } from "@angular/router";
+import { FormsModule } from "@angular/forms";
+import { AuthService } from "../../../services/auth.service";
+import { CollectionService } from "../../../services/collection.service";
+import { NotificationService } from "../../../services/notification.service";
+import { User } from "../../../models/user.model";
+import { Collection, CollectionStatus } from "../../../models/collection.model";
+import { ClientService } from "../../../services/client.service";
+import { map } from "rxjs";
+import { MessagesService } from "../../../services/messages.service";
+import { AgencyService } from "../../../services/agency.service";
+import { Message } from "../../../models/message.model";
+import { MatIcon } from "@angular/material/icon";
 
 interface PaymentHistory {
   id: string;
   date: Date;
   amount: number;
-  status: 'completed' | 'pending' | 'failed';
+  status: "completed" | "pending" | "failed";
   description: string;
   method: string;
 }
@@ -28,14 +30,14 @@ interface Subscription {
   agencyName: string;
   price: number;
   frequency: string;
-  status: 'active' | 'suspended' | 'cancelled';
+  status: "active" | "suspended" | "cancelled";
   nextPayment: Date;
 }
 
 @Component({
-  selector: 'app-client-dashboard',
+  selector: "app-client-dashboard",
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, MatIcon],
   template: `
     <div class="client-dashboard">
       <div class="page-header">
@@ -43,7 +45,9 @@ interface Subscription {
           <div class="header-content">
             <div class="welcome-section">
               <h1 class="page-title">Bonjour {{ currentUser?.firstName }} !</h1>
-              <p class="page-subtitle">Gérez vos collectes et abonnements en toute simplicité</p>
+              <p class="page-subtitle">
+                Gérez vos collectes et abonnements en toute simplicité
+              </p>
             </div>
             <div class="quick-actions">
               <button class="btn btn-primary" (click)="showReportModal = true">
@@ -67,14 +71,18 @@ interface Subscription {
               <div class="stat-icon next-collection">
                 <i class="material-icons">event</i>
               </div>
-              <div class="stat-info" >
+              <div class="stat-info">
                 <h3>Prochaine collecte</h3>
-                <p class="stat-value">{{ nextCollect?.date | date:'dd MMMM' : 'fr-FR' }}</p>
+                <p class="stat-value">
+                  {{ nextCollect?.date | date : "dd MMMM" : "fr-FR" }}
+                </p>
                 <!-- <p class="stat-value">{{ getNextCollectionTime(nextCollect?.date)  }}</p> -->
                 <!-- <span class="stat-detail">{{ getnextCollectionHour(nextCollect?.date) }}</span> -->
-                <span class="stat-detail">entre {{ nextCollect?.startTime }} et {{ nextCollect?.endTime }} </span>
+                <span class="stat-detail"
+                  >entre {{ nextCollect?.startTime }} et
+                  {{ nextCollect?.endTime }}
+                </span>
               </div>
-              
             </div>
 
             <div class="stat-card card">
@@ -105,8 +113,16 @@ interface Subscription {
               </div>
               <div class="stat-info" *ngIf="activeSubscription">
                 <h3>Prochain paiement</h3>
-                <p class="stat-value">{{ getNextPayment(activeSubscription?.endDate | date:'dd MMMM yyyy') }}</p>
-                <span class="stat-detail">{{ activeSubscription?.amount }} F CFA</span>
+                <p class="stat-value">
+                  {{
+                    getNextPayment(
+                      activeSubscription?.endDate | date : "dd MMMM yyyy"
+                    )
+                  }}
+                </p>
+                <span class="stat-detail"
+                  >{{ activeSubscription?.amount }} F CFA</span
+                >
               </div>
             </div>
 
@@ -116,11 +132,14 @@ interface Subscription {
               </div>
               <div class="stat-info">
                 <h3>Wallet</h3>
-                <p class="stat-value">{{clientBalance | number}} FCFA</p>
-                <button class="btn btn-secondary btn-small" (click)="showRechargeModal = true">
-                    <i class="material-icons">refresh</i>
-                    Recharger
-                  </button>
+                <p class="stat-value">{{ clientBalance | number }} FCFA</p>
+                <button
+                  class="btn btn-secondary btn-small"
+                  (click)="showRechargeModal = true"
+                >
+                  <i class="material-icons">refresh</i>
+                  Recharger
+                </button>
               </div>
             </div>
           </div>
@@ -135,17 +154,25 @@ interface Subscription {
                     <i class="material-icons">schedule</i>
                     Prochains passages planifiés/semaine
                   </h2>
-                  <button class="btn btn-secondary btn-small" (click)="refreshCollections()">
+                  <button
+                    class="btn btn-secondary btn-small"
+                    (click)="refreshCollections()"
+                  >
                     <i class="material-icons">refresh</i>
                     Actualiser
                   </button>
                 </div>
 
                 <div class="collections-list">
-                  <div *ngFor="let collection of weeklySchedule" class="collection-item">
+                  <div
+                    *ngFor="let collection of weeklySchedule"
+                    class="collection-item"
+                  >
                     <div class="collection-date">
-                      <div class="day">{{ collection.date | date:'dd' }}</div>
-                      <div class="month">{{ collection.date | date:'MMM' }}</div>
+                      <div class="day">{{ collection.date | date : "dd" }}</div>
+                      <div class="month">
+                        {{ collection.date | date : "MMM" }}
+                      </div>
                     </div>
                     <div class="collection-info">
                       <!-- <h4>{{ getWasteTypeName(collection.wasteTypes[0]) }}</h4> -->
@@ -162,16 +189,26 @@ interface Subscription {
                     </div>
                     <div class="collection-status">
                       <span class="status-badge" [class]="'status-scheduled'">
-                        {{ getStatusText(collection.isActive) ? 'Active' : 'Inactif' }}
+                        {{
+                          getStatusText(collection.isActive)
+                            ? "Active"
+                            : "Inactif"
+                        }}
                       </span>
                       <div class="collection-actions">
-                        <button class="action-btn" (click)="trackCollection(collection._id)" 
-                                *ngIf="collection.isActive === 'in_progress'">
+                        <button
+                          class="action-btn"
+                          (click)="trackCollection(collection._id)"
+                          *ngIf="collection.isActive === 'in_progress'"
+                        >
                           <i class="material-icons">location_on</i>
                           Suivre
                         </button>
-                        <button class="action-btn" (click)="reportIssue(collection._id)"
-                                *ngIf="collection.isActive === true ">
+                        <button
+                          class="action-btn"
+                          (click)="reportIssue(collection._id)"
+                          *ngIf="collection.isActive === true"
+                        >
                           <i class="material-icons">report</i>
                           Signaler
                         </button>
@@ -195,7 +232,11 @@ interface Subscription {
                     Historique des collectes
                   </h2>
                   <div class="filter-controls">
-                    <select [(ngModel)]="historyFilter" (change)="filterHistory()" class="filter-select">
+                    <select
+                      [(ngModel)]="historyFilter"
+                      (change)="filterHistory()"
+                      class="filter-select"
+                    >
                       <option value="all">Toutes</option>
                       <option value="completed">Réalisées</option>
                       <option value="missed">Manquées</option>
@@ -205,29 +246,56 @@ interface Subscription {
                 </div>
 
                 <div class="history-list">
-                  <div *ngFor="let collection of filteredHistory" class="history-item">
+                  <div
+                    *ngFor="let collection of filteredHistory"
+                    class="history-item"
+                  >
                     <div class="history-date">
-                      <div class="day">{{ collection.scheduledDate | date:'dd' }}</div>
-                      <div class="month">{{ collection.scheduledDate | date:'MMM' }}</div>
+                      <div class="day">
+                        {{ collection.scheduledDate | date : "dd" }}
+                      </div>
+                      <div class="month">
+                        {{ collection.scheduledDate | date : "MMM" }}
+                      </div>
                     </div>
                     <div class="history-info">
                       <h4>{{ getWasteTypeName(collection.wasteTypes[0]) }}</h4>
-                      <p class="history-time">{{ collection.scheduledDate | date:'HH:mm' }}</p>
-                      <p class="history-collector" *ngIf="collection.collectedDate">
-                        Collecté le {{ collection.collectedDate | date:'dd/MM à HH:mm' }}
+                      <p class="history-time">
+                        {{ collection.scheduledDate | date : "HH:mm" }}
+                      </p>
+                      <p
+                        class="history-collector"
+                        *ngIf="collection.collectedDate"
+                      >
+                        Collecté le
+                        {{ collection.collectedDate | date : "dd/MM à HH:mm" }}
                       </p>
                     </div>
                     <div class="history-status">
-                      <span class="status-badge" [class]="'status-' + collection.status">
+                      <span
+                        class="status-badge"
+                        [class]="'status-' + collection.status"
+                      >
                         {{ getStatusText(collection.status) }}
                       </span>
-                      <div class="history-rating" *ngIf="collection.status === 'completed'">
+                      <div
+                        class="history-rating"
+                        *ngIf="collection.status === 'completed'"
+                      >
                         <div class="stars">
-                          <i *ngFor="let star of getStars(collection.rating || 0)" 
-                             class="material-icons star">star</i>
+                          <i
+                            *ngFor="
+                              let star of getStars(collection.rating || 0)
+                            "
+                            class="material-icons star"
+                            >star</i
+                          >
                         </div>
-                        <button class="rate-btn" (click)="rateCollection(collection.id)" 
-                                *ngIf="!collection.rating">
+                        <button
+                          class="rate-btn"
+                          (click)="rateCollection(collection.id)"
+                          *ngIf="!collection.rating"
+                        >
                           Noter
                         </button>
                       </div>
@@ -250,56 +318,194 @@ interface Subscription {
                     Messagerie
                   </h2>
                   <div class="filter-controls">
-                    <span class="section-count">{{ unreadMessageCount}} message(s) non lu(s)</span>
+                    <span class="section-count"
+                      >{{ unreadMessageCount }} message(s) non lu(s)</span
+                    >
                   </div>
                 </div>
 
                 <div class="history-list history-message">
-                  <div *ngFor="let message of receivedMessages" class="history-item">
+                  <div
+                    *ngFor="let message of connectedUserMessages"
+                    class="history-item"
+                  >
                     <div class="history-date">
-                      <div class="day">{{ message.timestamp | date:'dd' }}</div>
-                      <div class="month">{{ message.timestamp | date:'MMM' }}</div>
+                      <div class="day">
+                        {{ message.timestamp | date : "dd" }}
+                      </div>
+                      <div class="month">
+                        {{ message.timestamp | date : "MMM" }}
+                      </div>
                     </div>
                     <div class="history-info">
                       <h4>{{ message.content }}</h4>
-                      <p class="history-time">{{ message.timestamp | date:'HH:mm' }}</p>
-                      <p class="history-collector" *ngIf="message.sender!== currentUser?._id">
-                        Reçu de <span class="sender-name">{{  message.senderName  }}</span>
+                      <p class="history-time">
+                        {{ message.timestamp | date : "HH:mm" }}
                       </p>
-                      <p class="history-collector" *ngIf="message.sender=== currentUser?._id">
+                      <p
+                        class="history-collector"
+                        *ngIf="message.sender !== currentUser?._id"
+                      >
+                        Reçu de
+                        <span class="sender-name">{{
+                          message.senderName
+                        }}</span>
+                      </p>
+                      <p
+                        class="history-collector"
+                        *ngIf="message.sender === currentUser?._id"
+                      >
                         Moi
                       </p>
                     </div>
                     <div class="history-status">
                       <span class="status-badge">
-                        {{ message.read === 'false' ? 'Non lu' : 'Lu' }}
+                        {{ message.read === "false" ? "Non lu" : "Lu" }}
                       </span>
-                      <div class="history-rating" *ngIf="message.read === 'false'">
-                        <button class="rate-btn" (click)="readAndRespondMessage(message)" 
-                                *ngIf="!message.rating">
+                      <div
+                        class="history-rating"
+                        *ngIf="message.read === 'false'"
+                      >
+                        <button
+                          class="rate-btn"
+                          (click)="readAndRespondMessage(message)"
+                          *ngIf="!message.rating"
+                        >
                           Repondre
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  <div *ngIf="filteredHistory.length === 0" class="empty-state">
+                  <div *ngIf="unreadMessageCount === 0" class="empty-state">
                     <i class="material-icons">history</i>
-                    <h3>Aucun historique</h3>
-                    <p>Vos collectes passées apparaîtront ici</p>
+                    <h3>Aucun message</h3>
+                    <p>Vos messages apparaîtront ici</p>
                   </div>
                 </div>
               </section>
+
+              <!-- Messages 2 -->
+              <section class="collection-message card">
+                <div class="section-header">
+                  <h2>
+                    <i class="material-icons">message</i>
+                    Messagerie
+                  </h2>
+                  <div class="filter-controls">
+                    <span class="section-count"
+                      >{{ unreadMessageCount }} message(s) non lu(s)</span
+                    >
+                  </div>
+                </div>
+
+                <!-- <div class="history-list history-message"> -->
+                <div class="parent">
+                  <!-- Header -->
+                  <div class="chat-header-column">
+                    Vous discutez avec {{ displayAgencyName }}
+                  </div>
+
+                  <div class="message-content">
+                    <!-- Sidebar -->
+                    <div class="chat-left-column">
+                      <div class="chat-left-column-header">
+                        <div class="chat-left-column-header-title">
+                          Mes discussions
+                        </div>
+                      </div>
+
+                      <div class="chat-left-column-content">
+                        <ng-container *ngFor="let message of connectedUserMessages">
+                          <button
+                          class="chat-left-column-content-item"
+                          *ngIf="message.senderName"
+                          (click)="
+                            userAndAgencyConversation(
+                              message.sender,
+                              message.receiver
+                            )
+                          "
+                        >
+                          {{ message.senderName }}
+                        </button>
+                        </ng-container>
+                        
+                      </div>
+                    </div>
+
+                    <!-- Messages + Input -->
+                    <div class="chat-area">
+                      <div class="chat-messages">
+                        <ng-container *ngFor="let message of receivedMessages">
+                          <div
+                            class="received "
+                            *ngIf="message.sender !== currentUser?._id"
+                          >
+                            <div class="div5 chat-bubble">
+                              <span> {{ message.content }}</span>
+                              <span class="chat-time"
+                                >reçu le
+                                {{
+                                  message.timestamp
+                                    | date : "dd/MMM/yyyy à HH:mm"
+                                }}</span
+                              >
+                            </div>
+                          </div>
+                          <div
+                            class="sent"
+                            *ngIf="message.sender === currentUser?._id"
+                          >
+                            <div class="div6 chat-bubble">
+                              <span> {{ message.content }}</span>
+                              <span class="chat-time"
+                                >envoyé le
+                                {{
+                                  message.timestamp
+                                    | date : "dd/MMM/yyyy  à HH:mm"
+                                }}</span
+                              >
+                            </div>
+                          </div>
+                        </ng-container>
+                      </div>
+
+                      <!-- Input fixé en bas -->
+                      <div class="div7 chat-input-row">
+                        <input
+                          class="sendChatMessage"
+                          type="text"
+                          placeholder="Composez votre message"
+                        />
+                        <div class="chat-actions">
+                          <button type="submit">
+                            <mat-icon class="material-icons">send</mat-icon>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
               <!-- Message -->
-              <div class="modal-overlay" *ngIf="showMessageModal" (click)="showMessageModal = false">
+              <div
+                class="modal-overlay"
+                *ngIf="showMessageModal"
+                (click)="showMessageModal = false"
+              >
                 <div class="modal-content" (click)="$event.stopPropagation()">
                   <div class="modal-header">
                     <h3>Décrivez nous votre besoins</h3>
-                    <button class="close-btn" (click)="showMessageModal = false">
+                    <button
+                      class="close-btn"
+                      (click)="showMessageModal = false"
+                    >
                       <i class="material-icons">close</i>
                     </button>
                   </div>
-                  <form class="report-form" >
+                  <form class="report-form">
                     <!-- <div class="form-group">
                       <label>Destinataire</label>
                       <select [(ngModel)]="messageData.receiver" name="receiver" required>
@@ -311,17 +517,30 @@ interface Subscription {
                         <option value="other">Autre</option>
                       </select>
                     </div>-->
-                    
+
                     <div class="form-group">
                       <label>Message</label>
-                      <textarea [(ngModel)]="messageData.content" name="content" 
-                                rows="4" placeholder="Votre message..." required></textarea>
+                      <textarea
+                        [(ngModel)]="messageData.content"
+                        name="content"
+                        rows="4"
+                        placeholder="Votre message..."
+                        required
+                      ></textarea>
                     </div>
                     <div class="form-actions">
-                      <button type="button" class="btn btn-secondary" (click)="showMessageModal = false">
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        (click)="showMessageModal = false"
+                      >
                         Annuler
                       </button>
-                      <button type="button" class="btn btn-primary" (click)="submitMessage() ; showMessageModal = false">
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        (click)="submitMessage(); showMessageModal = false"
+                      >
                         <i class="material-icons">send</i>
                         Envoyer
                       </button>
@@ -329,9 +548,6 @@ interface Subscription {
                   </form>
                 </div>
               </div>
-
-
-
             </div>
 
             <div class="right-column">
@@ -342,25 +558,36 @@ interface Subscription {
                     <i class="material-icons">card_membership</i>
                     Mon abonnement
                   </h2>
-                  <button class="btn btn-secondary btn-small" routerLink="/subscription">
+                  <button
+                    class="btn btn-secondary btn-small"
+                    routerLink="/subscription"
+                  >
                     <i class="material-icons">edit</i>
                     Changer de forfait
                   </button>
                 </div>
 
-                <div class="subscription-details" *ngIf="activeSubscription; else noSub">
+                <div
+                  class="subscription-details"
+                  *ngIf="activeSubscription; else noSub"
+                >
                   <div class="subscription-service">
                     <h3>Collecte {{ activeSubscription.plan }}</h3>
                     <p>{{ activeSubscription.agencyId?.agencyName }}</p>
                   </div>
 
                   <div class="subscription-pricing">
-                    <div class="price">{{ activeSubscription.amount }} <sup>F CFA</sup></div>
+                    <div class="price">
+                      {{ activeSubscription.amount }} <sup>F CFA</sup>
+                    </div>
                     <div class="frequency">par mois</div>
                   </div>
 
                   <div class="subscription-status">
-                    <span class="status-badge" [class]="'status-' + activeSubscription.status">
+                    <span
+                      class="status-badge"
+                      [class]="'status-' + activeSubscription.status"
+                    >
                       {{ getSubscriptionStatusText(activeSubscription.status) }}
                     </span>
                   </div>
@@ -417,17 +644,23 @@ interface Subscription {
                     <i class="material-icons">receipt</i>
                     Historique des paiements
                   </h2>
-                  <button class="btn btn-secondary btn-small" (click)="downloadInvoices()">
+                  <button
+                    class="btn btn-secondary btn-small"
+                    (click)="downloadInvoices()"
+                  >
                     <i class="material-icons">download</i>
                     Télécharger
                   </button>
                 </div>
 
                 <div class="payments-list">
-                  <div *ngFor="let payment of paymentHistory" class="payment-item">
+                  <div
+                    *ngFor="let payment of paymentHistory"
+                    class="payment-item"
+                  >
                     <div class="payment-date">
-                      <div class="day">{{ payment.date | date:'dd' }}</div>
-                      <div class="month">{{ payment.date | date:'MMM' }}</div>
+                      <div class="day">{{ payment.date | date : "dd" }}</div>
+                      <div class="month">{{ payment.date | date : "MMM" }}</div>
                     </div>
                     <div class="payment-details">
                       <h4>{{ payment.description }}</h4>
@@ -435,7 +668,10 @@ interface Subscription {
                     </div>
                     <div class="payment-amount">
                       <span class="amount">{{ payment.amount }} FCFA</span>
-                      <span class="status-badge" [class]="'status-' + payment.status">
+                      <span
+                        class="status-badge"
+                        [class]="'status-' + payment.status"
+                      >
                         {{ getPaymentStatusText(payment.status) }}
                       </span>
                     </div>
@@ -457,7 +693,10 @@ interface Subscription {
                     Adresse de collecte
                   </h2>
                   <!-- <button class="btn btn-secondary btn-small" routerLink="/profile" (click)="editAddress()"> -->
-                  <button class="btn btn-secondary btn-small" routerLink="/profile">
+                  <button
+                    class="btn btn-secondary btn-small"
+                    routerLink="/profile"
+                  >
                     <i class="material-icons">edit</i>
                     Modifier
                   </button>
@@ -466,7 +705,10 @@ interface Subscription {
                 <div class="address-details" *ngIf="currentUser">
                   <div class="address-line">
                     <i class="material-icons">location_on</i>
-                    <span>{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
+                    <span
+                      >{{ currentUser.firstName }}
+                      {{ currentUser.lastName }}</span
+                    >
                   </div>
                   <div class="address-line">
                     <i class="material-icons">home</i>
@@ -489,14 +731,17 @@ interface Subscription {
                   </div>
                 </div> -->
               </section>
-              
             </div>
           </div>
         </div>
       </div>
 
       <!-- Modal de signalement -->
-      <div class="modal-overlay" *ngIf="showReportModal" (click)="showReportModal = false">
+      <div
+        class="modal-overlay"
+        *ngIf="showReportModal"
+        (click)="showReportModal = false"
+      >
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h3>Signaler un problème</h3>
@@ -516,14 +761,24 @@ interface Subscription {
                 <option value="other">Autre</option>
               </select>
             </div>
-            
+
             <div class="form-group">
               <label>Description</label>
-              <textarea [(ngModel)]="reportData.description" name="description" 
-                        rows="4" placeholder="Décrivez le problème..." required></textarea>
-            </div> <div class="form-group">
+              <textarea
+                [(ngModel)]="reportData.description"
+                name="description"
+                rows="4"
+                placeholder="Décrivez le problème..."
+                required
+              ></textarea>
+            </div>
+            <div class="form-group">
               <label>Etat du problème</label>
-              <select [(ngModel)]="reportData.severity" name="severity" required>
+              <select
+                [(ngModel)]="reportData.severity"
+                name="severity"
+                required
+              >
                 <option value="">Sélectionnez</option>
                 <option value="low">Faible</option>
                 <option value="medium">Moyen</option>
@@ -537,7 +792,11 @@ interface Subscription {
               <input type="date" [(ngModel)]="reportData.date" name="date" required>
             </div>-->
             <div class="form-actions">
-              <button type="button" class="btn btn-secondary" (click)="showReportModal = false">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="showReportModal = false"
+              >
                 Annuler
               </button>
               <button type="submit" class="btn btn-primary">
@@ -549,11 +808,16 @@ interface Subscription {
         </div>
       </div>
 
-      
-
       <!-- Modal de paiement -->
-      <div class="modal-overlay" *ngIf="showPaymentModal" (click)="showPaymentModal = false">
-        <div class="modal-content payment-modal" (click)="$event.stopPropagation()">
+      <div
+        class="modal-overlay"
+        *ngIf="showPaymentModal"
+        (click)="showPaymentModal = false"
+      >
+        <div
+          class="modal-content payment-modal"
+          (click)="$event.stopPropagation()"
+        >
           <div class="modal-header">
             <h3>Paiement sécurisé</h3>
             <button class="close-btn" (click)="showPaymentModal = false">
@@ -575,14 +839,25 @@ interface Subscription {
             <div class="payment-methods">
               <h4>Mode de paiement</h4>
               <div class="payment-option">
-                <input type="radio" id="card" name="payment" value="card" checked>
+                <input
+                  type="radio"
+                  id="card"
+                  name="payment"
+                  value="card"
+                  checked
+                />
                 <label for="card">
                   <i class="material-icons">credit_card</i>
                   Carte bancaire
                 </label>
               </div>
               <div class="payment-option">
-                <input type="radio" id="transfer" name="payment" value="transfer">
+                <input
+                  type="radio"
+                  id="transfer"
+                  name="payment"
+                  value="transfer"
+                />
                 <label for="transfer">
                   <i class="material-icons">account_balance</i>
                   Virement bancaire
@@ -590,10 +865,18 @@ interface Subscription {
               </div>
             </div>
             <div class="form-actions">
-              <button type="button" class="btn btn-secondary" (click)="showPaymentModal = false">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="showPaymentModal = false"
+              >
                 Annuler
               </button>
-              <button type="button" class="btn btn-primary" (click)="processPayment()">
+              <button
+                type="button"
+                class="btn btn-primary"
+                (click)="processPayment()"
+              >
                 <i class="material-icons">lock</i>
                 Payer {{ subscription?.price }}€
               </button>
@@ -603,8 +886,15 @@ interface Subscription {
       </div>
 
       <!-- Modal de de recharge du wallet -->
-      <div class="modal-overlay" *ngIf="showRechargeModal" (click)="showRechargeModal = false">
-        <div class="modal-content payment-modal" (click)="$event.stopPropagation()">
+      <div
+        class="modal-overlay"
+        *ngIf="showRechargeModal"
+        (click)="showRechargeModal = false"
+      >
+        <div
+          class="modal-content payment-modal"
+          (click)="$event.stopPropagation()"
+        >
           <div class="modal-header">
             <h3>Recharger mon compte</h3>
             <button class="close-btn" (click)="showRechargeModal = false">
@@ -612,11 +902,16 @@ interface Subscription {
             </button>
           </div>
           <div class="payment-form">
-
             <div class="payment-methods">
               <h4>Mode de paiement</h4>
               <div class="payment-option">
-                <input type="radio" id="card" name="payment" value="card" checked>
+                <input
+                  type="radio"
+                  id="card"
+                  name="payment"
+                  value="card"
+                  checked
+                />
                 <label for="card">
                   <i class="material-icons">euro</i>
                   Orange money
@@ -624,7 +919,14 @@ interface Subscription {
               </div>
               <div class="payment-option">
                 <label for="amount">Montant :</label>
-                 <input type="number" min="100" id="amount" name="amount" [(ngModel)]="rechargeAmount" placeholder="Entrez le montant en FCFA">
+                <input
+                  type="number"
+                  min="100"
+                  id="amount"
+                  name="amount"
+                  [(ngModel)]="rechargeAmount"
+                  placeholder="Entrez le montant en FCFA"
+                />
               </div>
 
               <!-- <div class="payment-option" >
@@ -642,7 +944,6 @@ interface Subscription {
                   Carte bancaire
                 </label>
               </div> -->
-
             </div>
 
             <div class="payment-summary">
@@ -657,14 +958,25 @@ interface Subscription {
               </div>
               <div class="summary-total">
                 <span>Total</span>
-                <span>{{ clientBalance + rechargeAmount | number }} <sup>FCFA</sup></span>
+                <span
+                  >{{ clientBalance + rechargeAmount | number }}
+                  <sup>FCFA</sup></span
+                >
               </div>
             </div>
             <div class="form-actions">
-              <button type="button" class="btn btn-secondary" (click)="showRechargeModal = false">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="showRechargeModal = false"
+              >
                 Annuler
               </button>
-              <button type="button" class="btn btn-primary" (click)="walletPayment()">
+              <button
+                type="button"
+                class="btn btn-primary"
+                (click)="walletPayment()"
+              >
                 <i class="material-icons">lock</i>
                 Payer {{ rechargeAmount | number }} FCFA
               </button>
@@ -672,645 +984,867 @@ interface Subscription {
           </div>
         </div>
       </div>
-
     </div>
   `,
-  styles: [`
-    .client-dashboard {
-      min-height: 100vh;
-      background: var(--light-gray);
-    }
-
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 24px;
-    }
-
-    .welcome-section h1 {
-      color: var(--white);
-      margin-bottom: 8px;
-    }
-
-    .welcome-section p {
-      color: rgba(255, 255, 255, 0.9);
-    }
-
-    .quick-actions {
-      display: flex;
-      gap: 12px;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 24px;
-      margin-bottom: 32px;
-    }
-
-    .stat-card {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 24px;
-      transition: all 0.3s ease;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-medium);
-    }
-
-    .stat-icon {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--white);
-      font-size: 28px;
-    }
-
-    .stat-icon.next-collection { background: var(--primary-color); }
-    .stat-icon.collections { background: var(--success-color); }
-    .stat-icon.subscription { background: var(--secondary-color); }
-    .stat-icon.payment { background: var(--accent-color); }
-
-    .stat-info h3 {
-      font-size: 1rem;
-      font-weight: 500;
-      margin-bottom: 4px;
-      color: var(--text-secondary);
-    }
-
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin: 0 0 4px 0;
-      color: var(--text-primary);
-    }
-
-    .stat-detail {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-    }
-
-    .main-content {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 32px;
-    }
-
-    .left-column,
-    .right-column {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--medium-gray);
-    }
-
-    .section-header h2 {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 1.3rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin: 0;
-    }
-
-    .btn-small {
-      padding: 8px 16px;
-      font-size: 0.9rem;
-    }
-
-    .collections-list,
-    .history-list,
-    .payments-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-
-    .collection-item,
-    .history-item,
-    .payment-item {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px;
-      background: var(--light-gray);
-      border-radius: 8px;
-      transition: all 0.3s ease;
-    }
-
-    .collection-item:hover,
-    .history-item:hover,
-    .payment-item:hover {
-      background: #f0f0f0;
-    }
-
-    .collection-date,
-    .history-date,
-    .payment-date {
-      text-align: center;
-      min-width: 50px;
-    }
-
-    .day {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--primary-color);
-      line-height: 1;
-    }
-
-    .month {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-    }
-
-    .collection-info,
-    .history-info,
-    .payment-details {
-      flex: 1;
-    }
-
-    .collection-info h4,
-    .history-info h4,
-    .payment-details h4 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: var(--text-primary);
-    }
-
-    .collection-time,
-    .collection-address,
-    .history-time,
-    .history-collector,
-    .payment-method-text {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      margin: 2px 0;
-    }
-
-    .collection-status,
-    .history-status {
-      text-align: right;
-    }
-
-    .status-badge {
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      text-transform: uppercase;
-    }
-
-    .status-scheduled { background: #e3f2fd; color: var(--primary-color); }
-    .status-in_progress { background: #fff3e0; color: #f57c00; }
-    .status-completed { background: #e8f5e8; color: var(--success-color); }
-    .status-missed { background: #ffebee; color: var(--error-color); }
-    .status-cancelled { background: #f5f5f5; color: var(--text-secondary); }
-    .status-active { background: #e8f5e8; color: var(--success-color); }
-    .status-suspended { background: #fff3e0; color: #f57c00; }
-
-    .collection-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .action-btn {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 12px;
-      background: var(--white);
-      border: 1px solid var(--medium-gray);
-      border-radius: 6px;
-      color: var(--text-primary);
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .action-btn:hover {
-      border-color: var(--primary-color);
-      color: var(--primary-color);
-    }
-
-    .filter-controls {
-      display: flex;
-      gap: 12px;
-    }
-
-    .filter-select {
-      padding: 8px 12px;
-      border: 1px solid var(--medium-gray);
-      border-radius: 6px;
-      font-size: 0.9rem;
-    }
-
-    .history-rating {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .stars {
-      display: flex;
-      gap: 2px;
-    }
-
-    .star {
-      font-size: 16px;
-      color: var(--warning-color);
-    }
-
-    .rate-btn {
-      padding: 4px 8px;
-      background: var(--primary-color);
-      color: var(--white);
-      border: none;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .subscription-details {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .subscription-service h3 {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: var(--text-primary);
-    }
-
-    .subscription-service p {
-      color: var(--text-secondary);
-    }
-
-    .subscription-pricing {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-    }
-
-    .price {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--primary-color);
-    }
-
-    .frequency {
-      color: var(--text-secondary);
-    }
-
-    .btn-full {
-      width: 100%;
-    }
-
-    .payment-info {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .next-payment,
-    .payment-method {
-      padding: 16px;
-      background: var(--light-gray);
-      border-radius: 8px;
-    }
-
-    .next-payment h4,
-    .payment-method h4 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--text-primary);
-    }
-
-    .payment-date {
-      font-size: 1.1rem;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-
-    .payment-amount {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--primary-color);
-    }
-
-    .payment-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      background: var(--white);
-      border-radius: 6px;
-    }
-
-    .change-btn {
-      margin-left: auto;
-      padding: 4px 8px;
-      background: none;
-      border: 1px solid var(--primary-color);
-      color: var(--primary-color);
-      border-radius: 4px;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .payment-amount {
-      text-align: right;
-    }
-
-    .amount {
-      display: block;
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-
-    .address-details {
-      margin-bottom: 16px;
-    }
-
-    .address-line {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px 0;
-      color: var(--text-primary);
-    }
-
-    .address-line i {
-      color: var(--primary-color);
-      font-size: 20px;
-    }
-
-    .address-map {
-      margin-top: 16px;
-    }
-
-    .map-placeholder {
-      height: 150px;
-      background: var(--light-gray);
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-secondary);
-    }
-
-    .map-placeholder i {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-secondary);
-    }
-
-    .empty-state i {
-      font-size: 48px;
-      margin-bottom: 16px;
-      opacity: 0.5;
-    }
-
-    .empty-state h3 {
-      font-size: 1.2rem;
-      margin-bottom: 8px;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .modal-content {
-      background: var(--white);
-      border-radius: 12px;
-      padding: 24px;
-      max-width: 500px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--medium-gray);
-    }
-
-    .modal-header h3 {
-      font-size: 1.3rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 50%;
-      transition: all 0.3s ease;
-    }
-
-    .close-btn:hover {
-      background: var(--light-gray);
-    }
-
-    .report-form,
-    .payment-form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .form-group label {
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      padding: 12px 16px;
-      border: 2px solid var(--medium-gray);
-      border-radius: 8px;
-      font-family: 'Inter', sans-serif;
-      transition: border-color 0.3s ease;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-      outline: none;
-      border-color: var(--primary-color);
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-      margin-top: 16px;
-    }
-
-    .payment-modal {
-      max-width: 600px;
-    }
-
-    .payment-summary {
-      background: var(--light-gray);
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 24px;
-    }
-
-    .payment-summary h4 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: var(--text-primary);
-    }
-
-    .summary-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--medium-gray);
-    }
-
-    .summary-total {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 0;
-      font-weight: 600;
-      font-size: 1.1rem;
-      color: var(--text-primary);
-      border-top: 2px solid var(--primary-color);
-      margin-top: 8px;
-    }
-
-    .payment-methods h4 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: var(--text-primary);
-    }
-
-    .payment-option {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      border: 2px solid var(--medium-gray);
-      border-radius: 8px;
-      margin-bottom: 12px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .payment-option:hover {
-      border-color: var(--primary-color);
-    }
-
-    .payment-option input[type="radio"]:checked + label {
-      color: var(--primary-color);
-    }
-
-    .payment-option label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      flex: 1;
-    }
-
-    @media (max-width: 1024px) {
-      .main-content {
-        grid-template-columns: 1fr;
+  styles: [
+    `
+      .client-dashboard {
+        min-height: 100vh;
+        background: var(--light-gray);
       }
 
       .header-content {
-        flex-direction: column;
-        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 24px;
       }
-    }
 
-    @media (max-width: 768px) {
+      .welcome-section h1 {
+        color: var(--white);
+        margin-bottom: 8px;
+      }
+
+      .welcome-section p {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .quick-actions {
+        display: flex;
+        gap: 12px;
+      }
+
       .stats-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+      }
+
+      .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 24px;
+        transition: all 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+      }
+
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 28px;
+      }
+
+      .stat-icon.next-collection {
+        background: var(--primary-color);
+      }
+      .stat-icon.collections {
+        background: var(--success-color);
+      }
+      .stat-icon.subscription {
+        background: var(--secondary-color);
+      }
+      .stat-icon.payment {
+        background: var(--accent-color);
+      }
+
+      .stat-info h3 {
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: var(--text-secondary);
+      }
+
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+        color: var(--text-primary);
+      }
+
+      .stat-detail {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+
+      .main-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 32px;
+        padding: 0px;
+      }
+
+      .left-column,
+      .right-column {
+        display: flex;
+        flex-direction: column;
+        /*gap: 24px;*/
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--medium-gray);
+      }
+
+      .section-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+      }
+
+      .btn-small {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+      }
+
+      .collections-list,
+      .history-list,
+      .payments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
       }
 
       .collection-item,
       .history-item,
       .payment-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: var(--light-gray);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .collection-item:hover,
+      .history-item:hover,
+      .payment-item:hover {
+        background: #f0f0f0;
+      }
+
+      .collection-date,
+      .history-date,
+      .payment-date {
+        text-align: center;
+        min-width: 50px;
+      }
+
+      .day {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        line-height: 1;
+      }
+
+      .month {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+      }
+
+      .collection-info,
+      .history-info,
+      .payment-details {
+        flex: 1;
+      }
+
+      .collection-info h4,
+      .history-info h4,
+      .payment-details h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: var(--text-primary);
+      }
+
+      .collection-time,
+      .collection-address,
+      .history-time,
+      .history-collector,
+      .payment-method-text {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin: 2px 0;
       }
 
       .collection-status,
       .history-status {
-        text-align: left;
+        text-align: right;
+      }
+
+      .status-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+      }
+
+      .status-scheduled {
+        background: #e3f2fd;
+        color: var(--primary-color);
+      }
+      .status-in_progress {
+        background: #fff3e0;
+        color: #f57c00;
+      }
+      .status-completed {
+        background: #e8f5e8;
+        color: var(--success-color);
+      }
+      .status-missed {
+        background: #ffebee;
+        color: var(--error-color);
+      }
+      .status-cancelled {
+        background: #f5f5f5;
+        color: var(--text-secondary);
+      }
+      .status-active {
+        background: #e8f5e8;
+        color: var(--success-color);
+      }
+      .status-suspended {
+        background: #fff3e0;
+        color: #f57c00;
+      }
+
+      .collection-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        background: var(--white);
+        border: 1px solid var(--medium-gray);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .action-btn:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+      }
+
+      .filter-controls {
+        display: flex;
+        gap: 12px;
+      }
+
+      .filter-select {
+        padding: 8px 12px;
+        border: 1px solid var(--medium-gray);
+        border-radius: 6px;
+        font-size: 0.9rem;
+      }
+
+      .history-rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .stars {
+        display: flex;
+        gap: 2px;
+      }
+
+      .star {
+        font-size: 16px;
+        color: var(--warning-color);
+      }
+
+      .rate-btn {
+        padding: 4px 8px;
+        background: var(--primary-color);
+        color: var(--white);
+        border: none;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        cursor: pointer;
+      }
+
+      .subscription-details {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .subscription-service h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: var(--text-primary);
+      }
+
+      .subscription-service p {
+        color: var(--text-secondary);
+      }
+
+      .subscription-pricing {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+
+      .price {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+      }
+
+      .frequency {
+        color: var(--text-secondary);
+      }
+
+      .btn-full {
         width: 100%;
       }
 
-      .modal-content {
-        margin: 20px;
-        width: calc(100% - 40px);
+      .payment-info {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
       }
-    }
-  `]
+
+      .next-payment,
+      .payment-method {
+        padding: 16px;
+        background: var(--light-gray);
+        border-radius: 8px;
+      }
+
+      .next-payment h4,
+      .payment-method h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+      }
+
+      .payment-date {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .payment-amount {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+      }
+
+      .payment-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--white);
+        border-radius: 6px;
+      }
+
+      .change-btn {
+        margin-left: auto;
+        padding: 4px 8px;
+        background: none;
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+        border-radius: 4px;
+        font-size: 0.8rem;
+        cursor: pointer;
+      }
+
+      .payment-amount {
+        text-align: right;
+      }
+
+      .amount {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .address-details {
+        margin-bottom: 16px;
+      }
+
+      .address-line {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        color: var(--text-primary);
+      }
+
+      .address-line i {
+        color: var(--primary-color);
+        font-size: 20px;
+      }
+
+      .address-map {
+        margin-top: 16px;
+      }
+
+      .map-placeholder {
+        height: 150px;
+        background: var(--light-gray);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+      }
+
+      .map-placeholder i {
+        font-size: 32px;
+        margin-bottom: 8px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-secondary);
+      }
+
+      .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .empty-state h3 {
+        font-size: 1.2rem;
+        margin-bottom: 8px;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .modal-content {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--medium-gray);
+      }
+
+      .modal-header h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+      }
+
+      .close-btn:hover {
+        background: var(--light-gray);
+      }
+
+      .report-form,
+      .payment-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .form-group label {
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        padding: 12px 16px;
+        border: 2px solid var(--medium-gray);
+        border-radius: 8px;
+        font-family: "Inter", sans-serif;
+        transition: border-color 0.3s ease;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 16px;
+      }
+
+      .payment-modal {
+        max-width: 600px;
+      }
+
+      .payment-summary {
+        background: var(--light-gray);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+      }
+
+      .payment-summary h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--text-primary);
+      }
+
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--medium-gray);
+      }
+
+      .summary-total {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        border-top: 2px solid var(--primary-color);
+        margin-top: 8px;
+      }
+
+      .payment-methods h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--text-primary);
+      }
+
+      .payment-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border: 2px solid var(--medium-gray);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .payment-option:hover {
+        border-color: var(--primary-color);
+      }
+
+      .payment-option input[type="radio"]:checked + label {
+        color: var(--primary-color);
+      }
+
+      .payment-option label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        flex: 1;
+      }
+      /**Grid messagerie start */
+
+      .parent {
+        display: flex;
+        flex-direction: column;
+        height: 700px; /* prend toute la hauteur */
+      }
+
+      /* Header */
+      .chat-header-column {
+        background-color: var(--medium-gray);
+        padding: 10px;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        text-align: center;
+      }
+
+      /* Zone centrale (sidebar + chat) */
+      .message-content {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* Sidebar */
+      .chat-left-column {
+        width: 30%;
+        background-color: var(--medium-gray);
+        padding: 10px;
+      }
+
+      /* Zone chat (messages + input) */
+      .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #f9f9f9;
+        background-image: url("../../../../assets/chatBg/chat_background.png");
+        background-size: cover;
+      }
+
+      /* Messages scrollables */
+      .chat-messages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+      }
+      /* Messages reçus (à gauche) */
+      .received {
+        display: flex;
+        justify-content: flex-start;
+      }
+
+      .div5 {
+        background-color: var(--medium-gray);
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 60%;
+      }
+
+      /* Messages envoyés (à droite) */
+      .sent {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .div6 {
+        background-color: var(--message-send);
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 60%;
+      }
+      .received .chat-bubble {
+        background: #eff3f1;
+        color: #000;
+        padding: 8px 14px;
+        border-radius: 8px;
+        display: inline-block;
+        margin: 2% 0;
+        max-width: 80%;
+        font-size: 14px;
+      }
+
+      .sent .chat-bubble {
+        background: #6cee9e;
+        color: #000;
+        padding: 8px 14px;
+        border-radius: 6px;
+        display: inline-block;
+        margin: 2% 0;
+        max-width: 80%;
+        /* font-weight: bold; */
+        font-size: 14px;
+      }
+
+      /* Input en bas */
+      .div7 {
+        display: flex;
+        align-items: center;
+        background-color: var(--medium-gray);
+        padding: 10px;
+      }
+
+      .div7 input {
+        flex: 1;
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+      }
+
+      .chat-actions button {
+        margin-left: 10px;
+      }
+
+      .sendChatMessage {
+        flex: 1;
+        border-radius: 30px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        border: 1px solid #ccc;
+        padding: 10px 20px;
+        outline: none;
+        width: 100%;
+        font-size: 14px;
+        transition: box-shadow 0.2s ease;
+      }
+      .chat-input-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .chat-actions > button {
+        justify-content: center;
+        align-items: center;
+        display: flex;
+        height: 40px;
+      }
+      .chat-actions mat-icon {
+        font-size: 25px;
+      }
+
+      .material-icons {
+        font-family: "Material Icons";
+        font-weight: normal;
+        font-style: normal;
+      }
+      .sendChatMessage:focus {
+        box-shadow: 0 0 0 3px rgba(100, 150, 255, 0.3);
+        border-color: #6495ff;
+      }
+      .chat-time {
+        display: block;
+        text-align: right;
+        font-size: 8px;
+        margin-top: 5px;
+      }
+      /**left column chat css */
+      .chat-left-column-header {
+        padding: 16px;
+        background-color: var(--surface-400, #4caf50);
+        color: #fff;
+        margin-bottom: 10px;
+        font-weight: bold;
+        font-size: 16px;
+        border-bottom: 1px solid #ddd;
+        border-radius: 5px 5px 0 0;
+      }
+
+      /*Liste des discussions*/
+      .chat-left-column-content {
+        flex: 1;
+        max-height: 500px;
+        overflow-y: auto;
+      }
+
+      .chat-left-column-content-item {
+        padding: 12px 16px;
+        min-width: 100%;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        background-color: var(--surface-300);
+        transition: background-color 0.2s;
+      }
+
+      .chat-left-column-content-item:hover {
+        background-color: #f9f9f9;
+      }
+
+      .chat-left-column-content-item.active {
+        background-color: #e6f4ea;
+        font-weight: bold;
+      }
+      /** Grid messagerie end */
+
+      @media (max-width: 1024px) {
+        .main-content {
+          grid-template-columns: 1fr;
+        }
+
+        .header-content {
+          flex-direction: column;
+          text-align: center;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .collection-item,
+        .history-item,
+        .payment-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .collection-status,
+        .history-status {
+          text-align: left;
+          width: 100%;
+        }
+
+        .modal-content {
+          margin: 20px;
+          width: calc(100% - 40px);
+        }
+      }
+    `,
+  ],
 })
 export class ClientDashboardComponent implements OnInit {
   currentUser: User | null = null;
@@ -1320,34 +1854,36 @@ export class ClientDashboardComponent implements OnInit {
   paymentHistory: PaymentHistory[] = [];
   subscription: Subscription | null = null;
 
-  historyFilter = 'all';
+  historyFilter = "all";
   showReportModal = false;
   showPaymentModal = false;
 
   reportData = {
-    type: '',
-    description: '',
-    severity: '',
-    clientId: '',
-    agencyId: ''
+    type: "",
+    description: "",
+    severity: "",
+    clientId: "",
+    agencyId: "",
   };
   unreadMessageCount: any;
   receivedMessages: any;
+  connectedUserMessages: any;
   agency: any;
   showMessageModal: boolean = false;
-  receivedId: string = '';
+  receivedId: string = "";
   messageData: Message = {
-    sender: '',
-    receiver: '',
-    content: ''
+    sender: "",
+    receiver: "",
+    content: "",
   };
 
   subscriptions: any[] = [];
   activeSubscription: any = null;
-  showRechargeModal : boolean = false;
+  showRechargeModal: boolean = false;
 
   // Montant de recharge
   rechargeAmount: number = 0;
+  displayAgencyName: any;
   constructor(
     private authService: AuthService,
     private collectionService: CollectionService,
@@ -1355,11 +1891,11 @@ export class ClientDashboardComponent implements OnInit {
     private notificationService: NotificationService,
     private messageService: MessagesService,
     private agencyService: AgencyService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     // this.currentUser = this.authService.getCurrentUser();
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
       this.getUserSubscription();
       this.getClientWallet();
@@ -1370,119 +1906,135 @@ export class ClientDashboardComponent implements OnInit {
     this.loadDashboardData();
   }
 
-  //  GET CLIENT WALLET 
+  //  GET CLIENT WALLET
   clientBalance!: number;
   getClientWallet() {
-    const clientId = this.currentUser?.id || '';
+    const clientId = this.currentUser?.id || "";
     if (!clientId) return;
     this.clientService.getClientWallet(clientId).subscribe({
       next: (response: any) => {
         if (response && response.balance) {
           this.clientBalance = response?.balance;
-          console.log('Client Wallet:', response.balance, this.clientBalance);
+          console.log("Client Wallet:", response.balance, this.clientBalance);
         }
         // return response?.balance;
       },
       error: (error: any) => {
-        console.error('Erreur lors de la récupération du portefeuille client:', error);
-      }
+        console.error(
+          "Erreur lors de la récupération du portefeuille client:",
+          error
+        );
+      },
     });
   }
 
-  // Virer dans le Wallet du client 
+  // Virer dans le Wallet du client
   walletPayment() {
-    const clientId = this.currentUser?.id || '';
+    const clientId = this.currentUser?.id || "";
     if (!clientId) return;
 
     const paymentData = {
       amount: this.rechargeAmount,
-      clientId: clientId
+      clientId: clientId,
     };
-    console.log('Données de paiement du wallet:', paymentData);
+    console.log("Données de paiement du wallet:", paymentData);
     if (this.rechargeAmount < 100) {
-      this.notificationService.showError('Montant invalide', 'Le montant de recharge doit être au moins de 100 FCFA.');
+      this.notificationService.showError(
+        "Montant invalide",
+        "Le montant de recharge doit être au moins de 100 FCFA."
+      );
       return;
     }
 
     this.clientService.walletPayment(paymentData).subscribe({
       next: (response: any) => {
-        console.log('Paiement effectué avec succès:', response?.wallet);
+        console.log("Paiement effectué avec succès:", response?.wallet);
         this.getClientWallet();
-        this.notificationService.showSuccess('Paiement réussi', 'Votre compte a été rechargé avec succès.');
+        this.notificationService.showSuccess(
+          "Paiement réussi",
+          "Votre compte a été rechargé avec succès."
+        );
         this.showRechargeModal = false;
         this.rechargeAmount = 0;
       },
       error: (error: any) => {
-        this.notificationService.showError('Erreur de paiement', 'Une erreur est survenue lors du paiement. Veuillez réessayer.');
-        console.error('Erreur lors du paiement:', error);
-      }
+        this.notificationService.showError(
+          "Erreur de paiement",
+          "Une erreur est survenue lors du paiement. Veuillez réessayer."
+        );
+        console.error("Erreur lors du paiement:", error);
+      },
     });
   }
 
   // recuperer le planning de collecte de la semaine du client
   weeklySchedule: any[] = [];
 
-  nextCollect : any;
+  nextCollect: any;
   getWeeklySchedule() {
-    const clientId = this.currentUser?._id || '';
+    const clientId = this.currentUser?._id || "";
     if (!clientId) return;
 
     this.clientService.getClientPlanning(clientId).subscribe({
       next: (response: any) => {
-        console.log('API > getClientPlanning:', response);
+        console.log("API > getClientPlanning:", response);
         this.weeklySchedule = response?.plannings || [];
-        if(this.weeklySchedule.length) {
-
+        if (this.weeklySchedule.length) {
           this.nextCollect = this.weeklySchedule[0];
           console.log("Next collect ==> ", this.nextCollect);
         }
         // Traiter le planning récupéré
       },
       error: (error: any) => {
-        console.error('Erreur lors de la récupération du planning:', error);
-      }
+        console.error("Erreur lors de la récupération du planning:", error);
+      },
     });
   }
 
-  // Recuperer l'historique des collectes déjà effectuées 
+  // Recuperer l'historique des collectes déjà effectuées
   loadPlanningHistory(): void {
-    const clientId = this.currentUser?._id || '';
+    const clientId = this.currentUser?._id || "";
     if (!clientId) return;
     this.clientService.getClientPlanningHistory(clientId).subscribe({
       next: (response: Collection[]) => {
         this.collectionHistory = response || [];
       },
       error: (error: any) => {
-        console.error('Erreur lors de la récupération de l\'historique des collectes:', error);
-      }
+        console.error(
+          "Erreur lors de la récupération de l'historique des collectes:",
+          error
+        );
+      },
     });
   }
 
   // Afficher abonnement
   getUserSubscription() {
-    const userID = this.currentUser?.id || '';
+    const userID = this.currentUser?.id || "";
     if (!userID) return;
     this.agencyService.getUserSubscription(userID).subscribe({
       next: (response: any[]) => {
         this.subscriptions = response || [];
         // Filtrer la subscription active
         // this.activeSubscription = this.subscriptions.find(sub => sub.status === 'active') || null;
-        this.activeSubscription = this.subscriptions.length ? this.subscriptions[this.subscriptions.length - 1] : null;
+        this.activeSubscription = this.subscriptions.length
+          ? this.subscriptions[this.subscriptions.length - 1]
+          : null;
         console.log("Active subscription ==>", this.activeSubscription);
       },
       error: (err) => {
-        console.error('Erreur lors du chargement des abonnements', err);
-      }
+        console.error("Erreur lors du chargement des abonnements", err);
+      },
     });
   }
 
   renewSubscription() {
     // Logique pour renouveler l'abonnement
-    alert('Fonction de renouvellement d\'abonnement à implémenter.');
+    alert("Fonction de renouvellement d'abonnement à implémenter.");
   }
   contactSupport() {
     // Logique pour contacter le support
-    alert('Fonction de contact support à implémenter.');
+    alert("Fonction de contact support à implémenter.");
   }
 
   loadDashboardData(): void {
@@ -1497,85 +2049,124 @@ export class ClientDashboardComponent implements OnInit {
 
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
-    this.messageService.getUserUnreadMessagesCount(this.currentUser?._id || '').subscribe({
-      next: (response: any) => {
-        if (response) {
-          console.log('API > getUserUnreadMessagesCount:', response);
-          this.unreadMessageCount = response.unreadCount || 0;
-        }
-      },
-      error: (error: any) => {
-        console.error('API > getUserUnreadMessagesCount:', error);
-      }
-    });
+    this.messageService
+      .getUserUnreadMessagesCount(this.currentUser?._id || "")
+      .subscribe({
+        next: (response: any) => {
+          if (response) {
+            console.log("API > getUserUnreadMessagesCount:", response);
+            this.unreadMessageCount = response.unreadCount || 0;
+          }
+        },
+        error: (error: any) => {
+          console.error("API > getUserUnreadMessagesCount:", error);
+        },
+      });
   }
-
 
   userMessages() {
-    this.messageService.getMessagesForUser(this.currentUser?._id || '').subscribe({
-      next: (response: any) => {
+    this.messageService
+      .getMessagesForUser(this.currentUser?._id || "")
+      .subscribe({
+        next: (response: any) => {
+          if (response) {
+            console.log("API > getMessagesForUser:", response);
+            this.connectedUserMessages = response.messages || [];
+
+            this.connectedUserMessages.forEach((message: any) => {
+              message.read = message.read.toString();
+
+              this.agencyService
+                .getAgencyByIdFromApi(message.sender || message.receiver)
+                .subscribe((res: any) => {
+                  if (res.success && res.data) {
+                    message.senderName = res.data.agencyName;
+                  }
+
+                  console.log(
+                    "Received messages (no duplicates):",
+                    this.connectedUserMessages
+                  );
+                });
+            });
+          }
+        },
+        error: (error: any) => {
+          console.error("API > getMessagesForUser:", error);
+        },
+      });
+  }
+
+  userAndAgencyConversation(cliendId: string, agencyId: string) {
+    this.clientService
+      .userAndAgencyConversation(cliendId, agencyId)
+      .subscribe((response: any) => {
+        console.log("API >userAndAgencyConversation:", response);
         if (response) {
-          console.log('API > getMessagesForUser:', response);
+          console.log("API >userAndAgencyConversation:", response);
           this.receivedMessages = response.messages || [];
+
+          this.displayAgencyName = this.receivedMessages[0].senderName;
           this.receivedMessages.forEach((message: any) => {
             message.read = message.read.toString();
-            this.agencyService.getAgencyByIdFromApi(message.sender).subscribe((response: any) => {
-              if (response.success && response.data) {
-                this.agency = response.data;
-                message.senderName = this.agency.agencyName;
-              }
-            });
           });
-
         }
-      },
-      error: (error: any) => {
-        console.error('API > getMessagesForUser:', error);
-      }
-    });
+      });
   }
   readAndRespondMessage(message: Message): void {
-    this.messageService.markMessagesAsRead(message._id || '').subscribe({
+    this.messageService.markMessagesAsRead(message._id || "").subscribe({
       next: (response: any) => {
         this.showMessageModal = true;
         this.receivedId = message.sender;
         this.userMessages();
-        console.log('Lire et répondre au message:', message._id);
+        console.log("Lire et répondre au message:", message._id);
       },
       error: (error: any) => {
-        console.error('Erreur lors de la lecture du message:', error);
-      }
+        console.error("Erreur lors de la lecture du message:", error);
+      },
     });
   }
   submitMessage() {
     if (!this.currentUser) {
-      this.notificationService.showError('Connexion requise', 'Vous devez être connecté pour envoyer un message');
+      this.notificationService.showError(
+        "Connexion requise",
+        "Vous devez être connecté pour envoyer un message"
+      );
       return;
     }
     if (!this.agency) {
-      this.notificationService.showError('Erreur', 'Agence non trouvée');
+      this.notificationService.showError("Erreur", "Agence non trouvée");
       return;
     }
-    this.messageData.sender = this.currentUser?._id || '';
-    this.messageData.receiver = this.receivedId || '';
+    this.messageData.sender = this.currentUser?._id || "";
+    this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
     if (!this.messageData.content) {
-      this.notificationService.showError('Message vide', 'Le contenu du message ne peut pas être vide');
+      this.notificationService.showError(
+        "Message vide",
+        "Le contenu du message ne peut pas être vide"
+      );
       return;
     }
 
-    console.log('Envoi du message:', this.messageData);
+    console.log("Envoi du message:", this.messageData);
     this.messageService.sendMessage(this.messageData).subscribe({
       next: (response: any) => {
-        console.log('API > sendMessage:', response);
-        this.notificationService.showSuccess('Message envoyé', 'Votre message a bien été envoyé');
+        console.log("API > sendMessage:", response);
+        this.notificationService.showSuccess(
+          "Message envoyé",
+          "Votre message a bien été envoyé"
+        );
         this.showReportModal = false;
         this.userMessages();
       },
       error: (error: any) => {
-        console.error('API > sendMessage:', error);
-        this.notificationService.showError('Message non envoyé', 'Une erreur s\'est produite lors de l\'envoi du message');
-      }
+        console.error("API > sendMessage:", error);
+        this.notificationService.showError(
+          "Message non envoyé",
+          "Une erreur s'est produite lors de l'envoi du message"
+        );
+      },
     });
   }
 
@@ -1585,43 +2176,65 @@ export class ClientDashboardComponent implements OnInit {
     // Simuler les prochaines collectes
     this.upcomingCollections = [
       {
-        id: '1',
-        clientId: 'client1',
-        agencyId: 'agency1',
-        collectorId: 'collector1',
-        scheduledDate: new Date('2024-01-15T09:00:00'),
+        id: "1",
+        clientId: "client1",
+        agencyId: "agency1",
+        collectorId: "collector1",
+        scheduledDate: new Date("2024-01-15T09:00:00"),
         status: CollectionStatus.SCHEDULED,
         address: {
-          street: 'Rue des Roses',
-          doorNumber: '15',
-          doorColor: 'blue',
-          neighborhood: 'Centre-ville',
-          city: 'Paris',
-          postalCode: '75001'
+          street: "Rue des Roses",
+          doorNumber: "15",
+          doorColor: "blue",
+          neighborhood: "Centre-ville",
+          city: "Paris",
+          postalCode: "75001",
         },
-        wasteTypes: [{ id: '1', name: 'Déchets ménagers', description: '', icon: 'delete', color: '#4caf50', instructions: [], acceptedItems: [], rejectedItems: [] }],
+        wasteTypes: [
+          {
+            id: "1",
+            name: "Déchets ménagers",
+            description: "",
+            icon: "delete",
+            color: "#4caf50",
+            instructions: [],
+            acceptedItems: [],
+            rejectedItems: [],
+          },
+        ],
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       {
-        id: '2',
-        clientId: 'client1',
-        agencyId: 'agency1',
-        collectorId: 'collector1',
-        scheduledDate: new Date('2024-01-18T10:00:00'),
+        id: "2",
+        clientId: "client1",
+        agencyId: "agency1",
+        collectorId: "collector1",
+        scheduledDate: new Date("2024-01-18T10:00:00"),
         status: CollectionStatus.SCHEDULED,
         address: {
-          street: 'Rue des Roses',
-          doorNumber: '15',
-          doorColor: 'blue',
-          neighborhood: 'Centre-ville',
-          city: 'Paris',
-          postalCode: '75001'
+          street: "Rue des Roses",
+          doorNumber: "15",
+          doorColor: "blue",
+          neighborhood: "Centre-ville",
+          city: "Paris",
+          postalCode: "75001",
         },
-        wasteTypes: [{ id: '2', name: 'Recyclables', description: '', icon: 'recycling', color: '#2196f3', instructions: [], acceptedItems: [], rejectedItems: [] }],
+        wasteTypes: [
+          {
+            id: "2",
+            name: "Recyclables",
+            description: "",
+            icon: "recycling",
+            color: "#2196f3",
+            instructions: [],
+            acceptedItems: [],
+            rejectedItems: [],
+          },
+        ],
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     ];
   }
 
@@ -1629,26 +2242,37 @@ export class ClientDashboardComponent implements OnInit {
     // Simuler l'historique des collectes
     this.collectionHistory = [
       {
-        id: '3',
-        clientId: 'client1',
-        agencyId: 'agency1',
-        collectorId: 'collector1',
-        scheduledDate: new Date('2024-01-08T09:00:00'),
-        collectedDate: new Date('2024-01-08T09:30:00'),
+        id: "3",
+        clientId: "client1",
+        agencyId: "agency1",
+        collectorId: "collector1",
+        scheduledDate: new Date("2024-01-08T09:00:00"),
+        collectedDate: new Date("2024-01-08T09:30:00"),
         status: CollectionStatus.COMPLETED,
         address: {
-          street: 'Rue des Roses',
-          doorNumber: '15',
-          doorColor: 'blue',
-          neighborhood: 'Centre-ville',
-          city: 'Paris',
-          postalCode: '75001'
+          street: "Rue des Roses",
+          doorNumber: "15",
+          doorColor: "blue",
+          neighborhood: "Centre-ville",
+          city: "Paris",
+          postalCode: "75001",
         },
-        wasteTypes: [{ id: '1', name: 'Déchets ménagers', description: '', icon: 'delete', color: '#4caf50', instructions: [], acceptedItems: [], rejectedItems: [] }],
+        wasteTypes: [
+          {
+            id: "1",
+            name: "Déchets ménagers",
+            description: "",
+            icon: "delete",
+            color: "#4caf50",
+            instructions: [],
+            acceptedItems: [],
+            rejectedItems: [],
+          },
+        ],
         rating: 5,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     ];
     this.filteredHistory = [...this.collectionHistory];
   }
@@ -1656,51 +2280,54 @@ export class ClientDashboardComponent implements OnInit {
   loadPaymentHistory(): void {
     this.paymentHistory = [
       {
-        id: '1',
-        date: new Date('2024-01-01'),
+        id: "1",
+        date: new Date("2024-01-01"),
         amount: 25.99,
-        status: 'completed',
-        description: 'Abonnement mensuel - Janvier 2024',
-        method: 'Carte bancaire **** 1234'
+        status: "completed",
+        description: "Abonnement mensuel - Janvier 2024",
+        method: "Carte bancaire **** 1234",
       },
       {
-        id: '2',
-        date: new Date('2023-12-01'),
+        id: "2",
+        date: new Date("2023-12-01"),
         amount: 25.99,
-        status: 'completed',
-        description: 'Abonnement mensuel - Décembre 2023',
-        method: 'Carte bancaire **** 1234'
-      }
+        status: "completed",
+        description: "Abonnement mensuel - Décembre 2023",
+        method: "Carte bancaire **** 1234",
+      },
     ];
   }
 
   loadSubscription(): void {
     this.subscription = {
-      id: '1',
-      serviceName: 'Collecte Standard',
-      agencyName: 'EcoClean Services',
+      id: "1",
+      serviceName: "Collecte Standard",
+      agencyName: "EcoClean Services",
       price: 25.99,
-      frequency: 'mensuel',
-      status: 'active',
-      nextPayment: new Date('2024-02-01')
+      frequency: "mensuel",
+      status: "active",
+      nextPayment: new Date("2024-02-01"),
     };
   }
 
   getNextCollection(): string {
     if (this.upcomingCollections.length > 0) {
-      return this.upcomingCollections[0].scheduledDate.toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'long'
-      });
+      return this.upcomingCollections[0].scheduledDate.toLocaleDateString(
+        "fr-FR",
+        {
+          day: "numeric",
+          month: "long",
+        }
+      );
     }
-    return 'Aucune programmée';
+    return "Aucune programmée";
   }
 
   getNextCollectionType(): string {
     if (this.upcomingCollections.length > 0) {
-      return this.upcomingCollections[0].wasteTypes[0]?.name || '';
+      return this.upcomingCollections[0].wasteTypes[0]?.name || "";
     }
-    return '';
+    return "";
   }
 
   // getMonthlyCollections(): string {
@@ -1717,61 +2344,66 @@ export class ClientDashboardComponent implements OnInit {
 
   getNextPayment(paiementDate: string | null): string {
     paiementDate = paiementDate || this.activeSubscription?.endDate;
-    if (!paiementDate) return 'Aucun paiement prévu';
+    if (!paiementDate) return "Aucun paiement prévu";
     // return this.activeSubscription?.endDate.toLocaleDateString('fr-FR', {
-    return new Date(paiementDate).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      
-    }) || '';
+    return (
+      new Date(paiementDate).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+      }) || ""
+    );
   }
   getNextCollectionTime(collection: string | null): string {
-    if (!collection) return '';
-    return new Date(collection).toLocaleTimeString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      hour: '2-digit',
-      minute: '2-digit'
-    }) || '';
+    if (!collection) return "";
+    return (
+      new Date(collection).toLocaleTimeString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+      }) || ""
+    );
   }
   getnextCollectionHour(collection: string | null): string {
-    if (!collection) return '';
-    return new Date(collection).toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    }) || '';
+    if (!collection) return "";
+    return (
+      new Date(collection).toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }) || ""
+    );
   }
 
   getWasteTypeName(wasteType: any): string {
-    return wasteType?.name || 'Type inconnu';
+    return wasteType?.name || "Type inconnu";
   }
 
   getStatusText(status: CollectionStatus): string {
     const statusTexts = {
-      [CollectionStatus.SCHEDULED]: 'Programmé',
-      [CollectionStatus.IN_PROGRESS]: 'En cours',
-      [CollectionStatus.COMPLETED]: 'Collecté',
-      [CollectionStatus.MISSED]: 'Manqué',
-      [CollectionStatus.CANCELLED]: 'Annulé',
-      [CollectionStatus.REPORTED]: 'Signalé'
+      [CollectionStatus.SCHEDULED]: "Programmé",
+      [CollectionStatus.IN_PROGRESS]: "En cours",
+      [CollectionStatus.COMPLETED]: "Collecté",
+      [CollectionStatus.MISSED]: "Manqué",
+      [CollectionStatus.CANCELLED]: "Annulé",
+      [CollectionStatus.REPORTED]: "Signalé",
     };
     return statusTexts[status] || status;
   }
 
   getSubscriptionStatusText(status: string): string {
     const statusTexts = {
-      'active': 'Actif',
-      'suspended': 'Suspendu',
-      'cancelled': 'Annulé'
+      active: "Actif",
+      suspended: "Suspendu",
+      cancelled: "Annulé",
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
 
   getPaymentStatusText(status: string): string {
     const statusTexts = {
-      'completed': 'Payé',
-      'pending': 'En attente',
-      'failed': 'Échec'
+      completed: "Payé",
+      pending: "En attente",
+      failed: "Échec",
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
@@ -1783,19 +2415,27 @@ export class ClientDashboardComponent implements OnInit {
   refreshCollections(): void {
     this.loadUpcomingCollections();
     this.loadCollectionHistory();
-    this.notificationService.showSuccess('Actualisé', 'Les collectes ont été mises à jour');
+    this.notificationService.showSuccess(
+      "Actualisé",
+      "Les collectes ont été mises à jour"
+    );
   }
 
   filterHistory(): void {
-    if (this.historyFilter === 'all') {
+    if (this.historyFilter === "all") {
       this.filteredHistory = [...this.collectionHistory];
     } else {
-      this.filteredHistory = this.collectionHistory.filter(c => c.status === this.historyFilter);
+      this.filteredHistory = this.collectionHistory.filter(
+        (c) => c.status === this.historyFilter
+      );
     }
   }
 
   trackCollection(collectionId: string): void {
-    this.notificationService.showInfo('Suivi', 'Le collecteur est en route vers votre adresse');
+    this.notificationService.showInfo(
+      "Suivi",
+      "Le collecteur est en route vers votre adresse"
+    );
   }
 
   reportIssue(collectionId: string): void {
@@ -1803,7 +2443,10 @@ export class ClientDashboardComponent implements OnInit {
   }
 
   rateCollection(collectionId: string): void {
-    this.notificationService.showInfo('Évaluation', 'Fonctionnalité d\'évaluation à venir');
+    this.notificationService.showInfo(
+      "Évaluation",
+      "Fonctionnalité d'évaluation à venir"
+    );
   }
 
   submitReport(): void {
@@ -1812,40 +2455,69 @@ export class ClientDashboardComponent implements OnInit {
       description: this.reportData.description,
       severity: this.reportData.severity,
       clientId: this.currentUser?._id,
-      agencyId: this.currentUser?.subscribedAgencyId
-    }
-    if (this.reportData.type && this.reportData.description && this.reportData.clientId && this.reportData.agencyId || this.reportData.severity) {
-      console.log('Signalement envoyé:', this.reportData);
+      agencyId: this.currentUser?.subscribedAgencyId,
+    };
+    if (
+      (this.reportData.type &&
+        this.reportData.description &&
+        this.reportData.clientId &&
+        this.reportData.agencyId) ||
+      this.reportData.severity
+    ) {
+      console.log("Signalement envoyé:", this.reportData);
       this.clientService.reportClientIncident(data).subscribe({
         next: (response: any) => {
-          console.log('API > reportClientIncident:', response);
-          this.notificationService.showSuccess('Signalement envoyé', 'Votre signalement a été transmis à l\'agence');
+          console.log("API > reportClientIncident:", response);
+          this.notificationService.showSuccess(
+            "Signalement envoyé",
+            "Votre signalement a été transmis à l'agence"
+          );
           this.showReportModal = false;
-          this.reportData = { type: '', description: '', severity: '', clientId: '', agencyId: '' };
+          this.reportData = {
+            type: "",
+            description: "",
+            severity: "",
+            clientId: "",
+            agencyId: "",
+          };
         },
         error: (error: any) => {
-          console.error('API > reportClientIncident:', error);
-          this.notificationService.showError('Signalement non envoyé', 'Une erreur s\'est produite lors de l\'envoi du signalement');
-        }
+          console.error("API > reportClientIncident:", error);
+          this.notificationService.showError(
+            "Signalement non envoyé",
+            "Une erreur s'est produite lors de l'envoi du signalement"
+          );
+        },
       });
-
     }
   }
 
   processPayment(): void {
-    this.notificationService.showSuccess('Paiement effectué', 'Votre paiement a été traité avec succès');
+    this.notificationService.showSuccess(
+      "Paiement effectué",
+      "Votre paiement a été traité avec succès"
+    );
     this.showPaymentModal = false;
   }
 
   changePaymentMethod(): void {
-    this.notificationService.showInfo('Modification', 'Redirection vers la gestion des moyens de paiement');
+    this.notificationService.showInfo(
+      "Modification",
+      "Redirection vers la gestion des moyens de paiement"
+    );
   }
 
   downloadInvoices(): void {
-    this.notificationService.showInfo('Téléchargement', 'Génération des factures en cours...');
+    this.notificationService.showInfo(
+      "Téléchargement",
+      "Génération des factures en cours..."
+    );
   }
 
   editAddress(): void {
-    this.notificationService.showInfo('Modification', 'Redirection vers la modification d\'adresse');
+    this.notificationService.showInfo(
+      "Modification",
+      "Redirection vers la modification d'adresse"
+    );
   }
 }
