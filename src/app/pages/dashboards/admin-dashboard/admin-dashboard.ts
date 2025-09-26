@@ -137,13 +137,13 @@ interface Communication {
                 <i class="material-icons">campaign</i>
                 Nouvelle Communication
               </button> -->
-              <button
+              <!-- <button
                 class="btn btn-secondary"
                 (click)="generateGlobalReport()"
               >
                 <i class="material-icons">assessment</i>
                 Rapport Global
-              </button>
+              </button> -->
             </div>
           </div>
         </div>
@@ -322,7 +322,9 @@ interface Communication {
             >
               <i class="material-icons">{{ tab.icon }}</i>
               {{ tab.label }}
-              <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
+            <span *ngIf="getTabBadge(tab.id) > 0" class="tab-badge">
+      {{ getTabBadge(tab.id) }}
+    </span>
             </button>
           </div>
 
@@ -331,7 +333,7 @@ interface Communication {
             <!-- Onglet Vue d'ensemble -->
             <div *ngIf="activeTab === 'overview'" class="overview-tab">
               <div class="overview-grid">
-                <div class="overview-section card">
+                <!-- <div class="overview-section card">
                   <h3>
                     <i class="material-icons">trending_up</i>
                     Performance Globale
@@ -375,7 +377,7 @@ interface Communication {
                       </div>
                     </div>
                   </div>
-                </div>
+                </div> -->
 
                 <div class="overview-section card">
                   <h3>
@@ -523,7 +525,7 @@ interface Communication {
                     <option value="inactive">Inactives</option>
                     <option value="suspended">Suspendues</option>
                   </select>
-                  <select
+                  <!-- <select
                     [(ngModel)]="complianceFilter"
                     (change)="filterAgencies()"
                     class="filter-select"
@@ -532,7 +534,7 @@ interface Communication {
                     <option value="excellent">Excellent (95%+)</option>
                     <option value="good">Bon (85-94%)</option>
                     <option value="poor">Faible (<85%)</option>
-                  </select>
+                  </select> -->
                 </div>
               </div>
 
@@ -607,7 +609,7 @@ interface Communication {
                     <option value="inactive">Inactives</option>
                     <option value="suspended">Suspendues</option>
                   </select>
-                  <select
+                  <!-- <select
                     [(ngModel)]="complianceFilter"
                     (change)="filterAgencies()"
                     class="filter-select"
@@ -616,7 +618,7 @@ interface Communication {
                     <option value="excellent">Excellent (95%+)</option>
                     <option value="good">Bon (85-94%)</option>
                     <option value="poor">Faible (<85%)</option>
-                  </select>
+                  </select> -->
                 </div>
               </div>
 
@@ -701,13 +703,13 @@ interface Communication {
                     <ng-container
                       *ngIf="agency?.status === 'active'; else activation"
                     >
-                      <button
+                      <!-- <button
                         class="btn btn-primary"
                         (click)="auditAgency(agency.id)"
                       >
                         <i class="material-icons">fact_check</i>
                         Auditer
-                      </button>
+                      </button> -->
                       <button
                         class="btn btn-accent"
                         (click)="contactAgency(agency.id)"
@@ -755,7 +757,7 @@ interface Communication {
                     <option value="pending">Abonnement en attente</option>
                     <option value="cancelled">Abonnement annulé</option>
                   </select>
-                  <select
+                  <!-- <select
                     [(ngModel)]="complianceFilter"
                     (change)="filterClients()"
                     class="filter-select"
@@ -764,7 +766,7 @@ interface Communication {
                     <option value="excellent">Excellent (95%+)</option>
                     <option value="good">Bon (85-94%)</option>
                     <option value="poor">Faible (<85%)</option>
-                  </select>
+                  </select> -->
                 </div>
               </div>
 
@@ -896,7 +898,7 @@ interface Communication {
                     <option value="active">actif</option>
                     <option value="inactive">Inactif</option>
                   </select>
-                  <select
+                  <!-- <select
                     [(ngModel)]="complianceFilter"
                     (change)="filterCollectors()"
                     class="filter-select"
@@ -905,7 +907,7 @@ interface Communication {
                     <option value="excellent">Excellent (95%+)</option>
                     <option value="good">Bon (85-94%)</option>
                     <option value="poor">Faible (<85%)</option>
-                  </select>
+                  </select> -->
                 </div>
               </div>
 
@@ -993,11 +995,14 @@ interface Communication {
             <div *ngIf="activeTab === 'statistics'" class="statistics-tab">
               <div class="statistics-header">
                 <h2>Statistiques Consolidées</h2>
-                <div class="statistics-filters">
+                <!-- <div class="statistics-filters" 
+>
                   <select
                     [(ngModel)]="statisticsPeriod"
                     (change)="updateStatistics()"
                     class="filter-select"
+                        [disabled]="isDisabled"
+
                   >
                     <option value="today">Aujourd'hui</option>
                     <option value="week">Cette semaine</option>
@@ -1008,11 +1013,12 @@ interface Communication {
                   <button
                     class="btn btn-secondary"
                     (click)="exportStatistics()"
+                 
                   >
                     <i class="material-icons">download</i>
                     Exporter
                   </button>
-                </div>
+                </div> -->
               </div>
 
               <div class="statistics-content">
@@ -1107,7 +1113,7 @@ interface Communication {
                     class="filter-select"
                   >
                     <option value="all">Tous les incidents</option>
-                    <option value="open">Ouverts</option>
+                    <!-- <option value="open">Ouverts</option> -->
                     <option value="pending">En cours</option>
                     <option value="resolved">Résolus</option>
                   </select>
@@ -1882,6 +1888,7 @@ interface Communication {
         max-height: 450px;
         overflow-y: auto;
         padding-right: 10px;
+        
       }
 
       .zone-metrics {
@@ -3082,7 +3089,7 @@ export class AdminDashboard implements OnInit {
   clientGrowth: number = 0;
   signalementsAudits: any;
   filteredSignalements: any[] = [];
-
+isDisabled = true;
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
@@ -3487,7 +3494,7 @@ export class AdminDashboard implements OnInit {
 
   getIncidentStatusText(status: string): string {
     const statuses = {
-      open: "Ouvert",
+      // open: "Ouvert",
       pending: "En cours",
       resolved: "Résolu",
     };
@@ -3629,6 +3636,15 @@ export class AdminDashboard implements OnInit {
       "Génération du rapport global en cours..."
     );
   }
+//   handleDisabledClick(event: MouseEvent) {
+//   if (this.isDisabled) {
+//     event.stopPropagation();
+//     this.notificationService.showInfo(
+//       "Info",
+//       "Fonctionnalite viendra bientôt..."
+//     );
+//   }
+// }
   viewMunicipalityDetails(municipalityId: string): void {
     this.notificationService.showInfo(
       "Détails",
@@ -3938,6 +3954,7 @@ viewClientDetails(clientId: string): void {
         this.filteredMunicipalities = [...this.municipalitiesAudits];
         console.log("municipalities in response", response);
         console.log("municipalities in dashboard", this.filteredMunicipalities);
+       
       },
     });
   }
@@ -3965,5 +3982,23 @@ viewClientDetails(clientId: string): void {
   closeClientDetailsModal(): void {
   this.showClientDetailsModal = false;
   this.selectedClient = null; 
+}
+getTabBadge(tabId: string): number {
+  switch (tabId) {
+    case 'overview':
+      return this.filteredAgencies.length + this.filteredMunicipalities.length + this.filteredClients.length + this.filteredCollectors.length + this.filteredIncidents.length;
+    case 'municipalities':
+      return this.filteredMunicipalities.length;
+    case 'agencies':
+      return this.filteredAgencies.length;
+    case 'clients':
+      return this.filteredClients.length;
+    case 'collectors':
+      return this.filteredCollectors.length;
+    case 'incidents':
+      return this.filteredIncidents.length;
+    default:
+      return 0;
+  }
 }
 }
