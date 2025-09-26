@@ -14,6 +14,7 @@ export interface Collection {
   feedback?: string;
   createdAt: Date;
   updatedAt: Date;
+  // reports: CollectionReport[];
 }
 
 export enum CollectionStatus {
@@ -47,6 +48,7 @@ export enum RouteStatus {
 
 export interface CollectionReport {
   id: string;
+  // _id: string;
   collectionId: string;
   clientId: string;
   agencyId: string;
@@ -57,6 +59,12 @@ export interface CollectionReport {
   resolution?: string;
   createdAt: Date;
   resolvedAt?: Date;
+  // updatedAt: Date;
+  // scannedAt?: Date;
+  // positionGPS?: {
+  //   latitude: number;
+  //   longitude: number;
+  // };
 }
 
 export enum ReportType {
