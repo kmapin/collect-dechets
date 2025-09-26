@@ -419,10 +419,9 @@ interface Statistics {
                       <span>{{ employee.phone }}</span>
                     </div>
                     <div class="detail-item">
-                      <i class="material-icons">map</i>
-                      <span
-                        >{{ employee.zones.length }} zone(s) assignée(s)</span
-                      >
+                      <!-- <i class="material-icons">map</i> -->
+                      <!-- <span>{{getZoneLengthByEmployeeId(employee._id)}} zone(s) assignée(s)</span> -->
+                      <!-- <span>{{ employee.zones.length }} zone(s) assignée(s)</span> -->
                     </div>
                     <div class="detail-item">
                       <i class="material-icons">event</i>
@@ -432,6 +431,7 @@ interface Statistics {
                       >
                     </div>
                   </div>
+                  
                   <div class="employee-actions">
                     <button
                         class="action-btn"
@@ -4047,6 +4047,16 @@ export class AgencyDashboardComponent implements OnInit {
 
   employeesNbrs!: number;
   activesEmployeesNbrs!: number;
+  zoneLength!: number;
+  getZoneLengthByEmployeeId(employeeId: string): number {
+    const employee = this.allEmployees.find(emp => emp._id === employeeId);
+    this.zoneLength = employee ? employee.zones.length : 0;
+    console.log("Employee found for zone length:", this.zoneLength);
+    return this.zoneLength;
+
+  }
+
+
   loadEmployees(currentUser: any): void {
     if (currentUser?._id) {
       this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({

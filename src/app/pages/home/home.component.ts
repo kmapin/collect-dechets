@@ -277,7 +277,7 @@ import { Agency } from '../../models/agency.model';
             </div>
             <h2 class="section-title">Un processus simple en 3 étapes</h2>
             <p class="features-subtitle">
-              Notre plateforme révolutionne la gestion des déchets avec un processus 
+              Notre plateforme facilite la gestion des déchets avec un processus 
               optimisé qui vous fait gagner du temps tout en contribuant à un 
               environnement plus propre et durable.
             </p>
@@ -391,7 +391,7 @@ import { Agency } from '../../models/agency.model';
             <div class="cta-icon">
               <i class="material-icons">rocket_launch</i>
             </div>
-            <h2 class="cta-title">Prêt à révolutionner votre gestion des déchets ?</h2>
+            <h2 class="cta-title">Prêt à améliorer votre gestion des déchets ?</h2>
             <p class="cta-subtitle">
               Rejoignez des milliers d'utilisateurs qui ont déjà adopté la solution 
               la plus moderne et efficace pour gérer leurs déchets. Commencez 
