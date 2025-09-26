@@ -233,106 +233,110 @@ interface Statistics {
           </div>
 
           <!-- Contenu des onglets -->
-  
-<div class="tab-content">
-  <!-- Onglet Suivi des Collectes -->
-  <div *ngIf="activeTab === 'collections'" class="collections-tab">
-    <div class="collections-header">
-      <h2>Suivi des Collectes en Temps Réel</h2>
-      <div class="collections-filters">
-        <select
-          [(ngModel)]="collectionsFilter"
-          (change)="filterCollections()"
-          class="filter-select"
-        >
-          <option value="all">Toutes les collectes</option>
-          <option value="scheduled">Programmées</option>
-          <option value="in_progress">En cours</option>
-          <option value="collected">Collectées</option>
-          <option value="missed">Manquées</option>
-        </select>
-           
-    <!-- Bouton historique -->
-    <button
-      class="action-btn"
 
-      title="Voir l’historique des collectes"
-      style="margin-left: 10px;"
-     (click)="openHistoryModal()"
-     
-    >
-      <i class="material-icons">history</i>
-    </button>
-      </div>
-    </div>
+          <div class="tab-content">
+            <!-- Onglet Suivi des Collectes -->
+            <div *ngIf="activeTab === 'collections'" class="collections-tab">
+              <div class="collections-header">
+                <h2>Suivi des Collectes en Temps Réel</h2>
+                <div class="collections-filters">
+                  <select
+                    [(ngModel)]="collectionsFilter"
+                    (change)="filterCollections()"
+                    class="filter-select"
+                  >
+                    <option value="all">Toutes les collectes</option>
+                    <option value="scheduled">Programmées</option>
+                    <option value="in_progress">En cours</option>
+                    <option value="collected">Collectées</option>
+                    <option value="missed">Manquées</option>
+                  </select>
 
-    <div class="collections-grid">
-      <div
-        *ngFor="let collecte of dayCollectes"
-        class="collection-card card"
-      >
-        <!-- Header -->
-        <div class="collection-header">
-          <div class="collection-status">
-            <span
-              class="status-badge"
-              [class]="'status-' + collecte.status"
-            >
-              {{ collecte.status }}
-            </span>
-            <span class="collection-time">
-              {{ collecte.createdAt | date: "dd/MM/yyyy HH:mm" }}
-            </span>
-          </div>
+                  <!-- Bouton historique -->
+                  <button
+                    class="action-btn"
+                    title="Voir l’historique des collectes"
+                    style="margin-left: 10px;"
+                    (click)="openHistoryModal()"
+                  >
+                    <i class="material-icons">history</i>
+                  </button>
+                </div>
+              </div>
 
-          <div class="collection-actions">
-            <button
-              class="action-btn"
-              (click)="trackCollection(collecte._id)"
-              *ngIf="collecte.status === 'in_progress'"
-            >
-              <i class="material-icons">location_on</i>
-            </button>
-            <!-- <button
+              <div class="collections-grid">
+                <div
+                  *ngFor="let collecte of dayCollectes"
+                  class="collection-card card"
+                >
+                  <!-- Header -->
+                  <div class="collection-header">
+                    <div class="collection-status">
+                      <span
+                        class="status-badge"
+                        [class]="'status-' + collecte.status"
+                      >
+                        {{ collecte.status }}
+                      </span>
+                      <span class="collection-time">
+                        {{ collecte.createdAt | date : "dd/MM/yyyy HH:mm" }}
+                      </span>
+                    </div>
+
+                    <div class="collection-actions">
+                      <button
+                        class="action-btn"
+                        (click)="trackCollection(collecte._id)"
+                        *ngIf="collecte.status === 'in_progress'"
+                      >
+                        <i class="material-icons">location_on</i>
+                      </button>
+                      <!-- <button
               class="action-btn"
               (click)="contactClient(collecte.clientId)"
             >
               <i class="material-icons">phone</i>
             </button> -->
-          </div>
-        </div>
+                    </div>
+                  </div>
 
-        <!-- Infos -->
-        <div class="collection-info">
-   
-                  <i class="material-icons">group</i>
-            {{collecte.clientId.firstName + " " + collecte.clientId.lastName }}
-          <p>
-            <i class="material-icons">person</i>
-            Collecteur : {{collecte.collectorId.firstName + " " + collecte.collectorId.lastName }}
-          </p>
-          <p>
-            <i class="material-icons">apartment</i>
-            Agence : {{ collecte.agencyId.agencyName
- }}
-          </p>
-          <p>
-            <i class="material-icons">schedule</i>
-            Scannée à : {{ collecte.scannedAt | date: "dd/MM/yyyy HH:mm" }}
-          </p>
-        </div>
-      </div>
-    </div>
+                  <!-- Infos -->
+                  <div class="collection-info">
+                    <i class="material-icons">group</i>
+                    {{
+                      collecte.clientId.firstName +
+                        " " +
+                        collecte.clientId.lastName
+                    }}
+                    <p>
+                      <i class="material-icons">person</i>
+                      Collecteur :
+                      {{
+                        collecte.collectorId.firstName +
+                          " " +
+                          collecte.collectorId.lastName
+                      }}
+                    </p>
+                    <p>
+                      <i class="material-icons">apartment</i>
+                      Agence : {{ collecte.agencyId.agencyName }}
+                    </p>
+                    <p>
+                      <i class="material-icons">schedule</i>
+                      Scannée à :
+                      {{ collecte.scannedAt | date : "dd/MM/yyyy HH:mm" }}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-    <!-- État vide -->
-    <div *ngIf="dayCollectes.length === 0" class="empty-state">
-      <i class="material-icons">event_available</i>
-      <h3>Aucune collecte</h3>
-      <p>Aucune collecte disponible pour l’instant</p>
-   
-    </div>
-  </div>
-
+              <!-- État vide -->
+              <div *ngIf="dayCollectes.length === 0" class="empty-state">
+                <i class="material-icons">event_available</i>
+                <h3>Aucune collecte</h3>
+                <p>Aucune collecte disponible pour l’instant</p>
+              </div>
+            </div>
 
             <!-- Onglet Gestion des Employés -->
             <div *ngIf="activeTab === 'employees'" class="employees-tab">
@@ -431,19 +435,25 @@ interface Statistics {
                       >
                     </div>
                   </div>
-                  
+
                   <div class="employee-actions">
-                    <button
-                        class="action-btn"
-                        (click)="editEmployee(employee)"
-                      >
-                        <i class="material-icons">edit</i>
+                    <button class="action-btn" (click)="editEmployee(employee)">
+                      <i class="material-icons">edit</i>
                     </button>
                     <button
                       class="action-btn danger"
                       (click)="deleteEmployee(currentUser, employee)"
                     >
                       <i class="material-icons">delete</i>
+                    </button>
+                    <button
+                      class="action-btn"
+                      [class.active]="employee.isActive"
+                      (click)="toggleEmployeeStatus(employee)"
+                    >
+                      <i class="material-icons">{{
+                        employee.isActive ? "toggle_on" : "toggle_off"
+                      }}</i>
                     </button>
                   </div>
                   <!-- <div class="employee-stats" *ngIf="employee.role === 'collector'">
@@ -576,22 +586,29 @@ interface Statistics {
                         class="schedule-item"
                         (click)="openScheduleDetails(schedule)"
                       >
-                        <div class="schedule-time">
+                        <!-- <div class="schedule-time">
                           <span class="schedule-time">Debut:</span>
                           {{ schedule.startTime }}
+                        </div> -->
+                        <div class="schedule-time">
+                          <!-- <span class="schedule-time">Zone:</span> -->
+                          <i class="material-icons">location_on:</i> {{ getZoneName(schedule.zone) }}
                         </div>
                         <div class="schedule-time">
-                          <span class="schedule-time">Zone:</span>
-                          {{ getZoneName(schedule.zone) }}
-                        </div>
-                        <div class="schedule-time">
-                          <span class="schedule-time">Heure:</span>
+                          <!-- <span class="schedule-time">Heure:</span>
+                            -->
+                          <i class="material-icons">schedule:</i>
+
                           {{ schedule.startTime }} - {{ schedule.endTime }}
                         </div>
 
                         <div class="schedule-time">
-                          <span class="schedule-time">Collecteur:</span>
+                          <!-- <span class="schedule-time">Collecteur:</span> -->
+                          <i class="material-icons">person:</i>
+
                           {{ getCollectorName(schedule.collectorId) }}
+
+
                         </div>
                         <div class="schedule-actions">
                           <button
@@ -600,6 +617,13 @@ interface Statistics {
                           >
                             <i class="material-icons">delete</i>
                           </button>
+                          <!-- <button
+    class="action-btn"
+    [class.active]="schedule.isActive"
+    (click)="toggleScheduleStatus(schedule)"
+  >
+    <i class="material-icons">{{ schedule.isActive ? 'toggle_on' : 'toggle_off' }}</i>
+  </button> -->
                         </div>
                       </div>
                     </div>
@@ -653,11 +677,10 @@ interface Statistics {
                         </button> -->
                         <button
                           class="action-btn danger"
-                            (click)="viewClientDetails(client._id)"
-                          >
+                          (click)="viewClientDetails(client._id)"
+                        >
                           <i class="material-icons">visibility</i>
-                          
-                          </button>
+                        </button>
                         <!-- <button
                           class="action-btn danger"
                           (click)="deleteClient()"
@@ -806,8 +829,8 @@ interface Statistics {
                       <img
                         [src]="photo"
                         alt="Photo du signalement"
-                          class="report-photo circular-image"
-                             (click)="openImageModal(photo)"
+                        class="report-photo circular-image"
+                        (click)="openImageModal(photo)"
                       />
                     </div>
                   </div>
@@ -818,9 +841,11 @@ interface Statistics {
                     <button
                       class="btn btn-accent"
                       (click)="openAssignModal(report._id)"
+                       (click)="openAssignModal(report._id)"
+    *ngIf="!report.assignedTo"
                     >
                       <i class="material-icons">assignment_ind</i>
-                      Assigner
+                   Traiter
                     </button>
 
                     <!-- <button class="btn btn-primary" (click)="investigateIncident()" >
@@ -830,6 +855,8 @@ interface Statistics {
                     <button
                       class="btn btn-success"
                       (click)="resolveIncident(report._id)"
+                        (click)="resolveIncident(report._id)"
+    *ngIf="report.assignedTo"
                     >
                       <i class="material-icons">check</i>
                       Résoudre
@@ -902,9 +929,7 @@ interface Statistics {
                     <button
                       class="btn btn-success"
                       (click)="readAndRespondMessage(message)"
-                      *ngIf="
-                        message.sender !== currentUser?._id
-                      "
+                      *ngIf="message.sender !== currentUser?._id"
                     >
                       <i class="material-icons">check</i>
                       Repondre
@@ -1162,7 +1187,7 @@ interface Statistics {
                   </form>
                 </div>
               </div>
-             
+
               <!-- Modal Gestion Zone -->
               <div
                 class="modal-overlay"
@@ -1361,7 +1386,7 @@ interface Statistics {
                           *ngFor="let collector of collectors"
                           [value]="collector._id"
                         >
-                          {{ collector.firstName }} {{ collector.lastName }}
+                          {{ collector.firstName }} {{ collector.lastName }} 
                         </option>
                       </select>
                       <small
@@ -1584,119 +1609,155 @@ interface Statistics {
       </div>
     </div>
     <div
-  class="modal-overlay"
-  *ngIf="showClientDetailsModal"
-  (click)="closeClientDetailsModal()"
->
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Détails du Client</h3>
-      <button class="close-btn" (click)="closeClientDetailsModal()">
-        <i class="material-icons">close</i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p><strong>Nom :</strong> {{ selectedClient?.firstName }} {{ selectedClient?.lastName }}</p>
-      <p><strong>Email :</strong> {{ selectedClient?.userId?.email }}</p>
-      <p><strong>Téléphone :</strong> {{ selectedClient?.phone }}</p>
-      <p><strong>Adresse :</strong> {{ selectedClient?.address?.street }}, {{ selectedClient?.address?.neighborhood }}</p>
-      <p><strong>Rôle :</strong> {{ selectedClient?.userId?.role }}</p>
-         <p><strong>Sigalement:</strong> {{selectedClient?.nonPassageReports.length}}</p>
-         <p><strong>Nombre de souscription:</strong> {{selectedClient?.
-subscriptionHistory
-.length}}</p>
+      class="modal-overlay"
+      *ngIf="showClientDetailsModal"
+      (click)="closeClientDetailsModal()"
+    >
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Détails du Client</h3>
+          <button class="close-btn" (click)="closeClientDetailsModal()">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            <strong>Nom :</strong> {{ selectedClient?.firstName }}
+            {{ selectedClient?.lastName }}
+          </p>
+          <p><strong>Email :</strong> {{ selectedClient?.userId?.email }}</p>
+          <p><strong>Téléphone :</strong> {{ selectedClient?.phone }}</p>
+          <p>
+            <strong>Adresse :</strong> {{ selectedClient?.address?.street }},
+            {{ selectedClient?.address?.neighborhood }}
+          </p>
+          <p><strong>Rôle :</strong> {{ selectedClient?.userId?.role }}</p>
+          <p>
+            <strong>Sigalement:</strong>
+            {{ selectedClient?.nonPassageReports.length }}
+          </p>
+          <p>
+            <strong>Nombre de souscription:</strong>
+            {{ selectedClient?.subscriptionHistory.length }}
+          </p>
 
-      <ul>
-        <!-- <span>Souscription:</span> -->
-        <!-- <li *ngFor="let subscription of selectedClient?.subscriptionHistory">
+          <ul>
+            <!-- <span>Souscription:</span> -->
+            <!-- <li *ngFor="let subscription of selectedClient?.subscriptionHistory">
           {{ subscription.type }} - {{ subscription.status }}
         </li>  
             -->
-      
-      </ul>
-  
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeClientDetailsModal()">
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Modal pour modifier un employé -->
+    <div
+      class="modal-overlay"
+      *ngIf="showUpdateEmployeeModal"
+      (click)="closeUpdateEmployeeModal()"
+    >
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Modifier un Employé</h3>
+          <button class="close-btn" (click)="closeUpdateEmployeeModal()">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <form [formGroup]="employeeForm" (ngSubmit)="updateEmployee()">
+          <div class="form-group">
+            <label>Prénom</label>
+            <input formControlName="firstName" type="text" />
+          </div>
+          <div class="form-group">
+            <label>Nom</label>
+            <input formControlName="lastName" type="text" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input formControlName="email" type="email" />
+          </div>
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input formControlName="phone" type="tel" />
+          </div>
+          <div class="form-group">
+            <label>Rôle</label>
+            <select formControlName="role">
+              <option value="manager">Manager</option>
+              <option value="collector">Collecteur</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="closeUpdateEmployeeModal()"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="employeeForm.invalid"
+            >
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div
+      class="modal-overlay"
+      *ngIf="selectedImage"
+      (click)="closeImageModal()"
+    >
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <img
+          [src]="selectedImage"
+          alt="Image en plein écran"
+          class="full-image"
+        />
 
-
+        <button class="close-btn" (click)="closeImageModal()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeClientDetailsModal()">Fermer</button>
+    <div
+      class="modal-overlay"
+      *ngIf="showHistoryModal"
+      (click)="closeHistoryModal()"
+    >
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Historique des Collectes</h3>
+          <button class="close-btn" (click)="closeHistoryModal()">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <ul>
+            <li *ngFor="let collecte of historyCollecte">
+              <p>
+                <strong>Date :</strong>
+                {{ collecte?.scannedAt | date : "dd/MM/yyyy" }}
+              </p>
+              <p><strong>Statut :</strong> {{ collecte.status }}</p>
+              <p>
+                <strong>Client :</strong> {{ collecte?.clientId.firstName }}
+                {{ collecte?.clientId.clientName }}
+              </p>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-<!-- Modal pour modifier un employé -->
-<div
-  class="modal-overlay"
-  *ngIf="showUpdateEmployeeModal"
-  (click)="closeUpdateEmployeeModal()"
->
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Modifier un Employé</h3>
-      <button class="close-btn" (click)="closeUpdateEmployeeModal()">
-        <i class="material-icons">close</i>
-      </button>
-    </div>
-    <form [formGroup]="employeeForm" (ngSubmit)="updateEmployee()">
-      <div class="form-group">
-        <label>Prénom</label>
-        <input formControlName="firstName" type="text" />
-      </div>
-      <div class="form-group">
-        <label>Nom</label>
-        <input formControlName="lastName" type="text" />
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input formControlName="email" type="email" />
-      </div>
-      <div class="form-group">
-        <label>Téléphone</label>
-        <input formControlName="phone" type="tel" />
-      </div>
-      <div class="form-group">
-        <label>Rôle</label>
-        <select formControlName="role">
-          <option value="manager">Manager</option>
-          <option value="collector">Collecteur</option>
-        </select>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" (click)="closeUpdateEmployeeModal()">Annuler</button>
-        <button type="submit" class="btn btn-primary" [disabled]="employeeForm.invalid">Enregistrer</button>
-      </div>
-    </form>
-  </div>
-</div>
-<div class="modal-overlay" *ngIf="selectedImage" (click)="closeImageModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <img [src]="selectedImage" alt="Image en plein écran" class="full-image" />
-        
-    <button class="close-btn" (click)="closeImageModal()">
-      <i class="material-icons">close</i>
-    </button>
-  </div>
-</div>
-<div class="modal-overlay" *ngIf="showHistoryModal" (click)="closeHistoryModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Historique des Collectes</h3>
-      <button class="close-btn" (click)="closeHistoryModal()">
-        <i class="material-icons">close</i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <ul>
-        <li *ngFor="let collecte of historyCollecte">
-          <p><strong>Date :</strong> {{ collecte?.
-scannedAt
- | date: 'dd/MM/yyyy' }}</p>
-          <p><strong>Statut :</strong> {{ collecte.status }}</p>
-          <p><strong>Client :</strong> {{ collecte?.clientId.firstName }} {{ collecte?.clientId.clientName }}</p>
-        </li>
-      </ul>
-    </div>
-  </div>
-</div>
   `,
   styles: [
     `
@@ -1711,41 +1772,41 @@ scannedAt
         gap: 24px;
       }
       .full-image {
-  width: 100%;
-  height: auto;
-  max-height: 80vh;
-  border-radius: 8px;
-}
+        width: 100%;
+        height: auto;
+        max-height: 80vh;
+        border-radius: 8px;
+      }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
 
-.modal-content {
-  position: relative;
-  background: transparent;
-  padding: 0;
-}
+      .modal-content {
+        position: relative;
+        background: transparent;
+        padding: 0;
+      }
 
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 24px;
-  cursor: pointer;
-}
+      .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+      }
       .employee-grid {
         display: grid;
         grid-template-columns: repeat(
@@ -1770,22 +1831,22 @@ scannedAt
         cursor: pointer;
         transition: all 0.3s ease;
       }
-.modal-body ul {
-  list-style: none;
-  padding: 0;
-}
+      .modal-body ul {
+        list-style: none;
+        padding: 0;
+      }
 
-.modal-body ul li {
-  margin-bottom: 16px;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #f9f9f9;
-}
+      .modal-body ul li {
+        margin-bottom: 16px;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #f9f9f9;
+      }
 
-.modal-body ul li p {
-  margin: 4px 0;
-}
+      .modal-body ul li p {
+        margin: 4px 0;
+      }
       .employee-card:hover {
         background: #edf6f9;
         border-color: #38bdf8;
@@ -1826,94 +1887,94 @@ scannedAt
         margin-bottom: 8px;
       }
       /* Overlay du modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
 
-/* Contenu du modal */
-.modal-content {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 20px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
+      /* Contenu du modal */
+      .modal-content {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 20px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
 
-/* En-tête du modal */
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
+      /* En-tête du modal */
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
 
-.modal-header h3 {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-}
+      .modal-header h3 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+      }
 
-.close-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #888;
-  font-size: 1.5rem;
-}
+      .close-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #888;
+        font-size: 1.5rem;
+      }
 
-.close-btn:hover {
-  color: #f44336;
-}
+      .close-btn:hover {
+        color: #f44336;
+      }
 
-/* Corps du modal */
-.modal-body p {
-  margin: 8px 0;
-  font-size: 1rem;
-  color: #555;
-}
+      /* Corps du modal */
+      .modal-body p {
+        margin: 8px 0;
+        font-size: 1rem;
+        color: #555;
+      }
 
-.modal-body ul {
-  padding-left: 20px;
-}
+      .modal-body ul {
+        padding-left: 20px;
+      }
 
-.modal-body ul li {
-  font-size: 0.9rem;
-  color: #666;
-}
+      .modal-body ul li {
+        font-size: 0.9rem;
+        color: #666;
+      }
 
-/* Pied de page du modal */
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
+      /* Pied de page du modal */
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 16px;
+      }
 
-.modal-footer .btn {
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
+      .modal-footer .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
 
-.modal-footer .btn-secondary {
-  background: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
-}
+      .modal-footer .btn-secondary {
+        background: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+      }
 
-.modal-footer .btn-secondary:hover {
-  background: #e0e0e0;
-}
+      .modal-footer .btn-secondary:hover {
+        background: #e0e0e0;
+      }
 
       .welcome-section p {
         color: rgba(255, 255, 255, 0.9);
@@ -1939,6 +2000,7 @@ scannedAt
         max-width: 500px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
       }
+      
       .modal {
         transition: transform 0.2s ease, opacity 0.2s ease;
         transform: scale(1);
@@ -2373,35 +2435,30 @@ scannedAt
         margin-bottom: 16px;
       }
       .status-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: capitalize;
-  color: #fff;
-}
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: capitalize;
+        color: #fff;
+      }
 
+      .status-collected {
+        background-color: #4caf50; /* Vert */
+      }
 
-.status-collected {
-  background-color: #4caf50; /* Vert */
-}
+      .status-in_progress {
+        background-color: #ff9800; /* Orange */
+      }
 
+      .status-scheduled {
+        background-color: #2196f3; /* Bleu */
+      }
 
-.status-in_progress {
-  background-color: #ff9800; /* Orange */
-}
-
-
-.status-scheduled {
-  background-color: #2196f3; /* Bleu */
-}
-
-
-.status-missed {
-  background-color: #f44336; /* Rouge */
-}
-
+      .status-missed {
+        background-color: #f44336; /* Rouge */
+      }
 
       .collection-status {
         display: flex;
@@ -2875,7 +2932,11 @@ scannedAt
         color: var(--text-secondary);
         margin: 2px 0;
       }
-
+      button,
+      a,
+      .action-btn {
+        cursor: pointer;
+      }
       .schedule-actions {
         position: absolute;
         top: 4px;
@@ -3300,14 +3361,14 @@ scannedAt
         display: none;
       }
 
-.circular-image {
-  width: 100px;
-  height: 100px; 
-  border-radius: 50%;
-  object-fit: cover; 
-  border: 2px solid #ccc; 
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
-}
+      .circular-image {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #ccc;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
       .checkmark {
         width: 16px;
         height: 16px;
@@ -3572,10 +3633,10 @@ export class AgencyDashboardComponent implements OnInit {
     receiver: "",
     content: "",
   };
-  
+
   client: any;
   receivedId: string = "";
-    employeeForm: FormGroup;
+  employeeForm: FormGroup;
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
@@ -3601,12 +3662,12 @@ export class AgencyDashboardComponent implements OnInit {
         validators: [this.validateTimeOrder],
       }
     );
-     this.employeeForm = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      phone: ['', Validators.required],
-      role: ['', Validators.required],
+    this.employeeForm = this.fb.group({
+      firstName: ["", Validators.required],
+      lastName: ["", Validators.required],
+      email: ["", [Validators.required, Validators.email]],
+      phone: ["", Validators.required],
+      role: ["", Validators.required],
     });
   }
 
@@ -3625,10 +3686,10 @@ export class AgencyDashboardComponent implements OnInit {
     this.cdr.detectChanges();
     this.loadZones(this.currentUser);
     this.loadCollectDay();
-    
-  setInterval(() => {
-    this.loadCollectDay();
-  }, 30000);
+
+    setInterval(() => {
+      this.loadCollectDay();
+    }, 30000);
     this.loadCollectHistory();
     this.filterIncidents();
     this.countUnreadMessages();
@@ -4049,13 +4110,11 @@ export class AgencyDashboardComponent implements OnInit {
   activesEmployeesNbrs!: number;
   zoneLength!: number;
   getZoneLengthByEmployeeId(employeeId: string): number {
-    const employee = this.allEmployees.find(emp => emp._id === employeeId);
+    const employee = this.allEmployees.find((emp) => emp._id === employeeId);
     this.zoneLength = employee ? employee.zones.length : 0;
     console.log("Employee found for zone length:", this.zoneLength);
     return this.zoneLength;
-
   }
-
 
   loadEmployees(currentUser: any): void {
     if (currentUser?._id) {
@@ -4512,8 +4571,6 @@ export class AgencyDashboardComponent implements OnInit {
     // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
- 
-
   // deleteEmployee(employeeId: string): void {
   //   if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
   //     this.employees = this.employees.filter(e => e.id !== employeeId);
@@ -4550,23 +4607,32 @@ export class AgencyDashboardComponent implements OnInit {
       // No need to call notificationService.showSuccess here, as it's already handled in the template
     }
   }
-  selectedClient: any = null; 
-showClientDetailsModal: boolean = false;
-viewClientDetails(clientId: string): void {
-  this.notificationService.showInfo("Détails", "Récupération des détails du client...");
-  
-  this.agencyService.getClientById(clientId).subscribe({
-    next: (client: any) => {
-      this.selectedClient = client.data; 
-      console.log('voici les details du client:',client)
-      this.showClientDetailsModal = true; 
-    },
-    error: (err: any) => {
-      console.error("Erreur lors de la récupération des détails du client :", err);
-      this.notificationService.showError("Erreur", "Impossible de récupérer les détails du client.");
-    }
-  });
-}
+  selectedClient: any = null;
+  showClientDetailsModal: boolean = false;
+  viewClientDetails(clientId: string): void {
+    this.notificationService.showInfo(
+      "Détails",
+      "Récupération des détails du client..."
+    );
+
+    this.agencyService.getClientById(clientId).subscribe({
+      next: (client: any) => {
+        this.selectedClient = client.data;
+        console.log("voici les details du client:", client);
+        this.showClientDetailsModal = true;
+      },
+      error: (err: any) => {
+        console.error(
+          "Erreur lors de la récupération des détails du client :",
+          err
+        );
+        this.notificationService.showError(
+          "Erreur",
+          "Impossible de récupérer les détails du client."
+        );
+      },
+    });
+  }
   suspendClient(clientId: string): void {
     const client = this.clients.find((c) => c.id === clientId);
     if (client) {
@@ -4580,15 +4646,9 @@ viewClientDetails(clientId: string): void {
   }
 
   deleteClient(): void {
-
-      // Ajoute la logique de suppression ici (API ou local)
-      // ...
-      this.notificationService.showSuccess(
-        "Désole",
-        "Suppression non autorisée"
-        
-      );
-   
+    // Ajoute la logique de suppression ici (API ou local)
+    // ...
+    this.notificationService.showSuccess("Désole", "Suppression non autorisée");
   }
 
   resolveReport(reportId: string): void {
@@ -5210,10 +5270,13 @@ viewClientDetails(clientId: string): void {
   //   });
   // }
   addSchedule(): void {
-    if (this.scheduleForm.invalid) {
-      this.notificationService.showError(
-        "Erreur de validation",
-        "Veuillez corriger les erreurs dans le formulaire"
+    const { collectorId, date, startTime, endTime } = this.scheduleForm.value;
+    if (
+      this.checkCollectorAvailability(collectorId, date, startTime, endTime)
+    ) {
+      this.notificationService.showWarning(
+        "Attention",
+        "Le collecteur est déjà programmé sur ce créneau."
       );
       return;
     }
@@ -5463,11 +5526,11 @@ viewClientDetails(clientId: string): void {
     return this.sharedService.getRandomColor(item);
   }
   closeClientDetailsModal(): void {
-  this.showClientDetailsModal = false;
-  this.selectedClient = null; 
-}
-editEmployee(employee: any): void {
-  this.notificationService.showInfo("Modification", "ouvert...");
+    this.showClientDetailsModal = false;
+    this.selectedClient = null;
+  }
+  editEmployee(employee: any): void {
+    this.notificationService.showInfo("Modification", "ouvert...");
     this.selectedEmployee = employee;
     this.employeeForm.patchValue(employee);
     this.showUpdateEmployeeModal = true;
@@ -5478,109 +5541,191 @@ editEmployee(employee: any): void {
     this.selectedEmployee = [];
   }
 
- 
-updateEmployee(): void {
-  if (this.employeeForm.invalid) {
-    this.notificationService.showError("Erreur", "Formulaire invalide.");
-    return;
-  }
-  // On extrait uniquement les champs nécessaires
-  const { _id, createdAt, updatedAt, agencyId, userId, ...employeeData } = {
-    ...this.selectedEmployee,
-    ...this.employeeForm.value,
-  };
+  updateEmployee(): void {
+    if (this.employeeForm.invalid) {
+      this.notificationService.showError("Erreur", "Formulaire invalide.");
+      return;
+    }
+    // On extrait uniquement les champs nécessaires
+    const { _id, createdAt, updatedAt, agencyId, userId, ...employeeData } = {
+      ...this.selectedEmployee,
+      ...this.employeeForm.value,
+    };
 
-  this.agencyService.updateEmployee$(_id, employeeData).subscribe({
-    next: () => {
-      this.notificationService.showSuccess("Succès", "Employé mis à jour avec succès.");
-      this.showUpdateEmployeeModal = false;
-      this.loadEmployees(this.currentUser); // Recharge la liste
-    },
-    error: (err) => {
-      console.error("Erreur lors de la mise à jour :", err);
-      this.notificationService.showError("Erreur", "Impossible de mettre à jour l'employé.");
-    },
-  });
-}
+    this.agencyService.updateEmployee$(_id, employeeData).subscribe({
+      next: () => {
+        this.notificationService.showSuccess(
+          "Succès",
+          "Employé mis à jour avec succès."
+        );
+        this.showUpdateEmployeeModal = false;
+        this.loadEmployees(this.currentUser); // Recharge la liste
+      },
+      error: (err) => {
+        console.error("Erreur lors de la mise à jour :", err);
+        this.notificationService.showError(
+          "Erreur",
+          "Impossible de mettre à jour l'employé."
+        );
+      },
+    });
+  }
 
   // recuperations des collecte par jour d une agences
   dayCollectes: any[] = [];
 
-loadCollectDay(): void {
-  this.isLoading = true;
-  const agencyId = this.currentUser?._id;
+  loadCollectDay(): void {
+    this.isLoading = true;
+    const agencyId = this.currentUser?._id;
 
-  if (!agencyId) {
-    console.error("[DEBUG] Aucune collecte trouvée pour cette agence en jour");
-    this.notificationService.showError("Erreur", "Aucune agence sélectionnée.");
-    this.isLoading = false;
-    return;
-  }
-  this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
-next: (response) => {
-  this.dayCollectes = response.data || [];
-    console.log("Collectes journalières récupérées :", this.dayCollectes);
-       const CollectesTab = this.tabs.find((tab) => tab.id === "collections");
+    if (!agencyId) {
+      console.error(
+        "[DEBUG] Aucune collecte trouvée pour cette agence en jour"
+      );
+      this.notificationService.showError(
+        "Erreur",
+        "Aucune agence sélectionnée."
+      );
+      this.isLoading = false;
+      return;
+    }
+    this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
+      next: (response) => {
+        this.dayCollectes = response.data || [];
+        console.log("Collectes journalières récupérées :", this.dayCollectes);
+        const CollectesTab = this.tabs.find((tab) => tab.id === "collections");
         if (CollectesTab) {
           CollectesTab.badge = this.dayCollectes.length;
         }
-  this.isLoading = false;
-},
-    error: (error) => {
-      console.error("Erreur récupération collectes :", error);
-      const message = error?.error?.message || "Impossible de récupérer les collectes.";
-      this.notificationService.showError("Erreur", message);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error("Erreur récupération collectes :", error);
+        const message =
+          error?.error?.message || "Impossible de récupérer les collectes.";
+        this.notificationService.showError("Erreur", message);
 
-      this.isLoading = false;
-    },
-  });
-}
- // recuperations des tarifs liee a une agences
+        this.isLoading = false;
+      },
+    });
+  }
+  // recuperations des tarifs liee a une agences
   historyCollecte: any[] = [];
 
-loadCollectHistory(): void {
-  this.isLoading = true;
-  const agencyId = this.currentUser?._id;
+  loadCollectHistory(): void {
+    this.isLoading = true;
+    const agencyId = this.currentUser?._id;
 
-  if (!agencyId) {
-    console.error("[DEBUG] Aucune collecte trouvée pour cette agence en jour");
-    this.notificationService.showError("Erreur", "Aucune agence sélectionnée.");
-    this.isLoading = false;
-    return;
+    if (!agencyId) {
+      console.error(
+        "[DEBUG] Aucune collecte trouvée pour cette agence en jour"
+      );
+      this.notificationService.showError(
+        "Erreur",
+        "Aucune agence sélectionnée."
+      );
+      this.isLoading = false;
+      return;
+    }
+
+    this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
+      next: (response) => {
+        this.historyCollecte = response.data || [];
+        console.log(
+          "Historique des Collectes récupérées :",
+          this.historyCollecte
+        );
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error(
+          "Erreur récupération de l historique des collectes :",
+          error
+        );
+        const message =
+          error?.error?.message || "Impossible de récupérer les collectes.";
+        this.notificationService.showError("Erreur", message);
+
+        this.isLoading = false;
+      },
+    });
+  }
+  selectedImage: string | null = null;
+
+  openImageModal(imageUrl: string): void {
+    this.selectedImage = imageUrl;
   }
 
-  this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
-next: (response) => {
-  this.historyCollecte = response.data || [];
-  console.log("Historique des Collectes récupérées :", this.historyCollecte);
-  this.isLoading = false;
-},
-    error: (error) => {
-      console.error("Erreur récupération de l historique des collectes :", error);
-      const message = error?.error?.message || "Impossible de récupérer les collectes.";
-      this.notificationService.showError("Erreur", message);
+  closeImageModal(): void {
+    this.selectedImage = null;
+  }
+  showHistoryModal: boolean = false;
+  openHistoryModal(): void {
+    this.showHistoryModal = true;
+  }
 
-      this.isLoading = false;
-    },
-  });
-}
-selectedImage: string | null = null;
+  closeHistoryModal(): void {
+    this.showHistoryModal = false;
+  }
+  //modification  du status de l employee
+  toggleEmployeeStatus(employee: any): void {
+    const updatedStatus = !employee.isActive;
+    this.agencyService
+      .updateEmployee$(employee._id, { isActive: updatedStatus })
+      .subscribe({
+        next: () => {
+          employee.isActive = updatedStatus;
+          this.notificationService.showSuccess(
+            "Succès",
+            `L'employé a été ${
+              updatedStatus ? "activé" : "désactivé"
+            } avec succès.`
+          );
+        },
+        error: (error) => {
+          console.error("Erreur lors de la mise à jour du statut :", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de mettre à jour le statut de l'employé."
+          );
+        },
+      });
+  }
+  
+  //methode de verification de la disponibilite de l employee
+  checkCollectorAvailability(
+    collectorId: string,
+    date: string,
+    startTime: string,
+    endTime: string
+  ): boolean {
+    return this.schedules.some(
+      (schedule) =>
+        schedule.collectorId.includes(collectorId) &&
+        schedule.date === date &&
+        ((startTime >= schedule.startTime && startTime < schedule.endTime) ||
+          (endTime > schedule.startTime && endTime <= schedule.endTime))
+    );
+  }
+ 
 
-openImageModal(imageUrl: string): void {
-  this.selectedImage = imageUrl;
-}
-
-closeImageModal(): void {
-  this.selectedImage = null;
-}
-showHistoryModal: boolean = false;
-openHistoryModal(): void {
-  this.showHistoryModal = true;
-}
-
-
-closeHistoryModal(): void {
-  this.showHistoryModal = false;
-}
-
+//   toggleScheduleStatus(schedule: any): void {
+//   const updatedStatus = !schedule.isActive;
+//   this.agencyService.updateSchedule$(schedule._id, { isActive: updatedStatus }).subscribe({
+//     next: () => {
+//       schedule.isActive = updatedStatus;
+//       this.notificationService.showSuccess(
+//         "Succès",
+//         `Le planning a été ${updatedStatus ? "activé" : "désactivé"} avec succès.`
+//       );
+//     },
+//     error: (error) => {
+//       console.error("Erreur lors de la mise à jour du statut du planning :", error);
+//       this.notificationService.showError(
+//         "Erreur",
+//         "Impossible de mettre à jour le statut du planning."
+//       );
+//     },
+//   });
+// }
 }
