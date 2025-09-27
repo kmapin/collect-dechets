@@ -700,7 +700,7 @@ getAgencyAllHistoryCollectes$(agencyId: string): Observable<PaginatedResponse<an
 updateAgencyZones$(agencyId: string, zoneData: { name: string[]; description: string }): Observable<any> {
   const url = `${environment.apiUrl}/zones/${agencyId}`;
 
-  return this.http.patch<any>(url, zoneData).pipe(
+  return this.http.put<any>(url, zoneData).pipe(
     map(response => {
       console.log("API - Zones mises à jour :", response);
       return response;
