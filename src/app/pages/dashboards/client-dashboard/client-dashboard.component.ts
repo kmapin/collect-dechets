@@ -6,7 +6,7 @@ import { FormsModule } from "@angular/forms";
 import { AuthService } from "../../../services/auth.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
-import { User } from "../../../models/user.model";
+import { ClientUser, User } from "../../../models/user.model";
 import { Collection, CollectionStatus, CollectionReport } from "../../../models/collection.model";
 import { ClientService } from "../../../services/client.service";
 import { map } from "rxjs";
@@ -719,24 +719,24 @@ interface Subscription {
 
                 <div class="address-details" *ngIf="currentUser">
                   <div class="address-line">
+                    <i class="material-icons">location_city</i>
+                    <span>{{ currentUser.address?.city }}</span>
+                  </div>
+                  <div class="address-line">
                     <i class="material-icons">location_on</i>
                     <span
-                      >{{ currentUser.firstName }}
-                      {{ currentUser.lastName }}</span
-                    >
+                      >{{ currentUser?.address.arrondissement }}
+                    </span>
                   </div>
                   <div class="address-line">
                     <i class="material-icons">home</i>
-                    <span>123 Rue des Roses</span>
+                    <span>{{ currentUser.address?.sector }}, {{ currentUser.address?.street }}, {{ currentUser.address?.neighborhood }}</span>
                   </div>
                   <div class="address-line">
                     <i class="material-icons">palette</i>
-                    <span>Porte bleue</span>
+                    <span>Porte : {{ currentUser.address?.doorColor }}</span>
                   </div>
-                  <div class="address-line">
-                    <i class="material-icons">location_city</i>
-                    <span>Centre-ville, Paris 75001</span>
-                  </div>
+                  
                 </div>
 
                 <!-- <div class="address-map">
@@ -1862,7 +1862,7 @@ interface Subscription {
   ],
 })
 export class ClientDashboardComponent implements OnInit {
-  currentUser: User | null = null;
+  currentUser!: any ;
   upcomingCollections: Collection[] = [];
   collectionHistory: any[] = [];
   filteredHistory: Collection[] = [];
@@ -1911,15 +1911,20 @@ export class ClientDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     // this.currentUser = this.authService.getCurrentUser();
-    this.authService.currentUser$.subscribe((user) => {
+    this.getUser();
+    // console.log("Current User", this.currentUser);
+    this.loadDashboardData();
+  }
+
+  getUser(){
+   this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
       this.getUserSubscription();
       this.getClientWallet();
       this.getWeeklySchedule();
       this.loadPlanningHistory();
     });
-    console.log("Current User", this.currentUser);
-    this.loadDashboardData();
+    console.log("Current User", this.currentUser); 
   }
 
   //  GET CLIENT WALLET

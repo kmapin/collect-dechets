@@ -3,6 +3,7 @@ export interface User {
   userId?: string;
   id: string;
   email: string;
+  // address: ClientAddress;
   firstName: string;
   firstname: string;
   lastName: string;
@@ -14,6 +15,19 @@ export interface User {
   isActive: boolean;
   avatar?: string;
   subscribedAgencyId?: string;
+}
+
+export interface ClientAddress {
+  street: string;
+  doorNumber: string;
+  doorColor?: string;
+  neighborhood: string;
+  city: string;
+  postalCode: string;
+  latitude?: number;
+  longitude?: number;
+  sector: string;
+  arrondissement?: string;
 }
 
 export enum UserRole {

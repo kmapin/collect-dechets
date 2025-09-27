@@ -2010,7 +2010,8 @@ export class HomeComponent implements OnInit {
     rating: 5,
     avatar: '/assets/homeUseCases/rimvie.png'
 
-  }
+  },
+  
 ];
 
   carouselImages = [
