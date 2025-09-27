@@ -77,13 +77,17 @@ import { AgencyService } from '../../services/agency.service';
                 <span>{{ activeSubscription.agencyId?.phone }}</span>
               </div>
               <div class="actions">
-                <button class="btn btn-primary" (click)="renewSubscription()">Renouveler</button>
-                <button class="btn btn-secondary" (click)="contactSupport()">Support</button>
+                <button class="btn btn-primary" (click)="renewSubscription()">Configuration</button>
+                <button class="btn btn-secondary" (click)="contactSupport()">Contactez l'agence</button>
               </div>
             </div>
             <ng-template #noSub>
               <div class="info-item">
                 <span>Aucun abonnement actif.</span>
+              </div>
+              <div class="actions">
+                <button class="btn btn-primary" (click)="renewSubscription()">Configuration</button>
+                <button class="btn btn-secondary" (click)="contactSupport()">Contactez l'agence</button>
               </div>
             </ng-template>
             <!-- ...existing code... -->

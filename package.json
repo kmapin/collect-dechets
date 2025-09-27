@@ -22,6 +22,8 @@
     "@zxing/library": "^0.21.3",
     "@zxing/ngx-scanner": "^20.0.0",
     "flowbite": "^3.1.2",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "primeicons": "^7.0.0",
     "primeng": "^20.1.1",
     "rxjs": "^7.8.1",

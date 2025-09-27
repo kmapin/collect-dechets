@@ -1,19 +1,21 @@
 import { BarcodeFormat } from "@zxing/library";
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { RouterModule } from "@angular/router";
+import { RouterModule, TitleStrategy } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { AuthService } from "../../../services/auth.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
 import { User } from "../../../models/user.model";
-import { Collection, CollectionStatus } from "../../../models/collection.model";
+import { Collection, CollectionStatus, CollectionReport } from "../../../models/collection.model";
 import { ClientService } from "../../../services/client.service";
 import { map } from "rxjs";
 import { MessagesService } from "../../../services/messages.service";
 import { AgencyService } from "../../../services/agency.service";
 import { Message } from "../../../models/message.model";
 import { MatIcon } from "@angular/material/icon";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface PaymentHistory {
   id: string;
@@ -71,7 +73,7 @@ interface Subscription {
               <div class="stat-icon next-collection">
                 <i class="material-icons">event</i>
               </div>
-              <div class="stat-info">
+              <div class="stat-info" *ngIf="nextCollect else noNextCollect">
                 <h3>Prochaine collecte</h3>
                 <p class="stat-value">
                   {{ nextCollect?.date | date : "dd MMMM" : "fr-FR" }}
@@ -83,6 +85,12 @@ interface Subscription {
                   {{ nextCollect?.endTime }}
                 </span>
               </div>
+              <ng-template #noNextCollect>
+                <p>Pas de collecte prévue.<br />
+                  <sub>Veuillez vérifier plus tard </sub>
+                  <sub>ou contactez votre agence pour avoir un planning.</sub>
+                </p>
+              </ng-template>
             </div>
 
             <div class="stat-card card">
@@ -90,9 +98,16 @@ interface Subscription {
                 <i class="material-icons">check_circle</i>
               </div>
               <div class="stat-info">
-                <h3>Collectes ce mois</h3>
-                <!-- <p class="stat-value">{{ getMonthlyCollections() }}</p> -->
-                <!-- <span class="stat-detail">{{ getCollectionRate() }}% de réussite</span> -->
+                <h3>Collectes de ce mois</h3>
+                <p class="stat-value">{{ getTotalCompletedCollectionsLength() }} / {{ getMonthlyCollectionsLength() }}</p>
+                <!-- <span class="stat-detail">{{ getCompletedCollectionRate() }}% de réussite ; {{ getUncompletedCollectionRate() }}% d'échecs</span> -->
+                <span class="stat-detail"><i class="material-icons" style="color:var(--success-color);vertical-align:middle;">check_circle</i>
+                {{ getCompletedCollectionRate() }}% &nbsp;;&nbsp;
+                <i class="material-icons" style="color:var(--error-color);vertical-align:middle;">cancel</i>
+                {{ getUncompletedCollectionRate() }} % &nbsp;;&nbsp;
+                <i class="material-icons" style="color:var(--info-color);vertical-align:middle;">schedule</i>
+                {{ getUpcomingCollectionRate() }} %
+              </span>
               </div>
             </div>
 
@@ -152,7 +167,7 @@ interface Subscription {
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">schedule</i>
-                    Prochains passages planifiés/semaine
+                    Planning de la semaine
                   </h2>
                   <button
                     class="btn btn-secondary btn-small"
@@ -191,7 +206,7 @@ interface Subscription {
                       <span class="status-badge" [class]="'status-scheduled'">
                         {{
                           getStatusText(collection.isActive)
-                            ? "Active"
+                            ? "Programmé"
                             : "Inactif"
                         }}
                       </span>
@@ -219,7 +234,7 @@ interface Subscription {
                   <div *ngIf="weeklySchedule.length === 0" class="empty-state">
                     <i class="material-icons">event_available</i>
                     <h3>Aucune collecte programmée</h3>
-                    <p>Vos prochaines collectes apparaîtront ici</p>
+                    <p>Vos prochaines collectes de la semaine apparaîtront ici</p>
                   </div>
                 </div>
               </section>
@@ -231,7 +246,7 @@ interface Subscription {
                     <i class="material-icons">history</i>
                     Historique des collectes
                   </h2>
-                  <div class="filter-controls">
+                  <!-- <div class="filter-controls">
                     <select
                       [(ngModel)]="historyFilter"
                       (change)="filterHistory()"
@@ -242,12 +257,12 @@ interface Subscription {
                       <option value="missed">Manquées</option>
                       <option value="cancelled">Annulées</option>
                     </select>
-                  </div>
+                  </div> -->
                 </div>
 
                 <div class="history-list">
                   <div
-                    *ngFor="let collection of filteredHistory"
+                    *ngFor="let collection of filteredHistories"
                     class="history-item"
                   >
                     <div class="history-date">
@@ -552,7 +567,7 @@ interface Subscription {
 
             <div class="right-column">
               <!-- Informations d'abonnement -->
-              <section class="subscription-info card">
+              <section class="subscription-info card bg-blue-100">
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">card_membership</i>
@@ -672,7 +687,7 @@ interface Subscription {
                         class="status-badge"
                         [class]="'status-' + payment.status"
                       >
-                        {{ getPaymentStatusText(payment.status) }}
+                        {{ getPaymentStatusText(payment.status) === 'active' ? "Actif": (getPaymentStatusText(payment.status) === 'inactive' ? "Inactif" : (getPaymentStatusText(payment.status) === 'cancelled' ? "Annulé" : (getPaymentStatusText(payment.status) === 'refunded' ? "Remboursé" : (getPaymentStatusText(payment.status) === 'expired' ? "Expiré" : "En attente de réabonnement")))) }}
                       </span>
                     </div>
                   </div>
@@ -1849,8 +1864,9 @@ interface Subscription {
 export class ClientDashboardComponent implements OnInit {
   currentUser: User | null = null;
   upcomingCollections: Collection[] = [];
-  collectionHistory: Collection[] = [];
+  collectionHistory: any[] = [];
   filteredHistory: Collection[] = [];
+  filteredHistories: any;
   paymentHistory: PaymentHistory[] = [];
   subscription: Subscription | null = null;
 
@@ -1990,43 +2006,155 @@ export class ClientDashboardComponent implements OnInit {
       },
     });
   }
+  // Recuperer le nombre de passage du mois
+
+
+  getMonthlyCollectionsLength() {
+    const currentMonth = new Date().getMonth();
+    const monthlyCollections = this.collectionHistory.filter((col) => {
+      const collectionDate = col.scheduledDate;
+      return (
+        collectionDate &&
+        collectionDate.getMonth() === currentMonth &&
+        collectionDate.getFullYear() === new Date().getFullYear()
+      );
+    });
+    return monthlyCollections.length*4;
+  }
+  getMonthlyCollectionsLengthgetMonthlyCollections() {
+    const currentMonth = new Date().getMonth();
+    const monthlyCollections = this.collectionHistory.filter((col) => {
+      const collectionDate = col.scheduledDate;
+      return (
+        collectionDate &&
+        collectionDate.getMonth() === currentMonth &&
+        collectionDate.getFullYear() === new Date().getFullYear()
+      );
+    });
+    return monthlyCollections;
+  }
+
+  // Completed collection datad 
+  getTotalCompletedCollectionsLength() {
+    const completedCollections = this.collectionHistory.filter(
+      (col) => col.status === "completed"
+    ).length;
+    return completedCollections;
+  }
+  getTotalCompletedCollections() {
+    const completedCollections = this.collectionHistory.filter(
+      (col) => col.status === "completed"
+    );
+    return completedCollections;
+  }
+
+  getTotalUnCompletedCollectionLength() {
+    const unCompletedCollections = this.collectionHistory.filter(
+      (col) => col.status === "missed" || col.status === "cancelled"
+    ).length;
+    return unCompletedCollections;
+  }
+
+  getTotalUpcomingCollectionsLength() {
+    // const upcomingCollections = this.collectionHistory.filter(
+    //   (col) => col.status === "scheduled"
+    // ).length;
+    const totalCollections = this.getMonthlyCollectionsLength();
+    const completedCollections = this.getTotalCompletedCollectionsLength();
+    const unCompletedCollections = this.getTotalUnCompletedCollectionLength();
+    const upcomingCollections = totalCollections - (completedCollections + unCompletedCollections);
+    return upcomingCollections;
+  }
+
+  // Taux de collectes complétées
+  getCompletedCollectionRate() {
+    const totalCollections = this.getMonthlyCollectionsLength();
+    const completedCollections = this.getTotalCompletedCollectionsLength();
+    if (totalCollections === 0) return 0;
+
+    return Math.round((completedCollections / totalCollections) * 100);
+  }
+  // Taux de collectes non complétées
+  getUncompletedCollectionRate() {
+    const totalCollections = this.getMonthlyCollectionsLength();
+    const unCompletedCollections = this.getTotalUnCompletedCollectionLength();
+    if (totalCollections === 0) return 0;
+
+    return Math.round((unCompletedCollections / totalCollections) * 100);
+  }
+
+  // Taux de collectes à venir
+  getUpcomingCollectionRate() {
+    const totalCollections = this.getMonthlyCollectionsLength();
+    const upcomingCollections = this.getTotalUpcomingCollectionsLength();
+    if (totalCollections === 0) return 0;
+    return Math.round((upcomingCollections / totalCollections) * 100);
+  }
 
   // Recuperer l'historique des collectes déjà effectuées
   loadPlanningHistory(): void {
-    const clientId = this.currentUser?._id || "";
-    if (!clientId) return;
-    this.clientService.getClientPlanningHistory(clientId).subscribe({
-      next: (response: Collection[]) => {
-        this.collectionHistory = response || [];
-      },
-      error: (error: any) => {
-        console.error(
-          "Erreur lors de la récupération de l'historique des collectes:",
-          error
-        );
-      },
-    });
-  }
+  const clientId = this.currentUser?._id || "";
+  if (!clientId) return;
+  this.clientService.getClientPlanningHistory(clientId).subscribe({
+    next: (response: any) => {
+      // this.collectionHistory = response.reports || [];
+      this.collectionHistory = (response.reports || []).map((report: any) => ({
+        id: report._id,
+        clientId: report.clientId,
+        agencyId: report.agencyId,
+        collectorId: report.collectorId,
+        scheduledDate: report.createdAt ? new Date(report.createdAt) : null,
+        collectedDate: report.scannedAt ? new Date(report.scannedAt) : null, // si dispo
+        status: report.status === "collected" ? "completed" : report.status, // adapter au template
+        wasteTypes: report.wasteTypes || [ "Déchets ménagers" ], // valeur par défaut si absent
+        rating: report.rating || 0,
+        photos: report.photos,
+        positionGPS: report.positionGPS,
+        createdAt: report.createdAt,
+        updatedAt: report.updatedAt,
+      }));
+      console.log("Planning history ==> ", this.collectionHistory);
+      this.filteredHistories = [...this.collectionHistory];
+      console.log("Filtered histories ==> ", this.filteredHistories);
+      // Appliquer le filtre initial
+      // this.applyHistoryFilter();
+    },
+    error: (error: any) => {
+      console.error(
+        "Erreur lors de la récupération de l'historique des collectes:",
+        error
+      );
+    },
+  });
+}
 
   // Afficher abonnement
   getUserSubscription() {
-    const userID = this.currentUser?.id || "";
-    if (!userID) return;
-    this.agencyService.getUserSubscription(userID).subscribe({
-      next: (response: any[]) => {
-        this.subscriptions = response || [];
-        // Filtrer la subscription active
-        // this.activeSubscription = this.subscriptions.find(sub => sub.status === 'active') || null;
-        this.activeSubscription = this.subscriptions.length
-          ? this.subscriptions[this.subscriptions.length - 1]
-          : null;
-        console.log("Active subscription ==>", this.activeSubscription);
-      },
-      error: (err) => {
-        console.error("Erreur lors du chargement des abonnements", err);
-      },
-    });
-  }
+  const userID = this.currentUser?.id || "";
+  if (!userID) return;
+  this.agencyService.getUserSubscription(userID).subscribe({
+    next: (response: any[]) => {
+      this.subscriptions = response || [];
+      this.paymentHistory = this.subscriptions.map((sub: any) => ({
+        id: sub._id,
+        date: sub.createdAt ? new Date(sub.createdAt) : new Date(),
+        amount: sub.amount,
+        status: sub.status, // "active", "suspended", "cancelled" ou autre
+        description: `Abonnement ${sub.plan} - ${sub.agencyId?.agencyName || ""}`,
+        method: "Orange Money", // ou autre selon tes données
+      }));
+      // Pour la subscription active
+      this.activeSubscription = this.subscriptions.length
+        ? this.subscriptions[this.subscriptions.length - 1]
+        : null;
+      console.log("Active subscription ==>", this.activeSubscription);
+      console.log("Payment history ==>", this.paymentHistory);
+    },
+    error: (err) => {
+      console.error("Erreur lors du chargement des abonnements", err);
+    },
+  });
+}
 
   renewSubscription() {
     // Logique pour renouveler l'abonnement
@@ -2507,12 +2635,12 @@ export class ClientDashboardComponent implements OnInit {
     );
   }
 
-  downloadInvoices(): void {
-    this.notificationService.showInfo(
-      "Téléchargement",
-      "Génération des factures en cours..."
-    );
-  }
+  // downloadInvoices(): void {
+  //   this.notificationService.showInfo(
+  //     "Téléchargement",
+  //     "Génération des factures en cours..."
+  //   );
+  // }
 
   editAddress(): void {
     this.notificationService.showInfo(
@@ -2520,4 +2648,72 @@ export class ClientDashboardComponent implements OnInit {
       "Redirection vers la modification d'adresse"
     );
   }
+
+// Fonction de generation du pdf de l'historique des paiements 
+downloadInvoices(): void {
+  const doc = new jsPDF();
+
+  // HEADER DE TAILLE
+  doc.setFillColor(41, 128, 185);
+  doc.rect(0, 0, doc.internal.pageSize.width, 30, "F"); // Bandeau bleu en haut
+
+  doc.setFontSize(22);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.text("ZéroDéchet+", 14, 20);
+
+  doc.setFontSize(13);
+  doc.setTextColor(230, 230, 230);
+  doc.setFont("helvetica", "normal");
+  doc.text("Collecter aujourd’hui, préserver demain.", 14, 27);
+
+  // Titre principal
+  doc.setFontSize(18);
+  doc.setTextColor(41, 128, 185);
+  doc.setFont("helvetica", "bold");
+  doc.text("Historique des paiements", 14, 45);
+
+  // Sous-titre
+  doc.setFontSize(12);
+  doc.setTextColor(60, 60, 60);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Client: ${this.currentUser?.firstName || ""} ${this.currentUser?.lastName || ""}`, 14, 53);
+  doc.text(`Date: ${new Date().toLocaleDateString("fr-FR")}`, 14, 59);
+
+  // Tableau des paiements
+  autoTable(doc, {
+    startY: 65,
+    head: [["Date", "Description", "Méthode", "Montant", "Statut"]],
+    body: this.paymentHistory.map(payment => [
+      payment.date ? new Date(payment.date).toLocaleDateString("fr-FR") : "",
+      payment.description,
+      payment.method,
+      `${payment.amount} FCFA`,
+      this.getPaymentStatusText(payment.status)
+    ]),
+    theme: "grid",
+    styles: { fontSize: 10, cellPadding: 3 },
+    headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+    alternateRowStyles: { fillColor: [240, 240, 240] },
+  });
+
+  // Pied de page stylisé tout en bas
+  const pageHeight = doc.internal.pageSize.height || 297;
+  doc.setDrawColor(41, 128, 185);
+  doc.setLineWidth(0.7);
+  doc.line(14, pageHeight - 20, 195, pageHeight - 20);
+
+  doc.setFontSize(12);
+  doc.setTextColor(41, 128, 185);
+  doc.setFont("helvetica", "bold");
+  doc.text(
+    "Merci pour votre confiance !",
+    doc.internal.pageSize.width / 2,
+    pageHeight - 12,
+    { align: "center" }
+  );
+
+  doc.save("Historique-paiement-client.pdf");
+}
+
 }

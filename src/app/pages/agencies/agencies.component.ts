@@ -144,121 +144,123 @@ import { CountriesOrgMockService } from '../../services/countries-org-mock.servi
           </div> -->
         </div>
 
-        <!-- Vue grille -->
-        <div *ngIf="viewMode === 'grid'" class="agencies-grid">
-          <div *ngFor="let agency of filteredAgencies" class="agency-card card">
-            <div class="agency-header">
-              <div class="agency-logo">
-                <img [src]="'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.agencyName">
+        <div class="container">
+          <!-- Vue grille -->
+          <div *ngIf="viewMode === 'grid'" class="agencies-grid">
+            <div *ngFor="let agency of filteredAgencies" class="agency-card card">
+              <div class="agency-header">
+                <div class="agency-logo">
+                  <img [src]="'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.agencyName">
+                </div>
+                <div class="agency-badge" *ngIf="agency.rating >= 3">
+                  <i class="material-icons">star</i>
+                  Top Rated
+                </div>
               </div>
-              <div class="agency-badge" *ngIf="agency.rating >= 3">
-                <i class="material-icons">star</i>
-                Top Rated
-              </div>
-            </div>
- 
-            
-            <div class="agency-content">
-              <h3 class="agency-name">{{ agency.agencyName }}</h3>
-              <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
+  
               
-              <div class="agency-rating">
-                <div class="stars">
-                  <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
+              <div class="agency-content">
+                <h3 class="agency-name">{{ agency.agencyName }}</h3>
+                <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
+                
+                <div class="agency-rating">
+                  <div class="stars">
+                    <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
+                  </div>
+                  <span class="rating-text">{{ agency.rating }}/5 ({{ agency.totalClients }} avis)</span>
                 </div>
-                <span class="rating-text">{{ agency.rating }}/5 ({{ agency.totalClients }} avis)</span>
-              </div>
 
-              <div class="agency-info">
-                <div class="info-item">
-                  <i class="material-icons">location_on</i>
-                  <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
+                <div class="agency-info">
+                  <div class="info-item">
+                    <i class="material-icons">location_on</i>
+                    <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <i class="material-icons">people</i>
+                    <span>{{ agency.totalClients || 0 }} clients</span>
+                  </div>
+                  <!-- <div class="info-item">
+                    <i class="material-icons">build</i>
+                    <span>{{ agency.services.length || 0 }} services</span>
+                  </div> -->
                 </div>
-                <div class="info-item">
-                  <i class="material-icons">people</i>
-                  <span>{{ agency.totalClients || 0 }} clients</span>
-                </div>
-                <!-- <div class="info-item">
-                  <i class="material-icons">build</i>
-                  <span>{{ agency.services.length || 0 }} services</span>
+
+                <!-- <div class="services-preview">
+                  <h4>Services principaux</h4>
+                  <div class="services-tags">
+                    <span *ngFor="let service of (agency.services || []).slice(0, 3)" class="service-tag">
+                      {{ service.name }} - {{ service.price }}€
+                    </span>
+                    <span *ngIf="(agency.services || []).length > 3" class="service-tag more">
+                      +{{ (agency.services || []).length - 3 }} autres
+                    </span>
+                  </div>
                 </div> -->
               </div>
 
-              <!-- <div class="services-preview">
-                <h4>Services principaux</h4>
-                <div class="services-tags">
-                  <span *ngFor="let service of (agency.services || []).slice(0, 3)" class="service-tag">
-                    {{ service.name }} - {{ service.price }}€
-                  </span>
-                  <span *ngIf="(agency.services || []).length > 3" class="service-tag more">
-                    +{{ (agency.services || []).length - 3 }} autres
-                  </span>
-                </div>
-              </div> -->
-            </div>
-
-            <div class="agency-actions">
-              <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
-                <i class="material-icons">info</i>
-                Voir détails
-              </button>
-              <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
-                <i class="material-icons">add</i>
-                S'abonner
-              </button> -->
+              <div class="agency-actions">
+                <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
+                  <i class="material-icons">info</i>
+                  Voir détails
+                </button>
+                <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
+                  <i class="material-icons">add</i>
+                  S'abonner
+                </button> -->
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Vue liste -->
-        <div *ngIf="viewMode === 'list'" class="agencies-list">
-          <div *ngFor="let agency of filteredAgencies" class="agency-list-item card">
-            <div class="agency-list-content">
-              <div class="agency-list-header">
-                <div class="agency-logo-small">
-                  <img src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" [alt]="agency.agencyName">
-                </div>
-                <div class="agency-list-info">
-                  <h3 class="agency-name text-[--primary-color]">{{ agency.agencyName }}</h3>
-                  <div class="agency-rating">
-                    <div class="stars">
-                      <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
-                    </div>
-                    <span class="rating-text">{{ agency.rating }}/5</span>
+          <!-- Vue liste -->
+          <div *ngIf="viewMode === 'list'" class="agencies-list">
+            <div *ngFor="let agency of filteredAgencies" class="agency-list-item card">
+              <div class="agency-list-content">
+                <div class="agency-list-header">
+                  <div class="agency-logo-small">
+                    <img src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" [alt]="agency.agencyName">
                   </div>
+                  <div class="agency-list-info">
+                    <h3 class="agency-name text-[--primary-color]">{{ agency.agencyName }}</h3>
+                    <div class="agency-rating">
+                      <div class="stars">
+                        <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
+                      </div>
+                      <span class="rating-text">{{ agency.rating }}/5</span>
+                    </div>
+                  </div>
+                  <!-- <div class="agency-list-price">
+                    <span class="price-from">À partir de</span>
+                    <span class="price-value">{{ getMinPrice(agency) }}€</span>
+                  </div> -->
                 </div>
-                <!-- <div class="agency-list-price">
-                  <span class="price-from">À partir de</span>
-                  <span class="price-value">{{ getMinPrice(agency) }}€</span>
-                </div> -->
+                
+                <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
+                
+                <div class="agency-list-details">
+                  <div class="detail-item">
+                    <i class="material-icons">location_on</i>
+                    <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <i class="material-icons">people</i>
+                    <span>{{ agency.totalClients || 0 }} clients</span>
+                  </div>
+                  <!-- <div class="detail-item">
+                    <i class="material-icons">schedule</i>
+                    <span>Collecte {{ getFrequencyText(agency) }}</span>
+                  </div> -->
+                </div>
               </div>
-              
-              <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
-              
-              <div class="agency-list-details">
-                <div class="detail-item">
-                  <i class="material-icons">location_on</i>
-                  <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
-                </div>
-                <div class="detail-item">
-                  <i class="material-icons">people</i>
-                  <span>{{ agency.totalClients || 0 }} clients</span>
-                </div>
-                <!-- <div class="detail-item">
-                  <i class="material-icons">schedule</i>
-                  <span>Collecte {{ getFrequencyText(agency) }}</span>
-                </div> -->
-              </div>
-            </div>
 
-            <div class="agency-list-actions">
-              <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
-                <i class="material-icons">info</i>
-                Voir détails
-              </button>
-              <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
-                S'abonner
-              </button> -->
+              <div class="agency-list-actions">
+                <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
+                  <i class="material-icons">info</i>
+                  Voir détails
+                </button>
+                <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
+                  S'abonner
+                </button> -->
+              </div>
             </div>
           </div>
         </div>
@@ -482,9 +484,14 @@ import { CountriesOrgMockService } from '../../services/countries-org-mock.servi
     }
 
     .agency-card {
-      padding: 24px;
-      transition: all 0.3s ease;
+      background: white;
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
       border: 2px solid transparent;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     .agency-card:hover {
@@ -610,18 +617,37 @@ import { CountriesOrgMockService } from '../../services/countries-org-mock.servi
     }
 
     .agency-actions {
+      position: absolute;
+      z-index: 1;
+      bottom: 10px;
+      right: 30px;
       display: flex;
       gap: 12px;
       justify-content: flex-end;
     }
 
     .agencies-list {
+      position: relative;
+      overflow: hidden;
+      padding: 28px;
+      border: 2px solid transparent;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      transition: all 0.4s ease;
+      border-radius: 20px;
+
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
 
     .agency-list-item {
+      position: relative;
+      /* overflow: hidden;
+      padding: 28px;
+      border: 2px solid transparent;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      transition: all 0.4s ease; */
+      /* border-radius: 20px; */
       padding: 20px;
       display: flex;
       justify-content: space-between;
@@ -687,6 +713,10 @@ import { CountriesOrgMockService } from '../../services/countries-org-mock.servi
     }
 
     .agency-list-actions {
+      position: absolute;
+      z-index: 1;
+      bottom: 20px;
+      right: 30px;
       display: flex;
       flex-direction: column;
       gap: 8px;
