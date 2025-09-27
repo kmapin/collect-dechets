@@ -181,8 +181,21 @@ import { Agency } from '../../models/agency.model';
               <!-- <span>{{ searchResults.length }}Ouagadougou</span> -->
             </div>
           </div>
-          
+
+          <div class="cta-actions mt-4">
+           <!-- <a routerLink="/register" class="btn btn-primary btn-large">
+             <i class="material-icons">person_add</i>
+             <span>Créer un compte gratuit</span>
+             <div class="btn-shine"></div>
+           </a> -->
+           <a routerLink="/agencies" class="btn btn-secondary btn-small mt-4">
+             <i class="material-icons">add</i>
+             <span>Voir plus d'agences</span>
+           </a>
+         </div>
+
           <div class="agencies-grid">
+            
             <div *ngFor="let agency of searchResults" class="agency-card">
               <div class="agency-header">
                 <div class="agency-logo">
@@ -253,17 +266,7 @@ import { Agency } from '../../models/agency.model';
             </div>
             <!-- bouton voir plus  -->
           </div>
-          <div class="cta-actions mt-4">
-           <!-- <a routerLink="/register" class="btn btn-primary btn-large">
-             <i class="material-icons">person_add</i>
-             <span>Créer un compte gratuit</span>
-             <div class="btn-shine"></div>
-           </a> -->
-           <a routerLink="/agencies" class="btn btn-secondary btn-small mt-4">
-             <i class="material-icons">add</i>
-             <span>Voir plus d'agences</span>
-           </a>
-         </div>
+          
         </div>
       </section>
 
@@ -1257,6 +1260,10 @@ import { Agency } from '../../models/agency.model';
     }
 
     .agency-actions {
+      position: absolute;
+      z-index: 1;
+      bottom: 10px;
+      right: 30px;
       display: flex;
       gap: 12px;
       justify-content: flex-end;
@@ -1706,7 +1713,8 @@ import { Agency } from '../../models/agency.model';
     .cta-actions {
       display: flex;
       gap: 24px;
-      justify-content: center;
+      width: 100%;
+      justify-content: right;
       flex-wrap: wrap;
       margin-bottom: 32px;
     }
@@ -1979,29 +1987,31 @@ export class HomeComponent implements OnInit {
     }
   ];
 
-  testimonials = [
-    {
-      text: 'ZéroDéchet+ a complètement transformé notre gestion des déchets. Simple, efficace et écologique !',
-      name: 'GANGO Siméon',
-      role: 'Particulier, Kossodo',
-      rating: 5,
-      avatar: 'https://drive.google.com/file/d/1zfWZZD-sRxV3xaTd4lL4H16dCKD1zlpA/view?usp=drive_link'
-    },
-    {
-      text: 'Une plateforme intuitive qui nous fait gagner un temps précieux. Le service client est exceptionnel.',
-      name: 'W.Paulin GUIGMA',
-      role: 'Gérant d\'entreprise, Ouagadougou',
-      rating: 5,
-      avatar: 'https://drive.google.com/drive/folders/1-zkhOCP4zNAMlClgm1CHn7uP-CElGFgK'
-    },
-    {
-      text: 'Grâce à ZéroDéchet+, nous avons amélioré notre tri et réduit nos coûts de 30%. Parfait !',
-      name: 'Rimvie OUEDRAOGO',
-      role: 'Responsable RSE, Tampouy',
-      rating: 5,
-      avatar: 'https://drive.google.com/drive/folders/1-zkhOCP4zNAMlClgm1CHn7uP-CElGFgK'
-    }
-  ];
+ testimonials = [
+  {
+    text: 'ZéroDéchet+ a complètement transformé notre gestion des déchets. Simple, efficace et écologique !',
+    name: 'GANGO Siméon',
+    role: 'Particulier, Kossodo',
+    rating: 5,
+     avatar: '/assets/homeUseCases/symon.png'
+
+  },
+  {
+    text: 'Une plateforme intuitive qui nous fait gagner un temps précieux. Le service client est exceptionnel.',
+    name: 'W.Paulin GUIGMA',
+    role: 'Gérant d\'entreprise, Ouagadougou',
+    rating: 5,
+    avatar: '/assets/homeUseCases/paulBoss.jpg'
+  },
+  {
+    text: 'Grâce à ZéroDéchet+, nous avons amélioré notre tri et réduit nos coûts de 30%. Parfait !',
+    name: 'Rimvie OUEDRAOGO',
+    role: 'Responsable RSE, Tampouy',
+    rating: 5,
+    avatar: '/assets/homeUseCases/rimvie.png'
+
+  }
+];
 
   carouselImages = [
     // { src: 'https://images.pexels.com/photos/193338/pexels-photo-193338.jpeg?auto=compress&w=400&h=200&fit=crop', alt: 'Collecte de déchets' },

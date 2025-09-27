@@ -31,6 +31,10 @@ import { interval, Subscription, switchMap } from 'rxjs';
           <!-- Navigation Desktop -->
           <nav class="navbar-nav desktop-nav">
             <div class="nav-group">
+              <a routerLink="/" class="nav-link">
+                <i class="material-icons">home</i>
+                <span>Accueil</span>
+              </a>
               <a routerLink="/agencies" class="nav-link" routerLinkActive="active">
                 <i class="material-icons">business</i>
                 <span>Agences</span>
@@ -160,6 +164,10 @@ import { interval, Subscription, switchMap } from 'rxjs';
         <div class="mobile-menu" [class.open]="isMobileMenuOpen">
           <div class="mobile-menu-content">
             <div class="mobile-nav-links">
+              <a routerLink="/" class="mobile-nav-link" (click)="closeMobileMenu()">
+                <i class="material-icons">home</i>
+                <span>Accueil</span>
+              </a>
               <a routerLink="/agencies" class="mobile-nav-link" (click)="closeMobileMenu()">
                 <i class="material-icons">business</i>
                 <span>Agences</span>
