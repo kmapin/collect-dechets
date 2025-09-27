@@ -32,6 +32,7 @@ import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
 import { Message } from "../../../models/message.model";
 import { MessagesService } from "../../../services/messages.service";
 import { SharedService } from "../../../services/shared-service";
+import { MatExpansionModule } from "@angular/material/expansion";
 
 interface Client {
   id: string;
@@ -85,7 +86,7 @@ interface Statistics {
 @Component({
   selector: "app-agency-dashboard",
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule,MatExpansionModule],
   template: `
     <div class="agency-dashboard">
       <div class="page-header">
@@ -483,12 +484,15 @@ interface Statistics {
               </div>
 
               <div class="zones-content">
+                
                 <div class="zones-map">
                   <div class="map-container">
                     <div class="map-placeholder">
                       <i class="material-icons">map</i>
+                      
                       <p>Carte interactive des zones</p>
                       <small>Cliquez sur une zone pour la modifier</small>
+                      
                     </div>
                   </div>
                 </div>
@@ -600,6 +604,7 @@ interface Statistics {
                           <i class="material-icons">schedule:</i>
 
                           {{ schedule.startTime }} - {{ schedule.endTime }}
+                      
                         </div>
 
                         <div class="schedule-time">
@@ -607,6 +612,7 @@ interface Statistics {
                           <i class="material-icons">person:</i>
 
                           {{ getCollectorName(schedule.collectorId) }}
+                            
 
 
                         </div>
@@ -4372,7 +4378,7 @@ export class AgencyDashboardComponent implements OnInit {
       .map((id) => {
         const collector = this.collectors.find((c) => c._id === id);
         return collector
-          ? `${collector.firstName} ${collector.lastName}`
+          ? `${collector.firstName} ${collector.lastName} `
           : "Inconnu";
       })
       .join(", ");
@@ -4442,7 +4448,7 @@ export class AgencyDashboardComponent implements OnInit {
   getReportStatusText(status: string): string {
     const statusTexts = {
       open: "Ouvert",
-      in_progress: "En cours",
+      in_progress: "enregistré",
       resolved: "Résolu",
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
@@ -5468,6 +5474,7 @@ export class AgencyDashboardComponent implements OnInit {
               "Succès",
               "Signalement assigné avec succès."
             );
+             this.loadReports(); 
           },
           error: (err) => {
             console.error("Erreur assignation :", err);
@@ -5728,4 +5735,19 @@ export class AgencyDashboardComponent implements OnInit {
 //     },
 //   });
 // }
+loadZonesMock(): void {
+  this.serviceZones = OUAGA_DATA.map((arrondissement) => ({
+    id: Math.random().toString(36).substr(2, 9), 
+    name: arrondissement.arrondissement,
+    description: arrondissement.secteurs
+      .map((secteur) => `${secteur.secteur}: ${secteur.quartiers.join(", ")}`)
+      .join("; "),
+    boundaries: [], 
+    neighborhoods: arrondissement.secteurs.flatMap((secteur) => secteur.quartiers),
+    cities: ["Ouagadougou"], 
+    isActive: true, 
+  }));
+}
+
+
 }
