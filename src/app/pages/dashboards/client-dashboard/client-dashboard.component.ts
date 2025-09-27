@@ -1,7 +1,7 @@
 import { BarcodeFormat } from "@zxing/library";
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { RouterModule } from "@angular/router";
+import { RouterModule, TitleStrategy } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { AuthService } from "../../../services/auth.service";
 import { CollectionService } from "../../../services/collection.service";
@@ -73,7 +73,7 @@ interface Subscription {
               <div class="stat-icon next-collection">
                 <i class="material-icons">event</i>
               </div>
-              <div class="stat-info">
+              <div class="stat-info" *ngIf="nextCollect else noNextCollect">
                 <h3>Prochaine collecte</h3>
                 <p class="stat-value">
                   {{ nextCollect?.date | date : "dd MMMM" : "fr-FR" }}
@@ -85,6 +85,12 @@ interface Subscription {
                   {{ nextCollect?.endTime }}
                 </span>
               </div>
+              <ng-template #noNextCollect>
+                <p>Pas de collecte prévue.<br />
+                  <sub>Veuillez vérifier plus tard </sub>
+                  <sub>ou contactez votre agence pour avoir un planning.</sub>
+                </p>
+              </ng-template>
             </div>
 
             <div class="stat-card card">
@@ -92,9 +98,16 @@ interface Subscription {
                 <i class="material-icons">check_circle</i>
               </div>
               <div class="stat-info">
-                <h3>Collectes ce mois</h3>
-                <!-- <p class="stat-value">{{ getMonthlyCollections() }}</p> -->
-                <!-- <span class="stat-detail">{{ getCollectionRate() }}% de réussite</span> -->
+                <h3>Collectes de ce mois</h3>
+                <p class="stat-value">{{ getTotalCompletedCollectionsLength() }} / {{ getMonthlyCollectionsLength() }}</p>
+                <!-- <span class="stat-detail">{{ getCompletedCollectionRate() }}% de réussite ; {{ getUncompletedCollectionRate() }}% d'échecs</span> -->
+                <span class="stat-detail"><i class="material-icons" style="color:var(--success-color);vertical-align:middle;">check_circle</i>
+                {{ getCompletedCollectionRate() }}% &nbsp;;&nbsp;
+                <i class="material-icons" style="color:var(--error-color);vertical-align:middle;">cancel</i>
+                {{ getUncompletedCollectionRate() }} % &nbsp;;&nbsp;
+                <i class="material-icons" style="color:var(--info-color);vertical-align:middle;">schedule</i>
+                {{ getUpcomingCollectionRate() }} %
+              </span>
               </div>
             </div>
 
@@ -154,7 +167,7 @@ interface Subscription {
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">schedule</i>
-                    Prochains passages planifiés/semaine
+                    Planning de la semaine
                   </h2>
                   <button
                     class="btn btn-secondary btn-small"
@@ -221,7 +234,7 @@ interface Subscription {
                   <div *ngIf="weeklySchedule.length === 0" class="empty-state">
                     <i class="material-icons">event_available</i>
                     <h3>Aucune collecte programmée</h3>
-                    <p>Vos prochaines collectes apparaîtront ici</p>
+                    <p>Vos prochaines collectes de la semaine apparaîtront ici</p>
                   </div>
                 </div>
               </section>
@@ -554,7 +567,7 @@ interface Subscription {
 
             <div class="right-column">
               <!-- Informations d'abonnement -->
-              <section class="subscription-info card">
+              <section class="subscription-info card bg-blue-100">
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">card_membership</i>
@@ -1992,6 +2005,90 @@ export class ClientDashboardComponent implements OnInit {
         console.error("Erreur lors de la récupération du planning:", error);
       },
     });
+  }
+  // Recuperer le nombre de passage du mois
+
+
+  getMonthlyCollectionsLength() {
+    const currentMonth = new Date().getMonth();
+    const monthlyCollections = this.collectionHistory.filter((col) => {
+      const collectionDate = col.scheduledDate;
+      return (
+        collectionDate &&
+        collectionDate.getMonth() === currentMonth &&
+        collectionDate.getFullYear() === new Date().getFullYear()
+      );
+    });
+    return monthlyCollections.length*4;
+  }
+  getMonthlyCollectionsLengthgetMonthlyCollections() {
+    const currentMonth = new Date().getMonth();
+    const monthlyCollections = this.collectionHistory.filter((col) => {
+      const collectionDate = col.scheduledDate;
+      return (
+        collectionDate &&
+        collectionDate.getMonth() === currentMonth &&
+        collectionDate.getFullYear() === new Date().getFullYear()
+      );
+    });
+    return monthlyCollections;
+  }
+
+  // Completed collection datad 
+  getTotalCompletedCollectionsLength() {
+    const completedCollections = this.collectionHistory.filter(
+      (col) => col.status === "completed"
+    ).length;
+    return completedCollections;
+  }
+  getTotalCompletedCollections() {
+    const completedCollections = this.collectionHistory.filter(
+      (col) => col.status === "completed"
+    );
+    return completedCollections;
+  }
+
+  getTotalUnCompletedCollectionLength() {
+    const unCompletedCollections = this.collectionHistory.filter(
+      (col) => col.status === "missed" || col.status === "cancelled"
+    ).length;
+    return unCompletedCollections;
+  }
+
+  getTotalUpcomingCollectionsLength() {
+    // const upcomingCollections = this.collectionHistory.filter(
+    //   (col) => col.status === "scheduled"
+    // ).length;
+    const totalCollections = this.getMonthlyCollectionsLength();
+    const completedCollections = this.getTotalCompletedCollectionsLength();
+    const unCompletedCollections = this.getTotalUnCompletedCollectionLength();
+    const upcomingCollections = totalCollections - (completedCollections + unCompletedCollections);
+    return upcomingCollections;
+  }
+
+  // Taux de collectes complétées
+  getCompletedCollectionRate() {
+    const totalCollections = this.getMonthlyCollectionsLength();
+    const completedCollections = this.getTotalCompletedCollectionsLength();
+    if (totalCollections === 0) return 0;
+
+    return Math.round((completedCollections / totalCollections) * 100);
+  }
+  // Taux de collectes non complétées
+  getUncompletedCollectionRate() {
+    const totalCollections = this.getMonthlyCollectionsLength();
+    const unCompletedCollections = this.getTotalUnCompletedCollectionLength();
+    if (totalCollections === 0) return 0;
+
+    return Math.round((unCompletedCollections / totalCollections) * 100);
+  }
+
+  // Taux de collectes à venir
+  getUpcomingCollectionRate() {
+    const totalCollections = this.getMonthlyCollectionsLength();
+    const upcomingCollections = this.getTotalUpcomingCollectionsLength();
+    if (totalCollections === 0) return 0;
+    return Math.round((upcomingCollections / totalCollections) * 100);
   }
 
   // Recuperer l'historique des collectes déjà effectuées
