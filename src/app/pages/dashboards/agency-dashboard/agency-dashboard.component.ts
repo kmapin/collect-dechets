@@ -899,7 +899,7 @@ interface Statistics {
                     <div class="status-badge" [class]="'read-' + message.read">
                       <span
                         >{{
-                          message.sender === currentUser?._id
+                          message.sender === currentUser?.userId
                             ? "Envoyé"
                             : "Reçu"
                         }}
