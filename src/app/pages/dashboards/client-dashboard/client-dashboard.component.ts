@@ -163,7 +163,7 @@ interface Subscription {
               <div class="stat-icon payment">
                 <i class="material-icons">payment</i>
               </div>
-              <div class="stat-info" *ngIf="activeSubscription">
+              <div class="stat-info" *ngIf="activeSubscription; else noSubscription">
                 <h3>Prochain paiement</h3>
                 <p class="stat-value">
                   {{
@@ -176,6 +176,15 @@ interface Subscription {
                   >{{ activeSubscription?.amount }} F CFA</span
                 >
               </div>
+              <ng-template #noSubscription>
+                <p>
+                  Aucun abonnement actif.<br />
+                  <sub>
+                    Veuillez souscrire à un abonnement pour bénéficier de nos
+                    services.
+                  </sub>
+                </p>
+              </ng-template>
             </div>
 
             <div class="stat-card card">
@@ -356,7 +365,7 @@ interface Subscription {
                     </div>
                   </div>
 
-                  <div *ngIf="filteredHistory.length === 0" class="empty-state">
+                  <div *ngIf="filteredHistories.length === 0" class="empty-state">
                     <i class="material-icons">history</i>
                     <h3>Aucun historique</h3>
                     <p>Vos collectes passées apparaîtront ici</p>

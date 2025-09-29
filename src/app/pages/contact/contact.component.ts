@@ -27,21 +27,21 @@ import { FormsModule } from '@angular/forms';
                 <i class="material-icons">phone</i>
                 <div>
                   <strong>Téléphone</strong>
-                  <p>+33 1 23 45 67 89</p>
+                  <p>+226 64 09 57 71</p>
                 </div>
               </div>
               <div class="contact-item">
                 <i class="material-icons">email</i>
                 <div>
                   <strong>Email</strong>
-                  <p>contact&#64;wastemanager.fr</p>
+                  <p>contact&#64;zerodechet.bf</p>
                 </div>
               </div>
               <div class="contact-item">
                 <i class="material-icons">location_on</i>
                 <div>
                   <strong>Adresse</strong>
-                  <p>123 Avenue de l'Environnement<br>75001 Paris, France</p>
+                  <p>123 Avenue de la dignité<br>7500 Bonheur, Burkina Faso</p>
                 </div>
               </div>
             </div>
