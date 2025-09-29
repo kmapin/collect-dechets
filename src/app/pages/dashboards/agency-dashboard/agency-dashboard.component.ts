@@ -896,7 +896,7 @@ interface Statistics {
                   [ngClass]="'read-border-' + message.read"
                 >
                   <div class="incident-header">
-                    <div class="status-badge" [class]="'read-' + message.read">
+                    <div class="status-badge" [class]="'read-' +message.read">
                       <span
                         >{{
                           message.sender === currentUser?.userId
@@ -3790,7 +3790,7 @@ export class AgencyDashboardComponent implements OnInit {
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService
-      .getUserUnreadMessagesCount(this.currentUser?._id || "")
+      .getUserUnreadMessagesCount(this.currentUser?.userId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {

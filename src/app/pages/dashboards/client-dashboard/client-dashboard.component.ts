@@ -439,15 +439,14 @@ interface Subscription {
                         <ng-container *ngFor="let message of connectedUserMessages">
                           <button
                           class="chat-left-column-content-item"
-                          *ngIf="message.senderName"
+                          *ngIf="message.agencyName"
                           (click)="
                             userAndAgencyConversation(
-                              message.sender,
-                              message.receiver
+                              message.userId
                             )
                           "
                         >
-                          {{ message.senderName }}
+                          {{ message.agencyName }}
                         </button>
                         </ng-container>
                         
@@ -1833,8 +1832,11 @@ interface Subscription {
       }
 
       .chat-left-column-content-item {
+        display: flex;
         padding: 12px 16px;
         min-width: 100%;
+        font-size: 14px;
+        align-self:start;
         border-bottom: 1px solid #f0f0f0;
         cursor: pointer;
         background-color: var(--surface-300);
@@ -2211,7 +2213,7 @@ export class ClientDashboardComponent implements OnInit {
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService
-      .getUserUnreadMessagesCount(this.currentUser?._id || "")
+      .getUserUnreadMessagesCount(this.currentUser?.userId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
@@ -2232,24 +2234,8 @@ export class ClientDashboardComponent implements OnInit {
         next: (response: any) => {
           if (response) {
             console.log("API > getMessagesForUser:", response);
-            this.connectedUserMessages = response.messages || [];
-
-            this.connectedUserMessages.forEach((message: any) => {
-              message.read = message.read.toString();
-
-              this.agencyService
-                .getAgencyByIdFromApi(message.sender || message.receiver)
-                .subscribe((res: any) => {
-                  if (res.success && res.data) {
-                    message.senderName = res.data.agencyName;
-                  }
-
-                  console.log(
-                    "Received messages (no duplicates):",
-                    this.connectedUserMessages
-                  );
-                });
-            });
+            this.connectedUserMessages = response|| [];
+            console.log("this.connectedUserMessages:", this.connectedUserMessages);
           }
         },
         error: (error: any) => {
@@ -2258,9 +2244,9 @@ export class ClientDashboardComponent implements OnInit {
       });
   }
 
-  userAndAgencyConversation(cliendId: string, agencyId: string) {
+  userAndAgencyConversation(agencyId: string) {
     this.clientService
-      .userAndAgencyConversation(cliendId, agencyId)
+      .userAndAgencyConversation(this.currentUser?.userId || "", agencyId)
       .subscribe((response: any) => {
         console.log("API >userAndAgencyConversation:", response);
         if (response) {
@@ -2268,8 +2254,8 @@ export class ClientDashboardComponent implements OnInit {
           this.receivedMessages = response.messages || [];
 
           this.displayAgencyName = this.receivedMessages[0].senderName;
-          if(cliendId !== this.currentUser?._id){
-              this.receivedId = cliendId;
+          if(!agencyId){
+              this.receivedId = this.currentUser?.userId ;
           } else {
               this.receivedId = agencyId;
           }
@@ -2324,7 +2310,6 @@ export class ClientDashboardComponent implements OnInit {
       next: (response: any) => {
         console.log("API > sendMessage:", response);
         this.userAndAgencyConversation(
-          this.currentUser?.userId || "",
           this.receivedId || ""
         )
         this.notificationService.showSuccess(
