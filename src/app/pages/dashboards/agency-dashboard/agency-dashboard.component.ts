@@ -1,7 +1,7 @@
 import { map } from "rxjs";
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { RouterModule } from "@angular/router";
+import { ActivatedRoute, RouterModule } from "@angular/router";
 import {
   FormBuilder,
   FormGroup,
@@ -154,17 +154,14 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>zones</h3>
-                <!-- <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
-                <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
-                  {{ getCollectionRate() }}% réalisées
-                </span> -->
+           
                 <p class="stat-value">{{ statistics.totalZones }}</p>
                 <span
                   class="stat-trend"
                   [class.positive]="getCollectionRate() >= 90"
                   [class.negative]="getCollectionRate() < 80"
                 >
-                  <!-- {{ getCollectionRate() }}% réalisées -->
+                 
                 </span>
               </div>
             </div>
@@ -182,22 +179,7 @@ interface Statistics {
               </div>
             </div>
 
-            <!-- <div class="stat-card card">
-              <div class="stat-icon rating">
-                <i class="material-icons">star</i>
-              </div>
-              <div class="stat-info">
-                <h3>Note moyenne</h3>
-                <p class="stat-value"></p>
-                <div class="rating-stars">
-                  <i
-                    *ngFor="let star of getStars(statistics.averageRating)"
-                    class="material-icons star"
-                    >star</i
-                  >
-                </div>
-              </div>
-            </div> -->
+            
 
             <div class="stat-card card">
               <div class="stat-icon reports">
@@ -1842,10 +1824,11 @@ interface Statistics {
           id="neighborhood"
           [(ngModel)]="userData.address.neighborhood"
           class="form-control"
+          multiple
           [disabled]="!quartierss.length"
           
         >
-          <option value="">Sélectionner un quartier</option>
+   
           <option *ngFor="let quartier of quartierss" [value]="quartier.name">
             {{ quartier.name }}
           </option>
@@ -3545,7 +3528,7 @@ export class AgencyDashboardComponent implements OnInit {
         street: '',
         doorNumber: '',
         doorColor: '',
-        neighborhood: '',
+     neighborhood: [] as string[],
         city: '',
         postalCode: '',
         // latitude: '',
@@ -3712,7 +3695,8 @@ export class AgencyDashboardComponent implements OnInit {
     private fb: FormBuilder,
     private messageService: MessagesService,
     private sharedService: SharedService,
-        private countriesOrgMockService: CountriesOrgMockService
+        private countriesOrgMockService: CountriesOrgMockService,
+        private route: ActivatedRoute
     
   ) {
     const today = new Date();
@@ -3762,8 +3746,31 @@ export class AgencyDashboardComponent implements OnInit {
     this.filterIncidents();
     this.countUnreadMessages();
     this.userMessages();
-  }
+     // Écouter les changements de fragment
+    this.route.fragment.subscribe(fragment => {
+      if (fragment) {
+        // Faire défiler jusqu'à la section
+        const element = document.getElementById(fragment);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    });
 
+    // Écouter les queryParams
+    this.route.queryParams.subscribe(params => {
+      if (params['source'] === 'notification') {
+        // Traitement spécifique pour les notifications
+        this.handleNotificationParams(params);
+      }
+    });
+  }
+ private handleNotificationParams(params: any) {
+    // Logique pour traiter les paramètres selon le contexte
+    if (params['id']) {
+      // Charger les données spécifiques
+    }
+  }
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService
@@ -5715,7 +5722,8 @@ loadZonesMock(): void {
       console.log("Secteurs  ==> ", this.secteurss);
       this.quartiers = [];
       this.userData.address.sector = '';
-      this.userData.address.neighborhood = '';
+     this.userData.address.neighborhood = [];
+
     }
   }
 
@@ -5725,11 +5733,13 @@ loadZonesMock(): void {
       const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(secteurObj?.id || '');
       console.log("Quartiers  ==> ", quartiers);
       this.quartierss = quartiers;
-      this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+      this.userData.address.neighborhood = this.userData.address.neighborhood = [];
+;
     }
     const secteurObj = this.secteurs.find(s => s.secteur === secteur);
     this.quartiers = secteurObj ? secteurObj.quartiers : [];
-    this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+    this.userData.address.neighborhood =this.userData.address.neighborhood = [];
+;
   }
 
   onCityChange(city: string) {
@@ -5743,7 +5753,8 @@ loadZonesMock(): void {
       this.quartiers = [];
       this.userData.address.arrondissement = '';
       this.userData.address.sector = '';
-      this.userData.address.neighborhood = '';
+  this.userData.address.neighborhood = [];
+
     };
 
   }
@@ -5763,17 +5774,12 @@ editZoneAgency(): void {
     this.userData.address.city &&
     this.userData.address.arrondissement &&
     this.userData.address.sector &&
-    this.userData.address.neighborhood
+ this.userData.address.neighborhood.length > 0
   ) {
     const zoneData = {
-      serviceZones: [
-        // this.userData.address.city,
-        // this.userData.address.arrondissement,
-        // this.userData.address.sector,
-        this.userData.address.neighborhood,
-      ],
-      // description: `Zone couvrant ${this.userData.address.city}, ${this.userData.address.arrondissement}, ${this.userData.address.sector}, ${this.userData.address.neighborhood}`,
-    };
+  serviceZones: this.userData.address.neighborhood, 
+};
+
 
     const agencyId = this.currentUser?._id;
 
