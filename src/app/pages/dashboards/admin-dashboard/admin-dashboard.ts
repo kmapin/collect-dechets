@@ -515,7 +515,7 @@ interface Communication {
                       <span>Ajouter un agent de mairie</span>
                     </a>
                   </div>
-                  <select
+                  <!--<select
                     [(ngModel)]="agenciesFilter"
                     (change)="filterAgencies()"
                     class="filter-select"
@@ -525,7 +525,7 @@ interface Communication {
                     <option value="inactive">Inactives</option>
                     <option value="suspended">Suspendues</option>
                   </select>
-                  <!-- <select
+                   <select
                     [(ngModel)]="complianceFilter"
                     (change)="filterAgencies()"
                     class="filter-select"
@@ -778,27 +778,27 @@ interface Communication {
                     <mat-card class=" client-audit-card client-card">
                       <mat-card-header>
                         <mat-card-title-group class="w-100 pb-3">
-                          <mat-card-title
-                            >{{ client?.data?.firstName }}
-                            {{ client?.data?.lastName }}</mat-card-title
-                          >
-                          <mat-card-subtitle
-                            >Abonnement:
+                          <mat-card-title>
+                            {{ client?.data?.firstName }}
+                            {{ client?.data?.lastName }}
+                          </mat-card-title>
+                          <mat-card-subtitle>
+                            Abonnement:
                             <span
                               class="status-badge"
                               [class]="
-                                client?.data?.subscriptionStatus
-                                  ? 'status-' + client?.data?.subscriptionStatus
+                                client?.data?.subscribedAgencyId
+                                  ? 'status-success'
                                   : 'status-inconnu'
                               "
                               >{{
                                 getClientSubscriptionText(
-                                  client?.data?.subscriptionStatus
+                                  client?.data?.subscribedAgencyId
                                 )
-                              }}</span
-                            ></mat-card-subtitle
-                          >
-                          <mat-card-subtitle
+                              }}</span>
+                            </mat-card-subtitle>
+
+                          <!--<mat-card-subtitle--
                             >Abonnement actif:
                             <span
                               class="subscription-badge"
@@ -814,8 +814,7 @@ interface Communication {
                               >{{ client?.active_subscription?.length }}/{{
                                 client?.data?.subscriptionHistory?.length
                               }}</span
-                            ></mat-card-subtitle
-                          >
+                            ></mat-card-subtitle-->
                           <ng-container
                             *ngIf="client?.data?.avatar; else noImage"
                           >
@@ -3375,16 +3374,16 @@ isDisabled = true;
   }
   getClientSubscriptionText(status?: string): string {
     if (!status) {
-      return `Pas d'abonnement`;
+      return `Inactif`;
     }
-    const statusClientTexts = {
-      active: "Actif",
-      pending: "En attente",
-      cancelled: "Annulé",
-    };
-    return (
-      statusClientTexts[status as keyof typeof statusClientTexts] || status
-    );
+    return `Actif`;
+    // const statusClientTexts = {
+    //   active: "Actif",
+    //   inactif: "Inactif",
+    // };
+    // return (
+    //   statusClientTexts[status as keyof typeof statusClientTexts] || status
+    // );
   }
 
   getCollectorSubscriptionText(status?: string): string {

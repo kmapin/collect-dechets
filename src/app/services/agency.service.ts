@@ -697,10 +697,10 @@ getAgencyAllHistoryCollectes$(agencyId: string): Observable<PaginatedResponse<an
   );
 }
 // Mise à jour des zones de service pour une agence
-updateAgencyZones$(agencyId: string, zoneData: { name: string[]; description: string }): Observable<any> {
+updateAgencyZones$(agencyId: string, zoneData: { serviceZones: string[]}): Observable<any> {
   const url = `${environment.apiUrl}/zones/${agencyId}`;
 
-  return this.http.put<any>(url, zoneData).pipe(
+  return this.http.patch<any>(url, zoneData).pipe(
     map(response => {
       console.log("API - Zones mises à jour :", response);
       return response;
@@ -711,6 +711,64 @@ updateAgencyZones$(agencyId: string, zoneData: { name: string[]; description: st
     })
   );
 }
+// recuperation des signalement liee a un collecteur d une agence 
+  getCollectorById(collectorid: string): Observable<any> {
+    const url = `${environment.apiUrl}/rapports/collector/${collectorid}`;
+    return this.http.get<any>(url);
+  }
+
+  updatePlanning$(id: string, planningData: any): Observable<{ 
+  success: boolean; 
+  planning?: any; 
+  error?: any; 
+  message?: string 
+}> {
+  return this.http.patch<any>(`${environment.apiUrl}/api/zones/plannings/${id}`, planningData).pipe(
+    map(response => {
+      console.log("API > updatePlanning :", response);
+      if (response) {
+        return { success: true, planning: response, message: 'Planning mis à jour avec succès' };
+      } else {
+        return { success: false, error: 'Aucune donnée reçue', message: 'Erreur lors de la mise à jour' };
+      }
+    }),
+    catchError(error => {
+      console.error("Erreur API updatePlanning :", error);
+      return throwError(() => ({
+        success: false,
+        error: error.error || 'Une erreur est survenue',
+        message: error.error?.message || error.message || 'Erreur inconnue'
+      }));
+    })
+  );
+}
+
+updateTarif$(tarifId: string, tarifData: any): Observable<{ 
+  success: boolean; 
+  tarif?: any; 
+  error?: any; 
+  message?: string 
+}> {
+  return this.http.put<any>(`${environment.apiUrl}/api/agences/tarif/${tarifId}`, tarifData).pipe(
+    map(response => {
+      console.log("API > updateTarif :", response);
+      if (response) {
+        return { success: true, tarif: response, message: 'Tarif mis à jour avec succès' };
+      } else {
+        return { success: false, error: 'Aucune donnée reçue', message: 'Erreur lors de la mise à jour du tarif' };
+      }
+    }),
+    catchError(error => {
+      console.error("Erreur API updateTarif :", error);
+      return throwError(() => ({
+        success: false,
+        error: error.error || 'Une erreur est survenue',
+        message: error.error?.message || error.message || 'Erreur inconnue'
+      }));
+    })
+  );
+}
+
 
   
 }

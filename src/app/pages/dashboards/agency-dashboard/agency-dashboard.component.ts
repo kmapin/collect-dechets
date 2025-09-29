@@ -1,7 +1,7 @@
 import { map } from "rxjs";
 import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { RouterModule } from "@angular/router";
+import { ActivatedRoute, RouterModule } from "@angular/router";
 import {
   FormBuilder,
   FormGroup,
@@ -13,7 +13,7 @@ import { AuthService } from "../../../services/auth.service";
 import { AgencyService } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
-import { User } from "../../../models/user.model";
+import { User, UserRole } from "../../../models/user.model";
 import {
   Agency,
   Employee,
@@ -33,6 +33,8 @@ import { Message } from "../../../models/message.model";
 import { MessagesService } from "../../../services/messages.service";
 import { SharedService } from "../../../services/shared-service";
 import { MatExpansionModule } from "@angular/material/expansion";
+import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
+import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
 
 interface Client {
   id: string;
@@ -152,17 +154,14 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>zones</h3>
-                <!-- <p class="stat-value">{{ statistics.completedCollections }}/{{ statistics.todayCollections }}</p>
-                <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
-                  {{ getCollectionRate() }}% réalisées
-                </span> -->
+           
                 <p class="stat-value">{{ statistics.totalZones }}</p>
                 <span
                   class="stat-trend"
                   [class.positive]="getCollectionRate() >= 90"
                   [class.negative]="getCollectionRate() < 80"
                 >
-                  <!-- {{ getCollectionRate() }}% réalisées -->
+                 
                 </span>
               </div>
             </div>
@@ -180,22 +179,7 @@ interface Statistics {
               </div>
             </div>
 
-            <!-- <div class="stat-card card">
-              <div class="stat-icon rating">
-                <i class="material-icons">star</i>
-              </div>
-              <div class="stat-info">
-                <h3>Note moyenne</h3>
-                <p class="stat-value"></p>
-                <div class="rating-stars">
-                  <i
-                    *ngFor="let star of getStars(statistics.averageRating)"
-                    class="material-icons star"
-                    >star</i
-                  >
-                </div>
-              </div>
-            </div> -->
+            
 
             <div class="stat-card card">
               <div class="stat-icon reports">
@@ -480,9 +464,14 @@ interface Statistics {
                     <i class="material-icons">visibility</i>
                     Voir mes tarifs
                   </button>
+ 
                 </div>
-              </div>
 
+              </div>
+                 <button class="btn btn-primary" (click)="openZoneModalcouverture()">
+  <i class="material-icons">edit_location</i>
+  Modifier les zones couvertes
+</button>
               <div class="zones-content">
                 
                 <div class="zones-map">
@@ -490,8 +479,20 @@ interface Statistics {
                     <div class="map-placeholder">
                       <i class="material-icons">map</i>
                       
-                      <p>Carte interactive des zones</p>
-                      <small>Cliquez sur une zone pour la modifier</small>
+                    <div class="zone-container" *ngIf="zones?.length">
+  <h4 class="zone-title">Zones couvertes</h4>
+  <div class="zone-list">
+    <div class="zone-card" *ngFor="let zone of zones">
+           <div class="zone-details">
+                <p><strong>Quartier :</strong> {{ zone.neighborhood || zone }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="!zones?.length && !isLoading" class="no-zone">
+  <p>Aucune zone chargée pour cette agence.</p>
+</div>
                       
                     </div>
                   </div>
@@ -502,9 +503,9 @@ interface Statistics {
                     <div class="zone-header">
                       <h4>{{ zone.name }}</h4>
                       <div class="zone-actions">
-                        <!-- <button class="action-btn" (click)="editZone(zone.id)">
+                        <button class="action-btn" (click)="editZone(zone.id)">
                           <i class="material-icons">edit</i>
-                        </button> -->
+                        </button>
                         <button
                           class="action-btn danger"
                           (click)="deleteZone(zone.id)"
@@ -843,6 +844,10 @@ interface Statistics {
                   <div *ngIf="!report.photos || !report.photos.length">
                     <p><em>Aucune photo associée</em></p>
                   </div>
+                  <div *ngIf="agencyReports.length === 0" class="empty-state">
+  <i class="material-icons">report_problem</i>
+  <h3>Aucun signalement pour le moment</h3>
+</div>
                   <div class="incident-actions">
                     <button
                       class="btn btn-accent"
@@ -1296,7 +1301,7 @@ interface Statistics {
                       <label>Zone *</label>
                       <select formControlName="zone">
                         <option value="">Sélectionner une zone</option>
-                        <option
+                        <!-- <option
                           value="Tampouy
 "
                         >
@@ -1312,7 +1317,11 @@ interface Statistics {
 "
                         >
                           Marcoussis
-                        </option>
+                        </option> -->
+                            <option *ngFor="let zone of zones" [value]="zone.neighborhood || zone">
+      {{ zone.neighborhood || zone }}
+    </option>
+
                       </select>
                       <small
                         class="error-message"
@@ -1582,6 +1591,7 @@ interface Statistics {
                         <i class="material-icons text-sm align-middle">info</i>
                         {{ tariff.description }}
                       </p>
+                      
                       <!-- Boutons d’action dans le modal -->
                       <div class="tariff-actions">
                         <!-- <button class="btn btn-warning flex items-center gap-1">
@@ -1764,6 +1774,90 @@ interface Statistics {
         </div>
       </div>
     </div>
+
+
+
+<!-- Modal pour gérer les zones -->
+<div class="modal-overlay" *ngIf="showZoneModalcouverture" (click)="closeZoneModalcouverture()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Définir les zones couvertes</h3>
+      <button class="close-btn" (click)="closeZoneModalcouverture()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="city">Ville</label>
+        <select
+          id="city"
+          [(ngModel)]="userData.address.city"
+          (change)="onCityChange(userData.address.city)"
+          class="form-control"
+        >
+          <option value="">Sélectionner une ville</option>
+          <option *ngFor="let city of cities" [value]="city.name">
+            {{ city.name }}
+          </option>
+        </select>
+         </div>
+
+      <div class="form-group">
+        <label for="arrondissement">Arrondissement</label>
+        <select
+          id="arrondissement"
+          [(ngModel)]="userData.address.arrondissement"
+          (change)="onArrondissementChange(userData.address.arrondissement)"
+          class="form-control"
+          [disabled]="!arrondissementss.length"
+        >
+          <option value="">Sélectionner un arrondissement</option>
+          <option *ngFor="let arr of arrondissementss" [value]="arr.name">
+            {{ arr.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="sector">Secteur</label>
+        <select
+          id="sector"
+          [(ngModel)]="userData.address.sector"
+          (change)="onSecteurChange(userData.address.sector)"
+          class="form-control"
+          [disabled]="!secteurss.length"
+        >
+          <option value="">Sélectionner un secteur</option>
+          <option *ngFor="let secteur of secteurss" [value]="secteur.name">
+            {{ secteur.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="neighborhood">Quartier</label>
+        <select
+          id="neighborhood"
+          [(ngModel)]="userData.address.neighborhood"
+          class="form-control"
+          multiple
+          [disabled]="!quartierss.length"
+          
+        >
+   
+          <option *ngFor="let quartier of quartierss" [value]="quartier.name">
+            {{ quartier.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeZoneModalcouverture()">Annuler</button>
+      <button class="btn btn-primary" (click)="editZoneAgency()">Modifier</button>
+    </div>
+  </div>
+</div>
+
   `,
   styles: [
     `
@@ -1892,79 +1986,7 @@ interface Statistics {
         color: var(--white);
         margin-bottom: 8px;
       }
-      /* Overlay du modal */
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      }
-
-      /* Contenu du modal */
-      .modal-content {
-        background: #ffffff;
-        border-radius: 8px;
-        padding: 20px;
-        width: 90%;
-        max-width: 500px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-      }
-
-      /* En-tête du modal */
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-      }
-
-      .modal-header h3 {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #333;
-      }
-
-      .close-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #888;
-        font-size: 1.5rem;
-      }
-
-      .close-btn:hover {
-        color: #f44336;
-      }
-
-      /* Corps du modal */
-      .modal-body p {
-        margin: 8px 0;
-        font-size: 1rem;
-        color: #555;
-      }
-
-      .modal-body ul {
-        padding-left: 20px;
-      }
-
-      .modal-body ul li {
-        font-size: 0.9rem;
-        color: #666;
-      }
-
-      /* Pied de page du modal */
-      .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 16px;
-      }
-
+     
       .modal-footer .btn {
         padding: 8px 16px;
         border-radius: 4px;
@@ -3408,6 +3430,7 @@ interface Statistics {
         padding-top: 16px;
         border-top: 1px solid var(--medium-gray);
       }
+   
 
       @media (max-width: 1024px) {
         .header-content {
@@ -3506,6 +3529,39 @@ export class AgencyDashboardComponent implements OnInit {
     pendingReports: 0,
     pendingSignalements: 0,
   };
+   userData = {
+      _id: '',
+      role: UserRole.CLIENT as UserRole | null,
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      password: '',
+      confirmPassword: '',
+      address: {
+        arrondissement: '',
+        sector: '',
+        street: '',
+        doorNumber: '',
+        doorColor: '',
+     neighborhood: [] as string[],
+        city: '',
+        postalCode: '',
+        // latitude: '',
+        // longitude: ''
+      },
+      agencyName: '',
+      agencyDescription: '',
+      termsAccepted: false,
+      acceptTerms: true,
+      receiveOffers: false,
+      commune: {
+        name: '',
+        region: '',
+        province: ''
+      }
+    };
+  
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
   employees: Employee[] = [];
@@ -3541,6 +3597,8 @@ export class AgencyDashboardComponent implements OnInit {
   showAddEmployeeModal = false;
   showUpdateEmployeeModal = false;
   showZoneModal = false;
+  showZoneModalcouverture = false;
+
   showScheduleModal = false;
   editingZone = false;
 
@@ -3652,7 +3710,10 @@ export class AgencyDashboardComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private fb: FormBuilder,
     private messageService: MessagesService,
-    private sharedService: SharedService
+    private sharedService: SharedService,
+        private countriesOrgMockService: CountriesOrgMockService,
+        private route: ActivatedRoute
+    
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -3692,6 +3753,7 @@ export class AgencyDashboardComponent implements OnInit {
     this.cdr.detectChanges();
     this.loadZones(this.currentUser);
     this.loadCollectDay();
+     this.getAllCountries();
 
     setInterval(() => {
       this.loadCollectDay();
@@ -3700,8 +3762,31 @@ export class AgencyDashboardComponent implements OnInit {
     this.filterIncidents();
     this.countUnreadMessages();
     this.userMessages();
-  }
+     // Écouter les changements de fragment
+    this.route.fragment.subscribe(fragment => {
+      if (fragment) {
+        // Faire défiler jusqu'à la section
+        const element = document.getElementById(fragment);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    });
 
+    // Écouter les queryParams
+    this.route.queryParams.subscribe(params => {
+      if (params['source'] === 'notification') {
+        // Traitement spécifique pour les notifications
+        this.handleNotificationParams(params);
+      }
+    });
+  }
+ private handleNotificationParams(params: any) {
+    // Logique pour traiter les paramètres selon le contexte
+    if (params['id']) {
+      // Charger les données spécifiques
+    }
+  }
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService
@@ -3721,7 +3806,7 @@ export class AgencyDashboardComponent implements OnInit {
 
   userMessages() {
     this.messageService
-      .getMessagesForUser(this.currentUser?._id || "")
+      .getMessagesForUser(this.currentUser?.userId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
@@ -3775,7 +3860,7 @@ export class AgencyDashboardComponent implements OnInit {
       this.notificationService.showError("Erreur", "Agence non trouvée");
       return;
     }
-    this.messageData.sender = this.currentUser?._id || "";
+    this.messageData.sender = this.currentUser?.userId || "";
     this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
     if (!this.messageData.content) {
@@ -3928,7 +4013,7 @@ export class AgencyDashboardComponent implements OnInit {
       this.loadEmployees(this.currentUser);
     }
     this.loadCollections();
-    this.loadServiceZones();
+    // this.loadServiceZones();
     // this.loadSchedules();
     console.log("[loadAgencyData] agency avant loadClients:", this.agency);
     this.loadClients();
@@ -4220,19 +4305,19 @@ export class AgencyDashboardComponent implements OnInit {
       console.warn("Aucun ID d'utilisateur courant disponible.");
     }
   }
-  loadServiceZones(): void {
-    this.serviceZones = [
-      {
-        id: "zone1",
-        name: "Zone Centre",
-        description: "Centre-ville et quartiers adjacents",
-        boundaries: [],
-        neighborhoods: ["Centre-ville", "Quartier Latin"],
-        cities: ["Paris"],
-        isActive: true,
-      },
-    ];
-  }
+  // loadServiceZones(): void {
+  //   this.serviceZones = [
+  //     {
+  //       id: "zone1",
+  //       name: "Zone Centre",
+  //       description: "Centre-ville et quartiers adjacents",
+  //       boundaries: [],
+  //       neighborhoods: ["Centre-ville", "Quartier Latin"],
+  //       cities: ["Paris"],
+  //       isActive: true,
+  //     },
+  //   ];
+  // }
 
   // loadSchedules(): void {
   //   this.schedules = [
@@ -5164,117 +5249,6 @@ export class AgencyDashboardComponent implements OnInit {
     });
   }
 
-  // addSchedule(): void {
-  //   // Réinitialiser les erreurs
-  //   this.formErrors = {
-  //     zone: "",
-  //     dayOfWeek: "",
-  //     startTime: "",
-  //     endTime: "",
-  //     collectorId: "",
-  //     // endDate: "", // Ajout de cette ligne
-  //   };
-
-  //   let isValid = true;
-
-  //   if (!this.newSchedule.zone) {
-  //     this.formErrors.zone = "Veuillez sélectionner une zone";
-  //     isValid = false;
-  //   }
-  //   if (!this.newSchedule.dayOfWeek) {
-  //     this.formErrors.dayOfWeek = "Veuillez sélectionner un jour";
-  //     isValid = false;
-  //   }
-  //   if (!this.newSchedule.startTime) {
-  //     this.formErrors.startTime = "Veuillez définir une heure de début";
-  //     isValid = false;
-  //   }
-  //   if (!this.newSchedule.endTime) {
-  //     this.formErrors.endTime = "Veuillez définir une heure de fin";
-  //     isValid = false;
-  //   }
-  //   if (!this.newSchedule.collectorId) {
-  //     this.formErrors.collectorId = "Veuillez sélectionner un collecteur";
-  //     isValid = false;
-  //   }
-  //   // if (!this.newSchedule.endDate) {
-  //   //   this.formErrors.endDate = "Veuillez définir une date de fin";
-  //   //   isValid = false;
-  //   // }
-  //   // if (this.newSchedule.startTime && this.newSchedule.endTime) {
-  //   //   const start = new Date(`1970-01-01T${this.newSchedule.startTime}`);
-  //   //   const end = new Date(`1970-01-01T${this.newSchedule.endTime}`);
-  //   //   if (end <= start) {
-  //   //     this.formErrors.endTime = 'L\'heure de fin doit être postérieure à l\'heure de début';
-  //   //     isValid = false;
-  //   //   }
-  //   // }
-
-  //   if (!isValid) {
-  //     this.notificationService.showError(
-  //       "Erreur de validation",
-  //       "Veuillez corriger les erreurs dans le formulaire"
-  //     );
-  //     return;
-  //   }
-
-  //   // Création de l'objet planning
-  //   const schedule: CollectionSchedule = {
-  //     zone: this.newSchedule.zone,
-  //     dayOfWeek: Number(this.newSchedule.dayOfWeek),
-  //     startTime: this.newSchedule.startTime,
-  //     endTime: this.newSchedule.endTime,
-  //     collectorId: this.newSchedule.collectorId,
-  //     date: this.newSchedule.date,
-  //     // endDate: this.newSchedule.endDate,
-  //     agencyId: this.currentUser?._id || "",
-  //   };
-  //   // Envoi au service
-  //   this.agencyService.addSchedule$(schedule).subscribe({
-  //     next: (response) => {
-  //       this.notificationService.showSuccess(
-  //         "Succès",
-  //         "Le planning a été créé avec succès"
-  //       );
-  //       this.showScheduleModal = false;
-  //       // Réinitialisation du formulaire
-  //       this.newSchedule = {
-  //         zone: "",
-  //         dayOfWeek: "",
-  //         startTime: "",
-  //         endTime: "",
-  //         collectorId: "",
-  //         date: "", // Ajout de cette ligne
-  //         endDate: "", // Ajout de cette ligne
-  //       };
-  //     },
-  //     error: (error) => {
-  //       let errorMessage =
-  //         "Une erreur est survenue lors de la création du planning";
-
-  //       // Gestion des erreurs spécifiques
-  //       if (error.error?.message) {
-  //         switch (error.error.message) {
-  //           case "COLLECTOR_NOT_AVAILABLE":
-  //             errorMessage =
-  //               "Le collecteur n'est pas disponible sur ce créneau";
-  //             break;
-  //           case "ZONE_NOT_FOUND":
-  //             errorMessage = "La zone sélectionnée n'existe pas";
-  //             break;
-  //           case "TIME_CONFLICT":
-  //             errorMessage =
-  //               "Il existe déjà un planning sur ce créneau horaire";
-  //             break;
-  //           default:
-  //             errorMessage = error.error.message;
-  //         }
-  //       }
-
-  //       this.notificationService.showError("Erreur", errorMessage);
-  //     },
-  //   });
-  // }
   addSchedule(): void {
     const { collectorId, date, startTime, endTime } = this.scheduleForm.value;
     if (
@@ -5301,11 +5275,12 @@ export class AgencyDashboardComponent implements OnInit {
     };
 
     this.agencyService.addSchedule$(schedule).subscribe({
-      next: () => {
-        this.notificationService.showSuccess(
-          "Succès",
-          "Le planning a été créé avec succès"
-        );
+      next: (schedule) => {
+      if (schedule) {
+        this.schedules.push(schedule); 
+        this.notificationService.showSuccess('Succès', 'Le planning a été créé avec succès.');
+      }
+      this.loadPlannings(),
         this.showScheduleModal = false;
         this.scheduleForm.reset();
       },
@@ -5506,8 +5481,9 @@ export class AgencyDashboardComponent implements OnInit {
       const agencyId = currentUser._id;
       this.agencyService.getAllzones$(agencyId).subscribe({
         next: (zones: any) => {
-          this.zones = zones;
-          console.log("zones charger >>>>>> :", this.zones);
+          this.zones = zones.serviceZones
+;
+          console.log("zones charger>>>>>> :", this.zones);
         },
         error: (error) => {
           console.error(
@@ -5748,6 +5724,117 @@ loadZonesMock(): void {
     isActive: true, 
   }));
 }
+ arrondissements: QuartierData[] = OUAGA_DATA;
+  arrondissementss: Arrondissement[] = [];
+  cities: City[] = [];
+  secteurss: Sector[] = [];
+  secteurs: { secteur: string; quartiers: string[] }[] = [];
+  quartiers: string[] = [];
+  quartierss: Quartier[] = [];
+  onArrondissementChange(arrondissement?: string) {
+    if (arrondissement) {
+      const sectorObj = this.arrondissementss.find(a => a.name === arrondissement);
+      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(sectorObj?.id || '');
+      this.secteurss = sectors ? sectors : [];
+      console.log("Secteurs  ==> ", this.secteurss);
+      this.quartiers = [];
+      this.userData.address.sector = '';
+     this.userData.address.neighborhood = [];
+
+    }
+  }
+
+  onSecteurChange(secteur: string) {
+    if (secteur) {
+      const secteurObj = this.secteurss.find(s => s.name === secteur);
+      const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(secteurObj?.id || '');
+      console.log("Quartiers  ==> ", quartiers);
+      this.quartierss = quartiers;
+      this.userData.address.neighborhood = this.userData.address.neighborhood = [];
+;
+    }
+    const secteurObj = this.secteurs.find(s => s.secteur === secteur);
+    this.quartiers = secteurObj ? secteurObj.quartiers : [];
+    this.userData.address.neighborhood =this.userData.address.neighborhood = [];
+;
+  }
+
+  onCityChange(city: string) {
+    if (city) {
+      const cityObj = this.cities.find(c => c.name === city);
+      console.log("City Object ==> ", cityObj);
+      const arr = this.countriesOrgMockService.getArrondissementsByCity(cityObj?.id || '');
+      this.arrondissementss = arr ? arr : [];
+      console.log("Arrondissements  ==> ", this.arrondissementss);
+      this.secteurs = [];
+      this.quartiers = [];
+      this.userData.address.arrondissement = '';
+      this.userData.address.sector = '';
+  this.userData.address.neighborhood = [];
+
+    };
+
+  }
+
+  
+
+openZoneModalcouverture(): void {
+  this.showZoneModalcouverture = true;
+}
+
+closeZoneModalcouverture(): void {
+  this.showZoneModalcouverture = false;
+}
+
+editZoneAgency(): void {
+  if (
+    this.userData.address.city &&
+    this.userData.address.arrondissement &&
+    this.userData.address.sector &&
+ this.userData.address.neighborhood.length > 0
+  ) {
+    const zoneData = {
+  serviceZones: this.userData.address.neighborhood, 
+};
 
 
+    const agencyId = this.currentUser?._id;
+
+    if (!agencyId) {
+      this.notificationService.showError("Erreur", "ID agence manquant.");
+      return;
+    }
+
+    this.agencyService.updateAgencyZones$(agencyId, zoneData).subscribe({
+      next: (response) => {
+        console.log("Zone mise à jour :", response);
+        this.notificationService.showSuccess(
+          "Succès",
+          "La zone a été mise à jour avec succès."
+        );
+    this.loadZones(this.currentUser);
+
+        this.closeZoneModalcouverture();
+        // this.loadZones(this.currentUser?._id); 
+      },
+      error: (error) => {
+        console.error("Erreur lors de la mise à jour de la zone :", error);
+        this.notificationService.showError(
+          "Erreur",
+          "Impossible de mettre à jour la zone. Veuillez réessayer."
+        );
+      },
+    });
+  } else {
+    this.notificationService.showError(
+      "Erreur",
+      "Veuillez remplir tous les champs obligatoires."
+    );
+  }
+}
+
+getAllCountries() {
+  this.cities = this.countriesOrgMockService.getCitiesByCountry("1");
+  console.log("Villes chargées :", this.cities);
+}
 }
