@@ -11,7 +11,9 @@ import { Agency, Municipality } from '../models/agency.model';
 })
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
+  private currentUserSubjectLocalStorage = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
+  // public ProfileCurrentUser$ = this.currentUserSubjectLocalStorage.asObservable();
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
@@ -32,6 +34,7 @@ export class AuthService {
         if (response.success && response.user) {
           localStorage.setItem('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
+          // this.currentUserSubjectLocalStorage.next(response.user);
           this.isAuthenticatedSubject.next(true);
         }
         return response;
@@ -46,6 +49,7 @@ export class AuthService {
         if (response.user) {
           localStorage.setItem('currentUser', JSON.stringify(response));
           this.currentUserSubject.next(response?.user);
+          // this.currentUserSubjectLocalStorage.next(response?.user);
           this.isAuthenticatedSubject.next(true);
         }
         return response;
