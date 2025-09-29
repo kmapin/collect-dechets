@@ -1,3 +1,4 @@
+import { CellWidthType } from './../../../../../node_modules/jspdf-autotable/dist/index.d';
 import { BarcodeFormat } from "@zxing/library";
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
@@ -326,7 +327,7 @@ interface Subscription {
               </section>
 
               <!-- Messages -->
-              <section class="collection-message card">
+              <!-- <section class="collection-message card">
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">message</i>
@@ -399,7 +400,7 @@ interface Subscription {
                   </div>
                 </div>
               </section>
-
+              -->
               <!-- Messages 2 -->
               <section class="collection-message card">
                 <div class="section-header">
@@ -488,16 +489,23 @@ interface Subscription {
 
                       <!-- Input fixé en bas -->
                       <div class="div7 chat-input-row">
-                        <input
-                          class="sendChatMessage"
-                          type="text"
-                          placeholder="Composez votre message"
-                        />
-                        <div class="chat-actions">
-                          <button type="submit">
-                            <mat-icon class="material-icons">send</mat-icon>
-                          </button>
-                        </div>
+                        
+                          <input
+                            class="sendChatMessage"
+                            [(ngModel)]="messageData.content"
+                            name="content"
+                            type="text"
+                            placeholder="Composez votre message"
+                          />
+                          <div class="chat-actions">
+                            <button type="button"
+                                (click)="submitMessage()"
+                                class="btn_send btn-secondary"
+                            >
+                              <mat-icon class="material-icons">send</mat-icon>
+                            </button>
+                          </div>
+                        
                       </div>
                     </div>
                   </div>
@@ -1742,6 +1750,7 @@ interface Subscription {
 
       .chat-actions button {
         margin-left: 10px;
+        width: fit-content;
       }
 
       .sendChatMessage {
@@ -2240,9 +2249,17 @@ export class ClientDashboardComponent implements OnInit {
           this.receivedMessages = response.messages || [];
 
           this.displayAgencyName = this.receivedMessages[0].senderName;
+          if(cliendId !== this.currentUser?._id){
+              this.receivedId = cliendId;
+          } else {
+              this.receivedId = agencyId;
+          }
           this.receivedMessages.forEach((message: any) => {
             message.read = message.read.toString();
           });
+        }else{
+          this.receivedMessages = [];
+          this.notificationService.showError("Erreur", "Aucun message, veuillez contacter l'agence !");
         }
       });
   }
@@ -2267,7 +2284,7 @@ export class ClientDashboardComponent implements OnInit {
       );
       return;
     }
-    if (!this.agency) {
+    if (!this.receivedId) {
       this.notificationService.showError("Erreur", "Agence non trouvée");
       return;
     }
@@ -2286,12 +2303,17 @@ export class ClientDashboardComponent implements OnInit {
     this.messageService.sendMessage(this.messageData).subscribe({
       next: (response: any) => {
         console.log("API > sendMessage:", response);
+        this.userAndAgencyConversation(
+          this.currentUser?._id || "",
+          this.receivedId || ""
+        )
         this.notificationService.showSuccess(
           "Message envoyé",
           "Votre message a bien été envoyé"
         );
         this.showReportModal = false;
         this.userMessages();
+        this.messageData.content = "";
       },
       error: (error: any) => {
         console.error("API > sendMessage:", error);
