@@ -1301,7 +1301,7 @@ interface Statistics {
                       <label>Zone *</label>
                       <select formControlName="zone">
                         <option value="">Sélectionner une zone</option>
-                        <option
+                        <!-- <option
                           value="Tampouy
 "
                         >
@@ -1317,7 +1317,11 @@ interface Statistics {
 "
                         >
                           Marcoussis
-                        </option>
+                        </option> -->
+                            <option *ngFor="let zone of zones" [value]="zone.neighborhood || zone">
+      {{ zone.neighborhood || zone }}
+    </option>
+
                       </select>
                       <small
                         class="error-message"
