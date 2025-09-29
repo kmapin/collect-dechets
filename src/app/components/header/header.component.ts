@@ -75,7 +75,8 @@ import { interval, Subscription, switchMap } from 'rxjs';
              class="notification-item" 
              [class.read]="notif.read" 
              [class.unread]="!notif.read"
-             (click)="markAsRead(notif._id)">
+             (click)="markAsRead(notif._id)"
+               (click)="navigateToNotification(notif)">
           
           <div class="notification-content">
             <span class="notification-title">{{ notif.type }}</span>
@@ -1196,7 +1197,7 @@ markAsRead(notifId: string): void {
     this.notificationService.markNotificationAsRead$(notifId).subscribe({
       next: () => {
         notif.read = true;
-         this.router.navigate(['/']);
+      
       },
       error: (err) => {
         console.error(`Erreur lors du marquage comme lu de la notification ${notifId} :`, err);
@@ -1288,6 +1289,28 @@ startAutoRefresh(): void {
         }
       });
   }
+
+  navigateToNotification(notif: any): void {
+  if (!notif || !notif.type) {
+    console.warn('Type de notification introuvable.');
+    return;
+  }
+
+  switch (notif.type) {
+    case 'signalement':
+      this.router.navigate(['/dashboard/agency'], { fragment: 'signalements' });
+      break;
+    case 'planning':
+      this.router.navigate(['/dashboard/agency'], { fragment: 'plannings' });
+      break;
+    case 'tarif':
+      this.router.navigate(['/dashboard/agency'], { fragment: 'tarifs' });
+      break;
+    default:
+      console.warn('Type de notification non pris en charge.');
+      break;
+  }
+}
 }
 
 
