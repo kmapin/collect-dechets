@@ -2320,7 +2320,7 @@ export class ClientDashboardComponent implements OnInit {
       next: (response: any) => {
         console.log("API > sendMessage:", response);
         this.userAndAgencyConversation(
-          this.currentUser?._id || "",
+          this.currentUser?.userId || "",
           this.receivedId || ""
         )
         this.notificationService.showSuccess(
