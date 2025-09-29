@@ -57,6 +57,13 @@ interface Subscription {
               </p>
             </div>
             <div class="quick-actions">
+               <button
+                class="btn btn-primary"
+                (click)="scrollToChat()"
+                >
+                <i class="material-icons">message</i>Mes messages
+                <span  class="tab-badge">{{ unreadMessageCount}}</span>
+              </button>
               <button
                 *ngIf="currentUser?.subscribedAgencyId"
                 class="btn btn-primary"
@@ -433,7 +440,7 @@ interface Subscription {
               </section>
               -->
               <!-- Messages 2 -->
-              <section class="collection-message card">
+              <section class="collection-message card" #chatMessages>
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">message</i>
@@ -478,9 +485,9 @@ interface Subscription {
                         </ng-container>
                       </div>
                     </div>
-
                     <!-- Messages + Input -->
                     <div class="chat-area">
+                      
                       <div class="chat-messages" #scrollMe>
                         <ng-container *ngFor="let message of receivedMessages">
                           <div
@@ -529,7 +536,6 @@ interface Subscription {
                           </div>
                         </ng-container>
                       </div>
-
                       <!-- Input fixé en bas -->
                       <div class="div7 chat-input-row">
                         <input
@@ -1274,7 +1280,15 @@ interface Subscription {
       .history-status {
         text-align: right;
       }
-
+      .tab-badge {
+        background: var(--error-color);
+        color: var(--white);
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 16px;
+        text-align: center;
+      }
       .status-badge {
         padding: 4px 12px;
         border-radius: 12px;
@@ -1942,6 +1956,7 @@ interface Subscription {
 })
 export class ClientDashboardComponent implements OnInit, AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
+  @ViewChild('chatMessages') chatMessages!: ElementRef;
   currentUser!: any;
   upcomingCollections: Collection[] = [];
   collectionHistory: any[] = [];
@@ -2821,5 +2836,9 @@ export class ClientDashboardComponent implements OnInit, AfterViewChecked {
     try {
       this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
     } catch (err) {}
+  }
+
+  scrollToChat() {
+    this.chatMessages.nativeElement.scrollIntoView({ behavior: 'smooth' });
   }
 }
