@@ -1,5 +1,12 @@
 import { map } from "rxjs";
-import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
+import {
+  AfterViewChecked,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+} from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, RouterModule } from "@angular/router";
 import {
@@ -34,7 +41,12 @@ import { MessagesService } from "../../../services/messages.service";
 import { SharedService } from "../../../services/shared-service";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
-import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
+import {
+  Arrondissement,
+  City,
+  Quartier,
+  Sector,
+} from "../../../models/countries-org.model";
 import { MatIcon } from "@angular/material/icon";
 
 interface Client {
@@ -89,7 +101,14 @@ interface Statistics {
 @Component({
   selector: "app-agency-dashboard",
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule,MatExpansionModule, MatIcon],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatExpansionModule,
+    MatIcon,
+  ],
   template: `
     <div class="agency-dashboard">
       <div class="page-header">
@@ -155,14 +174,13 @@ interface Statistics {
               </div>
               <div class="stat-info">
                 <h3>zones</h3>
-           
+
                 <p class="stat-value">{{ statistics.totalZones }}</p>
                 <span
                   class="stat-trend"
                   [class.positive]="getCollectionRate() >= 90"
                   [class.negative]="getCollectionRate() < 80"
                 >
-                 
                 </span>
               </div>
             </div>
@@ -179,8 +197,6 @@ interface Statistics {
                 <!-- <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
               </div>
             </div>
-
-            
 
             <div class="stat-card card">
               <div class="stat-icon reports">
@@ -384,10 +400,7 @@ interface Statistics {
                         {{ employee.isActive ? "Actif" : "Inactif" }}
                       </p>
                     </div>
-                   
-                   
                   </div>
-                  
 
                   <div class="employee-details">
                     <!-- <div class="detail-item">
@@ -413,12 +426,12 @@ interface Statistics {
                   </div>
 
                   <div class="employee-actions">
-                    <button class="action-btn"  
- (click)="editEmployee(employee)">
+                    <button class="action-btn" (click)="editEmployee(employee)">
                       <i class="material-icons">edit</i>
                     </button>
                     <button
-                      class="action-btn danger"[disabled]="isDeleting"
+                      class="action-btn danger"
+                      [disabled]="isDeleting"
                       (click)="deleteEmployee(currentUser, employee)"
                     >
                       <i class="material-icons">delete</i>
@@ -446,10 +459,10 @@ interface Statistics {
                 </div>
               </div>
               <div *ngIf="!allEmployees?.length" class="empty-state">
-  <i class="material-icons">people_outline</i>
-  <h3>Aucun employé</h3>
-  <p>Vous n'avez pas encore ajouté d'employés à votre agence.</p>
-</div>
+                <i class="material-icons">people_outline</i>
+                <h3>Aucun employé</h3>
+                <p>Vous n'avez pas encore ajouté d'employés à votre agence.</p>
+              </div>
             </div>
 
             <!-- Onglet Gestion des Zones -->
@@ -461,36 +474,38 @@ interface Statistics {
                     <i class="material-icons">visibility</i>
                     Voir mes tarifs
                   </button>
- 
                 </div>
-
               </div>
-                 <button class="btn btn-primary" (click)="openZoneModalcouverture()">
-  <i class="material-icons">edit_location</i>
-  Modifier les zones couvertes
-</button>
+              <button
+                class="btn btn-primary"
+                (click)="openZoneModalcouverture()"
+              >
+                <i class="material-icons">edit_location</i>
+                Modifier les zones couvertes
+              </button>
               <div class="zones-content">
-                
                 <div class="zones-map">
                   <div class="map-container">
                     <div class="map-placeholder">
                       <i class="material-icons">map</i>
-                      
-                    <div class="zone-container" *ngIf="zones?.length">
-  <h4 class="zone-title">Zones couvertes</h4>
-  <div class="zone-list">
-    <div class="zone-card" *ngFor="let zone of zones">
-           <div class="zone-details">
-                <p><strong>Quartier :</strong> {{ zone.neighborhood || zone }}</p>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div *ngIf="!zones?.length && !isLoading" class="no-zone">
-  <p>Veuillez definir vos zonees de service .</p>
-</div>
-                      
+                      <div class="zone-container" *ngIf="zones?.length">
+                        <h4 class="zone-title">Zones couvertes</h4>
+                        <div class="zone-list">
+                          <div class="zone-card" *ngFor="let zone of zones">
+                            <div class="zone-details">
+                              <p>
+                                <strong>Quartier :</strong>
+                                {{ zone.neighborhood || zone }}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div *ngIf="!zones?.length && !isLoading" class="no-zone">
+                        <p>Veuillez definir vos zonees de service .</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -594,7 +609,8 @@ interface Statistics {
                         </div> -->
                         <div class="schedule-time">
                           <!-- <span class="schedule-time">Zone:</span> -->
-                          <i class="material-icons">location_on:</i> {{ getZoneName(schedule.zone) }}
+                          <i class="material-icons">location_on:</i>
+                          {{ getZoneName(schedule.zone) }}
                         </div>
                         <div class="schedule-time">
                           <!-- <span class="schedule-time">Heure:</span>
@@ -602,7 +618,6 @@ interface Statistics {
                           <i class="material-icons">schedule:</i>
 
                           {{ schedule.startTime }} - {{ schedule.endTime }}
-                      
                         </div>
 
                         <div class="schedule-time">
@@ -610,9 +625,6 @@ interface Statistics {
                           <i class="material-icons">person:</i>
 
                           {{ getCollectorName(schedule.collectorId) }}
-                            
-
-
                         </div>
                         <div class="schedule-actions">
                           <button
@@ -828,16 +840,17 @@ interface Statistics {
                     </p>
                   </div>
                   <!-- Affichage des photos -->
-                  <div *ngIf="report.photos && report.photos.length" class="report-photos">
-                   
-                      <img
+                  <div
+                    *ngIf="report.photos && report.photos.length"
+                    class="report-photos"
+                  >
+                    <img
                       *ngFor="let photo of report.photos"
-                        [src]="photo"
-                        alt="Photo du signalement"
-                        class="report-photo circular-image"
-                        (click)="openImageModal(photo)"
-                      />
-                   
+                      [src]="photo"
+                      alt="Photo du signalement"
+                      class="report-photo circular-image"
+                      (click)="openImageModal(photo)"
+                    />
                   </div>
                   <div *ngIf="!report.photos || !report.photos.length">
                     <p><em>Aucune photo associée</em></p>
@@ -850,11 +863,11 @@ interface Statistics {
                     <button
                       class="btn btn-accent"
                       (click)="openAssignModal(report._id)"
-                       (click)="openAssignModal(report._id)"
-                        *ngIf="!report.assignedTo"
+                      (click)="openAssignModal(report._id)"
+                      *ngIf="!report.assignedTo"
                     >
                       <i class="material-icons">assignment_ind</i>
-                   Traiter
+                      Traiter
                     </button>
 
                     <!-- <button class="btn btn-primary" (click)="investigateIncident()" >
@@ -864,7 +877,7 @@ interface Statistics {
                     <button
                       class="btn btn-success"
                       (click)="resolveIncident(report._id)"
-                        (click)="resolveIncident(report._id)"
+                      (click)="resolveIncident(report._id)"
                       *ngIf="report.assignedTo"
                     >
                       <i class="material-icons">check</i>
@@ -878,12 +891,12 @@ interface Statistics {
                 </div>
               </div>
               <div *ngIf="!agencyReports?.length" class="empty-state">
-  <i class="material-icons">report_off</i>
-  <h3>Aucun signalement</h3>
-  <p>Vous n'avez pas de signalements pour le moment.</p>
-</div>
+                <i class="material-icons">report_off</i>
+                <h3>Aucun signalement</h3>
+                <p>Vous n'avez pas de signalements pour le moment.</p>
+              </div>
             </div>
-    
+
             <!-- Onglet Messages -->
             <div *ngIf="activeTab === 'messages'" class="reports-tab">
               <div class="reports-header">
@@ -893,85 +906,85 @@ interface Statistics {
                 </div>
               </div>
               <div class="parent">
-              <!-- Header -->
-              <div class="chat-header-column">
-                <span  *ngIf="displayAgencyName">Vous discutez avec {{ displayAgencyName }}</span>
-              </div>
+                <!-- Header -->
+                <div class="chat-header-column">
+                  <span *ngIf="displayAgencyName"
+                    >Vous discutez avec {{ displayAgencyName }}</span
+                  >
+                </div>
 
-              <div class="message-content">
-                <!-- Sidebar -->
-                <div class="chat-left-column">
-                  <div class="chat-left-column-header">
-                    <div class="chat-left-column-header-title">
-                      Mes discussions
+                <div class="message-content">
+                  <!-- Sidebar -->
+                  <div class="chat-left-column">
+                    <div class="chat-left-column-header">
+                      <div class="chat-left-column-header-title">
+                        Mes discussions
+                      </div>
+                    </div>
+
+                    <div class="chat-left-column-content">
+                      <ng-container
+                        *ngFor="let message of connectedUserMessages"
+                      >
+                        <button
+                          class="chat-left-column-content-item"
+                          *ngIf="message.firstName"
+                          (click)="userAndAgencyConversation(message)"
+                        >
+                          {{ message.firstName }} {{ message.lastName }}
+                        </button>
+                      </ng-container>
                     </div>
                   </div>
 
-                  <div class="chat-left-column-content">
-                    <ng-container *ngFor="let message of connectedUserMessages">
-                      <button
-                      class="chat-left-column-content-item"
-                      *ngIf="message.firstName"
-                      (click)="
-                        userAndAgencyConversation(
-                          message
-                        )
-                      "
-                    >
-                      {{ message.firstName }} {{message.lastName}}
-                    </button>
-                    </ng-container>
-                    
-                  </div>
-                </div>
+                  <!-- Messages + Input -->
+                  <div class="chat-area">
+                    <div class="chat-messages" #scrollMe>
+                      <ng-container *ngFor="let message of receivedMessages">
+                        <div
+                          class="received "
+                          *ngIf="message.sender !== currentUser?.userId"
+                        >
+                          <div class="div5 chat-bubble">
+                            <span> {{ message.content }}</span>
+                            <span class="chat-time"
+                              >reçu le
+                              {{
+                                message.timestamp | date : "dd/MMM/yyyy à HH:mm"
+                              }}
+                              <mat-icon class="chat-read">
+                                {{
+                                  message.read === "true" ? "done_all" : "done"
+                                }}
+                              </mat-icon>
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          class="sent"
+                          *ngIf="message.sender === currentUser?.userId"
+                        >
+                          <div class="div6 chat-bubble">
+                            <span> {{ message.content }}</span>
+                            <span class="chat-time"
+                              >envoyé le
+                              {{
+                                message.timestamp
+                                  | date : "dd/MMM/yyyy  à HH:mm"
+                              }}
+                              <mat-icon class="chat-read">
+                                {{
+                                  message.read === "true" ? "done_all" : "done"
+                                }}
+                              </mat-icon>
+                            </span>
+                          </div>
+                        </div>
+                      </ng-container>
+                    </div>
 
-                <!-- Messages + Input -->
-                <div class="chat-area">
-                  <div class="chat-messages">
-                    <ng-container *ngFor="let message of receivedMessages">
-                      <div
-                        class="received "
-                        *ngIf="message.sender !== currentUser?.userId"
-                      >
-                        <div class="div5 chat-bubble">
-                          <span> {{ message.content }}</span>
-                          <span class="chat-time"
-                            >reçu le
-                            {{
-                              message.timestamp
-                                | date : "dd/MMM/yyyy à HH:mm"
-                            }}
-                            <mat-icon class="chat-read">
-                              {{ message.read=== 'true' ? 'done_all' : 'done' }}
-                            </mat-icon>
-                          </span>
-                        </div>
-                      </div>
-                      <div
-                        class="sent"
-                        *ngIf="message.sender === currentUser?.userId"
-                      >
-                        <div class="div6 chat-bubble">
-                          <span> {{ message.content }}</span>
-                          <span class="chat-time"
-                            >envoyé le
-                            {{
-                              message.timestamp
-                                | date : "dd/MMM/yyyy  à HH:mm"
-                            }}
-                            <mat-icon class="chat-read">
-                              {{ message.read=== 'true' ? 'done_all' : 'done' }}
-                            </mat-icon>
-                          </span>
-                          
-                        </div>
-                      </div>
-                    </ng-container>
-                  </div>
-              
-                  <!-- Input fixé en bas -->
-                  <div class="div7 chat-input-row">
-                    
+                    <!-- Input fixé en bas -->
+                    <div class="div7 chat-input-row">
                       <input
                         class="sendChatMessage"
                         [(ngModel)]="messageData.content"
@@ -980,33 +993,36 @@ interface Statistics {
                         placeholder="Composez votre message"
                       />
                       <div class="chat-actions">
-                        <button type="button"
-                            (click)="submitMessage()"
-                            class="btn_send btn-secondary"
+                        <button
+                          type="button"
+                          (click)="submitMessage()"
+                          class="btn_send btn-secondary"
                         >
                           <mat-icon class="material-icons">send</mat-icon>
                         </button>
                       </div>
-                    
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <!-- Message -->
-            <div
-              class="modal-overlay"
-              *ngIf="showMessageModal"
-              (click)="showMessageModal = false"
-            >
-              <div class="modal-content" (click)="$event.stopPropagation()">
-                <div class="modal-header">
-                  <h3>Décrivez nous votre besoins</h3>
-                  <button class="close-btn" (click)="showMessageModal = false">
-                    <i class="material-icons">close</i>
-                  </button>
-                </div>
-                <form class="report-form">
-                  <!-- <div class="form-group">
+              <!-- Message -->
+              <div
+                class="modal-overlay"
+                *ngIf="showMessageModal"
+                (click)="showMessageModal = false"
+              >
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Décrivez nous votre besoins</h3>
+                    <button
+                      class="close-btn"
+                      (click)="showMessageModal = false"
+                    >
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+                  <form class="report-form">
+                    <!-- <div class="form-group">
                       <label>Destinataire</label>
                       <select [(ngModel)]="messageData.receiver" name="receiver" required>
                         <option value="">Sélectionnez</option>
@@ -1018,39 +1034,39 @@ interface Statistics {
                       </select>
                     </div>-->
 
-                  <div class="form-group">
-                    <label>Message</label>
-                    <textarea
-                      [(ngModel)]="messageData.content"
-                      name="content"
-                      rows="4"
-                      placeholder="Votre message..."
-                      required
-                    ></textarea>
-                  </div>
-                  <div class="form-actions">
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      (click)="showMessageModal = false"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-primary"
-                      (click)="submitMessage(); showMessageModal = false"
-                    >
-                      <i class="material-icons">send</i>
-                      Envoyer
-                    </button>
-                  </div>
-                </form>
+                    <div class="form-group">
+                      <label>Message</label>
+                      <textarea
+                        [(ngModel)]="messageData.content"
+                        name="content"
+                        rows="4"
+                        placeholder="Votre message..."
+                        required
+                      ></textarea>
+                    </div>
+                    <div class="form-actions">
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        (click)="showMessageModal = false"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        (click)="submitMessage(); showMessageModal = false"
+                      >
+                        <i class="material-icons">send</i>
+                        Envoyer
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
-            </div>
 
-            <!-- Onglet Rapports -->
-            <!-- <div class="analytics-tab">
+              <!-- Onglet Rapports -->
+              <!-- <div class="analytics-tab">
               <div class="analytics-header">
                 <h2>Rapports et Statistiques</h2>
                 <div class="analytics-filters">
@@ -1133,208 +1149,222 @@ interface Statistics {
                 </div>
               </div>
             </div> -->
-          </div>
-          <!-- Onglet tarif -->
-          <div class="analytics-tab">
-            <div class="analytics-header"></div>
+            </div>
+            <!-- Onglet tarif -->
+            <div class="analytics-tab">
+              <div class="analytics-header"></div>
 
-            <div class="analytics-content">
-              <div
-                class="modal-overlay"
-                *ngIf="showAddEmployeeModal"
-                (click)="showAddEmployeeModal = false"
-              >
-                <div class="modal-content" (click)="$event.stopPropagation()">
-                  <div class="modal-header">
-                    <h3>Ajouter un Employé</h3>
-                    <button
-                      class="close-btn"
-                      (click)="showAddEmployeeModal = false"
-                    >
-                      <i class="material-icons">close</i>
-                    </button>
-                  </div>
-                  <form class="employee-form" (ngSubmit)="addEmployee()">
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label>Prénom *</label>
-                        <input
-                          type="text"
-                          [(ngModel)]="newEmployee.firstName"
-                          name="firstName"
-                          required
-                        />
-                      </div>
-                      <div class="form-group">
-                        <label>Nom *</label>
-                        <input
-                          type="text"
-                          [(ngModel)]="newEmployee.lastName"
-                          name="lastName"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label>Email *</label>
-                      <input
-                        type="email"
-                        [(ngModel)]="newEmployee.email"
-                        name="email"
-                        required
-                      />
-                    </div>
-                    <div class="form-group">
-                      <label>Téléphone *</label>
-                      <input
-                        type="tel"
-                        [(ngModel)]="newEmployee.phone"
-                        name="phone"
-                        required
-                      />
-                    </div>
-                    <div class="form-group">
-                      <label>Rôle *</label>
-                      <select
-                        [(ngModel)]="newEmployee.role"
-                        name="role"
-                        required
-                      >
-                        <option value="">Sélectionner un rôle</option>
-                        <option value="manager">Manager</option>
-                        <option value="collector">Collecteur</option>
-                      </select>
-                    </div>
-                   <!-- Dans la section du formulaire d'ajout d'employé -->
-<div class="form-group" *ngIf="newEmployee.role === 'collector'">
-  <label>Zone assignée *</label>
-  <select [(ngModel)]="newEmployee.zones" name="zones" required>
-    <option value="">Sélectionner une zone</option>
-    <option *ngFor="let zone of zones" [value]="zone.neighborhood || zone">
-      {{ zone.neighborhood || zone }}
-    </option>
-  </select>
-</div>
-                    <div class="form-actions">
+              <div class="analytics-content">
+                <div
+                  class="modal-overlay"
+                  *ngIf="showAddEmployeeModal"
+                  (click)="showAddEmployeeModal = false"
+                >
+                  <div class="modal-content" (click)="$event.stopPropagation()">
+                    <div class="modal-header">
+                      <h3>Ajouter un Employé</h3>
                       <button
-                        type="button"
-                        class="btn btn-secondary"
+                        class="close-btn"
                         (click)="showAddEmployeeModal = false"
                       >
-                        Annuler
-                      </button>
-                      <button type="submit" class="btn btn-primary">
-                        <i class="material-icons">person_add</i>
-                        Ajouter
+                        <i class="material-icons">close</i>
                       </button>
                     </div>
-                  </form>
-                </div>
-              </div>
-
-              <!-- Modal Gestion Zone -->
-              <div
-                class="modal-overlay"
-                *ngIf="showZoneModal"
-                (click)="showZoneModal = false"
-              >
-                <div class="modal-content" (click)="$event.stopPropagation()">
-                  <div class="modal-header">
-                    <h3>Ajouter un Tarif</h3>
-                    <button class="close-btn" (click)="showZoneModal = false">
-                      <i class="material-icons">close</i>
-                    </button>
-                  </div>
-
-                  <form class="tariff-form" (ngSubmit)="addTariff()">
-                    <!-- Type -->
-                    <div class="form-group">
-                      <label>Type *</label>
-                      <select [(ngModel)]="newTariff.type" name="type" required>
-                        <option value="standard">Standard</option>
-                        <option value="premium">Premium</option>
-                      </select>
-                    </div>
-
-                    <!-- Prix -->
-                    <div class="form-group">
-                      <label>Prix *</label>
-                      <input
-                        type="number"
-                        [(ngModel)]="newTariff.price"
-                        name="price"
-                        min="0"
-                        required
-                      />
-                    </div>
-
-                    <!-- Nombre de passages -->
-                    <div class="form-group">
-                      <label>Nombre de passages *</label>
-                      <input
-                        type="number"
-                        [(ngModel)]="newTariff.nbPassages"
-                        name="nbPassages"
-                        min="0"
-                        required
-                      />
-                    </div>
-
-                    <!-- Description -->
-                    <div class="form-group">
-                      <label>Description</label>
-                      <textarea
-                        [(ngModel)]="newTariff.description"
-                        name="description"
-                        rows="3"
-                      ></textarea>
-                    </div>
-
-                    <div class="form-actions">
-                      <button
-                        type="button"
-                        class="btn btn-secondary"
-                        (click)="showZoneModal = false"
+                    <form class="employee-form" (ngSubmit)="addEmployee()">
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Prénom *</label>
+                          <input
+                            type="text"
+                            [(ngModel)]="newEmployee.firstName"
+                            name="firstName"
+                            required
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label>Nom *</label>
+                          <input
+                            type="text"
+                            [(ngModel)]="newEmployee.lastName"
+                            name="lastName"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label>Email *</label>
+                        <input
+                          type="email"
+                          [(ngModel)]="newEmployee.email"
+                          name="email"
+                          required
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Téléphone *</label>
+                        <input
+                          type="tel"
+                          [(ngModel)]="newEmployee.phone"
+                          name="phone"
+                          required
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label>Rôle *</label>
+                        <select
+                          [(ngModel)]="newEmployee.role"
+                          name="role"
+                          required
+                        >
+                          <option value="">Sélectionner un rôle</option>
+                          <option value="manager">Manager</option>
+                          <option value="collector">Collecteur</option>
+                        </select>
+                      </div>
+                      <!-- Dans la section du formulaire d'ajout d'employé -->
+                      <div
+                        class="form-group"
+                        *ngIf="newEmployee.role === 'collector'"
                       >
-                        Annuler
-                      </button>
-                      <button type="submit" class="btn btn-primary">
-                        <i class="material-icons">add_circle</i>
-                        Ajouter
+                        <label>Zone assignée *</label>
+                        <select
+                          [(ngModel)]="newEmployee.zones"
+                          name="zones"
+                          required
+                        >
+                          <option value="">Sélectionner une zone</option>
+                          <option
+                            *ngFor="let zone of zones"
+                            [value]="zone.neighborhood || zone"
+                          >
+                            {{ zone.neighborhood || zone }}
+                          </option>
+                        </select>
+                      </div>
+                      <div class="form-actions">
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          (click)="showAddEmployeeModal = false"
+                        >
+                          Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                          <i class="material-icons">person_add</i>
+                          Ajouter
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- Modal Gestion Zone -->
+                <div
+                  class="modal-overlay"
+                  *ngIf="showZoneModal"
+                  (click)="showZoneModal = false"
+                >
+                  <div class="modal-content" (click)="$event.stopPropagation()">
+                    <div class="modal-header">
+                      <h3>Ajouter un Tarif</h3>
+                      <button class="close-btn" (click)="showZoneModal = false">
+                        <i class="material-icons">close</i>
                       </button>
                     </div>
-                  </form>
-                </div>
-              </div>
 
-              <!-- Modal Planning -->
-              <div
-                class="modal-overlay"
-                *ngIf="showScheduleModal"
-                (click)="showScheduleModal = false"
-              >
-                <div class="modal-content" (click)="$event.stopPropagation()">
-                  <div class="modal-header">
-                    <h3>Nouveau Planning de Collecte</h3>
-                    <button
-                      class="close-btn"
-                      (click)="showScheduleModal = false"
-                    >
-                      <i class="material-icons">close</i>
-                    </button>
+                    <form class="tariff-form" (ngSubmit)="addTariff()">
+                      <!-- Type -->
+                      <div class="form-group">
+                        <label>Type *</label>
+                        <select
+                          [(ngModel)]="newTariff.type"
+                          name="type"
+                          required
+                        >
+                          <option value="standard">Standard</option>
+                          <option value="premium">Premium</option>
+                        </select>
+                      </div>
+
+                      <!-- Prix -->
+                      <div class="form-group">
+                        <label>Prix *</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="newTariff.price"
+                          name="price"
+                          min="0"
+                          required
+                        />
+                      </div>
+
+                      <!-- Nombre de passages -->
+                      <div class="form-group">
+                        <label>Nombre de passages *</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="newTariff.nbPassages"
+                          name="nbPassages"
+                          min="0"
+                          required
+                        />
+                      </div>
+
+                      <!-- Description -->
+                      <div class="form-group">
+                        <label>Description</label>
+                        <textarea
+                          [(ngModel)]="newTariff.description"
+                          name="description"
+                          rows="3"
+                        ></textarea>
+                      </div>
+
+                      <div class="form-actions">
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          (click)="showZoneModal = false"
+                        >
+                          Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                          <i class="material-icons">add_circle</i>
+                          Ajouter
+                        </button>
+                      </div>
+                    </form>
                   </div>
+                </div>
 
-                  <form
-                    [formGroup]="scheduleForm"
-                    class="schedule-form"
-                    (ngSubmit)="addSchedule()"
-                  >
-                    <!-- Zone -->
-                    <div class="form-group">
-                      <label>Zone *</label>
-                      <select formControlName="zone">
-                        <option value="">Sélectionner une zone</option>
-                        <!-- <option
+                <!-- Modal Planning -->
+                <div
+                  class="modal-overlay"
+                  *ngIf="showScheduleModal"
+                  (click)="showScheduleModal = false"
+                >
+                  <div class="modal-content" (click)="$event.stopPropagation()">
+                    <div class="modal-header">
+                      <h3>Nouveau Planning de Collecte</h3>
+                      <button
+                        class="close-btn"
+                        (click)="showScheduleModal = false"
+                      >
+                        <i class="material-icons">close</i>
+                      </button>
+                    </div>
+
+                    <form
+                      [formGroup]="scheduleForm"
+                      class="schedule-form"
+                      (ngSubmit)="addSchedule()"
+                    >
+                      <!-- Zone -->
+                      <div class="form-group">
+                        <label>Zone *</label>
+                        <select formControlName="zone">
+                          <option value="">Sélectionner une zone</option>
+                          <!-- <option
                           value="Tampouy
 "
                         >
@@ -1351,601 +1381,630 @@ interface Statistics {
                         >
                           Marcoussis
                         </option> -->
-                            <option *ngFor="let zone of zones" [value]="zone.neighborhood || zone">
-      {{ zone.neighborhood || zone }}
-    </option>
-
-                      </select>
-                      <small
-                        class="error-message"
-                        *ngIf="
-                          scheduleForm.get('zone')?.invalid &&
-                          scheduleForm.get('zone')?.touched
-                        "
-                      >
-                        Veuillez sélectionner une zone
-                      </small>
-                    </div>
-
-                    <!-- Date -->
-                    <div class="form-group">
-                      <label>Date *</label>
-                      <input
-                        type="date"
-                        formControlName="date"
-                        class="full-width"
-                        [min]="minDate"
-                      />
-                      <small
-                        class="error-message"
-                        *ngIf="
-                          scheduleForm.get('date')?.invalid &&
-                          scheduleForm.get('date')?.touched
-                        "
-                      >
-                        Veuillez sélectionner une date
-                      </small>
-                    </div>
-
-                    <!-- Heures -->
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label>Heure de début *</label>
-                        <input type="time" formControlName="startTime" />
+                          <option
+                            *ngFor="let zone of zones"
+                            [value]="zone.neighborhood || zone"
+                          >
+                            {{ zone.neighborhood || zone }}
+                          </option>
+                        </select>
                         <small
                           class="error-message"
                           *ngIf="
-                            scheduleForm.get('startTime')?.invalid &&
-                            scheduleForm.get('startTime')?.touched
+                            scheduleForm.get('zone')?.invalid &&
+                            scheduleForm.get('zone')?.touched
                           "
                         >
-                          Veuillez définir une heure de début
+                          Veuillez sélectionner une zone
                         </small>
                       </div>
 
+                      <!-- Date -->
                       <div class="form-group">
-                        <label>Heure de fin *</label>
-                        <input type="time" formControlName="endTime" />
-                        <small
-                          class="error-message"
-                          *ngIf="
-                            scheduleForm.get('endTime')?.invalid &&
-                            scheduleForm.get('endTime')?.touched
-                          "
-                        >
-                          Veuillez définir une heure de fin
-                        </small>
-                        <small
-                          class="error-message"
-                          *ngIf="scheduleForm.hasError('invalidTimeOrder')"
-                        >
-                          L'heure de fin doit être postérieure à l'heure de
-                          début
-                        </small>
-                      </div>
-                    </div>
-
-                    <!-- Collecteur -->
-                    <div class="form-group">
-                      <label>Collecteur *</label>
-                      <select formControlName="collectorId">
-                        <option value="">Sélectionner un collecteur</option>
-                        <option
-                          *ngFor="let collector of collectors"
-                          [value]="collector._id"
-                        >
-                          {{ collector.firstName }} {{ collector.lastName }} 
-                        </option>
-                      </select>
-                      <small
-                        class="error-message"
-                        *ngIf="
-                          scheduleForm.get('collectorId')?.invalid &&
-                          scheduleForm.get('collectorId')?.touched
-                        "
-                      >
-                        Veuillez sélectionner un collecteur
-                      </small>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="form-actions">
-                      <button
-                        type="button"
-                        class="btn btn-secondary"
-                        (click)="showScheduleModal = false"
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        type="submit"
-                        class="btn btn-primary"
-                        [disabled]="scheduleForm.invalid"
-                      >
-                        <i class="material-icons">schedule</i> Créer Planning
-                      </button>
-                    </div>
-                  </form>
-                </div>
-                <div
-                  class="modal-overlay"
-                  *ngIf="showAssignModal"
-                  (click)="showAssignModal = false"
-                >
-                  <div class="modal-content" (click)="$event.stopPropagation()">
-                    <div class="modal-header">
-                      <h3>Assigner des employés</h3>
-                      <button
-                        class="close-btn"
-                        (click)="showAssignModal = false"
-                      >
-                        <i class="material-icons">close</i>
-                      </button>
-                    </div>
-                    <div class="modal-body">
-                      <label>Employés disponibles :</label>
-                      <div
-                        *ngFor="let employee of allEmployees"
-                        class="checkbox-group"
-                      >
+                        <label>Date *</label>
                         <input
-                          type="checkbox"
-                          [value]="employee._id"
-                          (change)="
-                            toggleEmployeeSelection(employee._id, $event)
-                          "
+                          type="date"
+                          formControlName="date"
+                          class="full-width"
+                          [min]="minDate"
                         />
-                        {{ employee.firstName }} {{ employee.lastName }}
-                      </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button
-                        class="btn btn-secondary"
-                        (click)="showAssignModal = false"
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        class="btn btn-primary"
-                        (click)="assignEmployeesToReport()"
-                      >
-                        soumettre
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="modal-backdrop"
-              *ngIf="selectedSchedule"
-              (click)="closeModal()"
-            >
-              <div class="modal">
-                <h3>Détails du planning</h3>
-                <p>
-                  <strong>Date :</strong>
-                  {{ selectedSchedule.date | date : "fullDate" }}
-                </p>
-                <p><strong>Zone :</strong> {{ selectedSchedule.zone }}</p>
-                <p>
-                  <strong>Heure :</strong> {{ selectedSchedule.startTime }} -
-                  {{ selectedSchedule.endTime }}
-                </p>
-                <p>
-                  <strong>Collecteur(s) :</strong>
-                  <span *ngFor="let c of selectedSchedule.collectors">
-                    {{ c.firstName }} {{ c.lastName }} ({{ c.phone }})
-                  </span>
-                </p>
-                <!-- <button class="close-btn" (click)="selectedSchedule = null">Fermer</button> -->
-              </div>
-            </div>
-            <div
-              class="modal-backdrop"
-              *ngIf="showAssignModal"
-              (click)="closeAssignModal()"
-            >
-              <div class="modal" (click)="$event.stopPropagation()">
-                <h3>Assigner un signalement</h3>
-                <p><strong>Signalement ID :</strong> {{ selectedReportId }}</p>
-
-                <div
-                  *ngIf="
-                    allEmployees && allEmployees.length > 0;
-                    else noEmployees
-                  "
-                  class="employee-grid"
-                >
-                  <label
-                    *ngFor="let employee of allEmployees"
-                    class="employee-card"
-                  >
-                    <input
-                      type="checkbox"
-                      [value]="employee._id"
-                      (change)="onEmployeeToggle($event)"
-                    />
-                    <div class="employee-info">
-                      <span class="employee-name"
-                        >{{ employee.firstName }} {{ employee.lastName }}</span
-                      >
-                      <span class="employee-role">{{ employee.role }}</span>
-                    </div>
-                  </label>
-                </div>
-
-                <ng-template #noEmployees>
-                  <p>Aucun employé disponible.</p>
-                </ng-template>
-
-                <div class="modal-actions">
-                  <button class="btn btn-primary" (click)="assignReport()">
-                    Assigner
-                  </button>
-                  <button
-                    class="btn btn-secondary"
-                    (click)="closeAssignModal()"
-                  >
-                    Annuler
-                  </button>
-                </div>
-              </div>
-            </div>
-            <!-- Modal -->
-            <div class="tariffs-modal" *ngIf="showTariffsModal">
-              <div class="modal-backdrop" (click)="closeTariffsModal()"></div>
-
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h3>Mes Tarifs</h3>
-                  <button class="close-btn" (click)="closeTariffsModal()">
-                    <i class="material-icons">close</i>
-                  </button>
-                </div>
-
-                <div class="modal-body">
-                  <div
-                    class="tariff-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
-                  >
-                    <div *ngFor="let tariff of tariffs" class="tariff-card">
-                      <div class="tariff-header">
-                        <h4 class="price">
-                          {{ tariff.price | number : "1.0-0" }} FCFA
-                        </h4>
-                        <span class="type-chip">
-                          <i class="material-icons text-sm">category</i>
-                          {{ tariff.type }}
-                        </span>
-                      </div>
-
-                      <p class="tariff-description">
-                        <i class="material-icons text-sm align-middle">info</i>
-                        {{ tariff.description }}
-                      </p>
-                      
-                      <!-- Boutons d’action dans le modal -->
-                      <div class="tariff-actions">
-                        <!-- <button class="btn btn-warning flex items-center gap-1">
-              <i class="material-icons text-base">edit</i>
-              Renommer
-            </button> -->
-                        <button
-                          class="btn btn-danger flex items-center gap-1"
-                          (click)="deleteTariff(tariff)"
+                        <small
+                          class="error-message"
+                          *ngIf="
+                            scheduleForm.get('date')?.invalid &&
+                            scheduleForm.get('date')?.touched
+                          "
                         >
-                          <i class="material-icons text-base">delete</i>
-                          Supprimer
+                          Veuillez sélectionner une date
+                        </small>
+                      </div>
+
+                      <!-- Heures -->
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Heure de début *</label>
+                          <input type="time" formControlName="startTime" />
+                          <small
+                            class="error-message"
+                            *ngIf="
+                              scheduleForm.get('startTime')?.invalid &&
+                              scheduleForm.get('startTime')?.touched
+                            "
+                          >
+                            Veuillez définir une heure de début
+                          </small>
+                        </div>
+
+                        <div class="form-group">
+                          <label>Heure de fin *</label>
+                          <input type="time" formControlName="endTime" />
+                          <small
+                            class="error-message"
+                            *ngIf="
+                              scheduleForm.get('endTime')?.invalid &&
+                              scheduleForm.get('endTime')?.touched
+                            "
+                          >
+                            Veuillez définir une heure de fin
+                          </small>
+                          <small
+                            class="error-message"
+                            *ngIf="scheduleForm.hasError('invalidTimeOrder')"
+                          >
+                            L'heure de fin doit être postérieure à l'heure de
+                            début
+                          </small>
+                        </div>
+                      </div>
+
+                      <!-- Collecteur -->
+                      <div class="form-group">
+                        <label>Collecteur *</label>
+                        <select formControlName="collectorId">
+                          <option value="">Sélectionner un collecteur</option>
+                          <option
+                            *ngFor="let collector of collectors"
+                            [value]="collector._id"
+                          >
+                            {{ collector.firstName }} {{ collector.lastName }}
+                          </option>
+                        </select>
+                        <small
+                          class="error-message"
+                          *ngIf="
+                            scheduleForm.get('collectorId')?.invalid &&
+                            scheduleForm.get('collectorId')?.touched
+                          "
+                        >
+                          Veuillez sélectionner un collecteur
+                        </small>
+                      </div>
+
+                      <!-- Actions -->
+                      <div class="form-actions">
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          (click)="showScheduleModal = false"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="submit"
+                          class="btn btn-primary"
+                          [disabled]="scheduleForm.invalid"
+                        >
+                          <i class="material-icons">schedule</i> Créer Planning
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                  <div
+                    class="modal-overlay"
+                    *ngIf="showAssignModal"
+                    (click)="showAssignModal = false"
+                  >
+                    <div
+                      class="modal-content"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <div class="modal-header">
+                        <h3>Assigner des employés</h3>
+                        <button
+                          class="close-btn"
+                          (click)="showAssignModal = false"
+                        >
+                          <i class="material-icons">close</i>
+                        </button>
+                      </div>
+                      <div class="modal-body">
+                        <label>Employés disponibles :</label>
+                        <div
+                          *ngFor="let employee of allEmployees"
+                          class="checkbox-group"
+                        >
+                          <input
+                            type="checkbox"
+                            [value]="employee._id"
+                            (change)="
+                              toggleEmployeeSelection(employee._id, $event)
+                            "
+                          />
+                          {{ employee.firstName }} {{ employee.lastName }}
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button
+                          class="btn btn-secondary"
+                          (click)="showAssignModal = false"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          class="btn btn-primary"
+                          (click)="assignEmployeesToReport()"
+                        >
+                          soumettre
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div class="modal-footer">
-                  <button
-                    class="btn btn-secondary"
-                    (click)="closeTariffsModal()"
+              <div
+                class="modal-backdrop"
+                *ngIf="selectedSchedule"
+                (click)="closeModal()"
+              >
+                <div class="modal">
+                  <h3>Détails du planning</h3>
+                  <p>
+                    <strong>Date :</strong>
+                    {{ selectedSchedule.date | date : "fullDate" }}
+                  </p>
+                  <p><strong>Zone :</strong> {{ selectedSchedule.zone }}</p>
+                  <p>
+                    <strong>Heure :</strong> {{ selectedSchedule.startTime }} -
+                    {{ selectedSchedule.endTime }}
+                  </p>
+                  <p>
+                    <strong>Collecteur(s) :</strong>
+                    <span *ngFor="let c of selectedSchedule.collectors">
+                      {{ c.firstName }} {{ c.lastName }} ({{ c.phone }})
+                    </span>
+                  </p>
+                  <!-- <button class="close-btn" (click)="selectedSchedule = null">Fermer</button> -->
+                </div>
+              </div>
+              <div
+                class="modal-backdrop"
+                *ngIf="showAssignModal"
+                (click)="closeAssignModal()"
+              >
+                <div class="modal" (click)="$event.stopPropagation()">
+                  <h3>Assigner un signalement</h3>
+                  <p>
+                    <strong>Signalement ID :</strong> {{ selectedReportId }}
+                  </p>
+
+                  <div
+                    *ngIf="
+                      allEmployees && allEmployees.length > 0;
+                      else noEmployees
+                    "
+                    class="employee-grid"
                   >
-                    Fermer
-                  </button>
+                    <label
+                      *ngFor="let employee of allEmployees"
+                      class="employee-card"
+                    >
+                      <input
+                        type="checkbox"
+                        [value]="employee._id"
+                        (change)="onEmployeeToggle($event)"
+                      />
+                      <div class="employee-info">
+                        <span class="employee-name"
+                          >{{ employee.firstName }}
+                          {{ employee.lastName }}</span
+                        >
+                        <span class="employee-role">{{ employee.role }}</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <ng-template #noEmployees>
+                    <p>Aucun employé disponible.</p>
+                  </ng-template>
+
+                  <div class="modal-actions">
+                    <button class="btn btn-primary" (click)="assignReport()">
+                      Assigner
+                    </button>
+                    <button
+                      class="btn btn-secondary"
+                      (click)="closeAssignModal()"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Modal -->
+              <div class="tariffs-modal" *ngIf="showTariffsModal">
+                <div class="modal-backdrop" (click)="closeTariffsModal()"></div>
+
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h3>Mes Tarifs</h3>
+                    <button class="close-btn" (click)="closeTariffsModal()">
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+
+                  <div class="modal-body">
+                    <div
+                      class="tariff-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+                    >
+                      <div *ngFor="let tariff of tariffs" class="tariff-card">
+                        <div class="tariff-header">
+                          <h4 class="price">
+                            {{ tariff.price | number : "1.0-0" }} FCFA
+                          </h4>
+                          <span class="type-chip">
+                            <i class="material-icons text-sm">category</i>
+                            {{ tariff.type }}
+                          </span>
+                        </div>
+
+                        <p class="tariff-description">
+                          <i class="material-icons text-sm align-middle"
+                            >info</i
+                          >
+                          {{ tariff.description }}
+                        </p>
+
+                        <!-- Boutons d’action dans le modal -->
+                        <div class="tariff-actions">
+                          <!-- <button class="btn btn-warning flex items-center gap-1">
+              <i class="material-icons text-base">edit</i>
+              Renommer
+            </button> -->
+                          <button
+                            class="btn btn-danger flex items-center gap-1"
+                            (click)="deleteTariff(tariff)"
+                          >
+                            <i class="material-icons text-base">delete</i>
+                            Supprimer
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="modal-footer">
+                    <button
+                      class="btn btn-secondary"
+                      (click)="closeTariffsModal()"
+                    >
+                      Fermer
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <div
-      class="modal-overlay"
-      *ngIf="showClientDetailsModal"
-      (click)="closeClientDetailsModal()"
-    >
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Détails du Client</h3>
-          <button class="close-btn" (click)="closeClientDetailsModal()">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <p>
-            <strong>Nom :</strong> {{ selectedClient?.firstName }}
-            {{ selectedClient?.lastName }}
-          </p>
-          <p><strong>Email :</strong> {{ selectedClient?.userId?.email }}</p>
-          <p><strong>Téléphone :</strong> {{ selectedClient?.phone }}</p>
-          <p>
-            <strong>Adresse :</strong> {{ selectedClient?.address?.street }},
-            {{ selectedClient?.address?.neighborhood }}
-          </p>
-          <p><strong>Rôle :</strong> {{ selectedClient?.userId?.role }}</p>
-          <p>
-            <strong>Sigalement:</strong>
-            {{ selectedClient?.nonPassageReports.length }}
-          </p>
-          <p>
-            <strong>Nombre de souscription:</strong>
-            {{ selectedClient?.subscriptionHistory.length }}
-          </p>
+      <div
+        class="modal-overlay"
+        *ngIf="showClientDetailsModal"
+        (click)="closeClientDetailsModal()"
+      >
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Détails du Client</h3>
+            <button class="close-btn" (click)="closeClientDetailsModal()">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>
+              <strong>Nom :</strong> {{ selectedClient?.firstName }}
+              {{ selectedClient?.lastName }}
+            </p>
+            <p><strong>Email :</strong> {{ selectedClient?.userId?.email }}</p>
+            <p><strong>Téléphone :</strong> {{ selectedClient?.phone }}</p>
+            <p>
+              <strong>Adresse :</strong> {{ selectedClient?.address?.street }},
+              {{ selectedClient?.address?.neighborhood }}
+            </p>
+            <p><strong>Rôle :</strong> {{ selectedClient?.userId?.role }}</p>
+            <p>
+              <strong>Sigalement:</strong>
+              {{ selectedClient?.nonPassageReports.length }}
+            </p>
+            <p>
+              <strong>Nombre de souscription:</strong>
+              {{ selectedClient?.subscriptionHistory.length }}
+            </p>
 
-          <ul>
-            <!-- <span>Souscription:</span> -->
-            <!-- <li *ngFor="let subscription of selectedClient?.subscriptionHistory">
+            <ul>
+              <!-- <span>Souscription:</span> -->
+              <!-- <li *ngFor="let subscription of selectedClient?.subscriptionHistory">
           {{ subscription.type }} - {{ subscription.status }}
         </li>  
             -->
-          </ul>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeClientDetailsModal()">
-            Fermer
-          </button>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button
+              class="btn btn-secondary"
+              (click)="closeClientDetailsModal()"
+            >
+              Fermer
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-    <!-- Modal pour modifier un employé -->
-    <div
-      class="modal-overlay"
-      *ngIf="showUpdateEmployeeModal"
-      (click)="closeUpdateEmployeeModal()"
-    >
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Modifier un Employé</h3>
-          <button class="close-btn" (click)="closeUpdateEmployeeModal()">
+      <!-- Modal pour modifier un employé -->
+      <div
+        class="modal-overlay"
+        *ngIf="showUpdateEmployeeModal"
+        (click)="closeUpdateEmployeeModal()"
+      >
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Modifier un Employé</h3>
+            <button class="close-btn" (click)="closeUpdateEmployeeModal()">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <form [formGroup]="employeeForm" (ngSubmit)="updateEmployee()">
+            <div class="form-group">
+              <label>Prénom</label>
+              <input formControlName="firstName" type="text" />
+            </div>
+            <div class="form-group">
+              <label>Nom</label>
+              <input formControlName="lastName" type="text" />
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input formControlName="email" type="email" />
+            </div>
+            <div class="form-group">
+              <label>Téléphone</label>
+              <input formControlName="phone" type="tel" />
+            </div>
+            <div class="form-group">
+              <label>Rôle</label>
+              <select formControlName="role">
+                <option value="manager">Manager</option>
+                <option value="collector">Collecteur</option>
+              </select>
+            </div>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="closeUpdateEmployeeModal()"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="employeeForm.invalid"
+              >
+                Enregistrer
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div
+        class="modal-overlay"
+        *ngIf="selectedImage"
+        (click)="closeImageModal()"
+      >
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <img
+            [src]="selectedImage"
+            alt="Image en plein écran"
+            class="full-image"
+          />
+
+          <button class="close-btn" (click)="closeImageModal()">
             <i class="material-icons">close</i>
           </button>
         </div>
-        <form [formGroup]="employeeForm" (ngSubmit)="updateEmployee()">
-          <div class="form-group">
-            <label>Prénom</label>
-            <input formControlName="firstName" type="text" />
+      </div>
+      <div
+        class="modal-overlay"
+        *ngIf="showHistoryModal"
+        (click)="closeHistoryModal()"
+      >
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Historique des Collectes</h3>
+            <button class="close-btn" (click)="closeHistoryModal()">
+              <i class="material-icons">close</i>
+            </button>
           </div>
-          <div class="form-group">
-            <label>Nom</label>
-            <input formControlName="lastName" type="text" />
+          <div class="modal-body">
+            <ul>
+              <li *ngFor="let collecte of historyCollecte">
+                <p>
+                  <strong>Date :</strong>
+                  {{ collecte?.scannedAt | date : "dd/MM/yyyy" }}
+                </p>
+                <p><strong>Statut :</strong> {{ collecte.status }}</p>
+                <p>
+                  <strong>Client :</strong> {{ collecte?.clientId.firstName }}
+                  {{ collecte?.clientId.clientName }}
+                </p>
+              </li>
+            </ul>
           </div>
-          <div class="form-group">
-            <label>Email</label>
-            <input formControlName="email" type="email" />
+        </div>
+      </div>
+
+      <!-- Modal pour gérer les zones -->
+      <div
+        class="modal-overlay"
+        *ngIf="showZoneModalcouverture"
+        (click)="closeZoneModalcouverture()"
+      >
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Définir les zones couvertes</h3>
+            <button class="close-btn" (click)="closeZoneModalcouverture()">
+              <i class="material-icons">close</i>
+            </button>
           </div>
-          <div class="form-group">
-            <label>Téléphone</label>
-            <input formControlName="phone" type="tel" />
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="city">Ville</label>
+              <select
+                id="city"
+                [(ngModel)]="userData.address.city"
+                (change)="onCityChange(userData.address.city)"
+                class="form-control"
+              >
+                <option value="">Sélectionner une ville</option>
+                <option *ngFor="let city of cities" [value]="city.name">
+                  {{ city.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="arrondissement">Arrondissement</label>
+              <select
+                id="arrondissement"
+                [(ngModel)]="userData.address.arrondissement"
+                (change)="
+                  onArrondissementChange(userData.address.arrondissement)
+                "
+                class="form-control"
+                [disabled]="!arrondissementss.length"
+              >
+                <option value="">Sélectionner un arrondissement</option>
+                <option *ngFor="let arr of arrondissementss" [value]="arr.name">
+                  {{ arr.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="sector">Secteur</label>
+              <select
+                id="sector"
+                [(ngModel)]="userData.address.sector"
+                (change)="onSecteurChange(userData.address.sector)"
+                class="form-control"
+                [disabled]="!secteurss.length"
+              >
+                <option value="">Sélectionner un secteur</option>
+                <option
+                  *ngFor="let secteur of secteurss"
+                  [value]="secteur.name"
+                >
+                  {{ secteur.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="neighborhood">Quartier</label>
+              <select
+                id="neighborhood"
+                [(ngModel)]="userData.address.neighborhood"
+                class="form-control"
+                multiple
+                [disabled]="!quartierss.length"
+              >
+                <option
+                  *ngFor="let quartier of quartierss"
+                  [value]="quartier.name"
+                >
+                  {{ quartier.name }}
+                </option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Rôle</label>
-            <select formControlName="role">
-              <option value="manager">Manager</option>
-              <option value="collector">Collecteur</option>
-            </select>
-          </div>
-          <div class="form-actions">
+          <div class="modal-footer">
             <button
-              type="button"
               class="btn btn-secondary"
-              (click)="closeUpdateEmployeeModal()"
+              (click)="closeZoneModalcouverture()"
             >
               Annuler
             </button>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              [disabled]="employeeForm.invalid"
-            >
-              Enregistrer
+            <button class="btn btn-primary" (click)="editZoneAgency()">
+              Modifier
             </button>
           </div>
-        </form>
-      </div>
-    </div>
-    <div
-      class="modal-overlay"
-      *ngIf="selectedImage"
-      (click)="closeImageModal()"
-    >
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <img
-          [src]="selectedImage"
-          alt="Image en plein écran"
-          class="full-image"
-        />
-
-        <button class="close-btn" (click)="closeImageModal()">
-          <i class="material-icons">close</i>
-        </button>
-      </div>
-    </div>
-    <div
-      class="modal-overlay"
-      *ngIf="showHistoryModal"
-      (click)="closeHistoryModal()"
-    >
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Historique des Collectes</h3>
-          <button class="close-btn" (click)="closeHistoryModal()">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <ul>
-            <li *ngFor="let collecte of historyCollecte">
-              <p>
-                <strong>Date :</strong>
-                {{ collecte?.scannedAt | date : "dd/MM/yyyy" }}
-              </p>
-              <p><strong>Statut :</strong> {{ collecte.status }}</p>
-              <p>
-                <strong>Client :</strong> {{ collecte?.clientId.firstName }}
-                {{ collecte?.clientId.clientName }}
-              </p>
-            </li>
-          </ul>
         </div>
       </div>
     </div>
-
-
-
-<!-- Modal pour gérer les zones -->
-<div class="modal-overlay" *ngIf="showZoneModalcouverture" (click)="closeZoneModalcouverture()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Définir les zones couvertes</h3>
-      <button class="close-btn" (click)="closeZoneModalcouverture()">
-        <i class="material-icons">close</i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label for="city">Ville</label>
-        <select
-          id="city"
-          [(ngModel)]="userData.address.city"
-          (change)="onCityChange(userData.address.city)"
-          class="form-control"
-        >
-          <option value="">Sélectionner une ville</option>
-          <option *ngFor="let city of cities" [value]="city.name">
-            {{ city.name }}
-          </option>
-        </select>
-         </div>
-
-      <div class="form-group">
-        <label for="arrondissement">Arrondissement</label>
-        <select
-          id="arrondissement"
-          [(ngModel)]="userData.address.arrondissement"
-          (change)="onArrondissementChange(userData.address.arrondissement)"
-          class="form-control"
-          [disabled]="!arrondissementss.length"
-        >
-          <option value="">Sélectionner un arrondissement</option>
-          <option *ngFor="let arr of arrondissementss" [value]="arr.name">
-            {{ arr.name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="sector">Secteur</label>
-        <select
-          id="sector"
-          [(ngModel)]="userData.address.sector"
-          (change)="onSecteurChange(userData.address.sector)"
-          class="form-control"
-          [disabled]="!secteurss.length"
-        >
-          <option value="">Sélectionner un secteur</option>
-          <option *ngFor="let secteur of secteurss" [value]="secteur.name">
-            {{ secteur.name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="neighborhood">Quartier</label>
-        <select
-          id="neighborhood"
-          [(ngModel)]="userData.address.neighborhood"
-          class="form-control"
-          multiple
-          [disabled]="!quartierss.length"
-          
-        >
-   
-          <option *ngFor="let quartier of quartierss" [value]="quartier.name">
-            {{ quartier.name }}
-          </option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" (click)="closeZoneModalcouverture()">Annuler</button>
-      <button class="btn btn-primary" (click)="editZoneAgency()">Modifier</button>
-    </div>
-  </div>
-</div>
-
   `,
   styles: [
-    `.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  background: #f9fafb;
-  border-radius: 8px;
-  margin: 1rem 0;
-  min-height: 200px;
-}
+    `
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: #f9fafb;
+        border-radius: 8px;
+        margin: 1rem 0;
+        min-height: 200px;
+      }
 
-.empty-state i {
-  font-size: 3rem;
-  color: #9ca3af;
-  margin-bottom: 1rem;
-}
+      .empty-state i {
+        font-size: 3rem;
+        color: #9ca3af;
+        margin-bottom: 1rem;
+      }
 
-.empty-state h3 {
-  color: #4b5563;
-  margin-bottom: 0.5rem;
-}
+      .empty-state h3 {
+        color: #4b5563;
+        margin-bottom: 0.5rem;
+      }
 
-.empty-state p {
-  color: #6b7280;
-  text-align: center;
-}
-.report-photos {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 10px 0;
-  margin: 10px 0;
-  white-space: nowrap;
-}
+      .empty-state p {
+        color: #6b7280;
+        text-align: center;
+      }
+      .report-photos {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 10px 0;
+        margin: 10px 0;
+        white-space: nowrap;
+      }
 
-.report-photo {
-  width: 150px;
-  height: 150px;
-  flex-shrink: 0;
-  object-fit: cover;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
+      .report-photo {
+        width: 150px;
+        height: 150px;
+        flex-shrink: 0;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
 
-.report-photo:hover {
-  transform: scale(1.05);
-}
-.report-photo:hover {
-  transform: scale(1.05);
-}
+      .report-photo:hover {
+        transform: scale(1.05);
+      }
+      .report-photo:hover {
+        transform: scale(1.05);
+      }
       .agency-dashboard {
         min-height: 100vh;
       }
@@ -1977,13 +2036,12 @@ interface Statistics {
       }
 
       .modal-content {
-  width: 95%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 24px;
-}
-
+        width: 95%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 24px;
+      }
 
       .close-btn {
         position: absolute;
@@ -2074,7 +2132,7 @@ interface Statistics {
         color: var(--white);
         margin-bottom: 8px;
       }
-     
+
       .modal-footer .btn {
         padding: 8px 16px;
         border-radius: 4px;
@@ -2116,7 +2174,7 @@ interface Statistics {
         max-width: 500px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
       }
-      
+
       .modal {
         transition: transform 0.2s ease, opacity 0.2s ease;
         transform: scale(1);
@@ -3414,11 +3472,11 @@ interface Statistics {
         gap: 16px;
       }
 
-    form-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
+      form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
       .form-group {
         display: flex;
         flex-direction: column;
@@ -3517,8 +3575,8 @@ interface Statistics {
         padding-top: 16px;
         border-top: 1px solid var(--medium-gray);
       }
-   
-            /**Grid messagerie start */
+
+      /**Grid messagerie start */
 
       .parent {
         display: flex;
@@ -3680,8 +3738,8 @@ interface Statistics {
         font-size: 14px;
         margin-top: 0px;
         padding-top: 5px;
-        width:fit-content;
-        height:fit-content;
+        width: fit-content;
+        height: fit-content;
       }
       /**left column chat css */
       .chat-left-column-header {
@@ -3707,7 +3765,7 @@ interface Statistics {
         padding: 12px 16px;
         min-width: 100%;
         font-size: 14px;
-        align-self:start;
+        align-self: start;
         border-bottom: 1px solid #f0f0f0;
         cursor: pointer;
         background-color: var(--surface-300);
@@ -3781,7 +3839,9 @@ interface Statistics {
     `,
   ],
 })
-export class AgencyDashboardComponent implements OnInit {
+export class AgencyDashboardComponent implements OnInit, AfterViewChecked {
+  @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
+
   scheduleForm: FormGroup;
 
   currentUser: User | null = null;
@@ -3820,39 +3880,39 @@ export class AgencyDashboardComponent implements OnInit {
     pendingReports: 0,
     pendingSignalements: 0,
   };
-   userData = {
-      _id: '',
-      role: UserRole.CLIENT as UserRole | null,
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      password: '',
-      confirmPassword: '',
-      address: {
-        arrondissement: '',
-        sector: '',
-        street: '',
-        doorNumber: '',
-        doorColor: '',
-     neighborhood: [] as string[],
-        city: '',
-        postalCode: '',
-        // latitude: '',
-        // longitude: ''
-      },
-      agencyName: '',
-      agencyDescription: '',
-      termsAccepted: false,
-      acceptTerms: true,
-      receiveOffers: false,
-      commune: {
-        name: '',
-        region: '',
-        province: ''
-      }
-    };
-  
+  userData = {
+    _id: "",
+    role: UserRole.CLIENT as UserRole | null,
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    address: {
+      arrondissement: "",
+      sector: "",
+      street: "",
+      doorNumber: "",
+      doorColor: "",
+      neighborhood: [] as string[],
+      city: "",
+      postalCode: "",
+      // latitude: '',
+      // longitude: ''
+    },
+    agencyName: "",
+    agencyDescription: "",
+    termsAccepted: false,
+    acceptTerms: true,
+    receiveOffers: false,
+    commune: {
+      name: "",
+      region: "",
+      province: "",
+    },
+  };
+
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
   employees: Employee[] = [];
@@ -3992,7 +4052,7 @@ export class AgencyDashboardComponent implements OnInit {
   connectedUserMessages: any;
   receivedId: string = "";
   client: any;
-  displayAgencyName: string = ""
+  displayAgencyName: string = "";
   employeeForm: FormGroup;
   constructor(
     private authService: AuthService,
@@ -4004,9 +4064,8 @@ export class AgencyDashboardComponent implements OnInit {
     private fb: FormBuilder,
     private messageService: MessagesService,
     private sharedService: SharedService,
-        private countriesOrgMockService: CountriesOrgMockService,
-        private route: ActivatedRoute
-    
+    private countriesOrgMockService: CountriesOrgMockService,
+    private route: ActivatedRoute
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -4046,7 +4105,7 @@ export class AgencyDashboardComponent implements OnInit {
     this.cdr.detectChanges();
     this.loadZones(this.currentUser);
     this.loadCollectDay();
-     this.getAllCountries();
+    this.getAllCountries();
 
     setInterval(() => {
       this.loadCollectDay();
@@ -4055,29 +4114,25 @@ export class AgencyDashboardComponent implements OnInit {
     this.filterIncidents();
     this.countUnreadMessages();
     this.userMessages();
-   
-    this.route.fragment.subscribe(fragment => {
+
+    this.route.fragment.subscribe((fragment) => {
       if (fragment) {
-     
         const element = document.getElementById(fragment);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
+          element.scrollIntoView({ behavior: "smooth" });
         }
       }
     });
 
     // Écouter les queryParams
-    this.route.queryParams.subscribe(params => {
-      if (params['source'] === 'notification') {
-      
+    this.route.queryParams.subscribe((params) => {
+      if (params["source"] === "notification") {
         this.handleNotificationParams(params);
       }
     });
   }
- private handleNotificationParams(params: any) {
-  
-    if (params['id']) {
-
+  private handleNotificationParams(params: any) {
+    if (params["id"]) {
     }
   }
   /**Gestion des messages recus par le client connecté */
@@ -4104,8 +4159,11 @@ export class AgencyDashboardComponent implements OnInit {
         next: (response: any) => {
           if (response) {
             console.log("API > getMessagesForUser:", response);
-            this.connectedUserMessages = response|| [];
-            console.log("this.connectedUserMessages:", this.connectedUserMessages);
+            this.connectedUserMessages = response || [];
+            console.log(
+              "this.connectedUserMessages:",
+              this.connectedUserMessages
+            );
           }
         },
         error: (error: any) => {
@@ -4115,9 +4173,9 @@ export class AgencyDashboardComponent implements OnInit {
   }
 
   userAndAgencyConversation(client: any) {
-    this.data=client;
-    this.displayAgencyName = client.firstName+ " " + client.lastName;
-    const clientId= client?.userId || "";
+    this.data = client;
+    this.displayAgencyName = client.firstName + " " + client.lastName;
+    const clientId = client?.userId || "";
     this.clientService
       .userAndAgencyConversation(this.currentUser?.userId || "", clientId)
       .subscribe((response: any) => {
@@ -4125,20 +4183,24 @@ export class AgencyDashboardComponent implements OnInit {
         if (response) {
           console.log("API >userAndAgencyConversation:", response);
           this.receivedMessages = response.messages || [];
-          if(!clientId){
-              this.receivedId = this.currentUser?.userId || "";
+          this.scrollToBottom();
+          if (!clientId) {
+            this.receivedId = this.currentUser?.userId || "";
           } else {
-              this.receivedId = clientId;
+            this.receivedId = clientId;
           }
           this.receivedMessages.forEach((message: any) => {
-            if(message.receiver === this.currentUser?.userId){
+            if (message.receiver === this.currentUser?.userId) {
               this.readAndRespondMessage(message);
             }
             message.read = message.read.toString();
           });
-        }else{
+        } else {
           this.receivedMessages = [];
-          this.notificationService.showError("Erreur", "Aucun message, veuillez contacter l'agence !");
+          this.notificationService.showError(
+            "Erreur",
+            "Aucun message, veuillez contacter l'agence !"
+          );
         }
       });
   }
@@ -4182,7 +4244,7 @@ export class AgencyDashboardComponent implements OnInit {
       next: (response: any) => {
         console.log("API > sendMessage:", response);
         console.log("API > data:", this.data);
-        this.userAndAgencyConversation(this.data)
+        this.userAndAgencyConversation(this.data);
         this.notificationService.showSuccess(
           "Message envoyé",
           "Votre message a bien été envoyé"
@@ -4408,11 +4470,14 @@ export class AgencyDashboardComponent implements OnInit {
           }
           this.isDeleting = false;
         },
-      error: (error) => {
-    const message = error?.error?.message || "Veuillez réessayer.";
-    this.notificationService.showError("Erreur", `Impossible de supprimer l'employé. ${message}`);
-    this.isDeleting = false;
-  },
+        error: (error) => {
+          const message = error?.error?.message || "Veuillez réessayer.";
+          this.notificationService.showError(
+            "Erreur",
+            `Impossible de supprimer l'employé. ${message}`
+          );
+          this.isDeleting = false;
+        },
 
         complete: () => {
           this.isDeleting = false;
@@ -5557,12 +5622,14 @@ export class AgencyDashboardComponent implements OnInit {
 
     this.agencyService.addSchedule$(schedule).subscribe({
       next: (schedule) => {
-      if (schedule) {
-        this.schedules.push(schedule); 
-        this.notificationService.showSuccess('Succès', 'Le planning a été créé avec succès.');
-      }
-      this.loadPlannings(),
-        this.showScheduleModal = false;
+        if (schedule) {
+          this.schedules.push(schedule);
+          this.notificationService.showSuccess(
+            "Succès",
+            "Le planning a été créé avec succès."
+          );
+        }
+        this.loadPlannings(), (this.showScheduleModal = false);
         this.scheduleForm.reset();
       },
       error: (error) => {
@@ -5722,9 +5789,9 @@ export class AgencyDashboardComponent implements OnInit {
     }
 
     this.selectedEmployee.forEach((employeeId) => {
-    //   const payload = {
-    //   status: 'in_progress'  
-    // };
+      //   const payload = {
+      //   status: 'in_progress'
+      // };
       this.agencyService
         .assignReportToEmployee$(this.selectedReportId, employeeId)
         .subscribe({
@@ -5733,7 +5800,7 @@ export class AgencyDashboardComponent implements OnInit {
               "Succès",
               "Signalement assigné avec succès."
             );
-             this.loadReports(); 
+            this.loadReports();
           },
           error: (err) => {
             console.error("Erreur assignation :", err);
@@ -5765,13 +5832,12 @@ export class AgencyDashboardComponent implements OnInit {
       const agencyId = currentUser._id;
       this.agencyService.getAllzones$(agencyId).subscribe({
         next: (zones: any) => {
-          this.zones = zones.serviceZones
-;
+          this.zones = zones.serviceZones;
           console.log("zones charger>>>>>> :", this.zones);
-           const ZonesTab = this.tabs.find((tab) => tab.id === "zonesTab");
-        if (ZonesTab) {
-          ZonesTab.badge = this.zones.length;
-        }
+          const ZonesTab = this.tabs.find((tab) => tab.id === "zonesTab");
+          if (ZonesTab) {
+            ZonesTab.badge = this.zones.length;
+          }
         },
         error: (error) => {
           console.error(
@@ -5962,7 +6028,7 @@ export class AgencyDashboardComponent implements OnInit {
         },
       });
   }
-  
+
   //methode de verification de la disponibilite de l employee
   checkCollectorAvailability(
     collectorId: string,
@@ -5978,41 +6044,42 @@ export class AgencyDashboardComponent implements OnInit {
           (endTime > schedule.startTime && endTime <= schedule.endTime))
     );
   }
- 
 
-//   toggleScheduleStatus(schedule: any): void {
-//   const updatedStatus = !schedule.isActive;
-//   this.agencyService.updateSchedule$(schedule._id, { isActive: updatedStatus }).subscribe({
-//     next: () => {
-//       schedule.isActive = updatedStatus;
-//       this.notificationService.showSuccess(
-//         "Succès",
-//         `Le planning a été ${updatedStatus ? "activé" : "désactivé"} avec succès.`
-//       );
-//     },
-//     error: (error) => {
-//       console.error("Erreur lors de la mise à jour du statut du planning :", error);
-//       this.notificationService.showError(
-//         "Erreur",
-//         "Impossible de mettre à jour le statut du planning."
-//       );
-//     },
-//   });
-// }
-loadZonesMock(): void {
-  this.serviceZones = OUAGA_DATA.map((arrondissement) => ({
-    id: Math.random().toString(36).substr(2, 9), 
-    name: arrondissement.arrondissement,
-    description: arrondissement.secteurs
-      .map((secteur) => `${secteur.secteur}: ${secteur.quartiers.join(", ")}`)
-      .join("; "),
-    boundaries: [], 
-    neighborhoods: arrondissement.secteurs.flatMap((secteur) => secteur.quartiers),
-    cities: ["Ouagadougou"], 
-    isActive: true, 
-  }));
-}
- arrondissements: QuartierData[] = OUAGA_DATA;
+  //   toggleScheduleStatus(schedule: any): void {
+  //   const updatedStatus = !schedule.isActive;
+  //   this.agencyService.updateSchedule$(schedule._id, { isActive: updatedStatus }).subscribe({
+  //     next: () => {
+  //       schedule.isActive = updatedStatus;
+  //       this.notificationService.showSuccess(
+  //         "Succès",
+  //         `Le planning a été ${updatedStatus ? "activé" : "désactivé"} avec succès.`
+  //       );
+  //     },
+  //     error: (error) => {
+  //       console.error("Erreur lors de la mise à jour du statut du planning :", error);
+  //       this.notificationService.showError(
+  //         "Erreur",
+  //         "Impossible de mettre à jour le statut du planning."
+  //       );
+  //     },
+  //   });
+  // }
+  loadZonesMock(): void {
+    this.serviceZones = OUAGA_DATA.map((arrondissement) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: arrondissement.arrondissement,
+      description: arrondissement.secteurs
+        .map((secteur) => `${secteur.secteur}: ${secteur.quartiers.join(", ")}`)
+        .join("; "),
+      boundaries: [],
+      neighborhoods: arrondissement.secteurs.flatMap(
+        (secteur) => secteur.quartiers
+      ),
+      cities: ["Ouagadougou"],
+      isActive: true,
+    }));
+  }
+  arrondissements: QuartierData[] = OUAGA_DATA;
   arrondissementss: Arrondissement[] = [];
   cities: City[] = [];
   secteurss: Sector[] = [];
@@ -6021,108 +6088,121 @@ loadZonesMock(): void {
   quartierss: Quartier[] = [];
   onArrondissementChange(arrondissement?: string) {
     if (arrondissement) {
-      const sectorObj = this.arrondissementss.find(a => a.name === arrondissement);
-      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(sectorObj?.id || '');
+      const sectorObj = this.arrondissementss.find(
+        (a) => a.name === arrondissement
+      );
+      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(
+        sectorObj?.id || ""
+      );
       this.secteurss = sectors ? sectors : [];
       console.log("Secteurs  ==> ", this.secteurss);
       this.quartiers = [];
-      this.userData.address.sector = '';
-     this.userData.address.neighborhood = [];
-
+      this.userData.address.sector = "";
+      this.userData.address.neighborhood = [];
     }
   }
 
   onSecteurChange(secteur: string) {
     if (secteur) {
-      const secteurObj = this.secteurss.find(s => s.name === secteur);
-      const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(secteurObj?.id || '');
+      const secteurObj = this.secteurss.find((s) => s.name === secteur);
+      const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(
+        secteurObj?.id || ""
+      );
       console.log("Quartiers  ==> ", quartiers);
       this.quartierss = quartiers;
-      this.userData.address.neighborhood = this.userData.address.neighborhood = [];
-;
+      this.userData.address.neighborhood = this.userData.address.neighborhood =
+        [];
     }
-    const secteurObj = this.secteurs.find(s => s.secteur === secteur);
+    const secteurObj = this.secteurs.find((s) => s.secteur === secteur);
     this.quartiers = secteurObj ? secteurObj.quartiers : [];
-    this.userData.address.neighborhood =this.userData.address.neighborhood = [];
-;
+    this.userData.address.neighborhood = this.userData.address.neighborhood =
+      [];
   }
 
   onCityChange(city: string) {
     if (city) {
-      const cityObj = this.cities.find(c => c.name === city);
+      const cityObj = this.cities.find((c) => c.name === city);
       console.log("City Object ==> ", cityObj);
-      const arr = this.countriesOrgMockService.getArrondissementsByCity(cityObj?.id || '');
+      const arr = this.countriesOrgMockService.getArrondissementsByCity(
+        cityObj?.id || ""
+      );
       this.arrondissementss = arr ? arr : [];
       console.log("Arrondissements  ==> ", this.arrondissementss);
       this.secteurs = [];
       this.quartiers = [];
-      this.userData.address.arrondissement = '';
-      this.userData.address.sector = '';
-  this.userData.address.neighborhood = [];
-
-    };
-
-  }
-
-  
-
-openZoneModalcouverture(): void {
-  this.showZoneModalcouverture = true;
-}
-
-closeZoneModalcouverture(): void {
-  this.showZoneModalcouverture = false;
-}
-
-editZoneAgency(): void {
-  if (
-    this.userData.address.city &&
-    this.userData.address.arrondissement &&
-    this.userData.address.sector &&
- this.userData.address.neighborhood.length > 0
-  ) {
-    const zoneData = {
-  serviceZones: this.userData.address.neighborhood, 
-};
-
-
-    const agencyId = this.currentUser?._id;
-
-    if (!agencyId) {
-      this.notificationService.showError("Erreur", "ID agence manquant.");
-      return;
+      this.userData.address.arrondissement = "";
+      this.userData.address.sector = "";
+      this.userData.address.neighborhood = [];
     }
-
-    this.agencyService.updateAgencyZones$(agencyId, zoneData).subscribe({
-      next: (response) => {
-        console.log("Zone mise à jour :", response);
-        this.notificationService.showSuccess(
-          "Succès",
-          "La zone a été mise à jour avec succès."
-        );
-    this.loadZones(this.currentUser);
-
-        this.closeZoneModalcouverture();
-        // this.loadZones(this.currentUser?._id); 
-      },
-      error: (error) => {
-        console.error("Erreur lors de la mise à jour de la zone :", error);
-        this.notificationService.showError(
-          "Erreur",
-          "Impossible de mettre à jour la zone. Veuillez réessayer."
-        );
-      },
-    });
-  } else {
-    this.notificationService.showError(
-      "Erreur",
-      "Veuillez remplir tous les champs obligatoires."
-    );
   }
-}
 
-getAllCountries() {
-  this.cities = this.countriesOrgMockService.getCitiesByCountry("1");
-  console.log("Villes chargées :", this.cities);
-}
+  openZoneModalcouverture(): void {
+    this.showZoneModalcouverture = true;
+  }
+
+  closeZoneModalcouverture(): void {
+    this.showZoneModalcouverture = false;
+  }
+
+  editZoneAgency(): void {
+    if (
+      this.userData.address.city &&
+      this.userData.address.arrondissement &&
+      this.userData.address.sector &&
+      this.userData.address.neighborhood.length > 0
+    ) {
+      const zoneData = {
+        serviceZones: this.userData.address.neighborhood,
+      };
+
+      const agencyId = this.currentUser?._id;
+
+      if (!agencyId) {
+        this.notificationService.showError("Erreur", "ID agence manquant.");
+        return;
+      }
+
+      this.agencyService.updateAgencyZones$(agencyId, zoneData).subscribe({
+        next: (response) => {
+          console.log("Zone mise à jour :", response);
+          this.notificationService.showSuccess(
+            "Succès",
+            "La zone a été mise à jour avec succès."
+          );
+          this.loadZones(this.currentUser);
+
+          this.closeZoneModalcouverture();
+          // this.loadZones(this.currentUser?._id);
+        },
+        error: (error) => {
+          console.error("Erreur lors de la mise à jour de la zone :", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de mettre à jour la zone. Veuillez réessayer."
+          );
+        },
+      });
+    } else {
+      this.notificationService.showError(
+        "Erreur",
+        "Veuillez remplir tous les champs obligatoires."
+      );
+    }
+  }
+
+  getAllCountries() {
+    this.cities = this.countriesOrgMockService.getCitiesByCountry("1");
+    console.log("Villes chargées :", this.cities);
+  }
+
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    try {
+      this.myScrollContainer.nativeElement.scrollTop =
+        this.myScrollContainer.nativeElement.scrollHeight;
+    } catch (err) {}
+  }
 }
