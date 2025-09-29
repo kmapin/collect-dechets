@@ -1666,7 +1666,7 @@ updateEndDate() {
       this.notificationService.showError('Erreur', 'Agence non trouvée');
       return;
     }
-    this.messageData.sender = this.currentUser?._id || '';
+    this.messageData.sender = this.currentUser?.userId || '';
     this.messageData.receiver = this.agencyId || '';
     this.messageData.content = this.messageData.content.trim();
     if (!this.messageData.content) {
@@ -1739,9 +1739,9 @@ updateEndDate() {
     this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
       if (response.success && response.data) {
         this.agency = this.mapApiAgency(response.data);
-        this.agencyIdd = this.agency?._id;
+        this.agencyId = this.agency?.userId;
         console.log('[DEBUG] Agency details:', this.agency);
-        console.log('[DEBUG] AgencyID details:', this.agencyIdd);
+        console.log('[DEBUG] AgencyID details:', this.agencyId);
         this.loadTariffs();
       } else {
         console.error('Erreur lors du chargement de l\'agence');
