@@ -2260,7 +2260,7 @@ export class ClientDashboardComponent implements OnInit {
               this.receivedId = agencyId;
           }
           this.receivedMessages.forEach((message: any) => {
-            if(message.receiver === this.currentUser?._id){
+            if(message.receiver === this.currentUser?.userId){
               this.readAndRespondMessage(message);
             }
             message.read = message.read.toString();

@@ -3806,7 +3806,7 @@ export class AgencyDashboardComponent implements OnInit {
 
   userMessages() {
     this.messageService
-      .getMessagesForUser(this.currentUser?.userId || "")
+      .getMessagesForAgency(this.currentUser?.userId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
