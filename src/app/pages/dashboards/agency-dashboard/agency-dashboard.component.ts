@@ -3839,7 +3839,7 @@ interface Statistics {
     `,
   ],
 })
-export class AgencyDashboardComponent implements OnInit {
+export class AgencyDashboardComponent implements OnInit,AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
 
   scheduleForm: FormGroup;
@@ -6195,9 +6195,9 @@ export class AgencyDashboardComponent implements OnInit {
     console.log("Villes chargées :", this.cities);
   }
 
-  // ngAfterViewChecked() {
-  //   this.scrollToBottom();
-  // }
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
 
   private scrollToBottom(): void {
     try {

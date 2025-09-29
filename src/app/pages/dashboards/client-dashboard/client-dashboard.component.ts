@@ -1940,7 +1940,7 @@ interface Subscription {
     `,
   ],
 })
-export class ClientDashboardComponent implements OnInit {
+export class ClientDashboardComponent implements OnInit, AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
   currentUser!: any;
   upcomingCollections: Collection[] = [];
@@ -2813,9 +2813,9 @@ export class ClientDashboardComponent implements OnInit {
 
     doc.save("Historique-paiement-client.pdf");
   }
-  // ngAfterViewChecked() {
-  //   this.scrollToBottom();
-  // }
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
 
   private scrollToBottom(): void {
     try {
