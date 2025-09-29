@@ -465,8 +465,11 @@ interface Subscription {
                                 {{
                                   message.timestamp
                                     | date : "dd/MMM/yyyy à HH:mm"
-                                }}</span
-                              >
+                                }}
+                                <mat-icon class="chat-read">
+                                  {{ message.read=== 'true' ? 'done_all' : 'done' }}
+                                </mat-icon>
+                              </span>
                             </div>
                           </div>
                           <div
@@ -480,8 +483,12 @@ interface Subscription {
                                 {{
                                   message.timestamp
                                     | date : "dd/MMM/yyyy  à HH:mm"
-                                }}</span
-                              >
+                                }}
+                                <mat-icon class="chat-read">
+                                  {{ message.read=== 'true' ? 'done_all' : 'done' }}
+                                </mat-icon>
+                              </span>
+                              
                             </div>
                           </div>
                         </ng-container>
@@ -1790,9 +1797,17 @@ interface Subscription {
       }
       .chat-time {
         display: block;
+        justify-items: center;
         text-align: right;
         font-size: 8px;
         margin-top: 5px;
+      }
+      .chat-read {
+        font-size: 14px;
+        margin-top: 0px;
+        padding-top: 5px;
+        width:fit-content;
+        height:fit-content;
       }
       /**left column chat css */
       .chat-left-column-header {
@@ -2255,6 +2270,9 @@ export class ClientDashboardComponent implements OnInit {
               this.receivedId = agencyId;
           }
           this.receivedMessages.forEach((message: any) => {
+            if(message.receiver === this.currentUser?._id){
+              this.readAndRespondMessage(message);
+            }
             message.read = message.read.toString();
           });
         }else{
@@ -2266,7 +2284,6 @@ export class ClientDashboardComponent implements OnInit {
   readAndRespondMessage(message: Message): void {
     this.messageService.markMessagesAsRead(message._id || "").subscribe({
       next: (response: any) => {
-        this.showMessageModal = true;
         this.receivedId = message.sender;
         this.userMessages();
         console.log("Lire et répondre au message:", message._id);
