@@ -35,6 +35,7 @@ import { SharedService } from "../../../services/shared-service";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
 import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
+import { MatIcon } from "@angular/material/icon";
 
 interface Client {
   id: string;
@@ -88,7 +89,7 @@ interface Statistics {
 @Component({
   selector: "app-agency-dashboard",
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule,MatExpansionModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule,MatExpansionModule, MatIcon],
   template: `
     <div class="agency-dashboard">
       <div class="page-header">
@@ -841,13 +842,16 @@ interface Statistics {
                   <div *ngIf="!report.photos || !report.photos.length">
                     <p><em>Aucune photo associée</em></p>
                   </div>
-                  
+                  <div *ngIf="agencyReports.length === 0" class="empty-state">
+                    <i class="material-icons">report_problem</i>
+                    <h3>Aucun signalement pour le moment</h3>
+                  </div>
                   <div class="incident-actions">
                     <button
                       class="btn btn-accent"
                       (click)="openAssignModal(report._id)"
                        (click)="openAssignModal(report._id)"
-    *ngIf="!report.assignedTo"
+                        *ngIf="!report.assignedTo"
                     >
                       <i class="material-icons">assignment_ind</i>
                    Traiter
@@ -861,7 +865,7 @@ interface Statistics {
                       class="btn btn-success"
                       (click)="resolveIncident(report._id)"
                         (click)="resolveIncident(report._id)"
-    *ngIf="report.assignedTo"
+                      *ngIf="report.assignedTo"
                     >
                       <i class="material-icons">check</i>
                       Résoudre
@@ -888,41 +892,81 @@ interface Statistics {
                   <span>{{ unreadMessageCount }} message(s) non lu(s)</span>
                 </div>
               </div>
-              <div class="reports-list">
-                <div
-                  *ngFor="let message of receivedMessages"
-                  class="report-card card"
-                  [ngClass]="'read-border-' + message.read"
-                >
-                  <div class="incident-header">
-                    <div class="status-badge" [class]="'read-' + message.read">
-                      <span
-                        >{{
-                          message.sender === currentUser?._id
-                            ? "Envoyé"
-                            : "Reçu"
-                        }}
-                      </span>
-                    </div>
-                    <div class="incident-status">
-                      <span
-                        class="status-badge"
-                        [class]="'read-' + message.read"
-                      >
-                        {{ message.read === "true" ? "lu" : "non lu" }}
-                      </span>
+              <div class="parent">
+              <!-- Header -->
+              <div class="chat-header-column">
+                Vous discutez avec {{ displayAgencyName }}
+              </div>
+
+              <div class="message-content">
+                <!-- Sidebar -->
+                <div class="chat-left-column">
+                  <div class="chat-left-column-header">
+                    <div class="chat-left-column-header-title">
+                      Mes discussions
                     </div>
                   </div>
-                  <h4>envoyé par : {{ message?.senderName ?? "Moi" }}</h4>
-                  <div class="incident-content">
-                    <h4>{{ getIncidentTypeText(message.type) }}</h4>
-                    <p class="incident-description">{{ message.content }}</p>
-                    <p class="incident-date">
-                      Date : {{ message.timestamp | date : "dd/MM/yyyy" }}
-                    </p>
-                    <p class="incident-date">
-                      Heure : {{ message.timestamp | date : "HH:mm:ss" }}
-                    </p>
+
+                  <div class="chat-left-column-content">
+                    <ng-container *ngFor="let message of connectedUserMessages">
+                      <button
+                      class="chat-left-column-content-item"
+                      *ngIf="message.firstName"
+                      (click)="
+                        userAndAgencyConversation(
+                          message.userId
+                        )
+                      "
+                    >
+                      {{ message.firstName }} {{message.lastName}}
+                    </button>
+                    </ng-container>
+                    
+                  </div>
+                </div>
+
+                <!-- Messages + Input -->
+                <div class="chat-area">
+                  <div class="chat-messages">
+                    <ng-container *ngFor="let message of receivedMessages">
+                      <div
+                        class="received "
+                        *ngIf="message.sender !== currentUser?.userId"
+                      >
+                        <div class="div5 chat-bubble">
+                          <span> {{ message.content }}</span>
+                          <span class="chat-time"
+                            >reçu le
+                            {{
+                              message.timestamp
+                                | date : "dd/MMM/yyyy à HH:mm"
+                            }}
+                            <mat-icon class="chat-read">
+                              {{ message.read=== 'true' ? 'done_all' : 'done' }}
+                            </mat-icon>
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        class="sent"
+                        *ngIf="message.sender === currentUser?.userId"
+                      >
+                        <div class="div6 chat-bubble">
+                          <span> {{ message.content }}</span>
+                          <span class="chat-time"
+                            >envoyé le
+                            {{
+                              message.timestamp
+                                | date : "dd/MMM/yyyy  à HH:mm"
+                            }}
+                            <mat-icon class="chat-read">
+                              {{ message.read=== 'true' ? 'done_all' : 'done' }}
+                            </mat-icon>
+                          </span>
+                          
+                        </div>
+                      </div>
+                    </ng-container>
                   </div>
                   <div class="incident-actions">
                     <button
@@ -947,11 +991,6 @@ interface Statistics {
                   </div>
                 </div>
               </div>
-              <div *ngIf="!receivedMessages?.length" class="empty-state">
-  <i class="material-icons">message_outline</i>
-  <h3>Aucun message</h3>
-  <p>Vous n'avez pas encore reçu de messages.</p>
-</div>
             </div>
             <!-- Message -->
             <div
@@ -3479,7 +3518,210 @@ interface Statistics {
         border-top: 1px solid var(--medium-gray);
       }
    
+            /**Grid messagerie start */
 
+      .parent {
+        display: flex;
+        flex-direction: column;
+        height: 700px; /* prend toute la hauteur */
+      }
+
+      /* Header */
+      .chat-header-column {
+        background-color: var(--medium-gray);
+        padding: 10px;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        text-align: center;
+      }
+
+      /* Zone centrale (sidebar + chat) */
+      .message-content {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* Sidebar */
+      .chat-left-column {
+        width: 30%;
+        background-color: var(--medium-gray);
+        padding: 10px;
+      }
+
+      /* Zone chat (messages + input) */
+      .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #f9f9f9;
+        background-image: url("../../../../assets/chatBg/chat_background.png");
+        background-size: cover;
+      }
+
+      /* Messages scrollables */
+      .chat-messages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+      }
+      /* Messages reçus (à gauche) */
+      .received {
+        display: flex;
+        justify-content: flex-start;
+      }
+
+      .div5 {
+        background-color: var(--medium-gray);
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 60%;
+      }
+
+      /* Messages envoyés (à droite) */
+      .sent {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .div6 {
+        background-color: var(--message-send);
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 60%;
+      }
+      .received .chat-bubble {
+        background: #eff3f1;
+        color: #000;
+        padding: 8px 14px;
+        border-radius: 8px;
+        display: inline-block;
+        margin: 2% 0;
+        max-width: 80%;
+        font-size: 14px;
+      }
+
+      .sent .chat-bubble {
+        background: #6cee9e;
+        color: #000;
+        padding: 8px 14px;
+        border-radius: 6px;
+        display: inline-block;
+        margin: 2% 0;
+        max-width: 80%;
+        /* font-weight: bold; */
+        font-size: 14px;
+      }
+
+      /* Input en bas */
+      .div7 {
+        display: flex;
+        align-items: center;
+        background-color: var(--medium-gray);
+        padding: 10px;
+      }
+
+      .div7 input {
+        flex: 1;
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+      }
+
+      .chat-actions button {
+        margin-left: 10px;
+        width: fit-content;
+      }
+
+      .sendChatMessage {
+        flex: 1;
+        border-radius: 30px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        border: 1px solid #ccc;
+        padding: 10px 20px;
+        outline: none;
+        width: 100%;
+        font-size: 14px;
+        transition: box-shadow 0.2s ease;
+      }
+      .chat-input-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .chat-actions > button {
+        justify-content: center;
+        align-items: center;
+        display: flex;
+        height: 40px;
+      }
+      .chat-actions mat-icon {
+        font-size: 25px;
+      }
+
+      .material-icons {
+        font-family: "Material Icons";
+        font-weight: normal;
+        font-style: normal;
+      }
+      .sendChatMessage:focus {
+        box-shadow: 0 0 0 3px rgba(100, 150, 255, 0.3);
+        border-color: #6495ff;
+      }
+      .chat-time {
+        display: block;
+        justify-items: center;
+        text-align: right;
+        font-size: 8px;
+        margin-top: 5px;
+      }
+      .chat-read {
+        font-size: 14px;
+        margin-top: 0px;
+        padding-top: 5px;
+        width:fit-content;
+        height:fit-content;
+      }
+      /**left column chat css */
+      .chat-left-column-header {
+        padding: 16px;
+        background-color: var(--surface-400, #4caf50);
+        color: #fff;
+        margin-bottom: 10px;
+        font-weight: bold;
+        font-size: 16px;
+        border-bottom: 1px solid #ddd;
+        border-radius: 5px 5px 0 0;
+      }
+
+      /*Liste des discussions*/
+      .chat-left-column-content {
+        flex: 1;
+        max-height: 500px;
+        overflow-y: auto;
+      }
+
+      .chat-left-column-content-item {
+        display: flex;
+        padding: 12px 16px;
+        min-width: 100%;
+        font-size: 14px;
+        align-self:start;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        background-color: var(--surface-300);
+        transition: background-color 0.2s;
+      }
+
+      .chat-left-column-content-item:hover {
+        background-color: #f9f9f9;
+      }
+
+      .chat-left-column-content-item.active {
+        background-color: #e6f4ea;
+        font-weight: bold;
+      }
+      /** Grid messagerie end */
       @media (max-width: 1024px) {
         .header-content {
           flex-direction: column;
@@ -3745,9 +3987,10 @@ export class AgencyDashboardComponent implements OnInit {
     receiver: "",
     content: "",
   };
-
-  client: any;
+  connectedUserMessages: any;
   receivedId: string = "";
+  client: any;
+  displayAgencyName: string = ""
   employeeForm: FormGroup;
   constructor(
     private authService: AuthService,
@@ -3835,10 +4078,10 @@ export class AgencyDashboardComponent implements OnInit {
 
     }
   }
-
+  /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService
-      .getUserUnreadMessagesCount(this.currentUser?._id || "")
+      .getUserUnreadMessagesCount(this.currentUser?.userId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
@@ -3854,26 +4097,13 @@ export class AgencyDashboardComponent implements OnInit {
 
   userMessages() {
     this.messageService
-      .getMessagesForUser(this.currentUser?._id || "")
+      .getMessagesForUser(this.currentUser?.userId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
             console.log("API > getMessagesForUser:", response);
-            this.receivedMessages = response.messages || [];
-            this.receivedMessages.forEach((message: any) => {
-              message.read = message.read.toString();
-              this.clientService
-                .getClientById(message.sender)
-                .subscribe((response: any) => {
-                  if (response.success && response.data) {
-                    this.client = response.data;
-                    console.log("Client data:", this.client);
-                    message.senderName =
-                      this.client.firstName + " " + this.client.lastName;
-                  }
-                });
-              console.log("Message:", message);
-            });
+            this.connectedUserMessages = response|| [];
+            console.log("this.connectedUserMessages:", this.connectedUserMessages);
           }
         },
         error: (error: any) => {
@@ -3881,14 +4111,38 @@ export class AgencyDashboardComponent implements OnInit {
         },
       });
   }
+
+  userAndAgencyConversation(clientId: string) {
+    this.clientService
+      .userAndAgencyConversation(this.currentUser?.userId || "", clientId)
+      .subscribe((response: any) => {
+        console.log("API >userAndAgencyConversation:", response);
+        if (response) {
+          console.log("API >userAndAgencyConversation:", response);
+          this.receivedMessages = response.messages || [];
+
+          this.displayAgencyName = this.receivedMessages[0].senderName;
+          if(!clientId){
+              this.receivedId = this.currentUser?.userId || "";
+          } else {
+              this.receivedId = clientId;
+          }
+          this.receivedMessages.forEach((message: any) => {
+            if(message.receiver === this.currentUser?.userId){
+              this.readAndRespondMessage(message);
+            }
+            message.read = message.read.toString();
+          });
+        }else{
+          this.receivedMessages = [];
+          this.notificationService.showError("Erreur", "Aucun message, veuillez contacter l'agence !");
+        }
+      });
+  }
   readAndRespondMessage(message: Message): void {
-    console.log("Marquer le message comme lu:", message);
     this.messageService.markMessagesAsRead(message._id || "").subscribe({
       next: (response: any) => {
-        this.showMessageModal = true;
         this.receivedId = message.sender;
-        this.countUnreadMessages();
-        this.userMessages();
         console.log("Lire et répondre au message:", message._id);
       },
       error: (error: any) => {
@@ -3896,7 +4150,7 @@ export class AgencyDashboardComponent implements OnInit {
       },
     });
   }
-  submitMessage(): void {
+  submitMessage() {
     if (!this.currentUser) {
       this.notificationService.showError(
         "Connexion requise",
@@ -3904,11 +4158,11 @@ export class AgencyDashboardComponent implements OnInit {
       );
       return;
     }
-    if (!this.agency) {
+    if (!this.receivedId) {
       this.notificationService.showError("Erreur", "Agence non trouvée");
       return;
     }
-    this.messageData.sender = this.currentUser?._id || "";
+    this.messageData.sender = this.currentUser?.userId || "";
     this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
     if (!this.messageData.content) {
@@ -3923,12 +4177,14 @@ export class AgencyDashboardComponent implements OnInit {
     this.messageService.sendMessage(this.messageData).subscribe({
       next: (response: any) => {
         console.log("API > sendMessage:", response);
+        this.userAndAgencyConversation(
+          this.receivedId || ""
+        )
         this.notificationService.showSuccess(
           "Message envoyé",
           "Votre message a bien été envoyé"
         );
-        this.showMessageModal = false;
-        this.userMessages();
+        this.messageData.content = "";
       },
       error: (error: any) => {
         console.error("API > sendMessage:", error);
@@ -3940,29 +4196,6 @@ export class AgencyDashboardComponent implements OnInit {
     });
   }
 
-  deleteMessage(messageId: string): void {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) {
-      this.messageService.deleteMessage(messageId).subscribe({
-        next: (response: any) => {
-          console.log("API > deleteMessage:", response);
-          this.notificationService.showSuccess(
-            "Message supprimé",
-            "Le message a bien été supprimé"
-          );
-          this.showMessageModal = false;
-          this.countUnreadMessages();
-          this.userMessages();
-        },
-        error: (error: any) => {
-          console.error("API > deleteMessage:", error);
-          this.notificationService.showError(
-            "Message non supprimé",
-            "Une erreur s'est produite lors de la suppression du message"
-          );
-        },
-      });
-    }
-  }
   /**Gestion des messages recus par le client connecté fin */
 
   openAssignModal(reportId: string): void {

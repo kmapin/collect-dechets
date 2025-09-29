@@ -1,3 +1,4 @@
+import { CellWidthType } from './../../../../../node_modules/jspdf-autotable/dist/index.d';
 import { BarcodeFormat } from "@zxing/library";
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
@@ -52,6 +53,10 @@ interface Subscription {
               </p>
             </div>
             <div class="quick-actions">
+              <button *ngIf="currentUser?.subscribedAgencyId" class="btn btn-primary" routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}">
+                <i class="material-icons">business</i>
+                Mon agence
+              </button>
               <button class="btn btn-primary" (click)="showReportModal = true">
                 <i class="material-icons">report_problem</i>
                 Signaler un problème
@@ -326,7 +331,7 @@ interface Subscription {
               </section>
 
               <!-- Messages -->
-              <section class="collection-message card">
+              <!-- <section class="collection-message card">
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">message</i>
@@ -399,7 +404,7 @@ interface Subscription {
                   </div>
                 </div>
               </section>
-
+              -->
               <!-- Messages 2 -->
               <section class="collection-message card">
                 <div class="section-header">
@@ -434,15 +439,14 @@ interface Subscription {
                         <ng-container *ngFor="let message of connectedUserMessages">
                           <button
                           class="chat-left-column-content-item"
-                          *ngIf="message.senderName"
+                          *ngIf="message.agencyName"
                           (click)="
                             userAndAgencyConversation(
-                              message.sender,
-                              message.receiver
+                              message.userId
                             )
                           "
                         >
-                          {{ message.senderName }}
+                          {{ message.agencyName }}
                         </button>
                         </ng-container>
                         
@@ -455,7 +459,7 @@ interface Subscription {
                         <ng-container *ngFor="let message of receivedMessages">
                           <div
                             class="received "
-                            *ngIf="message.sender !== currentUser?._id"
+                            *ngIf="message.sender !== currentUser?.userId"
                           >
                             <div class="div5 chat-bubble">
                               <span> {{ message.content }}</span>
@@ -464,13 +468,16 @@ interface Subscription {
                                 {{
                                   message.timestamp
                                     | date : "dd/MMM/yyyy à HH:mm"
-                                }}</span
-                              >
+                                }}
+                                <mat-icon class="chat-read">
+                                  {{ message.read=== 'true' ? 'done_all' : 'done' }}
+                                </mat-icon>
+                              </span>
                             </div>
                           </div>
                           <div
                             class="sent"
-                            *ngIf="message.sender === currentUser?._id"
+                            *ngIf="message.sender === currentUser?.userId"
                           >
                             <div class="div6 chat-bubble">
                               <span> {{ message.content }}</span>
@@ -479,8 +486,12 @@ interface Subscription {
                                 {{
                                   message.timestamp
                                     | date : "dd/MMM/yyyy  à HH:mm"
-                                }}</span
-                              >
+                                }}
+                                <mat-icon class="chat-read">
+                                  {{ message.read=== 'true' ? 'done_all' : 'done' }}
+                                </mat-icon>
+                              </span>
+                              
                             </div>
                           </div>
                         </ng-container>
@@ -488,16 +499,23 @@ interface Subscription {
 
                       <!-- Input fixé en bas -->
                       <div class="div7 chat-input-row">
-                        <input
-                          class="sendChatMessage"
-                          type="text"
-                          placeholder="Composez votre message"
-                        />
-                        <div class="chat-actions">
-                          <button type="submit">
-                            <mat-icon class="material-icons">send</mat-icon>
-                          </button>
-                        </div>
+                        
+                          <input
+                            class="sendChatMessage"
+                            [(ngModel)]="messageData.content"
+                            name="content"
+                            type="text"
+                            placeholder="Composez votre message"
+                          />
+                          <div class="chat-actions">
+                            <button type="button"
+                                (click)="submitMessage()"
+                                class="btn_send btn-secondary"
+                            >
+                              <mat-icon class="material-icons">send</mat-icon>
+                            </button>
+                          </div>
+                        
                       </div>
                     </div>
                   </div>
@@ -1742,6 +1760,7 @@ interface Subscription {
 
       .chat-actions button {
         margin-left: 10px;
+        width: fit-content;
       }
 
       .sendChatMessage {
@@ -1781,9 +1800,17 @@ interface Subscription {
       }
       .chat-time {
         display: block;
+        justify-items: center;
         text-align: right;
         font-size: 8px;
         margin-top: 5px;
+      }
+      .chat-read {
+        font-size: 14px;
+        margin-top: 0px;
+        padding-top: 5px;
+        width:fit-content;
+        height:fit-content;
       }
       /**left column chat css */
       .chat-left-column-header {
@@ -1805,8 +1832,11 @@ interface Subscription {
       }
 
       .chat-left-column-content-item {
+        display: flex;
         padding: 12px 16px;
         min-width: 100%;
+        font-size: 14px;
+        align-self:start;
         border-bottom: 1px solid #f0f0f0;
         cursor: pointer;
         background-color: var(--surface-300);
@@ -2183,7 +2213,7 @@ export class ClientDashboardComponent implements OnInit {
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService
-      .getUserUnreadMessagesCount(this.currentUser?._id || "")
+      .getUserUnreadMessagesCount(this.currentUser?.userId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
@@ -2199,29 +2229,13 @@ export class ClientDashboardComponent implements OnInit {
 
   userMessages() {
     this.messageService
-      .getMessagesForUser(this.currentUser?._id || "")
+      .getMessagesForUser(this.currentUser?.userId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
             console.log("API > getMessagesForUser:", response);
-            this.connectedUserMessages = response.messages || [];
-
-            this.connectedUserMessages.forEach((message: any) => {
-              message.read = message.read.toString();
-
-              this.agencyService
-                .getAgencyByIdFromApi(message.sender || message.receiver)
-                .subscribe((res: any) => {
-                  if (res.success && res.data) {
-                    message.senderName = res.data.agencyName;
-                  }
-
-                  console.log(
-                    "Received messages (no duplicates):",
-                    this.connectedUserMessages
-                  );
-                });
-            });
+            this.connectedUserMessages = response|| [];
+            console.log("this.connectedUserMessages:", this.connectedUserMessages);
           }
         },
         error: (error: any) => {
@@ -2230,9 +2244,9 @@ export class ClientDashboardComponent implements OnInit {
       });
   }
 
-  userAndAgencyConversation(cliendId: string, agencyId: string) {
+  userAndAgencyConversation(agencyId: string) {
     this.clientService
-      .userAndAgencyConversation(cliendId, agencyId)
+      .userAndAgencyConversation(this.currentUser?.userId || "", agencyId)
       .subscribe((response: any) => {
         console.log("API >userAndAgencyConversation:", response);
         if (response) {
@@ -2240,18 +2254,27 @@ export class ClientDashboardComponent implements OnInit {
           this.receivedMessages = response.messages || [];
 
           this.displayAgencyName = this.receivedMessages[0].senderName;
+          if(!agencyId){
+              this.receivedId = this.currentUser?.userId ;
+          } else {
+              this.receivedId = agencyId;
+          }
           this.receivedMessages.forEach((message: any) => {
+            if(message.receiver === this.currentUser?.userId){
+              this.readAndRespondMessage(message);
+            }
             message.read = message.read.toString();
           });
+        }else{
+          this.receivedMessages = [];
+          this.notificationService.showError("Erreur", "Aucun message, veuillez contacter l'agence !");
         }
       });
   }
   readAndRespondMessage(message: Message): void {
     this.messageService.markMessagesAsRead(message._id || "").subscribe({
       next: (response: any) => {
-        this.showMessageModal = true;
         this.receivedId = message.sender;
-        this.userMessages();
         console.log("Lire et répondre au message:", message._id);
       },
       error: (error: any) => {
@@ -2267,11 +2290,11 @@ export class ClientDashboardComponent implements OnInit {
       );
       return;
     }
-    if (!this.agency) {
+    if (!this.receivedId) {
       this.notificationService.showError("Erreur", "Agence non trouvée");
       return;
     }
-    this.messageData.sender = this.currentUser?._id || "";
+    this.messageData.sender = this.currentUser?.userId || "";
     this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
     if (!this.messageData.content) {
@@ -2286,12 +2309,14 @@ export class ClientDashboardComponent implements OnInit {
     this.messageService.sendMessage(this.messageData).subscribe({
       next: (response: any) => {
         console.log("API > sendMessage:", response);
+        this.userAndAgencyConversation(
+          this.receivedId || ""
+        )
         this.notificationService.showSuccess(
           "Message envoyé",
           "Votre message a bien été envoyé"
         );
-        this.showReportModal = false;
-        this.userMessages();
+        this.messageData.content = "";
       },
       error: (error: any) => {
         console.error("API > sendMessage:", error);

@@ -7,6 +7,7 @@ import { Agency, Tariff, WasteService } from '../../models/agency.model';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { Arrondissement, Quartier, Sector } from '../../models/countries-org.model';
 import { CountriesOrgMockService } from '../../services/countries-org-mock.service';
+import { AuthService } from '../../services/auth.service';
 
 
 @Component({
@@ -22,6 +23,13 @@ import { CountriesOrgMockService } from '../../services/countries-org-mock.servi
             Découvrez toutes les agences de collecte de déchets disponibles dans votre région. 
             Comparez leurs services, zones de couverture et tarifs pour choisir celle qui vous convient le mieux.
           </p>
+        </div>
+        <div class="quick-actions">
+              <button *ngIf="currentUser?.subscribedAgencyId" class="btn btn-primary" routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}">
+                <i class="material-icons">business</i>
+                Mon agence
+              </button>
+              
         </div>
       </div>
 
@@ -932,10 +940,13 @@ onSecteurChange(secteur: string) {
 // selectedNeighborhood: string = '';
 // minRating: string = '';
 // searchQuery: string = '';
+currentUser!: any ;
 
  private searchSubject = new Subject<string>();
   constructor(
     private agencyService: AgencyService,
+        private authService: AuthService,
+    
     private router: Router,
     private route: ActivatedRoute,
     private countriesOrgMockService: CountriesOrgMockService
@@ -943,6 +954,8 @@ onSecteurChange(secteur: string) {
   ) { }
 
   ngOnInit(): void {
+
+    this.getUser();
    
     this.loadAgenciesFromApi();
     this.searchSubject.pipe(
@@ -956,6 +969,14 @@ onSecteurChange(secteur: string) {
 
     // this.getCitiesContent(this.selectedCity);
 
+  }
+
+  getUser(){
+   this.authService.currentUser$.subscribe((user) => {
+      this.currentUser = user;
+      
+    });
+    console.log("Current User", this.currentUser); 
   }
 
   getCitiesContent(ville: string){

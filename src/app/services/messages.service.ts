@@ -19,9 +19,11 @@ export class MessagesService {
   }
 
   getMessagesForUser(userId: string): Observable<Message[]> {
+    return this.http.get<Message[]>(`${environment.apiUrl}/messages/${userId}/groupe`);
+  }
+  getMessagesForAgency(userId: string): Observable<Message[]> {
     return this.http.get<Message[]>(`${environment.apiUrl}/messages/${userId}`);
   }
-
   getUserUnreadMessagesCount(userId: string): Observable<number> {
     return this.http.get<number>(`${environment.apiUrl}/messages/unread-count/${userId}`);
   }
