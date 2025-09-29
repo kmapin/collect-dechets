@@ -479,8 +479,20 @@ interface Statistics {
                     <div class="map-placeholder">
                       <i class="material-icons">map</i>
                       
-                      <p>Carte interactive des zones</p>
-                      <small>Cliquez sur une zone pour la modifier</small>
+                    <div class="zone-container" *ngIf="zones?.length">
+  <h4 class="zone-title">Zones couvertes</h4>
+  <div class="zone-list">
+    <div class="zone-card" *ngFor="let zone of zones">
+           <div class="zone-details">
+                <p><strong>Quartier :</strong> {{ zone.neighborhood || zone }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="!zones?.length && !isLoading" class="no-zone">
+  <p>Aucune zone chargée pour cette agence.</p>
+</div>
                       
                     </div>
                   </div>
@@ -5465,7 +5477,8 @@ export class AgencyDashboardComponent implements OnInit {
       const agencyId = currentUser._id;
       this.agencyService.getAllzones$(agencyId).subscribe({
         next: (zones: any) => {
-          this.zones = zones;
+          this.zones = zones.serviceZones
+;
           console.log("zones charger>>>>>> :", this.zones);
         },
         error: (error) => {
@@ -5795,8 +5808,10 @@ editZoneAgency(): void {
           "Succès",
           "La zone a été mise à jour avec succès."
         );
+    this.loadZones(this.currentUser);
+
         this.closeZoneModalcouverture();
-        this.loadZones(this.currentUser?._id); 
+        // this.loadZones(this.currentUser?._id); 
       },
       error: (error) => {
         console.error("Erreur lors de la mise à jour de la zone :", error);
