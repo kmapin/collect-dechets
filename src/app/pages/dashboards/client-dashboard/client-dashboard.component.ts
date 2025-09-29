@@ -2285,7 +2285,6 @@ export class ClientDashboardComponent implements OnInit {
     this.messageService.markMessagesAsRead(message._id || "").subscribe({
       next: (response: any) => {
         this.receivedId = message.sender;
-        this.userMessages();
         console.log("Lire et répondre au message:", message._id);
       },
       error: (error: any) => {
@@ -2328,8 +2327,6 @@ export class ClientDashboardComponent implements OnInit {
           "Message envoyé",
           "Votre message a bien été envoyé"
         );
-        this.showReportModal = false;
-        this.userMessages();
         this.messageData.content = "";
       },
       error: (error: any) => {
