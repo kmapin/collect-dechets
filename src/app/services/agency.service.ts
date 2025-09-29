@@ -342,10 +342,11 @@ export class AgencyService {
         console.log(`Employé ${employeeId} supprimé avec succès`);
         return true;
       }),
-      catchError(error => {
-        console.error(`Erreur lors de la suppression de l'employé ${employeeId} :`, error);
-        return of(false); // Retourne false en cas d'erreur
-      })
+     catchError(error => {
+      console.error(` Erreur lors de la suppression de l'employé ${employeeId} :`, error);
+      return of(false); // Retourne false en cas d'erreur
+    })
+
     );
   }
   //recupere les employees d une agence en fonction de leur role
