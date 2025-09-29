@@ -1923,7 +1923,7 @@ export class ClientDashboardComponent implements OnInit {
     receiver: "",
     content: "",
   };
-
+  data: any;
   subscriptions: any[] = [];
   activeSubscription: any = null;
   showRechargeModal: boolean = false;
@@ -2246,8 +2246,9 @@ export class ClientDashboardComponent implements OnInit {
   }
 
   userAndAgencyConversation(agency: any) {
+    this.data=agency;
     this.displayAgencyName = agency.agencyName;
-    const agencyId= agency?.userId
+    const agencyId= agency?.userId 
     this.clientService
       .userAndAgencyConversation(this.currentUser?.userId || "", agencyId)
       .subscribe((response: any) => {
@@ -2298,6 +2299,7 @@ export class ClientDashboardComponent implements OnInit {
     this.messageData.sender = this.currentUser?.userId || "";
     this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
+    
     if (!this.messageData.content) {
       this.notificationService.showError(
         "Message vide",
@@ -2310,9 +2312,8 @@ export class ClientDashboardComponent implements OnInit {
     this.messageService.sendMessage(this.messageData).subscribe({
       next: (response: any) => {
         console.log("API > sendMessage:", response);
-        this.userAndAgencyConversation(
-          this.receivedId || ""
-        )
+        console.log("API > data:", this.data);
+        this.userAndAgencyConversation(this.data)
         this.notificationService.showSuccess(
           "Message envoyé",
           "Votre message a bien été envoyé"

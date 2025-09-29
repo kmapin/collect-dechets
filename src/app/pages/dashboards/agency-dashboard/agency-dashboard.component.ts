@@ -968,26 +968,26 @@ interface Statistics {
                       </div>
                     </ng-container>
                   </div>
-                  <div class="incident-actions">
-                    <button
-                      class="btn btn-accent"
-                      (click)="deleteMessage(message._id)"
-                      *ngIf="
-                        message.sender === currentUser?._id ||
-                        message.read === 'true'
-                      "
-                    >
-                      <i class="material-icons">delete</i>
-                      Supprimer
-                    </button>
-                    <button
-                      class="btn btn-success"
-                      (click)="readAndRespondMessage(message)"
-                      *ngIf="message.sender !== currentUser?._id"
-                    >
-                      <i class="material-icons">check</i>
-                      Repondre
-                    </button>
+              
+                  <!-- Input fixé en bas -->
+                  <div class="div7 chat-input-row">
+                    
+                      <input
+                        class="sendChatMessage"
+                        [(ngModel)]="messageData.content"
+                        name="content"
+                        type="text"
+                        placeholder="Composez votre message"
+                      />
+                      <div class="chat-actions">
+                        <button type="button"
+                            (click)="submitMessage()"
+                            class="btn_send btn-secondary"
+                        >
+                          <mat-icon class="material-icons">send</mat-icon>
+                        </button>
+                      </div>
+                    
                   </div>
                 </div>
               </div>
@@ -3988,6 +3988,7 @@ export class AgencyDashboardComponent implements OnInit {
     receiver: "",
     content: "",
   };
+  data: any;
   connectedUserMessages: any;
   receivedId: string = "";
   client: any;
@@ -4114,8 +4115,9 @@ export class AgencyDashboardComponent implements OnInit {
   }
 
   userAndAgencyConversation(client: any) {
+    this.data=client;
     this.displayAgencyName = client.firstName+ " " + client.lastName;
-    const clientId= client?.userId
+    const clientId= client?.userId || "";
     this.clientService
       .userAndAgencyConversation(this.currentUser?.userId || "", clientId)
       .subscribe((response: any) => {
@@ -4166,6 +4168,7 @@ export class AgencyDashboardComponent implements OnInit {
     this.messageData.sender = this.currentUser?.userId || "";
     this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
+
     if (!this.messageData.content) {
       this.notificationService.showError(
         "Message vide",
@@ -4178,9 +4181,8 @@ export class AgencyDashboardComponent implements OnInit {
     this.messageService.sendMessage(this.messageData).subscribe({
       next: (response: any) => {
         console.log("API > sendMessage:", response);
-        this.userAndAgencyConversation(
-          this.receivedId || ""
-        )
+        console.log("API > data:", this.data);
+        this.userAndAgencyConversation(this.data)
         this.notificationService.showSuccess(
           "Message envoyé",
           "Votre message a bien été envoyé"
