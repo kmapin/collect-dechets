@@ -423,7 +423,7 @@ interface Subscription {
                 <div class="parent">
                   <!-- Header -->
                   <div class="chat-header-column">
-                    Vous discutez avec {{ displayAgencyName }}
+                    <span  *ngIf="displayAgencyName">Vous discutez avec {{ displayAgencyName }}</span>
                   </div>
 
                   <div class="message-content">
@@ -442,7 +442,7 @@ interface Subscription {
                           *ngIf="message.agencyName"
                           (click)="
                             userAndAgencyConversation(
-                              message.userId
+                              message
                             )
                           "
                         >
@@ -1659,6 +1659,7 @@ interface Subscription {
       /* Header */
       .chat-header-column {
         background-color: var(--medium-gray);
+        height: 50px;
         padding: 10px;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
@@ -2244,7 +2245,9 @@ export class ClientDashboardComponent implements OnInit {
       });
   }
 
-  userAndAgencyConversation(agencyId: string) {
+  userAndAgencyConversation(agency: any) {
+    this.displayAgencyName = agency.agencyName;
+    const agencyId= agency?.userId
     this.clientService
       .userAndAgencyConversation(this.currentUser?.userId || "", agencyId)
       .subscribe((response: any) => {
@@ -2252,8 +2255,6 @@ export class ClientDashboardComponent implements OnInit {
         if (response) {
           console.log("API >userAndAgencyConversation:", response);
           this.receivedMessages = response.messages || [];
-
-          this.displayAgencyName = this.receivedMessages[0].senderName;
           if(!agencyId){
               this.receivedId = this.currentUser?.userId ;
           } else {

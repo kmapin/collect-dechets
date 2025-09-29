@@ -893,7 +893,7 @@ interface Statistics {
               <div class="parent">
               <!-- Header -->
               <div class="chat-header-column">
-                Vous discutez avec {{ displayAgencyName }}
+                <span  *ngIf="displayAgencyName">Vous discutez avec {{ displayAgencyName }}</span>
               </div>
 
               <div class="message-content">
@@ -912,7 +912,7 @@ interface Statistics {
                       *ngIf="message.firstName"
                       (click)="
                         userAndAgencyConversation(
-                          message.userId
+                          message
                         )
                       "
                     >
@@ -3488,6 +3488,7 @@ interface Statistics {
       .chat-header-column {
         background-color: var(--medium-gray);
         padding: 10px;
+        height: 50px;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
         text-align: center;
@@ -4200,7 +4201,9 @@ export class AgencyDashboardComponent implements OnInit {
       });
   }
 
-  userAndAgencyConversation(clientId: string) {
+  userAndAgencyConversation(client: any) {
+    this.displayAgencyName = client.firstName+ " " + client.lastName;
+    const clientId= client?.userId
     this.clientService
       .userAndAgencyConversation(this.currentUser?.userId || "", clientId)
       .subscribe((response: any) => {
@@ -4208,8 +4211,6 @@ export class AgencyDashboardComponent implements OnInit {
         if (response) {
           console.log("API >userAndAgencyConversation:", response);
           this.receivedMessages = response.messages || [];
-
-          this.displayAgencyName = this.receivedMessages[0].senderName;
           if(!clientId){
               this.receivedId = this.currentUser?.userId || "";
           } else {
