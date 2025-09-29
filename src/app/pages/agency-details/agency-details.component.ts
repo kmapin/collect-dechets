@@ -31,6 +31,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
             <span class="breadcrumb-item active">{{ agency.agencyName }}</span>
           </nav>
         </div>
+        
       </div>
 
       <!-- Agency Header -->
@@ -84,10 +85,10 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
               </button>
               <!-- Buton of drawer to subscribe -->
               <!-- <button class="btn btn-primary btn-large" (click)="subscribeToAgency()"> -->
-              <button *ngIf="currentUser?.role === 'client' && currentUser?.role === 'super_admin'" (click)="showSubscriptionModal = true" class="btn btn-primary btn-large" type="button" data-drawer-target="drawer-contact" data-drawer-show="drawer-contact" aria-controls="drawer-contact">
-                <i class="material-icons">add</i>
-                S'abonner
-              </button>
+              <div *ngIf="currentUser?.subscribedAgencyId == agency._id" class="btn btn-primary btn-large" type="button" data-drawer-target="drawer-contact" data-drawer-show="drawer-contact" aria-controls="drawer-contact">
+                <i class="material-icons">star</i>
+                Déjà abonné(e)
+              </div>
 
             </div>
           </div>
@@ -1294,6 +1295,20 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
     .similar-agency-item:last-child {
       border-bottom: none;
+    }
+
+    .agency-rating-header {
+      display: flex;
+      align-items: center;
+      /* text-color: white; */
+      gap: 8px;
+      background: var(--primary-color);
+      /* position: absolute; */
+      top: 16px;
+      right: 16px;
+      width: fit-content;
+      padding: 4px 12px;
+      margin-bottom: 16px;
     }
 
     .similar-agency-info h4 {
