@@ -383,20 +383,10 @@ interface Statistics {
                         {{ employee.isActive ? "Actif" : "Inactif" }}
                       </p>
                     </div>
-                    <ng-template #noEmployees>
-                      <p class="text-center text-gray-500">
-                        Aucun employé pour le moment.
-                      </p>
-                    </ng-template>
-                    <!-- <div class="employee-actions">
-                      <button class="action-btn" (click)="editEmployee(employee.id)">
-                        <i class="material-icons">edit</i>
-                      </button>
-                      <button class="action-btn danger" (click)="deleteEmployee(employee.id)">
-                        <i class="material-icons">delete</i>
-                      </button>
-                    </div> -->
+                   
+                   
                   </div>
+                  
 
                   <div class="employee-details">
                     <!-- <div class="detail-item">
@@ -422,11 +412,12 @@ interface Statistics {
                   </div>
 
                   <div class="employee-actions">
-                    <button class="action-btn" (click)="editEmployee(employee)">
+                    <button class="action-btn"  
+ (click)="editEmployee(employee)">
                       <i class="material-icons">edit</i>
                     </button>
                     <button
-                      class="action-btn danger"
+                      class="action-btn danger"[disabled]="isDeleting"
                       (click)="deleteEmployee(currentUser, employee)"
                     >
                       <i class="material-icons">delete</i>
@@ -453,6 +444,11 @@ interface Statistics {
                   </div> -->
                 </div>
               </div>
+              <div *ngIf="!allEmployees?.length" class="empty-state">
+  <i class="material-icons">people_outline</i>
+  <h3>Aucun employé</h3>
+  <p>Vous n'avez pas encore ajouté d'employés à votre agence.</p>
+</div>
             </div>
 
             <!-- Onglet Gestion des Zones -->
@@ -491,7 +487,7 @@ interface Statistics {
 </div>
 
 <div *ngIf="!zones?.length && !isLoading" class="no-zone">
-  <p>Aucune zone chargée pour cette agence.</p>
+  <p>Veuillez definir vos zonees de service .</p>
 </div>
                       
                     </div>
@@ -831,23 +827,21 @@ interface Statistics {
                     </p>
                   </div>
                   <!-- Affichage des photos -->
-                  <div *ngIf="report.photos && report.photos.length">
-                    <div *ngFor="let photo of report.photos">
+                  <div *ngIf="report.photos && report.photos.length" class="report-photos">
+                   
                       <img
+                      *ngFor="let photo of report.photos"
                         [src]="photo"
                         alt="Photo du signalement"
                         class="report-photo circular-image"
                         (click)="openImageModal(photo)"
                       />
-                    </div>
+                   
                   </div>
                   <div *ngIf="!report.photos || !report.photos.length">
                     <p><em>Aucune photo associée</em></p>
                   </div>
-                  <div *ngIf="agencyReports.length === 0" class="empty-state">
-  <i class="material-icons">report_problem</i>
-  <h3>Aucun signalement pour le moment</h3>
-</div>
+                  
                   <div class="incident-actions">
                     <button
                       class="btn btn-accent"
@@ -879,8 +873,13 @@ interface Statistics {
                   </div>
                 </div>
               </div>
+              <div *ngIf="!agencyReports?.length" class="empty-state">
+  <i class="material-icons">report_off</i>
+  <h3>Aucun signalement</h3>
+  <p>Vous n'avez pas de signalements pour le moment.</p>
+</div>
             </div>
-
+    
             <!-- Onglet Messages -->
             <div *ngIf="activeTab === 'messages'" class="reports-tab">
               <div class="reports-header">
@@ -948,6 +947,11 @@ interface Statistics {
                   </div>
                 </div>
               </div>
+              <div *ngIf="!receivedMessages?.length" class="empty-state">
+  <i class="material-icons">message_outline</i>
+  <h3>Aucun message</h3>
+  <p>Vous n'avez pas encore reçu de messages.</p>
+</div>
             </div>
             <!-- Message -->
             <div
@@ -1162,26 +1166,16 @@ interface Statistics {
                         <option value="collector">Collecteur</option>
                       </select>
                     </div>
-                    <div
-                      class="form-group"
-                      *ngIf="newEmployee.role === 'collector'"
-                    >
-                      <label>Zones assignées</label>
-                      <div class="zones-checkboxes">
-                        <label
-                          *ngFor="let zone of serviceZones"
-                          class="checkbox-label"
-                        >
-                          <input
-                            type="checkbox"
-                            [value]="zone.id"
-                            (change)="toggleZoneAssignment(zone.id, $event)"
-                          />
-                          <span class="checkmark"></span>
-                          {{ zone.name }}
-                        </label>
-                      </div>
-                    </div>
+                   <!-- Dans la section du formulaire d'ajout d'employé -->
+<div class="form-group" *ngIf="newEmployee.role === 'collector'">
+  <label>Zone assignée *</label>
+  <select [(ngModel)]="newEmployee.zones" name="zones" required>
+    <option value="">Sélectionner une zone</option>
+    <option *ngFor="let zone of zones" [value]="zone.neighborhood || zone">
+      {{ zone.neighborhood || zone }}
+    </option>
+  </select>
+</div>
                     <div class="form-actions">
                       <button
                         type="button"
@@ -1860,7 +1854,59 @@ interface Statistics {
 
   `,
   styles: [
-    `
+    `.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin: 1rem 0;
+  min-height: 200px;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: #6b7280;
+  text-align: center;
+}
+.report-photos {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 10px 0;
+  margin: 10px 0;
+  white-space: nowrap;
+}
+
+.report-photo {
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.report-photo:hover {
+  transform: scale(1.05);
+}
+.report-photo:hover {
+  transform: scale(1.05);
+}
       .agency-dashboard {
         min-height: 100vh;
       }
@@ -1892,10 +1938,13 @@ interface Statistics {
       }
 
       .modal-content {
-        position: relative;
-        background: transparent;
-        padding: 0;
-      }
+  width: 95%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+
 
       .close-btn {
         position: absolute;
@@ -3326,12 +3375,11 @@ interface Statistics {
         gap: 16px;
       }
 
-      .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-      }
-
+    form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
       .form-group {
         display: flex;
         flex-direction: column;
@@ -3762,10 +3810,10 @@ export class AgencyDashboardComponent implements OnInit {
     this.filterIncidents();
     this.countUnreadMessages();
     this.userMessages();
-     // Écouter les changements de fragment
+   
     this.route.fragment.subscribe(fragment => {
       if (fragment) {
-        // Faire défiler jusqu'à la section
+     
         const element = document.getElementById(fragment);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
@@ -3776,18 +3824,18 @@ export class AgencyDashboardComponent implements OnInit {
     // Écouter les queryParams
     this.route.queryParams.subscribe(params => {
       if (params['source'] === 'notification') {
-        // Traitement spécifique pour les notifications
+      
         this.handleNotificationParams(params);
       }
     });
   }
  private handleNotificationParams(params: any) {
-    // Logique pour traiter les paramètres selon le contexte
+  
     if (params['id']) {
-      // Charger les données spécifiques
+
     }
   }
-  /**Gestion des messages recus par le client connecté */
+
   countUnreadMessages() {
     this.messageService
       .getUserUnreadMessagesCount(this.currentUser?._id || "")
@@ -4124,15 +4172,12 @@ export class AgencyDashboardComponent implements OnInit {
           }
           this.isDeleting = false;
         },
-        error: (error) => {
-          console.error("Erreur lors de la suppression de l'employé :", error);
-          this.notificationService.showError(
-            "Erreur",
-            "Impossible de supprimer l'employé. " +
-              (error.error?.message || "Veuillez réessayer.")
-          );
-          this.isDeleting = false;
-        },
+      error: (error) => {
+    const message = error?.error?.message || "Veuillez réessayer.";
+    this.notificationService.showError("Erreur", `Impossible de supprimer l'employé. ${message}`);
+    this.isDeleting = false;
+  },
+
         complete: () => {
           this.isDeleting = false;
         },
@@ -5441,6 +5486,9 @@ export class AgencyDashboardComponent implements OnInit {
     }
 
     this.selectedEmployee.forEach((employeeId) => {
+    //   const payload = {
+    //   status: 'in_progress'  
+    // };
       this.agencyService
         .assignReportToEmployee$(this.selectedReportId, employeeId)
         .subscribe({
@@ -5484,6 +5532,10 @@ export class AgencyDashboardComponent implements OnInit {
           this.zones = zones.serviceZones
 ;
           console.log("zones charger>>>>>> :", this.zones);
+           const ZonesTab = this.tabs.find((tab) => tab.id === "zonesTab");
+        if (ZonesTab) {
+          ZonesTab.badge = this.zones.length;
+        }
         },
         error: (error) => {
           console.error(
