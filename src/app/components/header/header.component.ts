@@ -235,6 +235,7 @@ import { interval, Subscription, switchMap } from 'rxjs';
     </header>
   `,
   styles: [`
+  
     .navbar {
       /* background-color: red; */
       background: rgba(255, 255, 255, 0.95);
@@ -1092,6 +1093,7 @@ export class HeaderComponent implements OnInit {
     this.currentUser = this.authService.getCurrentUser();
     console.log("this.currentUser", this.currentUser);
 
+
     this.authService.isAuthenticated$.subscribe(isAuth => {
       this.isAuthenticated = isAuth;
     });
@@ -1170,7 +1172,7 @@ export class HeaderComponent implements OnInit {
     this.isMobileMenuOpen = false;
   }
   loadNotifications(): void {
-    const userId = this.currentUser?.id;
+    const userId = this.currentUser?._id;
     if (!userId) {
       console.warn('UUID utilisateur introuvable.');
       return;
@@ -1290,24 +1292,44 @@ startAutoRefresh(): void {
       });
   }
 
-  navigateToNotification(notif: any): void {
+navigateToNotification(notif: any): void {
   if (!notif || !notif.type) {
     console.warn('Type de notification introuvable.');
     return;
   }
 
-  switch (notif.type) {
+  // Marquer comme lu d'abord
+  if (!notif.read) {
+    this.markAsRead(notif._id);
+  }
+
+  switch (notif.type.toLowerCase()) {
     case 'signalement':
-      this.router.navigate(['/dashboard/agency'], { fragment: 'signalements' });
+      this.router.navigate(['/dashboard/agency'], { 
+        fragment: 'reports',
+        queryParams: { source: 'notification' }
+      });
       break;
     case 'planning':
-      this.router.navigate(['/dashboard/agency'], { fragment: 'plannings' });
+      this.router.navigate(['/dashboard/agency'], { 
+        fragment: 'schedules',
+        queryParams: { source: 'notification' }
+      });
       break;
-    case 'tarif':
-      this.router.navigate(['/dashboard/agency'], { fragment: 'tarifs' });
+    case 'zones':
+      this.router.navigate(['/dashboard/agency'], { 
+        fragment: 'zones',
+        queryParams: { source: 'notification' }
+      });
+      break;
+    case 'employee':
+      this.router.navigate(['/dashboard/agency'], { 
+        fragment: 'employees',
+        queryParams: { source: 'notification' }
+      });
       break;
     default:
-      console.warn('Type de notification non pris en charge.');
+      this.router.navigate(['/dashboard/agency']);
       break;
   }
 }

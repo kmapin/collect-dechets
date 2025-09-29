@@ -1,6 +1,6 @@
-import { CellWidthType } from './../../../../../node_modules/jspdf-autotable/dist/index.d';
+import { CellWidthType } from "./../../../../../node_modules/jspdf-autotable/dist/index.d";
 import { BarcodeFormat } from "@zxing/library";
-import { Component, OnInit } from "@angular/core";
+import { AfterViewChecked, Component, ElementRef, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule, TitleStrategy } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -8,7 +8,11 @@ import { AuthService } from "../../../services/auth.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
 import { ClientUser, User } from "../../../models/user.model";
-import { Collection, CollectionStatus, CollectionReport } from "../../../models/collection.model";
+import {
+  Collection,
+  CollectionStatus,
+  CollectionReport,
+} from "../../../models/collection.model";
 import { ClientService } from "../../../services/client.service";
 import { map } from "rxjs";
 import { MessagesService } from "../../../services/messages.service";
@@ -53,7 +57,18 @@ interface Subscription {
               </p>
             </div>
             <div class="quick-actions">
-              <button *ngIf="currentUser?.subscribedAgencyId" class="btn btn-primary" routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}">
+               <button
+                class="btn btn-primary"
+                (click)="scrollToChat()"
+                >
+                <i class="material-icons">message</i>Mes messages
+                <span  class="tab-badge">{{ unreadMessageCount}}</span>
+              </button>
+              <button
+                *ngIf="currentUser?.subscribedAgencyId"
+                class="btn btn-primary"
+                routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}"
+              >
                 <i class="material-icons">business</i>
                 Mon agence
               </button>
@@ -78,7 +93,7 @@ interface Subscription {
               <div class="stat-icon next-collection">
                 <i class="material-icons">event</i>
               </div>
-              <div class="stat-info" *ngIf="nextCollect else noNextCollect">
+              <div class="stat-info" *ngIf="nextCollect; else noNextCollect">
                 <h3>Prochaine collecte</h3>
                 <p class="stat-value">
                   {{ nextCollect?.date | date : "dd MMMM" : "fr-FR" }}
@@ -91,7 +106,8 @@ interface Subscription {
                 </span>
               </div>
               <ng-template #noNextCollect>
-                <p>Pas de collecte prévue.<br />
+                <p>
+                  Pas de collecte prévue.<br />
                   <sub>Veuillez vérifier plus tard </sub>
                   <sub>ou contactez votre agence pour avoir un planning.</sub>
                 </p>
@@ -104,15 +120,31 @@ interface Subscription {
               </div>
               <div class="stat-info">
                 <h3>Collectes de ce mois</h3>
-                <p class="stat-value">{{ getTotalCompletedCollectionsLength() }} / {{ getMonthlyCollectionsLength() }}</p>
+                <p class="stat-value">
+                  {{ getTotalCompletedCollectionsLength() }} /
+                  {{ getMonthlyCollectionsLength() }}
+                </p>
                 <!-- <span class="stat-detail">{{ getCompletedCollectionRate() }}% de réussite ; {{ getUncompletedCollectionRate() }}% d'échecs</span> -->
-                <span class="stat-detail"><i class="material-icons" style="color:var(--success-color);vertical-align:middle;">check_circle</i>
-                {{ getCompletedCollectionRate() }}% &nbsp;;&nbsp;
-                <i class="material-icons" style="color:var(--error-color);vertical-align:middle;">cancel</i>
-                {{ getUncompletedCollectionRate() }} % &nbsp;;&nbsp;
-                <i class="material-icons" style="color:var(--info-color);vertical-align:middle;">schedule</i>
-                {{ getUpcomingCollectionRate() }} %
-              </span>
+                <span class="stat-detail"
+                  ><i
+                    class="material-icons"
+                    style="color:var(--success-color);vertical-align:middle;"
+                    >check_circle</i
+                  >
+                  {{ getCompletedCollectionRate() }}% &nbsp;;&nbsp;
+                  <i
+                    class="material-icons"
+                    style="color:var(--error-color);vertical-align:middle;"
+                    >cancel</i
+                  >
+                  {{ getUncompletedCollectionRate() }} % &nbsp;;&nbsp;
+                  <i
+                    class="material-icons"
+                    style="color:var(--info-color);vertical-align:middle;"
+                    >schedule</i
+                  >
+                  {{ getUpcomingCollectionRate() }} %
+                </span>
               </div>
             </div>
 
@@ -239,7 +271,9 @@ interface Subscription {
                   <div *ngIf="weeklySchedule.length === 0" class="empty-state">
                     <i class="material-icons">event_available</i>
                     <h3>Aucune collecte programmée</h3>
-                    <p>Vos prochaines collectes de la semaine apparaîtront ici</p>
+                    <p>
+                      Vos prochaines collectes de la semaine apparaîtront ici
+                    </p>
                   </div>
                 </div>
               </section>
@@ -406,7 +440,7 @@ interface Subscription {
               </section>
               -->
               <!-- Messages 2 -->
-              <section class="collection-message card">
+              <section class="collection-message card" #chatMessages>
                 <div class="section-header">
                   <h2>
                     <i class="material-icons">message</i>
@@ -423,7 +457,9 @@ interface Subscription {
                 <div class="parent">
                   <!-- Header -->
                   <div class="chat-header-column">
-                    Vous discutez avec {{ displayAgencyName }}
+                    <span *ngIf="displayAgencyName"
+                      >Vous discutez avec {{ displayAgencyName }}</span
+                    >
                   </div>
 
                   <div class="message-content">
@@ -436,27 +472,23 @@ interface Subscription {
                       </div>
 
                       <div class="chat-left-column-content">
-                        <ng-container *ngFor="let message of connectedUserMessages">
-                          <button
-                          class="chat-left-column-content-item"
-                          *ngIf="message.senderName"
-                          (click)="
-                            userAndAgencyConversation(
-                              message.sender,
-                              message.receiver
-                            )
-                          "
+                        <ng-container
+                          *ngFor="let message of connectedUserMessages"
                         >
-                          {{ message.senderName }}
-                        </button>
+                          <button
+                            class="chat-left-column-content-item"
+                            *ngIf="message.agencyName"
+                            (click)="userAndAgencyConversation(message)"
+                           >
+                            {{ message.agencyName }}
+                          </button>
                         </ng-container>
-                        
                       </div>
                     </div>
-
                     <!-- Messages + Input -->
                     <div class="chat-area">
-                      <div class="chat-messages">
+                      
+                      <div class="chat-messages" #scrollMe>
                         <ng-container *ngFor="let message of receivedMessages">
                           <div
                             class="received "
@@ -471,7 +503,11 @@ interface Subscription {
                                     | date : "dd/MMM/yyyy à HH:mm"
                                 }}
                                 <mat-icon class="chat-read">
-                                  {{ message.read=== 'true' ? 'done_all' : 'done' }}
+                                  {{
+                                    message.read === "true"
+                                      ? "done_all"
+                                      : "done"
+                                  }}
                                 </mat-icon>
                               </span>
                             </div>
@@ -489,34 +525,35 @@ interface Subscription {
                                     | date : "dd/MMM/yyyy  à HH:mm"
                                 }}
                                 <mat-icon class="chat-read">
-                                  {{ message.read=== 'true' ? 'done_all' : 'done' }}
+                                  {{
+                                    message.read === "true"
+                                      ? "done_all"
+                                      : "done"
+                                  }}
                                 </mat-icon>
                               </span>
-                              
                             </div>
                           </div>
                         </ng-container>
                       </div>
-
                       <!-- Input fixé en bas -->
                       <div class="div7 chat-input-row">
-                        
-                          <input
-                            class="sendChatMessage"
-                            [(ngModel)]="messageData.content"
-                            name="content"
-                            type="text"
-                            placeholder="Composez votre message"
-                          />
-                          <div class="chat-actions">
-                            <button type="button"
-                                (click)="submitMessage()"
-                                class="btn_send btn-secondary"
-                            >
-                              <mat-icon class="material-icons">send</mat-icon>
-                            </button>
-                          </div>
-                        
+                        <input
+                          class="sendChatMessage"
+                          [(ngModel)]="messageData.content"
+                          name="content"
+                          type="text"
+                          placeholder="Composez votre message"
+                        />
+                        <div class="chat-actions">
+                          <button
+                            type="button"
+                            (click)="submitMessage()"
+                            class="btn_send btn-secondary"
+                          >
+                            <mat-icon class="material-icons">send</mat-icon>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -706,7 +743,22 @@ interface Subscription {
                         class="status-badge"
                         [class]="'status-' + payment.status"
                       >
-                        {{ getPaymentStatusText(payment.status) === 'active' ? "Actif": (getPaymentStatusText(payment.status) === 'inactive' ? "Inactif" : (getPaymentStatusText(payment.status) === 'cancelled' ? "Annulé" : (getPaymentStatusText(payment.status) === 'refunded' ? "Remboursé" : (getPaymentStatusText(payment.status) === 'expired' ? "Expiré" : "En attente de réabonnement")))) }}
+                        {{
+                          getPaymentStatusText(payment.status) === "active"
+                            ? "Actif"
+                            : getPaymentStatusText(payment.status) ===
+                              "inactive"
+                            ? "Inactif"
+                            : getPaymentStatusText(payment.status) ===
+                              "cancelled"
+                            ? "Annulé"
+                            : getPaymentStatusText(payment.status) ===
+                              "refunded"
+                            ? "Remboursé"
+                            : getPaymentStatusText(payment.status) === "expired"
+                            ? "Expiré"
+                            : "En attente de réabonnement"
+                        }}
                       </span>
                     </div>
                   </div>
@@ -743,19 +795,20 @@ interface Subscription {
                   </div>
                   <div class="address-line">
                     <i class="material-icons">location_on</i>
-                    <span
-                      >{{ currentUser?.address.arrondissement }}
-                    </span>
+                    <span>{{ currentUser?.address.arrondissement }} </span>
                   </div>
                   <div class="address-line">
                     <i class="material-icons">home</i>
-                    <span>{{ currentUser.address?.sector }}, {{ currentUser.address?.street }}, {{ currentUser.address?.neighborhood }}</span>
+                    <span
+                      >{{ currentUser.address?.sector }},
+                      {{ currentUser.address?.street }},
+                      {{ currentUser.address?.neighborhood }}</span
+                    >
                   </div>
                   <div class="address-line">
                     <i class="material-icons">palette</i>
                     <span>Porte : {{ currentUser.address?.doorColor }}</span>
                   </div>
-                  
                 </div>
 
                 <!-- <div class="address-map">
@@ -1227,7 +1280,15 @@ interface Subscription {
       .history-status {
         text-align: right;
       }
-
+      .tab-badge {
+        background: var(--error-color);
+        color: var(--white);
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 16px;
+        text-align: center;
+      }
       .status-badge {
         padding: 4px 12px;
         border-radius: 12px;
@@ -1660,6 +1721,7 @@ interface Subscription {
       /* Header */
       .chat-header-column {
         background-color: var(--medium-gray);
+        height: 50px;
         padding: 10px;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
@@ -1810,8 +1872,8 @@ interface Subscription {
         font-size: 14px;
         margin-top: 0px;
         padding-top: 5px;
-        width:fit-content;
-        height:fit-content;
+        width: fit-content;
+        height: fit-content;
       }
       /**left column chat css */
       .chat-left-column-header {
@@ -1833,8 +1895,11 @@ interface Subscription {
       }
 
       .chat-left-column-content-item {
+        display: flex;
         padding: 12px 16px;
         min-width: 100%;
+        font-size: 14px;
+        align-self: start;
         border-bottom: 1px solid #f0f0f0;
         cursor: pointer;
         background-color: var(--surface-300);
@@ -1889,8 +1954,10 @@ interface Subscription {
     `,
   ],
 })
-export class ClientDashboardComponent implements OnInit {
-  currentUser!: any ;
+export class ClientDashboardComponent implements OnInit, AfterViewChecked {
+  @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
+  @ViewChild('chatMessages') chatMessages!: ElementRef;
+  currentUser!: any;
   upcomingCollections: Collection[] = [];
   collectionHistory: any[] = [];
   filteredHistory: Collection[] = [];
@@ -1920,7 +1987,7 @@ export class ClientDashboardComponent implements OnInit {
     receiver: "",
     content: "",
   };
-
+  data: any;
   subscriptions: any[] = [];
   activeSubscription: any = null;
   showRechargeModal: boolean = false;
@@ -1944,15 +2011,15 @@ export class ClientDashboardComponent implements OnInit {
     this.loadDashboardData();
   }
 
-  getUser(){
-   this.authService.currentUser$.subscribe((user) => {
+  getUser() {
+    this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
       this.getUserSubscription();
       this.getClientWallet();
       this.getWeeklySchedule();
       this.loadPlanningHistory();
     });
-    console.log("Current User", this.currentUser); 
+    console.log("Current User", this.currentUser);
   }
 
   //  GET CLIENT WALLET
@@ -2041,7 +2108,6 @@ export class ClientDashboardComponent implements OnInit {
   }
   // Recuperer le nombre de passage du mois
 
-
   getMonthlyCollectionsLength() {
     const currentMonth = new Date().getMonth();
     const monthlyCollections = this.collectionHistory.filter((col) => {
@@ -2052,7 +2118,7 @@ export class ClientDashboardComponent implements OnInit {
         collectionDate.getFullYear() === new Date().getFullYear()
       );
     });
-    return monthlyCollections.length*4;
+    return monthlyCollections.length * 4;
   }
   getMonthlyCollectionsLengthgetMonthlyCollections() {
     const currentMonth = new Date().getMonth();
@@ -2067,7 +2133,7 @@ export class ClientDashboardComponent implements OnInit {
     return monthlyCollections;
   }
 
-  // Completed collection datad 
+  // Completed collection datad
   getTotalCompletedCollectionsLength() {
     const completedCollections = this.collectionHistory.filter(
       (col) => col.status === "completed"
@@ -2095,7 +2161,8 @@ export class ClientDashboardComponent implements OnInit {
     const totalCollections = this.getMonthlyCollectionsLength();
     const completedCollections = this.getTotalCompletedCollectionsLength();
     const unCompletedCollections = this.getTotalUnCompletedCollectionLength();
-    const upcomingCollections = totalCollections - (completedCollections + unCompletedCollections);
+    const upcomingCollections =
+      totalCollections - (completedCollections + unCompletedCollections);
     return upcomingCollections;
   }
 
@@ -2126,68 +2193,72 @@ export class ClientDashboardComponent implements OnInit {
 
   // Recuperer l'historique des collectes déjà effectuées
   loadPlanningHistory(): void {
-  const clientId = this.currentUser?._id || "";
-  if (!clientId) return;
-  this.clientService.getClientPlanningHistory(clientId).subscribe({
-    next: (response: any) => {
-      // this.collectionHistory = response.reports || [];
-      this.collectionHistory = (response.reports || []).map((report: any) => ({
-        id: report._id,
-        clientId: report.clientId,
-        agencyId: report.agencyId,
-        collectorId: report.collectorId,
-        scheduledDate: report.createdAt ? new Date(report.createdAt) : null,
-        collectedDate: report.scannedAt ? new Date(report.scannedAt) : null, // si dispo
-        status: report.status === "collected" ? "completed" : report.status, // adapter au template
-        wasteTypes: report.wasteTypes || [ "Déchets ménagers" ], // valeur par défaut si absent
-        rating: report.rating || 0,
-        photos: report.photos,
-        positionGPS: report.positionGPS,
-        createdAt: report.createdAt,
-        updatedAt: report.updatedAt,
-      }));
-      console.log("Planning history ==> ", this.collectionHistory);
-      this.filteredHistories = [...this.collectionHistory];
-      console.log("Filtered histories ==> ", this.filteredHistories);
-      // Appliquer le filtre initial
-      // this.applyHistoryFilter();
-    },
-    error: (error: any) => {
-      console.error(
-        "Erreur lors de la récupération de l'historique des collectes:",
-        error
-      );
-    },
-  });
-}
+    const clientId = this.currentUser?._id || "";
+    if (!clientId) return;
+    this.clientService.getClientPlanningHistory(clientId).subscribe({
+      next: (response: any) => {
+        // this.collectionHistory = response.reports || [];
+        this.collectionHistory = (response.reports || []).map(
+          (report: any) => ({
+            id: report._id,
+            clientId: report.clientId,
+            agencyId: report.agencyId,
+            collectorId: report.collectorId,
+            scheduledDate: report.createdAt ? new Date(report.createdAt) : null,
+            collectedDate: report.scannedAt ? new Date(report.scannedAt) : null, // si dispo
+            status: report.status === "collected" ? "completed" : report.status, // adapter au template
+            wasteTypes: report.wasteTypes || ["Déchets ménagers"], // valeur par défaut si absent
+            rating: report.rating || 0,
+            photos: report.photos,
+            positionGPS: report.positionGPS,
+            createdAt: report.createdAt,
+            updatedAt: report.updatedAt,
+          })
+        );
+        console.log("Planning history ==> ", this.collectionHistory);
+        this.filteredHistories = [...this.collectionHistory];
+        console.log("Filtered histories ==> ", this.filteredHistories);
+        // Appliquer le filtre initial
+        // this.applyHistoryFilter();
+      },
+      error: (error: any) => {
+        console.error(
+          "Erreur lors de la récupération de l'historique des collectes:",
+          error
+        );
+      },
+    });
+  }
 
   // Afficher abonnement
   getUserSubscription() {
-  const userID = this.currentUser?.id || "";
-  if (!userID) return;
-  this.agencyService.getUserSubscription(userID).subscribe({
-    next: (response: any[]) => {
-      this.subscriptions = response || [];
-      this.paymentHistory = this.subscriptions.map((sub: any) => ({
-        id: sub._id,
-        date: sub.createdAt ? new Date(sub.createdAt) : new Date(),
-        amount: sub.amount,
-        status: sub.status, // "active", "suspended", "cancelled" ou autre
-        description: `Abonnement ${sub.plan} - ${sub.agencyId?.agencyName || ""}`,
-        method: "Orange Money", // ou autre selon tes données
-      }));
-      // Pour la subscription active
-      this.activeSubscription = this.subscriptions.length
-        ? this.subscriptions[this.subscriptions.length - 1]
-        : null;
-      console.log("Active subscription ==>", this.activeSubscription);
-      console.log("Payment history ==>", this.paymentHistory);
-    },
-    error: (err) => {
-      console.error("Erreur lors du chargement des abonnements", err);
-    },
-  });
-}
+    const userID = this.currentUser?.id || "";
+    if (!userID) return;
+    this.agencyService.getUserSubscription(userID).subscribe({
+      next: (response: any[]) => {
+        this.subscriptions = response || [];
+        this.paymentHistory = this.subscriptions.map((sub: any) => ({
+          id: sub._id,
+          date: sub.createdAt ? new Date(sub.createdAt) : new Date(),
+          amount: sub.amount,
+          status: sub.status, // "active", "suspended", "cancelled" ou autre
+          description: `Abonnement ${sub.plan} - ${
+            sub.agencyId?.agencyName || ""
+          }`,
+          method: "Orange Money", // ou autre selon tes données
+        }));
+        // Pour la subscription active
+        this.activeSubscription = this.subscriptions.length
+          ? this.subscriptions[this.subscriptions.length - 1]
+          : null;
+        console.log("Active subscription ==>", this.activeSubscription);
+        console.log("Payment history ==>", this.paymentHistory);
+      },
+      error: (err) => {
+        console.error("Erreur lors du chargement des abonnements", err);
+      },
+    });
+  }
 
   renewSubscription() {
     // Logique pour renouveler l'abonnement
@@ -2211,7 +2282,7 @@ export class ClientDashboardComponent implements OnInit {
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService
-      .getUserUnreadMessagesCount(this.currentUser?._id || "")
+      .getUserUnreadMessagesCount(this.currentUser?.userId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
@@ -2232,24 +2303,11 @@ export class ClientDashboardComponent implements OnInit {
         next: (response: any) => {
           if (response) {
             console.log("API > getMessagesForUser:", response);
-            this.connectedUserMessages = response.messages || [];
-
-            this.connectedUserMessages.forEach((message: any) => {
-              message.read = message.read.toString();
-
-              this.agencyService
-                .getAgencyByIdFromApi(message.sender || message.receiver)
-                .subscribe((res: any) => {
-                  if (res.success && res.data) {
-                    message.senderName = res.data.agencyName;
-                  }
-
-                  console.log(
-                    "Received messages (no duplicates):",
-                    this.connectedUserMessages
-                  );
-                });
-            });
+            this.connectedUserMessages = response || [];
+            console.log(
+              "this.connectedUserMessages:",
+              this.connectedUserMessages
+            );
           }
         },
         error: (error: any) => {
@@ -2258,30 +2316,35 @@ export class ClientDashboardComponent implements OnInit {
       });
   }
 
-  userAndAgencyConversation(cliendId: string, agencyId: string) {
+  userAndAgencyConversation(agency: any) {
+    this.data = agency;
+    this.displayAgencyName = agency.agencyName;
+    const agencyId = agency?.userId;
     this.clientService
-      .userAndAgencyConversation(cliendId, agencyId)
+      .userAndAgencyConversation(this.currentUser?.userId || "", agencyId)
       .subscribe((response: any) => {
         console.log("API >userAndAgencyConversation:", response);
         if (response) {
           console.log("API >userAndAgencyConversation:", response);
-          this.receivedMessages = response.messages || [];
-
-          this.displayAgencyName = this.receivedMessages[0].senderName;
-          if(cliendId !== this.currentUser?._id){
-              this.receivedId = cliendId;
+          this.receivedMessages = (response.messages || []).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+          this.scrollToBottom()
+          if (!agencyId) {
+            this.receivedId = this.currentUser?.userId;
           } else {
-              this.receivedId = agencyId;
+            this.receivedId = agencyId;
           }
           this.receivedMessages.forEach((message: any) => {
-            if(message.receiver === this.currentUser?._id){
+            if (message.receiver === this.currentUser?.userId) {
               this.readAndRespondMessage(message);
             }
             message.read = message.read.toString();
           });
-        }else{
+        } else {
           this.receivedMessages = [];
-          this.notificationService.showError("Erreur", "Aucun message, veuillez contacter l'agence !");
+          this.notificationService.showError(
+            "Erreur",
+            "Aucun message, veuillez contacter l'agence !"
+          );
         }
       });
   }
@@ -2311,6 +2374,7 @@ export class ClientDashboardComponent implements OnInit {
     this.messageData.sender = this.currentUser?.userId || "";
     this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
+
     if (!this.messageData.content) {
       this.notificationService.showError(
         "Message vide",
@@ -2323,10 +2387,8 @@ export class ClientDashboardComponent implements OnInit {
     this.messageService.sendMessage(this.messageData).subscribe({
       next: (response: any) => {
         console.log("API > sendMessage:", response);
-        this.userAndAgencyConversation(
-          this.currentUser?.userId || "",
-          this.receivedId || ""
-        )
+        console.log("API > data:", this.data);
+        this.userAndAgencyConversation(this.data);
         this.notificationService.showSuccess(
           "Message envoyé",
           "Votre message a bien été envoyé"
@@ -2694,71 +2756,89 @@ export class ClientDashboardComponent implements OnInit {
     );
   }
 
-// Fonction de generation du pdf de l'historique des paiements 
-downloadInvoices(): void {
-  const doc = new jsPDF();
+  // Fonction de generation du pdf de l'historique des paiements
+  downloadInvoices(): void {
+    const doc = new jsPDF();
 
-  // HEADER DE TAILLE
-  doc.setFillColor(41, 128, 185);
-  doc.rect(0, 0, doc.internal.pageSize.width, 30, "F"); // Bandeau bleu en haut
+    // HEADER DE TAILLE
+    doc.setFillColor(41, 128, 185);
+    doc.rect(0, 0, doc.internal.pageSize.width, 30, "F"); // Bandeau bleu en haut
 
-  doc.setFontSize(22);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.text("ZéroDéchet+", 14, 20);
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text("ZéroDéchet+", 14, 20);
 
-  doc.setFontSize(13);
-  doc.setTextColor(230, 230, 230);
-  doc.setFont("helvetica", "normal");
-  doc.text("Collecter aujourd’hui, préserver demain.", 14, 27);
+    doc.setFontSize(13);
+    doc.setTextColor(230, 230, 230);
+    doc.setFont("helvetica", "normal");
+    doc.text("Collecter aujourd’hui, préserver demain.", 14, 27);
 
-  // Titre principal
-  doc.setFontSize(18);
-  doc.setTextColor(41, 128, 185);
-  doc.setFont("helvetica", "bold");
-  doc.text("Historique des paiements", 14, 45);
+    // Titre principal
+    doc.setFontSize(18);
+    doc.setTextColor(41, 128, 185);
+    doc.setFont("helvetica", "bold");
+    doc.text("Historique des paiements", 14, 45);
 
-  // Sous-titre
-  doc.setFontSize(12);
-  doc.setTextColor(60, 60, 60);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Client: ${this.currentUser?.firstName || ""} ${this.currentUser?.lastName || ""}`, 14, 53);
-  doc.text(`Date: ${new Date().toLocaleDateString("fr-FR")}`, 14, 59);
+    // Sous-titre
+    doc.setFontSize(12);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `Client: ${this.currentUser?.firstName || ""} ${
+        this.currentUser?.lastName || ""
+      }`,
+      14,
+      53
+    );
+    doc.text(`Date: ${new Date().toLocaleDateString("fr-FR")}`, 14, 59);
 
-  // Tableau des paiements
-  autoTable(doc, {
-    startY: 65,
-    head: [["Date", "Description", "Méthode", "Montant", "Statut"]],
-    body: this.paymentHistory.map(payment => [
-      payment.date ? new Date(payment.date).toLocaleDateString("fr-FR") : "",
-      payment.description,
-      payment.method,
-      `${payment.amount} FCFA`,
-      this.getPaymentStatusText(payment.status)
-    ]),
-    theme: "grid",
-    styles: { fontSize: 10, cellPadding: 3 },
-    headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-    alternateRowStyles: { fillColor: [240, 240, 240] },
-  });
+    // Tableau des paiements
+    autoTable(doc, {
+      startY: 65,
+      head: [["Date", "Description", "Méthode", "Montant", "Statut"]],
+      body: this.paymentHistory.map((payment) => [
+        payment.date ? new Date(payment.date).toLocaleDateString("fr-FR") : "",
+        payment.description,
+        payment.method,
+        `${payment.amount} FCFA`,
+        this.getPaymentStatusText(payment.status),
+      ]),
+      theme: "grid",
+      styles: { fontSize: 10, cellPadding: 3 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      alternateRowStyles: { fillColor: [240, 240, 240] },
+    });
 
-  // Pied de page stylisé tout en bas
-  const pageHeight = doc.internal.pageSize.height || 297;
-  doc.setDrawColor(41, 128, 185);
-  doc.setLineWidth(0.7);
-  doc.line(14, pageHeight - 20, 195, pageHeight - 20);
+    // Pied de page stylisé tout en bas
+    const pageHeight = doc.internal.pageSize.height || 297;
+    doc.setDrawColor(41, 128, 185);
+    doc.setLineWidth(0.7);
+    doc.line(14, pageHeight - 20, 195, pageHeight - 20);
 
-  doc.setFontSize(12);
-  doc.setTextColor(41, 128, 185);
-  doc.setFont("helvetica", "bold");
-  doc.text(
-    "Merci pour votre confiance !",
-    doc.internal.pageSize.width / 2,
-    pageHeight - 12,
-    { align: "center" }
-  );
+    doc.setFontSize(12);
+    doc.setTextColor(41, 128, 185);
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      "Merci pour votre confiance !",
+      doc.internal.pageSize.width / 2,
+      pageHeight - 12,
+      { align: "center" }
+    );
 
-  doc.save("Historique-paiement-client.pdf");
-}
+    doc.save("Historique-paiement-client.pdf");
+  }
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
 
+  private scrollToBottom(): void {
+    try {
+      this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
+    } catch (err) {}
+  }
+
+  scrollToChat() {
+    this.chatMessages.nativeElement.scrollIntoView({ behavior: 'smooth' });
+  }
 }
