@@ -572,22 +572,32 @@ export class ProfileComponent implements OnInit {
   constructor(private authService: AuthService, private notificationService: NotificationService) { }
 
   ngOnInit(): void {
-    this.user = this.authService.getCurrentUser();
-    console.log("loggedUser::>",this.user);
-    // Sécurise l'accès à address
-    if (!this.user.address) {
-      this.user.address = {};
-    }
-    // Pré-remplir les secteurs si adresse présente
-    if (this.user?.address?.arrondissement) {
-      this.onArrondissementChange(this.user.address.arrondissement);
-    }
-    if (this.user?.address?.sector) {
-      this.onSecteurChange(this.user.address.sector);
-    }
-    // Pour agency, charger tous les secteurs
-    this.allSecteurs = this.arrondissements.flatMap(a => a.secteurs);
+    this.getUser();
+    
   }
+
+  getUser(){
+   this.authService.currentUser$.subscribe((user) => {
+      this.user = user;
+      console.log("loggedUser::>",this.user);
+      // Sécurise l'accès à address
+      if (!this.user.address) {
+        this.user.address = {};
+      }
+      // Pré-remplir les secteurs si adresse présente
+      if (this.user?.address?.arrondissement) {
+        this.onArrondissementChange(this.user.address.arrondissement);
+      }
+      if (this.user?.address?.sector) {
+        this.onSecteurChange(this.user.address.sector);
+      }
+      // Pour agency, charger tous les secteurs
+      this.allSecteurs = this.arrondissements.flatMap(a => a.secteurs);
+      
+    });
+    console.log("Current User", this.user); 
+  }
+
 
   onArrondissementChange(arrondissement: string) {
     const arr = this.arrondissements.find(a => a.arrondissement === arrondissement);
@@ -639,6 +649,7 @@ export class ProfileComponent implements OnInit {
       this.authService.updateClient(this.user?.id, userEdit).subscribe(
         response => {
           this.notificationService.showSuccess('Modification réussie', 'Votre profil a été mis à jour avec succès.');
+          this.getUser(); // Recharger les données utilisateur
         },
         error => {
           this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la modification du profil.');
@@ -658,6 +669,7 @@ export class ProfileComponent implements OnInit {
       this.authService.updateClient(this.user?.id, agencyEdit).subscribe(
         response => {
           this.notificationService.showSuccess('Modification réussie', 'Le profil de l’agence a été mis à jour avec succès.');
+          this.getUser(); // Recharger les données utilisateur
         },
         error => {
           this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la modification du profil agence.');
