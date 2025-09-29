@@ -1940,7 +1940,7 @@ interface Subscription {
     `,
   ],
 })
-export class ClientDashboardComponent implements OnInit,AfterViewChecked {
+export class ClientDashboardComponent implements OnInit {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
   currentUser!: any;
   upcomingCollections: Collection[] = [];
@@ -2311,7 +2311,7 @@ export class ClientDashboardComponent implements OnInit,AfterViewChecked {
         console.log("API >userAndAgencyConversation:", response);
         if (response) {
           console.log("API >userAndAgencyConversation:", response);
-          this.receivedMessages = response.messages || [];
+          this.receivedMessages = (response.messages || []).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
           this.scrollToBottom()
           if (!agencyId) {
             this.receivedId = this.currentUser?.userId;
@@ -2813,9 +2813,9 @@ export class ClientDashboardComponent implements OnInit,AfterViewChecked {
 
     doc.save("Historique-paiement-client.pdf");
   }
-  ngAfterViewChecked() {
-    this.scrollToBottom();
-  }
+  // ngAfterViewChecked() {
+  //   this.scrollToBottom();
+  // }
 
   private scrollToBottom(): void {
     try {
