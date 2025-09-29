@@ -24,13 +24,13 @@ import { AuthService } from '../../services/auth.service';
             Comparez leurs services, zones de couverture et tarifs pour choisir celle qui vous convient le mieux.
           </p>
         </div>
-        <div class="quick-actions">
-              <button *ngIf="currentUser?.subscribedAgencyId" class="btn btn-primary" routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}">
-                <i class="material-icons">business</i>
-                Mon agence
-              </button>
+        <!-- <div class="quick-actions"> -->
+            <button *ngIf="currentUser?.subscribedAgencyId" class="btn btn-secondary m-5" routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}">
+              <i class="material-icons">business</i>
+              Mon agence
+            </button>
               
-        </div>
+        <!-- </div> -->
       </div>
 
       <div class="container">
@@ -58,7 +58,7 @@ import { AuthService } from '../../services/auth.service';
               <div class="filter-group">
                 <label class="filter-label">Ville</label>
                 <select [(ngModel)]="selectedCity" (change)="onCityChange(selectedCity)" class="filter-select">
-                  <option value="">Toutes les villes</option>
+                  <option value="">Aucune ...</option>
                   <option *ngFor="let city of cities" [value]="city">{{ city }}</option>
                 </select>
               </div>
@@ -171,11 +171,15 @@ import { AuthService } from '../../services/auth.service';
                 <h3 class="agency-name">{{ agency.agencyName }}</h3>
                 <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
                 
-                <div class="agency-rating">
-                  <div class="stars">
+                <div *ngIf="currentUser?.subscribedAgencyId == agency._id" class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
+                  <!-- <div class="stars">
                     <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
                   </div>
-                  <span class="rating-text">{{ agency.rating }}/5 ({{ agency.totalClients }} avis)</span>
+                  <span class="rating-text">{{ agency.rating }}/5 ({{ agency.totalClients }} avis)</span> -->
+                   <div class="stars">
+                    <i  class="material-icons star">star</i>
+                  </div>
+                  <span class="text-white rating-text">Déjà abonné(e)</span>
                 </div>
 
                 <div class="agency-info">
@@ -229,11 +233,18 @@ import { AuthService } from '../../services/auth.service';
                   </div>
                   <div class="agency-list-info">
                     <h3 class="agency-name text-[--primary-color]">{{ agency.agencyName }}</h3>
-                    <div class="agency-rating">
+                    <!-- <div class="agency-rating">
                       <div class="stars">
                         <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
                       </div>
                       <span class="rating-text">{{ agency.rating }}/5</span>
+                    </div> -->
+                    <div *ngIf="currentUser?.subscribedAgencyId == agency._id" class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
+                      
+                      <div class="stars">
+                        <i  class="material-icons star">star</i>
+                      </div>
+                      <span class="text-white rating-text">Déjà abonné(e)</span>
                     </div>
                   </div>
                   <!-- <div class="agency-list-price">
@@ -261,6 +272,7 @@ import { AuthService } from '../../services/auth.service';
               </div>
 
               <div class="agency-list-actions">
+                
                 <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
                   <i class="material-icons">info</i>
                   Voir détails
@@ -559,7 +571,13 @@ import { AuthService } from '../../services/auth.service';
     .agency-rating {
       display: flex;
       align-items: center;
+      /* text-color: white; */
       gap: 8px;
+      background: var(--primary-color);
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 4px 12px;
       margin-bottom: 16px;
     }
 
@@ -575,7 +593,7 @@ import { AuthService } from '../../services/auth.service';
 
     .rating-text {
       font-size: 0.9rem;
-      color: var(--text-secondary);
+      color: var(--text-white);
     }
 
     .agency-info {

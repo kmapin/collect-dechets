@@ -23,7 +23,7 @@ import { Arrondissement, City, Quartier, Sector } from '../../../models/countrie
           <div class="register-header">
             <div class="logo">
               <i class="material-icons">recycling</i>
-              <span>WasteManager</span>
+              <span>ZéroDéchet+</span>
             </div>
             <h1 class="register-title"> {{  agencyId ? 'Modifier un compte' : 'Créer un compte'}}</h1>
             <p class="register-subtitle">

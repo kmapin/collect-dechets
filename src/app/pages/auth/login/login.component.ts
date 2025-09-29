@@ -16,7 +16,7 @@ import { NotificationService } from '../../../services/notification.service';
           <div class="login-header">
             <div class="logo">
               <i class="material-icons">recycling</i>
-              <span>WasteManager</span>
+              <span>ZéroDéchet+</span>
             </div>
             <h1 class="login-title">Connexion</h1>
             <p class="login-subtitle">

@@ -5,6 +5,11 @@ import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
 import { OUAGA_DATA, QuartierData } from '../../data/mock-data';
 import { NotificationService } from '../../services/notification.service';
+import QRCode from 'qrcode';
+import { jsPDF } from 'jspdf';
+
+
+// ...existing code...
 
 @Component({
   selector: 'app-profile',
@@ -20,6 +25,14 @@ import { NotificationService } from '../../services/notification.service';
             <span class="role-badge">{{ getRoleLabel(user.role) }}</span>
             <p class="profile-email"><i class="material-icons">email</i> {{ user.email }}</p>
           </div>
+        </div>
+        <!-- Afficher le code QR et telecharger  -->
+        <div class="profile-card-modern card text-center">
+          <!-- <h3>Code QR</h3> -->
+          <div class="qr-code">
+            <img [src]="generateQRCode(user?.qrCodeImage)" alt="QR Code">
+          </div>
+          <a [href]="generateQRCode(user?.qrCodeImage)" download="qrcode.png" class="btn btn-primary mt-2">Télécharger le QR Code</a>
         </div>
       </div>
       <div class="profile-right">
@@ -101,12 +114,12 @@ import { NotificationService } from '../../services/notification.service';
               </div>
             </div>
             <div class="form-row-modern">
-              <div class="form-group-modern">
+              <!-- <div class="form-group-modern">
                 <label class="checkbox-label">
                   <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
                   J'accepte les conditions générales d'utilisation
                 </label>
-              </div>
+              </div> -->
               <div class="form-group-modern">
                 <label class="checkbox-label">
                   <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
@@ -160,12 +173,12 @@ import { NotificationService } from '../../services/notification.service';
               </div>
             </div>
             <div class="form-row-modern">
-              <div class="form-group-modern">
+              <!-- <div class="form-group-modern">
                 <label class="checkbox-label">
                   <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
                   J'accepte les conditions générales d'utilisation
                 </label>
-              </div>
+              </div> -->
               <div class="form-group-modern">
                 <label class="checkbox-label">
                   <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
@@ -407,6 +420,12 @@ import { NotificationService } from '../../services/notification.service';
       width: 100%;
       margin-top: 0;
     }
+    .qr-code {
+      margin-top: 16px;
+      width: 1OO%;
+      display: flex;
+      justify-content: center;
+    }
     .profile-form-modern h3 {
       font-size: 1.3rem;
       font-weight: 600;
@@ -575,6 +594,42 @@ export class ProfileComponent implements OnInit {
     this.getUser();
     
   }
+
+  // generer code qr en image 
+  generateQRCode(data: string): string {
+    // Utiliser une API tierce pour générer le QR code
+    return data ? data : "Pas de code QR généré";
+  }
+
+  // generer code qr en pdf 
+  async downloadQRCodePDF(data: string) {
+  if (!data) {
+    console.error('Donnée QR vide');
+    return;
+  }
+  try {
+    // Génère le QR code en base64 PNG
+    const qrCodeDataUrl = await QRCode.toDataURL(data, { width: 256, margin: 2 });
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Votre QR Code', 20, 20);
+    // Ajoute l'image au PDF
+    doc.addImage(qrCodeDataUrl, 'PNG', 40, 40, 120, 120);
+    doc.save('qrcode.pdf');
+  } catch (err) {
+    console.error('Erreur lors de la génération du PDF QR:', err);
+  }
+}
+
+  // async generateQRCodePDF(data: string): Promise<string> {
+  //   if (!data) return '';
+  //   try {
+  //     return await QRCode.toDataURL(data, { width: 256, margin: 2 });
+  //   } catch (err) {
+  //     console.error('Erreur QRCode:', err);
+  //     return '';
+  //   }
+  // }
 
   getUser(){
    this.authService.currentUser$.subscribe((user) => {
