@@ -52,6 +52,10 @@ interface Subscription {
               </p>
             </div>
             <div class="quick-actions">
+              <button *ngIf="currentUser?.subscribedAgencyId" class="btn btn-primary" routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}">
+                <i class="material-icons">business</i>
+                Mon agence
+              </button>
               <button class="btn btn-primary" (click)="showReportModal = true">
                 <i class="material-icons">report_problem</i>
                 Signaler un problème
