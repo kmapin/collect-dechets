@@ -456,7 +456,7 @@ interface Subscription {
                         <ng-container *ngFor="let message of receivedMessages">
                           <div
                             class="received "
-                            *ngIf="message.sender !== currentUser?._id"
+                            *ngIf="message.sender !== currentUser?.userId"
                           >
                             <div class="div5 chat-bubble">
                               <span> {{ message.content }}</span>
@@ -474,7 +474,7 @@ interface Subscription {
                           </div>
                           <div
                             class="sent"
-                            *ngIf="message.sender === currentUser?._id"
+                            *ngIf="message.sender === currentUser?.userId"
                           >
                             <div class="div6 chat-bubble">
                               <span> {{ message.content }}</span>
