@@ -239,6 +239,9 @@ import { AuthService } from '../../services/auth.service';
                       </div>
                       <span class="rating-text">{{ agency.rating }}/5</span>
                     </div> -->
+                    <div class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full" >
+                      <i *ngFor="let star of getStars(agency.rating, agency.randomStars)" class="material-icons star">star</i>
+                    </div>
                     <div *ngIf="currentUser?.subscribedAgencyId == agency._id" class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
                       
                       <div class="stars">
