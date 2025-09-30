@@ -1009,7 +1009,7 @@ interface Subscription {
                   checked
                 />
                 <label for="card">
-                  <i class="material-icons">euro</i>
+                  <i class="material-icons">billet</i>
                   Orange money
                 </label>
               </div>
