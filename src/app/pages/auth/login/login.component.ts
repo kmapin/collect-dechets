@@ -151,7 +151,7 @@ import { NotificationService } from '../../../services/notification.service';
 
         <div class="login-info">
           <div class="info-content">
-            <h2>Bienvenue sur WasteManager</h2>
+            <h2>Bienvenue sur ZéroDéchet+</h2>
             <div class="features-list">
               <div class="feature-item">
                 <i class="material-icons">schedule</i>

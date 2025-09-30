@@ -29,11 +29,11 @@ import { FormsModule } from '@angular/forms';
                 </div>
                 <div class="brand-text">
                   <span class="brand-name">ZéroDéchet+</span>
-                  <span class="brand-tagline">Gestion Intelligente</span>
+                  <span class="brand-tagline">Gestion Facile</span>
                 </div>
               </div>
               <p class="footer-description">
-                Révolutionnez votre gestion des déchets avec notre plateforme intelligente. 
+                <strong>Facilitez</strong> votre gestion des déchets avec notre plateforme intelligente. 
                 Connectant citoyens, entreprises et collecteurs pour un avenir plus propre et durable.
               </p>
               
@@ -202,7 +202,7 @@ import { FormsModule } from '@angular/forms';
               </div>
               <div class="contact-info">
                 <span class="contact-label">Support 24/7</span>
-                <a href="tel:+33123456789" class="contact-value">01 23 45 67 89</a>
+                <a href="tel:+33123456789" class="contact-value">64 09 57 71</a>
               </div>
             </div>
             
@@ -212,7 +212,7 @@ import { FormsModule } from '@angular/forms';
               </div>
               <div class="contact-info">
                 <span class="contact-label">Email</span>
-                <a href="mailto:contact&#64;wastemanager.bf" class="contact-value">contact&#64;wastemanager.bf</a>
+                <a href="mailto:contact&#64;wastemanager.bf" class="contact-value">contact&#64;zerodechet.bf</a>
               </div>
             </div>
             

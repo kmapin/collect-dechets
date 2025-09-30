@@ -53,7 +53,29 @@ export class CountriesOrgMockService {
     return MOCK_QUARTIERS.find(quartier => quartier.id === id);
   }
 
-  // Get full hierarchy for a quartier
+  getQuartierByName(name: string){
+    return MOCK_QUARTIERS.find(quartier => quartier.name === name);
+  }
+  getQuartierInfo(name: string) : {
+    quartier: Quartier;
+    sector: Sector;
+    arrondissement: Arrondissement;
+    city: City;
+    country: Country;
+  } | null {
+    const quartier = this.getQuartierByName(name);
+    if(!quartier) return null;
+
+    // Get full hierarchy for a quartier
+    return {
+      quartier,
+      sector: quartier.sector,
+      arrondissement: quartier.sector.arrondissement,
+      city: quartier.sector.arrondissement.city,
+      country: quartier.sector.arrondissement.city.country
+    };
+  }
+
   getFullHierarchy(quartierId: string): {
     quartier: Quartier;
     sector: Sector;

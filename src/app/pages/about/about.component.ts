@@ -10,7 +10,7 @@ import { RouterModule } from '@angular/router';
     <div class="about-page">
       <div class="page-header">
         <div class="container">
-          <h1 class="page-title">À propos de WasteManager</h1>
+          <h1 class="page-title">À propos de ZéroDéchet</h1>
           <p class="page-subtitle">
             Découvrez notre mission, nos valeurs et notre engagement pour un environnement plus propre
           </p>
@@ -22,7 +22,7 @@ import { RouterModule } from '@angular/router';
           <section class="mission-section card">
             <h2>Notre Mission</h2>
             <p>
-              WasteManager révolutionne la gestion des déchets en connectant clients, agences de collecte 
+              ZéroDéchet+ facilite la gestion des déchets en connectant clients, agences de collecte
               et autorités municipales sur une plateforme unique et intuitive. Notre objectif est de 
               simplifier les processus, optimiser les collectes et contribuer à un environnement plus propre.
             </p>

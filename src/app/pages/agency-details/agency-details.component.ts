@@ -9,6 +9,8 @@ import { User } from '../../models/user.model';
 import { MessagesService } from '../../services/messages.service';
 import { Message } from '../../models/message.model';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CountriesOrgMockService } from '../../services/countries-org-mock.service';
+
 
 
 @Component({
@@ -289,19 +291,21 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
                 <div class="zones-grid">
                   <div *ngFor="let zone of agency.serviceZones" class="zone-card">
                     <div class="zone-header">
-                      <h4>{{ zone.name }}</h4>
-                      <span class="zone-status" [class.active]="zone.isActive">
-                        {{ zone.isActive ? 'Active' : 'Inactive' }}
+                      <h4>Quartier : {{ zone }}</h4>
+                      <span class="zone-status" [class.active]="true">
+                        {{ zone.isActive ? 'Active' : 'Active' }}
                       </span>
                     </div>
-                    <p class="zone-description">{{ zone.description }}</p>
+                    <!-- <p class="zone-description">{{ zone }}</p> -->
                     <div class="zone-details">
-                      <div class="zone-cities">
-                        <strong>Villes :</strong>
-                        <div class="cities-list">
+                      <span class="">
+                        <strong>Ville : </strong>
+                        
+                        <span class="text-success">OUAGADOUGOU</span>
+                        <!-- <div class="cities-list">
                           <span *ngFor="let city of zone.cities" class="city-tag">{{ city }}</span>
-                        </div>
-                      </div>
+                        </div> -->
+                      </span>
                       <div class="zone-neighborhoods" *ngIf="zone && zone.neighborhoods && zone.neighborhoods.length > 0">
                         <strong>Quartiers :</strong>
                         <div class="neighborhoods-list">
@@ -1545,8 +1549,10 @@ export class AgencyDetailsComponent implements OnInit {
 
   showReportModal = false;
   unreadMessageCount: any;
+  quartierInfos: any; 
   constructor(
     private route: ActivatedRoute,
+    private countriesOrgMockService: CountriesOrgMockService,
     private agencyService: AgencyService,
     private authService: AuthService,
     private notificationService: NotificationService,
@@ -1566,6 +1572,13 @@ export class AgencyDetailsComponent implements OnInit {
     this.countUnreadMessages();
 
     // this.loadTariffs();
+  }
+
+  getQuartierInfos(qrt: string){
+    const data = this.countriesOrgMockService.getQuartierInfo(qrt);
+    this.quartierInfos = data;
+    console.log("Quartier Infos==>", this.quartierInfos);
+    return data;
   }
 
   // recuperations des tarifs liee a une agences
