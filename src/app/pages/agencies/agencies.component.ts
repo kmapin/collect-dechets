@@ -160,10 +160,10 @@ import { AuthService } from '../../services/auth.service';
                 <div class="agency-logo">
                   <img [src]="'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.agencyName">
                 </div>
-                <div class="agency-badge" *ngIf="agency.rating >= 3">
+                <!-- <div class="agency-badge" *ngIf="agency && agency.randomStars >= 1">
                   <i class="material-icons">star</i>
                   Top Rated
-                </div>
+                </div> -->
               </div>
   
               
@@ -171,11 +171,11 @@ import { AuthService } from '../../services/auth.service';
                 <h3 class="agency-name">{{ agency.agencyName }}</h3>
                 <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
                 
+                <div class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full" >
+                  <i *ngFor="let star of getStars(agency.rating, agency.randomStars)" class="material-icons star">star</i>
+                </div>
                 <div *ngIf="currentUser?.subscribedAgencyId == agency._id" class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
-                  <!-- <div class="stars">
-                    <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
-                  </div>
-                  <span class="rating-text">{{ agency.rating }}/5 ({{ agency.totalClients }} avis)</span> -->
+                  <!-- <span class="rating-text">{{ agency.randomStars }}/5 ({{ agency.totalClients }} avis)</span> -->
                    <div class="stars">
                     <i  class="material-icons star">star</i>
                   </div>
@@ -909,6 +909,7 @@ export class AgenciesComponent implements OnInit {
   agencyTariffs: WasteService[] = [];
   cities: string[] = ['Ouagadougou', 'Bobo-Dioulasso'];
   suggestions: any[] = [];
+  randomStarsList: number[] = [];
 
 // cities: string[] = [...];
 //sectors: string[] = [...]; // à remplir
@@ -1031,6 +1032,7 @@ currentUser!: any ;
         city: '',
         postalCode: ''
       },
+
       arrondissement: apiAgency.arrondissement || '',
       secteur: apiAgency.secteur || '',
       quartier: apiAgency.quartier || '',
@@ -1045,6 +1047,7 @@ currentUser!: any ;
       collections: apiAgency.collections || [],
       incidents: apiAgency.incidents || [],
       rating: apiAgency.rating || 0,
+      randomStars: Math.floor(Math.random() * 5) + 1,
       totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
       acceptTerms: apiAgency.acceptTerms || false,
       receiveOffers: apiAgency.receiveOffers || false,
@@ -1063,6 +1066,7 @@ currentUser!: any ;
       this.agencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
       this.filteredAgencies = this.agencies;
       console.log("Agences chargées :", this.filteredAgencies);
+      this.generateRandomStarsList()
       this.applyFilters();
     });
   }
@@ -1088,6 +1092,7 @@ applyFilters(): void {
     next: (response: any) => {
       this.filteredAgencies = (response.results || []).map((a: any) => this.mapApiAgency(a));
       console.log("Agences filtrées :", this.filteredAgencies);
+      this.generateRandomStarsList();
       this.sortAgencies();
     },
     error: (err) => {
@@ -1096,6 +1101,8 @@ applyFilters(): void {
     }
   });
 }
+
+
 
 // ...existing code...
 
@@ -1125,10 +1132,22 @@ applyFilters(): void {
     this.applyFilters();
   }
 
-  getStars(rating: number): number[] {
-    return new Array(Math.floor(rating)).fill(0);
+  // getStars(rating: number, randomStars?: number): number[] {
+  //   console.log("Rating:", rating+1, "Random Stars:", randomStars);
+  //   const stars = randomStars !== undefined ? randomStars : Math.floor(rating);
+  //   return stars > 0 ? Array(stars).fill(0) : [];
+  // }
+  generateRandomStarsList(): void {
+    this.randomStarsList = Array.from({ length: this.filteredAgencies.length }, () =>
+      Math.floor(Math.random() * 5) + 1
+    );
   }
-
+  getStars(rating: number, randomStars?: number): number[]
+   {
+    console.log("Rating:", rating+1, "Random Stars:", randomStars);
+    const stars = randomStars !== undefined ? randomStars : Math.floor(rating);
+    return stars > 0 ? Array(stars).fill(0) : [];
+  }
   getMinPrice(agency: Agency): number {
     return Math.min(...agency.services.map(service => service.price));
   }

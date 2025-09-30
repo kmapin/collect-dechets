@@ -22,6 +22,7 @@ export interface Agency {
   collectors: any[];
   clients: AgencyClient[];
   rating: number;
+  randomStars?: number | undefined; // Pour générer un nombre aléatoire d'étoiles
   totalClients: number;
   acceptTerms: boolean;
   receiveOffers: boolean;
