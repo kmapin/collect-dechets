@@ -24,9 +24,12 @@ import { FormsModule } from '@angular/forms';
             <!-- Section Brand -->
             <div class="footer-section brand-section">
               <div class="footer-brand">
-                <div class="brand-icon">
+                <!-- <div class="brand-icon">
                   <i class="material-icons">eco</i>
-                </div>
+                </div> -->
+                <div class="brand-logo">
+                <img src="assets/homeUseCases/Zéro_Déchet.png" alt="Logo ZéroDéchet+" class="logo">
+              </div>
                 <div class="brand-text">
                   <span class="brand-name">ZéroDéchet+</span>
                   <span class="brand-tagline">Gestion Facile</span>
@@ -386,6 +389,23 @@ import { FormsModule } from '@angular/forms';
       justify-content: center;
       font-size: 28px;
       box-shadow: 0 8px 32px rgba(0, 188, 212, 0.3);
+    }
+
+    .brand-logo {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 30px;
+      box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+    }
+    
+    .brand-logo img{
+      border-radius: 20px;
     }
 
     .brand-text {

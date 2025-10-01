@@ -319,8 +319,7 @@ import { interval, Subscription, switchMap } from 'rxjs';
     }
 
     .brand-logo img{
-      border-radius: 25px;
-     
+      border-radius: 20px;
     }
 
     .brand-text {
