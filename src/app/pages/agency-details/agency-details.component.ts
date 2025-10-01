@@ -1655,7 +1655,7 @@ submitSubscription(currentUserId: string | undefined, tariffId: string | undefin
       this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
     },
     error: (err) => {
-      this.notificationService.showError('Erreur', err?.error?.message || 'Impossible d\'enregistrer l\'abonnement.');
+      this.notificationService.showError('Erreur', err?.error || 'Impossible d\'enregistrer l\'abonnement.');
     }
   });
 }
