@@ -365,7 +365,7 @@ interface Subscription {
                     </div>
                   </div>
 
-                  <div *ngIf="filteredHistories.length === 0" class="empty-state">
+                  <div *ngIf="filteredHistories?.length === 0" class="empty-state">
                     <i class="material-icons">history</i>
                     <h3>Aucun historique</h3>
                     <p>Vos collectes passées apparaîtront ici</p>
