@@ -1,0 +1,569 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../services/auth.service';
+import { NotificationService } from '../../../services/notification.service';
+import { UserRole } from '../../../models/user.model';
+import { Agency } from '../../../models/agency.model';
+import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
+import { Admin } from '../../../services/admin';
+import { AgencyService } from '../../../services/agency.service';
+import { CountriesOrgMockService } from '../../../services/countries-org-mock.service';
+import { Arrondissement, City, Quartier, Sector } from '../../../models/countries-org.model';
+
+@Component({
+  selector: 'app-register',
+  imports: [CommonModule, RouterModule, FormsModule],
+  templateUrl: './register.html',
+  styleUrl: './register.css'
+})
+export class Register implements OnInit {
+
+  userData = {
+    _id: '',
+    role: UserRole.CLIENT as UserRole | null,
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    address: {
+      arrondissement: '',
+      sector: '',
+      street: '',
+      doorNumber: '',
+      doorColor: '',
+      neighborhood: '',
+      city: '',
+      postalCode: '',
+      // latitude: '',
+      // longitude: ''
+    },
+    agencyName: '',
+    agencyDescription: '',
+    termsAccepted: false,
+    acceptTerms: true,
+    receiveOffers: false,
+    commune: {
+      name: '',
+      region: '',
+      province: ''
+    }
+  };
+
+
+
+  arrondissements: QuartierData[] = OUAGA_DATA;
+  arrondissementss: Arrondissement[] = [];
+  cities: City[] = [];
+  secteurss: Sector[] = [];
+  secteurs: { secteur: string; quartiers: string[] }[] = [];
+  quartiers: string[] = [];
+  quartierss: Quartier[] = [];
+  agencyId: string = '';
+  showPassword = false;
+  isLoading = false;
+
+  roleMunicipality: string = '';
+  agency: any;
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private notificationService: NotificationService,
+    private adminService: Admin,
+    private activatedRoute: ActivatedRoute,
+    private agencyService: AgencyService,
+    private countriesOrgMockService: CountriesOrgMockService
+  ) { }
+
+  ngOnInit(): void {
+    this.formCountriesDataInit();
+    this.agencyId = this.activatedRoute.snapshot.params['id'];
+    if (this.agencyId) {
+      this.loadAgencyFromApi(this.agencyId);
+    }
+    console.log("L'id de l'agence est ", this.agencyId);
+    // this.roleMunicipality = this.adminService.getData()?.userRole || '';
+    this.roleMunicipality = localStorage.getItem('userRole') || '';
+    if (this.roleMunicipality === 'municipality') this.userData.role = UserRole.MUNICIPALITY
+    console.log(this.roleMunicipality);
+
+  }
+
+  formCountriesDataInit() {
+    this.getAllCountries();
+    this.test();
+  }
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  getPasswordStrength(): string {
+    const password = this.userData.password;
+    if (password.length < 6) return 'weak';
+    if (password.length < 10) return 'medium';
+    return 'strong';
+  }
+
+  getPasswordStrengthText(): string {
+    const strength = this.getPasswordStrength();
+    const texts = {
+      weak: 'Faible',
+      medium: 'Moyen',
+      strong: 'Fort'
+    };
+    return texts[strength as keyof typeof texts] || '';
+  }
+  loadAgencyFromApi(id: string | null): void {
+    this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
+      if (response.success && response.data) {
+        console.log('[DEBUG] Agency data:', response);
+        this.agency = this.mapApiAgency(response.data);
+        console.log('[DEBUG] Agency details:', this.agency);
+        this.userData._id = this.agency._id;
+        this.userData.role = this.agency.role;
+        this.userData.firstName = this.agency.firstName;
+        this.userData.lastName = this.agency.lastName;
+        this.userData.email = this.agency.email;
+        this.userData.phone = this.agency.phone;
+        // this.userData.password;
+        // this.userData.confirmPassword;
+        this.userData.acceptTerms = this.agency.termsAccepted; // renommé
+        this.userData.acceptTerms = this.agency.termsAccepted; // renommé
+        this.userData.receiveOffers = this.agency.receiveOffers;
+        this.userData.address.arrondissement = this.agency.address.arrondissement;
+        this.userData.address.sector = this.agency.address.sector;
+        this.userData.address.street = this.agency.address.street;
+        this.userData.address.doorNumber = this.agency.address.doorNumber;
+        this.userData.address.doorColor = this.agency.address.doorColor;
+        this.userData.address.neighborhood = this.agency.address.neighborhood;
+        this.userData.address.city = this.agency.address.city;
+        this.userData.address.postalCode = this.agency.address.postalCode;
+        // latitude: this.userData.address.latitude;
+        // longitude: this.userData.address.postalCode
+
+        this.userData.agencyName = this.agency.agencyName;
+        this.userData.agencyDescription = this.agency.agencyDescription
+
+
+      } else {
+        console.error('Erreur lors du chargement de l\'agence');
+        // Fallback vers les données mockées si l'API échoue
+        this.agencyService.getAgencyById(id).subscribe(agency => {
+          this.agency = agency || null;
+        });
+      }
+    });
+  }
+  private mapApiAgency(apiAgency: any): Agency {
+    return {
+      _id: apiAgency._id || '',
+      userId: apiAgency.userId || '',
+      role: apiAgency.role || UserRole.AGENCY,
+      firstName: apiAgency.firstName || '',
+      lastName: apiAgency.lastName || '',
+      agencyName: apiAgency.agencyName || '',
+      agencyDescription: apiAgency.agencyDescription || '',
+      phone: apiAgency.phone || '',
+      address: apiAgency.address || {
+        street: '',
+        arrondissement: '',
+        sector: '',
+        neighborhood: '',
+        city: '',
+        postalCode: ''
+      },
+      arrondissement: apiAgency.arrondissement || '',
+      secteur: apiAgency.secteur || '',
+      quartier: apiAgency.quartier || '',
+      licenseNumber: apiAgency.licenseNumber || '',
+      members: apiAgency.members || [],
+      serviceZones: apiAgency.serviceZones || [],
+      services: apiAgency.services || [],
+      employees: apiAgency.employees || [],
+      schedule: apiAgency.schedule || [],
+      collectors: apiAgency.collectors || [],
+      clients: apiAgency.clients || [],
+      collections: apiAgency.collections || [],
+      incidents: apiAgency.incidents || [],
+      rating: apiAgency.rating || 0,
+      totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
+      acceptTerms: apiAgency.acceptTerms || false,
+      receiveOffers: apiAgency.receiveOffers || false,
+      isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
+      createdAt: apiAgency.createdAt || '',
+      updatedAt: apiAgency.updatedAt || '',
+      __v: apiAgency.__v || 0
+    };
+  }
+  onRegister(): void {
+    if (!this.validateForm()) {
+      return;
+    }
+
+    this.isLoading = true;
+
+    let body: any;
+    if (this.userData.role === UserRole.CLIENT) {
+      body = {
+        role: this.userData.role,
+        firstName: this.userData.firstName,
+        lastName: this.userData.lastName,
+        email: this.userData.email,
+        phone: this.userData.phone,
+        password: this.userData.password,
+        confirmPassword: this.userData.confirmPassword,
+        acceptTerms: this.userData.acceptTerms, // renommé
+        termsAccepted: this.userData.acceptTerms, // renommé
+        receiveOffers: this.userData.receiveOffers,
+        // rue: this.userData.address.street,
+        // quartier: this.userData.address.neighborhood,
+        // numero: this.userData.address.doorNumber,
+        // couleurPorte: this.userData.address.doorColor,
+        // ville: this.userData.address.city,
+        // codePostal: this.userData.address.postalCode,
+        address: {
+          arrondissement: this.userData.address.arrondissement,
+          sector: this.userData.address.sector,
+          street: this.userData.address.street,
+          doorNumber: this.userData.address.doorNumber,
+          doorColor: this.userData.address.doorColor,
+          neighborhood: this.userData.address.neighborhood,
+          city: this.userData.address.city,
+          postalCode: this.userData.address.postalCode,
+          // latitude: this.userData.address.latitude,
+          // longitude: this.userData.address.postalCode
+        },
+      };
+      console.log('[DEBUG] Body envoyé à registerClient:', body);
+      this.authService.registerClient(body).subscribe({
+        next: (response: { success: boolean; user?: any; error?: string; message?: string; status?: string }) => {
+          this.isLoading = false;
+          console.log('[DEBUG] Réponse inscription client:', response);
+          const isSuccess =
+            response.success ||
+            response.status === 'success' ||
+            (typeof response.message === 'string' && (
+              response.message.toLowerCase().includes('succès') ||
+              response.message.toLowerCase().includes('réussi')
+            )) ||
+            !!response.user;
+
+          if (isSuccess) {
+            this.notificationService.showSuccess('Inscription réussie',
+              'Votre compte client a été créé avec succès ! Vous pouvez maintenant vous connecter.');
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          } else {
+            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
+            this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
+          this.notificationService.showError('Erreur lors de l\'inscription', errorMsg);
+        }
+      });
+      return;
+    } else if (this.userData.role === UserRole.AGENCY) {
+
+      body = {
+        _id: this.userData._id,
+        role: this.userData.role,
+        firstName: this.userData.firstName,
+        lastName: this.userData.lastName,
+        email: this.userData.email,
+        phone: this.userData.phone,
+        password: this.userData.password,
+        confirmPassword: this.userData.confirmPassword,
+        acceptTerms: this.userData.acceptTerms, // renommé
+        termsAccepted: this.userData.acceptTerms,
+        receiveOffers: this.userData.receiveOffers,
+        address: {
+          arrondissement: this.userData.address.arrondissement,
+          sector: this.userData.address.sector,
+          street: this.userData.address.street,
+          doorNumber: this.userData.address.doorNumber,
+          doorColor: this.userData.address.doorColor,
+          neighborhood: this.userData.address.neighborhood,
+          city: this.userData.address.city,
+          postalCode: this.userData.address.postalCode,
+          // latitude: this.userData.address.latitude,
+          // longitude: this.userData.address.postalCode
+        },
+        agencyName: this.userData.agencyName,
+        description: this.userData.agencyDescription
+      };
+      console.log('[DEBUG] Body envoyé à registerAgency:', body);
+      this.authService.registerAgency$(body).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          console.log('[DEBUG] Réponse inscription agence:', response);
+          const res: any = response;
+          const isSuccess =
+            response.success ||
+            res.status === 'success' ||
+            (typeof response.message === 'string' && (
+              response.message.toLowerCase().includes('succès') ||
+              response.message.toLowerCase().includes('réussi')
+            )) ||
+            !!response.agence;
+
+          if (isSuccess) {
+            this.notificationService.showSuccess('Inscription agence réussie',
+           'Votre agence a été créée avec succès ! Veuillez patienter pendant que l’administrateur active votre compte avant de pouvoir vous connecter.');
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          } else {
+            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
+            this.notificationService.showError('Erreur lors de l\'inscription agence', errorMsg);
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
+          // const errorMsg = this.getFriendlyMessage((error?.error?.error || error?.error?.message || error?.message || ''), false);
+          this.notificationService.showError('Erreur lors de l\'inscription agence', errorMsg);
+        }
+      });
+      return;
+    } else if (this.userData.role === UserRole.MUNICIPALITY) {
+      body = {
+        role: this.userData.role,
+        agencyId: [],
+        firstName: this.userData.firstName,
+        lastName: this.userData.lastName,
+        phone: this.userData.phone,
+        email: this.userData.email,
+        name: this.userData.firstName + ' ' + this.userData.lastName,
+        commune: {
+          region: this.userData.commune.region,
+          province: this.userData.commune.province,
+          name: this.userData.commune.name
+        },
+        managedZones: [
+          {
+            arrondissement: this.userData.address.arrondissement,
+            secteur: this.userData.address.sector,
+            quartier: this.userData.address.neighborhood,
+            village: this.userData.address.city,
+          }
+        ],
+        position: {
+
+        },
+        password: this.userData.password,
+        confirmPassword: this.userData.confirmPassword,
+        acceptTerms: this.userData.acceptTerms, // renommé
+        termsAccepted: this.userData.acceptTerms,
+      }
+      console.log('[DEBUG] Body envoyé à registerMunicipality:', body);
+      this.adminService.registerMunicipality$(body).subscribe({
+        next: (response) => {
+          localStorage.removeItem('userRole');
+          this.isLoading = false;
+          this.adminService.cleanData();
+          console.log('[DEBUG] Réponse inscription municipal:', response);
+          const res: any = response;
+          const isSuccess =
+            response.success ||
+            res.status === 'success' ||
+            (typeof response.message === 'string' && (
+              response.message.toLowerCase().includes('succès') ||
+              response.message.toLowerCase().includes('réussi')
+            )) ||
+            !!response.municipality;
+
+          if (isSuccess) {
+            this.notificationService.showSuccess('Inscription mairie réussie',
+              'Votre agence a été créée avec succès ! Vous pouvez maintenant vous connecter.');
+            setTimeout(() => {
+              this.router.navigate(['/dashboard/admin']);
+            }, 2000);
+          } else {
+            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
+            this.notificationService.showError('Erreur lors de l\'inscription mairie', errorMsg);
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.adminService.cleanData();
+          const errorMsg = this.getFriendlyMessage((error?.error?.message || error?.error?.message || error?.error || ''), false);
+          // const errorMsg = this.getFriendlyMessage((error?.error?.error || error?.error?.message || error?.message || ''), false);
+          this.notificationService.showError('Erreur lors de l\'inscription mairie', errorMsg);
+        }
+      });
+      return;
+    }
+  }
+
+  onArrondissementChange(arrondissement?: string) {
+    if (arrondissement) {
+      const sectorObj = this.arrondissementss.find(a => a.name === arrondissement);
+      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(sectorObj?.id || '');
+      this.secteurss = sectors ? sectors : [];
+      console.log("Secteurs  ==> ", this.secteurss);
+      this.quartiers = [];
+      this.userData.address.sector = '';
+      this.userData.address.neighborhood = '';
+    }
+  }
+
+  onSecteurChange(secteur: string) {
+    if (secteur) {
+      const secteurObj = this.secteurss.find(s => s.name === secteur);
+      const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(secteurObj?.id || '');
+      console.log("Quartiers  ==> ", quartiers);
+      this.quartierss = quartiers;
+      this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+    }
+    const secteurObj = this.secteurs.find(s => s.secteur === secteur);
+    this.quartiers = secteurObj ? secteurObj.quartiers : [];
+    this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+  }
+
+  onCityChange(city: string) {
+    if (city) {
+      const cityObj = this.cities.find(c => c.name === city);
+      console.log("City Object ==> ", cityObj);
+      const arr = this.countriesOrgMockService.getArrondissementsByCity(cityObj?.id || '');
+      this.arrondissementss = arr ? arr : [];
+      console.log("Arrondissements  ==> ", this.arrondissementss);
+      this.secteurs = [];
+      this.quartiers = [];
+      this.userData.address.arrondissement = '';
+      this.userData.address.sector = '';
+      this.userData.address.neighborhood = '';
+    };
+
+  }
+  private validateForm(): boolean {
+    // Vérifier que le rôle est bien sélectionné
+    if (!this.userData.role) {
+      this.notificationService.showError('Erreur', 'Veuillez sélectionner un rôle');
+      return false;
+    }
+
+    // Champs communs obligatoires
+    if (!this.userData.firstName || !this.userData.lastName || !this.userData.email || !this.userData.phone) {
+      this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
+      return false;
+    }
+
+    // Validation format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.userData.email)) {
+      this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
+      return false;
+    }
+
+    // Validation mot de passe
+    if (this.userData.password !== this.userData.confirmPassword) {
+      this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
+      return false;
+    }
+
+    if (this.userData.password.length < 8) {
+      this.notificationService.showError('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
+      return false;
+    }
+
+    // Validation acceptation des conditions
+    if (!this.userData.termsAccepted) {
+      this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
+      return false;
+    }
+
+    // Validation arrondissement obligatoire
+    // if (!this.userData.arrondissement) {
+    //   this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
+    //   return false;
+    // }
+
+    // Validation spécifique selon le rôle
+    if (this.userData.role === UserRole.CLIENT) {
+
+      const address = this.userData.address;
+      // if (!address.street || !address.doorNumber || !address.neighborhood || !address.city || !address.postalCode) {
+      //   this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
+      //   return false;
+      // }
+      if (!address.doorColor) {
+        this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
+        return false;
+      }
+    } else if (this.userData.role === UserRole.AGENCY) {
+      // Validation agence
+      if (!this.userData.agencyName) {
+        this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+        return false;
+      }
+    } else if (this.userData.role === UserRole.MUNICIPALITY) {
+      // Validation agence
+      // if (!this.userData.agencyName) {
+      //   this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+      //   return false;
+      // }
+    } else {
+      // Cas improbable, mais au cas où
+      this.notificationService.showError('Erreur', 'Rôle utilisateur invalide');
+      return false;
+    }
+
+    // Si tout est ok
+    return true;
+  }
+
+  /**
+   * Convertit les messages techniques du backend en messages conviviaux pour l'utilisateur
+   */
+  private getFriendlyMessage(raw: string, isSuccess: boolean = false): string {
+    if (!raw) {
+      return isSuccess
+        ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+        : "Une erreur est survenue. Veuillez réessayer.";
+    }
+    const map: { [key: string]: string } = {
+      "Email already exists": "Cette adresse email est déjà utilisée.",
+      "Invalid email or password": "Email ou mot de passe invalide.",
+      "User created successfully": "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+      "Missing required fields": "Veuillez remplir tous les champs obligatoires.",
+      "Password too short": "Le mot de passe est trop court.",
+      "Invalid phone number": "Le numéro de téléphone est invalide.",
+      // Ajoute d'autres correspondances ici si besoin
+    };
+    if (map[raw]) return map[raw];
+    for (const key in map) {
+      if (raw.toLowerCase().includes(key.toLowerCase())) return map[key];
+    }
+    return isSuccess
+      ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+      : raw;
+  }
+
+  private redirectToDashboard(role: string): void {
+    const dashboardRoutes = {
+      client: '/dashboard/client',
+      agency: '/dashboard/agency',
+      collector: '/dashboard/collector',
+      municipality: '/dashboard/municipality'
+    };
+
+    const route = dashboardRoutes[role as keyof typeof dashboardRoutes] || '/';
+    this.router.navigate([route]);
+  }
+
+  test() {
+    console.log("All sectors ==> ", this.countriesOrgMockService.getSectorsByArrondissement("1"));
+  }
+
+  getAllCountries() {
+    console.log("All cities ==> ", this.countriesOrgMockService.getCitiesByCountry("1"));
+    this.cities = this.countriesOrgMockService.getCitiesByCountry("1");
+  }
+}

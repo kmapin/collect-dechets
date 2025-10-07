@@ -1,0 +1,115 @@
+<div class="subscription-page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">Mon Abonnement</h1>
+      <p class="page-subtitle">
+        Gérez votre abonnement et vos services de collecte
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="subscription-content">
+      <div class="subscription-card card">
+        <h1 class="text-[28px] font-semibold text-[--primary-color]">
+          Abonnement Actuel
+        </h1>
+        <!-- ...existing code... -->
+        <div class="subscription-info" *ngIf="activeSubscription; else noSub">
+          <div class="plan-summary">
+            <span class="plan-badge" [ngClass]="activeSubscription.plan">
+              <ng-container [ngSwitch]="activeSubscription.plan">
+                <ng-container *ngSwitchCase="'premium'">
+                  <i class="material-icons" style="font-size: 32px; color: gold"
+                    >star</i
+                  >
+                </ng-container>
+                <ng-container *ngSwitchCase="'standard'">
+                  <i
+                    class="material-icons"
+                    style="font-size: 32px; color: #2196f3"
+                    >star_half</i
+                  >
+                </ng-container>
+                <ng-container *ngSwitchCase="'basic'">
+                  <i
+                    class="material-icons"
+                    style="font-size: 32px; color: #9e9e9e"
+                    >star_outline</i
+                  >
+                </ng-container>
+              </ng-container>
+              {{ activeSubscription.plan | titlecase }}
+            </span>
+            <span
+              class="status-badge"
+              [class.active]="activeSubscription.status === 'active'"
+            >
+              {{ activeSubscription.status | titlecase }}
+            </span>
+          </div>
+          <div class="info-item-agencyName">
+            <strong>Agence:</strong>
+            <span class="font-semibold text-[--primary-color]"
+              >{{ activeSubscription.agencyId?.agencyName }}</span
+            >
+          </div>
+          <div class="info-item">
+            <strong>Adresses:</strong>
+            <span
+              >{{ activeSubscription.agencyId?.address?.city }} - {{
+              activeSubscription.agencyId?.address?.neighborhood }} - {{
+              activeSubscription.agencyId?.address?.sector }}</span
+            >
+          </div>
+
+          <div class="info-item">
+            <strong>Code postal:</strong>
+            <span>{{ activeSubscription.agencyId?.address?.postalCode }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Prix:</strong>
+            <span class="text-[20px] font-semibold text-[--primary-color]"
+              >{{ activeSubscription.amount }}
+              <sup class="tex-black">FCFA</sup>/ Mois</span
+            >
+          </div>
+          <div class="info-item">
+            <strong>Début:</strong>
+            <span>{{ activeSubscription.startDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Fin:</strong>
+            <span>{{ activeSubscription.endDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="contact-info">
+            <strong>Contacts:</strong>
+            <span>{{ activeSubscription.agencyId?.phone }}</span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" (click)="renewSubscription()">
+              Configuration
+            </button>
+            <button class="btn btn-secondary" (click)="contactSupport()">
+              Contactez l'agence
+            </button>
+          </div>
+        </div>
+        <ng-template #noSub>
+          <div class="info-item">
+            <span>Aucun abonnement actif.</span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" (click)="renewSubscription()">
+              Configuration
+            </button>
+            <button class="btn btn-secondary" (click)="contactSupport()">
+              Contactez l'agence
+            </button>
+          </div>
+        </ng-template>
+        <!-- ...existing code... -->
+      </div>
+    </div>
+  </div>
+</div>

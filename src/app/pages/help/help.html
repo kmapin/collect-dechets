@@ -1,0 +1,28 @@
+<div class="help-page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">Centre d'aide</h1>
+      <p class="page-subtitle">
+        Trouvez rapidement les réponses à vos questions et apprenez à utiliser
+        WasteManager
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="help-content">
+      <div class="help-categories">
+        <div class="category-card card" *ngFor="let category of helpCategories">
+          <div class="category-icon">
+            <i class="material-icons">{{ category.icon }}</i>
+          </div>
+          <h3>{{ category.title }}</h3>
+          <p>{{ category.description }}</p>
+          <ul>
+            <li *ngFor="let item of category.items">{{ item }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

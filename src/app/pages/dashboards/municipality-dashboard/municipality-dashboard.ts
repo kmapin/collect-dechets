@@ -9,23 +9,18 @@ import { NotificationService } from "../../../services/notification.service";
 import { User } from "../../../models/user.model";
 import { Agency } from "../../../models/agency.model";
 import { Collection, CollectionStatus } from "../../../models/collection.model";
+import { OUAGA_DATA } from "../../../data/mock-data";
 import { Admin } from "../../../services/admin";
-import { MatCardModule } from "@angular/material/card";
-import { ClientService } from "../../../services/client.service";
-import { SharedService } from "../../../services/shared-service";
-import { forkJoin, map, of } from "rxjs";
 import {
   MOCK_CITIES,
   MOCK_ARRONDISSEMENTS,
 } from "../../../data/countries-org.mock";
 
-interface AdminStatistics {
+interface MunicipalityStatistics {
   totalAgencies: number;
   activeAgencies: number;
   totalClients: number;
   totalCollectors: number;
-  activeClients: number;
-  totalCollections: number;
   todayCollections: number;
   reportsFromClients?: {
     total: number;
@@ -33,8 +28,6 @@ interface AdminStatistics {
     pending: number;
   };
   completeCollections: number;
-  totalMunicipalities: number;
-  completedCollections: number;
   totalRevenue: number;
   averageRating: number;
   pendingReports: number;
@@ -55,7 +48,6 @@ interface AgencyAudit {
   lastAudit: Date;
   complianceScore: number;
   issues: string[];
-  userId: string;
 }
 
 interface WasteStatistic {
@@ -67,14 +59,14 @@ interface WasteStatistic {
 }
 
 interface ZoneStatistic {
+  cities: any;
+  country: any;
   name: string;
   agencies: number;
   clients: number;
   collections: number;
   coverage: number;
   incidents: number;
-  country: string;
-  cities?: ZoneStatistic[];
 }
 
 interface GroupedZoneStatistics {
@@ -114,30 +106,23 @@ interface Communication {
 }
 
 @Component({
-  selector: 'app-admin-dashboard',
-  imports: [CommonModule, RouterModule, FormsModule, MatCardModule],
-  templateUrl: './admin-dashboard.html',
-  styleUrl: './admin-dashboard.css'
+  selector: 'app-municipality-dashboard',
+  imports: [CommonModule, RouterModule, FormsModule],
+  templateUrl: './municipality-dashboard.html',
+  styleUrl: './municipality-dashboard.css'
 })
-export class AdminDashboard implements OnInit {
+export class MunicipalityDashboard  implements OnInit {
   currentUser: User | null = null;
-  Math: any = Math;
   activeTab = "overview";
-  longText = `The Shiba Inu is the smallest of the six original and distinct spitz breeds of dog
-    from Japan. A small, agile dog that copes very well with mountainous terrain, the Shiba Inu was
-    originally bred for hunting.`;
+
   // Data
-  statistics: AdminStatistics = {
+  statistics: MunicipalityStatistics = {
     totalAgencies: 15,
     activeAgencies: 14,
     totalClients: 12500,
-    activeClients: 12000,
     totalCollectors: 85,
     todayCollections: 450,
-    completedCollections: 425,
     completeCollections: 425,
-    totalMunicipalities: 25,
-    totalCollections: 425,
     totalRevenue: 485000,
     averageRating: 4.2,
     pendingReports: 8,
@@ -145,26 +130,21 @@ export class AdminDashboard implements OnInit {
   };
 
   agencyAudits: AgencyAudit[] = [];
-  clientsAudits: any[] = [];
-  collectorsAudits: any[] = [];
   filteredAgencies: AgencyAudit[] = [];
-  filteredClients: any[] = [];
-  filteredCollectors: any[] = [];
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: GroupedZoneStatistics[] = [];
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
   communications: Communication[] = [];
-  //  zoneStatistics: ZoneStatistic[] = [];
+  // zoneStatistics: ZoneStatistic[] = [];
 
   // Filters
   agenciesFilter = "all";
-  clientsFilter = "all";
-  collectorsFilter = "all";
   complianceFilter = "all";
   statisticsPeriod = "month";
   incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
   severityFilter: "all" | "low" | "medium" | "high" | "critical" = "all";
+  // incidentsFilter = "all";
 
   // Modals
   showCommunicationModal = false;
@@ -177,29 +157,12 @@ export class AdminDashboard implements OnInit {
     message: "",
     recipients: [],
   };
-  //Statistics for admin
-  statisticsAdmin: AdminStatistics | null = null;
-  //List all clients for admin dashboard
-  clients: any;
 
   tabs = [
     { id: "overview", label: "Vue d'ensemble", icon: "dashboard", badge: null },
-    {
-      id: "municipalities",
-      label: "Municipalités",
-      icon: "business",
-      badge: null,
-    },
-    { id: "agencies", label: "Agences", icon: "business", badge: null },
-    { id: "collectors", label: "Collecteurs", icon: "business", badge: null },
-    { id: "clients", label: "Clients", icon: "business", badge: null },
+    { id: "agencies", label: "Audit Agences", icon: "business", badge: 0 },
     { id: "statistics", label: "Statistiques", icon: "analytics", badge: null },
-    {
-      id: "incidents",
-      label: "Incidents",
-      icon: "report_problem",
-      badge: null,
-    },
+    { id: "incidents", label: "Incidents", icon: "report_problem", badge: 0 },
     // {
     //   id: "communications",
     //   label: "Communications",
@@ -207,46 +170,38 @@ export class AdminDashboard implements OnInit {
     //   badge: null,
     // },
   ];
-  municipalitiesAudits: any;
-  filteredMunicipalities: any[] = [];
+  statisticsAdmin: any;
   clientGrowth: number = 0;
-  signalementsAudits: any;
-  filteredSignalements: any[] = [];
-isDisabled = true;
+
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
-    private collectionService: CollectionService,
     private adminService: Admin,
-    private clientService: ClientService,
+    private collectionService: CollectionService,
     private notificationService: NotificationService,
-    private sharedService: SharedService,
     private router: Router,
     private cd: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    this.getAllAgenciesIDs();
-    // if(this.agencies.length > 0){
-    //   this.loadAllCollectors();
-    // }
-    this.loadAdminData();
-    this.showAdminStatistics();
-    this.loadAllMunipalities();
+    this.loadMunicipalityData();
+    this.loadZoneStatistics();
     this.getClientGrowth();
+    this.showAdminStatistics();
+    this.filterIncidents();
     this.loadZoneStat();
   }
 
-  loadAdminData(): void {
+  loadMunicipalityData(): void {
     this.loadAgencyAudits();
     this.loadWasteStatistics();
     this.loadZoneStatistics();
-    this.loadZoneStat();
-    this.loadCommunications();
-    this.showAdminClients();
     this.loadAllSignalements();
+    this.showAdminStatistics();
+    this.loadZoneStat();
     // this.loadIncidents();
+    // this.loadCommunications();
   }
 
   loadAgencyAudits(): void {
@@ -271,55 +226,61 @@ isDisabled = true;
         this.filteredAgencies = [...this.agencyAudits];
         console.log(" this.agencyAudits", this.agencyAudits);
         console.log(" this.agencies", agencies);
+        const auditTab = this.tabs.find((tab) => tab.id === "agencies");
+        if (auditTab) {
+          auditTab.badge = this.agencyAudits.length;
+          this.cd.detectChanges();
+        }
       },
     });
-    // this.agencyAudits = [
-    //   {
-    //     id: '1',
-    //     name: 'EcoClean Services',
-    //     status: 'active',
-    //     clients: 1250,
-    //     collectors: 8,
-    //     zones: 3,
-    //     collectionsToday: 45,
-    //     completionRate: 96,
-    //     rating: 4.5,
-    //     revenue: 32450,
-    //     lastAudit: new Date('2024-01-10'),
-    //     complianceScore: 95,
-    //     issues: []
-    //   },
-    //   {
-    //     id: '2',
-    //     name: 'GreenWaste Solutions',
-    //     status: 'active',
-    //     clients: 850,
-    //     collectors: 6,
-    //     zones: 2,
-    //     collectionsToday: 32,
-    //     completionRate: 88,
-    //     rating: 4.2,
-    //     revenue: 22100,
-    //     lastAudit: new Date('2024-01-08'),
-    //     complianceScore: 82,
-    //     issues: ['Retards fréquents', 'Signalements clients']
-    //   },
-    //   {
-    //     id: '3',
-    //     name: 'WasteManager Pro',
-    //     status: 'suspended',
-    //     clients: 450,
-    //     collectors: 3,
-    //     zones: 1,
-    //     collectionsToday: 0,
-    //     completionRate: 0,
-    //     rating: 3.8,
-    //     revenue: 0,
-    //     lastAudit: new Date('2024-01-05'),
-    //     complianceScore: 65,
-    //     issues: ['Non-conformité réglementaire', 'Licence expirée']
-    //   }
-    // ];
+
+    //   this.agencyAudits = [
+    //     {
+    //       id: '1',
+    //       name: 'EcoClean Services',
+    //       status: 'active',
+    //       clients: 1250,
+    //       collectors: 8,
+    //       zones: 3,
+    //       collectionsToday: 45,
+    //       completionRate: 96,
+    //       rating: 4.5,
+    //       revenue: 32450,
+    //       lastAudit: new Date('2024-01-10'),
+    //       complianceScore: 95,
+    //       issues: []
+    //     },
+    //     {
+    //       id: '2',
+    //       name: 'GreenWaste Solutions',
+    //       status: 'active',
+    //       clients: 850,
+    //       collectors: 6,
+    //       zones: 2,
+    //       collectionsToday: 32,
+    //       completionRate: 88,
+    //       rating: 4.2,
+    //       revenue: 22100,
+    //       lastAudit: new Date('2024-01-08'),
+    //       complianceScore: 82,
+    //       issues: ['Retards fréquents', 'Signalements clients']
+    //     },
+    //     {
+    //       id: '3',
+    //       name: 'WasteManager Pro',
+    //       status: 'suspended',
+    //       clients: 450,
+    //       collectors: 3,
+    //       zones: 1,
+    //       collectionsToday: 0,
+    //       completionRate: 0,
+    //       rating: 3.8,
+    //       revenue: 0,
+    //       lastAudit: new Date('2024-01-05'),
+    //       complianceScore: 65,
+    //       issues: ['Non-conformité réglementaire', 'Licence expirée']
+    //     }
+    //   ];
   }
 
   loadWasteStatistics(): void {
@@ -355,6 +316,7 @@ isDisabled = true;
     ];
   }
 
+  // Récupérer les différents pays et les villes
   loadZoneStatistics(): void {
     const stats = this.agencyService.getAgenceStats();
     const grouped: { [key: string]: any[] } = {};
@@ -379,6 +341,7 @@ isDisabled = true;
     }));
   }
 
+  // Récupérer les différentes statistiques des villes
   loadZoneStat(): void {
     this.adminService.getAllStatisticCity().subscribe({
       next: (response: any) => {
@@ -418,48 +381,42 @@ isDisabled = true;
     });
   }
 
-  loadIncidents1(): void {
-    this.incidents = [
-      {
-        id: "1",
-        agencyId: "2",
-        agencyName: "GreenWaste Solutions",
-        type: "missed_collection",
-        description: "Collecte manquée dans le secteur Nord",
-        severity: "medium",
-        date: new Date(),
-        status: "open",
+  /**Listes des signalements des users */
+  loadAllSignalements() {
+    this.adminService.getAllReports().subscribe({
+      next: (response: any) => {
+        this.incidents = response.map((signalement: any) => {
+          return {
+            agencyId: signalement?.agency?._id,
+            ...signalement,
+          };
+        });
+        this.filteredIncidents = [...this.incidents];
+        console.log("signalements in response", response);
+        console.log("signalements in dashboard", this.filteredIncidents);
+        const incidentsTab = this.tabs.find((tab) => tab.id === "incidents");
+        if (incidentsTab) {
+          incidentsTab.badge = this.incidents.length;
+          this.cd.detectChanges();
+        }
       },
-      {
-        id: "2",
-        agencyId: "3",
-        agencyName: "WasteManager Pro",
-        type: "compliance_issue",
-        description: "Non-respect des horaires réglementaires",
-        severity: "high",
-        date: new Date(Date.now() - 86400000),
-        status: "pending",
-        assignedTo: "Inspecteur Martin",
-      },
-    ];
-    this.filteredIncidents = [...this.incidents];
+    });
   }
 
-  loadCommunications(): void {
-    this.communications = [
-      {
-        id: "1",
-        type: "directive",
-        title: "Nouvelle réglementation tri sélectif",
-        message:
-          "Application des nouvelles consignes de tri à partir du 1er février",
-        recipients: ["1", "2"],
-        priority: "high",
-        sentAt: new Date(Date.now() - 3600000),
-        readBy: ["1"],
-      },
-    ];
-  }
+  // loadCommunications(): void {
+  //   this.communications = [
+  //     {
+  //       id: '1',
+  //       type: 'directive',
+  //       title: 'Nouvelle réglementation tri sélectif',
+  //       message: 'Application des nouvelles consignes de tri à partir du 1er février',
+  //       recipients: ['1', '2'],
+  //       priority: 'high',
+  //       sentAt: new Date(Date.now() - 3600000),
+  //       readBy: ['1']
+  //     }
+  //   ];
+  // }
 
   // Utility methods
   getAgencyStatusText(status?: string): string {
@@ -473,55 +430,7 @@ isDisabled = true;
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
-  getMunicipalityStatusText(status?: string): string {
-    if (!status) {
-      return `${this.statisticsAdmin?.totalMunicipalities} actives`;
-    }
-    const statusTexts = {
-      active: "Active",
-      inactive: "Inactive",
-      suspended: "Suspendue",
-    };
-    return statusTexts[status as keyof typeof statusTexts] || status;
-  }
 
-  getCollectorStatusText(status?: string): string {
-    if (!status) {
-      return `${this.statisticsAdmin?.totalCollectors} actives`;
-    }
-    const statusTexts = {
-      active: "Active",
-      inactive: "Inactive",
-      suspended: "Suspendue",
-    };
-    return statusTexts[status as keyof typeof statusTexts] || status;
-  }
-  getClientSubscriptionText(status?: string): string {
-    if (!status) {
-      return `Inactif`;
-    }
-    return `Actif`;
-    // const statusClientTexts = {
-    //   active: "Actif",
-    //   inactif: "Inactif",
-    // };
-    // return (
-    //   statusClientTexts[status as keyof typeof statusClientTexts] || status
-    // );
-  }
-
-  getCollectorSubscriptionText(status?: string): string {
-    if (!status) {
-      return `${this.filteredCollectors?.length} actives`;
-    }
-    const statusClientTexts = {
-      active: "Active",
-      inactive: "Inactive",
-    };
-    return (
-      statusClientTexts[status as keyof typeof statusClientTexts] || status
-    );
-  }
   getClientStatusText(status?: string): string {
     if (!status) {
       return `${this.statisticsAdmin?.activeClients} actives`;
@@ -533,16 +442,15 @@ isDisabled = true;
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
+
   getClientGrowth() {
-    // return Math.floor(Math.random() * 10) + 5;
     this.clientGrowth = Math.floor(Math.random() * 10) + 5;
     this.cd.detectChanges();
-    // return 5;
   }
 
   getCollectionRate(): number {
     return Math.round(
-      (this.statistics.completedCollections /
+      (this.statistics.completeCollections /
         this.statistics.todayCollections) *
         100
     );
@@ -586,12 +494,12 @@ isDisabled = true;
 
   getSeverityIcon(severity: string): string {
     const icons = {
-      critical: "error",
-      high: "warning",
-      medium: "info",
-      low: "help",
+      critical: "dangerous",
+      high: "priority_high",
+      medium: "warning",
+      low: "info",
     };
-    return icons[severity as keyof typeof icons] || "help";
+    return icons[severity as keyof typeof icons] || "i";
   }
 
   getSeverityText(severity: string): string {
@@ -607,17 +515,17 @@ isDisabled = true;
   getIncidentTypeText(type: string): string {
     const types = {
       missed_collection: "Collecte manquée",
+      problem: "Collecte manquée",
       compliance_issue: "Non-conformité",
       complaint: "Réclamation",
       technical_issue: "Problème technique",
-      problem: "Collecte manquée",
     };
     return types[type as keyof typeof types] || type;
   }
 
   getIncidentStatusText(status: string): string {
     const statuses = {
-      // open: "Ouvert",
+      open: "Ouvert",
       pending: "En cours",
       resolved: "Résolu",
     };
@@ -682,6 +590,16 @@ isDisabled = true;
     return agency ? agency.name : "Agence inconnue";
   }
 
+  // Statistics
+  showAdminStatistics(): void {
+    this.adminService.getAllStatistics().subscribe({
+      next: (statistics: any) => {
+        this.statisticsAdmin = statistics;
+        console.log(this.statisticsAdmin);
+      },
+    });
+  }
+
   // Filter methods
   filterAgencies(): void {
     this.filteredAgencies = this.agencyAudits.filter((agency) => {
@@ -701,45 +619,7 @@ isDisabled = true;
       return statusMatch && complianceMatch;
     });
   }
-  filterClients(): void {
-    this.filteredClients = this.clientsAudits.filter((client) => {
-      const statusMatch =
-        this.clientsFilter === "all" ||
-        client?.active_subscription
-          .map((sub: any) => sub.status)
-          .includes(this.clientsFilter);
-      let complianceMatch = true;
 
-      // if (this.complianceFilter === 'excellent') {
-      //   complianceMatch = client.complianceScore >= 95;
-      // } else if (this.complianceFilter === 'good') {
-      //   complianceMatch = client.complianceScore >= 85 && client.complianceScore < 95;
-      // } else if (this.complianceFilter === 'poor') {
-      //   complianceMatch = client.complianceScore < 85;
-      // }
-
-      return statusMatch;
-    });
-  }
-
-  filterCollectors(): void {
-    this.filteredCollectors = this.collectorsAudits.filter((client) => {
-      const statusMatch =
-        this.collectorsFilter === "all" ||
-        client.isActive == this.collectorsFilter;
-      let complianceMatch = true;
-
-      // if (this.complianceFilter === 'excellent') {
-      //   complianceMatch = client.complianceScore >= 95;
-      // } else if (this.complianceFilter === 'good') {
-      //   complianceMatch = client.complianceScore >= 85 && client.complianceScore < 95;
-      // } else if (this.complianceFilter === 'poor') {
-      //   complianceMatch = client.complianceScore < 85;
-      // }
-
-      return statusMatch;
-    });
-  }
   filterIncidents(): void {
     this.filteredIncidents = this.incidents.filter((incident) => {
       const statusMatch =
@@ -759,22 +639,7 @@ isDisabled = true;
       "Génération du rapport global en cours..."
     );
   }
-//   handleDisabledClick(event: MouseEvent) {
-//   if (this.isDisabled) {
-//     event.stopPropagation();
-//     this.notificationService.showInfo(
-//       "Info",
-//       "Fonctionnalite viendra bientôt..."
-//     );
-//   }
-// }
-  viewMunicipalityDetails(municipalityId: string): void {
-    this.notificationService.showInfo(
-      "Détails",
-      "Ouverture des détails de la mairie"
-    );
-    this.router.navigate(["/municipality", municipalityId]);
-  }
+
   viewAgencyDetails(agencyId: string): void {
     this.notificationService.showInfo(
       "Détails",
@@ -782,35 +647,7 @@ isDisabled = true;
     );
     this.router.navigate(["/agencies", agencyId]);
   }
-  selectedClient: any = null; 
-showClientDetailsModal: boolean = false;
-viewClientDetails(clientId: string): void {
-  this.notificationService.showInfo("Détails", "Récupération des détails du client...");
-  
-  this.adminService.getClientById(clientId).subscribe({
-    next: (client: any) => {
-      this.selectedClient = client.data; 
-      console.log('voici les details du client:',client)
-      this.showClientDetailsModal = true; 
-    },
-    error: (err: any) => {
-      console.error("Erreur lors de la récupération des détails du client :", err);
-      this.notificationService.showError("Erreur", "Impossible de récupérer les détails du client.");
-    }
-  });
-}
-  viewCollectorDetails(clientId: string): void {
-    this.notificationService.showInfo(
-      "Détails",
-      "Ouverture des détails du collecteur"
-    );
-  }
-  auditMunicipality(municipalityId: string): void {
-    this.notificationService.showInfo(
-      "Audit",
-      "Lancement de l'audit de l'agence"
-    );
-  }
+
   auditAgency(agencyId: string): void {
     this.notificationService.showInfo(
       "Audit",
@@ -818,12 +655,6 @@ viewClientDetails(clientId: string): void {
     );
   }
 
-  contactMunicipality(municipalityId: string): void {
-    this.notificationService.showInfo(
-      "Contact",
-      "Ouverture des informations de contact"
-    );
-  }
   contactAgency(agencyId?: string): void {
     this.router.navigate(["/agencies", agencyId]);
     this.notificationService.showInfo(
@@ -936,192 +767,4 @@ viewClientDetails(clientId: string): void {
       );
     }
   }
-
-  // Statistics
-  showAdminStatistics(): void {
-    this.adminService.getAllStatistics().subscribe({
-      next: (statistics: any) => {
-        this.statisticsAdmin = statistics;
-        console.log(this.statisticsAdmin);
-      },
-    });
-  }
-
-  //clients
-
-  showAdminClients(): void {
-    this.clientService.getAllClients().subscribe({
-      next: (response: any) => {
-        this.clientsAudits = response?.data.map((client: any) => {
-          return {
-            _id: client._id,
-            data: client,
-            active_subscription: client?.subscriptionHistory.filter(
-              (s: any) => s.status === "active"
-            ),
-          };
-        });
-        this.filteredClients = [...this.clientsAudits];
-        console.log("clients in dashboard", this.filteredClients);
-      },
-    });
-  }
-
-  agencies: any[] = [];
-  getAllAgenciesIDs(): void {
-    this.agencyService.getAllAgenciesFromApi().subscribe({
-      next: (response: any) => {
-        this.agencies = response?.data.map((a: any) => a._id);
-        console.log("agencies in dashboard", response, this.agencies);
-        this.loadAllCollectors();
-      },
-    });
-  }
-  loadAllCollectors(): void {
-    this.adminService.getAllEmployees("collector").subscribe({
-      next: (response: any) => {
-        const collectors = response?.employees || [];
-
-        const collectorsWithAgencies$ = collectors.map((employee: any) => {
-          const agency$ = this.agencies.includes(employee.agencyId)
-            ? this.agencyService.getAgencyById1(employee.agencyId)
-            : of({ data: { agencyName: "" } });
-
-          return agency$.pipe(
-            map((agencyResponse: any) => {
-              return {
-                agency: {
-                  agencyName: agencyResponse?.data?.agencyName || "",
-                  agencyId: agencyResponse?.data?._id || "",
-                  address: {
-                    city: agencyResponse?.data?.address?.city || "",
-                    quartier: agencyResponse?.data?.address?.neighborhood || "",
-                    postalCode: agencyResponse?.data?.address?.postalCode || "",
-                    sector: agencyResponse?.data?.address?.sector || "",
-                    street: agencyResponse?.data?.address?.street || "",
-                  },
-                },
-                createdAt: employee?.createdAt || "",
-                email: employee?.email || "",
-                firstName: employee?.firstName || "",
-                hiredAt: employee?.hiredAt || "",
-                isActive: employee?.isActive ? "active" : "inactive",
-                lastName: employee?.lastName || "",
-                phone: employee?.phone || "",
-                role: employee?.role || "",
-                updatedAt: employee?.updatedAt || "",
-                userId: employee?.userId || "",
-                zones: employee?.zones || [],
-              };
-            })
-          );
-        });
-
-        forkJoin(collectorsWithAgencies$).subscribe((result: any) => {
-          this.collectorsAudits = result;
-          this.filteredCollectors = [...this.collectorsAudits];
-          console.log("collectors in dashboard", this.filteredCollectors);
-        });
-      },
-    });
-  }
-  getInitials(fullName: string) {
-    return this.sharedService.getInitials(fullName);
-  }
-
-  getRandomColor(item: any): string {
-    return this.sharedService.getRandomColor(item);
-  }
-
-  //Agencies
-
-  // getAgencyById(id: string) {
-  //   return this.agencyService.getAgencyByIdFromApi(id).subscribe({
-  //     next: (response: any) => {
-  //       if (response.success) {
-  //         console.log('agencies in dashboard', response?.data?.agencyName);
-  //       }
-  //     }
-  //   });
-  // }
-
-  activateAgency(id: string) {
-    this.agencyService.activateAgency(id).subscribe({
-      next: (response: any) => {
-        console.log("agency activated  in dashboard", response);
-        if (response.message) {
-          this.notificationService.showSuccess(
-            "Activation",
-            "Agence activée avec succès"
-          );
-          this.loadAgencyAudits();
-        }
-      },
-      error: (error: any) => {
-        console.error("Error activating agency:", error);
-        const msg = error?.error?.message || "Error activating agency";
-        this.notificationService.showSuccess("Activation", msg);
-      },
-    });
-  }
-
-  loadAllMunipalities() {
-    this.adminService.getAllMunicipalities().subscribe({
-      next: (response: any) => {
-        this.municipalitiesAudits = response.map((municipality: any) => {
-          return {
-            _id: municipality._id,
-            data: municipality,
-          };
-        });
-        this.filteredMunicipalities = [...this.municipalitiesAudits];
-        console.log("municipalities in response", response);
-        console.log("municipalities in dashboard", this.filteredMunicipalities);
-       
-      },
-    });
-  }
-  /**Listes des signalements des users */
-  loadAllSignalements() {
-    this.adminService.getAllReports().subscribe({
-      next: (response: any) => {
-        this.incidents = response.map((signalement: any) => {
-          return {
-            agencyId: signalement.agency._id,
-            ...signalement,
-          };
-        });
-        this.filteredIncidents = [...this.incidents];
-        console.log("signalements in response", response);
-        console.log("signalements in dashboard", this.filteredIncidents);
-      },
-    });
-  }
-  //naviguate to add Municipality
-  navigateToAddMunicipality() {
-    this.router.navigate(["/register"]);
-    this.adminService.setData("municipality");
-  }
-  closeClientDetailsModal(): void {
-  this.showClientDetailsModal = false;
-  this.selectedClient = null; 
-}
-getTabBadge(tabId: string): number {
-  switch (tabId) {
-    case 'overview':
-      return this.filteredAgencies.length + this.filteredMunicipalities.length + this.filteredClients.length + this.filteredCollectors.length + this.filteredIncidents.length;
-    case 'municipalities':
-      return this.filteredMunicipalities.length;
-    case 'agencies':
-      return this.filteredAgencies.length;
-    case 'clients':
-      return this.filteredClients.length;
-    case 'collectors':
-      return this.filteredCollectors.length;
-    case 'incidents':
-      return this.filteredIncidents.length;
-    default:
-      return 0;
-  }
-}
 }

@@ -1,0 +1,26 @@
+.privacy-page {
+  min-height: 100vh;
+  background: var(--light-gray);
+}
+
+.privacy-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+.privacy-content section {
+  margin-bottom: 32px;
+}
+
+.privacy-content h2 {
+  color: var(--primary-color);
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.privacy-content p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}

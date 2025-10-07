@@ -1,0 +1,84 @@
+    <div class="contact-page">
+      <div class="page-header">
+        <div class="container">
+          <h1 class="page-title">Contactez-nous</h1>
+          <p class="page-subtitle">
+            Notre équipe est là pour répondre à toutes vos questions et vous accompagner
+          </p>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="contact-content">
+          <div class="contact-info">
+            <div class="info-card card">
+              <h3>Informations de contact</h3>
+              <div class="contact-item">
+                <i class="material-icons">phone</i>
+                <div>
+                  <strong>Téléphone</strong>
+                  <p>+226 64 09 57 71</p>
+                </div>
+              </div>
+              <div class="contact-item">
+                <i class="material-icons">email</i>
+                <div>
+                  <strong>Email</strong>
+                  <p>contact&#64;zerodechet.bf</p>
+                </div>
+              </div>
+              <div class="contact-item">
+                <i class="material-icons">location_on</i>
+                <div>
+                  <strong>Adresse</strong>
+                  <p>123 Avenue de la dignité<br>7500 Bonheur, Burkina Faso</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contact-form-section">
+            <form class="contact-form card" (ngSubmit)="onSubmit()">
+              <h3>Envoyez-nous un message</h3>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="firstName">Prénom *</label>
+                  <input type="text" id="firstName" [(ngModel)]="formData.firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                  <label for="lastName">Nom *</label>
+                  <input type="text" id="lastName" [(ngModel)]="formData.lastName" name="lastName" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" [(ngModel)]="formData.email" name="email" required>
+              </div>
+
+              <div class="form-group">
+                <label for="subject">Sujet *</label>
+                <select id="subject" [(ngModel)]="formData.subject" name="subject" required>
+                  <option value="">Sélectionnez un sujet</option>
+                  <option value="general">Question générale</option>
+                  <option value="technical">Support technique</option>
+                  <option value="billing">Facturation</option>
+                  <option value="partnership">Partenariat</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="message">Message *</label>
+                <textarea id="message" [(ngModel)]="formData.message" name="message" rows="5" required></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                <i class="material-icons">send</i>
+                Envoyer le message
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
