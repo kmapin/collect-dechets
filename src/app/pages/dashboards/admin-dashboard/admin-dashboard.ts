@@ -3253,6 +3253,7 @@ isDisabled = true;
       country,
       cities: grouped[country],
     }));
+    console.log("this.zoneStatistics", this.zoneStatistics);
   }
 
   loadZoneStat(): void {
