@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
-import { NotificationComponent } from './components/notification/notification.component';
 import { Footer } from './components/footer/footer';
 import { Header } from './components/header/header';
+import { Notification } from './components/notification/notification';
 
 @Component({
   selector: 'app-root',
@@ -13,7 +13,7 @@ import { Header } from './components/header/header';
     RouterOutlet,
     Header,
     Footer,
-    NotificationComponent
+    Notification
   ],
   template: `
     <div class="app">
