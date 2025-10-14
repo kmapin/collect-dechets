@@ -7,7 +7,7 @@ import { OUAGA_DATA, QuartierData } from '../../data/mock-data';
 import { NotificationService } from '../../services/notification.service';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
-
+import {  ClientService } from '../../services/client.service';
 
 // ...existing code...
 
@@ -33,6 +33,7 @@ import { jsPDF } from 'jspdf';
             <img [src]="generateQRCode(user?.qrCodeImage)" alt="QR Code">
           </div>
           <a [href]="generateQRCode(user?.qrCodeImage)" download="qrcode.png" class="btn btn-primary mt-2">Télécharger le QR Code</a>
+          <!-- <a [href]="generateNewQRCode(user?._id)" download="qrcode.png" class="btn btn-primary mt-2">Génére à nouveau le QR Code</a> -->
         </div>
       </div>
       <div class="profile-right">
@@ -588,7 +589,9 @@ export class ProfileComponent implements OnInit {
   ];
   allSecteurs: { secteur: string; quartiers: string[] }[] = [];
 
-  constructor(private authService: AuthService, private notificationService: NotificationService) { }
+  constructor(private authService: AuthService, private notificationService: NotificationService,
+    private clientService: ClientService
+  ) { }
 
   ngOnInit(): void {
     this.getUser();
@@ -600,6 +603,20 @@ export class ProfileComponent implements OnInit {
     // Utiliser une API tierce pour générer le QR code
     return data ? data : "Pas de code QR généré";
   }
+
+  // generateNewQRCode(data: string) {
+  //   this.clientService.generateNewQRCode(data).subscribe(
+  //     (response: any) => {
+  //       console.log('Nouveau QR Code généré:', response);
+  //       this.user.qrCodeImage = response.qrCodeImage; // Met à jour l'image du QR code
+  //       this.notificationService.showSuccess('Nouveau QR Code généré', 'Votre nouveau QR Code a été généré avec succès.');
+  //     },
+  //     (error: any) => {
+  //       console.error('Erreur lors de la génération du nouveau QR Code:', error);
+  //       this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la génération du nouveau QR Code.');
+  //     }
+  //   );
+  // }
 
   // generer code qr en pdf 
   async downloadQRCodePDF(data: string) {

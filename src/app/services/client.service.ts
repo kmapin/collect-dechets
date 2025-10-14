@@ -84,6 +84,15 @@ export class ClientService {
     );
   }
 
+  generateNewQRCode(clientId: string): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/collecte/regenerate/${clientId}`, {}).pipe(
+      map((response: any) => {
+        console.log('API > generateNewQRCode:', response);
+        return response;
+      })
+    );
+  }
+
   getClientWallet(clientId: string): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/users/${clientId}/wallet`).pipe(
       map((response: any) => {
