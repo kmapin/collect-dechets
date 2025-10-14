@@ -1,0 +1,433 @@
+<div class="home-page">
+  <!-- Hero Section Moderne -->
+  <section class="hero-section">
+    <div class="hero-background">
+      <div class="floating-particles">
+        <div class="particle" *ngFor="let i of [1,2,3,4,5,6,7,8]"></div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="hero-content">
+        <!-- Hero Principal -->
+        <div class="hero-main">
+          <div class="hero-badge">
+            <i class="material-icons">eco</i>
+            <span>Solution #1 au Burkina Faso</span>
+            <div class="badge-glow"></div>
+          </div>
+
+          <h1 class="hero-title">
+            Faciliter votre
+            <span class="highlight">gestion des déchets</span>
+            <!-- <span class="title-decoration">✨</span> -->
+          </h1>
+
+          <p class="hero-description">
+            Découvrez la première plateforme qui connecte facilement
+            particuliers, entreprises et agences de collecte pour une gestion
+            des déchets simple, écologique et efficace.
+          </p>
+
+          <div class="hero-cta">
+            <a routerLink="/register" class="btn btn-primary btn-hero">
+              <!-- <i class="material-icons">rocket_launch</i> -->
+              <span>Commencer gratuitement</span>
+              <div class="btn-shine"></div>
+            </a>
+            <!-- <button class="btn btn-secondary btn-hero" (click)="playDemo()">
+                  <i class="material-icons">play_circle</i>
+                  <span>Voir la démo</span>
+                </button> -->
+          </div>
+
+          <div class="hero-trust">
+            <div class="trust-item">
+              <div class="trust-number">150+</div>
+              <div class="trust-label">Agences partenaires</div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-number">50K+</div>
+              <div class="trust-label">Utilisateurs actifs</div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-number">95%</div>
+              <div class="trust-label">Satisfaction client</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Visual -->
+        <div class="hero-visual">
+          <div class="hero-dashboard">
+            <div class="dashboard-header">
+              <div class="dashboard-nav">
+                <div class="nav-dot active"></div>
+                <div class="nav-dot"></div>
+                <div class="nav-dot"></div>
+              </div>
+              <div class="dashboard-title">
+                #collecte #sensibilisation #tri #plannification
+              </div>
+            </div>
+            <!-- Carrousel vertical -->
+            <div class="dashboard-carousel-vertical">
+              <div
+                class="carousel-track"
+                [style.animation-duration]="carouselDuration + 's'"
+              >
+                <div class="carousel-item" *ngFor="let img of carouselImages">
+                  <img [src]="img.src" [alt]="img.alt" />
+                </div>
+                <!-- Duplique pour boucle infinie -->
+                <div class="carousel-item" *ngFor="let img of carouselImages">
+                  <img [src]="img.src" [alt]="img.alt" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Éléments flottants -->
+          <div class="floating-element element-1">
+            <i class="material-icons">recycling</i>
+          </div>
+          <div class="floating-element element-2">
+            <i class="material-icons">eco</i>
+          </div>
+          <div class="floating-element element-3">
+            <i class="material-icons">local_shipping</i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search Section Moderne -->
+  <!-- <section class="search-section">
+        <div class="container">
+          <div class="search-content">
+            <div class="search-header">
+              <div class="section-badge">
+                <i class="material-icons">search</i>
+                <span>Recherchez ici</span>
+              </div>
+              <h2 class="search-title">Trouvez votre agence de collecte</h2>
+              <p class="search-subtitle">
+                Localisez instantanément les agences qui desservent votre zone. 
+                Notre algorithme intelligent vous propose les meilleures options 
+                selon votre localisation et vos besoins spécifiques.
+              </p>
+            </div>
+            
+            <div class="search-card">
+              <form class="search-form" (ngSubmit)="searchAgencies()">
+                <div class="search-inputs">
+                  <div class="search-input-group">
+                    <i class="material-icons search-icon">location_on</i>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="searchQuery"
+                      name="searchQuery"
+                      placeholder="Saisissez la ville et le secteur ici .."
+                      class="search-input">
+                    <div class="input-glow"></div>
+                  </div>
+                  <button type="submit" class="btn btn-primary search-btn" [disabled]="isSearching">
+                    <i class="material-icons">{{ isSearching ? 'hourglass_empty' : 'search' }}</i>
+                    {{ isSearching ? 'Recherche...' : 'Rechercher' }}
+                  </button>
+                </div>
+              </form>
+
+              <div class="search-options">
+                <button class="search-option" (click)="useGeolocation()">
+                  <i class="material-icons">my_location</i>
+                  <span>Ma position</span>
+                </button>
+                <button class="search-option" (click)="showZoneSelector()">
+                  <i class="material-icons">map</i>
+                  <span>Sélectionner zone</span>
+                </button>
+                <button class="search-option" (click)="showAdvancedSearch()">
+                  <i class="material-icons">tune</i>
+                  <span>Recherche avancée</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section> -->
+
+  <!-- Search Results Moderne -->
+  <section class="results-section" *ngIf="searchResults.length > 0">
+    <div class="container">
+      <div class="results-header">
+        <h2 class="section-title">Quelques agences de collecte disponibles</h2>
+        <p class="results-subtitle">
+          Découvrez les meilleures agences de collecte près de chez vous.
+          Comparez leurs services, consultez les avis clients et choisissez la
+          solution parfaite pour vos besoins.
+        </p>
+        <div class="results-badge">
+          <i class="material-icons">business</i>
+          <span>Ouagadougou</span>
+          <!-- <span>{{ searchResults.length }}Ouagadougou</span> -->
+        </div>
+      </div>
+
+      <div class="cta-actions mt-4">
+        <!-- <a routerLink="/register" class="btn btn-primary btn-large">
+             <i class="material-icons">person_add</i>
+             <span>Créer un compte gratuit</span>
+             <div class="btn-shine"></div>
+           </a> -->
+        <a routerLink="/agencies" class="btn btn-secondary btn-small mt-4">
+          <i class="material-icons">add</i>
+          <span>Voir plus d'agences</span>
+        </a>
+      </div>
+
+      <div class="agencies-grid">
+        <div *ngFor="let agency of searchResults" class="agency-card">
+          <div class="agency-header">
+            <div class="agency-logo">
+              <img
+                src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
+                [alt]="agency.agencyName"
+              />
+              <div class="logo-glow"></div>
+            </div>
+            <div class="agency-badge" *ngIf="agency.rating >= 4.5">
+              <i class="material-icons">star</i>
+              <span>Top Rated</span>
+            </div>
+          </div>
+
+          <div class="agency-content">
+            <h3 class="agency-name">{{ agency.agencyName }}</h3>
+            <p class="agency-description truncate">
+              {{ agency.agencyDescription }}
+            </p>
+
+            <div class="agency-rating">
+              <div class="stars">
+                <i
+                  *ngFor="let star of getStars(agency.rating)"
+                  class="material-icons star"
+                  >star</i
+                >
+              </div>
+              <span class="rating-text">{{ agency.rating }}/5</span>
+              <span class="reviews-count"
+                >({{ agency.totalClients }} avis)</span
+              >
+            </div>
+
+            <div class="agency-info">
+              <div class="info-item">
+                <i class="material-icons">location_on</i>
+                <span
+                  >{{ agency.address.city }}, sect {{ agency.address.sector }},
+                  {{ agency.address.neighborhood }}</span
+                >
+              </div>
+              <div class="info-item">
+                <i class="material-icons">people</i>
+                <span>{{ agency.totalClients }} clients</span>
+              </div>
+              <!-- <div class="info-item">
+                    <i class="material-icons">build</i>
+                    <span>{{ agency.services.length }} services</span>
+                  </div> -->
+            </div>
+
+            <!-- <div class="services-preview">
+                  <h4>Services proposés</h4>
+                  <div class="services-tags">
+                    <div *ngFor="let service of agency.services.slice(0, 3)" class="service-tag">
+                      <span class="service-name">{{ service.name }}</span>
+                      <span class="service-price">{{ service.price }}€</span>
+                    </div>
+                    <div *ngIf="agency.services.length > 3" class="service-tag more-services">
+                      +{{ agency.services.length - 3 }} autres
+                    </div>
+                  </div>
+                </div> -->
+          </div>
+
+          <div class="agency-actions">
+            <button
+              class="btn btn-secondary"
+              (click)="viewAgencyDetails(agency._id)"
+            >
+              <i class="material-icons">info</i>
+              Voir détails
+            </button>
+            <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
+                  <i class="material-icons">add</i>
+                  S'abonner
+                </button> -->
+          </div>
+
+          <div class="card-glow"></div>
+        </div>
+        <!-- bouton voir plus  -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section Moderne -->
+  <section class="features-section">
+    <div class="container">
+      <div class="features-header">
+        <div class="section-badge">
+          <i class="material-icons">auto_awesome</i>
+          <span>Comment ça marche</span>
+        </div>
+        <h2 class="section-title">Un processus simple en 3 étapes</h2>
+        <p class="features-subtitle">
+          Notre plateforme facilite la gestion des déchets avec un processus
+          optimisé qui vous fait gagner du temps tout en contribuant à un
+          environnement plus propre et durable.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div
+          class="feature-card"
+          *ngFor="let feature of features; let i = index"
+        >
+          <div class="feature-number">{{ i + 1 }}</div>
+          <div class="feature-icon">
+            <i class="material-icons">{{ feature.icon }}</i>
+            <div class="icon-glow"></div>
+          </div>
+          <h3 class="feature-title">{{ feature.title }}</h3>
+          <p class="feature-description">{{ feature.description }}</p>
+          <ul class="feature-list">
+            <li *ngFor="let item of feature.items">
+              <i class="material-icons">check</i>
+              <span>{{ item }}</span>
+            </li>
+          </ul>
+          <div class="feature-decoration"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section Moderne -->
+  <section class="stats-section">
+    <div class="stats-background">
+      <div class="stats-pattern"></div>
+    </div>
+    <div class="container">
+      <div class="stats-header">
+        <div class="section-badge light">
+          <i class="material-icons">analytics</i>
+          <span>Nos Performances</span>
+        </div>
+        <h2 class="stats-title">Des chiffres qui parlent</h2>
+        <p class="stats-subtitle">
+          Une plateforme de confiance qui connecte des milliers d'utilisateurs
+          chaque jour pour une gestion optimale et écologique des déchets.
+        </p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card" *ngFor="let stat of stats">
+          <div class="stat-icon">
+            <i class="material-icons">{{ stat.icon }}</i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-number">{{ stat.number }}</div>
+            <div class="stat-label">{{ stat.label }}</div>
+            <div class="stat-description">{{ stat.description }}</div>
+          </div>
+          <div class="stat-glow"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials-section">
+    <div class="container">
+      <div class="testimonials-header">
+        <div class="section-badge">
+          <i class="material-icons">format_quote</i>
+          <span>Témoignages</span>
+        </div>
+        <h2 class="section-title">Ce que disent nos utilisateurs</h2>
+        <p class="testimonials-subtitle">
+          Découvrez pourquoi des milliers de personnes font confiance à
+          ZéroDéchet+ pour leur gestion des déchets au quotidien.
+        </p>
+      </div>
+
+      <div class="testimonials-grid">
+        <div class="testimonial-card" *ngFor="let testimonial of testimonials">
+          <div class="testimonial-content">
+            <div class="quote-icon">
+              <i class="material-icons">format_quote</i>
+            </div>
+            <p class="testimonial-text">{{ testimonial.text }}</p>
+            <div class="testimonial-rating">
+              <div class="stars">
+                <i
+                  *ngFor="let star of getStars(testimonial.rating)"
+                  class="material-icons star"
+                  >star</i
+                >
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-author">
+            <div class="author-avatar">
+              <img [src]="testimonial.avatar" [alt]="testimonial.name" />
+            </div>
+            <div class="author-info">
+              <div class="author-name">{{ testimonial.name }}</div>
+              <div class="author-role">{{ testimonial.role }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section Moderne -->
+  <section class="cta-section">
+    <div class="cta-background">
+      <div class="cta-pattern"></div>
+    </div>
+    <div class="container">
+      <div class="cta-content">
+        <div class="cta-icon">
+          <i class="material-icons">rocket_launch</i>
+        </div>
+        <h2 class="cta-title">Prêt à améliorer votre gestion des déchets ?</h2>
+        <p class="cta-subtitle">
+          Rejoignez des milliers d'utilisateurs qui ont déjà adopté la solution
+          la plus moderne et efficace pour gérer leurs déchets. Commencez
+          gratuitement dès aujourd'hui !
+        </p>
+        <div class="cta-actions">
+          <a routerLink="/register" class="btn btn-primary btn-large">
+            <i class="material-icons">person_add</i>
+            <span>Créer un compte gratuit</span>
+            <div class="btn-shine"></div>
+          </a>
+          <a routerLink="/agencies" class="btn btn-secondary btn-large">
+            <i class="material-icons">search</i>
+            <span>Explorer les agences</span>
+          </a>
+        </div>
+        <div class="cta-guarantee">
+          <i class="material-icons">verified</i>
+          <span>Gratuit • Sans engagement • Support 24/7</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

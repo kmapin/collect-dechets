@@ -3,7 +3,7 @@ import { Subject, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 
-export interface Notification {
+export interface NotificationI {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
   title: string;
@@ -21,7 +21,7 @@ export interface NotificationAction {
   providedIn: 'root'
 })
 export class NotificationService {
-  private notificationSubject = new Subject<Notification>();
+  private notificationSubject = new Subject<NotificationI>();
   public notifications$ = this.notificationSubject.asObservable();
   constructor(private http: HttpClient) { }
 
@@ -42,7 +42,7 @@ export class NotificationService {
   }
 
   private show(type: 'success' | 'error' | 'warning' | 'info', title: string, message: string, duration = 5000): void {
-    const notification: Notification = {
+    const notification: NotificationI = {
       id: Math.random().toString(36).substr(2, 9),
       type,
       title,
@@ -54,7 +54,7 @@ export class NotificationService {
   }
 
   showWithActions(type: 'success' | 'error' | 'warning' | 'info', title: string, message: string, actions: NotificationAction[], duration = 0): void {
-    const notification: Notification = {
+    const notification: NotificationI = {
       id: Math.random().toString(36).substr(2, 9),
       type,
       title,

@@ -1,0 +1,1757 @@
+<div class="agency-dashboard">
+  <div class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Tableau de Bord Agence</h1>
+          <p class="page-subtitle">
+            {{ agency?.agencyName }} - Gestion complète de votre agence de
+            collecte
+          </p>
+        </div>
+        <div class="quick-actions">
+          <button class="btn btn-primary" (click)="showAddEmployeeModal = true">
+            <i class="material-icons">person_add</i>
+            Ajouter Employé
+          </button>
+
+          <button class="btn btn-secondary" (click)="showZoneModal = true">
+            <i class="material-icons">map</i>
+            creer un tarif
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="dashboard-content">
+      <!-- Statistiques principales -->
+      <div class="stats-grid">
+        <div class="stat-card card">
+          <div class="stat-icon clients">
+            <i class="material-icons">people</i>
+          </div>
+          <div class="stat-info">
+            <h3>Clients actifs</h3>
+            <p class="stat-value">{{ statistics.totalClients }}</p>
+            <!-- <span class="stat-trend positive">+2 ce mois</span> -->
+          </div>
+        </div>
+
+        <div class="stat-card card">
+          <div class="stat-icon collectors">
+            <i class="material-icons">local_shipping</i>
+          </div>
+          <div class="stat-info">
+            <h3>Employés</h3>
+            <!-- <p class="stat-value">{{ statistics.activeCollectors }}</p>
+                <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span> -->
+            <p class="stat-value">{{ statistics.totalEmployees }}</p>
+            <span class="stat-trend neutral"
+              >{{ getActiveCollectorsToday() }} en tournée</span
+            >
+          </div>
+        </div>
+
+        <div class="stat-card card">
+          <div class="stat-icon collections">
+            <i class="material-icons">check_circle</i>
+          </div>
+          <div class="stat-info">
+            <h3>zones</h3>
+
+            <p class="stat-value">{{ statistics.totalZones }}</p>
+            <span
+              class="stat-trend"
+              [class.positive]="getCollectionRate() >= 90"
+              [class.negative]="getCollectionRate() < 80"
+            >
+            </span>
+          </div>
+        </div>
+
+        <div class="stat-card card">
+          <div class="stat-icon revenue">
+            <i class="material-icons">perso</i>
+          </div>
+          <div class="stat-info">
+            <h3>Collecteurs</h3>
+            <!-- <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
+                <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
+            <p class="stat-value">{{ statistics.totalCollectors }}</p>
+            <!-- <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
+          </div>
+        </div>
+
+        <div class="stat-card card">
+          <div class="stat-icon reports">
+            <i class="material-icons">report_problem</i>
+          </div>
+          <div class="stat-info">
+            <h3>Signalements</h3>
+            <p class="stat-value">{{ statistics.pendingSignalements }}</p>
+            <span
+              class="stat-trend"
+              [class.negative]="statistics.totalSignalements"
+            >
+              en attente
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation par onglets -->
+      <div class="tabs-navigation">
+        <button
+          *ngFor="let tab of tabs"
+          class="tab-btn"
+          [class.active]="activeTab === tab.id"
+          (click)="activeTab = tab.id"
+        >
+          <i class="material-icons">{{ tab.icon }}</i>
+          {{ tab.label }}
+          <span
+            *ngIf="tab.label === 'Messages' && unreadMessageCount >= 0"
+            class="tab-badge"
+            >{{ unreadMessageCount }}</span
+          >
+          <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
+        </button>
+      </div>
+
+      <!-- Contenu des onglets -->
+
+      <div class="tab-content">
+        <!-- Onglet Suivi des Collectes -->
+        <div *ngIf="activeTab === 'collections'" class="collections-tab">
+          <div class="collections-header">
+            <h2>Suivi des Collectes en Temps Réel</h2>
+            <div class="collections-filters">
+              <select
+                [(ngModel)]="collectionsFilter"
+                (change)="filterCollections()"
+                class="filter-select"
+              >
+                <option value="all">Toutes les collectes</option>
+                <option value="scheduled">Programmées</option>
+                <option value="in_progress">En cours</option>
+                <option value="collected">Collectées</option>
+                <option value="missed">Manquées</option>
+              </select>
+
+              <!-- Bouton historique -->
+              <button
+                class="action-btn"
+                title="Voir l’historique des collectes"
+                style="margin-left: 10px"
+                (click)="openHistoryModal()"
+              >
+                <i class="material-icons">history</i>
+              </button>
+            </div>
+          </div>
+
+          <div class="collections-grid">
+            <div
+              *ngFor="let collecte of dayCollectes"
+              class="collection-card card"
+            >
+              <!-- Header -->
+              <div class="collection-header">
+                <div class="collection-status">
+                  <span
+                    class="status-badge"
+                    [class]="'status-' + collecte.status"
+                  >
+                    {{ collecte.status }}
+                  </span>
+                  <span class="collection-time">
+                    {{ collecte.createdAt | date : "dd/MM/yyyy HH:mm" }}
+                  </span>
+                </div>
+
+                <div class="collection-actions">
+                  <button
+                    class="action-btn"
+                    (click)="trackCollection(collecte._id)"
+                    *ngIf="collecte.status === 'in_progress'"
+                  >
+                    <i class="material-icons">location_on</i>
+                  </button>
+                  <!-- <button
+              class="action-btn"
+              (click)="contactClient(collecte.clientId)"
+            >
+              <i class="material-icons">phone</i>
+            </button> -->
+                </div>
+              </div>
+
+              <!-- Infos -->
+              <div class="collection-info">
+                <i class="material-icons">group</i>
+                {{ collecte.clientId.firstName + " " +
+                collecte.clientId.lastName }}
+                <p>
+                  <i class="material-icons">person</i>
+                  Collecteur : {{ collecte.collectorId.firstName + " " +
+                  collecte.collectorId.lastName }}
+                </p>
+                <p>
+                  <i class="material-icons">apartment</i>
+                  Agence : {{ collecte.agencyId.agencyName }}
+                </p>
+                <p>
+                  <i class="material-icons">schedule</i>
+                  Scannée à : {{ collecte.scannedAt | date : "dd/MM/yyyy HH:mm"
+                  }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- État vide -->
+          <div *ngIf="dayCollectes.length === 0" class="empty-state">
+            <i class="material-icons">event_available</i>
+            <h3>Aucune collecte</h3>
+            <p>Aucune collecte disponible pour l’instant</p>
+          </div>
+        </div>
+
+        <!-- Onglet Gestion des Employés -->
+        <div *ngIf="activeTab === 'employees'" class="employees-tab">
+          <div class="employees-header">
+            <h2>Gestion des Employés</h2>
+            <div class="employees-actions">
+              <button
+                class="btn btn-primary"
+                (click)="showAddEmployeeModal = true"
+              >
+                <i class="material-icons">person_add</i>
+                Ajouter Employé
+              </button>
+            </div>
+          </div>
+
+          <div class="employees-grid">
+            <div
+              *ngFor="let employee of allEmployees"
+              class="employee-card card"
+              [ngClass]="
+                    employee.role
+                      ? 'client-audit-card-' + employee.role
+                      : 'client-audit-card'
+                  "
+            >
+              <div class="employee-header">
+                <div class="employee-avatar">
+                  <ng-container *ngIf="employee?.avatar; else noImage">
+                    <img
+                      [src]="
+                            employee.avatar || '/assets/default-avatar.png'
+                          "
+                      [alt]="employee.firstName"
+                    />
+                  </ng-container>
+                  <ng-template #noImage>
+                    <div
+                      class="rounded-circle text-white font-bold uppercase"
+                      [style.background-color]="getRandomColor(employee)"
+                    >
+                      {{ getInitials( employee?.firstName + " " +
+                      employee?.lastName ) }}
+                    </div>
+                  </ng-template>
+                </div>
+                <div class="employee-info">
+                  <h4>{{ employee.firstName }} {{ employee.lastName }}</h4>
+                  <p class="employee-role">{{ getRoleText(employee.role) }}</p>
+                  <p
+                    class="employee-status"
+                    [class]="employee.isActive ? 'active' : 'inactive'"
+                  >
+                    {{ employee.isActive ? "Actif" : "Inactif" }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="employee-details">
+                <!-- <div class="detail-item">
+                      <i class="material-icons">email</i>
+                      <span>{{ employee.userId.email}}</span>
+                    </div> -->
+                <div class="detail-item">
+                  <i class="material-icons">phone</i>
+                  <span>{{ employee.phone }}</span>
+                </div>
+                <div class="detail-item">
+                  <!-- <i class="material-icons">map</i> -->
+                  <!-- <span>{{getZoneLengthByEmployeeId(employee._id)}} zone(s) assignée(s)</span> -->
+                  <!-- <span>{{ employee.zones.length }} zone(s) assignée(s)</span> -->
+                </div>
+                <div class="detail-item">
+                  <i class="material-icons">event</i>
+                  <span
+                    >Embauché le {{ employee.hiredAt | date : "dd/MM/yyyy"
+                    }}</span
+                  >
+                </div>
+              </div>
+
+              <div class="employee-actions">
+                <button class="action-btn" (click)="editEmployee(employee)">
+                  <i class="material-icons">edit</i>
+                </button>
+                <button
+                  class="action-btn danger"
+                  [disabled]="isDeleting"
+                  (click)="deleteEmployee(currentUser, employee)"
+                >
+                  <i class="material-icons">delete</i>
+                </button>
+                <button
+                  class="action-btn"
+                  [class.active]="employee.isActive"
+                  (click)="toggleEmployeeStatus(employee)"
+                >
+                  <i class="material-icons"
+                    >{{ employee.isActive ? "toggle_on" : "toggle_off" }}</i
+                  >
+                </button>
+              </div>
+              <!-- <div class="employee-stats" *ngIf="employee.role === 'collector'">
+                    <div class="stat-item">
+                      <span class="stat-label">Collectes aujourd'hui</span>
+                      <span class="stat-value">{{ getEmployeeCollections(employee._id) }}</span>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-label">Note moyenne</span>
+                      <span class="stat-value">{{ getEmployeeRating(employee._id) }}/5</span>
+                    </div>
+                  </div> -->
+            </div>
+          </div>
+          <div *ngIf="!allEmployees?.length" class="empty-state">
+            <i class="material-icons">people_outline</i>
+            <h3>Aucun employé</h3>
+            <p>Vous n'avez pas encore ajouté d'employés à votre agence.</p>
+          </div>
+        </div>
+
+        <!-- Onglet Gestion des Zones -->
+        <div *ngIf="activeTab === 'zones'" class="zones-tab">
+          <div class="zones-header">
+            <h2>Gestion des Zones de Couverture</h2>
+            <div class="zones-actions">
+              <button class="btn btn-primary" (click)="openTariffsModal()">
+                <i class="material-icons">visibility</i>
+                Voir mes tarifs
+              </button>
+            </div>
+          </div>
+          <button class="btn btn-primary" (click)="openZoneModalcouverture()">
+            <i class="material-icons">edit_location</i>
+            Modifier les zones couvertes
+          </button>
+          <div class="zones-content">
+            <div class="zones-map">
+              <div class="map-container">
+                <div class="map-placeholder">
+                  <i class="material-icons">map</i>
+
+                  <div class="zone-container" *ngIf="zones?.length">
+                    <h4 class="zone-title">Zones couvertes</h4>
+                    <div class="zone-list">
+                      <div class="zone-card" *ngFor="let zone of zones">
+                        <div class="zone-details">
+                          <p>
+                            <strong>Quartier :</strong>
+                            {{ zone.neighborhood || zone }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div *ngIf="!zones?.length && !isLoading" class="no-zone">
+                    <p>Veuillez definir vos zonees de service .</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="zones-list">
+              <div *ngFor="let zone of serviceZones" class="zone-card card">
+                <div class="zone-header">
+                  <h4>{{ zone.name }}</h4>
+                  <div class="zone-actions">
+                    <button class="action-btn" (click)="editZone(zone.id)">
+                      <i class="material-icons">edit</i>
+                    </button>
+                    <button
+                      class="action-btn danger"
+                      (click)="deleteZone(zone.id)"
+                    >
+                      <i class="material-icons">delete</i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="zone-info">
+                  <p class="zone-description">{{ zone.description }}</p>
+                  <div class="zone-details">
+                    <div class="detail-item">
+                      <i class="material-icons">location_city</i>
+                      <span>{{ zone.cities.join(", ") }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <i class="material-icons">home</i>
+                      <span>{{ zone.neighborhoods.join(", ") }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <i class="material-icons">people</i>
+                      <span>{{ getZoneClients(zone.id) }} clients</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="zone-status">
+                  <span
+                    class="status-badge"
+                    [class]="
+                          zone.isActive ? 'status-active' : 'status-inactive'
+                        "
+                  >
+                    {{ zone.isActive ? "Active" : "Inactive" }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Plannings -->
+        <div *ngIf="activeTab === 'schedules'" class="schedules-tab">
+          <div class="schedules-header">
+            <h2>Gestion des Plannings de Collecte</h2>
+            <div class="schedules-actions">
+              <button
+                class="btn btn-primary"
+                (click)="showScheduleModal = true"
+              >
+                <i class="material-icons">schedule</i>
+                Nouveau Planning
+              </button>
+            </div>
+          </div>
+
+          <div class="schedules-calendar">
+            <div class="calendar-header">
+              <button class="calendar-nav" (click)="previousWeek()">
+                <i class="material-icons">chevron_left</i>
+              </button>
+              <h3>{{ getCurrentWeekText() }}</h3>
+              <button class="calendar-nav" (click)="nextWeek()">
+                <i class="material-icons">chevron_right</i>
+              </button>
+            </div>
+
+            <div class="calendar-grid">
+              <div class="calendar-days">
+                <div *ngFor="let day of weekDays" class="day-header">
+                  {{ day }}
+                </div>
+              </div>
+
+              <div class="calendar-content">
+                <div
+                  *ngFor="let day of weekDays; let i = index"
+                  class="day-column"
+                >
+                  <div
+                    *ngFor="let schedule of getSchedulesForDay(i)"
+                    class="schedule-item"
+                    (click)="openScheduleDetails(schedule)"
+                  >
+                    <!-- <div class="schedule-time">
+                          <span class="schedule-time">Debut:</span>
+                          {{ schedule.startTime }}
+                        </div> -->
+                    <div class="schedule-time">
+                      <!-- <span class="schedule-time">Zone:</span> -->
+                      <i class="material-icons">location_on:</i>
+                      {{ getZoneName(schedule.zone) }}
+                    </div>
+                    <div class="schedule-time">
+                      <!-- <span class="schedule-time">Heure:</span>
+                            -->
+                      <i class="material-icons">schedule:</i>
+
+                      {{ schedule.startTime }} - {{ schedule.endTime }}
+                    </div>
+
+                    <div class="schedule-time">
+                      <!-- <span class="schedule-time">Collecteur:</span> -->
+                      <i class="material-icons">person:</i>
+
+                      {{ getCollectorName(schedule.collectorId) }}
+                    </div>
+                    <div class="schedule-actions">
+                      <button
+                        class="action-btn danger"
+                        (click)="deletePlanning(schedule._id)"
+                      >
+                        <i class="material-icons">delete</i>
+                      </button>
+                      <!-- <button
+    class="action-btn"
+    [class.active]="schedule.isActive"
+    (click)="toggleScheduleStatus(schedule)"
+  >
+    <i class="material-icons">{{ schedule.isActive ? 'toggle_on' : 'toggle_off' }}</i>
+  </button> -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Clients -->
+        <!-- Clients Actifs  -->
+        <div *ngIf="activeTab === 'clients'" class="clients-tab">
+          <div class="clients-header">
+            <h2>Clients Actifs ({{ activeClients.length }})</h2>
+          </div>
+          <div class="clients-table">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Email</th>
+                  <th>Téléphone</th>
+                  <th>Adresse</th>
+                  <th>Statut</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="activeClients.length === 0">
+                  <td colspan="6" style="text-align: center; color: #888">
+                    Aucun client à afficher
+                  </td>
+                </tr>
+                <tr *ngFor="let client of activeClients">
+                  <td>{{ client.firstName }} {{ client.lastName }}</td>
+                  <td></td>
+                  <td>{{ client.phone }}</td>
+                  <td>
+                    {{ client.address.street }}, {{ client.address.neighborhood
+                    }}
+                  </td>
+                  <td>
+                    <span class="status-badge status-active">Actif</span>
+                  </td>
+                  <td>
+                    <!-- <button
+                          class="action-btn"
+                          (click)="suspendClient(client._id)"
+                          title="Suspendre"
+                        >
+                          <i class="material-icons">pause</i>
+                        </button> -->
+                    <button
+                      class="action-btn danger"
+                      (click)="viewClientDetails(client._id)"
+                    >
+                      <i class="material-icons">visibility</i>
+                    </button>
+                    <!-- <button
+                          class="action-btn danger"
+                          (click)="deleteClient()"
+                          title="Supprimer"
+                        >
+                          <i class="material-icons">delete</i>
+                        </button> -->
+                    <!-- <button
+                            class="btn btn-secondary"
+                            (click)="viewClientDetails(client?._id)"
+                          >
+                            <i class="material-icons">visibility</i>
+                            Détails
+                          </button> -->
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Clients en attente de validation  -->
+          <!-- Clients en attente de validation  -->
+          <!-- <div class="clients-header" style="margin-top:2em;">
+                <h2>
+                  Clients en attente de validation ({{ pendingClients.length }})
+                </h2>
+              </div>
+              <div class="clients-table">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Nom</th>
+                      <th>Email</th>
+                      <th>Téléphone</th>
+                      <th>Adresse</th>
+                      <th>Statut</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="pendingClients.length === 0">
+                      <td colspan="6" style="text-align:center; color:#888;">
+                        Aucun client à afficher
+                      </td>
+                    </tr>
+                    <tr *ngFor="let client of pendingClients">
+                      <td>{{ client.firstName }} {{ client.lastName }}</td>
+                      <td>paul&#64;gmail.com</td>
+                      <td>{{ client.phone }}</td>
+                      <td>
+                        {{ client.address.street }},
+                        {{ client.address.neighborhood }}
+                      </td>
+                      <td>
+                        <span class="status-badge status-pending"
+                          >En attente</span
+                        >
+                      </td>
+                      <td>
+                        <button
+                          class="btn btn-primary"
+                          (click)="validateClient(client._id)"
+                        >
+                          Valider
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div> -->
+        </div>
+
+        <!-- Onglet Signalements -->
+        <div *ngIf="activeTab === 'reports'" class="reports-tab">
+          <div class="reports-header">
+            <h2>Signalements</h2>
+            <div class="incidents-filters">
+              <select
+                [(ngModel)]="incidentsFilter"
+                (change)="filterIncidents()"
+                class="filter-select"
+              >
+                <option value="all">Tous les incidents</option>
+                <option value="open">Ouverts</option>
+                <option value="pending">En cours</option>
+                <option value="resolved">Résolus</option>
+              </select>
+              <select
+                [(ngModel)]="severityFilter"
+                (change)="filterIncidents()"
+                class="filter-select"
+              >
+                <option value="all">Toutes gravités</option>
+                <option value="critical">Critique</option>
+                <option value="high">Élevée</option>
+                <option value="medium">Moyenne</option>
+                <option value="low">Faible</option>
+              </select>
+            </div>
+          </div>
+          <div class="reports-list">
+            <div *ngFor="let report of agencyReports" class="report-card card">
+              <div class="incident-header">
+                <div
+                  class="incident-severity"
+                  [class]="'severity-' + report?.severity"
+                >
+                  <i class="material-icons"
+                    >{{ getSeverityIcon(report.severity) }}</i
+                  >
+                  <span
+                    >{{ getSeverityText(report.severity) ?
+                    getSeverityText(report.severity) : "Faible" }}</span
+                  >
+                </div>
+                <div class="incident-status">
+                  <span
+                    class="status-badge"
+                    [class]="'status-' + report.status"
+                  >
+                    {{ getIncidentStatusText(report.status) }}
+                  </span>
+                </div>
+              </div>
+              <h4>
+                {{ report?.client?.firstName }} {{ report?.client?.lastName }}
+              </h4>
+              <div class="incident-content">
+                <h4>{{ getIncidentTypeText(report.type) }}</h4>
+                <p class="incident-description">{{ report.description }}</p>
+                <p class="incident-date">
+                  Date : {{ report.date | date : "dd/MM/yyyy" }}
+                </p>
+                <p class="incident-date">
+                  Heure : {{ report.date | date : "HH:mm:ss" }}
+                </p>
+              </div>
+              <!-- Affichage des photos -->
+              <div
+                *ngIf="report.photos && report.photos.length"
+                class="report-photos"
+              >
+                <img
+                  *ngFor="let photo of report.photos"
+                  [src]="photo"
+                  alt="Photo du signalement"
+                  class="report-photo circular-image"
+                  (click)="openImageModal(photo)"
+                />
+              </div>
+              <div *ngIf="!report.photos || !report.photos.length">
+                <p><em>Aucune photo associée</em></p>
+              </div>
+              <div *ngIf="agencyReports.length === 0" class="empty-state">
+                <i class="material-icons">report_problem</i>
+                <h3>Aucun signalement pour le moment</h3>
+              </div>
+              <div class="incident-actions">
+                <button
+                  class="btn btn-accent"
+                  (click)="openAssignModal(report._id)"
+                  (click)="openAssignModal(report._id)"
+                  *ngIf="!report.assignedTo"
+                >
+                  <i class="material-icons">assignment_ind</i>
+                  Traiter
+                </button>
+
+                <!-- <button class="btn btn-primary" (click)="investigateIncident()" >
+                    <i class="material-icons">search</i>
+                    Enquêter
+                  </button> -->
+                <button
+                  class="btn btn-success"
+                  (click)="resolveIncident(report._id)"
+                  (click)="resolveIncident(report._id)"
+                  *ngIf="report.assignedTo"
+                >
+                  <i class="material-icons">check</i>
+                  Résoudre
+                </button>
+                <!--<button class="btn btn-accent" (click)="contactAgencyForIncident()">
+                    <i class="material-icons">phone</i>
+                                Contacter Agence
+                  </button>-->
+              </div>
+            </div>
+          </div>
+          <div *ngIf="!agencyReports?.length" class="empty-state">
+            <i class="material-icons">report_off</i>
+            <h3>Aucun signalement</h3>
+            <p>Vous n'avez pas de signalements pour le moment.</p>
+          </div>
+        </div>
+
+        <!-- Onglet Messages -->
+        <div *ngIf="activeTab === 'messages'" class="reports-tab">
+          <div class="reports-header">
+            <h2>Messages</h2>
+            <div class="incidents-filters">
+              <span>{{ unreadMessageCount }} message(s) non lu(s)</span>
+            </div>
+          </div>
+          <div class="parent">
+            <!-- Header -->
+            <div class="chat-header-column">
+              <span *ngIf="displayAgencyName"
+                >Vous discutez avec {{ displayAgencyName }}</span
+              >
+            </div>
+
+            <div class="message-content">
+              <!-- Sidebar -->
+              <div class="chat-left-column">
+                <div class="chat-left-column-header">
+                  <div class="chat-left-column-header-title">
+                    Mes discussions
+                  </div>
+                </div>
+
+                <div class="chat-left-column-content">
+                  <ng-container *ngFor="let message of connectedUserMessages">
+                    <button
+                      class="chat-left-column-content-item"
+                      *ngIf="message.firstName"
+                      (click)="userAndAgencyConversation(message)"
+                    >
+                      {{ message.firstName }} {{ message.lastName }}
+                    </button>
+                  </ng-container>
+                </div>
+              </div>
+
+              <!-- Messages + Input -->
+              <div class="chat-area">
+                <div class="chat-messages" #scrollMe>
+                  <ng-container *ngFor="let message of receivedMessages">
+                    <div
+                      class="received"
+                      *ngIf="message.sender !== currentUser?.userId"
+                    >
+                      <div class="div5 chat-bubble">
+                        <span> {{ message.content }}</span>
+                        <span class="chat-time"
+                          >reçu le {{ message.timestamp | date : "dd/MMM/yyyy à
+                          HH:mm" }}
+                          <mat-icon class="chat-read">
+                            {{ message.read === "true" ? "done_all" : "done" }}
+                          </mat-icon>
+                        </span>
+                      </div>
+                    </div>
+                    <div
+                      class="sent"
+                      *ngIf="message.sender === currentUser?.userId"
+                    >
+                      <div class="div6 chat-bubble">
+                        <span> {{ message.content }}</span>
+                        <span class="chat-time"
+                          >envoyé le {{ message.timestamp | date : "dd/MMM/yyyy
+                          à HH:mm" }}
+                          <mat-icon class="chat-read">
+                            {{ message.read === "true" ? "done_all" : "done" }}
+                          </mat-icon>
+                        </span>
+                      </div>
+                    </div>
+                  </ng-container>
+                </div>
+
+                <!-- Input fixé en bas -->
+                <div class="div7 chat-input-row">
+                  <input
+                    class="sendChatMessage"
+                    [(ngModel)]="messageData.content"
+                    name="content"
+                    type="text"
+                    placeholder="Composez votre message"
+                  />
+                  <div class="chat-actions">
+                    <button
+                      type="button"
+                      (click)="submitMessage()"
+                      class="btn_send btn-secondary"
+                    >
+                      <mat-icon class="material-icons">send</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Message -->
+          <div
+            class="modal-overlay"
+            *ngIf="showMessageModal"
+            (click)="showMessageModal = false"
+          >
+            <div class="modal-content" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                <h3>Décrivez nous votre besoins</h3>
+                <button class="close-btn" (click)="showMessageModal = false">
+                  <i class="material-icons">close</i>
+                </button>
+              </div>
+              <form class="report-form">
+                <!-- <div class="form-group">
+                      <label>Destinataire</label>
+                      <select [(ngModel)]="messageData.receiver" name="receiver" required>
+                        <option value="">Sélectionnez</option>
+                        <option value="missed_collection">Collecte manquée</option>
+                        <option value="compliance_issue">Non-conformité</option>
+                        <option value="technical_issue">Problème technique</option>
+                        <option value="complaint">Réclamation</option>
+                        <option value="other">Autre</option>
+                      </select>
+                    </div>-->
+
+                <div class="form-group">
+                  <label>Message</label>
+                  <textarea
+                    [(ngModel)]="messageData.content"
+                    name="content"
+                    rows="4"
+                    placeholder="Votre message..."
+                    required
+                  ></textarea>
+                </div>
+                <div class="form-actions">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="showMessageModal = false"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="submitMessage(); showMessageModal = false"
+                  >
+                    <i class="material-icons">send</i>
+                    Envoyer
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Onglet Rapports -->
+          <!-- <div class="analytics-tab">
+              <div class="analytics-header">
+                <h2>Rapports et Statistiques</h2>
+                <div class="analytics-filters">
+                  <select
+                    [(ngModel)]="analyticsPeriod"
+                    (change)="updateAnalytics()"
+                    class="filter-select"
+                  >
+                    <option value="week">Cette semaine</option>
+                    <option value="month">Ce mois</option>
+                    <option value="quarter">Ce trimestre</option>
+                    <option value="year">Cette année</option>
+                  </select>
+                  <button class="btn btn-secondary" (click)="exportReport()">
+                    <i class="material-icons">download</i>
+                    Exporter
+                  </button>
+                </div>
+              </div>
+
+              <div class="analytics-content">
+                <div class="analytics-cards">
+                  <div class="analytics-card card">
+                    <h3>Performance des Collectes</h3>
+                    <div class="chart-placeholder">
+                      <i class="material-icons">bar_chart</i>
+                      <p>Graphique des collectes réalisées vs programmées</p>
+                    </div>
+                  </div>
+
+                  <div class="analytics-card card">
+                    <h3>Évolution du Chiffre d'Affaires</h3>
+                    <div class="chart-placeholder">
+                      <i class="material-icons">trending_up</i>
+                      <p>Courbe d'évolution des revenus</p>
+                    </div>
+                  </div>
+
+                  <div class="analytics-card card">
+                    <h3>Performance par Collecteur</h3>
+                    <div class="performance-list">
+                      <div
+                        *ngFor="let collector of getCollectorPerformance()"
+                        class="performance-item"
+                      >
+                        <div class="collector-info">
+                          <strong>{{ collector.name }}</strong>
+                          <span
+                            >{{ collector.collectionsCount }} collectes</span
+                          >
+                        </div>
+                        <div class="performance-score">
+                          <div class="score-bar">
+                            <div
+                              class="score-fill"
+                              [style.width]="collector.score + '%'"
+                            ></div>
+                          </div>
+                          <span>{{ collector.score }}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="analytics-card card">
+                    <h3>Répartition par Zone</h3>
+                    <div class="zone-stats">
+                      <div
+                        *ngFor="let zoneStat of getZoneStatistics()"
+                        class="zone-stat"
+                      >
+                        <div class="zone-name">{{ zoneStat.name }}</div>
+                        <div class="zone-metrics">
+                          <span>{{ zoneStat.clients }} clients</span>
+                          <span>{{ zoneStat.collections }} collectes</span>
+                          <span>{{ zoneStat.revenue }}€</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div> -->
+        </div>
+        <!-- Onglet tarif -->
+        <div class="analytics-tab">
+          <div class="analytics-header"></div>
+
+          <div class="analytics-content">
+            <div
+              class="modal-overlay"
+              *ngIf="showAddEmployeeModal"
+              (click)="showAddEmployeeModal = false"
+            >
+              <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                  <h3>Ajouter un Employé</h3>
+                  <button
+                    class="close-btn"
+                    (click)="showAddEmployeeModal = false"
+                  >
+                    <i class="material-icons">close</i>
+                  </button>
+                </div>
+                <form class="employee-form" (ngSubmit)="addEmployee()">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Prénom *</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="newEmployee.firstName"
+                        name="firstName"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Nom *</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="newEmployee.lastName"
+                        name="lastName"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Email *</label>
+                    <input
+                      type="email"
+                      [(ngModel)]="newEmployee.email"
+                      name="email"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Téléphone *</label>
+                    <input
+                      type="tel"
+                      [(ngModel)]="newEmployee.phone"
+                      name="phone"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Rôle *</label>
+                    <select [(ngModel)]="newEmployee.role" name="role" required>
+                      <option value="">Sélectionner un rôle</option>
+                      <option value="manager">Manager</option>
+                      <option value="collector">Collecteur</option>
+                    </select>
+                  </div>
+                  <!-- Dans la section du formulaire d'ajout d'employé -->
+                  <div
+                    class="form-group"
+                    *ngIf="newEmployee.role === 'collector'"
+                  >
+                    <label>Zone assignée *</label>
+                    <select
+                      [(ngModel)]="newEmployee.zones"
+                      name="zones"
+                      required
+                    >
+                      <option value="">Sélectionner une zone</option>
+                      <option
+                        *ngFor="let zone of zones"
+                        [value]="zone.neighborhood || zone"
+                      >
+                        {{ zone.neighborhood || zone }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-actions">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      (click)="showAddEmployeeModal = false"
+                    >
+                      Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      <i class="material-icons">person_add</i>
+                      Ajouter
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Modal Gestion Zone -->
+            <div
+              class="modal-overlay"
+              *ngIf="showZoneModal"
+              (click)="showZoneModal = false"
+            >
+              <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                  <h3>Ajouter un Tarif</h3>
+                  <button class="close-btn" (click)="showZoneModal = false">
+                    <i class="material-icons">close</i>
+                  </button>
+                </div>
+
+                <form class="tariff-form" (ngSubmit)="addTariff()">
+                  <!-- Type -->
+                  <div class="form-group">
+                    <label>Type *</label>
+                    <select [(ngModel)]="newTariff.type" name="type" required>
+                      <option value="standard">Standard</option>
+                      <option value="premium">Premium</option>
+                    </select>
+                  </div>
+
+                  <!-- Prix -->
+                  <div class="form-group">
+                    <label>Prix *</label>
+                    <input
+                      type="number"
+                      [(ngModel)]="newTariff.price"
+                      name="price"
+                      min="0"
+                      required
+                    />
+                  </div>
+
+                  <!-- Nombre de passages -->
+                  <div class="form-group">
+                    <label>Nombre de passages *</label>
+                    <input
+                      type="number"
+                      [(ngModel)]="newTariff.nbPassages"
+                      name="nbPassages"
+                      min="0"
+                      required
+                    />
+                  </div>
+
+                  <!-- Description -->
+                  <div class="form-group">
+                    <label>Description</label>
+                    <textarea
+                      [(ngModel)]="newTariff.description"
+                      name="description"
+                      rows="3"
+                    ></textarea>
+                  </div>
+
+                  <div class="form-actions">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      (click)="showZoneModal = false"
+                    >
+                      Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      <i class="material-icons">add_circle</i>
+                      Ajouter
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Modal Planning -->
+            <div
+              class="modal-overlay"
+              *ngIf="showScheduleModal"
+              (click)="showScheduleModal = false"
+            >
+              <div class="modal-content" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                  <h3>Nouveau Planning de Collecte</h3>
+                  <button class="close-btn" (click)="showScheduleModal = false">
+                    <i class="material-icons">close</i>
+                  </button>
+                </div>
+
+                <form
+                  [formGroup]="scheduleForm"
+                  class="schedule-form"
+                  (ngSubmit)="addSchedule()"
+                >
+                  <!-- Zone -->
+                  <div class="form-group">
+                    <label>Zone *</label>
+                    <select formControlName="zone">
+                      <option value="">Sélectionner une zone</option>
+                      <!-- <option
+                          value="Tampouy
+"
+                        >
+                          Tampouy
+                        </option>
+                        <option value="Kilwin">Kilwin</option>
+                        <option value="Darsalam">Darsalam</option>
+                        <option value="Cissin">Cissin</option>
+                        <option value="Zongho">Zongho</option>
+                        <option value="Dassohgho">Dassohgho</option>
+                        <option
+                          value="Marcoussis
+"
+                        >
+                          Marcoussis
+                        </option> -->
+                      <option
+                        *ngFor="let zone of zones"
+                        [value]="zone.neighborhood || zone"
+                      >
+                        {{ zone.neighborhood || zone }}
+                      </option>
+                    </select>
+                    <small
+                      class="error-message"
+                      *ngIf="
+                            scheduleForm.get('zone')?.invalid &&
+                            scheduleForm.get('zone')?.touched
+                          "
+                    >
+                      Veuillez sélectionner une zone
+                    </small>
+                  </div>
+
+                  <!-- Date -->
+                  <div class="form-group">
+                    <label>Date *</label>
+                    <input
+                      type="date"
+                      formControlName="date"
+                      class="full-width"
+                      [min]="minDate"
+                    />
+                    <small
+                      class="error-message"
+                      *ngIf="
+                            scheduleForm.get('date')?.invalid &&
+                            scheduleForm.get('date')?.touched
+                          "
+                    >
+                      Veuillez sélectionner une date
+                    </small>
+                  </div>
+
+                  <!-- Heures -->
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Heure de début *</label>
+                      <input type="time" formControlName="startTime" />
+                      <small
+                        class="error-message"
+                        *ngIf="
+                              scheduleForm.get('startTime')?.invalid &&
+                              scheduleForm.get('startTime')?.touched
+                            "
+                      >
+                        Veuillez définir une heure de début
+                      </small>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Heure de fin *</label>
+                      <input type="time" formControlName="endTime" />
+                      <small
+                        class="error-message"
+                        *ngIf="
+                              scheduleForm.get('endTime')?.invalid &&
+                              scheduleForm.get('endTime')?.touched
+                            "
+                      >
+                        Veuillez définir une heure de fin
+                      </small>
+                      <small
+                        class="error-message"
+                        *ngIf="scheduleForm.hasError('invalidTimeOrder')"
+                      >
+                        L'heure de fin doit être postérieure à l'heure de début
+                      </small>
+                    </div>
+                  </div>
+
+                  <!-- Collecteur -->
+                  <div class="form-group">
+                    <label>Collecteur *</label>
+                    <select formControlName="collectorId">
+                      <option value="">Sélectionner un collecteur</option>
+                      <option
+                        *ngFor="let collector of collectors"
+                        [value]="collector._id"
+                      >
+                        {{ collector.firstName }} {{ collector.lastName }}
+                      </option>
+                    </select>
+                    <small
+                      class="error-message"
+                      *ngIf="
+                            scheduleForm.get('collectorId')?.invalid &&
+                            scheduleForm.get('collectorId')?.touched
+                          "
+                    >
+                      Veuillez sélectionner un collecteur
+                    </small>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="form-actions">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      (click)="showScheduleModal = false"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                      [disabled]="scheduleForm.invalid"
+                    >
+                      <i class="material-icons">schedule</i> Créer Planning
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div
+                class="modal-overlay"
+                *ngIf="showAssignModal"
+                (click)="showAssignModal = false"
+              >
+                <div class="modal-content" (click)="$event.stopPropagation()">
+                  <div class="modal-header">
+                    <h3>Assigner des employés</h3>
+                    <button class="close-btn" (click)="showAssignModal = false">
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+                  <div class="modal-body">
+                    <label>Employés disponibles :</label>
+                    <div
+                      *ngFor="let employee of allEmployees"
+                      class="checkbox-group"
+                    >
+                      <input
+                        type="checkbox"
+                        [value]="employee._id"
+                        (change)="
+                              toggleEmployeeSelection(employee._id, $event)
+                            "
+                      />
+                      {{ employee.firstName }} {{ employee.lastName }}
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button
+                      class="btn btn-secondary"
+                      (click)="showAssignModal = false"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      class="btn btn-primary"
+                      (click)="assignEmployeesToReport()"
+                    >
+                      soumettre
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="modal-backdrop"
+            *ngIf="selectedSchedule"
+            (click)="closeModal()"
+          >
+            <div class="modal">
+              <h3>Détails du planning</h3>
+              <p>
+                <strong>Date :</strong>
+                {{ selectedSchedule.date | date : "fullDate" }}
+              </p>
+              <p><strong>Zone :</strong> {{ selectedSchedule.zone }}</p>
+              <p>
+                <strong>Heure :</strong> {{ selectedSchedule.startTime }} - {{
+                selectedSchedule.endTime }}
+              </p>
+              <p>
+                <strong>Collecteur(s) :</strong>
+                <span *ngFor="let c of selectedSchedule.collectors">
+                  {{ c.firstName }} {{ c.lastName }} ({{ c.phone }})
+                </span>
+              </p>
+              <!-- <button class="close-btn" (click)="selectedSchedule = null">Fermer</button> -->
+            </div>
+          </div>
+          <div
+            class="modal-backdrop"
+            *ngIf="showAssignModal"
+            (click)="closeAssignModal()"
+          >
+            <div class="modal" (click)="$event.stopPropagation()">
+              <h3>Assigner un signalement</h3>
+              <p><strong>Signalement ID :</strong> {{ selectedReportId }}</p>
+
+              <div
+                *ngIf="
+                      allEmployees && allEmployees.length > 0;
+                      else noEmployees
+                    "
+                class="employee-grid"
+              >
+                <label
+                  *ngFor="let employee of allEmployees"
+                  class="employee-card"
+                >
+                  <input
+                    type="checkbox"
+                    [value]="employee._id"
+                    (change)="onEmployeeToggle($event)"
+                  />
+                  <div class="employee-info">
+                    <span class="employee-name"
+                      >{{ employee.firstName }} {{ employee.lastName }}</span
+                    >
+                    <span class="employee-role">{{ employee.role }}</span>
+                  </div>
+                </label>
+              </div>
+
+              <ng-template #noEmployees>
+                <p>Aucun employé disponible.</p>
+              </ng-template>
+
+              <div class="modal-actions">
+                <button class="btn btn-primary" (click)="assignReport()">
+                  Assigner
+                </button>
+                <button class="btn btn-secondary" (click)="closeAssignModal()">
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Modal -->
+          <div class="tariffs-modal" *ngIf="showTariffsModal">
+            <div class="modal-backdrop" (click)="closeTariffsModal()"></div>
+
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3>Mes Tarifs</h3>
+                <button class="close-btn" (click)="closeTariffsModal()">
+                  <i class="material-icons">close</i>
+                </button>
+              </div>
+
+              <div class="modal-body">
+                <div
+                  class="tariff-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+                >
+                  <div *ngFor="let tariff of tariffs" class="tariff-card">
+                    <div class="tariff-header">
+                      <h4 class="price">
+                        {{ tariff.price | number : "1.0-0" }} FCFA
+                      </h4>
+                      <span class="type-chip">
+                        <i class="material-icons text-sm">category</i>
+                        {{ tariff.type }}
+                      </span>
+                    </div>
+
+                    <p class="tariff-description">
+                      <i class="material-icons text-sm align-middle">info</i>
+                      {{ tariff.description }}
+                    </p>
+
+                    <!-- Boutons d’action dans le modal -->
+                    <div class="tariff-actions">
+                      <!-- <button class="btn btn-warning flex items-center gap-1">
+              <i class="material-icons text-base">edit</i>
+              Renommer
+            </button> -->
+                      <button
+                        class="btn btn-danger flex items-center gap-1"
+                        (click)="deleteTariff(tariff)"
+                      >
+                        <i class="material-icons text-base">delete</i>
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button class="btn btn-secondary" (click)="closeTariffsModal()">
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="modal-overlay"
+    *ngIf="showClientDetailsModal"
+    (click)="closeClientDetailsModal()"
+  >
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Détails du Client</h3>
+        <button class="close-btn" (click)="closeClientDetailsModal()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>
+          <strong>Nom :</strong> {{ selectedClient?.firstName }} {{
+          selectedClient?.lastName }}
+        </p>
+        <p><strong>Email :</strong> {{ selectedClient?.userId?.email }}</p>
+        <p><strong>Téléphone :</strong> {{ selectedClient?.phone }}</p>
+        <p>
+          <strong>Adresse :</strong> {{ selectedClient?.address?.street }}, {{
+          selectedClient?.address?.neighborhood }}
+        </p>
+        <p><strong>Rôle :</strong> {{ selectedClient?.userId?.role }}</p>
+        <p>
+          <strong>Sigalement:</strong>
+          {{ selectedClient?.nonPassageReports.length }}
+        </p>
+        <p>
+          <strong>Nombre de souscription:</strong>
+          {{ selectedClient?.subscriptionHistory.length }}
+        </p>
+
+        <ul>
+          <!-- <span>Souscription:</span> -->
+          <!-- <li *ngFor="let subscription of selectedClient?.subscriptionHistory">
+          {{ subscription.type }} - {{ subscription.status }}
+        </li>  
+            -->
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeClientDetailsModal()">
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- Modal pour modifier un employé -->
+  <div
+    class="modal-overlay"
+    *ngIf="showUpdateEmployeeModal"
+    (click)="closeUpdateEmployeeModal()"
+  >
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Modifier un Employé</h3>
+        <button class="close-btn" (click)="closeUpdateEmployeeModal()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <form [formGroup]="employeeForm" (ngSubmit)="updateEmployee()">
+        <div class="form-group">
+          <label>Prénom</label>
+          <input formControlName="firstName" type="text" />
+        </div>
+        <div class="form-group">
+          <label>Nom</label>
+          <input formControlName="lastName" type="text" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input formControlName="email" type="email" />
+        </div>
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input formControlName="phone" type="tel" />
+        </div>
+        <div class="form-group">
+          <label>Rôle</label>
+          <select formControlName="role">
+            <option value="manager">Manager</option>
+            <option value="collector">Collecteur</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="closeUpdateEmployeeModal()"
+          >
+            Annuler
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="employeeForm.invalid"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="modal-overlay" *ngIf="selectedImage" (click)="closeImageModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <img
+        [src]="selectedImage"
+        alt="Image en plein écran"
+        class="full-image"
+      />
+
+      <button class="close-btn" (click)="closeImageModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+  </div>
+  <div
+    class="modal-overlay"
+    *ngIf="showHistoryModal"
+    (click)="closeHistoryModal()"
+  >
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Historique des Collectes</h3>
+        <button class="close-btn" (click)="closeHistoryModal()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <ul>
+          <li *ngFor="let collecte of historyCollecte">
+            <p>
+              <strong>Date :</strong>
+              {{ collecte?.scannedAt | date : "dd/MM/yyyy" }}
+            </p>
+            <p><strong>Statut :</strong> {{ collecte.status }}</p>
+            <p>
+              <strong>Client :</strong> {{ collecte?.clientId.firstName }} {{
+              collecte?.clientId.clientName }}
+            </p>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal pour gérer les zones -->
+  <div
+    class="modal-overlay"
+    *ngIf="showZoneModalcouverture"
+    (click)="closeZoneModalcouverture()"
+  >
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Définir les zones couvertes</h3>
+        <button class="close-btn" (click)="closeZoneModalcouverture()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="city">Ville</label>
+          <select
+            id="city"
+            [(ngModel)]="userData.address.city"
+            (change)="onCityChange(userData.address.city)"
+            class="form-control"
+          >
+            <option value="">Sélectionner une ville</option>
+            <option *ngFor="let city of cities" [value]="city.name">
+              {{ city.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="arrondissement">Arrondissement</label>
+          <select
+            id="arrondissement"
+            [(ngModel)]="userData.address.arrondissement"
+            (change)="
+                  onArrondissementChange(userData.address.arrondissement)
+                "
+            class="form-control"
+            [disabled]="!arrondissementss.length"
+          >
+            <option value="">Sélectionner un arrondissement</option>
+            <option *ngFor="let arr of arrondissementss" [value]="arr.name">
+              {{ arr.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sector">Secteur</label>
+          <select
+            id="sector"
+            [(ngModel)]="userData.address.sector"
+            (change)="onSecteurChange(userData.address.sector)"
+            class="form-control"
+            [disabled]="!secteurss.length"
+          >
+            <option value="">Sélectionner un secteur</option>
+            <option *ngFor="let secteur of secteurss" [value]="secteur.name">
+              {{ secteur.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="neighborhood">Quartier</label>
+          <select
+            id="neighborhood"
+            [(ngModel)]="userData.address.neighborhood"
+            class="form-control"
+            multiple
+            [disabled]="!quartierss.length"
+          >
+            <option *ngFor="let quartier of quartierss" [value]="quartier.name">
+              {{ quartier.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeZoneModalcouverture()">
+          Annuler
+        </button>
+        <button class="btn btn-primary" (click)="editZoneAgency()">
+          Modifier
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

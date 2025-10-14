@@ -1,0 +1,554 @@
+<div class="register-page">
+  <div class="register-container">
+    <div class="register-card card">
+      <div class="register-header">
+        <div class="logo">
+          <i class="material-icons">recycling</i>
+          <span>ZéroDéchet+</span>
+        </div>
+        <h1 class="register-title">
+          {{ agencyId ? 'Modifier un compte' : 'Créer un compte'}}
+        </h1>
+        <p class="register-subtitle">
+          Rejoignez notre plateforme pour une gestion intelligente de vos
+          déchets
+        </p>
+      </div>
+
+      <!-- Sélection du type de compte -->
+      <div class="account-type-section" *ngIf="userData.role!=='municipality'">
+        <h3>Type de compte</h3>
+        <div class="account-types">
+          <label class="account-type-option">
+            <input
+              type="radio"
+              name="accountType"
+              value="client"
+              [(ngModel)]="userData.role"
+            />
+            <div class="account-type-card">
+              <i class="material-icons">person</i>
+              <h4>Client</h4>
+              <p>
+                Particulier ou entreprise souhaitant souscrire à un service de
+                collecte
+              </p>
+            </div>
+          </label>
+          <label class="account-type-option">
+            <input
+              type="radio"
+              name="accountType"
+              value="agency"
+              [(ngModel)]="userData.role"
+            />
+            <div class="account-type-card">
+              <i class="material-icons">business</i>
+              <h4>Agence</h4>
+              <p>Entreprise de collecte de déchets proposant ses services</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <form
+        class="register-form"
+        (ngSubmit)="onRegister()"
+        #registerForm="ngForm"
+      >
+        <!-- Informations personnelles -->
+        <div class="form-section">
+          <h3>Informations personnelles</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="firstName">
+                <i class="material-icons">person</i>
+                Prénom <span class="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                [(ngModel)]="userData.firstName"
+                class="form-control"
+                placeholder="Votre prénom"
+                required
+                #firstNameInput="ngModel"
+              />
+              <div
+                class="form-error"
+                *ngIf="firstNameInput.invalid && firstNameInput.touched"
+              >
+                Le prénom est requis
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="lastName">
+                <i class="material-icons">person</i>
+                Nom <span class="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                [(ngModel)]="userData.lastName"
+                class="form-control"
+                placeholder="Votre nom"
+                required
+                #lastNameInput="ngModel"
+              />
+              <div
+                class="form-error"
+                *ngIf="lastNameInput.invalid && lastNameInput.touched"
+              >
+                Le nom est requis
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" *ngIf="!agencyId">
+            <label class="form-label" for="email">
+              <i class="material-icons">email</i>
+              Adresse email <span class="required">*</span>
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              [(ngModel)]="userData.email"
+              class="form-control"
+              placeholder="votre@email.com"
+              required
+              #emailInput="ngModel"
+            />
+            <div
+              class="form-error"
+              *ngIf="emailInput.invalid && emailInput.touched"
+            >
+              Veuillez saisir une adresse email valide
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="phone">
+              <i class="material-icons">phone</i>
+              Téléphone <span class="required">*</span>
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              [(ngModel)]="userData.phone"
+              class="form-control"
+              placeholder="+226 XX XX XX XX"
+              required
+              #phoneInput="ngModel"
+            />
+            <div
+              class="form-error"
+              *ngIf="phoneInput.invalid && phoneInput.touched"
+            >
+              Le numéro de téléphone est requis
+            </div>
+          </div>
+        </div>
+        <div class="form-section" *ngIf="userData.role==='municipality'">
+          <h3>Informations de la commune</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="region">
+                <i class="material-icons">markunread_mailbox</i>
+                Region <span class="required">*</span>
+              </label>
+              <select
+                type="text"
+                id="region"
+                name="region"
+                [(ngModel)]="userData.commune.region"
+                class="form-control"
+                placeholder="Nom de la region"
+                required
+              >
+                <option value="">Sélectionner</option>
+                <option value="region du centre">Region du centre</option>
+                <option value="region du nord">Region du nord</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="province">
+                <i class="material-icons">location_city</i>
+                Province <span class="required">*</span>
+              </label>
+              <select
+                type="text"
+                id="province"
+                name="province"
+                [(ngModel)]="userData.commune.province"
+                class="form-control"
+                placeholder="Nom de la commune"
+                required
+              >
+                <option value="">Sélectionner</option>
+                <option value="province 1">Province 1</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="communeName">
+              <i class="material-icons">location_city</i>
+              Commune <span class="required">*</span>
+            </label>
+            <select
+              type="text"
+              id="communeName"
+              name="communeName"
+              [(ngModel)]="userData.commune.name"
+              class="form-control"
+              placeholder="Nom de la commune"
+              required
+            >
+              <option value="">Sélectionner</option>
+              <option value="ouagadoudou">Ouagadoudou</option>
+            </select>
+          </div>
+        </div>
+        <!-- Adresse (pour les clients) -->
+        <!-- <div class="form-section" *ngIf="userData.role === 'client'"> -->
+        <div class="form-section">
+          <h3>Adresse de localisation</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="city">
+                <i class="material-icons">location_city</i>
+                Ville <span class="required">*</span>
+              </label>
+              <select
+                id="city"
+                name="city"
+                [(ngModel)]="userData.address.city"
+                class="form-control"
+                (change)="onCityChange(userData.address.city)"
+                required
+              >
+                <option value="">Sélectionner</option>
+                <option *ngFor="let city of cities" [value]="city.name">
+                  {{ city.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="postalCode">
+                <i class="material-icons">markunread_mailbox</i>
+                Code postal <span class="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="postalCode"
+                name="postalCode"
+                [(ngModel)]="userData.address.postalCode"
+                class="form-control"
+                placeholder="75001"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="arrondissement">
+                <i class="material-icons">map</i>
+                Arrondiss... <span class="required">*</span>
+              </label>
+              <select
+                id="arrondissement"
+                name="arrondissement"
+                [(ngModel)]="userData.address.arrondissement"
+                (change)="onArrondissementChange(userData.address.arrondissement)"
+                class="form-control"
+                [disabled]="!arrondissementss.length"
+                required
+              >
+                <option value="">Sélectionner</option>
+                <option *ngFor="let arr of arrondissementss" [value]="arr.name">
+                  {{ arr.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="sector">
+                <i class="material-icons">location_city</i>
+                Secteur <span class="required">*</span>
+              </label>
+              <select
+                id="sector"
+                name="sector"
+                [(ngModel)]="userData.address.sector"
+                (change)="onSecteurChange(userData.address.sector)"
+                class="form-control"
+                [disabled]="!secteurss.length"
+                required
+              >
+                <option value="">Sélectionner</option>
+                <option
+                  *ngFor="let secteur of secteurss"
+                  [value]="secteur.name"
+                >
+                  {{ secteur.name }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="neighborhood">
+                <i class="material-icons">location_city</i>
+                Quartier <span class="required">*</span>
+              </label>
+              <select
+                id="neighborhood"
+                name="neighborhood"
+                [(ngModel)]="userData.address.neighborhood"
+                class="form-control"
+                [disabled]="!quartierss.length"
+                required
+              >
+                <option value="">Sélectionner</option>
+                <option
+                  *ngFor="let quartier of quartierss"
+                  [value]="quartier.name"
+                >
+                  {{ quartier.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="street">
+                <i class="material-icons">location_on</i>
+                Rue <span class="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="street"
+                name="street"
+                [(ngModel)]="userData.address.street"
+                class="form-control"
+                placeholder="Nom de la rue"
+                required
+              />
+            </div>
+
+            <div
+              class="form-group"
+              *ngIf="userData.role !== 'agency' && userData.role !== 'municipality'"
+            >
+              <label class="form-label" for="doorNumber">
+                <i class="material-icons">home</i>
+                Numéro Porte <span class="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="doorNumber"
+                name="doorNumber"
+                [(ngModel)]="userData.address.doorNumber"
+                class="form-control"
+                placeholder="123"
+                required
+              />
+            </div>
+
+            <div
+              class="form-group"
+              *ngIf="userData.role !== 'agency'  && userData.role !== 'municipality'"
+            >
+              <label class="form-label" for="doorColor">
+                <i class="material-icons">palette</i>
+                Couleur porte
+              </label>
+              <select
+                id="doorColor"
+                name="doorColor"
+                [(ngModel)]="userData.address.doorColor"
+                class="form-control"
+              >
+                <option value="">Sélectionner</option>
+                <option value="blanc">Blanc</option>
+                <option value="noir">Noir</option>
+                <option value="marron">Marron</option>
+                <option value="bleu">Bleu</option>
+                <option value="rouge">Rouge</option>
+                <option value="vert">Vert</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Informations agence -->
+        <div class="form-section" *ngIf="userData.role === 'agency'">
+          <h3>Informations de l'agence</h3>
+
+          <div class="form-group">
+            <label class="form-label" for="agencyName">
+              <i class="material-icons">business</i>
+              Nom de l'agence <span class="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="agencyName"
+              name="agencyName"
+              [(ngModel)]="userData.agencyName"
+              class="form-control"
+              placeholder="Nom de votre agence"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="agencyDescription">
+              <i class="material-icons">description</i>
+              Description
+            </label>
+            <textarea
+              id="agencyDescription"
+              name="agencyDescription"
+              [(ngModel)]="userData.agencyDescription"
+              class="form-control"
+              placeholder="Décrivez vos services..."
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Mot de passe -->
+        <ng-container *ngIf="!agencyId">
+          <div class="form-section">
+            <h3>Sécurité</h3>
+
+            <div class="form-group">
+              <label class="form-label" for="password">
+                <i class="material-icons">lock</i>
+                Mot de passe <span class="required">*</span>
+              </label>
+              <div class="password-input">
+                <input
+                  [type]="showPassword ? 'text' : 'password'"
+                  id="password"
+                  name="password"
+                  [(ngModel)]="userData.password"
+                  class="form-control"
+                  placeholder="Minimum 8 caractères"
+                  required
+                  minlength="8"
+                  #passwordInput="ngModel"
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  (click)="togglePassword()"
+                >
+                  <i class="material-icons"
+                    >{{ showPassword ? 'visibility_off' : 'visibility' }}</i
+                  >
+                </button>
+              </div>
+              <div class="password-strength">
+                <div class="strength-bar" [class]="getPasswordStrength()"></div>
+                <span class="strength-text"
+                  >{{ getPasswordStrengthText() }}</span
+                >
+              </div>
+              <div
+                class="form-error"
+                *ngIf="passwordInput.invalid && passwordInput.touched"
+              >
+                Le mot de passe doit contenir au moins 8 caractères
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="confirmPassword">
+                <i class="material-icons">lock</i>
+                Confirmer le mot de passe <span class="required">*</span>
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                [(ngModel)]="userData.confirmPassword"
+                class="form-control"
+                placeholder="Répétez votre mot de passe"
+                required
+                #confirmPasswordInput="ngModel"
+              />
+              <div
+                class="form-error"
+                *ngIf="confirmPasswordInput.touched && userData.password !== userData.confirmPassword"
+              >
+                Les mots de passe ne correspondent pas
+              </div>
+            </div>
+          </div>
+
+          <!-- Conditions -->
+          <div class="form-section">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="userData.termsAccepted"
+                name="termsAccepted"
+                required
+              />
+              <span class="checkmark"></span>
+              J'accepte les
+              <a routerLink="/terms" target="_blank"
+                >conditions d'utilisation</a
+              >
+              et la
+              <a routerLink="/privacy" target="_blank"
+                >politique de confidentialité</a
+              >
+            </label>
+
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="userData.receiveOffers"
+                name="receiveOffers"
+              />
+              <span class="checkmark"></span>
+              Je souhaite recevoir les actualités et offres par email
+            </label>
+          </div>
+        </ng-container>
+        <button
+          type="submit"
+          *ngIf="!agencyId"
+          class="btn btn-primary btn-full"
+          [disabled]="isLoading || registerForm.invalid || !userData.termsAccepted || userData.password !== userData.confirmPassword"
+        >
+          <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+          <i class="material-icons" *ngIf="!isLoading">person_add</i>
+          {{ isLoading ? 'Création...' : 'Créer mon compte' }}
+        </button>
+        <button type="submit" class="btn btn-primary btn-full" *ngIf="agencyId">
+          <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+          <i class="material-icons" *ngIf="!isLoading">person_add</i>
+          {{ isLoading ? 'Création...' : 'Modifier le compte' }}
+        </button>
+      </form>
+      <ng-container *ngIf="!agencyId">
+        <div class="register-footer">
+          <p>
+            Déjà un compte ?
+            <a routerLink="/login" class="login-link">Se connecter</a>
+          </p>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

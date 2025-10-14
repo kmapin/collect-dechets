@@ -1,0 +1,166 @@
+<div class="faq-page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">Questions Fréquentes</h1>
+      <p class="page-subtitle">
+        Trouvez rapidement les réponses à vos questions sur la collecte de
+        déchets, le tri, les abonnements et bien plus encore. Notre FAQ complète
+        vous guide pas à pas dans l'utilisation de nos services.
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Barre de recherche -->
+    <div class="search-section">
+      <div class="search-box">
+        <i class="material-icons search-icon">search</i>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          (input)="filterFAQ()"
+          placeholder="Rechercher dans la FAQ..."
+          class="search-input"
+        />
+      </div>
+      <p class="search-help">
+        Tapez des mots-clés comme "collecte", "tri", "paiement", "horaires"...
+      </p>
+    </div>
+
+    <!-- Catégories -->
+    <div class="categories-section">
+      <h2 class="section-title">Parcourir par catégorie</h2>
+      <div class="categories-grid">
+        <button
+          *ngFor="let category of categories"
+          class="category-card"
+          [class.active]="selectedCategory === category.id"
+          (click)="selectCategory(category.id)"
+        >
+          <div class="category-icon">
+            <i class="material-icons">{{ category.icon }}</i>
+          </div>
+          <h3 class="category-name">{{ category.name }}</h3>
+          <p class="category-description">{{ category.description }}</p>
+          <span class="category-count"
+            >{{ getCategoryCount(category.id) }} questions</span
+          >
+        </button>
+      </div>
+    </div>
+
+    <!-- Questions populaires -->
+    <div
+      class="popular-section"
+      *ngIf="!searchQuery && selectedCategory === 'all'"
+    >
+      <h2 class="section-title">Questions les plus populaires</h2>
+      <div class="popular-questions">
+        <div
+          *ngFor="let faq of getPopularQuestions()"
+          class="popular-question-card card"
+        >
+          <div class="popular-question-content" (click)="toggleFAQ(faq)">
+            <h4 class="popular-question-title">{{ faq.question }}</h4>
+            <i
+              class="material-icons expand-icon"
+              [class.expanded]="faq.isExpanded"
+              >expand_more</i
+            >
+          </div>
+          <div class="popular-answer" [class.expanded]="faq.isExpanded">
+            <p>{{ faq.answer }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liste des FAQ -->
+    <div class="faq-section">
+      <div class="faq-header">
+        <h2 class="section-title">
+          {{ getFilteredFAQ().length }} question(s)
+          <span *ngIf="selectedCategory !== 'all'">
+            dans {{ getCategoryName(selectedCategory) }}
+          </span>
+          <span *ngIf="searchQuery"> pour "{{ searchQuery }}" </span>
+        </h2>
+        <button
+          class="clear-filters-btn"
+          *ngIf="selectedCategory !== 'all' || searchQuery"
+          (click)="clearFilters()"
+        >
+          <i class="material-icons">clear</i>
+          Effacer les filtres
+        </button>
+      </div>
+
+      <div class="faq-list">
+        <div *ngFor="let faq of getFilteredFAQ()" class="faq-item card">
+          <div class="faq-question" (click)="toggleFAQ(faq)">
+            <h3 class="question-text">{{ faq.question }}</h3>
+            <div class="question-meta">
+              <span class="category-badge"
+                >{{ getCategoryName(faq.category) }}</span
+              >
+              <i
+                class="material-icons expand-icon"
+                [class.expanded]="faq.isExpanded"
+                >expand_more</i
+              >
+            </div>
+          </div>
+          <div class="faq-answer" [class.expanded]="faq.isExpanded">
+            <div class="answer-content">
+              <p>{{ faq.answer }}</p>
+              <div class="answer-tags" *ngIf="faq.tags.length > 0">
+                <span class="tag" *ngFor="let tag of faq.tags">{{ tag }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message si aucun résultat -->
+      <div *ngIf="getFilteredFAQ().length === 0" class="no-results">
+        <div class="no-results-content">
+          <i class="material-icons">help_outline</i>
+          <h3>Aucune question trouvée</h3>
+          <p>Essayez avec d'autres mots-clés ou parcourez les catégories.</p>
+          <button class="btn btn-primary" (click)="clearFilters()">
+            Voir toutes les questions
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section contact -->
+    <div class="contact-section">
+      <div class="contact-card card">
+        <div class="contact-content">
+          <div class="contact-icon">
+            <i class="material-icons">support_agent</i>
+          </div>
+          <div class="contact-text">
+            <h3>Vous ne trouvez pas votre réponse ?</h3>
+            <p>
+              Notre équipe support est là pour vous aider. Contactez-nous pour
+              obtenir une assistance personnalisée.
+            </p>
+          </div>
+          <div class="contact-actions">
+            <button class="btn btn-primary">
+              <i class="material-icons">chat</i>
+              Chat en direct
+            </button>
+            <button class="btn btn-secondary">
+              <i class="material-icons">email</i>
+              Envoyer un email
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
