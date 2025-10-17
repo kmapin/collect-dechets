@@ -103,7 +103,7 @@
   </section>
 
   <!-- Search Section Moderne -->
-  <!-- <section class="search-section">
+  <section class="search-section">
         <div class="container">
           <div class="search-content">
             <div class="search-header">
@@ -128,6 +128,7 @@
                       type="text" 
                       [(ngModel)]="searchQuery"
                       name="searchQuery"
+                      (input)="onSearch()"
                       placeholder="Saisissez la ville et le secteur ici .."
                       class="search-input">
                     <div class="input-glow"></div>
@@ -140,13 +141,13 @@
               </form>
 
               <div class="search-options">
-                <button class="search-option" (click)="useGeolocation()">
+                <button class="search-option" (click)="useGeolocations()">
                   <i class="material-icons">my_location</i>
                   <span>Ma position</span>
                 </button>
                 <button class="search-option" (click)="showZoneSelector()">
                   <i class="material-icons">map</i>
-                  <span>Sélectionner zone</span>
+                  <span>Proximitées</span>
                 </button>
                 <button class="search-option" (click)="showAdvancedSearch()">
                   <i class="material-icons">tune</i>
@@ -156,10 +157,70 @@
             </div>
           </div>
         </div>
-      </section> -->
+
+        <section *ngIf="showMap" class=" mt-4 border border-[--primary-color] ">
+          <div id="map" style="height: 400px; width: 100%;"></div>
+        </section>
+
+        <section *ngIf="showAdvancedSear" class=" mt-4">
+          <div class="filters-section card">
+
+          <div class="filters-grid">
+              <div class="filter-group">
+                <label class="filter-label">Ville</label>
+                <select [(ngModel)]="selectedCity" (change)="onCityChange(selectedCity)" class="filter-select">
+                  <option value="">Aucune ...</option>
+                  <option *ngFor="let city of cities" [value]="city">{{ city }}</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label class="filter-label">Secteur</label>
+                <select [(ngModel)]="selectedSector"
+                        (change)="onSecteurChange(selectedSector)"
+                        class="filter-select"
+                        [disabled]="!selectedCity || !secteurss.length">
+                  <option value="">Tous les secteurs</option>
+                  <option *ngFor="let secteur of secteurss" [value]="secteur.name">{{ secteur.name }}</option>
+                </select>
+                <!-- <div *ngIf="!selectedCity"> -->
+                  <sub *ngIf="!selectedCity" class="text-small font-small text-[--error-color]">Sélectionnez d'abord une ville.</sub>
+                <!-- </div> -->
+              </div>
+              <div class="filter-group">
+                <label class="filter-label">Quartier</label>
+                <select [(ngModel)]="selectedNeighborhood"
+                        (change)="applyFilters()"
+                        class="filter-select"
+                        [disabled]="!selectedCity || !quartierss.length">
+                  <option value="">Tous les quartiers</option>
+                  <option *ngFor="let quartier of quartierss" [value]="quartier.name">{{ quartier.name }}</option>
+                </select>
+                  <sub *ngIf="!selectedCity" class="text-small font-small text-[--error-color]">Sélectionnez d'abord une ville.</sub>
+
+              </div>
+              <!-- <div class="filter-group">
+                <label class="filter-label">Note minimum</label>
+                <select [(ngModel)]="minRating" (change)="applyFilters()" class="filter-select">
+                  <option value="">Toutes</option>
+                  <option value="3">3 étoiles et plus</option>
+                  <option value="4">4 étoiles et plus</option>
+                  <option value="4.5">4.5 étoiles et plus</option>
+                </select>
+              </div> -->
+          </div>
+          <div class="filters-actions" style="text-align:right; margin-top:8px;">
+            <button class="btn  btn-small text-[--error-color] transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-xl  gap-2 font-medium text-sm" (click)="clearFilters()" title="Réinitialiser les filtres">
+              <i class="material-icons">restart_alt</i>
+                            <i class="fas fa-undo-alt group-hover:rotate-180 transition-transform duration-300"></i>
+               Réinitialiser
+            </button>
+          </div>
+        </div>
+        </section>
+      </section>
 
   <!-- Search Results Moderne -->
-  <section class="results-section" *ngIf="searchResults.length > 0">
+  <section class="results-section">
     <div class="container">
       <div class="results-header">
         <h2 class="section-title">Quelques agences de collecte disponibles</h2>
@@ -188,7 +249,7 @@
       </div>
 
       <div class="agencies-grid">
-        <div *ngFor="let agency of searchResults" class="agency-card">
+        <div *ngFor="let agency of filteredAgencies" class="agency-card">
           <div class="agency-header">
             <div class="agency-logo">
               <img

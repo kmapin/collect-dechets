@@ -44,4 +44,11 @@ Email : gangosmeo@gmail.com          Mot de passe : Wise2024
 3.
 
 
-                                //////  TO DO in client dashboard
+                                //////  TO DO IN HOME PAGE
+1=>Recuperer ma position par geolocalisation et afficher les agences dans ma ville
+2=>Mettre en place une carte
+1=>Positionner les agences à proximité de chez moi
+1=>
+1=>
+1=>
+1=>

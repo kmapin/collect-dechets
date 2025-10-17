@@ -214,6 +214,7 @@ applyFilters(): void {
       this.generateRandomStarsList();
       this.sortAgencies();
     },
+
     error: (err) => {
       console.error('Erreur lors de la recherche des agences :', err);
       this.filteredAgencies = [];

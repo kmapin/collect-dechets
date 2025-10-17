@@ -1,5 +1,35 @@
 @import "primeicons/primeicons.css";
+/* @import "~leaflet/dist/leaflet.css"; */
 /* @import "flowbite/src/themes/default"; */
+
+/* styles.css pour la map */
+.leaflet-popup-content .popup-btn {
+  display: inline-flex;
+  align-items: center;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  margin: 6px 0 0 0;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.leaflet-popup-content .popup-btn:hover {
+  background: #1565c0;
+}
+.leaflet-popup-content .popup-btn.start-btn {
+  background: #43a047;
+}
+.leaflet-popup-content .popup-btn.start-btn:hover {
+  background: #388e3c;
+}
+.leaflet-popup-content .material-icons {
+  font-size: 1.1em;
+  margin-right: 4px;
+}
+
 
 :root {
   --primary-color: #00bcd4;

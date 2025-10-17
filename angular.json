@@ -36,6 +36,7 @@
             "polyfills": ["zone.js"],
             "scripts": [],
             "styles": [
+              "node_modules/leaflet/dist/leaflet.css",
               "node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css",
               "src/global_styles.css"
             ],

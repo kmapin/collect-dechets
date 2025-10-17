@@ -22,18 +22,18 @@
           <div class="search-bar">
             <div class="search-input-group">
               <i class="material-icons search-icon">search</i>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 [(ngModel)]="searchQuery"
                 (input)="onSearch()"
                 placeholder="Rechercher par nom, ville, secteur, quartier..."
                 class="search-input">
                     <!-- Ajout de la liste des suggestions -->
-            <ul class="suggestions-list" *ngIf="suggestions.length > 0">
-              <li *ngFor="let suggestion of suggestions" (click)="applySuggestion(suggestion)">
-                {{ suggestion.name }}
-              </li>
-            </ul>
+                <ul class="suggestions-list" *ngIf="suggestions.length > 0">
+                  <li *ngFor="let suggestion of suggestions" (click)="applySuggestion(suggestion)">
+                    {{ suggestion.name }}
+                  </li>
+                </ul>
               </div>
           </div>
 
