@@ -1021,84 +1021,113 @@
                     <i class="material-icons">close</i>
                   </button>
                 </div>
-                <form class="employee-form" (ngSubmit)="addEmployee()">
+                <form class="employee-form" [formGroup]="employeeForm" (ngSubmit)="addEmployee()">
                   <div class="form-row">
                     <div class="form-group">
-                      <label>Prénom *</label>
+                      <label class="form-label required">Prénom</label>
                       <input
                         type="text"
-                        [(ngModel)]="newEmployee.firstName"
-                        name="firstName"
-                        required
+                        formControlName="firstName"
+                        class="form-input"
+                        [class.error]="hasFieldError('employee', 'firstName')"
+                        [class.valid]="employeeForm.get('firstName')?.valid && employeeForm.get('firstName')?.touched"
+                        placeholder="Entrez le prénom"
                       />
+                      <span class="error-message">{{ getFieldError('employee', 'firstName') }}</span>
                     </div>
                     <div class="form-group">
-                      <label>Nom *</label>
+                      <label class="form-label required">Nom</label>
                       <input
                         type="text"
-                        [(ngModel)]="newEmployee.lastName"
-                        name="lastName"
-                        required
+                        formControlName="lastName"
+                        class="form-input"
+                        [class.error]="hasFieldError('employee', 'lastName')"
+                        [class.valid]="employeeForm.get('lastName')?.valid && employeeForm.get('lastName')?.touched"
+                        placeholder="Entrez le nom"
                       />
+                      <span class="error-message">{{ getFieldError('employee', 'lastName') }}</span>
                     </div>
                   </div>
                   <div class="form-group">
-                    <label>Email *</label>
+                    <label class="form-label required">Email</label>
                     <input
                       type="email"
-                      [(ngModel)]="newEmployee.email"
-                      name="email"
-                      required
+                      formControlName="email"
+                      class="form-input"
+                      [class.error]="hasFieldError('employee', 'email')"
+                      [class.valid]="employeeForm.get('email')?.valid && employeeForm.get('email')?.touched"
+                      placeholder="exemple@email.com"
                     />
+                    <span class="error-message">{{ getFieldError('employee', 'email') }}</span>
                   </div>
                   <div class="form-group">
-                    <label>Téléphone *</label>
+                    <label class="form-label required">Téléphone</label>
                     <input
                       type="tel"
-                      [(ngModel)]="newEmployee.phone"
-                      name="phone"
-                      required
+                      formControlName="phone"
+                      class="form-input"
+                      [class.error]="hasFieldError('employee', 'phone')"
+                      [class.valid]="employeeForm.get('phone')?.valid && employeeForm.get('phone')?.touched"
+                      placeholder="+226 XX XX XX XX"
                     />
+                    <span class="error-message">{{ getFieldError('employee', 'phone') }}</span>
                   </div>
                   <div class="form-group">
-                    <label>Rôle *</label>
-                    <select [(ngModel)]="newEmployee.role" name="role" required>
+                    <label class="form-label required">Rôle</label>
+                    <select 
+                      formControlName="role"
+                      class="form-select"
+                      [class.error]="hasFieldError('employee', 'role')"
+                      [class.valid]="employeeForm.get('role')?.valid && employeeForm.get('role')?.touched"
+                    >
                       <option value="">Sélectionner un rôle</option>
                       <option value="manager">Manager</option>
                       <option value="collector">Collecteur</option>
                     </select>
+                    <span class="error-message">{{ getFieldError('employee', 'role') }}</span>
                   </div>
-                  <!-- Dans la section du formulaire d'ajout d'employé -->
+                  <!-- Sélection multiple des zones -->
                   <div
                     class="form-group"
-                    *ngIf="newEmployee.role === 'collector'"
+                    *ngIf="employeeForm.get('role')?.value === 'collector'"
                   >
-                    <label>Zone assignée *</label>
-                    <select
-                      [(ngModel)]="newEmployee.zones"
-                      name="zones"
-                      required
-                    >
-                      <option value="">Sélectionner une zone</option>
-                      <option
-                        *ngFor="let zone of zones"
-                        [value]="zone.neighborhood || zone"
-                      >
-                        {{ zone.neighborhood || zone }}
-                      </option>
-                    </select>
+                    <label class="form-label required">Zones assignées</label>
+                    <div class="zone-selection" [class.error]="hasFieldError('employee', 'zones')">
+                      <div class="form-checkbox-group">
+                        <div 
+                          *ngFor="let zone of serviceZones" 
+                          class="form-checkbox-item"
+                          [class.selected]="isZoneSelected(zone.id)"
+                        >
+                          <input 
+                            type="checkbox" 
+                            class="form-checkbox"
+                            [checked]="isZoneSelected(zone.id)"
+                            (change)="toggleZoneSelection(zone.id, $event)"
+                          >
+                          <span>{{ zone.name }}</span>
+                        </div>
+                      </div>
+                      <small class="zone-summary">{{ getSelectedZonesText() }}</small>
+                    </div>
+                    <span class="error-message">{{ getFieldError('employee', 'zones') }}</span>
                   </div>
                   <div class="form-actions">
                     <button
                       type="button"
-                      class="btn btn-secondary"
-                      (click)="showAddEmployeeModal = false"
+                      class="btn btn-outline"
+                      (click)="closeAddEmployeeModal()"
                     >
                       Annuler
                     </button>
-                    <button type="submit" class="btn btn-primary">
-                      <i class="material-icons">person_add</i>
-                      Ajouter
+                    <button 
+                      type="submit" 
+                      class="btn btn-primary"
+                      [disabled]="!employeeForm.valid || isLoading"
+                    >
+                      <span class="loading-spinner" *ngIf="isLoading"></span>
+                      <i class="material-icons" *ngIf="!isLoading">person_add</i>
+                      {{ isLoading ? 'Ajout en cours...' : 'Ajouter l\'employé' }}
                     </button>
                   </div>
                 </form>
@@ -1119,61 +1148,84 @@
                   </button>
                 </div>
 
-                <form class="tariff-form" (ngSubmit)="addTariff()">
+                <form class="tariff-form" [formGroup]="tariffForm" (ngSubmit)="addTariff()">
                   <!-- Type -->
                   <div class="form-group">
-                    <label>Type *</label>
-                    <select [(ngModel)]="newTariff.type" name="type" required>
+                    <label class="form-label required">Type</label>
+                    <select 
+                      formControlName="type"
+                      class="form-select"
+                      [class.error]="hasFieldError('tariff', 'type')"
+                      [class.valid]="tariffForm.get('type')?.valid && tariffForm.get('type')?.touched"
+                    >
+                      <option value="">Sélectionner un type</option>
                       <option value="standard">Standard</option>
                       <option value="premium">Premium</option>
+                      <option value="vip">VIP</option>
                     </select>
+                    <span class="error-message">{{ getFieldError('tariff', 'type') }}</span>
                   </div>
 
                   <!-- Prix -->
                   <div class="form-group">
-                    <label>Prix *</label>
+                    <label class="form-label required">Prix (FCFA)</label>
                     <input
                       type="number"
-                      [(ngModel)]="newTariff.price"
-                      name="price"
+                      formControlName="price"
+                      class="form-input"
+                      [class.error]="hasFieldError('tariff', 'price')"
+                      [class.valid]="tariffForm.get('price')?.valid && tariffForm.get('price')?.touched"
+                      placeholder="0"
                       min="0"
-                      required
                     />
+                    <span class="error-message">{{ getFieldError('tariff', 'price') }}</span>
                   </div>
 
                   <!-- Nombre de passages -->
                   <div class="form-group">
-                    <label>Nombre de passages *</label>
+                    <label class="form-label required">Nombre de passages</label>
                     <input
                       type="number"
-                      [(ngModel)]="newTariff.nbPassages"
-                      name="nbPassages"
-                      min="0"
-                      required
+                      formControlName="nbPassages"
+                      class="form-input"
+                      [class.error]="hasFieldError('tariff', 'nbPassages')"
+                      [class.valid]="tariffForm.get('nbPassages')?.valid && tariffForm.get('nbPassages')?.touched"
+                      placeholder="1"
+                      min="1"
                     />
+                    <span class="error-message">{{ getFieldError('tariff', 'nbPassages') }}</span>
                   </div>
 
                   <!-- Description -->
                   <div class="form-group">
-                    <label>Description</label>
+                    <label class="form-label required">Description</label>
                     <textarea
-                      [(ngModel)]="newTariff.description"
-                      name="description"
+                      formControlName="description"
+                      class="form-textarea"
+                      [class.error]="hasFieldError('tariff', 'description')"
+                      [class.valid]="tariffForm.get('description')?.valid && tariffForm.get('description')?.touched"
+                      placeholder="Décrivez ce tarif..."
                       rows="3"
                     ></textarea>
+                    <span class="error-message">{{ getFieldError('tariff', 'description') }}</span>
                   </div>
 
                   <div class="form-actions">
                     <button
                       type="button"
-                      class="btn btn-secondary"
+                      class="btn btn-outline"
                       (click)="showZoneModal = false"
                     >
                       Annuler
                     </button>
-                    <button type="submit" class="btn btn-primary">
-                      <i class="material-icons">add_circle</i>
-                      Ajouter
+                    <button 
+                      type="submit" 
+                      class="btn btn-primary"
+                      [disabled]="!tariffForm.valid || isLoading"
+                    >
+                      <span class="loading-spinner" *ngIf="isLoading"></span>
+                      <i class="material-icons" *ngIf="!isLoading">add_circle</i>
+                      {{ isLoading ? 'Ajout en cours...' : 'Ajouter le tarif' }}
                     </button>
                   </div>
                 </form>

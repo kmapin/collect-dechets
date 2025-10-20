@@ -194,7 +194,7 @@ export class Home  implements OnInit {
         `;
         marker.bindPopup(popupContent);
         // Ajoute un listener pour le bouton après l'ouverture du popup
-        marker.on('popupopen', (event) => {
+        marker.on('popupopen', (event: any) => {
           setTimeout(() => {
             const itinBtn = document.querySelector('.itineraire-btn') as HTMLButtonElement;
             if (itinBtn) {

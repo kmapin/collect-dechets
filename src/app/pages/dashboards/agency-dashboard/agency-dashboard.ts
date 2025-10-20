@@ -114,7 +114,11 @@ interface Statistics {
 export class AgencyDashboard  implements OnInit,AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
 
-  scheduleForm: FormGroup;
+  scheduleForm!: FormGroup;
+  employeeForm!: FormGroup;
+  tariffForm!: FormGroup;
+  zoneForm!: FormGroup;
+  messageForm!: FormGroup;
 
   currentUser: User | null = null;
   agencyReports: Report[] = [];
@@ -225,7 +229,10 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   showScheduleModal = false;
   editingZone = false;
 
-  // Forms
+  // Forms - Supprimés les objets pour utiliser les reactive forms
+  // newEmployee, newTariff, newZone, newSchedule seront gérés par les FormGroups
+  
+  // Propriétés temporaires pour compatibilité (à supprimer après migration du template)
   newEmployee: any = {
     firstName: "",
     lastName: "",
@@ -235,13 +242,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     zones: [],
   };
   newTariff: any = {
-    // agencyId: "",
     type: "",
     price: "",
     description: "",
     nbPassages: "",
   };
-
   newZone: any = {
     name: "",
     description: "",
@@ -250,29 +255,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     isActive: true,
   };
 
-  newSchedule: any = {
-    zoneId: "",
-    dayOfWeek: "",
-    startTime: "",
-    // endTime: "",
-    collectorId: "",
-    // endDate: "",
-  };
-  // formErrors = {
-  //   zoneId: '',
-  //   dayOfWeek: '',
-  //   startTime: '',
-  //   endTime: '',
-  //   collectorId: ''
-  // };
-  formErrors = {
-    zone: "",
-    dayOfWeek: "",
-    startTime: "",
-    endTime: "",
-    collectorId: "",
-    // endDate: "",
-  };
+  // formErrors sera remplacé par une fonction d'erreur
   citiesInput = "";
   minDate: string;
 
@@ -325,7 +308,10 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   receivedId: string = "";
   client: any;
   displayAgencyName: string = "";
-  employeeForm: FormGroup;
+  
+  // Error handling
+  formErrors: { [key: string]: string } = {};
+
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
@@ -341,9 +327,16 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
+    
+    this.initializeForms();
+  }
+
+  // Initialisation de tous les formulaires réactifs
+  private initializeForms(): void {
+    // Formulaire de planification
     this.scheduleForm = this.fb.group(
       {
-        zone: [""],
+        zone: ["", Validators.required],
         date: ["", Validators.required],
         startTime: ["", Validators.required],
         endTime: ["", Validators.required],
@@ -353,13 +346,196 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
         validators: [this.validateTimeOrder],
       }
     );
+
+    // Formulaire d'employé
     this.employeeForm = this.fb.group({
-      firstName: ["", Validators.required],
-      lastName: ["", Validators.required],
+      firstName: ["", [Validators.required, Validators.minLength(2)]],
+      lastName: ["", [Validators.required, Validators.minLength(2)]],
       email: ["", [Validators.required, Validators.email]],
-      phone: ["", Validators.required],
+      phone: ["", [Validators.required, Validators.pattern(/^[0-9+\-\s]+$/)]],
       role: ["", Validators.required],
+      zones: [[], Validators.required]
     });
+
+    // Formulaire de tarif
+    this.tariffForm = this.fb.group({
+      type: ["", Validators.required],
+      price: ["", [Validators.required, Validators.min(0)]],
+      description: ["", [Validators.required, Validators.minLength(10)]],
+      nbPassages: ["", [Validators.required, Validators.min(1)]]
+    });
+
+    // Formulaire de zone
+    this.zoneForm = this.fb.group({
+      name: ["", [Validators.required, Validators.minLength(3)]],
+      description: ["", [Validators.required, Validators.minLength(10)]],
+      cities: [[], Validators.required],
+      neighborhoods: [[], Validators.required],
+      isActive: [true]
+    });
+
+    // Formulaire de message
+    this.messageForm = this.fb.group({
+      content: ["", [Validators.required, Validators.minLength(5)]]
+    });
+
+    // Écouter les changements pour afficher les erreurs en temps réel
+    this.setupFormErrorHandling();
+  }
+
+  // Configuration de la gestion des erreurs pour tous les formulaires
+  private setupFormErrorHandling(): void {
+    const forms = [
+      { form: this.scheduleForm, name: 'schedule' },
+      { form: this.employeeForm, name: 'employee' },
+      { form: this.tariffForm, name: 'tariff' },
+      { form: this.zoneForm, name: 'zone' },
+      { form: this.messageForm, name: 'message' }
+    ];
+
+    forms.forEach(({ form, name }) => {
+      form.valueChanges.subscribe(() => {
+        this.updateFormErrors(form, name);
+      });
+    });
+  }
+
+  // Mise à jour des erreurs pour un formulaire donné
+  private updateFormErrors(form: FormGroup, formName: string): void {
+    Object.keys(form.controls).forEach(key => {
+      const control = form.get(key);
+      const errorKey = `${formName}_${key}`;
+      
+      if (control && control.errors && (control.dirty || control.touched)) {
+        this.formErrors[errorKey] = this.getErrorMessage(key, control.errors);
+      } else {
+        delete this.formErrors[errorKey];
+      }
+    });
+  }
+
+  // Génération des messages d'erreur personnalisés
+  private getErrorMessage(fieldName: string, errors: any): string {
+    const fieldDisplayNames: { [key: string]: string } = {
+      firstName: 'Prénom',
+      lastName: 'Nom',
+      email: 'Email',
+      phone: 'Téléphone',
+      role: 'Rôle',
+      zones: 'Zones',
+      type: 'Type',
+      price: 'Prix',
+      description: 'Description',
+      nbPassages: 'Nombre de passages',
+      name: 'Nom',
+      cities: 'Villes',
+      neighborhoods: 'Quartiers',
+      content: 'Contenu',
+      zone: 'Zone',
+      date: 'Date',
+      startTime: 'Heure de début',
+      endTime: 'Heure de fin',
+      collectorId: 'Collecteur'
+    };
+
+    const displayName = fieldDisplayNames[fieldName] || fieldName;
+
+    if (errors['required']) {
+      return `${displayName} est requis`;
+    }
+    if (errors['email']) {
+      return 'Format d\'email invalide';
+    }
+    if (errors['minlength']) {
+      return `${displayName} doit contenir au moins ${errors['minlength'].requiredLength} caractères`;
+    }
+    if (errors['min']) {
+      return `${displayName} doit être supérieur ou égal à ${errors['min'].min}`;
+    }
+    if (errors['pattern']) {
+      return `${displayName} contient des caractères invalides`;
+    }
+    if (errors['invalidTimeOrder']) {
+      return 'L\'heure de fin doit être postérieure à l\'heure de début';
+    }
+
+    return `${displayName} est invalide`;
+  }
+
+  // Méthode pour obtenir l'erreur d'un champ spécifique
+  getFieldError(formName: string, fieldName: string): string {
+    return this.formErrors[`${formName}_${fieldName}`] || '';
+  }
+
+  // Méthode pour vérifier si un champ a une erreur
+  hasFieldError(formName: string, fieldName: string): boolean {
+    return !!this.formErrors[`${formName}_${fieldName}`];
+  }
+
+  // Méthodes pour gérer les modals
+  openAddEmployeeModal(): void {
+    this.employeeForm.reset();
+    this.showAddEmployeeModal = true;
+  }
+
+  closeAddEmployeeModal(): void {
+    this.showAddEmployeeModal = false;
+    this.employeeForm.reset();
+  }
+
+  openZoneModal(): void {
+    this.zoneForm.reset();
+    this.editingZone = false;
+    this.showZoneModal = true;
+  }
+
+  closeZoneModal(): void {
+    this.showZoneModal = false;
+    this.zoneForm.reset();
+    this.editingZone = false;
+  }
+
+  openScheduleModal(): void {
+    this.scheduleForm.reset();
+    this.showScheduleModal = true;
+  }
+
+  closeScheduleModal(): void {
+    this.showScheduleModal = false;
+    this.scheduleForm.reset();
+  }
+
+  // Méthode pour gérer la sélection multiple des zones pour les employés
+  toggleZoneSelection(zoneId: string, event: any): void {
+    const zonesControl = this.employeeForm.get('zones');
+    if (!zonesControl) return;
+
+    let currentZones = zonesControl.value || [];
+    
+    if (event.target.checked) {
+      if (!currentZones.includes(zoneId)) {
+        currentZones.push(zoneId);
+      }
+    } else {
+      currentZones = currentZones.filter((id: string) => id !== zoneId);
+    }
+    
+    zonesControl.setValue(currentZones);
+    zonesControl.markAsTouched();
+  }
+
+  // Méthode pour vérifier si une zone est sélectionnée
+  isZoneSelected(zoneId: string): boolean {
+    const zones = this.employeeForm.get('zones')?.value || [];
+    return zones.includes(zoneId);
+  }
+
+  // Méthode utilitaire pour afficher les zones sélectionnées
+  getSelectedZonesText(): string {
+    const zones = this.employeeForm.get('zones')?.value || [];
+    if (zones.length === 0) return 'Aucune zone sélectionnée';
+    if (zones.length === 1) return '1 zone sélectionnée';
+    return `${zones.length} zones sélectionnées`;
   }
 
   ngOnInit(): void {
@@ -489,6 +665,16 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     });
   }
   submitMessage() {
+    if (!this.messageForm.valid) {
+      this.messageForm.markAllAsTouched();
+      this.updateFormErrors(this.messageForm, 'message');
+      this.notificationService.showError(
+        "Message invalide",
+        "Veuillez saisir un message valide"
+      );
+      return;
+    }
+
     if (!this.currentUser) {
       this.notificationService.showError(
         "Connexion requise",
@@ -500,20 +686,15 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
       this.notificationService.showError("Erreur", "Agence non trouvée");
       return;
     }
-    this.messageData.sender = this.currentUser?.userId || "";
-    this.messageData.receiver = this.receivedId || "";
-    this.messageData.content = this.messageData.content.trim();
 
-    if (!this.messageData.content) {
-      this.notificationService.showError(
-        "Message vide",
-        "Le contenu du message ne peut pas être vide"
-      );
-      return;
-    }
+    const messageData = {
+      sender: this.currentUser?.userId || "",
+      receiver: this.receivedId || "",
+      content: this.messageForm.value.content.trim()
+    };
 
-    console.log("Envoi du message:", this.messageData);
-    this.messageService.sendMessage(this.messageData).subscribe({
+    console.log("Envoi du message:", messageData);
+    this.messageService.sendMessage(messageData).subscribe({
       next: (response: any) => {
         console.log("API > sendMessage:", response);
         console.log("API > data:", this.data);
@@ -522,7 +703,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
           "Message envoyé",
           "Votre message a bien été envoyé"
         );
-        this.messageData.content = "";
+        this.messageForm.reset(); // Reset du formulaire
       },
       error: (error: any) => {
         console.error("API > sendMessage:", error);
@@ -1292,7 +1473,15 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   editZone(zoneId: string): void {
     const zone = this.serviceZones.find((z) => z.id === zoneId);
     if (zone) {
-      this.newZone = { ...zone };
+      // Charger les données dans le reactive form
+      this.zoneForm.patchValue({
+        id: zone.id,
+        name: zone.name,
+        description: zone.description,
+        cities: zone.cities,
+        neighborhoods: zone.neighborhoods,
+        isActive: zone.isActive
+      });
       this.citiesInput = zone.cities.join(", ");
       this.neighborhoodsInput = zone.neighborhoods.join(", ");
       this.editingZone = true;
@@ -1390,15 +1579,10 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
-  // Form methods
+  // Form methods - DEPRECATED: Utiliser toggleZoneSelection à la place
   toggleZoneAssignment(zoneId: string, event: any): void {
-    if (event.target.checked) {
-      this.newEmployee.zones.push(zoneId);
-    } else {
-      this.newEmployee.zones = this.newEmployee.zones.filter(
-        (id: string) => id !== zoneId
-      );
-    }
+    // Rediriger vers la nouvelle méthode reactive form
+    this.toggleZoneSelection(zoneId, event);
   }
 
   /**
@@ -1431,22 +1615,16 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   }
 
   addEmployee(): void {
-    if (
-      this.newEmployee.firstName &&
-      this.newEmployee.lastName &&
-      this.newEmployee.email &&
-      this.newEmployee.role
-    ) {
+    if (this.employeeForm.valid) {
+      const formValue = this.employeeForm.value;
       const employee: Employees = {
         _id: Math.random().toString(36).substr(2, 9),
-        // userId: Math.random().toString(36).substr(2, 9),
-        firstName: this.newEmployee.firstName,
-        lastName: this.newEmployee.lastName,
-        email: this.newEmployee.email,
-        phone: this.newEmployee.phone,
-        role: this.newEmployee.role,
-        zones: this.newEmployee.zones,
-
+        firstName: formValue.firstName,
+        lastName: formValue.lastName,
+        email: formValue.email,
+        phone: formValue.phone,
+        role: formValue.role,
+        zones: formValue.zones,
         isActive: true,
         hiredAt: new Date(),
       };
@@ -1470,9 +1648,8 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             );
             // 🔄 Recharger la liste après ajout
             this.loadEmployees(this.currentUser);
-            // setTimeout(() => {
-            //   this.router.navigate(['/login']);
-            // }, 2000);
+            this.employeeForm.reset(); // Reset du formulaire
+            this.showAddEmployeeModal = false;
           } else {
             const errorMsg = this.getFriendlyMessage(
               response?.message || response?.error || "",
@@ -1500,28 +1677,28 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
           this.loadEmployees(this.currentUser);
         },
       });
-      this.showAddEmployeeModal = false;
-      this.newEmployee = {
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        role: "",
-        zones: [],
-      };
+    } else {
+      // Formulaire invalide, marquer tous les champs comme touchés pour afficher les erreurs
+      this.employeeForm.markAllAsTouched();
+      this.updateFormErrors(this.employeeForm, 'employee');
+      this.notificationService.showError(
+        "Formulaire invalide", 
+        "Veuillez corriger les erreurs dans le formulaire"
+      );
     }
   }
 
   //creation d un tarif
   addTariff(): void {
-    if (this.newTariff.type && this.newTariff.price !== undefined) {
+    if (this.tariffForm.valid) {
+      const formValue = this.tariffForm.value;
       const agencyId = this.currentUser?._id;
       const tariff: Tariff = {
         agencyId: agencyId || "",
-        type: this.newTariff.type,
-        price: this.newTariff.price,
-        description: this.newTariff.description,
-        nbPassages: this.newTariff.nbPassages,
+        type: formValue.type,
+        price: formValue.price,
+        description: formValue.description,
+        nbPassages: formValue.nbPassages,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -1800,50 +1977,57 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   }
 
   saveZone(): void {
-    if (this.newZone.name && this.citiesInput) {
-      this.newZone.cities = this.citiesInput
-        .split(",")
-        .map((city) => city.trim());
-      this.newZone.neighborhoods = this.neighborhoodsInput
-        .split(",")
-        .map((n) => n.trim())
-        .filter((n) => n);
+    if (this.zoneForm.valid) {
+      const formValue = this.zoneForm.value;
+      const zoneData = {
+        name: formValue.name,
+        description: formValue.description,
+        cities: formValue.cities,
+        neighborhoods: formValue.neighborhoods,
+        isActive: formValue.isActive
+      };
 
       if (this.editingZone) {
         const index = this.serviceZones.findIndex(
-          (z) => z.id === this.newZone.id
+          (z) => z.id === formValue.id
         );
         if (index !== -1) {
-          this.serviceZones[index] = { ...this.newZone };
+          this.serviceZones[index] = { ...formValue };
         }
-        // No need to call notificationService.showSuccess here, as it's already handled in the template
+        this.notificationService.showSuccess(
+          "Zone modifiée",
+          "La zone a été modifiée avec succès"
+        );
       } else {
         const zone: ServiceZones = {
-          // id: Math.random().toString(36).substr(2, 9),
-          name: this.newZone.name,
-          description: this.newZone.description,
+          name: zoneData.name,
+          description: zoneData.description,
           boundaries: [],
-          neighborhoods: this.newZone.neighborhoods,
-          cities: this.newZone.cities,
-          assignedCollectors: this.newZone.assignedCollectors,
-          isActive: this.newZone.isActive,
+          neighborhoods: zoneData.neighborhoods,
+          cities: zoneData.cities,
+          assignedCollectors: [],
+          isActive: zoneData.isActive,
         };
-        // this.agencyService.
         this.serviceZoness.push(zone);
-        // No need to call notificationService.showSuccess here, as it's already handled in the template
+        this.notificationService.showSuccess(
+          "Zone ajoutée",
+          "La zone a été créée avec succès"
+        );
       }
 
       this.showZoneModal = false;
       this.editingZone = false;
-      this.newZone = {
-        name: "",
-        description: "",
-        cities: [],
-        neighborhoods: [],
-        isActive: true,
-      };
+      this.zoneForm.reset(); // Reset du formulaire
       this.citiesInput = "";
       this.neighborhoodsInput = "";
+    } else {
+      // Formulaire invalide
+      this.zoneForm.markAllAsTouched();
+      this.updateFormErrors(this.zoneForm, 'zone');
+      this.notificationService.showError(
+        "Formulaire invalide", 
+        "Veuillez corriger les erreurs dans le formulaire"
+      );
     }
   }
 
@@ -1869,6 +2053,16 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   }
 
   addSchedule(): void {
+    if (!this.scheduleForm.valid) {
+      this.scheduleForm.markAllAsTouched();
+      this.updateFormErrors(this.scheduleForm, 'schedule');
+      this.notificationService.showError(
+        "Formulaire invalide", 
+        "Veuillez corriger les erreurs dans le formulaire"
+      );
+      return;
+    }
+
     const { collectorId, date, startTime, endTime } = this.scheduleForm.value;
     if (
       this.checkCollectorAvailability(collectorId, date, startTime, endTime)
@@ -1902,7 +2096,8 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             "Le planning a été créé avec succès."
           );
         }
-        this.loadPlannings(), (this.showScheduleModal = false);
+        this.loadPlannings();
+        this.showScheduleModal = false;
         this.scheduleForm.reset();
       },
       error: (error) => {
