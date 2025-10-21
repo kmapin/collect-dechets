@@ -131,7 +131,8 @@ export class Home  implements OnInit {
   ];
   carouselDuration = 20;
   selectedCity: string = '';
-  userPosition: { lat: number, lng: number } | null = null;
+  // userPosition: { lat: number, lng: number } | null = null;
+  userPosition: any = null;
   routeLayer: any = null;
 
 
@@ -226,9 +227,9 @@ startLiveNavigation(destLat: number, destLng: number, agencyName: string) {
     this.watchId = null;
   }
   // Supprime l'ancien marker et la route
-  if (this.userLiveMarker) {
-    this.map.removeLayer(this.userLiveMarker);
-    this.userLiveMarker = null;
+  if (this.userPosition) {
+    this.map.removeLayer(this.userPosition);
+    this.userPosition = null;
   }
   if (this.liveRouteLayer) {
     this.map.removeLayer(this.liveRouteLayer);
@@ -250,10 +251,10 @@ startLiveNavigation(destLat: number, destLng: number, agencyName: string) {
     async (position) => {
       const { latitude, longitude } = position.coords;
       // Met à jour le marker utilisateur
-      if (this.userLiveMarker) {
-        this.userLiveMarker.setLatLng([latitude, longitude]);
+      if (this.userPosition) {
+        this.userPosition.setLatLng([latitude, longitude]);
       } else {
-        this.userLiveMarker = L.marker([latitude, longitude], { icon: redIcon }).addTo(this.map)
+        this.userPosition = L.marker([latitude, longitude], { icon: redIcon }).addTo(this.map)
           .bindPopup('Votre position actuelle').openPopup();
       }
       // Recalcule l'itinéraire
@@ -318,7 +319,7 @@ startLiveNavigation(destLat: number, destLng: number, agencyName: string) {
     }).addTo(this.map);
 
     // Ajoute un bouton ou une logique pour géolocaliser
-    this.map.locate({ setView: true, maxZoom: 12 });
+    this.map.locate({ setView: true, maxZoom: 32 });
     this.map.on('locationfound', (e: any) => {
       const { lat, lng } = e.latlng;
       this.userPosition = { lat, lng };
