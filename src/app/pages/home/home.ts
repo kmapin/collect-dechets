@@ -315,7 +315,8 @@ startLiveNavigation(destLat: number, destLng: number, agencyName: string) {
   initMap(): void {
     this.map = L.map('map').setView([12.3714, -1.5197], 12); // Ouagadougou par défaut
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+      // attribution: '© OpenStreetMap contributors'
+      attribution: '© PaulBoss_100% OpenStreetMap corporation ;)'
     }).addTo(this.map);
 
     // Ajoute un bouton ou une logique pour géolocaliser
