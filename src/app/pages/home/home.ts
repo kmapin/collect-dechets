@@ -134,6 +134,8 @@ export class Home  implements OnInit {
   // userPosition: { lat: number, lng: number } | null = null;
   userPosition: any = null;
   routeLayer: any = null;
+  loading = true;
+  mapLoading = true;
 
 
   constructor(
@@ -288,12 +290,22 @@ startLiveNavigation(destLat: number, destLng: number, agencyName: string) {
       this.notificationsService.showError('Erreur', 'Votre position n\'est pas disponible');
       return;
     }
+    
+    if (this.watchId) {
+      navigator.geolocation.clearWatch(this.watchId);
+      this.watchId = null;
+    }
+    // Supprime l'ancien marker et la route
+    if (this.userPosition) {
+      this.map.removeLayer(this.userPosition);
+      this.userPosition = null;
+    }
+    if (this.liveRouteLayer) {
+      this.map.removeLayer(this.liveRouteLayer);
+      this.liveRouteLayer = null;
+    }
 
     
-    // Supprime l'ancien itinéraire s'il existe
-    if (this.routeLayer) {
-      this.map.removeLayer(this.routeLayer);
-    }
     // Appel à l'API OSRM pour le routage
     const url = `https://router.project-osrm.org/route/v1/driving/${this.userPosition.lng},${this.userPosition.lat};${destLng},${destLat}?overview=full&geometries=geojson`;
     try {
@@ -430,35 +442,10 @@ private mapApiAgency(apiAgency: any): Agency {
    * Charge les agences depuis l'API backend et affiche les 4 premières en vedette
    */
   loadFeaturedAgenciesFromApi(): void {
-    // this.agencyService.getAllAgenciesFromApi().subscribe((response: any) => {
-      // this.filteredAgencies = (response.data || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
-      // console.log('[DEBUG] searchResults:', this.filteredAgencies);
-      // if(response.results.length < 5){
-      //   this.filteredAgencies = (response.results || []).map((a: any) => this.mapApiAgency(a));
-      // } else {
-      //   this.filteredAgencies = (response.data || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
-      // }
-      
-    // });
-
     this.applyFilters();
   }
 
-  searchAgencies(): void {
-    if (!this.searchQuery.trim()) return;
-
-    this.isSearching = true;
-    this.agencyService.searchAgencies(this.searchQuery).subscribe({
-      next: (agencies) => {
-        this.filteredAgencies = agencies;
-        this.isSearching = false;
-      },
-      error: (error) => {
-        console.error('Search error:', error);
-        this.isSearching = false;
-      }
-    });
-  }
+  
 
    onSearch(): void {
     this.applyFilters();
@@ -482,6 +469,8 @@ private mapApiAgency(apiAgency: any): Agency {
         
         this.filteredAgencies = (response.results || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
         console.log("Agences filtrées :", this.filteredAgencies);
+        this.loading = false;
+        this.mapLoading = false;
 
       if(response.results.length < 5){
 
@@ -496,6 +485,7 @@ private mapApiAgency(apiAgency: any): Agency {
     error: (err) => {
       console.error('Erreur lors de la recherche des agences :', err);
       this.filteredAgencies = [];
+      this.loading = false;
     }
   });
 }
@@ -525,32 +515,18 @@ generateRandomStarsList(): void {
 
   getMinPrice(agency: Agency): number {
       return Math.min(...agency.services.map(service => service.price));
-    }
+  }
 
+  // ...existing properties...
+  selectedSearchOption: 'geolocation' | 'zone' | 'advanced' | null = null;
 
-  // useGeolocation(): void {
-  //   if ('geolocation' in navigator) {
-  //     navigator.geolocation.getCurrentPosition(
-  //       (position) => {
-  //         const { latitude, longitude } = position.coords;
-  //         this.agencyService.getAgenciesByZone(latitude, longitude).subscribe(agencies => {
-  //           this.searchResults = agencies;
-  //         });
-
-  //       },
-  //       (error) => {
-  //         console.error('Geolocation error:', error);
-  //         // alert('Impossible d\'obtenir votre position');
-  //         this.notificationsService.showError('Erreur', 'Impossible d\'obtenir votre position');
-  //       }
-  //     );
-  //   } else {
-  //     this.notificationsService.showError('Erreur', 'La géolocalisation n\'est pas supportée par votre navigateur');
-
-  //   }
-  // }
+  // Utility to mark an option active
+  selectOption(option: 'geolocation' | 'zone' | 'advanced') {
+    this.selectedSearchOption = option;
+  }
 
   useGeolocations(): void {
+    this.selectOption('geolocation');
     this.showMap = false;
     this.showAdvancedSear = false;
   if ('geolocation' in navigator) {
@@ -584,7 +560,7 @@ generateRandomStarsList(): void {
           // Tu peux aussi filtrer directement
           this.applyFilters();
           // alert(`Vous êtes à ${city}, secteur ${sector}, quartier ${neighborhood}`);
-          this.notificationsService.showSuccess('Localisation réussie', `Vous êtes à ${city}, secteur ${sector}, quartier ${neighborhood}`);
+          // this.notificationsService.showSuccess('Localisation réussie', `Vous êtes à ${city}, secteur ${sector}, quartier ${neighborhood}`);
         } catch (err) {
           console.error('Erreur géocodage:', err);
           // alert('Impossible de récupérer les informations de localisation');
@@ -606,6 +582,7 @@ generateRandomStarsList(): void {
 }
   showMap:boolean = false;
   showZoneSelector(): void {
+    this.selectOption('zone');
     console.log('Show zone selector');
     this.showMap = true;
     this.showAdvancedSear = false;
@@ -618,6 +595,7 @@ generateRandomStarsList(): void {
   showAdvancedSear:boolean = false;
 
   showAdvancedSearch(): void {
+    this.selectOption('advanced');
     console.log('Show advanced search');
     this.showAdvancedSear = true;
     this.showMap = false;

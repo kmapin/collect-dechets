@@ -4,6 +4,9 @@
   margin: 0 auto;
   overflow-x: hidden;
 }
+section{
+  padding: 30px !important;
+}
 
 .container {
   max-width: 100%;
@@ -695,7 +698,20 @@
   cursor: pointer;
   transition: all 0.3s ease;
 }
-
+.search-option i { font-size:20px; }
+/* active state */
+.search-option.active {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: rgba(0, 188, 212, 0.05);
+  transform: translateY(-2px); 
+}
+.search-option.active i { 
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: rgba(0, 188, 212, 0.05);
+  transform: translateY(-2px); 
+}
 .search-option:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
@@ -710,7 +726,7 @@
 
 .results-header {
   text-align: center;
-  margin-bottom: 48px;
+  /* margin-bottom: 48px; */
 }
 
 .results-badge {
@@ -738,7 +754,7 @@
   color: var(--text-secondary);
   line-height: 1.6;
   max-width: 600px;
-  margin: 0 auto;
+  margin: 10px auto;
 }
 
 .agencies-grid {

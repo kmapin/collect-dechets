@@ -2,6 +2,35 @@
 /* @import "~leaflet/dist/leaflet.css"; */
 /* @import "flowbite/src/themes/default"; */
 
+
+/* loader global */
+.loading-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  width: 100%;
+}
+.spinner {
+  width: 56px;
+  height: 56px;
+  border: 6px solid rgba(0,0,0,0.08);
+  border-top-color: var(--primary-color, #1976d2);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 18px rgba(25,118,210,0.12);
+}
+.loading-text {
+  color: var(--text-primary, #333);
+  font-weight: 600;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
 /* styles.css pour la map */
 .leaflet-popup-content .popup-btn {
   display: inline-flex;
