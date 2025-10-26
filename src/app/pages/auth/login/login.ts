@@ -39,22 +39,46 @@ export class Login implements OnInit {
       return;
     }
 
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.credentials.email)) {
+      this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
+      return;
+    }
+
     this.isLoading = true;
-    console.log('this.credentials', this.credentials);
+    console.log('[DEBUG] Login attempt with:', this.credentials.email);
+    
     this.authService.loginUser(this.credentials.email, this.credentials.password).subscribe({
       next: (response: any) => {
-        console.log('response login', response);
+        console.log('[DEBUG] Login response:', response);
         this.isLoading = false;
-        if (response?.user) {
-          this.notificationService.showSuccess('Connexion réussie', `Bienvenue ${response?.user?.firstName ?? response?.user?.firstname} ${response?.user?.lastName ?? response?.user?.lastname} !`);
-          this.redirectToDashboard(response?.user?.role);
+        
+        if (response?.success && response?.user) {
+          const user = response.user;
+          const welcomeName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+          
+          this.notificationService.showSuccess(
+            'Connexion réussie', 
+            `Bienvenue ${welcomeName || 'utilisateur'} !`
+          );
+          
+          // Redirect based on user role
+          this.redirectToDashboard(user.role);
         } else {
-          this.notificationService.showError('Erreur de connexion', response.error || 'Identifiants incorrects');
+          this.notificationService.showError(
+            'Erreur de connexion', 
+            response?.error || 'Email ou mot de passe incorrect'
+          );
         }
       },
       error: (error) => {
+        console.error('[ERROR] Login failed:', error);
         this.isLoading = false;
-        this.notificationService.showError('Erreur', 'Une erreur est survenue lors de la connexion');
+        this.notificationService.showError(
+          'Erreur de connexion', 
+          'Une erreur est survenue lors de la connexion'
+        );
       }
     });
   }

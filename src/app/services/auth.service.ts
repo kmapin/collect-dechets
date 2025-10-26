@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay, map, tap } from 'rxjs/operators';
-import { ClientUser, User, UserRole } from '../models/user.model';
-import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { delay, map, tap, catchError } from 'rxjs/operators';
+import { ClientUser, User, UserRole, RegisterUserData, RegisterResponse, UserAddress } from '../models/user.model';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Agency, Municipality } from '../models/agency.model';
 
@@ -42,68 +42,124 @@ export class AuthService {
     );
   }
   //Login add
-  loginUser(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
-    return this.http.post<{ success: true, data: any }>(`${environment.apiUrl}/auth/login`, { email, password }).pipe(
+  loginUser(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string; token?: string }> {
+    // The backend error says "Email et mot de passe requis", so try {email, password}
+    const requestBody = { email, password };
+    console.log('[DEBUG] Sending login request with:', { email, password: '***' });
+    console.log('[DEBUG] Request body:', requestBody);
+    return this.http.post<any>(`${environment.apiUrl}/auth/login`, requestBody).pipe(
       map((response: any) => {
-        console.log("API > LoginUser :", response)
-        if (response.user) {
-          localStorage.setItem('currentUser', JSON.stringify(response));
-          this.currentUserSubject.next(response?.user);
-          // this.currentUserSubjectLocalStorage.next(response?.user);
+        console.log("API > LoginUser Response:", response);
+        console.log("API > Response type:", typeof response);
+        console.log("API > Response keys:", response ? Object.keys(response) : 'null response');
+        
+        // Check different possible success indicators
+        const hasToken = response && response.token;
+        const hasUser = response && response.user;
+        const isSuccess = response && (response.success === true || hasToken || hasUser);
+        
+        console.log('[DEBUG] Response analysis:', { hasToken, hasUser, isSuccess });
+        
+        if (isSuccess) {
+          const user = response.user;
+          const token = response.token;
+          
+          // Store data based on what we received
+          const loginData = {
+            ...(token && { token }),
+            ...(user && { user })
+          };
+          
+          localStorage.setItem('currentUser', JSON.stringify(loginData));
+          if (token) {
+            localStorage.setItem('authToken', token);
+          }
+          
+          this.currentUserSubject.next(user);
           this.isAuthenticatedSubject.next(true);
+          
+          return {
+            success: true,
+            user: user,
+            token: token
+          };
+        } else {
+          console.log('[DEBUG] Login failed, response:', response);
+          return {
+            success: false,
+            error: response?.message || response?.error || 'Identifiants incorrects'
+          };
         }
-        return response;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Login Error:', error);
+        let errorMessage = 'Erreur de connexion';
+        
+        if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.status === 401) {
+          errorMessage = 'Email ou mot de passe incorrect';
+        } else if (error.status === 404) {
+          errorMessage = 'Utilisateur non trouvé';
+        }
+        
+        return of({
+          success: false,
+          error: errorMessage
+        });
       })
     );
   }
 
-  register(userData: any): Observable<{ success: boolean; user?: User; error?: string }> {
-    if (userData.role === 'client') {
-      return this.http.post<any>(`${environment.apiUrl}/auth/register/client`, userData).pipe(
-        map(response => {
-          if (response && response.user) {
-            localStorage.setItem('currentUser', JSON.stringify(response.user));
-            this.currentUserSubject.next(response.user);
-            this.isAuthenticatedSubject.next(true);
-            return { success: true, user: response.user };
-          } else {
-            return { success: false, error: response?.error || 'Erreur lors de la création du compte' };
-          }
-        })
-      );
-    } else {
-      // Simulate API call for other roles
-      return of({ success: true, user: this.mockUser(userData.email) }).pipe(
-        delay(1000),
-        map(response => {
-          if (response.success && response.user) {
-            localStorage.setItem('currentUser', JSON.stringify(response.user));
-            this.currentUserSubject.next(response.user);
-            this.isAuthenticatedSubject.next(true);
-          }
-          return response;
-        })
-      );
+  register(userData: RegisterUserData): Observable<RegisterResponse> {
+
+    if (!this.validateRegistrationData(userData)) {
+      return of({ 
+        success: false, 
+        error: 'Données de registration invalides. Veuillez vérifier tous les champs requis.' 
+      });
     }
+
+  
+    const registrationData = this.prepareRegistrationData(userData);
+    console.log('[DEBUG] Final registration data being sent to backend:', registrationData);
+    console.log('[DEBUG] Registration endpoint:', `${environment.apiUrl}/auth/register`);
+
+    return this.http.post<any>(`${environment.apiUrl}/auth/register`, registrationData).pipe(
+      map(response => {
+        console.log("API > Register Response:", response);
+        
+        if (response && (response.user || response.success)) {
+          const user = response.user || response;
+          localStorage.setItem('currentUser', JSON.stringify({ user }));
+          this.currentUserSubject.next(user);
+          this.isAuthenticatedSubject.next(true);
+          
+          return { 
+            success: true, 
+            user: user, 
+            message: response.message || 'Compte créé avec succès' 
+          };
+        } else {
+          return { 
+            success: false, 
+            error: response?.error || response?.message || 'Erreur lors de la création du compte' 
+          };
+        }
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Registration Error:', error);
+        return of(this.handleRegistrationError(error));
+      })
+    );
   }
 
   /**
-   * Inscription d'un client via l'API réelle
+   * Inscription d'un client via l'API réelle (méthode legacy - utilisez register() de préférence)
    */
-  registerClient(userData: any): Observable<{ success: boolean; user?: User; error?: string; message?: string }> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/register`, userData).pipe(
-      map(response => {
-        console.log("API > ClientRegister :", response)
-        if (response && response.user) {
-          localStorage.setItem('currentUser', JSON.stringify(response.user));
-          this.currentUserSubject.next(response.user);
-          this.isAuthenticatedSubject.next(true);
-          return { success: true, user: response.user, message: response.message };
-        } else {
-          return { success: false, error: response?.error || 'Erreur lors de la création du compte', message: response?.message };
-        }
-      })
-    );
+  registerClient(userData: RegisterUserData): Observable<RegisterResponse> {
+    // Delegate to the main register method
+    return this.register(userData);
   }
 
 
@@ -216,7 +272,7 @@ export class AuthService {
    * Inscription d'une agence via l'API réelle
    */
   registerAgency$(agencyData: any): Observable<{ success: boolean; agence?: Agency; error?: string; message?: string }> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/register`, agencyData).pipe(
+    return this.http.post<any>(`${environment.apiUrl}/register`, agencyData).pipe(
       map(response => {
         console.log("API > agenceRegister :", response)
         if (response && response.agence) {
@@ -265,6 +321,145 @@ export class AuthService {
     return user?.role === role;
   }
 
+  /**
+   * Validates registration data before sending to backend
+   */
+  private validateRegistrationData(userData: RegisterUserData): boolean {
+    if (!userData.firstName || !userData.lastName || !userData.email || 
+        !userData.password || !userData.phone || !userData.role) {
+      return false;
+    }
+
+    if (!userData.address || !userData.address.street || !userData.address.city || 
+        !userData.address.neighborhood || !userData.address.arrondissement) {
+      return false;
+    }
+
+    if (!userData.acceptTerms) {
+      return false;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userData.email)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Prepares registration data in the format expected by the backend
+   */
+  private prepareRegistrationData(userData: RegisterUserData): any {
+    console.log('[DEBUG] prepareRegistrationData called with:', userData);
+    const baseData = {
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      email: userData.email,
+      password: userData.password,
+      role: userData.role,
+      phone: userData.phone,
+      address: {
+        street: userData.address.street,
+        arrondissement: userData.address.arrondissement,
+        sector: userData.address.sector,
+        doorNumber: userData.address.doorNumber,
+        doorColor: userData.address.doorColor,
+        neighborhood: userData.address.neighborhood,
+        city: userData.address.city,
+        postalCode: userData.address.postalCode,
+        location: userData.address.location
+      },
+      acceptTerms: userData.acceptTerms,
+      receiveOffers: userData.receiveOffers,
+      ...(userData.agencyId && { agencyId: userData.agencyId }),
+      ...(userData.nbGestionnaires && { nbGestionnaires: userData.nbGestionnaires }),
+      ...(userData.isOwnerAgency !== undefined && { isOwnerAgency: userData.isOwnerAgency })
+    };
+
+    // Add agency-specific data if role is agency
+    if (userData.role === 'agency') {
+      console.log('[DEBUG] Agency role detected, agencyName:', userData.agencyName, 'agencyDescription:', userData.agencyDescription);
+      const agencyData = {
+        ...baseData,
+        // Try both formats to see which one the backend expects
+        agencyName: userData.agencyName,
+        agencyDescription: userData.agencyDescription,
+        agency: {
+          name: userData.agencyName,
+          description: userData.agencyDescription
+        }
+      };
+      console.log('[DEBUG] Final agency data:', agencyData);
+      return agencyData;
+    }
+
+    // Add municipality-specific data if role is municipality
+    if (userData.role === 'municipality') {
+      return {
+        ...baseData,
+        commune: userData.commune
+      };
+    }
+
+    return baseData;
+  }
+
+  /**
+   * Handles registration errors from the backend
+   */
+  private handleRegistrationError(error: HttpErrorResponse): RegisterResponse {
+    console.error('Registration error details:', error);
+
+    let errorMessage = 'Erreur lors de la création du compte';
+    let errorDetails: string | { [key: string]: string[] } = errorMessage;
+
+    if (error.error) {
+      // Handle validation errors (field-specific errors)
+      if (error.error.errors && typeof error.error.errors === 'object') {
+        errorDetails = error.error.errors;
+        errorMessage = 'Erreurs de validation détectées';
+      }
+      // Handle single error message
+      else if (error.error.message) {
+        errorMessage = error.error.message;
+        errorDetails = error.error.message;
+      }
+      // Handle error string
+      else if (typeof error.error === 'string') {
+        errorMessage = error.error;
+        errorDetails = error.error;
+      }
+    }
+    // Handle HTTP status errors
+    else if (error.status) {
+      switch (error.status) {
+        case 400:
+          errorMessage = 'Données invalides. Veuillez vérifier votre saisie.';
+          break;
+        case 409:
+          errorMessage = 'Cet email est déjà utilisé.';
+          break;
+        case 422:
+          errorMessage = 'Données non conformes. Veuillez corriger les erreurs.';
+          break;
+        case 500:
+          errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.';
+          break;
+        default:
+          errorMessage = `Erreur ${error.status}: ${error.statusText}`;
+      }
+      errorDetails = errorMessage;
+    }
+
+    return {
+      success: false,
+      error: errorDetails,
+      message: errorMessage
+    };
+  }
+
   private mockUser(email: string): User {
     // Mock user data for demonstration
     let role = UserRole.CLIENT;
@@ -273,16 +468,34 @@ export class AuthService {
     if (email.includes('municipality')) role = UserRole.MUNICIPALITY;
 
     return {
-      id: Math.random().toString(36).substr(2, 9),
-      email: email,
       firstName: 'John',
-      firstname: 'John',
       lastname: 'Doe',
       lastName: 'Doe',
+      email: email,
       phone: '+1234567890',
       role: role,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      address: {
+        street: 'Rue Test',
+        arrondissement: 'Test',
+        sector: 'Test',
+        doorNumber: '1',
+        doorColor: 'Bleu',
+        neighborhood: 'Test',
+        city: 'Dakar',
+        postalCode: '10000',
+        location: {
+          type: 'Point',
+          coordinates: [-17.444, 14.692]
+        }
+      },
+      status: 'active',
+      acceptTerms: true,
+      receiveOffers: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      // Legacy fields for backwards compatibility
+      firstname: 'John',
+      id: Math.random().toString(36).substr(2, 9),
       isActive: true
     };
   }

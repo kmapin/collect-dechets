@@ -1,20 +1,47 @@
 export interface User {
   _id?: string;
   userId?: string;
-  id: string;
-  email: string;
-  // address: ClientAddress;
+  id?: string;
   firstName: string;
-  firstname: string;
   lastName: string;
-  lastname: string;
-  phone: string;
+  email: string;
+  password?: string;
   role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
-  isActive: boolean;
+  phone: string;
+  address: UserAddress;
+  status: 'active' | 'inactive' | 'pending';
+  acceptTerms: boolean;
+  receiveOffers: boolean;
+  agencyId?: string;
+  qrToken?: string;
+  qrCode?: string;
+  nbGestionnaires?: number;
+  isOwnerAgency?: boolean;
+  deletedate?: string;
+  createdAt: string;
+  updatedAt: string;
+  agency?: UserAgency;
+  // Legacy fields for backwards compatibility
+  firstname?: string;
+  lastname?: string;
+  isActive?: boolean;
   avatar?: string;
   subscribedAgencyId?: string;
+}
+
+export interface UserAddress {
+  street: string;
+  arrondissement: string;
+  sector: string;
+  doorNumber: string;
+  doorColor: string;
+  neighborhood: string;
+  city: string;
+  postalCode: string;
+  location: {
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
+  };
 }
 
 export interface ClientAddress {
@@ -30,6 +57,27 @@ export interface ClientAddress {
   arrondissement?: string;
 }
 
+export interface UserAgency {
+  _id: string;
+  name: string;
+  agencyDescription: string;
+  zoneActivite: string[];
+  client: string;
+  collector: string;
+  slogan: string;
+  gestionnaires: string[];
+  owner: string;
+  documents: string[];
+  status: 'active' | 'inactive';
+  location: {
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
+  };
+  deletedate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export enum UserRole {
   CLIENT = "client",
   AGENCY = "agency",
@@ -39,7 +87,6 @@ export enum UserRole {
 }
 
 export interface ClientUser extends User {
-  address: Address;
   subscriptionId?: string;
   paymentMethod?: PaymentMethod;
 }
@@ -77,4 +124,37 @@ export interface PaymentMethod {
   isDefault: boolean;
   lastFour?: string;
   expiryDate?: string;
+}
+
+// Interface for user registration data
+export interface RegisterUserData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  phone: string;
+  address: UserAddress;
+  acceptTerms: boolean;
+  receiveOffers: boolean;
+  agencyId?: string;
+  nbGestionnaires?: number;
+  isOwnerAgency?: boolean;
+  // Agency-specific fields
+  agencyName?: string;
+  agencyDescription?: string;
+  // Municipality-specific fields  
+  commune?: {
+    name: string;
+    region: string;
+    province: string;
+  };
+}
+
+// Interface for registration response from backend
+export interface RegisterResponse {
+  success: boolean;
+  user?: User;
+  message?: string;
+  error?: string | { [key: string]: string[] };
 }

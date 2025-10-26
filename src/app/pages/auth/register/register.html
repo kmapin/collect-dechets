@@ -56,6 +56,12 @@
         (ngSubmit)="onRegister()"
         #registerForm="ngForm"
       >
+        <!-- General error message -->
+        <div class="alert alert-error" *ngIf="generalError">
+          <i class="material-icons">error</i>
+          <span>{{ generalError }}</span>
+        </div>
+
         <!-- Informations personnelles -->
         <div class="form-section">
           <h3>Informations personnelles</h3>
@@ -82,6 +88,13 @@
               >
                 Le prénom est requis
               </div>
+              <!-- Backend validation error -->
+              <div
+                class="form-error backend-error"
+                *ngIf="hasFieldError('firstName')"
+              >
+                {{ getFieldError('firstName') }}
+              </div>
             </div>
 
             <div class="form-group">
@@ -104,6 +117,13 @@
                 *ngIf="lastNameInput.invalid && lastNameInput.touched"
               >
                 Le nom est requis
+              </div>
+              <!-- Backend validation error -->
+              <div
+                class="form-error backend-error"
+                *ngIf="hasFieldError('lastName')"
+              >
+                {{ getFieldError('lastName') }}
               </div>
             </div>
           </div>
@@ -129,6 +149,13 @@
             >
               Veuillez saisir une adresse email valide
             </div>
+            <!-- Backend validation error -->
+            <div
+              class="form-error backend-error"
+              *ngIf="hasFieldError('email')"
+            >
+              {{ getFieldError('email') }}
+            </div>
           </div>
 
           <div class="form-group">
@@ -151,6 +178,13 @@
               *ngIf="phoneInput.invalid && phoneInput.touched"
             >
               Le numéro de téléphone est requis
+            </div>
+            <!-- Backend validation error -->
+            <div
+              class="form-error backend-error"
+              *ngIf="hasFieldError('phone')"
+            >
+              {{ getFieldError('phone') }}
             </div>
           </div>
         </div>
@@ -499,8 +533,8 @@
             <label class="checkbox-label">
               <input
                 type="checkbox"
-                [(ngModel)]="userData.termsAccepted"
-                name="termsAccepted"
+                [(ngModel)]="userData.acceptTerms"
+                name="acceptTerms"
                 required
               />
               <span class="checkmark"></span>
@@ -529,7 +563,7 @@
           type="submit"
           *ngIf="!agencyId"
           class="btn btn-primary btn-full"
-          [disabled]="isLoading || registerForm.invalid || !userData.termsAccepted || userData.password !== userData.confirmPassword"
+          [disabled]="isButtonDisabled()"
         >
           <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
           <i class="material-icons" *ngIf="!isLoading">person_add</i>
@@ -540,6 +574,8 @@
           <i class="material-icons" *ngIf="!isLoading">person_add</i>
           {{ isLoading ? 'Création...' : 'Modifier le compte' }}
         </button>
+        
+ 
       </form>
       <ng-container *ngIf="!agencyId">
         <div class="register-footer">

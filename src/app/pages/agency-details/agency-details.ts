@@ -311,9 +311,16 @@ updateEndDate() {
       return;
     }
 
-    console.log('[DEBUG] Tentative d\'abonnement:', { userId: currentUser.id, agencyId: this.agency._id });
+    // Get user ID - use _id if available, otherwise id
+    const userId = currentUser._id || currentUser.id;
+    if (!userId) {
+      this.notificationService.showError('Erreur', 'Utilisateur non identifié');
+      return;
+    }
 
-    this.authService.subscribeToAgency(currentUser.id, this.agency._id).subscribe({
+    console.log('[DEBUG] Tentative d\'abonnement:', { userId, agencyId: this.agency._id });
+
+    this.authService.subscribeToAgency(userId, this.agency._id).subscribe({
       next: (response) => {
         console.log('[DEBUG] Réponse abonnement:', response);
 
