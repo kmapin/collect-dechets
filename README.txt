@@ -13,6 +13,10 @@
 3==> Email : gwendindapaulin@gmail.com         Mot de passe : 07zeroDechetgp01
 4==> Email : g2wpaulin@gmail.com         Mot de passe : 07ZeroDechetgp01
 
+New CLIENTS
+1==> Email : gangosmeon@gmail.com ou 77938688       Mot de passe : Wise2024
+
+
 ##############################################################################################################################
 
 
@@ -20,6 +24,13 @@
 1==> email: aicha.t@sahelys.com pwd:WISEclean1234
 1==> email: guey@gmail.com pwd:motDePasseFort123
 1==> email: agence@gmail.com pwd:Wise2024
+
+
+
+New AGENCES
+
+1==> email: aicha.t@sahelys.com ou 77777777 pwd:Wise2024
+
 ##############################################################################################################################
 ## COLLECTEUR
 

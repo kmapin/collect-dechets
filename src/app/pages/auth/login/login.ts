@@ -109,7 +109,7 @@ export class Login implements OnInit {
   private redirectToDashboard(role: string): void {
     const dashboardRoutes = {
       client: '/dashboard/client',
-      agency: '/dashboard/agency',
+      manager: '/dashboard/agency',
       collector: '/dashboard/collector',
       municipality: '/dashboard/municipality',
       super_admin: '/dashboard/admin'

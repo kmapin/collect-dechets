@@ -1,3 +1,4 @@
+import { stamp } from './../../../../../node_modules/@types/leaflet/index.d';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
@@ -29,6 +30,8 @@ export class Register implements OnInit {
     phone: '',
     password: '',
     confirmPassword: '',
+    isOwnerAgency: false,
+    status:'',
     address: {
       arrondissement: '',
       sector: '',
@@ -42,6 +45,7 @@ export class Register implements OnInit {
       // longitude: ''
     },
     agencyName: '',
+    slogan: '',
     agencyDescription: '',
     termsAccepted: false,
     acceptTerms: true,
@@ -50,6 +54,27 @@ export class Register implements OnInit {
       name: '',
       region: '',
       province: ''
+    },
+    agency : {
+      name: '',
+      agencyDescription: '',
+      zoneActivite: [],
+      client: '',
+      collector: '',
+      slogan: '',
+      gestionnaires: [],
+      owner: '',
+      documents: [],
+      status: 'active',
+      location: {
+        type: 'Point',
+        coordinates: [0, 0]
+      },
+      commune: {
+        name: '',
+        region: '',
+        province: ''
+      }
     }
   };
 
@@ -165,7 +190,7 @@ export class Register implements OnInit {
     return {
       _id: apiAgency._id || '',
       userId: apiAgency.userId || '',
-      role: apiAgency.role || UserRole.AGENCY,
+      role: apiAgency.role || UserRole.MANAGER,
       firstName: apiAgency.firstName || '',
       lastName: apiAgency.lastName || '',
       agencyName: apiAgency.agencyName || '',
@@ -295,7 +320,7 @@ export class Register implements OnInit {
     }
 
     // Handle AGENCY role using the unified register method
-    if (this.userData.role === UserRole.AGENCY) {
+    if (this.userData.role === UserRole.MANAGER) {
       // Prepare agency registration data
       const registrationData: RegisterUserData = {
         firstName: this.userData.firstName,
@@ -306,6 +331,7 @@ export class Register implements OnInit {
         role: this.userData.role,
         acceptTerms: this.userData.acceptTerms,
         receiveOffers: this.userData.receiveOffers,
+        isOwnerAgency: this.userData.isOwnerAgency,
         address: {
           street: this.userData.address.street,
           arrondissement: this.userData.address.arrondissement,
@@ -321,8 +347,23 @@ export class Register implements OnInit {
           }
         },
         // Agency-specific data - ensure they are always included for agency role
-        agencyName: this.userData.agencyName || 'Agence Test', // Fallback for testing
-        agencyDescription: this.userData.agencyDescription || 'Description test'
+   
+        agency: {
+          name: this.userData.agencyName,
+          agencyDescription: this.userData.agencyDescription,
+          zoneActivite: [],
+          client: '' ,
+          collector: '',
+          slogan: this.userData.slogan,
+          gestionnaires: [],
+          owner: '',
+          documents: [],
+          status: 'inactive',
+          location: {
+            type: 'Point',
+            coordinates: [-17.444, 14.692]
+          }
+        }
       };
 
       console.log('[DEBUG] Données d\'inscription agence préparées:', registrationData);
@@ -500,7 +541,7 @@ export class Register implements OnInit {
     }
 
     // Validation spécifique pour les agences
-    if (this.userData.role === UserRole.AGENCY) {
+    if (this.userData.role === UserRole.MANAGER) {
       if (!this.userData.agencyName || this.userData.agencyName.trim() === '') {
         this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
         return false;
@@ -537,7 +578,7 @@ export class Register implements OnInit {
         this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
         return false;
       }
-    } else if (this.userData.role === UserRole.AGENCY) {
+    } else if (this.userData.role === UserRole.MANAGER) {
       // Validation agence
       if (!this.userData.agencyName) {
         this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');

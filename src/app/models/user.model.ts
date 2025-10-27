@@ -80,7 +80,7 @@ export interface UserAgency {
 
 export enum UserRole {
   CLIENT = "client",
-  AGENCY = "agency",
+  MANAGER = "manager",
   COLLECTOR = "collector",
   MUNICIPALITY = "municipality",
   SUPER_ADMIN = "super_admin",
@@ -138,8 +138,10 @@ export interface RegisterUserData {
   acceptTerms: boolean;
   receiveOffers: boolean;
   agencyId?: string;
+  status ? : 'active' | 'inactive';
   nbGestionnaires?: number;
   isOwnerAgency?: boolean;
+  slogan?: string;
   // Agency-specific fields
   agencyName?: string;
   agencyDescription?: string;
@@ -148,6 +150,23 @@ export interface RegisterUserData {
     name: string;
     region: string;
     province: string;
+  };
+
+  agency?: {
+    name: string;
+    agencyDescription: string;
+    zoneActivite: string[];
+    client: string;
+    collector: string;
+    slogan: string;
+    gestionnaires: string[];
+    owner: string;
+    documents: string[];
+    status: 'active' | 'inactive';
+    location: {
+      type: 'Point';
+      coordinates: [number, number];
+    };
   };
 }
 

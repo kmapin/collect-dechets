@@ -379,16 +379,24 @@ export class AuthService {
     };
 
     // Add agency-specific data if role is agency
-    if (userData.role === 'agency') {
+    if (userData.role === 'manager') {
       console.log('[DEBUG] Agency role detected, agencyName:', userData.agencyName, 'agencyDescription:', userData.agencyDescription);
-      const agencyData = {
+      const agencyData = 
+      {
         ...baseData,
         // Try both formats to see which one the backend expects
         agencyName: userData.agencyName,
         agencyDescription: userData.agencyDescription,
+        isOwnerAgency: userData.isOwnerAgency,
         agency: {
-          name: userData.agencyName,
-          description: userData.agencyDescription
+          name: userData.agency?.name || userData.agencyName,
+          agencyDescription: userData.agencyDescription,
+          zoneActivite: [],
+          slogan: userData.slogan,
+          gestionnaires: [],
+          documents: [],
+          status: userData.agency?.status,
+          location: userData.agency?.location
         }
       };
       console.log('[DEBUG] Final agency data:', agencyData);
@@ -463,7 +471,7 @@ export class AuthService {
   private mockUser(email: string): User {
     // Mock user data for demonstration
     let role = UserRole.CLIENT;
-    if (email.includes('agency')) role = UserRole.AGENCY;
+    if (email.includes('manager')) role = UserRole.MANAGER;
     if (email.includes('collector')) role = UserRole.COLLECTOR;
     if (email.includes('municipality')) role = UserRole.MUNICIPALITY;
 

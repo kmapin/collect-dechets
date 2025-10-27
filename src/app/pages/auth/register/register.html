@@ -39,7 +39,7 @@
             <input
               type="radio"
               name="accountType"
-              value="agency"
+              value="manager"
               [(ngModel)]="userData.role"
             />
             <div class="account-type-card">
@@ -378,7 +378,7 @@
 
             <div
               class="form-group"
-              *ngIf="userData.role !== 'agency' && userData.role !== 'municipality'"
+              *ngIf="userData.role !== 'manager' && userData.role !== 'municipality'"
             >
               <label class="form-label" for="doorNumber">
                 <i class="material-icons">home</i>
@@ -397,7 +397,7 @@
 
             <div
               class="form-group"
-              *ngIf="userData.role !== 'agency'  && userData.role !== 'municipality'"
+              *ngIf="userData.role !== 'manager'  && userData.role !== 'municipality'"
             >
               <label class="form-label" for="doorColor">
                 <i class="material-icons">palette</i>
@@ -423,7 +423,7 @@
         </div>
 
         <!-- Informations agence -->
-        <div class="form-section" *ngIf="userData.role === 'agency'">
+        <div class="form-section" *ngIf="userData.role === 'manager'">
           <h3>Informations de l'agence</h3>
 
           <div class="form-group">
@@ -455,6 +455,21 @@
               placeholder="Décrivez vos services..."
               rows="3"
             ></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="slogan">
+              <i class="material-icons">format_quote</i>
+              Slogan de l'agence <span class="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="slogan"
+              name="slogan"
+              [(ngModel)]="userData.slogan"
+              class="form-control"
+              placeholder="Slogan de votre agence"
+              required
+            />
           </div>
         </div>
 
@@ -530,6 +545,15 @@
 
           <!-- Conditions -->
           <div class="form-section">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="userData.isOwnerAgency"
+                name="isOwnerAgency"
+              />
+              <span class="checkmark"></span>
+              Je suis propriétaire de l'agence
+            </label>
             <label class="checkbox-label">
               <input
                 type="checkbox"

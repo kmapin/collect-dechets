@@ -57,7 +57,7 @@ export class Header  implements OnInit {
     switch (this.currentUser.role) {
       case UserRole.CLIENT:
         return '/dashboard/client';
-      case UserRole.AGENCY:
+      case UserRole.MANAGER:
         return '/dashboard/agency';
       case UserRole.COLLECTOR:
         return '/dashboard/collector';
