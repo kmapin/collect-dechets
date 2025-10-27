@@ -13,7 +13,37 @@
       </div>
 
       <form class="login-form" (ngSubmit)="onLogin()" #loginForm="ngForm">
-        <div class="form-group">
+
+        <div class="login-types">
+          <label class="login-type-option">
+            <input
+              type="radio"
+              name="loginType"
+              value="email"
+              [(ngModel)]="loginType.type"
+            />
+            <div class="login-type-card">
+              <i class="material-icons">email</i>
+              <h4>Par email</h4>
+            </div>
+          </label>
+          <label class="login-type-option">
+            <input
+              type="radio"
+              name="loginType"
+              value="phone"
+              [(ngModel)]="loginType.type"
+            />
+            <div class="login-type-card">
+              <i class="material-icons">phone</i>
+              <h4>Par telephone</h4>
+            </div>
+          </label>
+        </div>
+
+
+
+        <div class="form-group" *ngIf="loginType.type === 'email'">
           <label class="form-label" for="email">
             <i class="material-icons">email</i>
             Adresse email
@@ -33,6 +63,29 @@
             *ngIf="emailInput.invalid && emailInput.touched"
           >
             Veuillez saisir une adresse email valide
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="loginType.type === 'phone'">
+          <label class="form-label" for="phone">
+            <i class="material-icons">phone</i>
+            Numéro de téléphone
+          </label>
+          <input
+            type="number"
+            id="phone"
+            name="phone"
+            [(ngModel)]="credentials.phone"
+            class="form-control"
+            placeholder="XX XX XX XX"
+            required
+            #phoneInput="ngModel"
+          />
+          <div
+            class="form-error"
+            *ngIf="phoneInput.invalid && phoneInput.touched"
+          >
+            Veuillez saisir une numéro telephone valide
           </div>
         </div>
 

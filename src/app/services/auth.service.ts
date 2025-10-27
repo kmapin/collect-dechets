@@ -42,12 +42,12 @@ export class AuthService {
     );
   }
   //Login add
-  loginUser(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string; token?: string }> {
+  loginUser(login: string, password: string): Observable<{ success: boolean; user?: User; error?: string; token?: string }> {
     // The backend error says "Email et mot de passe requis", so try {email, password}
-    const requestBody = { email, password };
-    console.log('[DEBUG] Sending login request with:', { email, password: '***' });
+    const requestBody = { login, password };
+    console.log('[DEBUG] Sending login request with:', { login, password: '***' });
     console.log('[DEBUG] Request body:', requestBody);
-    return this.http.post<any>(`${environment.apiUrl}/auth/login`, requestBody).pipe(
+    return this.http.post<any>(`${environment.apiUrl}/login`, requestBody).pipe(
       map((response: any) => {
         console.log("API > LoginUser Response:", response);
         console.log("API > Response type:", typeof response);
@@ -125,7 +125,7 @@ export class AuthService {
     console.log('[DEBUG] Final registration data being sent to backend:', registrationData);
     console.log('[DEBUG] Registration endpoint:', `${environment.apiUrl}/auth/register`);
 
-    return this.http.post<any>(`${environment.apiUrl}/auth/register`, registrationData).pipe(
+    return this.http.post<any>(`${environment.apiUrl}/register`, registrationData).pipe(
       map(response => {
         console.log("API > Register Response:", response);
         

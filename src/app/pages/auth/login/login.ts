@@ -14,9 +14,12 @@ import { NotificationService } from '../../../services/notification.service';
 export class Login implements OnInit {
   credentials = {
     email: '',
+    phone: '',
     password: ''
   };
-
+  loginType = { 
+    type: 'phone' 
+  };
   showPassword = false;
   rememberMe = false;
   isLoading = false;
@@ -34,22 +37,27 @@ export class Login implements OnInit {
   }
 
   onLogin(): void {
-    if (!this.credentials.email || !this.credentials.password) {
+    if (!(this.credentials.email || this.credentials.phone) || !this.credentials.password) {
       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs');
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(this.credentials.email)) {
-      this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
+    const phoneRegex = /^[0-9]{8,}$/;
+    if (!emailRegex.test(this.credentials.email ) && !phoneRegex.test(this.credentials.phone) ) {
+      if(this.credentials.email){
+        this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
+        return;
+      }
+      this.notificationService.showError('Erreur', 'Veuillez saisir un numéro de téléphone');
       return;
     }
 
     this.isLoading = true;
     console.log('[DEBUG] Login attempt with:', this.credentials.email);
     
-    this.authService.loginUser(this.credentials.email, this.credentials.password).subscribe({
+    this.authService.loginUser(this.credentials.email || this.credentials.phone, this.credentials.password).subscribe({
       next: (response: any) => {
         console.log('[DEBUG] Login response:', response);
         this.isLoading = false;
@@ -85,10 +93,10 @@ export class Login implements OnInit {
 
   loginAsDemo(role: string): void {
     const demoCredentials = {
-      client: { email: 'client@demo.com', password: 'demo123' },
-      agency: { email: 'agency@demo.com', password: 'demo123' },
-      collector: { email: 'collector@demo.com', password: 'demo123' },
-      municipality: { email: 'municipality@demo.com', password: 'demo123' }
+      client: { email: 'client@demo.com', password: 'demo123',phone: '1234567890' },
+      agency: { email: 'agency@demo.com', password: 'demo123',phone: '1234567890' },
+      collector: { email: 'collector@demo.com', password: 'demo123',phone: '1234567890' },
+      municipality: { email: 'municipality@demo.com', password: 'demo123',phone: '1234567890' },
     };
 
     const creds = demoCredentials[role as keyof typeof demoCredentials];
