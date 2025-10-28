@@ -394,37 +394,34 @@ export class Register implements OnInit {
       });
       return;
     } else if (this.userData.role === UserRole.MUNICIPALITY) {
-      const body = {
-        role: this.userData.role,
-        agencyId: [],
+      const body : RegisterUserData = {
         firstName: this.userData.firstName,
         lastName: this.userData.lastName,
-        phone: this.userData.phone,
         email: this.userData.email,
-        name: this.userData.firstName + ' ' + this.userData.lastName,
-        commune: {
-          region: this.userData.commune.region,
-          province: this.userData.commune.province,
-          name: this.userData.commune.name
-        },
-        managedZones: [
-          {
-            arrondissement: this.userData.address.arrondissement,
-            secteur: this.userData.address.sector,
-            quartier: this.userData.address.neighborhood,
-            village: this.userData.address.city,
-          }
-        ],
-        position: {
-
-        },
+        phone: this.userData.phone,
         password: this.userData.password,
-        confirmPassword: this.userData.confirmPassword,
-        acceptTerms: this.userData.acceptTerms, // renommé
-        termsAccepted: this.userData.acceptTerms,
-      }
+        role: this.userData.role,
+        acceptTerms: this.userData.acceptTerms,
+        receiveOffers: this.userData.receiveOffers,
+        address: {
+          street: this.userData.address.street,
+          arrondissement: this.userData.address.arrondissement,
+          sector: this.userData.address.sector,
+          doorNumber: this.userData.address.doorNumber,
+          doorColor: this.userData.address.doorColor,
+          neighborhood: this.userData.address.neighborhood,
+          city: this.userData.address.city,
+          postalCode: this.userData.address.postalCode,
+          location: {
+            type: 'Point',
+            coordinates: [-17.444, 14.692] // Default coordinates, could be updated with geolocation
+          }
+        },
+        ...(this.agencyId && { agencyId: this.agencyId })
+      };
+
       console.log('[DEBUG] Body envoyé à registerMunicipality:', body);
-      this.adminService.registerMunicipality$(body).subscribe({
+      this.authService.register(body).subscribe({
         next: (response) => {
           localStorage.removeItem('userRole');
           this.isLoading = false;
@@ -437,8 +434,9 @@ export class Register implements OnInit {
             (typeof response.message === 'string' && (
               response.message.toLowerCase().includes('succès') ||
               response.message.toLowerCase().includes('réussi')
-            )) ||
-            !!response.municipality;
+            )) 
+            // ||
+            // !!response.municipality;
 
           if (isSuccess) {
             this.notificationService.showSuccess('Inscription mairie réussie',
@@ -447,7 +445,13 @@ export class Register implements OnInit {
               this.router.navigate(['/dashboard/admin']);
             }, 2000);
           } else {
-            const errorMsg = this.getFriendlyMessage((response?.message || response?.error || ''), false);
+            const rawMessage = response?.message || response?.error || '';
+
+            const message = typeof rawMessage === 'string'
+              ? rawMessage
+              : Object.values(rawMessage).flat().join(', '); // convertir objet en string
+
+            const errorMsg = this.getFriendlyMessage(message, false);
             this.notificationService.showError('Erreur lors de l\'inscription mairie', errorMsg);
           }
         },

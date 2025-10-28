@@ -404,12 +404,12 @@ export class AuthService {
     }
 
     // Add municipality-specific data if role is municipality
-    if (userData.role === 'municipality') {
-      return {
-        ...baseData,
-        commune: userData.commune
-      };
-    }
+    // if (userData.role === 'municipality') {
+    //   return {
+    //     ...baseData,
+    //     // commune: userData.commune
+    //   };
+    // }
 
     return baseData;
   }

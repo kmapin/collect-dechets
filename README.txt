@@ -41,7 +41,7 @@ Email : guigmawendindapaulin@gmail.com          Mot de passe : 5e86f7dfe4a5
 ##############################################################################################################################
 ## MINUCIPALITE
 
-Email : test@gmail.com          Mot de passe : Wise2024
+Email : test@gmail.com | 77777778    Mot de passe : 12345678
 Email : gangosmeo@gmail.com          Mot de passe : Wise2024
 
 
