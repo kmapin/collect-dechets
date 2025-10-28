@@ -88,23 +88,26 @@ export class Header  implements OnInit {
 
   // }
   logout(): void {
-    // localStorage.removeItem('currentUser');
-    this.authService.logout().subscribe({
-      next: (response: any) => {
+    localStorage.removeItem('currentUser');
+    window.location.href = '/';
+    this.router.navigate(['/']);
+    
+    // this.authService.logout().subscribe({
+    //   next: (response: any) => {
 
-        localStorage.removeItem('currentUser');
-        console.log('deconnexion', response);
-        if (response?.message) {
-          console.log('deconnexion', response);
-          this.router.navigate(['/']);
-          this.notificationService.showSuccess(`${response?.message} !`, 'Au revoir, à bientoît !');
+    //     localStorage.removeItem('currentUser');
+    //     console.log('deconnexion', response);
+    //     if (response?.message) {
+    //       console.log('deconnexion', response);
+    //       this.router.navigate(['/']);
+    //       this.notificationService.showSuccess(`${response?.message} !`, 'Au revoir, à bientoît !');
 
-        } else {
-          console.log('deconnexion', response);
-          this.notificationService.showError('Erreur de connexion', response.error);
-        }
-      }
-    });
+    //     } else {
+    //       console.log('deconnexion', response);
+    //       this.notificationService.showError('Erreur de connexion', response.error);
+    //     }
+    //   }
+    // });
 
   }
 
