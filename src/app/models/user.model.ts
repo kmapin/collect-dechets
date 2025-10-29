@@ -38,10 +38,8 @@ export interface UserAddress {
   neighborhood: string;
   city: string;
   postalCode: string;
-  location: {
-    type: 'Point';
-    coordinates: [number, number]; // [longitude, latitude]
-  };
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface ClientAddress {
@@ -142,6 +140,8 @@ export interface RegisterUserData {
   nbGestionnaires?: number;
   isOwnerAgency?: boolean;
   slogan?: string;
+  longitude?: number;
+  latitude?: number;
   // Agency-specific fields
   agencyName?: string;
   agencyDescription?: string;
@@ -163,10 +163,8 @@ export interface RegisterUserData {
     owner: string;
     documents: string[];
     status: 'active' | 'inactive';
-    location: {
-      type: 'Point';
-      coordinates: [number, number];
-    };
+    longitude: number;
+    latitude: number;
   };
 }
 

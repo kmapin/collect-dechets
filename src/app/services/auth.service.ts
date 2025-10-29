@@ -373,7 +373,8 @@ export class AuthService {
         neighborhood: userData.address.neighborhood,
         city: userData.address.city,
         postalCode: userData.address.postalCode,
-        location: userData.address.location
+        longitude: userData.address.longitude,
+        latitude: userData.address.latitude
       },
       acceptTerms: userData.acceptTerms,
       receiveOffers: userData.receiveOffers,
@@ -400,7 +401,8 @@ export class AuthService {
           gestionnaires: [],
           documents: [],
           status: userData.agency?.status,
-          location: userData.agency?.location
+          longitude: userData.address.longitude,
+          latitude: userData.address.latitude
         }
       };
       console.log('[DEBUG] Final agency data:', agencyData);
@@ -495,10 +497,8 @@ export class AuthService {
         neighborhood: 'Test',
         city: 'Dakar',
         postalCode: '10000',
-        location: {
-          type: 'Point',
-          coordinates: [-17.444, 14.692]
-        }
+        longitude: -17.444,
+        latitude: 14.692,
       },
       status: 'active',
       acceptTerms: true,

@@ -41,8 +41,8 @@ export class Register implements OnInit {
       neighborhood: '',
       city: '',
       postalCode: '',
-      // latitude: '',
-      // longitude: ''
+      latitude: '',
+      longitude: ''
     },
     agencyName: '',
     slogan: '',
@@ -283,10 +283,9 @@ export class Register implements OnInit {
           neighborhood: this.userData.address.neighborhood,
           city: this.userData.address.city,
           postalCode: this.userData.address.postalCode,
-          location: {
-            type: 'Point',
-            coordinates: [-17.444, 14.692] // Default coordinates, could be updated with geolocation
-          }
+          longitude: -17.444,
+          latitude: 14.692
+          
         },
         ...(this.agencyId && { agencyId: this.agencyId })
       };
@@ -341,10 +340,8 @@ export class Register implements OnInit {
           neighborhood: this.userData.address.neighborhood,
           city: this.userData.address.city,
           postalCode: this.userData.address.postalCode,
-          location: {
-            type: 'Point',
-            coordinates: [-17.444, 14.692] // Default coordinates, could be updated with geolocation
-          }
+          longitude: -17.444,
+          latitude: 14.692
         },
         // Agency-specific data - ensure they are always included for agency role
    
@@ -359,10 +356,8 @@ export class Register implements OnInit {
           owner: '',
           documents: [],
           status: 'inactive',
-          location: {
-            type: 'Point',
-            coordinates: [-17.444, 14.692]
-          }
+          longitude: -17.444,
+          latitude: 14.692 
         }
       };
 
@@ -412,10 +407,8 @@ export class Register implements OnInit {
           neighborhood: this.userData.address.neighborhood,
           city: this.userData.address.city,
           postalCode: this.userData.address.postalCode,
-          location: {
-            type: 'Point',
-            coordinates: [-17.444, 14.692] // Default coordinates, could be updated with geolocation
-          }
+          longitude: -17.444,
+          latitude: 14.692
         },
         ...(this.agencyId && { agencyId: this.agencyId })
       };
