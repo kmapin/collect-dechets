@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Municipality } from '../models/agency.model';
@@ -36,8 +36,9 @@ export class Admin {
 
   }
 
-  getAllEmployees(role: string) {
-    return this.http.get(`${environment.apiUrl}/auth/employees/${role}`).pipe(
+  getAllEmployees() {
+    let requestParams = new HttpParams().append('role', 'collector');
+    return this.http.get(`${environment.apiUrl}/users`, { params: requestParams }).pipe(
       map((response: any) => {
         console.log('API > getAllEmployees:', response);
         return response;
@@ -87,7 +88,8 @@ export class Admin {
 
 
   getAllMunicipalities() {
-    return this.http.get(`${environment.apiUrl}/auth/municipality`).pipe(
+    let requestParams = new HttpParams().append('role', 'municipality');
+    return this.http.get(`${environment.apiUrl}/users`,{params: requestParams}).pipe(
       map((response: any) => {
         console.log('API > getAllMunicipalities:', response);
         return response;

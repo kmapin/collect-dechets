@@ -231,7 +231,8 @@ export class AgencyService {
   }
 
   getAllAgenciesFromApi(): Observable<{ success: boolean; count: number; data: Agency[] }> {
-    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agences/recuperation?limit=25`);
+    let requestParams = new HttpParams().append('role', 'manager');
+    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/users`,{params: requestParams});
   }
 
 

@@ -957,9 +957,9 @@ viewClientDetails(clientId: string): void {
           return {
             _id: client._id,
             data: client,
-            active_subscription: client?.subscriptionHistory.filter(
-              (s: any) => s.status === "active"
-            ),
+            // active_subscription: client?.subscriptionHistory.filter(
+            //   (s: any) => s.status === "active"
+            // ),
           };
         });
         this.filteredClients = [...this.clientsAudits];
@@ -979,9 +979,9 @@ viewClientDetails(clientId: string): void {
     });
   }
   loadAllCollectors(): void {
-    this.adminService.getAllEmployees("collector").subscribe({
+    this.adminService.getAllEmployees().subscribe({
       next: (response: any) => {
-        const collectors = response?.employees || [];
+        const collectors = response?.data || [];
 
         const collectorsWithAgencies$ = collectors.map((employee: any) => {
           const agency$ = this.agencies.includes(employee.agencyId)
@@ -1069,7 +1069,7 @@ viewClientDetails(clientId: string): void {
   loadAllMunipalities() {
     this.adminService.getAllMunicipalities().subscribe({
       next: (response: any) => {
-        this.municipalitiesAudits = response.map((municipality: any) => {
+        this.municipalitiesAudits = response.data.map((municipality: any) => {
           return {
             _id: municipality._id,
             data: municipality,
