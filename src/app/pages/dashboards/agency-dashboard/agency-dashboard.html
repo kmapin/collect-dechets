@@ -27,18 +27,20 @@
     <div class="dashboard-content">
       <!-- Statistiques principales -->
       <div class="stats-grid">
+
+        
         <div class="stat-card card">
           <div class="stat-icon clients">
             <i class="material-icons">people</i>
           </div>
           <div class="stat-info">
             <h3>Clients actifs</h3>
-            <p class="stat-value">{{ statistics.totalClients }}</p>
+            <p class="stat-value">{{ statistics.totalClients || 0 }}</p>
             <!-- <span class="stat-trend positive">+2 ce mois</span> -->
           </div>
         </div>
 
-        <div class="stat-card card">
+        <div *ngIf="!isLoadingStatistics" class="stat-card card">
           <div class="stat-icon collectors">
             <i class="material-icons">local_shipping</i>
           </div>
@@ -46,21 +48,21 @@
             <h3>Employés</h3>
             <!-- <p class="stat-value">{{ statistics.activeCollectors }}</p>
                 <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span> -->
-            <p class="stat-value">{{ statistics.totalEmployees }}</p>
+            <p class="stat-value">{{ statistics.totalEmployees || 0 }}</p>
             <span class="stat-trend neutral"
               >{{ getActiveCollectorsToday() }} en tournée</span
             >
           </div>
         </div>
 
-        <div class="stat-card card">
+        <div *ngIf="!isLoadingStatistics" class="stat-card card">
           <div class="stat-icon collections">
             <i class="material-icons">check_circle</i>
           </div>
           <div class="stat-info">
             <h3>zones</h3>
 
-            <p class="stat-value">{{ statistics.totalZones }}</p>
+            <p class="stat-value">{{ statistics.totalZones || 0 }}</p>
             <span
               class="stat-trend"
               [class.positive]="getCollectionRate() >= 90"
@@ -70,7 +72,7 @@
           </div>
         </div>
 
-        <div class="stat-card card">
+        <div *ngIf="!isLoadingStatistics" class="stat-card card">
           <div class="stat-icon revenue">
             <i class="material-icons">perso</i>
           </div>
@@ -78,18 +80,18 @@
             <h3>Collecteurs</h3>
             <!-- <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
                 <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
-            <p class="stat-value">{{ statistics.totalCollectors }}</p>
+            <p class="stat-value">{{ statistics.totalCollectors || 0 }}</p>
             <!-- <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
           </div>
         </div>
 
-        <div class="stat-card card">
+        <div *ngIf="!isLoadingStatistics" class="stat-card card">
           <div class="stat-icon reports">
             <i class="material-icons">report_problem</i>
           </div>
           <div class="stat-info">
             <h3>Signalements</h3>
-            <p class="stat-value">{{ statistics.pendingSignalements }}</p>
+            <p class="stat-value">{{ statistics.pendingSignalements || 0 }}</p>
             <span
               class="stat-trend"
               [class.negative]="statistics.totalSignalements"
@@ -151,7 +153,14 @@
             </div>
           </div>
 
-          <div class="collections-grid">
+          <!-- Indicateur de chargement pour les collectes -->
+          <app-loading-spinner 
+            *ngIf="isLoadingCollections" 
+            message="Chargement des collectes..." 
+            size="medium">
+          </app-loading-spinner>
+
+          <div *ngIf="!isLoadingCollections" class="collections-grid">
             <div
               *ngFor="let collecte of dayCollectes"
               class="collection-card card"
@@ -211,7 +220,7 @@
           </div>
 
           <!-- État vide -->
-          <div *ngIf="dayCollectes.length === 0" class="empty-state">
+          <div *ngIf="!isLoadingCollections && dayCollectes.length === 0" class="empty-state">
             <i class="material-icons">event_available</i>
             <h3>Aucune collecte</h3>
             <p>Aucune collecte disponible pour l’instant</p>
@@ -233,7 +242,14 @@
             </div>
           </div>
 
-          <div class="employees-grid">
+          <!-- Indicateur de chargement pour les employés -->
+          <app-loading-spinner 
+            *ngIf="isLoadingEmployees" 
+            message="Chargement des employés..." 
+            size="medium">
+          </app-loading-spinner>
+
+          <div *ngIf="!isLoadingEmployees" class="employees-grid">
             <div
               *ngFor="let employee of allEmployees"
               class="employee-card card"
@@ -331,10 +347,10 @@
                   </div> -->
             </div>
           </div>
-          <div *ngIf="!allEmployees?.length" class="empty-state">
+          <div *ngIf="!isLoadingEmployees && !allEmployees?.length" class="empty-state">
             <i class="material-icons">people_outline</i>
             <h3>Aucun employé</h3>
-            <p>Vous n'avez pas encore ajouté d'employés à votre agence.</p>
+            <p>Vous n'avez pas encore ajouté d'employés à votre agence. Cliquez sur "Ajouter Employé" pour commencer.</p>
           </div>
         </div>
 
@@ -353,7 +369,14 @@
             <i class="material-icons">edit_location</i>
             Modifier les zones couvertes
           </button>
-          <div class="zones-content">
+          <!-- Indicateur de chargement pour les zones -->
+          <app-loading-spinner 
+            *ngIf="isLoadingZones" 
+            message="Chargement des zones..." 
+            size="medium">
+          </app-loading-spinner>
+
+          <div *ngIf="!isLoadingZones" class="zones-content">
             <div class="zones-map">
               <div class="map-container">
                 <div class="map-placeholder">
@@ -373,7 +396,7 @@
                     </div>
                   </div>
 
-                  <div *ngIf="!zones?.length && !isLoading" class="no-zone">
+                  <div *ngIf="!zones?.length && !isLoadingZones" class="no-zone">
                     <p>Veuillez definir vos zonees de service .</p>
                   </div>
                 </div>
@@ -524,7 +547,15 @@
           <div class="clients-header">
             <h2>Clients Actifs ({{ activeClients.length }})</h2>
           </div>
-          <div class="clients-table">
+          
+          <!-- Indicateur de chargement pour les clients -->
+          <app-loading-spinner 
+            *ngIf="isLoadingClients" 
+            message="Chargement des clients..." 
+            size="medium">
+          </app-loading-spinner>
+          
+          <div *ngIf="!isLoadingClients" class="clients-table">
             <table class="table">
               <thead>
                 <tr>
@@ -537,9 +568,9 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngIf="activeClients.length === 0">
+                <tr *ngIf="!isLoadingClients && activeClients.length === 0">
                   <td colspan="6" style="text-align: center; color: #888">
-                    Aucun client à afficher
+                    Aucun client actif pour le moment. Les nouveaux clients apparaîtront ici après leur inscription.
                   </td>
                 </tr>
                 <tr *ngFor="let client of activeClients">
@@ -667,7 +698,14 @@
               </select>
             </div>
           </div>
-          <div class="reports-list">
+          <!-- Indicateur de chargement pour les signalements -->
+          <app-loading-spinner 
+            *ngIf="isLoadingReports" 
+            message="Chargement des signalements..." 
+            size="medium">
+          </app-loading-spinner>
+
+          <div *ngIf="!isLoadingReports" class="reports-list">
             <div *ngFor="let report of agencyReports" class="report-card card">
               <div class="incident-header">
                 <div
@@ -755,10 +793,10 @@
               </div>
             </div>
           </div>
-          <div *ngIf="!agencyReports?.length" class="empty-state">
+          <div *ngIf="!isLoadingReports && !agencyReports?.length" class="empty-state">
             <i class="material-icons">report_off</i>
             <h3>Aucun signalement</h3>
-            <p>Vous n'avez pas de signalements pour le moment.</p>
+            <p>Excellent ! Vous n'avez aucun signalement en cours. Les nouveaux signalements apparaîtront ici.</p>
           </div>
         </div>
 
@@ -787,7 +825,14 @@
                   </div>
                 </div>
 
-                <div class="chat-left-column-content">
+                <!-- Indicateur de chargement pour les messages -->
+                <app-loading-spinner 
+                  *ngIf="isLoadingMessages" 
+                  message="Chargement des conversations..." 
+                  size="small">
+                </app-loading-spinner>
+
+                <div *ngIf="!isLoadingMessages" class="chat-left-column-content">
                   <ng-container *ngFor="let message of connectedUserMessages">
                     <button
                       class="chat-left-column-content-item"
@@ -797,6 +842,12 @@
                       {{ message.firstName }} {{ message.lastName }}
                     </button>
                   </ng-container>
+                  
+                  <!-- État vide pour les conversations -->
+                  <div *ngIf="!connectedUserMessages?.length" class="empty-conversations">
+                    <i class="material-icons">chat_bubble_outline</i>
+                    <p>Aucune conversation disponible</p>
+                  </div>
                 </div>
               </div>
 
@@ -1523,7 +1574,14 @@
               </div>
 
               <div class="modal-body">
-                <div
+                <!-- Indicateur de chargement pour les tarifs -->
+                <app-loading-spinner 
+                  *ngIf="isLoadingTariffs" 
+                  message="Chargement des tarifs..." 
+                  size="medium">
+                </app-loading-spinner>
+
+                <div *ngIf="!isLoadingTariffs && tariffs.length > 0"
                   class="tariff-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
                 >
                   <div *ngFor="let tariff of tariffs" class="tariff-card">
@@ -1557,6 +1615,13 @@
                       </button>
                     </div>
                   </div>
+                </div>
+
+                <!-- État vide pour les tarifs -->
+                <div *ngIf="!isLoadingTariffs && tariffs.length === 0" class="empty-state">
+                  <i class="material-icons">attach_money</i>
+                  <h3>Aucun tarif configuré</h3>
+                  <p>Créez vos premiers tarifs pour proposer vos services aux clients.</p>
                 </div>
               </div>
 
