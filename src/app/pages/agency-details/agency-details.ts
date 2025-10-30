@@ -19,7 +19,7 @@ import { CountriesOrgMockService } from '../../services/countries-org-mock.servi
   styleUrl: './agency-details.css'
 })
 export class AgencyDetails implements OnInit {
-  agency: Agency | null = null;
+  agency: any | null = null; 
   agencyId: string | null = null;
   agencyIdd: string | null = null;
   currentUser: User | null = null;

@@ -152,21 +152,27 @@ export class AgencyService {
     );
     return of(filtered).pipe(delay(500));
   }
- searchAgencie(params: { term?: string; city?: string; sector?: string; rating?: string; neighborhood?: string; service?: string }) {
-  let httpParams = new HttpParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) httpParams = httpParams.set(key, value);
-  });
+  //  searchAgencie(params: { term?: string; city?: string; sector?: string; rating?: string; 
+  //                         neighborhood?: string; service?: string; activityZone?: string;
+  //                        arrondissement?: string; radius?: number; status?: string;
+  //                        }): Observable<Agency[]> {
+  searchAgencie(params: {
+      term?: string; city?: string; sector?: string; rating?: string;
+      neighborhood?: string; service?: string}): Observable<Agency[]> {
+    let httpParams = new HttpParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) httpParams = httpParams.set(key, value);
+    });
 
-  return this.http.get<any>(`${environment.apiUrl}/agencies`, { params: httpParams }).pipe(
-    map(response => {
-      // response || [];
-      console.log("API > searchAgencie :", response);
-      return response || [];
-    },
-    )
-  );
-}
+    return this.http.get<any>(`${environment.apiUrl}/agencies`, { params: httpParams }).pipe(
+      map(response => {
+        // response || [];
+        console.log("API > searchAgencie :", response);
+        return response || [];
+      },
+      )
+    );
+  }
 
   getAgenciesByZone(latitude: number, longitude: number): Observable<Agency[]> {
     // Simple distance calculation for demo
@@ -301,7 +307,7 @@ export class AgencyService {
       }),
       catchError((error) => {
         console.error("Erreur lors de la récupération des statistiques :", error);
-        return of({ 'totalClients': 'undefind', 'totalCollections': 'undefind', 'totalIncidents': 'undefind' }); 
+        return of({ 'totalClients': 'undefind', 'totalCollections': 'undefind', 'totalIncidents': 'undefind' });
       })
     );
 
@@ -348,10 +354,10 @@ export class AgencyService {
         console.log(`Employé ${employeeId} supprimé avec succès`);
         return true;
       }),
-     catchError(error => {
-      console.error(` Erreur lors de la suppression de l'employé ${employeeId} :`, error);
-      return of(false); // Retourne false en cas d'erreur
-    })
+      catchError(error => {
+        console.error(` Erreur lors de la suppression de l'employé ${employeeId} :`, error);
+        return of(false); // Retourne false en cas d'erreur
+      })
 
     );
   }
@@ -404,19 +410,19 @@ export class AgencyService {
 
   // Subscribe to an agency 
   subscribeToAgencyPlan(currentUser: string | undefined, tariffId: string | undefined, numberMonths: number) {
-    console.log("API, SubcriptionPayload ==>",currentUser, tariffId, numberMonths);
-      return this.http.post(`${environment.apiUrl}/${currentUser}/subscriptions/${tariffId}/${ numberMonths }`, {});
-    }
+    console.log("API, SubcriptionPayload ==>", currentUser, tariffId, numberMonths);
+    return this.http.post(`${environment.apiUrl}/${currentUser}/subscriptions/${tariffId}/${numberMonths}`, {});
+  }
 
-     //Get user Subscription from an agency 
+  //Get user Subscription from an agency 
   getUserSubscription(userId: string): Observable<any[]> {
-      return this.http.get<any[]>(`${environment.apiUrl}/subscriptions/user/${userId}`).pipe(
-        map(response => {
-          console.log("API- Get subscriptions==>", response);
-          return response || [];
-        })
-      );
-    }
+    return this.http.get<any[]>(`${environment.apiUrl}/subscriptions/user/${userId}`).pipe(
+      map(response => {
+        console.log("API- Get subscriptions==>", response);
+        return response || [];
+      })
+    );
+  }
 
   addEmployee(employee: Partial<Employees>): Observable<Employees | null> {
     const newEmployee: Employees = {
@@ -536,13 +542,13 @@ export class AgencyService {
     );
 
   }
-    //recupere les planing d une agence
+  //recupere les planing d une agence
   getAllPlaningAgency$(agencyId: string): Observable<PlanningResponse> {
-  const url = `${environment.apiUrl}/zones/plannings/agency/${agencyId}`;
-  return this.http.get<PlanningResponse>(url);
-}
+    const url = `${environment.apiUrl}/zones/plannings/agency/${agencyId}`;
+    return this.http.get<PlanningResponse>(url);
+  }
 
-   //supprimer un  planing d une agence
+  //supprimer un  planing d une agence
   deletePlanning$(planningId: string): Observable<boolean> {
     return this.http.delete(`${environment.apiUrl}/zones/plannings/${planningId}`).pipe(
       map(() => {
@@ -555,11 +561,11 @@ export class AgencyService {
       })
     );
   }
-     //recupere les plannings d un collecteur
-         getPlaningCollectory$(collectorId: string): Observable<any[]> {
+  //recupere les plannings d un collecteur
+  getPlaningCollectory$(collectorId: string): Observable<any[]> {
     const collector = this.agencies.find(a => a._id === collectorId);
-    const url=`${environment.apiUrl}/zones/plannings/historique/agency/${collectorId}`;
-    console.log("URL de la requête :", url); 
+    const url = `${environment.apiUrl}/zones/plannings/historique/agency/${collectorId}`;
+    console.log("URL de la requête :", url);
     return this.http.get<Tariff[]>(url);
 
   }
@@ -586,7 +592,7 @@ export class AgencyService {
   }
 
   resolveIncident$(incidentId: string, incidentStatus: any): Observable<any> {
-    return this.http.patch<any>(`${environment.apiUrl}/reports/${incidentId}/status`,incidentStatus).pipe(
+    return this.http.patch<any>(`${environment.apiUrl}/reports/${incidentId}/status`, incidentStatus).pipe(
       map((response: any) => {
         console.log("API > resoledIncident :", response);
         return response;
@@ -598,19 +604,19 @@ export class AgencyService {
     );
 
   }
-assignReportToEmployee$(reportId: string, employeeId: string): Observable<any> {
-  const payload = { employeeId };
-  return this.http.put<any>(`${environment.apiUrl}/reports/${reportId}/assign`, payload).pipe(
-    map((response: any) => {
-      console.log("API > assignReportToEmployee :", response);
-      return response;
-    }),
-    catchError(error => {
-      console.error("Erreur lors de l'assignation du rapport :", error);
-     return throwError(() => error);
-    })
-  );
-}
+  assignReportToEmployee$(reportId: string, employeeId: string): Observable<any> {
+    const payload = { employeeId };
+    return this.http.put<any>(`${environment.apiUrl}/reports/${reportId}/assign`, payload).pipe(
+      map((response: any) => {
+        console.log("API > assignReportToEmployee :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de l'assignation du rapport :", error);
+        return throwError(() => error);
+      })
+    );
+  }
 
   /**
    * Récupère toutes les agences depuis l'API backend
@@ -645,28 +651,28 @@ assignReportToEmployee$(reportId: string, employeeId: string): Observable<any> {
       { agencies: 3, clients: 1600, collections: 76, coverage: 75, incidents: 1 },
     ];
   }
-        //recupere les planing d une agence
-    getAllzones$(agencyId: string): Observable<any> {
+  //recupere les planing d une agence
+  getAllzones$(agencyId: string): Observable<any> {
     const url = `${environment.apiUrl}/zones/${agencyId}`;
     return this.http.get<any>(url).pipe(
-      catchError(error=>{
-    return throwError(() => error);
+      catchError(error => {
+        return throwError(() => error);
       })
     );
   }
-updateEmployeeStatus(employeeId: string, payload: { agencyId: string; isActive: boolean }): Observable<{ message: string; employee: Employee }> {
-  const url = `${environment.apiUrl}/agences/employees/${employeeId}`;
-  return this.http.put<{ message: string; employee: Employee }>(url, payload);
-}
-updateEmployee$(id: string, employeeData: any): Observable<Employee> {
-  const url = `${environment.apiUrl}/agences/employees/${id}`;
-  return this.http.put<Employee>(url, employeeData).pipe(
-    catchError((error) => {
-      console.error("Erreur backend:", error);
-      return throwError(() => error);
-    })
-  );
-}
+  updateEmployeeStatus(employeeId: string, payload: { agencyId: string; isActive: boolean }): Observable<{ message: string; employee: Employee }> {
+    const url = `${environment.apiUrl}/agences/employees/${employeeId}`;
+    return this.http.put<{ message: string; employee: Employee }>(url, payload);
+  }
+  updateEmployee$(id: string, employeeData: any): Observable<Employee> {
+    const url = `${environment.apiUrl}/agences/employees/${id}`;
+    return this.http.put<Employee>(url, employeeData).pipe(
+      catchError((error) => {
+        console.error("Erreur backend:", error);
+        return throwError(() => error);
+      })
+    );
+  }
 
 
   getClientById(id: string): Observable<any> {
@@ -674,108 +680,108 @@ updateEmployee$(id: string, employeeData: any): Observable<Employee> {
     return this.http.get<any>(url);
   }
   //recuperation  des collecte journalieres
-getAgencyAllCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
-  const url = `${environment.apiUrl}/collecte/${agencyId}/scan`;
+  getAgencyAllCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
+    const url = `${environment.apiUrl}/collecte/${agencyId}/scan`;
 
-  return this.http.get<PaginatedResponse<any>>(url).pipe(
-    map(response => {
-      console.log("API- Get collectes==>", response);
-      return response || [];
-    }),
-    catchError((error) => {
-      console.error("Erreur backend lors de la récupération des collectes :", error);
-      return throwError(() => error);
-    })
-  );
-}
+    return this.http.get<PaginatedResponse<any>>(url).pipe(
+      map(response => {
+        console.log("API- Get collectes==>", response);
+        return response || [];
+      }),
+      catchError((error) => {
+        console.error("Erreur backend lors de la récupération des collectes :", error);
+        return throwError(() => error);
+      })
+    );
+  }
   //recuperation l historique  des collecte pour une agence
-getAgencyAllHistoryCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
-  const url = `${environment.apiUrl}/collecte/${agencyId}/scan`;
+  getAgencyAllHistoryCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
+    const url = `${environment.apiUrl}/collecte/${agencyId}/scan`;
 
-  return this.http.get<PaginatedResponse<any>>(url).pipe(
-    map(response => {
-      console.log("API- Get collectes==>", response);
-      return response || [];
-    }),
-    catchError((error) => {
-      console.error("Erreur backend lors de la récupération des collectes :", error);
-      return throwError(() => error);
-    })
-  );
-}
-// Mise à jour des zones de service pour une agence
-updateAgencyZones$(agencyId: string, zoneData: { serviceZones: string[]}): Observable<any> {
-  const url = `${environment.apiUrl}/zones/${agencyId}`;
+    return this.http.get<PaginatedResponse<any>>(url).pipe(
+      map(response => {
+        console.log("API- Get collectes==>", response);
+        return response || [];
+      }),
+      catchError((error) => {
+        console.error("Erreur backend lors de la récupération des collectes :", error);
+        return throwError(() => error);
+      })
+    );
+  }
+  // Mise à jour des zones de service pour une agence
+  updateAgencyZones$(agencyId: string, zoneData: { serviceZones: string[] }): Observable<any> {
+    const url = `${environment.apiUrl}/zones/${agencyId}`;
 
-  return this.http.patch<any>(url, zoneData).pipe(
-    map(response => {
-      console.log("API - Zones mises à jour :", response);
-      return response;
-    }),
-    catchError(error => {
-      console.error("Erreur lors de la mise à jour des zones :", error);
-      return throwError(() => error);
-    })
-  );
-}
-// recuperation des signalement liee a un collecteur d une agence 
+    return this.http.patch<any>(url, zoneData).pipe(
+      map(response => {
+        console.log("API - Zones mises à jour :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la mise à jour des zones :", error);
+        return throwError(() => error);
+      })
+    );
+  }
+  // recuperation des signalement liee a un collecteur d une agence 
   getCollectorById(collectorid: string): Observable<any> {
     const url = `${environment.apiUrl}/rapports/collector/${collectorid}`;
     return this.http.get<any>(url);
   }
 
-  updatePlanning$(id: string, planningData: any): Observable<{ 
-  success: boolean; 
-  planning?: any; 
-  error?: any; 
-  message?: string 
-}> {
-  return this.http.patch<any>(`${environment.apiUrl}/api/zones/plannings/${id}`, planningData).pipe(
-    map(response => {
-      console.log("API > updatePlanning :", response);
-      if (response) {
-        return { success: true, planning: response, message: 'Planning mis à jour avec succès' };
-      } else {
-        return { success: false, error: 'Aucune donnée reçue', message: 'Erreur lors de la mise à jour' };
-      }
-    }),
-    catchError(error => {
-      console.error("Erreur API updatePlanning :", error);
-      return throwError(() => ({
-        success: false,
-        error: error.error || 'Une erreur est survenue',
-        message: error.error?.message || error.message || 'Erreur inconnue'
-      }));
-    })
-  );
-}
+  updatePlanning$(id: string, planningData: any): Observable<{
+    success: boolean;
+    planning?: any;
+    error?: any;
+    message?: string
+  }> {
+    return this.http.patch<any>(`${environment.apiUrl}/api/zones/plannings/${id}`, planningData).pipe(
+      map(response => {
+        console.log("API > updatePlanning :", response);
+        if (response) {
+          return { success: true, planning: response, message: 'Planning mis à jour avec succès' };
+        } else {
+          return { success: false, error: 'Aucune donnée reçue', message: 'Erreur lors de la mise à jour' };
+        }
+      }),
+      catchError(error => {
+        console.error("Erreur API updatePlanning :", error);
+        return throwError(() => ({
+          success: false,
+          error: error.error || 'Une erreur est survenue',
+          message: error.error?.message || error.message || 'Erreur inconnue'
+        }));
+      })
+    );
+  }
 
-updateTarif$(tarifId: string, tarifData: any): Observable<{ 
-  success: boolean; 
-  tarif?: any; 
-  error?: any; 
-  message?: string 
-}> {
-  return this.http.put<any>(`${environment.apiUrl}/api/agences/tarif/${tarifId}`, tarifData).pipe(
-    map(response => {
-      console.log("API > updateTarif :", response);
-      if (response) {
-        return { success: true, tarif: response, message: 'Tarif mis à jour avec succès' };
-      } else {
-        return { success: false, error: 'Aucune donnée reçue', message: 'Erreur lors de la mise à jour du tarif' };
-      }
-    }),
-    catchError(error => {
-      console.error("Erreur API updateTarif :", error);
-      return throwError(() => ({
-        success: false,
-        error: error.error || 'Une erreur est survenue',
-        message: error.error?.message || error.message || 'Erreur inconnue'
-      }));
-    })
-  );
-}
+  updateTarif$(tarifId: string, tarifData: any): Observable<{
+    success: boolean;
+    tarif?: any;
+    error?: any;
+    message?: string
+  }> {
+    return this.http.put<any>(`${environment.apiUrl}/api/agences/tarif/${tarifId}`, tarifData).pipe(
+      map(response => {
+        console.log("API > updateTarif :", response);
+        if (response) {
+          return { success: true, tarif: response, message: 'Tarif mis à jour avec succès' };
+        } else {
+          return { success: false, error: 'Aucune donnée reçue', message: 'Erreur lors de la mise à jour du tarif' };
+        }
+      }),
+      catchError(error => {
+        console.error("Erreur API updateTarif :", error);
+        return throwError(() => ({
+          success: false,
+          error: error.error || 'Une erreur est survenue',
+          message: error.error?.message || error.message || 'Erreur inconnue'
+        }));
+      })
+    );
+  }
 
 
-  
+
 }
