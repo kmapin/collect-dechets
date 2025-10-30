@@ -10,7 +10,7 @@
         <i class="material-icons breadcrumb-separator">chevron_right</i>
         <a routerLink="/agencies" class="breadcrumb-item">Agences</a>
         <i class="material-icons breadcrumb-separator">chevron_right</i>
-        <span class="breadcrumb-item active">{{ agency.agencyName }}</span>
+        <span class="breadcrumb-item active">{{ agency?.name }}</span>
       </nav>
     </div>
   </div>
@@ -23,32 +23,32 @@
           <div class="agency-logo">
             <img
               src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
-              [alt]="agency.agencyName"
+              [alt]="agency?.name"
             />
           </div>
           <div class="agency-details">
-            <h1 class="agency-name">{{ agency.agencyName }}</h1>
-            <p class="agency-description">{{ agency.agencyDescription }}</p>
+            <h1 class="agency-name">{{ agency?.name }}</h1>
+            <p class="agency-description">{{ agency?.agencyDescription }}</p>
             <div class="agency-meta">
               <div class="agency-rating">
                 <div class="stars">
                   <i
-                    *ngFor="let star of getStars(agency.rating)"
+                    *ngFor="let star of getStars(agency?.rating)"
                     class="material-icons star"
                     >star</i
                   >
                 </div>
-                <span class="rating-text">{{ agency.rating }}/5</span>
+                <span class="rating-text">{{ agency?.rating }}/5</span>
                 <span class="reviews-count"
-                  >({{ agency.totalClients }} avis)</span
+                  >({{ agency?.totalClients }} avis)</span
                 >
               </div>
               <div class="agency-status">
-                <span class="status-badge" [class.active]="agency.isActive">
+                <span class="status-badge" [class.active]="agency?.isActive">
                   <i class="material-icons"
-                    >{{ agency.isActive ? 'check_circle' : 'cancel' }}</i
+                    >{{ agency?.isActive ? 'check_circle' : 'cancel' }}</i
                   >
-                  {{ agency.isActive ? 'Agence active' : 'Agence inactive' }}
+                  {{ agency?.isActive ? 'Agence active' : 'Agence inactive' }}
                 </span>
               </div>
             </div>

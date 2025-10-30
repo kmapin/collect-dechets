@@ -151,9 +151,9 @@
   
               
               <div class="agency-content">
-                <h3 class="agency-name">{{ agency.agencyName }}</h3>
-                <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
-                
+                <h3 class="agency-name">{{ agency.name }}</h3>
+                <p class="agency-description truncate">{{ agency?.agencyDescription }}</p>
+
                 <div class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full" >
                   <i *ngFor="let star of getStars(agency.rating, agency.randomStars)" class="material-icons star">star</i>
                 </div>
@@ -215,7 +215,7 @@
                     <img src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" [alt]="agency.agencyName">
                   </div>
                   <div class="agency-list-info">
-                    <h3 class="agency-name text-[--primary-color]">{{ agency.agencyName }}</h3>
+                    <h3 class="agency-name text-[--primary-color]">{{ agency.name }}</h3>
                     <!-- <div class="agency-rating">
                       <div class="stars">
                         <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>

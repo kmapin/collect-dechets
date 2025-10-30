@@ -3,7 +3,8 @@ export interface Agency {
   userId: string;
   firstName: string;
   lastName: string;
-  agencyName: string;
+  // agencyName: string;
+  name: string;
   arrondissement: string;
   secteur: string;
   quartier: string;

@@ -146,7 +146,7 @@ export class AgencyService {
 
   searchAgencies(query: string): Observable<Agency[]> {
     const filtered = this.agencies.filter(agency =>
-      agency.agencyName.toLowerCase().includes(query.toLowerCase()) ||
+      agency.name.toLowerCase().includes(query.toLowerCase()) ||
       agency.address.city.toLowerCase().includes(query.toLowerCase()) ||
       agency.address.neighborhood.toLowerCase().includes(query.toLowerCase())
     );
@@ -158,8 +158,13 @@ export class AgencyService {
     if (value) httpParams = httpParams.set(key, value);
   });
 
-  return this.http.get<any>(`${environment.apiUrl}/agences/search`, { params: httpParams }).pipe(
-    map(response => response || [])
+  return this.http.get<any>(`${environment.apiUrl}/agencies`, { params: httpParams }).pipe(
+    map(response => {
+      // response || [];
+      console.log("API > searchAgencie :", response);
+      return response || [];
+    },
+    )
   );
 }
 
@@ -181,7 +186,7 @@ export class AgencyService {
       userId: agency.userId || '',
       firstName: agency.firstName || '',
       lastName: agency.lastName || '',
-      agencyName: agency.agencyName || '',
+      name: agency.name || '',
       agencyDescription: agency.agencyDescription || '',
       phone: agency.phone || '',
       address: agency.address || {} as any,
@@ -231,7 +236,8 @@ export class AgencyService {
   }
 
   getAllAgenciesFromApi(): Observable<{ success: boolean; count: number; data: Agency[] }> {
-    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agences/recuperation?limit=25`);
+    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies?limit=25`);
+    // return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agences/recuperation?limit=25`);
   }
 
 

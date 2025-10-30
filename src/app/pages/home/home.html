@@ -269,7 +269,7 @@
               <div class="agency-logo">
                 <img
                   src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
-                  [alt]="agency.agencyName" />
+                  [alt]="agency.name" />
                 <div class="logo-glow"></div>
               </div>
               <div class="agency-badge" *ngIf="agency.rating >= 4.5">
@@ -279,7 +279,7 @@
             </div>
 
             <div class="agency-content">
-              <h3 class="agency-name">{{ agency.agencyName }}</h3>
+              <h3 class="agency-name">{{ agency.name }}</h3>
               <p class="agency-description truncate">
                 {{ agency.agencyDescription }}
               </p>
