@@ -140,7 +140,8 @@ currentUser!: any ;
       userId: apiAgency.userId || '',
       firstName: apiAgency.firstName || '',
       lastName: apiAgency.lastName || '',
-      agencyName: apiAgency.agencyName || '',
+      name: apiAgency.name || '',
+      // agencyName: apiAgency.agencyName || '',
       agencyDescription: apiAgency.agencyDescription || '',
       phone: apiAgency.phone || '',
       address: apiAgency.address || {
@@ -186,7 +187,7 @@ currentUser!: any ;
       this.filteredAgencies = this.agencies;
       console.log("Agences chargées :", this.filteredAgencies);
       this.generateRandomStarsList()
-      this.applyFilters();
+      // this.applyFilters();
     });
   }
 
@@ -230,7 +231,7 @@ applyFilters(): void {
     this.filteredAgencies.sort((a, b) => {
       switch (this.sortBy) {
         case 'name':
-          return a.agencyName.localeCompare(b.agencyName);
+          return a.name.localeCompare(b.name);
         case 'rating':
           return b.rating - a.rating;
         case 'price':

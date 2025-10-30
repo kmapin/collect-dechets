@@ -208,7 +208,7 @@ updateEndDate() {
       userId: apiAgency.userId || '',
       firstName: apiAgency.firstName || '',
       lastName: apiAgency.lastName || '',
-      agencyName: apiAgency.agencyName || '',
+      name: apiAgency.name || '',
       agencyDescription: apiAgency.agencyDescription || '',
       phone: apiAgency.phone || '',
       address: apiAgency.address || {
@@ -288,7 +288,7 @@ updateEndDate() {
   shareAgency(): void {
     if (navigator.share) {
       navigator.share({
-        title: this.agency?.agencyName,
+        title: this.agency?.name,
         text: this.agency?.agencyDescription,
         url: window.location.href
       });

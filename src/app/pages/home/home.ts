@@ -176,9 +176,9 @@ export class Home  implements OnInit {
       const lat = 12.35 + Math.random() * 0.05; // 12.35 à 12.40
       const lng = -1.55 + Math.random() * 0.07; // -1.55 à -1.48
       const popupContent = `
-        <b>${agency.agencyName}</b><br>
+        <b>${agency.name}</b><br>
         ${agency.address.city || ''}<br>
-        <button class="itineraire-btn" data-lat="${lat}" data-lng="${lng}" data-agency="${agency.agencyName}"><i class="material-icons">directions</i>Itinéraire</button>
+        <button class="itineraire-btn" data-lat="${lat}" data-lng="${lng}" data-agency="${agency.name}"><i class="material-icons">directions</i>Itinéraire</button>
       `;
       // agency.coordinates = { lat, lng };
       // Ajoute un marker sur la carte
@@ -186,12 +186,12 @@ export class Home  implements OnInit {
         const marker = L.marker([lat, lng]).addTo(this.map);
         // Ajoute un bouton avec un id unique basé sur l'index ou l'id de l'agence
         const popupContent = `
-          <b>${agency.agencyName}</b><br>
+          <b>${agency.name}</b><br>
           ${agency.address.city || ''}<br>
-          <button class="popup-btn itineraire-btn" data-lat="${lat}" data-lng="${lng}" data-agency="${agency.agencyName}">
+          <button class="popup-btn itineraire-btn" data-lat="${lat}" data-lng="${lng}" data-agency="${agency.name}">
             <i class="material-icons">directions</i>Itinéraire
           </button>
-          <button class="popup-btn start-btn" data-lat="${lat}" data-lng="${lng}" data-agency="${agency.agencyName}">
+          <button class="popup-btn start-btn" data-lat="${lat}" data-lng="${lng}" data-agency="${agency.name}">
             <i class="material-icons">play_arrow</i>Démarrer
           </button>
         `;
@@ -201,11 +201,11 @@ export class Home  implements OnInit {
           setTimeout(() => {
             const itinBtn = document.querySelector('.itineraire-btn') as HTMLButtonElement;
             if (itinBtn) {
-              itinBtn.onclick = () => this.showItineraryToAgency(lat, lng, agency.agencyName);
+              itinBtn.onclick = () => this.showItineraryToAgency(lat, lng, agency.name);
             }
             const startBtn = document.querySelector('.start-btn') as HTMLButtonElement;
             if (startBtn) {
-              startBtn.onclick = () => this.startLiveNavigation(lat, lng, agency.agencyName);
+              startBtn.onclick = () => this.startLiveNavigation(lat, lng, agency.name);
             }
           }, 1000);
         });
@@ -213,7 +213,7 @@ export class Home  implements OnInit {
     });
   }
 
-  startNavigation(destLat: number, destLng: number, agencyName: string) {
+  startNavigation(destLat: number, destLng: number, name: string) {
     // Exemple : ouvre Google Maps dans un nouvel onglet
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank');
   }
@@ -222,7 +222,7 @@ watchId: number | null = null;
 userLiveMarker: any = null;
 liveRouteLayer: any = null;
 
-startLiveNavigation(destLat: number, destLng: number, agencyName: string) {
+startLiveNavigation(destLat: number, destLng: number, name: string) {
   // Arrête le suivi précédent si besoin
   if (this.watchId) {
     navigator.geolocation.clearWatch(this.watchId);
@@ -402,7 +402,8 @@ private mapApiAgency(apiAgency: any): Agency {
     userId: apiAgency.userId || '',
     firstName: apiAgency.firstName || '',
     lastName: apiAgency.lastName || '',
-    agencyName: apiAgency.agencyName || '',
+    // agencyName: apiAgency.agencyName || '',
+    name: apiAgency.name || '',
     agencyDescription: apiAgency.agencyDescription || '',
     phone: apiAgency.phone || '',
     address: apiAgency.address || { 
@@ -500,7 +501,7 @@ generateRandomStarsList(): void {
     this.filteredAgencies.sort((a, b) => {
       switch (this.sortBy) {
         case 'name':
-          return a.agencyName.localeCompare(b.agencyName);
+          return a.name.localeCompare(b.name);
         case 'rating':
           return b.rating - a.rating;
         case 'price':

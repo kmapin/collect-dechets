@@ -193,7 +193,7 @@ export class Register implements OnInit {
       role: apiAgency.role || UserRole.MANAGER,
       firstName: apiAgency.firstName || '',
       lastName: apiAgency.lastName || '',
-      agencyName: apiAgency.agencyName || '',
+      name: apiAgency.name || '',
       agencyDescription: apiAgency.agencyDescription || '',
       phone: apiAgency.phone || '',
       address: apiAgency.address || {

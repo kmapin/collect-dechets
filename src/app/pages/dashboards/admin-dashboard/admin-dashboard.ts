@@ -266,7 +266,7 @@ isDisabled = true;
       next: (agencies) => {
         this.agencyAudits = agencies.data.map((agency) => ({
           id: agency?._id,
-          name: agency?.agencyName,
+          name: agency?.name,
           status: agency?.isActive ? "active" : "inactive",
           clients: agency?.clients?.length || 0,
           collectors: agency?.employees?.length || 0,

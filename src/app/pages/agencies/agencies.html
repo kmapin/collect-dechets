@@ -141,7 +141,7 @@
             <div *ngFor="let agency of filteredAgencies" class="agency-card card">
               <div class="agency-header">
                 <div class="agency-logo">
-                  <img [src]="'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.agencyName">
+                  <img [src]="'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'" [alt]="agency.name">
                 </div>
                 <!-- <div class="agency-badge" *ngIf="agency && agency.randomStars >= 1">
                   <i class="material-icons">star</i>
@@ -151,9 +151,9 @@
   
               
               <div class="agency-content">
-                <h3 class="agency-name">{{ agency.agencyName }}</h3>
-                <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
-                
+                <h3 class="agency-name">{{ agency.name }}</h3>
+                <p class="agency-description truncate">{{ agency?.agencyDescription }}</p>
+
                 <div class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full" >
                   <i *ngFor="let star of getStars(agency.rating, agency.randomStars)" class="material-icons star">star</i>
                 </div>
@@ -212,10 +212,10 @@
               <div class="agency-list-content">
                 <div class="agency-list-header">
                   <div class="agency-logo-small">
-                    <img src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" [alt]="agency.agencyName">
+                    <img src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" [alt]="agency.name">
                   </div>
                   <div class="agency-list-info">
-                    <h3 class="agency-name text-[--primary-color]">{{ agency.agencyName }}</h3>
+                    <h3 class="agency-name text-[--primary-color]">{{ agency.name }}</h3>
                     <!-- <div class="agency-rating">
                       <div class="stars">
                         <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
@@ -284,7 +284,7 @@
             <h3>Agences sur la carte</h3>
             <div class="map-agency-list">
               <div *ngFor="let agency of filteredAgencies" class="map-agency-item">
-                <h4>{{ agency.agencyName }}</h4>
+                <h4>{{ agency.name }}</h4>
                 <p>{{ agency.address.city || '-' }}</p>
                 <div class="agency-rating">
                   <div class="stars">
