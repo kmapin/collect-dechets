@@ -32,7 +32,14 @@
       <div class="container">
         <div class="dashboard-content">
           <!-- Statistiques principales -->
-          <div class="stats-grid">
+          <!-- Indicateur de chargement pour les statistiques -->
+          <app-loading-spinner 
+            *ngIf="isLoadingStatistics" 
+            message="Chargement des statistiques..." 
+            size="large">
+          </app-loading-spinner>
+
+          <div *ngIf="!isLoadingStatistics" class="stats-grid">
             <div class="stat-card card">
               <div class="stat-icon agencies">
                 <i class="material-icons">business</i>
@@ -297,6 +304,13 @@
                     Couverture Territoriale
                   </h3>
                   <div class="territory-stats scrollable-container">
+                    <!-- État vide pour la couverture territoriale -->
+                    <div *ngIf="!zoneStatistics?.length" class="empty-state">
+                      <i class="material-icons">map</i>
+                      <h3>Aucune donnée territoriale</h3>
+                      <p>Les données de couverture territoriale ne sont pas encore disponibles.</p>
+                    </div>
+
                     <!-- Boucle sur les pays -->
                     <div
                       *ngFor="let zone of zoneStatistics"
@@ -346,6 +360,13 @@
                   Alertes Récentes
                 </h3>
                 <div class="alerts-list">
+                  <!-- État vide pour les alertes récentes -->
+                  <div *ngIf="!getRecentIncidents()?.length" class="empty-state">
+                    <i class="material-icons">notifications_none</i>
+                    <h3>Aucune alerte récente</h3>
+                    <p>Aucun incident ou alerte n'a été signalé récemment.</p>
+                  </div>
+
                   <div
                     *ngFor="let incident of getRecentIncidents()"
                     class="alert-item"
@@ -502,7 +523,21 @@
                 </div>
               </div>
 
-              <div class="agencies-grid">
+              <!-- Indicateur de chargement pour les agences -->
+              <app-loading-spinner 
+                *ngIf="isLoadingAgencies" 
+                message="Chargement des agences..." 
+                size="medium">
+              </app-loading-spinner>
+
+              <div *ngIf="!isLoadingAgencies" class="agencies-grid">
+                <!-- État vide pour les agences -->
+                <div *ngIf="!filteredAgencies?.length" class="empty-state">
+                  <i class="material-icons">business</i>
+                  <h3>Aucune agence trouvée</h3>
+                  <p>Aucune agence ne correspond aux critères sélectionnés pour le moment.</p>
+                </div>
+
                 <div
                   *ngFor="let agency of filteredAgencies"
                   class="agency-audit-card card"
@@ -650,7 +685,21 @@
                 </div>
               </div>
 
-              <div class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+              <!-- Indicateur de chargement pour les clients -->
+              <app-loading-spinner 
+                *ngIf="isLoadingClients" 
+                message="Chargement des clients..." 
+                size="medium">
+              </app-loading-spinner>
+
+              <div *ngIf="!isLoadingClients" class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+                <!-- État vide pour les clients -->
+                <div *ngIf="!filteredClients?.length" class="empty-state">
+                  <i class="material-icons">people</i>
+                  <h3>Aucun client trouvé</h3>
+                  <p>Aucun client ne correspond aux critères sélectionnés pour le moment.</p>
+                </div>
+
                 <ng-container
                   *ngIf="filteredClients.length > 0; else noClients"
                 >
@@ -790,7 +839,21 @@
                 </div>
               </div>
 
-              <div class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+              <!-- Indicateur de chargement pour les collecteurs -->
+              <app-loading-spinner 
+                *ngIf="isLoadingCollectors" 
+                message="Chargement des collecteurs..." 
+                size="medium">
+              </app-loading-spinner>
+
+              <div *ngIf="!isLoadingCollectors" class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+                <!-- État vide pour les collecteurs -->
+                <div *ngIf="!filteredCollectors?.length" class="empty-state">
+                  <i class="material-icons">local_shipping</i>
+                  <h3>Pas de collecteur pour l'instant</h3>
+                  <p>Aucun collecteur disponible actuellement.</p>
+                </div>
+
                 <div class="col" *ngFor="let collector of filteredCollectors">
                   <mat-card class=" client-audit-card client-card">
                     <mat-card-header>
@@ -1010,7 +1073,21 @@
                 </div>
               </div>
 
-              <div class="incidents-list grid-2">
+              <!-- Indicateur de chargement pour les incidents -->
+              <app-loading-spinner 
+                *ngIf="isLoadingIncidents" 
+                message="Chargement des incidents..." 
+                size="medium">
+              </app-loading-spinner>
+
+              <div *ngIf="!isLoadingIncidents" class="incidents-list grid-2">
+                <!-- État vide pour les incidents -->
+                <div *ngIf="!filteredIncidents?.length" class="empty-state">
+                  <i class="material-icons">report_problem</i>
+                  <h3>Aucun incident trouvé</h3>
+                  <p>Aucun incident ne correspond aux critères sélectionnés pour le moment.</p>
+                </div>
+
                 <div
                   *ngFor="let incident of filteredIncidents"
                   class="incident-card card"

@@ -13,7 +13,8 @@ import { Admin } from "../../../services/admin";
 import { MatCardModule } from "@angular/material/card";
 import { ClientService } from "../../../services/client.service";
 import { SharedService } from "../../../services/shared-service";
-import { forkJoin, map, of } from "rxjs";
+import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
+import { forkJoin, map, of, timeout, catchError } from "rxjs";
 import {
   MOCK_CITIES,
   MOCK_ARRONDISSEMENTS,
@@ -115,7 +116,7 @@ interface Communication {
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [CommonModule, RouterModule, FormsModule, MatCardModule],
+  imports: [CommonModule, RouterModule, FormsModule, MatCardModule, LoadingSpinnerComponent],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css'
 })
@@ -165,6 +166,16 @@ export class AdminDashboard implements OnInit {
   statisticsPeriod = "month";
   incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
   severityFilter: "all" | "low" | "medium" | "high" | "critical" = "all";
+
+  // Loading states
+  isLoadingStatistics = false;
+  isLoadingAgencies = false;
+  isLoadingClients = false;
+  isLoadingCollectors = false;
+  isLoadingIncidents = false;
+  isLoadingCommunications = false;
+  isLoadingWasteStats = false;
+  isLoadingZoneStats = false;
 
   // Modals
   showCommunicationModal = false;
@@ -250,6 +261,7 @@ isDisabled = true;
   }
 
   loadAgencyAudits(): void {
+    this.isLoadingAgencies = true;
     this.agencyService.getAllAgenciesFromApi().subscribe({
       next: (agencies) => {
         this.agencyAudits = agencies.data.map((agency) => ({
@@ -269,9 +281,14 @@ isDisabled = true;
           issues: [],
         }));
         this.filteredAgencies = [...this.agencyAudits];
+        this.isLoadingAgencies = false;
         console.log(" this.agencyAudits", this.agencyAudits);
         console.log(" this.agencies", agencies);
       },
+      error: (error) => {
+        console.error('Erreur lors du chargement des agences:', error);
+        this.isLoadingAgencies = false;
+      }
     });
     // this.agencyAudits = [
     //   {
@@ -582,7 +599,7 @@ isDisabled = true;
   }
 
   getRecentIncidents(): Incident[] {
-    return this.incidents.slice(0, 5);
+    return this.incidents?.slice(0, 5) || [];
   }
 
   getSeverityIcon(severity: string): string {
@@ -940,17 +957,24 @@ viewClientDetails(clientId: string): void {
 
   // Statistics
   showAdminStatistics(): void {
+    this.isLoadingStatistics = true;
     this.adminService.getAllStatistics().subscribe({
       next: (statistics: any) => {
         this.statisticsAdmin = statistics;
+        this.isLoadingStatistics = false;
         console.log(this.statisticsAdmin);
       },
+      error: (error) => {
+        console.error('Erreur lors du chargement des statistiques:', error);
+        this.isLoadingStatistics = false;
+      }
     });
   }
 
   //clients
 
   showAdminClients(): void {
+    this.isLoadingClients = true;
     this.clientService.getAllClients().subscribe({
       next: (response: any) => {
         this.clientsAudits = response?.data.map((client: any) => {
@@ -963,8 +987,13 @@ viewClientDetails(clientId: string): void {
           };
         });
         this.filteredClients = [...this.clientsAudits];
+        this.isLoadingClients = false;
         console.log("clients in dashboard", this.filteredClients);
       },
+      error: (error) => {
+        console.error('Erreur lors du chargement des clients:', error);
+        this.isLoadingClients = false;
+      }
     });
   }
 
@@ -979,52 +1008,93 @@ viewClientDetails(clientId: string): void {
     });
   }
   loadAllCollectors(): void {
-    this.adminService.getAllEmployees().subscribe({
-      next: (response: any) => {
-        const collectors = response?.data || [];
+    this.isLoadingCollectors = true;
+    
+    // Ajouter un timeout de 30 secondes pour éviter le chargement infini
+    this.adminService.getAllEmployees()
+      .pipe(
+        timeout(30000), // 30 secondes
+        catchError(error => {
+          console.error('Erreur lors du chargement des collecteurs:', error);
+          this.isLoadingCollectors = false;
+          this.collectorsAudits = [];
+          this.filteredCollectors = [];
+          return of({ data: [] }); // Retourner un observable vide
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const collectors = response?.data || [];
 
-        const collectorsWithAgencies$ = collectors.map((employee: any) => {
-          const agency$ = this.agencies.includes(employee.agencyId)
-            ? this.agencyService.getAgencyById1(employee.agencyId)
-            : of({ data: { agencyName: "" } });
+          if (collectors.length === 0) {
+            this.collectorsAudits = [];
+            this.filteredCollectors = [];
+            this.isLoadingCollectors = false;
+            return;
+          }
 
-          return agency$.pipe(
-            map((agencyResponse: any) => {
-              return {
-                agency: {
-                  agencyName: agencyResponse?.data?.agencyName || "",
-                  agencyId: agencyResponse?.data?._id || "",
-                  address: {
-                    city: agencyResponse?.data?.address?.city || "",
-                    quartier: agencyResponse?.data?.address?.neighborhood || "",
-                    postalCode: agencyResponse?.data?.address?.postalCode || "",
-                    sector: agencyResponse?.data?.address?.sector || "",
-                    street: agencyResponse?.data?.address?.street || "",
+          const collectorsWithAgencies$ = collectors.map((employee: any) => {
+            const agency$ = this.agencies.includes(employee.agencyId)
+              ? this.agencyService.getAgencyById1(employee.agencyId)
+              : of({ data: { agencyName: "" } });
+
+            return agency$.pipe(
+              timeout(10000), // 10 secondes par agence
+              catchError(() => of({ data: { agencyName: "" } })), // En cas d'erreur, retourner des données vides
+              map((agencyResponse: any) => {
+                return {
+                  agency: {
+                    agencyName: agencyResponse?.data?.agencyName || "",
+                    agencyId: agencyResponse?.data?._id || "",
+                    address: {
+                      city: agencyResponse?.data?.address?.city || "",
+                      quartier: agencyResponse?.data?.address?.neighborhood || "",
+                      postalCode: agencyResponse?.data?.address?.postalCode || "",
+                      sector: agencyResponse?.data?.address?.sector || "",
+                      street: agencyResponse?.data?.address?.street || "",
+                    },
                   },
-                },
-                createdAt: employee?.createdAt || "",
-                email: employee?.email || "",
-                firstName: employee?.firstName || "",
-                hiredAt: employee?.hiredAt || "",
-                isActive: employee?.isActive ? "active" : "inactive",
-                lastName: employee?.lastName || "",
-                phone: employee?.phone || "",
-                role: employee?.role || "",
-                updatedAt: employee?.updatedAt || "",
-                userId: employee?.userId || "",
-                zones: employee?.zones || [],
-              };
-            })
-          );
-        });
+                  createdAt: employee?.createdAt || "",
+                  email: employee?.email || "",
+                  firstName: employee?.firstName || "",
+                  hiredAt: employee?.hiredAt || "",
+                  isActive: employee?.isActive ? "active" : "inactive",
+                  lastName: employee?.lastName || "",
+                  phone: employee?.phone || "",
+                  role: employee?.role || "",
+                  updatedAt: employee?.updatedAt || "",
+                  userId: employee?.userId || "",
+                  zones: employee?.zones || [],
+                };
+              })
+            );
+          });
 
-        forkJoin(collectorsWithAgencies$).subscribe((result: any) => {
-          this.collectorsAudits = result;
-          this.filteredCollectors = [...this.collectorsAudits];
-          console.log("collectors in dashboard", this.filteredCollectors);
-        });
-      },
-    });
+          forkJoin(collectorsWithAgencies$)
+            .pipe(
+              timeout(60000), // 1 minute pour toutes les requêtes
+              catchError(error => {
+                console.error('Erreur lors du chargement des agences des collecteurs:', error);
+                this.isLoadingCollectors = false;
+                this.collectorsAudits = [];
+                this.filteredCollectors = [];
+                return of([]);
+              })
+            )
+            .subscribe((result: any) => {
+              this.collectorsAudits = result || [];
+              this.filteredCollectors = [...this.collectorsAudits];
+              this.isLoadingCollectors = false;
+              console.log("collectors in dashboard", this.filteredCollectors);
+            });
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des collecteurs:', error);
+          this.isLoadingCollectors = false;
+          this.collectorsAudits = [];
+          this.filteredCollectors = [];
+        }
+      });
   }
   getInitials(fullName: string) {
     return this.sharedService.getInitials(fullName);
@@ -1084,6 +1154,7 @@ viewClientDetails(clientId: string): void {
   }
   /**Listes des signalements des users */
   loadAllSignalements() {
+    this.isLoadingIncidents = true;
     this.adminService.getAllReports().subscribe({
       next: (response: any) => {
         this.incidents = response.map((signalement: any) => {
@@ -1093,9 +1164,14 @@ viewClientDetails(clientId: string): void {
           };
         });
         this.filteredIncidents = [...this.incidents];
+        this.isLoadingIncidents = false;
         console.log("signalements in response", response);
         console.log("signalements in dashboard", this.filteredIncidents);
       },
+      error: (error) => {
+        console.error('Erreur lors du chargement des incidents:', error);
+        this.isLoadingIncidents = false;
+      }
     });
   }
   //naviguate to add Municipality
