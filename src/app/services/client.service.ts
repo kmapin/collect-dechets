@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -68,7 +68,8 @@ export class ClientService {
 
 
   getAllClients(): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/clients`).pipe(
+    let requestParams = new HttpParams().append('role', 'client');
+    return this.http.get(`${environment.apiUrl}/users`, { params: requestParams }).pipe(
       map((response: any) => {
         console.log('API > getAllClients:', response);
         return response;

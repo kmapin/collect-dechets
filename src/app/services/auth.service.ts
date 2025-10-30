@@ -167,7 +167,11 @@ export class AuthService {
   // ------------------------------------------------------------- Forgot password 
 
   forgotPassword$(email: string): Observable<{ success: boolean; message?: string; error?: string }> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/forgotPassword`, { email }).pipe(
+    const object = { 
+      "email" : email
+    };
+    console.log('API > ForgotPassword:', object);
+    return this.http.post<any>(`${environment.apiUrl}/forgot-password`, object).pipe(
       map(response => {
         console.log('API > ForgotPassword:', response);
 
@@ -185,7 +189,7 @@ export class AuthService {
 
 
   verifyCode$(email: string, code: string): Observable<{ success: boolean; message?: string; error?: string; resetToken?: string }> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/verifyCode`, { email, code }).pipe(
+    return this.http.post<any>(`${environment.apiUrl}/verify-reset-code`, { email, code }).pipe(
       map(response => {
         console.log('API > VerifyCode:', response);
         if (response?.resetToken) {
@@ -216,9 +220,9 @@ export class AuthService {
     console.log('Envoi à API :', {
       newPassword,
       confirmNewPassword,
-      tokenUrl: `${environment.apiUrl}/auth/resetPassword/${token}`
+      tokenUrl: `${environment.apiUrl}/reset-password/${token}`
     });
-    return this.http.post<any>(`${environment.apiUrl}/auth/resetPassword/${token}`, {
+    return this.http.post<any>(`${environment.apiUrl}/reset-password/${token}`, {
       newPassword,
       confirmNewPassword
     }).pipe(
@@ -369,7 +373,8 @@ export class AuthService {
         neighborhood: userData.address.neighborhood,
         city: userData.address.city,
         postalCode: userData.address.postalCode,
-        location: userData.address.location
+        longitude: userData.address.longitude,
+        latitude: userData.address.latitude
       },
       acceptTerms: userData.acceptTerms,
       receiveOffers: userData.receiveOffers,
@@ -396,7 +401,8 @@ export class AuthService {
           gestionnaires: [],
           documents: [],
           status: userData.agency?.status,
-          location: userData.agency?.location
+          longitude: userData.address.longitude,
+          latitude: userData.address.latitude
         }
       };
       console.log('[DEBUG] Final agency data:', agencyData);
@@ -491,10 +497,8 @@ export class AuthService {
         neighborhood: 'Test',
         city: 'Dakar',
         postalCode: '10000',
-        location: {
-          type: 'Point',
-          coordinates: [-17.444, 14.692]
-        }
+        longitude: -17.444,
+        latitude: 14.692,
       },
       status: 'active',
       acceptTerms: true,

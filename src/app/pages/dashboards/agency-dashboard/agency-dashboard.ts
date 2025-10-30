@@ -48,6 +48,7 @@ import {
   Sector,
 } from "../../../models/countries-org.model";
 import { MatIcon } from "@angular/material/icon";
+import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
 
 interface Client {
   id: string;
@@ -106,7 +107,8 @@ interface Statistics {
     FormsModule,
     ReactiveFormsModule,
     MatExpansionModule,
-    MatIcon
+    MatIcon,
+    LoadingSpinnerComponent
   ],
   templateUrl: './agency-dashboard.html',
   styleUrl: './agency-dashboard.css'
@@ -264,6 +266,18 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   activeClientNbrs!: number;
   pendingClients: ClientApi[] = [];
   isLoading: boolean = false;
+  
+  // Variables de state de chargement pour chaque section
+  isLoadingStatistics: boolean = false;
+  isLoadingCollections: boolean = false;
+  isLoadingEmployees: boolean = false;
+  isLoadingZones: boolean = false;
+  isLoadingClients: boolean = false;
+  isLoadingReports: boolean = false;
+  isLoadingMessages: boolean = false;
+  isLoadingTariffs: boolean = false;
+  isLoadingSchedules: boolean = false;
+  
   // get activeClientNbr(): number {
   //   return this.activeClients.length;
   // }
@@ -601,6 +615,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   }
 
   userMessages() {
+    this.isLoadingMessages = true;
     this.messageService
       .getMessagesForUser(this.currentUser?.userId || "")
       .subscribe({
@@ -613,9 +628,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
               this.connectedUserMessages
             );
           }
+          this.isLoadingMessages = false;
         },
         error: (error: any) => {
           console.error("API > getMessagesForUser:", error);
+          this.isLoadingMessages = false;
         },
       });
   }
@@ -822,6 +839,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     //this.updateTabs(); // Mettez à jour les tabs après avoir récupéré les clients
   }
   loadCollectors(currentUser: any): void {
+    this.isLoadingEmployees = true;
     if (currentUser?._id) {
       this.agencyService
         .getAgencyEmployeesByRole$(currentUser._id, EmployeeRole.COLLECTOR)
@@ -832,9 +850,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
               "Collecteurs chargés via l api service  :",
               this.collectors
             );
+            this.isLoadingEmployees = false;
           },
           (error) => {
             console.error("Erreur lors du chargement des collecteurs :", error);
+            this.isLoadingEmployees = false;
           }
         );
     } else {
@@ -847,9 +867,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
               "Collecteurs chargés via l api service  :",
               this.collectors
             );
+            this.isLoadingEmployees = false;
           },
           (error) => {
             console.error("Erreur lors du chargement des collecteurs :", error);
+            this.isLoadingEmployees = false;
           }
         );
     }
@@ -1009,6 +1031,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
 
   loadEmployees(currentUser: any): void {
     if (currentUser?._id) {
+      this.isLoadingEmployees = true;
       this.agencyService.getAgencyAllEmployees(currentUser?._id).subscribe({
         next: (employees) => {
           this.allEmployees = employees;
@@ -1018,6 +1041,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             employeesTab.badge = employees.length;
             this.cdr.detectChanges();
           }
+          this.isLoadingEmployees = false;
         },
         error: (error) => {
           console.error("Erreur lors du chargement des employés :", error);
@@ -1025,6 +1049,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             "Erreur",
             "Impossible de charger les employés. Veuillez réessayer."
           );
+          this.isLoadingEmployees = false;
         },
       });
     } else {
@@ -1050,6 +1075,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   //chargement des signalements
   loadAgencyReports(currentUser: any): void {
     if (currentUser && currentUser._id) {
+      this.isLoadingReports = true;
       const agencyId = currentUser._id;
       this.agencyService.getAgencyReports$(agencyId).subscribe({
         next: (reports: any) => {
@@ -1066,6 +1092,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             repportTab.badge = this.statistics.pendingSignalements;
             this.cdr.detectChanges();
           }
+          this.isLoadingReports = false;
         },
         error: (error) => {
           console.error("Erreur lors du chargement des signalements :", error);
@@ -1073,6 +1100,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             "Erreur",
             "Impossible de charger les signalements. Veuillez réessayer."
           );
+          this.isLoadingReports = false;
         },
       });
     } else {
@@ -1083,11 +1111,13 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   //recuperations des statistiques de l'agence
   loadAgencyStatistics(currentUser: any): void {
     if (currentUser && currentUser._id) {
+      this.isLoadingStatistics = true;
       const agencyId = currentUser._id;
       this.agencyService.getAgencyStats$(agencyId).subscribe({
         next: (statistics) => {
           this.statistics = statistics;
           console.log("Statistiques de l'agence chargées :", this.statistics);
+          this.isLoadingStatistics = false;
           this.cdr.detectChanges();
         },
         error: (error) => {
@@ -1099,6 +1129,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             "Erreur",
             "Impossible de charger les statistiques de l'agence. Veuillez réessayer."
           );
+          this.isLoadingStatistics = false;
         },
       });
     } else {
@@ -1147,6 +1178,8 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   loadClients(): void {
     console.log("[loadClients] called, agency:", this.agency);
     if (!this.agency || !this.agency?._id) return;
+    
+    this.isLoadingClients = true;
     this.clientService.getClientsByAgency(this.agency._id).subscribe({
       next: (clients) => {
         console.log(
@@ -1186,11 +1219,13 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             }
           }
         }
+        this.isLoadingClients = false;
       },
       error: (err) => {
         console.error("[loadClients] error:", err);
         this.activeClients = [];
         this.pendingClients = [];
+        this.isLoadingClients = false;
       },
     });
   }
@@ -1769,11 +1804,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   // recuperations des tarifs liee a une agences
   tariffs: Tariff[] = [];
   loadTariffs(): void {
-    this.isLoading = true;
+    this.isLoadingTariffs = true;
     const agencyId = this.currentUser?._id;
     if (!agencyId) {
       console.error("[DEBUG] Aucun tarif trouvé pour cette agence");
-      this.isLoading = false;
+      this.isLoadingTariffs = false;
       return;
     }
 
@@ -1781,11 +1816,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
       next: (data: Tariff[]) => {
         this.tariffs = data;
         console.log("Tarifs récupérés :", this.tariffs);
-        this.isLoading = false;
+        this.isLoadingTariffs = false;
       },
       error: (error) => {
         // console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
-        this.isLoading = false;
+        this.isLoadingTariffs = false;
       },
     });
   }
@@ -1793,7 +1828,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   schedules: CollectionSchedule[] = [];
 
   loadPlannings(): void {
-    this.isLoading = true;
+    this.isLoadingSchedules = true;
     const agencyId = this.currentUser?._id;
 
     if (!agencyId) {
@@ -1812,14 +1847,14 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
           schedulesTab.badge = this.schedules.length;
         }
 
-        this.isLoading = false;
+        this.isLoadingSchedules = false;
       },
       error: (error) => {
         console.error(
           "[DEBUG] Erreur lors du chargement des plannings :",
           error
         );
-        this.isLoading = false;
+        this.isLoadingSchedules = false;
       },
     });
   }
@@ -2295,7 +2330,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   zones: any[] = [];
   //recuperation des zones
   loadZones(currentUser: any): void {
-    this.isLoading = true;
+    this.isLoadingZones = true;
     if (currentUser && currentUser._id) {
       const agencyId = currentUser._id;
       this.agencyService.getAllzones$(agencyId).subscribe({
@@ -2306,6 +2341,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
           if (ZonesTab) {
             ZonesTab.badge = this.zones.length;
           }
+          this.isLoadingZones = false;
         },
         error: (error) => {
           console.error(
@@ -2316,6 +2352,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             "Erreur",
             "Erreur lors du chargement des Zones de l agence."
           );
+          this.isLoadingZones = false;
         },
       });
     } else {
@@ -2380,7 +2417,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   dayCollectes: any[] = [];
 
   loadCollectDay(): void {
-    this.isLoading = true;
+    this.isLoadingCollections = true;
     const agencyId = this.currentUser?._id;
 
     if (!agencyId) {
@@ -2391,7 +2428,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
         "Erreur",
         "Aucune agence sélectionnée."
       );
-      this.isLoading = false;
+      this.isLoadingCollections = false;
       return;
     }
     this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
@@ -2402,7 +2439,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
         if (CollectesTab) {
           CollectesTab.badge = this.dayCollectes.length;
         }
-        this.isLoading = false;
+        this.isLoadingCollections = false;
       },
       error: (error) => {
         console.error("Erreur récupération collectes :", error);
@@ -2410,7 +2447,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
           error?.error?.message || "Impossible de récupérer les collectes.";
         this.notificationService.showError("Erreur", message);
 
-        this.isLoading = false;
+        this.isLoadingCollections = false;
       },
     });
   }
