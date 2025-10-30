@@ -140,7 +140,7 @@ currentUser!: any ;
       userId: apiAgency.userId || '',
       firstName: apiAgency.firstName || '',
       lastName: apiAgency.lastName || '',
-      name: apiAgency.agencyName || '',
+      name: apiAgency.name || '',
       // agencyName: apiAgency.agencyName || '',
       agencyDescription: apiAgency.agencyDescription || '',
       phone: apiAgency.phone || '',

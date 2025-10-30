@@ -245,7 +245,7 @@ export class AgencyService {
    * Récupère une agence spécifique depuis l'API backend
    */
   getAgencyByIdFromApi(id: string | null): Observable<{ success: boolean; data: Agency }> {
-    return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agences/recuperation/${id}`);
+    return this.http.get<{ success: boolean; data: Agency }>(`${environment.apiUrl}/agencies/${id}`);
   }
 
   getAgencyById1(id: string): Observable<any> {
