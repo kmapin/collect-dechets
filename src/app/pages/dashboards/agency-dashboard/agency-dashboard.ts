@@ -20,7 +20,7 @@ import { AuthService } from "../../../services/auth.service";
 import { AgencyService } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
-import { User, UserRole } from "../../../models/user.model";
+import { User, UserRole, AddEmployeeData, UserAddress } from "../../../models/user.model";
 import {
   Agency,
   Employee,
@@ -224,6 +224,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
 
   // Modals
   showAddEmployeeModal = false;
+  showPassword = false;
+  showConfirmPassword = false;
+  employeeFormError: string | null = null;
+  employeeFormDetailedErrors: any = {};
+  Object = Object; // Pour utiliser Object.keys dans le template
   showUpdateEmployeeModal = false;
   showZoneModal = false;
   showZoneModalcouverture = false;
@@ -361,15 +366,30 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
       }
     );
 
-    // Formulaire d'employé
+    // Formulaire d'employé - selon le schéma Swagger requis
     this.employeeForm = this.fb.group({
       firstName: ["", [Validators.required, Validators.minLength(2)]],
       lastName: ["", [Validators.required, Validators.minLength(2)]],
       email: ["", [Validators.required, Validators.email]],
+      password: ["", [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ["", [Validators.required]],
       phone: ["", [Validators.required, Validators.pattern(/^[0-9+\-\s]+$/)]],
       role: ["", Validators.required],
-      zones: [[], Validators.required]
-    });
+      // Address fields (requis selon le schéma)
+      address: this.fb.group({
+        street: ["", Validators.required],
+        arrondissement: ["", Validators.required],
+        sector: ["", Validators.required],
+        doorNumber: ["", Validators.required],
+        doorColor: [""],
+        neighborhood: ["", Validators.required],
+        city: ["", Validators.required],
+        postalCode: ["", Validators.required],
+        latitude: [null],
+        longitude: [null]
+      }),
+      zones: [[]] // Validation dynamique selon le rôle
+    }, { validators: this.passwordMatchValidator });
 
     // Formulaire de tarif
     this.tariffForm = this.fb.group({
@@ -489,12 +509,125 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   // Méthodes pour gérer les modals
   openAddEmployeeModal(): void {
     this.employeeForm.reset();
+    this.employeeFormError = null;
+    this.employeeFormDetailedErrors = {};
     this.showAddEmployeeModal = true;
   }
 
   closeAddEmployeeModal(): void {
     this.showAddEmployeeModal = false;
     this.employeeForm.reset();
+    this.showPassword = false;
+    this.showConfirmPassword = false;
+    this.employeeFormError = null;
+    this.employeeFormDetailedErrors = {};
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  // Validateur personnalisé pour la correspondance des mots de passe
+  passwordMatchValidator(form: FormGroup) {
+    const password = form.get('password');
+    const confirmPassword = form.get('confirmPassword');
+    
+    if (password && confirmPassword && password.value !== confirmPassword.value) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+    } else if (confirmPassword?.hasError('passwordMismatch')) {
+      confirmPassword.setErrors(null);
+    }
+    
+    return null;
+  }
+
+  // Gérer la validation des zones en fonction du rôle
+  onRoleChange(): void {
+    const roleControl = this.employeeForm.get('role');
+    const zonesControl = this.employeeForm.get('zones');
+    
+    if (roleControl && zonesControl) {
+      // Les zones sont toujours optionnelles, même pour les collecteurs
+      zonesControl.clearValidators();
+      
+      if (roleControl.value === 'manager') {
+        // Pour les managers, on vide les zones
+        zonesControl.setValue([]);
+        console.log('Manager sélectionné - zones vidées');
+      } else {
+        console.log('Collecteur sélectionné - zones optionnelles');
+      }
+      
+      zonesControl.updateValueAndValidity();
+      
+      // Debug: vérifier l'état du formulaire
+      console.log('Formulaire valide ?', this.employeeForm.valid);
+      console.log('Erreurs du formulaire :', this.employeeForm.errors);
+    }
+  }
+
+  // Vérifier si le formulaire employé est valide
+  isEmployeeFormValid(): boolean {
+    const role = this.employeeForm.get('role')?.value;
+    const zones = this.employeeForm.get('zones')?.value || [];
+    
+    console.log('=== DEBUG isEmployeeFormValid ===');
+    console.log('Role:', role);
+    console.log('Zones:', zones);
+    console.log('Form valid:', this.employeeForm.valid);
+    console.log('Form errors:', this.employeeForm.errors);
+    
+    // Debug de chaque champ
+    Object.keys(this.employeeForm.controls).forEach(key => {
+      const control = this.employeeForm.get(key);
+      if (control && control.invalid) {
+        console.log(`Champ ${key} invalide:`, control.errors);
+      }
+    });
+    
+    // Les zones sont optionnelles pour tous les rôles
+    const result = this.employeeForm.valid;
+    console.log('Formulaire valide (zones optionnelles):', result);
+    return result;
+  }
+
+  // Vérifier si un champ a une erreur spécifique du backend
+  hasBackendFieldError(fieldName: string): boolean {
+    return this.employeeFormDetailedErrors && this.employeeFormDetailedErrors[fieldName];
+  }
+
+  // Obtenir l'erreur backend pour un champ spécifique
+  getBackendFieldError(fieldName: string): string {
+    return this.employeeFormDetailedErrors?.[fieldName] || '';
+  }
+
+  // Effacer les erreurs backend quand l'utilisateur modifie un champ
+  clearBackendErrors(): void {
+    this.employeeFormError = null;
+    this.employeeFormDetailedErrors = {};
+  }
+
+  // Helper pour obtenir les clés des erreurs détaillées
+  getDetailedErrorKeys(): string[] {
+    return this.employeeFormDetailedErrors ? Object.keys(this.employeeFormDetailedErrors) : [];
+  }
+
+  // Vérifier s'il y a des erreurs détaillées
+  hasDetailedErrors(): boolean {
+    return this.getDetailedErrorKeys().length > 0;
+  }
+
+  // Debug: Afficher toutes les informations d'erreur (à supprimer en production)
+  debugEmployeeErrors(): void {
+    console.log('=== DEBUG ERREURS EMPLOYÉ ===');
+    console.log('employeeFormError:', this.employeeFormError);
+    console.log('employeeFormDetailedErrors:', this.employeeFormDetailedErrors);
+    console.log('Clés des erreurs détaillées:', this.getDetailedErrorKeys());
+    console.log('hasDetailedErrors():', this.hasDetailedErrors());
   }
 
   openZoneModal(): void {
@@ -558,20 +691,20 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyStatistics(this.currentUser);
     this.loadAgencyData();
-    this.loadCollectors(this.currentUser);
+    // this.loadCollectors(this.currentUser);
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
-    this.loadTariffs();
-    this.loadPlannings();
-    this.loadCollectorPlannings();
+    // this.loadTariffs();
+    // this.loadPlannings();
+    // this.loadCollectorPlannings();
     this.cdr.detectChanges();
     this.loadZones(this.currentUser);
     this.loadCollectDay();
     this.getAllCountries();
 
-    setInterval(() => {
-      this.loadCollectDay();
-    }, 30000);
+    // setInterval(() => {
+    //   this.loadCollectDay();
+    // }, 30000);
     this.loadCollectHistory();
     this.filterIncidents();
     this.countUnreadMessages();
@@ -1650,66 +1783,86 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   }
 
   addEmployee(): void {
-    if (this.employeeForm.valid) {
+    // console.log('Tentative d\'ajout d\'employé...');
+    // console.log('Formulaire valide ?', this.employeeForm.valid);
+    // console.log('isEmployeeFormValid ?', this.isEmployeeFormValid());
+    // console.log('currentUser.agencyId ?', this.currentUser?.agencyId);
+    
+    if (this.isEmployeeFormValid() && this.currentUser?.agencyId) {
       const formValue = this.employeeForm.value;
-      const employee: Employees = {
-        _id: Math.random().toString(36).substr(2, 9),
+      const employeeData: AddEmployeeData = {
         firstName: formValue.firstName,
         lastName: formValue.lastName,
         email: formValue.email,
+        password: formValue.password,
         phone: formValue.phone,
-        role: formValue.role,
-        zones: formValue.zones,
-        isActive: true,
-        hiredAt: new Date(),
+        role: formValue.role as UserRole,
+        address: formValue.address as UserAddress,
+        agencyId: this.currentUser.agencyId 
+       
       };
 
-      this.agencyService.addEmployee(employee).subscribe({
+      this.agencyService.addEmployeeToAgency(employeeData).subscribe({
         next: (response: any) => {
           this.isLoading = false;
-          console.log("[DEBUG] Réponse inscription collector:", response);
-          const isSuccess =
-            response.success ||
-            response.status === "success" ||
-            (typeof response.message === "string" &&
-              (response.message.toLowerCase().includes("succès") ||
-                response.message.toLowerCase().includes("réussi"))) ||
-            !!response;
-
-          if (isSuccess) {
+          console.log("[DEBUG] Réponse inscription employee:", response);
+          
+          if (response.success) {
+            // Succès - réinitialiser les erreurs
+            this.employeeFormError = null;
+            this.employeeFormDetailedErrors = {};
+            
             this.notificationService.showSuccess(
-              "Inscription réussie",
-              "Le collaborateur a été créé avec succès ! Vous pouvez maintenant vous connecter."
+              "Employé ajouté avec succès",
+              response.message || "L'employé a été créé avec succès !"
             );
-            // 🔄 Recharger la liste après ajout
+            
+            //  Recharger la liste après ajout
             this.loadEmployees(this.currentUser);
-            this.employeeForm.reset(); // Reset du formulaire
+            this.employeeForm.reset();
             this.showAddEmployeeModal = false;
           } else {
-            const errorMsg = this.getFriendlyMessage(
-              response?.message || response?.error || "",
-              false
-            );
+            // Erreur - afficher les erreurs exactes du backend
+            console.log('=== ERREUR BACKEND ===');
+            console.log('Réponse complète:', response);
+            console.log('Erreur extraite:', response.error);
+            console.log('Erreurs détaillées:', response.detailedErrors);
+            
+            this.employeeFormError = response.error || "Erreur lors de l'ajout de l'employé";
+            this.employeeFormDetailedErrors = response.detailedErrors || {};
+            
+            console.error('Message affiché à l\'utilisateur:', this.employeeFormError);
+            console.error('Erreurs détaillées affichées:', this.employeeFormDetailedErrors);
+            
+            // Afficher aussi une notification
             this.notificationService.showError(
-              "Erreur lors de l'inscription",
-              errorMsg
+              "Erreur lors de l'ajout",
+              this.employeeFormError || "Erreur inconnue"
             );
           }
         },
-        error: (error) => {
+        error: (errorResponse) => {
           this.isLoading = false;
-          const errorMsg = this.getFriendlyMessage(
-            error?.error?.message ||
-              error?.error?.message ||
-              error?.error ||
-              "",
-            false
-          );
+          console.log('=== ERREUR HTTP ===');
+          console.log('Erreur complète:', errorResponse);
+          
+          // Cette fonction ne devrait normalement pas être appelée car 
+          // les erreurs du backend sont gérées dans le service
+          // Mais si elle l'est, on affiche l'erreur directement du service
+          if (errorResponse.error) {
+            this.employeeFormError = errorResponse.error;
+            this.employeeFormDetailedErrors = errorResponse.detailedErrors || {};
+          } else {
+            this.employeeFormError = "Erreur de communication avec le serveur";
+            this.employeeFormDetailedErrors = {};
+          }
+          
+          console.log('Message d\'erreur final (dashboard):', this.employeeFormError);
+          
           this.notificationService.showError(
-            "Erreur lors de l'inscription",
-            errorMsg
+            "Erreur lors de l'ajout",
+            this.employeeFormError || "Erreur inconnue"
           );
-          this.loadEmployees(this.currentUser);
         },
       });
     } else {

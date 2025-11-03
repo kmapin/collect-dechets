@@ -168,6 +168,19 @@ export interface RegisterUserData {
   };
 }
 
+// Interface for adding employee to agency
+export interface AddEmployeeData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: UserRole; // Should be 'manager' or 'collector'
+  phone: string;
+  address: UserAddress;
+  agencyId: string; // Required for employee creation
+  isOwnerAgency?: boolean; // false for manager, true for collector
+}
+
 // Interface for registration response from backend
 export interface RegisterResponse {
   success: boolean;

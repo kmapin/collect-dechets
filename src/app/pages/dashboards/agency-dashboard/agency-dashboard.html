@@ -1072,6 +1072,22 @@
                     <i class="material-icons">close</i>
                   </button>
                 </div>
+                
+                <!-- Zone d'affichage des erreurs -->
+                <div *ngIf="employeeFormError" class="error-alert">
+                  <div class="error-alert-content">
+                    <i class="material-icons">error</i>
+                    <div class="error-details">
+                      <strong>{{ employeeFormError }}</strong>
+                      <ul *ngIf="hasDetailedErrors()" class="detailed-errors">
+                        <li *ngFor="let error of getDetailedErrorKeys()">
+                          <strong>{{ error }}:</strong> {{ employeeFormDetailedErrors[error] }}
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                
                 <form class="employee-form" [formGroup]="employeeForm" (ngSubmit)="addEmployee()">
                   <div class="form-row">
                     <div class="form-group">
@@ -1105,11 +1121,15 @@
                       type="email"
                       formControlName="email"
                       class="form-input"
-                      [class.error]="hasFieldError('employee', 'email')"
+                      [class.error]="hasFieldError('employee', 'email') || hasBackendFieldError('email')"
                       [class.valid]="employeeForm.get('email')?.valid && employeeForm.get('email')?.touched"
                       placeholder="exemple@email.com"
+                      (input)="clearBackendErrors()"
                     />
                     <span class="error-message">{{ getFieldError('employee', 'email') }}</span>
+                    <span *ngIf="hasBackendFieldError('email')" class="error-message backend-error">
+                      {{ getBackendFieldError('email') }}
+                    </span>
                   </div>
                   <div class="form-group">
                     <label class="form-label required">Téléphone</label>
@@ -1124,12 +1144,59 @@
                     <span class="error-message">{{ getFieldError('employee', 'phone') }}</span>
                   </div>
                   <div class="form-group">
+                    <label class="form-label required">Mot de passe</label>
+                    <div class="password-input-wrapper">
+                      <input
+                        [type]="showPassword ? 'text' : 'password'"
+                        formControlName="password"
+                        class="form-input"
+                        [class.error]="hasFieldError('employee', 'password')"
+                        [class.valid]="employeeForm.get('password')?.valid && employeeForm.get('password')?.touched"
+                        placeholder="Minimum 6 caractères"
+                      />
+                      <button
+                        type="button"
+                        class="password-toggle-btn"
+                        (click)="togglePasswordVisibility()"
+                      >
+                        <i class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
+                      </button>
+                    </div>
+                    <span class="error-message">{{ getFieldError('employee', 'password') }}</span>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label required">Confirmer le mot de passe</label>
+                    <div class="password-input-wrapper">
+                      <input
+                        [type]="showConfirmPassword ? 'text' : 'password'"
+                        formControlName="confirmPassword"
+                        class="form-input"
+                        [class.error]="hasFieldError('employee', 'confirmPassword') || employeeForm.get('confirmPassword')?.hasError('passwordMismatch')"
+                        [class.valid]="employeeForm.get('confirmPassword')?.valid && employeeForm.get('confirmPassword')?.touched"
+                        placeholder="Ressaisissez le mot de passe"
+                      />
+                      <button
+                        type="button"
+                        class="password-toggle-btn"
+                        (click)="toggleConfirmPasswordVisibility()"
+                      >
+                        <i class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</i>
+                      </button>
+                    </div>
+                    <span class="error-message" *ngIf="employeeForm.get('confirmPassword')?.hasError('passwordMismatch')">
+                      Les mots de passe ne correspondent pas
+                    </span>
+                    <span class="error-message">{{ getFieldError('employee', 'confirmPassword') }}</span>
+                  </div>
+                  <div class="form-group">
                     <label class="form-label required">Rôle</label>
                     <select 
                       formControlName="role"
                       class="form-select"
                       [class.error]="hasFieldError('employee', 'role')"
                       [class.valid]="employeeForm.get('role')?.valid && employeeForm.get('role')?.touched"
+                      (change)="onRoleChange()"
                     >
                       <option value="">Sélectionner un rôle</option>
                       <option value="manager">Manager</option>
@@ -1137,12 +1204,99 @@
                     </select>
                     <span class="error-message">{{ getFieldError('employee', 'role') }}</span>
                   </div>
+                  
+                  <!-- Section Adresse -->
+                  <div class="form-section">
+                    <h4 class="section-title">Adresse</h4>
+                    <div formGroupName="address">
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label required">Rue</label>
+                          <input
+                            type="text"
+                            formControlName="street"
+                            class="form-input"
+                            placeholder="Nom de la rue"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label required">Numéro de porte</label>
+                          <input
+                            type="text"
+                            formControlName="doorNumber"
+                            class="form-input"
+                            placeholder="ex: 12B"
+                          />
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label">Couleur de porte</label>
+                          <input
+                            type="text"
+                            formControlName="doorColor"
+                            class="form-input"
+                            placeholder="ex: Bleu"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label required">Quartier</label>
+                          <input
+                            type="text"
+                            formControlName="neighborhood"
+                            class="form-input"
+                            placeholder="Nom du quartier"
+                          />
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label required">Arrondissement</label>
+                          <input
+                            type="text"
+                            formControlName="arrondissement"
+                            class="form-input"
+                            placeholder="Arrondissement"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label required">Secteur</label>
+                          <input
+                            type="text"
+                            formControlName="sector"
+                            class="form-input"
+                            placeholder="Secteur"
+                          />
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label required">Ville</label>
+                          <input
+                            type="text"
+                            formControlName="city"
+                            class="form-input"
+                            placeholder="Ville"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label required">Code postal</label>
+                          <input
+                            type="text"
+                            formControlName="postalCode"
+                            class="form-input"
+                            placeholder="Code postal"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <!-- Sélection multiple des zones -->
                   <div
                     class="form-group"
                     *ngIf="employeeForm.get('role')?.value === 'collector'"
                   >
-                    <label class="form-label required">Zones assignées</label>
+                    <label class="form-label">Zones assignées (optionnel)</label>
                     <div class="zone-selection" [class.error]="hasFieldError('employee', 'zones')">
                       <div class="form-checkbox-group">
                         <div 
@@ -1160,9 +1314,11 @@
                         </div>
                       </div>
                       <small class="zone-summary">{{ getSelectedZonesText() }}</small>
+                      <small class="form-help">Vous pouvez assigner des zones maintenant ou plus tard depuis la gestion des employés.</small>
                     </div>
                     <span class="error-message">{{ getFieldError('employee', 'zones') }}</span>
                   </div>
+                  
                   <div class="form-actions">
                     <button
                       type="button"
@@ -1174,7 +1330,7 @@
                     <button 
                       type="submit" 
                       class="btn btn-primary"
-                      [disabled]="!employeeForm.valid || isLoading"
+                      [disabled]="!isEmployeeFormValid() || isLoading"
                     >
                       <span class="loading-spinner" *ngIf="isLoading"></span>
                       <i class="material-icons" *ngIf="!isLoading">person_add</i>

@@ -4,6 +4,7 @@ import { catchError, delay, map, tap } from 'rxjs/operators';
 import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tariff, PlanningResponse, PaginatedResponse } from '../models/agency.model';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { AddEmployeeData, RegisterResponse, User } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
@@ -782,6 +783,116 @@ export class AgencyService {
     );
   }
 
+  /**
+   * Ajouter un employé à une agence
+   * Utilise le même endpoint d'enregistrement mais avec l'agencyId obligatoire
+   */
+  addEmployeeToAgency(employeeData: AddEmployeeData): Observable<RegisterResponse> {
+    console.log('[DEBUG] Adding employee to agency:', employeeData.agencyId);
+    console.log('[DEBUG] Employee data:', { ...employeeData, password: '***' });
+    
+    // Validation : s'assurer que l'agencyId est présent
+    if (!employeeData.agencyId) {
+      return of({ 
+        success: false, 
+        error: 'L\'ID de l\'agence est requis pour ajouter un employé.' 
+      });
+    }
 
+    // Calculer isOwnerAgency selon le rôle
+    const isOwnerAgency = employeeData.role === 'collector';
+    
+    // Préparer les données selon le schéma Swagger
+    const requestData = {
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName,
+      email: employeeData.email,
+      password: employeeData.password,
+      role: employeeData.role,
+      phone: employeeData.phone,
+      address: employeeData.address,
+      agencyId: employeeData.agencyId, // Obligatoire pour les employés d'agence
+      isOwnerAgency: isOwnerAgency // false pour manager, true pour collector
+    };
+
+    return this.http.post<any>(`${environment.apiUrl}/register`, requestData).pipe(
+      map(response => {
+        console.log("API > Add Employee Response:", response);
+        console.log("Response type:", typeof response);
+        console.log("Response keys:", Object.keys(response || {}));
+        
+        if (response && (response.user || response.success)) {
+          const user = response.user || response;
+          return { 
+            success: true, 
+            user: user, 
+            message: response.message || 'Employé ajouté avec succès' 
+          };
+        } else {
+          // Extraire l'erreur exacte du backend
+          let backendError = 'Erreur lors de l\'ajout de l\'employé';
+          
+          if (response?.error) {
+            backendError = response.error;
+          } else if (response?.message) {
+            backendError = response.message;
+          }
+          
+          console.log('Erreur backend extraite:', backendError);
+          
+          return { 
+            success: false, 
+            error: backendError,
+            originalResponse: response // Garder la réponse originale pour debug
+          };
+        }
+      }),
+      catchError((error: any) => {
+        console.error('Add Employee Error Details:', error);
+        console.error('Error structure:', JSON.stringify(error, null, 2));
+        
+        let errorMessage = 'Erreur lors de l\'ajout de l\'employé';
+        let detailedErrors = {};
+        
+        // Priorité 1: Message direct du backend
+        if (error.error?.error) {
+          errorMessage = error.error.error;
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        // Priorité 2: Gestion des erreurs de validation spécifiques
+        if (error.error) {
+          // Erreurs de validation détaillées
+          if (error.error.errors) {
+            detailedErrors = error.error.errors;
+            console.log('Erreurs de validation détaillées:', detailedErrors);
+          }
+          
+          // Erreurs MongoDB (duplicate key)
+          if (error.error.code === 11000) {
+            if (error.error.keyValue?.email) {
+              errorMessage = `L'email ${error.error.keyValue.email} est déjà utilisé`;
+            } else if (error.error.keyValue?.phone) {
+              errorMessage = `Le téléphone ${error.error.keyValue.phone} est déjà utilisé`;
+            } else {
+              errorMessage = 'Cette information est déjà utilisée par un autre utilisateur';
+            }
+          }
+        }
+        
+        console.log('Message d\'erreur final:', errorMessage);
+        
+        return of({
+          success: false,
+          error: errorMessage,
+          detailedErrors: detailedErrors,
+          statusCode: error.status
+        });
+      })
+    );
+  }
 
 }

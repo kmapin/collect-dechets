@@ -1576,6 +1576,114 @@ form-row {
   color: var(--text-secondary);
 }
 
+/* Styles pour les champs de mot de passe avec bouton de visibilité */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  padding-right: 45px !important;
+  flex: 1;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.password-toggle-btn:hover {
+  color: var(--primary-color);
+}
+
+.password-toggle-btn i {
+  font-size: 18px;
+}
+
+/* Style pour le texte d'aide */
+.form-help {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* Styles pour l'alerte d'erreur */
+.error-alert {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #991b1b;
+}
+
+.error-alert-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.error-alert-content i {
+  color: #dc2626;
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+.error-details {
+  flex: 1;
+}
+
+.error-details strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #991b1b;
+}
+
+.detailed-errors {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+  font-size: 0.9rem;
+}
+
+.detailed-errors li {
+  padding: 4px 0;
+  border-bottom: 1px solid #fecaca;
+}
+
+.detailed-errors li:last-child {
+  border-bottom: none;
+}
+
+.detailed-errors strong {
+  color: #7f1d1d;
+  text-transform: capitalize;
+}
+
+/* Style pour les erreurs backend spécifiques aux champs */
+.backend-error {
+  color: #dc2626 !important;
+  font-weight: 500;
+  background-color: #fef2f2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 3px solid #dc2626;
+  margin-top: 4px;
+  display: block;
+}
+
 .zones-checkboxes {
   display: flex;
   flex-direction: column;
