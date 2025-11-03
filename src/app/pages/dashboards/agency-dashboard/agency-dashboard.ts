@@ -1823,11 +1823,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
             this.showAddEmployeeModal = false;
           } else {
             // Erreur - afficher les erreurs exactes du backend
-            console.log('=== ERREUR BACKEND ===');
-            console.log('Réponse complète:', response);
-            console.log('Erreur extraite:', response.error);
-            console.log('Erreurs détaillées:', response.detailedErrors);
-            
+                      
             this.employeeFormError = response.error || "Erreur lors de l'ajout de l'employé";
             this.employeeFormDetailedErrors = response.detailedErrors || {};
             
@@ -1846,10 +1842,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
           console.log('=== ERREUR HTTP ===');
           console.log('Erreur complète:', errorResponse);
           
-          // Cette fonction ne devrait normalement pas être appelée car 
-          // les erreurs du backend sont gérées dans le service
-          // Mais si elle l'est, on affiche l'erreur directement du service
-          if (errorResponse.error) {
+                   if (errorResponse.error) {
             this.employeeFormError = errorResponse.error;
             this.employeeFormDetailedErrors = errorResponse.detailedErrors || {};
           } else {

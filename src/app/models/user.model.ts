@@ -174,11 +174,11 @@ export interface AddEmployeeData {
   lastName: string;
   email: string;
   password: string;
-  role: UserRole; // Should be 'manager' or 'collector'
+  role: UserRole; 
   phone: string;
   address: UserAddress;
-  agencyId: string; // Required for employee creation
-  isOwnerAgency?: boolean; // false for manager, true for collector
+  agencyId: string;
+  isOwnerAgency?: boolean; 
 }
 
 // Interface for registration response from backend
