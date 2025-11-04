@@ -4,6 +4,7 @@ import { BehaviorSubject, map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Municipality } from '../models/agency.model';
 import { User } from '../models/user.model';
+import { FilterParams } from '../models/filterParams.model';
 
 interface MunicipalityStatistics {
   totalAgencies: number;
@@ -35,7 +36,18 @@ export class Admin {
     );
 
   }
-
+    getAllUsers(fileterParams: FilterParams): Observable<any> {
+    let requestParams = new HttpParams()
+    .append('role', fileterParams.role)
+    .append('neighborhood', fileterParams.neighborhood);
+    console.log('API > getAllUsers params:', requestParams);
+    return this.http.get(`${environment.apiUrl}/users`, { params: requestParams }).pipe(
+      map((response: any) => {
+        console.log('API > getAllClients:', response);
+        return response;
+      })
+    );
+  }
   getAllEmployees() {
     let requestParams = new HttpParams().append('role', 'collector');
     return this.http.get(`${environment.apiUrl}/users`, { params: requestParams }).pipe(

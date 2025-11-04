@@ -812,6 +812,165 @@
               <div class="agencies-grid"></div>
             </div>
 
+            <!-- Onglet Audit devtoutes les utilisateus -->
+            <div *ngIf="activeTab === 'all_users'" class="agencies-tab">
+              <div class="agencies-header">
+                <h2>Audit des Utilisateurs</h2>
+                <div class="agencies-filters">
+                  <select
+                    [(ngModel)]="roleFilter"
+                    (change)="filterUsers()"
+                    class="filter-select"
+                  >
+                    <option value="">Toutes les Utisateurs</option>
+                    <option value="client">Client</option>
+                    <option value="manager">Manageur</option>
+                    <option value="collector">Collecteur</option>
+                    <option value="municipality">Agent de Mairie</option>
+                  </select>
+                  <select
+                    [(ngModel)]="neighborhoodFilter"
+                    (change)="filterUsers()"
+                    class="filter-select"
+                  >
+                    <option value="">Tous quartiers</option>
+                    <option value="Karpala">Karpala</option>
+                    <option value="wemtenga">Wemtenga</option>
+                    <option value="Gounghin">Gounghin</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Indicateur de chargement pour les clients -->
+              <app-loading-spinner 
+                *ngIf="isLoadingClients" 
+                message="Chargement des clients..." 
+                size="medium">
+              </app-loading-spinner>
+
+              <div *ngIf="!isLoadingClients" class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+                <!-- État vide pour les clients -->
+                <div *ngIf="!filteredUsers?.length" class="empty-state">
+                  <i class="material-icons">people</i>
+                  <h3>Aucun utilisateur trouvé</h3>
+                  <p>Aucun client ne correspond aux critères sélectionnés pour le moment.</p>
+                </div>
+
+                <ng-container
+                  *ngIf="filteredUsers.length > 0"
+                >
+                  <div class="col" *ngFor="let user of filteredUsers">
+                    <mat-card class=" client-audit-card client-card">
+                      <mat-card-header>
+                        <mat-card-title-group class="w-100 pb-3">
+                          <mat-card-title>
+                            {{ user?.data?.firstName }}
+                            {{ user?.data?.lastName }} <span
+                              class="status-badge"
+                              [class]="
+                                user?.data?.subscribedAgencyId
+                                  ? 'status-success'
+                                  : 'status-inconnu'
+                              "
+                              >{{ user?.data?.role }}</span>
+                          </mat-card-title>
+                          <mat-card-subtitle>
+                            <!-- Role:
+                            <span
+                              class="status-badge"
+                              [class]="
+                                user?.data?.subscribedAgencyId
+                                  ? 'status-success'
+                                  : 'status-inconnu'
+                              "
+                              >{{ user?.data?.role }}</span> -->
+                            </mat-card-subtitle>
+
+                          <!--<mat-card-subtitle--
+                            >Abonnement actif:
+                            <span
+                              class="subscription-badge"
+                              [class]="
+                                Math.round(
+                                  (client?.active_subscription?.length /
+                                    client?.data?.subscriptionHistory?.length) *
+                                    100
+                                ) > 50
+                                  ? 'status-success'
+                                  : 'status-inconnu'
+                              "
+                              >{{ client?.active_subscription?.length }}/{{
+                                client?.data?.subscriptionHistory?.length
+                              }}</span
+                            ></mat-card-subtitle-->
+                          <ng-container
+                            *ngIf="user?.data?.avatar; else noImage"
+                          >
+                            <img
+                              mat-card-md-image
+                              class="rounded"
+                              src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
+                              alt="Image of a Shiba Inu"
+                            />
+                          </ng-container>
+                          <ng-template #noImage>
+                            <div
+                              class="rounded-circle text-white font-bold uppercase"
+                              [style.background-color]="
+                                getRandomColor(user.data)
+                              "
+                            >
+                              {{
+                                getInitials(
+                                  user?.data?.firstName +
+                                    " " +
+                                    user?.data?.lastName
+                                )
+                              }}
+                            </div>
+                          </ng-template>
+                        </mat-card-title-group>
+                      </mat-card-header>
+                      <mat-card-content>
+                        <div *ngIf="user?.data?.address?.city">
+                          <h4 class="text-start">
+                            Ville/Quartier :
+                            {{ user?.data?.address?.city }}/{{
+                              user?.data?.address?.neighborhood
+                            }}
+                          </h4>
+                        </div>
+                        <div>
+                          <h5 class="text-start">
+                            Tel: {{ user?.data?.phone }}
+                          </h5>
+                        </div>
+                        <div
+                          class="agency-actions d-flex justify-content-end align-items"
+                        >
+                          <button
+                            class="btn btn-secondary"
+                            (click)="viewClientDetails(user?._id)"
+                          >
+                            <i class="material-icons">visibility</i>
+                            Détails
+                          </button>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+                  </div>
+                </ng-container>
+                <!-- <ng-template #noUsers>
+                  <div>
+                    <h4 class="text-center">Aucun utilisateur trouvé</h4>
+                  </div>
+                </ng-template> -->
+              </div>
+              <!--end row-->
+
+              <div class="agencies-grid"></div>
+            </div>
+
             <!-- Onglet Audit des Collecteurs -->
             <div *ngIf="activeTab === 'collectors'" class="agencies-tab">
               <div class="agencies-header">
