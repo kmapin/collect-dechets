@@ -867,23 +867,24 @@
                             {{ user?.data?.firstName }}
                             {{ user?.data?.lastName }} <span
                               class="status-badge"
-                              [class]="
-                                user?.data?.subscribedAgencyId
-                                  ? 'status-success'
-                                  : 'status-inconnu'
-                              "
-                              >{{ user?.data?.role }}</span>
+                              [class]="'status-inconnu'"
+                              >{{ user?.data?.role==='client' ? 
+                              'Client': user?.data?.role==='manager' ? 
+                              'Manageur d\'Agence': user?.data?.role==='municipality' ?
+                              'Agent de Mairie': user?.data?.role==='collector' ?
+                              'Collecteur': 'Super admin'  
+                            }}</span>
                           </mat-card-title>
                           <mat-card-subtitle>
-                            <!-- Role:
+                            Statut:
                             <span
                               class="status-badge"
                               [class]="
-                                user?.data?.subscribedAgencyId
+                                user?.data?.status === 'active'
                                   ? 'status-success'
                                   : 'status-inconnu'
                               "
-                              >{{ user?.data?.role }}</span> -->
+                              >{{ user?.data?.status==='active' ? 'Actif':'Inactif' }}</span>
                             </mat-card-subtitle>
 
                           <!--<mat-card-subtitle--
