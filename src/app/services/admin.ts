@@ -39,7 +39,9 @@ export class Admin {
     getAllUsers(fileterParams: FilterParams): Observable<any> {
     let requestParams = new HttpParams()
     .append('role', fileterParams.role)
+    .append('term', fileterParams.term)
     .append('neighborhood', fileterParams.neighborhood);
+
     console.log('API > getAllUsers params:', requestParams);
     return this.http.get(`${environment.apiUrl}/users`, { params: requestParams }).pipe(
       map((response: any) => {
