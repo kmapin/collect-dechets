@@ -568,3 +568,232 @@
     </div>
   </div>
 </div>
+<p-drawer header="Modifier votre agence" [(visible)]="visible2" position="right" [style]="{ width: '35%' }">
+  <form
+        class="register-form"
+        (ngSubmit)="onUpdateAgency()"
+        #editAgencyForm="ngForm"
+      >
+    <div class="form-section" style="margin-top: 0">
+
+      <div class="form-group">
+        <label class="form-label" for="agencyName">
+          <i class="material-icons">business</i>
+          Nom de l'agence <span class="required">*</span>
+        </label>
+        <input
+          type="text"
+          id="agencyName"
+          name="agencyName"
+          [(ngModel)]="userData.name"
+          class="form-control"
+          placeholder="Nom de votre agence"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="agencyDescription">
+          <i class="material-icons">description</i>
+          Description
+        </label>
+        <textarea
+          id="agencyDescription"
+          name="agencyDescription"
+          [(ngModel)]="userData.agencyDescription"
+          class="form-control"
+          placeholder="Décrivez vos services..."
+          rows="3"
+        ></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="slogan">
+          <i class="material-icons">format_quote</i>
+          Slogan de l'agence <span class="required">*</span>
+        </label>
+        <input
+          type="text"
+          id="slogan"
+          name="slogan"
+          [(ngModel)]="userData.slogan"
+          class="form-control"
+          placeholder="Slogan de votre agence"
+          required
+        />
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Adresse de localisation</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="city">
+            <i class="material-icons">location_city</i>
+            Ville <span class="required">*</span>
+          </label>
+          <select
+            id="city"
+            name="city"
+            [(ngModel)]="userData.address.city"
+            class="form-control"
+            (change)="onCityChange(userData.address.city)"
+            required
+          >
+            <option value="">Sélectionner</option>
+            <option *ngFor="let city of cities" [value]="city.name">
+              {{ city.name }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="postalBoite">
+            <i class="material-icons">markunread_mailbox</i>
+            Boite postal <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="postalBoite"
+            name="postalBoite"
+            [(ngModel)]="userData.address.postalCode"
+            class="form-control"
+            placeholder="75001"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="arrondissement">
+            <i class="material-icons">map</i>
+            Arrondiss... <span class="required">*</span>
+          </label>
+          <select
+            id="arrondissement"
+            name="arrondissement"
+            [(ngModel)]="userData.address.arrondissement"
+            (change)="onArrondissementChange(userData.address.arrondissement)"
+            class="form-control"
+            [disabled]="!arrondissementss.length"
+            required
+          >
+            <option value="">Sélectionner</option>
+            <option *ngFor="let arr of arrondissementss" [value]="arr.name">
+              {{ arr.name }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="sector">
+            <i class="material-icons">location_city</i>
+            Secteur <span class="required">*</span>
+          </label>
+          <select
+            id="sector"
+            name="sector"
+            [(ngModel)]="userData.address.sector"
+            (change)="onSecteurChange(userData.address.sector)"
+            class="form-control"
+            [disabled]="!secteurss.length"
+            required
+          >
+            <option value="">Sélectionner</option>
+            <option
+              *ngFor="let secteur of secteurss"
+              [value]="secteur.name"
+            >
+              {{ secteur.name }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="neighborhood">
+            <i class="material-icons">location_city</i>
+            Quartier <span class="required">*</span>
+          </label>
+          <select
+            id="neighborhood"
+            name="neighborhood"
+            [(ngModel)]="userData.address.neighborhood"
+            class="form-control"
+            [disabled]="!quartierss.length"
+            required
+          >
+            <option value="">Sélectionner</option>
+            <option
+              *ngFor="let quartier of quartierss"
+              [value]="quartier.name"
+            >
+              {{ quartier.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="street">
+            <i class="material-icons">location_on</i>
+            Rue <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="street"
+            name="street"
+            [(ngModel)]="userData.address.street"
+            class="form-control"
+            placeholder="Nom de la rue"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="doorNumber">
+            <i class="material-icons">home</i>
+            Numéro Porte <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="doorNumber"
+            name="doorNumber"
+            [(ngModel)]="userData.address.doorNumber"
+            class="form-control"
+            placeholder="123"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="doorColor">
+            <i class="material-icons">palette</i>
+            Couleur porte
+          </label>
+          <select
+            id="doorColor"
+            name="doorColor"
+            [(ngModel)]="userData.address.doorColor"
+            class="form-control"
+          >
+            <option value="">Sélectionner</option>
+            <option value="blanc">Blanc</option>
+            <option value="noir">Noir</option>
+            <option value="marron">Marron</option>
+            <option value="bleu">Bleu</option>
+            <option value="rouge">Rouge</option>
+            <option value="vert">Vert</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+      </div>
+    </div>
+      <button
+      type="submit"
+      class="btn btn-primary btn-full"
+      [disabled]="isButtonDisabled()"
+    >
+      <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+      <i class="material-icons" *ngIf="!isLoading">person_add</i>
+      {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+    </button>
+  </form>
+</p-drawer>
