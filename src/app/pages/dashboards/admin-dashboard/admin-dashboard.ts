@@ -1164,7 +1164,7 @@ viewClientDetails(clientId: string): void {
   // }
 
   activateAgency(id: string) {
-    this.agencyService.activateAgency(id).subscribe({
+    this.agencyService.activateAgency(id, "active").subscribe({
       next: (response: any) => {
         console.log("agency activated  in dashboard", response);
         if (response.message) {

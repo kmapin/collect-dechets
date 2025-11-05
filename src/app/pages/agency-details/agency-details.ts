@@ -15,10 +15,11 @@ import { DrawerModule } from 'primeng/drawer';
 import { OUAGA_DATA, QuartierData } from '../../data/mock-data';
 import { Arrondissement, City, Quartier, Sector } from '../../models/countries-org.model';
 import { Admin } from '../../services/admin';
+import { CdkAutofill } from "@angular/cdk/text-field";
 
 @Component({
   selector: 'app-agency-details',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DrawerModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DrawerModule, CdkAutofill],
   templateUrl: './agency-details.html',
   styleUrl: './agency-details.css'
 })
@@ -123,6 +124,7 @@ export class AgencyDetails implements OnInit {
     this.getAllCountries();
     this.currentUser = this.authService.getCurrentUser();
     this.agencyId = this.route.snapshot.paramMap.get('id');
+    console.log("AgencyId==>", this.agencyId);
     if (this.agencyId) {
       this.loadAgencyFromApi(this.agencyId);
     }
@@ -453,8 +455,15 @@ contactAgency(): void {
     // this.router.navigate(['/edit-agency', this.agencyId]);
   }
   //Activer ou desactiver une agence 
+  agencyStatus: string ="";
   activateAgency(id: string) {
-    this.agencyService.activateAgency(id).subscribe({
+    
+    if(this.userData?.status === "active") {
+      this.agencyStatus = "deactivate";
+    }else {
+      this.agencyStatus = "activate";
+    }
+    this.agencyService.activateAgency(id, this.agencyStatus).subscribe({
       next: (response: any) => {
         console.log('agency activated  in dashboard', response);
         if (response.message) {
@@ -586,7 +595,6 @@ contactAgency(): void {
       console.log('[DEBUG] onRegister() appelée');
       console.log('[DEBUG] Données utilisateur:', this.userData);
       console.log('[DEBUG] isLoading:', this.isLoading);
-      console.log('[DEBUG] acceptTerms:', this.userData.acceptTerms);
       
       // Clear previous errors
       this.validationErrors = {};
@@ -604,8 +612,8 @@ contactAgency(): void {
       const registrationData: any = {
           name: this.userData.name,
           agencyDescription: this.userData.agencyDescription,
-          zoneActivite:  [
-                  this.userData.address.neighborhood
+          zoneActivite:[
+            this.userData.address.neighborhood
           ],
           slogan: this.userData.slogan,
           status: this.userData.status,
@@ -616,30 +624,30 @@ contactAgency(): void {
   
         console.log('[DEBUG] Données de modification agence préparées:', registrationData);
         console.log('[DEBUG] agencyName value:', this.userData.name);
+        console.log('[DEBUG] agencyId value:', this.userData._id);
         console.log('[DEBUG] agencyDescription value:', this.userData.agencyDescription);
   
-        // this.adminService.updateAgency(this.agencyId ,registrationData).subscribe({
-        //   next: (response) => {
-        //     this.isLoading = false;
-        //     console.log('[DEBUG] Réponse modification agence:', response);
-        //     // Use the unified RegisterResponse structure
-        //     const isSuccess = response.success;
+        this.adminService.updateAgency(this.userData._id, registrationData).subscribe({
+          next: (response) => {
+            this.isLoading = false;
+
+            console.log('[DEBUG] Réponse modification agence:', response);
+            // Use the unified RegisterResponse structure
+            const isSuccess = response.success;
   
-        //     if (isSuccess) {
-        //       this.notificationService.showSuccess('Modification agence réussie',
-        //      'Votre agence a été modifiée avec succès !');
-        //       setTimeout(() => {
-        //         this.router.navigate(['/login']);
-        //       }, 2000);
-        //     } else {
-        //       this.handleRegistrationError(response.message || response.error);
-        //     }
-        //   },
-        //   error: (error) => {
-        //     this.isLoading = false;
-        //     this.handleRegistrationError(error.error || error.message || error);
-        //   }
-        // });
+            if (isSuccess) {
+              this.visible2 = false;
+              this.notificationService.showSuccess('Modification agence réussie',
+             'Votre agence a été modifiée avec succès !');
+            } else {
+              this.handleRegistrationError(response.message || response.error);
+            }
+          },
+          error: (error) => {
+            this.isLoading = false;
+            this.handleRegistrationError(error.error || error.message || error);
+          }
+        });
         return;
     }
 }

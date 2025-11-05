@@ -55,16 +55,18 @@
           </div>
         </div>
         <div class="agency-actions">
-          <ng-container *ngIf="currentUser?.role === 'super_admin'">
+          <ng-container *ngIf="currentUser?.role === 'manager'">
             <button class="btn btn-success" (click)="editAgency()">
               <i class="material-icons">edit</i>
               Modifier
             </button>
+          </ng-container>
+          <ng-container *ngIf="currentUser?.role === 'super_admin'">
             <button
               class="btn btn-accent"
               (click)="activateAgency(agency?._id)"
             >
-              <ng-container *ngIf="!agency?.isActive ; else activeBtn">
+              <ng-container *ngIf="agency?.status!== 'active' ; else activeBtn">
                 <i class="material-icons">check</i>
                 Activer
               </ng-container>
@@ -571,7 +573,6 @@
 <p-drawer header="Modifier votre agence" [(visible)]="visible2" position="right" [style]="{ width: '35%' }">
   <form
         class="register-form"
-        (ngSubmit)="onUpdateAgency()"
         #editAgencyForm="ngForm"
       >
     <div class="form-section" style="margin-top: 0">
@@ -786,8 +787,8 @@
         </div>
       </div>
     </div>
-      <button
-      type="submit"
+    <button
+      (click)="onUpdateAgency()"
       class="btn btn-primary btn-full"
       [disabled]="isButtonDisabled()"
     >

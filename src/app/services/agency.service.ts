@@ -387,8 +387,12 @@ export class AgencyService {
 
 
   //Activer ou desactiver une agence 
-  activateAgency(id: string): Observable<any> {
-    return this.http.patch(`${environment.apiUrl}/agencies/${id}/status`, {});
+  activateAgency(id: string, status: string): Observable<any> {
+    return this.http.patch(`${environment.apiUrl}/agencies_validation/${id}/validate`, {status: status}).pipe();
+  }
+
+  deActivateAgency(id: string): Observable<any> {
+    return this.http.patch(`${environment.apiUrl}/agencies/${id}/deactivate`, {}).pipe();
   }
   // addEmployee(agencyId: string, employee: Partial<Employee>): Observable<Employee> {
   //   const newEmployee: Employee = {

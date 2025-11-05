@@ -204,14 +204,14 @@ export class Admin {
     };
   }
 
-  updateAgency(agencyId:string | null ,userData:any): Observable<RegisterResponse> {
+  updateAgency(agencyId: string | null ,userData:any): Observable<any> {
   
-      if (!this.validateRegistrationData(userData)) {
-        return of({ 
-          success: false, 
-          error: 'Données de registration invalides. Veuillez vérifier tous les champs requis.' 
-        });
-      }
+      // if (!this.validateRegistrationData(userData)) {
+      //   return of({ 
+      //     success: false, 
+      //     error: 'Données de registration invalides. Veuillez vérifier tous les champs requis.' 
+      //   });
+      // }
   
     
       // const registrationData = this.prepareRegistrationData(userData);
@@ -219,19 +219,14 @@ export class Admin {
       console.log('[DEBUG] Final registration data being sent to backend:', registrationData);
       console.log('[DEBUG] Registration endpoint:', `${environment.apiUrl}/agencies/${agencyId}`);
   
-      return this.http.post<any>(`${environment.apiUrl}/agencies/${agencyId}`, registrationData).pipe(
+      return this.http.put<any>(`${environment.apiUrl}/agencies/${agencyId}`, registrationData).pipe(
         map(response => {
-          console.log("API > Register Response:", response);
+          console.log("API > Update Response:", response);
           
-          if (response && (response.user || response.success)) {
-            const user = response.user || response;
-            localStorage.setItem('currentUser', JSON.stringify({ user }));
-            this.currentUserSubject.next(user);
-            this.isAuthenticatedSubject.next(true);
+          if (response && (response.data || response.success)) {
             
             return { 
               success: true, 
-              user: user, 
               message: response.message || 'Compte créé avec succès' 
             };
           } else {
