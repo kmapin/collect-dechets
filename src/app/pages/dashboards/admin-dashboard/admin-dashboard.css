@@ -655,7 +655,8 @@
       .incidents-filters {
         display: flex;
         gap: 12px;
-        align-items: center;
+        align-items: center !important;
+        justify-items: center !important;
       }
 
       .filter-select {
@@ -665,7 +666,27 @@
         font-size: 0.9rem;
         transition: border-color 0.3s ease;
       }
-
+      
+      .search {
+        position: relative;
+        /* max-width: 500px; */
+      }
+      .search .search-input {
+        width: 100%;
+        padding: 8px 12px 8px 48px;
+        border: 2px solid var(--medium-gray);
+        border-radius: 6px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.9rem;
+        transition: border-color 0.3s ease;
+      }
+      .search .search-icon {
+        position: absolute;
+        right: inherit;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+      }
       .filter-select:focus {
         outline: none;
         border-color: var(--primary-color);
@@ -1450,7 +1471,6 @@
           flex-wrap: wrap;
           justify-content: center;
         }
-
         .tab-btn {
           flex: 1;
           min-width: 100px;

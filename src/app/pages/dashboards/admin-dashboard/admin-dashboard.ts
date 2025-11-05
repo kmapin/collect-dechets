@@ -164,6 +164,7 @@ export class AdminDashboard implements OnInit {
   agenciesFilter = "all";
   clientsFilter = "all";
   roleFilter = "";
+  searchTerm = "";
   neighborhoodFilter=""
   collectorsFilter = "all";
   complianceFilter = "all";
@@ -174,7 +175,7 @@ export class AdminDashboard implements OnInit {
   usersFilterParams: FilterParams = {
     role: this.roleFilter,
     neighborhood: this.neighborhoodFilter,
-    term:""
+    term:this.searchTerm
   }
   // Loading states
   isLoadingStatistics = false;
@@ -756,7 +757,7 @@ export class AdminDashboard implements OnInit {
     this.usersFilterParams = {
       role: this.roleFilter,
       neighborhood: this.neighborhoodFilter,
-      term:'',
+      term:this.searchTerm
     }
     console.log(this.usersFilterParams);
     this.showAdminUsers(this.usersFilterParams);

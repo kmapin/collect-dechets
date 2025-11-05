@@ -362,7 +362,7 @@ export class AgencyService {
 
   //Activer ou desactiver une agence 
   activateAgency(id: string): Observable<any> {
-    return this.http.patch(`${environment.apiUrl}/auth/agences/${id}/status`, {});
+    return this.http.patch(`${environment.apiUrl}/agencies/${id}/status`, {});
   }
 ;
 
