@@ -855,7 +855,19 @@
       position: relative;
     }
 
-
+    .drawer-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      gap: .5rem;
+      justify-content: flex-end;
+      align-items: center;
+      padding: .75rem 1rem;
+      border-top: 1px solid var(--surface-border);
+      background: white;
+    }
     @media (max-width: 1200px) {
       .content-layout {
         grid-template-columns: 1fr 300px;

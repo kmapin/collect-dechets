@@ -571,7 +571,7 @@
     </div>
   </div>
 </div>
-<p-drawer header="Modifier votre agence" [(visible)]="visible2" position="right" [style]="{ width: '35%' }">
+<p-drawer header="Modifier votre agence" footer="Modifier" [(visible)]="visible2" position="right" [style]="{ width: '35%' }">
   <form
         class="register-form"
         #editAgencyForm="ngForm"
@@ -788,7 +788,7 @@
         </div>
       </div>
     </div>
-    <button
+    <!-- <button
       (click)="onUpdateAgency()"
       class="btn btn-primary btn-full"
       [disabled]="isButtonDisabled()"
@@ -796,6 +796,17 @@
       <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
       <i class="material-icons" *ngIf="!isLoading">person_add</i>
       {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-    </button>
+    </button> -->
+    <div class="drawer-footer">
+      <button
+      (click)="onUpdateAgency()"
+      class="btn btn-primary btn-full"
+      [disabled]="isButtonDisabled()"
+      >
+        <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+        <i class="material-icons" *ngIf="!isLoading">person_add</i>
+        {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+      </button>
+    </div>
   </form>
 </p-drawer>
