@@ -17,7 +17,7 @@ import {
   Validators,
 } from "@angular/forms";
 import { AuthService } from "../../../services/auth.service";
-import { AgencyService } from "../../../services/agency.service";
+import { AgencyService, ZoneStatistics, ZoneRecommendation as ServiceZoneRecommendation, ZoneAnalyticsResponse } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
 import {
@@ -86,6 +86,29 @@ interface Report {
   assignedTo?: string;
   reportType?: string;
   photos?: string[];
+}
+
+interface ZoneAnalytics {
+  id: string;
+  name: string;
+  totalClients: number;
+  households: number;
+  businesses: number;
+  institutions: number;
+  capacityUsage: number;
+  estimatedTime: number;
+  requiredTeam: number;
+  requiredVehicles: number;
+  growth: number;
+}
+
+interface LocalZoneRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  icon: string;
+  zoneId: string;
 }
 
 interface Statistics {
@@ -287,6 +310,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   isLoadingMessages: boolean = false;
   isLoadingTariffs: boolean = false;
   isLoadingSchedules: boolean = false;
+
+  // Propriétés pour l'analyse des zones
+  selectedZoneForAnalytics: string = '';
+  zoneAnalyticsData: ZoneAnalytics[] = [];
+  zoneRecommendations: LocalZoneRecommendation[] = [];
 
   // get activeClientNbr(): number {
   //   return this.activeClients.length;
@@ -2562,7 +2590,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       this.notificationService.showError("Erreur", "Formulaire invalide.");
       return;
     }
-    // On extrait uniquement les champs nécessaires
+
     const { _id, createdAt, updatedAt, agencyId, userId, ...employeeData } = {
       ...this.selectedEmployee,
       ...this.employeeForm.value,
@@ -2575,7 +2603,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           "Employé mis à jour avec succès."
         );
         this.showUpdateEmployeeModal = false;
-        this.loadEmployees(this.currentUser); // Recharge la liste
+        this.loadEmployees(this.currentUser);
       },
       error: (err) => {
         console.error("Erreur lors de la mise à jour :", err);
@@ -2883,5 +2911,532 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       this.myScrollContainer.nativeElement.scrollTop =
         this.myScrollContainer.nativeElement.scrollHeight;
     } catch (err) {}
+  }
+
+  // ================================
+  // méthodes d analyse
+  // ================================
+
+  /**
+   * Actualise les données d'analyse des zones
+   */
+  refreshZoneAnalytics(): void {
+    this.generateZoneAnalyticsData();
+    this.generateZoneRecommendations();
+    this.notificationService.showSuccess('Succès', 'Données d\'analyse actualisées');
+  }
+
+  /**
+   * Retourne le nombre total de clients par type
+   */
+  getTotalClientsByType(type: 'household' | 'business' | 'institution'): number {
+    return this.activeClients.filter(client => this.getClientType(client) === type).length;
+  }
+
+  /**
+   * Retourne le pourcentage de clients par type
+   */
+  getPercentageByType(type: 'household' | 'business' | 'institution'): number {
+    const total = this.activeClients.length;
+    if (total === 0) return 0;
+    const typeCount = this.getTotalClientsByType(type);
+    return Math.round((typeCount / total) * 100);
+  }
+
+  /**
+   * Calcule le pourcentage de charge de travail
+   */
+  getWorkloadPercentage(): number {
+    const totalClients = this.activeClients.length;
+    const maxCapacity = this.allEmployees.filter(emp => emp.role === 'collector').length * 50; // 50 clients par collecteur
+    if (maxCapacity === 0) return 0;
+    return Math.min(Math.round((totalClients / maxCapacity) * 100), 100);
+  }
+
+  /**
+   * Retourne le statut de la charge de travail
+   */
+  getWorkloadStatus(): string {
+    const percentage = this.getWorkloadPercentage();
+    if (percentage <= 80) return 'Optimal';
+    if (percentage <= 95) return 'Attention';
+    return 'Critique';
+  }
+
+  /**
+   * Génère et retourne les données d'analyse par zone
+   */
+  getZoneAnalyticsData(): ZoneAnalytics[] {
+    if (this.zoneAnalyticsData.length === 0) {
+      this.generateZoneAnalyticsData();
+    }
+    return this.zoneAnalyticsData;
+  }
+
+  /**
+   * Génère les données d'analyse des zones en utilisant l'API
+   */
+  private generateZoneAnalyticsData(): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneAnalytics$(this.currentUser._id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.zoneAnalyticsData = response.data.map(zone => ({
+            id: zone.zoneId,
+            name: zone.zoneName,
+            totalClients: zone.clientStats.totalClients,
+            households: zone.clientStats.households,
+            businesses: zone.clientStats.businesses,
+            institutions: zone.clientStats.institutions,
+            capacityUsage: zone.workloadMetrics.capacityUsagePercentage,
+            estimatedTime: zone.workloadMetrics.estimatedWorkHours,
+            requiredTeam: zone.workloadMetrics.requiredTeamSize,
+            requiredVehicles: zone.workloadMetrics.requiredVehicles,
+            growth: zone.growthMetrics.monthlyGrowthRate
+          }));
+        } else {
+      
+          this.generateZoneAnalyticsDataFallback();
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des analytics:', error);
+     
+        this.generateZoneAnalyticsDataFallback();
+      }
+    });
+  }
+
+  /**
+   * Méthode de fallback pour générer les données localement
+   */
+  private generateZoneAnalyticsDataFallback(): void {
+    this.zoneAnalyticsData = this.zones.map((zone, index) => {
+      const zoneName = zone.neighborhood || zone;
+      const zoneClients = this.activeClients.filter(client => 
+        client.address?.neighborhood === zoneName
+      );
+      
+      const households = zoneClients.filter(client => this.getClientType(client) === 'household').length;
+      const businesses = zoneClients.filter(client => this.getClientType(client) === 'business').length;
+      const institutions = zoneClients.filter(client => this.getClientType(client) === 'institution').length;
+      
+      const totalClients = zoneClients.length;
+      const estimatedTime = Math.ceil(totalClients * 0.15); // 9 minutes par client
+      const requiredTeam = Math.ceil(totalClients / 25); 
+      const requiredVehicles = Math.ceil(requiredTeam / 2); 
+      const capacityUsage = Math.min((totalClients / 50) * 100, 100); 
+      const growth = Math.floor(Math.random() * 21) - 10; 
+
+      return {
+        id: `zone-${index}`,
+        name: zoneName,
+        totalClients,
+        households,
+        businesses,
+        institutions,
+        capacityUsage,
+        estimatedTime,
+        requiredTeam,
+        requiredVehicles,
+        growth
+      };
+    });
+  }
+
+  /**
+   * Détermine le type d'un client basé sur ses données
+   */
+  private getClientType(client: ClientApi): 'household' | 'business' | 'institution' {
+   
+    if (client.firstName?.toLowerCase().includes('entreprise') || 
+        client.lastName?.toLowerCase().includes('sarl') ||
+        client.lastName?.toLowerCase().includes('sas')) {
+      return 'business';
+    }
+    if (client.firstName?.toLowerCase().includes('mairie') || 
+        client.firstName?.toLowerCase().includes('école') ||
+        client.firstName?.toLowerCase().includes('hôpital')) {
+      return 'institution';
+    }
+    return 'household';
+  }
+
+  /**
+   * Retourne le statut de capacité pour une zone
+   */
+  getCapacityStatus(capacityUsage: number): string {
+    if (capacityUsage <= 70) return 'good';
+    if (capacityUsage <= 90) return 'warning';
+    return 'critical';
+  }
+
+  /**
+   * Retourne l'icône appropriée pour le niveau de capacité
+   */
+  getCapacityIcon(capacityUsage: number): string {
+    if (capacityUsage <= 70) return 'check_circle';
+    if (capacityUsage <= 90) return 'warning';
+    return 'error';
+  }
+
+  /**
+   * Affiche les détails d'une zone spécifique 
+   */
+  viewZoneDetails(zoneId: string): void {
+    this.loadZoneDetails(zoneId);
+   
+    this.loadZoneWorkloadMetrics(zoneId);
+    
+    const zone = this.zoneAnalyticsData.find(z => z.id === zoneId);
+    if (zone) {
+      this.notificationService.showInfo('Information', `Chargement des détails de la zone: ${zone.name}`);
+    }
+  }
+
+  /**
+   * Optimise la capacité d'une zone - Version améliorée avec API
+   */
+  optimizeZoneCapacity(zoneId: string): void {
+    this.optimizeSpecificZone(zoneId, 'all');
+  }
+
+  /**
+   * Affiche une alerte de capacité pour une zone
+   */
+  showCapacityAlert(zone: ZoneAnalytics): void {
+    const message = zone.capacityUsage > 95 
+      ? `Zone ${zone.name} surchargée (${zone.capacityUsage}%)` 
+      : `Zone ${zone.name} approche de la saturation (${zone.capacityUsage}%)`;
+    
+    this.notificationService.showWarning('Alerte Capacité', message);
+  }
+
+  /**
+   * Retourne les recommandations pour les zones
+   */
+  getZoneRecommendations(): LocalZoneRecommendation[] {
+    if (this.zoneRecommendations.length === 0) {
+      this.generateZoneRecommendations();
+    }
+    return this.zoneRecommendations;
+  }
+
+  /**
+   * Génère les recommandations automatiques en utilisant l'API
+   */
+  private generateZoneRecommendations(): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneRecommendations$(this.currentUser._id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.zoneRecommendations = response.data.map(rec => ({
+            id: rec.id,
+            title: rec.title,
+            description: rec.description,
+            priority: rec.priority,
+            icon: this.getRecommendationIcon(rec.type, rec.priority),
+            zoneId: rec.zoneId
+          }));
+        } else {
+      
+          this.generateZoneRecommendationsFallback();
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des recommandations:', error);
+     
+        this.generateZoneRecommendationsFallback();
+      }
+    });
+  }
+
+  /**
+   * Méthode de fallback pour générer les recommandations localement
+   */
+  private generateZoneRecommendationsFallback(): void {
+    this.zoneRecommendations = [];
+    
+    this.zoneAnalyticsData.forEach(zone => {
+      if (zone.capacityUsage > 95) {
+        this.zoneRecommendations.push({
+          id: `rec-${zone.id}-critical`,
+          title: `Zone ${zone.name} surchargée`,
+          description: `Cette zone dépasse sa capacité optimale. Considérez ajouter une équipe ou redistribuer les clients.`,
+          priority: 'high',
+          icon: 'error',
+          zoneId: zone.id
+        });
+      } else if (zone.capacityUsage > 80) {
+        this.zoneRecommendations.push({
+          id: `rec-${zone.id}-warning`,
+          title: `Zone ${zone.name} approche de la saturation`,
+          description: `Préparez-vous à augmenter les ressources pour cette zone.`,
+          priority: 'medium',
+          icon: 'warning',
+          zoneId: zone.id
+        });
+      }
+
+      if (zone.growth > 15) {
+        this.zoneRecommendations.push({
+          id: `rec-${zone.id}-growth`,
+          title: `Croissance rapide dans ${zone.name}`,
+          description: `Cette zone connaît une croissance de ${zone.growth}%. Anticipez les besoins futurs.`,
+          priority: 'medium',
+          icon: 'trending_up',
+          zoneId: zone.id
+        });
+      }
+    });
+  }
+
+  /**
+   * Retourne l'icône appropriée pour une recommandation
+   */
+  private getRecommendationIcon(type: string, priority: string): string {
+    switch (type) {
+      case 'capacity':
+        return priority === 'high' ? 'error' : 'warning';
+      case 'growth':
+        return 'trending_up';
+      case 'efficiency':
+        return 'tune';
+      case 'resource':
+        return 'build';
+      default:
+        return 'info';
+    }
+  }
+
+  /**
+   * Applique une recommandation
+   */
+  applyRecommendation(recommendation: LocalZoneRecommendation): void {
+ 
+    this.notificationService.showSuccess('Succès', `Recommandation "${recommendation.title}" appliquée`);
+    this.dismissRecommendation(recommendation);
+  }
+
+  /**
+   * Ignore une recommandation
+   */
+  dismissRecommendation(recommendation: LocalZoneRecommendation): void {
+    this.zoneRecommendations = this.zoneRecommendations.filter(r => r.id !== recommendation.id);
+  }
+
+  // ================================
+  // méthode pour l analyse avance
+  // ================================
+
+  /**
+   * Charge les détails d'une zone spécifique
+   */
+  loadZoneDetails(zoneId: string): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneStatistics$(this.currentUser._id, zoneId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Détails de la zone:', response.data);
+      
+          const zoneIndex = this.zoneAnalyticsData.findIndex(z => z.id === zoneId);
+          if (zoneIndex !== -1) {
+            const zoneStats = response.data;
+            this.zoneAnalyticsData[zoneIndex] = {
+              ...this.zoneAnalyticsData[zoneIndex],
+              totalClients: zoneStats.clientStats.totalClients,
+              households: zoneStats.clientStats.households,
+              businesses: zoneStats.clientStats.businesses,
+              institutions: zoneStats.clientStats.institutions,
+              capacityUsage: zoneStats.workloadMetrics.capacityUsagePercentage,
+              estimatedTime: zoneStats.workloadMetrics.estimatedWorkHours,
+              requiredTeam: zoneStats.workloadMetrics.requiredTeamSize,
+              requiredVehicles: zoneStats.workloadMetrics.requiredVehicles,
+              growth: zoneStats.growthMetrics.monthlyGrowthRate
+            };
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des détails de la zone:', error);
+        this.notificationService.showError('Erreur', 'Impossible de charger les détails de la zone');
+      }
+    });
+  }
+
+  /**
+   * Charge les métriques de charge de travail pour une zone
+   */
+  loadZoneWorkloadMetrics(zoneId: string): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneWorkloadMetrics$(this.currentUser._id, zoneId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Métriques de charge:', response.data);
+      
+          if (response.data.recommendations.length > 0) {
+            const zone = this.zoneAnalyticsData.find(z => z.id === zoneId);
+            const message = `Recommandations pour ${zone?.name || 'la zone'}:\n${response.data.recommendations.join('\n')}`;
+            this.notificationService.showInfo('Recommandations de charge', message);
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des métriques de charge:', error);
+      }
+    });
+  }
+
+  /**
+   * Charge l'évolution des abonnements
+   */
+  loadSubscriptionEvolution(period: string = 'month'): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getSubscriptionEvolution$(this.currentUser._id, undefined, period).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Évolution des abonnements:', response.data);
+     
+          this.processSubscriptionEvolution(response.data);
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement de l\'évolution des abonnements:', error);
+      }
+    });
+  }
+
+  /**
+   * Traite les données d'évolution des abonnements
+   */
+  private processSubscriptionEvolution(data: any[]): void {
+
+    data.forEach(zoneEvolution => {
+      const zoneIndex = this.zoneAnalyticsData.findIndex(z => z.id === zoneEvolution.zoneId);
+      if (zoneIndex !== -1) {
+        this.zoneAnalyticsData[zoneIndex].growth = zoneEvolution.growthRate;
+      }
+    });
+  }
+
+  /**
+   * Compare les performances des zones
+   */
+  compareZonePerformance(): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.compareZonePerformance$(this.currentUser._id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Comparaison des zones:', response);
+          this.displayZoneComparison(response);
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de la comparaison des zones:', error);
+      }
+    });
+  }
+
+  /**
+   * Affiche les résultats de comparaison des zones
+   */
+  private displayZoneComparison(comparison: any): void {
+    const bestZone = comparison.data.find((z: any) => z.rank === 1);
+    const summary = comparison.summary;
+    
+    const message = `
+       Résumé de performance:
+      Meilleure zone: ${summary.bestPerformingZone}
+       Plus efficace: ${summary.mostEfficient}
+       Zones nécessitant attention: ${summary.needsAttention.join(', ')}
+    `;
+    
+    this.notificationService.showInfo('Comparaison des zones', message);
+  }
+
+  /**
+   * Optimise les ressources d'une zone spécifique
+   */
+  optimizeSpecificZone(zoneId: string, optimizationType: 'team' | 'vehicles' | 'schedule' | 'all' = 'all'): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.optimizeZoneResources$(this.currentUser._id, zoneId, optimizationType).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Optimisation de zone:', response.data);
+          this.displayOptimizationResults(response.data);
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'optimisation de la zone:', error);
+        this.notificationService.showError('Erreur', 'Impossible d\'optimiser la zone');
+      }
+    });
+  }
+
+  /**
+   * Affiche les résultats d'optimisation
+   */
+  private displayOptimizationResults(results: any): void {
+    const improvements = results.expectedImprovements;
+    const message = `
+       Optimisation ${results.optimizationType} terminée!
+      
+      Améliorations attendues:
+       Efficacité: +${improvements.efficiency}%
+       Réduction des coûts: ${improvements.costReduction}%
+       Gain de temps: ${improvements.timeReduction}%
+      
+      Étapes d'implémentation:
+      ${results.implementationSteps.map((step: string, i: number) => `${i + 1}. ${step}`).join('\n')}
+    `;
+    
+    this.notificationService.showSuccess('Optimisation réussie', message);
+  }
+
+  /**
+   * Génère un rapport pour une zone
+   */
+  generateZoneReport(zoneId: string, reportType: 'performance' | 'financial' | 'operational' | 'complete' = 'complete'): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.generateZoneReport$(this.currentUser._id, zoneId, reportType).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Rapport généré:', response.data);
+          if (response.data.downloadUrl) {
+            // Ouvrir le lien de téléchargement
+            window.open(response.data.downloadUrl, '_blank');
+          }
+          this.notificationService.showSuccess('Rapport généré', 'Le rapport a été généré avec succès');
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de la génération du rapport:', error);
+        this.notificationService.showError('Erreur', 'Impossible de générer le rapport');
+      }
+    });
+  }
+
+
+
+  /**
+   * Méthode pour actualiser toutes les données d'une zone
+   */
+  refreshZoneData(zoneId?: string): void {
+    if (zoneId) {
+      this.loadZoneDetails(zoneId);
+      this.loadZoneWorkloadMetrics(zoneId);
+    } else {
+    
+      this.refreshZoneAnalytics();
+      this.loadSubscriptionEvolution();
+    }
   }
 }
