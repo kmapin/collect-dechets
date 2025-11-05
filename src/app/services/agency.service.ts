@@ -6,131 +6,120 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { AddEmployeeData, RegisterResponse, User } from '../models/user.model';
 
+// ================================
+// INTERFACES POUR L'ANALYSE DES ZONES
+// ================================
+
+/**
+ * Interface pour les statistiques détaillées d'une zone
+ */
+export interface ZoneAnalyticsResponse {
+  success: boolean;
+  data: ZoneStatistics[];
+  message?: string;
+}
+
+/**
+ * Interface pour les statistiques d'une zone spécifique
+ */
+export interface ZoneStatistics {
+  zoneId: string;
+  zoneName: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  clientStats: {
+    totalClients: number;
+    households: number;
+    businesses: number;
+    institutions: number;
+  };
+  workloadMetrics: {
+    estimatedWorkHours: number;
+    requiredTeamSize: number;
+    requiredVehicles: number;
+    capacityUsagePercentage: number;
+  };
+  growthMetrics: {
+    monthlyGrowthRate: number;
+    yearlyGrowthRate: number;
+    newSubscriptionsThisMonth: number;
+    churnRate: number;
+  };
+  revenueMetrics?: {
+    monthlyRevenue: number;
+    averageRevenuePerClient: number;
+  };
+}
+
+/**
+ * Interface pour les paramètres de filtrage des zones
+ */
+export interface ZoneAnalyticsFilters {
+  agencyId: string;
+  zoneIds?: string[];
+  clientType?: 'household' | 'business' | 'institution' | 'all';
+  period?: 'week' | 'month' | 'quarter' | 'year';
+  includeInactive?: boolean;
+}
+
+/**
+ * Interface pour les recommandations automatiques
+ */
+export interface ZoneRecommendationsResponse {
+  success: boolean;
+  data: ZoneRecommendation[];
+  message?: string;
+}
+
+export interface ZoneRecommendation {
+  id: string;
+  zoneId: string;
+  zoneName: string;
+  type: 'capacity' | 'growth' | 'efficiency' | 'resource';
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  suggestedActions: string[];
+  estimatedImpact?: {
+    efficiency?: number;
+    cost?: number;
+    revenue?: number;
+  };
+  createdAt: string;
+}
+
+/**
+ * Interface pour les données de comparaison entre zones
+ */
+export interface ZoneComparisonResponse {
+  success: boolean;
+  data: ZoneComparison[];
+  summary: {
+    totalZones: number;
+    bestPerformingZone: string;
+    mostEfficient: string;
+    needsAttention: string[];
+  };
+}
+
+export interface ZoneComparison {
+  zoneId: string;
+  zoneName: string;
+  performanceScore: number;
+  efficiencyRating: 'excellent' | 'good' | 'fair' | 'poor';
+  rank: number;
+  strengths: string[];
+  weaknesses: string[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AgencyService {
   private agencies: Agency[] = [
-    // {
-    //   _id: '1',
-    //   userId: 'user1',
-    //   firstName: 'Jean',
-    //   lastName: 'Dupont',
-    //   agencyName: 'EcoCollect Pro',
-    //   agencyDescription: 'Service de collecte écologique et professionnel',
-    //   phone: '+33123456789',
-    //   address: {
-    //     street: 'Avenue des Champs',
-    //     arrondissement: '8',
-    //     sector: 'Centre',
-    //     neighborhood: 'Champs-Élysées',
-    //     city: 'Paris',
-    //     postalCode: '75008',
-    //     latitude: 48.8698,
-    //     longitude: 2.3077
-    //   },
-    //   licenseNumber: 'LIC-001',
-    //   members: [],
-    //   serviceZones: [
-    //     {
-    //       id: '1',
-    //       name: 'Zone Nord',
-    //       description: 'Quartiers nord de la ville',
-    //       boundaries: [
-    //         { latitude: 48.8698, longitude: 2.3077 },
-    //         { latitude: 48.8639, longitude: 2.2978 },
-    //         { latitude: 48.8662, longitude: 2.3120 }
-    //       ],
-    //       neighborhoods: ['Champs-Élysées', 'Madeleine'],
-    //       cities: ['Paris'],
-    //       isActive: true
-    //     }
-    //   ],
-    //   services: [
-    //     {
-    //       id: '1',
-    //       name: 'Collecte Standard',
-    //       description: 'Collecte hebdomadaire de déchets ménagers',
-    //       wasteTypes: [],
-    //       frequency: 'weekly' as any,
-    //       price: 29.99,
-    //       currency: 'EUR',
-    //       isActive: true
-    //     }
-    //   ],
-    //   employees: [],
-    //   schedule: [],
-    //   collectors: [],
-    //   clients: [],
-    //   rating: 4.5,
-    //   totalClients: 1250,
-    //   acceptTerms: true,
-    //   receiveOffers: true,
-    //   isActive: true,
-    //   createdAt: '2024-01-01T00:00:00.000Z',
-    //   updatedAt: '2024-01-01T00:00:00.000Z',
-    //   __v: 0
-    // },
-    // {
-    //   _id: '2',
-    //   userId: 'user2',
-    //   firstName: 'Marie',
-    //   lastName: 'Martin',
-    //   agencyName: 'GreenWaste Solutions',
-    //   agencyDescription: 'Solutions durables pour la gestion des déchets',
-    //   phone: '+33987654321',
-    //   address: {
-    //     street: 'Rue de la Paix',
-    //     arrondissement: '5',
-    //     sector: 'Sud',
-    //     neighborhood: 'Quartier Latin',
-    //     city: 'Paris',
-    //     postalCode: '75005',
-    //     latitude: 48.8499,
-    //     longitude: 2.3447
-    //   },
-    //   licenseNumber: 'LIC-002',
-    //   members: [],
-    //   serviceZones: [
-    //     {
-    //       id: '2',
-    //       name: 'Zone Sud',
-    //       description: 'Quartiers sud de la ville',
-    //       boundaries: [
-    //         { latitude: 48.8499, longitude: 2.3447 },
-    //         { latitude: 48.8439, longitude: 2.3378 },
-    //         { latitude: 48.8462, longitude: 2.3520 }
-    //       ],
-    //       neighborhoods: ['Saint-Germain', 'Montparnasse'],
-    //       cities: ['Paris'],
-    //       isActive: true
-    //     }
-    //   ],
-    //   services: [
-    //     {
-    //       id: '2',
-    //       name: 'Collecte Premium',
-    //       description: 'Collecte bi-hebdomadaire avec tri sélectif',
-    //       wasteTypes: [],
-    //       frequency: 'biweekly' as any,
-    //       price: 45.99,
-    //       currency: 'EUR',
-    //       isActive: true
-    //     }
-    //   ],
-    //   employees: [],
-    //   schedule: [],
-    //   collectors: [],
-    //   clients: [],
-    //   rating: 4.2,
-    //   totalClients: 850,
-    //   acceptTerms: true,
-    //   receiveOffers: true,
-    //   isActive: true,
-    //   createdAt: '2024-01-01T00:00:00.000Z',
-    //   updatedAt: '2024-01-01T00:00:00.000Z',
-    //   __v: 0
-    // }
+   
   ];
   private tariffs: Agency[] = [
 
@@ -153,10 +142,7 @@ export class AgencyService {
     );
     return of(filtered).pipe(delay(500));
   }
-  //  searchAgencie(params: { term?: string; city?: string; sector?: string; rating?: string; 
-  //                         neighborhood?: string; service?: string; activityZone?: string;
-  //                        arrondissement?: string; radius?: number; status?: string;
-  //                        }): Observable<Agency[]> {
+ 
   searchAgencie(params: {
       term?: string; city?: string; sector?: string; rating?: string;
       neighborhood?: string; service?: string}): Observable<Agency[]> {
@@ -371,19 +357,7 @@ export class AgencyService {
   }
 
 
-  // updateEmployee$(employeeId: string, updatedData: any): Observable<any> {
-  //   return this.http.put<any>(
-  //     `${environment.apiUrl}/agences/employees/${employeeId}`,
-  //     updatedData
-  //   ).pipe(
-  //     tap((response) => console.log('Employé mis à jour :', response)),
-  //     catchError((error) => {
-  //       console.error("Erreur lors de la mise à jour :", error);
-  //       return throwError(() => error);
-  //     })
-  //   );
-  // }
-
+  
 
 
   //Activer ou desactiver une agence 
@@ -394,19 +368,7 @@ export class AgencyService {
   deActivateAgency(id: string): Observable<any> {
     return this.http.patch(`${environment.apiUrl}/agencies/${id}/deactivate`, {}).pipe();
   }
-  // addEmployee(agencyId: string, employee: Partial<Employee>): Observable<Employee> {
-  //   const newEmployee: Employee = {
-  //     id: Math.random().toString(36).substr(2, 9),
-  //     userId: Math.random().toString(36).substr(2, 9),
-  //      firstName: employee.firstName || '',
-  //     lastName: employee.lastName || '',
-  //     email: employee.email || '',
-  //     phone: employee.phone || '',
-  //     role: employee.role || 'collector' as any,
-  //     zones: employee.zones || [],
-  //     isActive: true,
-  //     hiredAt: new Date()
-  //   };
+;
 
   private currentUserSubject = new BehaviorSubject<Employees | null>(null);
   getCurrentUser(): Employees | null {
@@ -894,6 +856,372 @@ export class AgencyService {
           error: errorMessage,
           detailedErrors: detailedErrors,
           statusCode: error.status
+        });
+      })
+    );
+  }
+
+  // ================================
+  // fonction pour les analyses
+  // ================================
+
+  /**
+   
+   * @param agencyId 
+   * @param filters 
+   */
+  getZoneAnalytics$(agencyId: string, filters?: ZoneAnalyticsFilters): Observable<ZoneAnalyticsResponse> {
+    let params = new HttpParams().set('agencyId', agencyId);
+    
+    if (filters) {
+      if (filters.zoneIds && filters.zoneIds.length > 0) {
+        params = params.set('zoneIds', filters.zoneIds.join(','));
+      }
+      if (filters.clientType && filters.clientType !== 'all') {
+        params = params.set('clientType', filters.clientType);
+      }
+      if (filters.period) {
+        params = params.set('period', filters.period);
+      }
+      if (filters.includeInactive !== undefined) {
+        params = params.set('includeInactive', filters.includeInactive.toString());
+      }
+    }
+
+    return this.http.get<ZoneAnalyticsResponse>(`${environment.apiUrl}/agences/${agencyId}/zones/analytics`, { params }).pipe(
+      map(response => {
+        console.log("API > getZoneAnalytics :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la récupération des analytics de zones :", error);
+        return of({
+          success: false,
+          data: [],
+          message: 'Erreur lors du chargement des statistiques des zones'
+        });
+      })
+    );
+  }
+
+  /**
+   * Récupère les statistiques spécifiques d'une zone
+   * @param agencyId 
+   * @param zoneId 
+   * @param period 
+   */
+  getZoneStatistics$(agencyId: string, zoneId: string, period?: string): Observable<{ success: boolean; data: ZoneStatistics; message?: string }> {
+    let params = new HttpParams();
+    if (period) {
+      params = params.set('period', period);
+    }
+
+    return this.http.get<{ success: boolean; data: ZoneStatistics; message?: string }>(`${environment.apiUrl}/agences/${agencyId}/zones/${zoneId}/statistics`, { params }).pipe(
+      map(response => {
+        console.log("API > getZoneStatistics :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la récupération des statistiques de la zone :", error);
+        return of({
+          success: false,
+          data: {} as ZoneStatistics,
+          message: 'Erreur lors du chargement des statistiques de la zone'
+        });
+      })
+    );
+  }
+
+  /**
+   * Récupère le nombre de clients par type dans une zone spécifique
+   * @param agencyId 
+   * @param zoneId 
+   */
+  getClientsByTypeInZone$(agencyId: string, zoneId: string): Observable<{
+    success: boolean;
+    data: {
+      totalClients: number;
+      households: number;
+      businesses: number;
+      institutions: number;
+      distribution: {
+        householdsPercentage: number;
+        businessesPercentage: number;
+        institutionsPercentage: number;
+      };
+    };
+    message?: string;
+  }> {
+    return this.http.get<any>(`${environment.apiUrl}/agences/${agencyId}/zones/${zoneId}/clients/types`).pipe(
+      map(response => {
+        console.log("API > getClientsByTypeInZone :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la récupération des types de clients :", error);
+        return of({
+          success: false,
+          data: {
+            totalClients: 0,
+            households: 0,
+            businesses: 0,
+            institutions: 0,
+            distribution: {
+              householdsPercentage: 0,
+              businessesPercentage: 0,
+              institutionsPercentage: 0
+            }
+          },
+          message: 'Erreur lors du chargement des types de clients'
+        });
+      })
+    );
+  }
+
+  /**
+   * Récupère les métriques de charge de travail pour une zone
+   * @param agencyId 
+   * @param zoneId 
+   */
+  getZoneWorkloadMetrics$(agencyId: string, zoneId: string): Observable<{
+    success: boolean;
+    data: {
+      estimatedWorkHours: number;
+      requiredTeamSize: number;
+      requiredVehicles: number;
+      capacityUsagePercentage: number;
+      efficiency: 'optimal' | 'good' | 'overloaded' | 'underutilized';
+      recommendations: string[];
+    };
+    message?: string;
+  }> {
+    return this.http.get<any>(`${environment.apiUrl}/agences/${agencyId}/zones/${zoneId}/workload`).pipe(
+      map(response => {
+        console.log("API > getZoneWorkloadMetrics :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la récupération des métriques de charge :", error);
+        return of({
+          success: false,
+          data: {
+            estimatedWorkHours: 0,
+            requiredTeamSize: 0,
+            requiredVehicles: 0,
+            capacityUsagePercentage: 0,
+            efficiency: 'optimal' as const,
+            recommendations: []
+          },
+          message: 'Erreur lors du chargement des métriques de charge'
+        });
+      })
+    );
+  }
+
+  /**
+   * Récupère l'évolution des abonnements dans une zone
+   * @param agencyId 
+   * @param zoneId 
+   * @param period 
+   */
+  getSubscriptionEvolution$(agencyId: string, zoneId?: string, period: string = 'month'): Observable<{
+    success: boolean;
+    data: {
+      zoneId?: string;
+      zoneName?: string;
+      period: string;
+      currentSubscriptions: number;
+      newSubscriptions: number;
+      cancelledSubscriptions: number;
+      growthRate: number;
+      churnRate: number;
+      evolution: Array<{
+        date: string;
+        subscriptions: number;
+        newSubs: number;
+        cancelled: number;
+      }>;
+    }[];
+    message?: string;
+  }> {
+    let params = new HttpParams().set('period', period);
+    
+    const endpoint = zoneId 
+      ? `${environment.apiUrl}/agences/${agencyId}/zones/${zoneId}/subscriptions/evolution`
+      : `${environment.apiUrl}/agences/${agencyId}/subscriptions/evolution`;
+
+    return this.http.get<any>(endpoint, { params }).pipe(
+      map(response => {
+        console.log("API > getSubscriptionEvolution :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la récupération de l'évolution des abonnements :", error);
+        return of({
+          success: false,
+          data: [],
+          message: 'Erreur lors du chargement de l\'évolution des abonnements'
+        });
+      })
+    );
+  }
+
+  /**
+   * Récupère les recommandations automatiques pour l'optimisation des zones
+   * @param agencyId
+   * @param zoneId 
+   */
+  getZoneRecommendations$(agencyId: string, zoneId?: string): Observable<ZoneRecommendationsResponse> {
+    const endpoint = zoneId 
+      ? `${environment.apiUrl}/agences/${agencyId}/zones/${zoneId}/recommendations`
+      : `${environment.apiUrl}/agences/${agencyId}/zones/recommendations`;
+
+    return this.http.get<ZoneRecommendationsResponse>(endpoint).pipe(
+      map(response => {
+        console.log("API > getZoneRecommendations :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la récupération des recommandations :", error);
+        return of({
+          success: false,
+          data: [],
+          message: 'Erreur lors du chargement des recommandations'
+        });
+      })
+    );
+  }
+
+  /**
+   * Compare les performances entre différentes zones
+   * @param agencyId 
+   * @param zoneIds
+   */
+  compareZonePerformance$(agencyId: string, zoneIds?: string[]): Observable<ZoneComparisonResponse> {
+    let params = new HttpParams();
+    if (zoneIds && zoneIds.length > 0) {
+      params = params.set('zoneIds', zoneIds.join(','));
+    }
+
+    return this.http.get<ZoneComparisonResponse>(`${environment.apiUrl}/agences/${agencyId}/zones/comparison`, { params }).pipe(
+      map(response => {
+        console.log("API > compareZonePerformance :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la comparaison des zones :", error);
+        return of({
+          success: false,
+          data: [],
+          summary: {
+            totalZones: 0,
+            bestPerformingZone: '',
+            mostEfficient: '',
+            needsAttention: []
+          }
+        });
+      })
+    );
+  }
+
+  /**
+   * Optimise automatiquement les ressources d'une zone
+   * @param agencyId 
+   * @param zoneId 
+   * @param optimizationType 
+   */
+  optimizeZoneResources$(
+    agencyId: string, 
+    zoneId: string, 
+    optimizationType: 'team' | 'vehicles' | 'schedule' | 'all'
+  ): Observable<{
+    success: boolean;
+    data: {
+      optimizationType: string;
+      currentState: any;
+      optimizedState: any;
+      expectedImprovements: {
+        efficiency: number;
+        costReduction: number;
+        timeReduction: number;
+      };
+      implementationSteps: string[];
+    };
+    message?: string;
+  }> {
+    const payload = { optimizationType };
+
+    return this.http.post<any>(`${environment.apiUrl}/agences/${agencyId}/zones/${zoneId}/optimize`, payload).pipe(
+      map(response => {
+        console.log("API > optimizeZoneResources :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de l'optimisation de la zone :", error);
+        return of({
+          success: false,
+          data: {
+            optimizationType,
+            currentState: {},
+            optimizedState: {},
+            expectedImprovements: {
+              efficiency: 0,
+              costReduction: 0,
+              timeReduction: 0
+            },
+            implementationSteps: []
+          },
+          message: 'Erreur lors de l\'optimisation de la zone'
+        });
+      })
+    );
+  }
+
+  /**
+   * Génère un rapport détaillé pour une zone
+   * @param agencyId 
+   * @param zoneId 
+   * @param reportType 
+   * @param period 
+   */
+  generateZoneReport$(
+    agencyId: string, 
+    zoneId: string, 
+    reportType: 'performance' | 'financial' | 'operational' | 'complete',
+    period: string = 'month'
+  ): Observable<{
+    success: boolean;
+    data: {
+      reportId: string;
+      reportType: string;
+      period: string;
+      generatedAt: string;
+      downloadUrl?: string;
+      summary: any;
+      details: any;
+    };
+    message?: string;
+  }> {
+    const payload = { reportType, period };
+
+    return this.http.post<any>(`${environment.apiUrl}/agences/${agencyId}/zones/${zoneId}/reports`, payload).pipe(
+      map(response => {
+        console.log("API > generateZoneReport :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la génération du rapport :", error);
+        return of({
+          success: false,
+          data: {
+            reportId: '',
+            reportType,
+            period,
+            generatedAt: new Date().toISOString(),
+            summary: {},
+            details: {}
+          },
+          message: 'Erreur lors de la génération du rapport'
         });
       })
     );

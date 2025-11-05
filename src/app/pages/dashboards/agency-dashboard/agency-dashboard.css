@@ -2049,6 +2049,28 @@ form-row {
   overflow: hidden;
 }
 
+/* Drawer plus large pour les formulaires complexes (comme ajouter employé) */
+.drawer-content-wide {
+  width: 680px;
+  max-width: 90vw;
+}
+
+/* Amélioration de la disposition pour les drawers larges */
+.drawer-content-wide .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.drawer-content-wide .form-section .form-row {
+  margin-bottom: 8px;
+}
+
+/* Pour les champs qui doivent prendre toute la largeur */
+.drawer-content-wide .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
 /* Animation de glissement depuis la droite */
 @keyframes slideInRight {
   from {
@@ -2139,7 +2161,8 @@ form-row {
 
 /* Responsive pour le drawer */
 @media (max-width: 768px) {
-  .drawer-content {
+  .drawer-content,
+  .drawer-content-wide {
     width: 100%;
     max-width: 100vw;
   }
@@ -2317,5 +2340,555 @@ form-row {
 
   .stat-item {
     padding: 12px;
+  }
+}
+
+/* Zone Analytics Styles */
+.zone-analytics-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.analytics-header h3 {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.analytics-filters {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.zone-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.zone-stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.zone-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.zone-stat-card .stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.zone-stat-card .stat-icon.clients-zone {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.zone-stat-card .stat-icon.business-zone {
+  background: rgba(0, 123, 255, 0.1);
+  color: #007bff;
+}
+
+.zone-stat-card .stat-icon.institution-zone {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.zone-stat-card .stat-icon.capacity-zone {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.zone-stat-card h4 {
+  font-size: 1rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.zone-stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 0.25rem;
+}
+
+.zone-stat-card .stat-trend {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.zone-stat-card .stat-trend.positive {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.zone-stat-card .stat-trend.warning {
+  color: #ffc107;
+  font-weight: 500;
+}
+
+.zone-stat-card .stat-trend.negative {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+/* Zone Details Section */
+.zone-details-section {
+  margin-top: 2rem;
+}
+
+.zone-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.zone-details-header h4 {
+  color: #2c3e50;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.legend {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.legend-item.household i {
+  color: #28a745;
+}
+
+.legend-item.business i {
+  color: #007bff;
+}
+
+.legend-item.institution i {
+  color: #ffc107;
+}
+
+.zone-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.zone-breakdown-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.zone-breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.zone-breakdown-header h5 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.zone-total {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.total-clients {
+  font-size: 0.875rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.capacity-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capacity-indicator.good {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.capacity-indicator.warning {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.capacity-indicator.critical {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.capacity-indicator i {
+  font-size: 16px;
+}
+
+/* Client Type Breakdown */
+.client-type-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.breakdown-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.breakdown-info i {
+  font-size: 18px;
+}
+
+.breakdown-item.household .breakdown-info i {
+  color: #28a745;
+}
+
+.breakdown-item.business .breakdown-info i {
+  color: #007bff;
+}
+
+.breakdown-item.institution .breakdown-info i {
+  color: #ffc107;
+}
+
+.type-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.breakdown-stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.breakdown-stats .count {
+  font-weight: 600;
+  color: #212529;
+  min-width: 30px;
+  text-align: right;
+}
+
+.percentage-bar {
+  width: 60px;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.percentage-bar .fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.household-fill {
+  background: #28a745;
+}
+
+.business-fill {
+  background: #007bff;
+}
+
+.institution-fill {
+  background: #ffc107;
+}
+
+.breakdown-stats .percentage {
+  font-size: 0.875rem;
+  color: #6c757d;
+  min-width: 35px;
+  text-align: right;
+}
+
+/* Capacity Metrics */
+.capacity-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+}
+
+.metric-item i {
+  font-size: 18px;
+  color: #6c757d;
+}
+
+.metric-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.metric-value.positive {
+  color: #28a745;
+}
+
+.metric-value.negative {
+  color: #dc3545;
+}
+
+.zone-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.zone-actions .action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  color: #6c757d;
+  transition: all 0.2s ease;
+}
+
+.zone-actions .action-btn:hover {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.zone-actions .action-btn.warning {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: #ffc107;
+  color: #ffc107;
+}
+
+.zone-actions .action-btn.warning:hover {
+  background: rgba(255, 193, 7, 0.2);
+}
+
+/* Recommendations Section */
+.recommendations-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.recommendations-section h4 {
+  color: #2c3e50;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.recommendation-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid transparent;
+}
+
+.recommendation-item.high {
+  background: rgba(220, 53, 69, 0.05);
+  border-left-color: #dc3545;
+}
+
+.recommendation-item.medium {
+  background: rgba(255, 193, 7, 0.05);
+  border-left-color: #ffc107;
+}
+
+.recommendation-item.low {
+  background: rgba(40, 167, 69, 0.05);
+  border-left-color: #28a745;
+}
+
+.recommendation-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.recommendation-item.high .recommendation-icon {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.recommendation-item.medium .recommendation-icon {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.recommendation-item.low .recommendation-icon {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.recommendation-content {
+  flex: 1;
+}
+
+.recommendation-content h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 0.5rem;
+}
+
+.recommendation-content p {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.recommendation-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Responsive Design pour Zone Analytics */
+@media (max-width: 768px) {
+  .zone-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .zone-breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .analytics-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .analytics-filters {
+    justify-content: center;
+  }
+  
+  .legend {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .capacity-metrics {
+    grid-template-columns: 1fr;
+  }
+  
+  .zone-breakdown-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  
+  .breakdown-stats {
+    gap: 0.5rem;
+  }
+  
+  .percentage-bar {
+    width: 40px;
+  }
+
+  .zone-analytics-section {
+    padding: 1rem;
+  }
+
+  .metric-item {
+    padding: 0.5rem;
   }
 }

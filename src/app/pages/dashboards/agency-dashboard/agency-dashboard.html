@@ -306,6 +306,222 @@
             <i class="material-icons">edit_location</i>
             Modifier les zones couvertes
           </button>
+
+          <!-- Section Statistiques par Zone -->
+          <div class="zone-analytics-section">
+            <div class="analytics-header">
+              <h3>Analyse des Zones de Couverture</h3>
+              <div class="analytics-filters">
+                <select [(ngModel)]="selectedZoneForAnalytics" class="filter-select">
+                  <option value="">Toutes les zones</option>
+                  <option *ngFor="let zone of zones" [value]="zone.neighborhood || zone">
+                    {{ zone.neighborhood || zone }}
+                  </option>
+                </select>
+                <button class="btn btn-accent" (click)="refreshZoneAnalytics()">
+                  <i class="material-icons">refresh</i>
+                  Actualiser
+                </button>
+              </div>
+            </div>
+
+            <!-- Cartes de statistiques globales -->
+            <div class="zone-stats-grid">
+              <div class="zone-stat-card card">
+                <div class="stat-icon clients-zone">
+                  <i class="material-icons">home</i>
+                </div>
+                <div class="stat-info">
+                  <h4>Total Ménages</h4>
+                  <p class="stat-value">{{ getTotalClientsByType('household') || 0 }}</p>
+                  <span class="stat-trend">{{ getPercentageByType('household') }}% du total</span>
+                </div>
+              </div>
+
+              <div class="zone-stat-card card">
+                <div class="stat-icon business-zone">
+                  <i class="material-icons">business</i>
+                </div>
+                <div class="stat-info">
+                  <h4>Entreprises</h4>
+                  <p class="stat-value">{{ getTotalClientsByType('business') || 0 }}</p>
+                  <span class="stat-trend">{{ getPercentageByType('business') }}% du total</span>
+                </div>
+              </div>
+
+              <div class="zone-stat-card card">
+                <div class="stat-icon institution-zone">
+                  <i class="material-icons">account_balance</i>
+                </div>
+                <div class="stat-info">
+                  <h4>Institutions</h4>
+                  <p class="stat-value">{{ getTotalClientsByType('institution') || 0 }}</p>
+                  <span class="stat-trend">{{ getPercentageByType('institution') }}% du total</span>
+                </div>
+              </div>
+
+              <div class="zone-stat-card card">
+                <div class="stat-icon capacity-zone">
+                  <i class="material-icons">local_shipping</i>
+                </div>
+                <div class="stat-info">
+                  <h4>Charge de Travail</h4>
+                  <p class="stat-value">{{ getWorkloadPercentage() }}%</p>
+                  <span class="stat-trend" [class.positive]="getWorkloadPercentage() <= 80" 
+                        [class.warning]="getWorkloadPercentage() > 80 && getWorkloadPercentage() <= 95"
+                        [class.negative]="getWorkloadPercentage() > 95">
+                    {{ getWorkloadStatus() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Détails par zone -->
+            <div class="zone-details-section">
+              <div class="zone-details-header">
+                <h4>Répartition Détaillée par Zone</h4>
+                <div class="legend">
+                  <span class="legend-item household"><i class="material-icons">home</i> Ménages</span>
+                  <span class="legend-item business"><i class="material-icons">business</i> Entreprises</span>
+                  <span class="legend-item institution"><i class="material-icons">account_balance</i> Institutions</span>
+                </div>
+              </div>
+
+              <div class="zone-breakdown-grid">
+                <div *ngFor="let zone of getZoneAnalyticsData()" class="zone-breakdown-card card">
+                  <div class="zone-breakdown-header">
+                    <h5>{{ zone.name }}</h5>
+                    <div class="zone-total">
+                      <span class="total-clients">{{ zone.totalClients }} clients</span>
+                      <div class="capacity-indicator" [class]="getCapacityStatus(zone.capacityUsage)">
+                        <i class="material-icons">{{ getCapacityIcon(zone.capacityUsage) }}</i>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="client-type-breakdown">
+                    <div class="breakdown-item household">
+                      <div class="breakdown-info">
+                        <i class="material-icons">home</i>
+                        <span class="type-label">Ménages</span>
+                      </div>
+                      <div class="breakdown-stats">
+                        <span class="count">{{ zone.households }}</span>
+                        <div class="percentage-bar">
+                          <div class="fill household-fill" [style.width]="(zone.households / zone.totalClients * 100) + '%'"></div>
+                        </div>
+                        <span class="percentage">{{ (zone.households / zone.totalClients * 100) | number:'1.0-0' }}%</span>
+                      </div>
+                    </div>
+
+                    <div class="breakdown-item business">
+                      <div class="breakdown-info">
+                        <i class="material-icons">business</i>
+                        <span class="type-label">Entreprises</span>
+                      </div>
+                      <div class="breakdown-stats">
+                        <span class="count">{{ zone.businesses }}</span>
+                        <div class="percentage-bar">
+                          <div class="fill business-fill" [style.width]="(zone.businesses / zone.totalClients * 100) + '%'"></div>
+                        </div>
+                        <span class="percentage">{{ (zone.businesses / zone.totalClients * 100) | number:'1.0-0' }}%</span>
+                      </div>
+                    </div>
+
+                    <div class="breakdown-item institution">
+                      <div class="breakdown-info">
+                        <i class="material-icons">account_balance</i>
+                        <span class="type-label">Institutions</span>
+                      </div>
+                      <div class="breakdown-stats">
+                        <span class="count">{{ zone.institutions }}</span>
+                        <div class="percentage-bar">
+                          <div class="fill institution-fill" [style.width]="(zone.institutions / zone.totalClients * 100) + '%'"></div>
+                        </div>
+                        <span class="percentage">{{ (zone.institutions / zone.totalClients * 100) | number:'1.0-0' }}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Métriques de capacité -->
+                  <div class="capacity-metrics">
+                    <div class="metric-item">
+                      <i class="material-icons">schedule</i>
+                      <div class="metric-info">
+                        <span class="metric-label">Temps estimé</span>
+                        <span class="metric-value">{{ zone.estimatedTime }}h</span>
+                      </div>
+                    </div>
+
+                    <div class="metric-item">
+                      <i class="material-icons">group</i>
+                      <div class="metric-info">
+                        <span class="metric-label">Équipe requise</span>
+                        <span class="metric-value">{{ zone.requiredTeam }} personnes</span>
+                      </div>
+                    </div>
+
+                    <div class="metric-item">
+                      <i class="material-icons">local_shipping</i>
+                      <div class="metric-info">
+                        <span class="metric-label">Véhicules</span>
+                        <span class="metric-value">{{ zone.requiredVehicles }}</span>
+                      </div>
+                    </div>
+
+                    <div class="metric-item">
+                      <i class="material-icons">trending_up</i>
+                      <div class="metric-info">
+                        <span class="metric-label">Évolution</span>
+                        <span class="metric-value" [class.positive]="zone.growth >= 0" [class.negative]="zone.growth < 0">
+                          {{ zone.growth >= 0 ? '+' : '' }}{{ zone.growth }}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Actions de la zone -->
+                  <div class="zone-actions">
+                    <button class="action-btn" (click)="viewZoneDetails(zone.id)">
+                      <i class="material-icons">visibility</i>
+                    </button>
+                    <button class="action-btn" (click)="optimizeZoneCapacity(zone.id)">
+                      <i class="material-icons">tune</i>
+                    </button>
+                    <button class="action-btn" [class.warning]="zone.capacityUsage > 90" 
+                            (click)="showCapacityAlert(zone)">
+                      <i class="material-icons">warning</i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recommandations -->
+            <div class="recommendations-section" *ngIf="getZoneRecommendations().length > 0">
+              <h4>Recommandations</h4>
+              <div class="recommendations-list">
+                <div *ngFor="let recommendation of getZoneRecommendations()" 
+                     class="recommendation-item" [class]="recommendation.priority">
+                  <div class="recommendation-icon">
+                    <i class="material-icons">{{ recommendation.icon }}</i>
+                  </div>
+                  <div class="recommendation-content">
+                    <h5>{{ recommendation.title }}</h5>
+                    <p>{{ recommendation.description }}</p>
+                    <div class="recommendation-actions">
+                      <button class="btn btn-sm btn-primary" (click)="applyRecommendation(recommendation)">
+                        Appliquer
+                      </button>
+                      <button class="btn btn-sm btn-outline" (click)="dismissRecommendation(recommendation)">
+                        Ignorer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- Indicateur de chargement pour les zones -->
           <app-loading-spinner *ngIf="isLoadingZones" message="Chargement des zones..." size="medium">
           </app-loading-spinner>
@@ -890,7 +1106,7 @@
           <div class="analytics-content">
             <!-- Drawer Ajouter Employé -->
             <div class="drawer-overlay" *ngIf="showAddEmployeeModal" (click)="showAddEmployeeModal = false">
-              <div class="drawer-content" (click)="$event.stopPropagation()">
+              <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                 <div class="drawer-header">
                   <h3>Ajouter un Employé</h3>
                   <button class="drawer-close-btn" (click)="showAddEmployeeModal = false">
@@ -933,58 +1149,61 @@
                         <span class="error-message">{{ getFieldError('employee', 'lastName') }}</span>
                       </div>
                     </div>
-                    <div class="form-group">
-                      <label class="form-label required">Email</label>
-                      <input type="email" formControlName="email" class="form-input"
-                        [class.error]="hasFieldError('employee', 'email') || hasBackendFieldError('email')"
-                        [class.valid]="employeeForm.get('email')?.valid && employeeForm.get('email')?.touched"
-                        placeholder="exemple@email.com" (input)="clearBackendErrors()" />
-                      <span class="error-message">{{ getFieldError('employee', 'email') }}</span>
-                      <span *ngIf="hasBackendFieldError('email')" class="error-message backend-error">
-                        {{ getBackendFieldError('email') }}
-                      </span>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label required">Téléphone</label>
-                      <input type="tel" formControlName="phone" class="form-input"
-                        [class.error]="hasFieldError('employee', 'phone')"
-                        [class.valid]="employeeForm.get('phone')?.valid && employeeForm.get('phone')?.touched"
-                        placeholder="+226 XX XX XX XX" />
-                      <span class="error-message">{{ getFieldError('employee', 'phone') }}</span>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label required">Mot de passe</label>
-                      <div class="password-input-wrapper">
-                        <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-input"
-                          [class.error]="hasFieldError('employee', 'password')"
-                          [class.valid]="employeeForm.get('password')?.valid && employeeForm.get('password')?.touched"
-                          placeholder="Minimum 6 caractères" />
-                        <button type="button" class="password-toggle-btn" (click)="togglePasswordVisibility()">
-                          <i class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
-                        </button>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label required">Email</label>
+                        <input type="email" formControlName="email" class="form-input"
+                          [class.error]="hasFieldError('employee', 'email') || hasBackendFieldError('email')"
+                          [class.valid]="employeeForm.get('email')?.valid && employeeForm.get('email')?.touched"
+                          placeholder="exemple@email.com" (input)="clearBackendErrors()" />
+                        <span class="error-message">{{ getFieldError('employee', 'email') }}</span>
+                        <span *ngIf="hasBackendFieldError('email')" class="error-message backend-error">
+                          {{ getBackendFieldError('email') }}
+                        </span>
                       </div>
-                      <span class="error-message">{{ getFieldError('employee', 'password') }}</span>
-                    </div>
-
-                    <div class="form-group">
-                      <label class="form-label required">Confirmer le mot de passe</label>
-                      <div class="password-input-wrapper">
-                        <input [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword"
-                          class="form-input"
-                          [class.error]="hasFieldError('employee', 'confirmPassword') || employeeForm.get('confirmPassword')?.hasError('passwordMismatch')"
-                          [class.valid]="employeeForm.get('confirmPassword')?.valid && employeeForm.get('confirmPassword')?.touched"
-                          placeholder="Ressaisissez le mot de passe" />
-                        <button type="button" class="password-toggle-btn" (click)="toggleConfirmPasswordVisibility()">
-                          <i class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</i>
-                        </button>
+                      <div class="form-group">
+                        <label class="form-label required">Téléphone</label>
+                        <input type="tel" formControlName="phone" class="form-input"
+                          [class.error]="hasFieldError('employee', 'phone')"
+                          [class.valid]="employeeForm.get('phone')?.valid && employeeForm.get('phone')?.touched"
+                          placeholder="+226 XX XX XX XX" />
+                        <span class="error-message">{{ getFieldError('employee', 'phone') }}</span>
                       </div>
-                      <span class="error-message"
-                        *ngIf="employeeForm.get('confirmPassword')?.hasError('passwordMismatch')">
-                        Les mots de passe ne correspondent pas
-                      </span>
-                      <span class="error-message">{{ getFieldError('employee', 'confirmPassword') }}</span>
                     </div>
-                    <div class="form-group">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label required">Mot de passe</label>
+                        <div class="password-input-wrapper">
+                          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-input"
+                            [class.error]="hasFieldError('employee', 'password')"
+                            [class.valid]="employeeForm.get('password')?.valid && employeeForm.get('password')?.touched"
+                            placeholder="Minimum 6 caractères" />
+                          <button type="button" class="password-toggle-btn" (click)="togglePasswordVisibility()">
+                            <i class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
+                          </button>
+                        </div>
+                        <span class="error-message">{{ getFieldError('employee', 'password') }}</span>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label required">Confirmer le mot de passe</label>
+                        <div class="password-input-wrapper">
+                          <input [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword"
+                            class="form-input"
+                            [class.error]="hasFieldError('employee', 'confirmPassword') || employeeForm.get('confirmPassword')?.hasError('passwordMismatch')"
+                            [class.valid]="employeeForm.get('confirmPassword')?.valid && employeeForm.get('confirmPassword')?.touched"
+                            placeholder="Ressaisissez le mot de passe" />
+                          <button type="button" class="password-toggle-btn" (click)="toggleConfirmPasswordVisibility()">
+                            <i class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</i>
+                          </button>
+                        </div>
+                        <span class="error-message"
+                          *ngIf="employeeForm.get('confirmPassword')?.hasError('passwordMismatch')">
+                          Les mots de passe ne correspondent pas
+                        </span>
+                        <span class="error-message">{{ getFieldError('employee', 'confirmPassword') }}</span>
+                      </div>
+                    </div>
+                    <div class="form-group full-width">
                       <label class="form-label required">Rôle</label>
                       <select formControlName="role" class="form-select"
                         [class.error]="hasFieldError('employee', 'role')"
@@ -1048,7 +1267,7 @@
                       </div>
                     </div>
                     <!-- Sélection multiple des zones -->
-                    <div class="form-group" *ngIf="employeeForm.get('role')?.value === 'collector'">
+                    <div class="form-group full-width" *ngIf="employeeForm.get('role')?.value === 'collector'">
                       <label class="form-label">Zones assignées (optionnel)</label>
                       <div class="zone-selection" [class.error]="hasFieldError('employee', 'zones')">
                         <div class="form-checkbox-group">
@@ -1087,7 +1306,7 @@
 
             <!-- Drawer Ajouter Tarif -->
             <div class="drawer-overlay" *ngIf="showZoneModal" (click)="showZoneModal = false">
-              <div class="drawer-content" (click)="$event.stopPropagation()">
+              <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                 <div class="drawer-header">
                   <h3>Ajouter un Tarif</h3>
                   <button class="drawer-close-btn" (click)="showZoneModal = false">
@@ -1098,7 +1317,7 @@
                 <div class="drawer-body">
                   <form id="tariff-form" class="drawer-form" [formGroup]="tariffForm" (ngSubmit)="addTariff()">
                     <!-- Type -->
-                    <div class="form-group">
+                    <div class="form-group full-width">
                       <label class="form-label required">Type</label>
                       <select formControlName="type" class="form-select" [class.error]="hasFieldError('tariff', 'type')"
                         [class.valid]="tariffForm.get('type')?.valid && tariffForm.get('type')?.touched">
@@ -1110,28 +1329,28 @@
                       <span class="error-message">{{ getFieldError('tariff', 'type') }}</span>
                     </div>
 
-                    <!-- Prix -->
-                    <div class="form-group">
-                      <label class="form-label required">Prix (FCFA)</label>
-                      <input type="number" formControlName="price" class="form-input"
-                        [class.error]="hasFieldError('tariff', 'price')"
-                        [class.valid]="tariffForm.get('price')?.valid && tariffForm.get('price')?.touched"
-                        placeholder="0" min="0" />
-                      <span class="error-message">{{ getFieldError('tariff', 'price') }}</span>
-                    </div>
-
-                    <!-- Nombre de passages -->
-                    <div class="form-group">
-                      <label class="form-label required">Nombre de passages</label>
-                      <input type="number" formControlName="nbPassages" class="form-input"
-                        [class.error]="hasFieldError('tariff', 'nbPassages')"
-                        [class.valid]="tariffForm.get('nbPassages')?.valid && tariffForm.get('nbPassages')?.touched"
-                        placeholder="1" min="1" />
-                      <span class="error-message">{{ getFieldError('tariff', 'nbPassages') }}</span>
+                    <!-- Prix et Nombre de passages -->
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label required">Prix (FCFA)</label>
+                        <input type="number" formControlName="price" class="form-input"
+                          [class.error]="hasFieldError('tariff', 'price')"
+                          [class.valid]="tariffForm.get('price')?.valid && tariffForm.get('price')?.touched"
+                          placeholder="0" min="0" />
+                        <span class="error-message">{{ getFieldError('tariff', 'price') }}</span>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label required">Nombre de passages</label>
+                        <input type="number" formControlName="nbPassages" class="form-input"
+                          [class.error]="hasFieldError('tariff', 'nbPassages')"
+                          [class.valid]="tariffForm.get('nbPassages')?.valid && tariffForm.get('nbPassages')?.touched"
+                          placeholder="1" min="1" />
+                        <span class="error-message">{{ getFieldError('tariff', 'nbPassages') }}</span>
+                      </div>
                     </div>
 
                     <!-- Description -->
-                    <div class="form-group">
+                    <div class="form-group full-width">
                       <label class="form-label required">Description</label>
                       <textarea formControlName="description" class="form-textarea"
                         [class.error]="hasFieldError('tariff', 'description')"
