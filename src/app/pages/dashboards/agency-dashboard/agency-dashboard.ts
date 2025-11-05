@@ -8,7 +8,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { ActivatedRoute, RouterModule } from "@angular/router";
+import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import {
   FormBuilder,
   FormGroup,
@@ -375,14 +375,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     private messageService: MessagesService,
     private sharedService: SharedService,
     private countriesOrgMockService: CountriesOrgMockService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
 
     this.initializeForms();
   }
-
+  navigateToAgencyDetails() {
+    this.router.navigate(["/agencies", this.currentUser?.agencyId]);
+  }
   // Initialisation de tous les formulaires réactifs
   private initializeForms(): void {
     // Formulaire de planification
