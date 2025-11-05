@@ -55,7 +55,8 @@
           </div>
         </div>
         <div class="agency-actions">
-          <ng-container *ngIf="currentUser?.role === 'manager'">
+          <ng-container *ngIf="currentUser?.role === 'manager' && 
+              currentUser?.agencyId === agency?._id">
             <button class="btn btn-success" (click)="editAgency()">
               <i class="material-icons">edit</i>
               Modifier
