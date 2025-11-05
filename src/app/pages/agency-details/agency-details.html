@@ -62,7 +62,7 @@
             </button>
             <button
               class="btn btn-accent"
-              (click)="activateAgency(agency?.userId)"
+              (click)="activateAgency(agency?._id)"
             >
               <ng-container *ngIf="!agency?.isActive ; else activeBtn">
                 <i class="material-icons">check</i>
