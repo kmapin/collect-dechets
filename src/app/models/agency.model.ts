@@ -5,6 +5,8 @@ export interface Agency {
   lastName: string;
   // agencyName: string;
   name: string;
+  slogan?: string;
+  status?:string;
   arrondissement: string;
   secteur: string;
   quartier: string;

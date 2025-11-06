@@ -8,7 +8,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { ActivatedRoute, RouterModule } from "@angular/router";
+import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import {
   FormBuilder,
   FormGroup,
@@ -17,10 +17,15 @@ import {
   Validators,
 } from "@angular/forms";
 import { AuthService } from "../../../services/auth.service";
-import { AgencyService } from "../../../services/agency.service";
+import { AgencyService, ZoneStatistics, ZoneRecommendation as ServiceZoneRecommendation, ZoneAnalyticsResponse } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
-import { User, UserRole } from "../../../models/user.model";
+import {
+  User,
+  UserRole,
+  AddEmployeeData,
+  UserAddress,
+} from "../../../models/user.model";
 import {
   Agency,
   Employee,
@@ -83,6 +88,29 @@ interface Report {
   photos?: string[];
 }
 
+interface ZoneAnalytics {
+  id: string;
+  name: string;
+  totalClients: number;
+  households: number;
+  businesses: number;
+  institutions: number;
+  capacityUsage: number;
+  estimatedTime: number;
+  requiredTeam: number;
+  requiredVehicles: number;
+  growth: number;
+}
+
+interface LocalZoneRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  icon: string;
+  zoneId: string;
+}
+
 interface Statistics {
   totalClients: number;
   totalEmployees: number;
@@ -100,7 +128,7 @@ interface Statistics {
 }
 
 @Component({
-  selector: 'app-agency-dashboard',
+  selector: "app-agency-dashboard",
   imports: [
     CommonModule,
     RouterModule,
@@ -108,12 +136,12 @@ interface Statistics {
     ReactiveFormsModule,
     MatExpansionModule,
     MatIcon,
-    LoadingSpinnerComponent
+    LoadingSpinnerComponent,
   ],
-  templateUrl: './agency-dashboard.html',
-  styleUrl: './agency-dashboard.css'
+  templateUrl: "./agency-dashboard.html",
+  styleUrl: "./agency-dashboard.css",
 })
-export class AgencyDashboard  implements OnInit,AfterViewChecked {
+export class AgencyDashboard implements OnInit, AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
 
   scheduleForm!: FormGroup;
@@ -224,6 +252,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
 
   // Modals
   showAddEmployeeModal = false;
+  showPassword = false;
+  showConfirmPassword = false;
+  employeeFormError: string | null = null;
+  employeeFormDetailedErrors: any = {};
+  Object = Object; // Pour utiliser Object.keys dans le template
   showUpdateEmployeeModal = false;
   showZoneModal = false;
   showZoneModalcouverture = false;
@@ -233,7 +266,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
 
   // Forms - Supprimés les objets pour utiliser les reactive forms
   // newEmployee, newTariff, newZone, newSchedule seront gérés par les FormGroups
-  
+
   // Propriétés temporaires pour compatibilité (à supprimer après migration du template)
   newEmployee: any = {
     firstName: "",
@@ -266,7 +299,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   activeClientNbrs!: number;
   pendingClients: ClientApi[] = [];
   isLoading: boolean = false;
-  
+
   // Variables de state de chargement pour chaque section
   isLoadingStatistics: boolean = false;
   isLoadingCollections: boolean = false;
@@ -277,7 +310,12 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   isLoadingMessages: boolean = false;
   isLoadingTariffs: boolean = false;
   isLoadingSchedules: boolean = false;
-  
+
+  // Propriétés pour l'analyse des zones
+  selectedZoneForAnalytics: string = '';
+  zoneAnalyticsData: ZoneAnalytics[] = [];
+  zoneRecommendations: LocalZoneRecommendation[] = [];
+
   // get activeClientNbr(): number {
   //   return this.activeClients.length;
   // }
@@ -322,7 +360,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   receivedId: string = "";
   client: any;
   displayAgencyName: string = "";
-  
+
   // Error handling
   formErrors: { [key: string]: string } = {};
 
@@ -337,14 +375,17 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     private messageService: MessagesService,
     private sharedService: SharedService,
     private countriesOrgMockService: CountriesOrgMockService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
-    
+
     this.initializeForms();
   }
-
+  navigateToAgencyDetails() {
+    this.router.navigate(["/agencies", this.currentUser?.agencyId]);
+  }
   // Initialisation de tous les formulaires réactifs
   private initializeForms(): void {
     // Formulaire de planification
@@ -361,22 +402,40 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
       }
     );
 
-    // Formulaire d'employé
-    this.employeeForm = this.fb.group({
-      firstName: ["", [Validators.required, Validators.minLength(2)]],
-      lastName: ["", [Validators.required, Validators.minLength(2)]],
-      email: ["", [Validators.required, Validators.email]],
-      phone: ["", [Validators.required, Validators.pattern(/^[0-9+\-\s]+$/)]],
-      role: ["", Validators.required],
-      zones: [[], Validators.required]
-    });
+    // Formulaire d'employé - selon le schéma Swagger requis
+    this.employeeForm = this.fb.group(
+      {
+        firstName: ["", [Validators.required, Validators.minLength(2)]],
+        lastName: ["", [Validators.required, Validators.minLength(2)]],
+        email: ["", [Validators.required, Validators.email]],
+        password: ["", [Validators.required, Validators.minLength(6)]],
+        confirmPassword: ["", [Validators.required]],
+        phone: ["", [Validators.required, Validators.pattern(/^[0-9+\-\s]+$/)]],
+        role: ["", Validators.required],
+        // Address fields (requis selon le schéma)
+        address: this.fb.group({
+          street: ["", Validators.required],
+          arrondissement: ["", Validators.required],
+          sector: ["", Validators.required],
+          doorNumber: ["", Validators.required],
+          doorColor: [""],
+          neighborhood: ["", Validators.required],
+          city: ["", Validators.required],
+          postalCode: ["", Validators.required],
+          latitude: [null],
+          longitude: [null],
+        }),
+        zones: [[]], // Validation dynamique selon le rôle
+      },
+      { validators: this.passwordMatchValidator }
+    );
 
     // Formulaire de tarif
     this.tariffForm = this.fb.group({
       type: ["", Validators.required],
       price: ["", [Validators.required, Validators.min(0)]],
       description: ["", [Validators.required, Validators.minLength(10)]],
-      nbPassages: ["", [Validators.required, Validators.min(1)]]
+      nbPassages: ["", [Validators.required, Validators.min(1)]],
     });
 
     // Formulaire de zone
@@ -385,12 +444,12 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
       description: ["", [Validators.required, Validators.minLength(10)]],
       cities: [[], Validators.required],
       neighborhoods: [[], Validators.required],
-      isActive: [true]
+      isActive: [true],
     });
 
     // Formulaire de message
     this.messageForm = this.fb.group({
-      content: ["", [Validators.required, Validators.minLength(5)]]
+      content: ["", [Validators.required, Validators.minLength(5)]],
     });
 
     // Écouter les changements pour afficher les erreurs en temps réel
@@ -400,11 +459,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   // Configuration de la gestion des erreurs pour tous les formulaires
   private setupFormErrorHandling(): void {
     const forms = [
-      { form: this.scheduleForm, name: 'schedule' },
-      { form: this.employeeForm, name: 'employee' },
-      { form: this.tariffForm, name: 'tariff' },
-      { form: this.zoneForm, name: 'zone' },
-      { form: this.messageForm, name: 'message' }
+      { form: this.scheduleForm, name: "schedule" },
+      { form: this.employeeForm, name: "employee" },
+      { form: this.tariffForm, name: "tariff" },
+      { form: this.zoneForm, name: "zone" },
+      { form: this.messageForm, name: "message" },
     ];
 
     forms.forEach(({ form, name }) => {
@@ -416,10 +475,10 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
 
   // Mise à jour des erreurs pour un formulaire donné
   private updateFormErrors(form: FormGroup, formName: string): void {
-    Object.keys(form.controls).forEach(key => {
+    Object.keys(form.controls).forEach((key) => {
       const control = form.get(key);
       const errorKey = `${formName}_${key}`;
-      
+
       if (control && control.errors && (control.dirty || control.touched)) {
         this.formErrors[errorKey] = this.getErrorMessage(key, control.errors);
       } else {
@@ -431,46 +490,46 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   // Génération des messages d'erreur personnalisés
   private getErrorMessage(fieldName: string, errors: any): string {
     const fieldDisplayNames: { [key: string]: string } = {
-      firstName: 'Prénom',
-      lastName: 'Nom',
-      email: 'Email',
-      phone: 'Téléphone',
-      role: 'Rôle',
-      zones: 'Zones',
-      type: 'Type',
-      price: 'Prix',
-      description: 'Description',
-      nbPassages: 'Nombre de passages',
-      name: 'Nom',
-      cities: 'Villes',
-      neighborhoods: 'Quartiers',
-      content: 'Contenu',
-      zone: 'Zone',
-      date: 'Date',
-      startTime: 'Heure de début',
-      endTime: 'Heure de fin',
-      collectorId: 'Collecteur'
+      firstName: "Prénom",
+      lastName: "Nom",
+      email: "Email",
+      phone: "Téléphone",
+      role: "Rôle",
+      zones: "Zones",
+      type: "Type",
+      price: "Prix",
+      description: "Description",
+      nbPassages: "Nombre de passages",
+      name: "Nom",
+      cities: "Villes",
+      neighborhoods: "Quartiers",
+      content: "Contenu",
+      zone: "Zone",
+      date: "Date",
+      startTime: "Heure de début",
+      endTime: "Heure de fin",
+      collectorId: "Collecteur",
     };
 
     const displayName = fieldDisplayNames[fieldName] || fieldName;
 
-    if (errors['required']) {
+    if (errors["required"]) {
       return `${displayName} est requis`;
     }
-    if (errors['email']) {
-      return 'Format d\'email invalide';
+    if (errors["email"]) {
+      return "Format d'email invalide";
     }
-    if (errors['minlength']) {
-      return `${displayName} doit contenir au moins ${errors['minlength'].requiredLength} caractères`;
+    if (errors["minlength"]) {
+      return `${displayName} doit contenir au moins ${errors["minlength"].requiredLength} caractères`;
     }
-    if (errors['min']) {
-      return `${displayName} doit être supérieur ou égal à ${errors['min'].min}`;
+    if (errors["min"]) {
+      return `${displayName} doit être supérieur ou égal à ${errors["min"].min}`;
     }
-    if (errors['pattern']) {
+    if (errors["pattern"]) {
       return `${displayName} contient des caractères invalides`;
     }
-    if (errors['invalidTimeOrder']) {
-      return 'L\'heure de fin doit être postérieure à l\'heure de début';
+    if (errors["invalidTimeOrder"]) {
+      return "L'heure de fin doit être postérieure à l'heure de début";
     }
 
     return `${displayName} est invalide`;
@@ -478,7 +537,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
 
   // Méthode pour obtenir l'erreur d'un champ spécifique
   getFieldError(formName: string, fieldName: string): string {
-    return this.formErrors[`${formName}_${fieldName}`] || '';
+    return this.formErrors[`${formName}_${fieldName}`] || "";
   }
 
   // Méthode pour vérifier si un champ a une erreur
@@ -489,12 +548,134 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   // Méthodes pour gérer les modals
   openAddEmployeeModal(): void {
     this.employeeForm.reset();
+    this.employeeFormError = null;
+    this.employeeFormDetailedErrors = {};
     this.showAddEmployeeModal = true;
   }
 
   closeAddEmployeeModal(): void {
     this.showAddEmployeeModal = false;
     this.employeeForm.reset();
+    this.showPassword = false;
+    this.showConfirmPassword = false;
+    this.employeeFormError = null;
+    this.employeeFormDetailedErrors = {};
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  // Validateur personnalisé pour la correspondance des mots de passe
+  passwordMatchValidator(form: FormGroup) {
+    const password = form.get("password");
+    const confirmPassword = form.get("confirmPassword");
+
+    if (
+      password &&
+      confirmPassword &&
+      password.value !== confirmPassword.value
+    ) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+    } else if (confirmPassword?.hasError("passwordMismatch")) {
+      confirmPassword.setErrors(null);
+    }
+
+    return null;
+  }
+
+  // Gérer la validation des zones en fonction du rôle
+  onRoleChange(): void {
+    const roleControl = this.employeeForm.get("role");
+    const zonesControl = this.employeeForm.get("zones");
+
+    if (roleControl && zonesControl) {
+      // Les zones sont toujours optionnelles, même pour les collecteurs
+      zonesControl.clearValidators();
+
+      if (roleControl.value === "manager") {
+        // Pour les managers, on vide les zones
+        zonesControl.setValue([]);
+        console.log("Manager sélectionné - zones vidées");
+      } else {
+        console.log("Collecteur sélectionné - zones optionnelles");
+      }
+
+      zonesControl.updateValueAndValidity();
+
+      // Debug: vérifier l'état du formulaire
+      console.log("Formulaire valide ?", this.employeeForm.valid);
+      console.log("Erreurs du formulaire :", this.employeeForm.errors);
+    }
+  }
+
+  // Vérifier si le formulaire employé est valide
+  isEmployeeFormValid(): boolean {
+    const role = this.employeeForm.get("role")?.value;
+    const zones = this.employeeForm.get("zones")?.value || [];
+
+    console.log("=== DEBUG isEmployeeFormValid ===");
+    console.log("Role:", role);
+    console.log("Zones:", zones);
+    console.log("Form valid:", this.employeeForm.valid);
+    console.log("Form errors:", this.employeeForm.errors);
+
+    // Debug de chaque champ
+    Object.keys(this.employeeForm.controls).forEach((key) => {
+      const control = this.employeeForm.get(key);
+      if (control && control.invalid) {
+        console.log(`Champ ${key} invalide:`, control.errors);
+      }
+    });
+
+    // Les zones sont optionnelles pour tous les rôles
+    const result = this.employeeForm.valid;
+    console.log("Formulaire valide (zones optionnelles):", result);
+    return result;
+  }
+
+  // Vérifier si un champ a une erreur spécifique du backend
+  hasBackendFieldError(fieldName: string): boolean {
+    return (
+      this.employeeFormDetailedErrors &&
+      this.employeeFormDetailedErrors[fieldName]
+    );
+  }
+
+  // Obtenir l'erreur backend pour un champ spécifique
+  getBackendFieldError(fieldName: string): string {
+    return this.employeeFormDetailedErrors?.[fieldName] || "";
+  }
+
+  // Effacer les erreurs backend quand l'utilisateur modifie un champ
+  clearBackendErrors(): void {
+    this.employeeFormError = null;
+    this.employeeFormDetailedErrors = {};
+  }
+
+  // Helper pour obtenir les clés des erreurs détaillées
+  getDetailedErrorKeys(): string[] {
+    return this.employeeFormDetailedErrors
+      ? Object.keys(this.employeeFormDetailedErrors)
+      : [];
+  }
+
+  // Vérifier s'il y a des erreurs détaillées
+  hasDetailedErrors(): boolean {
+    return this.getDetailedErrorKeys().length > 0;
+  }
+
+  // Debug: Afficher toutes les informations d'erreur (à supprimer en production)
+  debugEmployeeErrors(): void {
+    console.log("=== DEBUG ERREURS EMPLOYÉ ===");
+    console.log("employeeFormError:", this.employeeFormError);
+    console.log("employeeFormDetailedErrors:", this.employeeFormDetailedErrors);
+    console.log("Clés des erreurs détaillées:", this.getDetailedErrorKeys());
+    console.log("hasDetailedErrors():", this.hasDetailedErrors());
   }
 
   openZoneModal(): void {
@@ -521,11 +702,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
 
   // Méthode pour gérer la sélection multiple des zones pour les employés
   toggleZoneSelection(zoneId: string, event: any): void {
-    const zonesControl = this.employeeForm.get('zones');
+    const zonesControl = this.employeeForm.get("zones");
     if (!zonesControl) return;
 
     let currentZones = zonesControl.value || [];
-    
+
     if (event.target.checked) {
       if (!currentZones.includes(zoneId)) {
         currentZones.push(zoneId);
@@ -533,22 +714,22 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     } else {
       currentZones = currentZones.filter((id: string) => id !== zoneId);
     }
-    
+
     zonesControl.setValue(currentZones);
     zonesControl.markAsTouched();
   }
 
   // Méthode pour vérifier si une zone est sélectionnée
   isZoneSelected(zoneId: string): boolean {
-    const zones = this.employeeForm.get('zones')?.value || [];
+    const zones = this.employeeForm.get("zones")?.value || [];
     return zones.includes(zoneId);
   }
 
   // Méthode utilitaire pour afficher les zones sélectionnées
   getSelectedZonesText(): string {
-    const zones = this.employeeForm.get('zones')?.value || [];
-    if (zones.length === 0) return 'Aucune zone sélectionnée';
-    if (zones.length === 1) return '1 zone sélectionnée';
+    const zones = this.employeeForm.get("zones")?.value || [];
+    if (zones.length === 0) return "Aucune zone sélectionnée";
+    if (zones.length === 1) return "1 zone sélectionnée";
     return `${zones.length} zones sélectionnées`;
   }
 
@@ -558,20 +739,20 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyStatistics(this.currentUser);
     this.loadAgencyData();
-    this.loadCollectors(this.currentUser);
+    // this.loadCollectors(this.currentUser);
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
-    this.loadTariffs();
-    this.loadPlannings();
-    this.loadCollectorPlannings();
+    // this.loadTariffs();
+    // this.loadPlannings();
+    // this.loadCollectorPlannings();
     this.cdr.detectChanges();
     this.loadZones(this.currentUser);
     this.loadCollectDay();
     this.getAllCountries();
 
-    setInterval(() => {
-      this.loadCollectDay();
-    }, 30000);
+    // setInterval(() => {
+    //   this.loadCollectDay();
+    // }, 30000);
     this.loadCollectHistory();
     this.filterIncidents();
     this.countUnreadMessages();
@@ -647,7 +828,10 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
         console.log("API >userAndAgencyConversation:", response);
         if (response) {
           console.log("API >userAndAgencyConversation:", response);
-          this.receivedMessages = (response.messages || []).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+          this.receivedMessages = (response.messages || []).sort(
+            (a: any, b: any) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
           this.scrollToBottom();
           this.countUnreadMessages();
           if (!clientId) {
@@ -684,7 +868,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   submitMessage() {
     if (!this.messageForm.valid) {
       this.messageForm.markAllAsTouched();
-      this.updateFormErrors(this.messageForm, 'message');
+      this.updateFormErrors(this.messageForm, "message");
       this.notificationService.showError(
         "Message invalide",
         "Veuillez saisir un message valide"
@@ -707,7 +891,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     const messageData = {
       sender: this.currentUser?.userId || "",
       receiver: this.receivedId || "",
-      content: this.messageForm.value.content.trim()
+      content: this.messageForm.value.content.trim(),
     };
 
     console.log("Envoi du message:", messageData);
@@ -1178,7 +1362,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   loadClients(): void {
     console.log("[loadClients] called, agency:", this.agency);
     if (!this.agency || !this.agency?._id) return;
-    
+
     this.isLoadingClients = true;
     this.clientService.getClientsByAgency(this.agency._id).subscribe({
       next: (clients) => {
@@ -1515,7 +1699,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
         description: zone.description,
         cities: zone.cities,
         neighborhoods: zone.neighborhoods,
-        isActive: zone.isActive
+        isActive: zone.isActive,
       });
       this.citiesInput = zone.cities.join(", ");
       this.neighborhoodsInput = zone.neighborhoods.join(", ");
@@ -1650,74 +1834,97 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   }
 
   addEmployee(): void {
-    if (this.employeeForm.valid) {
+    // console.log('Tentative d\'ajout d\'employé...');
+    // console.log('Formulaire valide ?', this.employeeForm.valid);
+    // console.log('isEmployeeFormValid ?', this.isEmployeeFormValid());
+    // console.log('currentUser.agencyId ?', this.currentUser?.agencyId);
+
+    if (this.isEmployeeFormValid() && this.currentUser?.agencyId) {
       const formValue = this.employeeForm.value;
-      const employee: Employees = {
-        _id: Math.random().toString(36).substr(2, 9),
+      const employeeData: AddEmployeeData = {
         firstName: formValue.firstName,
         lastName: formValue.lastName,
         email: formValue.email,
+        password: formValue.password,
         phone: formValue.phone,
-        role: formValue.role,
-        zones: formValue.zones,
-        isActive: true,
-        hiredAt: new Date(),
+        role: formValue.role as UserRole,
+        address: formValue.address as UserAddress,
+        agencyId: this.currentUser.agencyId,
       };
 
-      this.agencyService.addEmployee(employee).subscribe({
+      this.agencyService.addEmployeeToAgency(employeeData).subscribe({
         next: (response: any) => {
           this.isLoading = false;
-          console.log("[DEBUG] Réponse inscription collector:", response);
-          const isSuccess =
-            response.success ||
-            response.status === "success" ||
-            (typeof response.message === "string" &&
-              (response.message.toLowerCase().includes("succès") ||
-                response.message.toLowerCase().includes("réussi"))) ||
-            !!response;
+          console.log("[DEBUG] Réponse inscription employee:", response);
 
-          if (isSuccess) {
+          if (response.success) {
+            // Succès - réinitialiser les erreurs
+            this.employeeFormError = null;
+            this.employeeFormDetailedErrors = {};
+
             this.notificationService.showSuccess(
-              "Inscription réussie",
-              "Le collaborateur a été créé avec succès ! Vous pouvez maintenant vous connecter."
+              "Employé ajouté avec succès",
+              response.message || "L'employé a été créé avec succès !"
             );
-            // 🔄 Recharger la liste après ajout
+
+            //  Recharger la liste après ajout
             this.loadEmployees(this.currentUser);
-            this.employeeForm.reset(); // Reset du formulaire
+            this.employeeForm.reset();
             this.showAddEmployeeModal = false;
           } else {
-            const errorMsg = this.getFriendlyMessage(
-              response?.message || response?.error || "",
-              false
+            // Erreur - afficher les erreurs exactes du backend
+
+            this.employeeFormError =
+              response.error || "Erreur lors de l'ajout de l'employé";
+            this.employeeFormDetailedErrors = response.detailedErrors || {};
+
+            console.error(
+              "Message affiché à l'utilisateur:",
+              this.employeeFormError
             );
+            console.error(
+              "Erreurs détaillées affichées:",
+              this.employeeFormDetailedErrors
+            );
+
+            // Afficher aussi une notification
             this.notificationService.showError(
-              "Erreur lors de l'inscription",
-              errorMsg
+              "Erreur lors de l'ajout",
+              this.employeeFormError || "Erreur inconnue"
             );
           }
         },
-        error: (error) => {
+        error: (errorResponse) => {
           this.isLoading = false;
-          const errorMsg = this.getFriendlyMessage(
-            error?.error?.message ||
-              error?.error?.message ||
-              error?.error ||
-              "",
-            false
+          console.log("=== ERREUR HTTP ===");
+          console.log("Erreur complète:", errorResponse);
+
+          if (errorResponse.error) {
+            this.employeeFormError = errorResponse.error;
+            this.employeeFormDetailedErrors =
+              errorResponse.detailedErrors || {};
+          } else {
+            this.employeeFormError = "Erreur de communication avec le serveur";
+            this.employeeFormDetailedErrors = {};
+          }
+
+          console.log(
+            "Message d'erreur final (dashboard):",
+            this.employeeFormError
           );
+
           this.notificationService.showError(
-            "Erreur lors de l'inscription",
-            errorMsg
+            "Erreur lors de l'ajout",
+            this.employeeFormError || "Erreur inconnue"
           );
-          this.loadEmployees(this.currentUser);
         },
       });
     } else {
       // Formulaire invalide, marquer tous les champs comme touchés pour afficher les erreurs
       this.employeeForm.markAllAsTouched();
-      this.updateFormErrors(this.employeeForm, 'employee');
+      this.updateFormErrors(this.employeeForm, "employee");
       this.notificationService.showError(
-        "Formulaire invalide", 
+        "Formulaire invalide",
         "Veuillez corriger les erreurs dans le formulaire"
       );
     }
@@ -2019,13 +2226,11 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
         description: formValue.description,
         cities: formValue.cities,
         neighborhoods: formValue.neighborhoods,
-        isActive: formValue.isActive
+        isActive: formValue.isActive,
       };
 
       if (this.editingZone) {
-        const index = this.serviceZones.findIndex(
-          (z) => z.id === formValue.id
-        );
+        const index = this.serviceZones.findIndex((z) => z.id === formValue.id);
         if (index !== -1) {
           this.serviceZones[index] = { ...formValue };
         }
@@ -2058,9 +2263,9 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
     } else {
       // Formulaire invalide
       this.zoneForm.markAllAsTouched();
-      this.updateFormErrors(this.zoneForm, 'zone');
+      this.updateFormErrors(this.zoneForm, "zone");
       this.notificationService.showError(
-        "Formulaire invalide", 
+        "Formulaire invalide",
         "Veuillez corriger les erreurs dans le formulaire"
       );
     }
@@ -2090,9 +2295,9 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
   addSchedule(): void {
     if (!this.scheduleForm.valid) {
       this.scheduleForm.markAllAsTouched();
-      this.updateFormErrors(this.scheduleForm, 'schedule');
+      this.updateFormErrors(this.scheduleForm, "schedule");
       this.notificationService.showError(
-        "Formulaire invalide", 
+        "Formulaire invalide",
         "Veuillez corriger les erreurs dans le formulaire"
       );
       return;
@@ -2388,7 +2593,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
       this.notificationService.showError("Erreur", "Formulaire invalide.");
       return;
     }
-    // On extrait uniquement les champs nécessaires
+
     const { _id, createdAt, updatedAt, agencyId, userId, ...employeeData } = {
       ...this.selectedEmployee,
       ...this.employeeForm.value,
@@ -2401,7 +2606,7 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
           "Employé mis à jour avec succès."
         );
         this.showUpdateEmployeeModal = false;
-        this.loadEmployees(this.currentUser); // Recharge la liste
+        this.loadEmployees(this.currentUser);
       },
       error: (err) => {
         console.error("Erreur lors de la mise à jour :", err);
@@ -2709,5 +2914,532 @@ export class AgencyDashboard  implements OnInit,AfterViewChecked {
       this.myScrollContainer.nativeElement.scrollTop =
         this.myScrollContainer.nativeElement.scrollHeight;
     } catch (err) {}
+  }
+
+  // ================================
+  // méthodes d analyse
+  // ================================
+
+  /**
+   * Actualise les données d'analyse des zones
+   */
+  refreshZoneAnalytics(): void {
+    this.generateZoneAnalyticsData();
+    this.generateZoneRecommendations();
+    this.notificationService.showSuccess('Succès', 'Données d\'analyse actualisées');
+  }
+
+  /**
+   * Retourne le nombre total de clients par type
+   */
+  getTotalClientsByType(type: 'household' | 'business' | 'institution'): number {
+    return this.activeClients.filter(client => this.getClientType(client) === type).length;
+  }
+
+  /**
+   * Retourne le pourcentage de clients par type
+   */
+  getPercentageByType(type: 'household' | 'business' | 'institution'): number {
+    const total = this.activeClients.length;
+    if (total === 0) return 0;
+    const typeCount = this.getTotalClientsByType(type);
+    return Math.round((typeCount / total) * 100);
+  }
+
+  /**
+   * Calcule le pourcentage de charge de travail
+   */
+  getWorkloadPercentage(): number {
+    const totalClients = this.activeClients.length;
+    const maxCapacity = this.allEmployees.filter(emp => emp.role === 'collector').length * 50; // 50 clients par collecteur
+    if (maxCapacity === 0) return 0;
+    return Math.min(Math.round((totalClients / maxCapacity) * 100), 100);
+  }
+
+  /**
+   * Retourne le statut de la charge de travail
+   */
+  getWorkloadStatus(): string {
+    const percentage = this.getWorkloadPercentage();
+    if (percentage <= 80) return 'Optimal';
+    if (percentage <= 95) return 'Attention';
+    return 'Critique';
+  }
+
+  /**
+   * Génère et retourne les données d'analyse par zone
+   */
+  getZoneAnalyticsData(): ZoneAnalytics[] {
+    if (this.zoneAnalyticsData.length === 0) {
+      this.generateZoneAnalyticsData();
+    }
+    return this.zoneAnalyticsData;
+  }
+
+  /**
+   * Génère les données d'analyse des zones en utilisant l'API
+   */
+  private generateZoneAnalyticsData(): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneAnalytics$(this.currentUser._id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.zoneAnalyticsData = response.data.map(zone => ({
+            id: zone.zoneId,
+            name: zone.zoneName,
+            totalClients: zone.clientStats.totalClients,
+            households: zone.clientStats.households,
+            businesses: zone.clientStats.businesses,
+            institutions: zone.clientStats.institutions,
+            capacityUsage: zone.workloadMetrics.capacityUsagePercentage,
+            estimatedTime: zone.workloadMetrics.estimatedWorkHours,
+            requiredTeam: zone.workloadMetrics.requiredTeamSize,
+            requiredVehicles: zone.workloadMetrics.requiredVehicles,
+            growth: zone.growthMetrics.monthlyGrowthRate
+          }));
+        } else {
+      
+          this.generateZoneAnalyticsDataFallback();
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des analytics:', error);
+     
+        this.generateZoneAnalyticsDataFallback();
+      }
+    });
+  }
+
+  /**
+   * Méthode de fallback pour générer les données localement
+   */
+  private generateZoneAnalyticsDataFallback(): void {
+    this.zoneAnalyticsData = this.zones.map((zone, index) => {
+      const zoneName = zone.neighborhood || zone;
+      const zoneClients = this.activeClients.filter(client => 
+        client.address?.neighborhood === zoneName
+      );
+      
+      const households = zoneClients.filter(client => this.getClientType(client) === 'household').length;
+      const businesses = zoneClients.filter(client => this.getClientType(client) === 'business').length;
+      const institutions = zoneClients.filter(client => this.getClientType(client) === 'institution').length;
+      
+      const totalClients = zoneClients.length;
+      const estimatedTime = Math.ceil(totalClients * 0.15); // 9 minutes par client
+      const requiredTeam = Math.ceil(totalClients / 25); 
+      const requiredVehicles = Math.ceil(requiredTeam / 2); 
+      const capacityUsage = Math.min((totalClients / 50) * 100, 100); 
+      const growth = Math.floor(Math.random() * 21) - 10; 
+
+      return {
+        id: `zone-${index}`,
+        name: zoneName,
+        totalClients,
+        households,
+        businesses,
+        institutions,
+        capacityUsage,
+        estimatedTime,
+        requiredTeam,
+        requiredVehicles,
+        growth
+      };
+    });
+  }
+
+  /**
+   * Détermine le type d'un client basé sur ses données
+   */
+  private getClientType(client: ClientApi): 'household' | 'business' | 'institution' {
+   
+    if (client.firstName?.toLowerCase().includes('entreprise') || 
+        client.lastName?.toLowerCase().includes('sarl') ||
+        client.lastName?.toLowerCase().includes('sas')) {
+      return 'business';
+    }
+    if (client.firstName?.toLowerCase().includes('mairie') || 
+        client.firstName?.toLowerCase().includes('école') ||
+        client.firstName?.toLowerCase().includes('hôpital')) {
+      return 'institution';
+    }
+    return 'household';
+  }
+
+  /**
+   * Retourne le statut de capacité pour une zone
+   */
+  getCapacityStatus(capacityUsage: number): string {
+    if (capacityUsage <= 70) return 'good';
+    if (capacityUsage <= 90) return 'warning';
+    return 'critical';
+  }
+
+  /**
+   * Retourne l'icône appropriée pour le niveau de capacité
+   */
+  getCapacityIcon(capacityUsage: number): string {
+    if (capacityUsage <= 70) return 'check_circle';
+    if (capacityUsage <= 90) return 'warning';
+    return 'error';
+  }
+
+  /**
+   * Affiche les détails d'une zone spécifique 
+   */
+  viewZoneDetails(zoneId: string): void {
+    this.loadZoneDetails(zoneId);
+   
+    this.loadZoneWorkloadMetrics(zoneId);
+    
+    const zone = this.zoneAnalyticsData.find(z => z.id === zoneId);
+    if (zone) {
+      this.notificationService.showInfo('Information', `Chargement des détails de la zone: ${zone.name}`);
+    }
+  }
+
+  /**
+   * Optimise la capacité d'une zone - Version améliorée avec API
+   */
+  optimizeZoneCapacity(zoneId: string): void {
+    this.optimizeSpecificZone(zoneId, 'all');
+  }
+
+  /**
+   * Affiche une alerte de capacité pour une zone
+   */
+  showCapacityAlert(zone: ZoneAnalytics): void {
+    const message = zone.capacityUsage > 95 
+      ? `Zone ${zone.name} surchargée (${zone.capacityUsage}%)` 
+      : `Zone ${zone.name} approche de la saturation (${zone.capacityUsage}%)`;
+    
+    this.notificationService.showWarning('Alerte Capacité', message);
+  }
+
+  /**
+   * Retourne les recommandations pour les zones
+   */
+  getZoneRecommendations(): LocalZoneRecommendation[] {
+    if (this.zoneRecommendations.length === 0) {
+      this.generateZoneRecommendations();
+    }
+    return this.zoneRecommendations;
+  }
+
+  /**
+   * Génère les recommandations automatiques en utilisant l'API
+   */
+  private generateZoneRecommendations(): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneRecommendations$(this.currentUser._id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.zoneRecommendations = response.data.map(rec => ({
+            id: rec.id,
+            title: rec.title,
+            description: rec.description,
+            priority: rec.priority,
+            icon: this.getRecommendationIcon(rec.type, rec.priority),
+            zoneId: rec.zoneId
+          }));
+        } else {
+      
+          this.generateZoneRecommendationsFallback();
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des recommandations:', error);
+     
+        this.generateZoneRecommendationsFallback();
+      }
+    });
+  }
+
+  /**
+   * Méthode de fallback pour générer les recommandations localement
+   */
+  private generateZoneRecommendationsFallback(): void {
+    this.zoneRecommendations = [];
+    
+    this.zoneAnalyticsData.forEach(zone => {
+      if (zone.capacityUsage > 95) {
+        this.zoneRecommendations.push({
+          id: `rec-${zone.id}-critical`,
+          title: `Zone ${zone.name} surchargée`,
+          description: `Cette zone dépasse sa capacité optimale. Considérez ajouter une équipe ou redistribuer les clients.`,
+          priority: 'high',
+          icon: 'error',
+          zoneId: zone.id
+        });
+      } else if (zone.capacityUsage > 80) {
+        this.zoneRecommendations.push({
+          id: `rec-${zone.id}-warning`,
+          title: `Zone ${zone.name} approche de la saturation`,
+          description: `Préparez-vous à augmenter les ressources pour cette zone.`,
+          priority: 'medium',
+          icon: 'warning',
+          zoneId: zone.id
+        });
+      }
+
+      if (zone.growth > 15) {
+        this.zoneRecommendations.push({
+          id: `rec-${zone.id}-growth`,
+          title: `Croissance rapide dans ${zone.name}`,
+          description: `Cette zone connaît une croissance de ${zone.growth}%. Anticipez les besoins futurs.`,
+          priority: 'medium',
+          icon: 'trending_up',
+          zoneId: zone.id
+        });
+      }
+    });
+  }
+
+  /**
+   * Retourne l'icône appropriée pour une recommandation
+   */
+  private getRecommendationIcon(type: string, priority: string): string {
+    switch (type) {
+      case 'capacity':
+        return priority === 'high' ? 'error' : 'warning';
+      case 'growth':
+        return 'trending_up';
+      case 'efficiency':
+        return 'tune';
+      case 'resource':
+        return 'build';
+      default:
+        return 'info';
+    }
+  }
+
+  /**
+   * Applique une recommandation
+   */
+  applyRecommendation(recommendation: LocalZoneRecommendation): void {
+ 
+    this.notificationService.showSuccess('Succès', `Recommandation "${recommendation.title}" appliquée`);
+    this.dismissRecommendation(recommendation);
+  }
+
+  /**
+   * Ignore une recommandation
+   */
+  dismissRecommendation(recommendation: LocalZoneRecommendation): void {
+    this.zoneRecommendations = this.zoneRecommendations.filter(r => r.id !== recommendation.id);
+  }
+
+  // ================================
+  // méthode pour l analyse avance
+  // ================================
+
+  /**
+   * Charge les détails d'une zone spécifique
+   */
+  loadZoneDetails(zoneId: string): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneStatistics$(this.currentUser._id, zoneId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Détails de la zone:', response.data);
+      
+          const zoneIndex = this.zoneAnalyticsData.findIndex(z => z.id === zoneId);
+          if (zoneIndex !== -1) {
+            const zoneStats = response.data;
+            this.zoneAnalyticsData[zoneIndex] = {
+              ...this.zoneAnalyticsData[zoneIndex],
+              totalClients: zoneStats.clientStats.totalClients,
+              households: zoneStats.clientStats.households,
+              businesses: zoneStats.clientStats.businesses,
+              institutions: zoneStats.clientStats.institutions,
+              capacityUsage: zoneStats.workloadMetrics.capacityUsagePercentage,
+              estimatedTime: zoneStats.workloadMetrics.estimatedWorkHours,
+              requiredTeam: zoneStats.workloadMetrics.requiredTeamSize,
+              requiredVehicles: zoneStats.workloadMetrics.requiredVehicles,
+              growth: zoneStats.growthMetrics.monthlyGrowthRate
+            };
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des détails de la zone:', error);
+        this.notificationService.showError('Erreur', 'Impossible de charger les détails de la zone');
+      }
+    });
+  }
+
+  /**
+   * Charge les métriques de charge de travail pour une zone
+   */
+  loadZoneWorkloadMetrics(zoneId: string): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneWorkloadMetrics$(this.currentUser._id, zoneId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Métriques de charge:', response.data);
+      
+          if (response.data.recommendations.length > 0) {
+            const zone = this.zoneAnalyticsData.find(z => z.id === zoneId);
+            const message = `Recommandations pour ${zone?.name || 'la zone'}:\n${response.data.recommendations.join('\n')}`;
+            this.notificationService.showInfo('Recommandations de charge', message);
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des métriques de charge:', error);
+      }
+    });
+  }
+
+  /**
+   * Charge l'évolution des abonnements
+   */
+  loadSubscriptionEvolution(period: string = 'month'): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getSubscriptionEvolution$(this.currentUser._id, undefined, period).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Évolution des abonnements:', response.data);
+     
+          this.processSubscriptionEvolution(response.data);
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement de l\'évolution des abonnements:', error);
+      }
+    });
+  }
+
+  /**
+   * Traite les données d'évolution des abonnements
+   */
+  private processSubscriptionEvolution(data: any[]): void {
+
+    data.forEach(zoneEvolution => {
+      const zoneIndex = this.zoneAnalyticsData.findIndex(z => z.id === zoneEvolution.zoneId);
+      if (zoneIndex !== -1) {
+        this.zoneAnalyticsData[zoneIndex].growth = zoneEvolution.growthRate;
+      }
+    });
+  }
+
+  /**
+   * Compare les performances des zones
+   */
+  compareZonePerformance(): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.compareZonePerformance$(this.currentUser._id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Comparaison des zones:', response);
+          this.displayZoneComparison(response);
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de la comparaison des zones:', error);
+      }
+    });
+  }
+
+  /**
+   * Affiche les résultats de comparaison des zones
+   */
+  private displayZoneComparison(comparison: any): void {
+    const bestZone = comparison.data.find((z: any) => z.rank === 1);
+    const summary = comparison.summary;
+    
+    const message = `
+       Résumé de performance:
+      Meilleure zone: ${summary.bestPerformingZone}
+       Plus efficace: ${summary.mostEfficient}
+       Zones nécessitant attention: ${summary.needsAttention.join(', ')}
+    `;
+    
+    this.notificationService.showInfo('Comparaison des zones', message);
+  }
+
+  /**
+   * Optimise les ressources d'une zone spécifique
+   */
+  optimizeSpecificZone(zoneId: string, optimizationType: 'team' | 'vehicles' | 'schedule' | 'all' = 'all'): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.optimizeZoneResources$(this.currentUser._id, zoneId, optimizationType).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Optimisation de zone:', response.data);
+          this.displayOptimizationResults(response.data);
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'optimisation de la zone:', error);
+        this.notificationService.showError('Erreur', 'Impossible d\'optimiser la zone');
+      }
+    });
+  }
+
+  /**
+   * Affiche les résultats d'optimisation
+   */
+  private displayOptimizationResults(results: any): void {
+    const improvements = results.expectedImprovements;
+    const message = `
+       Optimisation ${results.optimizationType} terminée!
+      
+      Améliorations attendues:
+       Efficacité: +${improvements.efficiency}%
+       Réduction des coûts: ${improvements.costReduction}%
+       Gain de temps: ${improvements.timeReduction}%
+      
+      Étapes d'implémentation:
+      ${results.implementationSteps.map((step: string, i: number) => `${i + 1}. ${step}`).join('\n')}
+    `;
+    
+    this.notificationService.showSuccess('Optimisation réussie', message);
+  }
+
+  /**
+   * Génère un rapport pour une zone
+   */
+  generateZoneReport(zoneId: string, reportType: 'performance' | 'financial' | 'operational' | 'complete' = 'complete'): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.generateZoneReport$(this.currentUser._id, zoneId, reportType).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Rapport généré:', response.data);
+          if (response.data.downloadUrl) {
+            // Ouvrir le lien de téléchargement
+            window.open(response.data.downloadUrl, '_blank');
+          }
+          this.notificationService.showSuccess('Rapport généré', 'Le rapport a été généré avec succès');
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de la génération du rapport:', error);
+        this.notificationService.showError('Erreur', 'Impossible de générer le rapport');
+      }
+    });
+  }
+
+
+
+  /**
+   * Méthode pour actualiser toutes les données d'une zone
+   */
+  refreshZoneData(zoneId?: string): void {
+    if (zoneId) {
+      this.loadZoneDetails(zoneId);
+      this.loadZoneWorkloadMetrics(zoneId);
+    } else {
+    
+      this.refreshZoneAnalytics();
+      this.loadSubscriptionEvolution();
+    }
   }
 }

@@ -19,7 +19,7 @@ import {
   MOCK_CITIES,
   MOCK_ARRONDISSEMENTS,
 } from "../../../data/countries-org.mock";
-
+import { FilterParams } from "../../../models/filterParams.model";
 interface AdminStatistics {
   totalAgencies: number;
   activeAgencies: number;
@@ -148,8 +148,10 @@ export class AdminDashboard implements OnInit {
   agencyAudits: AgencyAudit[] = [];
   clientsAudits: any[] = [];
   collectorsAudits: any[] = [];
+  usersAudits: any[] = [];
   filteredAgencies: AgencyAudit[] = [];
   filteredClients: any[] = [];
+  filteredUsers: any[] = [];
   filteredCollectors: any[] = [];
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: GroupedZoneStatistics[] = [];
@@ -161,12 +163,20 @@ export class AdminDashboard implements OnInit {
   // Filters
   agenciesFilter = "all";
   clientsFilter = "all";
+  roleFilter = "";
+  searchTerm = "";
+  neighborhoodFilter=""
   collectorsFilter = "all";
   complianceFilter = "all";
   statisticsPeriod = "month";
   incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
   severityFilter: "all" | "low" | "medium" | "high" | "critical" = "all";
 
+  usersFilterParams: FilterParams = {
+    role: this.roleFilter,
+    neighborhood: this.neighborhoodFilter,
+    term:this.searchTerm
+  }
   // Loading states
   isLoadingStatistics = false;
   isLoadingAgencies = false;
@@ -204,6 +214,7 @@ export class AdminDashboard implements OnInit {
     { id: "agencies", label: "Agences", icon: "business", badge: null },
     { id: "collectors", label: "Collecteurs", icon: "business", badge: null },
     { id: "clients", label: "Clients", icon: "business", badge: null },
+    { id: "all_users", label: "Utilisateurs", icon: "person", badge: null },
     { id: "statistics", label: "Statistiques", icon: "analytics", badge: null },
     {
       id: "incidents",
@@ -223,7 +234,7 @@ export class AdminDashboard implements OnInit {
   clientGrowth: number = 0;
   signalementsAudits: any;
   filteredSignalements: any[] = [];
-isDisabled = true;
+  isDisabled = true;
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
@@ -257,9 +268,11 @@ isDisabled = true;
     this.loadCommunications();
     this.showAdminClients();
     this.loadAllSignalements();
+    this.showAdminUsers(this.usersFilterParams);
     // this.loadIncidents();
   }
 
+  
   loadAgencyAudits(): void {
     this.isLoadingAgencies = true;
     this.agencyService.getAllAgenciesFromApi().subscribe({
@@ -740,6 +753,15 @@ isDisabled = true;
     });
   }
 
+  filterUsers(): void {
+    this.usersFilterParams = {
+      role: this.roleFilter,
+      neighborhood: this.neighborhoodFilter,
+      term:this.searchTerm
+    }
+    console.log(this.usersFilterParams);
+    this.showAdminUsers(this.usersFilterParams);
+  }
   filterCollectors(): void {
     this.filteredCollectors = this.collectorsAudits.filter((client) => {
       const statusMatch =
@@ -996,7 +1018,32 @@ viewClientDetails(clientId: string): void {
       }
     });
   }
+  //users
 
+  showAdminUsers(usersFilterParams:FilterParams): void {
+    this.isLoadingClients = true;
+    console.log("usersFilterParams", usersFilterParams);
+    this.adminService.getAllUsers(usersFilterParams).subscribe({
+      next: (response: any) => {
+        this.usersAudits = response?.data.map((user: any) => {
+          return {
+            _id: user._id,
+            data: user,
+            // active_subscription: client?.subscriptionHistory.filter(
+            //   (s: any) => s.status === "active"
+            // ),
+          };
+        });
+        this.filteredUsers = [...this.usersAudits];
+        this.isLoadingClients = false;
+        console.log("clients in dashboard", this.filteredUsers);
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des utilisateurs:', error);
+        this.isLoadingClients = false;
+      }
+    });
+  }
   agencies: any[] = [];
   getAllAgenciesIDs(): void {
     this.agencyService.getAllAgenciesFromApi().subscribe({
@@ -1117,7 +1164,7 @@ viewClientDetails(clientId: string): void {
   // }
 
   activateAgency(id: string) {
-    this.agencyService.activateAgency(id).subscribe({
+    this.agencyService.activateAgency(id, "active").subscribe({
       next: (response: any) => {
         console.log("agency activated  in dashboard", response);
         if (response.message) {

@@ -5,21 +5,94 @@ import { AgencyService } from '../../services/agency.service';
 import { Agency, Tariff } from '../../models/agency.model';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
-import { User } from '../../models/user.model';
+import { RegisterUserData, User } from '../../models/user.model';
 import { MessagesService } from '../../services/messages.service';
 import { Message } from '../../models/message.model';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CountriesOrgMockService } from '../../services/countries-org-mock.service';
 
+import { DrawerModule } from 'primeng/drawer';
+import { OUAGA_DATA, QuartierData } from '../../data/mock-data';
+import { Arrondissement, City, Quartier, Sector } from '../../models/countries-org.model';
+import { Admin } from '../../services/admin';
+import { CdkAutofill } from "@angular/cdk/text-field";
 
 @Component({
   selector: 'app-agency-details',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DrawerModule],
   templateUrl: './agency-details.html',
   styleUrl: './agency-details.css'
 })
 export class AgencyDetails implements OnInit {
-  agency: any | null = null; 
+
+  userData = {
+    _id: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    isOwnerAgency: false,
+    status:'',
+    address: {
+      arrondissement: '',
+      sector: '',
+      street: '',
+      doorNumber: '',
+      doorColor: '',
+      neighborhood: '',
+      city: '',
+      postalCode: '',
+      latitude: '',
+      longitude: ''
+    },
+    agencyName: '',
+    name: '',
+    slogan: '',
+    agencyDescription: '',
+    termsAccepted: false,
+    acceptTerms: true,
+    receiveOffers: false,
+    commune: {
+      name: '',
+      region: '',
+      province: ''
+    },
+    agency : {
+      name: '',
+      agencyDescription: '',
+      zoneActivite: [],
+      client: '',
+      collector: '',
+      slogan: '',
+      gestionnaires: [],
+      owner: '',
+      documents: [],
+      status: 'active',
+      location: {
+        type: 'Point',
+        coordinates: [0, 0]
+      },
+      commune: {
+        name: '',
+        region: '',
+        province: ''
+      }
+    }
+  };
+  arrondissements: QuartierData[] = OUAGA_DATA;
+  arrondissementss: Arrondissement[] = [];
+  cities: City[] = [];
+  secteurss: Sector[] = [];
+  secteurs: { secteur: string; quartiers: string[] }[] = [];
+  quartiers: string[] = [];
+  quartierss: Quartier[] = [];
+  validationErrors: { [key: string]: string[] } = {};
+  generalError: string = '';
+
+
+  agency: any =''; 
   agencyId: string | null = null;
   agencyIdd: string | null = null;
   currentUser: User | null = null;
@@ -33,7 +106,9 @@ export class AgencyDetails implements OnInit {
 
   showReportModal = false;
   unreadMessageCount: any;
-  quartierInfos: any; 
+  quartierInfos: any;
+  
+  visible2: boolean = false;
   constructor(
     private route: ActivatedRoute,
     private countriesOrgMockService: CountriesOrgMockService,
@@ -41,12 +116,15 @@ export class AgencyDetails implements OnInit {
     private authService: AuthService,
     private notificationService: NotificationService,
     private router: Router,
-    private messageService: MessagesService
+    private messageService: MessagesService,
+    private adminService: Admin
   ) { }
 
   ngOnInit(): void {
+    this.getAllCountries();
     this.currentUser = this.authService.getCurrentUser();
     this.agencyId = this.route.snapshot.paramMap.get('id');
+    console.log("AgencyId==>", this.agencyId);
     if (this.agencyId) {
       this.loadAgencyFromApi(this.agencyId);
     }
@@ -209,6 +287,7 @@ updateEndDate() {
       firstName: apiAgency.firstName || '',
       lastName: apiAgency.lastName || '',
       name: apiAgency.name || '',
+      slogan: apiAgency.slogan || '',
       agencyDescription: apiAgency.agencyDescription || '',
       phone: apiAgency.phone || '',
       address: apiAgency.address || {
@@ -220,9 +299,9 @@ updateEndDate() {
         postalCode: ''
       },
 
-      arrondissement: apiAgency.arrondissement || '',
-      secteur: apiAgency.secteur || '',
-      quartier: apiAgency.quartier || '',
+      arrondissement: apiAgency.address.arrondissement || '',
+      secteur: apiAgency.address.sector || '',
+      quartier: apiAgency.address.neighborhood || '',
       licenseNumber: apiAgency.licenseNumber || '',
       members: apiAgency.members || [],
       serviceZones: apiAgency.serviceZones || [],
@@ -238,6 +317,7 @@ updateEndDate() {
       acceptTerms: apiAgency.acceptTerms || false,
       receiveOffers: apiAgency.receiveOffers || false,
       isActive: apiAgency.isActive !== undefined ? apiAgency.isActive : true,
+      status: apiAgency.status || 'pending',
       createdAt: apiAgency.createdAt || '',
       updatedAt: apiAgency.updatedAt || '',
       __v: apiAgency.__v || 0
@@ -250,6 +330,7 @@ updateEndDate() {
   loadAgencyFromApi(id: string | null): void {
     this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
       if (response.success && response.data) {
+        console.log('[DEBUG] Agency response:', response.data);
         this.agency = this.mapApiAgency(response.data);
         this.agencyId = this.agency?.userId;
         console.log('[DEBUG] Agency details:', this.agency);
@@ -367,11 +448,22 @@ contactAgency(): void {
 }
 
   editAgency() {
-    this.router.navigate(['/edit-agency', this.agencyId]);
+    this.userData = this.agency
+    console.log('[DEBUG] this.agency:', this.userData);
+    this.onCityChange(this.userData.address.city);
+    this.visible2 = true
+    // this.router.navigate(['/edit-agency', this.agencyId]);
   }
   //Activer ou desactiver une agence 
+  agencyStatus: string ="";
   activateAgency(id: string) {
-    this.agencyService.activateAgency(id).subscribe({
+    
+    if(this.userData?.status === "active") {
+      this.agencyStatus = "deactivate";
+    }else {
+      this.agencyStatus = "activate";
+    }
+    this.agencyService.activateAgency(id, this.agencyStatus).subscribe({
       next: (response: any) => {
         console.log('agency activated  in dashboard', response);
         if (response.message) {
@@ -418,4 +510,144 @@ contactAgency(): void {
   //     }
   //   });
   // }
+
+  //Edit agency
+  edit: boolean = false
+  onArrondissementChange(arrondissement?: string) {
+    if (arrondissement) {
+      const sectorObj = this.arrondissementss.find(a => a.name === arrondissement);
+      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(sectorObj?.id || '');
+      // if(this.edit) return
+      this.secteurss = sectors ? sectors : [];
+      console.log("Secteurs  ==> ", this.secteurss);
+      this.quartiers = [];
+      this.userData.address.sector = this.userData.address.sector || '';
+      if(this.userData.address.sector) this.onSecteurChange(this.userData.address.sector);
+      this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+    }
+  }
+
+  onSecteurChange(secteur: string) {
+    if (secteur) {
+      const secteurObj = this.secteurss.find(s => s.name === secteur);
+      const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(secteurObj?.id || '');
+      console.log("Quartiers  ==> ", quartiers);
+      this.quartierss = quartiers;
+      this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+    }
+    const secteurObj = this.secteurs.find(s => s.secteur === secteur);
+    this.quartiers = secteurObj ? secteurObj.quartiers : [];
+    this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+  }
+
+  onCityChange(city: string) {
+    if (city) {
+      const cityObj = this.cities.find(c => c.name === city);
+      console.log("City Object ==> ", cityObj);
+      const arr = this.countriesOrgMockService.getArrondissementsByCity(cityObj?.id || '');
+      this.arrondissementss = arr ? arr : [];
+      console.log("Arrondissements  ==> ", this.arrondissementss);
+      this.secteurs = [];
+      this.quartiers = [];
+      this.userData.address.arrondissement = this.userData.address.arrondissement || '';
+      if(this.userData.address.arrondissement) this.onArrondissementChange(this.userData.address.arrondissement);
+      this.userData.address.sector = this.userData.address.sector || '';
+      this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+    };
+
+  }
+  getAllCountries() {
+    console.log("All cities ==> ", this.countriesOrgMockService.getCitiesByCountry("1"));
+    this.cities = this.countriesOrgMockService.getCitiesByCountry("1");
+  }
+  isButtonDisabled(): boolean {
+    const disabled = this.isLoading;
+    return disabled;
+  }
+
+  /**
+   * Handles registration errors and displays appropriate messages
+   */
+  private handleRegistrationError(error: string | { [key: string]: string[] } | undefined, fallbackMessage?: string): void {
+    this.validationErrors = {};
+    this.generalError = '';
+
+    if (typeof error === 'object' && error !== null) {
+      // Handle field-specific validation errors
+      this.validationErrors = error;
+      this.notificationService.showError(
+        'Erreurs de validation',
+        'Veuillez corriger les erreurs dans le formulaire'
+      );
+    } else if (typeof error === 'string' && error.trim()) {
+      // Handle general error message
+      this.generalError = error;
+      this.notificationService.showError('Erreur lors de l\'inscription', error);
+    } else {
+      // Handle fallback error
+      const message = fallbackMessage || 'Une erreur inconnue s\'est produite';
+      this.generalError = message;
+      this.notificationService.showError('Erreur lors de l\'inscription', message);
+    }
+  }
+
+    onUpdateAgency(): void {
+      console.log('[DEBUG] onRegister() appelée');
+      console.log('[DEBUG] Données utilisateur:', this.userData);
+      console.log('[DEBUG] isLoading:', this.isLoading);
+      
+      // Clear previous errors
+      this.validationErrors = {};
+      this.generalError = '';
+  
+  
+      console.log('[DEBUG] Validation réussie, démarrage inscription...');
+  
+      this.isLoading = true;
+
+  
+      // Handle AGENCY role using the unified register method
+   
+      // Prepare agency registration data
+      const registrationData: any = {
+          name: this.userData.name,
+          agencyDescription: this.userData.agencyDescription,
+          zoneActivite:[
+            this.userData.address.neighborhood
+          ],
+          slogan: this.userData.slogan,
+          status: this.userData.status,
+          documents: [],
+          
+        }
+            
+  
+        console.log('[DEBUG] Données de modification agence préparées:', registrationData);
+        console.log('[DEBUG] agencyName value:', this.userData.name);
+        console.log('[DEBUG] agencyId value:', this.userData._id);
+        console.log('[DEBUG] agencyDescription value:', this.userData.agencyDescription);
+  
+        this.adminService.updateAgency(this.userData._id, registrationData).subscribe({
+          next: (response) => {
+            this.isLoading = false;
+
+            console.log('[DEBUG] Réponse modification agence:', response);
+            // Use the unified RegisterResponse structure
+            const isSuccess = response.success;
+  
+            if (isSuccess) {
+              this.visible2 = false;
+              this.notificationService.showSuccess('Modification agence réussie',
+             'Votre agence a été modifiée avec succès !');
+            } else {
+              this.handleRegistrationError(response.message || response.error);
+            }
+          },
+          error: (error) => {
+            this.isLoading = false;
+            this.handleRegistrationError(error.error || error.message || error);
+          }
+        });
+        return;
+    }
 }

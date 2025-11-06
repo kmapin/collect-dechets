@@ -16,8 +16,13 @@
           </button>
 
           <button class="btn btn-secondary" (click)="showZoneModal = true">
-            <i class="material-icons">map</i>
-            creer un tarif
+            <i class="material-icons">add_circle</i>
+            Ajouter un Tarif
+          </button>
+
+          <button class="btn btn-primary" (click)="navigateToAgencyDetails()">
+            <i class="material-icons">info</i>
+            Portail Agence
           </button>
         </div>
       </div>
@@ -28,7 +33,7 @@
       <!-- Statistiques principales -->
       <div class="stats-grid">
 
-        
+
         <div class="stat-card card">
           <div class="stat-icon clients">
             <i class="material-icons">people</i>
@@ -49,9 +54,7 @@
             <!-- <p class="stat-value">{{ statistics.activeCollectors }}</p>
                 <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span> -->
             <p class="stat-value">{{ statistics.totalEmployees || 0 }}</p>
-            <span class="stat-trend neutral"
-              >{{ getActiveCollectorsToday() }} en tournée</span
-            >
+            <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span>
           </div>
         </div>
 
@@ -63,11 +66,8 @@
             <h3>zones</h3>
 
             <p class="stat-value">{{ statistics.totalZones || 0 }}</p>
-            <span
-              class="stat-trend"
-              [class.positive]="getCollectionRate() >= 90"
-              [class.negative]="getCollectionRate() < 80"
-            >
+            <span class="stat-trend" [class.positive]="getCollectionRate() >= 90"
+              [class.negative]="getCollectionRate() < 80">
             </span>
           </div>
         </div>
@@ -92,10 +92,7 @@
           <div class="stat-info">
             <h3>Signalements</h3>
             <p class="stat-value">{{ statistics.pendingSignalements || 0 }}</p>
-            <span
-              class="stat-trend"
-              [class.negative]="statistics.totalSignalements"
-            >
+            <span class="stat-trend" [class.negative]="statistics.totalSignalements">
               en attente
             </span>
           </div>
@@ -104,19 +101,12 @@
 
       <!-- Navigation par onglets -->
       <div class="tabs-navigation">
-        <button
-          *ngFor="let tab of tabs"
-          class="tab-btn"
-          [class.active]="activeTab === tab.id"
-          (click)="activeTab = tab.id"
-        >
+        <button *ngFor="let tab of tabs" class="tab-btn" [class.active]="activeTab === tab.id"
+          (click)="activeTab = tab.id">
           <i class="material-icons">{{ tab.icon }}</i>
           {{ tab.label }}
-          <span
-            *ngIf="tab.label === 'Messages' && unreadMessageCount >= 0"
-            class="tab-badge"
-            >{{ unreadMessageCount }}</span
-          >
+          <span *ngIf="tab.label === 'Messages' && unreadMessageCount >= 0" class="tab-badge">{{ unreadMessageCount
+            }}</span>
           <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
         </button>
       </div>
@@ -129,11 +119,7 @@
           <div class="collections-header">
             <h2>Suivi des Collectes en Temps Réel</h2>
             <div class="collections-filters">
-              <select
-                [(ngModel)]="collectionsFilter"
-                (change)="filterCollections()"
-                class="filter-select"
-              >
+              <select [(ngModel)]="collectionsFilter" (change)="filterCollections()" class="filter-select">
                 <option value="all">Toutes les collectes</option>
                 <option value="scheduled">Programmées</option>
                 <option value="in_progress">En cours</option>
@@ -142,36 +128,23 @@
               </select>
 
               <!-- Bouton historique -->
-              <button
-                class="action-btn"
-                title="Voir l’historique des collectes"
-                style="margin-left: 10px"
-                (click)="openHistoryModal()"
-              >
+              <button class="action-btn" title="Voir l’historique des collectes" style="margin-left: 10px"
+                (click)="openHistoryModal()">
                 <i class="material-icons">history</i>
               </button>
             </div>
           </div>
 
           <!-- Indicateur de chargement pour les collectes -->
-          <app-loading-spinner 
-            *ngIf="isLoadingCollections" 
-            message="Chargement des collectes..." 
-            size="medium">
+          <app-loading-spinner *ngIf="isLoadingCollections" message="Chargement des collectes..." size="medium">
           </app-loading-spinner>
 
           <div *ngIf="!isLoadingCollections" class="collections-grid">
-            <div
-              *ngFor="let collecte of dayCollectes"
-              class="collection-card card"
-            >
+            <div *ngFor="let collecte of dayCollectes" class="collection-card card">
               <!-- Header -->
               <div class="collection-header">
                 <div class="collection-status">
-                  <span
-                    class="status-badge"
-                    [class]="'status-' + collecte.status"
-                  >
+                  <span class="status-badge" [class]="'status-' + collecte.status">
                     {{ collecte.status }}
                   </span>
                   <span class="collection-time">
@@ -180,11 +153,8 @@
                 </div>
 
                 <div class="collection-actions">
-                  <button
-                    class="action-btn"
-                    (click)="trackCollection(collecte._id)"
-                    *ngIf="collecte.status === 'in_progress'"
-                  >
+                  <button class="action-btn" (click)="trackCollection(collecte._id)"
+                    *ngIf="collecte.status === 'in_progress'">
                     <i class="material-icons">location_on</i>
                   </button>
                   <!-- <button
@@ -232,10 +202,7 @@
           <div class="employees-header">
             <h2>Gestion des Employés</h2>
             <div class="employees-actions">
-              <button
-                class="btn btn-primary"
-                (click)="showAddEmployeeModal = true"
-              >
+              <button class="btn btn-primary" (click)="showAddEmployeeModal = true">
                 <i class="material-icons">person_add</i>
                 Ajouter Employé
               </button>
@@ -243,37 +210,25 @@
           </div>
 
           <!-- Indicateur de chargement pour les employés -->
-          <app-loading-spinner 
-            *ngIf="isLoadingEmployees" 
-            message="Chargement des employés..." 
-            size="medium">
+          <app-loading-spinner *ngIf="isLoadingEmployees" message="Chargement des employés..." size="medium">
           </app-loading-spinner>
 
           <div *ngIf="!isLoadingEmployees" class="employees-grid">
-            <div
-              *ngFor="let employee of allEmployees"
-              class="employee-card card"
-              [ngClass]="
+            <div *ngFor="let employee of allEmployees" class="employee-card card" [ngClass]="
                     employee.role
                       ? 'client-audit-card-' + employee.role
                       : 'client-audit-card'
-                  "
-            >
+                  ">
               <div class="employee-header">
                 <div class="employee-avatar">
                   <ng-container *ngIf="employee?.avatar; else noImage">
-                    <img
-                      [src]="
+                    <img [src]="
                             employee.avatar || '/assets/default-avatar.png'
-                          "
-                      [alt]="employee.firstName"
-                    />
+                          " [alt]="employee.firstName" />
                   </ng-container>
                   <ng-template #noImage>
-                    <div
-                      class="rounded-circle text-white font-bold uppercase"
-                      [style.background-color]="getRandomColor(employee)"
-                    >
+                    <div class="rounded-circle text-white font-bold uppercase"
+                      [style.background-color]="getRandomColor(employee)">
                       {{ getInitials( employee?.firstName + " " +
                       employee?.lastName ) }}
                     </div>
@@ -282,10 +237,7 @@
                 <div class="employee-info">
                   <h4>{{ employee.firstName }} {{ employee.lastName }}</h4>
                   <p class="employee-role">{{ getRoleText(employee.role) }}</p>
-                  <p
-                    class="employee-status"
-                    [class]="employee.isActive ? 'active' : 'inactive'"
-                  >
+                  <p class="employee-status" [class]="employee.isActive ? 'active' : 'inactive'">
                     {{ employee.isActive ? "Actif" : "Inactif" }}
                   </p>
                 </div>
@@ -307,10 +259,8 @@
                 </div>
                 <div class="detail-item">
                   <i class="material-icons">event</i>
-                  <span
-                    >Embauché le {{ employee.hiredAt | date : "dd/MM/yyyy"
-                    }}</span
-                  >
+                  <span>Embauché le {{ employee.hiredAt | date : "dd/MM/yyyy"
+                    }}</span>
                 </div>
               </div>
 
@@ -318,21 +268,12 @@
                 <button class="action-btn" (click)="editEmployee(employee)">
                   <i class="material-icons">edit</i>
                 </button>
-                <button
-                  class="action-btn danger"
-                  [disabled]="isDeleting"
-                  (click)="deleteEmployee(currentUser, employee)"
-                >
+                <button class="action-btn danger" [disabled]="isDeleting"
+                  (click)="deleteEmployee(currentUser, employee)">
                   <i class="material-icons">delete</i>
                 </button>
-                <button
-                  class="action-btn"
-                  [class.active]="employee.isActive"
-                  (click)="toggleEmployeeStatus(employee)"
-                >
-                  <i class="material-icons"
-                    >{{ employee.isActive ? "toggle_on" : "toggle_off" }}</i
-                  >
+                <button class="action-btn" [class.active]="employee.isActive" (click)="toggleEmployeeStatus(employee)">
+                  <i class="material-icons">{{ employee.isActive ? "toggle_on" : "toggle_off" }}</i>
                 </button>
               </div>
               <!-- <div class="employee-stats" *ngIf="employee.role === 'collector'">
@@ -350,7 +291,8 @@
           <div *ngIf="!isLoadingEmployees && !allEmployees?.length" class="empty-state">
             <i class="material-icons">people_outline</i>
             <h3>Aucun employé</h3>
-            <p>Vous n'avez pas encore ajouté d'employés à votre agence. Cliquez sur "Ajouter Employé" pour commencer.</p>
+            <p>Vous n'avez pas encore ajouté d'employés à votre agence. Cliquez sur "Ajouter Employé" pour commencer.
+            </p>
           </div>
         </div>
 
@@ -369,11 +311,224 @@
             <i class="material-icons">edit_location</i>
             Modifier les zones couvertes
           </button>
+
+          <!-- Section Statistiques par Zone -->
+          <div class="zone-analytics-section">
+            <div class="analytics-header">
+              <h3>Analyse des Zones de Couverture</h3>
+              <div class="analytics-filters">
+                <select [(ngModel)]="selectedZoneForAnalytics" class="filter-select">
+                  <option value="">Toutes les zones</option>
+                  <option *ngFor="let zone of zones" [value]="zone.neighborhood || zone">
+                    {{ zone.neighborhood || zone }}
+                  </option>
+                </select>
+                <button class="btn btn-accent" (click)="refreshZoneAnalytics()">
+                  <i class="material-icons">refresh</i>
+                  Actualiser
+                </button>
+              </div>
+            </div>
+
+            <!-- Cartes de statistiques globales -->
+            <div class="zone-stats-grid">
+              <div class="zone-stat-card card">
+                <div class="stat-icon clients-zone">
+                  <i class="material-icons">home</i>
+                </div>
+                <div class="stat-info">
+                  <h4>Total Ménages</h4>
+                  <p class="stat-value">{{ getTotalClientsByType('household') || 0 }}</p>
+                  <span class="stat-trend">{{ getPercentageByType('household') }}% du total</span>
+                </div>
+              </div>
+
+              <div class="zone-stat-card card">
+                <div class="stat-icon business-zone">
+                  <i class="material-icons">business</i>
+                </div>
+                <div class="stat-info">
+                  <h4>Entreprises</h4>
+                  <p class="stat-value">{{ getTotalClientsByType('business') || 0 }}</p>
+                  <span class="stat-trend">{{ getPercentageByType('business') }}% du total</span>
+                </div>
+              </div>
+
+              <div class="zone-stat-card card">
+                <div class="stat-icon institution-zone">
+                  <i class="material-icons">account_balance</i>
+                </div>
+                <div class="stat-info">
+                  <h4>Institutions</h4>
+                  <p class="stat-value">{{ getTotalClientsByType('institution') || 0 }}</p>
+                  <span class="stat-trend">{{ getPercentageByType('institution') }}% du total</span>
+                </div>
+              </div>
+
+              <div class="zone-stat-card card">
+                <div class="stat-icon capacity-zone">
+                  <i class="material-icons">local_shipping</i>
+                </div>
+                <div class="stat-info">
+                  <h4>Charge de Travail</h4>
+                  <p class="stat-value">{{ getWorkloadPercentage() }}%</p>
+                  <span class="stat-trend" [class.positive]="getWorkloadPercentage() <= 80" 
+                        [class.warning]="getWorkloadPercentage() > 80 && getWorkloadPercentage() <= 95"
+                        [class.negative]="getWorkloadPercentage() > 95">
+                    {{ getWorkloadStatus() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Détails par zone -->
+            <div class="zone-details-section">
+              <div class="zone-details-header">
+                <h4>Répartition Détaillée par Zone</h4>
+                <div class="legend">
+                  <span class="legend-item household"><i class="material-icons">home</i> Ménages</span>
+                  <span class="legend-item business"><i class="material-icons">business</i> Entreprises</span>
+                  <span class="legend-item institution"><i class="material-icons">account_balance</i> Institutions</span>
+                </div>
+              </div>
+
+              <div class="zone-breakdown-grid">
+                <div *ngFor="let zone of getZoneAnalyticsData()" class="zone-breakdown-card card">
+                  <div class="zone-breakdown-header">
+                    <h5>{{ zone.name }}</h5>
+                    <div class="zone-total">
+                      <span class="total-clients">{{ zone.totalClients }} clients</span>
+                      <div class="capacity-indicator" [class]="getCapacityStatus(zone.capacityUsage)">
+                        <i class="material-icons">{{ getCapacityIcon(zone.capacityUsage) }}</i>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="client-type-breakdown">
+                    <div class="breakdown-item household">
+                      <div class="breakdown-info">
+                        <i class="material-icons">home</i>
+                        <span class="type-label">Ménages</span>
+                      </div>
+                      <div class="breakdown-stats">
+                        <span class="count">{{ zone.households }}</span>
+                        <div class="percentage-bar">
+                          <div class="fill household-fill" [style.width]="(zone.households / zone.totalClients * 100) + '%'"></div>
+                        </div>
+                        <span class="percentage">{{ (zone.households / zone.totalClients * 100) | number:'1.0-0' }}%</span>
+                      </div>
+                    </div>
+
+                    <div class="breakdown-item business">
+                      <div class="breakdown-info">
+                        <i class="material-icons">business</i>
+                        <span class="type-label">Entreprises</span>
+                      </div>
+                      <div class="breakdown-stats">
+                        <span class="count">{{ zone.businesses }}</span>
+                        <div class="percentage-bar">
+                          <div class="fill business-fill" [style.width]="(zone.businesses / zone.totalClients * 100) + '%'"></div>
+                        </div>
+                        <span class="percentage">{{ (zone.businesses / zone.totalClients * 100) | number:'1.0-0' }}%</span>
+                      </div>
+                    </div>
+
+                    <div class="breakdown-item institution">
+                      <div class="breakdown-info">
+                        <i class="material-icons">account_balance</i>
+                        <span class="type-label">Institutions</span>
+                      </div>
+                      <div class="breakdown-stats">
+                        <span class="count">{{ zone.institutions }}</span>
+                        <div class="percentage-bar">
+                          <div class="fill institution-fill" [style.width]="(zone.institutions / zone.totalClients * 100) + '%'"></div>
+                        </div>
+                        <span class="percentage">{{ (zone.institutions / zone.totalClients * 100) | number:'1.0-0' }}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Métriques de capacité -->
+                  <div class="capacity-metrics">
+                    <div class="metric-item">
+                      <i class="material-icons">schedule</i>
+                      <div class="metric-info">
+                        <span class="metric-label">Temps estimé</span>
+                        <span class="metric-value">{{ zone.estimatedTime }}h</span>
+                      </div>
+                    </div>
+
+                    <div class="metric-item">
+                      <i class="material-icons">group</i>
+                      <div class="metric-info">
+                        <span class="metric-label">Équipe requise</span>
+                        <span class="metric-value">{{ zone.requiredTeam }} personnes</span>
+                      </div>
+                    </div>
+
+                    <div class="metric-item">
+                      <i class="material-icons">local_shipping</i>
+                      <div class="metric-info">
+                        <span class="metric-label">Véhicules</span>
+                        <span class="metric-value">{{ zone.requiredVehicles }}</span>
+                      </div>
+                    </div>
+
+                    <div class="metric-item">
+                      <i class="material-icons">trending_up</i>
+                      <div class="metric-info">
+                        <span class="metric-label">Évolution</span>
+                        <span class="metric-value" [class.positive]="zone.growth >= 0" [class.negative]="zone.growth < 0">
+                          {{ zone.growth >= 0 ? '+' : '' }}{{ zone.growth }}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Actions de la zone -->
+                  <div class="zone-actions">
+                    <button class="action-btn" (click)="viewZoneDetails(zone.id)">
+                      <i class="material-icons">visibility</i>
+                    </button>
+                    <button class="action-btn" (click)="optimizeZoneCapacity(zone.id)">
+                      <i class="material-icons">tune</i>
+                    </button>
+                    <button class="action-btn" [class.warning]="zone.capacityUsage > 90" 
+                            (click)="showCapacityAlert(zone)">
+                      <i class="material-icons">warning</i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recommandations -->
+            <div class="recommendations-section" *ngIf="getZoneRecommendations().length > 0">
+              <h4>Recommandations</h4>
+              <div class="recommendations-list">
+                <div *ngFor="let recommendation of getZoneRecommendations()" 
+                     class="recommendation-item" [class]="recommendation.priority">
+                  <div class="recommendation-icon">
+                    <i class="material-icons">{{ recommendation.icon }}</i>
+                  </div>
+                  <div class="recommendation-content">
+                    <h5>{{ recommendation.title }}</h5>
+                    <p>{{ recommendation.description }}</p>
+                    <div class="recommendation-actions">
+                      <button class="btn btn-sm btn-primary" (click)="applyRecommendation(recommendation)">
+                        Appliquer
+                      </button>
+                      <button class="btn btn-sm btn-outline" (click)="dismissRecommendation(recommendation)">
+                        Ignorer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- Indicateur de chargement pour les zones -->
-          <app-loading-spinner 
-            *ngIf="isLoadingZones" 
-            message="Chargement des zones..." 
-            size="medium">
+          <app-loading-spinner *ngIf="isLoadingZones" message="Chargement des zones..." size="medium">
           </app-loading-spinner>
 
           <div *ngIf="!isLoadingZones" class="zones-content">
@@ -411,10 +566,7 @@
                     <button class="action-btn" (click)="editZone(zone.id)">
                       <i class="material-icons">edit</i>
                     </button>
-                    <button
-                      class="action-btn danger"
-                      (click)="deleteZone(zone.id)"
-                    >
+                    <button class="action-btn danger" (click)="deleteZone(zone.id)">
                       <i class="material-icons">delete</i>
                     </button>
                   </div>
@@ -439,12 +591,9 @@
                 </div>
 
                 <div class="zone-status">
-                  <span
-                    class="status-badge"
-                    [class]="
+                  <span class="status-badge" [class]="
                           zone.isActive ? 'status-active' : 'status-inactive'
-                        "
-                  >
+                        ">
                     {{ zone.isActive ? "Active" : "Inactive" }}
                   </span>
                 </div>
@@ -458,10 +607,7 @@
           <div class="schedules-header">
             <h2>Gestion des Plannings de Collecte</h2>
             <div class="schedules-actions">
-              <button
-                class="btn btn-primary"
-                (click)="showScheduleModal = true"
-              >
+              <button class="btn btn-primary" (click)="showScheduleModal = true">
                 <i class="material-icons">schedule</i>
                 Nouveau Planning
               </button>
@@ -487,15 +633,9 @@
               </div>
 
               <div class="calendar-content">
-                <div
-                  *ngFor="let day of weekDays; let i = index"
-                  class="day-column"
-                >
-                  <div
-                    *ngFor="let schedule of getSchedulesForDay(i)"
-                    class="schedule-item"
-                    (click)="openScheduleDetails(schedule)"
-                  >
+                <div *ngFor="let day of weekDays; let i = index" class="day-column">
+                  <div *ngFor="let schedule of getSchedulesForDay(i)" class="schedule-item"
+                    (click)="openScheduleDetails(schedule)">
                     <!-- <div class="schedule-time">
                           <span class="schedule-time">Debut:</span>
                           {{ schedule.startTime }}
@@ -520,10 +660,7 @@
                       {{ getCollectorName(schedule.collectorId) }}
                     </div>
                     <div class="schedule-actions">
-                      <button
-                        class="action-btn danger"
-                        (click)="deletePlanning(schedule._id)"
-                      >
+                      <button class="action-btn danger" (click)="deletePlanning(schedule._id)">
                         <i class="material-icons">delete</i>
                       </button>
                       <!-- <button
@@ -547,14 +684,11 @@
           <div class="clients-header">
             <h2>Clients Actifs ({{ activeClients.length }})</h2>
           </div>
-          
+
           <!-- Indicateur de chargement pour les clients -->
-          <app-loading-spinner 
-            *ngIf="isLoadingClients" 
-            message="Chargement des clients..." 
-            size="medium">
+          <app-loading-spinner *ngIf="isLoadingClients" message="Chargement des clients..." size="medium">
           </app-loading-spinner>
-          
+
           <div *ngIf="!isLoadingClients" class="clients-table">
             <table class="table">
               <thead>
@@ -592,10 +726,7 @@
                         >
                           <i class="material-icons">pause</i>
                         </button> -->
-                    <button
-                      class="action-btn danger"
-                      (click)="viewClientDetails(client._id)"
-                    >
+                    <button class="action-btn danger" (click)="viewClientDetails(client._id)">
                       <i class="material-icons">visibility</i>
                     </button>
                     <!-- <button
@@ -675,21 +806,13 @@
           <div class="reports-header">
             <h2>Signalements</h2>
             <div class="incidents-filters">
-              <select
-                [(ngModel)]="incidentsFilter"
-                (change)="filterIncidents()"
-                class="filter-select"
-              >
+              <select [(ngModel)]="incidentsFilter" (change)="filterIncidents()" class="filter-select">
                 <option value="all">Tous les incidents</option>
                 <option value="open">Ouverts</option>
                 <option value="pending">En cours</option>
                 <option value="resolved">Résolus</option>
               </select>
-              <select
-                [(ngModel)]="severityFilter"
-                (change)="filterIncidents()"
-                class="filter-select"
-              >
+              <select [(ngModel)]="severityFilter" (change)="filterIncidents()" class="filter-select">
                 <option value="all">Toutes gravités</option>
                 <option value="critical">Critique</option>
                 <option value="high">Élevée</option>
@@ -699,32 +822,19 @@
             </div>
           </div>
           <!-- Indicateur de chargement pour les signalements -->
-          <app-loading-spinner 
-            *ngIf="isLoadingReports" 
-            message="Chargement des signalements..." 
-            size="medium">
+          <app-loading-spinner *ngIf="isLoadingReports" message="Chargement des signalements..." size="medium">
           </app-loading-spinner>
 
           <div *ngIf="!isLoadingReports" class="reports-list">
             <div *ngFor="let report of agencyReports" class="report-card card">
               <div class="incident-header">
-                <div
-                  class="incident-severity"
-                  [class]="'severity-' + report?.severity"
-                >
-                  <i class="material-icons"
-                    >{{ getSeverityIcon(report.severity) }}</i
-                  >
-                  <span
-                    >{{ getSeverityText(report.severity) ?
-                    getSeverityText(report.severity) : "Faible" }}</span
-                  >
+                <div class="incident-severity" [class]="'severity-' + report?.severity">
+                  <i class="material-icons">{{ getSeverityIcon(report.severity) }}</i>
+                  <span>{{ getSeverityText(report.severity) ?
+                    getSeverityText(report.severity) : "Faible" }}</span>
                 </div>
                 <div class="incident-status">
-                  <span
-                    class="status-badge"
-                    [class]="'status-' + report.status"
-                  >
+                  <span class="status-badge" [class]="'status-' + report.status">
                     {{ getIncidentStatusText(report.status) }}
                   </span>
                 </div>
@@ -743,17 +853,9 @@
                 </p>
               </div>
               <!-- Affichage des photos -->
-              <div
-                *ngIf="report.photos && report.photos.length"
-                class="report-photos"
-              >
-                <img
-                  *ngFor="let photo of report.photos"
-                  [src]="photo"
-                  alt="Photo du signalement"
-                  class="report-photo circular-image"
-                  (click)="openImageModal(photo)"
-                />
+              <div *ngIf="report.photos && report.photos.length" class="report-photos">
+                <img *ngFor="let photo of report.photos" [src]="photo" alt="Photo du signalement"
+                  class="report-photo circular-image" (click)="openImageModal(photo)" />
               </div>
               <div *ngIf="!report.photos || !report.photos.length">
                 <p><em>Aucune photo associée</em></p>
@@ -763,12 +865,8 @@
                 <h3>Aucun signalement pour le moment</h3>
               </div>
               <div class="incident-actions">
-                <button
-                  class="btn btn-accent"
-                  (click)="openAssignModal(report._id)"
-                  (click)="openAssignModal(report._id)"
-                  *ngIf="!report.assignedTo"
-                >
+                <button class="btn btn-accent" (click)="openAssignModal(report._id)"
+                  (click)="openAssignModal(report._id)" *ngIf="!report.assignedTo">
                   <i class="material-icons">assignment_ind</i>
                   Traiter
                 </button>
@@ -777,12 +875,8 @@
                     <i class="material-icons">search</i>
                     Enquêter
                   </button> -->
-                <button
-                  class="btn btn-success"
-                  (click)="resolveIncident(report._id)"
-                  (click)="resolveIncident(report._id)"
-                  *ngIf="report.assignedTo"
-                >
+                <button class="btn btn-success" (click)="resolveIncident(report._id)"
+                  (click)="resolveIncident(report._id)" *ngIf="report.assignedTo">
                   <i class="material-icons">check</i>
                   Résoudre
                 </button>
@@ -811,9 +905,7 @@
           <div class="parent">
             <!-- Header -->
             <div class="chat-header-column">
-              <span *ngIf="displayAgencyName"
-                >Vous discutez avec {{ displayAgencyName }}</span
-              >
+              <span *ngIf="displayAgencyName">Vous discutez avec {{ displayAgencyName }}</span>
             </div>
 
             <div class="message-content">
@@ -826,23 +918,17 @@
                 </div>
 
                 <!-- Indicateur de chargement pour les messages -->
-                <app-loading-spinner 
-                  *ngIf="isLoadingMessages" 
-                  message="Chargement des conversations..." 
-                  size="small">
+                <app-loading-spinner *ngIf="isLoadingMessages" message="Chargement des conversations..." size="small">
                 </app-loading-spinner>
 
                 <div *ngIf="!isLoadingMessages" class="chat-left-column-content">
                   <ng-container *ngFor="let message of connectedUserMessages">
-                    <button
-                      class="chat-left-column-content-item"
-                      *ngIf="message.firstName"
-                      (click)="userAndAgencyConversation(message)"
-                    >
+                    <button class="chat-left-column-content-item" *ngIf="message.firstName"
+                      (click)="userAndAgencyConversation(message)">
                       {{ message.firstName }} {{ message.lastName }}
                     </button>
                   </ng-container>
-                  
+
                   <!-- État vide pour les conversations -->
                   <div *ngIf="!connectedUserMessages?.length" class="empty-conversations">
                     <i class="material-icons">chat_bubble_outline</i>
@@ -855,14 +941,10 @@
               <div class="chat-area">
                 <div class="chat-messages" #scrollMe>
                   <ng-container *ngFor="let message of receivedMessages">
-                    <div
-                      class="received"
-                      *ngIf="message.sender !== currentUser?.userId"
-                    >
+                    <div class="received" *ngIf="message.sender !== currentUser?.userId">
                       <div class="div5 chat-bubble">
                         <span> {{ message.content }}</span>
-                        <span class="chat-time"
-                          >reçu le {{ message.timestamp | date : "dd/MMM/yyyy à
+                        <span class="chat-time">reçu le {{ message.timestamp | date : "dd/MMM/yyyy à
                           HH:mm" }}
                           <mat-icon class="chat-read">
                             {{ message.read === "true" ? "done_all" : "done" }}
@@ -870,14 +952,10 @@
                         </span>
                       </div>
                     </div>
-                    <div
-                      class="sent"
-                      *ngIf="message.sender === currentUser?.userId"
-                    >
+                    <div class="sent" *ngIf="message.sender === currentUser?.userId">
                       <div class="div6 chat-bubble">
                         <span> {{ message.content }}</span>
-                        <span class="chat-time"
-                          >envoyé le {{ message.timestamp | date : "dd/MMM/yyyy
+                        <span class="chat-time">envoyé le {{ message.timestamp | date : "dd/MMM/yyyy
                           à HH:mm" }}
                           <mat-icon class="chat-read">
                             {{ message.read === "true" ? "done_all" : "done" }}
@@ -890,19 +968,10 @@
 
                 <!-- Input fixé en bas -->
                 <div class="div7 chat-input-row">
-                  <input
-                    class="sendChatMessage"
-                    [(ngModel)]="messageData.content"
-                    name="content"
-                    type="text"
-                    placeholder="Composez votre message"
-                  />
+                  <input class="sendChatMessage" [(ngModel)]="messageData.content" name="content" type="text"
+                    placeholder="Composez votre message" />
                   <div class="chat-actions">
-                    <button
-                      type="button"
-                      (click)="submitMessage()"
-                      class="btn_send btn-secondary"
-                    >
+                    <button type="button" (click)="submitMessage()" class="btn_send btn-secondary">
                       <mat-icon class="material-icons">send</mat-icon>
                     </button>
                   </div>
@@ -911,11 +980,7 @@
             </div>
           </div>
           <!-- Message -->
-          <div
-            class="modal-overlay"
-            *ngIf="showMessageModal"
-            (click)="showMessageModal = false"
-          >
+          <div class="modal-overlay" *ngIf="showMessageModal" (click)="showMessageModal = false">
             <div class="modal-content" (click)="$event.stopPropagation()">
               <div class="modal-header">
                 <h3>Décrivez nous votre besoins</h3>
@@ -938,27 +1003,14 @@
 
                 <div class="form-group">
                   <label>Message</label>
-                  <textarea
-                    [(ngModel)]="messageData.content"
-                    name="content"
-                    rows="4"
-                    placeholder="Votre message..."
-                    required
-                  ></textarea>
+                  <textarea [(ngModel)]="messageData.content" name="content" rows="4" placeholder="Votre message..."
+                    required></textarea>
                 </div>
                 <div class="form-actions">
-                  <button
-                    type="button"
-                    class="btn btn-secondary"
-                    (click)="showMessageModal = false"
-                  >
+                  <button type="button" class="btn btn-secondary" (click)="showMessageModal = false">
                     Annuler
                   </button>
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    (click)="submitMessage(); showMessageModal = false"
-                  >
+                  <button type="button" class="btn btn-primary" (click)="submitMessage(); showMessageModal = false">
                     <i class="material-icons">send</i>
                     Envoyer
                   </button>
@@ -1057,257 +1109,298 @@
           <div class="analytics-header"></div>
 
           <div class="analytics-content">
-            <div
-              class="modal-overlay"
-              *ngIf="showAddEmployeeModal"
-              (click)="showAddEmployeeModal = false"
-            >
-              <div class="modal-content" (click)="$event.stopPropagation()">
-                <div class="modal-header">
+            <!-- Drawer Ajouter Employé -->
+            <div class="drawer-overlay" *ngIf="showAddEmployeeModal" (click)="showAddEmployeeModal = false">
+              <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+                <div class="drawer-header">
                   <h3>Ajouter un Employé</h3>
-                  <button
-                    class="close-btn"
-                    (click)="showAddEmployeeModal = false"
-                  >
+                  <button class="drawer-close-btn" (click)="showAddEmployeeModal = false">
                     <i class="material-icons">close</i>
                   </button>
                 </div>
-                <form class="employee-form" [formGroup]="employeeForm" (ngSubmit)="addEmployee()">
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label class="form-label required">Prénom</label>
-                      <input
-                        type="text"
-                        formControlName="firstName"
-                        class="form-input"
-                        [class.error]="hasFieldError('employee', 'firstName')"
-                        [class.valid]="employeeForm.get('firstName')?.valid && employeeForm.get('firstName')?.touched"
-                        placeholder="Entrez le prénom"
-                      />
-                      <span class="error-message">{{ getFieldError('employee', 'firstName') }}</span>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label required">Nom</label>
-                      <input
-                        type="text"
-                        formControlName="lastName"
-                        class="form-input"
-                        [class.error]="hasFieldError('employee', 'lastName')"
-                        [class.valid]="employeeForm.get('lastName')?.valid && employeeForm.get('lastName')?.touched"
-                        placeholder="Entrez le nom"
-                      />
-                      <span class="error-message">{{ getFieldError('employee', 'lastName') }}</span>
+
+                <div class="drawer-body">
+                  <!-- Zone d'affichage des erreurs -->
+                  <div *ngIf="employeeFormError" class="error-alert">
+                    <div class="error-alert-content">
+                      <i class="material-icons">error</i>
+                      <div class="error-details">
+                        <strong>{{ employeeFormError }}</strong>
+                        <ul *ngIf="hasDetailedErrors()" class="detailed-errors">
+                          <li *ngFor="let error of getDetailedErrorKeys()">
+                            <strong>{{ error }}:</strong> {{ employeeFormDetailedErrors[error] }}
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                  <div class="form-group">
-                    <label class="form-label required">Email</label>
-                    <input
-                      type="email"
-                      formControlName="email"
-                      class="form-input"
-                      [class.error]="hasFieldError('employee', 'email')"
-                      [class.valid]="employeeForm.get('email')?.valid && employeeForm.get('email')?.touched"
-                      placeholder="exemple@email.com"
-                    />
-                    <span class="error-message">{{ getFieldError('employee', 'email') }}</span>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label required">Téléphone</label>
-                    <input
-                      type="tel"
-                      formControlName="phone"
-                      class="form-input"
-                      [class.error]="hasFieldError('employee', 'phone')"
-                      [class.valid]="employeeForm.get('phone')?.valid && employeeForm.get('phone')?.touched"
-                      placeholder="+226 XX XX XX XX"
-                    />
-                    <span class="error-message">{{ getFieldError('employee', 'phone') }}</span>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label required">Rôle</label>
-                    <select 
-                      formControlName="role"
-                      class="form-select"
-                      [class.error]="hasFieldError('employee', 'role')"
-                      [class.valid]="employeeForm.get('role')?.valid && employeeForm.get('role')?.touched"
-                    >
-                      <option value="">Sélectionner un rôle</option>
-                      <option value="manager">Manager</option>
-                      <option value="collector">Collecteur</option>
-                    </select>
-                    <span class="error-message">{{ getFieldError('employee', 'role') }}</span>
-                  </div>
-                  <!-- Sélection multiple des zones -->
-                  <div
-                    class="form-group"
-                    *ngIf="employeeForm.get('role')?.value === 'collector'"
-                  >
-                    <label class="form-label required">Zones assignées</label>
-                    <div class="zone-selection" [class.error]="hasFieldError('employee', 'zones')">
-                      <div class="form-checkbox-group">
-                        <div 
-                          *ngFor="let zone of serviceZones" 
-                          class="form-checkbox-item"
-                          [class.selected]="isZoneSelected(zone.id)"
-                        >
-                          <input 
-                            type="checkbox" 
-                            class="form-checkbox"
-                            [checked]="isZoneSelected(zone.id)"
-                            (change)="toggleZoneSelection(zone.id, $event)"
-                          >
-                          <span>{{ zone.name }}</span>
+
+                  <form id="employee-form" class="drawer-form" [formGroup]="employeeForm" (ngSubmit)="addEmployee()">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label required">Prénom</label>
+                        <input type="text" formControlName="firstName" class="form-input"
+                          [class.error]="hasFieldError('employee', 'firstName')"
+                          [class.valid]="employeeForm.get('firstName')?.valid && employeeForm.get('firstName')?.touched"
+                          placeholder="Entrez le prénom" />
+                        <span class="error-message">{{ getFieldError('employee', 'firstName') }}</span>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label required">Nom</label>
+                        <input type="text" formControlName="lastName" class="form-input"
+                          [class.error]="hasFieldError('employee', 'lastName')"
+                          [class.valid]="employeeForm.get('lastName')?.valid && employeeForm.get('lastName')?.touched"
+                          placeholder="Entrez le nom" />
+                        <span class="error-message">{{ getFieldError('employee', 'lastName') }}</span>
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label required">Email</label>
+                        <input type="email" formControlName="email" class="form-input"
+                          [class.error]="hasFieldError('employee', 'email') || hasBackendFieldError('email')"
+                          [class.valid]="employeeForm.get('email')?.valid && employeeForm.get('email')?.touched"
+                          placeholder="exemple@email.com" (input)="clearBackendErrors()" />
+                        <span class="error-message">{{ getFieldError('employee', 'email') }}</span>
+                        <span *ngIf="hasBackendFieldError('email')" class="error-message backend-error">
+                          {{ getBackendFieldError('email') }}
+                        </span>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label required">Téléphone</label>
+                        <input type="tel" formControlName="phone" class="form-input"
+                          [class.error]="hasFieldError('employee', 'phone')"
+                          [class.valid]="employeeForm.get('phone')?.valid && employeeForm.get('phone')?.touched"
+                          placeholder="+226 XX XX XX XX" />
+                        <span class="error-message">{{ getFieldError('employee', 'phone') }}</span>
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label required">Mot de passe</label>
+                        <div class="password-input-wrapper">
+                          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-input"
+                            [class.error]="hasFieldError('employee', 'password')"
+                            [class.valid]="employeeForm.get('password')?.valid && employeeForm.get('password')?.touched"
+                            placeholder="Minimum 6 caractères" />
+                          <button type="button" class="password-toggle-btn" (click)="togglePasswordVisibility()">
+                            <i class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
+                          </button>
+                        </div>
+                        <span class="error-message">{{ getFieldError('employee', 'password') }}</span>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label required">Confirmer le mot de passe</label>
+                        <div class="password-input-wrapper">
+                          <input [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword"
+                            class="form-input"
+                            [class.error]="hasFieldError('employee', 'confirmPassword') || employeeForm.get('confirmPassword')?.hasError('passwordMismatch')"
+                            [class.valid]="employeeForm.get('confirmPassword')?.valid && employeeForm.get('confirmPassword')?.touched"
+                            placeholder="Ressaisissez le mot de passe" />
+                          <button type="button" class="password-toggle-btn" (click)="toggleConfirmPasswordVisibility()">
+                            <i class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</i>
+                          </button>
+                        </div>
+                        <span class="error-message"
+                          *ngIf="employeeForm.get('confirmPassword')?.hasError('passwordMismatch')">
+                          Les mots de passe ne correspondent pas
+                        </span>
+                        <span class="error-message">{{ getFieldError('employee', 'confirmPassword') }}</span>
+                      </div>
+                    </div>
+                    <div class="form-group full-width">
+                      <label class="form-label required">Rôle</label>
+                      <select formControlName="role" class="form-select"
+                        [class.error]="hasFieldError('employee', 'role')"
+                        [class.valid]="employeeForm.get('role')?.valid && employeeForm.get('role')?.touched"
+                        (change)="onRoleChange()">
+                        <option value="">Sélectionner un rôle</option>
+                        <option value="manager">Manager</option>
+                        <option value="collector">Collecteur</option>
+                      </select>
+                      <span class="error-message">{{ getFieldError('employee', 'role') }}</span>
+                    </div>
+
+                    <!-- Section Adresse -->
+                    <div class="form-section">
+                      <h4 class="section-title">Adresse</h4>
+                      <div formGroupName="address">
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label required">Rue</label>
+                            <input type="text" formControlName="street" class="form-input"
+                              placeholder="Nom de la rue" />
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label required">Numéro de porte</label>
+                            <input type="text" formControlName="doorNumber" class="form-input" placeholder="ex: 12B" />
+                          </div>
+                        </div>
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label">Couleur de porte</label>
+                            <input type="text" formControlName="doorColor" class="form-input" placeholder="ex: Bleu" />
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label required">Quartier</label>
+                            <input type="text" formControlName="neighborhood" class="form-input"
+                              placeholder="Nom du quartier" />
+                          </div>
+                        </div>
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label required">Arrondissement</label>
+                            <input type="text" formControlName="arrondissement" class="form-input"
+                              placeholder="Arrondissement" />
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label required">Secteur</label>
+                            <input type="text" formControlName="sector" class="form-input" placeholder="Secteur" />
+                          </div>
+                        </div>
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label required">Ville</label>
+                            <input type="text" formControlName="city" class="form-input" placeholder="Ville" />
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label required">Code postal</label>
+                            <input type="text" formControlName="postalCode" class="form-input"
+                              placeholder="Code postal" />
+                          </div>
                         </div>
                       </div>
-                      <small class="zone-summary">{{ getSelectedZonesText() }}</small>
                     </div>
-                    <span class="error-message">{{ getFieldError('employee', 'zones') }}</span>
-                  </div>
-                  <div class="form-actions">
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      (click)="closeAddEmployeeModal()"
-                    >
+                    <!-- Sélection multiple des zones -->
+                    <div class="form-group full-width" *ngIf="employeeForm.get('role')?.value === 'collector'">
+                      <label class="form-label">Zones assignées (optionnel)</label>
+                      <div class="zone-selection" [class.error]="hasFieldError('employee', 'zones')">
+                        <div class="form-checkbox-group">
+                          <div *ngFor="let zone of serviceZones" class="form-checkbox-item"
+                            [class.selected]="isZoneSelected(zone.id)">
+                            <input type="checkbox" class="form-checkbox" [checked]="isZoneSelected(zone.id)"
+                              (change)="toggleZoneSelection(zone.id, $event)">
+                            <span>{{ zone.name }}</span>
+                          </div>
+                        </div>
+                        <small class="zone-summary">{{ getSelectedZonesText() }}</small>
+                        <small class="form-help">Vous pouvez assigner des zones maintenant ou plus tard depuis la
+                          gestion des employés.</small>
+                      </div>
+                      <span class="error-message">{{ getFieldError('employee', 'zones') }}</span>
+                    </div>
+                  </form>
+
+                </div>
+
+                <div class="drawer-footer">
+                  <div class="drawer-actions">
+                    <button type="button" class="btn btn-outline" (click)="closeAddEmployeeModal()">
                       Annuler
                     </button>
-                    <button 
-                      type="submit" 
-                      class="btn btn-primary"
-                      [disabled]="!employeeForm.valid || isLoading"
-                    >
+                    <button type="submit" form="employee-form" class="btn btn-primary"
+                      [disabled]="!isEmployeeFormValid() || isLoading">
                       <span class="loading-spinner" *ngIf="isLoading"></span>
                       <i class="material-icons" *ngIf="!isLoading">person_add</i>
                       {{ isLoading ? 'Ajout en cours...' : 'Ajouter l\'employé' }}
                     </button>
                   </div>
-                </form>
+                </div>
               </div>
             </div>
 
-            <!-- Modal Gestion Zone -->
-            <div
-              class="modal-overlay"
-              *ngIf="showZoneModal"
-              (click)="showZoneModal = false"
-            >
-              <div class="modal-content" (click)="$event.stopPropagation()">
-                <div class="modal-header">
+            <!-- Drawer Ajouter Tarif -->
+            <div class="drawer-overlay" *ngIf="showZoneModal" (click)="showZoneModal = false">
+              <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+                <div class="drawer-header">
                   <h3>Ajouter un Tarif</h3>
-                  <button class="close-btn" (click)="showZoneModal = false">
+                  <button class="drawer-close-btn" (click)="showZoneModal = false">
                     <i class="material-icons">close</i>
                   </button>
                 </div>
 
-                <form class="tariff-form" [formGroup]="tariffForm" (ngSubmit)="addTariff()">
-                  <!-- Type -->
-                  <div class="form-group">
-                    <label class="form-label required">Type</label>
-                    <select 
-                      formControlName="type"
-                      class="form-select"
-                      [class.error]="hasFieldError('tariff', 'type')"
-                      [class.valid]="tariffForm.get('type')?.valid && tariffForm.get('type')?.touched"
-                    >
-                      <option value="">Sélectionner un type</option>
-                      <option value="standard">Standard</option>
-                      <option value="premium">Premium</option>
-                      <option value="vip">VIP</option>
-                    </select>
-                    <span class="error-message">{{ getFieldError('tariff', 'type') }}</span>
-                  </div>
+                <div class="drawer-body">
+                  <form id="tariff-form" class="drawer-form" [formGroup]="tariffForm" (ngSubmit)="addTariff()">
+                    <!-- Type -->
+                    <div class="form-group full-width">
+                      <label class="form-label required">Type</label>
+                      <select formControlName="type" class="form-select" [class.error]="hasFieldError('tariff', 'type')"
+                        [class.valid]="tariffForm.get('type')?.valid && tariffForm.get('type')?.touched">
+                        <option value="">Sélectionner un type</option>
+                        <option value="standard">Standard</option>
+                        <option value="premium">Premium</option>
+                        <option value="vip">VIP</option>
+                      </select>
+                      <span class="error-message">{{ getFieldError('tariff', 'type') }}</span>
+                    </div>
 
-                  <!-- Prix -->
-                  <div class="form-group">
-                    <label class="form-label required">Prix (FCFA)</label>
-                    <input
-                      type="number"
-                      formControlName="price"
-                      class="form-input"
-                      [class.error]="hasFieldError('tariff', 'price')"
-                      [class.valid]="tariffForm.get('price')?.valid && tariffForm.get('price')?.touched"
-                      placeholder="0"
-                      min="0"
-                    />
-                    <span class="error-message">{{ getFieldError('tariff', 'price') }}</span>
-                  </div>
+                    <!-- Prix et Nombre de passages -->
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label required">Prix (FCFA)</label>
+                        <input type="number" formControlName="price" class="form-input"
+                          [class.error]="hasFieldError('tariff', 'price')"
+                          [class.valid]="tariffForm.get('price')?.valid && tariffForm.get('price')?.touched"
+                          placeholder="0" min="0" />
+                        <span class="error-message">{{ getFieldError('tariff', 'price') }}</span>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label required">Nombre de passages</label>
+                        <input type="number" formControlName="nbPassages" class="form-input"
+                          [class.error]="hasFieldError('tariff', 'nbPassages')"
+                          [class.valid]="tariffForm.get('nbPassages')?.valid && tariffForm.get('nbPassages')?.touched"
+                          placeholder="1" min="1" />
+                        <span class="error-message">{{ getFieldError('tariff', 'nbPassages') }}</span>
+                      </div>
+                    </div>
 
-                  <!-- Nombre de passages -->
-                  <div class="form-group">
-                    <label class="form-label required">Nombre de passages</label>
-                    <input
-                      type="number"
-                      formControlName="nbPassages"
-                      class="form-input"
-                      [class.error]="hasFieldError('tariff', 'nbPassages')"
-                      [class.valid]="tariffForm.get('nbPassages')?.valid && tariffForm.get('nbPassages')?.touched"
-                      placeholder="1"
-                      min="1"
-                    />
-                    <span class="error-message">{{ getFieldError('tariff', 'nbPassages') }}</span>
-                  </div>
+                    <!-- Description -->
+                    <div class="form-group full-width">
+                      <label class="form-label required">Description</label>
+                      <textarea formControlName="description" class="form-textarea"
+                        [class.error]="hasFieldError('tariff', 'description')"
+                        [class.valid]="tariffForm.get('description')?.valid && tariffForm.get('description')?.touched"
+                        placeholder="Décrivez ce tarif..." rows="3"></textarea>
+                      <span class="error-message">{{ getFieldError('tariff', 'description') }}</span>
+                    </div>
 
-                  <!-- Description -->
-                  <div class="form-group">
-                    <label class="form-label required">Description</label>
-                    <textarea
-                      formControlName="description"
-                      class="form-textarea"
-                      [class.error]="hasFieldError('tariff', 'description')"
-                      [class.valid]="tariffForm.get('description')?.valid && tariffForm.get('description')?.touched"
-                      placeholder="Décrivez ce tarif..."
-                      rows="3"
-                    ></textarea>
-                    <span class="error-message">{{ getFieldError('tariff', 'description') }}</span>
-                  </div>
+                  </form>
+                </div>
 
-                  <div class="form-actions">
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      (click)="showZoneModal = false"
-                    >
+                <div class="drawer-footer">
+                  <div class="drawer-actions">
+                    <button type="button" class="btn btn-outline" (click)="showZoneModal = false">
                       Annuler
                     </button>
-                    <button 
-                      type="submit" 
-                      class="btn btn-primary"
-                      [disabled]="!tariffForm.valid || isLoading"
-                    >
+                    <button type="submit" form="tariff-form" class="btn btn-primary"
+                      [disabled]="!tariffForm.valid || isLoading">
                       <span class="loading-spinner" *ngIf="isLoading"></span>
                       <i class="material-icons" *ngIf="!isLoading">add_circle</i>
                       {{ isLoading ? 'Ajout en cours...' : 'Ajouter le tarif' }}
                     </button>
                   </div>
-                </form>
+                </div>
               </div>
             </div>
 
-            <!-- Modal Planning -->
-            <div
-              class="modal-overlay"
-              *ngIf="showScheduleModal"
-              (click)="showScheduleModal = false"
-            >
-              <div class="modal-content" (click)="$event.stopPropagation()">
-                <div class="modal-header">
+            <!-- Drawer Planning -->
+            <div class="drawer-overlay" *ngIf="showScheduleModal" (click)="showScheduleModal = false">
+              <div class="drawer-content" (click)="$event.stopPropagation()">
+                <div class="drawer-header">
                   <h3>Nouveau Planning de Collecte</h3>
-                  <button class="close-btn" (click)="showScheduleModal = false">
+                  <button class="drawer-close-btn" (click)="showScheduleModal = false">
                     <i class="material-icons">close</i>
                   </button>
                 </div>
 
-                <form
-                  [formGroup]="scheduleForm"
-                  class="schedule-form"
-                  (ngSubmit)="addSchedule()"
-                >
-                  <!-- Zone -->
-                  <div class="form-group">
-                    <label>Zone *</label>
-                    <select formControlName="zone">
-                      <option value="">Sélectionner une zone</option>
-                      <!-- <option
+                <div class="drawer-body">
+                  <form id="schedule-form" [formGroup]="scheduleForm" class="drawer-form" (ngSubmit)="addSchedule()">
+                    <!-- Zone -->
+                    <div class="form-group">
+                      <label>Zone *</label>
+                      <select formControlName="zone">
+                        <option value="">Sélectionner une zone</option>
+                        <!-- <option
                           value="Tampouy
 "
                         >
@@ -1324,128 +1417,91 @@
                         >
                           Marcoussis
                         </option> -->
-                      <option
-                        *ngFor="let zone of zones"
-                        [value]="zone.neighborhood || zone"
-                      >
-                        {{ zone.neighborhood || zone }}
-                      </option>
-                    </select>
-                    <small
-                      class="error-message"
-                      *ngIf="
+                        <option *ngFor="let zone of zones" [value]="zone.neighborhood || zone">
+                          {{ zone.neighborhood || zone }}
+                        </option>
+                      </select>
+                      <small class="error-message" *ngIf="
                             scheduleForm.get('zone')?.invalid &&
                             scheduleForm.get('zone')?.touched
-                          "
-                    >
-                      Veuillez sélectionner une zone
-                    </small>
-                  </div>
+                          ">
+                        Veuillez sélectionner une zone
+                      </small>
+                    </div>
 
-                  <!-- Date -->
-                  <div class="form-group">
-                    <label>Date *</label>
-                    <input
-                      type="date"
-                      formControlName="date"
-                      class="full-width"
-                      [min]="minDate"
-                    />
-                    <small
-                      class="error-message"
-                      *ngIf="
+                    <!-- Date -->
+                    <div class="form-group">
+                      <label>Date *</label>
+                      <input type="date" formControlName="date" class="full-width" [min]="minDate" />
+                      <small class="error-message" *ngIf="
                             scheduleForm.get('date')?.invalid &&
                             scheduleForm.get('date')?.touched
-                          "
-                    >
-                      Veuillez sélectionner une date
-                    </small>
-                  </div>
+                          ">
+                        Veuillez sélectionner une date
+                      </small>
+                    </div>
 
-                  <!-- Heures -->
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label>Heure de début *</label>
-                      <input type="time" formControlName="startTime" />
-                      <small
-                        class="error-message"
-                        *ngIf="
+                    <!-- Heures -->
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Heure de début *</label>
+                        <input type="time" formControlName="startTime" />
+                        <small class="error-message" *ngIf="
                               scheduleForm.get('startTime')?.invalid &&
                               scheduleForm.get('startTime')?.touched
-                            "
-                      >
-                        Veuillez définir une heure de début
-                      </small>
-                    </div>
+                            ">
+                          Veuillez définir une heure de début
+                        </small>
+                      </div>
 
-                    <div class="form-group">
-                      <label>Heure de fin *</label>
-                      <input type="time" formControlName="endTime" />
-                      <small
-                        class="error-message"
-                        *ngIf="
+                      <div class="form-group">
+                        <label>Heure de fin *</label>
+                        <input type="time" formControlName="endTime" />
+                        <small class="error-message" *ngIf="
                               scheduleForm.get('endTime')?.invalid &&
                               scheduleForm.get('endTime')?.touched
-                            "
-                      >
-                        Veuillez définir une heure de fin
-                      </small>
-                      <small
-                        class="error-message"
-                        *ngIf="scheduleForm.hasError('invalidTimeOrder')"
-                      >
-                        L'heure de fin doit être postérieure à l'heure de début
-                      </small>
+                            ">
+                          Veuillez définir une heure de fin
+                        </small>
+                        <small class="error-message" *ngIf="scheduleForm.hasError('invalidTimeOrder')">
+                          L'heure de fin doit être postérieure à l'heure de début
+                        </small>
+                      </div>
                     </div>
-                  </div>
 
-                  <!-- Collecteur -->
-                  <div class="form-group">
-                    <label>Collecteur *</label>
-                    <select formControlName="collectorId">
-                      <option value="">Sélectionner un collecteur</option>
-                      <option
-                        *ngFor="let collector of collectors"
-                        [value]="collector._id"
-                      >
-                        {{ collector.firstName }} {{ collector.lastName }}
-                      </option>
-                    </select>
-                    <small
-                      class="error-message"
-                      *ngIf="
+                    <!-- Collecteur -->
+                    <div class="form-group">
+                      <label>Collecteur *</label>
+                      <select formControlName="collectorId">
+                        <option value="">Sélectionner un collecteur</option>
+                        <option *ngFor="let collector of collectors" [value]="collector._id">
+                          {{ collector.firstName }} {{ collector.lastName }}
+                        </option>
+                      </select>
+                      <small class="error-message" *ngIf="
                             scheduleForm.get('collectorId')?.invalid &&
                             scheduleForm.get('collectorId')?.touched
-                          "
-                    >
-                      Veuillez sélectionner un collecteur
-                    </small>
-                  </div>
+                          ">
+                        Veuillez sélectionner un collecteur
+                      </small>
+                    </div>
 
-                  <!-- Actions -->
-                  <div class="form-actions">
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      (click)="showScheduleModal = false"
-                    >
+                  </form>
+                </div>
+
+                <div class="drawer-footer">
+                  <div class="drawer-actions">
+                    <button type="button" class="btn btn-outline" (click)="showScheduleModal = false">
                       Annuler
                     </button>
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                      [disabled]="scheduleForm.invalid"
-                    >
+                    <button type="submit" form="schedule-form" class="btn btn-primary"
+                      [disabled]="scheduleForm.invalid">
                       <i class="material-icons">schedule</i> Créer Planning
                     </button>
                   </div>
-                </form>
+                </div>
               </div>
-              <div
-                class="modal-overlay"
-                *ngIf="showAssignModal"
-                (click)="showAssignModal = false"
-              >
+              <div class="modal-overlay" *ngIf="showAssignModal" (click)="showAssignModal = false">
                 <div class="modal-content" (click)="$event.stopPropagation()">
                   <div class="modal-header">
                     <h3>Assigner des employés</h3>
@@ -1455,31 +1511,18 @@
                   </div>
                   <div class="modal-body">
                     <label>Employés disponibles :</label>
-                    <div
-                      *ngFor="let employee of allEmployees"
-                      class="checkbox-group"
-                    >
-                      <input
-                        type="checkbox"
-                        [value]="employee._id"
-                        (change)="
+                    <div *ngFor="let employee of allEmployees" class="checkbox-group">
+                      <input type="checkbox" [value]="employee._id" (change)="
                               toggleEmployeeSelection(employee._id, $event)
-                            "
-                      />
+                            " />
                       {{ employee.firstName }} {{ employee.lastName }}
                     </div>
                   </div>
                   <div class="modal-footer">
-                    <button
-                      class="btn btn-secondary"
-                      (click)="showAssignModal = false"
-                    >
+                    <button class="btn btn-secondary" (click)="showAssignModal = false">
                       Annuler
                     </button>
-                    <button
-                      class="btn btn-primary"
-                      (click)="assignEmployeesToReport()"
-                    >
+                    <button class="btn btn-primary" (click)="assignEmployeesToReport()">
                       soumettre
                     </button>
                   </div>
@@ -1488,11 +1531,7 @@
             </div>
           </div>
 
-          <div
-            class="modal-backdrop"
-            *ngIf="selectedSchedule"
-            (click)="closeModal()"
-          >
+          <div class="modal-backdrop" *ngIf="selectedSchedule" (click)="closeModal()">
             <div class="modal">
               <h3>Détails du planning</h3>
               <p>
@@ -1513,35 +1552,19 @@
               <!-- <button class="close-btn" (click)="selectedSchedule = null">Fermer</button> -->
             </div>
           </div>
-          <div
-            class="modal-backdrop"
-            *ngIf="showAssignModal"
-            (click)="closeAssignModal()"
-          >
+          <div class="modal-backdrop" *ngIf="showAssignModal" (click)="closeAssignModal()">
             <div class="modal" (click)="$event.stopPropagation()">
               <h3>Assigner un signalement</h3>
               <p><strong>Signalement ID :</strong> {{ selectedReportId }}</p>
 
-              <div
-                *ngIf="
+              <div *ngIf="
                       allEmployees && allEmployees.length > 0;
                       else noEmployees
-                    "
-                class="employee-grid"
-              >
-                <label
-                  *ngFor="let employee of allEmployees"
-                  class="employee-card"
-                >
-                  <input
-                    type="checkbox"
-                    [value]="employee._id"
-                    (change)="onEmployeeToggle($event)"
-                  />
+                    " class="employee-grid">
+                <label *ngFor="let employee of allEmployees" class="employee-card">
+                  <input type="checkbox" [value]="employee._id" (change)="onEmployeeToggle($event)" />
                   <div class="employee-info">
-                    <span class="employee-name"
-                      >{{ employee.firstName }} {{ employee.lastName }}</span
-                    >
+                    <span class="employee-name">{{ employee.firstName }} {{ employee.lastName }}</span>
                     <span class="employee-role">{{ employee.role }}</span>
                   </div>
                 </label>
@@ -1561,29 +1584,23 @@
               </div>
             </div>
           </div>
-          <!-- Modal -->
-          <div class="tariffs-modal" *ngIf="showTariffsModal">
-            <div class="modal-backdrop" (click)="closeTariffsModal()"></div>
-
-            <div class="modal-content">
-              <div class="modal-header">
+          <!-- Drawer Mes Tarifs -->
+          <div class="drawer-overlay" *ngIf="showTariffsModal" (click)="closeTariffsModal()">
+            <div class="drawer-content" (click)="$event.stopPropagation()">
+              <div class="drawer-header">
                 <h3>Mes Tarifs</h3>
-                <button class="close-btn" (click)="closeTariffsModal()">
+                <button class="drawer-close-btn" (click)="closeTariffsModal()">
                   <i class="material-icons">close</i>
                 </button>
               </div>
 
-              <div class="modal-body">
+              <div class="drawer-body">
                 <!-- Indicateur de chargement pour les tarifs -->
-                <app-loading-spinner 
-                  *ngIf="isLoadingTariffs" 
-                  message="Chargement des tarifs..." 
-                  size="medium">
+                <app-loading-spinner *ngIf="isLoadingTariffs" message="Chargement des tarifs..." size="medium">
                 </app-loading-spinner>
 
                 <div *ngIf="!isLoadingTariffs && tariffs.length > 0"
-                  class="tariff-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
-                >
+                  class="tariff-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                   <div *ngFor="let tariff of tariffs" class="tariff-card">
                     <div class="tariff-header">
                       <h4 class="price">
@@ -1606,10 +1623,7 @@
               <i class="material-icons text-base">edit</i>
               Renommer
             </button> -->
-                      <button
-                        class="btn btn-danger flex items-center gap-1"
-                        (click)="deleteTariff(tariff)"
-                      >
+                      <button class="btn btn-danger flex items-center gap-1" (click)="deleteTariff(tariff)">
                         <i class="material-icons text-base">delete</i>
                         Supprimer
                       </button>
@@ -1625,10 +1639,11 @@
                 </div>
               </div>
 
-              <div class="modal-footer">
-                <button class="btn btn-secondary" (click)="closeTariffsModal()">
-                  Fermer
-                </button>
+            </div>
+
+            <div class="drawer-footer">
+              <div class="drawer-actions">
+
               </div>
             </div>
           </div>
@@ -1636,236 +1651,252 @@
       </div>
     </div>
   </div>
-  <div
-    class="modal-overlay"
-    *ngIf="showClientDetailsModal"
-    (click)="closeClientDetailsModal()"
-  >
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Détails du Client</h3>
-        <button class="close-btn" (click)="closeClientDetailsModal()">
-          <i class="material-icons">close</i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p>
-          <strong>Nom :</strong> {{ selectedClient?.firstName }} {{
-          selectedClient?.lastName }}
-        </p>
-        <p><strong>Email :</strong> {{ selectedClient?.userId?.email }}</p>
-        <p><strong>Téléphone :</strong> {{ selectedClient?.phone }}</p>
-        <p>
-          <strong>Adresse :</strong> {{ selectedClient?.address?.street }}, {{
-          selectedClient?.address?.neighborhood }}
-        </p>
-        <p><strong>Rôle :</strong> {{ selectedClient?.userId?.role }}</p>
-        <p>
-          <strong>Sigalement:</strong>
-          {{ selectedClient?.nonPassageReports.length }}
-        </p>
-        <p>
-          <strong>Nombre de souscription:</strong>
-          {{ selectedClient?.subscriptionHistory.length }}
-        </p>
+</div>
+<!-- Drawer Détails du Client -->
+<div class="drawer-overlay" *ngIf="showClientDetailsModal" (click)="closeClientDetailsModal()">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>Détails du Client</h3>
+      <button class="drawer-close-btn" (click)="closeClientDetailsModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <!-- Informations personnelles -->
+      <div class="form-section">
+        <h4 class="section-title">Informations personnelles</h4>
+        <div class="client-info-grid">
+          <div class="info-item">
+            <i class="material-icons">person</i>
+            <div>
+              <span class="info-label">Nom complet</span>
+              <span class="info-value">{{ selectedClient?.firstName }} {{ selectedClient?.lastName }}</span>
+            </div>
+          </div>
 
-        <ul>
-          <!-- <span>Souscription:</span> -->
-          <!-- <li *ngFor="let subscription of selectedClient?.subscriptionHistory">
-          {{ subscription.type }} - {{ subscription.status }}
-        </li>  
-            -->
-        </ul>
+          <div class="info-item">
+            <i class="material-icons">email</i>
+            <div>
+              <span class="info-label">Email</span>
+              <span class="info-value">{{ selectedClient?.userId?.email }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <i class="material-icons">phone</i>
+            <div>
+              <span class="info-label">Téléphone</span>
+              <span class="info-value">{{ selectedClient?.phone }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <i class="material-icons">badge</i>
+            <div>
+              <span class="info-label">Rôle</span>
+              <span class="info-value">{{ selectedClient?.userId?.role }}</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="modal-footer">
+
+      <!-- Adresse -->
+      <div class="form-section">
+        <h4 class="section-title">Adresse</h4>
+        <div class="info-item">
+          <i class="material-icons">location_on</i>
+          <div>
+            <span class="info-label">Adresse complète</span>
+            <span class="info-value">{{ selectedClient?.address?.street }}, {{ selectedClient?.address?.neighborhood
+              }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistiques -->
+      <div class="form-section">
+        <h4 class="section-title">Statistiques</h4>
+        <div class="stats-row">
+          <div class="stat-item">
+            <i class="material-icons">report_problem</i>
+            <div>
+              <span class="stat-number">{{ selectedClient?.nonPassageReports?.length || 0 }}</span>
+              <span class="stat-label">Signalements</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <i class="material-icons">subscriptions</i>
+            <div>
+              <span class="stat-number">{{ selectedClient?.subscriptionHistory?.length || 0 }}</span>
+              <span class="stat-label">Souscriptions</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historique des souscriptions -->
+      <!-- <div class="form-section" *ngIf="selectedClient?.subscriptionHistory?.length > 0">
+          <h4 class="section-title">Historique des souscriptions</h4>
+          <div class="subscription-list">
+            <div *ngFor="let subscription of selectedClient?.subscriptionHistory" class="subscription-item">
+              <span class="subscription-type">{{ subscription.type }}</span>
+              <span class="subscription-status" [class]="'status-' + subscription.status">{{ subscription.status }}</span>
+            </div>
+          </div>
+        </div> -->
+    </div>
+
+    <div class="drawer-footer">
+      <div class="drawer-actions">
         <button class="btn btn-secondary" (click)="closeClientDetailsModal()">
           Fermer
         </button>
       </div>
     </div>
   </div>
-  <!-- Modal pour modifier un employé -->
-  <div
-    class="modal-overlay"
-    *ngIf="showUpdateEmployeeModal"
-    (click)="closeUpdateEmployeeModal()"
-  >
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Modifier un Employé</h3>
-        <button class="close-btn" (click)="closeUpdateEmployeeModal()">
-          <i class="material-icons">close</i>
-        </button>
-      </div>
-      <form [formGroup]="employeeForm" (ngSubmit)="updateEmployee()">
-        <div class="form-group">
-          <label>Prénom</label>
-          <input formControlName="firstName" type="text" />
-        </div>
-        <div class="form-group">
-          <label>Nom</label>
-          <input formControlName="lastName" type="text" />
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input formControlName="email" type="email" />
-        </div>
-        <div class="form-group">
-          <label>Téléphone</label>
-          <input formControlName="phone" type="tel" />
-        </div>
-        <div class="form-group">
-          <label>Rôle</label>
-          <select formControlName="role">
-            <option value="manager">Manager</option>
-            <option value="collector">Collecteur</option>
-          </select>
-        </div>
-        <div class="form-actions">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="closeUpdateEmployeeModal()"
-          >
-            Annuler
-          </button>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [disabled]="employeeForm.invalid"
-          >
-            Enregistrer
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-  <div class="modal-overlay" *ngIf="selectedImage" (click)="closeImageModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <img
-        [src]="selectedImage"
-        alt="Image en plein écran"
-        class="full-image"
-      />
-
-      <button class="close-btn" (click)="closeImageModal()">
+</div>
+<!-- Modal pour modifier un employé -->
+<div class="modal-overlay" *ngIf="showUpdateEmployeeModal" (click)="closeUpdateEmployeeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Modifier un Employé</h3>
+      <button class="close-btn" (click)="closeUpdateEmployeeModal()">
         <i class="material-icons">close</i>
       </button>
     </div>
-  </div>
-  <div
-    class="modal-overlay"
-    *ngIf="showHistoryModal"
-    (click)="closeHistoryModal()"
-  >
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Historique des Collectes</h3>
-        <button class="close-btn" (click)="closeHistoryModal()">
-          <i class="material-icons">close</i>
+    <form [formGroup]="employeeForm" (ngSubmit)="updateEmployee()">
+      <div class="form-group">
+        <label>Prénom</label>
+        <input formControlName="firstName" type="text" />
+      </div>
+      <div class="form-group">
+        <label>Nom</label>
+        <input formControlName="lastName" type="text" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input formControlName="email" type="email" />
+      </div>
+      <div class="form-group">
+        <label>Téléphone</label>
+        <input formControlName="phone" type="tel" />
+      </div>
+      <div class="form-group">
+        <label>Rôle</label>
+        <select formControlName="role">
+          <option value="manager">Manager</option>
+          <option value="collector">Collecteur</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeUpdateEmployeeModal()">
+          Annuler
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="employeeForm.invalid">
+          Enregistrer
         </button>
       </div>
-      <div class="modal-body">
-        <ul>
-          <li *ngFor="let collecte of historyCollecte">
-            <p>
-              <strong>Date :</strong>
-              {{ collecte?.scannedAt | date : "dd/MM/yyyy" }}
-            </p>
-            <p><strong>Statut :</strong> {{ collecte.status }}</p>
-            <p>
-              <strong>Client :</strong> {{ collecte?.clientId.firstName }} {{
-              collecte?.clientId.clientName }}
-            </p>
-          </li>
-        </ul>
-      </div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" *ngIf="selectedImage" (click)="closeImageModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <img [src]="selectedImage" alt="Image en plein écran" class="full-image" />
+
+    <button class="close-btn" (click)="closeImageModal()">
+      <i class="material-icons">close</i>
+    </button>
+  </div>
+</div>
+<div class="modal-overlay" *ngIf="showHistoryModal" (click)="closeHistoryModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Historique des Collectes</h3>
+      <button class="close-btn" (click)="closeHistoryModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <ul>
+        <li *ngFor="let collecte of historyCollecte">
+          <p>
+            <strong>Date :</strong>
+            {{ collecte?.scannedAt | date : "dd/MM/yyyy" }}
+          </p>
+          <p><strong>Statut :</strong> {{ collecte.status }}</p>
+          <p>
+            <strong>Client :</strong> {{ collecte?.clientId.firstName }} {{
+            collecte?.clientId.clientName }}
+          </p>
+        </li>
+      </ul>
     </div>
   </div>
+</div>
 
-  <!-- Modal pour gérer les zones -->
-  <div
-    class="modal-overlay"
-    *ngIf="showZoneModalcouverture"
-    (click)="closeZoneModalcouverture()"
-  >
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Définir les zones couvertes</h3>
-        <button class="close-btn" (click)="closeZoneModalcouverture()">
-          <i class="material-icons">close</i>
-        </button>
+<!-- Drawer pour gérer les zones -->
+<div class="drawer-overlay" *ngIf="showZoneModalcouverture" (click)="closeZoneModalcouverture()">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>Définir les zones couvertes</h3>
+      <button class="drawer-close-btn" (click)="closeZoneModalcouverture()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="form-group">
+        <label for="city">Ville</label>
+        <select id="city" [(ngModel)]="userData.address.city" (change)="onCityChange(userData.address.city)"
+          class="form-control">
+          <option value="">Sélectionner une ville</option>
+          <option *ngFor="let city of cities" [value]="city.name">
+            {{ city.name }}
+          </option>
+        </select>
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="city">Ville</label>
-          <select
-            id="city"
-            [(ngModel)]="userData.address.city"
-            (change)="onCityChange(userData.address.city)"
-            class="form-control"
-          >
-            <option value="">Sélectionner une ville</option>
-            <option *ngFor="let city of cities" [value]="city.name">
-              {{ city.name }}
-            </option>
-          </select>
-        </div>
 
-        <div class="form-group">
-          <label for="arrondissement">Arrondissement</label>
-          <select
-            id="arrondissement"
-            [(ngModel)]="userData.address.arrondissement"
-            (change)="
+      <div class="form-group">
+        <label for="arrondissement">Arrondissement</label>
+        <select id="arrondissement" [(ngModel)]="userData.address.arrondissement" (change)="
                   onArrondissementChange(userData.address.arrondissement)
-                "
-            class="form-control"
-            [disabled]="!arrondissementss.length"
-          >
-            <option value="">Sélectionner un arrondissement</option>
-            <option *ngFor="let arr of arrondissementss" [value]="arr.name">
-              {{ arr.name }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="sector">Secteur</label>
-          <select
-            id="sector"
-            [(ngModel)]="userData.address.sector"
-            (change)="onSecteurChange(userData.address.sector)"
-            class="form-control"
-            [disabled]="!secteurss.length"
-          >
-            <option value="">Sélectionner un secteur</option>
-            <option *ngFor="let secteur of secteurss" [value]="secteur.name">
-              {{ secteur.name }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="neighborhood">Quartier</label>
-          <select
-            id="neighborhood"
-            [(ngModel)]="userData.address.neighborhood"
-            class="form-control"
-            multiple
-            [disabled]="!quartierss.length"
-          >
-            <option *ngFor="let quartier of quartierss" [value]="quartier.name">
-              {{ quartier.name }}
-            </option>
-          </select>
-        </div>
+                " class="form-control" [disabled]="!arrondissementss.length">
+          <option value="">Sélectionner un arrondissement</option>
+          <option *ngFor="let arr of arrondissementss" [value]="arr.name">
+            {{ arr.name }}
+          </option>
+        </select>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeZoneModalcouverture()">
+
+      <div class="form-group">
+        <label for="sector">Secteur</label>
+        <select id="sector" [(ngModel)]="userData.address.sector" (change)="onSecteurChange(userData.address.sector)"
+          class="form-control" [disabled]="!secteurss.length">
+          <option value="">Sélectionner un secteur</option>
+          <option *ngFor="let secteur of secteurss" [value]="secteur.name">
+            {{ secteur.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="neighborhood">Quartier</label>
+        <select id="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control" multiple
+          [disabled]="!quartierss.length">
+          <option *ngFor="let quartier of quartierss" [value]="quartier.name">
+            {{ quartier.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <div class="drawer-actions">
+        <button class="btn btn-outline" (click)="closeZoneModalcouverture()">
           Annuler
         </button>
         <button class="btn btn-primary" (click)="editZoneAgency()">
+          <i class="material-icons">edit</i>
           Modifier
         </button>
       </div>
