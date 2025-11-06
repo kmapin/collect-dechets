@@ -136,6 +136,9 @@ export class Home  implements OnInit {
   routeLayer: any = null;
   loading = true;
   mapLoading = true;
+  selectedActivityZone: string = '';
+  selectedRadius: string = '';
+  selectedStatus: string = '';
 
 
   constructor(
@@ -454,31 +457,36 @@ private mapApiAgency(apiAgency: any): Agency {
 
   applyFilters(): void {
   const payload: any = {
-    term: this.searchQuery || '',
-    city: this.selectedCity,
-    arrondissement: this.selectedArrondissement,
-    sector: this.selectedSector,
-    neighborhood: this.selectedNeighborhood,
-    rating: this.minRating ? parseFloat(this.minRating) : null
+    name: this.searchQuery || '',
+    city: this.selectedCity || '',
+    arrondissement: this.selectedArrondissement || '',
+    sector: this.selectedSector || '',
+    neighborhood: this.selectedNeighborhood || '',
+    rating: this.minRating ? this.minRating.toString() : undefined,
+    service: this.selectedService || undefined,
+    activityZone: this.selectedActivityZone || undefined, 
+    radius: this.selectedRadius || undefined,
+    status: this.selectedStatus || 'all'
     // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
   };
 
-  this.agencyService.searchAgencie(payload).subscribe({
+  this.agencyService.getAllAgenciesFromApiInAgencies(payload).subscribe({
+  // this.agencyService.searchAgencie(payload).subscribe({
     next: (response: any) => {
         console.log("responses filtrées :", response);
-        this.filteredAgenciesOnMap = (response.results || []).map((a: any) => this.mapApiAgency(a));
+        this.filteredAgenciesOnMap = (response.data || []).map((a: any) => this.mapApiAgency(a));
         
-        this.filteredAgencies = (response.results || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
+        this.filteredAgencies = (response.data || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
         console.log("Agences filtrées :", this.filteredAgencies);
         this.loading = false;
         this.mapLoading = false;
 
-      if(response.results.length < 5){
+      if(response.data.length < 5){
 
-        this.filteredAgencies = (response.results || []).map((a: any) => this.mapApiAgency(a));
+        this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
       } else {
 
-        this.filteredAgencies = (response.results || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
+        this.filteredAgencies = (response.data || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
       }
       this.generateRandomStarsList();
       this.sortAgencies();

@@ -9,131 +9,9 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class AgencyService {
-  private agencies: Agency[] = [
-    // {
-    //   _id: '1',
-    //   userId: 'user1',
-    //   firstName: 'Jean',
-    //   lastName: 'Dupont',
-    //   agencyName: 'EcoCollect Pro',
-    //   agencyDescription: 'Service de collecte écologique et professionnel',
-    //   phone: '+33123456789',
-    //   address: {
-    //     street: 'Avenue des Champs',
-    //     arrondissement: '8',
-    //     sector: 'Centre',
-    //     neighborhood: 'Champs-Élysées',
-    //     city: 'Paris',
-    //     postalCode: '75008',
-    //     latitude: 48.8698,
-    //     longitude: 2.3077
-    //   },
-    //   licenseNumber: 'LIC-001',
-    //   members: [],
-    //   serviceZones: [
-    //     {
-    //       id: '1',
-    //       name: 'Zone Nord',
-    //       description: 'Quartiers nord de la ville',
-    //       boundaries: [
-    //         { latitude: 48.8698, longitude: 2.3077 },
-    //         { latitude: 48.8639, longitude: 2.2978 },
-    //         { latitude: 48.8662, longitude: 2.3120 }
-    //       ],
-    //       neighborhoods: ['Champs-Élysées', 'Madeleine'],
-    //       cities: ['Paris'],
-    //       isActive: true
-    //     }
-    //   ],
-    //   services: [
-    //     {
-    //       id: '1',
-    //       name: 'Collecte Standard',
-    //       description: 'Collecte hebdomadaire de déchets ménagers',
-    //       wasteTypes: [],
-    //       frequency: 'weekly' as any,
-    //       price: 29.99,
-    //       currency: 'EUR',
-    //       isActive: true
-    //     }
-    //   ],
-    //   employees: [],
-    //   schedule: [],
-    //   collectors: [],
-    //   clients: [],
-    //   rating: 4.5,
-    //   totalClients: 1250,
-    //   acceptTerms: true,
-    //   receiveOffers: true,
-    //   isActive: true,
-    //   createdAt: '2024-01-01T00:00:00.000Z',
-    //   updatedAt: '2024-01-01T00:00:00.000Z',
-    //   __v: 0
-    // },
-    // {
-    //   _id: '2',
-    //   userId: 'user2',
-    //   firstName: 'Marie',
-    //   lastName: 'Martin',
-    //   agencyName: 'GreenWaste Solutions',
-    //   agencyDescription: 'Solutions durables pour la gestion des déchets',
-    //   phone: '+33987654321',
-    //   address: {
-    //     street: 'Rue de la Paix',
-    //     arrondissement: '5',
-    //     sector: 'Sud',
-    //     neighborhood: 'Quartier Latin',
-    //     city: 'Paris',
-    //     postalCode: '75005',
-    //     latitude: 48.8499,
-    //     longitude: 2.3447
-    //   },
-    //   licenseNumber: 'LIC-002',
-    //   members: [],
-    //   serviceZones: [
-    //     {
-    //       id: '2',
-    //       name: 'Zone Sud',
-    //       description: 'Quartiers sud de la ville',
-    //       boundaries: [
-    //         { latitude: 48.8499, longitude: 2.3447 },
-    //         { latitude: 48.8439, longitude: 2.3378 },
-    //         { latitude: 48.8462, longitude: 2.3520 }
-    //       ],
-    //       neighborhoods: ['Saint-Germain', 'Montparnasse'],
-    //       cities: ['Paris'],
-    //       isActive: true
-    //     }
-    //   ],
-    //   services: [
-    //     {
-    //       id: '2',
-    //       name: 'Collecte Premium',
-    //       description: 'Collecte bi-hebdomadaire avec tri sélectif',
-    //       wasteTypes: [],
-    //       frequency: 'biweekly' as any,
-    //       price: 45.99,
-    //       currency: 'EUR',
-    //       isActive: true
-    //     }
-    //   ],
-    //   employees: [],
-    //   schedule: [],
-    //   collectors: [],
-    //   clients: [],
-    //   rating: 4.2,
-    //   totalClients: 850,
-    //   acceptTerms: true,
-    //   receiveOffers: true,
-    //   isActive: true,
-    //   createdAt: '2024-01-01T00:00:00.000Z',
-    //   updatedAt: '2024-01-01T00:00:00.000Z',
-    //   __v: 0
-    // }
-  ];
-  private tariffs: Agency[] = [
-
-  ];
+  private agencies: Agency[] = [];
+  private tariffs: Agency[] = [];
+  
   constructor(private http: HttpClient) { }
 
   getAgencies(): Observable<Agency[]> {
@@ -152,19 +30,20 @@ export class AgencyService {
     );
     return of(filtered).pipe(delay(500));
   }
-  //  searchAgencie(params: { term?: string; city?: string; sector?: string; rating?: string; 
-  //                         neighborhood?: string; service?: string; activityZone?: string;
-  //                        arrondissement?: string; radius?: number; status?: string;
-  //                        }): Observable<Agency[]> {
-  searchAgencie(params: {
-      term?: string; city?: string; sector?: string; rating?: string;
-      neighborhood?: string; service?: string}): Observable<Agency[]> {
+   searchAgencie(params: { name?: string; city?: string; sector?: string; rating?: string; 
+                          neighborhood?: string; service?: string; activityZone?: string;
+                         arrondissement?: string; radius?: number; status?: string;
+                         }): Observable<Agency[]> {
+  // searchAgencie(params: {
+  //     term?: string; city?: string; sector?: string; rating?: string;
+  //     neighborhood?: string; service?: string}): Observable<Agency[]> {
     let httpParams = new HttpParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value) httpParams = httpParams.set(key, value);
     });
 
-    return this.http.get<any>(`${environment.apiUrl}/agencies`, { params: httpParams }).pipe(
+    // return this.http.get<any>(`${environment.apiUrl}/agencies`, { params: httpParams }).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/agencies/search/unified?${httpParams.toString()}`).pipe(
       map(response => {
         // response || [];
         console.log("API > searchAgencie :", response);
@@ -242,9 +121,68 @@ export class AgencyService {
   }
 
   getAllAgenciesFromApi(): Observable<{ success: boolean; count: number; data: Agency[] }> {
-    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies?limit=25`);
+    // return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies/search/unified?limit=25`, {});
+    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies?limit=25`, {});
     // return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agences/recuperation?limit=25`);
   }
+
+  // ...existing code...
+getAllAgenciesFromApiInAgencies(params: {
+  name?: string;
+  neighborhood?: string;
+  activityZone?: string;
+  sector?: string;
+  arrondissement?: string;
+  city?: string;
+  rating?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  status?: string;
+  hasOwner?: boolean;
+  minGestionnaires?: string;
+  page?: number;
+  limit?: number;
+  getAll?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}): Observable<{ success: boolean; count: number; data: Agency[] }> {
+  // Valeurs par défaut compatibles avec l'URL d'exemple
+  const defaults = {
+    limit: 10,
+    getAll: true,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+    page: 0
+  };
+
+  const merged = { ...(params || {}), ...defaults };
+
+  let httpParams = new HttpParams();
+  Object.entries(merged).forEach(([key, value]) => {
+    // je n'ajoute que les valeurs non nulles / non vides
+    if (value !== undefined && value !== null && value !== '') {
+      // bool -> "true"/"false", numbers -> string
+      const valStr = typeof value === 'boolean' ? String(value) : String(value);
+      httpParams = httpParams.set(key, valStr);
+    }
+  });
+
+  const url = `${environment.apiUrl}/search/agencies/unified?${httpParams.toString()}`;
+
+  return this.http.get<{ success: boolean; count: number; data: Agency[] }>(url).pipe(
+    map(response => {
+      console.log('API > searchAgencie :', response, 'url:', url);
+      // renvoie la réponse telle quelle (typed)
+      return response;
+    }),
+    catchError(err => {
+      console.error('Erreur API searchAgencie :', err, 'url:', url);
+      return throwError(() => err);
+    })
+  );
+}
+// ...existing code...
 
 
   /**

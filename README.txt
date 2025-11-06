@@ -71,3 +71,14 @@ Email : gangosmeo@gmail.com          Mot de passe : Wise2024
 1=>Demarrer(Deplacement en temps réel)
 1=>Ajouter loading when agencies charging
 1=>
+
+
+                                //// ISSUES OCCURED IN AGENCIES PAGE
+1=>Appel du WS avec recherches des agences returne un data[vide]-> voir pourquoi avec salif ou robert . 
+        Voici le WS:  getAllAgenciesFromApi(): Observable<{ success: boolean; count: number; data: Agency[] }> {
+                        return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies/search/unified?limit=25`, {});
+                        
+                      }
+                      ==> Probleme non onKycFileSelected
+
+2=>

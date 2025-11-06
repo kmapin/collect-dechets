@@ -43,6 +43,9 @@ quartierss: Quartier[] = [];
 selectedArrondissement: string = '';
 selectedSector: string = '';
 selectedNeighborhood: string = '';
+selectedRadius: string = '';
+selectedActivityZone: string = '';
+selectedStatus: string = '';
 // minRating: string = '';
 
 onCityChange(city: string) {
@@ -182,16 +185,12 @@ currentUser!: any ;
    * Charge les agences depuis l'API backend et remplace les données locales
    */
   loadAgenciesFromApi(): void {
-    this.agencyService.getAllAgenciesFromApi().subscribe((response: any) => {
-      this.agencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
-      this.filteredAgencies = this.agencies;
-      console.log("Agences chargées :", this.filteredAgencies);
-      this.generateRandomStarsList()
-      // this.applyFilters();
-    });
+    
+    this.applyFilters();
   }
 
   onSearch(): void {
+    // this.loadAgenciesFromApi()
     this.applyFilters();
   }
 
@@ -199,18 +198,23 @@ currentUser!: any ;
 
 applyFilters(): void {
   const payload: any = {
-    term: this.searchQuery || '',
-    city: this.selectedCity,
-    arrondissement: this.selectedArrondissement,
-    sector: this.selectedSector,
-    neighborhood: this.selectedNeighborhood,
-    rating: this.minRating ? parseFloat(this.minRating) : null
+    name: this.searchQuery || '',
+    city: this.selectedCity || '',
+    arrondissement: this.selectedArrondissement || '',
+    sector: this.selectedSector || '',
+    neighborhood: this.selectedNeighborhood || '',
+    rating: this.minRating ? this.minRating.toString() : undefined,
+    service: this.selectedService || undefined,
+    activityZone: this.selectedActivityZone || undefined, 
+    radius: this.selectedRadius || undefined,
+    status: this.selectedStatus || 'all'
     // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
   };
 
-  this.agencyService.searchAgencie(payload).subscribe({
+  // this.agencyService.searchAgencie(payload).subscribe({
+  this.agencyService.getAllAgenciesFromApiInAgencies(payload).subscribe({
     next: (response: any) => {
-      this.filteredAgencies = (response.results || []).map((a: any) => this.mapApiAgency(a));
+      this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
       console.log("Agences filtrées :", this.filteredAgencies);
       this.generateRandomStarsList();
       this.sortAgencies();
