@@ -7,7 +7,6 @@ export interface Agency {
   name: string;
   slogan?: string;
   status?:string;
-  agencyName?:string;
   agencyId?: string;
   arrondissement: string;
   secteur: string;

@@ -433,9 +433,12 @@
                 <div class="stat-info">
                   <h4>Charge de Travail</h4>
                   <p class="stat-value">{{ getWorkloadPercentage() }}%</p>
-                  <span class="stat-trend" [class.positive]="getWorkloadPercentage() <= 80" 
-                        [class.warning]="getWorkloadPercentage() > 80 && getWorkloadPercentage() <= 95"
-                        [class.negative]="getWorkloadPercentage() > 95">
+                  <span class="stat-trend" 
+                        [ngClass]="{ 
+                          'positive': getWorkloadPercentage() <= 80, 
+                          'warning': getWorkloadPercentage() > 80 && getWorkloadPercentage() <= 95,
+                          'negative': getWorkloadPercentage() > 95
+                        }">
                     {{ getWorkloadStatus() }}
                   </span>
                 </div>
@@ -589,77 +592,130 @@
             </div>
           </div>
 
-          <!-- Indicateur de chargement pour les zones -->
-          <app-loading-spinner *ngIf="isLoadingZones" message="Chargement des zones..." size="medium">
-          </app-loading-spinner>
+          <!-- Interface compacte des zones de couverture -->
+          <div *ngIf="!isLoadingZones" class="compact-coverage-display">
+            <!-- En-tête compact avec statistiques inline -->
+            <div class="compact-coverage-header">
+              <div class="coverage-stats-inline">
+                <div class="inline-stat">
+                  <i class="material-icons">location_on</i>
+                  <span class="stat-number">{{ zones.length }}</span>
+                  <span class="stat-label">zones</span>
+                </div>
+                <div class="inline-stat">
+                  <i class="material-icons">trending_up</i>
+                  <span class="stat-number">{{ getEstimatedCoverage() }}%</span>
+                  <span class="stat-label">couverture</span>
+                </div>
+                <div class="inline-stat">
+                  <i class="material-icons">people</i>
+                  <span class="stat-number">{{ getTotalZoneClients() }}</span>
+                  <span class="stat-label">clients</span>
+                </div>
+              </div>
+            </div>
 
-          <!-- Liste des zones -->
-          <div *ngIf="!isLoadingZones" class="zones-content">
-            <div class="zones-map">
-              <div class="map-container">
-                <div class="map-placeholder">
-                  <i class="material-icons">map</i>
-
-                  <div class="zone-container" *ngIf="zones.length">
-                    <h4 class="zone-title">Zones couvertes</h4>
-                    <div class="zone-list">
-                      <div class="zone-card" *ngFor="let zone of zones">
-                        <div class="zone-details">
-                          <p>
-                            <strong>Quartier :</strong>
-                            {{ zone.neighborhood || zone }}
-                          </p>
-                        </div>
+            <!-- Affichage compact des zones -->
+            <div class="zones-compact-container" *ngIf="zones.length > 0">
+              <!-- Liste compacte des zones -->
+              <div class="zones-compact-list">
+                <div *ngFor="let zone of zones; let i = index" 
+                     class="compact-zone-item"
+                     (click)="selectZone(zone)"
+                     [class.selected]="selectedZoneForDisplay === zone">
+                  
+                  <div class="zone-compact-content">
+                    <div class="zone-number">{{ i + 1 }}</div>
+                    <div class="zone-info-compact">
+                      <h4>{{ zone.neighborhood || zone }}</h4>
+                      <div class="zone-mini-stats">
+                        <span class="mini-stat">
+                          <i class="material-icons">business</i>
+                          {{ getZoneBusinessCount(zone) }}
+                        </span>
+                        <span class="mini-stat">
+                          <i class="material-icons">home</i>
+                          {{ getZoneHouseholdCount(zone) }}
+                        </span>
                       </div>
+                    </div>
+                    <div class="zone-status-compact">
+                      <div class="status-dot-small"></div>
+                      <span>Actif</span>
                     </div>
                   </div>
 
-                  <div *ngIf="!zones.length && !isLoadingZones" class="no-zone">
-                    <p>Veuillez definir vos zonees de service .</p>
+                  <!-- Actions compactes -->
+                  <div class="zone-actions-compact">
+                    <button class="compact-action-btn danger" 
+                            title="Retirer cette zone"
+                            (click)="$event.stopPropagation(); removeZone(zone)">
+                      <i class="material-icons">remove_circle</i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panneau de détails latéral (si zone sélectionnée) -->
+              <div class="zone-details-sidebar" *ngIf="selectedZoneForDisplay">
+                <div class="sidebar-header">
+                  <h4>{{ selectedZoneForDisplay.neighborhood || selectedZoneForDisplay }}</h4>
+                  <button class="close-sidebar" (click)="selectedZoneForDisplay = null">
+                    <i class="material-icons">close</i>
+                  </button>
+                </div>
+                
+                <div class="sidebar-content">
+                  <div class="detail-section">
+                    <h5>Localisation</h5>
+                    <div class="location-info">
+                      <div class="location-item">
+                        <div class="location-icon">
+                          <i class="material-icons">location_city</i>
+                        </div>
+                        <div class="location-details">
+                          <span class="location-label">Ville</span>
+                          <span class="location-value">{{ selectedZoneForDisplay.city || 'Ouagadougou' }}</span>
+                        </div>
+                      </div>
+                      
+                      <div class="location-item">
+                        <div class="location-icon">
+                          <i class="material-icons">place</i>
+                        </div>
+                        <div class="location-details">
+                          <span class="location-label">Arrondissement</span>
+                          <span class="location-value">{{ selectedZoneForDisplay.district || selectedZoneForDisplay.arrondissement || 'Arrondissement 1' }}</span>
+                        </div>
+                      </div>
+                      
+                      <div class="location-item">
+                        <div class="location-icon">
+                          <i class="material-icons">location_on</i>
+                        </div>
+                        <div class="location-details">
+                          <span class="location-label">Secteur</span>
+                          <span class="location-value">{{ selectedZoneForDisplay.sector || selectedZoneForDisplay.secteur || 'Secteur ' + ((zones.indexOf(selectedZoneForDisplay) + 1)) }}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="zones-list">
-              <div *ngFor="let zone of serviceZones" class="zone-card card">
-                <div class="zone-header">
-                  <h4>{{ zone.name }}</h4>
-                  <div class="zone-actions">
-                    <button class="action-btn" (click)="editZone(zone.id)">
-                      <i class="material-icons">edit</i>
-                    </button>
-                    <button class="action-btn danger" (click)="deleteZone(zone.id)">
-                      <i class="material-icons">delete</i>
-                    </button>
-                  </div>
+            <!-- État vide compact -->
+            <div class="empty-zones-compact" *ngIf="zones.length === 0">
+              <div class="empty-compact-content">
+                <i class="material-icons">location_off</i>
+                <div class="empty-text">
+                  <h4>Aucune zone définie</h4>
+                  <p>Ajoutez des zones pour organiser vos collectes</p>
                 </div>
-
-                <div class="zone-info">
-                  <p class="zone-description">{{ zone.description }}</p>
-                  <div class="zone-details">
-                    <div class="detail-item">
-                      <i class="material-icons">location_city</i>
-                      <span>{{ zone.cities.join(", ") }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <i class="material-icons">home</i>
-                      <span>{{ zone.neighborhoods.join(", ") }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <i class="material-icons">people</i>
-                      <span>{{ getZoneClients(zone.id) }} clients</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="zone-status">
-                  <span class="status-badge" [class]="
-                          zone.isActive ? 'status-active' : 'status-inactive'
-                        ">
-                    {{ zone.isActive ? "Active" : "Inactive" }}
-                  </span>
-                </div>
+                <button class="btn btn-primary btn-sm" (click)="openZoneModalcouverture()">
+                  <i class="material-icons">add</i>
+                  Ajouter une zone
+                </button>
               </div>
             </div>
           </div>
@@ -1649,7 +1705,8 @@
                     <div class="form-group">
                       <label>Collecteur *</label>
                       <select formControlName="collectorId">
-                        <option value="">Sélectionner un collecteur</option>
+                        <option value="" *ngIf="collectors && collectors.length > 0">Sélectionner un collecteur</option>
+                        <option value="" *ngIf="!collectors || collectors.length === 0" disabled>Aucun collecteur pour le moment</option>
                         <option *ngFor="let collector of collectors" [value]="collector._id">
                           {{ collector.firstName }} {{ collector.lastName }}
                         </option>

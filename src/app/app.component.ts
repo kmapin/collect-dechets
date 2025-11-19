@@ -23,7 +23,7 @@ import { Subscription } from 'rxjs';
       <div class="global-loading-container">
         <div class="global-loading-spinner"></div>
         <h2 class="loading-title"> ZéroDéchet+</h2>
-        <p class="loading-subtitle">Chargement en cour...</p>
+        <p class="loading-subtitle">Chargement en cours...</p>
         <div class="loading-dots">
           <span></span>
           <span></span>
