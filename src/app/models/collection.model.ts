@@ -14,6 +14,7 @@ export interface Collection {
   feedback?: string;
   createdAt: Date;
   updatedAt: Date;
+  // reports: CollectionReport[];
 }
 
 export enum CollectionStatus {
@@ -24,7 +25,14 @@ export enum CollectionStatus {
   CANCELLED = 'cancelled',
   REPORTED = 'reported'
 }
-
+export enum CollectionStatus1 {
+  SCHEDULED = 'Scheduled',
+  IN_PROGRESS = 'In_progress',
+  COMPLETED = 'Completed',
+  MISSED = 'Missed',
+  CANCELLED = 'Cancelled',
+  REPORTED = 'Reported'
+}
 export interface CollectionRoute {
   id: string;
   collectorId: string;
@@ -47,6 +55,7 @@ export enum RouteStatus {
 
 export interface CollectionReport {
   id: string;
+  // _id: string;
   collectionId: string;
   clientId: string;
   agencyId: string;
@@ -57,6 +66,12 @@ export interface CollectionReport {
   resolution?: string;
   createdAt: Date;
   resolvedAt?: Date;
+  // updatedAt: Date;
+  // scannedAt?: Date;
+  // positionGPS?: {
+  //   latitude: number;
+  //   longitude: number;
+  // };
 }
 
 export enum ReportType {

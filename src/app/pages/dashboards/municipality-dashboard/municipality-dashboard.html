@@ -1,0 +1,862 @@
+<div class="municipality-dashboard">
+  <div class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Tableau de Bord Municipal</h1>
+          <p class="page-subtitle">
+            Audit et contrôle des agences de collecte - {{
+            currentUser?.firstName }} {{ currentUser?.lastName }}
+          </p>
+        </div>
+        <div class="quick-actions">
+          <!-- <button
+                class="btn btn-primary"
+                (click)="showCommunicationModal = true"
+              >
+                <i class="material-icons">campaign</i>
+                Nouvelle Communication
+              </button> -->
+          <button class="btn btn-secondary" (click)="generateGlobalReport()">
+            <i class="material-icons">assessment</i>
+            Rapport Global
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="dashboard-content">
+      <!-- Statistiques principales -->
+      <div class="stats-grid">
+        <div class="stat-card card">
+          <div class="stat-icon agencies">
+            <i class="material-icons">business</i>
+          </div>
+          <div class="stat-info">
+            <h3>Agences</h3>
+            <p class="stat-value">
+              {{ statisticsAdmin?.totalActiveAgencies }}/{{
+              statisticsAdmin?.totalAgencies }}
+            </p>
+            <span
+              class="stat-trend"
+              [class.positive]="
+                    statisticsAdmin?.totalActiveAgencies ===
+                    statisticsAdmin?.totalAgencies
+                  "
+            >
+              {{ getAgencyStatusText() }}
+            </span>
+          </div>
+        </div>
+
+        <div class="stat-card card">
+          <div class="stat-icon clients">
+            <i class="material-icons">people</i>
+          </div>
+          <div class="stat-info">
+            <h3>Clients totaux</h3>
+            <p class="stat-value">
+              {{ statisticsAdmin?.totalClients | number }}
+            </p>
+            <p>
+              <span class="stat-trend positive"
+                >+{{ statisticsAdmin?.monthlyClientPercentage }}% ce mois</span
+              >
+              |
+              <span
+                class="stat-trend"
+                [class.positive]="
+                      statisticsAdmin?.totalClients ===
+                      statisticsAdmin?.activeClients
+                    "
+              >
+                {{ getClientStatusText() }}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div class="stat-card card">
+          <div class="stat-icon collections">
+            <i class="material-icons">local_shipping</i>
+          </div>
+          <div class="stat-info">
+            <h3>Collectes aujourd'hui</h3>
+            <p class="stat-value">
+              {{ statisticsAdmin?.completeCollections }}/{{
+              statisticsAdmin?.totalCollections }}
+            </p>
+            <span
+              class="stat-trend"
+              [class.positive]="getCollectionRate() >= 90"
+              [class.negative]="getCollectionRate() < 80"
+            >
+              {{ getCollectionRate() }}% réalisées
+            </span>
+          </div>
+        </div>
+
+        <!-- <div class="stat-card card">
+              <div class="stat-icon revenue">
+                <i class="material-icons">euro</i>
+              </div>
+              <div class="stat-info">
+                <h3>Revenus totaux</h3>
+                <p class="stat-value">
+                  {{ statistics.totalRevenue | number : "1.0-0" }}€
+                </p>
+                <span class="stat-trend positive">+12.3% vs mois dernier</span>
+              </div>
+            </div> -->
+
+        <!-- <div class="stat-card card">
+              <div class="stat-icon compliance">
+                <i class="material-icons">verified</i>
+              </div>
+              <div class="stat-info">
+                <h3>Conformité</h3>
+                <p class="stat-value">{{ statistics.complianceRate }}%</p>
+                <span
+                  class="stat-trend"
+                  [class.positive]="statistics.complianceRate >= 95"
+                  [class.negative]="statistics.complianceRate < 85"
+                >
+                  {{ getComplianceText() }}
+                </span>
+              </div>
+            </div> -->
+
+        <div class="stat-card card">
+          <div class="stat-icon incidents">
+            <i class="material-icons">report_problem</i>
+          </div>
+          <div class="stat-info">
+            <h3>Incidents non résolus</h3>
+            <p class="stat-value">
+              {{ statisticsAdmin?.reportsFromClients?.pending ?? 0 }}
+            </p>
+            <span
+              class="stat-trend"
+              [class.negative]="
+                    (statisticsAdmin?.reportsFromClients?.pending ?? 0) > 10
+                  "
+            >
+              {{ getIncidentSeverity() }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation par onglets -->
+      <div class="tabs-navigation">
+        <button
+          *ngFor="let tab of tabs"
+          class="tab-btn"
+          [class.active]="activeTab === tab.id"
+          (click)="activeTab = tab.id"
+        >
+          <i class="material-icons">{{ tab.icon }}</i>
+          {{ tab.label }}
+          <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
+        </button>
+      </div>
+
+      <!-- Contenu des onglets -->
+      <div class="tab-content">
+        <!-- Onglet Vue d'ensemble -->
+        <div *ngIf="activeTab === 'overview'" class="overview-tab">
+          <div class="overview-grid">
+            <div class="overview-section card">
+              <h3>
+                <i class="material-icons">trending_up</i>
+                Performance Globale
+              </h3>
+              <div class="performance-metrics">
+                <div class="metric-item">
+                  <div class="metric-label">Taux de collecte</div>
+                  <div class="metric-value">{{ getCollectionRate() }}%</div>
+                  <div class="metric-bar">
+                    <div
+                      class="metric-fill"
+                      [style.width]="getCollectionRate() + '%'"
+                    ></div>
+                  </div>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-label">Satisfaction client</div>
+                  <div class="metric-value">
+                    {{ statistics.averageRating }}/5
+                  </div>
+                  <div class="rating-stars">
+                    <i
+                      *ngFor="
+                            let star of getStars(statistics.averageRating)
+                          "
+                      class="material-icons star"
+                      >star</i
+                    >
+                  </div>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-label">Conformité réglementaire</div>
+                  <div class="metric-value">
+                    {{ statistics.complianceRate }}%
+                  </div>
+                  <div class="metric-bar">
+                    <div
+                      class="metric-fill compliance"
+                      [style.width]="statistics.complianceRate + '%'"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="overview-section card">
+              <h3>
+                <i class="material-icons">pie_chart</i>
+                Répartition des Déchets
+              </h3>
+              <div class="waste-chart">
+                <div *ngFor="let waste of wasteStatistics" class="waste-item">
+                  <div
+                    class="waste-color"
+                    [style.background-color]="waste.color"
+                  ></div>
+                  <div class="waste-info">
+                    <div class="waste-type">{{ waste.type }}</div>
+                    <div class="waste-quantity">
+                      {{ waste.quantity }}t ({{ waste.percentage }}%)
+                    </div>
+                  </div>
+                  <div class="waste-trend">
+                    <i class="material-icons" [class]="'trend-' + waste.trend">
+                      {{ getTrendIcon(waste.trend) }}
+                    </i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="overview-section card">
+              <h3>
+                <i class="material-icons">map</i>
+                Couverture Territoriale
+              </h3>
+
+              <div class="territory-stats scrollable-container">
+                <!-- Boucle sur les pays -->
+                <div *ngFor="let zone of zoneStatistics" class="country-block">
+                  <h2 class="country-title">{{ zone.country }}</h2>
+
+                  <!-- Boucle sur les villes du pays -->
+                  <div *ngFor="let city of zone.cities" class="zone-item">
+                    <div class="zone-header">
+                      <h4>{{ city.name }}</h4>
+                      <!-- <span
+                            class="coverage-badge"
+                            [class]="getCoverageBadgeClass(city.coverage)"
+                          >
+                            {{ city.coverage }}% couvert
+                          </span> -->
+                    </div>
+
+                    <div class="zone-metrics">
+                      <div class="zone-metric">
+                        <i class="material-icons">business</i>
+                        <span>{{ city.agencies }} agences</span>
+                      </div>
+                      <div class="zone-metric">
+                        <i class="material-icons">people</i>
+                        <span>{{ city.clients }} clients</span>
+                      </div>
+                      <!-- <div class="zone-metric">
+                            <i class="material-icons">local_shipping</i>
+                            <span>{{ city.collections }} collectes</span>
+                          </div>
+                          <div class="zone-metric" *ngIf="city.incidents > 0">
+                            <i class="material-icons">warning</i>
+                            <span>{{ city.incidents }} incidents</span>
+                          </div> -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="overview-section card">
+              <h3>
+                <i class="material-icons">notifications</i>
+                Alertes Récentes
+              </h3>
+              <div class="alerts-list">
+                <div
+                  *ngFor="let incident of getRecentIncidents()"
+                  class="alert-item"
+                >
+                  <div
+                    class="alert-severity"
+                    [class]="'severity-' + incident.severity"
+                  >
+                    <i class="material-icons"
+                      >{{ getSeverityIcon(incident.severity) }}</i
+                    >
+                  </div>
+                  <div class="alert-content">
+                    <div class="alert-title">
+                      {{ getIncidentTypeText(incident.type) }}
+                    </div>
+                    <div class="alert-agency">{{ incident.agencyName }}</div>
+                    <div class="alert-time">
+                      {{ incident.date | date : "dd/MM HH:mm" }}
+                    </div>
+                  </div>
+                  <div class="alert-status">
+                    <span
+                      class="status-badge"
+                      [class]="'status-' + incident.status"
+                    >
+                      {{ getIncidentStatusText(incident.status) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Audit des Agences -->
+        <div *ngIf="activeTab === 'agencies'" class="agencies-tab">
+          <div class="agencies-header">
+            <h2>Audit des Agences</h2>
+            <div class="agencies-filters">
+              <div class="search">
+                <i class="material-icons search-icon">search</i>
+                <input
+                  type="text"
+                  id="search"
+                  class="search-input"
+                  name="search"
+                  placeholder="Rechercher par nom"
+                  [(ngModel)]="searchTerm"
+                  (input)="filterAgencies()"
+                />
+              </div>
+              <select
+                [(ngModel)]="agenciesFilter"
+                (change)="filterAgencies()"
+                class="filter-select"
+              >
+                <option value="">Toutes les agences</option>
+                <option value="active">Actives</option>
+                <option value="inactive">Inactives</option>
+                <option value="deleted">Supprimées</option>
+              </select>
+              <!-- <select
+                [(ngModel)]="complianceFilter"
+                (change)="filterAgencies()"
+                class="filter-select"
+              >
+                <option value="all">Tous niveaux</option>
+                <option value="excellent">Excellent (95%+)</option>
+                <option value="good">Bon (85-94%)</option>
+                <option value="poor">Faible (85%)</option>
+              </select> -->
+            </div>
+          </div>
+
+          <div class="agencies-grid">
+            <!-- État vide pour les agences -->
+            <div *ngIf="!filteredAgencies?.length" class="empty-state">
+              <i class="material-icons">business</i>
+              <h3>Aucune agence trouvée</h3>
+              <p>Aucune agence ne correspond aux critères sélectionnés pour le moment.</p>
+            </div>
+            <div
+              *ngFor="let agency of filteredAgencies"
+              class="agency-audit-card card"
+            >
+              <div class="agency-audit-header">
+                <div class="agency-basic-info">
+                  <h4>{{ agency.name }}</h4>
+                  <span
+                    class="status-badge"
+                    [class]="'status-' + agency.status"
+                  >
+                    {{ getAgencyStatusText(agency.status) }}
+                  </span>
+                </div>
+                <!-- <div class="agency-compliance">
+                      <div
+                        class="compliance-score"
+                        [class]="getComplianceClass(agency.complianceScore)"
+                      >
+                        {{ agency.complianceScore }}%
+                      </div>
+                      <div class="compliance-label">Conformité</div>
+                    </div> -->
+              </div>
+
+              <div class="agency-metrics">
+                <div class="metric-row">
+                  <div class="metric">
+                    <i class="material-icons">people</i>
+                    <span>{{ agency.clients }} {{agency.clients > 1 ? 'clients' : 'client'}}</span>
+                  </div>
+                  <div class="metric">
+                    <i class="material-icons">person</i>
+                    <span>{{ agency.collectors }} {{agency.collectors > 1 ? 'collecteurs' : 'collecteur'}}</span>
+                  </div>
+                  <div class="metric">
+                    <i class="material-icons">map</i>
+                    <span>{{ agency.zones }} {{agency.zones > 1 ? 'zones' : 'zone'}}</span>
+                  </div>
+                </div>
+                <div class="metric-row">
+                  <div class="metric">
+                    <i class="material-icons">local_shipping</i>
+                    <span>{{ agency.collectionsToday }} {{ agency.collectionsToday > 1 ? 'collectes' : 'collecte'}}</span>
+                  </div>
+                  <div class="metric">
+                    <i class="material-icons">check_circle</i>
+                    <span>{{ agency.completionRate }}% réalisées</span>
+                  </div>
+                  <div class="metric">
+                    <i class="material-icons">star</i>
+                    <span>{{ agency.rating }}/5</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="agency-issues" *ngIf="agency.issues.length > 0">
+                <h5>Problèmes identifiés</h5>
+                <div class="issues-list">
+                  <div *ngFor="let issue of agency.issues" class="issue-item">
+                    <i class="material-icons">warning</i>
+                    <span>{{ issue }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="agency-actions">
+                <button
+                  class="btn btn-secondary"
+                  (click)="viewAgencyDetails(agency.id)"
+                >
+                  <i class="material-icons">visibility</i>
+                  Détails
+                </button>
+                <button
+                  class="btn btn-primary"
+                  (click)="auditAgency(agency.id)"
+                >
+                  <i class="material-icons">fact_check</i>
+                  Auditer
+                </button>
+                <button
+                  class="btn btn-accent"
+                  (click)="contactAgency(agency.id)"
+                >
+                  <i class="material-icons">message</i>
+                  Contacter
+                </button>
+              </div>
+
+              <div class="agency-footer">
+                <span class="last-audit"
+                  >Dernier audit: {{ agency.lastAudit | date : "dd/MM/yyyy"
+                  }}</span
+                >
+                <span class="revenue"
+                  >{{ agency.revenue | number : "1.0-0" }}€/mois</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Statistiques -->
+        <div *ngIf="activeTab === 'statistics'" class="statistics-tab">
+          <div class="statistics-header">
+            <h2>Statistiques Consolidées</h2>
+            <div class="statistics-filters">
+              <select
+                [(ngModel)]="statisticsPeriod"
+                (change)="updateStatistics()"
+                class="filter-select"
+              >
+                <option value="today">Aujourd'hui</option>
+                <option value="week">Cette semaine</option>
+                <option value="month">Ce mois</option>
+                <option value="quarter">Ce trimestre</option>
+                <option value="year">Cette année</option>
+              </select>
+              <button class="btn btn-secondary" (click)="exportStatistics()">
+                <i class="material-icons">download</i>
+                Exporter
+              </button>
+            </div>
+          </div>
+
+          <div class="statistics-content">
+            <div class="statistics-cards">
+              <div class="statistics-card card">
+                <h3>Collectes par Type de Déchets</h3>
+                <div class="chart-container">
+                  <div class="chart-placeholder">
+                    <i class="material-icons">donut_large</i>
+                    <p>Graphique en secteurs des types de déchets</p>
+                  </div>
+                </div>
+                <div class="chart-legend">
+                  <div
+                    *ngFor="let waste of wasteStatistics"
+                    class="legend-item"
+                  >
+                    <div
+                      class="legend-color"
+                      [style.background-color]="waste.color"
+                    ></div>
+                    <span>{{ waste.type }}: {{ waste.quantity }}t</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="statistics-card card">
+                <h3>Performance par Agence</h3>
+                <div class="performance-chart">
+                  <div
+                    *ngFor="let agency of getTopPerformingAgencies()"
+                    class="performance-bar"
+                  >
+                    <div class="agency-name">{{ agency.name }}</div>
+                    <div class="performance-bar-container">
+                      <div
+                        class="performance-bar-fill"
+                        [style.width]="agency.completionRate + '%'"
+                      ></div>
+                    </div>
+                    <div class="performance-value">
+                      {{ agency.completionRate }}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="statistics-card card">
+                <h3>Évolution des Collectes</h3>
+                <div class="chart-container">
+                  <div class="chart-placeholder">
+                    <i class="material-icons">show_chart</i>
+                    <p>Graphique linéaire de l'évolution des collectes</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="statistics-card card">
+                <h3>Incidents par Catégorie</h3>
+                <div class="incidents-breakdown">
+                  <div
+                    *ngFor="let incident of getIncidentBreakdown()"
+                    class="incident-category"
+                  >
+                    <div class="incident-header">
+                      <span class="incident-type">{{ incident.type }}</span>
+                      <span class="incident-count">{{ incident.count }}</span>
+                    </div>
+                    <div class="incident-bar">
+                      <div
+                        class="incident-fill"
+                        [style.width]="incident.percentage + '%'"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Incidents -->
+        <div *ngIf="activeTab === 'incidents'" class="incidents-tab">
+          <div class="incidents-header">
+            <h2>Gestion des Incidents</h2>
+            <div class="incidents-filters">
+              <select
+                [(ngModel)]="incidentsFilter"
+                (change)="filterIncidents()"
+                class="filter-select"
+              >
+                <option value="all">Tous les incidents</option>
+                <option value="open">Ouverts</option>
+                <option value="pending">En cours</option>
+                <option value="resolved">Résolus</option>
+              </select>
+              <select
+                [(ngModel)]="severityFilter"
+                (change)="filterIncidents()"
+                class="filter-select"
+              >
+                <option value="all">Toutes gravités</option>
+                <option value="critical">Critique</option>
+                <option value="high">Élevée</option>
+                <option value="medium">Moyenne</option>
+                <option value="low">Faible</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="incidents-list">
+            <div
+              *ngFor="let incident of filteredIncidents"
+              class="incident-card card"
+            >
+              <div class="incident-header">
+                <div
+                  class="incident-severity"
+                  [class]="'severity-' + incident.severity"
+                >
+                  <i class="material-icons"
+                    >{{ getSeverityIcon(incident.severity) }}</i
+                  >
+                  <span
+                    >{{ getSeverityText(incident.severity) ?
+                    getSeverityText(incident.severity) : "Faible" }}</span
+                  >
+                </div>
+                <div class="incident-status">
+                  <span
+                    class="status-badge"
+                    [class]="'status-' + incident.status"
+                  >
+                    {{ getIncidentStatusText(incident.status) }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="incident-content">
+                <h4>{{ getIncidentTypeText(incident.type) }}</h4>
+                <p class="incident-agency">
+                  Agence: {{ incident?.agency?.agencyName }}
+                </p>
+                <p class="incident-description">{{ incident.description }}</p>
+                <p class="incident-date">
+                  {{ incident.date | date : "dd/MM/yyyy HH:mm" }}
+                </p>
+              </div>
+
+              <div class="incident-assignment" *ngIf="incident.assignedTo">
+                <i class="material-icons">person</i>
+                <span>Assigné à {{ incident.assignedTo }}</span>
+              </div>
+
+              <div class="incident-actions">
+                <!-- <button
+                      class="btn btn-secondary"
+                      (click)="assignIncident(incident.id)"
+                      *ngIf="incident.status === 'open'"
+                    >
+                      <i class="material-icons">assignment_ind</i>
+                      Assigner
+                    </button>
+                    <button
+                      class="btn btn-primary"
+                      (click)="investigateIncident(incident.id)"
+                      *ngIf="incident.status === 'pending'"
+                    >
+                      <i class="material-icons">search</i>
+                      Enquêter
+                    </button>
+                    <button
+                      class="btn btn-success"
+                      (click)="resolveIncident(incident.id)"
+                      *ngIf="incident.status === 'resolved'"
+                    >
+                      <i class="material-icons">check</i>
+                      Résoudre
+                    </button> -->
+                <button
+                  class="btn btn-accent"
+                  (click)="contactAgencyForIncident(incident?.agencyId)"
+                >
+                  <i class="material-icons">phone</i>
+                  Contacter Agence
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Communications -->
+        <!-- <div
+              *ngIf="activeTab === 'communications'"
+              class="communications-tab"
+            >
+              <div class="communications-header">
+                <h2>Communications</h2>
+                <div class="communications-actions">
+                  <button
+                    class="btn btn-primary"
+                    (click)="showCommunicationModal = true"
+                  >
+                    <i class="material-icons">add</i>
+                    Nouvelle Communication
+                  </button>
+                </div>
+              </div>
+
+              <div class="communications-list">
+                <div
+                  *ngFor="let comm of communications"
+                  class="communication-card card"
+                >
+                  <div class="communication-header">
+                    <div class="communication-type">
+                      <i class="material-icons">{{
+                        getCommunicationIcon(comm.type)
+                      }}</i>
+                      <span>{{ getCommunicationTypeText(comm.type) }}</span>
+                    </div>
+                    <div
+                      class="communication-priority"
+                      [class]="'priority-' + comm.priority"
+                    >
+                      {{ getPriorityText(comm.priority) }}
+                    </div>
+                  </div>
+
+                  <div class="communication-content">
+                    <h4>{{ comm.title }}</h4>
+                    <p>{{ comm.message }}</p>
+                    <div class="communication-meta">
+                      <span
+                        >Envoyé le
+                        {{ comm.sentAt | date : "dd/MM/yyyy HH:mm" }}</span
+                      >
+                      <span>{{ comm.recipients.length }} destinataire(s)</span>
+                      <span>{{ comm.readBy.length }} lu(s)</span>
+                    </div>
+                  </div>
+
+                  <div class="communication-recipients">
+                    <h5>Destinataires</h5>
+                    <div class="recipients-list">
+                      <span
+                        *ngFor="let recipient of comm.recipients"
+                        class="recipient-tag"
+                      >
+                        {{ getAgencyName(recipient) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> -->
+
+        <!-- Modal Communication -->
+        <!-- <div
+        class="modal-overlay"
+        *ngIf="showCommunicationModal"
+        (click)="showCommunicationModal = false"
+      >
+        <div
+          class="modal-content communication-modal"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="modal-header">
+            <h3>Nouvelle Communication</h3>
+            <button class="close-btn" (click)="showCommunicationModal = false">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <form class="communication-form" (ngSubmit)="sendCommunication()">
+            <div class="form-group">
+              <label>Type de communication *</label>
+              <select [(ngModel)]="newCommunication.type" name="type" required>
+                <option value="">Sélectionner un type</option>
+                <option value="notification">Notification</option>
+                <option value="directive">Directive</option>
+                <option value="alert">Alerte</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Priorité *</label>
+              <select
+                [(ngModel)]="newCommunication.priority"
+                name="priority"
+                required
+              >
+                <option value="low">Faible</option>
+                <option value="medium">Moyenne</option>
+                <option value="high">Élevée</option>
+                <option value="urgent">Urgente</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Titre *</label>
+              <input
+                type="text"
+                [(ngModel)]="newCommunication.title"
+                name="title"
+                placeholder="Titre de la communication"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Message *</label>
+              <textarea
+                [(ngModel)]="newCommunication.message"
+                name="message"
+                rows="4"
+                placeholder="Contenu du message..."
+                required
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label>Destinataires *</label>
+              <div class="recipients-checkboxes">
+                <label class="checkbox-label">
+                  <input type="checkbox" (change)="toggleAllAgencies($event)" />
+                  <span class="checkmark"></span>
+                  Toutes les agences
+                </label>
+                <label
+                  *ngFor="let agency of agencyAudits"
+                  class="checkbox-label"
+                >
+                  <input
+                    type="checkbox"
+                    [value]="agency.id"
+                    (change)="toggleRecipient(agency.id, $event)"
+                  />
+                  <span class="checkmark"></span>
+                  {{ agency.name }}
+                </label>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="showCommunicationModal = false"
+              >
+                Annuler
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="material-icons">send</i>
+                Envoyer
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div> -->
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,4939 @@
+import { map } from "rxjs";
+import {
+  AfterViewChecked,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { ActivatedRoute, Router, RouterModule } from "@angular/router";
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
+import { 
+  trigger, 
+  state, 
+  style, 
+  transition, 
+  animate,
+  query,
+  stagger
+} from "@angular/animations";
+import { AuthService } from "../../../services/auth.service";
+import { AgencyService, ZoneStatistics, ZoneRecommendation as ServiceZoneRecommendation, ZoneAnalyticsResponse } from "../../../services/agency.service";
+import { CollectionService } from "../../../services/collection.service";
+import { NotificationService } from "../../../services/notification.service";
+import {
+  User,
+  UserRole,
+  AddEmployeeData,
+  UserAddress,
+  RegisterUserData,
+} from "../../../models/user.model";
+import {
+  Agency,
+  Employee,
+  Employees,
+  ServiceZone,
+  ServiceZones,
+  CollectionSchedule,
+  EmployeeRole,
+  WasteService,
+  tarif,
+  Tarif,
+} from "../../../models/agency.model";
+import { Collection, CollectionStatus } from "../../../models/collection.model";
+import { ClientService, ClientApi } from "../../../services/client.service";
+import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
+import { Message } from "../../../models/message.model";
+import { MessagesService } from "../../../services/messages.service";
+import { SharedService } from "../../../services/shared-service";
+import { MatExpansionModule } from "@angular/material/expansion";
+import {
+  Arrondissement,
+  City,
+  Quartier,
+  Sector,
+} from "../../../models/countries-org.model";
+import { MatIcon } from "@angular/material/icon";
+import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
+import { Admin } from "../../../services/admin";
+
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  subscriptionStatus: "active" | "suspended" | "cancelled";
+  lastPayment: Date;
+  totalPaid: number;
+  joinDate: Date;
+}
+
+interface Report {
+  _id: string;
+  clientId: string;
+  clientName: string;
+  client?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+  };
+  severity: "critical" | "high" | "medium" | "low";
+  type: "missed_collection" | "incomplete_collection" | "damage" | "complaint";
+  description: string;
+  comment: string;
+  date: Date;
+  createdAt: Date;
+  status: "open" | "in_progress" | "resolved";
+  assignedTo?: string;
+  reportType?: string;
+  photos?: string[];
+}
+
+interface ZoneAnalytics {
+  id: string;
+  name: string;
+  totalClients: number;
+  households: number;
+  businesses: number;
+  institutions: number;
+  capacityUsage: number;
+  estimatedTime: number;
+  requiredTeam: number;
+  requiredVehicles: number;
+  growth: number;
+}
+
+interface LocalZoneRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  icon: string;
+  zoneId: string;
+}
+
+interface Statistics {
+  totalClients: number;
+  totalClientsActifs?: number;
+  totalEmployees: number;
+  totalZones: number;
+  totalCollectors: number;
+  totalCollecteurs?: number;
+  totalGestionnaires?: number;
+  totalSignalements: number;
+  resolvedSignalements?: number;
+  activeCollectors: number;
+  todayCollections: number;
+  pendingSignalements: number;
+  completedCollections: number;
+  monthlyRevenue: number;
+  averageRating: number;
+  pendingReports: number;
+}
+
+interface DashboardTab {
+  id: TabId;
+  label: string;
+  icon: string;
+  badge: number | null;
+}
+
+type TabId = "collections" | "employees" | "zones" | "schedules" | "clients" | "reports" | "messages";
+
+@Component({
+  selector: "app-agency-dashboard",
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatExpansionModule,
+    MatIcon,
+    LoadingSpinnerComponent,
+  ],
+  templateUrl: "./agency-dashboard.html",
+  styleUrl: "./agency-dashboard.css",
+})
+export class AgencyDashboard implements OnInit, AfterViewChecked {
+  @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
+
+  scheduleForm!: FormGroup;
+  employeeForm!: FormGroup;
+  tariffForm!: FormGroup;
+  zoneForm!: FormGroup;
+  messageForm!: FormGroup;
+
+  currentUser: RegisterUserData| null = null;
+  agencyReports: Report[] = [];
+  ouagaData: QuartierData[] = OUAGA_DATA;
+  agency: Agency | null = null;
+  activeTab: TabId = "collections";
+
+  // Méthode pour changer d'onglet
+  setActiveTab(tabId: TabId): void {
+    this.activeTab = tabId;
+  }
+
+  collectors: Employees[] = [];
+  zonesAgency: ServiceZone[] = [];
+  manager: Employees[] = [];
+  // Data
+  // statistics: Statistics = {
+  //   totalClients: 1250,
+  //   activeCollectors: 8,
+  //   todayCollections: 45,
+  //   completedCollections: 38,
+  //   monthlyRevenue: 32450,
+  //   averageRating: 4.3,
+  //   pendingReports: 3
+  // };
+  incidentsFilter = "all";
+  severityFilter = "all";
+  filteredIncidents: any[] = [];
+  statistics: Statistics = {
+    totalClients: 0,
+    totalEmployees: 0,
+    totalZones: 0,
+    totalCollectors: 0,
+    totalSignalements: 0,
+    activeCollectors: 0,
+    todayCollections: 0,
+    resolvedSignalements: 0,
+    completedCollections: 0,
+    monthlyRevenue: 0,
+    averageRating: 0,
+    pendingReports: 0,
+    pendingSignalements: 0,
+  };
+  userData = {
+    _id: "",
+    role: UserRole.CLIENT as UserRole | null,
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    address: {
+      arrondissement: "",
+      sector: "",
+      street: "",
+      doorNumber: "",
+      doorColor: "",
+      neighborhood: [] as string[],
+      city: "",
+      postalCode: "",
+      // latitude: '',
+      // longitude: ''
+    },
+    agencyName: "",
+    agencyDescription: "",
+    termsAccepted: false,
+    acceptTerms: true,
+    receiveOffers: false,
+    commune: {
+      name: "",
+      region: "",
+      province: "",
+    },
+  };
+
+  collections: Collection[] = [];
+  filteredCollections: Collection[] = [];
+  employees: Employee[] = [];
+  tarif: tarif[] = [];
+  editingEmployeeId: string | null = null;
+  isEditing: boolean = false;
+  allEmployees: Employees[] = [];
+  filteredEmployees: Employees[] = [];
+  // Propriétés pour la recherche et le filtrage des employés
+  employeesSearch: string = "";
+  employeesRoleFilter: string = "all";
+  employeesStatusFilter: string = "all";
+  showEmployeesSearch: boolean = false;
+  
+  // Propriétés pour la recherche et le filtrage des clients
+  clientsSearch: string = "";
+  clientsStatusFilter: string = "all";
+  showClientsSearch: boolean = false;
+  filteredActiveClients: any[] = [];
+  allTarif: Tarif[] = [];
+  serviceZones: ServiceZone[] = [];
+  serviceZoness: ServiceZones[] = []; //from API
+  // schedules: CollectionSchedule[] = [];
+  clients: Client[] = [];
+  filteredClients: Client[] = [];
+  reports: Report[] = [];
+  filteredReports: Report[] = [];
+  isDeleting: boolean = false;
+  // Propriétés pour la confirmation de suppression
+  showDeleteConfirmation: boolean = false;
+  employeeToDelete: any = null;
+  currentUserForDeletion: any = null;
+  // assigner un planning à un collecteur
+  showAssignModal: boolean = false;
+  selectedReportId: string = "";
+
+  selectedEmployee: string[] = [];
+  // Propriétés pour l'édition d'employé 
+  employeeToEdit: any = null;
+  isEditingEmployee: boolean = false;
+  // Filters
+  collectionsFilter = "all";
+  selectedZone = "";
+  reportsFilter = "all";
+  reportsTypeFilter = "all";
+  analyticsPeriod = "monthly";
+  analyticsFilter = "all";
+
+  // Modals
+  showAddEmployeeModal = false;
+  showPassword = false;
+  showConfirmPassword = false;
+  employeeFormError: string | null = null;
+  employeeFormDetailedErrors: any = {};
+  Object = Object; // Pour utiliser Object.keys dans le template
+  showZoneModal = false;
+  showZoneModalcouverture = false;
+  zoneFormError: string | null = null;
+  zoneFormDetailedErrors: any = {};
+
+  showScheduleModal = false;
+  editingZone = false;
+
+  // Forms - Supprimés les objets pour utiliser les reactive forms
+  // newEmployee, newTariff, newZone, newSchedule seront gérés par les FormGroups
+
+  // Propriétés temporaires pour compatibilité (à supprimer après migration du template)
+  newEmployee: any = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    role: "",
+    zones: [],
+  };
+  newTariff: any = {
+    type: "",
+    price: "",
+    description: "",
+    nbPassages: "",
+  };
+  newZone: any = {
+    name: "",
+    description: "",
+    cities: [],
+    neighborhoods: [],
+    isActive: true,
+  };
+
+  // formErrors sera remplacé par une fonction d'erreur
+  citiesInput = "";
+  minDate: string;
+
+  neighborhoodsInput = "";
+  activeClients: ClientApi[] = [];
+  activeClientNbrs!: number;
+  pendingClients: ClientApi[] = [];
+  isLoading: boolean = false;
+
+  // Variables de state de chargement pour chaque section
+  isLoadingStatistics: boolean = false;
+  isLoadingCollections: boolean = false;
+  isLoadingEmployees: boolean = false;
+  isLoadingZones: boolean = false;
+  isLoadingClients: boolean = false;
+  isLoadingReports: boolean = false;
+  isLoadingMessages: boolean = false;
+  isLoadingTariffs: boolean = false;
+  isLoadingSchedules: boolean = false;
+
+  // Propriétés pour l'analyse des zones
+  selectedZoneForAnalytics: string = '';
+  zoneAnalyticsData: ZoneAnalytics[] = [];
+  zoneRecommendations: LocalZoneRecommendation[] = [];
+
+  // get activeClientNbr(): number {
+  //   return this.activeClients.length;
+  // }
+
+  tabs: DashboardTab[] = [
+    {
+      id: "collections",
+      label: "Collectes",
+      icon: "local_shipping",
+      badge: 0,
+    },
+    { id: "employees", label: "Employés", icon: "people", badge: null },
+    { id: "zones", label: "Zones", icon: "map", badge: null },
+    { id: "schedules", label: "Plannings", icon: "schedule", badge: null },
+    { id: "clients", label: "Clients", icon: "person", badge: null },
+    { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
+    { id: "messages", label: "Messages", icon: "message", badge: 0 },
+    // { id: "analytics", label: "Rapports", icon: "analytics", badge: null },
+  ];
+
+  weekDays = [
+    "Lundi",
+    "Mardi",
+    "Mercredi",
+    "Jeudi",
+    "Vendredi",
+    "Samedi",
+    "Dimanche",
+  ];
+  currentWeek = new Date();
+  unreadMessageCount: any;
+  receivedMessages: any;
+
+  showMessageModal: boolean = false;
+  messageData: Message = {
+    sender: "",
+    receiver: "",
+    content: "",
+  };
+  data: any;
+  connectedUserMessages: any;
+  receivedId: string = "";
+  client: any;
+  displayAgencyName: string = "";
+
+  // Error handling
+  formErrors: { [key: string]: string } = {};
+
+  constructor(
+    private authService: AuthService,
+    private agencyService: AgencyService,
+    private collectionService: CollectionService,
+    private notificationService: NotificationService,
+    private clientService: ClientService,
+    private cdr: ChangeDetectorRef,
+    private fb: FormBuilder,
+    private messageService: MessagesService,
+    private sharedService: SharedService,
+    private adminService: Admin,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {
+    const today = new Date();
+    this.minDate = today.toISOString().split("T")[0];
+
+    this.initializeForms();
+  }
+  navigateToAgencyDetails() {
+    this.router.navigate(["/agencies", this.currentUser?.agencyId]);
+  }
+  // Initialisation de tous les formulaires réactifs
+  private initializeForms(): void {
+    // Formulaire de planification
+    this.scheduleForm = this.fb.group(
+      {
+        zone: ["", Validators.required],
+        date: ["", Validators.required],
+        startTime: ["", Validators.required],
+        endTime: ["", Validators.required],
+        collectorId: ["", Validators.required],
+      },
+      {
+        validators: [this.validateTimeOrder],
+      }
+    );
+
+    // Formulaire d'employé - selon le schéma Swagger requis
+    this.employeeForm = this.fb.group(
+      {
+        firstName: ["", [Validators.required, Validators.minLength(2)]],
+        lastName: ["", [Validators.required, Validators.minLength(2)]],
+        email: ["", [Validators.required, Validators.email]],
+        password: ["", [Validators.required, Validators.minLength(6)]],
+        confirmPassword: ["", [Validators.required]],
+        phone: ["", [Validators.required, Validators.pattern(/^[0-9+\-\s]+$/)]],
+        role: ["", Validators.required],
+        // Address fields (requis selon le schéma)
+        address: this.fb.group({
+          street: ["", Validators.required],
+          arrondissement: ["", Validators.required],
+          sector: ["", Validators.required],
+          doorNumber: ["", Validators.required],
+          doorColor: [""],
+          neighborhood: ["", Validators.required],
+          city: ["", Validators.required],
+          postalCode: ["", Validators.required],
+          latitude: [null],
+          longitude: [null],
+        }),
+        zones: [[]], // Validation dynamique selon le rôle
+      },
+      { validators: this.passwordMatchValidator }
+    );
+
+    // Formulaire de tarif
+    this.tariffForm = this.fb.group({
+      type: ["", Validators.required],
+      price: ["", [Validators.required, Validators.min(0)]],
+      description: ["", [Validators.required, Validators.minLength(10)]],
+      nbPassages: ["", [Validators.required, Validators.min(1)]],
+    });
+
+    // Formulaire de zone
+    this.zoneForm = this.fb.group({
+      name: ["", [Validators.required, Validators.minLength(3)]],
+      description: ["", [Validators.required, Validators.minLength(10)]],
+      cities: [[], Validators.required],
+      neighborhoods: [[], Validators.required],
+      isActive: [true],
+    });
+
+    // Formulaire de message
+    this.messageForm = this.fb.group({
+      content: [this.messageData.content || "", [Validators.required, Validators.minLength(5)]],
+    });
+
+    // Écouter les changements pour afficher les erreurs en temps réel
+    this.setupFormErrorHandling();
+  }
+
+  // Configuration de la gestion des erreurs pour tous les formulaires
+  private setupFormErrorHandling(): void {
+    const forms = [
+      { form: this.scheduleForm, name: "schedule" },
+      { form: this.employeeForm, name: "employee" },
+      { form: this.tariffForm, name: "tariff" },
+      { form: this.zoneForm, name: "zone" },
+      { form: this.messageForm, name: "message" },
+    ];
+
+    forms.forEach(({ form, name }) => {
+      form.valueChanges.subscribe(() => {
+        this.updateFormErrors(form, name);
+      });
+    });
+  }
+
+  // Mise à jour des erreurs pour un formulaire donné
+  private updateFormErrors(form: FormGroup, formName: string): void {
+    // Ne pas traiter les erreurs si le formulaire est dans son état initial
+    if (this.isFormInInitialState(form)) {
+      return;
+    }
+
+    Object.keys(form.controls).forEach((key) => {
+      const control = form.get(key);
+      const errorKey = `${formName}_${key}`;
+
+      // Traiter aussi les FormGroups imbriqués (comme address)
+      if (control instanceof FormGroup) {
+        Object.keys(control.controls).forEach((nestedKey) => {
+          const nestedControl = control.get(nestedKey);
+          const nestedErrorKey = `${formName}_${nestedKey}`;
+          
+          if (nestedControl && nestedControl.errors && (nestedControl.dirty || nestedControl.touched)) {
+            this.formErrors[nestedErrorKey] = this.getErrorMessage(nestedKey, nestedControl.errors);
+          } else {
+            delete this.formErrors[nestedErrorKey];
+          }
+        });
+      } else if (control && control.errors && (control.dirty || control.touched)) {
+        this.formErrors[errorKey] = this.getErrorMessage(key, control.errors);
+      } else {
+        delete this.formErrors[errorKey];
+      }
+    });
+  }
+
+  // Génération des messages d'erreur personnalisés
+  private getErrorMessage(fieldName: string, errors: any): string {
+    const fieldDisplayNames: { [key: string]: string } = {
+      firstName: "Prénom",
+      lastName: "Nom",
+      email: "Email",
+      phone: "Téléphone",
+      role: "Rôle",
+      zones: "Zones",
+      type: "Type",
+      price: "Prix",
+      description: "Description",
+      nbPassages: "Nombre de passages",
+      name: "Nom",
+      cities: "Villes",
+      neighborhoods: "Quartiers",
+      content: "Contenu",
+      zone: "Zone",
+      date: "Date",
+      startTime: "Heure de début",
+      endTime: "Heure de fin",
+      collectorId: "Collecteur",
+    };
+
+    const displayName = fieldDisplayNames[fieldName] || fieldName;
+
+    if (errors["required"]) {
+      return `${displayName} est requis`;
+    }
+    if (errors["email"]) {
+      return "Format d'email invalide";
+    }
+    if (errors["minlength"]) {
+      return `${displayName} doit contenir au moins ${errors["minlength"].requiredLength} caractères`;
+    }
+    if (errors["min"]) {
+      return `${displayName} doit être supérieur ou égal à ${errors["min"].min}`;
+    }
+    if (errors["pattern"]) {
+      return `${displayName} contient des caractères invalides`;
+    }
+    if (errors["invalidTimeOrder"]) {
+      return "L'heure de fin doit être postérieure à l'heure de début";
+    }
+
+    return `${displayName} est invalide`;
+  }
+
+  // Méthode pour obtenir l'erreur d'un champ spécifique
+  getFieldError(formName: string, fieldName: string): string {
+    // Ne montrer l'erreur que si le champ a été touché ou modifié
+    const form = this.getFormByName(formName);
+    const control = form?.get(fieldName);
+    
+    if (!control || !(control.touched || control.dirty)) {
+      return "";
+    }
+    
+    // Vérifier que le formulaire n'est pas dans son état initial
+    if (this.isFormInInitialState(form)) {
+      return "";
+    }
+    
+    return this.formErrors[`${formName}_${fieldName}`] || "";
+  }
+
+  // Méthode pour vérifier si un champ a une erreur
+  hasFieldError(formName: string, fieldName: string): boolean {
+    // Ne montrer l'erreur que si le champ a été touché ou modifié
+    const form = this.getFormByName(formName);
+    const control = form?.get(fieldName);
+    
+    if (!control || !(control.touched || control.dirty)) {
+      return false;
+    }
+    
+    // Vérifier aussi que le formulaire n'est pas dans un état initial
+    if (this.isFormInInitialState(form)) {
+      return false;
+    }
+    
+    const hasError = !!this.formErrors[`${formName}_${fieldName}`];
+    
+    // Debug : Log pour voir quand les erreurs sont détectées
+    if (hasError && formName === 'employee') {
+      console.log(`Erreur détectée pour ${fieldName}:`, {
+        touched: control.touched,
+        dirty: control.dirty,
+        errors: control.errors,
+        formError: this.formErrors[`${formName}_${fieldName}`],
+        isInitialState: this.isFormInInitialState(form)
+      });
+    }
+    
+    return hasError;
+  }
+
+  // Méthode spéciale pour vérifier les erreurs de validation croisée (comme passwordMismatch)
+  hasValidationError(formName: string, fieldName: string, errorType: string): boolean {
+    const form = this.getFormByName(formName);
+    const control = form?.get(fieldName);
+    
+    if (!control || !(control.touched || control.dirty)) {
+      return false;
+    }
+    
+    // Vérifier que le formulaire n'est pas dans son état initial
+    if (this.isFormInInitialState(form)) {
+      return false;
+    }
+    
+    return control.hasError(errorType);
+  }
+
+  // Méthode pour vérifier si le formulaire est dans son état initial
+  private isFormInInitialState(form: FormGroup | null): boolean {
+    if (!form) return true;
+    
+    // Si aucun contrôle n'a été touché, le formulaire est dans son état initial
+    const allControls = this.getAllFormControls(form);
+    const hasAnyInteraction = allControls.some(control => control.touched || control.dirty);
+    
+    // Également vérifier si le modal vient d'être ouvert
+    const isModalJustOpened = this.showAddEmployeeModal && !hasAnyInteraction;
+    
+    return !hasAnyInteraction || isModalJustOpened;
+  }
+
+  // Méthode récursive pour obtenir tous les contrôles d'un formulaire
+  private getAllFormControls(form: FormGroup): any[] {
+    const controls: any[] = [];
+    
+    Object.keys(form.controls).forEach(key => {
+      const control = form.get(key);
+      if (control instanceof FormGroup) {
+        controls.push(...this.getAllFormControls(control));
+      } else {
+        controls.push(control);
+      }
+    });
+    
+    return controls;
+  }
+
+  // Méthode utilitaire pour obtenir le FormGroup par nom
+  private getFormByName(formName: string): FormGroup | null {
+    switch (formName) {
+      case 'employee':
+        return this.employeeForm;
+      case 'tariff':
+        return this.tariffForm;
+      case 'schedule':
+        return this.scheduleForm;
+      case 'zone':
+        return this.zoneForm;
+      case 'message':
+        return this.messageForm;
+      default:
+        return null;
+    }
+  }
+
+  // Méthodes pour gérer les modals
+  openAddEmployeeModal(): void {
+    // S'assurer qu'on n'est pas en mode modification
+    this.isEditingEmployee = false;
+    this.employeeToEdit = null;
+    
+    // Ajuster les validateurs pour le mode ajout
+    this.adjustValidatorsForEdit();
+    
+    // Réinitialiser complètement le formulaire
+    this.employeeForm.reset();
+    
+    // Marquer tous les contrôles comme non touchés et propres (incluant les contrôles imbriqués)
+    this.markFormGroupAsUntouchedAndPristine(this.employeeForm);
+    
+    // Réinitialiser les erreurs
+    this.employeeFormError = null;
+    this.employeeFormDetailedErrors = {};
+    
+    // Nettoyer TOUTES les erreurs du formulaire employé du cache
+    Object.keys(this.formErrors).forEach(key => {
+      if (key.startsWith('employee_')) {
+        delete this.formErrors[key];
+      }
+    });
+    
+    // Réinitialiser les états des mots de passe
+    this.showPassword = false;
+    this.showConfirmPassword = false;
+    
+    // Initialiser les données mock pour l'adresse
+    this.initializeAddressDataForEmployee();
+    
+    // Ouvrir le modal
+    this.showAddEmployeeModal = true;
+    
+    // Petite temporisation pour s'assurer que l'état est bien réinitialisé
+    setTimeout(() => {
+      this.markFormGroupAsUntouchedAndPristine(this.employeeForm);
+      // Force la suppression des erreurs après l'ouverture
+      Object.keys(this.formErrors).forEach(key => {
+        if (key.startsWith('employee_')) {
+          delete this.formErrors[key];
+        }
+      });
+    }, 50);
+  }
+
+  // Méthode pour ouvrir le drawer (utilisée par editEmployee)
+  private openEmployeeDrawer(): void {
+    this.showAddEmployeeModal = true;
+  }
+
+  // Méthode utilitaire pour marquer un FormGroup et tous ses contrôles comme non touchés et propres
+  private markFormGroupAsUntouchedAndPristine(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      if (control) {
+        if (control instanceof FormGroup) {
+          // Si c'est un groupe imbriqué (comme address), traiter récursivement
+          this.markFormGroupAsUntouchedAndPristine(control);
+        } else {
+          // Marquer le contrôle comme non touché et propre
+          control.markAsUntouched();
+          control.markAsPristine();
+          control.updateValueAndValidity({ emitEvent: false });
+        }
+      }
+    });
+    
+    // Marquer le formulaire lui-même
+    formGroup.markAsUntouched();
+    formGroup.markAsPristine();
+  }
+
+  closeAddEmployeeModal(): void {
+    // Fermer le modal
+    this.showAddEmployeeModal = false;
+    
+    // Réinitialiser le formulaire
+    this.employeeForm.reset();
+    this.markFormGroupAsUntouchedAndPristine(this.employeeForm);
+    
+    // Réinitialiser les états
+    this.showPassword = false;
+    this.showConfirmPassword = false;
+    this.employeeFormError = null;
+    this.employeeFormDetailedErrors = {};
+    
+    // Réinitialiser l'état d'édition
+    this.isEditingEmployee = false;
+    this.employeeToEdit = null;
+    
+    // Nettoyer les erreurs du cache
+    Object.keys(this.formErrors).forEach(key => {
+      if (key.startsWith('employee_')) {
+        delete this.formErrors[key];
+      }
+    });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  // Validateur personnalisé pour la correspondance des mots de passe
+  passwordMatchValidator(form: FormGroup) {
+    const password = form.get("password");
+    const confirmPassword = form.get("confirmPassword");
+
+    if (
+      password &&
+      confirmPassword &&
+      password.value !== confirmPassword.value
+    ) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+    } else if (confirmPassword?.hasError("passwordMismatch")) {
+      confirmPassword.setErrors(null);
+    }
+
+    return null;
+  }
+
+  // Gérer la validation des zones en fonction du rôle
+  onRoleChange(): void {
+    const roleControl = this.employeeForm.get("role");
+    const zonesControl = this.employeeForm.get("zones");
+
+    if (roleControl && zonesControl) {
+      // Les zones sont toujours optionnelles, même pour les collecteurs
+      zonesControl.clearValidators();
+
+      if (roleControl.value === "manager") {
+        // Pour les managers, on vide les zones
+        zonesControl.setValue([]);
+      }
+
+      zonesControl.updateValueAndValidity();
+    }
+  }
+
+  // Vérifier si le formulaire employé est valide
+  isEmployeeFormValid(): boolean {
+    // Vérifier les champs de base
+    const baseFieldsValid = 
+      this.employeeForm.get('firstName')?.valid &&
+      this.employeeForm.get('lastName')?.valid &&
+      this.employeeForm.get('email')?.valid &&
+      this.employeeForm.get('phone')?.valid &&
+      this.employeeForm.get('role')?.valid;
+
+    if (!baseFieldsValid) {
+      return false;
+    }
+
+    // En mode modification, les mots de passe sont optionnels
+    if (this.isEditingEmployee) {
+      // Si un mot de passe est saisi, il doit être valide
+      const password = this.employeeForm.get('password')?.value;
+      const confirmPassword = this.employeeForm.get('confirmPassword')?.value;
+      
+      if (password && password.length > 0) {
+        // Si un mot de passe est saisi, vérifier qu'il est valide
+        if (password.length < 6) {
+          return false;
+        }
+        // Et que la confirmation correspond
+        if (password !== confirmPassword) {
+          return false;
+        }
+      }
+      
+      return true; // Valide en mode modification si champs de base OK
+    } else {
+      // En mode ajout, tout doit être valide y compris les mots de passe
+      return this.employeeForm.valid;
+    }
+  }
+
+  // Vérifier si un champ a une erreur spécifique du backend
+  hasBackendFieldError(fieldName: string): boolean {
+    return (
+      this.employeeFormDetailedErrors &&
+      this.employeeFormDetailedErrors[fieldName]
+    );
+  }
+
+  // Obtenir l'erreur backend pour un champ spécifique
+  getBackendFieldError(fieldName: string): string {
+    return this.employeeFormDetailedErrors?.[fieldName] || "";
+  }
+
+  // Effacer les erreurs backend quand l'utilisateur modifie un champ
+  clearBackendErrors(): void {
+    this.employeeFormError = null;
+    this.employeeFormDetailedErrors = {};
+  }
+
+  // Helper pour obtenir les clés des erreurs détaillées
+  getDetailedErrorKeys(): string[] {
+    return this.employeeFormDetailedErrors
+      ? Object.keys(this.employeeFormDetailedErrors)
+      : [];
+  }
+
+  // Vérifier s'il y a des erreurs détaillées
+  hasDetailedErrors(): boolean {
+    return this.getDetailedErrorKeys().length > 0;
+  }
+
+
+
+  openZoneModal(): void {
+    this.zoneForm.reset();
+    this.editingZone = false;
+    
+    // Réinitialiser aussi le mode édition des tarifs quand on ouvre le modal pour créer
+    this.isEditingTariff = false;
+    this.tariffToUpdate = null;
+    this.tariffForm.reset();
+    
+    this.showZoneModal = true;
+  }
+
+  closeZoneModal(): void {
+    this.showZoneModal = false;
+    this.zoneForm.reset();
+    this.editingZone = false;
+    
+    // Réinitialiser aussi le mode édition des tarifs
+    this.isEditingTariff = false;
+    this.tariffToUpdate = null;
+    this.tariffForm.reset();
+    
+    // Effacer les erreurs des formulaires
+    Object.keys(this.formErrors).forEach(key => {
+      if (key.startsWith('zone_') || key.startsWith('tariff_')) {
+        delete this.formErrors[key];
+      }
+    });
+  }
+
+  openScheduleModal(): void {
+    this.scheduleForm.reset();
+    
+    // Réinitialiser le mode édition (pour le mode création)
+    this.isEditingSchedule = false;
+    this.editingSchedule = null;
+    
+    // Charger automatiquement les données nécessaires
+    this.loadScheduleModalData();
+    
+    // Nettoyer les erreurs du formulaire
+    Object.keys(this.formErrors).forEach(key => {
+      if (key.startsWith('schedule_')) {
+        delete this.formErrors[key];
+      }
+    });
+    
+    this.showScheduleModal = true;
+  }
+
+  // Nouvelle méthode pour charger toutes les données nécessaires au modal de planning
+  private loadScheduleModalData(): void {
+    // Charger les zones si nécessaire
+    if (this.zones.length === 0 && !this.isLoadingZones) {
+      console.log("Chargement des zones...");
+      this.loadZones(this.currentUser);
+    }
+    
+    // Charger les collecteurs si nécessaire
+    if (this.collectors.length === 0 && this.currentUser?.agencyId) {
+      console.log("Chargement des collecteurs...");
+      this.loadCollectors(this.currentUser.agencyId);
+    }
+    
+    // Recharger les plannings pour avoir les données les plus récentes
+    console.log("Rechargement des plannings...");
+    this.loadPlannings();
+  }
+
+  closeScheduleModal(): void {
+    this.showScheduleModal = false;
+    this.scheduleForm.reset();
+    this.isEditingSchedule = false;
+    this.editingSchedule = null;
+    
+    // Nettoyer les erreurs du formulaire de planning
+    Object.keys(this.formErrors).forEach(key => {
+      if (key.startsWith('schedule_')) {
+        delete this.formErrors[key];
+      }
+    });
+    
+    // Marquer le formulaire comme non touché et propre
+    this.markFormGroupAsUntouchedAndPristine(this.scheduleForm);
+  }
+
+  // Méthode pour recharger les zones manuellement
+  reloadZones(): void {
+    this.zones = []; // Vider les zones pour forcer le rechargement
+    this.loadZones(this.currentUser);
+  }
+
+  // Méthode pour gérer la sélection multiple des zones pour les employés
+  toggleZoneSelection(zoneId: string, event: any): void {
+    const zonesControl = this.employeeForm.get("zones");
+    if (!zonesControl) return;
+
+    let currentZones = zonesControl.value || [];
+
+    if (event.target.checked) {
+      if (!currentZones.includes(zoneId)) {
+        currentZones.push(zoneId);
+      }
+    } else {
+      currentZones = currentZones.filter((id: string) => id !== zoneId);
+    }
+
+    zonesControl.setValue(currentZones);
+    zonesControl.markAsTouched();
+  }
+
+  // Méthode pour vérifier si une zone est sélectionnée
+  isZoneSelected(zoneId: string): boolean {
+    const zones = this.employeeForm.get("zones")?.value || [];
+    return zones.includes(zoneId);
+  }
+
+  // Méthode utilitaire pour afficher les zones sélectionnées
+  getSelectedZonesText(): string {
+    const zones = this.employeeForm.get("zones")?.value || [];
+    if (zones.length === 0) return "Aucune zone sélectionnée";
+    if (zones.length === 1) return "1 zone sélectionnée";
+    return `${zones.length} zones sélectionnées`;
+  }
+
+  ngOnInit(): void {
+    this.currentUser = this.authService.getCurrentUser();
+    
+    // Initialiser la liste filtrée des employés
+    this.filteredEmployees = [...this.allEmployees];
+
+    console.log("this.currentUser", this.currentUser);
+    this.loadAgencyStatistics(this.currentUser);
+    this.loadAgencyData();
+    console.log(" APPEL EXPLICITE de loadEmployees depuis ngOnInit");
+    if (this.currentUser?.agencyId) {
+      this.loadEmployees(this.currentUser.agencyId);
+    }
+    console.log(" APPEL EXPLICITE de loadCollectors depuis ngOnInit");
+    if (this.currentUser?.agencyId) {
+      this.loadCollectors(this.currentUser.agencyId);
+       this.loadCollectDay();
+    }
+    // this.loadZonesForAgency(this.currentUser);
+    this.loadAgencyReports(this.currentUser);
+    this.loadTariffs();
+    this.loadPlannings();
+    // this.loadCollectorPlannings();
+    // this.cdr.detectChanges();
+    this.loadZones(this.currentUser);
+    // this.loadCollectDay();
+    this.getAllCountries();
+
+    setInterval(() => {
+      this.loadCollectDay();
+    }, 30000);
+    this.loadCollectHistory();
+    // this.filterIncidents();
+    this.countUnreadMessages();
+    this.userMessages();
+
+    this.route.fragment.subscribe((fragment) => {
+      if (fragment) {
+        const element = document.getElementById(fragment);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    });
+
+    // Écouter les queryParams
+    this.route.queryParams.subscribe((params) => {
+      if (params["source"] === "notification") {
+        this.handleNotificationParams(params);
+      }
+    });
+  }
+  private handleNotificationParams(params: any) {
+    if (params["id"]) {
+    }
+  }
+  /**Gestion des messages recus par le client connecté */
+  countUnreadMessages() {
+    this.messageService
+      .getUserUnreadMessagesCount(this.currentUser?._id || "")
+      .subscribe({
+        next: (response: any) => {
+          if (response) {
+            console.log("API > getUserUnreadMessagesCount:", response);
+            this.unreadMessageCount = response.unreadCount || 0;
+          }
+        },
+        error: (error: any) => {
+          console.error("API > getUserUnreadMessagesCount:", error);
+        },
+      });
+  }
+
+  userMessages() {
+    this.isLoadingMessages = true;
+    this.messageService
+      .getMessagesForUser(this.currentUser?.agencyId || "")
+      .subscribe({
+        next: (response: any) => {
+          if (response) {
+            console.log("API > getMessagesForUser:", response);
+            this.connectedUserMessages = response || [];
+            console.log(
+              "this.connectedUserMessages:",
+              this.connectedUserMessages
+            );
+          }
+          this.isLoadingMessages = false;
+        },
+        error: (error: any) => {
+          console.error("API > getMessagesForUser:", error);
+          this.isLoadingMessages = false;
+        },
+      });
+  }
+
+  userAndAgencyConversation(client: any) {
+    this.data = client;
+    this.displayAgencyName = client.firstName + " " + client.lastName;
+    const clientId = client?._id || "";
+    this.clientService
+      .userAndAgencyConversation(this.currentUser?.agencyId || "", clientId)
+      .subscribe((messages: any) => {
+        console.log("API >userAndAgencyConversation:", messages);
+        if (messages) {
+          console.log("API >userAndAgencyConversation:", messages);
+          this.receivedMessages = (messages || []).sort(
+            (a: any, b: any) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+          this.scrollToBottom();
+          this.countUnreadMessages();
+          if (!clientId) {
+            this.receivedId = this.currentUser?.agencyId || "";
+          } else {
+            this.receivedId = clientId;
+          }
+          this.receivedMessages.forEach((message: any) => {
+            if (message.receiver === this.currentUser?.agencyId) {
+              this.readAndRespondMessage(message);
+            }
+            message.read = message.read.toString();
+          });
+        } else {
+          this.receivedMessages = [];
+          this.notificationService.showError(
+            "Erreur",
+            "Aucun message, veuillez contacter l'agence !"
+          );
+        }
+      });
+  }
+  readAndRespondMessage(message: Message): void {
+    this.messageService.markMessagesAsRead(message._id || "").subscribe({
+      next: (response: any) => {
+        this.receivedId = message.sender;
+        console.log("Lire et répondre au message:", message._id);
+      },
+      error: (error: any) => {
+        console.error("Erreur lors de la lecture du message:", error);
+      },
+    });
+  }
+  submitMessage() {
+    if (!this.messageData.content) {
+      this.notificationService.showError(
+        "Message invalide",
+        "Veuillez saisir un message valide"
+      );
+      return;
+    }
+
+    if (!this.currentUser) {
+      this.notificationService.showError(
+        "Connexion requise",
+        "Vous devez être connecté pour envoyer un message"
+      );
+      return;
+    }
+    if (!this.receivedId) {
+      this.notificationService.showError("Erreur", "Agence non trouvée");
+      return;
+    }
+
+    const messageData = {
+      sender: this.currentUser?.agencyId || "",
+      receiver: this.receivedId || "",
+      content: this.messageData.content.trim(),
+    };
+
+    console.log("Envoi du message:", messageData);
+    this.messageService.sendMessage(messageData).subscribe({
+      next: (response: any) => {
+        console.log("API > sendMessage:", response);
+        console.log("API > data:", this.data);
+        this.userAndAgencyConversation(this.data);
+        this.notificationService.showSuccess(
+          "Message envoyé",
+          "Votre message a bien été envoyé"
+        );
+        this.messageData.content = "";
+      },
+      error: (error: any) => {
+        console.error("API > sendMessage:", error);
+        this.notificationService.showError(
+          "Message non envoyé",
+          "Une erreur s'est produite lors de l'envoi du message"
+        );
+      },
+    });
+  }
+
+  /**Gestion des messages recus par le client connecté fin */
+
+  openAssignModal(reportId: string): void {
+    this.selectedReportId = reportId;
+    this.selectedEmployee = [];
+    this.showAssignModal = true;
+  }
+  closeAssignModal(): void {
+    this.showAssignModal = false;
+    this.selectedEmployee = [];
+  }
+
+  validateTimeOrder(group: FormGroup) {
+    const start = group.get("startTime")?.value;
+    const end = group.get("endTime")?.value;
+
+    if (start && end && end <= start) {
+      return { invalidTimeOrder: true };
+    }
+    return null;
+  }
+
+  assignEmployeesToReport(): void {
+    // if (this.selectedReportId && this.selectedEmployees.length > 0) {
+    //   const payload = {
+    //     reportId: this.selectedReportId,
+    //     assignedEmployees: this.selectedEmployees,
+    //   };
+    //   this.agencyService.assignEmployeesToReport$(payload).subscribe({
+    //     next: () => {
+    //       this.notificationService.showSuccess('Succès', 'Les employés ont été assignés au signalement.');
+    //       this.showAssignModal = false;
+    //       this.loadAgencyReports(this.currentUser); // Recharger les signalements
+    //     },
+    //     error: (err) => {
+    //       console.error('Erreur lors de l\'assignation des employés :', err);
+    //       this.notificationService.showError('Erreur', 'Impossible d\'assigner les employés.');
+    //     },
+    //   });
+    // } else {
+    //   this.notificationService.showError('Erreur', 'Veuillez sélectionner au moins un employé.');
+    // }
+  }
+  toggleEmployeeSelection(employeeId: string, event: any): void {
+    if (event.target.checked) {
+      this.selectedEmployee.push(employeeId);
+    } else {
+      this.selectedEmployee = this.selectedEmployee.filter(
+        (id) => id !== employeeId
+      );
+    }
+  }
+  // updateTabs(): void {
+  //   this.tabs = [
+  //     { id: 'collections', label: 'Collectes', icon: 'local_shipping', badge: null },
+  //     { id: 'employees', label: 'Employés', icon: 'people', badge: null },
+  //     { id: 'zones', label: 'Zones', icon: 'map', badge: null },
+  //     { id: 'schedules', label: 'Plannings', icon: 'schedule', badge: null },
+  //     { id: 'clients', label: 'Clients', icon: 'person', badge: this.activeClientNbrs },
+  //     { id: 'reports', label: 'Signalements', icon: 'report_problem', badge: 3 },
+  //     { id: 'analytics', label: 'Rapports', icon: 'analytics', badge: null }
+  //   ];
+
+  // }
+  // activeClientNbr() {
+  //   return this.activeClients.length;
+  // }
+
+  // loadTariffsForAgency(): void {
+  //     const userString = localStorage.getItem('currentUser');
+  //     if (userString) {
+  //       const currentUser = JSON.parse(userString);
+  //       const agencyId = currentUser._id;
+
+  //       this.agencyService.getAgencyTariffs(agencyId).subscribe({
+  //         next: (tariffs) => {
+  //           this.agencyTariffs = tariffs;
+  //           console.log('Tarifs récupérés :', tariffs);
+  //         },
+  //         error: (err) => {
+  //           console.error("Erreur lors du chargement des tarifs de l'agence", err);
+  //         }
+  //       });
+  //     } else {
+  //       console.error("Aucun utilisateur trouvé dans le stockage local.");
+  //     }
+  //   }
+
+  loadAgencyData(): void {
+    console.log("DÉBUT loadAgencyData - Chargement des données agence");
+    // Charger les données de l'agence
+    // Simule une agence si null pour debug
+    if (this.currentUser) {
+      // this.agency = { _id: 'agency1', agencyName: 'Agence Demo' } as any;
+      this.agency = this.currentUser as any;
+      console.log("[loadAgencyData] agency simulée:", this.agency);
+      console.log(" Appel de loadEmployees avec agencyId:", this.currentUser.agencyId);
+      if (this.currentUser.agencyId) {
+        this.loadEmployees(this.currentUser.agencyId);
+      }
+    }
+    this.loadCollections();
+    // this.loadServiceZones();
+    // this.loadSchedules();
+    console.log("[loadAgencyData] agency avant loadClients:", this.agency);
+    this.loadClients();
+    this.loadReports();
+    //this.activeClientNbrs = this.activeClientNbr(); // Mettez à jour le nombre d'actifs
+    //this.updateTabs(); // Mettez à jour les tabs après avoir récupéré les clients
+    console.log("🏢 FIN loadAgencyData");
+  }
+  loadCollectors(agencyId: string): void {
+    console.log(" DÉBUT loadCollectors - Chargement des collecteurs");
+    console.log(" AgencyId reçu:", agencyId);
+    
+    if (agencyId) {
+      this.isLoadingEmployees = true;
+      console.log("📡 Appel du service getCollectorsAgency$ avec agencyId:", agencyId);
+      
+      this.agencyService.getCollectorsAgency$(agencyId).subscribe({
+        next: (collectors) => {
+          console.log("SUCCÈS - Réponse collecteurs reçue:", collectors);
+          
+          // Extraire les collecteurs depuis la nouvelle structure de l'API
+          if ((collectors as any)?.data) {
+            const data = (collectors as any).data;
+            // Prendre seulement les collectors de la réponse
+            this.collectors = data || [];
+            console.log(" Collecteurs extraits:", this.collectors);
+            console.log("   - Nombre de collecteurs:", this.collectors.length);
+          } else if (Array.isArray(collectors)) {
+            this.collectors = collectors;
+            console.log(" Collecteurs reçus directement:", this.collectors);
+          } else {
+            console.warn("Format de réponse collecteurs inattendu:", collectors);
+            this.collectors = [];
+          }
+       
+          console.log("Collecteurs chargés via l'API service:", this.collectors);
+          
+          // Mettre à jour le badge des collecteurs
+          const collectorsTab = this.tabs.find((tab) => tab.id === "employees");
+          if (collectorsTab) {
+            collectorsTab.badge = this.collectors.length;
+         
+            this.cdr.detectChanges();
+          }
+          
+          // Log chaque collecteur individuellement
+          this.collectors.forEach((collector, index) => {
+            console.log(` Collecteur ${index + 1}:`, {
+              nom: `${collector.firstName} ${collector.lastName}`,
+              role: collector.role,
+              email: collector.email,
+              données: collector
+            });
+          });
+          
+          this.isLoadingEmployees = false;
+          console.log(" FIN loadCollectors - Succès");
+        },
+        error: (error) => {
+          
+          console.error("Erreur lors du chargement des collecteurs:", error);
+          this.isLoadingEmployees = false;
+          console.log("FIN loadCollectors - Échec");
+        }
+      });
+    } else {
+   
+      console.log(" agencyId reçu:", agencyId);
+    }
+  }
+
+  //suppression d un employé
+  // deleteEmployee(currentUser: any, employeeId: any): void {
+  //   this.isDeleting = true;
+
+  //   if (currentUser?._id && employeeId?.userId?._id) {
+  //     this.agencyService.deleteEmployee$( employeeId.userId._id).subscribe(
+  //       () => {
+  //         this.notificationService.showSuccess(
+  //           'Succès',
+  //           'L\'employé a été supprimé avec succès.'
+  //         );
+  //         this.loadEmployees(currentUser);
+  //         this.isDeleting = false;
+  //       },
+  //       (error) => {
+  //         this.notificationService.showError(
+  //           'Erreur',
+  //           'Impossible de supprimer l\'employé. Veuillez réessayer.'
+  //         );
+  //         console.error("Erreur lors de la suppression de l'employé :", error);
+  //         this.isDeleting = false;
+  //       }
+  //     );
+  //   } else {
+  //     console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
+  //     this.isDeleting = false;
+  //   }
+  // }
+  deleteEmployee(currentUser: any, employeeId: any): void {
+    this.isDeleting = true;
+
+    // Logs pour debugger la structure des données
+    console.log('[DEBUG] Structure complète de l\'employé à supprimer:', employeeId);
+    console.log('[DEBUG] Type de l\'employé:', typeof employeeId);
+    console.log('[DEBUG] Clés de l\'objet employé:', Object.keys(employeeId));
+    console.log('[DEBUG] CurrentUser:', currentUser);
+
+    // Identifier l'ID de l'employé selon la structure des données
+    let employeeIdToDelete = null;
+    
+    // Essayer différentes structures possibles
+    if (employeeId?._id) {
+      employeeIdToDelete = employeeId._id;
+      console.log('[DEBUG] Utilisation de employeeId._id:', employeeIdToDelete);
+    } else if (employeeId?.userId?._id) {
+      employeeIdToDelete = employeeId.userId._id;
+      console.log('[DEBUG] Utilisation de employeeId.userId._id:', employeeIdToDelete);
+    } else if (employeeId?.id) {
+      employeeIdToDelete = employeeId.id;
+      console.log('[DEBUG] Utilisation de employeeId.id:', employeeIdToDelete);
+    } else if (typeof employeeId === 'string') {
+      employeeIdToDelete = employeeId;
+      console.log('[DEBUG] employeeId est déjà une string:', employeeIdToDelete);
+    }
+
+    // Vérification des IDs nécessaires
+    if (!currentUser?._id || !employeeIdToDelete) {
+      this.notificationService.showError(
+        "Erreur",
+        "Impossible d'identifier l'employé à supprimer"
+      );
+      console.error('[DEBUG] Échec validation - currentUser._id:', currentUser?._id, 'employeeIdToDelete:', employeeIdToDelete);
+      this.isDeleting = false;
+      return;
+    }
+
+    // Demander confirmation avec votre système de notification personnalisé
+    this.showDeleteConfirmationDialog(employeeIdToDelete, currentUser, employeeId);
+  }
+
+  /**
+   * Affiche la confirmation de suppression
+   */
+  showDeleteConfirmationDialog(employeeIdToDelete: string, currentUser: any, employeeData: any): void {
+    const employeeName = `${employeeData.firstName || employeeData.firstname || ''} ${employeeData.lastName || employeeData.lastname || ''}`.trim();
+    const displayName = employeeName || 'cet employé';
+    
+    // Stocker les données pour la suppression
+    this.employeeToDelete = {
+      id: employeeIdToDelete,
+      data: employeeData,
+      displayName: displayName
+    };
+    this.currentUserForDeletion = currentUser;
+    this.showDeleteConfirmation = true;
+    this.isDeleting = false; // Reset l'état de suppression
+    
+    // Afficher un message d'information
+    this.notificationService.showInfo(
+      "Confirmation requise", 
+      `Confirmez la suppression de ${displayName}`
+    );
+  }
+
+  /**
+   * Confirme et procède à la suppression
+   */
+  confirmDeleteEmployee(): void {
+    if (!this.employeeToDelete || !this.currentUserForDeletion) {
+      this.notificationService.showError("Erreur", "Données de suppression manquantes");
+      return;
+    }
+
+    this.showDeleteConfirmation = false;
+    this.isDeleting = true;
+    this.proceedWithDeletion(this.employeeToDelete.id, this.currentUserForDeletion);
+  }
+
+  /**
+   * Annule la suppression
+   */
+  cancelDeleteEmployee(): void {
+    this.showDeleteConfirmation = false;
+    this.employeeToDelete = null;
+    this.currentUserForDeletion = null;
+    this.isDeleting = false;
+    
+    this.notificationService.showInfo(
+      "Annulé", 
+      "La suppression a été annulée"
+    );
+  }
+
+  /**
+   * Procède à la suppression de l'employé
+   */
+  proceedWithDeletion(employeeIdToDelete: string, currentUser: any): void {
+    console.log('[DEBUG] Suppression de l\'employé avec ID:', employeeIdToDelete);
+    
+    this.agencyService.deleteEmployee(employeeIdToDelete).subscribe({
+        next: (response) => {
+          console.log('[DEBUG] Réponse suppression:', response);
+          this.isDeleting = false;
+          
+          if (response.success) {
+            this.notificationService.showSuccess(
+              "Succès",
+              response.message || "L'employé a été supprimé avec succès."
+            );
+            
+            // Recharger la liste des employés pour refléter la suppression
+            if (currentUser?.agencyId) {
+              this.loadEmployees(currentUser.agencyId);
+            }
+            
+          } else {
+            // Gérer les erreurs de response
+            const errorMessage = typeof response.error === 'string' 
+              ? response.error 
+              : "Erreur lors de la suppression de l'employé";
+            
+            this.notificationService.showError(
+              "Erreur",
+              errorMessage
+            );
+          }
+        },
+        error: (error) => {
+          this.isDeleting = false;
+          console.error('[ERROR] Erreur lors de la suppression:', error);
+          this.notificationService.showError(
+            "Erreur",
+            "Une erreur s'est produite lors de la suppression de l'employé."
+          );
+        },
+      });
+  }
+
+  assignIncident(): void {
+    this.notificationService.showInfo(
+      "Attribution",
+      "Ouverture du formulaire d'attribution"
+    );
+    return;
+  }
+  // onEditEmployee(emp: any) {
+  //   this.editingEmployeeId = emp._id;
+  //   this.editForm.patchValue({
+  //     firstname: emp.firstname,
+  //     lastname: emp.lastname,
+  //     email: emp.email,
+  //     phone: emp.phone,
+  //     role: emp.role
+  //   });
+  //   this.isEditing = true;
+  // }
+
+  loadCollections(): void {
+    // Simuler les collectes
+    this.collections = [
+      {
+        id: "1",
+        clientId: "client1",
+        agencyId: "agency1",
+        collectorId: "collector1",
+        scheduledDate: new Date(),
+        status: CollectionStatus.IN_PROGRESS,
+        address: {
+          street: "Rue des Roses",
+          doorNumber: "15",
+          doorColor: "blue",
+          neighborhood: "Centre-ville",
+          city: "Oouagadougou",
+          postalCode: "75001",
+        },
+        wasteTypes: [
+          {
+            id: "1",
+            name: "Déchets ménagers",
+            description: "",
+            icon: "delete",
+            color: "#4caf50",
+            instructions: [],
+            acceptedItems: [],
+            rejectedItems: [],
+          },
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+    this.filteredCollections = [...this.collections];
+  }
+
+  employeesNbrs!: number;
+  activesEmployeesNbrs!: number;
+  zoneLength!: number;
+  getZoneLengthByEmployeeId(employeeId: string): number {
+    const employee = this.allEmployees.find((emp) => emp._id === employeeId);
+    this.zoneLength = employee ? employee.zones.length : 0;
+    console.log("Employee found for zone length:", this.zoneLength);
+    return this.zoneLength;
+  }
+
+  loadEmployees(agencyId: string): void {
+    console.log(" DÉBUT loadEmployees - Chargement des employés");
+    console.log(" AgencyId reçu:", agencyId);
+    
+    if (agencyId) {
+      this.isLoadingEmployees = true;
+      console.log(" Appel du service getEmployeeAgency$ avec agencyId:", agencyId);
+      
+      this.agencyService.getEmployeeAgency$(agencyId).subscribe({
+        next: (employees) => {
+          console.log(" SUCCÈS - Réponse employés reçue:", employees);
+          
+          // Extraire les employés depuis la nouvelle structure de l'API
+          if ((employees as any)?.data) {
+            const data = (employees as any).data;
+            // Combiner managers, gestionnaires et collectors
+            this.allEmployees = [
+              ...(data.managers || []),
+              ...(data.gestionnaires || []),
+              ...(data.collectors || [])
+            ];
+            console.log(" Employés extraits et combinés:", this.allEmployees);
+            console.log("   - Managers:", data.managers?.length || 0);
+            console.log("   - Gestionnaires:", data.gestionnaires?.length || 0); 
+            console.log("   - Collecteurs:", data.collectors?.length || 0);
+          } else if (Array.isArray(employees)) {
+            this.allEmployees = employees;
+            console.log(" Employés reçus directement:", this.allEmployees);
+          } else {
+            console.warn("Format de réponse inattendu:", employees);
+            this.allEmployees = [];
+          }
+          
+          console.log("loadEmployees > Total final:", this.allEmployees);
+          
+          // Initialiser la liste filtrée avec tous les employés
+          this.filteredEmployees = [...this.allEmployees];
+          
+          const employeesTab = this.tabs.find((tab) => tab.id === "employees");
+          if (employeesTab) {
+            employeesTab.badge = this.allEmployees.length;
+            console.log("Badge employés mis à jour:", this.allEmployees.length);
+            this.cdr.detectChanges();
+          }
+          this.isLoadingEmployees = false;
+          console.log("FIN loadEmployees - Succès");
+        },
+        error: (error) => {
+          console.log(" ERREUR lors du chargement des employés:");
+          console.error(" Détails de l'erreur:", error);
+          console.error(" URL utilisée: /api/agencies/" + agencyId + "/employees");
+          console.error("Erreur lors du chargement des employés :", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de charger les employés. Veuillez réessayer."
+          );
+          this.isLoadingEmployees = false;
+          console.log(" FIN loadEmployees - Échec");
+        },
+      });
+    } else {
+      console.warn(" Aucun ID d'agence disponible.");
+      console.log(" agencyId reçu:", agencyId);
+    }
+  }
+
+  /**
+   * Filtre les employés en fonction des critères de recherche
+   */
+  filterEmployees(): void {
+    let filtered = [...this.allEmployees];
+
+    // Filtrage par texte de recherche
+    if (this.employeesSearch && this.employeesSearch.trim()) {
+      const searchTerm = this.employeesSearch.toLowerCase().trim();
+      filtered = filtered.filter(employee => 
+        employee.firstName?.toLowerCase().includes(searchTerm) ||
+        employee.lastName?.toLowerCase().includes(searchTerm) ||
+        employee.email?.toLowerCase().includes(searchTerm) ||
+        this.getRoleText(employee.role)?.toLowerCase().includes(searchTerm) ||
+        `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filtrage par rôle
+    if (this.employeesRoleFilter && this.employeesRoleFilter !== 'all') {
+      filtered = filtered.filter(employee => employee.role === this.employeesRoleFilter);
+    }
+
+    // Filtrage par statut
+    if (this.employeesStatusFilter && this.employeesStatusFilter !== 'all') {
+      const isActive = this.employeesStatusFilter === 'active';
+      filtered = filtered.filter(employee => employee.isActive === isActive);
+    }
+
+    this.filteredEmployees = filtered;
+    console.log('Employés filtrés:', this.filteredEmployees.length, 'sur', this.allEmployees.length);
+  }
+
+  /**
+   * Efface la recherche des employés
+   */
+  clearEmployeeSearch(): void {
+    this.employeesSearch = "";
+    this.filterEmployees();
+  }
+
+  /**
+   * Remet à zéro tous les filtres des employés
+   */
+  resetEmployeeFilters(): void {
+    this.employeesSearch = "";
+    this.employeesRoleFilter = "all";
+    this.employeesStatusFilter = "all";
+    this.filterEmployees();
+  }
+
+  /**
+   * Bascule l'affichage de la section de recherche des employés
+   */
+  toggleEmployeesSearch(): void {
+    this.showEmployeesSearch = !this.showEmployeesSearch;
+    
+    // Si on ferme la section, on remet à zéro les filtres
+    if (!this.showEmployeesSearch) {
+      this.resetEmployeeFilters();
+    }
+  }
+
+  // === MÉTHODES DE FILTRAGE ET RECHERCHE DES CLIENTS ===
+
+  /**
+   * Filtre les clients en fonction des critères de recherche
+   */
+  filterClients(): void {
+    let filtered = [...this.activeClients];
+
+    // Filtrage par texte de recherche
+    if (this.clientsSearch && this.clientsSearch.trim()) {
+      const searchTerm = this.clientsSearch.toLowerCase().trim();
+      filtered = filtered.filter(client => 
+        client.firstName?.toLowerCase().includes(searchTerm) ||
+        client.lastName?.toLowerCase().includes(searchTerm) ||
+        client.email?.toLowerCase().includes(searchTerm) ||
+        client.phone?.toLowerCase().includes(searchTerm) ||
+        client.address?.street?.toLowerCase().includes(searchTerm) ||
+        client.address?.neighborhood?.toLowerCase().includes(searchTerm) ||
+        `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filtrage par statut (si nécessaire pour d'autres statuts)
+    if (this.clientsStatusFilter && this.clientsStatusFilter !== 'all') {
+      // Ici vous pouvez ajouter d'autres filtres de statut si nécessaire
+      // Par exemple: filtered = filtered.filter(client => client.status === this.clientsStatusFilter);
+    }
+
+    this.filteredActiveClients = filtered;
+    console.log('Clients filtrés:', this.filteredActiveClients.length, 'sur', this.activeClients.length);
+  }
+
+  /**
+   * Efface la recherche des clients
+   */
+  clearClientSearch(): void {
+    this.clientsSearch = "";
+    this.filterClients();
+  }
+
+  /**
+   * Remet à zéro tous les filtres des clients
+   */
+  resetClientFilters(): void {
+    this.clientsSearch = "";
+    this.clientsStatusFilter = "all";
+    this.filterClients();
+  }
+
+  /**
+   * Bascule l'affichage de la section de recherche des clients
+   */
+  toggleClientsSearch(): void {
+    this.showClientsSearch = !this.showClientsSearch;
+    
+    // Si on ferme la section, on remet à zéro les filtres
+    if (!this.showClientsSearch) {
+      this.resetClientFilters();
+    }
+  }
+
+ 
+  //chargement des signalements
+  loadAgencyReports(currentUser: any): void {
+    if (currentUser && currentUser.agencyId) {
+      this.isLoadingReports = true;
+      const agencyId = currentUser.agencyId;
+      this.agencyService.getAgencyReports$(agencyId).subscribe({
+        next: (reports: any) => {
+          this.agencyReports = reports;
+          console.log("Signalements chargés >>>>>> :", this.agencyReports);
+          // Mise à jour du badge des Signalements
+          const SignalementsTab = this.tabs.find((tab) => tab.id === "reports");
+          if (SignalementsTab) {
+            SignalementsTab.badge = this.statistics.pendingSignalements;
+            this.cdr.detectChanges(); // Force la détection des changements
+          }
+          const repportTab = this.tabs.find((tab) => tab.id === "reports");
+          if (repportTab) {
+            repportTab.badge = this.statistics.pendingSignalements;
+            this.cdr.detectChanges();
+          }
+          this.isLoadingReports = false;
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement des signalements :", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de charger les signalements. Veuillez réessayer."
+          );
+          this.isLoadingReports = false;
+        },
+      });
+    } else {
+      console.warn("Aucun ID d'utilisateur courant disponible.");
+    }
+  }
+
+  //recuperations des statistiques de l'agence
+  loadAgencyStatistics(currentUser: any): void {
+    if (currentUser && currentUser.agencyId) {
+      this.isLoadingStatistics = true;
+      const agencyId = currentUser.agencyId;
+      this.agencyService.getAgencyStats$(agencyId).subscribe({
+        next: (statistics) => {
+          if(!statistics.success) return
+          this.statistics = statistics.data;
+          console.log("Statistiques de l'agence chargées :", this.statistics);
+          this.isLoadingStatistics = false;
+          this.cdr.detectChanges();
+          console.log(" FIN loadAgencyStatistics - Succès");
+        },
+        error: (error) => {
+         
+          console.error(
+            "Erreur lors du chargement des statistiques de l'agence :",
+            error
+          );
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de charger les statistiques de l'agence. Veuillez réessayer."
+          );
+          this.isLoadingStatistics = false;
+          console.log("🏁 FIN loadAgencyStatistics - Échec");
+        },
+      });
+    } else {
+      console.warn(" ID d'agence non disponible dans l'utilisateur courant.");
+    
+    }
+  }
+  // loadServiceZones(): void {
+  //   this.serviceZones = [
+  //     {
+  //       id: "zone1",
+  //       name: "Zone Centre",
+  //       description: "Centre-ville et quartiers adjacents",
+  //       boundaries: [],
+  //       neighborhoods: ["Centre-ville", "Quartier Latin"],
+  //       cities: ["Paris"],
+  //       isActive: true,
+  //     },
+  //   ];
+  // }
+
+  // loadSchedules(): void {
+  //   this.schedules = [
+  //     {
+  //       // id: '1',
+  //       zoneId: 'zone1',
+  //       dayOfWeek: 1,
+  //       startTime: '08:00',
+  //       endTime: '12:00',
+  //       collectorId: '1',
+  //       // isActive: true
+  //     }
+  //   ];
+  // }
+
+  // Helper pour récupérer le statut d'abonnement
+  getClientSubscriptionStatus(c: any): string | undefined {
+    return c.subscriptionHistory && c.subscriptionHistory.length
+      ? c.subscriptionHistory[
+          c.subscriptionHistory.length - 1
+        ].status?.toLowerCase()
+      : undefined;
+  }
+
+  clientNbrs!: number;
+
+  loadClients(): void {
+    console.log("[loadClients] called, agency:", this.agency);
+    if (!this.agency || !this.agency?.agencyId) return;
+
+    this.isLoadingClients = true;
+    this.clientService.getClientsByAgency(this.agency.agencyId).subscribe({
+      next: (clients:any) => {
+        console.log(
+          "[loadClients] clients number:",
+          this.activeClientNbrs,
+          clients.data.length
+        );
+        console.log("ALL Agency_clients", clients);
+        this.activeClients = clients.data.filter(
+          (c:any) => this.getClientSubscriptionStatus(c) === "active"
+        );
+        this.filteredActiveClients = [...this.activeClients]; // Initialiser les clients filtrés
+        this.pendingClients = clients.data.filter(
+          (c:any) => this.getClientSubscriptionStatus(c) === "pending"
+        );
+        console.log(
+          "[loadClients] active:",
+          this.activeClients,
+          "pending:",
+          this.pendingClients
+        );
+
+        if (clients) {
+          this.clientNbrs = clients.data.length;
+          this.activeClients = clients.data;
+          this.filteredActiveClients = [...this.activeClients]; // Initialiser les clients filtrés
+          console.log("[loadClients] clients received:", this.clientNbrs);
+          // Vérifiez si activeClients est défini et mettez à jour le nombre d'actifs
+          if (this.activeClients) {
+            this.activeClientNbrs = this.activeClients.length; // Directement obtenir le nombre d'actifs
+            // Trouver l'onglet "Clients" et mettre à jour son badge
+            const clientsTab = this.tabs.find((tab) => tab.label === "Clients");
+            if (clientsTab) {
+              clientsTab.badge = this.clientNbrs; // Mettre à jour le badge
+              console.log("badge >>", clientsTab.badge);
+              console.log("activeClientNbrs >>", this.activeClientNbrs);
+            } else {
+              console.warn("L'onglet 'Clients' n'a pas été trouvé.");
+            }
+          }
+        }
+        this.isLoadingClients = false;
+      },
+      error: (err) => {
+        console.error("[loadClients] error:", err);
+        this.activeClients = [];
+        this.filteredActiveClients = []; // Réinitialiser les clients filtrés
+        this.pendingClients = [];
+        this.isLoadingClients = false;
+      },
+    });
+  }
+
+  loadReports(): void {
+    this.reports = [
+      {
+        _id: "1",
+        clientId: "client1",
+        clientName: "Marie Dupont",
+        type: "missed_collection",
+        description: "La collecte n'a pas eu lieu à l'heure prévue",
+        comment: "La collecte n'a pas eu lieu à l'heure prévue",
+        date: new Date(),
+        status: "open",
+        severity: "medium",
+        createdAt: new Date(),
+        assignedTo: undefined,
+      },
+    ];
+    this.filteredReports = [...this.reports];
+  }
+
+  // Utility methods
+  getActiveCollectorsToday(): number {
+    return this.employees.filter((e) => e.role === "collector" && e.isActive)
+      .length;
+  }
+
+  getCollectionRate(): number {
+    return Math.round(
+      (this.statistics.completedCollections /
+        this.statistics.todayCollections) *
+        100
+    );
+  }
+
+  // getStars(rating: number): number[] {
+  //   return new Array(Math.floor(rating)).fill(0);
+  // }
+  getStars(rating: number): number[] {
+    // console.log('Rating reçu dans getStars:', rating);
+    if (!rating || rating < 0) {
+      return [];
+    }
+    return new Array(Math.floor(rating)).fill(0);
+  }
+
+  getStatusText(status: CollectionStatus): string {
+    const statusTexts = {
+      [CollectionStatus.SCHEDULED]: "Programmé",
+      [CollectionStatus.IN_PROGRESS]: "En cours",
+      [CollectionStatus.COMPLETED]: "Terminé",
+      [CollectionStatus.MISSED]: "Manqué",
+      [CollectionStatus.CANCELLED]: "Annulé",
+      [CollectionStatus.REPORTED]: "Signalé",
+    };
+    return statusTexts[status] || status;
+  }
+
+  getClientName(clientId: string): string {
+    const client = this.clients.find((c) => c.id === clientId);
+    return client ? client.name : "Client inconnu";
+  }
+
+  getWasteTypeName(wasteType: any): string {
+    return wasteType?.name || "Type inconnu";
+  }
+  getCollectorName(id: string): string {
+    const collector = this.collectors.find((c) => c._id === id);
+    return collector
+      ? `${collector.firstName} ${collector.lastName}`
+      : "Inconnu";
+  }
+
+
+
+  getCollectionProgress(collection: Collection): number {
+    // Simuler le progrès de collecte avec une valeur stable
+    const seed = collection.id
+      .split("")
+      .reduce((a, b) => a + b.charCodeAt(0), 0);
+    return seed % 100;
+  }
+
+  getRoleText(role: string): string {
+    const roleTexts = {
+      admin: "Administrateur",
+      manager: "Manager",
+      collector: "Collecteur",
+    };
+    return roleTexts[role as keyof typeof roleTexts] || role;
+  }
+
+  getZoneName(zone: string): string {
+    // Exemple simple
+    return zone || "Zone inconnue";
+  }
+
+  getZoneClients(zoneId: string): number {
+    // Simuler le nombre de clients par zone
+    return Math.floor(Math.random() * 200) + 50;
+  }
+
+  getEmployeeCollections(employeeId: string): number {
+    return Math.floor(Math.random() * 20) + 5;
+  }
+
+  getEmployeeRating(employeeId: string): number {
+    return Math.round((Math.random() * 2 + 3) * 10) / 10;
+  }
+
+  getEmployeeName(employeeId: string): string {
+    const employee = this.employees.find((e) => e.id === employeeId);
+    return employee
+      ? `${employee.firstName} ${employee.lastName}`
+      : "Employé inconnu";
+  }
+
+  getSubscriptionStatusText(status: string): string {
+    const statusTexts = {
+      active: "Actif",
+      suspended: "Suspendu",
+      cancelled: "Résilié",
+    };
+    return statusTexts[status as keyof typeof statusTexts] || status;
+  }
+
+  getReportTypeText(type: string): string {
+    const typeTexts = {
+      missed_collection: "Collecte manquée",
+      incomplete_collection: "Collecte incomplète",
+      damage: "Dommage",
+      complaint: "Réclamation",
+    };
+    return typeTexts[type as keyof typeof typeTexts] || type;
+  }
+
+  getReportStatusText(status: string): string {
+    const statusTexts = {
+      open: "Ouvert",
+      in_progress: "enregistré",
+      resolved: "Résolu",
+    };
+    return statusTexts[status as keyof typeof statusTexts] || status;
+  }
+
+  getCurrentWeekText(): string {
+    const startOfWeek = new Date(this.currentWeek);
+    startOfWeek.setDate(
+      this.currentWeek.getDate() - this.currentWeek.getDay() + 1
+    );
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+    return `${startOfWeek.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "short",
+    })} - ${endOfWeek.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "short",
+    })}`;
+  }
+
+  // getSchedulesForDay(dayIndex: number): any[] {
+  //   return this.schedules.filter(s => s.dayOfWeek === dayIndex + 1);
+  // }
+  // getSchedulesForDay(dayIndex: number): any[] {
+  //   const startOfWeek = new Date(this.currentWeek);
+  //   startOfWeek.setDate(
+  //     this.currentWeek.getDate() - this.currentWeek.getDay() + 1
+  //   ); // Lundi
+  //   const targetDate = new Date(startOfWeek);
+  //   targetDate.setDate(startOfWeek.getDate() + dayIndex);
+
+  //   return this.plannings.filter((schedule) => {
+  //     const scheduleDate = new Date(schedule.date);
+  //     return (
+  //       scheduleDate.toDateString() === targetDate.toDateString() &&
+  //       schedule.dayOfWeek === dayIndex + 1
+  //     );
+  //   });
+  // }
+
+  getSchedulesForDay(dayIndex: number): any[] {
+    if (!Array.isArray(this.schedules)) {
+      console.log("getSchedulesForDay: schedules n'est pas un tableau", this.schedules);
+      return [];
+    }
+
+    const startOfWeek = new Date(this.currentWeek);
+    const day = this.currentWeek.getDay();
+    const diff = this.currentWeek.getDate() - day + (day === 0 ? -6 : 1);
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const targetDate = new Date(startOfWeek);
+    targetDate.setDate(startOfWeek.getDate() + dayIndex);
+
+    console.log(`Recherche plannings pour le jour ${dayIndex} (${targetDate.toLocaleDateString()})`);
+    console.log("Nombre total de plannings:", this.schedules.length);
+
+    const filteredSchedules = this.schedules.filter((schedule) => {
+      if (!schedule.date) {
+        console.warn("Planning sans date:", schedule);
+        return false;
+      }
+      
+      const scheduleDate = new Date(schedule.date);
+      scheduleDate.setHours(0, 0, 0, 0);
+      
+      const isMatch = scheduleDate.getTime() === targetDate.getTime();
+      
+      if (isMatch) {
+        console.log("Planning trouvé pour ce jour:", schedule);
+      }
+      
+      return isMatch;
+    });
+
+    console.log(`Plannings trouvés pour le jour ${dayIndex}:`, filteredSchedules);
+    return filteredSchedules;
+  }
+
+  /**
+   * Vérifie si un planning est nouveau (créé dans les dernières 24h)
+   */
+  isNewSchedule(schedule: any): boolean {
+    if (!schedule.createdAt) return false;
+    const now = new Date();
+    const createdAt = new Date(schedule.createdAt);
+    const diffInHours = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+    return diffInHours <= 24;
+  }
+
+  /**
+   * Vérifie si un planning est en cours de chargement
+   */
+  isScheduleLoading(schedule: any): boolean {
+    // Vous pouvez implémenter votre logique de chargement ici
+    // Par exemple, si vous avez un tableau d'IDs en cours de traitement
+    return this.loadingScheduleIds?.includes(schedule._id) || false;
+  }
+
+  // Propriété pour tracker les plannings en cours de chargement
+  loadingScheduleIds: string[] = [];
+
+  /**
+   * Crée un nouveau planning pour un jour spécifique
+   */
+  createNewScheduleForDay(dayIndex: number): void {
+    // Calculer la date correspondant au jour sélectionné
+    const targetDate = this.getDateForDay(dayIndex);
+    
+    // Ouvrir le drawer de création de planning
+    this.showScheduleModal = true;
+    this.isEditingSchedule = false;
+    
+    // Pré-remplir le formulaire avec la date sélectionnée
+    this.scheduleForm.patchValue({
+      date: this.formatDateForInput(targetDate)
+    });
+
+    // Notification pour informer l'utilisateur
+    this.notificationService.showInfo(
+      "Nouveau planning", 
+      `Création d'un planning pour ${this.getDayName(dayIndex)} ${this.getFormattedDate(dayIndex)}`
+    );
+
+    console.log(`[DEBUG] Création planning pour le jour ${dayIndex} - Date: ${targetDate.toLocaleDateString()}`);
+  }
+
+  /**
+   * Calcule la date pour un index de jour donné
+   */
+  getDateForDay(dayIndex: number): Date {
+    const startOfWeek = new Date(this.currentWeek);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const targetDate = new Date(startOfWeek);
+    targetDate.setDate(startOfWeek.getDate() + dayIndex);
+    return targetDate;
+  }
+
+  /**
+   * Obtient le nom du jour en français
+   */
+  getDayName(dayIndex: number): string {
+    const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    return dayNames[dayIndex] || '';
+  }
+
+  /**
+   * Formate la date pour affichage (ex: "14 Nov")
+   */
+  getFormattedDate(dayIndex: number): string {
+    const targetDate = this.getDateForDay(dayIndex);
+    const options: Intl.DateTimeFormatOptions = { 
+      day: 'numeric', 
+      month: 'short' 
+    };
+    return targetDate.toLocaleDateString('fr-FR', options);
+  }
+
+  /**
+   * Formate la date pour l'input HTML (YYYY-MM-DD)
+   */
+  formatDateForInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  getCollectorPerformance(): any[] {
+    return this.employees
+      .filter((e) => e.role === "collector")
+      .map((e) => ({
+        name: `${e.firstName} ${e.lastName}`,
+        collectionsCount: this.getEmployeeCollections(e.id),
+        score: Math.floor(Math.random() * 30) + 70,
+      }));
+  }
+
+  getZoneStatistics(): any[] {
+    return this.serviceZones.map((zone) => ({
+      name: zone.name,
+      clients: this.getZoneClients(zone.id),
+      collections: Math.floor(Math.random() * 100) + 50,
+      revenue: Math.floor(Math.random() * 5000) + 2000,
+    }));
+  }
+
+  // Filter methods
+  filterCollections(): void {
+    this.filteredCollections = this.collections.filter((collection) => {
+      const statusMatch =
+        this.collectionsFilter === "all" ||
+        collection.status === this.collectionsFilter;
+      const zoneMatch =
+        !this.selectedZone ||
+        collection.address.neighborhood === this.selectedZone;
+      return statusMatch && zoneMatch;
+    });
+  }
+
+  filterReports(): void {
+    this.filteredReports = this.reports.filter((report) => {
+      const statusMatch =
+        this.reportsFilter === "all" || report.status === this.reportsFilter;
+      const typeMatch =
+        this.reportsTypeFilter === "all" ||
+        report.type === this.reportsTypeFilter;
+      return statusMatch && typeMatch;
+    });
+  }
+
+  // Action methods
+  trackCollection(collectionId: string): void {
+    // No need to call notificationService.showInfo here, as it's already handled in the template
+  }
+
+  contactClient(clientId: string): void {
+    // No need to call notificationService.showInfo here, as it's already handled in the template
+  }
+
+  // deleteEmployee(employeeId: string): void {
+  //   if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
+  //     this.employees = this.employees.filter(e => e.id !== employeeId);
+
+  //   }
+  // }
+
+  // Zone Side
+  editZone(zoneId: string): void {
+    const zone = this.serviceZones.find((z) => z.id === zoneId);
+    if (zone) {
+      // Charger les données dans le reactive form
+      this.zoneForm.patchValue({
+        id: zone.id,
+        name: zone.name,
+        description: zone.description,
+        cities: zone.cities,
+        neighborhoods: zone.neighborhoods,
+        isActive: zone.isActive,
+      });
+      this.citiesInput = zone.cities.join(", ");
+      this.neighborhoodsInput = zone.neighborhoods.join(", ");
+      this.editingZone = true;
+      this.showZoneModal = true;
+    }
+  }
+
+  deleteZone(zoneId: string): void {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette zone ?")) {
+      this.serviceZones = this.serviceZones.filter((z) => z.id !== zoneId);
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
+    }
+  }
+
+
+
+  deleteSchedule(scheduleId: string): void {
+    if (confirm("Êtes-vous sûr de vouloir supprimer ce planning ?")) {
+      // this.schedules = this.schedules.filter(s => s.id !== scheduleId);
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
+    }
+  }
+  selectedClient: any = null;
+  showClientDetailsModal: boolean = false;
+  viewClientDetails(clientId: string): void {
+    this.notificationService.showInfo(
+      "Détails",
+      "Récupération des détails du client..."
+    );
+
+    this.adminService.getUserById(clientId).subscribe({
+      next: (client: any) => {
+        this.selectedClient = client?.user;
+        console.log("voici les details du client:", client);
+        this.showClientDetailsModal = true;
+      },
+      error: (err: any) => {
+        console.error(
+          "Erreur lors de la récupération des détails du client :",
+          err
+        );
+        this.notificationService.showError(
+          "Erreur",
+          "Impossible de récupérer les détails du client."
+        );
+      },
+    });
+  }
+  suspendClient(clientId: string): void {
+    const client = this.clients.find((c) => c.id === clientId);
+    if (client) {
+      client.subscriptionStatus = "suspended";
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
+      this.notificationService.showSuccess(
+        "Client suspendu",
+        "Le client a bien été suspendu."
+      );
+    }
+  }
+
+  deleteClient(): void {
+    // Ajoute la logique de suppression ici (API ou local)
+    // ...
+    this.notificationService.showSuccess("Désole", "Suppression non autorisée");
+  }
+
+  resolveReport(reportId: string): void {
+    const report = this.reports.find((r) => r._id === reportId);
+    if (report) {
+      report.status = "resolved";
+      this.filterReports();
+      // No need to call notificationService.showSuccess here, as it's already handled in the template
+    }
+  }
+
+  contactReportClient(clientId: string): void {
+    this.contactClient(clientId);
+  }
+
+  previousWeek(): void {
+    this.currentWeek.setDate(this.currentWeek.getDate() - 7);
+  }
+
+  nextWeek(): void {
+    this.currentWeek.setDate(this.currentWeek.getDate() + 7);
+  }
+
+  updateAnalytics(): void {
+    // No need to call notificationService.showInfo here, as it's already handled in the template
+  }
+
+  exportReport(): void {
+    // No need to call notificationService.showInfo here, as it's already handled in the template
+  }
+
+  // Form methods - DEPRECATED: Utiliser toggleZoneSelection à la place
+  toggleZoneAssignment(zoneId: string, event: any): void {
+    // Rediriger vers la nouvelle méthode reactive form
+    this.toggleZoneSelection(zoneId, event);
+  }
+
+  /**
+   * Convertit les messages techniques du backend en messages conviviaux pour l'utilisateur
+   */
+  private getFriendlyMessage(raw: string, isSuccess: boolean = false): string {
+    if (!raw) {
+      return isSuccess
+        ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+        : "Une erreur est survenue. Veuillez réessayer.";
+    }
+    const map: { [key: string]: string } = {
+      "Email already exists": "Cette adresse email est déjà utilisée.",
+      "Invalid email or password": "Email ou mot de passe invalide.",
+      "User created successfully":
+        "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.",
+      "Missing required fields":
+        "Veuillez remplir tous les champs obligatoires.",
+      "Password too short": "Le mot de passe est trop court.",
+      "Invalid phone number": "Le numéro de téléphone est invalide.",
+      // Ajoute d'autres correspondances ici si besoin
+    };
+    if (map[raw]) return map[raw];
+    for (const key in map) {
+      if (raw.toLowerCase().includes(key.toLowerCase())) return map[key];
+    }
+    return isSuccess
+      ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
+      : raw;
+  }
+
+  addEmployee(): void {
+    // console.log('Tentative d\'ajout d\'employé...');
+    // console.log('Formulaire valide ?', this.employeeForm.valid);
+    // console.log('isEmployeeFormValid ?', this.isEmployeeFormValid());
+    // console.log('currentUser.agencyId ?', this.currentUser?.agencyId);
+
+    if (this.isEmployeeFormValid() && this.currentUser?.agencyId) {
+      const formValue = this.employeeForm.value;
+      
+      // Vérifier si on est en mode modification ou création
+      if (this.isEditingEmployee && this.employeeToEdit && this.employeeToEdit._id) {
+        // Mode modification - utiliser updateEmployee
+        this.updateEmployeeData(this.employeeToEdit._id);
+        return;
+      }
+
+      // Mode création - continuer avec la logique normale
+      const employeeData: AddEmployeeData = {
+        firstName: formValue.firstName,
+        lastName: formValue.lastName,
+        email: formValue.email,
+        password: formValue.password,
+        phone: formValue.phone,
+        role: formValue.role as UserRole,
+        address: formValue.address as UserAddress,
+        agencyId: this.currentUser.agencyId,
+      };
+
+      this.agencyService.addEmployeeToAgency(employeeData).subscribe({
+        next: (response: any) => {
+          this.isLoading = false;
+          console.log("[DEBUG] Réponse inscription employee:", response);
+
+          if (response.success) {
+            // Succès - réinitialiser les erreurs
+            this.employeeFormError = null;
+            this.employeeFormDetailedErrors = {};
+
+            this.notificationService.showSuccess(
+              "Employé ajouté avec succès",
+              response.message || "L'employé a été créé avec succès !"
+            );
+
+            //  Recharger la liste après ajout
+            if (this.currentUser?.agencyId) {
+              this.loadEmployees(this.currentUser.agencyId);
+            }
+            this.employeeForm.reset();
+            this.showAddEmployeeModal = false;
+          } else {
+            // Erreur - afficher les erreurs exactes du backend
+
+            this.employeeFormError =
+              response.error || "Erreur lors de l'ajout de l'employé";
+            this.employeeFormDetailedErrors = response.detailedErrors || {};
+
+            console.error(
+              "Message affiché à l'utilisateur:",
+              this.employeeFormError
+            );
+            console.error(
+              "Erreurs détaillées affichées:",
+              this.employeeFormDetailedErrors
+            );
+
+            // Afficher aussi une notification
+            this.notificationService.showError(
+              "Erreur lors de l'ajout",
+              this.employeeFormError || "Erreur inconnue"
+            );
+          }
+        },
+        error: (errorResponse) => {
+          this.isLoading = false;
+          console.log("=== ERREUR HTTP ===");
+          console.log("Erreur complète:", errorResponse);
+
+          if (errorResponse.error) {
+            this.employeeFormError = errorResponse.error;
+            this.employeeFormDetailedErrors =
+              errorResponse.detailedErrors || {};
+          } else {
+            this.employeeFormError = "Erreur de communication avec le serveur";
+            this.employeeFormDetailedErrors = {};
+          }
+
+          console.log(
+            "Message d'erreur final (dashboard):",
+            this.employeeFormError
+          );
+
+          this.notificationService.showError(
+            "Erreur lors de l'ajout",
+            this.employeeFormError || "Erreur inconnue"
+          );
+        },
+      });
+    } else {
+      // Formulaire invalide, marquer tous les champs comme touchés pour afficher les erreurs
+      this.employeeForm.markAllAsTouched();
+      this.updateFormErrors(this.employeeForm, "employee");
+      this.notificationService.showError(
+        "Formulaire invalide",
+        "Veuillez corriger les erreurs dans le formulaire"
+      );
+    }
+  }
+
+  // Nouvelle méthode pour la modification d'employé
+  updateEmployeeData(employeeId: string): void {
+    console.log('Tentative de modification d\'employé:', employeeId);
+
+    const formValue = this.employeeForm.value;
+    const employeeData: Partial<AddEmployeeData> = {
+      firstName: formValue.firstName,
+      lastName: formValue.lastName,
+      email: formValue.email,
+      phone: formValue.phone,
+      role: formValue.role as UserRole,
+      address: formValue.address as UserAddress,
+      agencyId: this.currentUser?.agencyId,
+    };
+
+    // Inclure le mot de passe seulement s'il est fourni
+    if (formValue.password && formValue.password.trim() !== '') {
+      employeeData.password = formValue.password;
+    }
+
+    this.agencyService.updateEmployee(employeeId, employeeData).subscribe({
+      next: (response: any) => {
+        this.isLoading = false;
+        console.log("[DEBUG] Réponse modification employee:", response);
+
+        if (response.success) {
+          // Succès - réinitialiser les erreurs
+          this.employeeFormError = null;
+          this.employeeFormDetailedErrors = {};
+
+          this.notificationService.showSuccess(
+            "Employé modifié avec succès",
+            response.message || "L'employé a été modifié avec succès !"
+          );
+
+          //  Recharger la liste après modification
+          if (this.currentUser?.agencyId) {
+            this.loadEmployees(this.currentUser.agencyId);
+          }
+          
+          // Fermer le drawer et réinitialiser
+          this.closeAddEmployeeModal();
+        } else {
+          // Erreur - afficher les erreurs exactes du backend
+          this.employeeFormError =
+            response.error || "Erreur lors de la modification de l'employé";
+          this.employeeFormDetailedErrors = response.detailedErrors || {};
+
+          console.error(
+            "Message affiché à l'utilisateur:",
+            this.employeeFormError
+          );
+          console.error(
+            "Erreurs détaillées affichées:",
+            this.employeeFormDetailedErrors
+          );
+
+          // Afficher aussi une notification
+          this.notificationService.showError(
+            "Erreur lors de la modification",
+            this.employeeFormError || "Erreur inconnue"
+          );
+        }
+      },
+      error: (errorResponse) => {
+        this.isLoading = false;
+        console.log("=== ERREUR HTTP MODIFICATION ===");
+        console.log("Erreur complète:", errorResponse);
+
+        if (errorResponse.error) {
+          this.employeeFormError = errorResponse.error;
+          this.employeeFormDetailedErrors =
+            errorResponse.detailedErrors || {};
+        } else {
+          this.employeeFormError = "Erreur de communication avec le serveur";
+          this.employeeFormDetailedErrors = {};
+        }
+
+        console.log(
+          "Message d'erreur final (dashboard):",
+          this.employeeFormError
+        );
+
+        this.notificationService.showError(
+          "Erreur lors de la modification",
+          this.employeeFormError || "Erreur inconnue"
+        );
+      },
+    });
+  }
+
+  //creation ou modification d un tarif
+  addTariff(): void {
+    if (this.tariffForm.valid) {
+      // Vérifier si on est en mode modification ou création
+      if (this.isEditingTariff && this.tariffToUpdate && this.tariffToUpdate._id) {
+        // Mode modification - utiliser updateTariff
+        this.updateTariff(this.tariffToUpdate._id);
+        return;
+      }
+
+      // Mode création - continuer avec la logique normale
+      const formValue = this.tariffForm.value;
+      const agencyId = this.currentUser?.agencyId;
+      const tarif: Tarif = {
+        agencyId: agencyId || "",
+        planType: formValue.type,
+        price: formValue.price,
+        description: formValue.description,
+        numberOfPasses: formValue.nbPassages,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      console.log('[DEBUG] Tarif:', tarif);
+      this.agencyService.addTariff(tarif).subscribe({
+        next: (response: any) => {
+          this.isLoading = false;
+          console.log("[DEBUG] Réponse ajout tarif:", response);
+
+          const isSuccess =
+            response?.success ||
+            response?.status === "success" ||
+            (typeof response?.message === "string" &&
+              (response.message.toLowerCase().includes("succès") ||
+                response.message.toLowerCase().includes("réussi"))) ||
+            !!response;
+
+          if (isSuccess) {
+            if (response) {
+              this.notificationService.showSuccess(
+                "Le tarif a été ajouté avec succès !",
+                "vous pouvez désormais le consulter dans la liste des tarifs, disponible dans la section Zones"
+              );
+              
+              // Fermer le modal et nettoyer l'état
+              this.closeZoneModal();
+              this.loadTariffs();
+            } else {
+              const errorMsg = this.getFriendlyMessage(
+                response?.message || response?.error || "",
+                false
+              );
+              this.notificationService.showError(
+                "Erreur lors de l’ajout du tarif",
+                errorMsg
+              );
+            }
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          const errorMsg = this.getFriendlyMessage(
+            error?.error?.message || error?.error || "",
+            false
+          );
+          this.notificationService.showError(
+            "Erreur lors de l’ajout du tarif",
+            errorMsg
+          );
+        },
+      });
+    }
+  }
+  // recuperations des tarifs liee a une agences
+  tariffs: Tarif[] = [];
+  loadTariffs(): void {
+    this.isLoadingTariffs = true;
+    const agencyId = this.currentUser?._id;
+    if (!agencyId) {
+      console.error("[DEBUG] Aucun tarif trouvé pour cette agence");
+      this.isLoadingTariffs = false;
+      return;
+    }
+
+    this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
+      next: (response: any) => {
+        this.tariffs = response.data;
+        console.log("Tarifs récupérés dans dashboard :", this.tariffs);
+        
+        // Debug: afficher la structure de chaque tarif pour vérifier les IDs
+        if (this.tariffs && this.tariffs.length > 0) {
+          console.log("Structure du premier tarif:", this.tariffs[0]);
+          console.log("Clés disponibles:", Object.keys(this.tariffs[0]));
+        }
+        
+        // Mettre à jour le badge des tarifs
+        // const tariffsTab = this.tabs.find((tab) => tab.id === "schedules"); // Tariffs tab doesn't exist, using schedules instead
+        // if (tariffsTab) {
+        //   tariffsTab.badge = this.tariffs.length;
+        // }
+        
+        this.isLoadingTariffs = false;
+      },
+      error: (error) => {
+        // console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
+        this.isLoadingTariffs = false;
+      },
+    });
+  }
+  //recupere les planning d une agence
+  schedules: any[] = [];
+
+  loadPlannings(): void {
+    this.isLoadingSchedules = true;
+    const agencyId = this.currentUser?.agencyId;
+
+    if (!agencyId) {
+      console.error("[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant");
+      this.isLoadingSchedules = false;
+      return;
+    }
+
+    this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
+      next: (response: any) => {
+        console.log("Réponse complète du backend:", response);
+        
+        // Gérer les deux formats possibles de réponse
+        if (Array.isArray(response)) {
+          // Si la réponse est directement un tableau
+          this.schedules = response;
+        } else if (response && response.plannings && Array.isArray(response.plannings)) {
+          // Si la réponse est un objet avec une propriété plannings
+          this.schedules = response.plannings;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          // Si la réponse est un objet avec une propriété data
+          this.schedules = response.data;
+        } else {
+          console.warn("Format de réponse non reconnu:", response);
+          this.schedules = [];
+        }
+        
+     
+
+
+    
+
+        const schedulesTab = this.tabs.find((tab) => tab.id === "schedules");
+        if (schedulesTab) {
+          schedulesTab.badge = this.schedules.length;
+        }
+
+        this.isLoadingSchedules = false;
+      },
+      error: (error) => {
+        console.error(
+          "[DEBUG] Erreur lors du chargement des plannings :",
+          error
+        );
+        this.isLoadingSchedules = false;
+      },
+    });
+  }
+
+  // recuperation des planning d un colector
+  collectorplannings: any[] = [];
+  // loadCollectorPlannings(): void {
+  //   this.isLoading = true;
+  //   const collectorId = "68c3f853a00747732407d946";
+  //   if (!collectorId) {
+  //     console.error("[DEBUG] Aucun collectorId trouvé ");
+  //     this.isLoading = false;
+  //     return;
+  //   }
+  //   this.agencyService.getPlaningCollectory$(collectorId).subscribe({
+  //     next: (data: any[]) => {
+  //       this.collectorplannings = data;
+  //       console.log(
+  //         "Plannings récupérés pour le collecteur :",
+  //         this.collectorplannings
+  //       );
+  //       this.isLoading = false;
+  //     },
+  //     error: (error) => {
+  //       // console.error(
+  //       //   "[DEBUG] Erreur lors du chargement des plannings du collecteur :",
+  //       //   error
+  //       // );
+  //       this.isLoading = false;
+  //     },
+  //   });
+  // }
+
+  // supprimer un planning
+  deletePlanning(schedulesId: string): void {
+    if (!schedulesId) {
+      console.warn("Aucun ID de planning fourni.");
+      this.notificationService.showWarning("Attention", "ID de planning manquant");
+      return;
+    }
+
+    // Demander confirmation
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce planning ?")) {
+      return;
+    }
+
+    this.isDeleting = true;
+    console.log("Suppression du planning:", schedulesId);
+
+    this.agencyService.deletePlanning$(schedulesId).subscribe({
+      next: () => {
+        this.notificationService.showSuccess(
+          "Succès",
+          "Le planning a été supprimé avec succès."
+        );
+        this.loadPlannings(); // Recharger la liste
+        this.isDeleting = false;
+      },
+      error: (error) => {
+        console.error("Erreur complète lors de la suppression du planning:", error);
+        let errorMessage = "Impossible de supprimer le planning";
+        
+        // Gestion détaillée des erreurs du backend
+        if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.error?.error) {
+          errorMessage = error.error.error;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        this.notificationService.showError("Erreur de suppression", errorMessage);
+        this.isDeleting = false;
+      }
+    });
+  }
+
+  tariffToUpdate: Tarif | null = null;
+  isEditingTariff: boolean = false; // Nouvelle propriété pour le mode édition
+  //update un tarif via l api
+  updateTariff(tariffId: string): void {
+    // Vérifier que nous avons bien un tarif à modifier
+    if (!this.tariffToUpdate || !this.tariffToUpdate._id) {
+      this.notificationService.showError(
+        "Erreur",
+        "Aucun tarif sélectionné pour la modification"
+      );
+      return;
+    }
+
+    this.isLoading = true;
+    
+    // Récupérer les données du formulaire
+    const formValue = this.tariffForm.value;
+    
+    // Utiliser directement l'ID du tarif stocké
+    const actualTariffId = this.tariffToUpdate._id;
+    
+    // Payload selon le format du swagger
+    const payload = {
+      id: actualTariffId, // Utiliser l'ID du tarif stocké
+      agencyId: this.currentUser?.agencyId || this.currentUser?._id || "",
+      planType: formValue.type,
+      price: formValue.price,
+      description: formValue.description || "",
+      numberOfPasses: formValue.nbPassages || 0,
+    };
+
+    this.agencyService.updateTariff$(actualTariffId, payload).subscribe({
+      next: (response: any) => {
+        this.isLoading = false;
+
+        if (response && response.success) {
+          this.notificationService.showSuccess(
+            "Modification réussie",
+            response.message || "Le tarif a été modifié avec succès !"
+          );
+          
+          // Recharger la liste des tarifs
+          this.loadTariffs();
+          
+          // Fermer le modal de formulaire et réinitialiser l'état  
+          this.closeZoneModal();
+        } else {
+          const errorMsg = response?.message || "Erreur lors de la modification du tarif";
+          this.notificationService.showError(
+            "Erreur de modification",
+            errorMsg
+          );
+        }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        
+        let errorMessage = "Erreur lors de la modification du tarif";
+        if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        this.notificationService.showError(
+          "Erreur de modification",
+          errorMessage
+        );
+      },
+    });
+  }
+
+  // supprimer un tarif
+  deleteTariff(tariff: any): void {
+    this.isDeleting = true;
+    const tariffId = tariff._id;
+    const agencyId = this.currentUser?.agencyId || this.currentUser?._id || "";
+
+    if (tariffId && agencyId) {
+      this.agencyService.deleteTarif$(tariffId, agencyId).subscribe(
+        () => {
+          this.notificationService.showSuccess(
+            "Succès",
+            "Le tarif a été supprimé avec succès."
+          );
+          this.isDeleting = false;
+          this.loadTariffs();
+        },
+        (error) => {
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de supprimer le tarif. Veuillez réessayer."
+          );
+          console.error("Erreur lors de la suppression du tarif :", error);
+          this.isDeleting = false;
+        }
+      );
+    } else {
+      console.warn("ID du tarif ou ID de l'agence manquant.");
+      this.isDeleting = false;
+    }
+  }
+
+  // Méthodes utilitaires pour les tarifs
+  formatTariffDate(date: string | Date | undefined): string {
+    if (!date) return 'Non défini';
+    
+    try {
+      const dateObject = typeof date === 'string' ? new Date(date) : date;
+      return dateObject.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Date invalide';
+    }
+  }
+
+  editTariff(tariff: any): void {
+    console.log('Édition du tarif:', tariff);
+    
+    if (!tariff || !tariff._id) {
+      this.notificationService.showError(
+        "Erreur",
+        "Tarif invalide pour la modification"
+      );
+      return;
+    }
+    
+    // Passer en mode édition
+    this.isEditingTariff = true;
+    this.tariffToUpdate = tariff;
+    
+    // Pré-remplir le formulaire avec les données du tarif existant
+    console.log("Données à pré-remplir:", {
+      type: tariff.planType,
+      price: tariff.price,
+      description: tariff.description,
+      nbPassages: tariff.numberOfPasses
+    });
+    
+    this.tariffForm.patchValue({
+      type: tariff.planType || '',
+      price: tariff.price || '',
+      description: tariff.description || '',
+      nbPassages: tariff.numberOfPasses || ''
+    });
+    
+    // Marquer le formulaire comme non touché et propre pour éviter les erreurs de validation
+    this.tariffForm.markAsUntouched();
+    this.tariffForm.markAsPristine();
+    
+    // Effacer les erreurs précédentes
+    Object.keys(this.formErrors).forEach(key => {
+      if (key.startsWith('tariff_')) {
+        delete this.formErrors[key];
+      }
+    });
+    
+    // Fermer le drawer des tarifs et ouvrir le modal de formulaire
+    this.showTariffsModal = false;
+    this.showZoneModal = true;
+    
+    // Debug: vérifier que le formulaire est bien pré-rempli
+    setTimeout(() => {
+      console.log("Valeurs du formulaire tarif après pré-remplissage:", this.tariffForm.value);
+    }, 100);
+    
+    this.notificationService.showInfo(
+      "Modification",
+      "Formulaire ouvert pour modification du tarif"
+    );
+  }
+
+  
+
+  saveZone(): void {
+    if (this.zoneForm.valid) {
+      const formValue = this.zoneForm.value;
+      const zoneData = {
+        name: formValue.name,
+        description: formValue.description,
+        cities: formValue.cities,
+        neighborhoods: formValue.neighborhoods,
+        isActive: formValue.isActive,
+      };
+
+      if (this.editingZone) {
+        const index = this.serviceZones.findIndex((z) => z.id === formValue.id);
+        if (index !== -1) {
+          this.serviceZones[index] = { ...formValue };
+        }
+        this.notificationService.showSuccess(
+          "Zone modifiée",
+          "La zone a été modifiée avec succès"
+        );
+      } else {
+        const zone: ServiceZones = {
+          name: zoneData.name,
+          description: zoneData.description,
+          boundaries: [],
+          neighborhoods: zoneData.neighborhoods,
+          cities: zoneData.cities,
+          assignedCollectors: [],
+          isActive: zoneData.isActive,
+        };
+        this.serviceZoness.push(zone);
+        this.notificationService.showSuccess(
+          "Zone ajoutée",
+          "La zone a été créée avec succès"
+        );
+      }
+
+      this.showZoneModal = false;
+      this.editingZone = false;
+      this.zoneForm.reset(); // Reset du formulaire
+      this.citiesInput = "";
+      this.neighborhoodsInput = "";
+    } else {
+      // Formulaire invalide
+      this.zoneForm.markAllAsTouched();
+      this.updateFormErrors(this.zoneForm, "zone");
+      this.notificationService.showError(
+        "Formulaire invalide",
+        "Veuillez corriger les erreurs dans le formulaire"
+      );
+    }
+  }
+
+  validateClient(clientId: string): void {
+    console.log("[validateClient] called for", clientId);
+    this.clientService.validateClientSubscription(clientId).subscribe({
+      next: () => {
+        console.log("[validateClient] success for", clientId);
+        this.notificationService.showSuccess(
+          "Validation",
+          "Abonnement validé avec succès !"
+        );
+        this.loadClients();
+      },
+      error: (err) => {
+        this.notificationService.showError(
+          "Validation",
+          "Validation a échoué  ! " + err?.error?.error
+        );
+        console.error("[validateClient] error for", clientId, err);
+      },
+    });
+  }
+
+  addSchedule(): void {
+    // Vérifier le mode : création ou modification
+    if (this.isEditingSchedule) {
+      this.updateSchedule();
+      return;
+    }
+
+    // Mode création
+    if (!this.scheduleForm.valid) {
+      this.scheduleForm.markAllAsTouched();
+      this.updateFormErrors(this.scheduleForm, "schedule");
+      this.notificationService.showError(
+        "Formulaire invalide",
+        "Veuillez corriger les erreurs dans le formulaire"
+      );
+      return;
+    }
+
+    const { collectorId, date, startTime, endTime } = this.scheduleForm.value;
+    if (
+      this.checkCollectorAvailability(collectorId, date, startTime, endTime)
+    ) {
+      this.notificationService.showWarning(
+        "Attention",
+        "Le collecteur est déjà programmé sur ce créneau."
+      );
+      return;
+    }
+
+    const formValues = this.scheduleForm.value;
+
+    const schedule: CollectionSchedule = {
+      zone: formValues.zone,
+      date: formValues.date,
+      startTime: formValues.startTime,
+      endTime: formValues.endTime,
+      collectorId: formValues.collectorId, // Maintenant une simple chaîne de caractères
+      agencyId: this.currentUser?.agencyId || "",
+      managerId: this.currentUser?._id || "", // ID du manager (utilisateur courant)
+    };
+
+    // Debug : log des données envoyées
+    console.log("Données du planning à envoyer:", schedule);
+    console.log("Utilisateur courant:", this.currentUser);
+
+    // Activer l'indicateur de chargement
+    this.isLoading = true;
+
+    this.agencyService.addSchedule$(schedule).subscribe({
+      next: (response) => {
+        console.log("Réponse complète du backend:", response);
+        
+        if (response) {
+          this.schedules.push(response);
+          
+          // Message de succès détaillé avec informations du planning créé
+          const successMessage = `Planning créé avec succès pour la zone "${response.zone || schedule.zone}" le ${response.date || schedule.date} de ${response.startTime || schedule.startTime} à ${response.endTime || schedule.endTime}.`;
+          
+          this.notificationService.showSuccess(
+            " Planning créé !",
+            successMessage
+          );
+        } else {
+          this.notificationService.showSuccess(
+            " Succès",
+            "Le planning a été créé avec succès."
+          );
+        }
+        
+        // Recharger la liste des plannings pour afficher le nouveau
+        this.loadPlannings();
+        
+        // Désactiver l'indicateur de chargement
+        this.isLoading = false;
+        
+        // Fermer le drawer et réinitialiser le formulaire
+        this.showScheduleModal = false;
+        this.scheduleForm.reset();
+      },
+      error: (error) => {
+        console.error("Erreur complète lors de la création du planning:", error);
+        let errorMessage = "Une erreur est survenue lors de la création du planning";
+        let errorDetails = "";
+        
+        // Gestion détaillée des erreurs du backend
+        if (error.error) {
+          // Erreur avec message spécifique
+          if (error.error.message) {
+            switch (error.error.message) {
+              case "COLLECTOR_NOT_AVAILABLE":
+                errorMessage = "Le collecteur n'est pas disponible sur ce créneau";
+                break;
+              case "ZONE_NOT_FOUND":
+                errorMessage = "La zone sélectionnée n'existe pas";
+                break;
+              case "TIME_CONFLICT":
+                errorMessage = "Il existe déjà un planning sur ce créneau horaire";
+                break;
+              case "Missing required fields":
+                errorMessage = "Des champs obligatoires sont manquants";
+                errorDetails = "Vérifiez que tous les champs sont correctement remplis";
+                console.error("Champs manquants. Données envoyées:", schedule);
+                break;
+              default:
+                errorMessage = error.error.message;
+            }
+          }
+          // Erreur avec propriété error
+          else if (error.error.error) {
+            errorMessage = error.error.error;
+            if (error.error.details) {
+              errorDetails = error.error.details;
+            }
+          }
+          // Erreurs de validation
+          else if (error.error.errors) {
+            errorMessage = "Erreurs de validation";
+            errorDetails = Object.keys(error.error.errors)
+              .map(key => `${key}: ${error.error.errors[key]}`)
+              .join(", ");
+          }
+        }
+        
+        // Afficher l'erreur avec détails si disponibles
+        const fullErrorMessage = errorDetails 
+          ? `${errorMessage}\n${errorDetails}` 
+          : errorMessage;
+        
+        // Désactiver l'indicateur de chargement même en cas d'erreur
+        this.isLoading = false;
+        
+        this.notificationService.showError("Erreur de création", fullErrorMessage);
+      },
+    });
+  }
+  investigateIncident(): void {
+    // const incident = this.incidents.find(i => i.id === incidentId);
+    // if (incident) {
+    //   incident.status = 'investigating';
+    //   incident.assignedTo = 'Inspecteur Municipal';
+    //   this.filterIncidents();
+    //   this.notificationService.showSuccess('Enquête', 'Incident pris en charge pour enquête');
+    // }
+  }
+  filterIncidents(): void {
+    // this.filteredIncidents = this.incidents.filter(incident => {
+    //   const statusMatch = this.incidentsFilter === 'all' || incident.status === this.incidentsFilter;
+    //   const severityMatch = this.severityFilter === 'all' || incident.severity === this.severityFilter;
+    //   return statusMatch && severityMatch;
+    // });
+  }
+  resolveIncident1(): void {
+    // const incident = this.incidents.find(i => i.id === incidentId);
+    // if (incident) {
+    //   incident.status = 'resolved';
+    this.filterIncidents();
+    this.statistics.pendingReports--;
+    this.notificationService.showSuccess(
+      "Résolu",
+      "Incident marqué comme résolu"
+    );
+    // }
+  }
+  contactAgencyForIncident(): void {
+    this.contactAgency();
+  }
+
+  contactAgency(): void {
+    this.notificationService.showInfo(
+      "Contact",
+      "Ouverture des informations de contact"
+    );
+  }
+
+  getSeverityText(severity: string): string {
+    const texts = {
+      critical: "Critique",
+      high: "Élevé",
+      medium: "Moyen",
+      low: "Faible",
+    };
+    return texts[severity as keyof typeof texts] || severity;
+  }
+
+  getIncidentTypeText(type: string): string {
+    const types = {
+      missed_collection: "Collecte manquée",
+      compliance_issue: "Non-conformité",
+      complaint: "Réclamation",
+      technical_issue: "Problème technique",
+      problem: "Collecte manquée",
+    };
+    return types[type as keyof typeof types] || type;
+  }
+
+  getSeverityIcon(severity: string): string {
+    const icons = {
+      critical: "dangerous",
+      high: "priority_high",
+      medium: "warning",
+      low: "info",
+    };
+    return icons[severity as keyof typeof icons] || "help";
+  }
+
+  getIncidentStatusText(status: string): string {
+    const statuses = {
+      open: "Ouvert",
+      pending: "En cours",
+      resolved: "Résolu",
+    };
+    return statuses[status as keyof typeof statuses] || status;
+  }
+  resolveIncident(id: string) {
+    const body = {
+      status: "resolved",
+      // status:"pending"
+    };
+    console.log("Status envoyé :", body);
+    this.agencyService.resolveIncident$(id, body).subscribe({
+      next: (response: any) => {
+        console.log("[DEBUG] Réponse de resolution d'incidant:", response);
+        if (response.message) {
+          this.notificationService.showSuccess("Resolu", response.message);
+          this.loadAgencyReports(this.currentUser);
+          // this.notificationService.showSuccess('Résolu', 'Incident marqué comme résolu');
+        } else {
+          this.notificationService.showError(
+            "Activation",
+            "Erreur lors de l'activation de l'agence"
+          );
+        }
+      },
+      error: (error: any) => {
+        console.error("Error activating agency:", error);
+        const msg = error?.error?.message || "Error activating agency";
+        this.notificationService.showSuccess("Activation", msg);
+      },
+    });
+  }
+  selectedSchedule: any = null;
+  editingSchedule: any = null;
+  isEditingSchedule: boolean = false;
+
+  openScheduleDetails(schedule: any): void {
+    this.selectedSchedule = schedule;
+  }
+  
+  closeModal(): void {
+    this.selectedSchedule = null;
+  }
+
+  // Ouvrir le formulaire de modification de planning
+  editSchedule(schedule: any): void {
+    console.log("Édition du planning:", schedule);
+    
+    if (!schedule || !schedule._id) {
+      this.notificationService.showError(
+        "Erreur",
+        "Planning invalide pour la modification"
+      );
+      return;
+    }
+
+    this.editingSchedule = schedule;
+    this.isEditingSchedule = true;
+    
+    // Charger les données nécessaires
+    this.loadScheduleModalData();
+    
+    // Formater la date si nécessaire (en cas de format ISO)
+    let formattedDate = schedule.date;
+    if (schedule.date && schedule.date.includes('T')) {
+      // Si la date est au format ISO (avec T), extraire seulement la partie date
+      formattedDate = schedule.date.split('T')[0];
+    }
+    
+    // Pré-remplir le formulaire avec les données existantes
+    console.log("Données à pré-remplir:", {
+      zone: schedule.zone,
+      date: formattedDate,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      collectorId: schedule.collectorId
+    });
+
+    this.scheduleForm.patchValue({
+      zone: schedule.zone || '',
+      date: formattedDate || '',
+      startTime: schedule.startTime || '',
+      endTime: schedule.endTime || '',
+      collectorId: schedule.collectorId || ''
+    });
+    
+    // Marquer les contrôles comme touchés pour déclencher la validation si nécessaire
+    this.scheduleForm.markAsUntouched();
+    this.scheduleForm.markAsPristine();
+    
+    // Effacer les erreurs précédentes
+    Object.keys(this.formErrors).forEach(key => {
+      if (key.startsWith('schedule_')) {
+        delete this.formErrors[key];
+      }
+    });
+    
+    this.showScheduleModal = true;
+    
+    // Debug: vérifier que le formulaire est bien pré-rempli
+    setTimeout(() => {
+      console.log("Valeurs du formulaire après pré-remplissage:", this.scheduleForm.value);
+    }, 100);
+  }
+
+  // Méthode pour mettre à jour un planning
+  updateSchedule(): void {
+    if (!this.scheduleForm.valid) {
+      this.scheduleForm.markAllAsTouched();
+      this.updateFormErrors(this.scheduleForm, "schedule");
+      this.notificationService.showError(
+        "Formulaire invalide",
+        "Veuillez corriger les erreurs dans le formulaire"
+      );
+      return;
+    }
+
+    if (!this.editingSchedule?._id) {
+      this.notificationService.showError(
+        "Erreur",
+        "Aucun planning sélectionné pour la modification"
+      );
+      return;
+    }
+
+    const formValues = this.scheduleForm.value;
+    const scheduleId = this.editingSchedule._id;
+
+    // Vérifier la disponibilité du collecteur (sauf pour le planning actuel)
+    const { collectorId, date, startTime, endTime } = formValues;
+    if (this.checkCollectorAvailabilityForUpdate(collectorId, date, startTime, endTime, scheduleId)) {
+      this.notificationService.showWarning(
+        "Attention",
+        "Le collecteur est déjà programmé sur ce créneau."
+      );
+      return;
+    }
+
+    const updatedSchedule: Partial<CollectionSchedule> = {
+      zone: formValues.zone,
+      date: formValues.date,
+      startTime: formValues.startTime,
+      endTime: formValues.endTime,
+      collectorId: formValues.collectorId,
+    };
+
+    console.log("Mise à jour du planning:", updatedSchedule);
+    console.log("ID du planning à modifier:", scheduleId);
+
+    // Activer l'indicateur de chargement
+    this.isLoading = true;
+
+    this.agencyService.updateSchedule$(scheduleId, updatedSchedule).subscribe({
+      next: (response) => {
+        console.log("Réponse complète du backend (modification):", response);
+        
+        if (response) {
+          this.notificationService.showSuccess(
+            "Succès",
+            "Le planning a été mis à jour avec succès."
+          );
+        } else {
+          this.notificationService.showWarning(
+            "Attention",
+            "Le planning a été traité mais la réponse est incomplète."
+          );
+        }
+        
+        // Recharger la liste des plannings pour afficher les modifications
+        this.loadPlannings();
+        
+        // Désactiver l'indicateur de chargement
+        this.isLoading = false;
+        
+        // Fermer le drawer et réinitialiser le formulaire
+        this.closeScheduleModal();
+      },
+      error: (error) => {
+        console.error("Erreur complète lors de la modification du planning:", error);
+        let errorMessage = "Une erreur est survenue lors de la modification du planning";
+        let errorDetails = "";
+        
+        // Gestion détaillée des erreurs du backend
+        if (error.error) {
+          if (error.error.message) {
+            errorMessage = error.error.message;
+          } else if (error.error.error) {
+            errorMessage = error.error.error;
+            if (error.error.details) {
+              errorDetails = error.error.details;
+            }
+          } else if (error.error.errors) {
+            errorMessage = "Erreurs de validation";
+            errorDetails = Object.keys(error.error.errors)
+              .map(key => `${key}: ${error.error.errors[key]}`)
+              .join(", ");
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        const fullErrorMessage = errorDetails 
+          ? `${errorMessage}\nDétails: ${errorDetails}` 
+          : errorMessage;
+        
+        this.notificationService.showError("Erreur de modification", fullErrorMessage);
+        
+        // Désactiver l'indicateur de chargement en cas d'erreur
+        this.isLoading = false;
+      }
+    });
+  }
+  onEmployeeToggle(event: any): void {
+    const employeeId = event.target.value;
+    if (event.target.checked) {
+      this.selectedEmployee.push(employeeId);
+    } else {
+      this.selectedEmployee = this.selectedEmployee.filter(
+        (id) => id !== employeeId
+      );
+    }
+  }
+  assignReport(): void {
+    if (!this.selectedReportId || this.selectedEmployee.length === 0) {
+      this.notificationService.showError(
+        "Erreur",
+        "Veuillez sélectionner au moins un employé."
+      );
+      return;
+    }
+
+    this.selectedEmployee.forEach((employeeId) => {
+      //   const payload = {
+      //   status: 'in_progress'
+      // };
+      this.agencyService
+        .assignReportToEmployee$(this.selectedReportId, employeeId)
+        .subscribe({
+          next: () => {
+            this.notificationService.showSuccess(
+              "Succès",
+              "Signalement assigné avec succès."
+            );
+            this.loadReports();
+          },
+          error: (err) => {
+            console.error("Erreur assignation :", err);
+
+            const message =
+              err?.error?.error || err?.message || "Échec de l'assignation.";
+            this.notificationService.showError("Erreur", message);
+          },
+        });
+    });
+
+    this.closeAssignModal();
+  }
+
+  showTariffsModal = false;
+
+  openTariffsModal() {
+    // Réinitialiser le formulaire sauf si on est en mode édition
+    if (!this.isEditingTariff && !this.tariffToUpdate) {
+      this.tariffForm.reset();
+    }
+    this.showTariffsModal = true;
+  }
+
+  closeTariffsModal() {
+    this.showTariffsModal = false;
+    this.tariffForm.reset();
+    this.tariffToUpdate = null; // Réinitialiser le mode édition
+    this.isEditingTariff = false; // Sortir du mode édition
+    
+    // Effacer les erreurs du formulaire
+    Object.keys(this.formErrors).forEach(key => {
+      if (key.startsWith('tariff_')) {
+        delete this.formErrors[key];
+      }
+    });
+  }
+  zones: any[] = [];
+  agencyZonesActivite: any[] = []; // Variable pour stocker les zones d'activité de l'agence
+  
+  //recuperation des zones
+  loadZones(currentUser: any): void {
+    // Éviter le rechargement si les zones sont déjà chargées
+    if (this.zones.length > 0 && !this.isLoadingZones) {
+      console.log("Zones déjà chargées, pas besoin de recharger");
+      return;
+    }
+
+    this.isLoadingZones = true;
+    this.scheduleForm.get('zone')?.disable();
+    if (currentUser && currentUser._id) {
+      const agencyId = currentUser.agencyId;
+      this.agencyService.getAllzones$(agencyId).subscribe({
+        next: (zones: any) => {
+          this.zones = zones.data || zones;
+          console.log("zones charger>>>>>> :", this.zones);
+          if (this.zones.length > 0) {
+            console.log("Structure d'une zone:", this.zones[0]);
+          }
+          const ZonesTab = this.tabs.find((tab) => tab.id === "zones");
+          if (ZonesTab) {
+            ZonesTab.badge = this.zones.length;
+            this.cdr.detectChanges();
+          }
+          this.isLoadingZones = false;
+          this.scheduleForm.get('zone')?.enable();
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement des Zones de l agence:", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Erreur lors du chargement des Zones de l agence."
+          );
+          this.isLoadingZones = false;
+          this.scheduleForm.get('zone')?.enable();
+        },
+      });
+    } else {
+      console.warn("Aucun ID d'utilisateur courant disponible.");
+      this.isLoadingZones = false;
+      this.scheduleForm.get('zone')?.enable();
+    }
+  }
+
+  getInitials(fullName: string) {
+    return this.sharedService.getInitials(fullName);
+  }
+
+  getRandomColor(item: any): string {
+    return this.sharedService.getRandomColor(item);
+  }
+  closeClientDetailsModal(): void {
+    this.showClientDetailsModal = false;
+    this.selectedClient = null;
+  }
+  editEmployee(employee: any): void {
+    console.log("Édition de l'employé :", employee);
+    
+    // Configurer le mode édition
+    this.isEditingEmployee = true;
+    this.employeeToEdit = { ...employee };
+    
+    // Pré-remplir le formulaire avec les données de l'employé (SANS les mots de passe)
+    this.employeeForm.patchValue({
+      firstName: employee.firstName || '',
+      lastName: employee.lastName || '',
+      email: employee.email || '',
+      phone: employee.phone || '',
+      role: employee.role || '',
+      password: '', // Ne jamais pré-remplir le mot de passe
+      confirmPassword: '', // Ne jamais pré-remplir la confirmation
+      address: {
+        city: employee.address?.city || '',
+        arrondissement: employee.address?.arrondissement || '',
+        sector: employee.address?.sector || '',
+        neighborhood: employee.address?.neighborhood || '',
+        street: employee.address?.street || '',
+        doorNumber: employee.address?.doorNumber || '',
+        doorColor: employee.address?.doorColor || '',
+        postalCode: employee.address?.postalCode || ''
+      }
+    });
+
+    // Charger les dépendances de l'adresse si elles existent
+    if (employee.address?.city) {
+      this.loadEmployeeAddressDependencies(employee.address);
+    }
+
+    // Ajuster les validateurs pour le mode modification
+    this.adjustValidatorsForEdit();
+
+    // Ouvrir le drawer d'ajout/modification d'employé
+    this.openEmployeeDrawer();
+    
+    this.notificationService.showInfo("Modification", "Formulaire ouvert pour modification");
+  }
+
+  // Méthode pour ajuster les validateurs selon le mode (ajout/modification)
+  private adjustValidatorsForEdit(): void {
+    const passwordControl = this.employeeForm.get('password');
+    const confirmPasswordControl = this.employeeForm.get('confirmPassword');
+    
+    if (this.isEditingEmployee) {
+      // En mode modification : les mots de passe deviennent optionnels
+      passwordControl?.clearValidators(); // Complètement optionnel
+      confirmPasswordControl?.clearValidators(); // Complètement optionnel
+      
+      // Si un mot de passe est saisi, il doit être valide (min 6 caractères)
+      passwordControl?.setValidators((control) => {
+        if (!control.value || control.value === '') {
+          return null; // Valide si vide
+        }
+        return control.value.length >= 6 ? null : { minlength: { requiredLength: 6, actualLength: control.value.length } };
+      });
+      
+    } else {
+      // En mode ajout : les mots de passe sont obligatoires
+      passwordControl?.setValidators([Validators.required, Validators.minLength(6)]);
+      confirmPasswordControl?.setValidators([Validators.required]);
+    }
+    
+    // Mettre à jour la validité
+    passwordControl?.updateValueAndValidity();
+    confirmPasswordControl?.updateValueAndValidity();
+  }
+
+  // Méthode pour charger les dépendances de l'adresse lors de l'édition
+  private loadEmployeeAddressDependencies(address: any): void {
+    // Charger les arrondissements pour la ville sélectionnée
+    if (address.city && address.city === 'Ouagadougou') {
+      // Utiliser OUAGA_DATA directement puisque nous avons seulement Ouagadougou pour l'instant
+      this.arrondissements = OUAGA_DATA || [];
+      
+      // Charger les secteurs pour l'arrondissement sélectionné
+      if (address.arrondissement && this.arrondissements.length > 0) {
+        const selectedArrondissement = this.arrondissements.find(arr => arr.arrondissement === address.arrondissement);
+        if (selectedArrondissement) {
+          this.secteurs = selectedArrondissement.secteurs || [];
+          
+          // Charger les quartiers pour le secteur sélectionné
+          if (address.sector && this.secteurs.length > 0) {
+            const selectedSecteur = this.secteurs.find(sect => sect.secteur === address.sector);
+            if (selectedSecteur) {
+              this.quartiers = selectedSecteur.quartiers || [];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // recuperations des collecte par jour d une agences
+  dayCollectes: any[] = [];
+
+  loadCollectDay(): void {
+    this.isLoadingCollections = true;
+    const agencyId = this.currentUser?.agencyId;
+
+    if (!agencyId) {
+      console.error(
+        "[DEBUG] Aucune collecte trouvée pour cette agence en jour"
+      );
+      this.notificationService.showError(
+        "Erreur",
+        "Aucune agence sélectionnée."
+      );
+      this.isLoadingCollections = false;
+      return;
+    }
+    this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
+      next: (response) => {
+        this.dayCollectes = response.data || [];
+        console.log("Collectes journalières récupérées :", this.dayCollectes);
+        const CollectesTab = this.tabs.find((tab) => tab.id === "collections");
+        if (CollectesTab) {
+          CollectesTab.badge = this.dayCollectes.length;
+        }
+        this.isLoadingCollections = false;
+      },
+      error: (error) => {
+        console.error("Erreur récupération collectes :", error);
+        const message =
+          error?.error?.message || "Impossible de récupérer les collectes.";
+        this.notificationService.showError("Erreur", message);
+
+        this.isLoadingCollections = false;
+      },
+    });
+  }
+  // recuperations des tarifs liee a une agences
+  historyCollecte: any[] = [];
+
+  loadCollectHistory(): void {
+    this.isLoading = true;
+    const agencyId = this.currentUser?._id;
+
+    if (!agencyId) {
+      console.error(
+        "[DEBUG] Aucune collecte trouvée pour cette agence en jour"
+      );
+      this.notificationService.showError(
+        "Erreur",
+        "Aucune agence sélectionnée."
+      );
+      this.isLoading = false;
+      return;
+    }
+
+    this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
+      next: (response) => {
+        this.historyCollecte = response.data || [];
+        console.log(
+          "Historique des Collectes récupérées :",
+          this.historyCollecte
+        );
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error(
+          "Erreur récupération de l historique des collectes :",
+          error
+        );
+        const message =
+          error?.error?.message || "Impossible de récupérer les collectes.";
+        this.notificationService.showError("Erreur", message);
+
+        this.isLoading = false;
+      },
+    });
+  }
+  selectedImage: string | null = null;
+
+  openImageModal(imageUrl: string): void {
+    this.selectedImage = imageUrl;
+  }
+
+  closeImageModal(): void {
+    this.selectedImage = null;
+  }
+  showHistoryModal: boolean = false;
+  openHistoryModal(): void {
+    this.showHistoryModal = true;
+  }
+
+  closeHistoryModal(): void {
+    this.showHistoryModal = false;
+  }
+  //modification  du status de l employee
+  toggleEmployeeStatus(employee: any): void {
+    const updatedStatus = !employee.isActive;
+    this.agencyService
+      .updateEmployee$(employee._id, { isActive: updatedStatus })
+      .subscribe({
+        next: () => {
+          employee.isActive = updatedStatus;
+          this.notificationService.showSuccess(
+            "Succès",
+            `L'employé a été ${
+              updatedStatus ? "activé" : "désactivé"
+            } avec succès.`
+          );
+        },
+        error: (error) => {
+          console.error("Erreur lors de la mise à jour du statut :", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de mettre à jour le statut de l'employé."
+          );
+        },
+      });
+  }
+
+  //methode de verification de la disponibilite de l employee
+  checkCollectorAvailability(
+    collectorId: string,
+    date: string,
+    startTime: string,
+    endTime: string
+  ): boolean {
+    // Vérifier que schedules existe et est un tableau
+    if (!this.schedules || !Array.isArray(this.schedules)) {
+      console.warn('schedules is undefined or not an array, returning false');
+      return false;
+    }
+    
+    return this.schedules.some(
+      (schedule) =>
+        schedule.collectorId === collectorId &&
+        schedule.date === date &&
+        ((startTime >= schedule.startTime && startTime < schedule.endTime) ||
+          (endTime > schedule.startTime && endTime <= schedule.endTime))
+    );
+  }
+
+  // Méthode de vérification de la disponibilité du collecteur pour la modification (exclut le planning en cours de modification)
+  checkCollectorAvailabilityForUpdate(
+    collectorId: string,
+    date: string,
+    startTime: string,
+    endTime: string,
+    excludeScheduleId: string
+  ): boolean {
+    // Vérifier que schedules existe et est un tableau
+    if (!this.schedules || !Array.isArray(this.schedules)) {
+      console.warn('schedules is undefined or not an array, returning false');
+      return false;
+    }
+    
+    return this.schedules.some(
+      (schedule) =>
+        schedule._id !== excludeScheduleId && // Exclure le planning en cours de modification
+        schedule.collectorId === collectorId &&
+        schedule.date === date &&
+        ((startTime >= schedule.startTime && startTime < schedule.endTime) ||
+          (endTime > schedule.startTime && endTime <= schedule.endTime))
+    );
+  }
+
+  //   toggleScheduleStatus(schedule: any): void {
+  //   const updatedStatus = !schedule.isActive;
+  //   this.agencyService.updateSchedule$(schedule._id, { isActive: updatedStatus }).subscribe({
+  //     next: () => {
+  //       schedule.isActive = updatedStatus;
+  //       this.notificationService.showSuccess(
+  //         "Succès",
+  //         `Le planning a été ${updatedStatus ? "activé" : "désactivé"} avec succès.`
+  //       );
+  //     },
+  //     error: (error) => {
+  //       console.error("Erreur lors de la mise à jour du statut du planning :", error);
+  //       this.notificationService.showError(
+  //         "Erreur",
+  //         "Impossible de mettre à jour le statut du planning."
+  //       );
+  //     },
+  //   });
+  // }
+  loadZonesMock(): void {
+    this.serviceZones = OUAGA_DATA.map((arrondissement) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name: arrondissement.arrondissement,
+      description: arrondissement.secteurs
+        .map((secteur) => `${secteur.secteur}: ${secteur.quartiers.join(", ")}`)
+        .join("; "),
+      boundaries: [],
+      neighborhoods: arrondissement.secteurs.flatMap(
+        (secteur) => secteur.quartiers
+      ),
+      cities: ["Ouagadougou"],
+      isActive: true,
+    }));
+  }
+  arrondissements: QuartierData[] = OUAGA_DATA;
+  cities: City[] = [];
+  secteurs: { secteur: string; quartiers: string[] }[] = [];
+  quartiers: string[] = [];
+  onArrondissementChange(arrondissement?: string) {
+    if (arrondissement) {
+      // Utiliser OUAGA_DATA pour trouver les secteurs
+      const arrondissementData = this.arrondissements.find(a => a.arrondissement === arrondissement);
+      if (arrondissementData && arrondissementData.secteurs) {
+        this.secteurs = arrondissementData.secteurs;
+      } else {
+        this.secteurs = [];
+      }
+      
+      console.log("Secteurs  ==> ", this.secteurs);
+      this.quartiers = [];
+      this.userData.address.sector = "";
+      this.userData.address.neighborhood = [];
+    }
+  }
+
+  onSecteurChange(secteur: string) {
+    if (secteur) {
+      // Trouver le secteur dans OUAGA_DATA et récupérer ses quartiers
+      const secteurObj = this.secteurs.find((s) => s.secteur === secteur);
+      if (secteurObj) {
+        this.quartiers = secteurObj.quartiers || [];
+        console.log("Quartiers disponibles :", this.quartiers);
+      } else {
+        this.quartiers = [];
+      }
+      this.userData.address.neighborhood = [];
+    } else {
+      this.quartiers = [];
+      this.userData.address.neighborhood = [];
+    }
+  }
+
+  onCityChange(city: string) {
+    if (city && city === 'Ouagadougou') {
+      // Pour Ouagadougou, les arrondissements sont déjà chargés depuis OUAGA_DATA
+    } else {
+      // Pour les autres villes, réinitialiser
+      this.secteurs = [];
+      this.quartiers = [];
+    }
+    
+    // Réinitialiser tous les champs dépendants
+    this.secteurs = [];
+    this.quartiers = [];
+    this.userData.address.arrondissement = "";
+    this.userData.address.sector = "";
+    this.userData.address.neighborhood = [];
+  }
+
+  // Méthodes spécifiques pour le formulaire d'employé
+  onEmployeeCityChange(event: Event) {
+    const selectedCity = (event.target as HTMLSelectElement)?.value;
+    
+    if (selectedCity === 'Ouagadougou') {
+      // Activer le contrôle arrondissement
+      this.employeeForm.get('address.arrondissement')?.enable();
+    } else {
+      // Pour les autres villes, réinitialiser et désactiver
+      this.secteurs = [];
+      this.quartiers = [];
+      this.employeeForm.get('address.arrondissement')?.disable();
+      this.employeeForm.get('address.sector')?.disable();
+      this.employeeForm.get('address.neighborhood')?.disable();
+    }
+    
+    // Réinitialiser tous les champs dépendants
+    this.employeeForm.patchValue({
+      address: {
+        arrondissement: '',
+        sector: '',
+        neighborhood: ''
+      }
+    });
+    this.secteurs = [];
+    this.quartiers = [];
+  }
+
+  onEmployeeArrondissementChange(event: Event) {
+    const arrondissement = (event.target as HTMLSelectElement)?.value;
+    if (arrondissement) {
+      const arrondissementObj = this.arrondissements.find(
+        (arr) => arr.arrondissement === arrondissement
+      );
+      
+      if (arrondissementObj) {
+        this.secteurs = arrondissementObj.secteurs || [];
+        // Activer le contrôle secteur
+        this.employeeForm.get('address.sector')?.enable();
+        
+        // Réinitialiser les champs dépendants dans le formulaire employé
+        this.employeeForm.get('address.sector')?.setValue('');
+        this.employeeForm.get('address.neighborhood')?.setValue('');
+        this.quartiers = [];
+        // Désactiver le quartier jusqu'à sélection du secteur
+        this.employeeForm.get('address.neighborhood')?.disable();
+      }
+    } else {
+      this.secteurs = [];
+      this.quartiers = [];
+      this.employeeForm.get('address.sector')?.disable();
+      this.employeeForm.get('address.neighborhood')?.disable();
+    }
+  }
+
+  onEmployeeSecteurChange(event: Event) {
+    const secteur = (event.target as HTMLSelectElement)?.value;
+    if (secteur) {
+      const secteurObj = this.secteurs.find((s) => s.secteur === secteur);
+      
+      if (secteurObj) {
+        this.quartiers = secteurObj.quartiers || [];
+        // Activer le contrôle quartier
+        this.employeeForm.get('address.neighborhood')?.enable();
+        
+        // Réinitialiser le quartier dans le formulaire employé
+        this.employeeForm.get('address.neighborhood')?.setValue('');
+      }
+    } else {
+      this.quartiers = [];
+      this.employeeForm.get('address.neighborhood')?.disable();
+    }
+  }
+
+  // Initialiser les données mock pour l'adresse d'employé
+  private initializeAddressDataForEmployee(): void {
+    // Utiliser directement les données OUAGA_DATA du fichier mock-data.ts
+    // Ces données sont déjà chargées dans this.arrondissements
+    
+    // Réinitialiser les autres données
+    this.secteurs = [];
+    this.quartiers = [];
+    
+    // Créer une liste simple de villes (pour l'instant juste Ouagadougou)
+    this.cities = [
+      { 
+        id: '1', 
+        name: 'Ouagadougou', 
+        code: 'OUA', 
+        country: { id: '1', name: 'Burkina Faso', code: 'BF' } 
+      },
+      { 
+        id: '2', 
+        name: 'Bobo-Dioulasso', 
+        code: 'BOB', 
+        country: { id: '1', name: 'Burkina Faso', code: 'BF' } 
+      }
+    ];
+    
+    // Initialiser l'état disabled des contrôles d'adresse
+    this.employeeForm.get('address.arrondissement')?.disable();
+    this.employeeForm.get('address.sector')?.disable();
+    this.employeeForm.get('address.neighborhood')?.disable();
+  }
+
+  // Initialiser les données mock pour la sélection des zones de couverture
+  private initializeAddressDataForZones(): void {
+    // Les arrondissements sont déjà chargés depuis OUAGA_DATA
+    // Réinitialiser les autres données
+    this.secteurs = [];
+    this.quartiers = [];
+    
+    // Initialiser les villes si pas déjà fait
+    if (this.cities.length === 0) {
+      this.cities = [
+        { id: '1', name: 'Ouagadougou', code: 'OUA', country: { id: '1', name: 'Burkina Faso', code: 'BF' } },
+        { id: '2', name: 'Bobo-Dioulasso', code: 'BOB', country: { id: '1', name: 'Burkina Faso', code: 'BF' } }
+      ];
+    }
+  }
+
+  openZoneModalcouverture(): void {
+    // Initialiser les données d'adresse pour la sélection des zones
+    this.initializeAddressDataForZones();
+    this.showZoneModalcouverture = true;
+  }
+
+  closeZoneModalcouverture(): void {
+    this.showZoneModalcouverture = false;
+    // Réinitialiser les erreurs lors de la fermeture du modal
+    this.zoneFormError = null;
+    this.zoneFormDetailedErrors = {};
+  }
+
+  /**
+   * Méthode pour fermer les alertes d'erreur de zone
+   */
+  dismissZoneError(): void {
+    this.zoneFormError = null;
+    this.zoneFormDetailedErrors = {};
+  }
+
+  editZoneAgency(): void {
+    // Réinitialiser les erreurs
+    this.zoneFormError = null;
+    this.zoneFormDetailedErrors = {};
+
+    // Validation côté frontend
+    if (!this.validateZoneData()) {
+      return;
+    }
+
+    const zoneData = {
+      zones: this.userData.address.neighborhood,
+    };
+
+    const agencyId = this.currentUser?.agencyId;
+
+    if (!agencyId) {
+      this.zoneFormError = "ID agence manquant.";
+      this.notificationService.showError("Erreur", "ID agence manquant.");
+      return;
+    }
+
+    console.log("Zone mise à jour :", zoneData);
+    this.agencyService.updateAgencyZones$(agencyId, zoneData).subscribe({
+      next: (response) => {
+        console.log("Zone mise à jour :", response);
+        
+        // Utiliser directement les zones retournées par l'API de modification
+        if (response.data && response.data.zoneActivite) {
+          this.zones = response.data.zoneActivite;
+          console.log("Zones récupérées depuis la réponse :", this.zones);
+          
+          // Mettre à jour le badge des zones
+          const ZonesTab = this.tabs.find((tab) => tab.id === "zones");
+          if (ZonesTab) {
+            ZonesTab.badge = this.zones.length;
+          }
+        } else {
+          // Fallback : charger les zones si la structure de réponse est différente
+          this.loadZones(this.currentUser);
+        }
+        
+        this.notificationService.showSuccess(
+          "Succès",
+          "La zone a été mise à jour avec succès."
+        );
+        this.closeZoneModalcouverture();
+      },
+      error: (error) => {
+        console.error("Erreur lors de la mise à jour de la zone :", error);
+        
+        // Utilisation de la méthode utilitaire pour obtenir un message convivial
+        const friendlyMessage = this.getFriendlyZoneErrorMessage(error);
+        this.zoneFormError = friendlyMessage;
+        
+        // Gestion des erreurs détaillées du backend
+        if (error.error && typeof error.error === 'object') {
+          // Si l'erreur contient des détails de validation
+          if (error.error.details) {
+            this.zoneFormDetailedErrors = error.error.details;
+          }
+        }
+        
+        this.notificationService.showError("Erreur", friendlyMessage);
+      },
+    });
+  }
+
+  /**
+   * Valide les données de zone avant l'envoi
+   * @returns boolean - true si les données sont valides
+   */
+  private validateZoneData(): boolean {
+    const { city, arrondissement, sector, neighborhood } = this.userData.address;
+
+    if (!city) {
+      this.zoneFormError = "Veuillez sélectionner une ville.";
+      return false;
+    }
+
+    if (!arrondissement) {
+      this.zoneFormError = "Veuillez sélectionner un arrondissement.";
+      return false;
+    }
+
+    if (!sector) {
+      this.zoneFormError = "Veuillez sélectionner un secteur.";
+      return false;
+    }
+
+    if (!neighborhood || !Array.isArray(neighborhood) || neighborhood.length === 0) {
+      this.zoneFormError = "Veuillez sélectionner au moins un quartier.";
+      return false;
+    }
+
+    // Validation supplémentaire : vérifier que neighborhood est bien un tableau itérable
+    try {
+      // Tenter de convertir en tableau si ce n'est pas le cas
+      if (typeof neighborhood === 'string') {
+        this.userData.address.neighborhood = [neighborhood];
+      } else if (!Array.isArray(neighborhood)) {
+        this.zoneFormError = "Format de quartiers invalide. Veuillez reselectionner vos quartiers.";
+        return false;
+      }
+    } catch (error) {
+      this.zoneFormError = "Erreur de validation des quartiers. Veuillez reselectionner vos quartiers.";
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Méthode utilitaire pour obtenir un message d'erreur convivial
+   * @param error - L'erreur retournée par le backend
+   * @returns string - Message d'erreur formaté
+   */
+  private getFriendlyZoneErrorMessage(error: any): string {
+    if (error?.error) {
+      const backendError = error.error;
+      
+      // Messages spécifiques selon le type d'erreur
+      if (backendError.error === "newZones is not iterable") {
+        return "Format des zones invalide. Veuillez vérifier la sélection des quartiers.";
+      }
+      
+      if (backendError.message) {
+        return backendError.message;
+      }
+      
+      if (backendError.error) {
+        return backendError.error;
+      }
+    }
+    
+    if (error?.message) {
+      return error.message;
+    }
+    
+    return "Une erreur inattendue s'est produite lors de la mise à jour des zones.";
+  }
+
+  getAllCountries() {
+    // Utiliser les villes définies localement
+    console.log("Villes disponibles :", this.cities);
+  }
+
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    try {
+      this.myScrollContainer.nativeElement.scrollTop =
+        this.myScrollContainer.nativeElement.scrollHeight;
+    } catch (err) {}
+  }
+
+  // ================================
+  // méthodes d analyse
+  // ================================
+
+  /**
+   * Actualise les données d'analyse des zones
+   */
+  refreshZoneAnalytics(): void {
+    this.generateZoneAnalyticsData();
+    this.generateZoneRecommendations();
+    this.notificationService.showSuccess('Succès', 'Données d\'analyse actualisées');
+  }
+
+  /**
+   * Retourne le nombre total de clients par type
+   */
+  getTotalClientsByType(type: 'household' | 'business' | 'institution'): number {
+    return this.activeClients.filter(client => this.getClientType(client) === type).length;
+  }
+
+  /**
+   * Retourne le pourcentage de clients par type
+   */
+  getPercentageByType(type: 'household' | 'business' | 'institution'): number {
+    const total = this.activeClients.length;
+    if (total === 0) return 0;
+    const typeCount = this.getTotalClientsByType(type);
+    return Math.round((typeCount / total) * 100);
+  }
+
+  /**
+   * Calcule le pourcentage de charge de travail
+   */
+  getWorkloadPercentage(): number {
+    const totalClients = this.activeClients.length;
+    const maxCapacity = this.allEmployees.filter(emp => emp.role === 'collector').length * 50; // 50 clients par collecteur
+    if (maxCapacity === 0) return 0;
+    return Math.min(Math.round((totalClients / maxCapacity) * 100), 100);
+  }
+
+  /**
+   * Retourne le statut de la charge de travail
+   */
+  getWorkloadStatus(): string {
+    const percentage = this.getWorkloadPercentage();
+    if (percentage <= 80) return 'Optimal';
+    if (percentage <= 95) return 'Attention';
+    return 'Critique';
+  }
+
+  /**
+   * Génère et retourne les données d'analyse par zone
+   */
+  getZoneAnalyticsData(): ZoneAnalytics[] {
+    if (this.zoneAnalyticsData.length === 0) {
+      this.generateZoneAnalyticsData();
+    }
+    return this.zoneAnalyticsData;
+  }
+
+  /**
+   * Génère les données d'analyse des zones en utilisant l'API
+   */
+  private generateZoneAnalyticsData(): void {
+    if (!this.currentUser?._id) return;
+
+    // this.agencyService.getZoneAnalytics$(this.currentUser._id).subscribe({
+    //   next: (response) => {
+    //     if (response.success && response.data) {
+    //       this.zoneAnalyticsData = response.data.map(zone => ({
+    //         id: zone.zoneId,
+    //         name: zone.zoneName,
+    //         totalClients: zone.clientStats.totalClients,
+    //         households: zone.clientStats.households,
+    //         businesses: zone.clientStats.businesses,
+    //         institutions: zone.clientStats.institutions,
+    //         capacityUsage: zone.workloadMetrics.capacityUsagePercentage,
+    //         estimatedTime: zone.workloadMetrics.estimatedWorkHours,
+    //         requiredTeam: zone.workloadMetrics.requiredTeamSize,
+    //         requiredVehicles: zone.workloadMetrics.requiredVehicles,
+    //         growth: zone.growthMetrics.monthlyGrowthRate
+    //       }));
+    //     } else {
+      
+    //       this.generateZoneAnalyticsDataFallback();
+    //     }
+    //   },
+    //   error: (error) => {
+    //     console.error('Erreur lors du chargement des analytics:', error);
+     
+    //     this.generateZoneAnalyticsDataFallback();
+    //   }
+    // });
+  }
+
+  /**
+   * Méthode de fallback pour générer les données localement
+   */
+  private generateZoneAnalyticsDataFallback(): void {
+    this.zoneAnalyticsData = this.zones.map((zone, index) => {
+      const zoneName = zone.neighborhood || zone;
+      const zoneClients = this.activeClients.filter(client => 
+        client.address?.neighborhood === zoneName
+      );
+      
+      const households = zoneClients.filter(client => this.getClientType(client) === 'household').length;
+      const businesses = zoneClients.filter(client => this.getClientType(client) === 'business').length;
+      const institutions = zoneClients.filter(client => this.getClientType(client) === 'institution').length;
+      
+      const totalClients = zoneClients.length;
+      const estimatedTime = Math.ceil(totalClients * 0.15); // 9 minutes par client
+      const requiredTeam = Math.ceil(totalClients / 25); 
+      const requiredVehicles = Math.ceil(requiredTeam / 2); 
+      const capacityUsage = Math.min((totalClients / 50) * 100, 100); 
+      const growth = Math.floor(Math.random() * 21) - 10; 
+
+      return {
+        id: `zone-${index}`,
+        name: zoneName,
+        totalClients,
+        households,
+        businesses,
+        institutions,
+        capacityUsage,
+        estimatedTime,
+        requiredTeam,
+        requiredVehicles,
+        growth
+      };
+    });
+  }
+
+  /**
+   * Détermine le type d'un client basé sur ses données
+   */
+  private getClientType(client: ClientApi): 'household' | 'business' | 'institution' {
+   
+    if (client.firstName?.toLowerCase().includes('entreprise') || 
+        client.lastName?.toLowerCase().includes('sarl') ||
+        client.lastName?.toLowerCase().includes('sas')) {
+      return 'business';
+    }
+    if (client.firstName?.toLowerCase().includes('mairie') || 
+        client.firstName?.toLowerCase().includes('école') ||
+        client.firstName?.toLowerCase().includes('hôpital')) {
+      return 'institution';
+    }
+    return 'household';
+  }
+
+  /**
+   * Retourne le statut de capacité pour une zone
+   */
+  getCapacityStatus(capacityUsage: number): string {
+    if (capacityUsage <= 70) return 'good';
+    if (capacityUsage <= 90) return 'warning';
+    return 'critical';
+  }
+
+  /**
+   * Retourne l'icône appropriée pour le niveau de capacité
+   */
+  getCapacityIcon(capacityUsage: number): string {
+    if (capacityUsage <= 70) return 'check_circle';
+    if (capacityUsage <= 90) return 'warning';
+    return 'error';
+  }
+
+  /**
+   * Affiche les détails d'une zone spécifique 
+   */
+  viewZoneDetails(zoneId: string): void {
+    this.loadZoneDetails(zoneId);
+   
+    this.loadZoneWorkloadMetrics(zoneId);
+    
+    const zone = this.zoneAnalyticsData.find(z => z.id === zoneId);
+    if (zone) {
+      this.notificationService.showInfo('Information', `Chargement des détails de la zone: ${zone.name}`);
+    }
+  }
+
+  /**
+   * Optimise la capacité d'une zone - Version améliorée avec API
+   */
+  optimizeZoneCapacity(zoneId: string): void {
+    this.optimizeSpecificZone(zoneId, 'all');
+  }
+
+  /**
+   * Affiche une alerte de capacité pour une zone
+   */
+  showCapacityAlert(zone: ZoneAnalytics): void {
+    const message = zone.capacityUsage > 95 
+      ? `Zone ${zone.name} surchargée (${zone.capacityUsage}%)` 
+      : `Zone ${zone.name} approche de la saturation (${zone.capacityUsage}%)`;
+    
+    this.notificationService.showWarning('Alerte Capacité', message);
+  }
+
+  /**
+   * Retourne les recommandations pour les zones
+   */
+  getZoneRecommendations(): LocalZoneRecommendation[] {
+    if (this.zoneRecommendations.length === 0) {
+      this.generateZoneRecommendations();
+    }
+    return this.zoneRecommendations;
+  }
+
+  /**
+   * Génère les recommandations automatiques en utilisant l'API
+   */
+  private generateZoneRecommendations(): void {
+    if (!this.currentUser?._id) return;
+
+    // this.agencyService.getZoneRecommendations$(this.currentUser._id).subscribe({
+    //   next: (response) => {
+    //     if (response.success && response.data) {
+    //       this.zoneRecommendations = response.data.map(rec => ({
+    //         id: rec.id,
+    //         title: rec.title,
+    //         description: rec.description,
+    //         priority: rec.priority,
+    //         icon: this.getRecommendationIcon(rec.type, rec.priority),
+    //         zoneId: rec.zoneId
+    //       }));
+    //     } else {
+      
+    //       this.generateZoneRecommendationsFallback();
+    //     }
+    //   },
+    //   error: (error) => {
+    //     console.error('Erreur lors du chargement des recommandations:', error);
+     
+    //     this.generateZoneRecommendationsFallback();
+    //   }
+    // });
+  }
+
+  /**
+   * Méthode de fallback pour générer les recommandations localement
+   */
+  private generateZoneRecommendationsFallback(): void {
+    this.zoneRecommendations = [];
+    
+    this.zoneAnalyticsData.forEach(zone => {
+      if (zone.capacityUsage > 95) {
+        this.zoneRecommendations.push({
+          id: `rec-${zone.id}-critical`,
+          title: `Zone ${zone.name} surchargée`,
+          description: `Cette zone dépasse sa capacité optimale. Considérez ajouter une équipe ou redistribuer les clients.`,
+          priority: 'high',
+          icon: 'error',
+          zoneId: zone.id
+        });
+      } else if (zone.capacityUsage > 80) {
+        this.zoneRecommendations.push({
+          id: `rec-${zone.id}-warning`,
+          title: `Zone ${zone.name} approche de la saturation`,
+          description: `Préparez-vous à augmenter les ressources pour cette zone.`,
+          priority: 'medium',
+          icon: 'warning',
+          zoneId: zone.id
+        });
+      }
+
+      if (zone.growth > 15) {
+        this.zoneRecommendations.push({
+          id: `rec-${zone.id}-growth`,
+          title: `Croissance rapide dans ${zone.name}`,
+          description: `Cette zone connaît une croissance de ${zone.growth}%. Anticipez les besoins futurs.`,
+          priority: 'medium',
+          icon: 'trending_up',
+          zoneId: zone.id
+        });
+      }
+    });
+  }
+
+  /**
+   * Retourne l'icône appropriée pour une recommandation
+   */
+  private getRecommendationIcon(type: string, priority: string): string {
+    switch (type) {
+      case 'capacity':
+        return priority === 'high' ? 'error' : 'warning';
+      case 'growth':
+        return 'trending_up';
+      case 'efficiency':
+        return 'tune';
+      case 'resource':
+        return 'build';
+      default:
+        return 'info';
+    }
+  }
+
+  /**
+   * Applique une recommandation
+   */
+  applyRecommendation(recommendation: LocalZoneRecommendation): void {
+ 
+    this.notificationService.showSuccess('Succès', `Recommandation "${recommendation.title}" appliquée`);
+    this.dismissRecommendation(recommendation);
+  }
+
+  /**
+   * Ignore une recommandation
+   */
+  dismissRecommendation(recommendation: LocalZoneRecommendation): void {
+    this.zoneRecommendations = this.zoneRecommendations.filter(r => r.id !== recommendation.id);
+  }
+
+  // ================================
+  // méthode pour l analyse avance
+  // ================================
+
+  /**
+   * Charge les détails d'une zone spécifique
+   */
+  loadZoneDetails(zoneId: string): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneStatistics$(this.currentUser._id, zoneId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Détails de la zone:', response.data);
+      
+          const zoneIndex = this.zoneAnalyticsData.findIndex(z => z.id === zoneId);
+          if (zoneIndex !== -1) {
+            const zoneStats = response.data;
+            this.zoneAnalyticsData[zoneIndex] = {
+              ...this.zoneAnalyticsData[zoneIndex],
+              totalClients: zoneStats.clientStats.totalClients,
+              households: zoneStats.clientStats.households,
+              businesses: zoneStats.clientStats.businesses,
+              institutions: zoneStats.clientStats.institutions,
+              capacityUsage: zoneStats.workloadMetrics.capacityUsagePercentage,
+              estimatedTime: zoneStats.workloadMetrics.estimatedWorkHours,
+              requiredTeam: zoneStats.workloadMetrics.requiredTeamSize,
+              requiredVehicles: zoneStats.workloadMetrics.requiredVehicles,
+              growth: zoneStats.growthMetrics.monthlyGrowthRate
+            };
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des détails de la zone:', error);
+        this.notificationService.showError('Erreur', 'Impossible de charger les détails de la zone');
+      }
+    });
+  }
+
+  /**
+   * Charge les métriques de charge de travail pour une zone
+   */
+  loadZoneWorkloadMetrics(zoneId: string): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getZoneWorkloadMetrics$(this.currentUser._id, zoneId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Métriques de charge:', response.data);
+      
+          if (response.data.recommendations.length > 0) {
+            const zone = this.zoneAnalyticsData.find(z => z.id === zoneId);
+            const message = `Recommandations pour ${zone?.name || 'la zone'}:\n${response.data.recommendations.join('\n')}`;
+            this.notificationService.showInfo('Recommandations de charge', message);
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des métriques de charge:', error);
+      }
+    });
+  }
+
+  /**
+   * Charge l'évolution des abonnements
+   */
+  loadSubscriptionEvolution(period: string = 'month'): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.getSubscriptionEvolution$(this.currentUser._id, undefined, period).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Évolution des abonnements:', response.data);
+     
+          this.processSubscriptionEvolution(response.data);
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement de l\'évolution des abonnements:', error);
+      }
+    });
+  }
+
+  /**
+   * Traite les données d'évolution des abonnements
+   */
+  private processSubscriptionEvolution(data: any[]): void {
+
+    data.forEach(zoneEvolution => {
+      const zoneIndex = this.zoneAnalyticsData.findIndex(z => z.id === zoneEvolution.zoneId);
+      if (zoneIndex !== -1) {
+        this.zoneAnalyticsData[zoneIndex].growth = zoneEvolution.growthRate;
+      }
+    });
+  }
+
+  /**
+   * Compare les performances des zones
+   */
+  compareZonePerformance(): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.compareZonePerformance$(this.currentUser._id).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Comparaison des zones:', response);
+          this.displayZoneComparison(response);
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de la comparaison des zones:', error);
+      }
+    });
+  }
+
+  /**
+   * Affiche les résultats de comparaison des zones
+   */
+  private displayZoneComparison(comparison: any): void {
+    const bestZone = comparison.data.find((z: any) => z.rank === 1);
+    const summary = comparison.summary;
+    
+    const message = `
+       Résumé de performance:
+      Meilleure zone: ${summary.bestPerformingZone}
+       Plus efficace: ${summary.mostEfficient}
+       Zones nécessitant attention: ${summary.needsAttention.join(', ')}
+    `;
+    
+    this.notificationService.showInfo('Comparaison des zones', message);
+  }
+
+  /**
+   * Optimise les ressources d'une zone spécifique
+   */
+  optimizeSpecificZone(zoneId: string, optimizationType: 'team' | 'vehicles' | 'schedule' | 'all' = 'all'): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.optimizeZoneResources$(this.currentUser._id, zoneId, optimizationType).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Optimisation de zone:', response.data);
+          this.displayOptimizationResults(response.data);
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'optimisation de la zone:', error);
+        this.notificationService.showError('Erreur', 'Impossible d\'optimiser la zone');
+      }
+    });
+  }
+
+  /**
+   * Affiche les résultats d'optimisation
+   */
+  private displayOptimizationResults(results: any): void {
+    const improvements = results.expectedImprovements;
+    const message = `
+       Optimisation ${results.optimizationType} terminée!
+      
+      Améliorations attendues:
+       Efficacité: +${improvements.efficiency}%
+       Réduction des coûts: ${improvements.costReduction}%
+       Gain de temps: ${improvements.timeReduction}%
+      
+      Étapes d'implémentation:
+      ${results.implementationSteps.map((step: string, i: number) => `${i + 1}. ${step}`).join('\n')}
+    `;
+    
+    this.notificationService.showSuccess('Optimisation réussie', message);
+  }
+
+  /**
+   * Génère un rapport pour une zone
+   */
+  generateZoneReport(zoneId: string, reportType: 'performance' | 'financial' | 'operational' | 'complete' = 'complete'): void {
+    if (!this.currentUser?._id) return;
+
+    this.agencyService.generateZoneReport$(this.currentUser._id, zoneId, reportType).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          console.log('Rapport généré:', response.data);
+          if (response.data.downloadUrl) {
+            // Ouvrir le lien de téléchargement
+            window.open(response.data.downloadUrl, '_blank');
+          }
+          this.notificationService.showSuccess('Rapport généré', 'Le rapport a été généré avec succès');
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de la génération du rapport:', error);
+        this.notificationService.showError('Erreur', 'Impossible de générer le rapport');
+      }
+    });
+  }
+
+
+
+  /**
+   * Méthode pour actualiser toutes les données d'une zone
+   */
+  refreshZoneData(zoneId?: string): void {
+    if (zoneId) {
+      this.loadZoneDetails(zoneId);
+      this.loadZoneWorkloadMetrics(zoneId);
+    } else {
+    
+      this.refreshZoneAnalytics();
+      this.loadSubscriptionEvolution();
+    }
+  }
+}

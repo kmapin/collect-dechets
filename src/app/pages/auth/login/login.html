@@ -1,0 +1,238 @@
+<div class="login-page">
+  <div class="login-container">
+    <div class="login-card card">
+      <div class="login-header">
+        <div class="logo">
+          <i class="material-icons">recycling</i>
+          <span>ZéroDéchet+</span>
+        </div>
+        <h1 class="login-title">Connexion</h1>
+        <p class="login-subtitle">
+          Accédez à votre espace personnel pour gérer vos collectes de déchets
+        </p>
+      </div>
+
+      <form class="login-form" (ngSubmit)="onLogin()" #loginForm="ngForm">
+
+        <div class="login-types">
+          <label class="login-type-option">
+            <input
+              type="radio"
+              name="loginType"
+              value="email"
+              [(ngModel)]="loginType.type"
+            />
+            <div class="login-type-card">
+              <i class="material-icons">email</i>
+              <h4>Par email</h4>
+            </div>
+          </label>
+          <label class="login-type-option">
+            <input
+              type="radio"
+              name="loginType"
+              value="phone"
+              [(ngModel)]="loginType.type"
+            />
+            <div class="login-type-card">
+              <i class="material-icons">phone</i>
+              <h4>Par telephone</h4>
+            </div>
+          </label>
+        </div>
+
+
+
+        <div class="form-group" *ngIf="loginType.type === 'email'">
+          <label class="form-label" for="email">
+            <i class="material-icons">email</i>
+            Adresse email
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            [(ngModel)]="credentials.email"
+            class="form-control"
+            placeholder="votre@email.com"
+            required
+            #emailInput="ngModel"
+          />
+          <div
+            class="form-error"
+            *ngIf="emailInput.invalid && emailInput.touched"
+          >
+            Veuillez saisir une adresse email valide
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="loginType.type === 'phone'">
+          <label class="form-label" for="phone">
+            <i class="material-icons">phone</i>
+            Numéro de téléphone
+          </label>
+          <input
+            type="number"
+            id="phone"
+            name="phone"
+            [(ngModel)]="credentials.phone"
+            class="form-control"
+            placeholder="XX XX XX XX"
+            required
+            #phoneInput="ngModel"
+          />
+          <div
+            class="form-error"
+            *ngIf="phoneInput.invalid && phoneInput.touched"
+          >
+            Veuillez saisir une numéro telephone valide
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">
+            <i class="material-icons">lock</i>
+            Mot de passe
+          </label>
+          <div class="password-input">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              id="password"
+              name="password"
+              [(ngModel)]="credentials.password"
+              class="form-control"
+              placeholder="Votre mot de passe"
+              required
+              #passwordInput="ngModel"
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="togglePassword()"
+            >
+              <i class="material-icons"
+                >{{ showPassword ? 'visibility_off' : 'visibility' }}</i
+              >
+            </button>
+          </div>
+          <div
+            class="form-error"
+            *ngIf="passwordInput.invalid && passwordInput.touched"
+          >
+            Le mot de passe est requis
+          </div>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
+            <span class="checkmark"></span>
+            Se souvenir de moi
+          </label>
+          <a routerLink="/forgot-password" class="forgot-link">
+            Mot de passe oublié ?
+          </a>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary btn-full"
+          [disabled]="isLoading || loginForm.invalid"
+        >
+          <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+          <i class="material-icons" *ngIf="!isLoading">login</i>
+          {{ isLoading ? 'Connexion...' : 'Se connecter' }}
+        </button>
+      </form>
+      <!------------------------------------ Comptes de démonstration  
+          <div class="login-divider">
+            <span>ou</span>
+          </div>
+          
+          <div class="demo-accounts">
+            <h3>Comptes de démonstration</h3>
+            <div class="demo-buttons">
+              <button 
+                class="demo-btn client"
+                (click)="loginAsDemo('client')">
+                <i class="material-icons">person</i>
+                <div>
+                  <strong>Client</strong>
+                  <small>Gérer mes collectes</small>
+                </div>
+              </button>
+              <button 
+                class="demo-btn agency"
+                (click)="loginAsDemo('agency')">
+                <i class="material-icons">business</i>
+                <div>
+                  <strong>Agence</strong>
+                  <small>Gérer les services</small>
+                </div>
+              </button>
+              <button 
+                class="demo-btn collector"
+                (click)="loginAsDemo('collector')">
+                <i class="material-icons">local_shipping</i>
+                <div>
+                  <strong>Collecteur</strong>
+                  <small>Interface mobile</small>
+                </div>
+              </button>
+              <button 
+                class="demo-btn municipality"
+                (click)="loginAsDemo('municipality')">
+                <i class="material-icons">location_city</i>
+                <div>
+                  <strong>Mairie</strong>
+                  <small>Audit et contrôle</small>
+                </div>
+              </button>
+            </div>
+          </div>
+            -->
+      <div class="login-footer">
+        <p>
+          Pas encore de compte ?
+          <a routerLink="/register" class="register-link">Créer un compte</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="login-info">
+      <div class="info-content">
+        <h2>Bienvenue sur ZéroDéchet+</h2>
+        <div class="features-list">
+          <div class="feature-item">
+            <i class="material-icons">schedule</i>
+            <div>
+              <h4>Collecte programmée</h4>
+              <p>Planifiez et suivez vos collectes en temps réel</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <i class="material-icons">eco</i>
+            <div>
+              <h4>Tri intelligent</h4>
+              <p>Guide complet pour un tri efficace et écologique</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <i class="material-icons">payment</i>
+            <div>
+              <h4>Paiement sécurisé</h4>
+              <p>Gestion simplifiée de vos abonnements</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <i class="material-icons">support_agent</i>
+            <div>
+              <h4>Support 24/7</h4>
+              <p>Assistance dédiée pour tous vos besoins</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

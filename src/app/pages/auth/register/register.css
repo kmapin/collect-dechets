@@ -1,0 +1,374 @@
+    .register-page {
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      padding: 20px;
+    }
+
+    .register-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .register-card {
+      padding: 40px;
+      margin: 20px 0;
+    }
+
+    .register-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 24px;
+    }
+
+    .logo i {
+      font-size: 32px;
+    }
+
+    .register-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .register-subtitle {
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .account-type-section {
+      margin-bottom: 32px;
+    }
+
+    .account-type-section h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .account-types {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .account-type-option {
+      cursor: pointer;
+    }
+
+    .account-type-option input[type="radio"] {
+      display: none;
+    }
+
+    .account-type-card {
+      padding: 20px;
+      border: 2px solid var(--medium-gray);
+      border-radius: 12px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .account-type-option input[type="radio"]:checked + .account-type-card {
+      border-color: var(--primary-color);
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: var(--white);
+    }
+
+    .account-type-card i {
+      font-size: 32px;
+      margin-bottom: 12px;
+      color: var(--primary-color);
+    }
+
+    .account-type-option input[type="radio"]:checked + .account-type-card i {
+      color: var(--white);
+    }
+
+    .account-type-card h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .account-type-card p {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      line-height: 1.4;
+    }
+
+    .form-section {
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--medium-gray);
+    }
+
+    .form-section:last-of-type {
+      border-bottom: none;
+    }
+
+    .form-section h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .required{
+      color: red;
+    }
+    .form-control {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid var(--medium-gray);
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .password-input {
+      position: relative;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .password-strength {
+      margin-top: 8px;
+    }
+
+    .strength-bar {
+      height: 4px;
+      border-radius: 2px;
+      margin-bottom: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .strength-bar.weak {
+      width: 33%;
+      background: var(--error-color);
+    }
+
+    .strength-bar.medium {
+      width: 66%;
+      background: var(--warning-color);
+    }
+
+    .strength-bar.strong {
+      width: 100%;
+      background: var(--success-color);
+    }
+
+    .strength-text {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .form-error {
+      color: var(--error-color);
+      font-size: 0.8rem;
+      margin-top: 4px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      display: none;
+    }
+
+    .checkmark {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--medium-gray);
+      border-radius: 4px;
+      position: relative;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .checkbox-label input[type="checkbox"]:checked + .checkmark {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+
+    .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--white);
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .checkbox-label a {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+
+    .checkbox-label a:hover {
+      text-decoration: underline;
+    }
+
+    .btn-full {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .register-footer {
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--medium-gray);
+      margin-top: 24px;
+    }
+
+    .login-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .login-link:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .register-page {
+        padding: 16px;
+      }
+
+      .register-card {
+        padding: 24px;
+      }
+
+      .account-types {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .register-title {
+        font-size: 1.8rem;
+      }
+    }
+
+    /* Enhanced Error Handling Styles */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+    }
+
+    .alert-error {
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+    }
+
+    .alert-error i {
+      color: #dc2626;
+    }
+
+    .form-error.backend-error {
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-top: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-error.backend-error::before {
+      content: "⚠️";
+      font-size: 0.9rem;
+    }
+
+    /* Highlight fields with backend errors */
+    .form-control.has-backend-error {
+      border-color: #dc2626 !important;
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1) !important;
+    }
+
+    /* Success states */
+    .alert-success {
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #16a34a;
+    }
+
+    .alert-success i {
+      color: #16a34a;
+    }

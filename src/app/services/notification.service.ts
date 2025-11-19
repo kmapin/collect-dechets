@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { HttpClient } from '@angular/common/http';
 
-export interface Notification {
+export interface NotificationI {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
   title: string;
@@ -19,8 +21,9 @@ export interface NotificationAction {
   providedIn: 'root'
 })
 export class NotificationService {
-  private notificationSubject = new Subject<Notification>();
+  private notificationSubject = new Subject<NotificationI>();
   public notifications$ = this.notificationSubject.asObservable();
+  constructor(private http: HttpClient) { }
 
   showSuccess(title: string, message: string, duration = 5000): void {
     this.show('success', title, message, duration);
@@ -39,7 +42,7 @@ export class NotificationService {
   }
 
   private show(type: 'success' | 'error' | 'warning' | 'info', title: string, message: string, duration = 5000): void {
-    const notification: Notification = {
+    const notification: NotificationI = {
       id: Math.random().toString(36).substr(2, 9),
       type,
       title,
@@ -51,7 +54,7 @@ export class NotificationService {
   }
 
   showWithActions(type: 'success' | 'error' | 'warning' | 'info', title: string, message: string, actions: NotificationAction[], duration = 0): void {
-    const notification: Notification = {
+    const notification: NotificationI = {
       id: Math.random().toString(36).substr(2, 9),
       type,
       title,
@@ -61,5 +64,22 @@ export class NotificationService {
     };
 
     this.notificationSubject.next(notification);
+  }
+      getAllNotificationsAgency$(userId: string): Observable<any[]> {
+      const url=`${environment.apiUrl}/notifications/get/${userId}`;
+      console.log("URL de la requête :", url); 
+      return this.http.get<any[]>(url);
+  
+    }
+    //marquer un message comme lu 
+       markNotificationAsRead$(notificationId: string): Observable<any> {
+        const url = `${environment.apiUrl}/notifications/${notificationId}/read`;
+        return this.http.patch(url, notificationId);
+    }
+
+    //suppressin d une notification
+    deleteNotification$(notificationId: string): Observable<any> {
+      const url = `${environment.apiUrl}/notifications/delete/${notificationId}`;
+      return this.http.delete(url);
   }
 }

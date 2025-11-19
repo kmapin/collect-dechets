@@ -1,0 +1,102 @@
+.subscription-page {
+  min-height: 100vh;
+  background: var(--light-gray);
+}
+
+.subscription-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.subscription-card {
+  padding: 32px;
+}
+
+.subscription-info {
+  margin-top: 24px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--medium-gray);
+}
+.info-item-agencyName {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.contact-info {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  color: var(--primary-color);
+  font-weight: 10;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.status-active {
+  color: var(--success-color);
+  font-weight: 500;
+}
+.status-premium {
+  color: var(--warning-color);
+  font-weight: 500;
+}
+.status-standard {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.plan-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.plan-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 24px;
+  background: #f5f5f5;
+}
+.plan-badge.premium {
+  background: #fffbe6;
+  color: #bfa100;
+}
+.plan-badge.standard {
+  background: #e3f2fd;
+  color: #2196f3;
+}
+.plan-badge.basic {
+  background: #f5f5f5;
+  color: #757575;
+}
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: #e8f5e9;
+  color: #388e3c;
+}
+.status-badge.active {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+.actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+}

@@ -3,7 +3,52 @@ export interface Agency {
   userId: string;
   firstName: string;
   lastName: string;
+  // agencyName: string;
+  name: string;
+  slogan?: string;
+  status?:string;
+  agencyName?:string;
+  agencyId?: string;
+  arrondissement: string;
+  secteur: string;
+  quartier: string;
+  collections: number;
+  incidents: number;
+  agencyDescription: string;
+  phone: string;
+  address: Address;
+  role?: {};
+  owner?: string;
+  zoneActivite?: string[];
+  licenseNumber: string;
+  members: AgencyMember[];
+  serviceZones: ServiceZone[];
+  services: WasteService[];
+  employees: Employee[];
+  schedule: CollectionSchedule[];
+  collectors: any[];
+  clients: AgencyClient[];
+  rating: number;
+  randomStars?: number | undefined; // Pour générer un nombre aléatoire d'étoiles
+  totalClients: number;
+  acceptTerms: boolean;
+  receiveOffers: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+export interface Municipality {
+  _id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
   agencyName: string;
+  arrondissement: string;
+  secteur: string;
+  quartier: string;
+  collections: number;
+  incidents: number;
   agencyDescription: string;
   phone: string;
   address: Address;
@@ -24,7 +69,6 @@ export interface Agency {
   updatedAt: string;
   __v: number;
 }
-
 export interface AgencyMember {
   user: string;
   role: string;
@@ -69,6 +113,18 @@ export interface ServiceZone {
   boundaries: Coordinate[];
   neighborhoods: string[];
   cities: string[];
+  // assignedCollectors: string[];
+  isActive: boolean;
+}
+
+export interface ServiceZones {
+  // id: string;
+  name: string;
+  description: string;
+  boundaries: Coordinate[];
+  neighborhoods: string[];
+  cities: string[];
+  assignedCollectors: string[];
   isActive: boolean;
 }
 
@@ -83,9 +139,19 @@ export interface WasteService {
   isActive: boolean;
 }
 
+export interface tarif {
+  id?: string;
+  agencyId: string;
+  type: string;
+  description: string;
+  price: number;
+  nbPassages?: number;
+  Active: boolean;
+}
+
+
 export interface Employee {
   id: string;
-  userId: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -97,21 +163,63 @@ export interface Employee {
   avatar?: string;
 }
 
+export interface Employees {
+   _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: EmployeeRole;
+  zones: string[];
+  isActive: boolean;
+  hiredAt: Date;
+  avatar?: string;
+}
+export interface Tarif {
+  _id?: string;
+  agencyId: string;
+  planType: TarifType;       
+  price: number;           
+  description?: string;    
+  numberOfPasses?: number;     
+  createdAt?: Date;         
+  updatedAt?: Date;        
+}
+export type TarifType = 'standard' | 'premium' | 'vip';
 export enum  EmployeeRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
   COLLECTOR = 'collector'
 }
 
+// export enum  UserRole {
+//   ADMIN = 'admin',
+//   MANAGER = 'manager',
+//   COLLECTOR = 'collector',
+//   CLIENT = 'client',
+//   AGENCY = 'agence'
+// }
+
+// export interface CollectionSchedule {
+//   id: string;
+//   zoneId: string;
+//   dayOfWeek: number;
+//   startTime: string;
+//   endTime: string;
+//   collectorId: string;
+//   isActive: boolean;
+// }
 export interface CollectionSchedule {
-  id: string;
-  zoneId: string;
-  dayOfWeek: number;
+  _id?: string;
+  zone: string; 
+  date: string;
   startTime: string;
   endTime: string;
   collectorId: string;
-  isActive: boolean;
+  agencyId: string;
+  managerId: string; // Ajout du champ obligatoire managerId
 }
+
 
 export interface WasteType {
   id: string;
@@ -147,4 +255,31 @@ export interface Address {
   postalCode: string;
   latitude?: number;
   longitude?: number;
+}
+export interface Statistics {
+  totalClients: number;
+  totalEmployees: number;
+  totalZones: number;
+  totalCollectors: number;
+  totalSignalements: number;
+  activeCollectors: number;
+  todayCollections: number;
+  completedCollections: number;
+  monthlyRevenue: number;
+  averageRating: number;
+  pendingReports: number;
+  totalpendingSignalements: number; // ← AJOUTE cette ligne
+  message?: string;
+  success?: boolean;
+}
+
+export interface PlanningResponse {
+  plannings: CollectionSchedule[];
+}
+export interface PaginatedResponse<T> {
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+  data: T[];
 }

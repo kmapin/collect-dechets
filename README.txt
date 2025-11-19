@@ -1,20 +1,113 @@
 ## Les differents utilisateurs de waste management
 
-## CLIENTS
-        //***des comptes à supprimé***
-1==> email: guigmawpaulin@gmail.com pwd:07WasteManagergp01
-2==> email: adama2@gmail.com pwd:07WasteManagerda01
-3==> email: adama@gmail.com pwd:07WasteManagerda01
 
-        **Compte effectif pour les abonnements aux agences**
-1==> email: paul@gmail.com pwd:07WasteManagergp01
-2==> email: info@institutwise.org pwd:Wise1234
-
-## AGENCES
-1==> email: adamaagency@gmail.com pwd:07WasteManagerAdamaAgency01
-2==> email: adamaagency@gmail.com pwd:07WasteManagerAdamaAgency01
-2==> email: aicha.t@sahelys.com pwd:WISEclean1234
-
-## SUPER ADMIN
+## SUPER ADMIN.
 1==> email: admin.waste@gmail.com pwd:Wise2024
 
+##############################################################################################################################
+##############################################################################################################################
+
+## Old CLIENTS
+        //***des comptes à supprimé***
+1==> Email : bile58@gmail.com          Mot de passe : Wise2024
+2==> Email : bamogo@gmail.com          Mot de passe : Wise2024
+3==> Email : gwendindapaulin@gmail.com         Mot de passe : 07zeroDechetgp01
+4==> Email : g2wpaulin@gmail.com         Mot de passe : 07ZeroDechetgp01
+
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+New CLIENTS
+1==> Email : gangosmeon@gmail.com ou 77938688       Mot de passe : Wise2024
+
+
+##############################################################################################################################  \----,
+##############################################################################################################################  /----'
+
+
+## OLD AGENCES
+1==> email: aicha.t@sahelys.com pwd:WISEclean1234
+1==> email: guey@gmail.com pwd:motDePasseFort123
+1==> email: agence@gmail.com pwd:Wise2024
+
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
+New AGENCES
+
+1==> email: aicha.t@sahelys.com ou 77777777 pwd:12345678
+
+##############################################################################################################################
+##############################################################################################################################
+
+## COLLECTEUR
+
+Email : guigmawendindapaulin@gmail.com          Mot de passe : 5e86f7dfe4a5
+
+
+
+##############################################################################################################################
+##############################################################################################################################
+## MINUCIPALITE
+
+Email : test@gmail.com | 77777778    Mot de passe : 12345678
+Email : gangosmeo@gmail.com          Mot de passe : Wise2024
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                
+                                //////  TO DO in client dashboard
+1. Recuperer et afficher l'historique des collectes ==>(il me faut d'abord un QR code pour le collecteur afin qu'il puisse faire des collectes que je vais recuperer )
+2. Modifier un client, une agence, et meme ladmin ==>()==> 
+3.
+
+
+                                //////  TO DO IN HOME PAGE
+1=>Recuperer ma position par geolocalisation et afficher les agences dans ma ville
+2=>Mettre en place une carte
+1=>Positionner les agences à proximité de chez moi
+1=>Tracer l'itineraire pour rejoindre une agence
+1=>Demarrer(Deplacement en temps réel)
+1=>Ajouter loading when agencies charging
+1=>
+
+
+
+
+
+
+
+
+              <div *ngFor="let zone of agency?.serviceZones" class="zone-card">
+                <div class="zone-header">
+                  <h4>Quartier : {{ zone }}</h4>
+                  <span class="zone-status" [class.active]="true">
+                    {{ zone.isActive ? 'Active' : 'Active' }}
+                  </span>
+                </div>
+                <!-- <p class="zone-description">{{ zone }}</p> -->
+                <div class="zone-details">
+                  <span class="">
+                    <strong>Ville : </strong>
+
+                    <span class="text-success">OUAGADOUGOU</span>
+                    <!-- <div class="cities-list">
+                          <span *ngFor="let city of zone.cities" class="city-tag">{{ city }}</span>
+                        </div> -->
+                  </span>
+                  <div
+                    class="zone-neighborhoods"
+                    *ngIf="zone && zone.neighborhoods && zone.neighborhoods.length > 0"
+                  >
+                    <strong>Quartiers :</strong>
+                    <div class="neighborhoods-list">
+                      <span
+                        *ngFor="let neighborhood of zone.neighborhoods"
+                        class="neighborhood-tag"
+                        >{{ neighborhood }}</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
