@@ -2,7 +2,7 @@ import { Component, OnInit, HostListener, ElementRef, ChangeDetectorRef } from '
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { User, UserRole } from '../../models/user.model';
+import { User,RegisterUserData, UserRole } from '../../models/user.model';
 import { NotificationService } from '../../services/notification.service';
 import { MatIconModule } from '@angular/material/icon';
 import { interval, Subscription, switchMap } from 'rxjs';
@@ -13,7 +13,7 @@ import { interval, Subscription, switchMap } from 'rxjs';
   styleUrl: './header.css'
 })
 export class Header  implements OnInit {
-  currentUser: User | null = null;
+  currentUser: RegisterUserData | null = null;
   isAuthenticated = false;
   showUserMenu = false;
   isMobileMenuOpen = false;
@@ -127,7 +127,7 @@ export class Header  implements OnInit {
     this.notificationService.getAllNotificationsAgency$(userId).subscribe({
       next: (data: any) => {
         console.log('Notifications reçues :', data);
-        this.notifications = data.notifications;
+        this.notifications = data;
       },
       error: (err) => {
         console.error('Erreur lors du chargement des notifications :', err);

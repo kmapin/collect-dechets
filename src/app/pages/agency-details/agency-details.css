@@ -461,53 +461,7 @@
       width: 100%;
     }
 
-    .zones-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-    }
 
-    .zone-card {
-      padding: 20px;
-      border: 1px solid var(--medium-gray);
-      border-radius: 12px;
-      background: var(--light-gray);
-      transition: all 0.3s ease;
-    }
-
-    .zone-card:hover {
-      border-color: var(--primary-color);
-      transform: translateY(-2px);
-    }
-
-    .zone-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .zone-card h4 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin: 0;
-      color: var(--text-primary);
-    }
-
-    .zone-status {
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      background: #ffebee;
-      color: var(--error-color);
-    }
-
-    .zone-status.active {
-      background: #e8f5e8;
-      color: var(--success-color);
-    }
 
     .zone-description {
       color: var(--text-secondary);
@@ -868,6 +822,65 @@
       border-top: 1px solid var(--surface-border);
       background: white;
     }
+
+.districts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding-top: 1.5rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.district-card {
+  background: var(--light-gray);
+  border: 2px solid var(--medium-gray);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.district-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+
+.district-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.district-card.active .district-name {
+  color: black;
+}
+
+.district-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: #e8f5e8;
+  color: var(--success-color);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.city-section {
+  padding: 1.5rem;
+  background:white;
+  border-radius: 12px;
+}
+
+.city-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #667eea;
+}
     @media (max-width: 1200px) {
       .content-layout {
         grid-template-columns: 1fr 300px;
@@ -981,6 +994,9 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
+      }
+      .districts-grid {
+        grid-template-columns: 1fr;
       }
     }
 

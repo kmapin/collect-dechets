@@ -15,21 +15,21 @@ export class MessagesService {
   ) { }
 
   sendMessage(message: Message): Observable<Message> {
-    return this.http.post<Message>(`${environment.apiUrl}/messages`, message);
+    return this.http.post<Message>(`${environment.apiUrl}/messages/send`, message);
   }
 
   getMessagesForUser(userId: string): Observable<Message[]> {
-    return this.http.get<Message[]>(`${environment.apiUrl}/messages/${userId}/groupe`);
+    return this.http.get<Message[]>(`${environment.apiUrl}/messages/groups/${userId}`);
   }
-  getMessagesForAgency(userId: string): Observable<Message[]> {
-    return this.http.get<Message[]>(`${environment.apiUrl}/messages/${userId}`);
+  getMessagesForAgencyOrUser(userId: string): Observable<Message[]> {
+    return this.http.get<Message[]>(`${environment.apiUrl}/messages/${userId}/all`);
   }
   getUserUnreadMessagesCount(userId: string): Observable<number> {
     return this.http.get<number>(`${environment.apiUrl}/messages/unread-count/${userId}`);
   }
 
   markMessagesAsRead(messageId: string): Observable<void> {
-    return this.http.put<void>(`${environment.apiUrl}/messages/${messageId}/mark-read`, {});
+    return this.http.put<void>(`${environment.apiUrl}/messages/markAsRead/${messageId}`, {});
   }
 
 

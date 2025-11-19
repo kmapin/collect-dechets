@@ -11,7 +11,7 @@
         <div class="quick-actions">
           <button class="btn btn-primary" (click)="scrollToChat()">
             <i class="material-icons">message</i>Mes messages
-            <span class="tab-badge">{{ unreadMessageCount}}</span>
+            <span class="tab-badge">{{ unreadMessageCount ? unreadMessageCount : 0 }}</span>
           </button>
           <button
             *ngIf="currentUser?.subscribedAgencyId"
@@ -117,8 +117,7 @@
           >
             <h3>Prochain paiement</h3>
             <p class="stat-value">
-              {{ getNextPayment( activeSubscription?.endDate | date : "dd MMMM
-              yyyy" ) }}
+              {{ getNextPayment( activeSubscription?.endDate | date : "dd MMMM yyyy" ) }}
             </p>
             <span class="stat-detail"
               >{{ activeSubscription?.amount }} F CFA</span
@@ -189,21 +188,20 @@
                     {{ collection.startTime }}
                     <!-- {{ collection.startTime | date:'HH:mm' }} -->
                   </p>
-                  <p class="collection-address">
+                  <!-- <p class="collection-address">
                     <i class="material-icons">location_on</i>
                     {{ collection.zone }}
-                  </p>
+                  </p> -->
                 </div>
                 <div class="collection-status">
                   <span class="status-badge" [class]="'status-scheduled'">
-                    {{ getStatusText(collection.isActive) ? "Programmé" :
-                    "Inactif" }}
+                    {{ getStatusText(collection.status)}}
                   </span>
                   <div class="collection-actions">
                     <button
                       class="action-btn"
                       (click)="trackCollection(collection._id)"
-                      *ngIf="collection.isActive === 'in_progress'"
+                      *ngIf="collection.status === 'in_progress'"
                     >
                       <i class="material-icons">location_on</i>
                       Suivre
@@ -211,7 +209,7 @@
                     <button
                       class="action-btn"
                       (click)="reportIssue(collection._id)"
-                      *ngIf="collection.isActive === true"
+                      *ngIf="collection.status === 'Scheduled' || collection.status === 'In_progress'"
                     >
                       <i class="material-icons">report</i>
                       Signaler
@@ -268,8 +266,7 @@
                     {{ collection.scheduledDate | date : "HH:mm" }}
                   </p>
                   <p class="history-collector" *ngIf="collection.collectedDate">
-                    Collecté le {{ collection.collectedDate | date : "dd/MM à
-                    HH:mm" }}
+                    Collecté le {{ collection.collectedDate | date : "dd/MM à HH:mm" }}
                   </p>
                 </div>
                 <div class="history-status">
@@ -422,10 +419,10 @@
                     <ng-container *ngFor="let message of connectedUserMessages">
                       <button
                         class="chat-left-column-content-item"
-                        *ngIf="message.agencyName"
+                        *ngIf="message.name"
                         (click)="userAndAgencyConversation(message)"
                       >
-                        {{ message.agencyName }}
+                        {{ message.name }}
                       </button>
                     </ng-container>
                   </div>
@@ -436,13 +433,12 @@
                     <ng-container *ngFor="let message of receivedMessages">
                       <div
                         class="received"
-                        *ngIf="message.sender !== currentUser?.userId"
+                        *ngIf="message.sender !== currentUser?._id"
                       >
                         <div class="div5 chat-bubble">
                           <span> {{ message.content }}</span>
                           <span class="chat-time"
-                            >reçu le {{ message.timestamp | date : "dd/MMM/yyyy
-                            à HH:mm" }}
+                            >reçu le {{ message.timestamp | date : "dd/MMM/yyyy à HH:mm" }}
                             <mat-icon class="chat-read">
                               {{ message.read === "true" ? "done_all" : "done"
                               }}
@@ -452,7 +448,7 @@
                       </div>
                       <div
                         class="sent"
-                        *ngIf="message.sender === currentUser?.userId"
+                        *ngIf="message.sender === currentUser?._id"
                       >
                         <div class="div6 chat-bubble">
                           <span> {{ message.content }}</span>
@@ -572,13 +568,13 @@
               *ngIf="activeSubscription; else noSub"
             >
               <div class="subscription-service">
-                <h3>Collecte {{ activeSubscription.plan }}</h3>
-                <p>{{ activeSubscription.agencyId?.agencyName }}</p>
+                <h3>Collecte {{ activeSubscription.pricingId?.planType }}</h3>
+                <p>{{ activeSubscription.agencyId?.name }}</p>
               </div>
 
               <div class="subscription-pricing">
                 <div class="price">
-                  {{ activeSubscription.amount }} <sup>F CFA</sup>
+                  {{ activeSubscription.pricingId?.price }} <sup>F CFA</sup>
                 </div>
                 <div class="frequency">par mois</div>
               </div>
@@ -586,9 +582,9 @@
               <div class="subscription-status">
                 <span
                   class="status-badge"
-                  [class]="'status-' + activeSubscription.status"
+                  [class]="'status-' + (activeSubscription.isActive ? 'active' : 'inactive')"
                 >
-                  {{ getSubscriptionStatusText(activeSubscription.status) }}
+                  {{ getSubscriptionStatusText((activeSubscription.isActive ? 'active' : 'inactive')) }}
                 </span>
               </div>
 
@@ -667,10 +663,10 @@
                   <span class="amount">{{ payment.amount }} FCFA</span>
                   <span
                     class="status-badge"
-                    [class]="'status-' + payment.status"
+                    [class]="'status-' + (payment.status ? 'active' : 'inactive')"
                   >
-                    {{ getPaymentStatusText(payment.status) === "active" ?
-                    "Actif" : getPaymentStatusText(payment.status) ===
+                    {{ getPaymentStatusText((payment.status? 'active' :'')) === "active" ?
+                    "Actif" : getPaymentStatusText((payment.status? 'inactive' :'')) ===
                     "inactive" ? "Inactif" :
                     getPaymentStatusText(payment.status) === "cancelled" ?
                     "Annulé" : getPaymentStatusText(payment.status) ===

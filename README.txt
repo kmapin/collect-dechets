@@ -34,7 +34,7 @@ New CLIENTS
 
 New AGENCES
 
-1==> email: aicha.t@sahelys.com ou 77777777 pwd:Wise2024
+1==> email: aicha.t@sahelys.com ou 77777777 pwd:12345678
 
 ##############################################################################################################################
 ##############################################################################################################################
@@ -73,12 +73,41 @@ Email : gangosmeo@gmail.com          Mot de passe : Wise2024
 1=>
 
 
-                                //// ISSUES OCCURED IN AGENCIES PAGE
-1=>Appel du WS avec recherches des agences returne un data[vide]-> voir pourquoi avec salif ou robert . 
-        Voici le WS:  getAllAgenciesFromApi(): Observable<{ success: boolean; count: number; data: Agency[] }> {
-                        return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies/search/unified?limit=25`, {});
-                        
-                      }
-                      ==> Probleme non onKycFileSelected
 
-2=>
+
+
+
+
+
+              <div *ngFor="let zone of agency?.serviceZones" class="zone-card">
+                <div class="zone-header">
+                  <h4>Quartier : {{ zone }}</h4>
+                  <span class="zone-status" [class.active]="true">
+                    {{ zone.isActive ? 'Active' : 'Active' }}
+                  </span>
+                </div>
+                <!-- <p class="zone-description">{{ zone }}</p> -->
+                <div class="zone-details">
+                  <span class="">
+                    <strong>Ville : </strong>
+
+                    <span class="text-success">OUAGADOUGOU</span>
+                    <!-- <div class="cities-list">
+                          <span *ngFor="let city of zone.cities" class="city-tag">{{ city }}</span>
+                        </div> -->
+                  </span>
+                  <div
+                    class="zone-neighborhoods"
+                    *ngIf="zone && zone.neighborhoods && zone.neighborhoods.length > 0"
+                  >
+                    <strong>Quartiers :</strong>
+                    <div class="neighborhoods-list">
+                      <span
+                        *ngFor="let neighborhood of zone.neighborhoods"
+                        class="neighborhood-tag"
+                        >{{ neighborhood }}</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>

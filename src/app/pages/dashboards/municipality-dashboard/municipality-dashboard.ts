@@ -6,7 +6,7 @@ import { AuthService } from "../../../services/auth.service";
 import { AgencyService } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
-import { User } from "../../../models/user.model";
+import { RegisterUserData, User } from "../../../models/user.model";
 import { Agency } from "../../../models/agency.model";
 import { Collection, CollectionStatus } from "../../../models/collection.model";
 import { OUAGA_DATA } from "../../../data/mock-data";
@@ -15,6 +15,7 @@ import {
   MOCK_CITIES,
   MOCK_ARRONDISSEMENTS,
 } from "../../../data/countries-org.mock";
+import { FilterParams } from "../../../models/filterParams.model";
 
 interface MunicipalityStatistics {
   totalAgencies: number;
@@ -37,7 +38,7 @@ interface MunicipalityStatistics {
 interface AgencyAudit {
   id: string;
   name: string;
-  status: "active" | "inactive" | "suspended";
+  status: string;
   clients: number;
   collectors: number;
   zones: number;
@@ -112,7 +113,7 @@ interface Communication {
   styleUrl: './municipality-dashboard.css'
 })
 export class MunicipalityDashboard  implements OnInit {
-  currentUser: User | null = null;
+  currentUser: RegisterUserData | null = null;
   activeTab = "overview";
 
   // Data
@@ -129,6 +130,8 @@ export class MunicipalityDashboard  implements OnInit {
     complianceRate: 92,
   };
 
+
+ 
   agencyAudits: AgencyAudit[] = [];
   filteredAgencies: AgencyAudit[] = [];
   wasteStatistics: WasteStatistic[] = [];
@@ -139,11 +142,13 @@ export class MunicipalityDashboard  implements OnInit {
   // zoneStatistics: ZoneStatistic[] = [];
 
   // Filters
-  agenciesFilter = "all";
+  agenciesFilter = "";
   complianceFilter = "all";
   statisticsPeriod = "month";
   incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
   severityFilter: "all" | "low" | "medium" | "high" | "critical" = "all";
+  searchTerm="";
+  neighborhoodFilter="";
   // incidentsFilter = "all";
 
   // Modals
@@ -157,7 +162,10 @@ export class MunicipalityDashboard  implements OnInit {
     message: "",
     recipients: [],
   };
-
+  agenciesFilterParams: FilterParams = {
+      status: this.agenciesFilter,
+      search:this.searchTerm
+  }
   tabs = [
     { id: "overview", label: "Vue d'ensemble", icon: "dashboard", badge: null },
     { id: "agencies", label: "Audit Agences", icon: "business", badge: 0 },
@@ -194,7 +202,7 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   loadMunicipalityData(): void {
-    this.loadAgencyAudits();
+    this.loadAgencyAudits(this.agenciesFilterParams);
     this.loadWasteStatistics();
     this.loadZoneStatistics();
     this.loadAllSignalements();
@@ -204,16 +212,16 @@ export class MunicipalityDashboard  implements OnInit {
     // this.loadCommunications();
   }
 
-  loadAgencyAudits(): void {
-    this.agencyService.getAllAgenciesFromApi().subscribe({
+  loadAgencyAudits(agenciesFilterParams?: FilterParams ): void {
+    this.agencyService.getAllAgenciesFromApi(agenciesFilterParams).subscribe({
       next: (agencies) => {
         this.agencyAudits = agencies.data.map((agency) => ({
           id: agency?._id,
           name: agency?.name,
-          status: agency?.isActive ? "active" : "inactive",
+          status: agency?.status || "inactive",
           clients: agency?.clients?.length || 0,
           collectors: agency?.employees?.length || 0,
-          zones: 0,
+          zones: agency?.zoneActivite?.length || 0,
           userId: agency?.userId,
           collectionsToday: 0,
           completionRate: 0,
@@ -421,7 +429,7 @@ export class MunicipalityDashboard  implements OnInit {
   // Utility methods
   getAgencyStatusText(status?: string): string {
     if (!status) {
-      return `${this.statisticsAdmin?.activeAgencies} actives`;
+      return `${this.statisticsAdmin?.totalActiveAgencies} actives`;
     }
     const statusTexts = {
       active: "Active",
@@ -433,7 +441,7 @@ export class MunicipalityDashboard  implements OnInit {
 
   getClientStatusText(status?: string): string {
     if (!status) {
-      return `${this.statisticsAdmin?.activeClients} actives`;
+      return `${this.statisticsAdmin?.totalClients} actives`;
     }
     const statusTexts = {
       active: "Active",
@@ -470,6 +478,7 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   getStars(rating: number): number[] {
+    if (!rating || rating < 0) return [];
     return new Array(Math.floor(rating)).fill(0);
   }
 
@@ -594,7 +603,7 @@ export class MunicipalityDashboard  implements OnInit {
   showAdminStatistics(): void {
     this.adminService.getAllStatistics().subscribe({
       next: (statistics: any) => {
-        this.statisticsAdmin = statistics;
+        this.statisticsAdmin = statistics.stats;
         console.log(this.statisticsAdmin);
       },
     });
@@ -602,22 +611,28 @@ export class MunicipalityDashboard  implements OnInit {
 
   // Filter methods
   filterAgencies(): void {
-    this.filteredAgencies = this.agencyAudits.filter((agency) => {
-      const statusMatch =
-        this.agenciesFilter === "all" || agency.status === this.agenciesFilter;
-      let complianceMatch = true;
+    // this.filteredAgencies = this.agencyAudits.filter((agency) => {
+    //   const statusMatch =
+    //     this.agenciesFilter === "all" || agency.status === this.agenciesFilter;
+    //   let complianceMatch = true;
 
-      if (this.complianceFilter === "excellent") {
-        complianceMatch = agency.complianceScore >= 95;
-      } else if (this.complianceFilter === "good") {
-        complianceMatch =
-          agency.complianceScore >= 85 && agency.complianceScore < 95;
-      } else if (this.complianceFilter === "poor") {
-        complianceMatch = agency.complianceScore < 85;
-      }
+    //   if (this.complianceFilter === "excellent") {
+    //     complianceMatch = agency.complianceScore >= 95;
+    //   } else if (this.complianceFilter === "good") {
+    //     complianceMatch =
+    //       agency.complianceScore >= 85 && agency.complianceScore < 95;
+    //   } else if (this.complianceFilter === "poor") {
+    //     complianceMatch = agency.complianceScore < 85;
+    //   }
 
-      return statusMatch && complianceMatch;
-    });
+    //   return statusMatch && complianceMatch;
+    // });
+    this.agenciesFilterParams = {
+      status: this.agenciesFilter,
+      search:this.searchTerm
+    }
+    console.log('agenciesFilterParams', this.agenciesFilterParams);
+    this.loadAgencyAudits(this.agenciesFilterParams);
   }
 
   filterIncidents(): void {

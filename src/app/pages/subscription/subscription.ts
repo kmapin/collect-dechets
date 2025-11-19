@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
-import { User, UserRole } from '../../models/user.model';
+import { RegisterUserData, User, UserRole } from '../../models/user.model';
 import { AgencyService } from '../../services/agency.service';
 
 
@@ -14,7 +14,7 @@ import { AgencyService } from '../../services/agency.service';
   styleUrl: './subscription.css'
 })
 export class Subscription  implements OnInit {
-    currentUser: User | null = null;
+    currentUser: RegisterUserData | null = null;
     subscriptions: any[] = [];
     activeSubscription: any = null;
   
@@ -34,7 +34,7 @@ constructor(
   }
 
   getUserSubscription() {
-    const userID = this.currentUser?.id || '';
+    const userID = this.currentUser?._id || '';
     if (!userID) return;
     this.agencyService.getUserSubscription(userID).subscribe({
       next: (response: any[]) => {

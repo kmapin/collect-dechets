@@ -1,25 +1,23 @@
 <div class="agency-dashboard">
+  <!-- Page Header -->
   <div class="page-header">
     <div class="container">
       <div class="header-content">
         <div class="welcome-section">
           <h1 class="page-title">Tableau de Bord Agence</h1>
           <p class="page-subtitle">
-            {{ agency?.name }} - Gestion complète de votre agence de
-            collecte
+            {{ agency?.name }} - Gestion complète de votre agence de collecte
           </p>
         </div>
         <div class="quick-actions">
-          <button class="btn btn-primary" (click)="showAddEmployeeModal = true">
+          <button class="btn btn-primary" (click)="openAddEmployeeModal()">
             <i class="material-icons">person_add</i>
             Ajouter Employé
           </button>
-
-          <button class="btn btn-secondary" (click)="showZoneModal = true">
+          <button class="btn btn-secondary" (click)="openZoneModal()">
             <i class="material-icons">add_circle</i>
             Ajouter un Tarif
           </button>
-
           <button class="btn btn-primary" (click)="navigateToAgencyDetails()">
             <i class="material-icons">info</i>
             Portail Agence
@@ -28,20 +26,19 @@
       </div>
     </div>
   </div>
+
+  <!-- Main Content -->
   <div class="container">
     <div class="dashboard-content">
       <!-- Statistiques principales -->
       <div class="stats-grid">
-
-
         <div class="stat-card card">
           <div class="stat-icon clients">
             <i class="material-icons">people</i>
           </div>
           <div class="stat-info">
             <h3>Clients actifs</h3>
-            <p class="stat-value">{{ statistics.totalClients || 0 }}</p>
-            <!-- <span class="stat-trend positive">+2 ce mois</span> -->
+            <p class="stat-value">{{ statistics.totalClientsActifs || 0 }}</p>
           </div>
         </div>
 
@@ -51,8 +48,6 @@
           </div>
           <div class="stat-info">
             <h3>Employés</h3>
-            <!-- <p class="stat-value">{{ statistics.activeCollectors }}</p>
-                <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span> -->
             <p class="stat-value">{{ statistics.totalEmployees || 0 }}</p>
             <span class="stat-trend neutral">{{ getActiveCollectorsToday() }} en tournée</span>
           </div>
@@ -64,27 +59,30 @@
           </div>
           <div class="stat-info">
             <h3>zones</h3>
-
             <p class="stat-value">{{ statistics.totalZones || 0 }}</p>
-            <span class="stat-trend" [class.positive]="getCollectionRate() >= 90"
-              [class.negative]="getCollectionRate() < 80">
+            <span class="stat-trend" [class.positive]="getCollectionRate() >= 90" [class.negative]="getCollectionRate() < 80">
             </span>
           </div>
         </div>
 
         <div *ngIf="!isLoadingStatistics" class="stat-card card">
           <div class="stat-icon revenue">
-            <i class="material-icons">perso</i>
+            <i class="material-icons">person</i>
           </div>
           <div class="stat-info">
             <h3>Collecteurs</h3>
-            <!-- <p class="stat-value">{{ statistics.monthlyRevenue | number:'1.0-0' }}€</p>
-                <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
-            <p class="stat-value">{{ statistics.totalCollectors || 0 }}</p>
-            <!-- <span class="stat-trend positive">+8.5% vs mois dernier</span> -->
+            <p class="stat-value">{{ statistics.totalCollecteurs || 0 }}</p>
           </div>
         </div>
-
+        <div *ngIf="!isLoadingStatistics" class="stat-card card">
+          <div class="stat-icon revenue">
+            <i class="material-icons">people</i>
+          </div>
+          <div class="stat-info">
+            <h3>Gestionnaires</h3>
+            <p class="stat-value">{{ statistics.totalGestionnaires || 0 }}</p>
+          </div>
+        </div>
         <div *ngIf="!isLoadingStatistics" class="stat-card card">
           <div class="stat-icon reports">
             <i class="material-icons">report_problem</i>
@@ -101,24 +99,21 @@
 
       <!-- Navigation par onglets -->
       <div class="tabs-navigation">
-        <button *ngFor="let tab of tabs" class="tab-btn" [class.active]="activeTab === tab.id"
-          (click)="activeTab = tab.id">
+        <button *ngFor="let tab of tabs" class="tab-btn" [class.active]="activeTab === tab.id" (click)="activeTab = tab.id">
           <i class="material-icons">{{ tab.icon }}</i>
           {{ tab.label }}
-          <span *ngIf="tab.label === 'Messages' && unreadMessageCount >= 0" class="tab-badge">{{ unreadMessageCount
-            }}</span>
+          <span *ngIf="tab.label === 'Messages' && unreadMessageCount >= 0" class="tab-badge">{{ unreadMessageCount }}</span>
           <span *ngIf="tab.badge" class="tab-badge">{{ tab.badge }}</span>
         </button>
       </div>
 
       <!-- Contenu des onglets -->
-
       <div class="tab-content">
         <!-- Onglet Suivi des Collectes -->
         <div *ngIf="activeTab === 'collections'" class="collections-tab">
-          <div class="collections-header">
+          <div class="section-header">
             <h2>Suivi des Collectes en Temps Réel</h2>
-            <div class="collections-filters">
+            <div class="section-actions">
               <select [(ngModel)]="collectionsFilter" (change)="filterCollections()" class="filter-select">
                 <option value="all">Toutes les collectes</option>
                 <option value="scheduled">Programmées</option>
@@ -128,8 +123,7 @@
               </select>
 
               <!-- Bouton historique -->
-              <button class="action-btn" title="Voir l’historique des collectes" style="margin-left: 10px"
-                (click)="openHistoryModal()">
+              <button class="action-btn" title="Voir l’historique des collectes" style="margin-left: 10px" (click)="openHistoryModal()">
                 <i class="material-icons">history</i>
               </button>
             </div>
@@ -139,6 +133,7 @@
           <app-loading-spinner *ngIf="isLoadingCollections" message="Chargement des collectes..." size="medium">
           </app-loading-spinner>
 
+          <!-- Liste des collectes -->
           <div *ngIf="!isLoadingCollections" class="collections-grid">
             <div *ngFor="let collecte of dayCollectes" class="collection-card card">
               <!-- Header -->
@@ -157,12 +152,6 @@
                     *ngIf="collecte.status === 'in_progress'">
                     <i class="material-icons">location_on</i>
                   </button>
-                  <!-- <button
-              class="action-btn"
-              (click)="contactClient(collecte.clientId)"
-            >
-              <i class="material-icons">phone</i>
-            </button> -->
                 </div>
               </div>
 
@@ -199,12 +188,84 @@
 
         <!-- Onglet Gestion des Employés -->
         <div *ngIf="activeTab === 'employees'" class="employees-tab">
-          <div class="employees-header">
+          <div class="section-header">
             <h2>Gestion des Employés</h2>
-            <div class="employees-actions">
-              <button class="btn btn-primary" (click)="showAddEmployeeModal = true">
+            <div class="section-actions">
+              <button 
+                class="btn btn-outline search-toggle-btn" 
+                (click)="toggleEmployeesSearch()"
+                [class.active]="showEmployeesSearch"
+                title="{{ showEmployeesSearch ? 'Masquer la recherche' : 'Afficher la recherche' }}">
+                <i class="material-icons">{{ showEmployeesSearch ? 'search_off' : 'search' }}</i>
+                {{ showEmployeesSearch ? 'Masquer recherche' : 'Rechercher' }}
+              </button>
+              <button class="btn btn-primary" (click)="openAddEmployeeModal()">
                 <i class="material-icons">person_add</i>
                 Ajouter Employé
+              </button>
+            </div>
+          </div>
+
+          <!-- Barre de recherche des employés (conditionnelle) -->
+          <div class="employees-search-section" 
+               *ngIf="showEmployeesSearch" 
+               [@slideInOut]>
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <i class="material-icons search-icon">search</i>
+                <input 
+                  type="text" 
+                  class="search-input"
+                  placeholder="Rechercher un employé par nom, email ou rôle..."
+                  [(ngModel)]="employeesSearch"
+                  (input)="filterEmployees()"
+                  #searchInput>
+                <button 
+                  class="clear-search-btn" 
+                  *ngIf="employeesSearch"
+                  (click)="clearEmployeeSearch()"
+                  title="Effacer la recherche">
+                  <i class="material-icons">clear</i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Filtres supplémentaires -->
+            <div class="employees-filters">
+              <div class="filter-group">
+                <label for="roleFilter">Rôle :</label>
+                <select 
+                  id="roleFilter"
+                  class="filter-select"
+                  [(ngModel)]="employeesRoleFilter"
+                  (change)="filterEmployees()">
+                  <option value="all">Tous les rôles</option>
+                  <option value="manager">Managers</option>
+                  <option value="gestionnaire">Gestionnaires</option>
+                  <option value="collector">Collecteurs</option>
+                </select>
+              </div>
+              
+              <div class="filter-group">
+                <label for="statusFilter">Statut :</label>
+                <select 
+                  id="statusFilter"
+                  class="filter-select"
+                  [(ngModel)]="employeesStatusFilter"
+                  (change)="filterEmployees()">
+                  <option value="all">Tous</option>
+                  <option value="active">Actifs</option>
+                  <option value="inactive">Inactifs</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Résultats de la recherche -->
+            <div class="search-results-info" *ngIf="employeesSearch || employeesRoleFilter !== 'all' || employeesStatusFilter !== 'all'">
+              <span class="results-count">{{ filteredEmployees.length }} employé(s) trouvé(s)</span>
+              <button class="reset-filters-btn" (click)="resetEmployeeFilters()">
+                <i class="material-icons">refresh</i>
+                Réinitialiser les filtres
               </button>
             </div>
           </div>
@@ -213,8 +274,9 @@
           <app-loading-spinner *ngIf="isLoadingEmployees" message="Chargement des employés..." size="medium">
           </app-loading-spinner>
 
+          <!-- Liste des employés -->
           <div *ngIf="!isLoadingEmployees" class="employees-grid">
-            <div *ngFor="let employee of allEmployees" class="employee-card card" [ngClass]="
+            <div *ngFor="let employee of filteredEmployees" class="employee-card card" [ngClass]="
                     employee.role
                       ? 'client-audit-card-' + employee.role
                       : 'client-audit-card'
@@ -244,73 +306,72 @@
               </div>
 
               <div class="employee-details">
-                <!-- <div class="detail-item">
-                      <i class="material-icons">email</i>
-                      <span>{{ employee.userId.email}}</span>
-                    </div> -->
+                <div class="detail-item">
+                  <i class="material-icons">email</i>
+                  <span>{{ employee.email }}</span>
+                </div>
                 <div class="detail-item">
                   <i class="material-icons">phone</i>
-                  <span>{{ employee.phone }}</span>
+                  <span>{{ employee.phone || 'Non renseigné' }}</span>
                 </div>
-                <div class="detail-item">
-                  <!-- <i class="material-icons">map</i> -->
-                  <!-- <span>{{getZoneLengthByEmployeeId(employee._id)}} zone(s) assignée(s)</span> -->
-                  <!-- <span>{{ employee.zones.length }} zone(s) assignée(s)</span> -->
-                </div>
-                <div class="detail-item">
+                <div class="detail-item" *ngIf="employee.hiredAt">
                   <i class="material-icons">event</i>
-                  <span>Embauché le {{ employee.hiredAt | date : "dd/MM/yyyy"
-                    }}</span>
+                  <span>{{ employee.hiredAt | date : "dd/MM/yyyy" }}</span>
                 </div>
               </div>
 
               <div class="employee-actions">
-                <button class="action-btn" (click)="editEmployee(employee)">
+                <button class="action-btn edit" (click)="editEmployee(employee)" title="Modifier l'employé">
                   <i class="material-icons">edit</i>
                 </button>
-                <button class="action-btn danger" [disabled]="isDeleting"
-                  (click)="deleteEmployee(currentUser, employee)">
-                  <i class="material-icons">delete</i>
+                <button 
+                  class="action-btn danger" 
+                  [class.loading]="isDeleting"
+                  [disabled]="isDeleting"
+                  (click)="deleteEmployee(currentUser, employee)"
+                  title="Supprimer l'employé">
+                  <i class="material-icons">{{ isDeleting ? 'hourglass_empty' : 'delete' }}</i>
                 </button>
-                <button class="action-btn" [class.active]="employee.isActive" (click)="toggleEmployeeStatus(employee)">
+                <button 
+                  class="action-btn" 
+                  [class.active]="employee.isActive" 
+                  (click)="toggleEmployeeStatus(employee)"
+                  title="{{ employee.isActive ? 'Désactiver' : 'Activer' }} l'employé">
                   <i class="material-icons">{{ employee.isActive ? "toggle_on" : "toggle_off" }}</i>
                 </button>
               </div>
-              <!-- <div class="employee-stats" *ngIf="employee.role === 'collector'">
-                    <div class="stat-item">
-                      <span class="stat-label">Collectes aujourd'hui</span>
-                      <span class="stat-value">{{ getEmployeeCollections(employee._id) }}</span>
-                    </div>
-                    <div class="stat-item">
-                      <span class="stat-label">Note moyenne</span>
-                      <span class="stat-value">{{ getEmployeeRating(employee._id) }}/5</span>
-                    </div>
-                  </div> -->
             </div>
           </div>
-          <div *ngIf="!isLoadingEmployees && !allEmployees?.length" class="empty-state">
+
+          <!-- État vide pour les employés -->
+          <div *ngIf="!isLoadingEmployees && !filteredEmployees.length" class="empty-state">
             <i class="material-icons">people_outline</i>
-            <h3>Aucun employé</h3>
-            <p>Vous n'avez pas encore ajouté d'employés à votre agence. Cliquez sur "Ajouter Employé" pour commencer.
+            <h3 *ngIf="!employeesSearch && employeesRoleFilter === 'all' && employeesStatusFilter === 'all'">Aucun employé</h3>
+            <h3 *ngIf="employeesSearch || employeesRoleFilter !== 'all' || employeesStatusFilter !== 'all'">Aucun résultat</h3>
+            <p *ngIf="!employeesSearch && employeesRoleFilter === 'all' && employeesStatusFilter === 'all'">
+              Vous n'avez pas encore ajouté d'employés à votre agence. Cliquez sur "Ajouter Employé" pour commencer.
+            </p>
+            <p *ngIf="employeesSearch || employeesRoleFilter !== 'all' || employeesStatusFilter !== 'all'">
+              Aucun employé ne correspond à vos critères de recherche. Essayez de modifier vos filtres.
             </p>
           </div>
         </div>
 
         <!-- Onglet Gestion des Zones -->
         <div *ngIf="activeTab === 'zones'" class="zones-tab">
-          <div class="zones-header">
+          <div class="section-header">
             <h2>Gestion des Zones de Couverture</h2>
-            <div class="zones-actions">
+            <div class="section-actions">
               <button class="btn btn-primary" (click)="openTariffsModal()">
                 <i class="material-icons">visibility</i>
                 Voir mes tarifs
               </button>
+              <button class="btn btn-primary" (click)="openZoneModalcouverture()">
+                <i class="material-icons">edit_location</i>
+             Ajouter des zones couvertes
+              </button>
             </div>
           </div>
-          <button class="btn btn-primary" (click)="openZoneModalcouverture()">
-            <i class="material-icons">edit_location</i>
-            Modifier les zones couvertes
-          </button>
 
           <!-- Section Statistiques par Zone -->
           <div class="zone-analytics-section">
@@ -372,9 +433,12 @@
                 <div class="stat-info">
                   <h4>Charge de Travail</h4>
                   <p class="stat-value">{{ getWorkloadPercentage() }}%</p>
-                  <span class="stat-trend" [class.positive]="getWorkloadPercentage() <= 80" 
-                        [class.warning]="getWorkloadPercentage() > 80 && getWorkloadPercentage() <= 95"
-                        [class.negative]="getWorkloadPercentage() > 95">
+                  <span class="stat-trend" 
+                        [ngClass]="{ 
+                          'positive': getWorkloadPercentage() <= 80, 
+                          'warning': getWorkloadPercentage() > 80 && getWorkloadPercentage() <= 95,
+                          'negative': getWorkloadPercentage() > 95
+                        }">
                     {{ getWorkloadStatus() }}
                   </span>
                 </div>
@@ -527,76 +591,131 @@
               </div>
             </div>
           </div>
-          <!-- Indicateur de chargement pour les zones -->
-          <app-loading-spinner *ngIf="isLoadingZones" message="Chargement des zones..." size="medium">
-          </app-loading-spinner>
 
-          <div *ngIf="!isLoadingZones" class="zones-content">
-            <div class="zones-map">
-              <div class="map-container">
-                <div class="map-placeholder">
-                  <i class="material-icons">map</i>
+          <!-- Interface compacte des zones de couverture -->
+          <div *ngIf="!isLoadingZones" class="compact-coverage-display">
+            <!-- En-tête compact avec statistiques inline -->
+            <div class="compact-coverage-header">
+              <div class="coverage-stats-inline">
+                <div class="inline-stat">
+                  <i class="material-icons">location_on</i>
+                  <span class="stat-number">{{ zones.length }}</span>
+                  <span class="stat-label">zones</span>
+                </div>
+                <div class="inline-stat">
+                  <i class="material-icons">trending_up</i>
+                  <span class="stat-number">{{ getEstimatedCoverage() }}%</span>
+                  <span class="stat-label">couverture</span>
+                </div>
+                <div class="inline-stat">
+                  <i class="material-icons">people</i>
+                  <span class="stat-number">{{ getTotalZoneClients() }}</span>
+                  <span class="stat-label">clients</span>
+                </div>
+              </div>
+            </div>
 
-                  <div class="zone-container" *ngIf="zones?.length">
-                    <h4 class="zone-title">Zones couvertes</h4>
-                    <div class="zone-list">
-                      <div class="zone-card" *ngFor="let zone of zones">
-                        <div class="zone-details">
-                          <p>
-                            <strong>Quartier :</strong>
-                            {{ zone.neighborhood || zone }}
-                          </p>
-                        </div>
+            <!-- Affichage compact des zones -->
+            <div class="zones-compact-container" *ngIf="zones.length > 0">
+              <!-- Liste compacte des zones -->
+              <div class="zones-compact-list">
+                <div *ngFor="let zone of zones; let i = index" 
+                     class="compact-zone-item"
+                     (click)="selectZone(zone)"
+                     [class.selected]="selectedZoneForDisplay === zone">
+                  
+                  <div class="zone-compact-content">
+                    <div class="zone-number">{{ i + 1 }}</div>
+                    <div class="zone-info-compact">
+                      <h4>{{ zone.neighborhood || zone }}</h4>
+                      <div class="zone-mini-stats">
+                        <span class="mini-stat">
+                          <i class="material-icons">business</i>
+                          {{ getZoneBusinessCount(zone) }}
+                        </span>
+                        <span class="mini-stat">
+                          <i class="material-icons">home</i>
+                          {{ getZoneHouseholdCount(zone) }}
+                        </span>
                       </div>
+                    </div>
+                    <div class="zone-status-compact">
+                      <div class="status-dot-small"></div>
+                      <span>Actif</span>
                     </div>
                   </div>
 
-                  <div *ngIf="!zones?.length && !isLoadingZones" class="no-zone">
-                    <p>Veuillez definir vos zonees de service .</p>
+                  <!-- Actions compactes -->
+                  <div class="zone-actions-compact">
+                    <button class="compact-action-btn danger" 
+                            title="Retirer cette zone"
+                            (click)="$event.stopPropagation(); removeZone(zone)">
+                      <i class="material-icons">remove_circle</i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panneau de détails latéral (si zone sélectionnée) -->
+              <div class="zone-details-sidebar" *ngIf="selectedZoneForDisplay">
+                <div class="sidebar-header">
+                  <h4>{{ selectedZoneForDisplay.neighborhood || selectedZoneForDisplay }}</h4>
+                  <button class="close-sidebar" (click)="selectedZoneForDisplay = null">
+                    <i class="material-icons">close</i>
+                  </button>
+                </div>
+                
+                <div class="sidebar-content">
+                  <div class="detail-section">
+                    <h5>Localisation</h5>
+                    <div class="location-info">
+                      <div class="location-item">
+                        <div class="location-icon">
+                          <i class="material-icons">location_city</i>
+                        </div>
+                        <div class="location-details">
+                          <span class="location-label">Ville</span>
+                          <span class="location-value">{{ selectedZoneForDisplay.city || 'Ouagadougou' }}</span>
+                        </div>
+                      </div>
+                      
+                      <div class="location-item">
+                        <div class="location-icon">
+                          <i class="material-icons">place</i>
+                        </div>
+                        <div class="location-details">
+                          <span class="location-label">Arrondissement</span>
+                          <span class="location-value">{{ selectedZoneForDisplay.district || selectedZoneForDisplay.arrondissement || 'Arrondissement 1' }}</span>
+                        </div>
+                      </div>
+                      
+                      <div class="location-item">
+                        <div class="location-icon">
+                          <i class="material-icons">location_on</i>
+                        </div>
+                        <div class="location-details">
+                          <span class="location-label">Secteur</span>
+                          <span class="location-value">{{ selectedZoneForDisplay.sector || selectedZoneForDisplay.secteur || 'Secteur ' + ((zones.indexOf(selectedZoneForDisplay) + 1)) }}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="zones-list">
-              <div *ngFor="let zone of serviceZones" class="zone-card card">
-                <div class="zone-header">
-                  <h4>{{ zone.name }}</h4>
-                  <div class="zone-actions">
-                    <button class="action-btn" (click)="editZone(zone.id)">
-                      <i class="material-icons">edit</i>
-                    </button>
-                    <button class="action-btn danger" (click)="deleteZone(zone.id)">
-                      <i class="material-icons">delete</i>
-                    </button>
-                  </div>
+            <!-- État vide compact -->
+            <div class="empty-zones-compact" *ngIf="zones.length === 0">
+              <div class="empty-compact-content">
+                <i class="material-icons">location_off</i>
+                <div class="empty-text">
+                  <h4>Aucune zone définie</h4>
+                  <p>Ajoutez des zones pour organiser vos collectes</p>
                 </div>
-
-                <div class="zone-info">
-                  <p class="zone-description">{{ zone.description }}</p>
-                  <div class="zone-details">
-                    <div class="detail-item">
-                      <i class="material-icons">location_city</i>
-                      <span>{{ zone.cities.join(", ") }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <i class="material-icons">home</i>
-                      <span>{{ zone.neighborhoods.join(", ") }}</span>
-                    </div>
-                    <div class="detail-item">
-                      <i class="material-icons">people</i>
-                      <span>{{ getZoneClients(zone.id) }} clients</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="zone-status">
-                  <span class="status-badge" [class]="
-                          zone.isActive ? 'status-active' : 'status-inactive'
-                        ">
-                    {{ zone.isActive ? "Active" : "Inactive" }}
-                  </span>
-                </div>
+                <button class="btn btn-primary btn-sm" (click)="openZoneModalcouverture()">
+                  <i class="material-icons">add</i>
+                  Ajouter une zone
+                </button>
               </div>
             </div>
           </div>
@@ -604,9 +723,9 @@
 
         <!-- Onglet Plannings -->
         <div *ngIf="activeTab === 'schedules'" class="schedules-tab">
-          <div class="schedules-header">
+          <div class="section-header">
             <h2>Gestion des Plannings de Collecte</h2>
-            <div class="schedules-actions">
+            <div class="section-actions">
               <button class="btn btn-primary" (click)="showScheduleModal = true">
                 <i class="material-icons">schedule</i>
                 Nouveau Planning
@@ -634,43 +753,64 @@
 
               <div class="calendar-content">
                 <div *ngFor="let day of weekDays; let i = index" class="day-column">
-                  <div *ngFor="let schedule of getSchedulesForDay(i)" class="schedule-item"
-                    (click)="openScheduleDetails(schedule)">
-                    <!-- <div class="schedule-time">
-                          <span class="schedule-time">Debut:</span>
-                          {{ schedule.startTime }}
-                        </div> -->
+                  <div *ngFor="let schedule of getSchedulesForDay(i)" 
+                       class="schedule-item"
+                       [class.new]="isNewSchedule(schedule)"
+                       [class.loading]="isScheduleLoading(schedule)"
+                       (click)="openScheduleDetails(schedule)">
+                    
+                    <!-- Localisation avec icône moderne -->
                     <div class="schedule-time">
-                      <!-- <span class="schedule-time">Zone:</span> -->
-                      <i class="material-icons">location_on:</i>
-                      {{ getZoneName(schedule.zone) }}
+                      <i class="material-icons">place</i>
+                      <span>{{ getZoneName(schedule.zone) }}</span>
                     </div>
+                    
+                    <!-- Horaires avec icône horloge -->
                     <div class="schedule-time">
-                      <!-- <span class="schedule-time">Heure:</span>
-                            -->
-                      <i class="material-icons">schedule:</i>
-
-                      {{ schedule.startTime }} - {{ schedule.endTime }}
+                      <i class="material-icons">schedule</i>
+                      <span>{{ schedule.startTime }} - {{ schedule.endTime }}</span>
                     </div>
 
+                    <!-- Collecteur avec icône personne -->
                     <div class="schedule-time">
-                      <!-- <span class="schedule-time">Collecteur:</span> -->
-                      <i class="material-icons">person:</i>
-
-                      {{ getCollectorName(schedule.collectorId) }}
+                      <i class="material-icons">person</i>
+                      <span>{{ getCollectorName(schedule.collectorId) || 'Non assigné' }}</span>
                     </div>
-                    <div class="schedule-actions">
-                      <button class="action-btn danger" (click)="deletePlanning(schedule._id)">
+                    
+                    <!-- Actions avec effet glassmorphism -->
+                    <div class="schedule-actions" (click)="$event.stopPropagation()">
+                      <button class="action-btn edit" 
+                              (click)="editSchedule(schedule)" 
+                              title="Modifier le planning">
+                        <i class="material-icons">edit</i>
+                      </button>
+                      <button class="action-btn danger" 
+                              (click)="deletePlanning(schedule._id)" 
+                              title="Supprimer le planning">
                         <i class="material-icons">delete</i>
                       </button>
-                      <!-- <button
-    class="action-btn"
-    [class.active]="schedule.isActive"
-    (click)="toggleScheduleStatus(schedule)"
-  >
-    <i class="material-icons">{{ schedule.isActive ? 'toggle_on' : 'toggle_off' }}</i>
-  </button> -->
                     </div>
+                  </div>
+                  
+                  <!-- Zone cliquable pour créer un nouveau planning -->
+                  <div *ngIf="getSchedulesForDay(i).length === 0" 
+                       class="empty-day-clickable"
+                       (click)="createNewScheduleForDay(i)"
+                       title="Cliquer pour créer un planning pour {{ getDayName(i) }}">
+                    <div class="empty-day-content">
+                      <i class="material-icons">add_circle_outline</i>
+                      <span>Nouveau planning</span>
+                      <small>{{ getDayName(i) }} {{ getFormattedDate(i) }}</small>
+                    </div>
+                  </div>
+
+                  <!-- Bouton d'ajout rapide même quand il y a déjà des plannings -->
+                  <div *ngIf="getSchedulesForDay(i).length > 0" 
+                       class="add-more-schedule"
+                       (click)="createNewScheduleForDay(i)"
+                       title="Ajouter un autre planning pour {{ getDayName(i) }}">
+                    <i class="material-icons">add</i>
+                    <span>Ajouter</span>
                   </div>
                 </div>
               </div>
@@ -681,8 +821,65 @@
         <!-- Onglet Clients -->
         <!-- Clients Actifs  -->
         <div *ngIf="activeTab === 'clients'" class="clients-tab">
-          <div class="clients-header">
+          <div class="section-header">
             <h2>Clients Actifs ({{ activeClients.length }})</h2>
+            <div class="section-actions">
+              <button class="btn btn-outline" (click)="toggleClientsSearch()">
+                <i class="material-icons">{{ showClientsSearch ? 'search_off' : 'search' }}</i>
+                {{ showClientsSearch ? 'Masquer recherche' : 'Rechercher' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Barre de recherche des clients (conditionnelle) -->
+          <div class="clients-search-section" 
+               *ngIf="showClientsSearch" 
+               [@slideInOut]>
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <i class="material-icons search-icon">search</i>
+                <input 
+                  type="text" 
+                  class="search-input"
+                  placeholder="Rechercher un client par nom, email, téléphone ou adresse..."
+                  [(ngModel)]="clientsSearch"
+                  (input)="filterClients()"
+                  #clientSearchInput>
+                <button 
+                  class="clear-search-btn" 
+                  *ngIf="clientsSearch"
+                  (click)="clearClientSearch()"
+                  title="Effacer la recherche">
+                  <i class="material-icons">clear</i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Filtres supplémentaires -->
+            <div class="clients-filters">
+              <div class="filter-group">
+                <label for="clientStatusFilter">Statut :</label>
+                <select 
+                  id="clientStatusFilter"
+                  class="filter-select"
+                  [(ngModel)]="clientsStatusFilter"
+                  (change)="filterClients()">
+                  <option value="all">Tous</option>
+                  <option value="active">Actifs</option>
+                  <option value="suspended">Suspendus</option>
+                  <option value="pending">En attente</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Résultats de la recherche -->
+            <div class="search-results-info" *ngIf="clientsSearch || clientsStatusFilter !== 'all'">
+              <span class="results-count">{{ filteredActiveClients.length }} client(s) trouvé(s)</span>
+              <button class="reset-filters-btn" (click)="resetClientFilters()">
+                <i class="material-icons">refresh</i>
+                Réinitialiser les filtres
+              </button>
+            </div>
           </div>
 
           <!-- Indicateur de chargement pour les clients -->
@@ -702,14 +899,14 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngIf="!isLoadingClients && activeClients.length === 0">
+                <tr *ngIf="!isLoadingClients && filteredActiveClients.length === 0">
                   <td colspan="6" style="text-align: center; color: #888">
-                    Aucun client actif pour le moment. Les nouveaux clients apparaîtront ici après leur inscription.
+                    {{ clientsSearch || clientsStatusFilter !== 'all' ? 'Aucun client trouvé avec ces critères.' : 'Aucun client actif pour le moment. Les nouveaux clients apparaîtront ici après leur inscription.' }}
                   </td>
                 </tr>
-                <tr *ngFor="let client of activeClients">
+                <tr *ngFor="let client of filteredActiveClients">
                   <td>{{ client.firstName }} {{ client.lastName }}</td>
-                  <td></td>
+                  <td> {{ client.email }}</td>
                   <td>{{ client.phone }}</td>
                   <td>
                     {{ client.address.street }}, {{ client.address.neighborhood
@@ -719,30 +916,9 @@
                     <span class="status-badge status-active">Actif</span>
                   </td>
                   <td>
-                    <!-- <button
-                          class="action-btn"
-                          (click)="suspendClient(client._id)"
-                          title="Suspendre"
-                        >
-                          <i class="material-icons">pause</i>
-                        </button> -->
                     <button class="action-btn danger" (click)="viewClientDetails(client._id)">
                       <i class="material-icons">visibility</i>
                     </button>
-                    <!-- <button
-                          class="action-btn danger"
-                          (click)="deleteClient()"
-                          title="Supprimer"
-                        >
-                          <i class="material-icons">delete</i>
-                        </button> -->
-                    <!-- <button
-                            class="btn btn-secondary"
-                            (click)="viewClientDetails(client?._id)"
-                          >
-                            <i class="material-icons">visibility</i>
-                            Détails
-                          </button> -->
                   </td>
                 </tr>
               </tbody>
@@ -803,9 +979,9 @@
 
         <!-- Onglet Signalements -->
         <div *ngIf="activeTab === 'reports'" class="reports-tab">
-          <div class="reports-header">
+          <div class="section-header">
             <h2>Signalements</h2>
-            <div class="incidents-filters">
+            <div class="section-actions">
               <select [(ngModel)]="incidentsFilter" (change)="filterIncidents()" class="filter-select">
                 <option value="all">Tous les incidents</option>
                 <option value="open">Ouverts</option>
@@ -821,6 +997,7 @@
               </select>
             </div>
           </div>
+
           <!-- Indicateur de chargement pour les signalements -->
           <app-loading-spinner *ngIf="isLoadingReports" message="Chargement des signalements..." size="medium">
           </app-loading-spinner>
@@ -844,12 +1021,12 @@
               </h4>
               <div class="incident-content">
                 <h4>{{ getIncidentTypeText(report.type) }}</h4>
-                <p class="incident-description">{{ report.description }}</p>
+                <p class="incident-description">{{ report.comment }}</p>
                 <p class="incident-date">
-                  Date : {{ report.date | date : "dd/MM/yyyy" }}
+                  Date : {{ report.createdAt | date : "dd/MM/yyyy" }}
                 </p>
                 <p class="incident-date">
-                  Heure : {{ report.date | date : "HH:mm:ss" }}
+                  Heure : {{ report.createdAt | date : "HH:mm:ss" }}
                 </p>
               </div>
               <!-- Affichage des photos -->
@@ -887,7 +1064,9 @@
               </div>
             </div>
           </div>
-          <div *ngIf="!isLoadingReports && !agencyReports?.length" class="empty-state">
+
+          <!-- État vide pour les signalements -->
+          <div *ngIf="!isLoadingReports && !agencyReports.length" class="empty-state">
             <i class="material-icons">report_off</i>
             <h3>Aucun signalement</h3>
             <p>Excellent ! Vous n'avez aucun signalement en cours. Les nouveaux signalements apparaîtront ici.</p>
@@ -895,10 +1074,10 @@
         </div>
 
         <!-- Onglet Messages -->
-        <div *ngIf="activeTab === 'messages'" class="reports-tab">
-          <div class="reports-header">
+        <div *ngIf="activeTab === 'messages'" class="messages-tab">
+          <div class="section-header">
             <h2>Messages</h2>
-            <div class="incidents-filters">
+            <div class="section-actions">
               <span>{{ unreadMessageCount }} message(s) non lu(s)</span>
             </div>
           </div>
@@ -941,22 +1120,20 @@
               <div class="chat-area">
                 <div class="chat-messages" #scrollMe>
                   <ng-container *ngFor="let message of receivedMessages">
-                    <div class="received" *ngIf="message.sender !== currentUser?.userId">
+                    <div class="received" *ngIf="message.sender !== currentUser?.agencyId">
                       <div class="div5 chat-bubble">
                         <span> {{ message.content }}</span>
-                        <span class="chat-time">reçu le {{ message.timestamp | date : "dd/MMM/yyyy à
-                          HH:mm" }}
+                        <span class="chat-time">reçu le {{ message.timestamp | date : "dd/MMM/yyyy àHH:mm" }}
                           <mat-icon class="chat-read">
                             {{ message.read === "true" ? "done_all" : "done" }}
                           </mat-icon>
                         </span>
                       </div>
                     </div>
-                    <div class="sent" *ngIf="message.sender === currentUser?.userId">
+                    <div class="sent" *ngIf="message.sender === currentUser?.agencyId">
                       <div class="div6 chat-bubble">
                         <span> {{ message.content }}</span>
-                        <span class="chat-time">envoyé le {{ message.timestamp | date : "dd/MMM/yyyy
-                          à HH:mm" }}
+                        <span class="chat-time">envoyé le {{ message.timestamp | date : "dd/MMM/yyyy à HH:mm" }}
                           <mat-icon class="chat-read">
                             {{ message.read === "true" ? "done_all" : "done" }}
                           </mat-icon>
@@ -979,6 +1156,7 @@
               </div>
             </div>
           </div>
+
           <!-- Message -->
           <div class="modal-overlay" *ngIf="showMessageModal" (click)="showMessageModal = false">
             <div class="modal-content" (click)="$event.stopPropagation()">
@@ -989,18 +1167,6 @@
                 </button>
               </div>
               <form class="report-form">
-                <!-- <div class="form-group">
-                      <label>Destinataire</label>
-                      <select [(ngModel)]="messageData.receiver" name="receiver" required>
-                        <option value="">Sélectionnez</option>
-                        <option value="missed_collection">Collecte manquée</option>
-                        <option value="compliance_issue">Non-conformité</option>
-                        <option value="technical_issue">Problème technique</option>
-                        <option value="complaint">Réclamation</option>
-                        <option value="other">Autre</option>
-                      </select>
-                    </div>-->
-
                 <div class="form-group">
                   <label>Message</label>
                   <textarea [(ngModel)]="messageData.content" name="content" rows="4" placeholder="Votre message..."
@@ -1104,17 +1270,18 @@
               </div>
             </div> -->
         </div>
+
         <!-- Onglet tarif -->
         <div class="analytics-tab">
           <div class="analytics-header"></div>
 
           <div class="analytics-content">
             <!-- Drawer Ajouter Employé -->
-            <div class="drawer-overlay" *ngIf="showAddEmployeeModal" (click)="showAddEmployeeModal = false">
+            <div class="drawer-overlay" *ngIf="showAddEmployeeModal" (click)="closeAddEmployeeModal()">
               <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                 <div class="drawer-header">
-                  <h3>Ajouter un Employé</h3>
-                  <button class="drawer-close-btn" (click)="showAddEmployeeModal = false">
+                  <h3>{{ isEditingEmployee ? 'Modifier l\'Employé' : 'Ajouter un Employé' }}</h3>
+                  <button class="drawer-close-btn" (click)="closeAddEmployeeModal()">
                     <i class="material-icons">close</i>
                   </button>
                 </div>
@@ -1135,81 +1302,86 @@
                     </div>
                   </div>
 
-                  <form id="employee-form" class="drawer-form" [formGroup]="employeeForm" (ngSubmit)="addEmployee()">
+                  <form id="employee-form" class="drawer-form" [formGroup]="employeeForm" (ngSubmit)="addEmployee()" autocomplete="off">
                     <div class="form-row">
                       <div class="form-group">
-                        <label class="form-label required">Prénom</label>
+                        <label class="form-label required">Prénom *</label>
                         <input type="text" formControlName="firstName" class="form-input"
                           [class.error]="hasFieldError('employee', 'firstName')"
                           [class.valid]="employeeForm.get('firstName')?.valid && employeeForm.get('firstName')?.touched"
-                          placeholder="Entrez le prénom" />
-                        <span class="error-message">{{ getFieldError('employee', 'firstName') }}</span>
+                          placeholder="Entrez le prénom" autocomplete="off" />
+                        <span *ngIf="hasFieldError('employee', 'firstName')" class="error-message">{{ getFieldError('employee', 'firstName') }}</span>
                       </div>
                       <div class="form-group">
-                        <label class="form-label required">Nom</label>
+                        <label class="form-label required">Nom *</label>
                         <input type="text" formControlName="lastName" class="form-input"
                           [class.error]="hasFieldError('employee', 'lastName')"
                           [class.valid]="employeeForm.get('lastName')?.valid && employeeForm.get('lastName')?.touched"
-                          placeholder="Entrez le nom" />
-                        <span class="error-message">{{ getFieldError('employee', 'lastName') }}</span>
+                          placeholder="Entrez le nom" autocomplete="off" />
+                        <span *ngIf="hasFieldError('employee', 'lastName')" class="error-message">{{ getFieldError('employee', 'lastName') }}</span>
                       </div>
                     </div>
                     <div class="form-row">
                       <div class="form-group">
-                        <label class="form-label required">Email</label>
+                        <label class="form-label required">Email *</label>
                         <input type="email" formControlName="email" class="form-input"
                           [class.error]="hasFieldError('employee', 'email') || hasBackendFieldError('email')"
                           [class.valid]="employeeForm.get('email')?.valid && employeeForm.get('email')?.touched"
-                          placeholder="exemple@email.com" (input)="clearBackendErrors()" />
-                        <span class="error-message">{{ getFieldError('employee', 'email') }}</span>
+                          placeholder="exemple@email.com" autocomplete="off" (input)="clearBackendErrors()" />
+                        <span *ngIf="hasFieldError('employee', 'email')" class="error-message">{{ getFieldError('employee', 'email') }}</span>
                         <span *ngIf="hasBackendFieldError('email')" class="error-message backend-error">
                           {{ getBackendFieldError('email') }}
                         </span>
                       </div>
                       <div class="form-group">
-                        <label class="form-label required">Téléphone</label>
+                        <label class="form-label required">Téléphone *</label>
                         <input type="tel" formControlName="phone" class="form-input"
                           [class.error]="hasFieldError('employee', 'phone')"
                           [class.valid]="employeeForm.get('phone')?.valid && employeeForm.get('phone')?.touched"
-                          placeholder="+226 XX XX XX XX" />
-                        <span class="error-message">{{ getFieldError('employee', 'phone') }}</span>
+                          placeholder="+226 XX XX XX XX" autocomplete="off" />
+                        <span *ngIf="hasFieldError('employee', 'phone')" class="error-message">{{ getFieldError('employee', 'phone') }}</span>
                       </div>
                     </div>
                     <div class="form-row">
                       <div class="form-group">
-                        <label class="form-label required">Mot de passe</label>
+                        <label class="form-label required">
+                          Mot de passe *
+                        </label>
                         <div class="password-input-wrapper">
                           <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-input"
                             [class.error]="hasFieldError('employee', 'password')"
                             [class.valid]="employeeForm.get('password')?.valid && employeeForm.get('password')?.touched"
-                            placeholder="Minimum 6 caractères" />
+                            [placeholder]="isEditingEmployee ? 'Laisser vide pour conserver le mot de passe actuel' : 'Minimum 6 caractères'"
+                            autocomplete="new-password" />
                           <button type="button" class="password-toggle-btn" (click)="togglePasswordVisibility()">
                             <i class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
                           </button>
                         </div>
-                        <span class="error-message">{{ getFieldError('employee', 'password') }}</span>
+                        <span *ngIf="hasFieldError('employee', 'password')" class="error-message">{{ getFieldError('employee', 'password') }}</span>
                       </div>
                       <div class="form-group">
-                        <label class="form-label required">Confirmer le mot de passe</label>
+                        <label class="form-label required">
+                          Confirmer le mot de passe *
+                        </label>
                         <div class="password-input-wrapper">
                           <input [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword"
                             class="form-input"
-                            [class.error]="hasFieldError('employee', 'confirmPassword') || employeeForm.get('confirmPassword')?.hasError('passwordMismatch')"
+                            [class.error]="hasFieldError('employee', 'confirmPassword') || hasValidationError('employee', 'confirmPassword', 'passwordMismatch')"
                             [class.valid]="employeeForm.get('confirmPassword')?.valid && employeeForm.get('confirmPassword')?.touched"
-                            placeholder="Ressaisissez le mot de passe" />
+                            [placeholder]="isEditingEmployee ? 'Confirmer le nouveau mot de passe' : 'Ressaisissez le mot de passe'"
+                            autocomplete="new-password" />
                           <button type="button" class="password-toggle-btn" (click)="toggleConfirmPasswordVisibility()">
                             <i class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</i>
                           </button>
                         </div>
-                        <span class="error-message"
-                          *ngIf="employeeForm.get('confirmPassword')?.hasError('passwordMismatch')">
+                        <span *ngIf="hasValidationError('employee', 'confirmPassword', 'passwordMismatch')" class="error-message">
                           Les mots de passe ne correspondent pas
                         </span>
-                        <span class="error-message">{{ getFieldError('employee', 'confirmPassword') }}</span>
+                        <span *ngIf="hasFieldError('employee', 'confirmPassword')" class="error-message">{{ getFieldError('employee', 'confirmPassword') }}</span>
                       </div>
                     </div>
                     <div class="form-group full-width">
-                      <label class="form-label required">Rôle</label>
+                      <label class="form-label required">Rôle *</label>
                       <select formControlName="role" class="form-select"
                         [class.error]="hasFieldError('employee', 'role')"
                         [class.valid]="employeeForm.get('role')?.valid && employeeForm.get('role')?.touched"
@@ -1218,53 +1390,119 @@
                         <option value="manager">Manager</option>
                         <option value="collector">Collecteur</option>
                       </select>
-                      <span class="error-message">{{ getFieldError('employee', 'role') }}</span>
+                      <span *ngIf="hasFieldError('employee', 'role')" class="error-message">{{ getFieldError('employee', 'role') }}</span>
                     </div>
 
-                    <!-- Section Adresse -->
-                    <div class="form-section">
+                    <!-- Section Adresse avec sélection automatique - Cachée en mode modification -->
+                    <div class="form-section" *ngIf="!isEditingEmployee">
                       <h4 class="section-title">Adresse</h4>
                       <div formGroupName="address">
+                        <!-- Sélection Ville d'abord -->
                         <div class="form-row">
                           <div class="form-group">
-                            <label class="form-label required">Rue</label>
+                            <label class="form-label required">
+                              <mat-icon class="field-icon">location_city</mat-icon>
+                              Ville
+                            </label>
+                            <select formControlName="city" class="form-input"
+                                    (change)="onEmployeeCityChange($event)">
+                              <option value="">Choisir une ville</option>
+                              <option *ngFor="let city of cities" [value]="city.name">
+                                {{ city.name }}
+                              </option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label required">
+                              <mat-icon class="field-icon">business</mat-icon>
+                              Arrondissement
+                            </label>
+                            <select formControlName="arrondissement" class="form-input" 
+                                    (change)="onEmployeeArrondissementChange($event)">
+                              <option value="">Choisir un arrondissement</option>
+                              <option *ngFor="let arr of arrondissements" [value]="arr.arrondissement">
+                                {{ arr.arrondissement }}
+                              </option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- Sélection Secteur et Quartier -->
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label required">
+                              <mat-icon class="field-icon">domain</mat-icon>
+                              Secteur
+                            </label>
+                            <select formControlName="sector" class="form-input"
+                                    (change)="onEmployeeSecteurChange($event)">
+                              <option value="">Choisir un secteur</option>
+                              <option *ngFor="let secteur of secteurs" [value]="secteur.secteur">
+                                {{ secteur.secteur }}
+                              </option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label required">
+                              <mat-icon class="field-icon">place</mat-icon>
+                              Quartier
+                            </label>
+                            <select formControlName="neighborhood" class="form-input">
+                              <option value="">Choisir un quartier</option>
+                              <option *ngFor="let quartier of quartiers" [value]="quartier">
+                                {{ quartier }}
+                              </option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- Informations spécifiques -->
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label required">
+                              <mat-icon class="field-icon">way</mat-icon>
+                              Rue
+                            </label>
                             <input type="text" formControlName="street" class="form-input"
                               placeholder="Nom de la rue" />
                           </div>
                           <div class="form-group">
-                            <label class="form-label required">Numéro de porte</label>
+                            <label class="form-label required">
+                              <mat-icon class="field-icon">numbers</mat-icon>
+                              Numéro de porte
+                            </label>
                             <input type="text" formControlName="doorNumber" class="form-input" placeholder="ex: 12B" />
                           </div>
                         </div>
+
                         <div class="form-row">
                           <div class="form-group">
-                            <label class="form-label">Couleur de porte</label>
-                            <input type="text" formControlName="doorColor" class="form-input" placeholder="ex: Bleu" />
+                            <label class="form-label">
+                              <mat-icon class="field-icon">palette</mat-icon>
+                              Couleur de porte
+                            </label>
+                            <select formControlName="doorColor" class="form-input">
+                              <option value="">Choisir une couleur</option>
+                              <option value="Blanc">Blanc</option>
+                              <option value="Bleu">Bleu</option>
+                              <option value="Rouge">Rouge</option>
+                              <option value="Vert">Vert</option>
+                              <option value="Jaune">Jaune</option>
+                              <option value="Noir">Noir</option>
+                              <option value="Marron">Marron</option>
+                              <option value="Gris">Gris</option>
+                              <option value="Orange">Orange</option>
+                              <option value="Violet">Violet</option>
+                              <option value="Rose">Rose</option>
+                              <option value="Beige">Beige</option>
+                              <option value="Autre">Autre</option>
+                            </select>
                           </div>
                           <div class="form-group">
-                            <label class="form-label required">Quartier</label>
-                            <input type="text" formControlName="neighborhood" class="form-input"
-                              placeholder="Nom du quartier" />
-                          </div>
-                        </div>
-                        <div class="form-row">
-                          <div class="form-group">
-                            <label class="form-label required">Arrondissement</label>
-                            <input type="text" formControlName="arrondissement" class="form-input"
-                              placeholder="Arrondissement" />
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label required">Secteur</label>
-                            <input type="text" formControlName="sector" class="form-input" placeholder="Secteur" />
-                          </div>
-                        </div>
-                        <div class="form-row">
-                          <div class="form-group">
-                            <label class="form-label required">Ville</label>
-                            <input type="text" formControlName="city" class="form-input" placeholder="Ville" />
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label required">Code postal</label>
+                            <label class="form-label">
+                              <mat-icon class="field-icon">local_post_office</mat-icon>
+                              Code postal
+                            </label>
                             <input type="text" formControlName="postalCode" class="form-input"
                               placeholder="Code postal" />
                           </div>
@@ -1287,7 +1525,7 @@
                         <small class="form-help">Vous pouvez assigner des zones maintenant ou plus tard depuis la
                           gestion des employés.</small>
                       </div>
-                      <span class="error-message">{{ getFieldError('employee', 'zones') }}</span>
+                      <span *ngIf="hasFieldError('employee', 'zones')" class="error-message">{{ getFieldError('employee', 'zones') }}</span>
                     </div>
                   </form>
 
@@ -1301,8 +1539,8 @@
                     <button type="submit" form="employee-form" class="btn btn-primary"
                       [disabled]="!isEmployeeFormValid() || isLoading">
                       <span class="loading-spinner" *ngIf="isLoading"></span>
-                      <i class="material-icons" *ngIf="!isLoading">person_add</i>
-                      {{ isLoading ? 'Ajout en cours...' : 'Ajouter l\'employé' }}
+                      <i class="material-icons" *ngIf="!isLoading">{{ isEditingEmployee ? 'edit' : 'person_add' }}</i>
+                      {{ isLoading ? (isEditingEmployee ? 'Modification en cours...' : 'Ajout en cours...') : (isEditingEmployee ? 'Modifier l\'employé' : 'Ajouter l\'employé') }}
                     </button>
                   </div>
                 </div>
@@ -1313,7 +1551,7 @@
             <div class="drawer-overlay" *ngIf="showZoneModal" (click)="showZoneModal = false">
               <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                 <div class="drawer-header">
-                  <h3>Ajouter un Tarif</h3>
+                  <h3>{{ isEditingTariff ? 'Modifier le Tarif' : 'Ajouter un Tarif' }}</h3>
                   <button class="drawer-close-btn" (click)="showZoneModal = false">
                     <i class="material-icons">close</i>
                   </button>
@@ -1363,10 +1601,8 @@
                         placeholder="Décrivez ce tarif..." rows="3"></textarea>
                       <span class="error-message">{{ getFieldError('tariff', 'description') }}</span>
                     </div>
-
                   </form>
                 </div>
-
                 <div class="drawer-footer">
                   <div class="drawer-actions">
                     <button type="button" class="btn btn-outline" (click)="showZoneModal = false">
@@ -1375,8 +1611,8 @@
                     <button type="submit" form="tariff-form" class="btn btn-primary"
                       [disabled]="!tariffForm.valid || isLoading">
                       <span class="loading-spinner" *ngIf="isLoading"></span>
-                      <i class="material-icons" *ngIf="!isLoading">add_circle</i>
-                      {{ isLoading ? 'Ajout en cours...' : 'Ajouter le tarif' }}
+                      <i class="material-icons" *ngIf="!isLoading">{{ tariffToUpdate ? 'edit' : 'add_circle' }}</i>
+                      {{ isLoading ? (tariffToUpdate ? 'Modification en cours...' : 'Ajout en cours...') : (tariffToUpdate ? 'Modifier le tarif' : 'Ajouter le tarif') }}
                     </button>
                   </div>
                 </div>
@@ -1387,7 +1623,7 @@
             <div class="drawer-overlay" *ngIf="showScheduleModal" (click)="showScheduleModal = false">
               <div class="drawer-content" (click)="$event.stopPropagation()">
                 <div class="drawer-header">
-                  <h3>Nouveau Planning de Collecte</h3>
+                  <h3>{{ isEditingSchedule ? 'Modifier le Planning' : 'Nouveau Planning de Collecte' }}</h3>
                   <button class="drawer-close-btn" (click)="showScheduleModal = false">
                     <i class="material-icons">close</i>
                   </button>
@@ -1397,34 +1633,31 @@
                   <form id="schedule-form" [formGroup]="scheduleForm" class="drawer-form" (ngSubmit)="addSchedule()">
                     <!-- Zone -->
                     <div class="form-group">
-                      <label>Zone *</label>
+                      <div class="label-with-action">
+                        <label>Zone *</label>
+                        <button type="button" 
+                                class="reload-btn" 
+                                (click)="reloadZones()" 
+                                [disabled]="isLoadingZones"
+                                title="Recharger les zones">
+                          <i class="material-icons">refresh</i>
+                        </button>
+                      </div>
                       <select formControlName="zone">
-                        <option value="">Sélectionner une zone</option>
-                        <!-- <option
-                          value="Tampouy
-"
-                        >
-                          Tampouy
-                        </option>
-                        <option value="Kilwin">Kilwin</option>
-                        <option value="Darsalam">Darsalam</option>
-                        <option value="Cissin">Cissin</option>
-                        <option value="Zongho">Zongho</option>
-                        <option value="Dassohgho">Dassohgho</option>
-                        <option
-                          value="Marcoussis
-"
-                        >
-                          Marcoussis
-                        </option> -->
-                        <option *ngFor="let zone of zones" [value]="zone.neighborhood || zone">
-                          {{ zone.neighborhood || zone }}
+                        <option value="" *ngIf="!isLoadingZones && zones.length === 0">Aucune zone disponible</option>
+                        <option value="" *ngIf="!isLoadingZones && zones.length > 0">Sélectionner une zone</option>
+                        <option value="" *ngIf="isLoadingZones">Chargement des zones...</option>
+                        <option *ngFor="let zone of zones" [value]="zone.name || zone.neighborhood || zone">
+                          {{ zone.name || zone.neighborhood || zone }}
                         </option>
                       </select>
+                      <div *ngIf="isLoadingZones" class="loading-indicator">
+                        <i class="material-icons loading-spinner">refresh</i>
+                        <span>Chargement des zones...</span>
+                      </div>
                       <small class="error-message" *ngIf="
                             scheduleForm.get('zone')?.invalid &&
-                            scheduleForm.get('zone')?.touched
-                          ">
+                            scheduleForm.get('zone')?.touched">
                         Veuillez sélectionner une zone
                       </small>
                     </div>
@@ -1459,8 +1692,7 @@
                         <input type="time" formControlName="endTime" />
                         <small class="error-message" *ngIf="
                               scheduleForm.get('endTime')?.invalid &&
-                              scheduleForm.get('endTime')?.touched
-                            ">
+                              scheduleForm.get('endTime')?.touched">
                           Veuillez définir une heure de fin
                         </small>
                         <small class="error-message" *ngIf="scheduleForm.hasError('invalidTimeOrder')">
@@ -1473,15 +1705,14 @@
                     <div class="form-group">
                       <label>Collecteur *</label>
                       <select formControlName="collectorId">
-                        <option value="">Sélectionner un collecteur</option>
+                        <option value="" *ngIf="collectors && collectors.length > 0">Sélectionner un collecteur</option>
+                        <option value="" *ngIf="!collectors || collectors.length === 0" disabled>Aucun collecteur pour le moment</option>
                         <option *ngFor="let collector of collectors" [value]="collector._id">
                           {{ collector.firstName }} {{ collector.lastName }}
                         </option>
                       </select>
-                      <small class="error-message" *ngIf="
-                            scheduleForm.get('collectorId')?.invalid &&
-                            scheduleForm.get('collectorId')?.touched
-                          ">
+                      <small class="error-message" *ngIf="scheduleForm.get('collectorId')?.invalid &&
+                            scheduleForm.get('collectorId')?.touched">
                         Veuillez sélectionner un collecteur
                       </small>
                     </div>
@@ -1495,8 +1726,10 @@
                       Annuler
                     </button>
                     <button type="submit" form="schedule-form" class="btn btn-primary"
-                      [disabled]="scheduleForm.invalid">
-                      <i class="material-icons">schedule</i> Créer Planning
+                      [disabled]="scheduleForm.invalid || isLoading">
+                      <span class="loading-spinner" *ngIf="isLoading"></span>
+                      <i class="material-icons" *ngIf="!isLoading">{{ isEditingSchedule ? 'edit' : 'schedule' }}</i>
+                      {{ isLoading ? (isEditingSchedule ? 'Modification en cours...' : 'Création en cours...') : (isEditingSchedule ? 'Modifier Planning' : 'Créer Planning') }}
                     </button>
                   </div>
                 </div>
@@ -1557,10 +1790,7 @@
               <h3>Assigner un signalement</h3>
               <p><strong>Signalement ID :</strong> {{ selectedReportId }}</p>
 
-              <div *ngIf="
-                      allEmployees && allEmployees.length > 0;
-                      else noEmployees
-                    " class="employee-grid">
+              <div *ngIf="allEmployees && allEmployees.length > 0; else noEmployees" class="employee-grid">
                 <label *ngFor="let employee of allEmployees" class="employee-card">
                   <input type="checkbox" [value]="employee._id" (change)="onEmployeeToggle($event)" />
                   <div class="employee-info">
@@ -1588,7 +1818,7 @@
           <div class="drawer-overlay" *ngIf="showTariffsModal" (click)="closeTariffsModal()">
             <div class="drawer-content" (click)="$event.stopPropagation()">
               <div class="drawer-header">
-                <h3>Mes Tarifs</h3>
+                <h3>{{ tariffToUpdate ? 'Modifier le Tarif' : 'Ajouter un Tarif' }}</h3>
                 <button class="drawer-close-btn" (click)="closeTariffsModal()">
                   <i class="material-icons">close</i>
                 </button>
@@ -1608,7 +1838,7 @@
                       </h4>
                       <span class="type-chip">
                         <i class="material-icons text-sm">category</i>
-                        {{ tariff.type }}
+                        {{ tariff.planType }}
                       </span>
                     </div>
 
@@ -1619,10 +1849,10 @@
 
                     <!-- Boutons d’action dans le modal -->
                     <div class="tariff-actions">
-                      <!-- <button class="btn btn-warning flex items-center gap-1">
-              <i class="material-icons text-base">edit</i>
-              Renommer
-            </button> -->
+                      <button class="btn btn-warning flex items-center gap-1" (click)="editTariff(tariff)">
+                        <i class="material-icons text-base">edit</i>
+                        Modifier
+                      </button>
                       <button class="btn btn-danger flex items-center gap-1" (click)="deleteTariff(tariff)">
                         <i class="material-icons text-base">delete</i>
                         Supprimer
@@ -1678,7 +1908,7 @@
             <i class="material-icons">email</i>
             <div>
               <span class="info-label">Email</span>
-              <span class="info-value">{{ selectedClient?.userId?.email }}</span>
+              <span class="info-value">{{ selectedClient?.email }}</span>
             </div>
           </div>
 
@@ -1694,7 +1924,7 @@
             <i class="material-icons">badge</i>
             <div>
               <span class="info-label">Rôle</span>
-              <span class="info-value">{{ selectedClient?.userId?.role }}</span>
+              <span class="info-value">{{ selectedClient?.role }}</span>
             </div>
           </div>
         </div>
@@ -1728,7 +1958,7 @@
           <div class="stat-item">
             <i class="material-icons">subscriptions</i>
             <div>
-              <span class="stat-number">{{ selectedClient?.subscriptionHistory?.length || 0 }}</span>
+              <span class="stat-number">{{ selectedClient?.agencyId ? 1 : 0 }}</span>
               <span class="stat-label">Souscriptions</span>
             </div>
           </div>
@@ -1754,50 +1984,6 @@
         </button>
       </div>
     </div>
-  </div>
-</div>
-<!-- Modal pour modifier un employé -->
-<div class="modal-overlay" *ngIf="showUpdateEmployeeModal" (click)="closeUpdateEmployeeModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Modifier un Employé</h3>
-      <button class="close-btn" (click)="closeUpdateEmployeeModal()">
-        <i class="material-icons">close</i>
-      </button>
-    </div>
-    <form [formGroup]="employeeForm" (ngSubmit)="updateEmployee()">
-      <div class="form-group">
-        <label>Prénom</label>
-        <input formControlName="firstName" type="text" />
-      </div>
-      <div class="form-group">
-        <label>Nom</label>
-        <input formControlName="lastName" type="text" />
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input formControlName="email" type="email" />
-      </div>
-      <div class="form-group">
-        <label>Téléphone</label>
-        <input formControlName="phone" type="tel" />
-      </div>
-      <div class="form-group">
-        <label>Rôle</label>
-        <select formControlName="role">
-          <option value="manager">Manager</option>
-          <option value="collector">Collecteur</option>
-        </select>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" (click)="closeUpdateEmployeeModal()">
-          Annuler
-        </button>
-        <button type="submit" class="btn btn-primary" [disabled]="employeeForm.invalid">
-          Enregistrer
-        </button>
-      </div>
-    </form>
   </div>
 </div>
 <div class="modal-overlay" *ngIf="selectedImage" (click)="closeImageModal()">
@@ -1845,6 +2031,40 @@
       </button>
     </div>
     <div class="drawer-body">
+      <!-- Zone d'affichage des erreurs améliorée -->
+      <div *ngIf="zoneFormError" class="error-alert">
+        <div class="error-alert-header">
+          <div style="display: flex; align-items: center;">
+            <i class="material-icons">error_outline</i>
+            <span>Erreur lors de la modification des zones</span>
+          </div>
+          <button class="error-alert-close" (click)="dismissZoneError()" title="Fermer l'alerte">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="error-alert-body">
+          <div class="error-message">{{ zoneFormError }}</div>
+          <!-- Affichage des erreurs détaillées si disponibles -->
+          <div *ngIf="Object.keys(zoneFormDetailedErrors).length > 0" class="detailed-errors">
+            <strong style="color: #7f1d1d; margin-bottom: 8px; display: block;">Détails de l'erreur :</strong>
+            <ul>
+              <li *ngFor="let error of Object.keys(zoneFormDetailedErrors)">
+                <strong>{{ error }}:</strong> {{ zoneFormDetailedErrors[error] }}
+              </li>
+            </ul>
+          </div>
+          <!-- Message d'aide -->
+          <div style="margin-top: 16px; padding: 12px; background-color: #eff6ff; border-radius: 6px; border-left: 3px solid #3b82f6;">
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+              <i class="material-icons" style="color: #3b82f6; font-size: 18px;">info</i>
+              <div style="color: #1e40af; font-size: 14px;">
+                <strong>Conseil :</strong> Assurez-vous de sélectionner au moins un quartier et vérifiez que tous les champs sont correctement remplis.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="city">Ville</label>
         <select id="city" [(ngModel)]="userData.address.city" (change)="onCityChange(userData.address.city)"
@@ -1860,10 +2080,10 @@
         <label for="arrondissement">Arrondissement</label>
         <select id="arrondissement" [(ngModel)]="userData.address.arrondissement" (change)="
                   onArrondissementChange(userData.address.arrondissement)
-                " class="form-control" [disabled]="!arrondissementss.length">
+                " class="form-control" [disabled]="arrondissements.length === 0">
           <option value="">Sélectionner un arrondissement</option>
-          <option *ngFor="let arr of arrondissementss" [value]="arr.name">
-            {{ arr.name }}
+          <option *ngFor="let arr of arrondissements" [value]="arr.arrondissement">
+            {{ arr.arrondissement }}
           </option>
         </select>
       </div>
@@ -1871,22 +2091,30 @@
       <div class="form-group">
         <label for="sector">Secteur</label>
         <select id="sector" [(ngModel)]="userData.address.sector" (change)="onSecteurChange(userData.address.sector)"
-          class="form-control" [disabled]="!secteurss.length">
+          class="form-control" [disabled]="secteurs.length === 0">
           <option value="">Sélectionner un secteur</option>
-          <option *ngFor="let secteur of secteurss" [value]="secteur.name">
-            {{ secteur.name }}
+          <option *ngFor="let secteur of secteurs" [value]="secteur.secteur">
+            {{ secteur.secteur }}
           </option>
         </select>
       </div>
 
       <div class="form-group">
         <label for="neighborhood">Quartier</label>
+        <small class="form-help-text">
+          <i class="material-icons">info_outline</i>
+          Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs quartiers
+        </small>
         <select id="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control" multiple
-          [disabled]="!quartierss.length">
-          <option *ngFor="let quartier of quartierss" [value]="quartier.name">
-            {{ quartier.name }}
+          [disabled]="quartiers.length === 0" 
+          title="Sélectionnez un ou plusieurs quartiers. Utilisez Ctrl+clic pour sélectionner plusieurs options.">
+          <option *ngFor="let quartier of quartiers" [value]="quartier">
+            {{ quartier }}
           </option>
         </select>
+        <small class="form-help-text" *ngIf="userData.address.neighborhood && userData.address.neighborhood.length > 0">
+          {{ userData.address.neighborhood.length }} quartier(s) sélectionné(s)
+        </small>
       </div>
     </div>
 
@@ -1900,6 +2128,43 @@
           Modifier
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal-overlay" *ngIf="showDeleteConfirmation" (click)="cancelDeleteEmployee()">
+  <div class="modal-content delete-confirmation" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <i class="material-icons text-danger">warning</i>
+        Confirmer la suppression
+      </h3>
+      <button class="close-btn" (click)="cancelDeleteEmployee()" [disabled]="isDeleting">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <p class="confirmation-text">
+        Êtes-vous sûr de vouloir supprimer <strong>{{ employeeToDelete?.displayName }}</strong> ?
+      </p>
+      <p class="warning-text">
+        <i class="material-icons">info</i>
+        Cette action est irréversible et supprimera définitivement cet employé du système.
+      </p>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="cancelDeleteEmployee()" [disabled]="isDeleting">
+        <i class="material-icons">close</i>
+        Annuler
+      </button>
+      <button class="btn btn-danger" (click)="confirmDeleteEmployee()" [disabled]="isDeleting">
+        <i class="material-icons">delete_forever</i>
+        <span *ngIf="!isDeleting">Supprimer définitivement</span>
+        <span *ngIf="isDeleting">Suppression...</span>
+      </button>
     </div>
   </div>
 </div>

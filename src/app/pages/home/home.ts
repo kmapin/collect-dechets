@@ -136,9 +136,6 @@ export class Home  implements OnInit {
   routeLayer: any = null;
   loading = true;
   mapLoading = true;
-  selectedActivityZone: string = '';
-  selectedRadius: string = '';
-  selectedStatus: string = '';
 
 
   constructor(
@@ -455,23 +452,18 @@ private mapApiAgency(apiAgency: any): Agency {
     this.applyFilters();
   }
 
-  applyFilters(): void {
+applyFilters(): void {
   const payload: any = {
-    name: this.searchQuery || '',
-    city: this.selectedCity || '',
-    arrondissement: this.selectedArrondissement || '',
-    sector: this.selectedSector || '',
-    neighborhood: this.selectedNeighborhood || '',
-    rating: this.minRating ? this.minRating.toString() : undefined,
-    service: this.selectedService || undefined,
-    activityZone: this.selectedActivityZone || undefined, 
-    radius: this.selectedRadius || undefined,
-    status: this.selectedStatus || 'all'
+    term: this.searchQuery || '',
+    city: this.selectedCity,
+    arrondissement: this.selectedArrondissement,
+    sector: this.selectedSector,
+    neighborhood: this.selectedNeighborhood,
+    rating: this.minRating ? parseFloat(this.minRating) : null
     // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
   };
 
-  this.agencyService.getAllAgenciesFromApiInAgencies(payload).subscribe({
-  // this.agencyService.searchAgencie(payload).subscribe({
+  this.agencyService.searchAgencie(payload).subscribe({
     next: (response: any) => {
         console.log("responses filtrées :", response);
         this.filteredAgenciesOnMap = (response.data || []).map((a: any) => this.mapApiAgency(a));
@@ -612,6 +604,7 @@ generateRandomStarsList(): void {
   }
 
   getStars(rating: number): number[] {
+    if (!rating || rating < 0) return [];
     return new Array(Math.floor(rating)).fill(0);
   }
 

@@ -25,7 +25,14 @@ export enum CollectionStatus {
   CANCELLED = 'cancelled',
   REPORTED = 'reported'
 }
-
+export enum CollectionStatus1 {
+  SCHEDULED = 'Scheduled',
+  IN_PROGRESS = 'In_progress',
+  COMPLETED = 'Completed',
+  MISSED = 'Missed',
+  CANCELLED = 'Cancelled',
+  REPORTED = 'Reported'
+}
 export interface CollectionRoute {
   id: string;
   collectorId: string;

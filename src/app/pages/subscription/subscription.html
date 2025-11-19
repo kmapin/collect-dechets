@@ -17,8 +17,8 @@
         <!-- ...existing code... -->
         <div class="subscription-info" *ngIf="activeSubscription; else noSub">
           <div class="plan-summary">
-            <span class="plan-badge" [ngClass]="activeSubscription.plan">
-              <ng-container [ngSwitch]="activeSubscription.plan">
+            <span class="plan-badge" [ngClass]="activeSubscription.pricingId.planType">
+              <ng-container [ngSwitch]="activeSubscription.pricingId.planType">
                 <ng-container *ngSwitchCase="'premium'">
                   <i class="material-icons" style="font-size: 32px; color: gold"
                     >star</i
@@ -39,19 +39,19 @@
                   >
                 </ng-container>
               </ng-container>
-              {{ activeSubscription.plan | titlecase }}
+              {{ activeSubscription.pricingId.planType | titlecase }}
             </span>
             <span
               class="status-badge"
-              [class.active]="activeSubscription.status === 'active'"
+              [class.active]="activeSubscription.isActive === true"
             >
-              {{ activeSubscription.status | titlecase }}
+              {{ (activeSubscription.isActive ? 'Actif' : 'Inactif') | titlecase }}
             </span>
           </div>
           <div class="info-item-agencyName">
             <strong>Agence:</strong>
             <span class="font-semibold text-[--primary-color]"
-              >{{ activeSubscription.agencyId?.agencyName }}</span
+              >{{ activeSubscription.agencyId?.name }}</span
             >
           </div>
           <div class="info-item">
@@ -70,7 +70,7 @@
           <div class="info-item">
             <strong>Prix:</strong>
             <span class="text-[20px] font-semibold text-[--primary-color]"
-              >{{ activeSubscription.amount }}
+              >{{ activeSubscription.pricingId.price }}
               <sup class="tex-black">FCFA</sup>/ Mois</span
             >
           </div>

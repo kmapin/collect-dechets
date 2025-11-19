@@ -28,7 +28,7 @@ export class Admin {
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
   getAllStatistics() {
-    return this.http.get(`${environment.apiUrl}/auth/statistics`).pipe(
+    return this.http.get(`${environment.apiUrl}/statistics`).pipe(
       map((response: any) => {
         console.log('API > getAllStatistics:', response);
         return response;
@@ -38,9 +38,10 @@ export class Admin {
   }
     getAllUsers(fileterParams: FilterParams): Observable<any> {
     let requestParams = new HttpParams()
-    .append('role', fileterParams.role)
-    .append('term', fileterParams.term)
-    .append('neighborhood', fileterParams.neighborhood);
+    .append('limit', 25)
+    .append('role', fileterParams.role ?? '')
+    .append('term', fileterParams.term ?? '')
+    .append('neighborhood', fileterParams.neighborhood ?? '');
 
     console.log('API > getAllUsers params:', requestParams);
     return this.http.get(`${environment.apiUrl}/users`, { params: requestParams }).pipe(
@@ -130,8 +131,8 @@ export class Admin {
   );
 }
 
-  getClientById(id: string): Observable<any> {
-    const url = `${environment.apiUrl}/clients/${id}`;
+  getUserById(id: string): Observable<any> {
+    const url = `${environment.apiUrl}/user/${id}`;
     return this.http.get<any>(url);
   }
 
@@ -153,7 +154,7 @@ export class Admin {
     /**
    * Handles registration errors from the backend
    */
-  private handleRegistrationError(error: HttpErrorResponse): RegisterResponse {
+  public handleRegistrationError(error: HttpErrorResponse): RegisterResponse {
     console.error('Registration error details:', error);
 
     let errorMessage = 'Erreur lors de la création du compte';

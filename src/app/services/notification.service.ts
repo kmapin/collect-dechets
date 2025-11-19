@@ -66,7 +66,7 @@ export class NotificationService {
     this.notificationSubject.next(notification);
   }
       getAllNotificationsAgency$(userId: string): Observable<any[]> {
-      const url=`${environment.apiUrl}/notifications/${userId}`;
+      const url=`${environment.apiUrl}/notifications/get/${userId}`;
       console.log("URL de la requête :", url); 
       return this.http.get<any[]>(url);
   
@@ -79,7 +79,7 @@ export class NotificationService {
 
     //suppressin d une notification
     deleteNotification$(notificationId: string): Observable<any> {
-      const url = `${environment.apiUrl}/notifications/${notificationId}`;
+      const url = `${environment.apiUrl}/notifications/delete/${notificationId}`;
       return this.http.delete(url);
   }
 }

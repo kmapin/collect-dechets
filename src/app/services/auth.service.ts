@@ -10,8 +10,8 @@ import { Agency, Municipality } from '../models/agency.model';
   providedIn: 'root'
 })
 export class AuthService {
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  private currentUserSubjectLocalStorage = new BehaviorSubject<User | null>(null);
+  private currentUserSubject = new BehaviorSubject<RegisterUserData | null>(null);
+  private currentUserSubjectLocalStorage = new BehaviorSubject<RegisterUserData | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
   // public ProfileCurrentUser$ = this.currentUserSubjectLocalStorage.asObservable();
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
@@ -26,7 +26,7 @@ export class AuthService {
     }
   }
 
-  login(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
+  login(email: string, password: string): Observable<{ success: boolean; user?: RegisterUserData; error?: string }> {
     // Simulate API call
     return of({ success: true, user: this.mockUser(email) }).pipe(
       delay(1000),
@@ -316,7 +316,7 @@ export class AuthService {
       })
     );
   }
-  getCurrentUser(): User | null {
+  getCurrentUser(): RegisterUserData |null {
     return this.currentUserSubject.value;
   }
 
@@ -355,7 +355,7 @@ export class AuthService {
   /**
    * Prepares registration data in the format expected by the backend
    */
-  private prepareRegistrationData(userData: RegisterUserData): any {
+  public prepareRegistrationData(userData: RegisterUserData): any {
     console.log('[DEBUG] prepareRegistrationData called with:', userData);
     const baseData = {
       firstName: userData.firstName,
@@ -365,7 +365,7 @@ export class AuthService {
       role: userData.role,
       phone: userData.phone,
       address: {
-        street: userData.address.street,
+        street: userData.address.street || '',
         arrondissement: userData.address.arrondissement,
         sector: userData.address.sector,
         doorNumber: userData.address.doorNumber,
@@ -401,8 +401,8 @@ export class AuthService {
           gestionnaires: [],
           documents: [],
           status: userData.agency?.status,
-          longitude: userData.address.longitude,
-          latitude: userData.address.latitude
+          longitude: userData?.address.longitude || 0,
+          latitude: userData?.address.latitude || 0
         }
       };
       console.log('[DEBUG] Final agency data:', agencyData);
@@ -474,7 +474,7 @@ export class AuthService {
     };
   }
 
-  private mockUser(email: string): User {
+  private mockUser(email: string): RegisterUserData {
     // Mock user data for demonstration
     let role = UserRole.CLIENT;
     if (email.includes('manager')) role = UserRole.MANAGER;
@@ -483,7 +483,6 @@ export class AuthService {
 
     return {
       firstName: 'John',
-      lastname: 'Doe',
       lastName: 'Doe',
       email: email,
       phone: '+1234567890',
@@ -506,7 +505,7 @@ export class AuthService {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       // Legacy fields for backwards compatibility
-      firstname: 'John',
+      // firstName: 'John',
       id: Math.random().toString(36).substr(2, 9),
       isActive: true
     };

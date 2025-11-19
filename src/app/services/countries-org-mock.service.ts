@@ -10,6 +10,10 @@ export class CountriesOrgMockService {
     return MOCK_COUNTRIES;
   }
 
+  getAllCities(): City[] {
+    return MOCK_CITIES;
+  }
+
   getCitiesByCountry(countryId: string): City[] {
     return MOCK_CITIES.filter(city => city.country.id === countryId);
   }

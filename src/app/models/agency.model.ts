@@ -7,6 +7,7 @@ export interface Agency {
   name: string;
   slogan?: string;
   status?:string;
+  agencyId?: string;
   arrondissement: string;
   secteur: string;
   quartier: string;
@@ -15,7 +16,9 @@ export interface Agency {
   agencyDescription: string;
   phone: string;
   address: Address;
-  role?: string;
+  role?: {};
+  owner?: string;
+  zoneActivite?: string[];
   licenseNumber: string;
   members: AgencyMember[];
   serviceZones: ServiceZone[];
@@ -171,17 +174,17 @@ export interface Employees {
   hiredAt: Date;
   avatar?: string;
 }
-export interface Tariff {
+export interface Tarif {
   _id?: string;
   agencyId: string;
-  type: TariffType;       
+  planType: TarifType;       
   price: number;           
   description?: string;    
-  nbPassages: number;     
-  createdAt: Date;         
+  numberOfPasses?: number;     
+  createdAt?: Date;         
   updatedAt?: Date;        
 }
-export type TariffType = 'standard' | 'premium' | 'vip';
+export type TarifType = 'standard' | 'premium' | 'vip';
 export enum  EmployeeRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
@@ -211,8 +214,9 @@ export interface CollectionSchedule {
   date: string;
   startTime: string;
   endTime: string;
-collectorId: string[];
+  collectorId: string;
   agencyId: string;
+  managerId: string; // Ajout du champ obligatoire managerId
 }
 
 

@@ -21,6 +21,7 @@ import { Schedule } from './pages/schedule/schedule';
 import { Subscription } from './pages/subscription/subscription';
 import { Terms } from './pages/terms/terms';
 import { WasteTypes } from './pages/waste-types/waste-types';
+import { Chat } from './pages/chat/chat';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -46,5 +47,6 @@ export const routes: Routes = [
   { path: 'dashboard/municipality', component: MunicipalityDashboard},
   {path: 'edit-agency/:id', component: Register},
   {path: 'dashboard/admin', component: AdminDashboard},
+  {path: 'chat', component: Chat},
   { path: '**', redirectTo: '' }
 ];

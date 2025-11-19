@@ -44,11 +44,11 @@
                 >
               </div>
               <div class="agency-status">
-                <span class="status-badge" [class.active]="agency?.isActive">
+                <span class="status-badge" [class.active]="agency?.status ==='active'? true : false">
                   <i class="material-icons"
-                    >{{ agency?.isActive ? 'check_circle' : 'cancel' }}</i
+                    >{{ agency?.status ==='active' ? 'check_circle' : 'cancel' }}</i
                   >
-                  {{ agency?.isActive ? 'Agence active' : 'Agence inactive' }}
+                  {{ agency?.status === 'active' ? 'Agence active' : 'Agence inactive'  }}
                 </span>
               </div>
             </div>
@@ -207,7 +207,7 @@
             <div class="services-grid">
               <div *ngFor="let tariff of tariffs" class="service-card">
                 <div class="service-header">
-                  <h3>{{ tariff.type }}</h3>
+                  <h3>{{ tariff.planType }}</h3>
                   <div class="service-price">
                     <span class="price-amount"
                       >{{ tariff.price }} <sup>FCFA</sup></span
@@ -219,7 +219,7 @@
                 <div class="service-details">
                   <div class="service-frequency">
                     <i class="material-icons">loop</i>
-                    <span>{{ tariff.nbPassages }} passages inclus</span>
+                    <span>{{ tariff.numberOfPasses }} passages inclus</span>
                   </div>
                 </div>
                 <div class="form-group" style="margin: 12px 0">
@@ -240,7 +240,7 @@
                 <div class="service-actions">
                   <button
                     class="btn btn-primary btn-small"
-                    (click)="submitSubscription(currentUser?.id, tariff?._id, tariffSelectedMonths)"
+                    (click)="submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths)"
                   >
                     <i class="material-icons">add_shopping_cart</i>
                     Choisir ce tarif
@@ -304,44 +304,25 @@
                 Zones de couverture
               </h2>
               <span class="section-count"
-                >{{ agency?.serviceZones?.length || 0 }} zone(s)</span
+                >{{ agencyZones.length || 0 }} zone(s)</span
               >
             </div>
             <div class="zones-grid">
-              <div *ngFor="let zone of agency?.serviceZones" class="zone-card">
-                <div class="zone-header">
-                  <h4>Quartier : {{ zone }}</h4>
-                  <span class="zone-status" [class.active]="true">
-                    {{ zone.isActive ? 'Active' : 'Active' }}
-                  </span>
-                </div>
-                <!-- <p class="zone-description">{{ zone }}</p> -->
-                <div class="zone-details">
-                  <span class="">
-                    <strong>Ville : </strong>
-
-                    <span class="text-success">OUAGADOUGOU</span>
-                    <!-- <div class="cities-list">
-                          <span *ngFor="let city of zone.cities" class="city-tag">{{ city }}</span>
-                        </div> -->
-                  </span>
-                  <div
-                    class="zone-neighborhoods"
-                    *ngIf="zone && zone.neighborhoods && zone.neighborhoods.length > 0"
-                  >
-                    <strong>Quartiers :</strong>
-                    <div class="neighborhoods-list">
-                      <span
-                        *ngFor="let neighborhood of zone.neighborhoods"
-                        class="neighborhood-tag"
-                        >{{ neighborhood }}</span
-                      >
+              <div class="zones-by-city">
+                <!-- <div *ngFor="let entry of getDistrictsForActivity() | keyvalue" class="city-section"> -->
+                  <div class="city-section">
+                  <h3 class="city-title">Ouagadougou</h3>
+                  <div class="districts-grid">
+                    <div *ngFor="let district of agencyZones" class="district-card active">
+                    <!-- <div  class="district-card active"> -->
+                      <h4 class="district-name">{{ district}}</h4>
+                      <span class="district-badge active">Zone active</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div *ngIf="agency?.serviceZones?.length === 0" class="empty-state">
+            <div *ngIf="agencyZones.length === 0" class="empty-state">
               <i class="material-icons">map</i>
               <h3>Aucune zone de couverture</h3>
               <p>Cette agence n'a pas encore défini ses zones de couverture.</p>
@@ -367,7 +348,7 @@
                 <div class="contact-info">
                   <span class="contact-label">Téléphone</span>
                   <a href="tel:{{ agency?.phone }}" class="contact-value"
-                    >{{ agency?.phone }}</a
+                    >{{ agency?.owner?.phone }}</a
                   >
                 </div>
               </div>
@@ -405,62 +386,6 @@
             </div>
           </div>
 
-          <!-- Message -->
-          <div
-            class="modal-overlay"
-            *ngIf="showReportModal"
-            (click)="showReportModal = false"
-          >
-            <div class="modal-content" (click)="$event.stopPropagation()">
-              <div class="modal-header">
-                <h3>Décrivez nous votre besoins</h3>
-                <button class="close-btn" (click)="showReportModal = false">
-                  <i class="material-icons">close</i>
-                </button>
-              </div>
-              <form class="report-form">
-                <!-- <div class="form-group">
-                      <label>Destinataire</label>
-                      <select [(ngModel)]="messageData.receiver" name="receiver" required>
-                        <option value="">Sélectionnez</option>
-                        <option value="missed_collection">Collecte manquée</option>
-                        <option value="compliance_issue">Non-conformité</option>
-                        <option value="technical_issue">Problème technique</option>
-                        <option value="complaint">Réclamation</option>
-                        <option value="other">Autre</option>
-                      </select>
-                    </div>-->
-
-                <div class="form-group">
-                  <label>Message</label>
-                  <textarea
-                    [(ngModel)]="messageData.content"
-                    name="content"
-                    rows="4"
-                    placeholder="Votre message..."
-                    required
-                  ></textarea>
-                </div>
-                <div class="form-actions">
-                  <button
-                    type="button"
-                    class="btn btn-secondary"
-                    (click)="showReportModal = false"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    (click)="submitMessage() ; showReportModal = false"
-                  >
-                    <i class="material-icons">send</i>
-                    Envoyer
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
 
           <!-- Location Map -->
           <!-- <div class="location-card card">
@@ -571,7 +496,7 @@
     </div>
   </div>
 </div>
-<p-drawer header="Modifier votre agence" footer="Modifier" [(visible)]="visible2" position="right" [style]="{ width: '35%' }">
+<p-drawer header="Modifier votre agence" [(visible)]="visible2" position="right" [style]="{ width: '35%' }">
   <form
         class="register-form"
         #editAgencyForm="ngForm"
@@ -810,3 +735,52 @@
     </div>
   </form>
 </p-drawer>
+
+<!--Messagerie-->
+
+  <p-drawer header="Envoyer un message à l'agence {{agency.name}}" [(visible)]="showReportModal" position="right" [style]="{ width: '35%' }">
+    <!-- Message -->
+   
+        <form class="report-form">
+          <!-- <div class="form-group">
+                <label>Destinataire</label>
+                <select [(ngModel)]="messageData.receiver" name="receiver" required>
+                  <option value="">Sélectionnez</option>
+                  <option value="missed_collection">Collecte manquée</option>
+                  <option value="compliance_issue">Non-conformité</option>
+                  <option value="technical_issue">Problème technique</option>
+                  <option value="complaint">Réclamation</option>
+                  <option value="other">Autre</option>
+                </select>
+              </div>-->
+
+          <div class="form-group">
+            <label>Message</label>
+            <textarea
+              [(ngModel)]="messageData.content"
+              name="content"
+              rows="4"
+              placeholder="Votre message..."
+              required
+            ></textarea>
+          </div>
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="showReportModal = false"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="submitMessage(agency._id) ; showReportModal = false"
+            >
+              <i class="material-icons">send</i>
+              Envoyer
+            </button>
+          </div>
+        </form>
+
+  </p-drawer>

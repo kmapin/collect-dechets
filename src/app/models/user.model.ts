@@ -126,17 +126,21 @@ export interface PaymentMethod {
 
 // Interface for user registration data
 export interface RegisterUserData {
+  _id ?: string;
+  id?: string;
+  userId?: string;
+  subscribedAgencyId?: string;
   firstName: string;
   lastName: string;
   email: string;
-  password: string;
-  role: UserRole;
+  password?: string;
+  role?: UserRole | string;
   phone: string;
   address: UserAddress;
   acceptTerms: boolean;
   receiveOffers: boolean;
   agencyId?: string;
-  status ? : 'active' | 'inactive';
+  status?: string;
   nbGestionnaires?: number;
   isOwnerAgency?: boolean;
   slogan?: string;
@@ -146,6 +150,10 @@ export interface RegisterUserData {
   agencyName?: string;
   agencyDescription?: string;
   // Municipality-specific fields  
+  createdAt?: string;
+  updatedAt?: string;
+  isActive?: boolean;
+  avatar?: string;
   commune?: {
     name: string;
     region: string;

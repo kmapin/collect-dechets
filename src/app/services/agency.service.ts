@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, delay, map, tap } from 'rxjs/operators';
-import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tariff, PlanningResponse, PaginatedResponse } from '../models/agency.model';
+import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tarif, PlanningResponse, PaginatedResponse } from '../models/agency.model';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { AddEmployeeData, RegisterResponse, User } from '../models/user.model';
+import { FilterParams } from '../models/filterParams.model';
 
 // ================================
 // INTERFACES POUR L'ANALYSE DES ZONES
@@ -118,9 +119,12 @@ export interface ZoneComparison {
   providedIn: 'root'
 })
 export class AgencyService {
-  private agencies: Agency[] = [];
-  private tariffs: Agency[] = [];
-  
+  private agencies: Agency[] = [
+   
+  ];
+  private tariffs: Agency[] = [
+
+  ];
   constructor(private http: HttpClient) { }
 
   getAgencies(): Observable<Agency[]> {
@@ -139,20 +143,16 @@ export class AgencyService {
     );
     return of(filtered).pipe(delay(500));
   }
-   searchAgencie(params: { name?: string; city?: string; sector?: string; rating?: string; 
-                          neighborhood?: string; service?: string; activityZone?: string;
-                         arrondissement?: string; radius?: number; status?: string;
-                         }): Observable<Agency[]> {
-  // searchAgencie(params: {
-  //     term?: string; city?: string; sector?: string; rating?: string;
-  //     neighborhood?: string; service?: string}): Observable<Agency[]> {
+ 
+  searchAgencie(params: {
+      term?: string; city?: string; sector?: string; rating?: string;
+      neighborhood?: string; service?: string}): Observable<Agency[]> {
     let httpParams = new HttpParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value) httpParams = httpParams.set(key, value);
     });
-
-    // return this.http.get<any>(`${environment.apiUrl}/agencies`, { params: httpParams }).pipe(
-    return this.http.get<any>(`${environment.apiUrl}/agencies/search/unified?${httpParams.toString()}`).pipe(
+    console.log("API > searchAgencie params:", params);
+    return this.http.get<any>(`${environment.apiUrl}/agencies`, { params: httpParams }).pipe(
       map(response => {
         // response || [];
         console.log("API > searchAgencie :", response);
@@ -229,69 +229,13 @@ export class AgencyService {
     return of(false).pipe(delay(500));
   }
 
-  getAllAgenciesFromApi(): Observable<{ success: boolean; count: number; data: Agency[] }> {
-    // return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies/search/unified?limit=25`, {});
-    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies?limit=25`, {});
+  getAllAgenciesFromApi(agenciesFilter?: FilterParams ): Observable<{ success: boolean; count: number; data: Agency[] }> {
+    let httpParams = new HttpParams();
+    httpParams = httpParams.append('status', agenciesFilter?.status || '');
+    httpParams = httpParams.append('search', agenciesFilter?.search || '');
+    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies?limit=25`, { params: httpParams });
     // return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agences/recuperation?limit=25`);
   }
-
-  // ...existing code...
-getAllAgenciesFromApiInAgencies(params: {
-  name?: string;
-  neighborhood?: string;
-  activityZone?: string;
-  sector?: string;
-  arrondissement?: string;
-  city?: string;
-  rating?: string;
-  latitude?: number;
-  longitude?: number;
-  radius?: number;
-  status?: string;
-  hasOwner?: boolean;
-  minGestionnaires?: string;
-  page?: number;
-  limit?: number;
-  getAll?: boolean;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}): Observable<{ success: boolean; count: number; data: Agency[] }> {
-  // Valeurs par défaut compatibles avec l'URL d'exemple
-  const defaults = {
-    limit: 10,
-    getAll: true,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-    page: 0
-  };
-
-  const merged = { ...(params || {}), ...defaults };
-
-  let httpParams = new HttpParams();
-  Object.entries(merged).forEach(([key, value]) => {
-    // je n'ajoute que les valeurs non nulles / non vides
-    if (value !== undefined && value !== null && value !== '') {
-      // bool -> "true"/"false", numbers -> string
-      const valStr = typeof value === 'boolean' ? String(value) : String(value);
-      httpParams = httpParams.set(key, valStr);
-    }
-  });
-
-  const url = `${environment.apiUrl}/search/agencies/unified?${httpParams.toString()}`;
-
-  return this.http.get<{ success: boolean; count: number; data: Agency[] }>(url).pipe(
-    map(response => {
-      console.log('API > searchAgencie :', response, 'url:', url);
-      // renvoie la réponse telle quelle (typed)
-      return response;
-    }),
-    catchError(err => {
-      console.error('Erreur API searchAgencie :', err, 'url:', url);
-      return throwError(() => err);
-    })
-  );
-}
-// ...existing code...
 
 
   /**
@@ -327,13 +271,20 @@ getAllAgenciesFromApiInAgencies(params: {
   }
   //recupere les zones d une agence
   getAgencyZones$(agencyId: string): Observable<ServiceZone[]> {
-    return this.http.get<ServiceZone[]>(`${environment.apiUrl}/zones/agence/${agencyId}`);
+    return this.http.get<ServiceZone[]>(`${environment.apiUrl}/agencies/${agencyId}/zones`);
   }
-
+   //recupere les zones d une agence
+  getEmployeeAgency$(agencyId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/agency_employees/${agencyId}/employees`);
+  }
+// recuperation de la liste des collecteurs au niveau d une agence 
+  getCollectorsAgency$(agencyId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/agency_employees/${agencyId}/collectors`);
+  }
 
   //recuperation des signalement liee a une agence
   getAgencyReports$(agencyId: string): Observable<any[]> {
-    const url = `${environment.apiUrl}/reports/agency/${agencyId}`;
+    const url = `${environment.apiUrl}/collectes/agency/${agencyId}/reporting-collectes`;
     return this.http.get<any[]>(url).pipe(
       map((response) => {
         console.log("Signalements récupérés :", response);
@@ -347,7 +298,7 @@ getAllAgenciesFromApiInAgencies(params: {
   }
   //recuperation des statistique liee a une agence 
   getAgencyStats$(agencyId: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/agences/${agencyId}/statistiques`).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/state_agencies/${agencyId}/stats`).pipe(
       map((response) => {
         console.log("Statistiques récupérées :", response);
         return response;
@@ -374,22 +325,17 @@ getAllAgenciesFromApiInAgencies(params: {
     );
   }
   //recuperation des tarifs liee a une agence
-  getAgencyAllTarifs$(agencyId: string): Observable<Tariff[]> {
+  getAgencyAllTarifs$(agencyId: string): Observable<Tarif[]> {
     const agency = this.agencies.find(a => a._id === agencyId);
-    return this.http.get<Tariff[]>(`${environment.apiUrl}/agences/${agencyId}/tarif`);
+    return this.http.get<Tarif[]>(`${environment.apiUrl}/pricing/${agencyId}`);
+  
   }
-  //update d un tarif par une agence
-  public getUpdateTarifs$(tarifId: string, payload: any): Observable<any> {
-    let url = (`${environment.apiUrl}/agences/tarif/${tarifId}`);
-    return this.http.put<any>(url, payload).pipe(
-      tap((data) => console.log('[API] tarifUpdate$ > tap :', data)),
-      // catchError(this.newGlobalErrorHandler)
-    );
-  }
+  
   //delete d un tarif par une agence
-  public deleteTarif$(tarifId: string): Observable<any> {
-    const url = `${environment.apiUrl}/agences/tarif/${tarifId}`;
-    return this.http.delete<any>(url).pipe(
+  public deleteTarif$(Id: string, agencyId: string): Observable<any> {
+    const url = `${environment.apiUrl}/pricing/${Id}`;
+    const body = { agencyId }; // Inclure l'agencyId dans le body
+    return this.http.delete<any>(url, { body }).pipe(
       tap(data => console.log('[API] deleteTarif$ > tap :', data)),
       // catchError(this.newGlobalErrorHandler) // Décommente si tu as un gestionnaire d'erreurs global
     );
@@ -422,7 +368,8 @@ getAllAgenciesFromApiInAgencies(params: {
 
   //Activer ou desactiver une agence 
   activateAgency(id: string, status: string): Observable<any> {
-    return this.http.patch(`${environment.apiUrl}/agencies_validation/${id}/validate`, {status: status}).pipe();
+    let queryParams = new HttpParams().append('action', status);
+    return this.http.patch(`${environment.apiUrl}/agencies_validation/${id}/validate`, {}, { params: queryParams }).pipe();
   }
 
   deActivateAgency(id: string): Observable<any> {
@@ -438,12 +385,12 @@ getAllAgenciesFromApiInAgencies(params: {
   // Subscribe to an agency 
   subscribeToAgencyPlan(currentUser: string | undefined, tariffId: string | undefined, numberMonths: number) {
     console.log("API, SubcriptionPayload ==>", currentUser, tariffId, numberMonths);
-    return this.http.post(`${environment.apiUrl}/${currentUser}/subscriptions/${tariffId}/${numberMonths}`, {});
+    return this.http.post(`${environment.apiUrl}/subscription/subscribe/${currentUser}/pricing/${tariffId}/${numberMonths}`, {});
   }
 
   //Get user Subscription from an agency 
   getUserSubscription(userId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/subscriptions/user/${userId}`).pipe(
+    return this.http.get<any[]>(`${environment.apiUrl}/subscription/client/${userId}`).pipe(
       map(response => {
         console.log("API- Get subscriptions==>", response);
         return response || [];
@@ -487,31 +434,20 @@ getAllAgenciesFromApiInAgencies(params: {
   //   throw new Error('Employee not found');
   // }
 
-  deleteEmployee(agencyId: string, employeeId: string): Observable<boolean> {
-    const agency = this.agencies.find(a => a._id === agencyId);
-    if (agency) {
-      const index = agency.employees.findIndex(e => e.id === employeeId);
-      if (index !== -1) {
-        agency.employees.splice(index, 1);
-        return of(true).pipe(delay(500));
-      }
-    }
-    return of(false).pipe(delay(500));
-  }
   //ajouter un tarifs 
-  addTariff(tariff: Partial<Tariff>): Observable<Tariff | null> {
-    const newTariff: Tariff = {
+  addTariff(tariff: Partial<Tarif>): Observable<Tarif | null> {
+    const newTariff: Tarif = {
       agencyId: tariff.agencyId || '',
-      type: tariff.type || 'standard',
+      planType: tariff.planType || 'standard',
       price: tariff.price || 0,
       description: tariff.description || '',
-      nbPassages: tariff.nbPassages || 0,
+      numberOfPasses: tariff.numberOfPasses || 0,
       createdAt: new Date(),
       updatedAt: new Date()
     };
 
-    return this.http.post<Tariff>(`${environment.apiUrl}/agences/tarif`, newTariff).pipe(
-      map((response: Tariff) => {
+    return this.http.post<Tarif>(`${environment.apiUrl}/pricing`, newTariff).pipe(
+      map((response: Tarif) => {
         console.log("API > addTariff :", response);
         return response;
       }),
@@ -523,7 +459,7 @@ getAllAgenciesFromApiInAgencies(params: {
   }
 
   deleteTariff$(tarifId: string): Observable<boolean> {
-    return this.http.delete(`${environment.apiUrl}/agences/tarif/${tarifId}`).pipe(
+    return this.http.delete(`${environment.apiUrl}/pricing/${tarifId}`).pipe(
       map(() => {
         console.log(`Tarif ${tarifId} supprimé avec succès`);
         return true;
@@ -531,6 +467,37 @@ getAllAgenciesFromApiInAgencies(params: {
       catchError(error => {
         console.error(`Erreur lors de la suppression du tarif ${tarifId} :`, error);
         return of(false);
+      })
+    );
+  }
+
+  // Mettre à jour un tarif existant
+  updateTariff$(tarifId: string, tariffData: any): Observable<{
+    success: boolean;
+    data?: any;
+    message?: string;
+    error?: any;
+  }> {
+    const url = `${environment.apiUrl}/pricing/${tarifId}`;
+    console.log('Mise à jour du tarif - URL:', url);
+    console.log('Données envoyées:', tariffData);
+    
+    return this.http.put<any>(url, tariffData).pipe(
+      map(response => {
+        console.log("API > updateTariff$ :", response);
+        return {
+          success: true,
+          data: response,
+          message: 'Tarif mis à jour avec succès'
+        };
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la mise à jour du tarif:", error);
+        return throwError(() => ({
+          success: false,
+          error: error.error || error,
+          message: error.error?.message || 'Erreur lors de la mise à jour du tarif'
+        }));
       })
     );
   }
@@ -557,43 +524,56 @@ getAllAgenciesFromApiInAgencies(params: {
   // }
   // //ajouter une planification
   addSchedule$(schedule: CollectionSchedule): Observable<CollectionSchedule | null> {
-    return this.http.post<CollectionSchedule>(`${environment.apiUrl}/zones/plannings`, schedule).pipe(
+    return this.http.post<CollectionSchedule>(`${environment.apiUrl}/planning/create`, schedule).pipe(
       map((response: CollectionSchedule) => {
         console.log("API > planification enregistre :", response);
         return response;
       }),
       catchError(error => {
         console.error("Erreur lors de l'enregistrement de la planification:", error);
-        return of(null);
+        throw error; // Propager l'erreur pour une meilleure gestion
       })
     );
+  }
 
+  //modifier une planification
+  updateSchedule$(id: string, schedule: Partial<CollectionSchedule>): Observable<CollectionSchedule> {
+    return this.http.put<CollectionSchedule>(`${environment.apiUrl}/planning/update/${id}`, schedule).pipe(
+      map((response: CollectionSchedule) => {
+        console.log("API > planification mise à jour :", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la mise à jour de la planification:", error);
+        throw error;
+      })
+    );
   }
   //recupere les planing d une agence
-  getAllPlaningAgency$(agencyId: string): Observable<PlanningResponse> {
-    const url = `${environment.apiUrl}/zones/plannings/agency/${agencyId}`;
-    return this.http.get<PlanningResponse>(url);
+  getAllPlaningAgency$(agencyId: string): Observable<any> {
+    const url = `${environment.apiUrl}/planning/agency/${agencyId}`;
+    return this.http.get<any>(url);
   }
 
   //supprimer un  planing d une agence
-  deletePlanning$(planningId: string): Observable<boolean> {
-    return this.http.delete(`${environment.apiUrl}/zones/plannings/${planningId}`).pipe(
+  deletePlanning$(id: string): Observable<boolean> {
+    return this.http.delete(`${environment.apiUrl}/planning/delete/${id}`).pipe(
       map(() => {
-        console.log(`planning ${planningId} supprimé avec succès`);
+        console.log(`planning ${id} supprimé avec succès`);
         return true;
       }),
       catchError(error => {
-        console.error(`Erreur lors de la suppression du planning ${planningId} :`, error);
-        return of(false);
+        console.error(`Erreur lors de la suppression du planning ${id} :`, error);
+        throw error; // Propager l'erreur pour une meilleure gestion
       })
     );
   }
   //recupere les plannings d un collecteur
   getPlaningCollectory$(collectorId: string): Observable<any[]> {
     const collector = this.agencies.find(a => a._id === collectorId);
-    const url = `${environment.apiUrl}/zones/plannings/historique/agency/${collectorId}`;
+    const url = `${environment.apiUrl}/planning/collector/${collectorId}`;
     console.log("URL de la requête :", url);
-    return this.http.get<Tariff[]>(url);
+    return this.http.get<Tarif[]>(url);
 
   }
   //recupere les employees  d une agence en fonction de leur role 
@@ -680,9 +660,10 @@ getAllAgenciesFromApiInAgencies(params: {
   }
   //recupere les planing d une agence
   getAllzones$(agencyId: string): Observable<any> {
-    const url = `${environment.apiUrl}/zones/${agencyId}`;
+    const url = `${environment.apiUrl}/agencies/${agencyId}/zones`;
     return this.http.get<any>(url).pipe(
       catchError(error => {
+        console.error("Erreur lors de la récupération des zones de l'agence:", error);
         return throwError(() => error);
       })
     );
@@ -708,7 +689,7 @@ getAllAgenciesFromApiInAgencies(params: {
   }
   //recuperation  des collecte journalieres
   getAgencyAllCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
-    const url = `${environment.apiUrl}/collecte/${agencyId}/scan`;
+    const url = `${environment.apiUrl}/collecte/agency/${agencyId}`;
 
     return this.http.get<PaginatedResponse<any>>(url).pipe(
       map(response => {
@@ -723,7 +704,7 @@ getAllAgenciesFromApiInAgencies(params: {
   }
   //recuperation l historique  des collecte pour une agence
   getAgencyAllHistoryCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
-    const url = `${environment.apiUrl}/collecte/${agencyId}/scan`;
+    const url = `${environment.apiUrl}/collecte/agency/${agencyId}`;
 
     return this.http.get<PaginatedResponse<any>>(url).pipe(
       map(response => {
@@ -737,8 +718,8 @@ getAllAgenciesFromApiInAgencies(params: {
     );
   }
   // Mise à jour des zones de service pour une agence
-  updateAgencyZones$(agencyId: string, zoneData: { serviceZones: string[] }): Observable<any> {
-    const url = `${environment.apiUrl}/zones/${agencyId}`;
+  updateAgencyZones$(agencyId: string, zoneData: { zones: string[] }): Observable<any> {
+    const url = `${environment.apiUrl}/agencies/${agencyId}/zone`;
 
     return this.http.patch<any>(url, zoneData).pipe(
       map(response => {
@@ -753,7 +734,8 @@ getAllAgenciesFromApiInAgencies(params: {
   }
   // recuperation des signalement liee a un collecteur d une agence 
   getCollectorById(collectorid: string): Observable<any> {
-    const url = `${environment.apiUrl}/rapports/collector/${collectorid}`;
+    // const url = `${environment.apiUrl}/rapports/collector/${collectorid}`;
+    const url = `${environment.apiUrl}/collectes/collector/${collectorid}/reporting-collectes`;
     return this.http.get<any>(url);
   }
 
@@ -763,7 +745,7 @@ getAllAgenciesFromApiInAgencies(params: {
     error?: any;
     message?: string
   }> {
-    return this.http.patch<any>(`${environment.apiUrl}/api/zones/plannings/${id}`, planningData).pipe(
+    return this.http.put<any>(`${environment.apiUrl}/planning/update/${id}`, planningData).pipe(
       map(response => {
         console.log("API > updatePlanning :", response);
         if (response) {
@@ -789,7 +771,7 @@ getAllAgenciesFromApiInAgencies(params: {
     error?: any;
     message?: string
   }> {
-    return this.http.put<any>(`${environment.apiUrl}/api/agences/tarif/${tarifId}`, tarifData).pipe(
+    return this.http.put<any>(`${environment.apiUrl}/api/pricing/${tarifId}`, tarifData).pipe(
       map(response => {
         console.log("API > updateTarif :", response);
         if (response) {
@@ -907,6 +889,198 @@ getAllAgenciesFromApiInAgencies(params: {
               errorMessage = 'Cette information est déjà utilisée par un autre utilisateur';
             }
           }
+        }
+        
+        console.log('Message d\'erreur final:', errorMessage);
+        
+        return of({
+          success: false,
+          error: errorMessage,
+          detailedErrors: detailedErrors,
+          statusCode: error.status
+        });
+      })
+    );
+  }
+
+  /**
+   * Mettre à jour un employé existant
+   * Utilise le endpoint PUT /api/user/{id}
+   */
+  updateEmployee(employeeId: string, employeeData: Partial<AddEmployeeData>): Observable<RegisterResponse> {
+    console.log('[DEBUG] Updating employee:', employeeId);
+    console.log('[DEBUG] Employee data:', { ...employeeData, password: '***' });
+    
+    // Validation : s'assurer que l'employeeId est présent
+    if (!employeeId) {
+      return of({ 
+        success: false, 
+        error: 'L\'ID de l\'employé est requis pour la modification.' 
+      });
+    }
+
+    // Calculer isOwnerAgency selon le rôle
+    const isOwnerAgency = employeeData.role === 'collector';
+    
+    // Préparer les données
+    const requestData: any = {
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName,
+      email: employeeData.email,
+      role: employeeData.role,
+      phone: employeeData.phone,
+      address: employeeData.address,
+      agencyId: employeeData.agencyId,
+      isOwnerAgency: isOwnerAgency 
+    };
+
+  
+    if (employeeData.password) {
+      requestData.password = employeeData.password;
+    }
+
+    return this.http.put<any>(`${environment.apiUrl}/user/${employeeId}`, requestData).pipe(
+      map(response => {
+        console.log("API > Update Employee Response:", response);
+        console.log("Response type:", typeof response);
+        console.log("Response keys:", Object.keys(response || {}));
+        
+        if (response && (response.user || response.success)) {
+          const user = response.user || response;
+          return { 
+            success: true, 
+            user: user, 
+            message: response.message || 'Employé modifié avec succès' 
+          };
+        } else {
+          // Extraire l'erreur exacte du backend
+          let backendError = 'Erreur lors de la modification de l\'employé';
+          
+          if (response?.error) {
+            backendError = response.error;
+          } else if (response?.message) {
+            backendError = response.message;
+          }
+          
+          console.log('Erreur backend extraite:', backendError);
+          
+          return { 
+            success: false, 
+            error: backendError,
+            originalResponse: response 
+          };
+        }
+      }),
+      catchError((error: any) => {
+        console.error('Update Employee Error Details:', error);
+        console.error('Error structure:', JSON.stringify(error, null, 2));
+        
+        let errorMessage = 'Erreur lors de la modification de l\'employé';
+        let detailedErrors = {};
+        
+        // Priorité 1: Message direct du backend
+        if (error.error?.error) {
+          errorMessage = error.error.error;
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        // Priorité 2: Erreurs de validation détaillées
+        if (error.error?.errors) {
+          detailedErrors = error.error.errors;
+          console.log('Erreurs de validation détaillées:', detailedErrors);
+        } else if (error.error?.details) {
+          detailedErrors = error.error.details;
+          console.log('Erreurs détaillées from backend:', detailedErrors);
+        }
+        
+        // Gestion spéciale pour les erreurs de doublon email
+        if (error.status === 409 || error.status === 400) {
+          if (typeof error.error?.error === 'string' && error.error.error.includes('email')) {
+            if (error.error.error.includes('already exists') || error.error.error.includes('déjà utilisé')) {
+              errorMessage = 'Cette information est déjà utilisée par un autre utilisateur';
+            }
+          }
+        }
+        
+        console.log('Message d\'erreur final:', errorMessage);
+        
+        return of({
+          success: false,
+          error: errorMessage,
+          detailedErrors: detailedErrors,
+          statusCode: error.status
+        });
+      })
+    );
+  }
+
+  /**
+   * Supprimer un employé existant
+   * Utilise le endpoint DELETE /api/user/{id}
+   */
+  deleteEmployee(Id: string): Observable<RegisterResponse> {
+    console.log('[DEBUG] Deleting employee:',Id);
+    
+    // Validation : s'assurer que l'employeeId est présent
+    if (!Id) {
+      return of({ 
+        success: false, 
+        error: 'L\'ID de l\'employé est requis pour la suppression.' 
+      });
+    }
+
+    // Effectuer la requête DELETE
+    return this.http.delete<any>(`${environment.apiUrl}/user/${Id}`).pipe(
+      map((response: any) => {
+        console.log('[DEBUG] Delete Employee Response:', response);
+        
+        // Vérifier si la suppression a réussi
+        if (response && (response.success === true || response.message)) {
+          return { 
+            success: true, 
+            message: response.message || 'Employé supprimé avec succès' 
+          };
+        } else {
+          // Extraire l'erreur exacte du backend
+          let backendError = 'Erreur lors de la suppression de l\'employé';
+          
+          if (response?.error) {
+            backendError = response.error;
+          } else if (response?.message) {
+            backendError = response.message;
+          }
+          
+          console.log('Erreur backend extraite:', backendError);
+          
+          return { 
+            success: false, 
+            error: backendError,
+            originalResponse: response 
+          };
+        }
+      }),
+      catchError((error: any) => {
+        console.error('Delete Employee Error Details:', error);
+        console.error('Error structure:', JSON.stringify(error, null, 2));
+        
+        let errorMessage = 'Erreur lors de la suppression de l\'employé';
+        let detailedErrors = {};
+        
+        // Priorité 1: Message direct du backend
+        if (error.error?.error) {
+          errorMessage = error.error.error;
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        // Gestion spéciale pour les erreurs de suppression
+        if (error.status === 404) {
+          errorMessage = 'Employé non trouvé';
+        } else if (error.status === 403) {
+          errorMessage = 'Vous n\'avez pas l\'autorisation de supprimer cet employé';
+        } else if (error.status === 409) {
+          errorMessage = 'Impossible de supprimer cet employé car il est lié à des données';
         }
         
         console.log('Message d\'erreur final:', errorMessage);
@@ -1286,5 +1460,6 @@ getAllAgenciesFromApiInAgencies(params: {
       })
     );
   }
+  
 
 }

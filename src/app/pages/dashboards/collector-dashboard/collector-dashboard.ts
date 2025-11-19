@@ -10,7 +10,7 @@ import {
   CollectionStatus,
   CollectionRoute,
 } from "../../../models/collection.model";
-import { User } from "../../../models/user.model";
+import { RegisterUserData, User } from "../../../models/user.model";
 import { ZXingScannerModule } from "@zxing/ngx-scanner";
 import { BarcodeFormat } from "@zxing/library";
 import { ClientService, ClientApi } from "../../../services/client.service";
@@ -56,7 +56,7 @@ interface IncidentReport {
   styleUrl: './collector-dashboard.css'
 })
 export class CollectorDashboard  implements OnInit {
-  currentUser: User | null = null;
+  currentUser: RegisterUserData | null = null;
   today = new Date();
   selectedView = "today";
   routeStarted = false;

@@ -12,6 +12,7 @@ import {
   Collection,
   CollectionStatus,
   CollectionReport,
+  CollectionStatus1,
 } from "../../../models/collection.model";
 import { ClientService } from "../../../services/client.service";
 import { map } from "rxjs";
@@ -68,6 +69,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
     severity: "",
     clientId: "",
     agencyId: "",
+    collecteId: ""
   };
   unreadMessageCount: any;
   receivedMessages: any;
@@ -118,13 +120,13 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
   //  GET CLIENT WALLET
   clientBalance!: number;
   getClientWallet() {
-    const clientId = this.currentUser?.id || "";
+    const clientId = this.currentUser?._id || "";
     if (!clientId) return;
     this.clientService.getClientWallet(clientId).subscribe({
       next: (response: any) => {
-        if (response && response.balance) {
-          this.clientBalance = response?.balance;
-          console.log("Client Wallet:", response.balance, this.clientBalance);
+        if (response.success && response.wallet.balance) {
+          this.clientBalance = response?.wallet?.balance;
+          console.log("Client Wallet:", response.wallet.balance, this.clientBalance);
         }
         // return response?.balance;
       },
@@ -139,7 +141,8 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
 
   // Virer dans le Wallet du client
   walletPayment() {
-    const clientId = this.currentUser?.id || "";
+    const clientId = this.currentUser?._id || "";
+    console.log("Client ID:", clientId);
     if (!clientId) return;
 
     const paymentData = {
@@ -187,7 +190,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
     this.clientService.getClientPlanning(clientId).subscribe({
       next: (response: any) => {
         console.log("API > getClientPlanning:", response);
-        this.weeklySchedule = response?.plannings || [];
+        this.weeklySchedule = response|| [];
         if (this.weeklySchedule.length) {
           this.nextCollect = this.weeklySchedule[0];
           console.log("Next collect ==> ", this.nextCollect);
@@ -229,20 +232,20 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
   // Completed collection datad
   getTotalCompletedCollectionsLength() {
     const completedCollections = this.collectionHistory.filter(
-      (col) => col.status === "completed"
+      (col) => col.status === "Completed"
     ).length;
     return completedCollections;
   }
   getTotalCompletedCollections() {
     const completedCollections = this.collectionHistory.filter(
-      (col) => col.status === "completed"
+      (col) => col.status === "Completed"
     );
     return completedCollections;
   }
 
   getTotalUnCompletedCollectionLength() {
     const unCompletedCollections = this.collectionHistory.filter(
-      (col) => col.status === "missed" || col.status === "cancelled"
+      (col) => col.status === "Missed" || col.status === "Cancelled"
     ).length;
     return unCompletedCollections;
   }
@@ -287,6 +290,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
   // Recuperer l'historique des collectes déjà effectuées
   loadPlanningHistory(): void {
     const clientId = this.currentUser?._id || "";
+    this.filteredHistories = [];
     if (!clientId) return;
     this.clientService.getClientPlanningHistory(clientId).subscribe({
       next: (response: any) => {
@@ -299,7 +303,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
             collectorId: report.collectorId,
             scheduledDate: report.createdAt ? new Date(report.createdAt) : null,
             collectedDate: report.scannedAt ? new Date(report.scannedAt) : null, // si dispo
-            status: report.status === "collected" ? "completed" : report.status, // adapter au template
+            status: report.status === "Collected" ? "Completed" : report.status, // adapter au template
             wasteTypes: report.wasteTypes || ["Déchets ménagers"], // valeur par défaut si absent
             rating: report.rating || 0,
             photos: report.photos,
@@ -325,18 +329,19 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
 
   // Afficher abonnement
   getUserSubscription() {
-    const userID = this.currentUser?.id || "";
+    const userID = this.currentUser?._id || "";
     if (!userID) return;
     this.agencyService.getUserSubscription(userID).subscribe({
       next: (response: any[]) => {
         this.subscriptions = response || [];
+        console.log("Subscriptions ==>", this.subscriptions);
         this.paymentHistory = this.subscriptions.map((sub: any) => ({
           id: sub._id,
-          date: sub.createdAt ? new Date(sub.createdAt) : new Date(),
-          amount: sub.amount,
-          status: sub.status, // "active", "suspended", "cancelled" ou autre
-          description: `Abonnement ${sub.plan} - ${
-            sub.agencyId?.agencyName || ""
+          date: sub.startDate ? new Date(sub.startDate) : new Date(),
+          amount: sub.pricingId.price,
+          status: sub.isActive, // "active", "suspended", "cancelled" ou autre
+          description: `Abonnement ${sub.pricingId.planType} - ${
+            sub.agencyId?.name || ""
           }`,
           method: "Orange Money", // ou autre selon tes données
         }));
@@ -375,7 +380,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService
-      .getUserUnreadMessagesCount(this.currentUser?.userId || "")
+      .getUserUnreadMessagesCount(this.currentUser?._id || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
@@ -391,14 +396,14 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
 
   userMessages() {
     this.messageService
-      .getMessagesForUser(this.currentUser?.userId || "")
+      .getMessagesForUser(this.currentUser?._id || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
             console.log("API > getMessagesForUser:", response);
             this.connectedUserMessages = response || [];
             console.log(
-              "this.connectedUserMessages:",
+              "this.connectedUserMessages client:",
               this.connectedUserMessages
             );
           }
@@ -411,24 +416,24 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
 
   userAndAgencyConversation(agency: any) {
     this.data = agency;
-    this.displayAgencyName = agency.agencyName;
-    const agencyId = agency?.userId;
+    this.displayAgencyName = agency.name;
+    const agencyId = agency?._id || "";
     this.clientService
-      .userAndAgencyConversation(this.currentUser?.userId || "", agencyId)
-      .subscribe((response: any) => {
-        console.log("API >userAndAgencyConversation:", response);
-        if (response) {
-          console.log("API >userAndAgencyConversation:", response);
-          this.receivedMessages = (response.messages || []).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      .userAndAgencyConversation(this.currentUser?._id || "", agencyId)
+      .subscribe((messages: any) => {
+        console.log("API >userAndAgencyConversation:", messages);
+        if (messages) {
+          console.log("API >userAndAgencyConversation:", messages);
+          this.receivedMessages = (messages || []).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
           this.scrollToBottom()
           this.countUnreadMessages();
           if (!agencyId) {
-            this.receivedId = this.currentUser?.userId;
+            this.receivedId = this.currentUser?._id;
           } else {
             this.receivedId = agencyId;
           }
           this.receivedMessages.forEach((message: any) => {
-            if (message.receiver === this.currentUser?.userId) {
+            if (message.receiver === this.currentUser?._id) {
               this.readAndRespondMessage(message);
             }
             message.read = message.read.toString();
@@ -465,7 +470,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
       this.notificationService.showError("Erreur", "Agence non trouvée");
       return;
     }
-    this.messageData.sender = this.currentUser?.userId || "";
+    this.messageData.sender = this.currentUser?._id || "";
     this.messageData.receiver = this.receivedId || "";
     this.messageData.content = this.messageData.content.trim();
 
@@ -707,14 +712,14 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
     return wasteType?.name || "Type inconnu";
   }
 
-  getStatusText(status: CollectionStatus): string {
+  getStatusText(status: CollectionStatus1): string {
     const statusTexts = {
-      [CollectionStatus.SCHEDULED]: "Programmé",
-      [CollectionStatus.IN_PROGRESS]: "En cours",
-      [CollectionStatus.COMPLETED]: "Collecté",
-      [CollectionStatus.MISSED]: "Manqué",
-      [CollectionStatus.CANCELLED]: "Annulé",
-      [CollectionStatus.REPORTED]: "Signalé",
+      [CollectionStatus1.SCHEDULED]: "Programmé",
+      [CollectionStatus1.IN_PROGRESS]: "En cours",
+      [CollectionStatus1.COMPLETED]: "Collecté",
+      [CollectionStatus1.MISSED]: "Manqué",
+      [CollectionStatus1.CANCELLED]: "Annulé",
+      [CollectionStatus1.REPORTED]: "Signalé",
     };
     return statusTexts[status] || status;
   }
@@ -738,6 +743,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
   }
 
   getStars(rating: number): number[] {
+    if (!rating || rating < 0) return [];
     return new Array(Math.floor(rating)).fill(0);
   }
 
@@ -768,6 +774,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
   }
 
   reportIssue(collectionId: string): void {
+    this.reportData.collecteId = collectionId;
     this.showReportModal = true;
   }
 
@@ -780,12 +787,15 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
 
   submitReport(): void {
     const data = {
+      collecteId: this.reportData.collecteId,
       type: this.reportData.type,
-      description: this.reportData.description,
+      comment: this.reportData.description,
       severity: this.reportData.severity,
       clientId: this.currentUser?._id,
-      agencyId: this.currentUser?.subscribedAgencyId,
+      agencyId: this.currentUser?.agencyId
     };
+
+    console.log("Signalement envoyé:", this.data);
     if (
       (this.reportData.type &&
         this.reportData.description &&
@@ -793,7 +803,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
         this.reportData.agencyId) ||
       this.reportData.severity
     ) {
-      console.log("Signalement envoyé:", this.reportData);
+      console.log("Signalement envoyé:", this.data);
       this.clientService.reportClientIncident(data).subscribe({
         next: (response: any) => {
           console.log("API > reportClientIncident:", response);
@@ -802,13 +812,14 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
             "Votre signalement a été transmis à l'agence"
           );
           this.showReportModal = false;
-          this.reportData = {
-            type: "",
-            description: "",
-            severity: "",
-            clientId: "",
-            agencyId: "",
-          };
+          // this.reportData = {
+          //   type: "",
+          //   description: "",
+          //   severity: "",
+          //   clientId: "",
+          //   agencyId: "",
+          //   collectorId: ""
+          // };
         },
         error: (error: any) => {
           console.error("API > reportClientIncident:", error);

@@ -1,10 +1,15 @@
 import { Injectable } from '@angular/core';
+import { catchError, map, Observable, of } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Admin } from './admin';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SharedService {
   
+  constructor(private http: HttpClient,private adminService: Admin) { }
   getInitials(fullName: string): string {
     if (!fullName) return '';
 
@@ -42,4 +47,45 @@ export class SharedService {
 
     return this.avatarColors[key];
   }
+
+
+    updateUser(userId: string | undefined ,userData:any): Observable<any> {
+  
+      // if (!this.validateRegistrationData(userData)) {
+      //   return of({ 
+      //     success: false, 
+      //     error: 'Données de registration invalides. Veuillez vérifier tous les champs requis.' 
+      //   });
+      // }
+  
+    
+      // const registrationData = this.prepareRegistrationData(userData);
+      const registrationData = userData;
+      console.log('[DEBUG] Final registration data being sent to backend:', registrationData);
+      console.log('[DEBUG] Registration endpoint:', `${environment.apiUrl}/users/${userId}`);
+  
+      return this.http.put<any>(`${environment.apiUrl}/user/${userId}`, registrationData).pipe(
+        map(response => {
+          console.log("API > Update Response:", response);
+          
+          if (response && (response.data || response.success)) {
+            
+            return { 
+              success: true, 
+              message: response.message || 'Compte créé avec succès' 
+            };
+          } else {
+            return { 
+              success: false, 
+              error: response?.error || response?.message || 'Erreur lors de la création du compte' 
+            };
+          }
+        }),
+        catchError((error: HttpErrorResponse) => {
+          console.error('Registration Error:', error);
+          return of(this.adminService.handleRegistrationError(error));
+        })
+      );
+    }
+  
 }

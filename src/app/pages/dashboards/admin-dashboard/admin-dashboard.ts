@@ -6,7 +6,7 @@ import { AuthService } from "../../../services/auth.service";
 import { AgencyService } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
-import { User } from "../../../models/user.model";
+import { RegisterUserData } from "../../../models/user.model";
 import { Agency } from "../../../models/agency.model";
 import { Collection, CollectionStatus } from "../../../models/collection.model";
 import { Admin } from "../../../services/admin";
@@ -20,9 +20,12 @@ import {
   MOCK_ARRONDISSEMENTS,
 } from "../../../data/countries-org.mock";
 import { FilterParams } from "../../../models/filterParams.model";
+import { DrawerModule } from "primeng/drawer";
 interface AdminStatistics {
   totalAgencies: number;
-  activeAgencies: number;
+  totalActiveAgencies: number;
+  monthlyClientPercentage: number;
+  dailyCollections: number;
   totalClients: number;
   totalCollectors: number;
   activeClients: number;
@@ -35,7 +38,9 @@ interface AdminStatistics {
   };
   completeCollections: number;
   totalMunicipalities: number;
+  totalMunicipalityAgents: number;
   completedCollections: number;
+  totalManagers: number;
   totalRevenue: number;
   averageRating: number;
   pendingReports: number;
@@ -45,7 +50,7 @@ interface AdminStatistics {
 interface AgencyAudit {
   id: string;
   name: string;
-  status: "active" | "inactive" | "suspended";
+  status: string;
   clients: number;
   collectors: number;
   zones: number;
@@ -113,15 +118,38 @@ interface Communication {
   sentAt: Date;
   readBy: string[];
 }
-
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  jobTitle: string;
+  department: string;
+  avatarUrl: string;
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  mobile: string;
+  office: string;
+  linkedin: string;
+}
 @Component({
-  selector: 'app-admin-dashboard',
-  imports: [CommonModule, RouterModule, FormsModule, MatCardModule, LoadingSpinnerComponent],
-  templateUrl: './admin-dashboard.html',
-  styleUrl: './admin-dashboard.css'
+  selector: "app-admin-dashboard",
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    MatCardModule,
+    LoadingSpinnerComponent,
+    DrawerModule,
+  ],
+  templateUrl: "./admin-dashboard.html",
+  styleUrl: "./admin-dashboard.css",
 })
 export class AdminDashboard implements OnInit {
-  currentUser: User | null = null;
+  currentUser: RegisterUserData | null = null;
   Math: any = Math;
   activeTab = "overview";
   longText = `The Shiba Inu is the smallest of the six original and distinct spitz breeds of dog
@@ -130,7 +158,9 @@ export class AdminDashboard implements OnInit {
   // Data
   statistics: AdminStatistics = {
     totalAgencies: 15,
-    activeAgencies: 14,
+    dailyCollections: 10,
+    totalActiveAgencies: 14,
+    monthlyClientPercentage: 5,
     totalClients: 12500,
     activeClients: 12000,
     totalCollectors: 85,
@@ -138,6 +168,8 @@ export class AdminDashboard implements OnInit {
     completedCollections: 425,
     completeCollections: 425,
     totalMunicipalities: 25,
+    totalMunicipalityAgents: 25,
+    totalManagers: 25,
     totalCollections: 425,
     totalRevenue: 485000,
     averageRating: 4.2,
@@ -161,11 +193,11 @@ export class AdminDashboard implements OnInit {
   //  zoneStatistics: ZoneStatistic[] = [];
 
   // Filters
-  agenciesFilter = "all";
+  agenciesFilter = "";
   clientsFilter = "all";
   roleFilter = "";
   searchTerm = "";
-  neighborhoodFilter=""
+  neighborhoodFilter = "";
   collectorsFilter = "all";
   complianceFilter = "all";
   statisticsPeriod = "month";
@@ -175,8 +207,13 @@ export class AdminDashboard implements OnInit {
   usersFilterParams: FilterParams = {
     role: this.roleFilter,
     neighborhood: this.neighborhoodFilter,
-    term:this.searchTerm
-  }
+    term: this.searchTerm,
+  };
+
+  agenciesFilterParams: FilterParams = {
+    status: this.agenciesFilter,
+    search: this.searchTerm,
+  };
   // Loading states
   isLoadingStatistics = false;
   isLoadingAgencies = false;
@@ -205,15 +242,15 @@ export class AdminDashboard implements OnInit {
 
   tabs = [
     { id: "overview", label: "Vue d'ensemble", icon: "dashboard", badge: null },
-    {
-      id: "municipalities",
-      label: "Municipalités",
-      icon: "business",
-      badge: null,
-    },
+    // {
+    //   id: "municipalities",
+    //   label: "Municipalités",
+    //   icon: "business",
+    //   badge: null,
+    // },
     { id: "agencies", label: "Agences", icon: "business", badge: null },
-    { id: "collectors", label: "Collecteurs", icon: "business", badge: null },
-    { id: "clients", label: "Clients", icon: "business", badge: null },
+    // { id: "collectors", label: "Collecteurs", icon: "business", badge: null },
+    // { id: "clients", label: "Clients", icon: "business", badge: null },
     { id: "all_users", label: "Utilisateurs", icon: "person", badge: null },
     { id: "statistics", label: "Statistiques", icon: "analytics", badge: null },
     {
@@ -235,6 +272,8 @@ export class AdminDashboard implements OnInit {
   signalementsAudits: any;
   filteredSignalements: any[] = [];
   isDisabled = true;
+  visible1: boolean = false;
+  isLargeScreen = false;
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
@@ -261,7 +300,7 @@ export class AdminDashboard implements OnInit {
   }
 
   loadAdminData(): void {
-    this.loadAgencyAudits();
+    this.loadAgencyAudits(this.agenciesFilterParams);
     this.loadWasteStatistics();
     this.loadZoneStatistics();
     this.loadZoneStat();
@@ -272,18 +311,77 @@ export class AdminDashboard implements OnInit {
     // this.loadIncidents();
   }
 
-  
-  loadAgencyAudits(): void {
+  //User
+  selectedUser: RegisterUserData = {
+    _id: "",
+    id: "",
+    userId: "",
+    subscribedAgencyId: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    phone: "",
+    role: "",
+    address: {
+      arrondissement: "",
+      sector: "",
+      street: "",
+      doorNumber: "",
+      doorColor: "",
+      neighborhood: "",
+      city: "",
+      postalCode: "",
+      latitude: 0,
+      longitude: 0,
+    },
+    acceptTerms: true,
+    receiveOffers: false,
+    agencyId: "",
+    status: "",
+    nbGestionnaires: 0,
+    isOwnerAgency: false,
+    slogan: "",
+    longitude: 0,
+    latitude: 0,
+    agencyName: "",
+    agencyDescription: "",
+    createdAt: "",
+    updatedAt: "",
+    isActive: true,
+    avatar: "",
+    commune: {
+      name: "",
+      region: "",
+      province: "",
+    },
+    agency: {
+      name: "",
+      agencyDescription: "",
+      zoneActivite: [],
+      client: "",
+      collector: "",
+      slogan: "",
+      gestionnaires: [],
+      owner: "",
+      documents: [],
+      status: "active",
+      longitude: 0,
+      latitude: 0,
+    },
+  };
+
+  loadAgencyAudits(agenciesFilter: any): void {
     this.isLoadingAgencies = true;
-    this.agencyService.getAllAgenciesFromApi().subscribe({
+    this.agencyService.getAllAgenciesFromApi(agenciesFilter).subscribe({
       next: (agencies) => {
         this.agencyAudits = agencies.data.map((agency) => ({
           id: agency?._id,
           name: agency?.name,
-          status: agency?.isActive ? "active" : "inactive",
+          status: agency?.status || "inactive",
           clients: agency?.clients?.length || 0,
           collectors: agency?.employees?.length || 0,
-          zones: 0,
+          zones: agency?.zoneActivite?.length || 0,
           userId: agency?.userId,
           collectionsToday: 0,
           completionRate: 0,
@@ -299,9 +397,9 @@ export class AdminDashboard implements OnInit {
         console.log(" this.agencies", agencies);
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des agences:', error);
+        console.error("Erreur lors du chargement des agences:", error);
         this.isLoadingAgencies = false;
-      }
+      },
     });
     // this.agencyAudits = [
     //   {
@@ -495,7 +593,7 @@ export class AdminDashboard implements OnInit {
   // Utility methods
   getAgencyStatusText(status?: string): string {
     if (!status) {
-      return `${this.statisticsAdmin?.activeAgencies} actives`;
+      return `${this.statisticsAdmin?.totalActiveAgencies} actives`;
     }
     const statusTexts = {
       active: "Active",
@@ -593,6 +691,7 @@ export class AdminDashboard implements OnInit {
   }
 
   getStars(rating: number): number[] {
+    if (!rating || rating < 0) return [];
     return new Array(Math.floor(rating)).fill(0);
   }
 
@@ -715,22 +814,28 @@ export class AdminDashboard implements OnInit {
 
   // Filter methods
   filterAgencies(): void {
-    this.filteredAgencies = this.agencyAudits.filter((agency) => {
-      const statusMatch =
-        this.agenciesFilter === "all" || agency.status === this.agenciesFilter;
-      let complianceMatch = true;
+    // this.filteredAgencies = this.agencyAudits.filter((agency) => {
+    //   const statusMatch =
+    //     this.agenciesFilter === "all" || agency.status === this.agenciesFilter;
+    //   let complianceMatch = true;
 
-      if (this.complianceFilter === "excellent") {
-        complianceMatch = agency.complianceScore >= 95;
-      } else if (this.complianceFilter === "good") {
-        complianceMatch =
-          agency.complianceScore >= 85 && agency.complianceScore < 95;
-      } else if (this.complianceFilter === "poor") {
-        complianceMatch = agency.complianceScore < 85;
-      }
+    //   if (this.complianceFilter === "excellent") {
+    //     complianceMatch = agency.complianceScore >= 95;
+    //   } else if (this.complianceFilter === "good") {
+    //     complianceMatch =
+    //       agency.complianceScore >= 85 && agency.complianceScore < 95;
+    //   } else if (this.complianceFilter === "poor") {
+    //     complianceMatch = agency.complianceScore < 85;
+    //   }
 
-      return statusMatch && complianceMatch;
-    });
+    //   return statusMatch && complianceMatch;
+    // });
+    this.agenciesFilterParams = {
+      status: this.agenciesFilter,
+      search: this.searchTerm,
+    };
+    console.log(this.agenciesFilterParams);
+    this.loadAgencyAudits(this.agenciesFilterParams);
   }
   filterClients(): void {
     this.filteredClients = this.clientsAudits.filter((client) => {
@@ -757,8 +862,8 @@ export class AdminDashboard implements OnInit {
     this.usersFilterParams = {
       role: this.roleFilter,
       neighborhood: this.neighborhoodFilter,
-      term:this.searchTerm
-    }
+      term: this.searchTerm,
+    };
     console.log(this.usersFilterParams);
     this.showAdminUsers(this.usersFilterParams);
   }
@@ -799,15 +904,15 @@ export class AdminDashboard implements OnInit {
       "Génération du rapport global en cours..."
     );
   }
-//   handleDisabledClick(event: MouseEvent) {
-//   if (this.isDisabled) {
-//     event.stopPropagation();
-//     this.notificationService.showInfo(
-//       "Info",
-//       "Fonctionnalite viendra bientôt..."
-//     );
-//   }
-// }
+  //   handleDisabledClick(event: MouseEvent) {
+  //   if (this.isDisabled) {
+  //     event.stopPropagation();
+  //     this.notificationService.showInfo(
+  //       "Info",
+  //       "Fonctionnalite viendra bientôt..."
+  //     );
+  //   }
+  // }
   viewMunicipalityDetails(municipalityId: string): void {
     this.notificationService.showInfo(
       "Détails",
@@ -822,23 +927,52 @@ export class AdminDashboard implements OnInit {
     );
     this.router.navigate(["/agencies", agencyId]);
   }
-  selectedClient: any = null; 
-showClientDetailsModal: boolean = false;
-viewClientDetails(clientId: string): void {
-  this.notificationService.showInfo("Détails", "Récupération des détails du client...");
-  
-  this.adminService.getClientById(clientId).subscribe({
-    next: (client: any) => {
-      this.selectedClient = client.data; 
-      console.log('voici les details du client:',client)
-      this.showClientDetailsModal = true; 
-    },
-    error: (err: any) => {
-      console.error("Erreur lors de la récupération des détails du client :", err);
-      this.notificationService.showError("Erreur", "Impossible de récupérer les détails du client.");
-    }
-  });
-}
+  selectedClient: any = null;
+  viewUserDetails(clientId: string): void {
+    this.notificationService.showInfo(
+      "Détails",
+      "Récupération des détails du client..."
+    );
+
+    this.adminService.getUserById(clientId).subscribe({
+      next: (client: any) => {
+        if (client.success) {
+          const user = client.user;
+          if(user.agencyId){
+            const id=user.agencyId;
+            if(id){
+              this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
+                if (response.success) {
+                  console.log('[DEBUG] Agency response in admin dashbord:', response.data);
+                  user.agency = response.data;
+                } else {
+                  console.error('Erreur lors du chargement de l\'agence');
+                }
+              });
+            }
+          }
+          this.selectedUser = user;
+          // console.log("voici les details du client:", this.selectedUser);
+          this.visible1 = true;
+        } else {
+          this.notificationService.showInfo(
+            "Erreur de recuperation",
+            "Impossible de recuperer les details du client."
+          );
+        }
+      },
+      error: (err: any) => {
+        console.error(
+          "Erreur lors de la récupération des détails du client :",
+          err
+        );
+        this.notificationService.showError(
+          "Erreur",
+          "Impossible de récupérer les détails du client."
+        );
+      },
+    });
+  }
   viewCollectorDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",
@@ -982,14 +1116,15 @@ viewClientDetails(clientId: string): void {
     this.isLoadingStatistics = true;
     this.adminService.getAllStatistics().subscribe({
       next: (statistics: any) => {
-        this.statisticsAdmin = statistics;
+        if (!statistics.stats) return;
+        this.statisticsAdmin = statistics.stats;
         this.isLoadingStatistics = false;
-        console.log(this.statisticsAdmin);
+        console.log(" statistics in dashboard", this.statisticsAdmin);
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des statistiques:', error);
+        console.error("Erreur lors du chargement des statistiques:", error);
         this.isLoadingStatistics = false;
-      }
+      },
     });
   }
 
@@ -1013,14 +1148,14 @@ viewClientDetails(clientId: string): void {
         console.log("clients in dashboard", this.filteredClients);
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des clients:', error);
+        console.error("Erreur lors du chargement des clients:", error);
         this.isLoadingClients = false;
-      }
+      },
     });
   }
   //users
 
-  showAdminUsers(usersFilterParams:FilterParams): void {
+  showAdminUsers(usersFilterParams: FilterParams): void {
     this.isLoadingClients = true;
     console.log("usersFilterParams", usersFilterParams);
     this.adminService.getAllUsers(usersFilterParams).subscribe({
@@ -1039,30 +1174,33 @@ viewClientDetails(clientId: string): void {
         console.log("clients in dashboard", this.filteredUsers);
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des utilisateurs:', error);
+        console.error("Erreur lors du chargement des utilisateurs:", error);
         this.isLoadingClients = false;
-      }
+      },
     });
   }
   agencies: any[] = [];
   getAllAgenciesIDs(): void {
-    this.agencyService.getAllAgenciesFromApi().subscribe({
-      next: (response: any) => {
-        this.agencies = response?.data.map((a: any) => a._id);
-        console.log("agencies in dashboard", response, this.agencies);
-        this.loadAllCollectors();
-      },
-    });
+    this.agencyService
+      .getAllAgenciesFromApi(this.agenciesFilterParams)
+      .subscribe({
+        next: (response: any) => {
+          this.agencies = response?.data.map((a: any) => a._id);
+          console.log("agencies in dashboard", response, this.agencies);
+          this.loadAllCollectors();
+        },
+      });
   }
   loadAllCollectors(): void {
     this.isLoadingCollectors = true;
-    
+
     // Ajouter un timeout de 30 secondes pour éviter le chargement infini
-    this.adminService.getAllEmployees()
+    this.adminService
+      .getAllEmployees()
       .pipe(
         timeout(30000), // 30 secondes
-        catchError(error => {
-          console.error('Erreur lors du chargement des collecteurs:', error);
+        catchError((error) => {
+          console.error("Erreur lors du chargement des collecteurs:", error);
           this.isLoadingCollectors = false;
           this.collectorsAudits = [];
           this.filteredCollectors = [];
@@ -1095,8 +1233,10 @@ viewClientDetails(clientId: string): void {
                     agencyId: agencyResponse?.data?._id || "",
                     address: {
                       city: agencyResponse?.data?.address?.city || "",
-                      quartier: agencyResponse?.data?.address?.neighborhood || "",
-                      postalCode: agencyResponse?.data?.address?.postalCode || "",
+                      quartier:
+                        agencyResponse?.data?.address?.neighborhood || "",
+                      postalCode:
+                        agencyResponse?.data?.address?.postalCode || "",
                       sector: agencyResponse?.data?.address?.sector || "",
                       street: agencyResponse?.data?.address?.street || "",
                     },
@@ -1120,8 +1260,11 @@ viewClientDetails(clientId: string): void {
           forkJoin(collectorsWithAgencies$)
             .pipe(
               timeout(60000), // 1 minute pour toutes les requêtes
-              catchError(error => {
-                console.error('Erreur lors du chargement des agences des collecteurs:', error);
+              catchError((error) => {
+                console.error(
+                  "Erreur lors du chargement des agences des collecteurs:",
+                  error
+                );
                 this.isLoadingCollectors = false;
                 this.collectorsAudits = [];
                 this.filteredCollectors = [];
@@ -1136,11 +1279,11 @@ viewClientDetails(clientId: string): void {
             });
         },
         error: (error) => {
-          console.error('Erreur lors du chargement des collecteurs:', error);
+          console.error("Erreur lors du chargement des collecteurs:", error);
           this.isLoadingCollectors = false;
           this.collectorsAudits = [];
           this.filteredCollectors = [];
-        }
+        },
       });
   }
   getInitials(fullName: string) {
@@ -1164,7 +1307,8 @@ viewClientDetails(clientId: string): void {
   // }
 
   activateAgency(id: string) {
-    this.agencyService.activateAgency(id, "active").subscribe({
+    const status = "activate";
+    this.agencyService.activateAgency(id, status).subscribe({
       next: (response: any) => {
         console.log("agency activated  in dashboard", response);
         if (response.message) {
@@ -1172,7 +1316,7 @@ viewClientDetails(clientId: string): void {
             "Activation",
             "Agence activée avec succès"
           );
-          this.loadAgencyAudits();
+          this.loadAgencyAudits(this.agenciesFilterParams);
         }
       },
       error: (error: any) => {
@@ -1195,7 +1339,6 @@ viewClientDetails(clientId: string): void {
         this.filteredMunicipalities = [...this.municipalitiesAudits];
         console.log("municipalities in response", response);
         console.log("municipalities in dashboard", this.filteredMunicipalities);
-       
       },
     });
   }
@@ -1216,9 +1359,9 @@ viewClientDetails(clientId: string): void {
         console.log("signalements in dashboard", this.filteredIncidents);
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des incidents:', error);
+        console.error("Erreur lors du chargement des incidents:", error);
         this.isLoadingIncidents = false;
-      }
+      },
     });
   }
   //naviguate to add Municipality
@@ -1226,26 +1369,61 @@ viewClientDetails(clientId: string): void {
     this.router.navigate(["/register"]);
     this.adminService.setData("municipality");
   }
-  closeClientDetailsModal(): void {
-  this.showClientDetailsModal = false;
-  this.selectedClient = null; 
-}
-getTabBadge(tabId: string): number {
-  switch (tabId) {
-    case 'overview':
-      return this.filteredAgencies.length + this.filteredMunicipalities.length + this.filteredClients.length + this.filteredCollectors.length + this.filteredIncidents.length;
-    case 'municipalities':
-      return this.filteredMunicipalities.length;
-    case 'agencies':
-      return this.filteredAgencies.length;
-    case 'clients':
-      return this.filteredClients.length;
-    case 'collectors':
-      return this.filteredCollectors.length;
-    case 'incidents':
-      return this.filteredIncidents.length;
-    default:
-      return 0;
+
+  getTabBadge(tabId: string): number {
+    switch (tabId) {
+      case "overview":
+        return (
+          this.filteredAgencies.length +
+          this.filteredMunicipalities.length +
+          this.filteredClients.length +
+          this.filteredCollectors.length +
+          this.filteredIncidents.length
+        );
+      case "municipalities":
+        return this.filteredMunicipalities.length;
+      case "agencies":
+        return this.filteredAgencies.length;
+      case "clients":
+        return this.filteredClients.length;
+      case "collectors":
+        return this.filteredCollectors.length;
+      case "incidents":
+        return this.filteredIncidents.length;
+      case "all_users":
+        return this.filteredUsers.length;
+      default:
+        return 0;
+    }
   }
-}
+
+  getRoleLabel(): string {
+    const count = this.filteredUsers.length;
+    const plural = count > 1;
+    switch (this.roleFilter) {
+      case "client":
+        return plural ? "Clients" : "Client";
+      case "manager":
+        return plural ? "Manageurs" : "Manageur";
+      case "collector":
+        return plural ? "Collecteurs" : "Collecteur";
+      case "municipality":
+        return plural ? "AGENTS DE MAIRIE" : "Agent de Mairie";
+      default:
+        return "";
+    }
+  }
+
+  // Recuperer l'agence d'un user
+  agency:any;
+  loadAgencyFromApi(id: string | null): void {
+    this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
+      if (response.success && response.data) {
+        console.log('[DEBUG] Agency response:', response.data);
+        this.agency = response.data;
+      } else {
+        console.error('Erreur lors du chargement de l\'agence');
+      }
+    });
+  } 
 }

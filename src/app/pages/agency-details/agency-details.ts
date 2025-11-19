@@ -1,8 +1,9 @@
+import { tarif } from './../../models/agency.model';
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AgencyService } from '../../services/agency.service';
-import { Agency, Tariff } from '../../models/agency.model';
+import { Agency, Tarif } from '../../models/agency.model';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { RegisterUserData, User } from '../../models/user.model';
@@ -95,7 +96,7 @@ export class AgencyDetails implements OnInit {
   agency: any =''; 
   agencyId: string | null = null;
   agencyIdd: string | null = null;
-  currentUser: User | null = null;
+  currentUser: RegisterUserData | null = null;
   messageData: Message = {
     sender: '',
     receiver: '',
@@ -107,8 +108,9 @@ export class AgencyDetails implements OnInit {
   showReportModal = false;
   unreadMessageCount: any;
   quartierInfos: any;
-  
+  agencyZones: string[] = [];
   visible2: boolean = false;
+  visible1: boolean = false;
   constructor(
     private route: ActivatedRoute,
     private countriesOrgMockService: CountriesOrgMockService,
@@ -121,19 +123,23 @@ export class AgencyDetails implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.loadAgencyDataOnInit();
+  }
+  loadAgencyDataOnInit(): void {
     this.getAllCountries();
     this.currentUser = this.authService.getCurrentUser();
     this.agencyId = this.route.snapshot.paramMap.get('id');
     console.log("AgencyId==>", this.agencyId);
+    this.onZoneActiviteChange(this.agencyId || '');
     if (this.agencyId) {
       this.loadAgencyFromApi(this.agencyId);
+      this.loadTariffs(this.agencyId || '');
     }
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
     this.countUnreadMessages();
 
-    // this.loadTariffs();
   }
 
   getQuartierInfos(qrt: string){
@@ -144,10 +150,11 @@ export class AgencyDetails implements OnInit {
   }
 
   // recuperations des tarifs liee a une agences
-  tariffs: Tariff[] = [];
-  loadTariffs(): void {
+  tariffs: Tarif[] = [];
+  loadTariffs(agencyId: string): void {
     this.isLoading = true;
-    const agency_id = this.agency?._id;
+    // const agency_id = this.agency?._id;
+    const agency_id = agencyId;
     console.log("AgenceId==>", agency_id);
     if (!agency_id) {
       console.error("[DEBUG] Aucun tarif trouvé pour cette agence");
@@ -156,9 +163,9 @@ export class AgencyDetails implements OnInit {
     }
 
     this.agencyService.getAgencyAllTarifs$(agency_id).subscribe({
-      next: (data: Tariff[]) => {
-        this.tariffs = data;
-        console.log("Tarifs récupérés :", this.tariffs);
+      next: (response: any) => {
+        this.tariffs = response.data;
+        console.log("Tarifs récupérés :", response);
         this.isLoading = false;
       },
       error: (error) => {
@@ -247,7 +254,8 @@ updateEndDate() {
       }
     });
   }
-  submitMessage() {
+  submitMessage(agencyId: string) {
+    console.log('this.agencyId', agencyId);
     if (!this.currentUser) {
       this.notificationService.showError('Connexion requise', 'Vous devez être connecté pour envoyer un message');
       return;
@@ -256,8 +264,8 @@ updateEndDate() {
       this.notificationService.showError('Erreur', 'Agence non trouvée');
       return;
     }
-    this.messageData.sender = this.currentUser?.userId || '';
-    this.messageData.receiver = this.agencyId || '';
+    this.messageData.sender = this.currentUser?._id || '';
+    this.messageData.receiver = agencyId || '';
     this.messageData.content = this.messageData.content.trim();
     if (!this.messageData.content) {
       this.notificationService.showError('Message vide', 'Le contenu du message ne peut pas être vide');
@@ -298,7 +306,8 @@ updateEndDate() {
         city: '',
         postalCode: ''
       },
-
+      
+      owner: apiAgency.owner,
       arrondissement: apiAgency.address.arrondissement || '',
       secteur: apiAgency.address.sector || '',
       quartier: apiAgency.address.neighborhood || '',
@@ -332,10 +341,13 @@ updateEndDate() {
       if (response.success && response.data) {
         console.log('[DEBUG] Agency response:', response.data);
         this.agency = this.mapApiAgency(response.data);
-        this.agencyId = this.agency?.userId;
-        console.log('[DEBUG] Agency details:', this.agency);
-        console.log('[DEBUG] AgencyID details:', this.agencyId);
-        this.loadTariffs();
+        this.agencyId = this.agency?.agencyId;
+        if(this.agencyId) {
+          console.log('[DEBUG] Agency details:', this.agency);
+          console.log('[DEBUG] AgencyID details:', this.agencyId);
+          this.loadTariffs(this.agencyId || '');
+        }
+
       } else {
         console.error('Erreur lors du chargement de l\'agence');
         // Fallback vers les données mockées si l'API échoue
@@ -347,6 +359,7 @@ updateEndDate() {
   }
 
   getStars(rating: number): number[] {
+    if (!rating || rating < 0) return [];
     return new Array(Math.floor(rating)).fill(0);
   }
 
@@ -438,7 +451,7 @@ private normalizePhoneForWhatsApp(raw: string): string {
 
 contactAgency(): void {
   if (!this.agency?.phone) return;
-  const phoneForWA = this.normalizePhoneForWhatsApp(this.agency.phone);
+  const phoneForWA = this.normalizePhoneForWhatsApp(this.agency.owner.phone);
   if (!phoneForWA) return;
 
   const message = encodeURIComponent("Bonjour, je vous contacte au sujet de ...");
@@ -458,17 +471,19 @@ contactAgency(): void {
   agencyStatus: string ="";
   activateAgency(id: string) {
     
-    if(this.userData?.status === "active") {
+    if(this.agency?.status === "active") {
       this.agencyStatus = "deactivate";
     }else {
       this.agencyStatus = "activate";
     }
+
+    console.log("agency status",this.agencyStatus);
     this.agencyService.activateAgency(id, this.agencyStatus).subscribe({
       next: (response: any) => {
         console.log('agency activated  in dashboard', response);
-        if (response.message) {
+        if (response.success) {
           this.notificationService.showSuccess('Activation', response.message);
-          this.loadAgencyFromApi(this.agencyId);
+          this.loadAgencyFromApi(id);
         } else {
           this.notificationService.showError('Activation', 'Erreur lors de l\'activation de l\'agence');
         }
@@ -649,5 +664,22 @@ contactAgency(): void {
           }
         });
         return;
+    }
+
+
+    //Zones d'intervention de l'agences
+    onZoneActiviteChange(agencyId: string) {
+      this.agencyService.getAgencyZones$(agencyId).subscribe({
+        next: (response: any) => {
+          if(!response.success) return;
+          this.agencyZones = response.data;
+          this.isLoading = false;
+          console.log('[DEBUG] Zones d\'activité de l\'agence:', response);
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.handleRegistrationError(error.error || error.message || error);
+        }
+      })
     }
 }

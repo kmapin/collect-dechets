@@ -137,12 +137,10 @@
             </div>
             <div class="user-info">
               <span class="user-name"
-                >{{ currentUser.firstName ? currentUser.firstName :
-                currentUser.firstname }} {{ currentUser.lastName?
-                currentUser.lastName : currentUser.lastname }}</span
+                >{{ currentUser.firstName }}</span
               >
               <span class="user-role"
-                >{{ getRoleLabel(currentUser.role) }}</span
+                >{{ getRoleLabel(currentUser.role ?? "") }}</span
               >
             </div>
             <i
@@ -156,9 +154,7 @@
             <div class="dropdown-header">
               <div class="user-details">
                 <strong
-                  >{{ currentUser.firstName ? currentUser.firstName :
-                  currentUser.firstname }} {{ currentUser.lastName ?
-                  currentUser.lastName : currentUser.lastname }}</strong
+                  >{{ currentUser.firstName }}</strong
                 >
                 <span>{{ currentUser.email }}</span>
               </div>
@@ -266,7 +262,7 @@
               <strong
                 >{{ currentUser.email }} {{ currentUser.lastName }}</strong
               >
-              <span>{{ getRoleLabel(currentUser.role) }}</span>
+              <span>{{ getRoleLabel(currentUser.role ??"") }}</span>
             </div>
           </div>
           <div class="mobile-user-actions">

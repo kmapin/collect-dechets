@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
-import { Agency, Tariff, WasteService } from '../../models/agency.model';
+import { Agency, Tarif, WasteService } from '../../models/agency.model';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { Arrondissement, Quartier, Sector } from '../../models/countries-org.model';
 import { CountriesOrgMockService } from '../../services/countries-org-mock.service';
@@ -43,9 +43,6 @@ quartierss: Quartier[] = [];
 selectedArrondissement: string = '';
 selectedSector: string = '';
 selectedNeighborhood: string = '';
-selectedRadius: string = '';
-selectedActivityZone: string = '';
-selectedStatus: string = '';
 // minRating: string = '';
 
 onCityChange(city: string) {
@@ -185,12 +182,16 @@ currentUser!: any ;
    * Charge les agences depuis l'API backend et remplace les données locales
    */
   loadAgenciesFromApi(): void {
-    
-    this.applyFilters();
+    this.agencyService.getAllAgenciesFromApi().subscribe((response: any) => {
+      this.agencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
+      this.filteredAgencies = this.agencies;
+      console.log("Agences chargées :", this.filteredAgencies);
+      this.generateRandomStarsList()
+      // this.applyFilters();
+    });
   }
 
   onSearch(): void {
-    // this.loadAgenciesFromApi()
     this.applyFilters();
   }
 
@@ -198,23 +199,18 @@ currentUser!: any ;
 
 applyFilters(): void {
   const payload: any = {
-    name: this.searchQuery || '',
-    city: this.selectedCity || '',
-    arrondissement: this.selectedArrondissement || '',
-    sector: this.selectedSector || '',
-    neighborhood: this.selectedNeighborhood || '',
-    rating: this.minRating ? this.minRating.toString() : undefined,
-    service: this.selectedService || undefined,
-    activityZone: this.selectedActivityZone || undefined, 
-    radius: this.selectedRadius || undefined,
-    status: this.selectedStatus || 'all'
+    term: this.searchQuery || '',
+    city: this.selectedCity,
+    arrondissement: this.selectedArrondissement,
+    sector: this.selectedSector,
+    neighborhood: this.selectedNeighborhood,
+    rating: this.minRating ? parseFloat(this.minRating) : null
     // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
   };
 
-  // this.agencyService.searchAgencie(payload).subscribe({
-  this.agencyService.getAllAgenciesFromApiInAgencies(payload).subscribe({
+  this.agencyService.searchAgencie(payload).subscribe({
     next: (response: any) => {
-      this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
+      this.filteredAgencies = (response.results || []).map((a: any) => this.mapApiAgency(a));
       console.log("Agences filtrées :", this.filteredAgencies);
       this.generateRandomStarsList();
       this.sortAgencies();
@@ -336,7 +332,7 @@ applySuggestion(suggestion: any): void {
   this.applyFilters();
 }
 // recuperations des tarifs liee a une agences
-tariffs: Tariff[] = [];
+tariffs: Tarif[] = [];
   isLoading: boolean = false;
  loadTariffs(): void {
   this.isLoading = true;
@@ -348,7 +344,7 @@ tariffs: Tariff[] = [];
   }
 
   this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
-    next: (data: Tariff[]) => {
+    next: (data: Tarif[]) => {
       this.tariffs = data;
       console.log('Tarifs récupérés :', this.tariffs);
       this.isLoading = false;

@@ -28,6 +28,7 @@ export interface ClientApi {
     latitude: number | null;
     longitude: number | null;
   };
+  email?: string;
   subscriptionStatus: string;
   acceptTerms: boolean;
   receiveOffers: boolean;
@@ -50,7 +51,7 @@ export class ClientService {
   constructor(private http: HttpClient) {}
 
   getClientsByAgency(agencyId: string): Observable<ClientApi[]> {
-    return this.http.get<ClientApi[]>(`${environment.apiUrl}/clients/agency/${agencyId}`).pipe(
+    return this.http.get<ClientApi[]>(`${environment.apiUrl}/agency_employees/${agencyId}/clients`).pipe(
       map((response: any) => {
         console.log('API > getClientsByAgency:', response);
         return response;
@@ -95,7 +96,7 @@ export class ClientService {
   }
 
   getClientWallet(clientId: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/users/${clientId}/wallet`).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/wallet/${clientId}`).pipe(
       map((response: any) => {
         console.log('API > getClientWallet:', response);
         return response;
@@ -104,7 +105,7 @@ export class ClientService {
   }
 
   walletPayment(data: any): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/users/${data.clientId}/wallet/${data.amount}`, {}).pipe(
+    return this.http.post(`${environment.apiUrl}/wallet/add/${data.clientId}/${data.amount}`, {}).pipe(
       map((response: any) => {
         console.log('API > walletPayment:', response);
         return response;
@@ -112,7 +113,7 @@ export class ClientService {
     );
   }
   getClientPlanning(clientId: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/zones/plannings/${clientId}`).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/collectes/user/${clientId}/scheduled-collectes`).pipe(
       map((response: any) => {
         console.log('API > getClientPlanning:', response);
         return response;
@@ -121,7 +122,7 @@ export class ClientService {
   }
 
   getClientPlanningHistory(clientId: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/zones/plannings/${clientId}/collecte`).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/collectes/user/${clientId}/collecte-history`).pipe(
       map((response: any) => {
         console.log('API > getClientPlanningHistory:', response);
         return response;
@@ -139,7 +140,7 @@ export class ClientService {
   }
 
   reportClientIncident(data: any) {
-    return this.http.post(`${environment.apiUrl}/reports`, data).pipe(
+    return this.http.patch(`${environment.apiUrl}/collectes/${data.collecteId}/report/${data.clientId}`, data).pipe(
       map((response: any) => {
         console.log('API > reportClientIncident:', response);
         return response;
