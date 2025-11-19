@@ -1365,7 +1365,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.loadReports();
     //this.activeClientNbrs = this.activeClientNbr(); // Mettez à jour le nombre d'actifs
     //this.updateTabs(); // Mettez à jour les tabs après avoir récupéré les clients
-    console.log("🏢 FIN loadAgencyData");
+    console.log(" FIN loadAgencyData");
   }
   loadCollectors(agencyId: string): void {
     console.log(" DÉBUT loadCollectors - Chargement des collecteurs");
@@ -1430,34 +1430,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     }
   }
 
-  //suppression d un employé
-  // deleteEmployee(currentUser: any, employeeId: any): void {
-  //   this.isDeleting = true;
-
-  //   if (currentUser?._id && employeeId?.userId?._id) {
-  //     this.agencyService.deleteEmployee$( employeeId.userId._id).subscribe(
-  //       () => {
-  //         this.notificationService.showSuccess(
-  //           'Succès',
-  //           'L\'employé a été supprimé avec succès.'
-  //         );
-  //         this.loadEmployees(currentUser);
-  //         this.isDeleting = false;
-  //       },
-  //       (error) => {
-  //         this.notificationService.showError(
-  //           'Erreur',
-  //           'Impossible de supprimer l\'employé. Veuillez réessayer.'
-  //         );
-  //         console.error("Erreur lors de la suppression de l'employé :", error);
-  //         this.isDeleting = false;
-  //       }
-  //     );
-  //   } else {
-  //     console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
-  //     this.isDeleting = false;
-  //   }
-  // }
+ 
   deleteEmployee(currentUser: any, employeeId: any): void {
     this.isDeleting = true;
 
@@ -1496,7 +1469,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       return;
     }
 
-    // Demander confirmation avec votre système de notification personnalisé
+    
     this.showDeleteConfirmationDialog(employeeIdToDelete, currentUser, employeeId);
   }
 
@@ -1667,9 +1640,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   loadEmployees(agencyId: string): void {
-    console.log(" DÉBUT loadEmployees - Chargement des employés");
-    console.log(" AgencyId reçu:", agencyId);
-    
     if (agencyId) {
       this.isLoadingEmployees = true;
       console.log(" Appel du service getEmployeeAgency$ avec agencyId:", agencyId);
@@ -1816,11 +1786,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm)
       );
     }
-
-    // Filtrage par statut (si nécessaire pour d'autres statuts)
     if (this.clientsStatusFilter && this.clientsStatusFilter !== 'all') {
-      // Ici vous pouvez ajouter d'autres filtres de statut si nécessaire
-      // Par exemple: filtered = filtered.filter(client => client.status === this.clientsStatusFilter);
+     
     }
 
     this.filteredActiveClients = filtered;
@@ -1926,34 +1893,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     
     }
   }
-  // loadServiceZones(): void {
-  //   this.serviceZones = [
-  //     {
-  //       id: "zone1",
-  //       name: "Zone Centre",
-  //       description: "Centre-ville et quartiers adjacents",
-  //       boundaries: [],
-  //       neighborhoods: ["Centre-ville", "Quartier Latin"],
-  //       cities: ["Paris"],
-  //       isActive: true,
-  //     },
-  //   ];
-  // }
-
-  // loadSchedules(): void {
-  //   this.schedules = [
-  //     {
-  //       // id: '1',
-  //       zoneId: 'zone1',
-  //       dayOfWeek: 1,
-  //       startTime: '08:00',
-  //       endTime: '12:00',
-  //       collectorId: '1',
-  //       // isActive: true
-  //     }
-  //   ];
-  // }
-
+ 
   // Helper pour récupérer le statut d'abonnement
   getClientSubscriptionStatus(c: any): string | undefined {
     return c.subscriptionHistory && c.subscriptionHistory.length
@@ -2016,7 +1956,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       error: (err) => {
         console.error("[loadClients] error:", err);
         this.activeClients = [];
-        this.filteredActiveClients = []; // Réinitialiser les clients filtrés
+        this.filteredActiveClients = []; 
         this.pendingClients = [];
         this.isLoadingClients = false;
       },
@@ -2056,11 +1996,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     );
   }
 
-  // getStars(rating: number): number[] {
-  //   return new Array(Math.floor(rating)).fill(0);
-  // }
+
   getStars(rating: number): number[] {
-    // console.log('Rating reçu dans getStars:', rating);
+    
     if (!rating || rating < 0) {
       return [];
     }
@@ -2097,7 +2035,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
 
   getCollectionProgress(collection: Collection): number {
-    // Simuler le progrès de collecte avec une valeur stable
+
     const seed = collection.id
       .split("")
       .reduce((a, b) => a + b.charCodeAt(0), 0);
@@ -2114,12 +2052,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   getZoneName(zone: string): string {
-    // Exemple simple
+
     return zone || "Zone inconnue";
   }
 
   getZoneClients(zoneId: string): number {
-    // Simuler le nombre de clients par zone
+
     return Math.floor(Math.random() * 200) + 50;
   }
 
@@ -2183,25 +2121,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     })}`;
   }
 
-  // getSchedulesForDay(dayIndex: number): any[] {
-  //   return this.schedules.filter(s => s.dayOfWeek === dayIndex + 1);
-  // }
-  // getSchedulesForDay(dayIndex: number): any[] {
-  //   const startOfWeek = new Date(this.currentWeek);
-  //   startOfWeek.setDate(
-  //     this.currentWeek.getDate() - this.currentWeek.getDay() + 1
-  //   ); // Lundi
-  //   const targetDate = new Date(startOfWeek);
-  //   targetDate.setDate(startOfWeek.getDate() + dayIndex);
 
-  //   return this.plannings.filter((schedule) => {
-  //     const scheduleDate = new Date(schedule.date);
-  //     return (
-  //       scheduleDate.toDateString() === targetDate.toDateString() &&
-  //       schedule.dayOfWeek === dayIndex + 1
-  //     );
-  //   });
-  // }
 
   getSchedulesForDay(dayIndex: number): any[] {
     if (!Array.isArray(this.schedules)) {
@@ -2258,12 +2178,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Vérifie si un planning est en cours de chargement
    */
   isScheduleLoading(schedule: any): boolean {
-    // Vous pouvez implémenter votre logique de chargement ici
-    // Par exemple, si vous avez un tableau d'IDs en cours de traitement
+  
     return this.loadingScheduleIds?.includes(schedule._id) || false;
   }
 
-  // Propriété pour tracker les plannings en cours de chargement
+
   loadingScheduleIds: string[] = [];
 
   /**
@@ -2381,19 +2300,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   // Action methods
   trackCollection(collectionId: string): void {
-    // No need to call notificationService.showInfo here, as it's already handled in the template
+
   }
 
   contactClient(clientId: string): void {
-    // No need to call notificationService.showInfo here, as it's already handled in the template
+   
   }
 
-  // deleteEmployee(employeeId: string): void {
-  //   if (confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')) {
-  //     this.employees = this.employees.filter(e => e.id !== employeeId);
 
-  //   }
-  // }
 
   // Zone Side
   editZone(zoneId: string): void {
@@ -2418,7 +2332,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   deleteZone(zoneId: string): void {
     if (confirm("Êtes-vous sûr de vouloir supprimer cette zone ?")) {
       this.serviceZones = this.serviceZones.filter((z) => z.id !== zoneId);
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
+      
     }
   }
 
@@ -2426,8 +2340,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   deleteSchedule(scheduleId: string): void {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce planning ?")) {
-      // this.schedules = this.schedules.filter(s => s.id !== scheduleId);
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
+ 
     }
   }
   selectedClient: any = null;
@@ -2460,7 +2373,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     const client = this.clients.find((c) => c.id === clientId);
     if (client) {
       client.subscriptionStatus = "suspended";
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
       this.notificationService.showSuccess(
         "Client suspendu",
         "Le client a bien été suspendu."
@@ -2469,8 +2381,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   deleteClient(): void {
-    // Ajoute la logique de suppression ici (API ou local)
-    // ...
+   
     this.notificationService.showSuccess("Désole", "Suppression non autorisée");
   }
 
@@ -2479,7 +2390,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (report) {
       report.status = "resolved";
       this.filterReports();
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
+
     }
   }
 
@@ -2539,10 +2450,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   addEmployee(): void {
-    // console.log('Tentative d\'ajout d\'employé...');
-    // console.log('Formulaire valide ?', this.employeeForm.valid);
-    // console.log('isEmployeeFormValid ?', this.isEmployeeFormValid());
-    // console.log('currentUser.agencyId ?', this.currentUser?.agencyId);
+  
 
     if (this.isEmployeeFormValid() && this.currentUser?.agencyId) {
       const formValue = this.employeeForm.value;
@@ -2905,32 +2813,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   // recuperation des planning d un colector
   collectorplannings: any[] = [];
-  // loadCollectorPlannings(): void {
-  //   this.isLoading = true;
-  //   const collectorId = "68c3f853a00747732407d946";
-  //   if (!collectorId) {
-  //     console.error("[DEBUG] Aucun collectorId trouvé ");
-  //     this.isLoading = false;
-  //     return;
-  //   }
-  //   this.agencyService.getPlaningCollectory$(collectorId).subscribe({
-  //     next: (data: any[]) => {
-  //       this.collectorplannings = data;
-  //       console.log(
-  //         "Plannings récupérés pour le collecteur :",
-  //         this.collectorplannings
-  //       );
-  //       this.isLoading = false;
-  //     },
-  //     error: (error) => {
-  //       // console.error(
-  //       //   "[DEBUG] Erreur lors du chargement des plannings du collecteur :",
-  //       //   error
-  //       // );
-  //       this.isLoading = false;
-  //     },
-  //   });
-  // }
+ 
 
   // supprimer un planning
   deletePlanning(schedulesId: string): void {
@@ -3125,7 +3008,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       nbPassages: tariff.numberOfPasses || ''
     });
     
-    // Marquer le formulaire comme non touché et propre pour éviter les erreurs de validation
+
     this.tariffForm.markAsUntouched();
     this.tariffForm.markAsPristine();
     
@@ -3136,11 +3019,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       }
     });
     
-    // Fermer le drawer des tarifs et ouvrir le modal de formulaire
+
     this.showTariffsModal = false;
     this.showZoneModal = true;
     
-    // Debug: vérifier que le formulaire est bien pré-rempli
+
     setTimeout(() => {
       console.log("Valeurs du formulaire tarif après pré-remplissage:", this.tariffForm.value);
     }, 100);
@@ -3192,11 +3075,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
       this.showZoneModal = false;
       this.editingZone = false;
-      this.zoneForm.reset(); // Reset du formulaire
+      this.zoneForm.reset();
       this.citiesInput = "";
       this.neighborhoodsInput = "";
     } else {
-      // Formulaire invalide
+
       this.zoneForm.markAllAsTouched();
       this.updateFormErrors(this.zoneForm, "zone");
       this.notificationService.showError(
@@ -3228,7 +3111,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   addSchedule(): void {
-    // Vérifier le mode : création ou modification
+  
     if (this.isEditingSchedule) {
       this.updateSchedule();
       return;
@@ -3263,9 +3146,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       date: formValues.date,
       startTime: formValues.startTime,
       endTime: formValues.endTime,
-      collectorId: formValues.collectorId, // Maintenant une simple chaîne de caractères
+      collectorId: formValues.collectorId, 
       agencyId: this.currentUser?.agencyId || "",
-      managerId: this.currentUser?._id || "", // ID du manager (utilisateur courant)
+      managerId: this.currentUser?._id || "", 
     };
 
     // Debug : log des données envoyées
@@ -3296,13 +3179,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           );
         }
         
-        // Recharger la liste des plannings pour afficher le nouveau
+
         this.loadPlannings();
         
-        // Désactiver l'indicateur de chargement
+    
         this.isLoading = false;
         
-        // Fermer le drawer et réinitialiser le formulaire
+     
         this.showScheduleModal = false;
         this.scheduleForm.reset();
       },
@@ -3363,25 +3246,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
   investigateIncident(): void {
-    // const incident = this.incidents.find(i => i.id === incidentId);
-    // if (incident) {
-    //   incident.status = 'investigating';
-    //   incident.assignedTo = 'Inspecteur Municipal';
-    //   this.filterIncidents();
-    //   this.notificationService.showSuccess('Enquête', 'Incident pris en charge pour enquête');
-    // }
+ 
   }
   filterIncidents(): void {
-    // this.filteredIncidents = this.incidents.filter(incident => {
-    //   const statusMatch = this.incidentsFilter === 'all' || incident.status === this.incidentsFilter;
-    //   const severityMatch = this.severityFilter === 'all' || incident.severity === this.severityFilter;
-    //   return statusMatch && severityMatch;
-    // });
+ 
   }
   resolveIncident1(): void {
-    // const incident = this.incidents.find(i => i.id === incidentId);
-    // if (incident) {
-    //   incident.status = 'resolved';
+
     this.filterIncidents();
     this.statistics.pendingReports--;
     this.notificationService.showSuccess(
@@ -3717,8 +3588,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
   zones: any[] = [];
-  agencyZonesActivite: any[] = []; // Variable pour stocker les zones d'activité de l'agence
-  
+  agencyZonesActivite: any[] = []; 
   //recuperation des zones
   loadZones(currentUser: any): void {
     // Éviter le rechargement si les zones sont déjà chargées
@@ -3854,8 +3724,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       email: employee.email || '',
       phone: employee.phone || '',
       role: employee.role || '',
-      password: '', // Ne jamais pré-remplir le mot de passe
-      confirmPassword: '', // Ne jamais pré-remplir la confirmation
+      password: '', 
+      confirmPassword: '', 
       address: {
         city: employee.address?.city || '',
         arrondissement: employee.address?.arrondissement || '',
