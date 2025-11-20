@@ -3287,8 +3287,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   loadTariffs(): void {
     this.isLoadingTariffs = true;
     const agencyId = this.currentUser?._id;
+    
+    console.log('[DEBUG] LoadTariffs - currentUser:', this.currentUser);
+    console.log('[DEBUG] LoadTariffs - agencyId utilisé:', agencyId);
+    
     if (!agencyId) {
-      console.error("[DEBUG] Aucun tarif trouvé pour cette agence");
+      console.error("[DEBUG] Aucun agencyId trouvé pour charger les tarifs");
       this.isLoadingTariffs = false;
       return;
     }
@@ -3302,6 +3306,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         if (this.tariffs && this.tariffs.length > 0) {
           console.log("Structure du premier tarif:", this.tariffs[0]);
           console.log("Clés disponibles:", Object.keys(this.tariffs[0]));
+          console.log("agencyId du premier tarif:", this.tariffs[0].agencyId);
+          console.log("_id du premier tarif:", this.tariffs[0]._id);
         }
         
         // Mettre à jour le badge des tarifs
@@ -3313,7 +3319,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         this.isLoadingTariffs = false;
       },
       error: (error) => {
-        // console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
+        console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
         this.isLoadingTariffs = false;
       },
     });
@@ -3466,15 +3472,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Utiliser directement l'ID du tarif stocké
     const actualTariffId = this.tariffToUpdate._id;
     
-    // Payload selon le format du swagger
+
+    const originalAgencyId = this.tariffToUpdate.agencyId;
+    const fallbackAgencyId = this.currentUser?._id || "";
+    const finalAgencyId = originalAgencyId || fallbackAgencyId;
+    
     const payload = {
-      id: actualTariffId, // Utiliser l'ID du tarif stocké
-      agencyId: this.currentUser?.agencyId || this.currentUser?._id || "",
+      id: actualTariffId,
+      agencyId: finalAgencyId, 
       planType: formValue.type,
       price: formValue.price,
       description: formValue.description || "",
       numberOfPasses: formValue.nbPassages || 0,
     };
+    
+    console.log('[DEBUG] UpdateTariff payload:', payload);
+    console.log('[DEBUG] Tarif original:', this.tariffToUpdate);
+    console.log('[DEBUG] originalAgencyId:', originalAgencyId);
+    console.log('[DEBUG] fallbackAgencyId:', fallbackAgencyId);
+    console.log('[DEBUG] finalAgencyId:', finalAgencyId);
 
     this.agencyService.updateTariff$(actualTariffId, payload).subscribe({
       next: (response: any) => {
@@ -3521,10 +3537,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   deleteTariff(tariff: any): void {
     this.isDeleting = true;
     const tariffId = tariff._id;
-    const agencyId = this.currentUser?.agencyId || this.currentUser?._id || "";
+    
+    // IMPORTANT: Utiliser l'agencyId du tarif lui-même si disponible
+    const originalAgencyId = tariff.agencyId;
+    const fallbackAgencyId = this.currentUser?._id || "";
+    const finalAgencyId = originalAgencyId || fallbackAgencyId;
+    
+    console.log('[DEBUG] DeleteTariff - tariffId:', tariffId);
+    console.log('[DEBUG] DeleteTariff - originalAgencyId:', originalAgencyId);
+    console.log('[DEBUG] DeleteTariff - fallbackAgencyId:', fallbackAgencyId);
+    console.log('[DEBUG] DeleteTariff - finalAgencyId:', finalAgencyId);
+    console.log('[DEBUG] DeleteTariff - tariff object:', tariff);
 
-    if (tariffId && agencyId) {
-      this.agencyService.deleteTarif$(tariffId, agencyId).subscribe(
+    if (tariffId && finalAgencyId) {
+      this.agencyService.deleteTarif$(tariffId, finalAgencyId).subscribe(
         () => {
           this.notificationService.showSuccess(
             "Succès",
