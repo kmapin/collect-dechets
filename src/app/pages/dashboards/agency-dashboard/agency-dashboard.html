@@ -233,6 +233,29 @@
             <!-- Filtres supplémentaires -->
             <div class="employees-filters">
               <div class="filter-group">
+                <label for="cityFilter">Arrondissement :</label>
+                <select 
+                  id="cityFilter"
+                  class="filter-select"
+                  [(ngModel)]="employeesCityFilter"
+                  (change)="onEmployeeFilterCityChange()">
+                  <option value="">Tous les arrondissements</option>
+                  <option *ngFor="let city of availableCities" [value]="city">{{ city }}</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="neighborhoodFilter">Quartier :</label>
+                <select 
+                  id="neighborhoodFilter"
+                  class="filter-select"
+                  [(ngModel)]="employeesNeighborhoodFilter"
+                  (change)="filterEmployees()"
+                  [disabled]="filteredNeighborhoods.length === 0">
+                  <option value="">Tous les quartiers</option>
+                  <option *ngFor="let neighborhood of filteredNeighborhoods" [value]="neighborhood">{{ neighborhood }}</option>
+                </select>
+              </div>              <div class="filter-group">
                 <label for="roleFilter">Rôle :</label>
                 <select 
                   id="roleFilter"
@@ -258,11 +281,35 @@
                   <option value="inactive">Inactifs</option>
                 </select>
               </div>
+
+              <div class="filter-group">
+                <label for="itemsPerPageFilter">Éléments par page :</label>
+                <select 
+                  id="itemsPerPageFilter"
+                  class="filter-select"
+                  [value]="itemsPerPage"
+                  (change)="changeItemsPerPage(+($any($event.target).value))">
+                  <option [value]="10">10</option>
+                  <option [value]="20">20</option>
+                  <option [value]="50">50</option>
+                  <option [value]="100">100</option>
+                </select>
+              </div>
             </div>
 
             <!-- Résultats de la recherche -->
-            <div class="search-results-info" *ngIf="employeesSearch || employeesRoleFilter !== 'all' || employeesStatusFilter !== 'all'">
-              <span class="results-count">{{ filteredEmployees.length }} employé(s) trouvé(s)</span>
+            <div class="search-results-info" *ngIf="employeesSearch || employeesRoleFilter !== 'all' || employeesStatusFilter !== 'all' || employeesCityFilter || employeesNeighborhoodFilter">
+              <div class="results-summary">
+                <span class="results-count">
+                  {{ filteredEmployees.length }} employé(s) trouvé(s) 
+                  <span *ngIf="totalEmployees > filteredEmployees.length">
+                    sur {{ totalEmployees }} total
+                  </span>
+                </span>
+                <span *ngIf="totalPages > 1" class="page-info">
+                  Page {{ currentPage }} sur {{ totalPages }}
+                </span>
+              </div>
               <button class="reset-filters-btn" (click)="resetEmployeeFilters()">
                 <i class="material-icons">refresh</i>
                 Réinitialiser les filtres
@@ -271,11 +318,13 @@
           </div>
 
           <!-- Indicateur de chargement pour les employés -->
-          <app-loading-spinner *ngIf="isLoadingEmployees" message="Chargement des employés..." size="medium">
+          <app-loading-spinner *ngIf="isLoadingEmployees || isLoadingFilteredEmployees" 
+                               [message]="isLoadingFilteredEmployees ? 'Filtrage des employés...' : 'Chargement des employés...'" 
+                               size="medium">
           </app-loading-spinner>
 
           <!-- Liste des employés -->
-          <div *ngIf="!isLoadingEmployees" class="employees-grid">
+          <div *ngIf="!isLoadingEmployees && !isLoadingFilteredEmployees" class="employees-grid">
             <div *ngFor="let employee of filteredEmployees" class="employee-card card" [ngClass]="
                     employee.role
                       ? 'client-audit-card-' + employee.role
@@ -344,16 +393,54 @@
           </div>
 
           <!-- État vide pour les employés -->
-          <div *ngIf="!isLoadingEmployees && !filteredEmployees.length" class="empty-state">
+          <div *ngIf="!isLoadingEmployees && !isLoadingFilteredEmployees && !filteredEmployees.length" class="empty-state">
             <i class="material-icons">people_outline</i>
-            <h3 *ngIf="!employeesSearch && employeesRoleFilter === 'all' && employeesStatusFilter === 'all'">Aucun employé</h3>
-            <h3 *ngIf="employeesSearch || employeesRoleFilter !== 'all' || employeesStatusFilter !== 'all'">Aucun résultat</h3>
-            <p *ngIf="!employeesSearch && employeesRoleFilter === 'all' && employeesStatusFilter === 'all'">
+            <h3 *ngIf="!employeesSearch && employeesRoleFilter === 'all' && employeesStatusFilter === 'all' && !employeesCityFilter && !employeesNeighborhoodFilter">Aucun employé</h3>
+            <h3 *ngIf="employeesSearch || employeesRoleFilter !== 'all' || employeesStatusFilter !== 'all' || employeesCityFilter || employeesNeighborhoodFilter">Aucun résultat</h3>
+            <p *ngIf="!employeesSearch && employeesRoleFilter === 'all' && employeesStatusFilter === 'all' && !employeesCityFilter && !employeesNeighborhoodFilter">
               Vous n'avez pas encore ajouté d'employés à votre agence. Cliquez sur "Ajouter Employé" pour commencer.
             </p>
-            <p *ngIf="employeesSearch || employeesRoleFilter !== 'all' || employeesStatusFilter !== 'all'">
+            <p *ngIf="employeesSearch || employeesRoleFilter !== 'all' || employeesStatusFilter !== 'all' || employeesCityFilter || employeesNeighborhoodFilter">
               Aucun employé ne correspond à vos critères de recherche. Essayez de modifier vos filtres.
             </p>
+          </div>
+
+          <!-- Section de pagination -->
+          <div *ngIf="!isLoadingEmployees && !isLoadingFilteredEmployees && filteredEmployees.length > 0 && totalPages > 1" class="pagination-section">
+            <div class="pagination-info">
+              <span class="pagination-details">
+                Affichage {{ ((currentPage - 1) * itemsPerPage) + 1 }} à {{ getEndItemNumber() }} 
+                sur {{ totalEmployees }} employé(s)
+              </span>
+            </div>
+            
+            <div class="pagination-controls">
+              <button 
+                class="pagination-btn" 
+                [disabled]="currentPage === 1"
+                (click)="goToPreviousPage()"
+                title="Page précédente">
+                <i class="material-icons">chevron_left</i>
+              </button>
+
+              <div class="pagination-numbers">
+                <button 
+                  *ngFor="let page of getPageNumbers()" 
+                  class="pagination-btn page-number" 
+                  [class.active]="page === currentPage"
+                  (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+              </div>
+
+              <button 
+                class="pagination-btn" 
+                [disabled]="currentPage === totalPages"
+                (click)="goToNextPage()"
+                title="Page suivante">
+                <i class="material-icons">chevron_right</i>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -824,7 +911,11 @@
           <div class="section-header">
             <h2>Clients Actifs ({{ activeClients.length }})</h2>
             <div class="section-actions">
-              <button class="btn btn-outline" (click)="toggleClientsSearch()">
+              <button 
+                class="btn btn-outline search-toggle-btn" 
+                (click)="toggleClientsSearch()"
+                [class.active]="showClientsSearch"
+                title="{{ showClientsSearch ? 'Masquer la recherche' : 'Afficher la recherche' }}">
                 <i class="material-icons">{{ showClientsSearch ? 'search_off' : 'search' }}</i>
                 {{ showClientsSearch ? 'Masquer recherche' : 'Rechercher' }}
               </button>
@@ -841,7 +932,7 @@
                 <input 
                   type="text" 
                   class="search-input"
-                  placeholder="Rechercher un client par nom, email, téléphone ou adresse..."
+                  placeholder="Rechercher un client par nom, email ou téléphone..."
                   [(ngModel)]="clientsSearch"
                   (input)="filterClients()"
                   #clientSearchInput>
@@ -858,6 +949,20 @@
             <!-- Filtres supplémentaires -->
             <div class="clients-filters">
               <div class="filter-group">
+                <label for="clientNeighborhoodFilter">Quartier :</label>
+                <select 
+                  id="clientNeighborhoodFilter"
+                  class="filter-select"
+                  [(ngModel)]="clientsNeighborhoodFilter"
+                  (change)="filterClients()">
+                  <option value="all">Tous les quartiers</option>
+                  <option *ngFor="let neighborhood of getUniqueClientNeighborhoods()" [value]="neighborhood">
+                    {{ neighborhood }}
+                  </option>
+                </select>
+              </div>
+              
+              <div class="filter-group">
                 <label for="clientStatusFilter">Statut :</label>
                 <select 
                   id="clientStatusFilter"
@@ -870,11 +975,35 @@
                   <option value="pending">En attente</option>
                 </select>
               </div>
+
+              <div class="filter-group">
+                <label for="clientItemsPerPageFilter">Éléments par page :</label>
+                <select 
+                  id="clientItemsPerPageFilter"
+                  class="filter-select"
+                  [value]="clientsItemsPerPage"
+                  (change)="changeClientItemsPerPage(+($any($event.target).value))">
+                  <option [value]="10">10</option>
+                  <option [value]="20">20</option>
+                  <option [value]="50">50</option>
+                  <option [value]="100">100</option>
+                </select>
+              </div>
             </div>
 
             <!-- Résultats de la recherche -->
-            <div class="search-results-info" *ngIf="clientsSearch || clientsStatusFilter !== 'all'">
-              <span class="results-count">{{ filteredActiveClients.length }} client(s) trouvé(s)</span>
+            <div class="search-results-info" *ngIf="clientsSearch || clientsNeighborhoodFilter !== 'all' || clientsStatusFilter !== 'all'" [@fadeInOut]>
+              <div class="results-summary">
+                <span class="results-count">
+                  {{ filteredActiveClients.length }} client(s) trouvé(s) 
+                  <span *ngIf="clientsTotalItems > filteredActiveClients.length">
+                    sur {{ clientsTotalItems }} total
+                  </span>
+                </span>
+                <span *ngIf="clientsTotalPages > 1" class="page-info">
+                  Page {{ clientsCurrentPage }} sur {{ clientsTotalPages }}
+                </span>
+              </div>
               <button class="reset-filters-btn" (click)="resetClientFilters()">
                 <i class="material-icons">refresh</i>
                 Réinitialiser les filtres
@@ -883,7 +1012,10 @@
           </div>
 
           <!-- Indicateur de chargement pour les clients -->
-          <app-loading-spinner *ngIf="isLoadingClients" message="Chargement des clients..." size="medium">
+          <app-loading-spinner *ngIf="isLoadingClients || isLoadingFilteredClients" 
+                               [message]="isLoadingFilteredClients ? 'Filtrage des clients...' : 'Chargement des clients...'" 
+                               size="medium"
+                               [@fadeInOut]>
           </app-loading-spinner>
 
           <div *ngIf="!isLoadingClients" class="clients-table">
@@ -899,9 +1031,9 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngIf="!isLoadingClients && filteredActiveClients.length === 0">
+                <tr *ngIf="!isLoadingClients && !isLoadingFilteredClients && filteredActiveClients.length === 0">
                   <td colspan="6" style="text-align: center; color: #888">
-                    {{ clientsSearch || clientsStatusFilter !== 'all' ? 'Aucun client trouvé avec ces critères.' : 'Aucun client actif pour le moment. Les nouveaux clients apparaîtront ici après leur inscription.' }}
+                    {{ (clientsSearch || clientsNeighborhoodFilter !== 'all' || clientsStatusFilter !== 'all') ? 'Aucun client trouvé avec ces critères.' : 'Aucun client actif pour le moment. Les nouveaux clients apparaîtront ici après leur inscription.' }}
                   </td>
                 </tr>
                 <tr *ngFor="let client of filteredActiveClients">
@@ -923,6 +1055,44 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Section de pagination pour les clients -->
+          <div *ngIf="!isLoadingClients && !isLoadingFilteredClients && filteredActiveClients.length > 0 && clientsTotalPages > 1" class="pagination-section" [@slideFromLeft]>
+            <div class="pagination-info">
+              <span class="pagination-details">
+                Affichage {{ ((clientsCurrentPage - 1) * clientsItemsPerPage) + 1 }} à {{ getClientEndItemNumber() }} 
+                sur {{ clientsTotalItems }} client(s)
+              </span>
+            </div>
+            
+            <div class="pagination-controls">
+              <button 
+                class="pagination-btn" 
+                [disabled]="clientsCurrentPage === 1"
+                (click)="previousClientPage()"
+                title="Page précédente">
+                <i class="material-icons">chevron_left</i>
+              </button>
+
+              <div class="pagination-numbers">
+                <button 
+                  *ngFor="let page of getClientPaginationPages()" 
+                  class="pagination-btn page-number" 
+                  [class.active]="page === clientsCurrentPage"
+                  (click)="goToClientPage(page)">
+                  {{ page }}
+                </button>
+              </div>
+
+              <button 
+                class="pagination-btn" 
+                [disabled]="clientsCurrentPage === clientsTotalPages"
+                (click)="nextClientPage()"
+                title="Page suivante">
+                <i class="material-icons">chevron_right</i>
+              </button>
+            </div>
           </div>
 
           <!-- Clients en attente de validation  -->

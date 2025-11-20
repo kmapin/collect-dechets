@@ -362,6 +362,56 @@ export class AgencyService {
     return this.http.get<{ success: boolean; count: number; data: Employee[] }>(url, { params });
   }
 
+  /**
+   * Récupère les employés filtrés d'une agence via l'API backend
+   * Utilise l'endpoint /api/agency_employees/{agencyId}/employees avec les paramètres de filtre
+   */
+  getFilteredEmployees(agencyId: string, filters?: {
+    terme?: string;
+    ville?: string;
+    quartier?: string;
+    role?: string;
+    limite?: number;
+    page?: number;
+  }): Observable<{ success: boolean; count: number; data: Employees[] }> {
+    let params = new HttpParams();
+    
+    if (filters) {
+      if (filters.terme) {
+        params = params.set('terme', filters.terme);
+      }
+      if (filters.ville) {
+        params = params.set('ville', filters.ville);
+      }
+      if (filters.quartier) {
+        params = params.set('quartier', filters.quartier);
+      }
+      if (filters.role) {
+        params = params.set('role', filters.role);
+      }
+      if (filters.limite) {
+        params = params.set('limite', filters.limite.toString());
+      }
+      if (filters.page) {
+        params = params.set('page', filters.page.toString());
+      }
+    }
+
+    const url = `${environment.apiUrl}/agency_employees/${agencyId}/employees`;
+    console.log('🔍 [DEBUG SERVICE] URL appelée:', url);
+    console.log('🔍 [DEBUG SERVICE] Paramètres HttpParams:', params.toString());
+
+    return this.http.get<{ success: boolean; count: number; data: Employees[] }>(
+      url,
+      { params }
+    ).pipe(
+      catchError(error => {
+        console.error('Erreur lors de la récupération des employés filtrés:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
 
   
 

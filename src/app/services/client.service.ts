@@ -148,6 +148,38 @@ export class ClientService {
     );
   }
 
+  // Nouvelle méthode pour filtrer les clients de l'agence via l'API
+  getFilteredClients(agencyId: string, filters: any): Observable<any> {
+    let params = new HttpParams();
+    
+    // Paramètres de filtrage selon le Swagger
+    if (filters.term && filters.term.trim()) {
+      params = params.set('term', filters.term.trim());
+    }
+    
+    if (filters.neighborhood && filters.neighborhood !== 'all') {
+      params = params.set('neighborhood', filters.neighborhood);
+    }
+    
+    if (filters.page) {
+      params = params.set('page', filters.page.toString());
+    }
+    
+    if (filters.limit) {
+      params = params.set('limit', filters.limit.toString());
+    }
+
+    console.log('API > getFilteredClients - Paramètres envoyés:', params.toString());
+    
+    // Utiliser l'endpoint spécifique à l'agence
+    return this.http.get<any>(`${environment.apiUrl}/agency_employees/${agencyId}/clients`, { params }).pipe(
+      map((response: any) => {
+        console.log('API > getFilteredClients - Réponse:', response);
+        return response;
+      })
+    );
+  }
+
   userAndAgencyConversation(clientId: string, agencyId: string): Observable<any> {
     return this.http.get(`${environment.apiUrl}/messages/${clientId}/inbox/${agencyId}`).pipe(
       map((response: any) => {
