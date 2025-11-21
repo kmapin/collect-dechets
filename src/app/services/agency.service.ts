@@ -367,33 +367,42 @@ export class AgencyService {
    * Utilise l'endpoint /api/agency_employees/{agencyId}/employees avec les paramètres de filtre
    */
   getFilteredEmployees(agencyId: string, filters?: {
-    terme?: string;
-    ville?: string;
-    quartier?: string;
+    term?: string;
+    city?: string;
+    neighborhood?: string;
+    arrondissement?: string;
+    sector?: number;
     role?: string;
-    limite?: number;
-    page?: number;
-  }): Observable<{ success: boolean; count: number; data: Employees[] }> {
+    limit?: number;
+  }): Observable<{ success: boolean; count?: number; data?: {
+    managers?: Employees[];
+    collectors?: Employees[];
+    gestionnaires?: Employees[];
+    employees?: Employees[];
+  } }> {
     let params = new HttpParams();
     
     if (filters) {
-      if (filters.terme) {
-        params = params.set('terme', filters.terme);
+      if (filters.term) {
+        params = params.set('term', filters.term);
       }
-      if (filters.ville) {
-        params = params.set('ville', filters.ville);
+      if (filters.city) {
+        params = params.set('city', filters.city);
       }
-      if (filters.quartier) {
-        params = params.set('quartier', filters.quartier);
+      if (filters.neighborhood) {
+        params = params.set('neighborhood', filters.neighborhood);
+      }
+      if (filters.arrondissement) {
+        params = params.set('arrondissement', filters.arrondissement);
+      }
+      if (filters.sector !== undefined && filters.sector !== null) {
+        params = params.set('sector', filters.sector.toString());
       }
       if (filters.role) {
         params = params.set('role', filters.role);
       }
-      if (filters.limite) {
-        params = params.set('limite', filters.limite.toString());
-      }
-      if (filters.page) {
-        params = params.set('page', filters.page.toString());
+      if (filters.limit) {
+        params = params.set('limit', filters.limit.toString());
       }
     }
 
@@ -401,7 +410,12 @@ export class AgencyService {
     console.log('🔍 [DEBUG SERVICE] URL appelée:', url);
     console.log('🔍 [DEBUG SERVICE] Paramètres HttpParams:', params.toString());
 
-    return this.http.get<{ success: boolean; count: number; data: Employees[] }>(
+    return this.http.get<{ success: boolean; count?: number; data?: {
+      managers?: Employees[];
+      collectors?: Employees[];
+      gestionnaires?: Employees[];
+      employees?: Employees[];
+    } }>(
       url,
       { params }
     ).pipe(

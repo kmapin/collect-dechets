@@ -152,15 +152,21 @@ export class ClientService {
   getFilteredClients(agencyId: string, filters: any): Observable<any> {
     let params = new HttpParams();
     
-    // Paramètres de filtrage selon le Swagger
+    // Paramètres de filtrage selon le nouveau Swagger
     if (filters.term && filters.term.trim()) {
       params = params.set('term', filters.term.trim());
+    }
+    
+    // Nouveau paramètre city
+    if (filters.city && filters.city !== 'all') {
+      params = params.set('city', filters.city);
     }
     
     if (filters.neighborhood && filters.neighborhood !== 'all') {
       params = params.set('neighborhood', filters.neighborhood);
     }
     
+    // Pagination
     if (filters.page) {
       params = params.set('page', filters.page.toString());
     }
@@ -170,6 +176,7 @@ export class ClientService {
     }
 
     console.log('API > getFilteredClients - Paramètres envoyés:', params.toString());
+    console.log('API > getFilteredClients - URL:', `${environment.apiUrl}/agency_employees/${agencyId}/clients`);
     
     // Utiliser l'endpoint spécifique à l'agence
     return this.http.get<any>(`${environment.apiUrl}/agency_employees/${agencyId}/clients`, { params }).pipe(

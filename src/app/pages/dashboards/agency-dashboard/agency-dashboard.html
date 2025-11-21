@@ -233,14 +233,40 @@
             <!-- Filtres supplémentaires -->
             <div class="employees-filters">
               <div class="filter-group">
-                <label for="cityFilter">Arrondissement :</label>
+                <label for="cityFilter">Ville :</label>
                 <select 
                   id="cityFilter"
                   class="filter-select"
                   [(ngModel)]="employeesCityFilter"
-                  (change)="onEmployeeFilterCityChange()">
+                  (change)="onEmployeeCityFilterChange()">
+                  <option value="">Toutes les villes</option>
+                  <option *ngFor="let city of availableEmployeeCities" [value]="city.id">{{ city.name }}</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="arrondissementFilter">Arrondissement :</label>
+                <select 
+                  id="arrondissementFilter"
+                  class="filter-select"
+                  [(ngModel)]="employeesArrondissementFilter"
+                  (change)="onEmployeeArrondissementFilterChange()"
+                  [disabled]="!employeesCityFilter">
                   <option value="">Tous les arrondissements</option>
-                  <option *ngFor="let city of availableCities" [value]="city">{{ city }}</option>
+                  <option *ngFor="let arrond of availableEmployeeArrondissements" [value]="arrond.id">{{ arrond.name }}</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="sectorFilter">Secteur :</label>
+                <select 
+                  id="sectorFilter"
+                  class="filter-select"
+                  [(ngModel)]="employeesSectorFilter"
+                  (change)="onEmployeeSectorFilterChange()"
+                  [disabled]="!employeesArrondissementFilter">
+                  <option [ngValue]="null">Tous les secteurs</option>
+                  <option *ngFor="let sector of availableEmployeeSectors" [ngValue]="+sector.id">Secteur {{ sector.name }}</option>
                 </select>
               </div>
 
@@ -251,11 +277,13 @@
                   class="filter-select"
                   [(ngModel)]="employeesNeighborhoodFilter"
                   (change)="filterEmployees()"
-                  [disabled]="filteredNeighborhoods.length === 0">
+                  [disabled]="availableEmployeeNeighborhoods.length === 0">
                   <option value="">Tous les quartiers</option>
-                  <option *ngFor="let neighborhood of filteredNeighborhoods" [value]="neighborhood">{{ neighborhood }}</option>
+                  <option *ngFor="let neighborhood of availableEmployeeNeighborhoods" [value]="neighborhood.name">{{ neighborhood.name }}</option>
                 </select>
-              </div>              <div class="filter-group">
+              </div>
+
+              <div class="filter-group">
                 <label for="roleFilter">Rôle :</label>
                 <select 
                   id="roleFilter"
@@ -949,6 +977,20 @@
             <!-- Filtres supplémentaires -->
             <div class="clients-filters">
               <div class="filter-group">
+                <label for="clientCityFilter">Ville :</label>
+                <select 
+                  id="clientCityFilter"
+                  class="filter-select"
+                  [(ngModel)]="clientsCityFilter"
+                  (change)="filterClients()">
+                  <option value="all">Toutes les villes</option>
+                  <option *ngFor="let city of getUniqueClientCities()" [value]="city">
+                    {{ city }}
+                  </option>
+                </select>
+              </div>
+              
+              <div class="filter-group">
                 <label for="clientNeighborhoodFilter">Quartier :</label>
                 <select 
                   id="clientNeighborhoodFilter"
@@ -989,10 +1031,12 @@
                   <option [value]="100">100</option>
                 </select>
               </div>
+              
+             
             </div>
 
             <!-- Résultats de la recherche -->
-            <div class="search-results-info" *ngIf="clientsSearch || clientsNeighborhoodFilter !== 'all' || clientsStatusFilter !== 'all'" [@fadeInOut]>
+            <div class="search-results-info" *ngIf="clientsSearch || clientsCityFilter !== 'all' || clientsNeighborhoodFilter !== 'all' || clientsStatusFilter !== 'all'" [@fadeInOut]>
               <div class="results-summary">
                 <span class="results-count">
                   {{ filteredActiveClients.length }} client(s) trouvé(s) 
@@ -1033,7 +1077,7 @@
               <tbody>
                 <tr *ngIf="!isLoadingClients && !isLoadingFilteredClients && filteredActiveClients.length === 0">
                   <td colspan="6" style="text-align: center; color: #888">
-                    {{ (clientsSearch || clientsNeighborhoodFilter !== 'all' || clientsStatusFilter !== 'all') ? 'Aucun client trouvé avec ces critères.' : 'Aucun client actif pour le moment. Les nouveaux clients apparaîtront ici après leur inscription.' }}
+                    {{ (clientsSearch || clientsCityFilter !== 'all' || clientsNeighborhoodFilter !== 'all' || clientsStatusFilter !== 'all') ? 'Aucun client trouvé avec ces critères.' : 'Aucun client actif pour le moment. Les nouveaux clients apparaîtront ici après leur inscription.' }}
                   </td>
                 </tr>
                 <tr *ngFor="let client of filteredActiveClients">
