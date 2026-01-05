@@ -48,5 +48,15 @@ export const routes: Routes = [
   {path: 'edit-agency/:id', component: Register},
   {path: 'dashboard/admin', component: AdminDashboard},
   {path: 'chat', component: Chat},
+  {
+    path: 'payment',
+    loadComponent: () => import('./pages/payment/mobile-money-form/mobile-money-form')
+      .then(m => m.MobileMoneyFormComponent)
+  },
+  {
+    path: 'otp',
+    loadComponent: () => import('./pages/payment/otp-input/otp-input')
+      .then(m => m.OtpInputComponent)
+  },
   { path: '**', redirectTo: '' }
 ];

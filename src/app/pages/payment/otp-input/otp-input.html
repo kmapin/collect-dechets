@@ -1,0 +1,82 @@
+<mat-card class="otp-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon class="orange-icon">lock</mat-icon>
+        Validation Orange Money
+      </mat-card-title>
+      <mat-card-subtitle>
+        Saisissez le code OTP reçu par SMS
+      </mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <div class="transaction-info">
+        <div class="info-item">
+          <span class="label">Transaction:</span>
+          <span class="value">{{ transactionId }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Montant:</span>
+          <span class="value">{{ amount | number:'1.0-0' }} FCFA</span>
+        </div>
+      </div>
+  
+      <form [formGroup]="otpForm" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" class="full-width otp-field">
+          <mat-label>Code OTP</mat-label>
+          <input 
+            matInput 
+            formControlName="otp"
+            placeholder="000000"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            required
+            autocomplete="one-time-code">
+
+          <mat-icon matPrefix>dialpad</mat-icon>
+          <mat-error *ngIf="otpForm.get('otp')?.invalid">
+            {{ getOtpErrorMessage() }}
+          </mat-error>
+          <mat-hint>Code à 6 chiffres</mat-hint>
+        </mat-form-field>
+  
+        <div class="error-message" *ngIf="errorMessage">
+          <mat-icon>error</mat-icon>
+          <span>{{ errorMessage }}</span>
+        </div>
+  
+        <div class="info-message">
+          <mat-icon>info</mat-icon>
+          <p>Un code de validation a été envoyé à votre numéro Orange Money. Veuillez le saisir ci-dessus pour confirmer le paiement.</p>
+        </div>
+  
+        <div class="form-actions">
+          <button 
+            mat-stroked-button 
+            type="button"
+            class="cancel-button"
+            (click)="onCancel()"
+            [disabled]="isProcessing">
+            <mat-icon>close</mat-icon>
+            Annuler
+          </button>
+          
+          <button 
+            mat-raised-button 
+            color="primary"
+            type="submit"
+            class="submit-button"
+            [disabled]="otpForm.invalid || isProcessing">
+            @if (isProcessing) {
+            <mat-spinner  diameter="20" class="button-spinner"></mat-spinner>
+            }
+            <mat-icon>check</mat-icon>
+            <span>Valider</span>
+            <span>Validation...</span>
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+  
