@@ -1,6 +1,33 @@
 /* @import "primeicons/primeicons.css"; */
 /* @import "~leaflet/dist/leaflet.css"; */
 /* @import "flowbite/src/themes/default"; */
+/*Material Icons*/
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url('assets/fonts/material-icons/MaterialIcons-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url('assets/fonts/material-icons/MaterialIcons-Regular.woff') format('truetype');
+}
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url('assets/fonts/material-icons/MaterialIcons-Regular.woff2') format('truetype');
+}
+.material-icons {
+  font-family: 'Material Icons';
+  font-size: 24px;
+  line-height: 1;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+}
 
 
 /* loader global */

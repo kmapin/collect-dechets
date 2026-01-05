@@ -53,47 +53,47 @@ bootstrapApplication(AppComponent, {
       withInterceptors([
         authInterceptorInterceptor
       ])),
-     providePrimeNG({
-            theme: {
-                preset: Aura
-            }
-        }),
-    importProvidersFrom([
-      BrowserAnimationsModule,
-      MatIconModule,
-      MatButtonModule,
-      MatInputModule,
-      MatFormFieldModule,
-      MatCardModule,
-      MatToolbarModule,
-      MatMenuModule,
-      MatSidenavModule,
-      MatListModule,
-      MatTableModule,
-      MatPaginatorModule,
-      MatSortModule,
-      MatDialogModule,
-      MatSnackBarModule,
-      MatProgressSpinnerModule,
-      MatSelectModule,
-      MatDatepickerModule,
-      MatNativeDateModule,
-      MatCheckboxModule,
-      MatRadioModule,
-      MatSlideToggleModule,
-      MatTabsModule,
-      MatExpansionModule,
-      MatChipsModule,
-      MatAutocompleteModule,
-      MatBadgeModule,
-      MatBottomSheetModule,
-      MatGridListModule,
-      MatProgressBarModule,
-      MatRippleModule,
-      MatStepperModule,
-      MatTooltipModule,
-      MatTreeModule
-    ]),
+      providePrimeNG({
+        theme: {
+            preset: Aura
+        }
+      }),
+    // importProvidersFrom([
+    //   BrowserAnimationsModule,
+    //   MatIconModule,
+    //   MatButtonModule,
+    //   MatInputModule,
+    //   MatFormFieldModule,
+    //   MatCardModule,
+    //   MatToolbarModule,
+    //   MatMenuModule,
+    //   MatSidenavModule,
+    //   MatListModule,
+    //   MatTableModule,
+    //   MatPaginatorModule,
+    //   MatSortModule,
+    //   MatDialogModule,
+    //   MatSnackBarModule,
+    //   MatProgressSpinnerModule,
+    //   MatSelectModule,
+    //   MatDatepickerModule,
+    //   MatNativeDateModule,
+    //   MatCheckboxModule,
+    //   MatRadioModule,
+    //   MatSlideToggleModule,
+    //   MatTabsModule,
+    //   MatExpansionModule,
+    //   MatChipsModule,
+    //   MatAutocompleteModule,
+    //   MatBadgeModule,
+    //   MatBottomSheetModule,
+    //   MatGridListModule,
+    //   MatProgressBarModule,
+    //   MatRippleModule,
+    //   MatStepperModule,
+    //   MatTooltipModule,
+    //   MatTreeModule
+    // ]),
     MessageService
   ]
 }).catch(err => console.error(err));
