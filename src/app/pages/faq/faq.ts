@@ -18,7 +18,7 @@ interface FAQCategory {
   description: string;
 }
 
-@Component({
+  @Component({
   selector: 'app-faq',
   imports: [CommonModule, FormsModule],
   templateUrl: './faq.html',
@@ -210,4 +210,13 @@ export class Faq  implements OnInit {
     const category = this.categories.find(cat => cat.id === categoryId);
     return category ? category.name : '';
   }
+
+  sendMail() {
+    const email = 'contact@zerodechet.bf';
+    const subject = encodeURIComponent('Demande d’information');
+    const body = encodeURIComponent('Bonjour,\n\nJe souhaite avoir plus d’informations.');
+  
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  }
+  
 }
