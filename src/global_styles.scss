@@ -1,7 +1,44 @@
+
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+body {
+  // Default the application to a light color theme. This can be changed to
+  // `dark` to enable the dark color theme, or to `light dark` to defer to the
+  // user's system settings.
+  color-scheme: light;
+
+  // Set a default background, font and text colors for the application using
+  // Angular Material's system-level CSS variables. Learn more about these
+  // variables at https://material.angular.dev/guide/system-variables
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
+  margin: 0;
+}
+@import '@angular/material/prebuilt-themes/azure-blue.css';
 /* @import "primeicons/primeicons.css"; */
 /* @import "~leaflet/dist/leaflet.css"; */
 /* @import "flowbite/src/themes/default"; */
 /*Material Icons*/
+/*
 @font-face {
   font-family: 'Material Icons';
   font-style: normal;
@@ -12,14 +49,15 @@
   font-family: 'Material Icons';
   font-style: normal;
   font-weight: 400;
-  src: url('assets/fonts/material-icons/MaterialIcons-Regular.woff') format('truetype');
+  src: url('assets/fonts/material-icons/MaterialIcons-Regular.woff') format('woff');
 }
 @font-face {
   font-family: 'Material Icons';
   font-style: normal;
   font-weight: 400;
-  src: url('assets/fonts/material-icons/MaterialIcons-Regular.woff2') format('truetype');
+  src: url('assets/fonts/material-icons/MaterialIcons-Regular.woff2') format('woff2');
 }
+
 .material-icons {
   font-family: 'Material Icons';
   font-size: 24px;
@@ -28,7 +66,7 @@
   white-space: nowrap;
   direction: ltr;
 }
-
+*/
 
 /* loader global */
 .loading-wrapper {
@@ -975,5 +1013,8 @@ body {
   max-height: 800px;
   overflow-y: auto;
 }
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

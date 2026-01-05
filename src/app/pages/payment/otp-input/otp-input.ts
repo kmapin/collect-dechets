@@ -1,25 +1,25 @@
 import { Component, EventEmitter, Output, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PaymentService } from '../../../services/payment/payment.service';
 import { Router } from '@angular/router';
 import { PaymentStatus } from '../../../models/payment/payment-response.model';
-
 /**
  * Composant de saisie OTP pour validation Orange Money
  */
 @Component({
   selector: 'app-otp-input',
-  standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
+    MatInputModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
@@ -28,7 +28,7 @@ import { PaymentStatus } from '../../../models/payment/payment-response.model';
     MatProgressSpinnerModule
   ],
   templateUrl: './otp-input.html',
-  styleUrls: ['./otp-input.css']
+  styleUrls: ['./otp-input.scss']
 })
 export class OtpInputComponent implements OnInit {
   /** ID de transaction pour lequel l'OTP est demandé */

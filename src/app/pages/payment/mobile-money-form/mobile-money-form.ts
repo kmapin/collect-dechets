@@ -1,18 +1,18 @@
+import { MatSelectModule } from '@angular/material/select';
 import { Component, OnInit } from '@angular/core';
 
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { PaymentService } from '../../../services/payment/payment.service';
 import { MobileMoneyOperator, PaymentRequest } from '../../../models/payment/payment-request.model';
 import { PaymentResponse } from '../../../models/payment/payment-response.model';
 import { PaymentStatusComponent } from '../payment-status/payment-status';
 import { Router } from '@angular/router';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 /**
  * Interface pour les informations d'affichage des opérateurs
@@ -26,17 +26,17 @@ interface OperatorInfo {
 
 @Component({
   selector: 'app-mobile-money-form',
-  standalone: true,
+  // standalone: true,
   imports: [
     ReactiveFormsModule,
     FormsModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatIconModule,
+    MatSelectModule,
     PaymentStatusComponent
 ],
   templateUrl: './mobile-money-form.html',

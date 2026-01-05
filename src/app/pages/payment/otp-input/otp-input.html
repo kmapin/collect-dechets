@@ -72,9 +72,12 @@
             type="submit"
             class="submit-button"
             [disabled]="otpForm.invalid || isProcessing">
-            @if (isProcessing) {
-              <mat-spinner  diameter="20" class="button-spinner"></mat-spinner>
-            }
+            <mat-spinner
+              *ngIf="isProcessing"
+              mode="indeterminate"
+              diameter="30">
+            </mat-spinner>
+
             <mat-icon>check</mat-icon>
             <span>Valider</span>
             <span>Validation...</span>
