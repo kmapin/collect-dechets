@@ -64,6 +64,7 @@ import {
 import { MatIcon } from "@angular/material/icon";
 import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
 import { Admin } from "../../../services/admin";
+import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
 
 interface Client {
   id: string;
@@ -163,6 +164,32 @@ type TabId = "collections" | "employees" | "zones" | "schedules" | "clients" | "
   ],
   templateUrl: "./agency-dashboard.html",
   styleUrl: "./agency-dashboard.css",
+  animations: [
+    trigger('slideInOut', [
+      transition(':enter', [
+        style({ transform: 'translateY(-100%)', opacity: 0 }),
+        animate('300ms ease-in', style({ transform: 'translateY(0%)', opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('300ms ease-out', style({ transform: 'translateY(-100%)', opacity: 0 }))
+      ])
+    ]),
+    trigger('fadeInOut', [
+      transition(':enter', [
+        style({ opacity: 0 }),
+        animate('200ms ease-in', style({ opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-out', style({ opacity: 0 }))
+      ])
+    ]),
+    trigger('slideFromLeft', [
+      transition(':enter', [
+        style({ transform: 'translateX(-100%)', opacity: 0 }),
+        animate('250ms ease-out', style({ transform: 'translateX(0%)', opacity: 1 }))
+      ])
+    ])
+  ]
 })
 export class AgencyDashboard implements OnInit, AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
@@ -177,7 +204,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   agencyReports: Report[] = [];
   ouagaData: QuartierData[] = OUAGA_DATA;
   agency: Agency | null = null;
-  activeTab: TabId = "collections";
+  activeTab: TabId = "employees"; // Changé pour debug - était "collections"
 
   // Méthode pour changer d'onglet
   setActiveTab(tabId: TabId): void {
@@ -262,11 +289,48 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   employeesStatusFilter: string = "all";
   showEmployeesSearch: boolean = false;
   
+  // Nouveaux filtres basés sur l'API backend
+  employeesCityFilter: string = "";
+  employeesNeighborhoodFilter: string = "";
+  employeesArrondissementFilter: string = "";
+  employeesSectorFilter: number | null = null;
+  
+  // Données pour les filtres (utilisant le même système que l'enregistrement)
+  availableEmployeeCities: City[] = [];
+  availableEmployeeArrondissements: Arrondissement[] = [];
+  availableEmployeeSectors: Sector[] = [];
+  availableEmployeeNeighborhoods: Quartier[] = [];
+  
+  // Propriétés de pagination
+  currentPage: number = 1;
+  itemsPerPage: number = 20;
+  totalEmployees: number = 0;
+  totalPages: number = 0;
+  
+  // Chargement des données
+  isLoadingFilteredEmployees: boolean = false;
+  
+  // Listes pour les filtres déroulants
+  availableCities: string[] = [];
+  availableNeighborhoods: string[] = [];
+  filteredNeighborhoods: string[] = [];
+  
   // Propriétés pour la recherche et le filtrage des clients
   clientsSearch: string = "";
+  clientsCityFilter: string = "all"; // Nouveau filtre par ville
+  clientsNeighborhoodFilter: string = "all";
   clientsStatusFilter: string = "all";
   showClientsSearch: boolean = false;
   filteredActiveClients: any[] = [];
+  
+  // Variables pour la pagination des clients
+  clientsCurrentPage: number = 1;
+  clientsItemsPerPage: number = 10;
+  clientsTotalItems: number = 0;
+  clientsTotalPages: number = 0;
+  
+  // Variables pour le chargement des clients
+  isLoadingFilteredClients: boolean = false;
   
   // Propriété pour l'affichage moderne des zones
   selectedZoneForDisplay: any = null;
@@ -404,7 +468,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   ];
   currentWeek = new Date();
   unreadMessageCount: any;
-  receivedMessages: any;
+  receivedMessages: any[] = [];
 
   showMessageModal: boolean = false;
   messageData: Message = {
@@ -413,7 +477,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     content: "",
   };
   data: any;
-  connectedUserMessages: any;
+  connectedUserMessages: any[] = [];
   receivedId: string = "";
   client: any;
   displayAgencyName: string = "";
@@ -433,7 +497,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     private sharedService: SharedService,
     private adminService: Admin,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private countriesOrgMockService: CountriesOrgMockService
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -1066,9 +1131,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    
+    console.log(" [DEBUG] ngOnInit - currentUser:", this.currentUser);
+   
     // Initialiser la liste filtrée des employés
     this.filteredEmployees = [...this.allEmployees];
+    console.log("🔍 [DEBUG] ngOnInit - filteredEmployees initialisés:", this.filteredEmployees.length);
+    
+    // Initialiser les listes de villes et quartiers
+    this.initializeCitiesAndNeighborhoods();
+    this.initializeFiltersData();
 
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyStatistics(this.currentUser);
@@ -1092,9 +1163,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // this.loadCollectDay();
     this.getAllCountries();
 
-    setInterval(() => {
-      this.loadCollectDay();
-    }, 30000);
+    // setInterval(() => {
+    //   this.loadCollectDay();
+    // }, 30000);
     this.loadCollectHistory();
     // this.filterIncidents();
     this.countUnreadMessages();
@@ -1279,25 +1350,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   assignEmployeesToReport(): void {
-    // if (this.selectedReportId && this.selectedEmployees.length > 0) {
-    //   const payload = {
-    //     reportId: this.selectedReportId,
-    //     assignedEmployees: this.selectedEmployees,
-    //   };
-    //   this.agencyService.assignEmployeesToReport$(payload).subscribe({
-    //     next: () => {
-    //       this.notificationService.showSuccess('Succès', 'Les employés ont été assignés au signalement.');
-    //       this.showAssignModal = false;
-    //       this.loadAgencyReports(this.currentUser); // Recharger les signalements
-    //     },
-    //     error: (err) => {
-    //       console.error('Erreur lors de l\'assignation des employés :', err);
-    //       this.notificationService.showError('Erreur', 'Impossible d\'assigner les employés.');
-    //     },
-    //   });
-    // } else {
-    //   this.notificationService.showError('Erreur', 'Veuillez sélectionner au moins un employé.');
-    // }
+   
   }
   toggleEmployeeSelection(employeeId: string, event: any): void {
     if (event.target.checked) {
@@ -1308,41 +1361,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       );
     }
   }
-  // updateTabs(): void {
-  //   this.tabs = [
-  //     { id: 'collections', label: 'Collectes', icon: 'local_shipping', badge: null },
-  //     { id: 'employees', label: 'Employés', icon: 'people', badge: null },
-  //     { id: 'zones', label: 'Zones', icon: 'map', badge: null },
-  //     { id: 'schedules', label: 'Plannings', icon: 'schedule', badge: null },
-  //     { id: 'clients', label: 'Clients', icon: 'person', badge: this.activeClientNbrs },
-  //     { id: 'reports', label: 'Signalements', icon: 'report_problem', badge: 3 },
-  //     { id: 'analytics', label: 'Rapports', icon: 'analytics', badge: null }
-  //   ];
 
-  // }
-  // activeClientNbr() {
-  //   return this.activeClients.length;
-  // }
-
-  // loadTariffsForAgency(): void {
-  //     const userString = localStorage.getItem('currentUser');
-  //     if (userString) {
-  //       const currentUser = JSON.parse(userString);
-  //       const agencyId = currentUser._id;
-
-  //       this.agencyService.getAgencyTariffs(agencyId).subscribe({
-  //         next: (tariffs) => {
-  //           this.agencyTariffs = tariffs;
-  //           console.log('Tarifs récupérés :', tariffs);
-  //         },
-  //         error: (err) => {
-  //           console.error("Erreur lors du chargement des tarifs de l'agence", err);
-  //         }
-  //       });
-  //     } else {
-  //       console.error("Aucun utilisateur trouvé dans le stockage local.");
-  //     }
-  //   }
 
   loadAgencyData(): void {
     console.log("DÉBUT loadAgencyData - Chargement des données agence");
@@ -1365,7 +1384,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.loadReports();
     //this.activeClientNbrs = this.activeClientNbr(); // Mettez à jour le nombre d'actifs
     //this.updateTabs(); // Mettez à jour les tabs après avoir récupéré les clients
-    console.log("🏢 FIN loadAgencyData");
+    console.log(" FIN loadAgencyData");
   }
   loadCollectors(agencyId: string): void {
     console.log(" DÉBUT loadCollectors - Chargement des collecteurs");
@@ -1373,7 +1392,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     
     if (agencyId) {
       this.isLoadingEmployees = true;
-      console.log("📡 Appel du service getCollectorsAgency$ avec agencyId:", agencyId);
+      console.log(" Appel du service getCollectorsAgency$ avec agencyId:", agencyId);
       
       this.agencyService.getCollectorsAgency$(agencyId).subscribe({
         next: (collectors) => {
@@ -1430,34 +1449,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     }
   }
 
-  //suppression d un employé
-  // deleteEmployee(currentUser: any, employeeId: any): void {
-  //   this.isDeleting = true;
-
-  //   if (currentUser?._id && employeeId?.userId?._id) {
-  //     this.agencyService.deleteEmployee$( employeeId.userId._id).subscribe(
-  //       () => {
-  //         this.notificationService.showSuccess(
-  //           'Succès',
-  //           'L\'employé a été supprimé avec succès.'
-  //         );
-  //         this.loadEmployees(currentUser);
-  //         this.isDeleting = false;
-  //       },
-  //       (error) => {
-  //         this.notificationService.showError(
-  //           'Erreur',
-  //           'Impossible de supprimer l\'employé. Veuillez réessayer.'
-  //         );
-  //         console.error("Erreur lors de la suppression de l'employé :", error);
-  //         this.isDeleting = false;
-  //       }
-  //     );
-  //   } else {
-  //     console.warn("Aucun ID d'agence trouvé dans l'utilisateur courant.");
-  //     this.isDeleting = false;
-  //   }
-  // }
+ 
   deleteEmployee(currentUser: any, employeeId: any): void {
     this.isDeleting = true;
 
@@ -1607,17 +1599,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     );
     return;
   }
-  // onEditEmployee(emp: any) {
-  //   this.editingEmployeeId = emp._id;
-  //   this.editForm.patchValue({
-  //     firstname: emp.firstname,
-  //     lastname: emp.lastname,
-  //     email: emp.email,
-  //     phone: emp.phone,
-  //     role: emp.role
-  //   });
-  //   this.isEditing = true;
-  // }
+  
 
   loadCollections(): void {
     // Simuler les collectes
@@ -1701,8 +1683,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           
           console.log("loadEmployees > Total final:", this.allEmployees);
           
-          // Initialiser la liste filtrée avec tous les employés
+          // Au chargement initial, afficher tous les employés localement
+          // L'API backend sera utilisée seulement quand l'utilisateur applique des filtres
           this.filteredEmployees = [...this.allEmployees];
+          this.totalEmployees = this.allEmployees.length;
+          this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
+          console.log("Employés initialisés localement:", this.filteredEmployees.length);
+          
+          // COMMENTÉ : Utilisation immédiate de l'API backend au chargement
+          // this.filterEmployees();
           
           const employeesTab = this.tabs.find((tab) => tab.id === "employees");
           if (employeesTab) {
@@ -1711,6 +1700,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             this.cdr.detectChanges();
           }
           this.isLoadingEmployees = false;
+          
+          console.log("🔍 [DEBUG] FIN loadEmployees - État final:");
+          console.log("  - allEmployees:", this.allEmployees.length);
+          console.log("  - filteredEmployees:", this.filteredEmployees.length);
+          console.log("  - isLoadingEmployees:", this.isLoadingEmployees);
           console.log("FIN loadEmployees - Succès");
         },
         error: (error) => {
@@ -1733,9 +1727,132 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   /**
-   * Filtre les employés en fonction des critères de recherche
+   * Filtre les employés - utilise l'API backend seulement si des filtres sont appliqués
    */
   filterEmployees(): void {
+    // Détecter si des filtres sont réellement appliqués
+    const hasRealFilters = (this.employeesSearch && this.employeesSearch.trim()) ||
+                          (this.employeesCityFilter && this.employeesCityFilter !== 'all' && this.employeesCityFilter.trim()) ||
+                          (this.employeesNeighborhoodFilter && this.employeesNeighborhoodFilter !== 'all' && this.employeesNeighborhoodFilter.trim()) ||
+                          (this.employeesArrondissementFilter && this.employeesArrondissementFilter !== 'all' && this.employeesArrondissementFilter.trim()) ||
+                          (this.employeesSectorFilter !== null && this.employeesSectorFilter !== undefined) ||
+                          (this.employeesRoleFilter && this.employeesRoleFilter !== 'all');
+    
+    const agencyId = this.authService.getCurrentUser()?.agencyId;
+    if (!agencyId) {
+      console.warn('Aucun ID d\'agence disponible pour le filtrage');
+      this.filterEmployeesLocally();
+      return;
+    }
+
+    // Si aucun filtre backend n'est appliqué, utiliser le filtrage local
+    if (!hasRealFilters) {
+      this.filterEmployeesLocally();
+      return;
+    }
+
+    this.isLoadingFilteredEmployees = true;
+
+    // Paramètres selon le Swagger exact
+    const filters: any = {
+      limit: this.itemsPerPage
+    };
+
+    // Paramètres de filtrage selon le Swagger
+    if (this.employeesSearch?.trim()) {
+      filters.term = this.employeesSearch.trim();
+    }
+    if (this.employeesCityFilter?.trim()) {
+      filters.city = this.employeesCityFilter.trim();
+    }
+    if (this.employeesNeighborhoodFilter?.trim()) {
+      filters.neighborhood = this.employeesNeighborhoodFilter.trim();
+    }
+    if (this.employeesArrondissementFilter?.trim()) {
+      filters.arrondissement = this.employeesArrondissementFilter.trim();
+    }
+    if (this.employeesSectorFilter !== null && this.employeesSectorFilter !== undefined) {
+      filters.sector = this.employeesSectorFilter;
+    }
+    if (this.employeesRoleFilter && this.employeesRoleFilter !== 'all') {
+      filters.role = this.employeesRoleFilter;
+    }
+
+    this.agencyService.getFilteredEmployees(agencyId, filters).subscribe({
+      next: (response) => {
+        console.log('🔍 [DEBUG] Réponse complète de l\'API:', response);
+        
+        if (response.success) {
+          // La réponse API groupe les employés par rôle
+          let employees: any[] = [];
+          
+          if (response.data) {
+            console.log('🔍 [DEBUG] Structure de response.data:', response.data);
+            
+            // Extraire tous les employés des différents groupes de rôles
+            if (response.data.managers && Array.isArray(response.data.managers)) {
+              console.log(`🔍 [DEBUG] Managers trouvés: ${response.data.managers.length}`);
+              employees.push(...response.data.managers);
+            }
+            if (response.data.collectors && Array.isArray(response.data.collectors)) {
+              console.log(`🔍 [DEBUG] Collectors trouvés: ${response.data.collectors.length}`);
+              employees.push(...response.data.collectors);
+            }
+            if (response.data.gestionnaires && Array.isArray(response.data.gestionnaires)) {
+              console.log(`🔍 [DEBUG] Gestionnaires trouvés: ${response.data.gestionnaires.length}`);
+              employees.push(...response.data.gestionnaires);
+            }
+            // Ajouter d'autres rôles si nécessaire
+            if (response.data.employees && Array.isArray(response.data.employees)) {
+              console.log(`🔍 [DEBUG] Employees génériques trouvés: ${response.data.employees.length}`);
+              employees.push(...response.data.employees);
+            }
+          } else {
+            console.warn('🔍 [DEBUG] Aucune donnée dans response.data');
+          }
+          
+          console.log(`🔍 [DEBUG] Total employés extraits: ${employees.length}`);
+          
+          // Appliquer le filtre de statut côté client 
+          if (this.employeesStatusFilter && this.employeesStatusFilter !== 'all') {
+            const isActive = this.employeesStatusFilter === 'active';
+            const beforeStatus = employees.length;
+            employees = employees.filter(employee => employee.isActive === isActive);
+            console.log(`🔍 [DEBUG] Après filtre statut (${this.employeesStatusFilter}): ${beforeStatus} -> ${employees.length}`);
+          }
+          
+          this.filteredEmployees = employees;
+          this.totalEmployees = employees.length;
+          this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
+          console.log(`🔍 [DEBUG] Employés finalement affichés: ${this.filteredEmployees.length}`);
+          console.log('🔍 [DEBUG] Employés dans filteredEmployees:', this.filteredEmployees);
+        } else {
+          console.error('🔍 [ERROR] Erreur dans la réponse de l\'API:', response);
+          this.notificationService.showError('Erreur', 'Erreur lors du filtrage des employés');
+        }
+        this.isLoadingFilteredEmployees = false;
+      },
+      error: (error) => {
+        console.error('🔍 [ERROR] Erreur lors du filtrage des employés:', error);
+        this.notificationService.showError('Erreur', 'Erreur lors du filtrage des employés');
+        this.isLoadingFilteredEmployees = false;
+        // En cas d'erreur, utiliser le filtrage local comme fallback
+        this.filterEmployeesLocally();
+      }
+    });
+  }
+
+  /**
+   * Méthode de filtrage local - gère les filtres de rôle et statut + pagination locale
+   */
+  private filterEmployeesLocally(): void {
+    console.log('Début du filtrage local avec:', {
+      search: this.employeesSearch,
+      roleFilter: this.employeesRoleFilter,
+      statusFilter: this.employeesStatusFilter,
+      totalEmployees: this.allEmployees.length
+    });
+    
     let filtered = [...this.allEmployees];
 
     // Filtrage par texte de recherche
@@ -1761,8 +1878,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       filtered = filtered.filter(employee => employee.isActive === isActive);
     }
 
-    this.filteredEmployees = filtered;
-    console.log('Employés filtrés:', this.filteredEmployees.length, 'sur', this.allEmployees.length);
+    
+    // Calcul de la pagination
+    this.totalEmployees = filtered.length;
+    this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
+    
+    // S'assurer que currentPage est valide
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = this.totalPages;
+    }
+    if (this.currentPage < 1) {
+      this.currentPage = 1;
+    }
+
+    // Appliquer la pagination
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.filteredEmployees = filtered.slice(startIndex, endIndex);
+    
+    console.log('Employés filtrés localement:', this.filteredEmployees.length, 'sur', this.totalEmployees, 'total (page', this.currentPage, 'sur', this.totalPages, ')');
   }
 
   /**
@@ -1780,6 +1914,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.employeesSearch = "";
     this.employeesRoleFilter = "all";
     this.employeesStatusFilter = "all";
+    this.employeesCityFilter = "";
+    this.employeesNeighborhoodFilter = "";
+    this.employeesArrondissementFilter = "";
+    this.employeesSectorFilter = null;
+    this.currentPage = 1;
     this.filterEmployees();
   }
 
@@ -1795,12 +1934,287 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     }
   }
 
+  /**
+   * Navigue vers la page précédente
+   */
+  goToPreviousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.filterEmployees();
+    }
+  }
+
+  /**
+   * Navigue vers la page suivante
+   */
+  goToNextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.filterEmployees();
+    }
+  }
+
+  /**
+   * Navigue vers une page spécifique
+   */
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
+      this.currentPage = page;
+      this.filterEmployees();
+    }
+  }
+
+  /**
+   * Change le nombre d'éléments par page
+   */
+  changeItemsPerPage(newSize: number): void {
+    this.itemsPerPage = newSize;
+    this.currentPage = 1; // Reset à la première page
+    this.filterEmployees();
+  }
+
+  /**
+   * Change le nombre d'éléments par page pour les clients
+   */
+  changeClientItemsPerPage(newSize: number): void {
+    this.clientsItemsPerPage = newSize;
+    this.clientsCurrentPage = 1; // Reset à la première page
+    this.filterClients();
+  }
+
+  /**
+   * Génère la liste des numéros de pages pour la pagination
+   */
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+    
+    // Ajuster le début si on est proche de la fin
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  }
+
+  /**
+   * Calcule le numéro du dernier élément affiché sur la page actuelle
+   */
+  getEndItemNumber(): number {
+    return Math.min(this.currentPage * this.itemsPerPage, this.totalEmployees);
+  }
+
+  /**
+   * Calcule le numéro du dernier élément client affiché sur la page actuelle
+   */
+  getClientEndItemNumber(): number {
+    return Math.min(this.clientsCurrentPage * this.clientsItemsPerPage, this.clientsTotalItems);
+  }
+
+  /**
+   * Initialise les listes de villes et quartiers à partir des données mock
+   */
+  initializeCitiesAndNeighborhoods(): void {
+    try {
+      // S'assurer que OUAGA_DATA existe et est un tableau
+      if (!OUAGA_DATA || !Array.isArray(OUAGA_DATA)) {
+        console.warn('OUAGA_DATA non disponible ou incorrect');
+        this.availableCities = [];
+        this.availableNeighborhoods = [];
+        this.filteredNeighborhoods = [];
+        return;
+      }
+      
+      // Extraire les arrondissements comme "villes"
+      this.availableCities = OUAGA_DATA.map(data => data.arrondissement);
+      
+      // Extraire tous les quartiers
+      this.availableNeighborhoods = [];
+      OUAGA_DATA.forEach(arrond => {
+        if (arrond.secteurs && Array.isArray(arrond.secteurs)) {
+          arrond.secteurs.forEach(secteur => {
+            if (secteur.quartiers && Array.isArray(secteur.quartiers)) {
+              this.availableNeighborhoods.push(...secteur.quartiers);
+            }
+          });
+        }
+      });
+      
+      // Supprimer les doublons et trier
+      this.availableNeighborhoods = [...new Set(this.availableNeighborhoods)].sort();
+      this.filteredNeighborhoods = [...this.availableNeighborhoods];
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation des villes et quartiers:', error);
+      this.availableCities = [];
+      this.availableNeighborhoods = [];
+      this.filteredNeighborhoods = [];
+    }
+  }
+
+  /**
+   * Filtre les quartiers en fonction de la ville sélectionnée pour les employés
+   */
+  onEmployeeFilterCityChange(): void {
+    if (this.employeesCityFilter) {
+      const selectedArrond = OUAGA_DATA.find(data => data.arrondissement === this.employeesCityFilter);
+      if (selectedArrond) {
+        this.filteredNeighborhoods = [];
+        selectedArrond.secteurs.forEach(secteur => {
+          this.filteredNeighborhoods.push(...secteur.quartiers);
+        });
+        this.filteredNeighborhoods.sort();
+        
+        // Réinitialiser le quartier si il n'est plus dans la liste
+        if (this.employeesNeighborhoodFilter && 
+            !this.filteredNeighborhoods.includes(this.employeesNeighborhoodFilter)) {
+          this.employeesNeighborhoodFilter = '';
+        }
+      }
+    } else {
+      // Si aucune ville sélectionnée, montrer tous les quartiers
+      this.filteredNeighborhoods = [...this.availableNeighborhoods];
+      this.employeesNeighborhoodFilter = '';
+    }
+    
+    // Appliquer les filtres
+    this.filterEmployees();
+  }
+
   // === MÉTHODES DE FILTRAGE ET RECHERCHE DES CLIENTS ===
 
   /**
-   * Filtre les clients en fonction des critères de recherche
+   * Filtre les clients via l'API backend
    */
   filterClients(): void {
+    if (!this.agency?.agencyId) {
+      console.log('Aucune agence disponible pour filtrer les clients');
+      return;
+    }
+
+    this.isLoadingFilteredClients = true;
+    
+    const filters = {
+      term: this.clientsSearch,
+      city: this.clientsCityFilter, // Nouveau paramètre city
+      neighborhood: this.clientsNeighborhoodFilter,
+      page: this.clientsCurrentPage,
+      limit: this.clientsItemsPerPage
+    };
+
+    console.log('Filtrage des clients avec:', filters);
+
+    this.clientService.getFilteredClients(this.agency.agencyId, filters).subscribe({
+      next: (response: any) => {
+        console.log('Clients filtrés reçus:', response);
+        
+        if (response && response.data) {
+          // S'assurer que response.data est un tableau
+          const clientsData = Array.isArray(response.data) ? response.data : [];
+          
+          // Si l'API retourne les données de pagination
+          if (response.totalItems && response.totalPages) {
+            this.filteredActiveClients = clientsData;
+            this.clientsTotalItems = response.totalItems;
+            this.clientsTotalPages = response.totalPages;
+          } else {
+            // Si l'API ne supporte pas la pagination, on fait la pagination côté client
+            console.log('Pagination côté client pour les clients');
+            this.handleClientSidePagination(clientsData, filters);
+          }
+          
+          console.log(`Clients filtrés: ${this.filteredActiveClients.length} résultats`);
+          console.log(`Pagination: page ${this.clientsCurrentPage}/${this.clientsTotalPages}, total: ${this.clientsTotalItems}`);
+          
+        } else {
+          console.warn('Réponse API inattendue pour les clients:', response);
+          this.filteredActiveClients = [];
+          this.clientsTotalItems = 0;
+          this.clientsTotalPages = 0;
+        }
+        
+        this.isLoadingFilteredClients = false;
+      },
+      error: (error: any) => {
+        console.error('Erreur lors du filtrage des clients:', error);
+        // En cas d'erreur API, utiliser le filtrage local
+        this.filterClientsLocally();
+        this.isLoadingFilteredClients = false;
+      }
+    });
+  }
+
+  /**
+   * Gère la pagination côté client quand l'API ne la supporte pas
+   */
+  private handleClientSidePagination(allClients: any[], filters: any): void {
+ 
+    let filteredClients = [...allClients];
+    
+    // Filtrage par terme de recherche
+    if (filters.term && filters.term.trim()) {
+      const searchTerm = filters.term.toLowerCase().trim();
+      filteredClients = filteredClients.filter(client => 
+        client.firstName?.toLowerCase().includes(searchTerm) ||
+        client.lastName?.toLowerCase().includes(searchTerm) ||
+        client.email?.toLowerCase().includes(searchTerm) ||
+        client.phone?.toLowerCase().includes(searchTerm) ||
+        client.address?.street?.toLowerCase().includes(searchTerm) ||
+        client.address?.neighborhood?.toLowerCase().includes(searchTerm) ||
+        `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filtrage par ville
+    if (filters.city && filters.city !== 'all') {
+      filteredClients = filteredClients.filter(client => 
+        client.address?.city === filters.city
+      );
+    }
+    
+    // Filtrage par quartier
+    if (filters.neighborhood && filters.neighborhood !== 'all') {
+      filteredClients = filteredClients.filter(client => 
+        client.address?.neighborhood === filters.neighborhood
+      );
+    }
+
+    // Calcul de la pagination
+    this.clientsTotalItems = filteredClients.length;
+    this.clientsTotalPages = Math.ceil(this.clientsTotalItems / this.clientsItemsPerPage);
+    
+    // S'assurer que la page courante est valide
+    if (this.clientsCurrentPage > this.clientsTotalPages && this.clientsTotalPages > 0) {
+      this.clientsCurrentPage = this.clientsTotalPages;
+    }
+    
+    // Découper les résultats pour la page courante
+    const startIndex = (this.clientsCurrentPage - 1) * this.clientsItemsPerPage;
+    const endIndex = startIndex + this.clientsItemsPerPage;
+    this.filteredActiveClients = filteredClients.slice(startIndex, endIndex);
+    
+    console.log(`Pagination côté client: page ${this.clientsCurrentPage}/${this.clientsTotalPages}, ${this.filteredActiveClients.length} sur ${this.clientsTotalItems} clients`);
+  }
+
+  /**
+   * Vérifie s'il y a des filtres actifs
+   */
+  private hasClientFilters(): boolean {
+    return (!!this.clientsSearch && this.clientsSearch.trim() !== '') ||
+           (!!this.clientsCityFilter && this.clientsCityFilter !== 'all') ||
+           (!!this.clientsNeighborhoodFilter && this.clientsNeighborhoodFilter !== 'all');
+  }
+
+  /**
+   * Filtrage local des clients (fallback)
+   */
+  private filterClientsLocally(): void {
     let filtered = [...this.activeClients];
 
     // Filtrage par texte de recherche
@@ -1813,18 +2227,27 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         client.phone?.toLowerCase().includes(searchTerm) ||
         client.address?.street?.toLowerCase().includes(searchTerm) ||
         client.address?.neighborhood?.toLowerCase().includes(searchTerm) ||
+        client.address?.city?.toLowerCase().includes(searchTerm) ||
         `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm)
       );
     }
 
-    // Filtrage par statut (si nécessaire pour d'autres statuts)
-    if (this.clientsStatusFilter && this.clientsStatusFilter !== 'all') {
-      // Ici vous pouvez ajouter d'autres filtres de statut si nécessaire
-      // Par exemple: filtered = filtered.filter(client => client.status === this.clientsStatusFilter);
+    // Filtrage par ville
+    if (this.clientsCityFilter && this.clientsCityFilter !== 'all') {
+      filtered = filtered.filter(client => 
+        client.address?.city === this.clientsCityFilter
+      );
+    }
+
+    // Filtrage par quartier
+    if (this.clientsNeighborhoodFilter && this.clientsNeighborhoodFilter !== 'all') {
+      filtered = filtered.filter(client => 
+        client.address?.neighborhood === this.clientsNeighborhoodFilter
+      );
     }
 
     this.filteredActiveClients = filtered;
-    console.log('Clients filtrés:', this.filteredActiveClients.length, 'sur', this.activeClients.length);
+    console.log('Filtrage local - Clients filtrés:', this.filteredActiveClients.length, 'sur', this.activeClients.length);
   }
 
   /**
@@ -1832,6 +2255,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   clearClientSearch(): void {
     this.clientsSearch = "";
+    this.clientsCurrentPage = 1;
     this.filterClients();
   }
 
@@ -1840,8 +2264,263 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   resetClientFilters(): void {
     this.clientsSearch = "";
+    this.clientsCityFilter = "all"; // Reset du nouveau filtre ville
+    this.clientsNeighborhoodFilter = "all";
     this.clientsStatusFilter = "all";
+    this.clientsCurrentPage = 1;
     this.filterClients();
+  }
+
+  /**
+   * Gestion de la pagination des clients
+   */
+  goToClientPage(page: number): void {
+    if (page >= 1 && page <= this.clientsTotalPages) {
+      this.clientsCurrentPage = page;
+      this.filterClients();
+    }
+  }
+
+  nextClientPage(): void {
+    if (this.clientsCurrentPage < this.clientsTotalPages) {
+      this.clientsCurrentPage++;
+      this.filterClients();
+    }
+  }
+
+  previousClientPage(): void {
+    if (this.clientsCurrentPage > 1) {
+      this.clientsCurrentPage--;
+      this.filterClients();
+    }
+  }
+
+  /**
+   * Méthodes pour obtenir les pages de pagination
+   */
+  getClientPaginationPages(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+    
+    let start = Math.max(1, this.clientsCurrentPage - half);
+    let end = Math.min(this.clientsTotalPages, start + maxPagesToShow - 1);
+    
+    if (end - start + 1 < maxPagesToShow) {
+      start = Math.max(1, end - maxPagesToShow + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  }
+
+  /**
+   * Obtenir la liste des quartiers uniques des clients
+   */
+  getUniqueClientNeighborhoods(): string[] {
+    // Essayer d'abord depuis les clients actifs
+    let clientNeighborhoods: string[] = [];
+    if (this.activeClients && this.activeClients.length > 0) {
+      const clientsArray = Array.isArray(this.activeClients) ? this.activeClients : [];
+      clientNeighborhoods = clientsArray
+        .map(client => client.address?.neighborhood)
+        .filter((neighborhood, index, self) => 
+          neighborhood && 
+          neighborhood.trim() !== '' && 
+          self.indexOf(neighborhood) === index
+        )
+        .sort();
+    }
+    
+    // Si aucun quartier trouvé dans les clients, utiliser le mock comme fallback
+    if (clientNeighborhoods.length === 0) {
+      const allQuartiers: string[] = [];
+      OUAGA_DATA.forEach(arrond => {
+        arrond.secteurs.forEach(secteur => {
+          allQuartiers.push(...secteur.quartiers);
+        });
+      });
+      clientNeighborhoods = [...new Set(allQuartiers)].sort();
+    }
+    
+    return clientNeighborhoods;
+  }
+
+  /**
+   * Obtenir la liste des villes uniques des clients
+   */
+  getUniqueClientCities(): string[] {
+    // Essayer d'abord depuis les clients actifs
+    let clientCities: string[] = [];
+    if (this.activeClients && this.activeClients.length > 0) {
+      const clientsArray = Array.isArray(this.activeClients) ? this.activeClients : [];
+      clientCities = clientsArray
+        .map(client => client.address?.city)
+        .filter((city, index, self) => 
+          city && 
+          city.trim() !== '' && 
+          self.indexOf(city) === index
+        )
+        .sort();
+    }
+    
+    // Si aucune ville trouvée dans les clients, utiliser "Ouagadougou" par défaut
+    if (clientCities.length === 0) {
+      clientCities = ["Ouagadougou"];
+    }
+    
+    return clientCities;
+  }
+
+  /**
+   * Obtenir la liste des quartiers uniques des employés
+   */
+  getUniqueEmployeeNeighborhoods(): string[] {
+    return this.availableEmployeeNeighborhoods.map(q => q.name).sort();
+  }
+
+  /**
+   * Initialise les données pour les filtres (même système que l'enregistrement)
+   */
+  initializeFiltersData(): void {
+    // Charger les villes du Burkina Faso (country id = '1')
+    this.availableEmployeeCities = this.countriesOrgMockService.getCitiesByCountry('1');
+    
+    // Par défaut, charger les arrondissements de Ouagadougou (city id = '1')
+    this.availableEmployeeArrondissements = this.countriesOrgMockService.getArrondissementsByCity('1');
+    
+    // Charger tous les quartiers de Ouagadougou par défaut
+    this.loadAllNeighborhoodsForCity('1');
+  }
+
+  /**
+   * Charge tous les quartiers d'une ville donnée
+   */
+  loadAllNeighborhoodsForCity(cityId: string): void {
+    const arrondissements = this.countriesOrgMockService.getArrondissementsByCity(cityId);
+    this.availableEmployeeNeighborhoods = [];
+    
+    arrondissements.forEach(arr => {
+      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(arr.id);
+      sectors.forEach(sector => {
+        const neighborhoods = this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
+        this.availableEmployeeNeighborhoods.push(...neighborhoods);
+      });
+    });
+  }
+
+  /**
+   * Gère le changement de ville pour les filtres employés
+   */
+  onEmployeeCityFilterChange(): void {
+    // Réinitialiser les filtres dépendants
+    this.employeesArrondissementFilter = '';
+    this.employeesSectorFilter = null;
+    this.employeesNeighborhoodFilter = '';
+    
+    if (this.employeesCityFilter) {
+      // Charger les arrondissements de la ville sélectionnée
+      this.availableEmployeeArrondissements = this.countriesOrgMockService.getArrondissementsByCity(this.employeesCityFilter);
+      this.loadAllNeighborhoodsForCity(this.employeesCityFilter);
+    } else {
+      this.availableEmployeeArrondissements = [];
+      this.availableEmployeeSectors = [];
+      this.availableEmployeeNeighborhoods = [];
+    }
+    
+    this.filterEmployees();
+  }
+
+  /**
+   * Gère le changement d'arrondissement pour les filtres employés
+   */
+  onEmployeeArrondissementFilterChange(): void {
+    // Réinitialiser les filtres dépendants
+    this.employeesSectorFilter = null;
+    this.employeesNeighborhoodFilter = '';
+    
+    if (this.employeesArrondissementFilter) {
+      // Charger les secteurs de l'arrondissement sélectionné
+      this.availableEmployeeSectors = this.countriesOrgMockService.getSectorsByArrondissement(this.employeesArrondissementFilter);
+      
+      // Charger les quartiers de cet arrondissement
+      this.availableEmployeeNeighborhoods = [];
+      this.availableEmployeeSectors.forEach(sector => {
+        const neighborhoods = this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
+        this.availableEmployeeNeighborhoods.push(...neighborhoods);
+      });
+    } else {
+      this.availableEmployeeSectors = [];
+      this.availableEmployeeNeighborhoods = [];
+    }
+    
+    this.filterEmployees();
+  }
+
+  /**
+   * Gère le changement de secteur pour les filtres employés
+   */
+  onEmployeeSectorFilterChange(): void {
+    this.employeesNeighborhoodFilter = '';
+    
+    if (this.employeesSectorFilter) {
+      // Charger les quartiers du secteur sélectionné
+      const sectorId = this.employeesSectorFilter.toString();
+      this.availableEmployeeNeighborhoods = this.countriesOrgMockService.getNeighborhoodsBySector(sectorId);
+    } else {
+      // Si aucun secteur sélectionné, charger tous les quartiers de l'arrondissement
+      if (this.employeesArrondissementFilter) {
+        this.availableEmployeeNeighborhoods = [];
+        this.availableEmployeeSectors.forEach(sector => {
+          const neighborhoods = this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
+          this.availableEmployeeNeighborhoods.push(...neighborhoods);
+        });
+      }
+    }
+    
+    this.filterEmployees();
+  }
+
+  /**
+   * Méthodes sécurisées pour les ngFor - supprimer les doublons
+   */
+
+  /**
+   * S'assurer que tabs est toujours un tableau
+   */
+  getTabs(): any[] {
+    return Array.isArray(this.tabs) ? this.tabs : [];
+  }
+
+  /**
+   * S'assurer que dayCollectes est toujours un tableau
+   */
+  getDayCollectes(): any[] {
+    return Array.isArray(this.dayCollectes) ? this.dayCollectes : [];
+  }
+
+  /**
+   * S'assurer que agencyReports est toujours un tableau
+   */
+  getAgencyReports(): any[] {
+    return Array.isArray(this.agencyReports) ? this.agencyReports : [];
+  }
+
+  /**
+   * S'assurer que connectedUserMessages est toujours un tableau
+   */
+  getConnectedUserMessages(): any[] {
+    return Array.isArray(this.connectedUserMessages) ? this.connectedUserMessages : [];
+  }
+
+  /**
+   * S'assurer que receivedMessages est toujours un tableau
+   */
+  getReceivedMessages(): any[] {
+    return Array.isArray(this.receivedMessages) ? this.receivedMessages : [];
   }
 
   /**
@@ -1850,7 +2529,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   toggleClientsSearch(): void {
     this.showClientsSearch = !this.showClientsSearch;
     
-    // Si on ferme la section, on remet à zéro les filtres
+    
     if (!this.showClientsSearch) {
       this.resetClientFilters();
     }
@@ -1870,7 +2549,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           const SignalementsTab = this.tabs.find((tab) => tab.id === "reports");
           if (SignalementsTab) {
             SignalementsTab.badge = this.statistics.pendingSignalements;
-            this.cdr.detectChanges(); // Force la détection des changements
+            this.cdr.detectChanges(); 
           }
           const repportTab = this.tabs.find((tab) => tab.id === "reports");
           if (repportTab) {
@@ -1926,33 +2605,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     
     }
   }
-  // loadServiceZones(): void {
-  //   this.serviceZones = [
-  //     {
-  //       id: "zone1",
-  //       name: "Zone Centre",
-  //       description: "Centre-ville et quartiers adjacents",
-  //       boundaries: [],
-  //       neighborhoods: ["Centre-ville", "Quartier Latin"],
-  //       cities: ["Paris"],
-  //       isActive: true,
-  //     },
-  //   ];
-  // }
-
-  // loadSchedules(): void {
-  //   this.schedules = [
-  //     {
-  //       // id: '1',
-  //       zoneId: 'zone1',
-  //       dayOfWeek: 1,
-  //       startTime: '08:00',
-  //       endTime: '12:00',
-  //       collectorId: '1',
-  //       // isActive: true
-  //     }
-  //   ];
-  // }
+ 
 
   // Helper pour récupérer le statut d'abonnement
   getClientSubscriptionStatus(c: any): string | undefined {
@@ -1975,14 +2628,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         console.log(
           "[loadClients] clients number:",
           this.activeClientNbrs,
-          clients.data.length
+          clients?.data?.length || 0
         );
         console.log("ALL Agency_clients", clients);
-        this.activeClients = clients.data.filter(
+    
+        const clientsData = Array.isArray(clients?.data) ? clients.data : [];
+        
+        this.activeClients = clientsData.filter(
           (c:any) => this.getClientSubscriptionStatus(c) === "active"
         );
-        this.filteredActiveClients = [...this.activeClients]; // Initialiser les clients filtrés
-        this.pendingClients = clients.data.filter(
+        this.filteredActiveClients = [...this.activeClients]; 
+        this.pendingClients = clientsData.filter(
           (c:any) => this.getClientSubscriptionStatus(c) === "pending"
         );
         console.log(
@@ -1992,31 +2648,39 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           this.pendingClients
         );
 
-        if (clients) {
-          this.clientNbrs = clients.data.length;
-          this.activeClients = clients.data;
-          this.filteredActiveClients = [...this.activeClients]; // Initialiser les clients filtrés
-          console.log("[loadClients] clients received:", this.clientNbrs);
-          // Vérifiez si activeClients est défini et mettez à jour le nombre d'actifs
+        if (clients && clientsData.length > 0) {
+          this.clientNbrs = clientsData.length;
+        
+    
           if (this.activeClients) {
-            this.activeClientNbrs = this.activeClients.length; // Directement obtenir le nombre d'actifs
-            // Trouver l'onglet "Clients" et mettre à jour son badge
+            this.activeClientNbrs = this.activeClients.length; 
+           
             const clientsTab = this.tabs.find((tab) => tab.label === "Clients");
             if (clientsTab) {
-              clientsTab.badge = this.clientNbrs; // Mettre à jour le badge
+              clientsTab.badge = this.clientNbrs; 
               console.log("badge >>", clientsTab.badge);
               console.log("activeClientNbrs >>", this.activeClientNbrs);
             } else {
               console.warn("L'onglet 'Clients' n'a pas été trouvé.");
             }
           }
+        } else {
+          // Aucun client trouvé
+          this.clientNbrs = 0;
+          this.activeClientNbrs = 0;
+          this.activeClients = [];
+          this.filteredActiveClients = [];
+          this.pendingClients = [];
         }
         this.isLoadingClients = false;
+        
+        // Initialiser le filtrage avec les nouveaux clients chargés
+        this.filterClients();
       },
       error: (err) => {
         console.error("[loadClients] error:", err);
         this.activeClients = [];
-        this.filteredActiveClients = []; // Réinitialiser les clients filtrés
+        this.filteredActiveClients = [];
         this.pendingClients = [];
         this.isLoadingClients = false;
       },
@@ -2056,11 +2720,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     );
   }
 
-  // getStars(rating: number): number[] {
-  //   return new Array(Math.floor(rating)).fill(0);
-  // }
+  
   getStars(rating: number): number[] {
-    // console.log('Rating reçu dans getStars:', rating);
+
     if (!rating || rating < 0) {
       return [];
     }
@@ -2818,8 +3480,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   loadTariffs(): void {
     this.isLoadingTariffs = true;
     const agencyId = this.currentUser?._id;
+    
+    console.log('[DEBUG] LoadTariffs - currentUser:', this.currentUser);
+    console.log('[DEBUG] LoadTariffs - agencyId utilisé:', agencyId);
+    
     if (!agencyId) {
-      console.error("[DEBUG] Aucun tarif trouvé pour cette agence");
+      console.error("[DEBUG] Aucun agencyId trouvé pour charger les tarifs");
       this.isLoadingTariffs = false;
       return;
     }
@@ -2833,6 +3499,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         if (this.tariffs && this.tariffs.length > 0) {
           console.log("Structure du premier tarif:", this.tariffs[0]);
           console.log("Clés disponibles:", Object.keys(this.tariffs[0]));
+          console.log("agencyId du premier tarif:", this.tariffs[0].agencyId);
+          console.log("_id du premier tarif:", this.tariffs[0]._id);
         }
         
         // Mettre à jour le badge des tarifs
@@ -2844,7 +3512,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         this.isLoadingTariffs = false;
       },
       error: (error) => {
-        // console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
+        console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
         this.isLoadingTariffs = false;
       },
     });
@@ -2997,15 +3665,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Utiliser directement l'ID du tarif stocké
     const actualTariffId = this.tariffToUpdate._id;
     
-    // Payload selon le format du swagger
+
+    const originalAgencyId = this.tariffToUpdate.agencyId;
+    const fallbackAgencyId = this.currentUser?._id || "";
+    const finalAgencyId = originalAgencyId || fallbackAgencyId;
+    
     const payload = {
-      id: actualTariffId, // Utiliser l'ID du tarif stocké
-      agencyId: this.currentUser?.agencyId || this.currentUser?._id || "",
+      id: actualTariffId,
+      agencyId: finalAgencyId, 
       planType: formValue.type,
       price: formValue.price,
       description: formValue.description || "",
       numberOfPasses: formValue.nbPassages || 0,
     };
+    
 
     this.agencyService.updateTariff$(actualTariffId, payload).subscribe({
       next: (response: any) => {
@@ -3052,10 +3725,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   deleteTariff(tariff: any): void {
     this.isDeleting = true;
     const tariffId = tariff._id;
-    const agencyId = this.currentUser?.agencyId || this.currentUser?._id || "";
+    
+    // IMPORTANT: Utiliser l'agencyId du tarif lui-même si disponible
+    const originalAgencyId = tariff.agencyId;
+    const fallbackAgencyId = this.currentUser?._id || "";
+    const finalAgencyId = originalAgencyId || fallbackAgencyId;
+    
+    console.log('[DEBUG] DeleteTariff - tariffId:', tariffId);
+    console.log('[DEBUG] DeleteTariff - originalAgencyId:', originalAgencyId);
+    console.log('[DEBUG] DeleteTariff - fallbackAgencyId:', fallbackAgencyId);
+    console.log('[DEBUG] DeleteTariff - finalAgencyId:', finalAgencyId);
+    console.log('[DEBUG] DeleteTariff - tariff object:', tariff);
 
-    if (tariffId && agencyId) {
-      this.agencyService.deleteTarif$(tariffId, agencyId).subscribe(
+    if (tariffId && finalAgencyId) {
+      this.agencyService.deleteTarif$(tariffId, finalAgencyId).subscribe(
         () => {
           this.notificationService.showSuccess(
             "Succès",
@@ -3733,7 +4416,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       const agencyId = currentUser.agencyId;
       this.agencyService.getAllzones$(agencyId).subscribe({
         next: (zones: any) => {
-          this.zones = zones.data || zones;
+          // S'assurer que zones est toujours un tableau
+          if (zones && zones.data && Array.isArray(zones.data)) {
+            this.zones = zones.data;
+          } else if (Array.isArray(zones)) {
+            this.zones = zones;
+          } else {
+            console.warn('Format de zones inattendu:', zones);
+            this.zones = [];
+          }
+          
           console.log("zones charger>>>>>> :", this.zones);
           if (this.zones.length > 0) {
             console.log("Structure d'une zone:", this.zones[0]);
@@ -4563,6 +5255,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Génère et retourne les données d'analyse par zone
    */
   getZoneAnalyticsData(): ZoneAnalytics[] {
+    // S'assurer que zoneAnalyticsData est un tableau
+    if (!this.zoneAnalyticsData || !Array.isArray(this.zoneAnalyticsData)) {
+      return [];
+    }
+    
     if (this.zoneAnalyticsData.length === 0) {
       this.generateZoneAnalyticsData();
     }
@@ -4713,6 +5410,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Retourne les recommandations pour les zones
    */
   getZoneRecommendations(): LocalZoneRecommendation[] {
+    // S'assurer que zoneRecommendations est un tableau
+    if (!this.zoneRecommendations || !Array.isArray(this.zoneRecommendations)) {
+      return [];
+    }
+    
     if (this.zoneRecommendations.length === 0) {
       this.generateZoneRecommendations();
     }

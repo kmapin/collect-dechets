@@ -362,6 +362,70 @@ export class AgencyService {
     return this.http.get<{ success: boolean; count: number; data: Employee[] }>(url, { params });
   }
 
+  /**
+   * Récupère les employés filtrés d'une agence via l'API backend
+   * Utilise l'endpoint /api/agency_employees/{agencyId}/employees avec les paramètres de filtre
+   */
+  getFilteredEmployees(agencyId: string, filters?: {
+    term?: string;
+    city?: string;
+    neighborhood?: string;
+    arrondissement?: string;
+    sector?: number;
+    role?: string;
+    limit?: number;
+  }): Observable<{ success: boolean; count?: number; data?: {
+    managers?: Employees[];
+    collectors?: Employees[];
+    gestionnaires?: Employees[];
+    employees?: Employees[];
+  } }> {
+    let params = new HttpParams();
+    
+    if (filters) {
+      if (filters.term) {
+        params = params.set('term', filters.term);
+      }
+      if (filters.city) {
+        params = params.set('city', filters.city);
+      }
+      if (filters.neighborhood) {
+        params = params.set('neighborhood', filters.neighborhood);
+      }
+      if (filters.arrondissement) {
+        params = params.set('arrondissement', filters.arrondissement);
+      }
+      if (filters.sector !== undefined && filters.sector !== null) {
+        params = params.set('sector', filters.sector.toString());
+      }
+      if (filters.role) {
+        params = params.set('role', filters.role);
+      }
+      if (filters.limit) {
+        params = params.set('limit', filters.limit.toString());
+      }
+    }
+
+    const url = `${environment.apiUrl}/agency_employees/${agencyId}/employees`;
+    console.log('🔍 [DEBUG SERVICE] URL appelée:', url);
+    console.log('🔍 [DEBUG SERVICE] Paramètres HttpParams:', params.toString());
+
+    return this.http.get<{ success: boolean; count?: number; data?: {
+      managers?: Employees[];
+      collectors?: Employees[];
+      gestionnaires?: Employees[];
+      employees?: Employees[];
+    } }>(
+      url,
+      { params }
+    ).pipe(
+      catchError(error => {
+        console.error('Erreur lors de la récupération des employés filtrés:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
 
   
 
