@@ -5,1126 +5,1141 @@
         class="profile-avatar"
         [src]="user.avatar || 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'"
         [alt]="user.firstName"
-      />
-      <div class="profile-user-info">
-        <h2>{{ user.firstName || user.name }} {{ user.lastName || '' }}</h2>
-        <span class="role-badge">{{ getRoleLabel(user.role) }}</span>
-        <p class="profile-email">
-          <i class="material-icons">email</i> {{ user.email }}
-        </p>
+        />
+        <div class="profile-user-info">
+          <h2>{{ user.firstName || user.name }} {{ user.lastName || '' }}</h2>
+          <span class="role-badge">{{ getRoleLabel(user.role) }}</span>
+          <p class="profile-email">
+            <i class="material-icons">email</i> {{ user.email }}
+          </p>
+        </div>
       </div>
-    </div>
-    <!-- Afficher le code QR et telecharger  -->
-    <div class="profile-card-modern card text-center">
-      <!-- <h3>Code QR</h3> -->
-      <div class="qr-code">
-        <img [src]="generateQRCode(user?.qrCode)" alt="QR Code" />
+      <!-- Afficher le code QR et telecharger  -->
+      <div class="profile-card-modern card text-center">
+        <!-- <h3>Code QR</h3> -->
+        <div class="qr-code">
+          <img [src]="generateQRCode(user?.qrCode)" alt="QR Code" />
+        </div>
+        <a
+          [href]="generateQRCode(user?.qrCode)"
+          download="qrcode.png"
+          class="btn btn-primary mt-2"
+          >Télécharger le QR Code</a
+          >
+        </div>
       </div>
-      <a
-        [href]="generateQRCode(user?.qrCode)"
-        download="qrcode.png"
-        class="btn btn-primary mt-2"
-        >Télécharger le QR Code</a
-      >
-    </div>
-  </div>
-  <div class="profile-right">
-    <div class="profile-card-modern card">
-      <!-- Formulaire CLIENT -->
-      <form
-        *ngIf="user.role === 'client'"
-        class="profile-form-modern"
-        (ngSubmit)="onSave()"
-      >
-        <h3>Informations personnelles du client</h3>
-          <div class="form-row-modern">
-          <!-- <div class="form-group-modern">
+      <div class="profile-right">
+        <div class="profile-card-modern card">
+          <!-- Formulaire CLIENT -->
+          @if (user.role === 'client') {
+            <form
+              class="profile-form-modern"
+              (ngSubmit)="onSave()"
+              >
+              <h3>Informations personnelles du client</h3>
+              <div class="form-row-modern">
+                <!-- <div class="form-group-modern">
                 <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
                 <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
               </div> -->
-          <div class="form-group-modern">
-            <label for="agencyName"
-              ><i class="material-icons">business</i> Nom</label
-            >
-            <input
-              type="text"
-              id="agencyName"
-              [(ngModel)]="userData.firstName"
-              name="firstname"
-              required
-            />
-          </div>
-          <div class="form-group-modern">
-            <label for="agencyName"
-              ><i class="material-icons">business</i> Prénom</label
-            >
-            <input
-              type="text"
-              id="agencyName"
-              [(ngModel)]="userData.lastName"
-              name="lastname"
-              required
-            />
-          </div>
-          <!-- <div class="form-group-modern">
-            <label for="agencyDescription"
-              ><i class="material-icons">description</i> Description</label
-            >
-            <textarea
-              id="agencyDescription"
-              [(ngModel)]="userData.agencyDescription"
-              name="description"
-              rows="2"
-            ></textarea>
-          </div> -->
-        </div>
-        <div class="form-row-modern">
-          <div class="form-group-modern">
-            <label for="agencyPhone"
-              ><i class="material-icons">phone</i> Téléphone</label
-            >
-            <input
-              type="tel"
-              id="agencyPhone"
-              [(ngModel)]="userData.phone"
-              name="phone"
-              required
-            />
-          </div>
-          <!-- <div class="form-group-modern">
-                <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
-                <input type="email" id="agencyEmail" [(ngModel)]="userData.email" name="email" required>
-              </div> -->
-        </div>
-
-        <!-- <div class="form-row-modern">
               <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
-                  J'accepte les conditions générales d'utilisation
-                </label>
-              </div>
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
-                  Je souhaite recevoir des offres et actualités
-                </label>
-              </div>
-            </div> -->
-        <!-- <div class="form-actions-modern">
-          <button type="submit" class="btn btn-primary">
-            <i class="material-icons">save</i>
-            Sauvegarder
-          </button>
-        </div> -->
- 
-    <div class="form-section">
-      <h3>Adresse de localisation</h3>
+                <label for="agencyName"
+                  ><i class="material-icons">business</i> Nom</label
+                  >
+                  <input
+                    type="text"
+                    id="agencyName"
+                    [(ngModel)]="userData.firstName"
+                    name="firstname"
+                    required
+                    />
+                  </div>
+                  <div class="form-group-modern">
+                    <label for="agencyName"
+                      ><i class="material-icons">business</i> Prénom</label
+                      >
+                      <input
+                        type="text"
+                        id="agencyName"
+                        [(ngModel)]="userData.lastName"
+                        name="lastname"
+                        required
+                        />
+                      </div>
+                      <!-- <div class="form-group-modern">
+                      <label for="agencyDescription"
+                        ><i class="material-icons">description</i> Description</label
+                        >
+                        <textarea
+                          id="agencyDescription"
+                          [(ngModel)]="userData.agencyDescription"
+                          name="description"
+                          rows="2"
+                        ></textarea>
+                      </div> -->
+                    </div>
+                    <div class="form-row-modern">
+                      <div class="form-group-modern">
+                        <label for="agencyPhone"
+                          ><i class="material-icons">phone</i> Téléphone</label
+                          >
+                          <input
+                            type="tel"
+                            id="agencyPhone"
+                            [(ngModel)]="userData.phone"
+                            name="phone"
+                            required
+                            />
+                          </div>
+                          <!-- <div class="form-group-modern">
+                          <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
+                          <input type="email" id="agencyEmail" [(ngModel)]="userData.email" name="email" required>
+                        </div> -->
+                      </div>
+                      <!-- <div class="form-row-modern">
+                      <div class="form-group-modern">
+                        <label class="checkbox-label">
+                          <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
+                          J'accepte les conditions générales d'utilisation
+                        </label>
+                      </div>
+                      <div class="form-group-modern">
+                        <label class="checkbox-label">
+                          <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
+                          Je souhaite recevoir des offres et actualités
+                        </label>
+                      </div>
+                    </div> -->
+                    <!-- <div class="form-actions-modern">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="material-icons">save</i>
+                      Sauvegarder
+                    </button>
+                  </div> -->
+                  <div class="form-section">
+                    <h3>Adresse de localisation</h3>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label" for="city">
+                          <i class="material-icons">location_city</i>
+                          Ville <span class="required">*</span>
+                        </label>
+                        <select
+                          id="city"
+                          name="city"
+                          [(ngModel)]="userData.address.city"
+                          class="form-control"
+                          (change)="onCityChange(userData.address.city)"
+                          required
+                          >
+                          <option value="">Sélectionner</option>
+                          @for (city of cities; track city) {
+                            <option [value]="city.name">
+                              {{ city.name }}
+                            </option>
+                          }
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" for="postalBoite">
+                          <i class="material-icons">markunread_mailbox</i>
+                          Boite postal <span class="required">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="postalBoite"
+                          name="postalBoite"
+                          [(ngModel)]="userData.address.postalCode"
+                          class="form-control"
+                          placeholder="75001"
+                          required
+                          />
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label" for="arrondissement">
+                            <i class="material-icons">map</i>
+                            Arrondiss... <span class="required">*</span>
+                          </label>
+                          <select
+                            id="arrondissement"
+                            name="arrondissement"
+                            [(ngModel)]="userData.address.arrondissement"
+                            (change)="onArrondissementChange(userData.address.arrondissement)"
+                            class="form-control"
+                            [disabled]="!arrondissementss.length"
+                            required
+                            >
+                            <option value="">Sélectionner</option>
+                            @for (arr of arrondissementss; track arr) {
+                              <option [value]="arr.name">
+                                {{ arr.name }}
+                              </option>
+                            }
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label" for="sector">
+                            <i class="material-icons">location_city</i>
+                            Secteur <span class="required">*</span>
+                          </label>
+                          <select
+                            id="sector"
+                            name="sector"
+                            [(ngModel)]="userData.address.sector"
+                            (change)="onSecteurChange(userData.address.sector)"
+                            class="form-control"
+                            [disabled]="!secteurss.length"
+                            required
+                            >
+                            <option value="">Sélectionner</option>
+                            @for (secteur of secteurss; track secteur) {
+                              <option
+                                [value]="secteur.name"
+                                >
+                                {{ secteur.name }}
+                              </option>
+                            }
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label" for="neighborhood">
+                            <i class="material-icons">location_city</i>
+                            Quartier <span class="required">*</span>
+                          </label>
+                          <select
+                            id="neighborhood"
+                            name="neighborhood"
+                            [(ngModel)]="userData.address.neighborhood"
+                            class="form-control"
+                            [disabled]="!quartierss.length"
+                            required
+                            >
+                            <option value="">Sélectionner</option>
+                            @for (quartier of quartierss; track quartier) {
+                              <option
+                                [value]="quartier.name"
+                                >
+                                {{ quartier.name }}
+                              </option>
+                            }
+                          </select>
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label" for="street">
+                            <i class="material-icons">location_on</i>
+                            Rue <span class="required">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            id="street"
+                            name="street"
+                            [(ngModel)]="userData.address.street"
+                            class="form-control"
+                            placeholder="Nom de la rue"
+                            required
+                            />
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label" for="doorNumber">
+                              <i class="material-icons">home</i>
+                              Numéro Porte <span class="required">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              id="doorNumber"
+                              name="doorNumber"
+                              [(ngModel)]="userData.address.doorNumber"
+                              class="form-control"
+                              placeholder="123"
+                              required
+                              />
+                            </div>
+                            <div class="form-group">
+                              <label class="form-label" for="doorColor">
+                                <i class="material-icons">palette</i>
+                                Couleur porte
+                              </label>
+                              <select
+                                id="doorColor"
+                                name="doorColor"
+                                [(ngModel)]="userData.address.doorColor"
+                                class="form-control"
+                                >
+                                <option value="">Sélectionner</option>
+                                <option value="blanc">Blanc</option>
+                                <option value="noir">Noir</option>
+                                <option value="marron">Marron</option>
+                                <option value="bleu">Bleu</option>
+                                <option value="rouge">Rouge</option>
+                                <option value="vert">Vert</option>
+                                <option value="autre">Autre</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- <button
+                        (click)="onUpdateAgency()"
+                        class="btn btn-primary btn-full"
+                        [disabled]="isButtonDisabled()"
+                        >
+                        <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+                        <i class="material-icons" *ngIf="!isLoading">person_add</i>
+                        {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+                      </button> -->
+                      <div class="drawer-footer">
+                        <button
+                          (click)="onUpdateUser()"
+                          class="btn btn-primary btn-full"
+                          [disabled]="isButtonDisabled()"
+                          >
+                          @if (isLoading) {
+                            <i class="material-icons">hourglass_empty</i>
+                          }
+                          @if (!isLoading) {
+                            <i class="material-icons">person_add</i>
+                          }
+                          {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="city">
-            <i class="material-icons">location_city</i>
-            Ville <span class="required">*</span>
-          </label>
-          <select
-            id="city"
-            name="city"
-            [(ngModel)]="userData.address.city"
-            class="form-control"
-            (change)="onCityChange(userData.address.city)"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option *ngFor="let city of cities" [value]="city.name">
-              {{ city.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="postalBoite">
-            <i class="material-icons">markunread_mailbox</i>
-            Boite postal <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="postalBoite"
-            name="postalBoite"
-            [(ngModel)]="userData.address.postalCode"
-            class="form-control"
-            placeholder="75001"
-            required
-          />
-        </div>
-      </div>
+                  <!-- Formulaire SUPER_ADMIN -->
+                  @if (user.role === 'super_admin') {
+                    <form
+                      class="profile-form-modern"
+                      (ngSubmit)="onSave()"
+                      >
+                      <h3>Informations de l'administrateur</h3>
+                      <div class="form-row-modern">
+                        <!-- <div class="form-group-modern">
+                        <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
+                        <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
+                      </div> -->
+                      <div class="form-group-modern">
+                        <label for="agencyName"
+                          ><i class="material-icons">business</i> Nom</label
+                          >
+                          <input
+                            type="text"
+                            id="agencyName"
+                            [(ngModel)]="userData.firstName"
+                            name="firstname"
+                            required
+                            />
+                          </div>
+                          <div class="form-group-modern">
+                            <label for="agencyName"
+                              ><i class="material-icons">business</i> Prénom</label
+                              >
+                              <input
+                                type="text"
+                                id="agencyName"
+                                [(ngModel)]="userData.lastName"
+                                name="lastname"
+                                required
+                                />
+                              </div>
+                              <!-- <div class="form-group-modern">
+                              <label for="agencyDescription"
+                                ><i class="material-icons">description</i> Description</label
+                                >
+                                <textarea
+                                  id="agencyDescription"
+                                  [(ngModel)]="userData.agencyDescription"
+                                  name="description"
+                                  rows="2"
+                                ></textarea>
+                              </div> -->
+                            </div>
+                            <div class="form-row-modern">
+                              <div class="form-group-modern">
+                                <label for="agencyPhone"
+                                  ><i class="material-icons">phone</i> Téléphone</label
+                                  >
+                                  <input
+                                    type="tel"
+                                    id="agencyPhone"
+                                    [(ngModel)]="userData.phone"
+                                    name="phone"
+                                    required
+                                    />
+                                  </div>
+                                  <!-- <div class="form-group-modern">
+                                  <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
+                                  <input type="email" id="agencyEmail" [(ngModel)]="userData.email" name="email" required>
+                                </div> -->
+                              </div>
+                              <!-- <div class="form-row-modern">
+                              <div class="form-group-modern">
+                                <label class="checkbox-label">
+                                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
+                                  J'accepte les conditions générales d'utilisation
+                                </label>
+                              </div>
+                              <div class="form-group-modern">
+                                <label class="checkbox-label">
+                                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
+                                  Je souhaite recevoir des offres et actualités
+                                </label>
+                              </div>
+                            </div> -->
+                            <!-- <div class="form-actions-modern">
+                            <button type="submit" class="btn btn-primary">
+                              <i class="material-icons">save</i>
+                              Sauvegarder
+                            </button>
+                          </div> -->
+                          <div class="form-section">
+                            <h3>Adresse de localisation</h3>
+                            <div class="form-row">
+                              <div class="form-group">
+                                <label class="form-label" for="city">
+                                  <i class="material-icons">location_city</i>
+                                  Ville <span class="required">*</span>
+                                </label>
+                                <select
+                                  id="city"
+                                  name="city"
+                                  [(ngModel)]="userData.address.city"
+                                  class="form-control"
+                                  (change)="onCityChange(userData.address.city)"
+                                  required
+                                  >
+                                  <option value="">Sélectionner</option>
+                                  @for (city of cities; track city) {
+                                    <option [value]="city.name">
+                                      {{ city.name }}
+                                    </option>
+                                  }
+                                </select>
+                              </div>
+                              <div class="form-group">
+                                <label class="form-label" for="postalBoite">
+                                  <i class="material-icons">markunread_mailbox</i>
+                                  Boite postal <span class="required">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  id="postalBoite"
+                                  name="postalBoite"
+                                  [(ngModel)]="userData.address.postalCode"
+                                  class="form-control"
+                                  placeholder="75001"
+                                  required
+                                  />
+                                </div>
+                              </div>
+                              <div class="form-row">
+                                <div class="form-group">
+                                  <label class="form-label" for="arrondissement">
+                                    <i class="material-icons">map</i>
+                                    Arrondiss... <span class="required">*</span>
+                                  </label>
+                                  <select
+                                    id="arrondissement"
+                                    name="arrondissement"
+                                    [(ngModel)]="userData.address.arrondissement"
+                                    (change)="onArrondissementChange(userData.address.arrondissement)"
+                                    class="form-control"
+                                    [disabled]="!arrondissementss.length"
+                                    required
+                                    >
+                                    <option value="">Sélectionner</option>
+                                    @for (arr of arrondissementss; track arr) {
+                                      <option [value]="arr.name">
+                                        {{ arr.name }}
+                                      </option>
+                                    }
+                                  </select>
+                                </div>
+                                <div class="form-group">
+                                  <label class="form-label" for="sector">
+                                    <i class="material-icons">location_city</i>
+                                    Secteur <span class="required">*</span>
+                                  </label>
+                                  <select
+                                    id="sector"
+                                    name="sector"
+                                    [(ngModel)]="userData.address.sector"
+                                    (change)="onSecteurChange(userData.address.sector)"
+                                    class="form-control"
+                                    [disabled]="!secteurss.length"
+                                    required
+                                    >
+                                    <option value="">Sélectionner</option>
+                                    @for (secteur of secteurss; track secteur) {
+                                      <option
+                                        [value]="secteur.name"
+                                        >
+                                        {{ secteur.name }}
+                                      </option>
+                                    }
+                                  </select>
+                                </div>
+                                <div class="form-group">
+                                  <label class="form-label" for="neighborhood">
+                                    <i class="material-icons">location_city</i>
+                                    Quartier <span class="required">*</span>
+                                  </label>
+                                  <select
+                                    id="neighborhood"
+                                    name="neighborhood"
+                                    [(ngModel)]="userData.address.neighborhood"
+                                    class="form-control"
+                                    [disabled]="!quartierss.length"
+                                    required
+                                    >
+                                    <option value="">Sélectionner</option>
+                                    @for (quartier of quartierss; track quartier) {
+                                      <option
+                                        [value]="quartier.name"
+                                        >
+                                        {{ quartier.name }}
+                                      </option>
+                                    }
+                                  </select>
+                                </div>
+                              </div>
+                              <div class="form-row">
+                                <div class="form-group">
+                                  <label class="form-label" for="street">
+                                    <i class="material-icons">location_on</i>
+                                    Rue <span class="required">*</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    id="street"
+                                    name="street"
+                                    [(ngModel)]="userData.address.street"
+                                    class="form-control"
+                                    placeholder="Nom de la rue"
+                                    required
+                                    />
+                                  </div>
+                                  <div class="form-group">
+                                    <label class="form-label" for="doorNumber">
+                                      <i class="material-icons">home</i>
+                                      Numéro Porte <span class="required">*</span>
+                                    </label>
+                                    <input
+                                      type="text"
+                                      id="doorNumber"
+                                      name="doorNumber"
+                                      [(ngModel)]="userData.address.doorNumber"
+                                      class="form-control"
+                                      placeholder="123"
+                                      required
+                                      />
+                                    </div>
+                                    <div class="form-group">
+                                      <label class="form-label" for="doorColor">
+                                        <i class="material-icons">palette</i>
+                                        Couleur porte
+                                      </label>
+                                      <select
+                                        id="doorColor"
+                                        name="doorColor"
+                                        [(ngModel)]="userData.address.doorColor"
+                                        class="form-control"
+                                        >
+                                        <option value="">Sélectionner</option>
+                                        <option value="blanc">Blanc</option>
+                                        <option value="noir">Noir</option>
+                                        <option value="marron">Marron</option>
+                                        <option value="bleu">Bleu</option>
+                                        <option value="rouge">Rouge</option>
+                                        <option value="vert">Vert</option>
+                                        <option value="autre">Autre</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                </div>
+                                <!-- <button
+                                (click)="onUpdateAgency()"
+                                class="btn btn-primary btn-full"
+                                [disabled]="isButtonDisabled()"
+                                >
+                                <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+                                <i class="material-icons" *ngIf="!isLoading">person_add</i>
+                                {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+                              </button> -->
+                              <div class="drawer-footer">
+                                <button
+                                  (click)="onUpdateUser()"
+                                  class="btn btn-primary btn-full"
+                                  [disabled]="isButtonDisabled()"
+                                  >
+                                  @if (isLoading) {
+                                    <i class="material-icons">hourglass_empty</i>
+                                  }
+                                  @if (!isLoading) {
+                                    <i class="material-icons">person_add</i>
+                                  }
+                                  {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+                                </button>
+                              </div>
+                            </form>
+                          }
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="arrondissement">
-            <i class="material-icons">map</i>
-            Arrondiss... <span class="required">*</span>
-          </label>
-          <select
-            id="arrondissement"
-            name="arrondissement"
-            [(ngModel)]="userData.address.arrondissement"
-            (change)="onArrondissementChange(userData.address.arrondissement)"
-            class="form-control"
-            [disabled]="!arrondissementss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option *ngFor="let arr of arrondissementss" [value]="arr.name">
-              {{ arr.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="sector">
-            <i class="material-icons">location_city</i>
-            Secteur <span class="required">*</span>
-          </label>
-          <select
-            id="sector"
-            name="sector"
-            [(ngModel)]="userData.address.sector"
-            (change)="onSecteurChange(userData.address.sector)"
-            class="form-control"
-            [disabled]="!secteurss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option
-              *ngFor="let secteur of secteurss"
-              [value]="secteur.name"
-            >
-              {{ secteur.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="neighborhood">
-            <i class="material-icons">location_city</i>
-            Quartier <span class="required">*</span>
-          </label>
-          <select
-            id="neighborhood"
-            name="neighborhood"
-            [(ngModel)]="userData.address.neighborhood"
-            class="form-control"
-            [disabled]="!quartierss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option
-              *ngFor="let quartier of quartierss"
-              [value]="quartier.name"
-            >
-              {{ quartier.name }}
-            </option>
-          </select>
-        </div>
-      </div>
+                          <!-- Formulaire MUNICIPALITY -->
+                          @if (user.role === 'municipality') {
+                            <form
+                              class="profile-form-modern"
+                              (ngSubmit)="onSave()"
+                              >
+                              <h3>Informations Municipales</h3>
+                              <div class="form-row-modern">
+                                <!-- <div class="form-group-modern">
+                                <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
+                                <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
+                              </div> -->
+                              <div class="form-group-modern">
+                                <label for="agencyName"
+                                  ><i class="material-icons">business</i> Nom</label
+                                  >
+                                  <input
+                                    type="text"
+                                    id="agencyName"
+                                    [(ngModel)]="userData.firstName"
+                                    name="firstname"
+                                    required
+                                    />
+                                  </div>
+                                  <div class="form-group-modern">
+                                    <label for="agencyName"
+                                      ><i class="material-icons">business</i> Prénom</label
+                                      >
+                                      <input
+                                        type="text"
+                                        id="agencyName"
+                                        [(ngModel)]="userData.lastName"
+                                        name="lastname"
+                                        required
+                                        />
+                                      </div>
+                                      <!-- <div class="form-group-modern">
+                                      <label for="agencyDescription"
+                                        ><i class="material-icons">description</i> Description</label
+                                        >
+                                        <textarea
+                                          id="agencyDescription"
+                                          [(ngModel)]="userData.agencyDescription"
+                                          name="description"
+                                          rows="2"
+                                        ></textarea>
+                                      </div> -->
+                                    </div>
+                                    <div class="form-row-modern">
+                                      <div class="form-group-modern">
+                                        <label for="agencyPhone"
+                                          ><i class="material-icons">phone</i> Téléphone</label
+                                          >
+                                          <input
+                                            type="tel"
+                                            id="agencyPhone"
+                                            [(ngModel)]="userData.phone"
+                                            name="phone"
+                                            required
+                                            />
+                                          </div>
+                                          <!-- <div class="form-group-modern">
+                                          <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
+                                          <input type="email" id="agencyEmail" [(ngModel)]="userData.email" name="email" required>
+                                        </div> -->
+                                      </div>
+                                      <!-- <div class="form-row-modern">
+                                      <div class="form-group-modern">
+                                        <label class="checkbox-label">
+                                          <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
+                                          J'accepte les conditions générales d'utilisation
+                                        </label>
+                                      </div>
+                                      <div class="form-group-modern">
+                                        <label class="checkbox-label">
+                                          <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
+                                          Je souhaite recevoir des offres et actualités
+                                        </label>
+                                      </div>
+                                    </div> -->
+                                    <!-- <div class="form-actions-modern">
+                                    <button type="submit" class="btn btn-primary">
+                                      <i class="material-icons">save</i>
+                                      Sauvegarder
+                                    </button>
+                                  </div> -->
+                                  <div class="form-section">
+                                    <h3>Adresse de localisation</h3>
+                                    <div class="form-row">
+                                      <div class="form-group">
+                                        <label class="form-label" for="city">
+                                          <i class="material-icons">location_city</i>
+                                          Ville <span class="required">*</span>
+                                        </label>
+                                        <select
+                                          id="city"
+                                          name="city"
+                                          [(ngModel)]="userData.address.city"
+                                          class="form-control"
+                                          (change)="onCityChange(userData.address.city)"
+                                          required
+                                          >
+                                          <option value="">Sélectionner</option>
+                                          @for (city of cities; track city) {
+                                            <option [value]="city.name">
+                                              {{ city.name }}
+                                            </option>
+                                          }
+                                        </select>
+                                      </div>
+                                      <div class="form-group">
+                                        <label class="form-label" for="postalBoite">
+                                          <i class="material-icons">markunread_mailbox</i>
+                                          Boite postal <span class="required">*</span>
+                                        </label>
+                                        <input
+                                          type="text"
+                                          id="postalBoite"
+                                          name="postalBoite"
+                                          [(ngModel)]="userData.address.postalCode"
+                                          class="form-control"
+                                          placeholder="75001"
+                                          required
+                                          />
+                                        </div>
+                                      </div>
+                                      <div class="form-row">
+                                        <div class="form-group">
+                                          <label class="form-label" for="arrondissement">
+                                            <i class="material-icons">map</i>
+                                            Arrondiss... <span class="required">*</span>
+                                          </label>
+                                          <select
+                                            id="arrondissement"
+                                            name="arrondissement"
+                                            [(ngModel)]="userData.address.arrondissement"
+                                            (change)="onArrondissementChange(userData.address.arrondissement)"
+                                            class="form-control"
+                                            [disabled]="!arrondissementss.length"
+                                            required
+                                            >
+                                            <option value="">Sélectionner</option>
+                                            @for (arr of arrondissementss; track arr) {
+                                              <option [value]="arr.name">
+                                                {{ arr.name }}
+                                              </option>
+                                            }
+                                          </select>
+                                        </div>
+                                        <div class="form-group">
+                                          <label class="form-label" for="sector">
+                                            <i class="material-icons">location_city</i>
+                                            Secteur <span class="required">*</span>
+                                          </label>
+                                          <select
+                                            id="sector"
+                                            name="sector"
+                                            [(ngModel)]="userData.address.sector"
+                                            (change)="onSecteurChange(userData.address.sector)"
+                                            class="form-control"
+                                            [disabled]="!secteurss.length"
+                                            required
+                                            >
+                                            <option value="">Sélectionner</option>
+                                            @for (secteur of secteurss; track secteur) {
+                                              <option
+                                                [value]="secteur.name"
+                                                >
+                                                {{ secteur.name }}
+                                              </option>
+                                            }
+                                          </select>
+                                        </div>
+                                        <div class="form-group">
+                                          <label class="form-label" for="neighborhood">
+                                            <i class="material-icons">location_city</i>
+                                            Quartier <span class="required">*</span>
+                                          </label>
+                                          <select
+                                            id="neighborhood"
+                                            name="neighborhood"
+                                            [(ngModel)]="userData.address.neighborhood"
+                                            class="form-control"
+                                            [disabled]="!quartierss.length"
+                                            required
+                                            >
+                                            <option value="">Sélectionner</option>
+                                            @for (quartier of quartierss; track quartier) {
+                                              <option
+                                                [value]="quartier.name"
+                                                >
+                                                {{ quartier.name }}
+                                              </option>
+                                            }
+                                          </select>
+                                        </div>
+                                      </div>
+                                      <div class="form-row">
+                                        <div class="form-group">
+                                          <label class="form-label" for="street">
+                                            <i class="material-icons">location_on</i>
+                                            Rue <span class="required">*</span>
+                                          </label>
+                                          <input
+                                            type="text"
+                                            id="street"
+                                            name="street"
+                                            [(ngModel)]="userData.address.street"
+                                            class="form-control"
+                                            placeholder="Nom de la rue"
+                                            required
+                                            />
+                                          </div>
+                                          <div class="form-group">
+                                            <label class="form-label" for="doorNumber">
+                                              <i class="material-icons">home</i>
+                                              Numéro Porte <span class="required">*</span>
+                                            </label>
+                                            <input
+                                              type="text"
+                                              id="doorNumber"
+                                              name="doorNumber"
+                                              [(ngModel)]="userData.address.doorNumber"
+                                              class="form-control"
+                                              placeholder="123"
+                                              required
+                                              />
+                                            </div>
+                                            <div class="form-group">
+                                              <label class="form-label" for="doorColor">
+                                                <i class="material-icons">palette</i>
+                                                Couleur porte
+                                              </label>
+                                              <select
+                                                id="doorColor"
+                                                name="doorColor"
+                                                [(ngModel)]="userData.address.doorColor"
+                                                class="form-control"
+                                                >
+                                                <option value="">Sélectionner</option>
+                                                <option value="blanc">Blanc</option>
+                                                <option value="noir">Noir</option>
+                                                <option value="marron">Marron</option>
+                                                <option value="bleu">Bleu</option>
+                                                <option value="rouge">Rouge</option>
+                                                <option value="vert">Vert</option>
+                                                <option value="autre">Autre</option>
+                                              </select>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <!-- <button
+                                        (click)="onUpdateAgency()"
+                                        class="btn btn-primary btn-full"
+                                        [disabled]="isButtonDisabled()"
+                                        >
+                                        <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+                                        <i class="material-icons" *ngIf="!isLoading">person_add</i>
+                                        {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+                                      </button> -->
+                                      <div class="drawer-footer">
+                                        <button
+                                          (click)="onUpdateUser()"
+                                          class="btn btn-primary btn-full"
+                                          [disabled]="isButtonDisabled()"
+                                          >
+                                          @if (isLoading) {
+                                            <i class="material-icons">hourglass_empty</i>
+                                          }
+                                          @if (!isLoading) {
+                                            <i class="material-icons">person_add</i>
+                                          }
+                                          {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+                                        </button>
+                                      </div>
+                                    </form>
+                                  }
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="street">
-            <i class="material-icons">location_on</i>
-            Rue <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="street"
-            name="street"
-            [(ngModel)]="userData.address.street"
-            class="form-control"
-            placeholder="Nom de la rue"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="doorNumber">
-            <i class="material-icons">home</i>
-            Numéro Porte <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="doorNumber"
-            name="doorNumber"
-            [(ngModel)]="userData.address.doorNumber"
-            class="form-control"
-            placeholder="123"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="doorColor">
-            <i class="material-icons">palette</i>
-            Couleur porte
-          </label>
-          <select
-            id="doorColor"
-            name="doorColor"
-            [(ngModel)]="userData.address.doorColor"
-            class="form-control"
-          >
-            <option value="">Sélectionner</option>
-            <option value="blanc">Blanc</option>
-            <option value="noir">Noir</option>
-            <option value="marron">Marron</option>
-            <option value="bleu">Bleu</option>
-            <option value="rouge">Rouge</option>
-            <option value="vert">Vert</option>
-            <option value="autre">Autre</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <!-- <button
-      (click)="onUpdateAgency()"
-      class="btn btn-primary btn-full"
-      [disabled]="isButtonDisabled()"
-    >
-      <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
-      <i class="material-icons" *ngIf="!isLoading">person_add</i>
-      {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-    </button> -->
-    <div class="drawer-footer">
-      <button
-      (click)="onUpdateUser()"
-      class="btn btn-primary btn-full"
-      [disabled]="isButtonDisabled()"
-      >
-        <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
-        <i class="material-icons" *ngIf="!isLoading">person_add</i>
-        {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-      </button>
-    </div>
-      </form>
-
-      <!-- Formulaire SUPER_ADMIN -->
-      <form
-        *ngIf="user.role === 'super_admin'"
-        class="profile-form-modern"
-        (ngSubmit)="onSave()"
-      >
-        <h3>Informations de l'administrateur</h3>
-        <div class="form-row-modern">
-          <!-- <div class="form-group-modern">
-                <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
-              </div> -->
-          <div class="form-group-modern">
-            <label for="agencyName"
-              ><i class="material-icons">business</i> Nom</label
-            >
-            <input
-              type="text"
-              id="agencyName"
-              [(ngModel)]="userData.firstName"
-              name="firstname"
-              required
-            />
-          </div>
-          <div class="form-group-modern">
-            <label for="agencyName"
-              ><i class="material-icons">business</i> Prénom</label
-            >
-            <input
-              type="text"
-              id="agencyName"
-              [(ngModel)]="userData.lastName"
-              name="lastname"
-              required
-            />
-          </div>
-          <!-- <div class="form-group-modern">
-            <label for="agencyDescription"
-              ><i class="material-icons">description</i> Description</label
-            >
-            <textarea
-              id="agencyDescription"
-              [(ngModel)]="userData.agencyDescription"
-              name="description"
-              rows="2"
-            ></textarea>
-          </div> -->
-        </div>
-        <div class="form-row-modern">
-          <div class="form-group-modern">
-            <label for="agencyPhone"
-              ><i class="material-icons">phone</i> Téléphone</label
-            >
-            <input
-              type="tel"
-              id="agencyPhone"
-              [(ngModel)]="userData.phone"
-              name="phone"
-              required
-            />
-          </div>
-          <!-- <div class="form-group-modern">
-                <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
-                <input type="email" id="agencyEmail" [(ngModel)]="userData.email" name="email" required>
-              </div> -->
-        </div>
-
-        <!-- <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
-                  J'accepte les conditions générales d'utilisation
-                </label>
-              </div>
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
-                  Je souhaite recevoir des offres et actualités
-                </label>
-              </div>
-            </div> -->
-        <!-- <div class="form-actions-modern">
-          <button type="submit" class="btn btn-primary">
-            <i class="material-icons">save</i>
-            Sauvegarder
-          </button>
-        </div> -->
- 
-    <div class="form-section">
-      <h3>Adresse de localisation</h3>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="city">
-            <i class="material-icons">location_city</i>
-            Ville <span class="required">*</span>
-          </label>
-          <select
-            id="city"
-            name="city"
-            [(ngModel)]="userData.address.city"
-            class="form-control"
-            (change)="onCityChange(userData.address.city)"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option *ngFor="let city of cities" [value]="city.name">
-              {{ city.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="postalBoite">
-            <i class="material-icons">markunread_mailbox</i>
-            Boite postal <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="postalBoite"
-            name="postalBoite"
-            [(ngModel)]="userData.address.postalCode"
-            class="form-control"
-            placeholder="75001"
-            required
-          />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="arrondissement">
-            <i class="material-icons">map</i>
-            Arrondiss... <span class="required">*</span>
-          </label>
-          <select
-            id="arrondissement"
-            name="arrondissement"
-            [(ngModel)]="userData.address.arrondissement"
-            (change)="onArrondissementChange(userData.address.arrondissement)"
-            class="form-control"
-            [disabled]="!arrondissementss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option *ngFor="let arr of arrondissementss" [value]="arr.name">
-              {{ arr.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="sector">
-            <i class="material-icons">location_city</i>
-            Secteur <span class="required">*</span>
-          </label>
-          <select
-            id="sector"
-            name="sector"
-            [(ngModel)]="userData.address.sector"
-            (change)="onSecteurChange(userData.address.sector)"
-            class="form-control"
-            [disabled]="!secteurss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option
-              *ngFor="let secteur of secteurss"
-              [value]="secteur.name"
-            >
-              {{ secteur.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="neighborhood">
-            <i class="material-icons">location_city</i>
-            Quartier <span class="required">*</span>
-          </label>
-          <select
-            id="neighborhood"
-            name="neighborhood"
-            [(ngModel)]="userData.address.neighborhood"
-            class="form-control"
-            [disabled]="!quartierss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option
-              *ngFor="let quartier of quartierss"
-              [value]="quartier.name"
-            >
-              {{ quartier.name }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="street">
-            <i class="material-icons">location_on</i>
-            Rue <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="street"
-            name="street"
-            [(ngModel)]="userData.address.street"
-            class="form-control"
-            placeholder="Nom de la rue"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="doorNumber">
-            <i class="material-icons">home</i>
-            Numéro Porte <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="doorNumber"
-            name="doorNumber"
-            [(ngModel)]="userData.address.doorNumber"
-            class="form-control"
-            placeholder="123"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="doorColor">
-            <i class="material-icons">palette</i>
-            Couleur porte
-          </label>
-          <select
-            id="doorColor"
-            name="doorColor"
-            [(ngModel)]="userData.address.doorColor"
-            class="form-control"
-          >
-            <option value="">Sélectionner</option>
-            <option value="blanc">Blanc</option>
-            <option value="noir">Noir</option>
-            <option value="marron">Marron</option>
-            <option value="bleu">Bleu</option>
-            <option value="rouge">Rouge</option>
-            <option value="vert">Vert</option>
-            <option value="autre">Autre</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <!-- <button
-      (click)="onUpdateAgency()"
-      class="btn btn-primary btn-full"
-      [disabled]="isButtonDisabled()"
-    >
-      <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
-      <i class="material-icons" *ngIf="!isLoading">person_add</i>
-      {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-    </button> -->
-    <div class="drawer-footer">
-      <button
-      (click)="onUpdateUser()"
-      class="btn btn-primary btn-full"
-      [disabled]="isButtonDisabled()"
-      >
-        <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
-        <i class="material-icons" *ngIf="!isLoading">person_add</i>
-        {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-      </button>
-    </div>
-      </form>
-
-      <!-- Formulaire MUNICIPALITY -->
-      <form
-        *ngIf="user.role === 'municipality'"
-        class="profile-form-modern"
-        (ngSubmit)="onSave()"
-      >
-        <h3>Informations Municipales</h3>
-        <div class="form-row-modern">
-          <!-- <div class="form-group-modern">
-                <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
-              </div> -->
-          <div class="form-group-modern">
-            <label for="agencyName"
-              ><i class="material-icons">business</i> Nom</label
-            >
-            <input
-              type="text"
-              id="agencyName"
-              [(ngModel)]="userData.firstName"
-              name="firstname"
-              required
-            />
-          </div>
-          <div class="form-group-modern">
-            <label for="agencyName"
-              ><i class="material-icons">business</i> Prénom</label
-            >
-            <input
-              type="text"
-              id="agencyName"
-              [(ngModel)]="userData.lastName"
-              name="lastname"
-              required
-            />
-          </div>
-          <!-- <div class="form-group-modern">
-            <label for="agencyDescription"
-              ><i class="material-icons">description</i> Description</label
-            >
-            <textarea
-              id="agencyDescription"
-              [(ngModel)]="userData.agencyDescription"
-              name="description"
-              rows="2"
-            ></textarea>
-          </div> -->
-        </div>
-        <div class="form-row-modern">
-          <div class="form-group-modern">
-            <label for="agencyPhone"
-              ><i class="material-icons">phone</i> Téléphone</label
-            >
-            <input
-              type="tel"
-              id="agencyPhone"
-              [(ngModel)]="userData.phone"
-              name="phone"
-              required
-            />
-          </div>
-          <!-- <div class="form-group-modern">
-                <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
-                <input type="email" id="agencyEmail" [(ngModel)]="userData.email" name="email" required>
-              </div> -->
-        </div>
-
-        <!-- <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
-                  J'accepte les conditions générales d'utilisation
-                </label>
-              </div>
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
-                  Je souhaite recevoir des offres et actualités
-                </label>
-              </div>
-            </div> -->
-        <!-- <div class="form-actions-modern">
-          <button type="submit" class="btn btn-primary">
-            <i class="material-icons">save</i>
-            Sauvegarder
-          </button>
-        </div> -->
- 
-    <div class="form-section">
-      <h3>Adresse de localisation</h3>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="city">
-            <i class="material-icons">location_city</i>
-            Ville <span class="required">*</span>
-          </label>
-          <select
-            id="city"
-            name="city"
-            [(ngModel)]="userData.address.city"
-            class="form-control"
-            (change)="onCityChange(userData.address.city)"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option *ngFor="let city of cities" [value]="city.name">
-              {{ city.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="postalBoite">
-            <i class="material-icons">markunread_mailbox</i>
-            Boite postal <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="postalBoite"
-            name="postalBoite"
-            [(ngModel)]="userData.address.postalCode"
-            class="form-control"
-            placeholder="75001"
-            required
-          />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="arrondissement">
-            <i class="material-icons">map</i>
-            Arrondiss... <span class="required">*</span>
-          </label>
-          <select
-            id="arrondissement"
-            name="arrondissement"
-            [(ngModel)]="userData.address.arrondissement"
-            (change)="onArrondissementChange(userData.address.arrondissement)"
-            class="form-control"
-            [disabled]="!arrondissementss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option *ngFor="let arr of arrondissementss" [value]="arr.name">
-              {{ arr.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="sector">
-            <i class="material-icons">location_city</i>
-            Secteur <span class="required">*</span>
-          </label>
-          <select
-            id="sector"
-            name="sector"
-            [(ngModel)]="userData.address.sector"
-            (change)="onSecteurChange(userData.address.sector)"
-            class="form-control"
-            [disabled]="!secteurss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option
-              *ngFor="let secteur of secteurss"
-              [value]="secteur.name"
-            >
-              {{ secteur.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="neighborhood">
-            <i class="material-icons">location_city</i>
-            Quartier <span class="required">*</span>
-          </label>
-          <select
-            id="neighborhood"
-            name="neighborhood"
-            [(ngModel)]="userData.address.neighborhood"
-            class="form-control"
-            [disabled]="!quartierss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option
-              *ngFor="let quartier of quartierss"
-              [value]="quartier.name"
-            >
-              {{ quartier.name }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="street">
-            <i class="material-icons">location_on</i>
-            Rue <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="street"
-            name="street"
-            [(ngModel)]="userData.address.street"
-            class="form-control"
-            placeholder="Nom de la rue"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="doorNumber">
-            <i class="material-icons">home</i>
-            Numéro Porte <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="doorNumber"
-            name="doorNumber"
-            [(ngModel)]="userData.address.doorNumber"
-            class="form-control"
-            placeholder="123"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="doorColor">
-            <i class="material-icons">palette</i>
-            Couleur porte
-          </label>
-          <select
-            id="doorColor"
-            name="doorColor"
-            [(ngModel)]="userData.address.doorColor"
-            class="form-control"
-          >
-            <option value="">Sélectionner</option>
-            <option value="blanc">Blanc</option>
-            <option value="noir">Noir</option>
-            <option value="marron">Marron</option>
-            <option value="bleu">Bleu</option>
-            <option value="rouge">Rouge</option>
-            <option value="vert">Vert</option>
-            <option value="autre">Autre</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <!-- <button
-      (click)="onUpdateAgency()"
-      class="btn btn-primary btn-full"
-      [disabled]="isButtonDisabled()"
-    >
-      <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
-      <i class="material-icons" *ngIf="!isLoading">person_add</i>
-      {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-    </button> -->
-    <div class="drawer-footer">
-      <button
-      (click)="onUpdateUser()"
-      class="btn btn-primary btn-full"
-      [disabled]="isButtonDisabled()"
-      >
-        <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
-        <i class="material-icons" *ngIf="!isLoading">person_add</i>
-        {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-      </button>
-    </div>
-      </form>
-
-      <!-- Formulaire MANAGER -->
-      <form
-        *ngIf="user.role === 'manager'"
-        class="profile-form-modern"
-       
-      >
-        <h3>Informations du manager de l'agence</h3>
-        <div class="form-row-modern">
-          <!-- <div class="form-group-modern">
-                <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
-              </div> -->
-          <div class="form-group-modern">
-            <label for="agencyName"
-              ><i class="material-icons">business</i> Nom</label
-            >
-            <input
-              type="text"
-              id="agencyName"
-              [(ngModel)]="userData.firstName"
-              name="firstname"
-              required
-            />
-          </div>
-          <div class="form-group-modern">
-            <label for="agencyName"
-              ><i class="material-icons">business</i> Prénom</label
-            >
-            <input
-              type="text"
-              id="agencyName"
-              [(ngModel)]="userData.lastName"
-              name="lastname"
-              required
-            />
-          </div>
-          <!-- <div class="form-group-modern">
-            <label for="agencyDescription"
-              ><i class="material-icons">description</i> Description</label
-            >
-            <textarea
-              id="agencyDescription"
-              [(ngModel)]="userData.agencyDescription"
-              name="description"
-              rows="2"
-            ></textarea>
-          </div> -->
-        </div>
-        <div class="form-row-modern">
-          <div class="form-group-modern">
-            <label for="agencyPhone"
-              ><i class="material-icons">phone</i> Téléphone</label
-            >
-            <input
-              type="tel"
-              id="agencyPhone"
-              [(ngModel)]="userData.phone"
-              name="phone"
-              required
-            />
-          </div>
-          <!-- <div class="form-group-modern">
-                <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
-                <input type="email" id="agencyEmail" [(ngModel)]="userData.email" name="email" required>
-              </div> -->
-        </div>
-
-        <!-- <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
-                  J'accepte les conditions générales d'utilisation
-                </label>
-              </div>
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
-                  Je souhaite recevoir des offres et actualités
-                </label>
-              </div>
-            </div> -->
-        <!-- <div class="form-actions-modern">
-          <button type="submit" class="btn btn-primary">
-            <i class="material-icons">save</i>
-            Sauvegarder
-          </button>
-        </div> -->
- 
-    <div class="form-section">
-      <h3>Adresse de localisation</h3>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="city">
-            <i class="material-icons">location_city</i>
-            Ville <span class="required">*</span>
-          </label>
-          <select
-            id="city"
-            name="city"
-            [(ngModel)]="userData.address.city"
-            class="form-control"
-            (change)="onCityChange(userData.address.city)"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option *ngFor="let city of cities" [value]="city.name">
-              {{ city.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="postalBoite">
-            <i class="material-icons">markunread_mailbox</i>
-            Boite postal <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="postalBoite"
-            name="postalBoite"
-            [(ngModel)]="userData.address.postalCode"
-            class="form-control"
-            placeholder="75001"
-            required
-          />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="arrondissement">
-            <i class="material-icons">map</i>
-            Arrondiss... <span class="required">*</span>
-          </label>
-          <select
-            id="arrondissement"
-            name="arrondissement"
-            [(ngModel)]="userData.address.arrondissement"
-            (change)="onArrondissementChange(userData.address.arrondissement)"
-            class="form-control"
-            [disabled]="!arrondissementss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option *ngFor="let arr of arrondissementss" [value]="arr.name">
-              {{ arr.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="sector">
-            <i class="material-icons">location_city</i>
-            Secteur <span class="required">*</span>
-          </label>
-          <select
-            id="sector"
-            name="sector"
-            [(ngModel)]="userData.address.sector"
-            (change)="onSecteurChange(userData.address.sector)"
-            class="form-control"
-            [disabled]="!secteurss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option
-              *ngFor="let secteur of secteurss"
-              [value]="secteur.name"
-            >
-              {{ secteur.name }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="neighborhood">
-            <i class="material-icons">location_city</i>
-            Quartier <span class="required">*</span>
-          </label>
-          <select
-            id="neighborhood"
-            name="neighborhood"
-            [(ngModel)]="userData.address.neighborhood"
-            class="form-control"
-            [disabled]="!quartierss.length"
-            required
-          >
-            <option value="">Sélectionner</option>
-            <option
-              *ngFor="let quartier of quartierss"
-              [value]="quartier.name"
-            >
-              {{ quartier.name }}
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="street">
-            <i class="material-icons">location_on</i>
-            Rue <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="street"
-            name="street"
-            [(ngModel)]="userData.address.street"
-            class="form-control"
-            placeholder="Nom de la rue"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="doorNumber">
-            <i class="material-icons">home</i>
-            Numéro Porte <span class="required">*</span>
-          </label>
-          <input
-            type="text"
-            id="doorNumber"
-            name="doorNumber"
-            [(ngModel)]="userData.address.doorNumber"
-            class="form-control"
-            placeholder="123"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="doorColor">
-            <i class="material-icons">palette</i>
-            Couleur porte
-          </label>
-          <select
-            id="doorColor"
-            name="doorColor"
-            [(ngModel)]="userData.address.doorColor"
-            class="form-control"
-          >
-            <option value="">Sélectionner</option>
-            <option value="blanc">Blanc</option>
-            <option value="noir">Noir</option>
-            <option value="marron">Marron</option>
-            <option value="bleu">Bleu</option>
-            <option value="rouge">Rouge</option>
-            <option value="vert">Vert</option>
-            <option value="autre">Autre</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <!-- <button
-      (click)="onUpdateAgency()"
-      class="btn btn-primary btn-full"
-      [disabled]="isButtonDisabled()"
-    >
-      <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
-      <i class="material-icons" *ngIf="!isLoading">person_add</i>
-      {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-    </button> -->
-    <div class="drawer-footer">
-      <button
-      (click)="onUpdateUser()"
-      class="btn btn-primary btn-full"
-      [disabled]="isButtonDisabled()"
-      >
-        <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
-        <i class="material-icons" *ngIf="!isLoading">person_add</i>
-        {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-      </button>
-    </div>
-  </form>
-    </div>
-  </div>
-</div>
+                                  <!-- Formulaire MANAGER -->
+                                  @if (user.role === 'manager') {
+                                    <form
+                                      class="profile-form-modern"
+                                      >
+                                      <h3>Informations du manager de l'agence</h3>
+                                      <div class="form-row-modern">
+                                        <!-- <div class="form-group-modern">
+                                        <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
+                                        <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
+                                      </div> -->
+                                      <div class="form-group-modern">
+                                        <label for="agencyName"
+                                          ><i class="material-icons">business</i> Nom</label
+                                          >
+                                          <input
+                                            type="text"
+                                            id="agencyName"
+                                            [(ngModel)]="userData.firstName"
+                                            name="firstname"
+                                            required
+                                            />
+                                          </div>
+                                          <div class="form-group-modern">
+                                            <label for="agencyName"
+                                              ><i class="material-icons">business</i> Prénom</label
+                                              >
+                                              <input
+                                                type="text"
+                                                id="agencyName"
+                                                [(ngModel)]="userData.lastName"
+                                                name="lastname"
+                                                required
+                                                />
+                                              </div>
+                                              <!-- <div class="form-group-modern">
+                                              <label for="agencyDescription"
+                                                ><i class="material-icons">description</i> Description</label
+                                                >
+                                                <textarea
+                                                  id="agencyDescription"
+                                                  [(ngModel)]="userData.agencyDescription"
+                                                  name="description"
+                                                  rows="2"
+                                                ></textarea>
+                                              </div> -->
+                                            </div>
+                                            <div class="form-row-modern">
+                                              <div class="form-group-modern">
+                                                <label for="agencyPhone"
+                                                  ><i class="material-icons">phone</i> Téléphone</label
+                                                  >
+                                                  <input
+                                                    type="tel"
+                                                    id="agencyPhone"
+                                                    [(ngModel)]="userData.phone"
+                                                    name="phone"
+                                                    required
+                                                    />
+                                                  </div>
+                                                  <!-- <div class="form-group-modern">
+                                                  <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
+                                                  <input type="email" id="agencyEmail" [(ngModel)]="userData.email" name="email" required>
+                                                </div> -->
+                                              </div>
+                                              <!-- <div class="form-row-modern">
+                                              <div class="form-group-modern">
+                                                <label class="checkbox-label">
+                                                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
+                                                  J'accepte les conditions générales d'utilisation
+                                                </label>
+                                              </div>
+                                              <div class="form-group-modern">
+                                                <label class="checkbox-label">
+                                                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
+                                                  Je souhaite recevoir des offres et actualités
+                                                </label>
+                                              </div>
+                                            </div> -->
+                                            <!-- <div class="form-actions-modern">
+                                            <button type="submit" class="btn btn-primary">
+                                              <i class="material-icons">save</i>
+                                              Sauvegarder
+                                            </button>
+                                          </div> -->
+                                          <div class="form-section">
+                                            <h3>Adresse de localisation</h3>
+                                            <div class="form-row">
+                                              <div class="form-group">
+                                                <label class="form-label" for="city">
+                                                  <i class="material-icons">location_city</i>
+                                                  Ville <span class="required">*</span>
+                                                </label>
+                                                <select
+                                                  id="city"
+                                                  name="city"
+                                                  [(ngModel)]="userData.address.city"
+                                                  class="form-control"
+                                                  (change)="onCityChange(userData.address.city)"
+                                                  required
+                                                  >
+                                                  <option value="">Sélectionner</option>
+                                                  @for (city of cities; track city) {
+                                                    <option [value]="city.name">
+                                                      {{ city.name }}
+                                                    </option>
+                                                  }
+                                                </select>
+                                              </div>
+                                              <div class="form-group">
+                                                <label class="form-label" for="postalBoite">
+                                                  <i class="material-icons">markunread_mailbox</i>
+                                                  Boite postal <span class="required">*</span>
+                                                </label>
+                                                <input
+                                                  type="text"
+                                                  id="postalBoite"
+                                                  name="postalBoite"
+                                                  [(ngModel)]="userData.address.postalCode"
+                                                  class="form-control"
+                                                  placeholder="75001"
+                                                  required
+                                                  />
+                                                </div>
+                                              </div>
+                                              <div class="form-row">
+                                                <div class="form-group">
+                                                  <label class="form-label" for="arrondissement">
+                                                    <i class="material-icons">map</i>
+                                                    Arrondiss... <span class="required">*</span>
+                                                  </label>
+                                                  <select
+                                                    id="arrondissement"
+                                                    name="arrondissement"
+                                                    [(ngModel)]="userData.address.arrondissement"
+                                                    (change)="onArrondissementChange(userData.address.arrondissement)"
+                                                    class="form-control"
+                                                    [disabled]="!arrondissementss.length"
+                                                    required
+                                                    >
+                                                    <option value="">Sélectionner</option>
+                                                    @for (arr of arrondissementss; track arr) {
+                                                      <option [value]="arr.name">
+                                                        {{ arr.name }}
+                                                      </option>
+                                                    }
+                                                  </select>
+                                                </div>
+                                                <div class="form-group">
+                                                  <label class="form-label" for="sector">
+                                                    <i class="material-icons">location_city</i>
+                                                    Secteur <span class="required">*</span>
+                                                  </label>
+                                                  <select
+                                                    id="sector"
+                                                    name="sector"
+                                                    [(ngModel)]="userData.address.sector"
+                                                    (change)="onSecteurChange(userData.address.sector)"
+                                                    class="form-control"
+                                                    [disabled]="!secteurss.length"
+                                                    required
+                                                    >
+                                                    <option value="">Sélectionner</option>
+                                                    @for (secteur of secteurss; track secteur) {
+                                                      <option
+                                                        [value]="secteur.name"
+                                                        >
+                                                        {{ secteur.name }}
+                                                      </option>
+                                                    }
+                                                  </select>
+                                                </div>
+                                                <div class="form-group">
+                                                  <label class="form-label" for="neighborhood">
+                                                    <i class="material-icons">location_city</i>
+                                                    Quartier <span class="required">*</span>
+                                                  </label>
+                                                  <select
+                                                    id="neighborhood"
+                                                    name="neighborhood"
+                                                    [(ngModel)]="userData.address.neighborhood"
+                                                    class="form-control"
+                                                    [disabled]="!quartierss.length"
+                                                    required
+                                                    >
+                                                    <option value="">Sélectionner</option>
+                                                    @for (quartier of quartierss; track quartier) {
+                                                      <option
+                                                        [value]="quartier.name"
+                                                        >
+                                                        {{ quartier.name }}
+                                                      </option>
+                                                    }
+                                                  </select>
+                                                </div>
+                                              </div>
+                                              <div class="form-row">
+                                                <div class="form-group">
+                                                  <label class="form-label" for="street">
+                                                    <i class="material-icons">location_on</i>
+                                                    Rue <span class="required">*</span>
+                                                  </label>
+                                                  <input
+                                                    type="text"
+                                                    id="street"
+                                                    name="street"
+                                                    [(ngModel)]="userData.address.street"
+                                                    class="form-control"
+                                                    placeholder="Nom de la rue"
+                                                    required
+                                                    />
+                                                  </div>
+                                                  <div class="form-group">
+                                                    <label class="form-label" for="doorNumber">
+                                                      <i class="material-icons">home</i>
+                                                      Numéro Porte <span class="required">*</span>
+                                                    </label>
+                                                    <input
+                                                      type="text"
+                                                      id="doorNumber"
+                                                      name="doorNumber"
+                                                      [(ngModel)]="userData.address.doorNumber"
+                                                      class="form-control"
+                                                      placeholder="123"
+                                                      required
+                                                      />
+                                                    </div>
+                                                    <div class="form-group">
+                                                      <label class="form-label" for="doorColor">
+                                                        <i class="material-icons">palette</i>
+                                                        Couleur porte
+                                                      </label>
+                                                      <select
+                                                        id="doorColor"
+                                                        name="doorColor"
+                                                        [(ngModel)]="userData.address.doorColor"
+                                                        class="form-control"
+                                                        >
+                                                        <option value="">Sélectionner</option>
+                                                        <option value="blanc">Blanc</option>
+                                                        <option value="noir">Noir</option>
+                                                        <option value="marron">Marron</option>
+                                                        <option value="bleu">Bleu</option>
+                                                        <option value="rouge">Rouge</option>
+                                                        <option value="vert">Vert</option>
+                                                        <option value="autre">Autre</option>
+                                                      </select>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <!-- <button
+                                                (click)="onUpdateAgency()"
+                                                class="btn btn-primary btn-full"
+                                                [disabled]="isButtonDisabled()"
+                                                >
+                                                <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
+                                                <i class="material-icons" *ngIf="!isLoading">person_add</i>
+                                                {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+                                              </button> -->
+                                              <div class="drawer-footer">
+                                                <button
+                                                  (click)="onUpdateUser()"
+                                                  class="btn btn-primary btn-full"
+                                                  [disabled]="isButtonDisabled()"
+                                                  >
+                                                  @if (isLoading) {
+                                                    <i class="material-icons">hourglass_empty</i>
+                                                  }
+                                                  @if (!isLoading) {
+                                                    <i class="material-icons">person_add</i>
+                                                  }
+                                                  {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+                                                </button>
+                                              </div>
+                                            </form>
+                                          }
+                                        </div>
+                                      </div>
+                                    </div>

@@ -1,5 +1,5 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { importProvidersFrom } from '@angular/core';
+import { importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -47,7 +47,7 @@ import Aura from '@primeuix/themes/aura';
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideRouter(routes),
+    provideZoneChangeDetection(),provideRouter(routes),
     provideHttpClient(
       withFetch(),
       withInterceptors([

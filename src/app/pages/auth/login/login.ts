@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
@@ -7,7 +7,7 @@ import { NotificationService } from '../../../services/notification.service';
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [RouterModule, FormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css'
 })

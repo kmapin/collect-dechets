@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
@@ -14,7 +14,7 @@ import {  ClientService } from '../../services/client.service';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   template: `
     <div class="profile-page profile-flex-layout">
       <div class="profile-left">
@@ -39,83 +39,96 @@ import {  ClientService } from '../../services/client.service';
       <div class="profile-right">
         <div class="profile-card-modern card">
           <!-- Formulaire CLIENT -->
-          <form *ngIf="user.role === 'client'" class="profile-form-modern" (ngSubmit)="onSave()">
-            <h3>Informations personnelles du client</h3>
-            <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label for="firstName"><i class="material-icons">person</i> Prénom</label>
-                <input type="text" id="firstName" [(ngModel)]="user.firstName" name="firstName" required>
+          @if (user.role === 'client') {
+            <form class="profile-form-modern" (ngSubmit)="onSave()">
+              <h3>Informations personnelles du client</h3>
+              <div class="form-row-modern">
+                <div class="form-group-modern">
+                  <label for="firstName"><i class="material-icons">person</i> Prénom</label>
+                  <input type="text" id="firstName" [(ngModel)]="user.firstName" name="firstName" required>
+                </div>
+                <div class="form-group-modern">
+                  <label for="lastName"><i class="material-icons">badge</i> Nom</label>
+                  <input type="text" id="lastName" [(ngModel)]="user.lastName" name="lastName" required>
+                </div>
               </div>
-              <div class="form-group-modern">
-                <label for="lastName"><i class="material-icons">badge</i> Nom</label>
-                <input type="text" id="lastName" [(ngModel)]="user.lastName" name="lastName" required>
+              <div class="form-row-modern">
+                <div class="form-group-modern">
+                  <label for="phone"><i class="material-icons">phone</i> Téléphone</label>
+                  <input type="tel" id="phone" [(ngModel)]="user.phone" name="phone" required>
+                </div>
               </div>
-            </div>
-            <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label for="phone"><i class="material-icons">phone</i> Téléphone</label>
-                <input type="tel" id="phone" [(ngModel)]="user.phone" name="phone" required>
-              </div>
-            </div>
-            <h3>Adresse</h3>
-            <div class="form-row-modern" *ngIf="user.address">
-              <div class="form-group-modern">
-                <label for="city">Ville</label>
-                <input type="text" id="city" [(ngModel)]="user.address.city" name="address.city">
-              </div>
-              <div class="form-group-modern">
-                <label for="postalCode">Code postal</label>
-                <input type="text" id="postalCode" [(ngModel)]="user.address.postalCode" name="address.postalCode">
-              </div>
-            </div>
-            <div class="form-row-modern" *ngIf="user.address">
-              <div class="form-group-modern">
-                <label for="arrondissement">Arrondissement</label>
-                <select id="arrondissement" [(ngModel)]="user.address.arrondissement" name="address.arrondissement" (change)="onArrondissementChange(user.address.arrondissement)">
-                  <option value="">Sélectionner</option>
-                  <option *ngFor="let arr of arrondissements" [value]="arr.arrondissement">{{ arr.arrondissement }}</option>
-                </select>
-              </div>
-              <div class="form-group-modern">
-                <label for="sector">Secteur</label>
-                <select id="sector" [(ngModel)]="user.address.sector" name="address.sector" (change)="onSecteurChange(user.address.sector)" [disabled]="!secteurs.length">
-                  <option value="">Sélectionner</option>
-                  <option *ngFor="let s of secteurs" [value]="s.secteur">{{ s.secteur }}</option>
-                </select>
-              </div>
-              <div class="form-group-modern">
-                <label for="neighborhood">Quartier</label>
-                <select id="neighborhood" [(ngModel)]="user.address.neighborhood" name="address.neighborhood" [disabled]="!quartiers.length">
-                  <option value="">Sélectionner</option>
-                  <option *ngFor="let q of quartiers" [value]="q">{{ q }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row-modern" *ngIf="user.address">
-              <div class="form-group-modern">
-                <label for="street">Rue</label>
-                <input type="text" id="street" [(ngModel)]="user.address.street" name="address.street">
-              </div>
-              <div class="form-group-modern">
-                <label for="doorNumber">Porte</label>
-                <input type="text" id="doorNumber" [(ngModel)]="user.address.doorNumber" name="address.doorNumber">
-              </div>
-              <div class="form-group-modern">
-                <label for="doorColor">Couleur de la porte</label>
-                <select id="doorColor" [(ngModel)]="user.address.doorColor" name="address.doorColor">
-                  <option value="">Sélectionner</option>
-                  <option value="blanc">Blanc</option>
-                  <option value="noir">Noir</option>
-                  <option value="marron">Marron</option>
-                  <option value="bleu">Bleu</option>
-                  <option value="rouge">Rouge</option>
-                  <option value="vert">Vert</option>
-                  <option value="autre">Autre</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row-modern">
-              <!-- <div class="form-group-modern">
+              <h3>Adresse</h3>
+              @if (user.address) {
+                <div class="form-row-modern">
+                  <div class="form-group-modern">
+                    <label for="city">Ville</label>
+                    <input type="text" id="city" [(ngModel)]="user.address.city" name="address.city">
+                  </div>
+                  <div class="form-group-modern">
+                    <label for="postalCode">Code postal</label>
+                    <input type="text" id="postalCode" [(ngModel)]="user.address.postalCode" name="address.postalCode">
+                  </div>
+                </div>
+              }
+              @if (user.address) {
+                <div class="form-row-modern">
+                  <div class="form-group-modern">
+                    <label for="arrondissement">Arrondissement</label>
+                    <select id="arrondissement" [(ngModel)]="user.address.arrondissement" name="address.arrondissement" (change)="onArrondissementChange(user.address.arrondissement)">
+                      <option value="">Sélectionner</option>
+                      @for (arr of arrondissements; track arr) {
+                        <option [value]="arr.arrondissement">{{ arr.arrondissement }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group-modern">
+                    <label for="sector">Secteur</label>
+                    <select id="sector" [(ngModel)]="user.address.sector" name="address.sector" (change)="onSecteurChange(user.address.sector)" [disabled]="!secteurs.length">
+                      <option value="">Sélectionner</option>
+                      @for (s of secteurs; track s) {
+                        <option [value]="s.secteur">{{ s.secteur }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group-modern">
+                    <label for="neighborhood">Quartier</label>
+                    <select id="neighborhood" [(ngModel)]="user.address.neighborhood" name="address.neighborhood" [disabled]="!quartiers.length">
+                      <option value="">Sélectionner</option>
+                      @for (q of quartiers; track q) {
+                        <option [value]="q">{{ q }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+              }
+              @if (user.address) {
+                <div class="form-row-modern">
+                  <div class="form-group-modern">
+                    <label for="street">Rue</label>
+                    <input type="text" id="street" [(ngModel)]="user.address.street" name="address.street">
+                  </div>
+                  <div class="form-group-modern">
+                    <label for="doorNumber">Porte</label>
+                    <input type="text" id="doorNumber" [(ngModel)]="user.address.doorNumber" name="address.doorNumber">
+                  </div>
+                  <div class="form-group-modern">
+                    <label for="doorColor">Couleur de la porte</label>
+                    <select id="doorColor" [(ngModel)]="user.address.doorColor" name="address.doorColor">
+                      <option value="">Sélectionner</option>
+                      <option value="blanc">Blanc</option>
+                      <option value="noir">Noir</option>
+                      <option value="marron">Marron</option>
+                      <option value="bleu">Bleu</option>
+                      <option value="rouge">Rouge</option>
+                      <option value="vert">Vert</option>
+                      <option value="autre">Autre</option>
+                    </select>
+                  </div>
+                </div>
+              }
+              <div class="form-row-modern">
+                <!-- <div class="form-group-modern">
                 <label class="checkbox-label">
                   <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
                   J'accepte les conditions générales d'utilisation
@@ -135,9 +148,11 @@ import {  ClientService } from '../../services/client.service';
               </button>
             </div>
           </form>
-
-          <!-- Formulaire AGENCY -->
-          <form *ngIf="user.role === 'agency'" class="profile-form-modern" (ngSubmit)="onSave()">
+        }
+    
+        <!-- Formulaire AGENCY -->
+        @if (user.role === 'agency') {
+          <form class="profile-form-modern" (ngSubmit)="onSave()">
             <h3>Informations de l'agence</h3>
             <div class="form-row-modern">
               <div class="form-group-modern">
@@ -155,172 +170,181 @@ import {  ClientService } from '../../services/client.service';
                 <input type="tel" id="agencyPhone" [(ngModel)]="user.phone" name="phone" required>
               </div>
               <!-- <div class="form-group-modern">
-                <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
-                <input type="email" id="agencyEmail" [(ngModel)]="user.email" name="email" required>
-              </div> -->
-            </div>
-            <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label for="serviceZones">Zones de service (secteurs)</label>
-                <select id="serviceZones" [(ngModel)]="user.serviceZones" name="serviceZones" multiple>
-                  <option *ngFor="let s of allSecteurs" [value]="s.secteur">Secteur {{ s.secteur }}</option>
-                </select>
-              </div>
-              <div class="form-group-modern">
-                <label for="services">Services proposés</label>
-                <select id="services" [(ngModel)]="user.services" name="services" multiple>
-                  <option *ngFor="let s of allServices" [value]="s">{{ s }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row-modern">
-              <!-- <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
-                  J'accepte les conditions générales d'utilisation
-                </label>
-              </div> -->
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
-                  Je souhaite recevoir des offres et actualités
-                </label>
-              </div>
-            </div>
-            <div class="form-actions-modern">
-              <button type="submit" class="btn btn-primary">
-                <i class="material-icons">save</i>
-                Sauvegarder
-              </button>
-            </div>
-          </form>
-
-          <!-- Formulaire SUPER_ADMIN -->
-          <form *ngIf="user.role === 'super_admin'" class="profile-form-modern" (ngSubmit)="onSave()">
-            <h3>Informations de l'administrateur</h3>
-            <div class="form-row-modern">
-              <!-- <div class="form-group-modern">
-                <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
-              </div> -->
-              <div class="form-group-modern">
-                <label for="agencyName"><i class="material-icons">business</i> Nom</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.firstname" name="firstname" required>
-              </div>
-              <div class="form-group-modern">
-                <label for="agencyName"><i class="material-icons">business</i> Prénom</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.lastname" name="lastname" required>
-              </div>
-              <div class="form-group-modern">
-                <label for="agencyDescription"><i class="material-icons">description</i> Description</label>
-                <textarea id="agencyDescription" [(ngModel)]="user.agencyDescription" name="description" rows="2"></textarea>
-              </div>
-            </div>
-            <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label for="agencyPhone"><i class="material-icons">phone</i> Téléphone</label>
-                <input type="tel" id="agencyPhone" [(ngModel)]="user.phone" name="phone" required>
-              </div>
-              <!-- <div class="form-group-modern">
-                <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
-                <input type="email" id="agencyEmail" [(ngModel)]="user.email" name="email" required>
-              </div> -->
-            </div>
-            
-            <!-- <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
-                  J'accepte les conditions générales d'utilisation
-                </label>
-              </div>
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
-                  Je souhaite recevoir des offres et actualités
-                </label>
-              </div>
+              <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
+              <input type="email" id="agencyEmail" [(ngModel)]="user.email" name="email" required>
             </div> -->
-            <div class="form-actions-modern">
-              <button type="submit" class="btn btn-primary">
-                <i class="material-icons">save</i>
-                Sauvegarder
-              </button>
+          </div>
+          <div class="form-row-modern">
+            <div class="form-group-modern">
+              <label for="serviceZones">Zones de service (secteurs)</label>
+              <select id="serviceZones" [(ngModel)]="user.serviceZones" name="serviceZones" multiple>
+                @for (s of allSecteurs; track s) {
+                  <option [value]="s.secteur">Secteur {{ s.secteur }}</option>
+                }
+              </select>
             </div>
-          </form>
-
-           <!-- Formulaire MUNICIPALITY -->
-          <form *ngIf="user.role === 'municipality'" class="profile-form-modern" (ngSubmit)="onSave()">
-            <h3>Informations Municipales</h3>
-            <div class="form-row-modern">
-              <!-- <div class="form-group-modern">
-                <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
-              </div> -->
-              <div class="form-group-modern">
-                <label for="agencyName"><i class="material-icons">business</i> Nom</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.name" name="fullName" required>
-              </div>
-              <div class="form-group-modern">
-                <label for="agencyName"><i class="material-icons">business</i> Statut</label>
-                <input type="text" id="agencyName" [(ngModel)]="user.position" name="position" required>
-              </div>
-              <div class="form-group-modern">
-                <label for="agencyDescription"><i class="material-icons">description</i> Description</label>
-                <textarea id="agencyDescription" [(ngModel)]="user.agencyDescription" name="description" rows="2"></textarea>
-              </div>
+            <div class="form-group-modern">
+              <label for="services">Services proposés</label>
+              <select id="services" [(ngModel)]="user.services" name="services" multiple>
+                @for (s of allServices; track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
             </div>
-            <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label for="agencyPhone"><i class="material-icons">phone</i> Téléphone</label>
-                <input type="tel" id="agencyPhone" [(ngModel)]="user.phone" name="phone" required>
-              </div>
-              <!-- <div class="form-group-modern">
-                <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
-                <input type="email" id="agencyEmail" [(ngModel)]="user.email" name="email" required>
-              </div> -->
-            </div>
-             <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label for="serviceZones">Zones de service (secteurs)</label>
-                <select id="serviceZones" [(ngModel)]="user.managedZones" name="serviceZones" multiple>
-                  <option *ngFor="let s of allSecteurs" [value]="s.secteur">Secteur {{ s.secteur }}</option>
-                </select>
-              </div>
-              <!-- <div class="form-group-modern">
-                <label for="services">Services proposés</label>
-                <select id="services" [(ngModel)]="user.services" name="services" multiple>
-                  <option *ngFor="let s of allServices" [value]="s">{{ s }}</option>
-                </select>
-              </div> -->
-            </div>
-            
-            <!-- <div class="form-row-modern">
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
-                  J'accepte les conditions générales d'utilisation
-                </label>
-              </div>
-              <div class="form-group-modern">
-                <label class="checkbox-label">
-                  <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
-                  Je souhaite recevoir des offres et actualités
-                </label>
-              </div>
-            </div> -->
-            <div class="form-actions-modern">
-              <button type="submit" class="btn btn-primary">
-                <i class="material-icons">save</i>
-                Sauvegarder
-              </button>
-            </div>
-          </form>
-
+          </div>
+          <div class="form-row-modern">
+            <!-- <div class="form-group-modern">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
+              J'accepte les conditions générales d'utilisation
+            </label>
+          </div> -->
+          <div class="form-group-modern">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
+              Je souhaite recevoir des offres et actualités
+            </label>
+          </div>
+        </div>
+        <div class="form-actions-modern">
+          <button type="submit" class="btn btn-primary">
+            <i class="material-icons">save</i>
+            Sauvegarder
+          </button>
+        </div>
+      </form>
+    }
+    
+    <!-- Formulaire SUPER_ADMIN -->
+    @if (user.role === 'super_admin') {
+      <form class="profile-form-modern" (ngSubmit)="onSave()">
+        <h3>Informations de l'administrateur</h3>
+        <div class="form-row-modern">
+          <!-- <div class="form-group-modern">
+          <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
+          <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
+        </div> -->
+        <div class="form-group-modern">
+          <label for="agencyName"><i class="material-icons">business</i> Nom</label>
+          <input type="text" id="agencyName" [(ngModel)]="user.firstname" name="firstname" required>
+        </div>
+        <div class="form-group-modern">
+          <label for="agencyName"><i class="material-icons">business</i> Prénom</label>
+          <input type="text" id="agencyName" [(ngModel)]="user.lastname" name="lastname" required>
+        </div>
+        <div class="form-group-modern">
+          <label for="agencyDescription"><i class="material-icons">description</i> Description</label>
+          <textarea id="agencyDescription" [(ngModel)]="user.agencyDescription" name="description" rows="2"></textarea>
         </div>
       </div>
+      <div class="form-row-modern">
+        <div class="form-group-modern">
+          <label for="agencyPhone"><i class="material-icons">phone</i> Téléphone</label>
+          <input type="tel" id="agencyPhone" [(ngModel)]="user.phone" name="phone" required>
+        </div>
+        <!-- <div class="form-group-modern">
+        <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
+        <input type="email" id="agencyEmail" [(ngModel)]="user.email" name="email" required>
+      </div> -->
     </div>
-  `,
+    <!-- <div class="form-row-modern">
+    <div class="form-group-modern">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
+        J'accepte les conditions générales d'utilisation
+      </label>
+    </div>
+    <div class="form-group-modern">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
+        Je souhaite recevoir des offres et actualités
+      </label>
+    </div>
+    </div> -->
+    <div class="form-actions-modern">
+      <button type="submit" class="btn btn-primary">
+        <i class="material-icons">save</i>
+        Sauvegarder
+      </button>
+    </div>
+    </form>
+    }
+    
+    <!-- Formulaire MUNICIPALITY -->
+    @if (user.role === 'municipality') {
+      <form class="profile-form-modern" (ngSubmit)="onSave()">
+        <h3>Informations Municipales</h3>
+        <div class="form-row-modern">
+          <!-- <div class="form-group-modern">
+          <label for="agencyName"><i class="material-icons">business</i> Nom de l'agence</label>
+          <input type="text" id="agencyName" [(ngModel)]="user.agencyName" name="name" required>
+        </div> -->
+        <div class="form-group-modern">
+          <label for="agencyName"><i class="material-icons">business</i> Nom</label>
+          <input type="text" id="agencyName" [(ngModel)]="user.name" name="fullName" required>
+        </div>
+        <div class="form-group-modern">
+          <label for="agencyName"><i class="material-icons">business</i> Statut</label>
+          <input type="text" id="agencyName" [(ngModel)]="user.position" name="position" required>
+        </div>
+        <div class="form-group-modern">
+          <label for="agencyDescription"><i class="material-icons">description</i> Description</label>
+          <textarea id="agencyDescription" [(ngModel)]="user.agencyDescription" name="description" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="form-row-modern">
+        <div class="form-group-modern">
+          <label for="agencyPhone"><i class="material-icons">phone</i> Téléphone</label>
+          <input type="tel" id="agencyPhone" [(ngModel)]="user.phone" name="phone" required>
+        </div>
+        <!-- <div class="form-group-modern">
+        <label for="agencyEmail"><i class="material-icons">email</i> Email</label>
+        <input type="email" id="agencyEmail" [(ngModel)]="user.email" name="email" required>
+      </div> -->
+    </div>
+    <div class="form-row-modern">
+      <div class="form-group-modern">
+        <label for="serviceZones">Zones de service (secteurs)</label>
+        <select id="serviceZones" [(ngModel)]="user.managedZones" name="serviceZones" multiple>
+          @for (s of allSecteurs; track s) {
+            <option [value]="s.secteur">Secteur {{ s.secteur }}</option>
+          }
+        </select>
+      </div>
+      <!-- <div class="form-group-modern">
+      <label for="services">Services proposés</label>
+      <select id="services" [(ngModel)]="user.services" name="services" multiple>
+        <option *ngFor="let s of allServices" [value]="s">{{ s }}</option>
+      </select>
+    </div> -->
+    </div>
+    <!-- <div class="form-row-modern">
+    <div class="form-group-modern">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="user.termsAccepted" name="termsAccepted" required>
+        J'accepte les conditions générales d'utilisation
+      </label>
+    </div>
+    <div class="form-group-modern">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="user.receiveOffers" name="receiveOffers">
+        Je souhaite recevoir des offres et actualités
+      </label>
+    </div>
+    </div> -->
+    <div class="form-actions-modern">
+      <button type="submit" class="btn btn-primary">
+        <i class="material-icons">save</i>
+        Sauvegarder
+      </button>
+    </div>
+    </form>
+    }
+    
+    </div>
+    </div>
+    </div>
+    `,
   styles: [`
     .profile-page {
       min-height: 100vh;

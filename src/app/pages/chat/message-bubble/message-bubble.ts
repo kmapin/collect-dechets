@@ -1,10 +1,10 @@
 import { Component, Input } from "@angular/core";
-import { CommonModule } from "@angular/common";
+
 import { Message, User } from "./../../../models/chat.models";
 
 @Component({
   selector: "app-message-bubble",
-  imports: [CommonModule],
+  imports: [],
   templateUrl: "./message-bubble.html",
   styleUrl: "./message-bubble.css",
 })

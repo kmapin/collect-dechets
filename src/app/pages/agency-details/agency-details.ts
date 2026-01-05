@@ -1,6 +1,6 @@
 import { tarif } from './../../models/agency.model';
 import { Component, OnInit, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AgencyService } from '../../services/agency.service';
 import { Agency, Tarif } from '../../models/agency.model';
@@ -20,7 +20,7 @@ import { CdkAutofill } from "@angular/cdk/text-field";
 
 @Component({
   selector: 'app-agency-details',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DrawerModule],
+  imports: [RouterModule, FormsModule, ReactiveFormsModule, DrawerModule],
   templateUrl: './agency-details.html',
   styleUrl: './agency-details.css'
 })

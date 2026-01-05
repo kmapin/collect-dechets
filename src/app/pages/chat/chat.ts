@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from "@angular/core";
-import { CommonModule } from "@angular/common";
+
 import { from, Subject, takeUntil } from "rxjs";
 import { ChatWindow } from "./chat-window/chat-window";
 import { ConversationList } from "./conversation-list/conversation-list";
@@ -13,7 +13,7 @@ import {
 
 @Component({
   selector: "app-chat",
-  imports: [CommonModule, ConversationList, ChatWindow],
+  imports: [ConversationList, ChatWindow],
   templateUrl: "./chat.html",
   styleUrl: "./chat.css",
 })

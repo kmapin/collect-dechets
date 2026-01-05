@@ -1,16 +1,16 @@
 <div class="page-header">
-    <div class="container">
-      <h1 class="page-title">Messagerie</h1>
-      <p class="page-subtitle">
-        Contactez une agence en temps réel pour toute demande ou signalement.
-      </p>
-    </div>
+  <div class="container">
+    <h1 class="page-title">Messagerie</h1>
+    <p class="page-subtitle">
+      Contactez une agence en temps réel pour toute demande ou signalement.
+    </p>
+  </div>
 </div>
 <div class="chat-container card">
   <div
     class="chat-sidebar"
     [class.mobile-hidden]="selectedConversation && isMobileView"
-  >
+    >
     <app-conversation-list
       [conversations]="conversations"
       [selectedConversation]="selectedConversation"
@@ -23,15 +23,16 @@
   <div
     class="chat-main-content"
     [class.mobile-hidden]="!selectedConversation && isMobileView"
-  >
-    <button
-      *ngIf="selectedConversation && isMobileView"
-      class="back-button"
-      (click)="goBack()"
     >
-      <i class="pi pi-arrow-left"></i>
-      Back
-    </button>
+    @if (selectedConversation && isMobileView) {
+      <button
+        class="back-button"
+        (click)="goBack()"
+        >
+        <i class="pi pi-arrow-left"></i>
+        Back
+      </button>
+    }
     <app-chat-window
       [conversation]="selectedConversation"
       [messages]="messages"

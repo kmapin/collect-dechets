@@ -12,16 +12,20 @@
   <div class="container">
     <div class="help-content">
       <div class="help-categories">
-        <div class="category-card card" *ngFor="let category of helpCategories">
-          <div class="category-icon">
-            <i class="material-icons">{{ category.icon }}</i>
+        @for (category of helpCategories; track category) {
+          <div class="category-card card">
+            <div class="category-icon">
+              <i class="material-icons">{{ category.icon }}</i>
+            </div>
+            <h3>{{ category.title }}</h3>
+            <p>{{ category.description }}</p>
+            <ul>
+              @for (item of category.items; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
           </div>
-          <h3>{{ category.title }}</h3>
-          <p>{{ category.description }}</p>
-          <ul>
-            <li *ngFor="let item of category.items">{{ item }}</li>
-          </ul>
-        </div>
+        }
       </div>
     </div>
   </div>

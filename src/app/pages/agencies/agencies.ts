@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-agencies',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [RouterModule, FormsModule],
   templateUrl: './agencies.html',
   styleUrl: './agencies.css'
 })

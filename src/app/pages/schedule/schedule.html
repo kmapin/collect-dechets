@@ -13,23 +13,25 @@
       <div class="schedule-card card">
         <h2>Prochaines Collectes</h2>
         <div class="schedule-list">
-          <div class="schedule-item" *ngFor="let item of scheduleItems">
-            <div class="schedule-date">
-              <div class="day">{{ item.day }}</div>
-              <div class="month">{{ item.month }}</div>
-            </div>
-            <div class="schedule-info">
-              <h4>{{ item.type }}</h4>
-              <p>{{ item.time }}</p>
-            </div>
-            <div class="schedule-status">
-              <span [class]="'status-' + item.status"
-                >{{ item.statusText }}</span
-              >
-            </div>
+          @for (item of scheduleItems; track item) {
+            <div class="schedule-item">
+              <div class="schedule-date">
+                <div class="day">{{ item.day }}</div>
+                <div class="month">{{ item.month }}</div>
+              </div>
+              <div class="schedule-info">
+                <h4>{{ item.type }}</h4>
+                <p>{{ item.time }}</p>
+              </div>
+              <div class="schedule-status">
+                <span [class]="'status-' + item.status"
+                  >{{ item.statusText }}</span
+                  >
+                </div>
+              </div>
+            }
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>

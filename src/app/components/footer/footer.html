@@ -1,13 +1,14 @@
 <footer class="footer">
   <!-- Particules d'arrière-plan -->
   <div class="footer-particles">
-    <div
-      class="particle"
-      *ngFor="let particle of particles"
-      [style.left.%]="particle.x"
-      [style.top.%]="particle.y"
-      [style.animation-delay.s]="particle.delay"
-    ></div>
+    @for (particle of particles; track particle) {
+      <div
+        class="particle"
+        [style.left.%]="particle.x"
+        [style.top.%]="particle.y"
+        [style.animation-delay.s]="particle.delay"
+      ></div>
+    }
   </div>
 
   <div class="container">
@@ -18,13 +19,13 @@
         <div class="footer-section brand-section">
           <div class="footer-brand">
             <!-- <div class="brand-icon">
-                  <i class="material-icons">eco</i>
-                </div> -->
-            <div class="brand-logo">
-              <img
-                src="assets/homeUseCases/Zéro_Déchet.png"
-                alt="Logo ZéroDéchet+"
-                class="logo"
+            <i class="material-icons">eco</i>
+          </div> -->
+          <div class="brand-logo">
+            <img
+              src="assets/homeUseCases/Zéro_Déchet.png"
+              alt="Logo ZéroDéchet+"
+              class="logo"
               />
             </div>
             <div class="brand-text">
@@ -201,152 +202,156 @@
                 placeholder="Votre adresse email"
                 class="newsletter-input"
                 required
-              />
-              <button
-                type="submit"
-                class="newsletter-btn"
-                [disabled]="isSubmitting"
-              >
-                <i class="material-icons" *ngIf="!isSubmitting">send</i>
-                <i class="material-icons rotating" *ngIf="isSubmitting"
-                  >hourglass_empty</i
+                />
+                <button
+                  type="submit"
+                  class="newsletter-btn"
+                  [disabled]="isSubmitting"
+                  >
+                  @if (!isSubmitting) {
+                    <i class="material-icons">send</i>
+                  }
+                  @if (isSubmitting) {
+                    <i class="material-icons rotating"
+                      >hourglass_empty</i
+                      >
+                  }
+                </button>
+              </div>
+              <div class="newsletter-benefits">
+                <div class="benefit-item">
+                  <i class="material-icons">check_circle</i>
+                  <span>Conseils écologiques hebdomadaires</span>
+                </div>
+                <div class="benefit-item">
+                  <i class="material-icons">check_circle</i>
+                  <span>Alertes nouvelles fonctionnalités</span>
+                </div>
+                <div class="benefit-item">
+                  <i class="material-icons">check_circle</i>
+                  <span>Pas de spam, désabonnement facile</span>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section contact rapide -->
+      <div class="footer-contact">
+        <div class="contact-cards">
+          <div class="contact-card">
+            <div class="contact-icon">
+              <i class="material-icons">phone</i>
+            </div>
+            <div class="contact-info">
+              <span class="contact-label">Support 24/7</span>
+              <a href="tel:+33123456789" class="contact-value">64 09 57 71</a>
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <div class="contact-icon">
+              <i class="material-icons">email</i>
+            </div>
+            <div class="contact-info">
+              <span class="contact-label">Email</span>
+              <a href="mailto:contact&#64;wastemanager.bf" class="contact-value"
+                >contact&#64;zerodechet.bf</a
                 >
-              </button>
-            </div>
-            <div class="newsletter-benefits">
-              <div class="benefit-item">
-                <i class="material-icons">check_circle</i>
-                <span>Conseils écologiques hebdomadaires</span>
-              </div>
-              <div class="benefit-item">
-                <i class="material-icons">check_circle</i>
-                <span>Alertes nouvelles fonctionnalités</span>
-              </div>
-              <div class="benefit-item">
-                <i class="material-icons">check_circle</i>
-                <span>Pas de spam, désabonnement facile</span>
               </div>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
 
-    <!-- Section contact rapide -->
-    <div class="footer-contact">
-      <div class="contact-cards">
-        <div class="contact-card">
-          <div class="contact-icon">
-            <i class="material-icons">phone</i>
-          </div>
-          <div class="contact-info">
-            <span class="contact-label">Support 24/7</span>
-            <a href="tel:+33123456789" class="contact-value">64 09 57 71</a>
-          </div>
-        </div>
-
-        <div class="contact-card">
-          <div class="contact-icon">
-            <i class="material-icons">email</i>
-          </div>
-          <div class="contact-info">
-            <span class="contact-label">Email</span>
-            <a href="mailto:contact&#64;wastemanager.bf" class="contact-value"
-              >contact&#64;zerodechet.bf</a
-            >
-          </div>
-        </div>
-
-        <div class="contact-card">
-          <div class="contact-icon">
-            <i class="material-icons">location_on</i>
-          </div>
-          <div class="contact-info">
-            <span class="contact-label">Siège social</span>
-            <span class="contact-value">Ouagadougou, Burkina Faso</span>
-          </div>
-        </div>
-
-        <div class="contact-card">
-          <div class="contact-icon">
-            <i class="material-icons">schedule</i>
-          </div>
-          <div class="contact-info">
-            <span class="contact-label">Horaires</span>
-            <span class="contact-value">Lun-Ven 8h-20h</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Section certifications -->
-    <!-- <div class="footer-certifications">
-          <div class="certifications-content">
-            <h4>Certifications & Partenaires</h4>
-            <div class="certifications-grid">
-              <div class="certification-item">
-                <div class="cert-icon">
-                  <i class="material-icons">verified</i>
-                </div>
-                <span>ISO 14001</span>
+            <div class="contact-card">
+              <div class="contact-icon">
+                <i class="material-icons">location_on</i>
               </div>
-              <div class="certification-item">
-                <div class="cert-icon">
-                  <i class="material-icons">eco</i>
-                </div>
-                <span>Label Vert</span>
+              <div class="contact-info">
+                <span class="contact-label">Siège social</span>
+                <span class="contact-value">Ouagadougou, Burkina Faso</span>
               </div>
-              <div class="certification-item">
-                <div class="cert-icon">
-                  <i class="material-icons">security</i>
-                </div>
-                <span>RGPD Conforme</span>
+            </div>
+
+            <div class="contact-card">
+              <div class="contact-icon">
+                <i class="material-icons">schedule</i>
               </div>
-              <div class="certification-item">
-                <div class="cert-icon">
-                  <i class="material-icons">star</i>
-                </div>
-                <span>Élu Service Client</span>
+              <div class="contact-info">
+                <span class="contact-label">Horaires</span>
+                <span class="contact-value">Lun-Ven 8h-20h</span>
               </div>
             </div>
           </div>
-        </div> -->
-
-    <!-- Footer bottom -->
-    <div class="footer-bottom">
-      <div class="footer-bottom-content">
-        <div class="copyright">
-          <p>© 2025 ZéroDéchet+. Tous droits réservés.</p>
-          <p class="made-with">
-            Fait avec <i class="material-icons heart">favorite</i> pour un monde
-            plus propre
-          </p>
         </div>
 
-        <div class="footer-bottom-links">
-          <a routerLink="/privacy" class="footer-bottom-link"
-            >Confidentialité</a
-          >
-          <a routerLink="/terms" class="footer-bottom-link">Conditions</a>
-          <a href="#" class="footer-bottom-link">Cookies</a>
-          <a href="#" class="footer-bottom-link">Plan du site</a>
+        <!-- Section certifications -->
+        <!-- <div class="footer-certifications">
+        <div class="certifications-content">
+          <h4>Certifications & Partenaires</h4>
+          <div class="certifications-grid">
+            <div class="certification-item">
+              <div class="cert-icon">
+                <i class="material-icons">verified</i>
+              </div>
+              <span>ISO 14001</span>
+            </div>
+            <div class="certification-item">
+              <div class="cert-icon">
+                <i class="material-icons">eco</i>
+              </div>
+              <span>Label Vert</span>
+            </div>
+            <div class="certification-item">
+              <div class="cert-icon">
+                <i class="material-icons">security</i>
+              </div>
+              <span>RGPD Conforme</span>
+            </div>
+            <div class="certification-item">
+              <div class="cert-icon">
+                <i class="material-icons">star</i>
+              </div>
+              <span>Élu Service Client</span>
+            </div>
+          </div>
         </div>
+      </div> -->
 
-        <div class="footer-stats">
-          <div class="stat-item">
-            <span class="stat-number">50K+</span>
-            <span class="stat-label">Utilisateurs</span>
+      <!-- Footer bottom -->
+      <div class="footer-bottom">
+        <div class="footer-bottom-content">
+          <div class="copyright">
+            <p>© 2025 ZéroDéchet+. Tous droits réservés.</p>
+            <p class="made-with">
+              Fait avec <i class="material-icons heart">favorite</i> pour un monde
+              plus propre
+            </p>
           </div>
-          <div class="stat-item">
-            <span class="stat-number">200+</span>
-            <span class="stat-label">Agences</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-number">1M+</span>
-            <span class="stat-label">Collectes</span>
+
+          <div class="footer-bottom-links">
+            <a routerLink="/privacy" class="footer-bottom-link"
+              >Confidentialité</a
+              >
+              <a routerLink="/terms" class="footer-bottom-link">Conditions</a>
+              <a href="#" class="footer-bottom-link">Cookies</a>
+              <a href="#" class="footer-bottom-link">Plan du site</a>
+            </div>
+
+            <div class="footer-stats">
+              <div class="stat-item">
+                <span class="stat-number">50K+</span>
+                <span class="stat-label">Utilisateurs</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">200+</span>
+                <span class="stat-label">Agences</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">1M+</span>
+                <span class="stat-label">Collectes</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</footer>
+    </footer>

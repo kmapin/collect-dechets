@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 
 interface FAQItem {
@@ -20,7 +20,7 @@ interface FAQCategory {
 
   @Component({
   selector: 'app-faq',
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './faq.html',
   styleUrl: './faq.css'
 })

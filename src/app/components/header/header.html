@@ -5,309 +5,315 @@
       <div class="navbar-brand">
         <a routerLink="/" class="brand-link">
           <!-- <div class="brand-icon">
-                <i class="material-icons">eco</i>
-              </div> -->
-          <div class="brand-logo">
-            <!-- <i class="material-icons">eco</i> -->
-            <img
-              src="assets/homeUseCases/Zéro_Déchet.png"
-              alt="Logo ZéroDéchet+"
-              class="logo"
-              style="width: 50px; height: 50px;"
+          <i class="material-icons">eco</i>
+        </div> -->
+        <div class="brand-logo">
+          <!-- <i class="material-icons">eco</i> -->
+          <img
+            src="assets/homeUseCases/Zéro_Déchet.png"
+            alt="Logo ZéroDéchet+"
+            class="logo"
+            style="width: 50px; height: 50px;"
             />
           </div>
           <div class="brand-text">
             <span class="brand-name">ZéroDéchet+</span>
             <span class="brand-tagline"
               >Collecter aujourd’hui, préserver demain.</span
-            >
-          </div>
-        </a>
-      </div>
-
-      <!-- Navigation Desktop -->
-      <nav class="navbar-nav desktop-nav">
-        <div class="nav-group">
-          <a routerLink="/" class="nav-link">
-            <i class="material-icons">home</i>
-            <span>Accueil</span>
-          </a>
-          <a routerLink="/agencies" class="nav-link" routerLinkActive="active">
-            <i class="material-icons">business</i>
-            <span>Agences</span>
-          </a>
-          <a
-            routerLink="/waste-types"
-            class="nav-link"
-            routerLinkActive="active"
-          >
-            <i class="material-icons">recycling</i>
-            <span>Types de déchets</span>
-          </a>
-          <a routerLink="/faq" class="nav-link" routerLinkActive="active">
-            <i class="material-icons">help</i>
-            <span>FAQ</span>
-          </a>
-        </div>
-
-        <!-- Actions utilisateur -->
-        <div class="nav-actions" *ngIf="!isAuthenticated">
-          <a routerLink="/login" class="nav-link login-link">
-            <i class="material-icons">login</i>
-            <span>Connexion</span>
-          </a>
-          <a routerLink="/register" class="btn btn-primary nav-cta">
-            <i class="material-icons">person_add</i>
-            <span>S'inscrire</span>
-          </a>
-        </div>
-        <div class="notification-bell" *ngIf="isAuthenticated">
-          <i class="material-icons" (click)="toggleNotifications()"
-            >notifications</i
-          >
-          <span class="badge" *ngIf="unreadCount() > 0"
-            >{{ unreadCount() }}</span
-          >
-
-          <div class="dropdown-notification" [class.show]="showNotifications">
-            <div class="dropdown-header">
-              <strong>Notifications</strong>
-            </div>
-
-            <div class="notifications-list">
-              <ng-container
-                *ngIf="notifications && notifications.length > 0; else noNotif"
               >
-                <div
-                  *ngFor="let notif of notifications"
-                  class="notification-item"
-                  [class.read]="notif.read"
-                  [class.unread]="!notif.read"
-                  (click)="markAsRead(notif._id)"
-                  (click)="navigateToNotification(notif)"
-                >
-                  <div class="notification-content">
-                    <span class="notification-title">{{ notif.type }}</span>
-                    <span class="notification-date"
-                      >{{ notif.createdAt | date:'short' }}</span
-                    >
-                    <p class="notification-comment">{{ notif.message }}</p>
-                  </div>
+            </div>
+          </a>
+        </div>
 
-                  <div class="notif-actions">
-                    <button
-                      class="icon-btn delete-btn"
-                      title="Supprimer"
-                      (click)="deleteNotification(notif._id); $event.stopPropagation()"
+        <!-- Navigation Desktop -->
+        <nav class="navbar-nav desktop-nav">
+          <div class="nav-group">
+            <a routerLink="/" class="nav-link">
+              <i class="material-icons">home</i>
+              <span>Accueil</span>
+            </a>
+            <a routerLink="/agencies" class="nav-link" routerLinkActive="active">
+              <i class="material-icons">business</i>
+              <span>Agences</span>
+            </a>
+            <a
+              routerLink="/waste-types"
+              class="nav-link"
+              routerLinkActive="active"
+              >
+              <i class="material-icons">recycling</i>
+              <span>Types de déchets</span>
+            </a>
+            <a routerLink="/faq" class="nav-link" routerLinkActive="active">
+              <i class="material-icons">help</i>
+              <span>FAQ</span>
+            </a>
+          </div>
+
+          <!-- Actions utilisateur -->
+          @if (!isAuthenticated) {
+            <div class="nav-actions">
+              <a routerLink="/login" class="nav-link login-link">
+                <i class="material-icons">login</i>
+                <span>Connexion</span>
+              </a>
+              <a routerLink="/register" class="btn btn-primary nav-cta">
+                <i class="material-icons">person_add</i>
+                <span>S'inscrire</span>
+              </a>
+            </div>
+          }
+          @if (isAuthenticated) {
+            <div class="notification-bell">
+              <i class="material-icons" (click)="toggleNotifications()"
+                >notifications</i
+                >
+                @if (unreadCount() > 0) {
+                  <span class="badge"
+                    >{{ unreadCount() }}</span
                     >
-                      <i class="material-icons">delete</i>
-                    </button>
+                }
+                <div class="dropdown-notification" [class.show]="showNotifications">
+                  <div class="dropdown-header">
+                    <strong>Notifications</strong>
                   </div>
-                  <mat-icon
-                    *ngIf="notif.read"
-                    class="read-indicator"
-                    style="font-size: 18px"
-                    >done_all</mat-icon
-                  >
-                  <!-- <div class="read-indicator" *ngIf="notif.read">
-           
-          </div> -->
+                  <div class="notifications-list">
+                    @if (notifications && notifications.length > 0) {
+                      @for (notif of notifications; track notif) {
+                        <div
+                          class="notification-item"
+                          [class.read]="notif.read"
+                          [class.unread]="!notif.read"
+                          (click)="markAsRead(notif._id)"
+                          (click)="navigateToNotification(notif)"
+                          >
+                          <div class="notification-content">
+                            <span class="notification-title">{{ notif.type }}</span>
+                            <span class="notification-date"
+                              >{{ notif.createdAt | date:'short' }}</span
+                              >
+                              <p class="notification-comment">{{ notif.message }}</p>
+                            </div>
+                            <div class="notif-actions">
+                              <button
+                                class="icon-btn delete-btn"
+                                title="Supprimer"
+                                (click)="deleteNotification(notif._id); $event.stopPropagation()"
+                                >
+                                <i class="material-icons">delete</i>
+                              </button>
+                            </div>
+                            @if (notif.read) {
+                              <mat-icon
+                                class="read-indicator"
+                                style="font-size: 18px"
+                                >done_all</mat-icon
+                                >
+                              }
+                              <!-- <div class="read-indicator" *ngIf="notif.read">
+                            </div> -->
+                          </div>
+                        }
+                      } @else {
+                        <div class="empty-notification">Aucune notification</div>
+                      }
+                    </div>
+                  </div>
                 </div>
-              </ng-container>
+              }
 
-              <ng-template #noNotif>
-                <div class="empty-notification">Aucune notification</div>
-              </ng-template>
-            </div>
-          </div>
-        </div>
+              <!-- Menu utilisateur connecté -->
+              @if (isAuthenticated && currentUser) {
+                <div
+                  class="user-menu"
+                  (mouseenter)="showUserMenu = true"
+                  (mouseleave)="showUserMenu = false"
+                  >
+                  <div class="user-trigger">
+                    <div class="user-avatar">
+                      <img
+                        [src]="currentUser.avatar || 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'"
+                        [alt]="currentUser.firstName"
+                        />
+                      </div>
+                      <div class="user-info">
+                        <span class="user-name"
+                          >{{ currentUser.firstName }}</span
+                          >
+                          <span class="user-role"
+                            >{{ getRoleLabel(currentUser.role ?? "") }}</span
+                            >
+                          </div>
+                          <i
+                            class="material-icons dropdown-icon"
+                            [class.rotated]="showUserMenu"
+                            >expand_more</i
+                            >
+                          </div>
+                          <div class="user-dropdown" [class.show]="showUserMenu">
+                            <div class="dropdown-header">
+                              <div class="user-details">
+                                <strong
+                                  >{{ currentUser.firstName }}</strong
+                                  >
+                                  <span>{{ currentUser.email }}</span>
+                                </div>
+                              </div>
+                              <div class="dropdown-divider"></div>
+                              <a [routerLink]="getDashboardRoute()" class="dropdown-item">
+                                <i class="material-icons">dashboard</i>
+                                <span>Tableau de bord</span>
+                              </a>
+                              <a routerLink="/profile" class="dropdown-item">
+                                <i class="material-icons">person</i>
+                                <span>Mon profil</span>
+                              </a>
+                              @if (currentUser.role === 'client') {
+                                <a
+                                  routerLink="/subscription"
+                                  class="dropdown-item"
+                                  >
+                                  <i class="material-icons">card_membership</i>
+                                  <span>Mon abonnement</span>
+                                </a>
+                              }
+                              <div class="dropdown-divider"></div>
+                              <button (click)="logout()" class="dropdown-item logout-item">
+                                <i class="material-icons">logout</i>
+                                <span>Déconnexion</span>
+                              </button>
+                            </div>
+                          </div>
+                        }
+                      </nav>
 
-        <!-- Menu utilisateur connecté -->
-        <div
-          class="user-menu"
-          *ngIf="isAuthenticated && currentUser"
-          (mouseenter)="showUserMenu = true"
-          (mouseleave)="showUserMenu = false"
-        >
-          <div class="user-trigger">
-            <div class="user-avatar">
-              <img
-                [src]="currentUser.avatar || 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'"
-                [alt]="currentUser.firstName"
-              />
-            </div>
-            <div class="user-info">
-              <span class="user-name"
-                >{{ currentUser.firstName }}</span
-              >
-              <span class="user-role"
-                >{{ getRoleLabel(currentUser.role ?? "") }}</span
-              >
-            </div>
-            <i
-              class="material-icons dropdown-icon"
-              [class.rotated]="showUserMenu"
-              >expand_more</i
-            >
-          </div>
+                      <!-- Bouton menu mobile -->
+                      <button
+                        class="mobile-menu-toggle"
+                        (click)="toggleMobileMenu()"
+                        [class.active]="isMobileMenuOpen"
+                        >
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                      </button>
+                    </div>
 
-          <div class="user-dropdown" [class.show]="showUserMenu">
-            <div class="dropdown-header">
-              <div class="user-details">
-                <strong
-                  >{{ currentUser.firstName }}</strong
-                >
-                <span>{{ currentUser.email }}</span>
-              </div>
-            </div>
-            <div class="dropdown-divider"></div>
-            <a [routerLink]="getDashboardRoute()" class="dropdown-item">
-              <i class="material-icons">dashboard</i>
-              <span>Tableau de bord</span>
-            </a>
-            <a routerLink="/profile" class="dropdown-item">
-              <i class="material-icons">person</i>
-              <span>Mon profil</span>
-            </a>
-            <a
-              *ngIf="currentUser?.role === 'client'"
-              routerLink="/subscription"
-              class="dropdown-item"
-            >
-              <i class="material-icons">card_membership</i>
-              <span>Mon abonnement</span>
-            </a>
-            <div class="dropdown-divider"></div>
-            <button (click)="logout()" class="dropdown-item logout-item">
-              <i class="material-icons">logout</i>
-              <span>Déconnexion</span>
-            </button>
-          </div>
-        </div>
-      </nav>
+                    <!-- Menu mobile -->
+                    <div class="mobile-menu" [class.open]="isMobileMenuOpen">
+                      <div class="mobile-menu-content">
+                        <div class="mobile-nav-links">
+                          <a routerLink="/" class="mobile-nav-link" (click)="closeMobileMenu()">
+                            <i class="material-icons">home</i>
+                            <span>Accueil</span>
+                          </a>
+                          <a
+                            routerLink="/agencies"
+                            class="mobile-nav-link"
+                            (click)="closeMobileMenu()"
+                            >
+                            <i class="material-icons">business</i>
+                            <span>Agences</span>
+                          </a>
+                          <a
+                            routerLink="/waste-types"
+                            class="mobile-nav-link"
+                            (click)="closeMobileMenu()"
+                            >
+                            <i class="material-icons">recycling</i>
+                            <span>Types de déchets</span>
+                          </a>
+                          <a
+                            routerLink="/faq"
+                            class="mobile-nav-link"
+                            (click)="closeMobileMenu()"
+                            >
+                            <i class="material-icons">help</i>
+                            <span>FAQ</span>
+                          </a>
+                        </div>
 
-      <!-- Bouton menu mobile -->
-      <button
-        class="mobile-menu-toggle"
-        (click)="toggleMobileMenu()"
-        [class.active]="isMobileMenuOpen"
-      >
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
-        <span class="hamburger-line"></span>
-      </button>
-    </div>
+                        @if (!isAuthenticated) {
+                          <div class="mobile-auth-section">
+                            <a
+                              routerLink="/login"
+                              class="mobile-auth-link"
+                              (click)="closeMobileMenu()"
+                              >
+                              <i class="material-icons">login</i>
+                              <span>Connexion</span>
+                            </a>
+                            <a
+                              routerLink="/register"
+                              class="btn btn-primary mobile-cta"
+                              (click)="closeMobileMenu()"
+                              >
+                              <i class="material-icons">person_add</i>
+                              <span>S'inscrire</span>
+                            </a>
+                          </div>
+                        }
 
-    <!-- Menu mobile -->
-    <div class="mobile-menu" [class.open]="isMobileMenuOpen">
-      <div class="mobile-menu-content">
-        <div class="mobile-nav-links">
-          <a routerLink="/" class="mobile-nav-link" (click)="closeMobileMenu()">
-            <i class="material-icons">home</i>
-            <span>Accueil</span>
-          </a>
-          <a
-            routerLink="/agencies"
-            class="mobile-nav-link"
-            (click)="closeMobileMenu()"
-          >
-            <i class="material-icons">business</i>
-            <span>Agences</span>
-          </a>
-          <a
-            routerLink="/waste-types"
-            class="mobile-nav-link"
-            (click)="closeMobileMenu()"
-          >
-            <i class="material-icons">recycling</i>
-            <span>Types de déchets</span>
-          </a>
-          <a
-            routerLink="/faq"
-            class="mobile-nav-link"
-            (click)="closeMobileMenu()"
-          >
-            <i class="material-icons">help</i>
-            <span>FAQ</span>
-          </a>
-        </div>
+                        @if (isAuthenticated && currentUser) {
+                          <div class="mobile-user-section">
+                            <div class="mobile-user-info">
+                              <div class="mobile-user-avatar">
+                                <img
+                                  [src]="currentUser.avatar || 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'"
+                                  [alt]="currentUser.firstName"
+                                  />
+                                </div>
+                                <div class="mobile-user-details">
+                                  <strong
+                                    >{{ currentUser.email }} {{ currentUser.lastName }}</strong
+                                    >
+                                    <span>{{ getRoleLabel(currentUser.role ??"") }}</span>
+                                  </div>
+                                </div>
+                                <div class="mobile-user-actions">
+                                  <a
+                                    [routerLink]="getDashboardRoute()"
+                                    class="mobile-nav-link"
+                                    (click)="closeMobileMenu()"
+                                    >
+                                    <i class="material-icons">dashboard</i>
+                                    <span>Tableau de bord</span>
+                                  </a>
+                                  <a
+                                    routerLink="/profile"
+                                    class="mobile-nav-link"
+                                    (click)="closeMobileMenu()"
+                                    >
+                                    <i class="material-icons">person</i>
+                                    <span>Mon profil</span>
+                                  </a>
+                                  @if (currentUser.role === 'client') {
+                                    <a
+                                      routerLink="/subscription"
+                                      class="dropdown-item"
+                                      >
+                                      <i class="material-icons">card_membership</i>
+                                      <span>Mon abonnement</span>
+                                    </a>
+                                  }
+                                  <button
+                                    (click)="logout(); closeMobileMenu()"
+                                    class="mobile-nav-link logout-mobile"
+                                    >
+                                    <i class="material-icons">logout</i>
+                                    <span>Déconnexion</span>
+                                  </button>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </div>
 
-        <div class="mobile-auth-section" *ngIf="!isAuthenticated">
-          <a
-            routerLink="/login"
-            class="mobile-auth-link"
-            (click)="closeMobileMenu()"
-          >
-            <i class="material-icons">login</i>
-            <span>Connexion</span>
-          </a>
-          <a
-            routerLink="/register"
-            class="btn btn-primary mobile-cta"
-            (click)="closeMobileMenu()"
-          >
-            <i class="material-icons">person_add</i>
-            <span>S'inscrire</span>
-          </a>
-        </div>
-
-        <div class="mobile-user-section" *ngIf="isAuthenticated && currentUser">
-          <div class="mobile-user-info">
-            <div class="mobile-user-avatar">
-              <img
-                [src]="currentUser.avatar || 'https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'"
-                [alt]="currentUser.firstName"
-              />
-            </div>
-            <div class="mobile-user-details">
-              <strong
-                >{{ currentUser.email }} {{ currentUser.lastName }}</strong
-              >
-              <span>{{ getRoleLabel(currentUser.role ??"") }}</span>
-            </div>
-          </div>
-          <div class="mobile-user-actions">
-            <a
-              [routerLink]="getDashboardRoute()"
-              class="mobile-nav-link"
-              (click)="closeMobileMenu()"
-            >
-              <i class="material-icons">dashboard</i>
-              <span>Tableau de bord</span>
-            </a>
-            <a
-              routerLink="/profile"
-              class="mobile-nav-link"
-              (click)="closeMobileMenu()"
-            >
-              <i class="material-icons">person</i>
-              <span>Mon profil</span>
-            </a>
-            <a
-              *ngIf="currentUser?.role === 'client'"
-              routerLink="/subscription"
-              class="dropdown-item"
-            >
-              <i class="material-icons">card_membership</i>
-              <span>Mon abonnement</span>
-            </a>
-            <button
-              (click)="logout(); closeMobileMenu()"
-              class="mobile-nav-link logout-mobile"
-            >
-              <i class="material-icons">logout</i>
-              <span>Déconnexion</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Overlay pour fermer le menu mobile -->
-  <div
-    class="mobile-menu-overlay"
-    [class.show]="isMobileMenuOpen"
-    (click)="closeMobileMenu()"
-  ></div>
-</header>
+                      <!-- Overlay pour fermer le menu mobile -->
+                      <div
+                        class="mobile-menu-overlay"
+                        [class.show]="isMobileMenuOpen"
+                        (click)="closeMobileMenu()"
+                      ></div>
+                    </header>

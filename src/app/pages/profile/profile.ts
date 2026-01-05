@@ -1,5 +1,5 @@
 import { Component, OnInit } from "@angular/core";
-import { CommonModule } from "@angular/common";
+
 import { FormsModule } from "@angular/forms";
 import { AuthService } from "../../services/auth.service";
 import { RegisterUserData, User } from "../../models/user.model";
@@ -18,7 +18,7 @@ import { SharedService } from "../../services/shared-service";
 
 @Component({
   selector: "app-profile",
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: "./profile.html",
   styleUrl: "./profile.css",
 })

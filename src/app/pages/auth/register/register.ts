@@ -1,6 +1,6 @@
 import { stamp } from './../../../../../node_modules/@types/leaflet/index.d';
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
@@ -15,7 +15,7 @@ import { Arrondissement, City, Quartier, Sector } from '../../../models/countrie
 
 @Component({
   selector: 'app-register',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [RouterModule, FormsModule],
   templateUrl: './register.html',
   styleUrl: './register.css'
 })

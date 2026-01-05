@@ -1,50 +1,60 @@
 <div class="message-wrapper" [class.own-message]="isOwnMessage">
-  <div *ngIf="!isOwnMessage" class="message-avatar">
-    <img
-      [src]="message.sender?.avatar_url || 'https://via.placeholder.com/40'"
-      [alt]="message.sender?.username"
-      class="avatar-img"
-    />
-  </div>
-
-  <div
-    class="message-bubble"
-    [class.own]="isOwnMessage"
-    [class.other]="!isOwnMessage"
-  >
-    <div *ngIf="!isOwnMessage" class="sender-name">
-      {{ message.sender?.username }}
-      <span class="sender-role" [class]="'role-' + message.sender?.role">
-        {{ message.sender?.role }}
-      </span>
-    </div>
-
-    <div *ngIf="message.attachment_url" class="message-attachment">
+  @if (!isOwnMessage) {
+    <div class="message-avatar">
       <img
-        *ngIf="message.attachment_type === 'photo'"
-        [src]="message.attachment_url"
-        alt="Attachment"
-        class="attachment-image"
-      />
-      <div
-        *ngIf="message.attachment_type === 'location'"
-        class="location-attachment"
-      >
-        <i class="pi pi-map-marker"></i>
-        <span>Location shared</span>
+        [src]="message.sender?.avatar_url || 'https://via.placeholder.com/40'"
+        [alt]="message.sender?.username"
+        class="avatar-img"
+        />
       </div>
+    }
+
+    <div
+      class="message-bubble"
+      [class.own]="isOwnMessage"
+      [class.other]="!isOwnMessage"
+      >
+      @if (!isOwnMessage) {
+        <div class="sender-name">
+          {{ message.sender?.username }}
+          <span class="sender-role" [class]="'role-' + message.sender?.role">
+            {{ message.sender?.role }}
+          </span>
+        </div>
+      }
+
+      @if (message.attachment_url) {
+        <div class="message-attachment">
+          @if (message.attachment_type === 'photo') {
+            <img
+              [src]="message.attachment_url"
+              alt="Attachment"
+              class="attachment-image"
+              />
+          }
+          @if (message.attachment_type === 'location') {
+            <div
+              class="location-attachment"
+              >
+              <i class="pi pi-map-marker"></i>
+              <span>Location shared</span>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="message-content">{{ message.content }}</div>
+
+      <div class="message-time">{{ formatTime(message.created_at) }}</div>
     </div>
 
-    <div class="message-content">{{ message.content }}</div>
-
-    <div class="message-time">{{ formatTime(message.created_at) }}</div>
-  </div>
-
-  <div *ngIf="isOwnMessage" class="message-avatar">
-    <img
-      [src]="currentUser.avatar_url || 'https://via.placeholder.com/40'"
-      [alt]="currentUser.username"
-      class="avatar-img"
-    />
-  </div>
-</div>
+    @if (isOwnMessage) {
+      <div class="message-avatar">
+        <img
+          [src]="currentUser.avatar_url || 'https://via.placeholder.com/40'"
+          [alt]="currentUser.username"
+          class="avatar-img"
+          />
+        </div>
+      }
+    </div>

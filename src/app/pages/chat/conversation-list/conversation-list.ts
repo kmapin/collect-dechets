@@ -1,10 +1,10 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Conversation, User } from '../../../models/chat.models';
 @Component({
   selector: 'app-conversation-list',
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './conversation-list.html',
   styleUrl: './conversation-list.css'
 })

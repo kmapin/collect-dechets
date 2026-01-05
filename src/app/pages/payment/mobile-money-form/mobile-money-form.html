@@ -1,96 +1,111 @@
 <div class="form-container">
-    <mat-card class="payment-card" *ngIf="!paymentResponse">
-        <mat-card-header>
-            <mat-card-title>
-                <mat-icon>payment</mat-icon>
-                Paiement Mobile Money
-            </mat-card-title>
-            <mat-card-subtitle>
-                Effectuez votre paiement en toute sécurité
-            </mat-card-subtitle>
-        </mat-card-header>
-
-        <mat-card-content>
-            <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
-
-                <!-- Sélection de l'opérateur -->
-                <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Opérateur Mobile Money</mat-label>
-                    <mat-select formControlName="operator" required>
-                        <mat-option *ngFor="let op of operators" [value]="op.value">
-                            <span class="operator-option">
-                                <span class="operator-icon">{{ op.icon }}</span>
-                                <span class="operator-label">{{ op.label }}</span>
-                            </span>
-                        </mat-option>
-                    </mat-select>
-                    <mat-icon matPrefix>account_balance_wallet</mat-icon>
-                    <mat-error *ngIf="paymentForm.get('operator')?.hasError('required')">
-                        {{ getErrorMessage('operator') }}
-                    </mat-error>
-                </mat-form-field>
-
-                <!-- Numéro de téléphone -->
-                <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Numéro de téléphone</mat-label>
-                    <input matInput formControlName="phoneNumber" placeholder="+225 XX XX XX XX XX" type="tel" required>
-                    <mat-icon matPrefix>phone</mat-icon>
-                    <mat-error *ngIf="paymentForm.get('phoneNumber')?.invalid">
-                        {{ getErrorMessage('phoneNumber') }}
-                    </mat-error>
-                    <mat-hint>Format: +225XXXXXXXXXX ou 0XXXXXXXXX</mat-hint>
-                </mat-form-field>
-
-                <!-- Montant -->
-                <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Montant</mat-label>
-                    <input matInput formControlName="amount" type="number" placeholder="0" min="1" max="1000000"
-                        required>
-                    <mat-icon matPrefix>attach_money</mat-icon>
-                    <span matSuffix>FCFA</span>
-                    <mat-error *ngIf="paymentForm.get('amount')?.invalid">
-                        {{ getErrorMessage('amount') }}
-                    </mat-error>
-                    <mat-hint>Montant maximum: 1,000,000 FCFA</mat-hint>
-                </mat-form-field>
-
-                <!-- Description -->
-                <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Description / Référence</mat-label>
-                    <textarea matInput formControlName="description" placeholder="Motif du paiement" rows="3"
-                        maxlength="200" required></textarea>
-                    <mat-icon matPrefix>description</mat-icon>
-                    <mat-error *ngIf="paymentForm.get('description')?.invalid">
-                        {{ getErrorMessage('description') }}
-                    </mat-error>
-                    <mat-hint align="end">
-                        {{ paymentForm.get('description')?.value?.length || 0 }}/200
-                    </mat-hint>
-                </mat-form-field>
-
-                <!-- Bouton de soumission -->
-                <div class="form-actions">
-                    <button mat-raised-button color="primary" type="submit" class="submit-button"
-                        [disabled]="paymentForm.invalid || isProcessing">
-                        <mat-spinner *ngIf="isProcessing" diameter="20" class="button-spinner"></mat-spinner>
-                        <mat-icon *ngIf="!isProcessing">send</mat-icon>
-                        <span *ngIf="!isProcessing">Payer maintenant</span>
-                        <span *ngIf="isProcessing">Traitement en cours...</span>
-                    </button>
-                </div>
-            </form>
+  @if (!paymentResponse) {
+    <mat-card class="payment-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>payment</mat-icon>
+          Paiement Mobile Money
+        </mat-card-title>
+        <mat-card-subtitle>
+          Effectuez votre paiement en toute sécurité
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+          <!-- Sélection de l'opérateur -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Opérateur Mobile Money</mat-label>
+            <mat-select formControlName="operator" required>
+              @for (op of operators; track op) {
+                <mat-option [value]="op.value">
+                  <span class="operator-option">
+                    <span class="operator-icon">{{ op.icon }}</span>
+                    <span class="operator-label">{{ op.label }}</span>
+                  </span>
+                </mat-option>
+              }
+            </mat-select>
+            <mat-icon matPrefix>account_balance_wallet</mat-icon>
+            @if (paymentForm.get('operator')?.hasError('required')) {
+              <mat-error>
+                {{ getErrorMessage('operator') }}
+              </mat-error>
+            }
+          </mat-form-field>
+          <!-- Numéro de téléphone -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Numéro de téléphone</mat-label>
+            <input matInput formControlName="phoneNumber" placeholder="+225 XX XX XX XX XX" type="tel" required>
+            <mat-icon matPrefix>phone</mat-icon>
+            @if (paymentForm.get('phoneNumber')?.invalid) {
+              <mat-error>
+                {{ getErrorMessage('phoneNumber') }}
+              </mat-error>
+            }
+            <mat-hint>Format: +225XXXXXXXXXX ou 0XXXXXXXXX</mat-hint>
+          </mat-form-field>
+          <!-- Montant -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Montant</mat-label>
+            <input matInput formControlName="amount" type="number" placeholder="0" min="1" max="1000000"
+              required>
+              <mat-icon matPrefix>attach_money</mat-icon>
+              <span matSuffix>FCFA</span>
+              @if (paymentForm.get('amount')?.invalid) {
+                <mat-error>
+                  {{ getErrorMessage('amount') }}
+                </mat-error>
+              }
+              <mat-hint>Montant maximum: 1,000,000 FCFA</mat-hint>
+            </mat-form-field>
+            <!-- Description -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Description / Référence</mat-label>
+              <textarea matInput formControlName="description" placeholder="Motif du paiement" rows="3"
+              maxlength="200" required></textarea>
+              <mat-icon matPrefix>description</mat-icon>
+              @if (paymentForm.get('description')?.invalid) {
+                <mat-error>
+                  {{ getErrorMessage('description') }}
+                </mat-error>
+              }
+              <mat-hint align="end">
+                {{ paymentForm.get('description')?.value?.length || 0 }}/200
+              </mat-hint>
+            </mat-form-field>
+            <!-- Bouton de soumission -->
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" class="submit-button"
+                [disabled]="paymentForm.invalid || isProcessing">
+                @if (isProcessing) {
+                  <mat-spinner diameter="20" class="button-spinner"></mat-spinner>
+                }
+                @if (!isProcessing) {
+                  <mat-icon>send</mat-icon>
+                }
+                @if (!isProcessing) {
+                  <span>Payer maintenant</span>
+                }
+                @if (isProcessing) {
+                  <span>Traitement en cours...</span>
+                }
+              </button>
+            </div>
+          </form>
         </mat-card-content>
-    </mat-card>
+      </mat-card>
+    }
 
     <!-- Affichage du statut du paiement -->
-    <div *ngIf="paymentResponse">
+    @if (paymentResponse) {
+      <div>
         <app-payment-status [paymentResponse]="paymentResponse"></app-payment-status>
-
         <div class="action-buttons">
-            <button mat-raised-button color="primary" (click)="resetForm()" class="new-payment-button">
-                <mat-icon>add</mat-icon>
-                Nouveau paiement
-            </button>
+          <button mat-raised-button color="primary" (click)="resetForm()" class="new-payment-button">
+            <mat-icon>add</mat-icon>
+            Nouveau paiement
+          </button>
         </div>
-    </div>
-</div>
+      </div>
+    }
+  </div>

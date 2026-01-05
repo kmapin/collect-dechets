@@ -1,11 +1,11 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { MessageBubble } from '../message-bubble/message-bubble';
 import { Conversation, Message, User, TypingIndicator } from './../../../models/chat.models';
 @Component({
   selector: 'app-chat-window',
-  imports: [CommonModule, FormsModule, MessageBubble],
+  imports: [FormsModule, MessageBubble],
   templateUrl: './chat-window.html',
   styleUrl: './chat-window.css'
 })

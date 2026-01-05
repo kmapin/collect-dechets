@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-schedule',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './schedule.html',
   styleUrl: './schedule.css'
 })

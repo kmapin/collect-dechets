@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -28,7 +28,6 @@ interface OperatorInfo {
   selector: 'app-mobile-money-form',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     FormsModule,
     MatCardModule,
@@ -39,7 +38,7 @@ interface OperatorInfo {
     MatProgressSpinnerModule,
     MatIconModule,
     PaymentStatusComponent
-  ],
+],
   templateUrl: './mobile-money-form.html',
   styleUrls: ['./mobile-money-form.css']
 })

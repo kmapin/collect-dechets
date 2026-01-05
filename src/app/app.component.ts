@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterOutlet } from '@angular/router';
 import { Footer } from './components/footer/footer';
 import { Header } from './components/header/header';
@@ -11,39 +11,41 @@ import { Subscription } from 'rxjs';
   selector: 'app-root',
   standalone: true,
   imports: [
-    CommonModule,
     RouterOutlet,
     Header,
     Footer,
     Notification
-  ],
+],
   template: `
     <!-- Indicateur de chargement global avec design personnalisé -->
-    <div *ngIf="isAppLoading" class="global-loading-overlay">
-      <div class="global-loading-container">
-        <div class="global-loading-spinner"></div>
-        <h2 class="loading-title"> ZéroDéchet+</h2>
-        <p class="loading-subtitle">Chargement en cours...</p>
-        <div class="loading-dots">
-          <span></span>
-          <span></span>
-          <span></span>
+    @if (isAppLoading) {
+      <div class="global-loading-overlay">
+        <div class="global-loading-container">
+          <div class="global-loading-spinner"></div>
+          <h2 class="loading-title"> ZéroDéchet+</h2>
+          <p class="loading-subtitle">Chargement en cours...</p>
+          <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </div>
       </div>
-    </div>
-
-    <div *ngIf="!isAppLoading" class="app">
-      <div class="page-header">
-        <app-header></app-header>
+    }
+    
+    @if (!isAppLoading) {
+      <div class="app">
+        <div class="page-header">
+          <app-header></app-header>
+        </div>
+        <main class="main-content">
+          <router-outlet></router-outlet>
+        </main>
+        <app-footer></app-footer>
+        <app-notification></app-notification>
       </div>
-      
-      <main class="main-content">
-        <router-outlet></router-outlet>
-      </main>
-      <app-footer></app-footer>
-      <app-notification></app-notification>
-    </div>
-  `,
+    }
+    `,
   styles: [`
     /* Styles pour l'indicateur de chargement global */
     .global-loading-overlay {

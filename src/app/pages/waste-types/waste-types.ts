@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 
 interface WasteType {
@@ -18,7 +18,7 @@ interface WasteType {
 
 @Component({
   selector: 'app-waste-types',
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   templateUrl: './waste-types.html',
   styleUrl: './waste-types.css'
 })

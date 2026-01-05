@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
@@ -13,7 +13,7 @@ import { CountriesOrgMockService } from '../../services/countries-org-mock.servi
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [RouterModule, FormsModule],
   templateUrl: './home.html',
   styleUrl: './home.css'
 })
