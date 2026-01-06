@@ -15,7 +15,7 @@ import { CountriesOrgMockService } from '../../services/countries-org-mock.servi
   selector: 'app-home',
   imports: [RouterModule, FormsModule],
   templateUrl: './home.html',
-  styleUrl: './home.css'
+  styleUrl: './home.scss'
 })
 export class Home  implements OnInit {
   searchQuery = '';

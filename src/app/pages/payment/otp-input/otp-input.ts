@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { PaymentService } from '../../../services/payment/payment.service';
 import { Router } from '@angular/router';
 import { PaymentStatus } from '../../../models/payment/payment-response.model';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 /**
  * Composant de saisie OTP pour validation Orange Money
  */

@@ -110,7 +110,7 @@ interface Communication {
   selector: 'app-municipality-dashboard',
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './municipality-dashboard.html',
-  styleUrl: './municipality-dashboard.css'
+  styleUrl: './municipality-dashboard.scss'
 })
 export class MunicipalityDashboard  implements OnInit {
   currentUser: RegisterUserData | null = null;

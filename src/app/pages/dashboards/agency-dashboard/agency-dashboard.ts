@@ -163,7 +163,7 @@ type TabId = "collections" | "employees" | "zones" | "schedules" | "clients" | "
     LoadingSpinnerComponent,
   ],
   templateUrl: "./agency-dashboard.html",
-  styleUrl: "./agency-dashboard.css",
+  styleUrl: "./agency-dashboard.scss",
   animations: [
     trigger('slideInOut', [
       transition(':enter', [

@@ -46,7 +46,7 @@ interface Subscription {
   selector: 'app-client-dashboard',
   imports: [CommonModule, RouterModule, FormsModule, MatIcon],
   templateUrl: './client-dashboard.html',
-  styleUrl: './client-dashboard.css'
+  styleUrl: './client-dashboard.scss'
 })
 export class ClientDashboard  implements OnInit, AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;

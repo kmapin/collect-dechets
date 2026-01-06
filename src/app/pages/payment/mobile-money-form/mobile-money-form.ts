@@ -40,7 +40,7 @@ interface OperatorInfo {
     PaymentStatusComponent
 ],
   templateUrl: './mobile-money-form.html',
-  styleUrls: ['./mobile-money-form.css']
+  styleUrls: ['./mobile-money-form.scss']
 })
 export class MobileMoneyFormComponent implements OnInit {
   /** Formulaire de paiement */

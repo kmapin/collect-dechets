@@ -13,7 +13,7 @@ import { PaymentResponse, PaymentStatus } from '../../../models/payment/payment-
   standalone: true,
   imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule],
   templateUrl: './payment-status.html',
-  styleUrls: ['./payment-status.css']
+  styleUrls: ['./payment-status.scss']
 })
 export class PaymentStatusComponent {
   /** Réponse de paiement à afficher */

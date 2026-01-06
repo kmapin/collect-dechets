@@ -146,7 +146,7 @@ interface User {
     DrawerModule,
   ],
   templateUrl: "./admin-dashboard.html",
-  styleUrl: "./admin-dashboard.css",
+  styleUrl: "./admin-dashboard.scss",
 })
 export class AdminDashboard implements OnInit {
   currentUser: RegisterUserData | null = null;
