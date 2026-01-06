@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "boite-idees": {
+    "collect-dechets": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -24,7 +24,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/zerodechet",
+            "outputPath": "dist/collect-dechets",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -71,10 +71,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "zerodechet:build:production"
+              "buildTarget": "collect-dechets:build:production"
             },
             "development": {
-              "buildTarget": "zerodechet:build:development"
+              "buildTarget": "collect-dechets:build:development"
             }
           },
           "defaultConfiguration": "development"
