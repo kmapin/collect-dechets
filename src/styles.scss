@@ -1,3 +1,9 @@
+
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
 html {
@@ -12,12 +18,19 @@ html {
 }
 
 body {
+  // Default the application to a light color theme. This can be changed to
+  // `dark` to enable the dark color theme, or to `light dark` to defer to the
   // user's system settings.
   color-scheme: light;
 
+  // Set a default background, font and text colors for the application using
+  // Angular Material's system-level CSS variables. Learn more about these
+  // variables at https://material.angular.dev/guide/system-variables
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
   margin: 0;
 }
 /* @import "primeicons/primeicons.css"; */
@@ -53,6 +66,25 @@ body {
   direction: ltr;
 }
 */
+
+/*
+Source - https://stackoverflow.com/a
+Posted by MGX
+Retrieved 2026-01-07, License - CC BY-SA 4.0
+gère les bordures des champs de saisie material et
+conflits entre tailwind et material
+*/
+
+.mdc-text-field--outlined:not(.mdc-text-field--disabled)
+  .mdc-notched-outline
+  .mdc-notched-outline__trailing {
+  border-left-style: none;
+}
+.mdc-text-field--outlined:not(.mdc-text-field--disabled)
+  .mdc-notched-outline
+  .mdc-notched-outline__notch {
+  border-right-style: none;
+}
 
 /* loader global */
 .loading-wrapper {
@@ -999,6 +1031,9 @@ body {
   max-height: 800px;
   overflow-y: auto;
 }
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
