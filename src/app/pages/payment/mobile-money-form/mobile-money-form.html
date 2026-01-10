@@ -38,14 +38,14 @@
           <!-- Numéro de téléphone -->
           <mat-form-field appearance="outline">
             <mat-label>Numéro de téléphone</mat-label>
-            <input matInput formControlName="phoneNumber" placeholder="+225 XX XX XX XX XX" type="tel" required>
+            <input matInput formControlName="phoneNumber" placeholder="226XXXXXXXX" type="tel" required>
             <mat-icon matPrefix>phone</mat-icon>
             @if (paymentForm.get('phoneNumber')?.invalid) {
               <mat-error>
                 {{ getErrorMessage('phoneNumber') }}
               </mat-error>
             }
-            <mat-hint>Format: +225XXXXXXXXXX ou 0XXXXXXXXX</mat-hint>
+            <mat-hint>Format: 226XXXXXXXX</mat-hint>
           </mat-form-field>
           <!-- Montant -->
           <mat-form-field appearance="outline">
@@ -98,7 +98,7 @@
         </mat-card-content>
       </mat-card>
     }
-    @if (paymentResponse && paymentResponse.requiresOtp && paymentResponse.status !== 'SUCCESS') {
+    @if (paymentResponse && paymentResponse.requiresOtp && paymentResponse.status === 'PENDING_OTP') {
       <div>
         <app-otp-input
         [paymentResponse]="paymentResponse"
@@ -108,7 +108,7 @@
       </div>
     }
     <!-- Affichage du statut du paiement -->
-    @if (paymentResponse && paymentResponse.status === 'SUCCESS')  {
+    @if (paymentResponse && paymentResponse.status !== 'PENDING_OTP')  {
       <div>
         <app-payment-status [paymentResponse]="paymentResponse"></app-payment-status>
         <div class="action-buttons">
