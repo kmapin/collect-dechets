@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,6 +18,7 @@ import { PaymentResponse, PaymentStatus } from '../../../models/payment/payment-
 export class PaymentStatusComponent {
   /** Réponse de paiement à afficher */
   @Input() paymentResponse: PaymentResponse | null = null;
+  @Output() newPayment = new EventEmitter<void>();
   
   /** Référence à l'énumération PaymentStatus pour utilisation dans le template */
   PaymentStatus = PaymentStatus;
@@ -26,6 +27,7 @@ export class PaymentStatusComponent {
    * Retourne l'icône appropriée selon le statut du paiement
    */
   getStatusIcon(): string {
+    console.log('paymentResponsev', this.paymentResponse);
     if (!this.paymentResponse) return 'help_outline';
     
     switch (this.paymentResponse.status) {
@@ -59,5 +61,9 @@ export class PaymentStatusComponent {
       default:
         return '';
     }
+  }
+
+  onNewPayment(): void {
+    this.newPayment.emit();
   }
 }

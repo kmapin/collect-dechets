@@ -1,5 +1,5 @@
 <div class="form-container">
-  @if (!paymentResponse) {
+  @if (!paymentResponse && currentStep === 'payment') {
     <mat-card class="payment-card">
       <mat-card-header>
         <mat-card-title>
@@ -13,25 +13,28 @@
       <mat-card-content>
         <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
           <!-- Sélection de l'opérateur -->
-          <mat-form-field appearance="outline">
-            <mat-label>Opérateur Mobile Money</mat-label>
-            <mat-select formControlName="operator" required>
+           <div class="operator-selection">
+            <label class="form-label">Sélectionnez votre opérateur</label>
+            <div class="operators-grid">
               @for (op of operators; track op) {
-                <mat-option [value]="op.value">
-                  <span class="operator-option">
-                    <span class="operator-icon">{{ op.icon }}</span>
-                    <span class="operator-label">{{ op.label }}</span>
-                  </span>
-                </mat-option>
+              <div
+                class="operator-card"
+                [class.selected]="operator?.value === op.value"
+                (click)="operator?.setValue(op.value)"
+              >
+                <div class="operator-icon" [style.background-color]="op.color">
+                  {{ op.icon }}
+                </div>
+                <div class="operator-name">{{ op.label }}</div>
+              </div>
               }
-            </mat-select>
-            <mat-icon matPrefix>account_balance_wallet</mat-icon>
-            @if (paymentForm.get('operator')?.hasError('required')) {
+            </div>
+            @if (paymentForm.get('operator')?.invalid) {
               <mat-error>
                 {{ getErrorMessage('operator') }}
               </mat-error>
             }
-          </mat-form-field>
+           </div>
           <!-- Numéro de téléphone -->
           <mat-form-field appearance="outline">
             <mat-label>Numéro de téléphone</mat-label>
@@ -95,9 +98,17 @@
         </mat-card-content>
       </mat-card>
     }
-
+    @if (paymentResponse && paymentResponse.requiresOtp && paymentResponse.status !== 'SUCCESS') {
+      <div>
+        <app-otp-input
+        [paymentResponse]="paymentResponse"
+        (otpVerified)="onOtpVerified($event)"
+        (cancelOtp)="onCancelOtp()"
+        ></app-otp-input>
+      </div>
+    }
     <!-- Affichage du statut du paiement -->
-    @if (paymentResponse) {
+    @if (paymentResponse && paymentResponse.status === 'SUCCESS')  {
       <div>
         <app-payment-status [paymentResponse]="paymentResponse"></app-payment-status>
         <div class="action-buttons">

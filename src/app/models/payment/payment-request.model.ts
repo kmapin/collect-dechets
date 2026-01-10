@@ -3,9 +3,8 @@
  */
 export enum MobileMoneyOperator {
   ORANGE_MONEY = 'ORANGE_MONEY',
-  MTN_MOMO = 'MTN_MOMO',
   MOOV_MONEY = 'MOOV_MONEY',
-  WAVE = 'WAVE'
+  TELECEL_MONEY = 'TELECEL_MONEY'
 }
 
 /**

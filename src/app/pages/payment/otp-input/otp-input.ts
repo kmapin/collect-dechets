@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { PaymentService } from '../../../services/payment/payment.service';
 import { Router } from '@angular/router';
-import { PaymentStatus } from '../../../models/payment/payment-response.model';
+import { PaymentResponse, PaymentStatus } from '../../../models/payment/payment-response.model';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 /**
  * Composant de saisie OTP pour validation Orange Money
@@ -32,6 +32,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
   styleUrls: ['./otp-input.scss']
 })
 export class OtpInputComponent implements OnInit {
+    /** Réponse de paiement à afficher */
+  @Input() paymentResponse: PaymentResponse | null = null;
+  
+  @Output() otpVerified = new EventEmitter<PaymentResponse>();
+  @Output() cancelOtp = new EventEmitter<void>();
+
   /** ID de transaction pour lequel l'OTP est demandé */
   transactionId: string = '';
   
@@ -63,14 +69,13 @@ export class OtpInputComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const currentPayment = this.paymentService.currentPaymentResponse;
-  
+    const currentPayment = this.paymentResponse;
     if (!currentPayment) {
       this.router.navigate(['/payment']);
       return;
     }
   
-    this.transactionId = currentPayment.transactionId;
+    this.transactionId = currentPayment?.transactionId || '';
     this.amount = currentPayment.amount || 0;
   
     // 🔐 Gestion OTP propre et réactive
@@ -92,26 +97,19 @@ export class OtpInputComponent implements OnInit {
   /**
    * Soumet le code OTP
    */
-  onSubmit(): void {
+  onVerifyOtp(): void {
     if (this.otpForm.valid && !this.isProcessing) {
       this.isProcessing = true;
       this.errorMessage = '';
       const otp = this.otpForm.value.otp;
-      
+
       this.paymentService.validateOtp(this.transactionId, otp).subscribe({
         next: (response) => {
           this.isProcessing = false;
-          
+          console.log('response', response);
           if (response.status === PaymentStatus.SUCCESS) {
-            // Mise à jour de la réponse courante pour l'affichage du statut
-            this.paymentService.currentPaymentResponse = response;
-            // Redirection vers la page de paiement (qui affichera le statut)
-            // Idéalement on aurait une page de succès dédiée ou on réutiliserait le composant
-            // Pour l'instant, on retourne au formulaire qui gère l'affichage du statut si response est set
-            // Mais le formulaire est un nouveau composant via le router...
-            // Modifions la logique : on reste ici et on affiche le succès ou on redirige
-            alert(response.message); // Simple feedback pour l'instant
-            this.router.navigate(['/payment']);
+            this.paymentResponse = response;
+            this.otpVerified.emit(this.paymentResponse);
           } else {
             this.errorMessage = response.message;
           }
@@ -129,7 +127,8 @@ export class OtpInputComponent implements OnInit {
    * Annule la saisie OTP
    */
   onCancel(): void {
-    this.router.navigate(['/payment']);
+    this.cancelOtp.emit();
+    this.router.navigate(['/payment']);   
   }
 
   /**
