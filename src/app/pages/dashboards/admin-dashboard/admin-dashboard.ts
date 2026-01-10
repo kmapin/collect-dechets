@@ -284,7 +284,9 @@ export class AdminDashboard implements OnInit {
     private sharedService: SharedService,
     private router: Router,
     private cd: ChangeDetectorRef
-  ) {}
+  ) {
+    this.drawerWidth;
+  }
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
@@ -481,6 +483,9 @@ export class AdminDashboard implements OnInit {
         color: "#00bcd4",
       },
     ];
+  }
+  get drawerWidth(): string {
+    return window.innerWidth <= 768 ? '100%' : '33%';
   }
 
   loadZoneStatistics(): void {

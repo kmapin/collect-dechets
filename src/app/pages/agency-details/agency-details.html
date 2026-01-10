@@ -1,4 +1,4 @@
-<div class="agency-details-page" >
+<div class="agency-details-page">
   <!-- Breadcrumb Navigation -->
   <div class="breadcrumb-section">
     <div class="container">
@@ -23,135 +23,115 @@
           <div class="agency-logo">
             <img
               src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
-              [alt]="agency?.name"
-              />
-            </div>
-            <div class="agency-details">
-              <h1 class="agency-name">{{ agency?.name }}</h1>
-              <p class="agency-description">{{ agency?.agencyDescription }}</p>
-              <div class="agency-meta">
-                <div class="agency-rating">
-                  <div class="stars">
-                    @for (star of getStars(agency?.rating); track star) {
-                      <i
-                        class="material-icons star"
-                        >star</i
-                        >
-                    }
-                  </div>
-                  <span class="rating-text">{{ agency?.rating }}/5</span>
-                  <span class="reviews-count"
-                    >({{ agency?.totalClients }} avis)</span
-                    >
-                  </div>
-                  <div class="agency-status">
-                    <span class="status-badge" [class.active]="agency?.status ==='active'? true : false">
-                      <i class="material-icons"
-                        >{{ agency?.status ==='active' ? 'check_circle' : 'cancel' }}</i
-                        >
-                        {{ agency?.status === 'active' ? 'Agence active' : 'Agence inactive'  }}
-                      </span>
-                    </div>
-                  </div>
+              [alt]="agency?.name" />
+          </div>
+          <div class="agency-details">
+            <h1 class="agency-name">{{ agency?.name }}</h1>
+            <p class="agency-description">{{ agency?.agencyDescription }}</p>
+            <div class="agency-meta">
+              <div class="agency-rating">
+                <div class="stars">
+                  @for (star of getStars(agency?.rating); track star) {
+                  <i class="material-icons star">star</i>
+                  }
                 </div>
+                <span class="rating-text">{{ agency?.rating }}/5</span>
+                <span class="reviews-count">({{ agency?.totalClients }} avis)</span>
               </div>
-              <div class="agency-actions">
-                @if (currentUser?.role === 'manager' &&
-                  currentUser?.agencyId === agency?._id) {
-                  <button class="btn btn-success" (click)="editAgency()">
-                    <i class="material-icons">edit</i>
-                    Modifier
-                  </button>
-                }
-                @if (currentUser?.role === 'super_admin') {
-                  <button
-                    class="btn btn-accent"
-                    (click)="activateAgency(agency?._id)"
-                    >
-                    @if (agency?.status!== 'active' ) {
-                      <i class="material-icons">check</i>
-                      Activer
-                    } @else {
-                      <i class="material-icons">lock_open</i>
-                      Desactiver
-                    }
-                  </button>
-                }
-                <button class="btn btn-secondary" (click)="shareAgency()">
-                  <i class="material-icons">share</i>
-                  Partager
-                </button>
-                <!-- Buton of drawer to subscribe -->
-                <!-- <button class="btn btn-primary btn-large" (click)="subscribeToAgency()"> -->
-                @if (currentUser?.subscribedAgencyId == agency?._id) {
-                  <div
-                    class="btn btn-primary btn-large"
-                    type="button"
-                    data-drawer-target="drawer-contact"
-                    data-drawer-show="drawer-contact"
-                    aria-controls="drawer-contact"
-                    >
-                    <i class="material-icons">star</i>
-                    Déjà abonné(e)
-                  </div>
-                }
+              <div class="agency-status">
+                <span class="status-badge" [class.active]="agency?.status ==='active'? true : false">
+                  <i class="material-icons">{{ agency?.status ==='active' ? 'check_circle' : 'cancel' }}</i>
+                  {{ agency?.status === 'active' ? 'Agence active' : 'Agence inactive' }}
+                </span>
               </div>
             </div>
           </div>
         </div>
+        <div class="agency-actions">
+          @if (currentUser?.role === 'manager' &&
+          currentUser?.agencyId === agency?._id) {
+          <button class="btn btn-success" (click)="editAgency()">
+            <i class="material-icons">edit</i>
+            Modifier
+          </button>
+          }
+          @if (currentUser?.role === 'super_admin') {
+          <button class="btn btn-accent" (click)="activateAgency(agency?._id)">
+            @if (agency?.status!== 'active' ) {
+            <i class="material-icons">check</i>
+            Activer
+            } @else {
+            <i class="material-icons">lock_open</i>
+            Desactiver
+            }
+          </button>
+          }
+          <button class="btn btn-secondary" (click)="shareAgency()">
+            <i class="material-icons">share</i>
+            Partager
+          </button>
+          <!-- Buton of drawer to subscribe -->
+          <!-- <button class="btn btn-primary btn-large" (click)="subscribeToAgency()"> -->
+          @if (currentUser?.subscribedAgencyId == agency?._id) {
+          <div class="btn btn-primary btn-large" type="button" data-drawer-target="drawer-contact"
+            data-drawer-show="drawer-contact" aria-controls="drawer-contact">
+            <i class="material-icons">star</i>
+            Déjà abonné(e)
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- Main Content -->
-        <div class="agency-main-content">
-          <div class="container">
-            <div class="content-layout">
-              <!-- Left Column - Main Information -->
-              <div class="main-column">
-                <!-- Quick Stats -->
-                <section class="quick-stats">
-                  <div class="stat-item">
-                    <div class="stat-icon">
-                      <i class="material-icons">people</i>
-                    </div>
-                    <div class="stat-info">
-                      <span class="stat-number">{{ agency?.totalClients }}</span>
-                      <span class="stat-label">Clients</span>
-                    </div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-icon">
-                      <i class="material-icons">build</i>
-                    </div>
-                    <div class="stat-info">
-                      <span class="stat-number">{{ tariffs.length || 0 }}</span>
-                      <span class="stat-label">Tarifs</span>
-                    </div>
-                  </div>
-                  <div class="stat-item">
-                    <div class="stat-icon">
-                      <i class="material-icons">map</i>
-                    </div>
-                    <div class="stat-info">
-                      <span class="stat-number"
-                        >{{ agency?.serviceZones?.length || 0 }}</span
-                        >
-                        <span class="stat-label">Zones</span>
-                      </div>
-                    </div>
-                    <div class="stat-item">
-                      <div class="stat-icon">
-                        <i class="material-icons">local_shipping</i>
-                      </div>
-                      <div class="stat-info">
-                        <span class="stat-number"
-                          >{{ agency?.employees?.length || 0 }}</span
-                          >
-                          <span class="stat-label">Employés</span>
-                        </div>
-                      </div>
-                    </section>
+  <!-- Main Content -->
+  <div class="agency-main-content">
+    <div class="container">
+      <div class="content-layout">
+        <!-- Left Column - Main Information -->
+        <div class="main-column">
+          <!-- Quick Stats -->
+          <section class="quick-stats">
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="material-icons">people</i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-number">{{ agency?.totalClients }}</span>
+                <span class="stat-label">Clients</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="material-icons">build</i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-number">{{ tariffs.length || 0 }}</span>
+                <span class="stat-label">Tarifs</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="material-icons">map</i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-number">{{ agency?.serviceZones?.length || 0 }}</span>
+                <span class="stat-label">Zones</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="material-icons">local_shipping</i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-number">{{ agency?.employees?.length || 0 }}</span>
+                <span class="stat-label">Employés</span>
+              </div>
+            </div>
+          </section>
 
-                    <!-- Services Section -->
-                    <!-- <section class="services-section card">
+          <!-- Services Section -->
+          <!-- <section class="services-section card">
                     <div class="section-header">
                       <h2>
                         <i class="material-icons">build</i>
@@ -194,75 +174,62 @@
                     </div>
                   </section> -->
 
-                  <!-- Tarifs Section -->
-                  <section class="services-section card">
-                    <div class="section-header">
-                      <h2>
-                        <i class="material-icons">receipt_long</i>
-                        Tarifs d'abonnement
-                      </h2>
-                      <span class="section-count"
-                        >{{ tariffs.length || 0 }} tarif(s)</span
-                        >
-                      </div>
-                      <div class="services-grid">
-                        @for (tariff of tariffs; track tariff) {
-                          <div class="service-card">
-                            <div class="service-header">
-                              <h3>{{ tariff.planType }}</h3>
-                              <div class="service-price">
-                                <span class="price-amount"
-                                  >{{ tariff.price }} <sup>FCFA</sup></span
-                                  >
-                                  <span class="price-period">/mois</span>
-                                </div>
-                              </div>
-                              <p class="service-description">{{ tariff.description }}</p>
-                              <div class="service-details">
-                                <div class="service-frequency">
-                                  <i class="material-icons">loop</i>
-                                  <span>{{ tariff.numberOfPasses }} passages inclus</span>
-                                </div>
-                              </div>
-                              <div class="form-group" style="margin: 12px 0">
-                                <!-- <label>Nombre de mois :</label> -->
-                                <span class="text-sm font-small text-[--primary-color]"
-                                  >Saisir le nombre de mois pour l'abonnement à ce
-                                  service</span
-                                  >
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max="12"
-                                    [(ngModel)]="tariffSelectedMonths"
-                                    [name]="'months_' + tariff?._id"
-                                    style="width: 80px"
-                                    />
-                                  </div>
-                                  <div class="service-actions">
-                                    <button
-                                      class="btn btn-primary btn-small"
-                                      (click)="submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths)"
-                                      >
-                                      <i class="material-icons">add_shopping_cart</i>
-                                      Choisir ce tarif
-                                    </button>
-                                  </div>
-                                </div>
-                              }
-                            </div>
-                            @if (tariffs.length === 0) {
-                              <div class="empty-state">
-                                <i class="material-icons">receipt_long</i>
-                                <h3>Aucun tarif disponible</h3>
-                                <p>
-                                  Cette agence ne propose actuellement aucun tarif d'abonnement.
-                                </p>
-                              </div>
-                            }
-                          </section>
+          <!-- Tarifs Section -->
+          <section class="services-section card">
+            <div class="section-header">
+              <h2>
+                <i class="material-icons">receipt_long</i>
+                Tarifs d'abonnement
+              </h2>
+              <span class="section-count">{{ tariffs.length || 0 }} tarif(s)</span>
+            </div>
+            <div class="services-grid">
+              @for (tariff of tariffs; track tariff) {
+              <div class="service-card">
+                <div class="service-header">
+                  <h3>{{ tariff.planType }}</h3>
+                  <div class="service-price">
+                    <span class="price-amount">{{ tariff.price }} <sup>FCFA</sup></span>
+                    <span class="price-period">/mois</span>
+                  </div>
+                </div>
+                <p class="service-description">{{ tariff.description }}</p>
+                <div class="service-details">
+                  <div class="service-frequency">
+                    <i class="material-icons">loop</i>
+                    <span>{{ tariff.numberOfPasses }} passages inclus</span>
+                  </div>
+                </div>
+                <div class="form-group" style="margin: 12px 0">
+                  <!-- <label>Nombre de mois :</label> -->
+                  <span class="text-sm font-small text-[--primary-color]">Saisir le nombre de mois pour l'abonnement à
+                    ce
+                    service</span>
+                  <input type="number" min="1" max="12" [(ngModel)]="tariffSelectedMonths"
+                    [name]="'months_' + tariff?._id" style="width: 80px" />
+                </div>
+                <div class="service-actions">
+                  <button class="btn btn-primary btn-small"
+                    (click)="submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths)">
+                    <i class="material-icons">add_shopping_cart</i>
+                    Choisir ce tarif
+                  </button>
+                </div>
+              </div>
+              }
+            </div>
+            @if (tariffs.length === 0) {
+            <div class="empty-state">
+              <i class="material-icons">receipt_long</i>
+              <h3>Aucun tarif disponible</h3>
+              <p>
+                Cette agence ne propose actuellement aucun tarif d'abonnement.
+              </p>
+            </div>
+            }
+          </section>
 
-                          <!-- <section class="tariffs-section card">
+          <!-- <section class="tariffs-section card">
                           <div class="section-header">
                             <h2>
                               <i class="material-icons">receipt_long</i>
@@ -301,104 +268,94 @@
                           </div>
                         </section> -->
 
-                        <!-- Coverage Zones Section -->
-                        <section class="zones-section card">
-                          <div class="section-header">
-                            <h2>
-                              <i class="material-icons">map</i>
-                              Zones de couverture
-                            </h2>
-                            <span class="section-count"
-                              >{{ agencyZones.length || 0 }} zone(s)</span
-                              >
-                            </div>
-                            <div class="zones-grid">
-                              <div class="zones-by-city">
-                                <!-- <div *ngFor="let entry of getDistrictsForActivity() | keyvalue" class="city-section"> -->
-                                <div class="city-section">
-                                  <h3 class="city-title">Ouagadougou</h3>
-                                  <div class="districts-grid">
-                                    @for (district of agencyZones; track district) {
-                                      <div class="district-card active">
-                                        <!-- <div  class="district-card active"> -->
-                                        <h4 class="district-name">{{ district}}</h4>
-                                        <span class="district-badge active">Zone active</span>
-                                      </div>
-                                    }
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            @if (agencyZones.length === 0) {
-                              <div class="empty-state">
-                                <i class="material-icons">map</i>
-                                <h3>Aucune zone de couverture</h3>
-                                <p>Cette agence n'a pas encore défini ses zones de couverture.</p>
-                              </div>
-                            }
-                          </section>
-                        </div>
+          <!-- Coverage Zones Section -->
+          <section class="zones-section card">
+            <div class="section-header">
+              <h2>
+                <i class="material-icons">map</i>
+                Zones de couverture
+              </h2>
+              <span class="section-count">{{ agencyZones.length || 0 }} zone(s)</span>
+            </div>
+            <div class="zones-grid">
+              <div class="zones-by-city">
+                <!-- <div *ngFor="let entry of getDistrictsForActivity() | keyvalue" class="city-section"> -->
+                <div class="city-section">
+                  <h3 class="city-title">Ouagadougou</h3>
+                  <div class="districts-grid">
+                    @for (district of agencyZones; track district) {
+                    <div class="district-card active">
+                      <!-- <div  class="district-card active"> -->
+                      <h4 class="district-name">{{ district}}</h4>
+                      <span class="district-badge active">Zone active</span>
+                    </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+            @if (agencyZones.length === 0) {
+            <div class="empty-state">
+              <i class="material-icons">map</i>
+              <h3>Aucune zone de couverture</h3>
+              <p>Cette agence n'a pas encore défini ses zones de couverture.</p>
+            </div>
+            }
+          </section>
+        </div>
 
-                        <!-- Right Column - Sidebar -->
-                        <div class="sidebar-column">
-                          <!-- Contact Card -->
-                          <div class="contact-card card">
-                            <div class="card-header">
-                              <h3>
-                                <i class="material-icons">contact_phone</i>
-                                Informations de contact
-                              </h3>
-                            </div>
-                            <div class="contact-content">
-                              <div class="contact-item">
-                                <div class="contact-icon">
-                                  <i class="material-icons">phone</i>
-                                </div>
-                                <div class="contact-info">
-                                  <span class="contact-label">Téléphone</span>
-                                  <a href="tel:{{ agency?.phone }}" class="contact-value"
-                                    >{{ agency?.owner?.phone }}</a
-                                    >
-                                  </div>
-                                </div>
-                                <div class="contact-item">
-                                  <div class="contact-icon">
-                                    <i class="material-icons">location_on</i>
-                                  </div>
-                                  <div class="contact-info">
-                                    <span class="contact-label">Adresse</span>
-                                    <span class="contact-value">
-                                      {{ agency?.address?.doorNumber }} {{ agency?.address?.street
-                                      }}<br />
-                                      {{ agency?.address?.neighborhood }}, {{ agency?.address?.city }}
-                                      {{ agency?.address?.postalCode }}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="contact-actions">
-                                <button
-                                  class="btn btn-primary btn-full"
-                                  (click)="contactAgency()"
-                                  >
-                                  <i class="material-icons">phone</i>
-                                  Contacter l'agence
-                                </button>
-                                @if (currentUser?.role === 'client') {
-                                  <button
-                                    class="btn btn-primary btn-full"
-                                    (click)="showReportModal = true"
-                                    >
-                                    <i class="material-icons">message</i>
-                                    Envoyer message
-                                  </button>
-                                }
-                              </div>
-                            </div>
+        <!-- Right Column - Sidebar -->
+        <div class="sidebar-column">
+          <!-- Contact Card -->
+          <div class="contact-card card">
+            <div class="card-header">
+              <h3>
+                <i class="material-icons">contact_phone</i>
+                Informations de contact
+              </h3>
+            </div>
+            <div class="contact-content">
+              <div class="contact-item">
+                <div class="contact-icon">
+                  <i class="material-icons">phone</i>
+                </div>
+                <div class="contact-info">
+                  <span class="contact-label">Téléphone</span>
+                  <a href="tel:{{ agency?.phone }}" class="contact-value">{{ agency?.owner?.phone }}</a>
+                </div>
+              </div>
+              <div class="contact-item">
+                <div class="contact-icon">
+                  <i class="material-icons">location_on</i>
+                </div>
+                <div class="contact-info">
+                  <span class="contact-label">Adresse</span>
+                  <span class="contact-value">
+                    {{ agency?.address?.doorNumber }} {{ agency?.address?.street
+                    }}<br />
+                    {{ agency?.address?.neighborhood }}, {{ agency?.address?.city }}
+                    {{ agency?.address?.postalCode }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="contact-actions">
+              <button class="btn btn-primary btn-full" (click)="contactAgency()">
+                <i class="material-icons">phone</i>
+                Contacter l'agence
+              </button>
+              @if (currentUser?.role === 'client') {
+              <button class="btn btn-primary btn-full" (click)="showReportModal = true">
+                <i class="material-icons">message</i>
+                Envoyer message
+              </button>
+              }
+            </div>
+          </div>
 
 
-                            <!-- Location Map -->
-                            <!-- <div class="location-card card">
+          <!-- Location Map -->
+          <!-- <div class="location-card card">
                             <div class="card-header">
                               <h3>
                                 <i class="material-icons">place</i>
@@ -420,316 +377,239 @@
                             </div>
                           </div> -->
 
-                          <!-- Agency Stats -->
-                          <div class="agency-stats-card card">
-                            <div class="card-header">
-                              <h3>
-                                <i class="material-icons">analytics</i>
-                                Statistiques
-                              </h3>
-                            </div>
-                            <div class="stats-content">
-                              <div class="stat-row">
-                                <div class="stat-icon">
-                                  <i class="material-icons">people</i>
-                                </div>
-                                <div class="stat-details">
-                                  <span class="stat-number">{{ agency?.totalClients }}</span>
-                                  <span class="stat-label">Clients actifs</span>
-                                </div>
-                              </div>
-                              <div class="stat-row">
-                                <div class="stat-icon">
-                                  <i class="material-icons">star</i>
-                                </div>
-                                <div class="stat-details">
-                                  <span class="stat-number">{{ agency?.rating }}/5</span>
-                                  <span class="stat-label">Note moyenne</span>
-                                </div>
-                              </div>
-                              <div class="stat-row">
-                                <div class="stat-icon">
-                                  <i class="material-icons">event</i>
-                                </div>
-                                <div class="stat-details">
-                                  <span class="stat-number">{{ getYearsInService() }}</span>
-                                  <span class="stat-label">Années de service</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+          <!-- Agency Stats -->
+          <div class="agency-stats-card card">
+            <div class="card-header">
+              <h3>
+                <i class="material-icons">analytics</i>
+                Statistiques
+              </h3>
+            </div>
+            <div class="stats-content">
+              <div class="stat-row">
+                <div class="stat-icon">
+                  <i class="material-icons">people</i>
+                </div>
+                <div class="stat-details">
+                  <span class="stat-number">{{ agency?.totalClients }}</span>
+                  <span class="stat-label">Clients actifs</span>
+                </div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-icon">
+                  <i class="material-icons">star</i>
+                </div>
+                <div class="stat-details">
+                  <span class="stat-number">{{ agency?.rating }}/5</span>
+                  <span class="stat-label">Note moyenne</span>
+                </div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-icon">
+                  <i class="material-icons">event</i>
+                </div>
+                <div class="stat-details">
+                  <span class="stat-number">{{ getYearsInService() }}</span>
+                  <span class="stat-label">Années de service</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                          <!-- Similar Agencies -->
-                          <div class="similar-agencies-card card">
-                            <div class="card-header">
-                              <h3>
-                                <i class="material-icons">business</i>
-                                Agences similaires
-                              </h3>
-                            </div>
-                            <div class="similar-agencies-list">
-                              <div class="similar-agency-item">
-                                <div class="similar-agency-info">
-                                  <h4>GreenWaste Solutions</h4>
-                                  <div class="similar-agency-rating">
-                                    <div class="stars">
-                                      <i class="material-icons star">star</i>
-                                      <i class="material-icons star">star</i>
-                                      <i class="material-icons star">star</i>
-                                      <i class="material-icons star">star</i>
-                                    </div>
-                                    <span>4.2/5</span>
-                                  </div>
-                                </div>
-                                <button class="btn btn-secondary btn-small">Voir</button>
-                              </div>
-                              <div class="similar-agency-item">
-                                <div class="similar-agency-info">
-                                  <h4>EcoClean Pro</h4>
-                                  <div class="similar-agency-rating">
-                                    <div class="stars">
-                                      <i class="material-icons star">star</i>
-                                      <i class="material-icons star">star</i>
-                                      <i class="material-icons star">star</i>
-                                      <i class="material-icons star">star</i>
-                                      <i class="material-icons star">star</i>
-                                    </div>
-                                    <span>4.8/5</span>
-                                  </div>
-                                </div>
-                                <button class="btn btn-secondary btn-small">Voir</button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+          <!-- Similar Agencies -->
+          <div class="similar-agencies-card card">
+            <div class="card-header">
+              <h3>
+                <i class="material-icons">business</i>
+                Agences similaires
+              </h3>
+            </div>
+            <div class="similar-agencies-list">
+              <div class="similar-agency-item">
+                <div class="similar-agency-info">
+                  <h4>GreenWaste Solutions</h4>
+                  <div class="similar-agency-rating">
+                    <div class="stars">
+                      <i class="material-icons star">star</i>
+                      <i class="material-icons star">star</i>
+                      <i class="material-icons star">star</i>
+                      <i class="material-icons star">star</i>
                     </div>
+                    <span>4.2/5</span>
                   </div>
                 </div>
-                <p-drawer header="Modifier votre agence" [(visible)]="visible2" position="right" [style]="{ width: '35%' }">
-                  <form
-                    class="register-form"
-                    #editAgencyForm="ngForm"
-                    >
-                    <div class="form-section" style="margin-top: 0">
+                <button class="btn btn-secondary btn-small">Voir</button>
+              </div>
+              <div class="similar-agency-item">
+                <div class="similar-agency-info">
+                  <h4>EcoClean Pro</h4>
+                  <div class="similar-agency-rating">
+                    <div class="stars">
+                      <i class="material-icons star">star</i>
+                      <i class="material-icons star">star</i>
+                      <i class="material-icons star">star</i>
+                      <i class="material-icons star">star</i>
+                      <i class="material-icons star">star</i>
+                    </div>
+                    <span>4.8/5</span>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-small">Voir</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<p-drawer header="Modifier votre agence" [(visible)]="visible2" position="right" [style]="{ width: drawerWidth }">
+  <form class="register-form" #editAgencyForm="ngForm">
+    <div class="form-section" style="margin-top: 0">
 
-                      <div class="form-group">
-                        <label class="form-label" for="agencyName">
-                          <i class="material-icons">business</i>
-                          Nom de l'agence <span class="required">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          id="agencyName"
-                          name="agencyName"
-                          [(ngModel)]="userData.name"
-                          class="form-control"
-                          placeholder="Nom de votre agence"
-                          required
-                          />
-                        </div>
+      <div class="form-group">
+        <label class="form-label" for="agencyName">
+          <i class="material-icons">business</i>
+          Nom de l'agence <span class="required">*</span>
+        </label>
+        <input type="text" id="agencyName" name="agencyName" [(ngModel)]="userData.name" class="form-control"
+          placeholder="Nom de votre agence" required />
+      </div>
 
-                        <div class="form-group">
-                          <label class="form-label" for="agencyDescription">
-                            <i class="material-icons">description</i>
-                            Description
-                          </label>
-                          <textarea
-                            id="agencyDescription"
-                            name="agencyDescription"
-                            [(ngModel)]="userData.agencyDescription"
-                            class="form-control"
-                            placeholder="Décrivez vos services..."
-                            rows="3"
-                          ></textarea>
-                        </div>
-                        <div class="form-group">
-                          <label class="form-label" for="slogan">
-                            <i class="material-icons">format_quote</i>
-                            Slogan de l'agence <span class="required">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            id="slogan"
-                            name="slogan"
-                            [(ngModel)]="userData.slogan"
-                            class="form-control"
-                            placeholder="Slogan de votre agence"
-                            required
-                            />
-                          </div>
-                        </div>
-                        <div class="form-section">
-                          <h3>Adresse de localisation</h3>
+      <div class="form-group">
+        <label class="form-label" for="agencyDescription">
+          <i class="material-icons">description</i>
+          Description
+        </label>
+        <textarea id="agencyDescription" name="agencyDescription" [(ngModel)]="userData.agencyDescription"
+          class="form-control" placeholder="Décrivez vos services..." rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="slogan">
+          <i class="material-icons">format_quote</i>
+          Slogan de l'agence <span class="required">*</span>
+        </label>
+        <input type="text" id="slogan" name="slogan" [(ngModel)]="userData.slogan" class="form-control"
+          placeholder="Slogan de votre agence" required />
+      </div>
+    </div>
+    <div class="form-section">
+      <h3>Adresse de localisation</h3>
 
-                          <div class="form-row">
-                            <div class="form-group">
-                              <label class="form-label" for="city">
-                                <i class="material-icons">location_city</i>
-                                Ville <span class="required">*</span>
-                              </label>
-                              <select
-                                id="city"
-                                name="city"
-                                [(ngModel)]="userData.address.city"
-                                class="form-control"
-                                (change)="onCityChange(userData.address.city)"
-                                required
-                                >
-                                <option value="">Sélectionner</option>
-                                @for (city of cities; track city) {
-                                  <option [value]="city.name">
-                                    {{ city.name }}
-                                  </option>
-                                }
-                              </select>
-                            </div>
-                            <div class="form-group">
-                              <label class="form-label" for="postalBoite">
-                                <i class="material-icons">markunread_mailbox</i>
-                                Boite postal <span class="required">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                id="postalBoite"
-                                name="postalBoite"
-                                [(ngModel)]="userData.address.postalCode"
-                                class="form-control"
-                                placeholder="75001"
-                                required
-                                />
-                              </div>
-                            </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="city">
+            <i class="material-icons">location_city</i>
+            Ville <span class="required">*</span>
+          </label>
+          <select id="city" name="city" [(ngModel)]="userData.address.city" class="form-control"
+            (change)="onCityChange(userData.address.city)" required>
+            <option value="">Sélectionner</option>
+            @for (city of cities; track city) {
+            <option [value]="city.name">
+              {{ city.name }}
+            </option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="postalBoite">
+            <i class="material-icons">markunread_mailbox</i>
+            Boite postal <span class="required">*</span>
+          </label>
+          <input type="text" id="postalBoite" name="postalBoite" [(ngModel)]="userData.address.postalCode"
+            class="form-control" placeholder="75001" required />
+        </div>
+      </div>
 
-                            <div class="form-row">
-                              <div class="form-group">
-                                <label class="form-label" for="arrondissement">
-                                  <i class="material-icons">map</i>
-                                  Arrondiss... <span class="required">*</span>
-                                </label>
-                                <select
-                                  id="arrondissement"
-                                  name="arrondissement"
-                                  [(ngModel)]="userData.address.arrondissement"
-                                  (change)="onArrondissementChange(userData.address.arrondissement)"
-                                  class="form-control"
-                                  [disabled]="!arrondissementss.length"
-                                  required
-                                  >
-                                  <option value="">Sélectionner</option>
-                                  @for (arr of arrondissementss; track arr) {
-                                    <option [value]="arr.name">
-                                      {{ arr.name }}
-                                    </option>
-                                  }
-                                </select>
-                              </div>
-                              <div class="form-group">
-                                <label class="form-label" for="sector">
-                                  <i class="material-icons">location_city</i>
-                                  Secteur <span class="required">*</span>
-                                </label>
-                                <select
-                                  id="sector"
-                                  name="sector"
-                                  [(ngModel)]="userData.address.sector"
-                                  (change)="onSecteurChange(userData.address.sector)"
-                                  class="form-control"
-                                  [disabled]="!secteurss.length"
-                                  required
-                                  >
-                                  <option value="">Sélectionner</option>
-                                  @for (secteur of secteurss; track secteur) {
-                                    <option
-                                      [value]="secteur.name"
-                                      >
-                                      {{ secteur.name }}
-                                    </option>
-                                  }
-                                </select>
-                              </div>
-                              <div class="form-group">
-                                <label class="form-label" for="neighborhood">
-                                  <i class="material-icons">location_city</i>
-                                  Quartier <span class="required">*</span>
-                                </label>
-                                <select
-                                  id="neighborhood"
-                                  name="neighborhood"
-                                  [(ngModel)]="userData.address.neighborhood"
-                                  class="form-control"
-                                  [disabled]="!quartierss.length"
-                                  required
-                                  >
-                                  <option value="">Sélectionner</option>
-                                  @for (quartier of quartierss; track quartier) {
-                                    <option
-                                      [value]="quartier.name"
-                                      >
-                                      {{ quartier.name }}
-                                    </option>
-                                  }
-                                </select>
-                              </div>
-                            </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="arrondissement">
+            <i class="material-icons">map</i>
+            Arrondiss... <span class="required">*</span>
+          </label>
+          <select id="arrondissement" name="arrondissement" [(ngModel)]="userData.address.arrondissement"
+            (change)="onArrondissementChange(userData.address.arrondissement)" class="form-control"
+            [disabled]="!arrondissementss.length" required>
+            <option value="">Sélectionner</option>
+            @for (arr of arrondissementss; track arr) {
+            <option [value]="arr.name">
+              {{ arr.name }}
+            </option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="sector">
+            <i class="material-icons">location_city</i>
+            Secteur <span class="required">*</span>
+          </label>
+          <select id="sector" name="sector" [(ngModel)]="userData.address.sector"
+            (change)="onSecteurChange(userData.address.sector)" class="form-control" [disabled]="!secteurss.length"
+            required>
+            <option value="">Sélectionner</option>
+            @for (secteur of secteurss; track secteur) {
+            <option [value]="secteur.name">
+              {{ secteur.name }}
+            </option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="neighborhood">
+            <i class="material-icons">location_city</i>
+            Quartier <span class="required">*</span>
+          </label>
+          <select id="neighborhood" name="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control"
+            [disabled]="!quartierss.length" required>
+            <option value="">Sélectionner</option>
+            @for (quartier of quartierss; track quartier) {
+            <option [value]="quartier.name">
+              {{ quartier.name }}
+            </option>
+            }
+          </select>
+        </div>
+      </div>
 
-                            <div class="form-row">
-                              <div class="form-group">
-                                <label class="form-label" for="street">
-                                  <i class="material-icons">location_on</i>
-                                  Rue <span class="required">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  id="street"
-                                  name="street"
-                                  [(ngModel)]="userData.address.street"
-                                  class="form-control"
-                                  placeholder="Nom de la rue"
-                                  required
-                                  />
-                                </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="street">
+            <i class="material-icons">location_on</i>
+            Rue <span class="required">*</span>
+          </label>
+          <input type="text" id="street" name="street" [(ngModel)]="userData.address.street" class="form-control"
+            placeholder="Nom de la rue" required />
+        </div>
 
-                                <div class="form-group">
-                                  <label class="form-label" for="doorNumber">
-                                    <i class="material-icons">home</i>
-                                    Numéro Porte <span class="required">*</span>
-                                  </label>
-                                  <input
-                                    type="text"
-                                    id="doorNumber"
-                                    name="doorNumber"
-                                    [(ngModel)]="userData.address.doorNumber"
-                                    class="form-control"
-                                    placeholder="123"
-                                    required
-                                    />
-                                  </div>
+        <div class="form-group">
+          <label class="form-label" for="doorNumber">
+            <i class="material-icons">home</i>
+            Numéro Porte <span class="required">*</span>
+          </label>
+          <input type="text" id="doorNumber" name="doorNumber" [(ngModel)]="userData.address.doorNumber"
+            class="form-control" placeholder="123" required />
+        </div>
 
-                                  <div class="form-group">
-                                    <label class="form-label" for="doorColor">
-                                      <i class="material-icons">palette</i>
-                                      Couleur porte
-                                    </label>
-                                    <select
-                                      id="doorColor"
-                                      name="doorColor"
-                                      [(ngModel)]="userData.address.doorColor"
-                                      class="form-control"
-                                      >
-                                      <option value="">Sélectionner</option>
-                                      <option value="blanc">Blanc</option>
-                                      <option value="noir">Noir</option>
-                                      <option value="marron">Marron</option>
-                                      <option value="bleu">Bleu</option>
-                                      <option value="rouge">Rouge</option>
-                                      <option value="vert">Vert</option>
-                                      <option value="autre">Autre</option>
-                                    </select>
-                                  </div>
-                                </div>
-                              </div>
-                              <!-- <button
+        <div class="form-group">
+          <label class="form-label" for="doorColor">
+            <i class="material-icons">palette</i>
+            Couleur porte
+          </label>
+          <select id="doorColor" name="doorColor" [(ngModel)]="userData.address.doorColor" class="form-control">
+            <option value="">Sélectionner</option>
+            <option value="blanc">Blanc</option>
+            <option value="noir">Noir</option>
+            <option value="marron">Marron</option>
+            <option value="bleu">Bleu</option>
+            <option value="rouge">Rouge</option>
+            <option value="vert">Vert</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <!-- <button
                               (click)="onUpdateAgency()"
                               class="btn btn-primary btn-full"
                               [disabled]="isButtonDisabled()"
@@ -738,31 +618,28 @@
                               <i class="material-icons" *ngIf="!isLoading">person_add</i>
                               {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
                             </button> -->
-                            <div class="drawer-footer">
-                              <button
-                                (click)="onUpdateAgency()"
-                                class="btn btn-primary btn-full"
-                                [disabled]="isButtonDisabled()"
-                                >
-                                @if (isLoading) {
-                                  <i class="material-icons">hourglass_empty</i>
-                                }
-                                @if (!isLoading) {
-                                  <i class="material-icons">person_add</i>
-                                }
-                                {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-                              </button>
-                            </div>
-                          </form>
-                        </p-drawer>
+    <div class="drawer-footer">
+      <button (click)="onUpdateAgency()" class="btn btn-primary btn-full" [disabled]="isButtonDisabled()">
+        @if (isLoading) {
+        <i class="material-icons">hourglass_empty</i>
+        }
+        @if (!isLoading) {
+        <i class="material-icons">person_add</i>
+        }
+        {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+      </button>
+    </div>
+  </form>
+</p-drawer>
 
-                        <!--Messagerie-->
+<!--Messagerie-->
 
-                        <p-drawer header="Envoyer un message à l'agence {{agency.name}}" [(visible)]="showReportModal" position="right" [style]="{ width: '35%' }">
-                          <!-- Message -->
+<p-drawer header="Envoyer un message à l'agence {{agency.name}}" [(visible)]="showReportModal" position="right"
+  [style]="{ width: drawerWidth }">
+  <!-- Message -->
 
-                          <form class="report-form">
-                            <!-- <div class="form-group">
+  <form class="report-form">
+    <!-- <div class="form-group">
                             <label>Destinataire</label>
                             <select [(ngModel)]="messageData.receiver" name="receiver" required>
                               <option value="">Sélectionnez</option>
@@ -774,33 +651,23 @@
                             </select>
                           </div>-->
 
-                          <div class="form-group">
-                            <label>Message</label>
-                            <textarea
-                              [(ngModel)]="messageData.content"
-                              name="content"
-                              rows="4"
-                              placeholder="Votre message..."
-                              required
-                            ></textarea>
-                          </div>
-                          <div class="form-actions">
-                            <button
-                              type="button"
-                              class="btn btn-secondary"
-                              (click)="showReportModal = false"
-                              >
-                              Annuler
-                            </button>
-                            <button
-                              type="button"
-                              class="btn btn-primary"
-                              (click)="submitMessage(agency._id) ; showReportModal = false"
-                              >
-                              <i class="material-icons">send</i>
-                              Envoyer
-                            </button>
-                          </div>
-                        </form>
+    <div class="form-group">
+      <label>Message</label>
+      <textarea [(ngModel)]="messageData.content" name="content" rows="4" placeholder="Votre message..."
+        required></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="showReportModal = false">
+        Annuler
+      </button>
+      <button type="button" class="btn btn-primary" (click)="submitMessage(agency._id) ; showReportModal = false">
+        <i class="material-icons">send</i>
+        Envoyer
+      </button>
+    </div>
+  </form>
 
-                      </p-drawer>
+</p-drawer>
+<p-drawer header="Abonnement" [(visible)]="showPaymentDrawer" position="right" [style]="{ width: drawerWidth }">
+  <app-mobile-money-form></app-mobile-money-form>
+</p-drawer>

@@ -17,10 +17,17 @@ import { OUAGA_DATA, QuartierData } from '../../data/mock-data';
 import { Arrondissement, City, Quartier, Sector } from '../../models/countries-org.model';
 import { Admin } from '../../services/admin';
 import { CdkAutofill } from "@angular/cdk/text-field";
+import { MobileMoneyFormComponent } from '../payment/mobile-money-form/mobile-money-form';
 
 @Component({
   selector: 'app-agency-details',
-  imports: [RouterModule, FormsModule, ReactiveFormsModule, DrawerModule],
+  imports: [
+    RouterModule, 
+    FormsModule, 
+    ReactiveFormsModule, 
+    DrawerModule,
+    MobileMoneyFormComponent
+  ],
   templateUrl: './agency-details.html',
   styleUrl: './agency-details.css'
 })
@@ -111,6 +118,7 @@ export class AgencyDetails implements OnInit {
   agencyZones: string[] = [];
   visible2: boolean = false;
   visible1: boolean = false;
+  showPaymentDrawer: boolean = false;
   constructor(
     private route: ActivatedRoute,
     private countriesOrgMockService: CountriesOrgMockService,
@@ -120,7 +128,9 @@ export class AgencyDetails implements OnInit {
     private router: Router,
     private messageService: MessagesService,
     private adminService: Admin
-  ) { }
+  ) {
+    this.drawerWidth;
+  }
 
   ngOnInit(): void {
     this.loadAgencyDataOnInit();
@@ -140,6 +150,9 @@ export class AgencyDetails implements OnInit {
     });
     this.countUnreadMessages();
 
+  }
+  get drawerWidth(): string {
+    return window.innerWidth <= 768 ? '100%' : '33%';
   }
 
   getQuartierInfos(qrt: string){
@@ -219,6 +232,7 @@ submitSubscription(currentUserId: string | undefined, tariffId: string | undefin
   //   userId: this.currentUser?._id || this.currentUser?.id || '',
   //   agencyId: this.agency?._id || '',
   // };
+  this.showPaymentDrawer = true;
   this.agencyService.subscribeToAgencyPlan(currentUserId, tariff_id, numberm_month).subscribe({
     next: (res) => {
       this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
