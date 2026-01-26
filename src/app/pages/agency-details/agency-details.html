@@ -210,7 +210,7 @@
                 </div>
                 <div class="service-actions">
                   <button class="btn btn-primary btn-small"
-                    (click)="submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths)">
+                    (click)="submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths, tariff.price )">
                     <i class="material-icons">add_shopping_cart</i>
                     Choisir ce tarif
                   </button>
@@ -669,5 +669,7 @@
 
 </p-drawer>
 <p-drawer header="Abonnement" [(visible)]="showPaymentDrawer" position="right" [style]="{ width: drawerWidth }">
-  <app-mobile-money-form></app-mobile-money-form>
+  @if(showPaymentDrawer && selectedTarif !== null) {
+    <app-mobile-money-form [tarifResponse]="selectedTarif"></app-mobile-money-form>
+  }
 </p-drawer>

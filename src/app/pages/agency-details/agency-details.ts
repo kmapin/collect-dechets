@@ -164,6 +164,10 @@ export class AgencyDetails implements OnInit {
 
   // recuperations des tarifs liee a une agences
   tariffs: Tarif[] = [];
+
+  //Tarif choisi par le client
+  selectedTarif: any | null = null;
+
   loadTariffs(agencyId: string): void {
     this.isLoading = true;
     // const agency_id = this.agency?._id;
@@ -223,7 +227,7 @@ planPrices: any = {
 
 tariffSelectedMonths: number = 1;
 
-submitSubscription(currentUserId: string | undefined, tariffId: string | undefined, numberMonth: number) {
+submitSubscription(currentUserId: string | undefined, tariffId: string | undefined, numberMonth: number, price: number) {
   const tariff_id : string | undefined = tariffId;
   const numberm_month = numberMonth || 1;
   // const payload = {
@@ -232,15 +236,27 @@ submitSubscription(currentUserId: string | undefined, tariffId: string | undefin
   //   userId: this.currentUser?._id || this.currentUser?.id || '',
   //   agencyId: this.agency?._id || '',
   // };
-  this.showPaymentDrawer = true;
-  this.agencyService.subscribeToAgencyPlan(currentUserId, tariff_id, numberm_month).subscribe({
-    next: (res) => {
-      this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
-    },
-    error: (err) => {
-      this.notificationService.showError('Erreur', err?.error?.error || 'Impossible d\'enregistrer l\'abonnement.');
-    }
-  });
+  
+  this.selectedTarif = {
+    tarifId: tariff_id,
+    userId: currentUserId,
+    numberMonth: numberm_month,
+    amount: price
+  }
+
+  console.log("selectedTarif==>", this.selectedTarif);
+  if(this.selectedTarif !==null ){
+    this.showPaymentDrawer = true;
+  }
+  
+  // this.agencyService.subscribeToAgencyPlan(currentUserId, tariff_id, numberm_month).subscribe({
+  //   next: (res) => {
+  //     this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
+  //   },
+  //   error: (err) => {
+  //     this.notificationService.showError('Erreur', err?.error?.error || 'Impossible d\'enregistrer l\'abonnement.');
+  //   }
+  // });
 }
 updateAmount() {
   this.subscription.amount = this.planPrices[this.subscription.plan] || 0;

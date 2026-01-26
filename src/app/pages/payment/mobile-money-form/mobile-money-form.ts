@@ -1,5 +1,5 @@
 import { MatSelectModule } from '@angular/material/select';
-import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { PaymentService } from '../../../services/payment/payment.service';
 import { MobileMoneyOperator, PaymentRequest } from '../../../models/payment/payment-request.model';
-import { PaymentResponse } from '../../../models/payment/payment-response.model';
+import { PaymentResponse, PaymentStatus } from '../../../models/payment/payment-response.model';
 import { PaymentStatusComponent } from '../payment-status/payment-status';
 import { Router } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -48,6 +48,9 @@ interface OperatorInfo {
 export class MobileMoneyFormComponent implements OnInit {
 
   @ViewChild(OtpInputComponent) otpComponent?: OtpInputComponent;
+
+
+  @Input() tarifResponse: any | null = null;
   /** Formulaire de paiement */
   paymentForm: FormGroup;
   
@@ -105,6 +108,21 @@ export class MobileMoneyFormComponent implements OnInit {
         // Optionnel : nettoyer après affichage
         // this.paymentService.currentPaymentResponse = null;
       }
+    }; 
+  }
+
+  //detecte les changements et met a jour le formulaire
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['tarifResponse'] && this.tarifResponse) {
+      console.log('tarifResponse reçu', this.tarifResponse);
+
+      if (!this.paymentForm) {
+        this.paymentForm = this.createForm();
+      } else {
+        this.paymentForm.patchValue({
+          amount: this.tarifResponse.amount
+        });
+      }
     }
   }
   get operator() { return this.paymentForm.get('operator'); }
@@ -120,9 +138,9 @@ export class MobileMoneyFormComponent implements OnInit {
       operator: ['', Validators.required],
       phoneNumber: ['', [
         Validators.required,
-        Validators.pattern(/^(\+?[1-9]\d{9,14}|0\d{8,13})$/)
+        Validators.pattern(/^\d{8}$/)
       ]],
-      amount: ['', [
+      amount: [this.tarifResponse?.amount ?? 0, [
         Validators.required,
         Validators.min(1),
         Validators.max(1000000)
@@ -145,14 +163,27 @@ export class MobileMoneyFormComponent implements OnInit {
       
       const request: PaymentRequest = {
         operator: this.paymentForm.value.operator,
+        customerMsisdn: this.paymentForm.value.phoneNumber,
         phoneNumber: this.paymentForm.value.phoneNumber,
         amount: this.paymentForm.value.amount,
+        tarifId: this.tarifResponse?.tarifId,
+        walletId: "6650b8e9f4e8d32f9c9d2222",
+        userId: this.tarifResponse?.userId,
         description: this.paymentForm.value.description
       };
       console.log('request in payment form', request);
       this.paymentService.processPayment(request).subscribe({
         next: (response) => {
-          this.paymentResponse = response;
+          this.paymentResponse = response ? {
+              ...response,
+              amount: this.paymentForm.value.amount,
+              operator: this.paymentForm.value.operator,
+              transactionId: response.reference!,
+              timestamp: new Date(),
+              status: PaymentStatus.PENDING_OTP,
+              requiresOtp: true,
+            }
+          : null;
           this.isProcessing = false;
           console.log('paymentResponse in payment form', this.paymentResponse);
           if (response.status === 'PENDING_OTP' || response.requiresOtp) {

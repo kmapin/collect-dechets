@@ -1,3 +1,4 @@
+import { Message } from './../../../models/message.model';
 import { Component, EventEmitter, Output, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -115,14 +116,25 @@ export class OtpInputComponent implements OnInit {
       this.isProcessing = true;
       this.errorMessage = '';
       const otp = this.otpForm.value.otp;
-
-      this.paymentService.validateOtp(this.transactionId, otp).subscribe({
+      const otpForm ={
+        otp: this.otpForm.value.otp,
+        reference: this.transactionId
+      }
+      this.paymentService.validateOtp(otpForm).subscribe({
         next: (response) => {
           this.isProcessing = false;
-          console.log('response', response);
-          if (response.status === PaymentStatus.SUCCESS) {
-            this.paymentResponse = response;
-            this.otpVerified.emit(this.paymentResponse);
+          console.log('response of validate otp', response);
+          if (response.success) {
+            this.paymentResponse = response? {
+              ...response,
+              message: response.message ?? 'Paiement Orange Money validé avec succès ! Vous allez recevoir une confirmation par SMS.',
+              amount: this.amount,
+              operator: this.operator,
+              transactionId: response.reference!,
+              timestamp: new Date(),
+              status: PaymentStatus.SUCCESS
+            }: null;
+            this.otpVerified.emit(this.paymentResponse!);
           } else {
             this.errorMessage = response.message;
           }

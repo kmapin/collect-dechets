@@ -38,4 +38,6 @@ export interface PaymentResponse {
   timestamp?: Date;
 
   operator?: string;
+  reference?: string;
+  success?: boolean;
 }
