@@ -40,4 +40,5 @@ export interface PaymentResponse {
   operator?: string;
   reference?: string;
   success?: boolean;
+  data?: any;
 }

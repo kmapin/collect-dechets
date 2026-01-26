@@ -39,10 +39,12 @@
                 <span class="reviews-count">({{ agency?.totalClients }} avis)</span>
               </div>
               <div class="agency-status">
+                @if (agency?.status) {
                 <span class="status-badge" [class.active]="agency?.status ==='active'? true : false">
                   <i class="material-icons">{{ agency?.status ==='active' ? 'check_circle' : 'cancel' }}</i>
                   {{ agency?.status === 'active' ? 'Agence active' : 'Agence inactive' }}
                 </span>
+              }
               </div>
             </div>
           </div>
@@ -205,12 +207,15 @@
                   <span class="text-sm font-small text-[--primary-color]">Saisir le nombre de mois pour l'abonnement à
                     ce
                     service</span>
-                  <input type="number" min="1" max="12" [(ngModel)]="tariffSelectedMonths"
+                  <input type="number" min="1" max="12" 
+                      [(ngModel)]="tariffSelectedMonths[tariff?._id!]"
+                      [ngModelOptions]="{ standalone: true }"
+                      (ngModelChange)="tariffSelectedMonths[tariff?._id!] ||= 1"
                     [name]="'months_' + tariff?._id" style="width: 80px" />
                 </div>
                 <div class="service-actions">
                   <button class="btn btn-primary btn-small"
-                    (click)="submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths, tariff.price )">
+                    (click)="submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths[tariff?._id!], tariff.price )">
                     <i class="material-icons">add_shopping_cart</i>
                     Choisir ce tarif
                   </button>
@@ -670,6 +675,6 @@
 </p-drawer>
 <p-drawer header="Abonnement" [(visible)]="showPaymentDrawer" position="right" [style]="{ width: drawerWidth }">
   @if(showPaymentDrawer && selectedTarif !== null) {
-    <app-mobile-money-form [tarifResponse]="selectedTarif"></app-mobile-money-form>
+    <app-mobile-money-form [tarifResponse]="selectedTarif" (showPaymentDrawer)="showPaymentDrawer = $event"></app-mobile-money-form>
   }
 </p-drawer>

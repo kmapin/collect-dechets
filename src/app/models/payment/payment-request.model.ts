@@ -27,4 +27,7 @@ export interface PaymentRequest {
   tarifId?: string;
   userId?: string;
   walletId?: string;
+  numberMonths?: string;
+  pricingId?: string;
+
 }

@@ -182,6 +182,9 @@ export class AgencyDetails implements OnInit {
     this.agencyService.getAgencyAllTarifs$(agency_id).subscribe({
       next: (response: any) => {
         this.tariffs = response.data;
+        this.tariffs.forEach(tariff => {
+        this.tariffSelectedMonths[tariff._id!] = 1;
+        });
         console.log("Tarifs récupérés :", response);
         this.isLoading = false;
       },
@@ -225,7 +228,8 @@ planPrices: any = {
 //   });
 // }
 
-tariffSelectedMonths: number = 1;
+// tariffSelectedMonths: number = 1;
+tariffSelectedMonths: Record<string, number> = {};
 
 submitSubscription(currentUserId: string | undefined, tariffId: string | undefined, numberMonth: number, price: number) {
   const tariff_id : string | undefined = tariffId;
@@ -240,8 +244,9 @@ submitSubscription(currentUserId: string | undefined, tariffId: string | undefin
   this.selectedTarif = {
     tarifId: tariff_id,
     userId: currentUserId,
-    numberMonth: numberm_month,
-    amount: price
+    numberMonths: numberm_month,
+    amount: price*numberm_month,
+    agencyId : this.agencyId ?? this.agency?._id
   }
 
   console.log("selectedTarif==>", this.selectedTarif);

@@ -49,7 +49,7 @@ export class MobileMoneyFormComponent implements OnInit {
 
   @ViewChild(OtpInputComponent) otpComponent?: OtpInputComponent;
 
-
+  @Output() showPaymentDrawer = new EventEmitter<boolean>();
   @Input() tarifResponse: any | null = null;
   /** Formulaire de paiement */
   paymentForm: FormGroup;
@@ -166,21 +166,23 @@ export class MobileMoneyFormComponent implements OnInit {
         customerMsisdn: this.paymentForm.value.phoneNumber,
         phoneNumber: this.paymentForm.value.phoneNumber,
         amount: this.paymentForm.value.amount,
-        tarifId: this.tarifResponse?.tarifId,
-        walletId: "6650b8e9f4e8d32f9c9d2222",
+        pricingId : this.tarifResponse?.tarifId,
+        walletId: this.tarifResponse?.agencyId,
         userId: this.tarifResponse?.userId,
+        numberMonths: this.tarifResponse?.numberMonths,
         description: this.paymentForm.value.description
       };
       console.log('request in payment form', request);
       this.paymentService.processPayment(request).subscribe({
         next: (response) => {
           this.paymentResponse = response ? {
-              ...response,
-              amount: this.paymentForm.value.amount,
-              operator: this.paymentForm.value.operator,
-              transactionId: response.reference!,
+              ...response.data,
+              message: response.message,
+              amount: response.data.amount,
+              operator: response.data.operator,
+              transactionId: response.data.reference!,
               timestamp: new Date(),
-              status: PaymentStatus.PENDING_OTP,
+              status: response.data?.status === 'INITIATED' ? PaymentStatus.PENDING_OTP : PaymentStatus.SUCCESS,
               requiresOtp: true,
             }
           : null;
@@ -256,6 +258,7 @@ export class MobileMoneyFormComponent implements OnInit {
   }
 
   resetForm(): void {
+    this.showPaymentDrawer.emit(false);
     this.paymentForm.reset();
     this.isProcessing = false;
     this.isRequestingOtp = false;
