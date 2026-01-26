@@ -11,6 +11,7 @@ import { PaymentService } from '../../../services/payment/payment.service';
 import { Router } from '@angular/router';
 import { PaymentResponse, PaymentStatus } from '../../../models/payment/payment-response.model';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MobileMoneyOperator } from '../../../models/payment/payment-request.model';
 /**
  * Composant de saisie OTP pour validation Orange Money
  */
@@ -40,7 +41,10 @@ export class OtpInputComponent implements OnInit {
 
   /** ID de transaction pour lequel l'OTP est demandé */
   transactionId: string = '';
+
+  message : string = '';
   
+  operator : string = '';
   /** Montant de la transaction */
   amount: number = 0;
   
@@ -77,7 +81,8 @@ export class OtpInputComponent implements OnInit {
   
     this.transactionId = currentPayment?.transactionId || '';
     this.amount = currentPayment.amount || 0;
-  
+    this.message = currentPayment.message || '';
+    this.operator = currentPayment.operator || '';
     // 🔐 Gestion OTP propre et réactive
     this.otpForm.get('otp')?.valueChanges.subscribe(value => {
       if (!value) return;
@@ -92,7 +97,15 @@ export class OtpInputComponent implements OnInit {
       }
     });
   }
-  
+ paymentOperator(operator : string): string {
+    if (operator === MobileMoneyOperator.ORANGE_MONEY) {
+      return 'Orange Money';
+    } else if (operator === MobileMoneyOperator.MOOV_MONEY) {
+      return 'Moov Money';
+    } else {
+      return 'Autre opérateur';
+    }
+  }
 
   /**
    * Soumet le code OTP

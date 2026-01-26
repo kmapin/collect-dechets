@@ -2,7 +2,7 @@
   <mat-card-header>
     <mat-card-title>
       <mat-icon class="orange-icon">lock</mat-icon>
-      Validation Orange Money
+      Validation {{paymentOperator(operator)}}
     </mat-card-title>
     <mat-card-subtitle>
       Saisissez le code OTP reçu par SMS
@@ -52,7 +52,7 @@
 
         <div class="info-message">
           <mat-icon>info</mat-icon>
-          <p>Un code de validation a été envoyé à votre numéro Orange Money. Veuillez le saisir ci-dessus pour confirmer le paiement.</p>
+          <p>{{message }}</p>
         </div>
 
         <div class="form-actions">

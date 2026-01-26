@@ -149,7 +149,7 @@ export class MobileMoneyFormComponent implements OnInit {
         amount: this.paymentForm.value.amount,
         description: this.paymentForm.value.description
       };
-      
+      console.log('request in payment form', request);
       this.paymentService.processPayment(request).subscribe({
         next: (response) => {
           this.paymentResponse = response;

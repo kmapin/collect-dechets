@@ -28,14 +28,17 @@ export class PaymentService {
     const networkDelay = Math.random() * 2000 + 2000;
     
     // Pour Orange Money, on demande un OTP
-    if (request.operator === MobileMoneyOperator.ORANGE_MONEY) {
+    if (request.operator === MobileMoneyOperator.ORANGE_MONEY || request.operator === MobileMoneyOperator.MOOV_MONEY) {
       const response: PaymentResponse = {
         transactionId,
         status: PaymentStatus.PENDING_OTP,
-        message: 'Un code OTP a été envoyé à votre numéro Orange Money. Veuillez le saisir pour confirmer le paiement.',
+        message:request.operator === MobileMoneyOperator.ORANGE_MONEY ? 
+        'Un code OTP a été envoyé à votre numéro Orange Money. Veuillez le saisir pour confirmer le paiement.' 
+        : 'Un code OTP a été envoyé à votre numéro Moov Money. Veuillez le saisir pour confirmer le paiement.',
         requiresOtp: true,
         amount: request.amount,
-        timestamp: new Date()
+        timestamp: new Date(),
+        operator : request.operator
       };
       
       return of(response).pipe(delay(networkDelay));

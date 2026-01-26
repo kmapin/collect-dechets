@@ -36,4 +36,6 @@ export interface PaymentResponse {
   
   /** Date et heure de la transaction */
   timestamp?: Date;
+
+  operator?: string;
 }
