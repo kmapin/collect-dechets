@@ -1,62 +1,160 @@
-import { Routes } from '@angular/router';
-import { ForgotPassword } from './pages/auth/forgot-password/forgot-password';
-import { AdminDashboard } from './pages/dashboards/admin-dashboard/admin-dashboard';
-import { About } from './pages/about/about';
-import { Agencies } from './pages/agencies/agencies';
-import { AgencyDetails } from './pages/agency-details/agency-details';
-import { Login } from './pages/auth/login/login';
-import { Register } from './pages/auth/register/register';
-import { Contact } from './pages/contact/contact';
-import { AgencyDashboard } from './pages/dashboards/agency-dashboard/agency-dashboard';
-import { ClientDashboard } from './pages/dashboards/client-dashboard/client-dashboard';
-import { CollectorDashboard } from './pages/dashboards/collector-dashboard/collector-dashboard';
-import { MunicipalityDashboard } from './pages/dashboards/municipality-dashboard/municipality-dashboard';
-import { Faq } from './pages/faq/faq';
-import { Home } from './pages/home/home';
-import { Privacy } from './pages/privacy/privacy';
-import { Help } from './pages/help/help';
-import { Profile } from './pages/profile/profile';
-import { Report } from './pages/report/report';
-import { Schedule } from './pages/schedule/schedule';
-import { Subscription } from './pages/subscription/subscription';
-import { Terms } from './pages/terms/terms';
-import { WasteTypes } from './pages/waste-types/waste-types';
-import { Chat } from './pages/chat/chat';
+import { Routes } from "@angular/router";
 
 export const routes: Routes = [
-  { path: '', component: Home },
-  { path: 'agencies', component: Agencies },
-  { path: 'agencies/:id', component: AgencyDetails },
-  { path: 'waste-types', component: WasteTypes},
-  { path: 'faq', component: Faq },
-  { path: 'login', component: Login },
-  { path: 'register', component: Register },
-  { path: 'forgot-password', component: ForgotPassword },
-  { path: 'about', component: About },
-  { path: 'contact', component: Contact},
-  { path: 'help', component: Help },
-  { path: 'privacy', component: Privacy},
-  { path: 'terms', component: Terms },
-  { path: 'profile', component: Profile },
-  { path: 'subscription', component: Subscription },
-  { path: 'schedule', component: Schedule },
-  { path: 'report', component: Report },
-  { path: 'dashboard/client', component: ClientDashboard },
-  { path: 'dashboard/agency', component: AgencyDashboard },
-  { path: 'dashboard/collector', component: CollectorDashboard },
-  { path: 'dashboard/municipality', component: MunicipalityDashboard},
-  {path: 'edit-agency/:id', component: Register},
-  {path: 'dashboard/admin', component: AdminDashboard},
-  {path: 'chat', component: Chat},
-  // {
-  //   path: 'payment',
-  //   loadComponent: () => import('./pages/payment/mobile-money-form/mobile-money-form')
-  //     .then(m => m.MobileMoneyFormComponent)
-  // },
-  // {
-  //   path: 'otp',
-  //   loadComponent: () => import('./pages/payment/otp-input/otp-input')
-  //     .then(m => m.OtpInputComponent)
-  // },
-  { path: '**', redirectTo: '' }
+  {
+    path: "",
+    loadComponent: () => import("./pages/home/home").then((c) => c.Home),
+  },
+
+  {
+    path: "agencies",
+    loadComponent: () =>
+      import("./pages/agencies/agencies").then((c) => c.Agencies),
+  },
+
+  {
+    path: "agencies/:id",
+    loadComponent: () =>
+      import("./pages/agency-details/agency-details").then(
+        (c) => c.AgencyDetails,
+      ),
+  },
+
+  {
+    path: "waste-types",
+    loadComponent: () =>
+      import("./pages/waste-types/waste-types").then((c) => c.WasteTypes),
+  },
+
+  {
+    path: "faq",
+    loadComponent: () => import("./pages/faq/faq").then((c) => c.Faq),
+  },
+
+  {
+    path: "login",
+    loadComponent: () =>
+      import("./pages/auth/login/login").then((c) => c.Login),
+  },
+
+  {
+    path: "register",
+    loadComponent: () =>
+      import("./pages/auth/register/register").then((c) => c.Register),
+  },
+
+  {
+    path: "forgot-password",
+    loadComponent: () =>
+      import("./pages/auth/forgot-password/forgot-password").then(
+        (c) => c.ForgotPassword,
+      ),
+  },
+
+  {
+    path: "about",
+    loadComponent: () => import("./pages/about/about").then((c) => c.About),
+  },
+
+  {
+    path: "contact",
+    loadComponent: () =>
+      import("./pages/contact/contact").then((c) => c.Contact),
+  },
+
+  {
+    path: "help",
+    loadComponent: () => import("./pages/help/help").then((c) => c.Help),
+  },
+
+  {
+    path: "privacy",
+    loadComponent: () =>
+      import("./pages/privacy/privacy").then((c) => c.Privacy),
+  },
+
+  {
+    path: "terms",
+    loadComponent: () => import("./pages/terms/terms").then((c) => c.Terms),
+  },
+
+  {
+    path: "profile",
+    loadComponent: () =>
+      import("./pages/profile/profile").then((c) => c.Profile),
+  },
+
+  {
+    path: "subscription",
+    loadComponent: () =>
+      import("./pages/subscription/subscription").then((c) => c.Subscription),
+  },
+
+  {
+    path: "schedule",
+    loadComponent: () =>
+      import("./pages/schedule/schedule").then((c) => c.Schedule),
+  },
+
+  {
+    path: "report",
+    loadComponent: () => import("./pages/report/report").then((c) => c.Report),
+  },
+
+  // ================= DASHBOARDS =================
+
+  {
+    path: "dashboard/client",
+    loadComponent: () =>
+      import("./pages/dashboards/client-dashboard/client-dashboard").then(
+        (c) => c.ClientDashboard,
+      ),
+  },
+
+  {
+    path: "dashboard/agency",
+    loadComponent: () =>
+      import("./pages/dashboards/agency-dashboard/agency-dashboard").then(
+        (c) => c.AgencyDashboard,
+      ),
+  },
+
+  {
+    path: "dashboard/collector",
+    loadComponent: () =>
+      import("./pages/dashboards/collector-dashboard/collector-dashboard").then(
+        (c) => c.CollectorDashboard,
+      ),
+  },
+
+  {
+    path: "dashboard/municipality",
+    loadComponent: () =>
+      import("./pages/dashboards/municipality-dashboard/municipality-dashboard").then(
+        (c) => c.MunicipalityDashboard,
+      ),
+  },
+
+  {
+    path: "dashboard/admin",
+    loadComponent: () =>
+      import("./pages/dashboards/admin-dashboard/admin-dashboard").then(
+        (c) => c.AdminDashboard,
+      ),
+  },
+
+  // ================= AUTRES =================
+
+  {
+    path: "edit-agency/:id",
+    loadComponent: () =>
+      import("./pages/auth/register/register").then((c) => c.Register),
+  },
+
+  {
+    path: "chat",
+    loadComponent: () => import("./pages/chat/chat").then((c) => c.Chat),
+  },
+
+  { path: "**", redirectTo: "" },
 ];
