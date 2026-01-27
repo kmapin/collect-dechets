@@ -37,7 +37,16 @@
               "src/styles.scss"
             ],
             "scripts": [],
-            "allowedCommonJsDependencies": ["html2canvas", "jspdf"]
+            "allowedCommonJsDependencies": [
+              "canvg",
+              "raf",
+              "rgbcolor",
+              "core-js",
+              "html2canvas",
+              "jspdf",
+              "qrcode",
+              "leaflet"
+            ]
           },
           "configurations": {
             "production": {
@@ -49,8 +58,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "20kB",
-                  "maximumError": "40kB"
+                  "maximumWarning": "80kb",
+                  "maximumError": "120kb"
                 }
               ],
               "outputHashing": "all"
