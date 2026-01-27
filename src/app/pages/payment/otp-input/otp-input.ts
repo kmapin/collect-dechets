@@ -126,11 +126,11 @@ export class OtpInputComponent implements OnInit {
           console.log('response of validate otp', response);
           if (response.success) {
             this.paymentResponse = response? {
-              ...response,
-              message: response.message ?? 'Paiement Orange Money validé avec succès ! Vous allez recevoir une confirmation par SMS.',
+              ...response.data,
+              message: response.message,
               amount: this.amount,
               operator: this.operator,
-              transactionId: response.reference!,
+              transactionId: response.data.reference!,
               timestamp: new Date(),
               status: PaymentStatus.SUCCESS
             }: null;
