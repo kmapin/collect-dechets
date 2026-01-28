@@ -22,10 +22,10 @@
               Mon agence
             </button>
           }
-          <button class="btn btn-primary" (click)="showReportModal = true">
+          <!-- <button class="btn btn-primary" (click)="showReportModal = true">
             <i class="material-icons">report_problem</i>
             Signaler un problème
-          </button>
+          </button> -->
           <button class="btn btn-secondary" routerLink="/profile">
             <i class="material-icons">settings</i>
             Mon profil
@@ -187,8 +187,8 @@
                         <h4>Collecte standard</h4>
                         <p class="collection-time">
                           <i class="material-icons">access_time</i>
-                          {{ collection.startTime }}
-                          <!-- {{ collection.startTime | date:'HH:mm' }} -->
+                          <!-- {{ collection.date }} -->
+                          {{ collection.date | date:'HH:mm' }}
                         </p>
                         <!-- <p class="collection-address">
                         <i class="material-icons">location_on</i>

@@ -438,6 +438,17 @@
                   "
             >
               <div class="employee-header">
+                
+                <div class="employee-info">
+                  <h4>{{ employee.firstName }} {{ employee.lastName }}</h4>
+                  <p class="employee-role">{{ getRoleText(employee.role) }}</p>
+                  <p
+                    class="employee-status"
+                    [class]="employee.isActive ? 'active' : 'inactive'"
+                  >
+                    {{ employee.isActive ? "Actif" : "Inactif" }}
+                  </p>
+                </div>
                 <div class="employee-avatar">
                   @if (employee?.avatar) {
                   <img
@@ -453,16 +464,6 @@
                     employee?.lastName ) }}
                   </div>
                   }
-                </div>
-                <div class="employee-info">
-                  <h4>{{ employee.firstName }} {{ employee.lastName }}</h4>
-                  <p class="employee-role">{{ getRoleText(employee.role) }}</p>
-                  <p
-                    class="employee-status"
-                    [class]="employee.isActive ? 'active' : 'inactive'"
-                  >
-                    {{ employee.isActive ? "Actif" : "Inactif" }}
-                  </p>
                 </div>
               </div>
               <div class="employee-details">

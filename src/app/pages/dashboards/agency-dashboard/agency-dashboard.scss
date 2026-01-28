@@ -1073,9 +1073,10 @@
 
 .employee-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
+  min-width: 100%;
+  margin-bottom: 10px;
 }
 
 .employee-avatar {
