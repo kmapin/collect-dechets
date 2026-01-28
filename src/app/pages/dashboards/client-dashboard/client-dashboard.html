@@ -52,7 +52,7 @@
               <!-- <p class="stat-value">{{ getNextCollectionTime(nextCollect?.date)  }}</p> -->
               <!-- <span class="stat-detail">{{ getnextCollectionHour(nextCollect?.date) }}</span> -->
               <span class="stat-detail"
-                >entre {{ nextCollect?.startTime }} et {{ nextCollect?.endTime }}
+                >entre {{ nextCollect?.startTime ?? '00:00' }} et {{ nextCollect?.endTime?? '00:00' }}
               </span>
             </div>
           } @else {
@@ -119,10 +119,10 @@
                 >
                 <h3>Prochain paiement</h3>
                 <p class="stat-value">
-                  {{ getNextPayment( activeSubscription?.endDate | date : "dd MMMM yyyy" ) }}
+                  {{ getNextPayment( activeSubscription?.endDate) }}
                 </p>
                 <span class="stat-detail"
-                  >{{ activeSubscription?.amount }} F CFA</span
+                  >{{ activeSubscription?.pricingId.price }} F CFA</span
                   >
                 </div>
               } @else {
@@ -188,7 +188,7 @@
                         <p class="collection-time">
                           <i class="material-icons">access_time</i>
                           <!-- {{ collection.date }} -->
-                          {{ collection.date | date:'HH:mm' }}
+                          {{ collection.startTime ?? collection.date | date:'HH:mm' }}
                         </p>
                         <!-- <p class="collection-address">
                         <i class="material-icons">location_on</i>
