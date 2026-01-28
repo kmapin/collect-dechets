@@ -1,4 +1,5 @@
-import { map } from "rxjs";
+import { Agency } from "./../../../models/agency.model";
+import { catchError, forkJoin, map, of } from "rxjs";
 import {
   AfterViewChecked,
   ChangeDetectorRef,
@@ -16,17 +17,22 @@ import {
   ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
-import { 
-  trigger, 
-  state, 
-  style, 
-  transition, 
+import {
+  trigger,
+  state,
+  style,
+  transition,
   animate,
   query,
-  stagger
+  stagger,
 } from "@angular/animations";
 import { AuthService } from "../../../services/auth.service";
-import { AgencyService, ZoneStatistics, ZoneRecommendation as ServiceZoneRecommendation, ZoneAnalyticsResponse } from "../../../services/agency.service";
+import {
+  AgencyService,
+  ZoneStatistics,
+  ZoneRecommendation as ServiceZoneRecommendation,
+  ZoneAnalyticsResponse,
+} from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
 import {
@@ -37,7 +43,6 @@ import {
   RegisterUserData,
 } from "../../../models/user.model";
 import {
-  Agency,
   Employee,
   Employees,
   ServiceZone,
@@ -65,7 +70,13 @@ import { MatIcon } from "@angular/material/icon";
 import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
 import { Admin } from "../../../services/admin";
 import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
-
+//test
+import { ButtonModule } from "primeng/button";
+import { RatingModule } from "primeng/rating";
+import { TableModule } from "primeng/table";
+import { TagModule } from "primeng/tag";
+import { ToastModule } from "primeng/toast";
+import { RippleModule } from "primeng/ripple";
 interface Client {
   id: string;
   name: string;
@@ -118,7 +129,7 @@ interface LocalZoneRecommendation {
   id: string;
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   icon: string;
   zoneId: string;
 }
@@ -149,7 +160,14 @@ interface DashboardTab {
   badge: number | null;
 }
 
-type TabId = "collections" | "employees" | "zones" | "schedules" | "clients" | "reports" | "messages";
+type TabId =
+  | "collections"
+  | "employees"
+  | "zones"
+  | "schedules"
+  | "clients"
+  | "reports"
+  | "messages";
 
 @Component({
   selector: "app-agency-dashboard",
@@ -161,35 +179,49 @@ type TabId = "collections" | "employees" | "zones" | "schedules" | "clients" | "
     MatExpansionModule,
     MatIcon,
     LoadingSpinnerComponent,
+
+    TableModule,
+    ButtonModule,
+    RatingModule,
+    TagModule,
+    ToastModule,
+    RippleModule,
   ],
   templateUrl: "./agency-dashboard.html",
   styleUrl: "./agency-dashboard.scss",
   animations: [
-    trigger('slideInOut', [
-      transition(':enter', [
-        style({ transform: 'translateY(-100%)', opacity: 0 }),
-        animate('300ms ease-in', style({ transform: 'translateY(0%)', opacity: 1 }))
+    trigger("slideInOut", [
+      transition(":enter", [
+        style({ transform: "translateY(-100%)", opacity: 0 }),
+        animate(
+          "300ms ease-in",
+          style({ transform: "translateY(0%)", opacity: 1 }),
+        ),
       ]),
-      transition(':leave', [
-        animate('300ms ease-out', style({ transform: 'translateY(-100%)', opacity: 0 }))
-      ])
+      transition(":leave", [
+        animate(
+          "300ms ease-out",
+          style({ transform: "translateY(-100%)", opacity: 0 }),
+        ),
+      ]),
     ]),
-    trigger('fadeInOut', [
-      transition(':enter', [
+    trigger("fadeInOut", [
+      transition(":enter", [
         style({ opacity: 0 }),
-        animate('200ms ease-in', style({ opacity: 1 }))
+        animate("200ms ease-in", style({ opacity: 1 })),
       ]),
-      transition(':leave', [
-        animate('200ms ease-out', style({ opacity: 0 }))
-      ])
+      transition(":leave", [animate("200ms ease-out", style({ opacity: 0 }))]),
     ]),
-    trigger('slideFromLeft', [
-      transition(':enter', [
-        style({ transform: 'translateX(-100%)', opacity: 0 }),
-        animate('250ms ease-out', style({ transform: 'translateX(0%)', opacity: 1 }))
-      ])
-    ])
-  ]
+    trigger("slideFromLeft", [
+      transition(":enter", [
+        style({ transform: "translateX(-100%)", opacity: 0 }),
+        animate(
+          "250ms ease-out",
+          style({ transform: "translateX(0%)", opacity: 1 }),
+        ),
+      ]),
+    ]),
+  ],
 })
 export class AgencyDashboard implements OnInit, AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
@@ -200,7 +232,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   zoneForm!: FormGroup;
   messageForm!: FormGroup;
 
-  currentUser: RegisterUserData| null = null;
+  currentUser: RegisterUserData | null = null;
   agencyReports: Report[] = [];
   ouagaData: QuartierData[] = OUAGA_DATA;
   agency: Agency | null = null;
@@ -288,50 +320,50 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   employeesRoleFilter: string = "all";
   employeesStatusFilter: string = "all";
   showEmployeesSearch: boolean = false;
-  
+
   // Nouveaux filtres basés sur l'API backend
   employeesCityFilter: string = "";
   employeesNeighborhoodFilter: string = "";
   employeesArrondissementFilter: string = "";
   employeesSectorFilter: number | null = null;
-  
+
   // Données pour les filtres (utilisant le même système que l'enregistrement)
   availableEmployeeCities: City[] = [];
   availableEmployeeArrondissements: Arrondissement[] = [];
   availableEmployeeSectors: Sector[] = [];
   availableEmployeeNeighborhoods: Quartier[] = [];
-  
+
   // Propriétés de pagination
   currentPage: number = 1;
   itemsPerPage: number = 20;
   totalEmployees: number = 0;
   totalPages: number = 0;
-  
+
   // Chargement des données
   isLoadingFilteredEmployees: boolean = false;
-  
+
   // Listes pour les filtres déroulants
   availableCities: string[] = [];
   availableNeighborhoods: string[] = [];
   filteredNeighborhoods: string[] = [];
-  
+
   // Propriétés pour la recherche et le filtrage des clients
   clientsSearch: string = "";
   clientsCityFilter: string = "all"; // Nouveau filtre par ville
   clientsNeighborhoodFilter: string = "all";
   clientsStatusFilter: string = "all";
   showClientsSearch: boolean = false;
-  filteredActiveClients: any[] = [];
-  
+  filteredActiveClients: any;
+
   // Variables pour la pagination des clients
   clientsCurrentPage: number = 1;
   clientsItemsPerPage: number = 10;
   clientsTotalItems: number = 0;
   clientsTotalPages: number = 0;
-  
+
   // Variables pour le chargement des clients
   isLoadingFilteredClients: boolean = false;
-  
+
   // Propriété pour l'affichage moderne des zones
   selectedZoneForDisplay: any = null;
   allTarif: Tarif[] = [];
@@ -352,7 +384,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   selectedReportId: string = "";
 
   selectedEmployee: string[] = [];
-  // Propriétés pour l'édition d'employé 
+  // Propriétés pour l'édition d'employé
   employeeToEdit: any = null;
   isEditingEmployee: boolean = false;
   // Filters
@@ -433,7 +465,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   private readonly CACHE_DURATION = 1000; // 1 seconde
 
   // Propriétés pour l'analyse des zones
-  selectedZoneForAnalytics: string = '';
+  selectedZoneForAnalytics: string = "";
   zoneAnalyticsData: ZoneAnalytics[] = [];
   zoneRecommendations: LocalZoneRecommendation[] = [];
 
@@ -498,7 +530,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     private adminService: Admin,
     private route: ActivatedRoute,
     private router: Router,
-    private countriesOrgMockService: CountriesOrgMockService
+    private countriesOrgMockService: CountriesOrgMockService,
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -521,7 +553,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       },
       {
         validators: [this.validateTimeOrder],
-      }
+      },
     );
 
     // Formulaire d'employé - selon le schéma Swagger requis
@@ -549,7 +581,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         }),
         zones: [[]], // Validation dynamique selon le rôle
       },
-      { validators: this.passwordMatchValidator }
+      { validators: this.passwordMatchValidator },
     );
 
     // Formulaire de tarif
@@ -571,7 +603,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     // Formulaire de message
     this.messageForm = this.fb.group({
-      content: [this.messageData.content || "", [Validators.required, Validators.minLength(5)]],
+      content: [
+        this.messageData.content || "",
+        [Validators.required, Validators.minLength(5)],
+      ],
     });
 
     // Écouter les changements pour afficher les erreurs en temps réel
@@ -611,14 +646,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         Object.keys(control.controls).forEach((nestedKey) => {
           const nestedControl = control.get(nestedKey);
           const nestedErrorKey = `${formName}_${nestedKey}`;
-          
-          if (nestedControl && nestedControl.errors && (nestedControl.dirty || nestedControl.touched)) {
-            this.formErrors[nestedErrorKey] = this.getErrorMessage(nestedKey, nestedControl.errors);
+
+          if (
+            nestedControl &&
+            nestedControl.errors &&
+            (nestedControl.dirty || nestedControl.touched)
+          ) {
+            this.formErrors[nestedErrorKey] = this.getErrorMessage(
+              nestedKey,
+              nestedControl.errors,
+            );
           } else {
             delete this.formErrors[nestedErrorKey];
           }
         });
-      } else if (control && control.errors && (control.dirty || control.touched)) {
+      } else if (
+        control &&
+        control.errors &&
+        (control.dirty || control.touched)
+      ) {
         this.formErrors[errorKey] = this.getErrorMessage(key, control.errors);
       } else {
         delete this.formErrors[errorKey];
@@ -679,16 +725,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Ne montrer l'erreur que si le champ a été touché ou modifié
     const form = this.getFormByName(formName);
     const control = form?.get(fieldName);
-    
+
     if (!control || !(control.touched || control.dirty)) {
       return "";
     }
-    
+
     // Vérifier que le formulaire n'est pas dans son état initial
     if (this.isFormInInitialState(form)) {
       return "";
     }
-    
+
     return this.formErrors[`${formName}_${fieldName}`] || "";
   }
 
@@ -697,68 +743,74 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Ne montrer l'erreur que si le champ a été touché ou modifié
     const form = this.getFormByName(formName);
     const control = form?.get(fieldName);
-    
+
     if (!control || !(control.touched || control.dirty)) {
       return false;
     }
-    
+
     // Vérifier aussi que le formulaire n'est pas dans un état initial
     if (this.isFormInInitialState(form)) {
       return false;
     }
-    
+
     const hasError = !!this.formErrors[`${formName}_${fieldName}`];
-    
+
     // Debug : Log pour voir quand les erreurs sont détectées
-    if (hasError && formName === 'employee') {
+    if (hasError && formName === "employee") {
       console.log(`Erreur détectée pour ${fieldName}:`, {
         touched: control.touched,
         dirty: control.dirty,
         errors: control.errors,
         formError: this.formErrors[`${formName}_${fieldName}`],
-        isInitialState: this.isFormInInitialState(form)
+        isInitialState: this.isFormInInitialState(form),
       });
     }
-    
+
     return hasError;
   }
 
   // Méthode spéciale pour vérifier les erreurs de validation croisée (comme passwordMismatch)
-  hasValidationError(formName: string, fieldName: string, errorType: string): boolean {
+  hasValidationError(
+    formName: string,
+    fieldName: string,
+    errorType: string,
+  ): boolean {
     const form = this.getFormByName(formName);
     const control = form?.get(fieldName);
-    
+
     if (!control || !(control.touched || control.dirty)) {
       return false;
     }
-    
+
     // Vérifier que le formulaire n'est pas dans son état initial
     if (this.isFormInInitialState(form)) {
       return false;
     }
-    
+
     return control.hasError(errorType);
   }
 
   // Méthode pour vérifier si le formulaire est dans son état initial
   private isFormInInitialState(form: FormGroup | null): boolean {
     if (!form) return true;
-    
+
     // Si aucun contrôle n'a été touché, le formulaire est dans son état initial
     const allControls = this.getAllFormControls(form);
-    const hasAnyInteraction = allControls.some(control => control.touched || control.dirty);
-    
+    const hasAnyInteraction = allControls.some(
+      (control) => control.touched || control.dirty,
+    );
+
     // Également vérifier si le modal vient d'être ouvert
     const isModalJustOpened = this.showAddEmployeeModal && !hasAnyInteraction;
-    
+
     return !hasAnyInteraction || isModalJustOpened;
   }
 
   // Méthode récursive pour obtenir tous les contrôles d'un formulaire
   private getAllFormControls(form: FormGroup): any[] {
     const controls: any[] = [];
-    
-    Object.keys(form.controls).forEach(key => {
+
+    Object.keys(form.controls).forEach((key) => {
       const control = form.get(key);
       if (control instanceof FormGroup) {
         controls.push(...this.getAllFormControls(control));
@@ -766,22 +818,22 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         controls.push(control);
       }
     });
-    
+
     return controls;
   }
 
   // Méthode utilitaire pour obtenir le FormGroup par nom
   private getFormByName(formName: string): FormGroup | null {
     switch (formName) {
-      case 'employee':
+      case "employee":
         return this.employeeForm;
-      case 'tariff':
+      case "tariff":
         return this.tariffForm;
-      case 'schedule':
+      case "schedule":
         return this.scheduleForm;
-      case 'zone':
+      case "zone":
         return this.zoneForm;
-      case 'message':
+      case "message":
         return this.messageForm;
       default:
         return null;
@@ -793,43 +845,43 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // S'assurer qu'on n'est pas en mode modification
     this.isEditingEmployee = false;
     this.employeeToEdit = null;
-    
+
     // Ajuster les validateurs pour le mode ajout
     this.adjustValidatorsForEdit();
-    
+
     // Réinitialiser complètement le formulaire
     this.employeeForm.reset();
-    
+
     // Marquer tous les contrôles comme non touchés et propres (incluant les contrôles imbriqués)
     this.markFormGroupAsUntouchedAndPristine(this.employeeForm);
-    
+
     // Réinitialiser les erreurs
     this.employeeFormError = null;
     this.employeeFormDetailedErrors = {};
-    
+
     // Nettoyer TOUTES les erreurs du formulaire employé du cache
-    Object.keys(this.formErrors).forEach(key => {
-      if (key.startsWith('employee_')) {
+    Object.keys(this.formErrors).forEach((key) => {
+      if (key.startsWith("employee_")) {
         delete this.formErrors[key];
       }
     });
-    
+
     // Réinitialiser les états des mots de passe
     this.showPassword = false;
     this.showConfirmPassword = false;
-    
+
     // Initialiser les données mock pour l'adresse
     this.initializeAddressDataForEmployee();
-    
+
     // Ouvrir le modal
     this.showAddEmployeeModal = true;
-    
+
     // Petite temporisation pour s'assurer que l'état est bien réinitialisé
     setTimeout(() => {
       this.markFormGroupAsUntouchedAndPristine(this.employeeForm);
       // Force la suppression des erreurs après l'ouverture
-      Object.keys(this.formErrors).forEach(key => {
-        if (key.startsWith('employee_')) {
+      Object.keys(this.formErrors).forEach((key) => {
+        if (key.startsWith("employee_")) {
           delete this.formErrors[key];
         }
       });
@@ -843,7 +895,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   // Méthode utilitaire pour marquer un FormGroup et tous ses contrôles comme non touchés et propres
   private markFormGroupAsUntouchedAndPristine(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach(key => {
+    Object.keys(formGroup.controls).forEach((key) => {
       const control = formGroup.get(key);
       if (control) {
         if (control instanceof FormGroup) {
@@ -857,7 +909,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         }
       }
     });
-    
+
     // Marquer le formulaire lui-même
     formGroup.markAsUntouched();
     formGroup.markAsPristine();
@@ -866,24 +918,24 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   closeAddEmployeeModal(): void {
     // Fermer le modal
     this.showAddEmployeeModal = false;
-    
+
     // Réinitialiser le formulaire
     this.employeeForm.reset();
     this.markFormGroupAsUntouchedAndPristine(this.employeeForm);
-    
+
     // Réinitialiser les états
     this.showPassword = false;
     this.showConfirmPassword = false;
     this.employeeFormError = null;
     this.employeeFormDetailedErrors = {};
-    
+
     // Réinitialiser l'état d'édition
     this.isEditingEmployee = false;
     this.employeeToEdit = null;
-    
+
     // Nettoyer les erreurs du cache
-    Object.keys(this.formErrors).forEach(key => {
-      if (key.startsWith('employee_')) {
+    Object.keys(this.formErrors).forEach((key) => {
+      if (key.startsWith("employee_")) {
         delete this.formErrors[key];
       }
     });
@@ -936,12 +988,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // Vérifier si le formulaire employé est valide
   isEmployeeFormValid(): boolean {
     // Vérifier les champs de base
-    const baseFieldsValid = 
-      this.employeeForm.get('firstName')?.valid &&
-      this.employeeForm.get('lastName')?.valid &&
-      this.employeeForm.get('email')?.valid &&
-      this.employeeForm.get('phone')?.valid &&
-      this.employeeForm.get('role')?.valid;
+    const baseFieldsValid =
+      this.employeeForm.get("firstName")?.valid &&
+      this.employeeForm.get("lastName")?.valid &&
+      this.employeeForm.get("email")?.valid &&
+      this.employeeForm.get("phone")?.valid &&
+      this.employeeForm.get("role")?.valid;
 
     if (!baseFieldsValid) {
       return false;
@@ -950,9 +1002,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // En mode modification, les mots de passe sont optionnels
     if (this.isEditingEmployee) {
       // Si un mot de passe est saisi, il doit être valide
-      const password = this.employeeForm.get('password')?.value;
-      const confirmPassword = this.employeeForm.get('confirmPassword')?.value;
-      
+      const password = this.employeeForm.get("password")?.value;
+      const confirmPassword = this.employeeForm.get("confirmPassword")?.value;
+
       if (password && password.length > 0) {
         // Si un mot de passe est saisi, vérifier qu'il est valide
         if (password.length < 6) {
@@ -963,7 +1015,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           return false;
         }
       }
-      
+
       return true; // Valide en mode modification si champs de base OK
     } else {
       // En mode ajout, tout doit être valide y compris les mots de passe
@@ -1002,17 +1054,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return this.getDetailedErrorKeys().length > 0;
   }
 
-
-
   openZoneModal(): void {
     this.zoneForm.reset();
     this.editingZone = false;
-    
+
     // Réinitialiser aussi le mode édition des tarifs quand on ouvre le modal pour créer
     this.isEditingTariff = false;
     this.tariffToUpdate = null;
     this.tariffForm.reset();
-    
+
     this.showZoneModal = true;
   }
 
@@ -1020,15 +1070,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.showZoneModal = false;
     this.zoneForm.reset();
     this.editingZone = false;
-    
+
     // Réinitialiser aussi le mode édition des tarifs
     this.isEditingTariff = false;
     this.tariffToUpdate = null;
     this.tariffForm.reset();
-    
+
     // Effacer les erreurs des formulaires
-    Object.keys(this.formErrors).forEach(key => {
-      if (key.startsWith('zone_') || key.startsWith('tariff_')) {
+    Object.keys(this.formErrors).forEach((key) => {
+      if (key.startsWith("zone_") || key.startsWith("tariff_")) {
         delete this.formErrors[key];
       }
     });
@@ -1036,21 +1086,21 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   openScheduleModal(): void {
     this.scheduleForm.reset();
-    
+
     // Réinitialiser le mode édition (pour le mode création)
     this.isEditingSchedule = false;
     this.editingSchedule = null;
-    
+
     // Charger automatiquement les données nécessaires
     this.loadScheduleModalData();
-    
+
     // Nettoyer les erreurs du formulaire
-    Object.keys(this.formErrors).forEach(key => {
-      if (key.startsWith('schedule_')) {
+    Object.keys(this.formErrors).forEach((key) => {
+      if (key.startsWith("schedule_")) {
         delete this.formErrors[key];
       }
     });
-    
+
     this.showScheduleModal = true;
   }
 
@@ -1061,13 +1111,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       console.log("Chargement des zones...");
       this.loadZones(this.currentUser);
     }
-    
+
     // Charger les collecteurs si nécessaire
     if (this.collectors.length === 0 && this.currentUser?.agencyId) {
       console.log("Chargement des collecteurs...");
       this.loadCollectors(this.currentUser.agencyId);
     }
-    
+
     // Recharger les plannings pour avoir les données les plus récentes
     console.log("Rechargement des plannings...");
     this.loadPlannings();
@@ -1078,14 +1128,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.scheduleForm.reset();
     this.isEditingSchedule = false;
     this.editingSchedule = null;
-    
+
     // Nettoyer les erreurs du formulaire de planning
-    Object.keys(this.formErrors).forEach(key => {
-      if (key.startsWith('schedule_')) {
+    Object.keys(this.formErrors).forEach((key) => {
+      if (key.startsWith("schedule_")) {
         delete this.formErrors[key];
       }
     });
-    
+
     // Marquer le formulaire comme non touché et propre
     this.markFormGroupAsUntouchedAndPristine(this.scheduleForm);
   }
@@ -1132,11 +1182,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     console.log(" [DEBUG] ngOnInit - currentUser:", this.currentUser);
-   
+
     // Initialiser la liste filtrée des employés
     this.filteredEmployees = [...this.allEmployees];
-    console.log("🔍 [DEBUG] ngOnInit - filteredEmployees initialisés:", this.filteredEmployees.length);
-    
+    console.log(
+      "🔍 [DEBUG] ngOnInit - filteredEmployees initialisés:",
+      this.filteredEmployees.length,
+    );
+
     // Initialiser les listes de villes et quartiers
     this.initializeCitiesAndNeighborhoods();
     this.initializeFiltersData();
@@ -1151,7 +1204,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     console.log(" APPEL EXPLICITE de loadCollectors depuis ngOnInit");
     if (this.currentUser?.agencyId) {
       this.loadCollectors(this.currentUser.agencyId);
-       this.loadCollectDay();
+      this.loadCollectDay();
     }
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
@@ -1219,7 +1272,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             this.connectedUserMessages = response || [];
             console.log(
               "this.connectedUserMessages:",
-              this.connectedUserMessages
+              this.connectedUserMessages,
             );
           }
           this.isLoadingMessages = false;
@@ -1243,7 +1296,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           console.log("API >userAndAgencyConversation:", messages);
           this.receivedMessages = (messages || []).sort(
             (a: any, b: any) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
           );
           this.scrollToBottom();
           this.countUnreadMessages();
@@ -1262,7 +1315,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           this.receivedMessages = [];
           this.notificationService.showError(
             "Erreur",
-            "Aucun message, veuillez contacter l'agence !"
+            "Aucun message, veuillez contacter l'agence !",
           );
         }
       });
@@ -1282,7 +1335,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (!this.messageData.content) {
       this.notificationService.showError(
         "Message invalide",
-        "Veuillez saisir un message valide"
+        "Veuillez saisir un message valide",
       );
       return;
     }
@@ -1290,7 +1343,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (!this.currentUser) {
       this.notificationService.showError(
         "Connexion requise",
-        "Vous devez être connecté pour envoyer un message"
+        "Vous devez être connecté pour envoyer un message",
       );
       return;
     }
@@ -1313,7 +1366,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         this.userAndAgencyConversation(this.data);
         this.notificationService.showSuccess(
           "Message envoyé",
-          "Votre message a bien été envoyé"
+          "Votre message a bien été envoyé",
         );
         this.messageData.content = "";
       },
@@ -1321,7 +1374,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         console.error("API > sendMessage:", error);
         this.notificationService.showError(
           "Message non envoyé",
-          "Une erreur s'est produite lors de l'envoi du message"
+          "Une erreur s'est produite lors de l'envoi du message",
         );
       },
     });
@@ -1349,19 +1402,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return null;
   }
 
-  assignEmployeesToReport(): void {
-   
-  }
+  assignEmployeesToReport(): void {}
   toggleEmployeeSelection(employeeId: string, event: any): void {
     if (event.target.checked) {
       this.selectedEmployee.push(employeeId);
     } else {
       this.selectedEmployee = this.selectedEmployee.filter(
-        (id) => id !== employeeId
+        (id) => id !== employeeId,
       );
     }
   }
-
 
   loadAgencyData(): void {
     console.log("DÉBUT loadAgencyData - Chargement des données agence");
@@ -1371,7 +1421,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       // this.agency = { _id: 'agency1', agencyName: 'Agence Demo' } as any;
       this.agency = this.currentUser as any;
       console.log("[loadAgencyData] agency simulée:", this.agency);
-      console.log(" Appel de loadEmployees avec agencyId:", this.currentUser.agencyId);
+      console.log(
+        " Appel de loadEmployees avec agencyId:",
+        this.currentUser.agencyId,
+      );
       if (this.currentUser.agencyId) {
         this.loadEmployees(this.currentUser.agencyId);
       }
@@ -1389,15 +1442,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   loadCollectors(agencyId: string): void {
     console.log(" DÉBUT loadCollectors - Chargement des collecteurs");
     console.log(" AgencyId reçu:", agencyId);
-    
+
     if (agencyId) {
       this.isLoadingEmployees = true;
-      console.log(" Appel du service getCollectorsAgency$ avec agencyId:", agencyId);
-      
+      console.log(
+        " Appel du service getCollectorsAgency$ avec agencyId:",
+        agencyId,
+      );
+
       this.agencyService.getCollectorsAgency$(agencyId).subscribe({
         next: (collectors) => {
           console.log("SUCCÈS - Réponse collecteurs reçue:", collectors);
-          
+
           // Extraire les collecteurs depuis la nouvelle structure de l'API
           if ((collectors as any)?.data) {
             const data = (collectors as any).data;
@@ -1409,110 +1465,136 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             this.collectors = collectors;
             console.log(" Collecteurs reçus directement:", this.collectors);
           } else {
-            console.warn("Format de réponse collecteurs inattendu:", collectors);
+            console.warn(
+              "Format de réponse collecteurs inattendu:",
+              collectors,
+            );
             this.collectors = [];
           }
-       
-          console.log("Collecteurs chargés via l'API service:", this.collectors);
-          
+
+          console.log(
+            "Collecteurs chargés via l'API service:",
+            this.collectors,
+          );
+
           // Mettre à jour le badge des collecteurs
           const collectorsTab = this.tabs.find((tab) => tab.id === "employees");
           if (collectorsTab) {
             collectorsTab.badge = this.collectors.length;
-         
+
             this.cdr.detectChanges();
           }
-          
+
           // Log chaque collecteur individuellement
           this.collectors.forEach((collector, index) => {
             console.log(` Collecteur ${index + 1}:`, {
               nom: `${collector.firstName} ${collector.lastName}`,
               role: collector.role,
               email: collector.email,
-              données: collector
+              données: collector,
             });
           });
-          
+
           this.isLoadingEmployees = false;
           console.log(" FIN loadCollectors - Succès");
         },
         error: (error) => {
-          
           console.error("Erreur lors du chargement des collecteurs:", error);
           this.isLoadingEmployees = false;
           console.log("FIN loadCollectors - Échec");
-        }
+        },
       });
     } else {
-   
       console.log(" agencyId reçu:", agencyId);
     }
   }
 
- 
   deleteEmployee(currentUser: any, employeeId: any): void {
     this.isDeleting = true;
 
     // Logs pour debugger la structure des données
-    console.log('[DEBUG] Structure complète de l\'employé à supprimer:', employeeId);
-    console.log('[DEBUG] Type de l\'employé:', typeof employeeId);
-    console.log('[DEBUG] Clés de l\'objet employé:', Object.keys(employeeId));
-    console.log('[DEBUG] CurrentUser:', currentUser);
+    console.log(
+      "[DEBUG] Structure complète de l'employé à supprimer:",
+      employeeId,
+    );
+    console.log("[DEBUG] Type de l'employé:", typeof employeeId);
+    console.log("[DEBUG] Clés de l'objet employé:", Object.keys(employeeId));
+    console.log("[DEBUG] CurrentUser:", currentUser);
 
     // Identifier l'ID de l'employé selon la structure des données
     let employeeIdToDelete = null;
-    
+
     // Essayer différentes structures possibles
     if (employeeId?._id) {
       employeeIdToDelete = employeeId._id;
-      console.log('[DEBUG] Utilisation de employeeId._id:', employeeIdToDelete);
+      console.log("[DEBUG] Utilisation de employeeId._id:", employeeIdToDelete);
     } else if (employeeId?.userId?._id) {
       employeeIdToDelete = employeeId.userId._id;
-      console.log('[DEBUG] Utilisation de employeeId.userId._id:', employeeIdToDelete);
+      console.log(
+        "[DEBUG] Utilisation de employeeId.userId._id:",
+        employeeIdToDelete,
+      );
     } else if (employeeId?.id) {
       employeeIdToDelete = employeeId.id;
-      console.log('[DEBUG] Utilisation de employeeId.id:', employeeIdToDelete);
-    } else if (typeof employeeId === 'string') {
+      console.log("[DEBUG] Utilisation de employeeId.id:", employeeIdToDelete);
+    } else if (typeof employeeId === "string") {
       employeeIdToDelete = employeeId;
-      console.log('[DEBUG] employeeId est déjà une string:', employeeIdToDelete);
+      console.log(
+        "[DEBUG] employeeId est déjà une string:",
+        employeeIdToDelete,
+      );
     }
 
     // Vérification des IDs nécessaires
     if (!currentUser?._id || !employeeIdToDelete) {
       this.notificationService.showError(
         "Erreur",
-        "Impossible d'identifier l'employé à supprimer"
+        "Impossible d'identifier l'employé à supprimer",
       );
-      console.error('[DEBUG] Échec validation - currentUser._id:', currentUser?._id, 'employeeIdToDelete:', employeeIdToDelete);
+      console.error(
+        "[DEBUG] Échec validation - currentUser._id:",
+        currentUser?._id,
+        "employeeIdToDelete:",
+        employeeIdToDelete,
+      );
       this.isDeleting = false;
       return;
     }
 
     // Demander confirmation avec votre système de notification personnalisé
-    this.showDeleteConfirmationDialog(employeeIdToDelete, currentUser, employeeId);
+    this.showDeleteConfirmationDialog(
+      employeeIdToDelete,
+      currentUser,
+      employeeId,
+    );
   }
 
   /**
    * Affiche la confirmation de suppression
    */
-  showDeleteConfirmationDialog(employeeIdToDelete: string, currentUser: any, employeeData: any): void {
-    const employeeName = `${employeeData.firstName || employeeData.firstname || ''} ${employeeData.lastName || employeeData.lastname || ''}`.trim();
-    const displayName = employeeName || 'cet employé';
-    
+  showDeleteConfirmationDialog(
+    employeeIdToDelete: string,
+    currentUser: any,
+    employeeData: any,
+  ): void {
+    const employeeName =
+      `${employeeData.firstName || employeeData.firstname || ""} ${employeeData.lastName || employeeData.lastname || ""}`.trim();
+    const displayName = employeeName || "cet employé";
+
     // Stocker les données pour la suppression
     this.employeeToDelete = {
       id: employeeIdToDelete,
       data: employeeData,
-      displayName: displayName
+      displayName: displayName,
     };
     this.currentUserForDeletion = currentUser;
     this.showDeleteConfirmation = true;
     this.isDeleting = false; // Reset l'état de suppression
-    
+
     // Afficher un message d'information
     this.notificationService.showInfo(
-      "Confirmation requise", 
-      `Confirmez la suppression de ${displayName}`
+      "Confirmation requise",
+      `Confirmez la suppression de ${displayName}`,
     );
   }
 
@@ -1521,13 +1603,19 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   confirmDeleteEmployee(): void {
     if (!this.employeeToDelete || !this.currentUserForDeletion) {
-      this.notificationService.showError("Erreur", "Données de suppression manquantes");
+      this.notificationService.showError(
+        "Erreur",
+        "Données de suppression manquantes",
+      );
       return;
     }
 
     this.showDeleteConfirmation = false;
     this.isDeleting = true;
-    this.proceedWithDeletion(this.employeeToDelete.id, this.currentUserForDeletion);
+    this.proceedWithDeletion(
+      this.employeeToDelete.id,
+      this.currentUserForDeletion,
+    );
   }
 
   /**
@@ -1538,68 +1626,64 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.employeeToDelete = null;
     this.currentUserForDeletion = null;
     this.isDeleting = false;
-    
-    this.notificationService.showInfo(
-      "Annulé", 
-      "La suppression a été annulée"
-    );
+
+    this.notificationService.showInfo("Annulé", "La suppression a été annulée");
   }
 
   /**
    * Procède à la suppression de l'employé
    */
   proceedWithDeletion(employeeIdToDelete: string, currentUser: any): void {
-    console.log('[DEBUG] Suppression de l\'employé avec ID:', employeeIdToDelete);
-    
+    console.log(
+      "[DEBUG] Suppression de l'employé avec ID:",
+      employeeIdToDelete,
+    );
+
     this.agencyService.deleteEmployee(employeeIdToDelete).subscribe({
-        next: (response) => {
-          console.log('[DEBUG] Réponse suppression:', response);
-          this.isDeleting = false;
-          
-          if (response.success) {
-            this.notificationService.showSuccess(
-              "Succès",
-              response.message || "L'employé a été supprimé avec succès."
-            );
-            
-            // Recharger la liste des employés pour refléter la suppression
-            if (currentUser?.agencyId) {
-              this.loadEmployees(currentUser.agencyId);
-              // Recharger les collecteurs car un collecteur peut avoir été supprimé
-              this.loadCollectors(currentUser.agencyId);
-            }
-            
-          } else {
-            // Gérer les erreurs de response
-            const errorMessage = typeof response.error === 'string' 
-              ? response.error 
-              : "Erreur lors de la suppression de l'employé";
-            
-            this.notificationService.showError(
-              "Erreur",
-              errorMessage
-            );
-          }
-        },
-        error: (error) => {
-          this.isDeleting = false;
-          console.error('[ERROR] Erreur lors de la suppression:', error);
-          this.notificationService.showError(
-            "Erreur",
-            "Une erreur s'est produite lors de la suppression de l'employé."
+      next: (response) => {
+        console.log("[DEBUG] Réponse suppression:", response);
+        this.isDeleting = false;
+
+        if (response.success) {
+          this.notificationService.showSuccess(
+            "Succès",
+            response.message || "L'employé a été supprimé avec succès.",
           );
-        },
-      });
+
+          // Recharger la liste des employés pour refléter la suppression
+          if (currentUser?.agencyId) {
+            this.loadEmployees(currentUser.agencyId);
+            // Recharger les collecteurs car un collecteur peut avoir été supprimé
+            this.loadCollectors(currentUser.agencyId);
+          }
+        } else {
+          // Gérer les erreurs de response
+          const errorMessage =
+            typeof response.error === "string"
+              ? response.error
+              : "Erreur lors de la suppression de l'employé";
+
+          this.notificationService.showError("Erreur", errorMessage);
+        }
+      },
+      error: (error) => {
+        this.isDeleting = false;
+        console.error("[ERROR] Erreur lors de la suppression:", error);
+        this.notificationService.showError(
+          "Erreur",
+          "Une erreur s'est produite lors de la suppression de l'employé.",
+        );
+      },
+    });
   }
 
   assignIncident(): void {
     this.notificationService.showInfo(
       "Attribution",
-      "Ouverture du formulaire d'attribution"
+      "Ouverture du formulaire d'attribution",
     );
     return;
   }
-  
 
   loadCollections(): void {
     // Simuler les collectes
@@ -1651,15 +1735,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   loadEmployees(agencyId: string): void {
     console.log(" DÉBUT loadEmployees - Chargement des employés");
     console.log(" AgencyId reçu:", agencyId);
-    
+
     if (agencyId) {
       this.isLoadingEmployees = true;
-      console.log(" Appel du service getEmployeeAgency$ avec agencyId:", agencyId);
-      
+      console.log(
+        " Appel du service getEmployeeAgency$ avec agencyId:",
+        agencyId,
+      );
+
       this.agencyService.getEmployeeAgency$(agencyId).subscribe({
         next: (employees) => {
           console.log(" SUCCÈS - Réponse employés reçue:", employees);
-          
+
           // Extraire les employés depuis la nouvelle structure de l'API
           if ((employees as any)?.data) {
             const data = (employees as any).data;
@@ -1667,11 +1754,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             this.allEmployees = [
               ...(data.managers || []),
               ...(data.gestionnaires || []),
-              ...(data.collectors || [])
+              ...(data.collectors || []),
             ];
             console.log(" Employés extraits et combinés:", this.allEmployees);
             console.log("   - Managers:", data.managers?.length || 0);
-            console.log("   - Gestionnaires:", data.gestionnaires?.length || 0); 
+            console.log("   - Gestionnaires:", data.gestionnaires?.length || 0);
             console.log("   - Collecteurs:", data.collectors?.length || 0);
           } else if (Array.isArray(employees)) {
             this.allEmployees = employees;
@@ -1680,19 +1767,22 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             console.warn("Format de réponse inattendu:", employees);
             this.allEmployees = [];
           }
-          
+
           console.log("loadEmployees > Total final:", this.allEmployees);
-          
+
           // Au chargement initial, afficher tous les employés localement
           // L'API backend sera utilisée seulement quand l'utilisateur applique des filtres
           this.filteredEmployees = [...this.allEmployees];
           this.totalEmployees = this.allEmployees.length;
           this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
-          console.log("Employés initialisés localement:", this.filteredEmployees.length);
-          
+          console.log(
+            "Employés initialisés localement:",
+            this.filteredEmployees.length,
+          );
+
           // COMMENTÉ : Utilisation immédiate de l'API backend au chargement
           // this.filterEmployees();
-          
+
           const employeesTab = this.tabs.find((tab) => tab.id === "employees");
           if (employeesTab) {
             employeesTab.badge = this.allEmployees.length;
@@ -1700,7 +1790,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             this.cdr.detectChanges();
           }
           this.isLoadingEmployees = false;
-          
+
           console.log("🔍 [DEBUG] FIN loadEmployees - État final:");
           console.log("  - allEmployees:", this.allEmployees.length);
           console.log("  - filteredEmployees:", this.filteredEmployees.length);
@@ -1710,11 +1800,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         error: (error) => {
           console.log(" ERREUR lors du chargement des employés:");
           console.error(" Détails de l'erreur:", error);
-          console.error(" URL utilisée: /api/agencies/" + agencyId + "/employees");
+          console.error(
+            " URL utilisée: /api/agencies/" + agencyId + "/employees",
+          );
           console.error("Erreur lors du chargement des employés :", error);
           this.notificationService.showError(
             "Erreur",
-            "Impossible de charger les employés. Veuillez réessayer."
+            "Impossible de charger les employés. Veuillez réessayer.",
           );
           this.isLoadingEmployees = false;
           console.log(" FIN loadEmployees - Échec");
@@ -1731,16 +1823,24 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   filterEmployees(): void {
     // Détecter si des filtres sont réellement appliqués
-    const hasRealFilters = (this.employeesSearch && this.employeesSearch.trim()) ||
-                          (this.employeesCityFilter && this.employeesCityFilter !== 'all' && this.employeesCityFilter.trim()) ||
-                          (this.employeesNeighborhoodFilter && this.employeesNeighborhoodFilter !== 'all' && this.employeesNeighborhoodFilter.trim()) ||
-                          (this.employeesArrondissementFilter && this.employeesArrondissementFilter !== 'all' && this.employeesArrondissementFilter.trim()) ||
-                          (this.employeesSectorFilter !== null && this.employeesSectorFilter !== undefined) ||
-                          (this.employeesRoleFilter && this.employeesRoleFilter !== 'all');
-    
+    const hasRealFilters =
+      (this.employeesSearch && this.employeesSearch.trim()) ||
+      (this.employeesCityFilter &&
+        this.employeesCityFilter !== "all" &&
+        this.employeesCityFilter.trim()) ||
+      (this.employeesNeighborhoodFilter &&
+        this.employeesNeighborhoodFilter !== "all" &&
+        this.employeesNeighborhoodFilter.trim()) ||
+      (this.employeesArrondissementFilter &&
+        this.employeesArrondissementFilter !== "all" &&
+        this.employeesArrondissementFilter.trim()) ||
+      (this.employeesSectorFilter !== null &&
+        this.employeesSectorFilter !== undefined) ||
+      (this.employeesRoleFilter && this.employeesRoleFilter !== "all");
+
     const agencyId = this.authService.getCurrentUser()?.agencyId;
     if (!agencyId) {
-      console.warn('Aucun ID d\'agence disponible pour le filtrage');
+      console.warn("Aucun ID d'agence disponible pour le filtrage");
       this.filterEmployeesLocally();
       return;
     }
@@ -1755,7 +1855,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     // Paramètres selon le Swagger exact
     const filters: any = {
-      limit: this.itemsPerPage
+      limit: this.itemsPerPage,
     };
 
     // Paramètres de filtrage selon le Swagger
@@ -1771,74 +1871,126 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (this.employeesArrondissementFilter?.trim()) {
       filters.arrondissement = this.employeesArrondissementFilter.trim();
     }
-    if (this.employeesSectorFilter !== null && this.employeesSectorFilter !== undefined) {
+    if (
+      this.employeesSectorFilter !== null &&
+      this.employeesSectorFilter !== undefined
+    ) {
       filters.sector = this.employeesSectorFilter;
     }
-    if (this.employeesRoleFilter && this.employeesRoleFilter !== 'all') {
+    if (this.employeesRoleFilter && this.employeesRoleFilter !== "all") {
       filters.role = this.employeesRoleFilter;
     }
 
     this.agencyService.getFilteredEmployees(agencyId, filters).subscribe({
       next: (response) => {
-        console.log('🔍 [DEBUG] Réponse complète de l\'API:', response);
-        
+        console.log("🔍 [DEBUG] Réponse complète de l'API:", response);
+
         if (response.success) {
           // La réponse API groupe les employés par rôle
           let employees: any[] = [];
-          
+
           if (response.data) {
-            console.log('🔍 [DEBUG] Structure de response.data:', response.data);
-            
+            console.log(
+              "🔍 [DEBUG] Structure de response.data:",
+              response.data,
+            );
+
             // Extraire tous les employés des différents groupes de rôles
-            if (response.data.managers && Array.isArray(response.data.managers)) {
-              console.log(`🔍 [DEBUG] Managers trouvés: ${response.data.managers.length}`);
+            if (
+              response.data.managers &&
+              Array.isArray(response.data.managers)
+            ) {
+              console.log(
+                `🔍 [DEBUG] Managers trouvés: ${response.data.managers.length}`,
+              );
               employees.push(...response.data.managers);
             }
-            if (response.data.collectors && Array.isArray(response.data.collectors)) {
-              console.log(`🔍 [DEBUG] Collectors trouvés: ${response.data.collectors.length}`);
+            if (
+              response.data.collectors &&
+              Array.isArray(response.data.collectors)
+            ) {
+              console.log(
+                `🔍 [DEBUG] Collectors trouvés: ${response.data.collectors.length}`,
+              );
               employees.push(...response.data.collectors);
             }
-            if (response.data.gestionnaires && Array.isArray(response.data.gestionnaires)) {
-              console.log(`🔍 [DEBUG] Gestionnaires trouvés: ${response.data.gestionnaires.length}`);
+            if (
+              response.data.gestionnaires &&
+              Array.isArray(response.data.gestionnaires)
+            ) {
+              console.log(
+                `🔍 [DEBUG] Gestionnaires trouvés: ${response.data.gestionnaires.length}`,
+              );
               employees.push(...response.data.gestionnaires);
             }
             // Ajouter d'autres rôles si nécessaire
-            if (response.data.employees && Array.isArray(response.data.employees)) {
-              console.log(`🔍 [DEBUG] Employees génériques trouvés: ${response.data.employees.length}`);
+            if (
+              response.data.employees &&
+              Array.isArray(response.data.employees)
+            ) {
+              console.log(
+                `🔍 [DEBUG] Employees génériques trouvés: ${response.data.employees.length}`,
+              );
               employees.push(...response.data.employees);
             }
           } else {
-            console.warn('🔍 [DEBUG] Aucune donnée dans response.data');
+            console.warn("🔍 [DEBUG] Aucune donnée dans response.data");
           }
-          
-          console.log(`🔍 [DEBUG] Total employés extraits: ${employees.length}`);
-          
-          // Appliquer le filtre de statut côté client 
-          if (this.employeesStatusFilter && this.employeesStatusFilter !== 'all') {
-            const isActive = this.employeesStatusFilter === 'active';
+
+          console.log(
+            `🔍 [DEBUG] Total employés extraits: ${employees.length}`,
+          );
+
+          // Appliquer le filtre de statut côté client
+          if (
+            this.employeesStatusFilter &&
+            this.employeesStatusFilter !== "all"
+          ) {
+            const isActive = this.employeesStatusFilter === "active";
             const beforeStatus = employees.length;
-            employees = employees.filter(employee => employee.isActive === isActive);
-            console.log(`🔍 [DEBUG] Après filtre statut (${this.employeesStatusFilter}): ${beforeStatus} -> ${employees.length}`);
+            employees = employees.filter(
+              (employee) => employee.isActive === isActive,
+            );
+            console.log(
+              `🔍 [DEBUG] Après filtre statut (${this.employeesStatusFilter}): ${beforeStatus} -> ${employees.length}`,
+            );
           }
-          
+
           this.filteredEmployees = employees;
           this.totalEmployees = employees.length;
           this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
-          console.log(`🔍 [DEBUG] Employés finalement affichés: ${this.filteredEmployees.length}`);
-          console.log('🔍 [DEBUG] Employés dans filteredEmployees:', this.filteredEmployees);
+          console.log(
+            `🔍 [DEBUG] Employés finalement affichés: ${this.filteredEmployees.length}`,
+          );
+          console.log(
+            "🔍 [DEBUG] Employés dans filteredEmployees:",
+            this.filteredEmployees,
+          );
         } else {
-          console.error('🔍 [ERROR] Erreur dans la réponse de l\'API:', response);
-          this.notificationService.showError('Erreur', 'Erreur lors du filtrage des employés');
+          console.error(
+            "🔍 [ERROR] Erreur dans la réponse de l'API:",
+            response,
+          );
+          this.notificationService.showError(
+            "Erreur",
+            "Erreur lors du filtrage des employés",
+          );
         }
         this.isLoadingFilteredEmployees = false;
       },
       error: (error) => {
-        console.error('🔍 [ERROR] Erreur lors du filtrage des employés:', error);
-        this.notificationService.showError('Erreur', 'Erreur lors du filtrage des employés');
+        console.error(
+          "🔍 [ERROR] Erreur lors du filtrage des employés:",
+          error,
+        );
+        this.notificationService.showError(
+          "Erreur",
+          "Erreur lors du filtrage des employés",
+        );
         this.isLoadingFilteredEmployees = false;
         // En cas d'erreur, utiliser le filtrage local comme fallback
         this.filterEmployeesLocally();
-      }
+      },
     });
   }
 
@@ -1846,43 +1998,47 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Méthode de filtrage local - gère les filtres de rôle et statut + pagination locale
    */
   private filterEmployeesLocally(): void {
-    console.log('Début du filtrage local avec:', {
+    console.log("Début du filtrage local avec:", {
       search: this.employeesSearch,
       roleFilter: this.employeesRoleFilter,
       statusFilter: this.employeesStatusFilter,
-      totalEmployees: this.allEmployees.length
+      totalEmployees: this.allEmployees.length,
     });
-    
+
     let filtered = [...this.allEmployees];
 
     // Filtrage par texte de recherche
     if (this.employeesSearch && this.employeesSearch.trim()) {
       const searchTerm = this.employeesSearch.toLowerCase().trim();
-      filtered = filtered.filter(employee => 
-        employee.firstName?.toLowerCase().includes(searchTerm) ||
-        employee.lastName?.toLowerCase().includes(searchTerm) ||
-        employee.email?.toLowerCase().includes(searchTerm) ||
-        this.getRoleText(employee.role)?.toLowerCase().includes(searchTerm) ||
-        `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchTerm)
+      filtered = filtered.filter(
+        (employee) =>
+          employee.firstName?.toLowerCase().includes(searchTerm) ||
+          employee.lastName?.toLowerCase().includes(searchTerm) ||
+          employee.email?.toLowerCase().includes(searchTerm) ||
+          this.getRoleText(employee.role)?.toLowerCase().includes(searchTerm) ||
+          `${employee.firstName} ${employee.lastName}`
+            .toLowerCase()
+            .includes(searchTerm),
       );
     }
 
     // Filtrage par rôle
-    if (this.employeesRoleFilter && this.employeesRoleFilter !== 'all') {
-      filtered = filtered.filter(employee => employee.role === this.employeesRoleFilter);
+    if (this.employeesRoleFilter && this.employeesRoleFilter !== "all") {
+      filtered = filtered.filter(
+        (employee) => employee.role === this.employeesRoleFilter,
+      );
     }
 
     // Filtrage par statut
-    if (this.employeesStatusFilter && this.employeesStatusFilter !== 'all') {
-      const isActive = this.employeesStatusFilter === 'active';
-      filtered = filtered.filter(employee => employee.isActive === isActive);
+    if (this.employeesStatusFilter && this.employeesStatusFilter !== "all") {
+      const isActive = this.employeesStatusFilter === "active";
+      filtered = filtered.filter((employee) => employee.isActive === isActive);
     }
 
-    
     // Calcul de la pagination
     this.totalEmployees = filtered.length;
     this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
-    
+
     // S'assurer que currentPage est valide
     if (this.currentPage > this.totalPages && this.totalPages > 0) {
       this.currentPage = this.totalPages;
@@ -1895,8 +2051,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
     this.filteredEmployees = filtered.slice(startIndex, endIndex);
-    
-    console.log('Employés filtrés localement:', this.filteredEmployees.length, 'sur', this.totalEmployees, 'total (page', this.currentPage, 'sur', this.totalPages, ')');
+
+    console.log(
+      "Employés filtrés localement:",
+      this.filteredEmployees.length,
+      "sur",
+      this.totalEmployees,
+      "total (page",
+      this.currentPage,
+      "sur",
+      this.totalPages,
+      ")",
+    );
   }
 
   /**
@@ -1927,7 +2093,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   toggleEmployeesSearch(): void {
     this.showEmployeesSearch = !this.showEmployeesSearch;
-    
+
     // Si on ferme la section, on remet à zéro les filtres
     if (!this.showEmployeesSearch) {
       this.resetEmployeeFilters();
@@ -1988,19 +2154,22 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxVisiblePages = 5;
-    
-    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+
+    let startPage = Math.max(
+      1,
+      this.currentPage - Math.floor(maxVisiblePages / 2),
+    );
     let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
-    
+
     // Ajuster le début si on est proche de la fin
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
-    
+
     return pages;
   }
 
@@ -2015,7 +2184,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Calcule le numéro du dernier élément client affiché sur la page actuelle
    */
   getClientEndItemNumber(): number {
-    return Math.min(this.clientsCurrentPage * this.clientsItemsPerPage, this.clientsTotalItems);
+    return Math.min(
+      this.clientsCurrentPage * this.clientsItemsPerPage,
+      this.clientsTotalItems,
+    );
   }
 
   /**
@@ -2025,33 +2197,38 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     try {
       // S'assurer que OUAGA_DATA existe et est un tableau
       if (!OUAGA_DATA || !Array.isArray(OUAGA_DATA)) {
-        console.warn('OUAGA_DATA non disponible ou incorrect');
+        console.warn("OUAGA_DATA non disponible ou incorrect");
         this.availableCities = [];
         this.availableNeighborhoods = [];
         this.filteredNeighborhoods = [];
         return;
       }
-      
+
       // Extraire les arrondissements comme "villes"
-      this.availableCities = OUAGA_DATA.map(data => data.arrondissement);
-      
+      this.availableCities = OUAGA_DATA.map((data) => data.arrondissement);
+
       // Extraire tous les quartiers
       this.availableNeighborhoods = [];
-      OUAGA_DATA.forEach(arrond => {
+      OUAGA_DATA.forEach((arrond) => {
         if (arrond.secteurs && Array.isArray(arrond.secteurs)) {
-          arrond.secteurs.forEach(secteur => {
+          arrond.secteurs.forEach((secteur) => {
             if (secteur.quartiers && Array.isArray(secteur.quartiers)) {
               this.availableNeighborhoods.push(...secteur.quartiers);
             }
           });
         }
       });
-      
+
       // Supprimer les doublons et trier
-      this.availableNeighborhoods = [...new Set(this.availableNeighborhoods)].sort();
+      this.availableNeighborhoods = [
+        ...new Set(this.availableNeighborhoods),
+      ].sort();
       this.filteredNeighborhoods = [...this.availableNeighborhoods];
     } catch (error) {
-      console.error('Erreur lors de l\'initialisation des villes et quartiers:', error);
+      console.error(
+        "Erreur lors de l'initialisation des villes et quartiers:",
+        error,
+      );
       this.availableCities = [];
       this.availableNeighborhoods = [];
       this.filteredNeighborhoods = [];
@@ -2063,26 +2240,30 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   onEmployeeFilterCityChange(): void {
     if (this.employeesCityFilter) {
-      const selectedArrond = OUAGA_DATA.find(data => data.arrondissement === this.employeesCityFilter);
+      const selectedArrond = OUAGA_DATA.find(
+        (data) => data.arrondissement === this.employeesCityFilter,
+      );
       if (selectedArrond) {
         this.filteredNeighborhoods = [];
-        selectedArrond.secteurs.forEach(secteur => {
+        selectedArrond.secteurs.forEach((secteur) => {
           this.filteredNeighborhoods.push(...secteur.quartiers);
         });
         this.filteredNeighborhoods.sort();
-        
+
         // Réinitialiser le quartier si il n'est plus dans la liste
-        if (this.employeesNeighborhoodFilter && 
-            !this.filteredNeighborhoods.includes(this.employeesNeighborhoodFilter)) {
-          this.employeesNeighborhoodFilter = '';
+        if (
+          this.employeesNeighborhoodFilter &&
+          !this.filteredNeighborhoods.includes(this.employeesNeighborhoodFilter)
+        ) {
+          this.employeesNeighborhoodFilter = "";
         }
       }
     } else {
       // Si aucune ville sélectionnée, montrer tous les quartiers
       this.filteredNeighborhoods = [...this.availableNeighborhoods];
-      this.employeesNeighborhoodFilter = '';
+      this.employeesNeighborhoodFilter = "";
     }
-    
+
     // Appliquer les filtres
     this.filterEmployees();
   }
@@ -2093,122 +2274,149 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Filtre les clients via l'API backend
    */
   filterClients(): void {
-    if (!this.agency?.agencyId) {
-      console.log('Aucune agence disponible pour filtrer les clients');
-      return;
-    }
+    if (!this.agency?.agencyId) return;
 
     this.isLoadingFilteredClients = true;
-    
+
     const filters = {
       term: this.clientsSearch,
-      city: this.clientsCityFilter, // Nouveau paramètre city
+      city: this.clientsCityFilter,
       neighborhood: this.clientsNeighborhoodFilter,
       page: this.clientsCurrentPage,
-      limit: this.clientsItemsPerPage
+      limit: this.clientsItemsPerPage,
     };
 
-    console.log('Filtrage des clients avec:', filters);
-
-    this.clientService.getFilteredClients(this.agency.agencyId, filters).subscribe({
-      next: (response: any) => {
-        console.log('Clients filtrés reçus:', response);
-        
-        if (response && response.data) {
-          // S'assurer que response.data est un tableau
-          const clientsData = Array.isArray(response.data) ? response.data : [];
-          
-          // Si l'API retourne les données de pagination
-          if (response.totalItems && response.totalPages) {
-            this.filteredActiveClients = clientsData;
-            this.clientsTotalItems = response.totalItems;
-            this.clientsTotalPages = response.totalPages;
-          } else {
-            // Si l'API ne supporte pas la pagination, on fait la pagination côté client
-            console.log('Pagination côté client pour les clients');
-            this.handleClientSidePagination(clientsData, filters);
+    this.clientService
+      .getFilteredClients(this.agency.agencyId, filters)
+      .subscribe({
+        next: (response: any) => {
+          if (!response?.data || !Array.isArray(response.data)) {
+            this.filteredActiveClients = [];
+            this.isLoadingFilteredClients = false;
+            return;
           }
-          
-          console.log(`Clients filtrés: ${this.filteredActiveClients.length} résultats`);
-          console.log(`Pagination: page ${this.clientsCurrentPage}/${this.clientsTotalPages}, total: ${this.clientsTotalItems}`);
-          
-        } else {
-          console.warn('Réponse API inattendue pour les clients:', response);
-          this.filteredActiveClients = [];
-          this.clientsTotalItems = 0;
-          this.clientsTotalPages = 0;
-        }
-        
-        this.isLoadingFilteredClients = false;
-      },
-      error: (error: any) => {
-        console.error('Erreur lors du filtrage des clients:', error);
-        // En cas d'erreur API, utiliser le filtrage local
-        this.filterClientsLocally();
-        this.isLoadingFilteredClients = false;
-      }
-    });
+
+          const clients = response.data;
+
+          // 🔥 Requêtes abonnements par client
+          const subscriptionsRequests = clients.map((client: any) =>
+            this.agencyService.getUserSubscription(client._id).pipe(
+              map((subs: any[]) => ({
+                ...client,
+                historyAbonnement:
+                  subs
+                    .filter(
+                      (abonnement) =>
+                        abonnement.agencyId._id === client.agencyId,
+                    )
+                    .sort((a, b) => {
+                      const dateA = new Date(a.startDate).getTime();
+                      const dateB = new Date(b.startDate).getTime();
+                      return dateB - dateA;
+                    }) || [],
+              })),
+              catchError(() =>
+                of({
+                  ...client,
+                  historyAbonnement: [],
+                }),
+              ),
+            ),
+          );
+
+          forkJoin(subscriptionsRequests).subscribe({
+            next: (clientsWithSubscriptions: any) => {
+              this.filteredActiveClients = clientsWithSubscriptions;
+              this.clientsTotalItems =
+                response.totalItems || clientsWithSubscriptions.length;
+              this.clientsTotalPages = response.totalPages || 1;
+              this.isLoadingFilteredClients = false;
+
+              console.log("agency clients ", this.filteredActiveClients);
+            },
+            error: () => {
+              this.isLoadingFilteredClients = false;
+            },
+          });
+        },
+        error: () => {
+          this.filterClientsLocally();
+          this.isLoadingFilteredClients = false;
+        },
+      });
   }
 
   /**
    * Gère la pagination côté client quand l'API ne la supporte pas
    */
   private handleClientSidePagination(allClients: any[], filters: any): void {
- 
     let filteredClients = [...allClients];
-    
+
     // Filtrage par terme de recherche
     if (filters.term && filters.term.trim()) {
       const searchTerm = filters.term.toLowerCase().trim();
-      filteredClients = filteredClients.filter(client => 
-        client.firstName?.toLowerCase().includes(searchTerm) ||
-        client.lastName?.toLowerCase().includes(searchTerm) ||
-        client.email?.toLowerCase().includes(searchTerm) ||
-        client.phone?.toLowerCase().includes(searchTerm) ||
-        client.address?.street?.toLowerCase().includes(searchTerm) ||
-        client.address?.neighborhood?.toLowerCase().includes(searchTerm) ||
-        `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm)
+      filteredClients = filteredClients.filter(
+        (client) =>
+          client.firstName?.toLowerCase().includes(searchTerm) ||
+          client.lastName?.toLowerCase().includes(searchTerm) ||
+          client.email?.toLowerCase().includes(searchTerm) ||
+          client.phone?.toLowerCase().includes(searchTerm) ||
+          client.address?.street?.toLowerCase().includes(searchTerm) ||
+          client.address?.neighborhood?.toLowerCase().includes(searchTerm) ||
+          `${client.firstName} ${client.lastName}`
+            .toLowerCase()
+            .includes(searchTerm),
       );
     }
 
     // Filtrage par ville
-    if (filters.city && filters.city !== 'all') {
-      filteredClients = filteredClients.filter(client => 
-        client.address?.city === filters.city
+    if (filters.city && filters.city !== "all") {
+      filteredClients = filteredClients.filter(
+        (client) => client.address?.city === filters.city,
       );
     }
-    
+
     // Filtrage par quartier
-    if (filters.neighborhood && filters.neighborhood !== 'all') {
-      filteredClients = filteredClients.filter(client => 
-        client.address?.neighborhood === filters.neighborhood
+    if (filters.neighborhood && filters.neighborhood !== "all") {
+      filteredClients = filteredClients.filter(
+        (client) => client.address?.neighborhood === filters.neighborhood,
       );
     }
 
     // Calcul de la pagination
     this.clientsTotalItems = filteredClients.length;
-    this.clientsTotalPages = Math.ceil(this.clientsTotalItems / this.clientsItemsPerPage);
-    
+    this.clientsTotalPages = Math.ceil(
+      this.clientsTotalItems / this.clientsItemsPerPage,
+    );
+
     // S'assurer que la page courante est valide
-    if (this.clientsCurrentPage > this.clientsTotalPages && this.clientsTotalPages > 0) {
+    if (
+      this.clientsCurrentPage > this.clientsTotalPages &&
+      this.clientsTotalPages > 0
+    ) {
       this.clientsCurrentPage = this.clientsTotalPages;
     }
-    
+
     // Découper les résultats pour la page courante
     const startIndex = (this.clientsCurrentPage - 1) * this.clientsItemsPerPage;
     const endIndex = startIndex + this.clientsItemsPerPage;
     this.filteredActiveClients = filteredClients.slice(startIndex, endIndex);
-    
-    console.log(`Pagination côté client: page ${this.clientsCurrentPage}/${this.clientsTotalPages}, ${this.filteredActiveClients.length} sur ${this.clientsTotalItems} clients`);
+
+    console.log(
+      `Pagination côté client: page ${this.clientsCurrentPage}/${this.clientsTotalPages}, ${this.filteredActiveClients.length} sur ${this.clientsTotalItems} clients`,
+    );
   }
 
   /**
    * Vérifie s'il y a des filtres actifs
    */
   private hasClientFilters(): boolean {
-    return (!!this.clientsSearch && this.clientsSearch.trim() !== '') ||
-           (!!this.clientsCityFilter && this.clientsCityFilter !== 'all') ||
-           (!!this.clientsNeighborhoodFilter && this.clientsNeighborhoodFilter !== 'all');
+    return (
+      (!!this.clientsSearch && this.clientsSearch.trim() !== "") ||
+      (!!this.clientsCityFilter && this.clientsCityFilter !== "all") ||
+      (!!this.clientsNeighborhoodFilter &&
+        this.clientsNeighborhoodFilter !== "all")
+    );
   }
 
   /**
@@ -2220,34 +2428,46 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Filtrage par texte de recherche
     if (this.clientsSearch && this.clientsSearch.trim()) {
       const searchTerm = this.clientsSearch.toLowerCase().trim();
-      filtered = filtered.filter(client => 
-        client.firstName?.toLowerCase().includes(searchTerm) ||
-        client.lastName?.toLowerCase().includes(searchTerm) ||
-        client.email?.toLowerCase().includes(searchTerm) ||
-        client.phone?.toLowerCase().includes(searchTerm) ||
-        client.address?.street?.toLowerCase().includes(searchTerm) ||
-        client.address?.neighborhood?.toLowerCase().includes(searchTerm) ||
-        client.address?.city?.toLowerCase().includes(searchTerm) ||
-        `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm)
+      filtered = filtered.filter(
+        (client) =>
+          client.firstName?.toLowerCase().includes(searchTerm) ||
+          client.lastName?.toLowerCase().includes(searchTerm) ||
+          client.email?.toLowerCase().includes(searchTerm) ||
+          client.phone?.toLowerCase().includes(searchTerm) ||
+          client.address?.street?.toLowerCase().includes(searchTerm) ||
+          client.address?.neighborhood?.toLowerCase().includes(searchTerm) ||
+          client.address?.city?.toLowerCase().includes(searchTerm) ||
+          `${client.firstName} ${client.lastName}`
+            .toLowerCase()
+            .includes(searchTerm),
       );
     }
 
     // Filtrage par ville
-    if (this.clientsCityFilter && this.clientsCityFilter !== 'all') {
-      filtered = filtered.filter(client => 
-        client.address?.city === this.clientsCityFilter
+    if (this.clientsCityFilter && this.clientsCityFilter !== "all") {
+      filtered = filtered.filter(
+        (client) => client.address?.city === this.clientsCityFilter,
       );
     }
 
     // Filtrage par quartier
-    if (this.clientsNeighborhoodFilter && this.clientsNeighborhoodFilter !== 'all') {
-      filtered = filtered.filter(client => 
-        client.address?.neighborhood === this.clientsNeighborhoodFilter
+    if (
+      this.clientsNeighborhoodFilter &&
+      this.clientsNeighborhoodFilter !== "all"
+    ) {
+      filtered = filtered.filter(
+        (client) =>
+          client.address?.neighborhood === this.clientsNeighborhoodFilter,
       );
     }
 
     this.filteredActiveClients = filtered;
-    console.log('Filtrage local - Clients filtrés:', this.filteredActiveClients.length, 'sur', this.activeClients.length);
+    console.log(
+      "Filtrage local - Clients filtrés:",
+      this.filteredActiveClients.length,
+      "sur",
+      this.activeClients.length,
+    );
   }
 
   /**
@@ -2302,18 +2522,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     const pages: number[] = [];
     const maxPagesToShow = 5;
     const half = Math.floor(maxPagesToShow / 2);
-    
+
     let start = Math.max(1, this.clientsCurrentPage - half);
     let end = Math.min(this.clientsTotalPages, start + maxPagesToShow - 1);
-    
+
     if (end - start + 1 < maxPagesToShow) {
       start = Math.max(1, end - maxPagesToShow + 1);
     }
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     return pages;
   }
 
@@ -2324,28 +2544,31 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Essayer d'abord depuis les clients actifs
     let clientNeighborhoods: string[] = [];
     if (this.activeClients && this.activeClients.length > 0) {
-      const clientsArray = Array.isArray(this.activeClients) ? this.activeClients : [];
+      const clientsArray = Array.isArray(this.activeClients)
+        ? this.activeClients
+        : [];
       clientNeighborhoods = clientsArray
-        .map(client => client.address?.neighborhood)
-        .filter((neighborhood, index, self) => 
-          neighborhood && 
-          neighborhood.trim() !== '' && 
-          self.indexOf(neighborhood) === index
+        .map((client) => client.address?.neighborhood)
+        .filter(
+          (neighborhood, index, self) =>
+            neighborhood &&
+            neighborhood.trim() !== "" &&
+            self.indexOf(neighborhood) === index,
         )
         .sort();
     }
-    
+
     // Si aucun quartier trouvé dans les clients, utiliser le mock comme fallback
     if (clientNeighborhoods.length === 0) {
       const allQuartiers: string[] = [];
-      OUAGA_DATA.forEach(arrond => {
-        arrond.secteurs.forEach(secteur => {
+      OUAGA_DATA.forEach((arrond) => {
+        arrond.secteurs.forEach((secteur) => {
           allQuartiers.push(...secteur.quartiers);
         });
       });
       clientNeighborhoods = [...new Set(allQuartiers)].sort();
     }
-    
+
     return clientNeighborhoods;
   }
 
@@ -2356,22 +2579,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Essayer d'abord depuis les clients actifs
     let clientCities: string[] = [];
     if (this.activeClients && this.activeClients.length > 0) {
-      const clientsArray = Array.isArray(this.activeClients) ? this.activeClients : [];
+      const clientsArray = Array.isArray(this.activeClients)
+        ? this.activeClients
+        : [];
       clientCities = clientsArray
-        .map(client => client.address?.city)
-        .filter((city, index, self) => 
-          city && 
-          city.trim() !== '' && 
-          self.indexOf(city) === index
+        .map((client) => client.address?.city)
+        .filter(
+          (city, index, self) =>
+            city && city.trim() !== "" && self.indexOf(city) === index,
         )
         .sort();
     }
-    
+
     // Si aucune ville trouvée dans les clients, utiliser "Ouagadougou" par défaut
     if (clientCities.length === 0) {
       clientCities = ["Ouagadougou"];
     }
-    
+
     return clientCities;
   }
 
@@ -2379,7 +2603,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Obtenir la liste des quartiers uniques des employés
    */
   getUniqueEmployeeNeighborhoods(): string[] {
-    return this.availableEmployeeNeighborhoods.map(q => q.name).sort();
+    return this.availableEmployeeNeighborhoods.map((q) => q.name).sort();
   }
 
   /**
@@ -2387,26 +2611,32 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   initializeFiltersData(): void {
     // Charger les villes du Burkina Faso (country id = '1')
-    this.availableEmployeeCities = this.countriesOrgMockService.getCitiesByCountry('1');
-    
+    this.availableEmployeeCities =
+      this.countriesOrgMockService.getCitiesByCountry("1");
+
     // Par défaut, charger les arrondissements de Ouagadougou (city id = '1')
-    this.availableEmployeeArrondissements = this.countriesOrgMockService.getArrondissementsByCity('1');
-    
+    this.availableEmployeeArrondissements =
+      this.countriesOrgMockService.getArrondissementsByCity("1");
+
     // Charger tous les quartiers de Ouagadougou par défaut
-    this.loadAllNeighborhoodsForCity('1');
+    this.loadAllNeighborhoodsForCity("1");
   }
 
   /**
    * Charge tous les quartiers d'une ville donnée
    */
   loadAllNeighborhoodsForCity(cityId: string): void {
-    const arrondissements = this.countriesOrgMockService.getArrondissementsByCity(cityId);
+    const arrondissements =
+      this.countriesOrgMockService.getArrondissementsByCity(cityId);
     this.availableEmployeeNeighborhoods = [];
-    
-    arrondissements.forEach(arr => {
-      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(arr.id);
-      sectors.forEach(sector => {
-        const neighborhoods = this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
+
+    arrondissements.forEach((arr) => {
+      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(
+        arr.id,
+      );
+      sectors.forEach((sector) => {
+        const neighborhoods =
+          this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
         this.availableEmployeeNeighborhoods.push(...neighborhoods);
       });
     });
@@ -2417,20 +2647,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   onEmployeeCityFilterChange(): void {
     // Réinitialiser les filtres dépendants
-    this.employeesArrondissementFilter = '';
+    this.employeesArrondissementFilter = "";
     this.employeesSectorFilter = null;
-    this.employeesNeighborhoodFilter = '';
-    
+    this.employeesNeighborhoodFilter = "";
+
     if (this.employeesCityFilter) {
       // Charger les arrondissements de la ville sélectionnée
-      this.availableEmployeeArrondissements = this.countriesOrgMockService.getArrondissementsByCity(this.employeesCityFilter);
+      this.availableEmployeeArrondissements =
+        this.countriesOrgMockService.getArrondissementsByCity(
+          this.employeesCityFilter,
+        );
       this.loadAllNeighborhoodsForCity(this.employeesCityFilter);
     } else {
       this.availableEmployeeArrondissements = [];
       this.availableEmployeeSectors = [];
       this.availableEmployeeNeighborhoods = [];
     }
-    
+
     this.filterEmployees();
   }
 
@@ -2440,23 +2673,27 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   onEmployeeArrondissementFilterChange(): void {
     // Réinitialiser les filtres dépendants
     this.employeesSectorFilter = null;
-    this.employeesNeighborhoodFilter = '';
-    
+    this.employeesNeighborhoodFilter = "";
+
     if (this.employeesArrondissementFilter) {
       // Charger les secteurs de l'arrondissement sélectionné
-      this.availableEmployeeSectors = this.countriesOrgMockService.getSectorsByArrondissement(this.employeesArrondissementFilter);
-      
+      this.availableEmployeeSectors =
+        this.countriesOrgMockService.getSectorsByArrondissement(
+          this.employeesArrondissementFilter,
+        );
+
       // Charger les quartiers de cet arrondissement
       this.availableEmployeeNeighborhoods = [];
-      this.availableEmployeeSectors.forEach(sector => {
-        const neighborhoods = this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
+      this.availableEmployeeSectors.forEach((sector) => {
+        const neighborhoods =
+          this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
         this.availableEmployeeNeighborhoods.push(...neighborhoods);
       });
     } else {
       this.availableEmployeeSectors = [];
       this.availableEmployeeNeighborhoods = [];
     }
-    
+
     this.filterEmployees();
   }
 
@@ -2464,23 +2701,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Gère le changement de secteur pour les filtres employés
    */
   onEmployeeSectorFilterChange(): void {
-    this.employeesNeighborhoodFilter = '';
-    
+    this.employeesNeighborhoodFilter = "";
+
     if (this.employeesSectorFilter) {
       // Charger les quartiers du secteur sélectionné
       const sectorId = this.employeesSectorFilter.toString();
-      this.availableEmployeeNeighborhoods = this.countriesOrgMockService.getNeighborhoodsBySector(sectorId);
+      this.availableEmployeeNeighborhoods =
+        this.countriesOrgMockService.getNeighborhoodsBySector(sectorId);
     } else {
       // Si aucun secteur sélectionné, charger tous les quartiers de l'arrondissement
       if (this.employeesArrondissementFilter) {
         this.availableEmployeeNeighborhoods = [];
-        this.availableEmployeeSectors.forEach(sector => {
-          const neighborhoods = this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
+        this.availableEmployeeSectors.forEach((sector) => {
+          const neighborhoods =
+            this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
           this.availableEmployeeNeighborhoods.push(...neighborhoods);
         });
       }
     }
-    
+
     this.filterEmployees();
   }
 
@@ -2513,7 +2752,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * S'assurer que connectedUserMessages est toujours un tableau
    */
   getConnectedUserMessages(): any[] {
-    return Array.isArray(this.connectedUserMessages) ? this.connectedUserMessages : [];
+    return Array.isArray(this.connectedUserMessages)
+      ? this.connectedUserMessages
+      : [];
   }
 
   /**
@@ -2528,14 +2769,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   toggleClientsSearch(): void {
     this.showClientsSearch = !this.showClientsSearch;
-    
-    
+
     if (!this.showClientsSearch) {
       this.resetClientFilters();
     }
   }
 
- 
   //chargement des signalements
   loadAgencyReports(currentUser: any): void {
     if (currentUser && currentUser.agencyId) {
@@ -2549,7 +2788,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           const SignalementsTab = this.tabs.find((tab) => tab.id === "reports");
           if (SignalementsTab) {
             SignalementsTab.badge = this.statistics.pendingSignalements;
-            this.cdr.detectChanges(); 
+            this.cdr.detectChanges();
           }
           const repportTab = this.tabs.find((tab) => tab.id === "reports");
           if (repportTab) {
@@ -2562,7 +2801,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           console.error("Erreur lors du chargement des signalements :", error);
           this.notificationService.showError(
             "Erreur",
-            "Impossible de charger les signalements. Veuillez réessayer."
+            "Impossible de charger les signalements. Veuillez réessayer.",
           );
           this.isLoadingReports = false;
         },
@@ -2579,7 +2818,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       const agencyId = currentUser.agencyId;
       this.agencyService.getAgencyStats$(agencyId).subscribe({
         next: (statistics) => {
-          if(!statistics.success) return
+          if (!statistics.success) return;
           this.statistics = statistics.data;
           console.log("Statistiques de l'agence chargées :", this.statistics);
           this.isLoadingStatistics = false;
@@ -2587,14 +2826,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           console.log(" FIN loadAgencyStatistics - Succès");
         },
         error: (error) => {
-         
           console.error(
             "Erreur lors du chargement des statistiques de l'agence :",
-            error
+            error,
           );
           this.notificationService.showError(
             "Erreur",
-            "Impossible de charger les statistiques de l'agence. Veuillez réessayer."
+            "Impossible de charger les statistiques de l'agence. Veuillez réessayer.",
           );
           this.isLoadingStatistics = false;
           console.log("🏁 FIN loadAgencyStatistics - Échec");
@@ -2602,10 +2840,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       });
     } else {
       console.warn(" ID d'agence non disponible dans l'utilisateur courant.");
-    
     }
   }
- 
 
   // Helper pour récupérer le statut d'abonnement
   getClientSubscriptionStatus(c: any): string | undefined {
@@ -2624,40 +2860,39 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     this.isLoadingClients = true;
     this.clientService.getClientsByAgency(this.agency.agencyId).subscribe({
-      next: (clients:any) => {
+      next: (clients: any) => {
         console.log(
           "[loadClients] clients number:",
           this.activeClientNbrs,
-          clients?.data?.length || 0
+          clients?.data?.length || 0,
         );
         console.log("ALL Agency_clients", clients);
-    
+
         const clientsData = Array.isArray(clients?.data) ? clients.data : [];
-        
+
         this.activeClients = clientsData.filter(
-          (c:any) => this.getClientSubscriptionStatus(c) === "active"
+          (c: any) => this.getClientSubscriptionStatus(c) === "active",
         );
-        this.filteredActiveClients = [...this.activeClients]; 
+        this.filteredActiveClients = [...this.activeClients];
         this.pendingClients = clientsData.filter(
-          (c:any) => this.getClientSubscriptionStatus(c) === "pending"
+          (c: any) => this.getClientSubscriptionStatus(c) === "pending",
         );
         console.log(
           "[loadClients] active:",
           this.activeClients,
           "pending:",
-          this.pendingClients
+          this.pendingClients,
         );
 
         if (clients && clientsData.length > 0) {
           this.clientNbrs = clientsData.length;
-        
-    
+
           if (this.activeClients) {
-            this.activeClientNbrs = this.activeClients.length; 
-           
+            this.activeClientNbrs = this.activeClients.length;
+
             const clientsTab = this.tabs.find((tab) => tab.label === "Clients");
             if (clientsTab) {
-              clientsTab.badge = this.clientNbrs; 
+              clientsTab.badge = this.clientNbrs;
               console.log("badge >>", clientsTab.badge);
               console.log("activeClientNbrs >>", this.activeClientNbrs);
             } else {
@@ -2673,7 +2908,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           this.pendingClients = [];
         }
         this.isLoadingClients = false;
-        
+
         // Initialiser le filtrage avec les nouveaux clients chargés
         this.filterClients();
       },
@@ -2716,13 +2951,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return Math.round(
       (this.statistics.completedCollections /
         this.statistics.todayCollections) *
-        100
+        100,
     );
   }
 
-  
   getStars(rating: number): number[] {
-
     if (!rating || rating < 0) {
       return [];
     }
@@ -2755,8 +2988,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       ? `${collector.firstName} ${collector.lastName}`
       : "Inconnu";
   }
-
-
 
   getCollectionProgress(collection: Collection): number {
     // Simuler le progrès de collecte avec une valeur stable
@@ -2831,7 +3062,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   getCurrentWeekText(): string {
     const startOfWeek = new Date(this.currentWeek);
     startOfWeek.setDate(
-      this.currentWeek.getDate() - this.currentWeek.getDay() + 1
+      this.currentWeek.getDate() - this.currentWeek.getDay() + 1,
     );
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
@@ -2867,7 +3098,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   getSchedulesForDay(dayIndex: number): any[] {
     if (!Array.isArray(this.schedules)) {
-      console.log("getSchedulesForDay: schedules n'est pas un tableau", this.schedules);
+      console.log(
+        "getSchedulesForDay: schedules n'est pas un tableau",
+        this.schedules,
+      );
       return [];
     }
 
@@ -2880,7 +3114,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     const targetDate = new Date(startOfWeek);
     targetDate.setDate(startOfWeek.getDate() + dayIndex);
 
-    console.log(`Recherche plannings pour le jour ${dayIndex} (${targetDate.toLocaleDateString()})`);
+    console.log(
+      `Recherche plannings pour le jour ${dayIndex} (${targetDate.toLocaleDateString()})`,
+    );
     console.log("Nombre total de plannings:", this.schedules.length);
 
     const filteredSchedules = this.schedules.filter((schedule) => {
@@ -2888,20 +3124,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         console.warn("Planning sans date:", schedule);
         return false;
       }
-      
+
       const scheduleDate = new Date(schedule.date);
       scheduleDate.setHours(0, 0, 0, 0);
-      
+
       const isMatch = scheduleDate.getTime() === targetDate.getTime();
-      
+
       if (isMatch) {
         console.log("Planning trouvé pour ce jour:", schedule);
       }
-      
+
       return isMatch;
     });
 
-    console.log(`Plannings trouvés pour le jour ${dayIndex}:`, filteredSchedules);
+    console.log(
+      `Plannings trouvés pour le jour ${dayIndex}:`,
+      filteredSchedules,
+    );
     return filteredSchedules;
   }
 
@@ -2912,7 +3151,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (!schedule.createdAt) return false;
     const now = new Date();
     const createdAt = new Date(schedule.createdAt);
-    const diffInHours = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+    const diffInHours =
+      (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
     return diffInHours <= 24;
   }
 
@@ -2934,23 +3174,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   createNewScheduleForDay(dayIndex: number): void {
     // Calculer la date correspondant au jour sélectionné
     const targetDate = this.getDateForDay(dayIndex);
-    
+
     // Ouvrir le drawer de création de planning
     this.showScheduleModal = true;
     this.isEditingSchedule = false;
-    
+
     // Pré-remplir le formulaire avec la date sélectionnée
     this.scheduleForm.patchValue({
-      date: this.formatDateForInput(targetDate)
+      date: this.formatDateForInput(targetDate),
     });
 
     // Notification pour informer l'utilisateur
     this.notificationService.showInfo(
-      "Nouveau planning", 
-      `Création d'un planning pour ${this.getDayName(dayIndex)} ${this.getFormattedDate(dayIndex)}`
+      "Nouveau planning",
+      `Création d'un planning pour ${this.getDayName(dayIndex)} ${this.getFormattedDate(dayIndex)}`,
     );
 
-    console.log(`[DEBUG] Création planning pour le jour ${dayIndex} - Date: ${targetDate.toLocaleDateString()}`);
+    console.log(
+      `[DEBUG] Création planning pour le jour ${dayIndex} - Date: ${targetDate.toLocaleDateString()}`,
+    );
   }
 
   /**
@@ -2972,8 +3214,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Obtient le nom du jour en français
    */
   getDayName(dayIndex: number): string {
-    const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-    return dayNames[dayIndex] || '';
+    const dayNames = [
+      "Lundi",
+      "Mardi",
+      "Mercredi",
+      "Jeudi",
+      "Vendredi",
+      "Samedi",
+      "Dimanche",
+    ];
+    return dayNames[dayIndex] || "";
   }
 
   /**
@@ -2981,11 +3231,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   getFormattedDate(dayIndex: number): string {
     const targetDate = this.getDateForDay(dayIndex);
-    const options: Intl.DateTimeFormatOptions = { 
-      day: 'numeric', 
-      month: 'short' 
+    const options: Intl.DateTimeFormatOptions = {
+      day: "numeric",
+      month: "short",
     };
-    return targetDate.toLocaleDateString('fr-FR', options);
+    return targetDate.toLocaleDateString("fr-FR", options);
   }
 
   /**
@@ -2993,8 +3243,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   formatDateForInput(date: Date): string {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
@@ -3084,8 +3334,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     }
   }
 
-
-
   deleteSchedule(scheduleId: string): void {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce planning ?")) {
       // this.schedules = this.schedules.filter(s => s.id !== scheduleId);
@@ -3097,7 +3345,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   viewClientDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",
-      "Récupération des détails du client..."
+      "Récupération des détails du client...",
     );
 
     this.adminService.getUserById(clientId).subscribe({
@@ -3109,11 +3357,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       error: (err: any) => {
         console.error(
           "Erreur lors de la récupération des détails du client :",
-          err
+          err,
         );
         this.notificationService.showError(
           "Erreur",
-          "Impossible de récupérer les détails du client."
+          "Impossible de récupérer les détails du client.",
         );
       },
     });
@@ -3125,7 +3373,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       // No need to call notificationService.showSuccess here, as it's already handled in the template
       this.notificationService.showSuccess(
         "Client suspendu",
-        "Le client a bien été suspendu."
+        "Le client a bien été suspendu.",
       );
     }
   }
@@ -3208,9 +3456,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     if (this.isEmployeeFormValid() && this.currentUser?.agencyId) {
       const formValue = this.employeeForm.value;
-      
+
       // Vérifier si on est en mode modification ou création
-      if (this.isEditingEmployee && this.employeeToEdit && this.employeeToEdit._id) {
+      if (
+        this.isEditingEmployee &&
+        this.employeeToEdit &&
+        this.employeeToEdit._id
+      ) {
         // Mode modification - utiliser updateEmployee
         this.updateEmployeeData(this.employeeToEdit._id);
         return;
@@ -3240,7 +3492,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
             this.notificationService.showSuccess(
               "Employé ajouté avec succès",
-              response.message || "L'employé a été créé avec succès !"
+              response.message || "L'employé a été créé avec succès !",
             );
 
             //  Recharger la liste après ajout
@@ -3260,17 +3512,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
             console.error(
               "Message affiché à l'utilisateur:",
-              this.employeeFormError
+              this.employeeFormError,
             );
             console.error(
               "Erreurs détaillées affichées:",
-              this.employeeFormDetailedErrors
+              this.employeeFormDetailedErrors,
             );
 
             // Afficher aussi une notification
             this.notificationService.showError(
               "Erreur lors de l'ajout",
-              this.employeeFormError || "Erreur inconnue"
+              this.employeeFormError || "Erreur inconnue",
             );
           }
         },
@@ -3290,12 +3542,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
           console.log(
             "Message d'erreur final (dashboard):",
-            this.employeeFormError
+            this.employeeFormError,
           );
 
           this.notificationService.showError(
             "Erreur lors de l'ajout",
-            this.employeeFormError || "Erreur inconnue"
+            this.employeeFormError || "Erreur inconnue",
           );
         },
       });
@@ -3305,14 +3557,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       this.updateFormErrors(this.employeeForm, "employee");
       this.notificationService.showError(
         "Formulaire invalide",
-        "Veuillez corriger les erreurs dans le formulaire"
+        "Veuillez corriger les erreurs dans le formulaire",
       );
     }
   }
 
   // Nouvelle méthode pour la modification d'employé
   updateEmployeeData(employeeId: string): void {
-    console.log('Tentative de modification d\'employé:', employeeId);
+    console.log("Tentative de modification d'employé:", employeeId);
 
     const formValue = this.employeeForm.value;
     const employeeData: Partial<AddEmployeeData> = {
@@ -3326,7 +3578,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     };
 
     // Inclure le mot de passe seulement s'il est fourni
-    if (formValue.password && formValue.password.trim() !== '') {
+    if (formValue.password && formValue.password.trim() !== "") {
       employeeData.password = formValue.password;
     }
 
@@ -3342,7 +3594,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
           this.notificationService.showSuccess(
             "Employé modifié avec succès",
-            response.message || "L'employé a été modifié avec succès !"
+            response.message || "L'employé a été modifié avec succès !",
           );
 
           //  Recharger la liste après modification
@@ -3351,7 +3603,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             // Recharger les collecteurs car le rôle peut avoir changé
             this.loadCollectors(this.currentUser.agencyId);
           }
-          
+
           // Fermer le drawer et réinitialiser
           this.closeAddEmployeeModal();
         } else {
@@ -3362,17 +3614,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
           console.error(
             "Message affiché à l'utilisateur:",
-            this.employeeFormError
+            this.employeeFormError,
           );
           console.error(
             "Erreurs détaillées affichées:",
-            this.employeeFormDetailedErrors
+            this.employeeFormDetailedErrors,
           );
 
           // Afficher aussi une notification
           this.notificationService.showError(
             "Erreur lors de la modification",
-            this.employeeFormError || "Erreur inconnue"
+            this.employeeFormError || "Erreur inconnue",
           );
         }
       },
@@ -3383,8 +3635,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
         if (errorResponse.error) {
           this.employeeFormError = errorResponse.error;
-          this.employeeFormDetailedErrors =
-            errorResponse.detailedErrors || {};
+          this.employeeFormDetailedErrors = errorResponse.detailedErrors || {};
         } else {
           this.employeeFormError = "Erreur de communication avec le serveur";
           this.employeeFormDetailedErrors = {};
@@ -3392,12 +3643,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
         console.log(
           "Message d'erreur final (dashboard):",
-          this.employeeFormError
+          this.employeeFormError,
         );
 
         this.notificationService.showError(
           "Erreur lors de la modification",
-          this.employeeFormError || "Erreur inconnue"
+          this.employeeFormError || "Erreur inconnue",
         );
       },
     });
@@ -3407,7 +3658,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   addTariff(): void {
     if (this.tariffForm.valid) {
       // Vérifier si on est en mode modification ou création
-      if (this.isEditingTariff && this.tariffToUpdate && this.tariffToUpdate._id) {
+      if (
+        this.isEditingTariff &&
+        this.tariffToUpdate &&
+        this.tariffToUpdate._id
+      ) {
         // Mode modification - utiliser updateTariff
         this.updateTariff(this.tariffToUpdate._id);
         return;
@@ -3425,7 +3680,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      console.log('[DEBUG] Tarif:', tarif);
+      console.log("[DEBUG] Tarif:", tarif);
       this.agencyService.addTariff(tarif).subscribe({
         next: (response: any) => {
           this.isLoading = false;
@@ -3443,20 +3698,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             if (response) {
               this.notificationService.showSuccess(
                 "Le tarif a été ajouté avec succès !",
-                "vous pouvez désormais le consulter dans la liste des tarifs, disponible dans la section Zones"
+                "vous pouvez désormais le consulter dans la liste des tarifs, disponible dans la section Zones",
               );
-              
+
               // Fermer le modal et nettoyer l'état
               this.closeZoneModal();
               this.loadTariffs();
             } else {
               const errorMsg = this.getFriendlyMessage(
                 response?.message || response?.error || "",
-                false
+                false,
               );
               this.notificationService.showError(
                 "Erreur lors de l’ajout du tarif",
-                errorMsg
+                errorMsg,
               );
             }
           }
@@ -3465,11 +3720,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           this.isLoading = false;
           const errorMsg = this.getFriendlyMessage(
             error?.error?.message || error?.error || "",
-            false
+            false,
           );
           this.notificationService.showError(
             "Erreur lors de l’ajout du tarif",
-            errorMsg
+            errorMsg,
           );
         },
       });
@@ -3480,10 +3735,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   loadTariffs(): void {
     this.isLoadingTariffs = true;
     const agencyId = this.currentUser?._id;
-    
-    console.log('[DEBUG] LoadTariffs - currentUser:', this.currentUser);
-    console.log('[DEBUG] LoadTariffs - agencyId utilisé:', agencyId);
-    
+
+    console.log("[DEBUG] LoadTariffs - currentUser:", this.currentUser);
+    console.log("[DEBUG] LoadTariffs - agencyId utilisé:", agencyId);
+
     if (!agencyId) {
       console.error("[DEBUG] Aucun agencyId trouvé pour charger les tarifs");
       this.isLoadingTariffs = false;
@@ -3494,7 +3749,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       next: (response: any) => {
         this.tariffs = response.data;
         console.log("Tarifs récupérés dans dashboard :", this.tariffs);
-        
+
         // Debug: afficher la structure de chaque tarif pour vérifier les IDs
         if (this.tariffs && this.tariffs.length > 0) {
           console.log("Structure du premier tarif:", this.tariffs[0]);
@@ -3502,13 +3757,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           console.log("agencyId du premier tarif:", this.tariffs[0].agencyId);
           console.log("_id du premier tarif:", this.tariffs[0]._id);
         }
-        
+
         // Mettre à jour le badge des tarifs
         // const tariffsTab = this.tabs.find((tab) => tab.id === "schedules"); // Tariffs tab doesn't exist, using schedules instead
         // if (tariffsTab) {
         //   tariffsTab.badge = this.tariffs.length;
         // }
-        
+
         this.isLoadingTariffs = false;
       },
       error: (error) => {
@@ -3533,12 +3788,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
       next: (response: any) => {
         console.log("Réponse complète du backend:", response);
-        
+
         // Gérer les deux formats possibles de réponse
         if (Array.isArray(response)) {
           // Si la réponse est directement un tableau
           this.schedules = response;
-        } else if (response && response.plannings && Array.isArray(response.plannings)) {
+        } else if (
+          response &&
+          response.plannings &&
+          Array.isArray(response.plannings)
+        ) {
           // Si la réponse est un objet avec une propriété plannings
           this.schedules = response.plannings;
         } else if (response && response.data && Array.isArray(response.data)) {
@@ -3548,11 +3807,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           console.warn("Format de réponse non reconnu:", response);
           this.schedules = [];
         }
-        
-     
-
-
-    
 
         const schedulesTab = this.tabs.find((tab) => tab.id === "schedules");
         if (schedulesTab) {
@@ -3564,7 +3818,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       error: (error) => {
         console.error(
           "[DEBUG] Erreur lors du chargement des plannings :",
-          error
+          error,
         );
         this.isLoadingSchedules = false;
       },
@@ -3604,7 +3858,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   deletePlanning(schedulesId: string): void {
     if (!schedulesId) {
       console.warn("Aucun ID de planning fourni.");
-      this.notificationService.showWarning("Attention", "ID de planning manquant");
+      this.notificationService.showWarning(
+        "Attention",
+        "ID de planning manquant",
+      );
       return;
     }
 
@@ -3620,15 +3877,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       next: () => {
         this.notificationService.showSuccess(
           "Succès",
-          "Le planning a été supprimé avec succès."
+          "Le planning a été supprimé avec succès.",
         );
         this.loadPlannings(); // Recharger la liste
         this.isDeleting = false;
       },
       error: (error) => {
-        console.error("Erreur complète lors de la suppression du planning:", error);
+        console.error(
+          "Erreur complète lors de la suppression du planning:",
+          error,
+        );
         let errorMessage = "Impossible de supprimer le planning";
-        
+
         // Gestion détaillée des erreurs du backend
         if (error.error?.message) {
           errorMessage = error.error.message;
@@ -3637,10 +3897,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         } else if (error.message) {
           errorMessage = error.message;
         }
-        
-        this.notificationService.showError("Erreur de suppression", errorMessage);
+
+        this.notificationService.showError(
+          "Erreur de suppression",
+          errorMessage,
+        );
         this.isDeleting = false;
-      }
+      },
     });
   }
 
@@ -3652,33 +3915,31 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (!this.tariffToUpdate || !this.tariffToUpdate._id) {
       this.notificationService.showError(
         "Erreur",
-        "Aucun tarif sélectionné pour la modification"
+        "Aucun tarif sélectionné pour la modification",
       );
       return;
     }
 
     this.isLoading = true;
-    
+
     // Récupérer les données du formulaire
     const formValue = this.tariffForm.value;
-    
+
     // Utiliser directement l'ID du tarif stocké
     const actualTariffId = this.tariffToUpdate._id;
-    
 
     const originalAgencyId = this.tariffToUpdate.agencyId;
     const fallbackAgencyId = this.currentUser?._id || "";
     const finalAgencyId = originalAgencyId || fallbackAgencyId;
-    
+
     const payload = {
       id: actualTariffId,
-      agencyId: finalAgencyId, 
+      agencyId: finalAgencyId,
       planType: formValue.type,
       price: formValue.price,
       description: formValue.description || "",
       numberOfPasses: formValue.nbPassages || 0,
     };
-    
 
     this.agencyService.updateTariff$(actualTariffId, payload).subscribe({
       next: (response: any) => {
@@ -3687,25 +3948,26 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         if (response && response.success) {
           this.notificationService.showSuccess(
             "Modification réussie",
-            response.message || "Le tarif a été modifié avec succès !"
+            response.message || "Le tarif a été modifié avec succès !",
           );
-          
+
           // Recharger la liste des tarifs
           this.loadTariffs();
-          
-          // Fermer le modal de formulaire et réinitialiser l'état  
+
+          // Fermer le modal de formulaire et réinitialiser l'état
           this.closeZoneModal();
         } else {
-          const errorMsg = response?.message || "Erreur lors de la modification du tarif";
+          const errorMsg =
+            response?.message || "Erreur lors de la modification du tarif";
           this.notificationService.showError(
             "Erreur de modification",
-            errorMsg
+            errorMsg,
           );
         }
       },
       error: (error) => {
         this.isLoading = false;
-        
+
         let errorMessage = "Erreur lors de la modification du tarif";
         if (error.error && error.error.message) {
           errorMessage = error.error.message;
@@ -3715,7 +3977,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
         this.notificationService.showError(
           "Erreur de modification",
-          errorMessage
+          errorMessage,
         );
       },
     });
@@ -3725,24 +3987,24 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   deleteTariff(tariff: any): void {
     this.isDeleting = true;
     const tariffId = tariff._id;
-    
+
     // IMPORTANT: Utiliser l'agencyId du tarif lui-même si disponible
     const originalAgencyId = tariff.agencyId;
     const fallbackAgencyId = this.currentUser?._id || "";
     const finalAgencyId = originalAgencyId || fallbackAgencyId;
-    
-    console.log('[DEBUG] DeleteTariff - tariffId:', tariffId);
-    console.log('[DEBUG] DeleteTariff - originalAgencyId:', originalAgencyId);
-    console.log('[DEBUG] DeleteTariff - fallbackAgencyId:', fallbackAgencyId);
-    console.log('[DEBUG] DeleteTariff - finalAgencyId:', finalAgencyId);
-    console.log('[DEBUG] DeleteTariff - tariff object:', tariff);
+
+    console.log("[DEBUG] DeleteTariff - tariffId:", tariffId);
+    console.log("[DEBUG] DeleteTariff - originalAgencyId:", originalAgencyId);
+    console.log("[DEBUG] DeleteTariff - fallbackAgencyId:", fallbackAgencyId);
+    console.log("[DEBUG] DeleteTariff - finalAgencyId:", finalAgencyId);
+    console.log("[DEBUG] DeleteTariff - tariff object:", tariff);
 
     if (tariffId && finalAgencyId) {
       this.agencyService.deleteTarif$(tariffId, finalAgencyId).subscribe(
         () => {
           this.notificationService.showSuccess(
             "Succès",
-            "Le tarif a été supprimé avec succès."
+            "Le tarif a été supprimé avec succès.",
           );
           this.isDeleting = false;
           this.loadTariffs();
@@ -3750,11 +4012,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         (error) => {
           this.notificationService.showError(
             "Erreur",
-            "Impossible de supprimer le tarif. Veuillez réessayer."
+            "Impossible de supprimer le tarif. Veuillez réessayer.",
           );
           console.error("Erreur lors de la suppression du tarif :", error);
           this.isDeleting = false;
-        }
+        },
       );
     } else {
       console.warn("ID du tarif ou ID de l'agence manquant.");
@@ -3764,77 +4026,78 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   // Méthodes utilitaires pour les tarifs
   formatTariffDate(date: string | Date | undefined): string {
-    if (!date) return 'Non défini';
-    
+    if (!date) return "Non défini";
+
     try {
-      const dateObject = typeof date === 'string' ? new Date(date) : date;
-      return dateObject.toLocaleDateString('fr-FR', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      const dateObject = typeof date === "string" ? new Date(date) : date;
+      return dateObject.toLocaleDateString("fr-FR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     } catch (error) {
-      return 'Date invalide';
+      return "Date invalide";
     }
   }
 
   editTariff(tariff: any): void {
-    console.log('Édition du tarif:', tariff);
-    
+    console.log("Édition du tarif:", tariff);
+
     if (!tariff || !tariff._id) {
       this.notificationService.showError(
         "Erreur",
-        "Tarif invalide pour la modification"
+        "Tarif invalide pour la modification",
       );
       return;
     }
-    
+
     // Passer en mode édition
     this.isEditingTariff = true;
     this.tariffToUpdate = tariff;
-    
+
     // Pré-remplir le formulaire avec les données du tarif existant
     console.log("Données à pré-remplir:", {
       type: tariff.planType,
       price: tariff.price,
       description: tariff.description,
-      nbPassages: tariff.numberOfPasses
+      nbPassages: tariff.numberOfPasses,
     });
-    
+
     this.tariffForm.patchValue({
-      type: tariff.planType || '',
-      price: tariff.price || '',
-      description: tariff.description || '',
-      nbPassages: tariff.numberOfPasses || ''
+      type: tariff.planType || "",
+      price: tariff.price || "",
+      description: tariff.description || "",
+      nbPassages: tariff.numberOfPasses || "",
     });
-    
+
     // Marquer le formulaire comme non touché et propre pour éviter les erreurs de validation
     this.tariffForm.markAsUntouched();
     this.tariffForm.markAsPristine();
-    
+
     // Effacer les erreurs précédentes
-    Object.keys(this.formErrors).forEach(key => {
-      if (key.startsWith('tariff_')) {
+    Object.keys(this.formErrors).forEach((key) => {
+      if (key.startsWith("tariff_")) {
         delete this.formErrors[key];
       }
     });
-    
+
     // Fermer le drawer des tarifs et ouvrir le modal de formulaire
     this.showTariffsModal = false;
     this.showZoneModal = true;
-    
+
     // Debug: vérifier que le formulaire est bien pré-rempli
     setTimeout(() => {
-      console.log("Valeurs du formulaire tarif après pré-remplissage:", this.tariffForm.value);
+      console.log(
+        "Valeurs du formulaire tarif après pré-remplissage:",
+        this.tariffForm.value,
+      );
     }, 100);
-    
+
     this.notificationService.showInfo(
       "Modification",
-      "Formulaire ouvert pour modification du tarif"
+      "Formulaire ouvert pour modification du tarif",
     );
   }
-
-  
 
   saveZone(): void {
     if (this.zoneForm.valid) {
@@ -3854,7 +4117,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         }
         this.notificationService.showSuccess(
           "Zone modifiée",
-          "La zone a été modifiée avec succès"
+          "La zone a été modifiée avec succès",
         );
       } else {
         const zone: ServiceZones = {
@@ -3869,7 +4132,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         this.serviceZoness.push(zone);
         this.notificationService.showSuccess(
           "Zone ajoutée",
-          "La zone a été créée avec succès"
+          "La zone a été créée avec succès",
         );
       }
 
@@ -3884,7 +4147,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       this.updateFormErrors(this.zoneForm, "zone");
       this.notificationService.showError(
         "Formulaire invalide",
-        "Veuillez corriger les erreurs dans le formulaire"
+        "Veuillez corriger les erreurs dans le formulaire",
       );
     }
   }
@@ -3896,14 +4159,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         console.log("[validateClient] success for", clientId);
         this.notificationService.showSuccess(
           "Validation",
-          "Abonnement validé avec succès !"
+          "Abonnement validé avec succès !",
         );
         this.loadClients();
       },
       error: (err) => {
         this.notificationService.showError(
           "Validation",
-          "Validation a échoué  ! " + err?.error?.error
+          "Validation a échoué  ! " + err?.error?.error,
         );
         console.error("[validateClient] error for", clientId, err);
       },
@@ -3923,7 +4186,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       this.updateFormErrors(this.scheduleForm, "schedule");
       this.notificationService.showError(
         "Formulaire invalide",
-        "Veuillez corriger les erreurs dans le formulaire"
+        "Veuillez corriger les erreurs dans le formulaire",
       );
       return;
     }
@@ -3934,7 +4197,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     ) {
       this.notificationService.showWarning(
         "Attention",
-        "Le collecteur est déjà programmé sur ce créneau."
+        "Le collecteur est déjà programmé sur ce créneau.",
       );
       return;
     }
@@ -3961,56 +4224,63 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.agencyService.addSchedule$(schedule).subscribe({
       next: (response) => {
         console.log("Réponse complète du backend:", response);
-        
+
         if (response) {
           this.schedules.push(response);
-          
+
           // Message de succès détaillé avec informations du planning créé
           const successMessage = `Planning créé avec succès pour la zone "${response.zone || schedule.zone}" le ${response.date || schedule.date} de ${response.startTime || schedule.startTime} à ${response.endTime || schedule.endTime}.`;
-          
+
           this.notificationService.showSuccess(
             " Planning créé !",
-            successMessage
+            successMessage,
           );
         } else {
           this.notificationService.showSuccess(
             " Succès",
-            "Le planning a été créé avec succès."
+            "Le planning a été créé avec succès.",
           );
         }
-        
+
         // Recharger la liste des plannings pour afficher le nouveau
         this.loadPlannings();
-        
+
         // Désactiver l'indicateur de chargement
         this.isLoading = false;
-        
+
         // Fermer le drawer et réinitialiser le formulaire
         this.showScheduleModal = false;
         this.scheduleForm.reset();
       },
       error: (error) => {
-        console.error("Erreur complète lors de la création du planning:", error);
-        let errorMessage = "Une erreur est survenue lors de la création du planning";
+        console.error(
+          "Erreur complète lors de la création du planning:",
+          error,
+        );
+        let errorMessage =
+          "Une erreur est survenue lors de la création du planning";
         let errorDetails = "";
-        
+
         // Gestion détaillée des erreurs du backend
         if (error.error) {
           // Erreur avec message spécifique
           if (error.error.message) {
             switch (error.error.message) {
               case "COLLECTOR_NOT_AVAILABLE":
-                errorMessage = "Le collecteur n'est pas disponible sur ce créneau";
+                errorMessage =
+                  "Le collecteur n'est pas disponible sur ce créneau";
                 break;
               case "ZONE_NOT_FOUND":
                 errorMessage = "La zone sélectionnée n'existe pas";
                 break;
               case "TIME_CONFLICT":
-                errorMessage = "Il existe déjà un planning sur ce créneau horaire";
+                errorMessage =
+                  "Il existe déjà un planning sur ce créneau horaire";
                 break;
               case "Missing required fields":
                 errorMessage = "Des champs obligatoires sont manquants";
-                errorDetails = "Vérifiez que tous les champs sont correctement remplis";
+                errorDetails =
+                  "Vérifiez que tous les champs sont correctement remplis";
                 console.error("Champs manquants. Données envoyées:", schedule);
                 break;
               default:
@@ -4028,20 +4298,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           else if (error.error.errors) {
             errorMessage = "Erreurs de validation";
             errorDetails = Object.keys(error.error.errors)
-              .map(key => `${key}: ${error.error.errors[key]}`)
+              .map((key) => `${key}: ${error.error.errors[key]}`)
               .join(", ");
           }
         }
-        
+
         // Afficher l'erreur avec détails si disponibles
-        const fullErrorMessage = errorDetails 
-          ? `${errorMessage}\n${errorDetails}` 
+        const fullErrorMessage = errorDetails
+          ? `${errorMessage}\n${errorDetails}`
           : errorMessage;
-        
+
         // Désactiver l'indicateur de chargement même en cas d'erreur
         this.isLoading = false;
-        
-        this.notificationService.showError("Erreur de création", fullErrorMessage);
+
+        this.notificationService.showError(
+          "Erreur de création",
+          fullErrorMessage,
+        );
       },
     });
   }
@@ -4069,7 +4342,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.statistics.pendingReports--;
     this.notificationService.showSuccess(
       "Résolu",
-      "Incident marqué comme résolu"
+      "Incident marqué comme résolu",
     );
     // }
   }
@@ -4080,7 +4353,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   contactAgency(): void {
     this.notificationService.showInfo(
       "Contact",
-      "Ouverture des informations de contact"
+      "Ouverture des informations de contact",
     );
   }
 
@@ -4139,7 +4412,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         } else {
           this.notificationService.showError(
             "Activation",
-            "Erreur lors de l'activation de l'agence"
+            "Erreur lors de l'activation de l'agence",
           );
         }
       },
@@ -4157,7 +4430,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   openScheduleDetails(schedule: any): void {
     this.selectedSchedule = schedule;
   }
-  
+
   closeModal(): void {
     this.selectedSchedule = null;
   }
@@ -4165,61 +4438,64 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // Ouvrir le formulaire de modification de planning
   editSchedule(schedule: any): void {
     console.log("Édition du planning:", schedule);
-    
+
     if (!schedule || !schedule._id) {
       this.notificationService.showError(
         "Erreur",
-        "Planning invalide pour la modification"
+        "Planning invalide pour la modification",
       );
       return;
     }
 
     this.editingSchedule = schedule;
     this.isEditingSchedule = true;
-    
+
     // Charger les données nécessaires
     this.loadScheduleModalData();
-    
+
     // Formater la date si nécessaire (en cas de format ISO)
     let formattedDate = schedule.date;
-    if (schedule.date && schedule.date.includes('T')) {
+    if (schedule.date && schedule.date.includes("T")) {
       // Si la date est au format ISO (avec T), extraire seulement la partie date
-      formattedDate = schedule.date.split('T')[0];
+      formattedDate = schedule.date.split("T")[0];
     }
-    
+
     // Pré-remplir le formulaire avec les données existantes
     console.log("Données à pré-remplir:", {
       zone: schedule.zone,
       date: formattedDate,
       startTime: schedule.startTime,
       endTime: schedule.endTime,
-      collectorId: schedule.collectorId
+      collectorId: schedule.collectorId,
     });
 
     this.scheduleForm.patchValue({
-      zone: schedule.zone || '',
-      date: formattedDate || '',
-      startTime: schedule.startTime || '',
-      endTime: schedule.endTime || '',
-      collectorId: schedule.collectorId || ''
+      zone: schedule.zone || "",
+      date: formattedDate || "",
+      startTime: schedule.startTime || "",
+      endTime: schedule.endTime || "",
+      collectorId: schedule.collectorId || "",
     });
-    
+
     // Marquer les contrôles comme touchés pour déclencher la validation si nécessaire
     this.scheduleForm.markAsUntouched();
     this.scheduleForm.markAsPristine();
-    
+
     // Effacer les erreurs précédentes
-    Object.keys(this.formErrors).forEach(key => {
-      if (key.startsWith('schedule_')) {
+    Object.keys(this.formErrors).forEach((key) => {
+      if (key.startsWith("schedule_")) {
         delete this.formErrors[key];
       }
     });
-    
+
     this.showScheduleModal = true;
-    
+
     // Debug: vérifier que le formulaire est bien pré-rempli
     setTimeout(() => {
-      console.log("Valeurs du formulaire après pré-remplissage:", this.scheduleForm.value);
+      console.log(
+        "Valeurs du formulaire après pré-remplissage:",
+        this.scheduleForm.value,
+      );
     }, 100);
   }
 
@@ -4230,7 +4506,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       this.updateFormErrors(this.scheduleForm, "schedule");
       this.notificationService.showError(
         "Formulaire invalide",
-        "Veuillez corriger les erreurs dans le formulaire"
+        "Veuillez corriger les erreurs dans le formulaire",
       );
       return;
     }
@@ -4238,7 +4514,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (!this.editingSchedule?._id) {
       this.notificationService.showError(
         "Erreur",
-        "Aucun planning sélectionné pour la modification"
+        "Aucun planning sélectionné pour la modification",
       );
       return;
     }
@@ -4248,10 +4524,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     // Vérifier la disponibilité du collecteur (sauf pour le planning actuel)
     const { collectorId, date, startTime, endTime } = formValues;
-    if (this.checkCollectorAvailabilityForUpdate(collectorId, date, startTime, endTime, scheduleId)) {
+    if (
+      this.checkCollectorAvailabilityForUpdate(
+        collectorId,
+        date,
+        startTime,
+        endTime,
+        scheduleId,
+      )
+    ) {
       this.notificationService.showWarning(
         "Attention",
-        "Le collecteur est déjà programmé sur ce créneau."
+        "Le collecteur est déjà programmé sur ce créneau.",
       );
       return;
     }
@@ -4273,33 +4557,37 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.agencyService.updateSchedule$(scheduleId, updatedSchedule).subscribe({
       next: (response) => {
         console.log("Réponse complète du backend (modification):", response);
-        
+
         if (response) {
           this.notificationService.showSuccess(
             "Succès",
-            "Le planning a été mis à jour avec succès."
+            "Le planning a été mis à jour avec succès.",
           );
         } else {
           this.notificationService.showWarning(
             "Attention",
-            "Le planning a été traité mais la réponse est incomplète."
+            "Le planning a été traité mais la réponse est incomplète.",
           );
         }
-        
+
         // Recharger la liste des plannings pour afficher les modifications
         this.loadPlannings();
-        
+
         // Désactiver l'indicateur de chargement
         this.isLoading = false;
-        
+
         // Fermer le drawer et réinitialiser le formulaire
         this.closeScheduleModal();
       },
       error: (error) => {
-        console.error("Erreur complète lors de la modification du planning:", error);
-        let errorMessage = "Une erreur est survenue lors de la modification du planning";
+        console.error(
+          "Erreur complète lors de la modification du planning:",
+          error,
+        );
+        let errorMessage =
+          "Une erreur est survenue lors de la modification du planning";
         let errorDetails = "";
-        
+
         // Gestion détaillée des erreurs du backend
         if (error.error) {
           if (error.error.message) {
@@ -4312,22 +4600,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           } else if (error.error.errors) {
             errorMessage = "Erreurs de validation";
             errorDetails = Object.keys(error.error.errors)
-              .map(key => `${key}: ${error.error.errors[key]}`)
+              .map((key) => `${key}: ${error.error.errors[key]}`)
               .join(", ");
           }
         } else if (error.message) {
           errorMessage = error.message;
         }
-        
-        const fullErrorMessage = errorDetails 
-          ? `${errorMessage}\nDétails: ${errorDetails}` 
+
+        const fullErrorMessage = errorDetails
+          ? `${errorMessage}\nDétails: ${errorDetails}`
           : errorMessage;
-        
-        this.notificationService.showError("Erreur de modification", fullErrorMessage);
-        
+
+        this.notificationService.showError(
+          "Erreur de modification",
+          fullErrorMessage,
+        );
+
         // Désactiver l'indicateur de chargement en cas d'erreur
         this.isLoading = false;
-      }
+      },
     });
   }
   onEmployeeToggle(event: any): void {
@@ -4336,7 +4627,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       this.selectedEmployee.push(employeeId);
     } else {
       this.selectedEmployee = this.selectedEmployee.filter(
-        (id) => id !== employeeId
+        (id) => id !== employeeId,
       );
     }
   }
@@ -4344,7 +4635,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (!this.selectedReportId || this.selectedEmployee.length === 0) {
       this.notificationService.showError(
         "Erreur",
-        "Veuillez sélectionner au moins un employé."
+        "Veuillez sélectionner au moins un employé.",
       );
       return;
     }
@@ -4359,7 +4650,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           next: () => {
             this.notificationService.showSuccess(
               "Succès",
-              "Signalement assigné avec succès."
+              "Signalement assigné avec succès.",
             );
             this.loadReports();
           },
@@ -4391,17 +4682,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.tariffForm.reset();
     this.tariffToUpdate = null; // Réinitialiser le mode édition
     this.isEditingTariff = false; // Sortir du mode édition
-    
+
     // Effacer les erreurs du formulaire
-    Object.keys(this.formErrors).forEach(key => {
-      if (key.startsWith('tariff_')) {
+    Object.keys(this.formErrors).forEach((key) => {
+      if (key.startsWith("tariff_")) {
         delete this.formErrors[key];
       }
     });
   }
   zones: any[] = [];
   agencyZonesActivite: any[] = []; // Variable pour stocker les zones d'activité de l'agence
-  
+
   //recuperation des zones
   loadZones(currentUser: any): void {
     // Éviter le rechargement si les zones sont déjà chargées
@@ -4411,7 +4702,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     }
 
     this.isLoadingZones = true;
-    this.scheduleForm.get('zone')?.disable();
+    this.scheduleForm.get("zone")?.disable();
     if (currentUser && currentUser._id) {
       const agencyId = currentUser.agencyId;
       this.agencyService.getAllzones$(agencyId).subscribe({
@@ -4422,40 +4713,43 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           } else if (Array.isArray(zones)) {
             this.zones = zones;
           } else {
-            console.warn('Format de zones inattendu:', zones);
+            console.warn("Format de zones inattendu:", zones);
             this.zones = [];
           }
-          
+
           console.log("zones charger>>>>>> :", this.zones);
           if (this.zones.length > 0) {
             console.log("Structure d'une zone:", this.zones[0]);
           }
-          
+
           // Invalider le cache car les zones ont changé
           this.invalidateCache();
-          
+
           const ZonesTab = this.tabs.find((tab) => tab.id === "zones");
           if (ZonesTab) {
             ZonesTab.badge = this.zones.length;
             this.cdr.detectChanges();
           }
           this.isLoadingZones = false;
-          this.scheduleForm.get('zone')?.enable();
+          this.scheduleForm.get("zone")?.enable();
         },
         error: (error) => {
-          console.error("Erreur lors du chargement des Zones de l agence:", error);
+          console.error(
+            "Erreur lors du chargement des Zones de l agence:",
+            error,
+          );
           this.notificationService.showError(
             "Erreur",
-            "Erreur lors du chargement des Zones de l agence."
+            "Erreur lors du chargement des Zones de l agence.",
           );
           this.isLoadingZones = false;
-          this.scheduleForm.get('zone')?.enable();
+          this.scheduleForm.get("zone")?.enable();
         },
       });
     } else {
       console.warn("Aucun ID d'utilisateur courant disponible.");
       this.isLoadingZones = false;
-      this.scheduleForm.get('zone')?.enable();
+      this.scheduleForm.get("zone")?.enable();
     }
   }
 
@@ -4472,19 +4766,21 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // Méthode pour retirer une zone
   removeZone(zone: any): void {
     if (!zone) {
-      console.warn('Zone non définie');
+      console.warn("Zone non définie");
       return;
     }
 
     // Afficher une confirmation avant suppression
     const zoneName = zone.neighborhood || zone.name || zone;
-    const confirmed = confirm(`Êtes-vous sûr de vouloir retirer la zone "${zoneName}" ?`);
-    
+    const confirmed = confirm(
+      `Êtes-vous sûr de vouloir retirer la zone "${zoneName}" ?`,
+    );
+
     if (confirmed) {
       // Retirer la zone de la liste locale
-      this.zones = this.zones.filter(z => {
+      this.zones = this.zones.filter((z) => {
         // Comparaison robuste selon la structure de l'objet zone
-        if (typeof z === 'string' && typeof zone === 'string') {
+        if (typeof z === "string" && typeof zone === "string") {
           return z !== zone;
         }
         if (z._id && zone._id) {
@@ -4513,8 +4809,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
       // Afficher une notification de succès
       this.notificationService.showSuccess(
-        'Succès',
-        `La zone "${zoneName}" a été retirée avec succès.`
+        "Succès",
+        `La zone "${zoneName}" a été retirée avec succès.`,
       );
 
       console.log(`Zone "${zoneName}" retirée. Zones restantes:`, this.zones);
@@ -4534,30 +4830,30 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
   editEmployee(employee: any): void {
     console.log("Édition de l'employé :", employee);
-    
+
     // Configurer le mode édition
     this.isEditingEmployee = true;
     this.employeeToEdit = { ...employee };
-    
+
     // Pré-remplir le formulaire avec les données de l'employé (SANS les mots de passe)
     this.employeeForm.patchValue({
-      firstName: employee.firstName || '',
-      lastName: employee.lastName || '',
-      email: employee.email || '',
-      phone: employee.phone || '',
-      role: employee.role || '',
-      password: '', // Ne jamais pré-remplir le mot de passe
-      confirmPassword: '', // Ne jamais pré-remplir la confirmation
+      firstName: employee.firstName || "",
+      lastName: employee.lastName || "",
+      email: employee.email || "",
+      phone: employee.phone || "",
+      role: employee.role || "",
+      password: "", // Ne jamais pré-remplir le mot de passe
+      confirmPassword: "", // Ne jamais pré-remplir la confirmation
       address: {
-        city: employee.address?.city || '',
-        arrondissement: employee.address?.arrondissement || '',
-        sector: employee.address?.sector || '',
-        neighborhood: employee.address?.neighborhood || '',
-        street: employee.address?.street || '',
-        doorNumber: employee.address?.doorNumber || '',
-        doorColor: employee.address?.doorColor || '',
-        postalCode: employee.address?.postalCode || ''
-      }
+        city: employee.address?.city || "",
+        arrondissement: employee.address?.arrondissement || "",
+        sector: employee.address?.sector || "",
+        neighborhood: employee.address?.neighborhood || "",
+        street: employee.address?.street || "",
+        doorNumber: employee.address?.doorNumber || "",
+        doorColor: employee.address?.doorColor || "",
+        postalCode: employee.address?.postalCode || "",
+      },
     });
 
     // Charger les dépendances de l'adresse si elles existent
@@ -4570,34 +4866,46 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     // Ouvrir le drawer d'ajout/modification d'employé
     this.openEmployeeDrawer();
-    
-    this.notificationService.showInfo("Modification", "Formulaire ouvert pour modification");
+
+    this.notificationService.showInfo(
+      "Modification",
+      "Formulaire ouvert pour modification",
+    );
   }
 
   // Méthode pour ajuster les validateurs selon le mode (ajout/modification)
   private adjustValidatorsForEdit(): void {
-    const passwordControl = this.employeeForm.get('password');
-    const confirmPasswordControl = this.employeeForm.get('confirmPassword');
-    
+    const passwordControl = this.employeeForm.get("password");
+    const confirmPasswordControl = this.employeeForm.get("confirmPassword");
+
     if (this.isEditingEmployee) {
       // En mode modification : les mots de passe deviennent optionnels
       passwordControl?.clearValidators(); // Complètement optionnel
       confirmPasswordControl?.clearValidators(); // Complètement optionnel
-      
+
       // Si un mot de passe est saisi, il doit être valide (min 6 caractères)
       passwordControl?.setValidators((control) => {
-        if (!control.value || control.value === '') {
+        if (!control.value || control.value === "") {
           return null; // Valide si vide
         }
-        return control.value.length >= 6 ? null : { minlength: { requiredLength: 6, actualLength: control.value.length } };
+        return control.value.length >= 6
+          ? null
+          : {
+              minlength: {
+                requiredLength: 6,
+                actualLength: control.value.length,
+              },
+            };
       });
-      
     } else {
       // En mode ajout : les mots de passe sont obligatoires
-      passwordControl?.setValidators([Validators.required, Validators.minLength(6)]);
+      passwordControl?.setValidators([
+        Validators.required,
+        Validators.minLength(6),
+      ]);
       confirmPasswordControl?.setValidators([Validators.required]);
     }
-    
+
     // Mettre à jour la validité
     passwordControl?.updateValueAndValidity();
     confirmPasswordControl?.updateValueAndValidity();
@@ -4606,19 +4914,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // Méthode pour charger les dépendances de l'adresse lors de l'édition
   private loadEmployeeAddressDependencies(address: any): void {
     // Charger les arrondissements pour la ville sélectionnée
-    if (address.city && address.city === 'Ouagadougou') {
+    if (address.city && address.city === "Ouagadougou") {
       // Utiliser OUAGA_DATA directement puisque nous avons seulement Ouagadougou pour l'instant
       this.arrondissements = OUAGA_DATA || [];
-      
+
       // Charger les secteurs pour l'arrondissement sélectionné
       if (address.arrondissement && this.arrondissements.length > 0) {
-        const selectedArrondissement = this.arrondissements.find(arr => arr.arrondissement === address.arrondissement);
+        const selectedArrondissement = this.arrondissements.find(
+          (arr) => arr.arrondissement === address.arrondissement,
+        );
         if (selectedArrondissement) {
           this.secteurs = selectedArrondissement.secteurs || [];
-          
+
           // Charger les quartiers pour le secteur sélectionné
           if (address.sector && this.secteurs.length > 0) {
-            const selectedSecteur = this.secteurs.find(sect => sect.secteur === address.sector);
+            const selectedSecteur = this.secteurs.find(
+              (sect) => sect.secteur === address.sector,
+            );
             if (selectedSecteur) {
               this.quartiers = selectedSecteur.quartiers || [];
             }
@@ -4637,11 +4949,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     if (!agencyId) {
       console.error(
-        "[DEBUG] Aucune collecte trouvée pour cette agence en jour"
+        "[DEBUG] Aucune collecte trouvée pour cette agence en jour",
       );
       this.notificationService.showError(
         "Erreur",
-        "Aucune agence sélectionnée."
+        "Aucune agence sélectionnée.",
       );
       this.isLoadingCollections = false;
       return;
@@ -4675,11 +4987,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     if (!agencyId) {
       console.error(
-        "[DEBUG] Aucune collecte trouvée pour cette agence en jour"
+        "[DEBUG] Aucune collecte trouvée pour cette agence en jour",
       );
       this.notificationService.showError(
         "Erreur",
-        "Aucune agence sélectionnée."
+        "Aucune agence sélectionnée.",
       );
       this.isLoading = false;
       return;
@@ -4690,14 +5002,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         this.historyCollecte = response.data || [];
         console.log(
           "Historique des Collectes récupérées :",
-          this.historyCollecte
+          this.historyCollecte,
         );
         this.isLoading = false;
       },
       error: (error) => {
         console.error(
           "Erreur récupération de l historique des collectes :",
-          error
+          error,
         );
         const message =
           error?.error?.message || "Impossible de récupérer les collectes.";
@@ -4732,24 +5044,24 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       .subscribe({
         next: () => {
           employee.isActive = updatedStatus;
-          
+
           // Recharger les collecteurs si c'est un collecteur dont le statut a changé
-          if (employee.role === 'collector' && this.currentUser?.agencyId) {
+          if (employee.role === "collector" && this.currentUser?.agencyId) {
             this.loadCollectors(this.currentUser.agencyId);
           }
-          
+
           this.notificationService.showSuccess(
             "Succès",
             `L'employé a été ${
               updatedStatus ? "activé" : "désactivé"
-            } avec succès.`
+            } avec succès.`,
           );
         },
         error: (error) => {
           console.error("Erreur lors de la mise à jour du statut :", error);
           this.notificationService.showError(
             "Erreur",
-            "Impossible de mettre à jour le statut de l'employé."
+            "Impossible de mettre à jour le statut de l'employé.",
           );
         },
       });
@@ -4760,20 +5072,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     collectorId: string,
     date: string,
     startTime: string,
-    endTime: string
+    endTime: string,
   ): boolean {
     // Vérifier que schedules existe et est un tableau
     if (!this.schedules || !Array.isArray(this.schedules)) {
-      console.warn('schedules is undefined or not an array, returning false');
+      console.warn("schedules is undefined or not an array, returning false");
       return false;
     }
-    
+
     return this.schedules.some(
       (schedule) =>
         schedule.collectorId === collectorId &&
         schedule.date === date &&
         ((startTime >= schedule.startTime && startTime < schedule.endTime) ||
-          (endTime > schedule.startTime && endTime <= schedule.endTime))
+          (endTime > schedule.startTime && endTime <= schedule.endTime)),
     );
   }
 
@@ -4783,21 +5095,21 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     date: string,
     startTime: string,
     endTime: string,
-    excludeScheduleId: string
+    excludeScheduleId: string,
   ): boolean {
     // Vérifier que schedules existe et est un tableau
     if (!this.schedules || !Array.isArray(this.schedules)) {
-      console.warn('schedules is undefined or not an array, returning false');
+      console.warn("schedules is undefined or not an array, returning false");
       return false;
     }
-    
+
     return this.schedules.some(
       (schedule) =>
         schedule._id !== excludeScheduleId && // Exclure le planning en cours de modification
         schedule.collectorId === collectorId &&
         schedule.date === date &&
         ((startTime >= schedule.startTime && startTime < schedule.endTime) ||
-          (endTime > schedule.startTime && endTime <= schedule.endTime))
+          (endTime > schedule.startTime && endTime <= schedule.endTime)),
     );
   }
 
@@ -4829,7 +5141,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         .join("; "),
       boundaries: [],
       neighborhoods: arrondissement.secteurs.flatMap(
-        (secteur) => secteur.quartiers
+        (secteur) => secteur.quartiers,
       ),
       cities: ["Ouagadougou"],
       isActive: true,
@@ -4842,13 +5154,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   onArrondissementChange(arrondissement?: string) {
     if (arrondissement) {
       // Utiliser OUAGA_DATA pour trouver les secteurs
-      const arrondissementData = this.arrondissements.find(a => a.arrondissement === arrondissement);
+      const arrondissementData = this.arrondissements.find(
+        (a) => a.arrondissement === arrondissement,
+      );
       if (arrondissementData && arrondissementData.secteurs) {
         this.secteurs = arrondissementData.secteurs;
       } else {
         this.secteurs = [];
       }
-      
+
       console.log("Secteurs  ==> ", this.secteurs);
       this.quartiers = [];
       this.userData.address.sector = "";
@@ -4874,14 +5188,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   onCityChange(city: string) {
-    if (city && city === 'Ouagadougou') {
+    if (city && city === "Ouagadougou") {
       // Pour Ouagadougou, les arrondissements sont déjà chargés depuis OUAGA_DATA
     } else {
       // Pour les autres villes, réinitialiser
       this.secteurs = [];
       this.quartiers = [];
     }
-    
+
     // Réinitialiser tous les champs dépendants
     this.secteurs = [];
     this.quartiers = [];
@@ -4893,26 +5207,26 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // Méthodes spécifiques pour le formulaire d'employé
   onEmployeeCityChange(event: Event) {
     const selectedCity = (event.target as HTMLSelectElement)?.value;
-    
-    if (selectedCity === 'Ouagadougou') {
+
+    if (selectedCity === "Ouagadougou") {
       // Activer le contrôle arrondissement
-      this.employeeForm.get('address.arrondissement')?.enable();
+      this.employeeForm.get("address.arrondissement")?.enable();
     } else {
       // Pour les autres villes, réinitialiser et désactiver
       this.secteurs = [];
       this.quartiers = [];
-      this.employeeForm.get('address.arrondissement')?.disable();
-      this.employeeForm.get('address.sector')?.disable();
-      this.employeeForm.get('address.neighborhood')?.disable();
+      this.employeeForm.get("address.arrondissement")?.disable();
+      this.employeeForm.get("address.sector")?.disable();
+      this.employeeForm.get("address.neighborhood")?.disable();
     }
-    
+
     // Réinitialiser tous les champs dépendants
     this.employeeForm.patchValue({
       address: {
-        arrondissement: '',
-        sector: '',
-        neighborhood: ''
-      }
+        arrondissement: "",
+        sector: "",
+        neighborhood: "",
+      },
     });
     this.secteurs = [];
     this.quartiers = [];
@@ -4922,26 +5236,26 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     const arrondissement = (event.target as HTMLSelectElement)?.value;
     if (arrondissement) {
       const arrondissementObj = this.arrondissements.find(
-        (arr) => arr.arrondissement === arrondissement
+        (arr) => arr.arrondissement === arrondissement,
       );
-      
+
       if (arrondissementObj) {
         this.secteurs = arrondissementObj.secteurs || [];
         // Activer le contrôle secteur
-        this.employeeForm.get('address.sector')?.enable();
-        
+        this.employeeForm.get("address.sector")?.enable();
+
         // Réinitialiser les champs dépendants dans le formulaire employé
-        this.employeeForm.get('address.sector')?.setValue('');
-        this.employeeForm.get('address.neighborhood')?.setValue('');
+        this.employeeForm.get("address.sector")?.setValue("");
+        this.employeeForm.get("address.neighborhood")?.setValue("");
         this.quartiers = [];
         // Désactiver le quartier jusqu'à sélection du secteur
-        this.employeeForm.get('address.neighborhood')?.disable();
+        this.employeeForm.get("address.neighborhood")?.disable();
       }
     } else {
       this.secteurs = [];
       this.quartiers = [];
-      this.employeeForm.get('address.sector')?.disable();
-      this.employeeForm.get('address.neighborhood')?.disable();
+      this.employeeForm.get("address.sector")?.disable();
+      this.employeeForm.get("address.neighborhood")?.disable();
     }
   }
 
@@ -4949,18 +5263,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     const secteur = (event.target as HTMLSelectElement)?.value;
     if (secteur) {
       const secteurObj = this.secteurs.find((s) => s.secteur === secteur);
-      
+
       if (secteurObj) {
         this.quartiers = secteurObj.quartiers || [];
         // Activer le contrôle quartier
-        this.employeeForm.get('address.neighborhood')?.enable();
-        
+        this.employeeForm.get("address.neighborhood")?.enable();
+
         // Réinitialiser le quartier dans le formulaire employé
-        this.employeeForm.get('address.neighborhood')?.setValue('');
+        this.employeeForm.get("address.neighborhood")?.setValue("");
       }
     } else {
       this.quartiers = [];
-      this.employeeForm.get('address.neighborhood')?.disable();
+      this.employeeForm.get("address.neighborhood")?.disable();
     }
   }
 
@@ -4968,31 +5282,31 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   private initializeAddressDataForEmployee(): void {
     // Utiliser directement les données OUAGA_DATA du fichier mock-data.ts
     // Ces données sont déjà chargées dans this.arrondissements
-    
+
     // Réinitialiser les autres données
     this.secteurs = [];
     this.quartiers = [];
-    
+
     // Créer une liste simple de villes (pour l'instant juste Ouagadougou)
     this.cities = [
-      { 
-        id: '1', 
-        name: 'Ouagadougou', 
-        code: 'OUA', 
-        country: { id: '1', name: 'Burkina Faso', code: 'BF' } 
+      {
+        id: "1",
+        name: "Ouagadougou",
+        code: "OUA",
+        country: { id: "1", name: "Burkina Faso", code: "BF" },
       },
-      { 
-        id: '2', 
-        name: 'Bobo-Dioulasso', 
-        code: 'BOB', 
-        country: { id: '1', name: 'Burkina Faso', code: 'BF' } 
-      }
+      {
+        id: "2",
+        name: "Bobo-Dioulasso",
+        code: "BOB",
+        country: { id: "1", name: "Burkina Faso", code: "BF" },
+      },
     ];
-    
+
     // Initialiser l'état disabled des contrôles d'adresse
-    this.employeeForm.get('address.arrondissement')?.disable();
-    this.employeeForm.get('address.sector')?.disable();
-    this.employeeForm.get('address.neighborhood')?.disable();
+    this.employeeForm.get("address.arrondissement")?.disable();
+    this.employeeForm.get("address.sector")?.disable();
+    this.employeeForm.get("address.neighborhood")?.disable();
   }
 
   // Initialiser les données mock pour la sélection des zones de couverture
@@ -5001,12 +5315,22 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Réinitialiser les autres données
     this.secteurs = [];
     this.quartiers = [];
-    
+
     // Initialiser les villes si pas déjà fait
     if (this.cities.length === 0) {
       this.cities = [
-        { id: '1', name: 'Ouagadougou', code: 'OUA', country: { id: '1', name: 'Burkina Faso', code: 'BF' } },
-        { id: '2', name: 'Bobo-Dioulasso', code: 'BOB', country: { id: '1', name: 'Burkina Faso', code: 'BF' } }
+        {
+          id: "1",
+          name: "Ouagadougou",
+          code: "OUA",
+          country: { id: "1", name: "Burkina Faso", code: "BF" },
+        },
+        {
+          id: "2",
+          name: "Bobo-Dioulasso",
+          code: "BOB",
+          country: { id: "1", name: "Burkina Faso", code: "BF" },
+        },
       ];
     }
   }
@@ -5058,12 +5382,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.agencyService.updateAgencyZones$(agencyId, zoneData).subscribe({
       next: (response) => {
         console.log("Zone mise à jour :", response);
-        
+
         // Utiliser directement les zones retournées par l'API de modification
         if (response.data && response.data.zoneActivite) {
           this.zones = response.data.zoneActivite;
           console.log("Zones récupérées depuis la réponse :", this.zones);
-          
+
           // Mettre à jour le badge des zones
           const ZonesTab = this.tabs.find((tab) => tab.id === "zones");
           if (ZonesTab) {
@@ -5073,28 +5397,28 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           // Fallback : charger les zones si la structure de réponse est différente
           this.loadZones(this.currentUser);
         }
-        
+
         this.notificationService.showSuccess(
           "Succès",
-          "La zone a été mise à jour avec succès."
+          "La zone a été mise à jour avec succès.",
         );
         this.closeZoneModalcouverture();
       },
       error: (error) => {
         console.error("Erreur lors de la mise à jour de la zone :", error);
-        
+
         // Utilisation de la méthode utilitaire pour obtenir un message convivial
         const friendlyMessage = this.getFriendlyZoneErrorMessage(error);
         this.zoneFormError = friendlyMessage;
-        
+
         // Gestion des erreurs détaillées du backend
-        if (error.error && typeof error.error === 'object') {
+        if (error.error && typeof error.error === "object") {
           // Si l'erreur contient des détails de validation
           if (error.error.details) {
             this.zoneFormDetailedErrors = error.error.details;
           }
         }
-        
+
         this.notificationService.showError("Erreur", friendlyMessage);
       },
     });
@@ -5105,7 +5429,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * @returns boolean - true si les données sont valides
    */
   private validateZoneData(): boolean {
-    const { city, arrondissement, sector, neighborhood } = this.userData.address;
+    const { city, arrondissement, sector, neighborhood } =
+      this.userData.address;
 
     if (!city) {
       this.zoneFormError = "Veuillez sélectionner une ville.";
@@ -5122,7 +5447,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       return false;
     }
 
-    if (!neighborhood || !Array.isArray(neighborhood) || neighborhood.length === 0) {
+    if (
+      !neighborhood ||
+      !Array.isArray(neighborhood) ||
+      neighborhood.length === 0
+    ) {
       this.zoneFormError = "Veuillez sélectionner au moins un quartier.";
       return false;
     }
@@ -5130,14 +5459,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Validation supplémentaire : vérifier que neighborhood est bien un tableau itérable
     try {
       // Tenter de convertir en tableau si ce n'est pas le cas
-      if (typeof neighborhood === 'string') {
+      if (typeof neighborhood === "string") {
         this.userData.address.neighborhood = [neighborhood];
       } else if (!Array.isArray(neighborhood)) {
-        this.zoneFormError = "Format de quartiers invalide. Veuillez reselectionner vos quartiers.";
+        this.zoneFormError =
+          "Format de quartiers invalide. Veuillez reselectionner vos quartiers.";
         return false;
       }
     } catch (error) {
-      this.zoneFormError = "Erreur de validation des quartiers. Veuillez reselectionner vos quartiers.";
+      this.zoneFormError =
+        "Erreur de validation des quartiers. Veuillez reselectionner vos quartiers.";
       return false;
     }
 
@@ -5152,25 +5483,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   private getFriendlyZoneErrorMessage(error: any): string {
     if (error?.error) {
       const backendError = error.error;
-      
+
       // Messages spécifiques selon le type d'erreur
       if (backendError.error === "newZones is not iterable") {
         return "Format des zones invalide. Veuillez vérifier la sélection des quartiers.";
       }
-      
+
       if (backendError.message) {
         return backendError.message;
       }
-      
+
       if (backendError.error) {
         return backendError.error;
       }
     }
-    
+
     if (error?.message) {
       return error.message;
     }
-    
+
     return "Une erreur inattendue s'est produite lors de la mise à jour des zones.";
   }
 
@@ -5200,20 +5531,27 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   refreshZoneAnalytics(): void {
     this.generateZoneAnalyticsData();
     this.generateZoneRecommendations();
-    this.notificationService.showSuccess('Succès', 'Données d\'analyse actualisées');
+    this.notificationService.showSuccess(
+      "Succès",
+      "Données d'analyse actualisées",
+    );
   }
 
   /**
    * Retourne le nombre total de clients par type
    */
-  getTotalClientsByType(type: 'household' | 'business' | 'institution'): number {
-    return this.activeClients.filter(client => this.getClientType(client) === type).length;
+  getTotalClientsByType(
+    type: "household" | "business" | "institution",
+  ): number {
+    return this.activeClients.filter(
+      (client) => this.getClientType(client) === type,
+    ).length;
   }
 
   /**
    * Retourne le pourcentage de clients par type
    */
-  getPercentageByType(type: 'household' | 'business' | 'institution'): number {
+  getPercentageByType(type: "household" | "business" | "institution"): number {
     const total = this.activeClients.length;
     if (total === 0) return 0;
     const typeCount = this.getTotalClientsByType(type);
@@ -5225,18 +5563,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   getWorkloadPercentage(): number {
     const now = Date.now();
-    if (this._cachedWorkloadPercentage !== null && (now - this._cacheTimestamp < this.CACHE_DURATION)) {
+    if (
+      this._cachedWorkloadPercentage !== null &&
+      now - this._cacheTimestamp < this.CACHE_DURATION
+    ) {
       return this._cachedWorkloadPercentage;
     }
 
     const totalClients = this.activeClients.length;
-    const maxCapacity = this.allEmployees.filter(emp => emp.role === 'collector').length * 50; // 50 clients par collecteur
+    const maxCapacity =
+      this.allEmployees.filter((emp) => emp.role === "collector").length * 50; // 50 clients par collecteur
     if (maxCapacity === 0) {
       this._cachedWorkloadPercentage = 0;
     } else {
-      this._cachedWorkloadPercentage = Math.min(Math.round((totalClients / maxCapacity) * 100), 100);
+      this._cachedWorkloadPercentage = Math.min(
+        Math.round((totalClients / maxCapacity) * 100),
+        100,
+      );
     }
-    
+
     this._cacheTimestamp = now;
     return this._cachedWorkloadPercentage;
   }
@@ -5246,9 +5591,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   getWorkloadStatus(): string {
     const percentage = this.getWorkloadPercentage();
-    if (percentage <= 80) return 'Optimal';
-    if (percentage <= 95) return 'Attention';
-    return 'Critique';
+    if (percentage <= 80) return "Optimal";
+    if (percentage <= 95) return "Attention";
+    return "Critique";
   }
 
   /**
@@ -5259,7 +5604,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (!this.zoneAnalyticsData || !Array.isArray(this.zoneAnalyticsData)) {
       return [];
     }
-    
+
     if (this.zoneAnalyticsData.length === 0) {
       this.generateZoneAnalyticsData();
     }
@@ -5289,13 +5634,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     //         growth: zone.growthMetrics.monthlyGrowthRate
     //       }));
     //     } else {
-      
+
     //       this.generateZoneAnalyticsDataFallback();
     //     }
     //   },
     //   error: (error) => {
     //     console.error('Erreur lors du chargement des analytics:', error);
-     
+
     //     this.generateZoneAnalyticsDataFallback();
     //   }
     // });
@@ -5307,20 +5652,26 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   private generateZoneAnalyticsDataFallback(): void {
     this.zoneAnalyticsData = this.zones.map((zone, index) => {
       const zoneName = zone.neighborhood || zone;
-      const zoneClients = this.activeClients.filter(client => 
-        client.address?.neighborhood === zoneName
+      const zoneClients = this.activeClients.filter(
+        (client) => client.address?.neighborhood === zoneName,
       );
-      
-      const households = zoneClients.filter(client => this.getClientType(client) === 'household').length;
-      const businesses = zoneClients.filter(client => this.getClientType(client) === 'business').length;
-      const institutions = zoneClients.filter(client => this.getClientType(client) === 'institution').length;
-      
+
+      const households = zoneClients.filter(
+        (client) => this.getClientType(client) === "household",
+      ).length;
+      const businesses = zoneClients.filter(
+        (client) => this.getClientType(client) === "business",
+      ).length;
+      const institutions = zoneClients.filter(
+        (client) => this.getClientType(client) === "institution",
+      ).length;
+
       const totalClients = zoneClients.length;
       const estimatedTime = Math.ceil(totalClients * 0.15); // 9 minutes par client
-      const requiredTeam = Math.ceil(totalClients / 25); 
-      const requiredVehicles = Math.ceil(requiredTeam / 2); 
-      const capacityUsage = Math.min((totalClients / 50) * 100, 100); 
-      const growth = Math.floor(Math.random() * 21) - 10; 
+      const requiredTeam = Math.ceil(totalClients / 25);
+      const requiredVehicles = Math.ceil(requiredTeam / 2);
+      const capacityUsage = Math.min((totalClients / 50) * 100, 100);
+      const growth = Math.floor(Math.random() * 21) - 10;
 
       return {
         id: `zone-${index}`,
@@ -5333,7 +5684,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         estimatedTime,
         requiredTeam,
         requiredVehicles,
-        growth
+        growth,
       };
     });
   }
@@ -5341,50 +5692,58 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   /**
    * Détermine le type d'un client basé sur ses données
    */
-  private getClientType(client: ClientApi): 'household' | 'business' | 'institution' {
-   
-    if (client.firstName?.toLowerCase().includes('entreprise') || 
-        client.lastName?.toLowerCase().includes('sarl') ||
-        client.lastName?.toLowerCase().includes('sas')) {
-      return 'business';
+  private getClientType(
+    client: ClientApi,
+  ): "household" | "business" | "institution" {
+    if (
+      client.firstName?.toLowerCase().includes("entreprise") ||
+      client.lastName?.toLowerCase().includes("sarl") ||
+      client.lastName?.toLowerCase().includes("sas")
+    ) {
+      return "business";
     }
-    if (client.firstName?.toLowerCase().includes('mairie') || 
-        client.firstName?.toLowerCase().includes('école') ||
-        client.firstName?.toLowerCase().includes('hôpital')) {
-      return 'institution';
+    if (
+      client.firstName?.toLowerCase().includes("mairie") ||
+      client.firstName?.toLowerCase().includes("école") ||
+      client.firstName?.toLowerCase().includes("hôpital")
+    ) {
+      return "institution";
     }
-    return 'household';
+    return "household";
   }
 
   /**
    * Retourne le statut de capacité pour une zone
    */
   getCapacityStatus(capacityUsage: number): string {
-    if (capacityUsage <= 70) return 'good';
-    if (capacityUsage <= 90) return 'warning';
-    return 'critical';
+    if (capacityUsage <= 70) return "good";
+    if (capacityUsage <= 90) return "warning";
+    return "critical";
   }
 
   /**
    * Retourne l'icône appropriée pour le niveau de capacité
    */
   getCapacityIcon(capacityUsage: number): string {
-    if (capacityUsage <= 70) return 'check_circle';
-    if (capacityUsage <= 90) return 'warning';
-    return 'error';
+    if (capacityUsage <= 70) return "check_circle";
+    if (capacityUsage <= 90) return "warning";
+    return "error";
   }
 
   /**
-   * Affiche les détails d'une zone spécifique 
+   * Affiche les détails d'une zone spécifique
    */
   viewZoneDetails(zoneId: string): void {
     this.loadZoneDetails(zoneId);
-   
+
     this.loadZoneWorkloadMetrics(zoneId);
-    
-    const zone = this.zoneAnalyticsData.find(z => z.id === zoneId);
+
+    const zone = this.zoneAnalyticsData.find((z) => z.id === zoneId);
     if (zone) {
-      this.notificationService.showInfo('Information', `Chargement des détails de la zone: ${zone.name}`);
+      this.notificationService.showInfo(
+        "Information",
+        `Chargement des détails de la zone: ${zone.name}`,
+      );
     }
   }
 
@@ -5392,18 +5751,19 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Optimise la capacité d'une zone - Version améliorée avec API
    */
   optimizeZoneCapacity(zoneId: string): void {
-    this.optimizeSpecificZone(zoneId, 'all');
+    this.optimizeSpecificZone(zoneId, "all");
   }
 
   /**
    * Affiche une alerte de capacité pour une zone
    */
   showCapacityAlert(zone: ZoneAnalytics): void {
-    const message = zone.capacityUsage > 95 
-      ? `Zone ${zone.name} surchargée (${zone.capacityUsage}%)` 
-      : `Zone ${zone.name} approche de la saturation (${zone.capacityUsage}%)`;
-    
-    this.notificationService.showWarning('Alerte Capacité', message);
+    const message =
+      zone.capacityUsage > 95
+        ? `Zone ${zone.name} surchargée (${zone.capacityUsage}%)`
+        : `Zone ${zone.name} approche de la saturation (${zone.capacityUsage}%)`;
+
+    this.notificationService.showWarning("Alerte Capacité", message);
   }
 
   /**
@@ -5414,7 +5774,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (!this.zoneRecommendations || !Array.isArray(this.zoneRecommendations)) {
       return [];
     }
-    
+
     if (this.zoneRecommendations.length === 0) {
       this.generateZoneRecommendations();
     }
@@ -5439,13 +5799,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     //         zoneId: rec.zoneId
     //       }));
     //     } else {
-      
+
     //       this.generateZoneRecommendationsFallback();
     //     }
     //   },
     //   error: (error) => {
     //     console.error('Erreur lors du chargement des recommandations:', error);
-     
+
     //     this.generateZoneRecommendationsFallback();
     //   }
     // });
@@ -5456,25 +5816,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   private generateZoneRecommendationsFallback(): void {
     this.zoneRecommendations = [];
-    
-    this.zoneAnalyticsData.forEach(zone => {
+
+    this.zoneAnalyticsData.forEach((zone) => {
       if (zone.capacityUsage > 95) {
         this.zoneRecommendations.push({
           id: `rec-${zone.id}-critical`,
           title: `Zone ${zone.name} surchargée`,
           description: `Cette zone dépasse sa capacité optimale. Considérez ajouter une équipe ou redistribuer les clients.`,
-          priority: 'high',
-          icon: 'error',
-          zoneId: zone.id
+          priority: "high",
+          icon: "error",
+          zoneId: zone.id,
         });
       } else if (zone.capacityUsage > 80) {
         this.zoneRecommendations.push({
           id: `rec-${zone.id}-warning`,
           title: `Zone ${zone.name} approche de la saturation`,
           description: `Préparez-vous à augmenter les ressources pour cette zone.`,
-          priority: 'medium',
-          icon: 'warning',
-          zoneId: zone.id
+          priority: "medium",
+          icon: "warning",
+          zoneId: zone.id,
         });
       }
 
@@ -5483,9 +5843,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           id: `rec-${zone.id}-growth`,
           title: `Croissance rapide dans ${zone.name}`,
           description: `Cette zone connaît une croissance de ${zone.growth}%. Anticipez les besoins futurs.`,
-          priority: 'medium',
-          icon: 'trending_up',
-          zoneId: zone.id
+          priority: "medium",
+          icon: "trending_up",
+          zoneId: zone.id,
         });
       }
     });
@@ -5496,16 +5856,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   private getRecommendationIcon(type: string, priority: string): string {
     switch (type) {
-      case 'capacity':
-        return priority === 'high' ? 'error' : 'warning';
-      case 'growth':
-        return 'trending_up';
-      case 'efficiency':
-        return 'tune';
-      case 'resource':
-        return 'build';
+      case "capacity":
+        return priority === "high" ? "error" : "warning";
+      case "growth":
+        return "trending_up";
+      case "efficiency":
+        return "tune";
+      case "resource":
+        return "build";
       default:
-        return 'info';
+        return "info";
     }
   }
 
@@ -5513,8 +5873,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Applique une recommandation
    */
   applyRecommendation(recommendation: LocalZoneRecommendation): void {
- 
-    this.notificationService.showSuccess('Succès', `Recommandation "${recommendation.title}" appliquée`);
+    this.notificationService.showSuccess(
+      "Succès",
+      `Recommandation "${recommendation.title}" appliquée`,
+    );
     this.dismissRecommendation(recommendation);
   }
 
@@ -5522,7 +5884,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Ignore une recommandation
    */
   dismissRecommendation(recommendation: LocalZoneRecommendation): void {
-    this.zoneRecommendations = this.zoneRecommendations.filter(r => r.id !== recommendation.id);
+    this.zoneRecommendations = this.zoneRecommendations.filter(
+      (r) => r.id !== recommendation.id,
+    );
   }
 
   // ================================
@@ -5535,34 +5899,45 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   loadZoneDetails(zoneId: string): void {
     if (!this.currentUser?._id) return;
 
-    this.agencyService.getZoneStatistics$(this.currentUser._id, zoneId).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          console.log('Détails de la zone:', response.data);
-      
-          const zoneIndex = this.zoneAnalyticsData.findIndex(z => z.id === zoneId);
-          if (zoneIndex !== -1) {
-            const zoneStats = response.data;
-            this.zoneAnalyticsData[zoneIndex] = {
-              ...this.zoneAnalyticsData[zoneIndex],
-              totalClients: zoneStats.clientStats.totalClients,
-              households: zoneStats.clientStats.households,
-              businesses: zoneStats.clientStats.businesses,
-              institutions: zoneStats.clientStats.institutions,
-              capacityUsage: zoneStats.workloadMetrics.capacityUsagePercentage,
-              estimatedTime: zoneStats.workloadMetrics.estimatedWorkHours,
-              requiredTeam: zoneStats.workloadMetrics.requiredTeamSize,
-              requiredVehicles: zoneStats.workloadMetrics.requiredVehicles,
-              growth: zoneStats.growthMetrics.monthlyGrowthRate
-            };
+    this.agencyService
+      .getZoneStatistics$(this.currentUser._id, zoneId)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            console.log("Détails de la zone:", response.data);
+
+            const zoneIndex = this.zoneAnalyticsData.findIndex(
+              (z) => z.id === zoneId,
+            );
+            if (zoneIndex !== -1) {
+              const zoneStats = response.data;
+              this.zoneAnalyticsData[zoneIndex] = {
+                ...this.zoneAnalyticsData[zoneIndex],
+                totalClients: zoneStats.clientStats.totalClients,
+                households: zoneStats.clientStats.households,
+                businesses: zoneStats.clientStats.businesses,
+                institutions: zoneStats.clientStats.institutions,
+                capacityUsage:
+                  zoneStats.workloadMetrics.capacityUsagePercentage,
+                estimatedTime: zoneStats.workloadMetrics.estimatedWorkHours,
+                requiredTeam: zoneStats.workloadMetrics.requiredTeamSize,
+                requiredVehicles: zoneStats.workloadMetrics.requiredVehicles,
+                growth: zoneStats.growthMetrics.monthlyGrowthRate,
+              };
+            }
           }
-        }
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement des détails de la zone:', error);
-        this.notificationService.showError('Erreur', 'Impossible de charger les détails de la zone');
-      }
-    });
+        },
+        error: (error) => {
+          console.error(
+            "Erreur lors du chargement des détails de la zone:",
+            error,
+          );
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de charger les détails de la zone",
+          );
+        },
+      });
   }
 
   /**
@@ -5571,51 +5946,65 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   loadZoneWorkloadMetrics(zoneId: string): void {
     if (!this.currentUser?._id) return;
 
-    this.agencyService.getZoneWorkloadMetrics$(this.currentUser._id, zoneId).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          console.log('Métriques de charge:', response.data);
-      
-          if (response.data.recommendations.length > 0) {
-            const zone = this.zoneAnalyticsData.find(z => z.id === zoneId);
-            const message = `Recommandations pour ${zone?.name || 'la zone'}:\n${response.data.recommendations.join('\n')}`;
-            this.notificationService.showInfo('Recommandations de charge', message);
+    this.agencyService
+      .getZoneWorkloadMetrics$(this.currentUser._id, zoneId)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            console.log("Métriques de charge:", response.data);
+
+            if (response.data.recommendations.length > 0) {
+              const zone = this.zoneAnalyticsData.find((z) => z.id === zoneId);
+              const message = `Recommandations pour ${zone?.name || "la zone"}:\n${response.data.recommendations.join("\n")}`;
+              this.notificationService.showInfo(
+                "Recommandations de charge",
+                message,
+              );
+            }
           }
-        }
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement des métriques de charge:', error);
-      }
-    });
+        },
+        error: (error) => {
+          console.error(
+            "Erreur lors du chargement des métriques de charge:",
+            error,
+          );
+        },
+      });
   }
 
   /**
    * Charge l'évolution des abonnements
    */
-  loadSubscriptionEvolution(period: string = 'month'): void {
+  loadSubscriptionEvolution(period: string = "month"): void {
     if (!this.currentUser?._id) return;
 
-    this.agencyService.getSubscriptionEvolution$(this.currentUser._id, undefined, period).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          console.log('Évolution des abonnements:', response.data);
-     
-          this.processSubscriptionEvolution(response.data);
-        }
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement de l\'évolution des abonnements:', error);
-      }
-    });
+    this.agencyService
+      .getSubscriptionEvolution$(this.currentUser._id, undefined, period)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            console.log("Évolution des abonnements:", response.data);
+
+            this.processSubscriptionEvolution(response.data);
+          }
+        },
+        error: (error) => {
+          console.error(
+            "Erreur lors du chargement de l'évolution des abonnements:",
+            error,
+          );
+        },
+      });
   }
 
   /**
    * Traite les données d'évolution des abonnements
    */
   private processSubscriptionEvolution(data: any[]): void {
-
-    data.forEach(zoneEvolution => {
-      const zoneIndex = this.zoneAnalyticsData.findIndex(z => z.id === zoneEvolution.zoneId);
+    data.forEach((zoneEvolution) => {
+      const zoneIndex = this.zoneAnalyticsData.findIndex(
+        (z) => z.id === zoneEvolution.zoneId,
+      );
       if (zoneIndex !== -1) {
         this.zoneAnalyticsData[zoneIndex].growth = zoneEvolution.growthRate;
       }
@@ -5631,13 +6020,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.agencyService.compareZonePerformance$(this.currentUser._id).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          console.log('Comparaison des zones:', response);
+          console.log("Comparaison des zones:", response);
           this.displayZoneComparison(response);
         }
       },
       error: (error) => {
-        console.error('Erreur lors de la comparaison des zones:', error);
-      }
+        console.error("Erreur lors de la comparaison des zones:", error);
+      },
     });
   }
 
@@ -5647,35 +6036,43 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   private displayZoneComparison(comparison: any): void {
     const bestZone = comparison.data.find((z: any) => z.rank === 1);
     const summary = comparison.summary;
-    
+
     const message = `
        Résumé de performance:
       Meilleure zone: ${summary.bestPerformingZone}
        Plus efficace: ${summary.mostEfficient}
-       Zones nécessitant attention: ${summary.needsAttention.join(', ')}
+       Zones nécessitant attention: ${summary.needsAttention.join(", ")}
     `;
-    
-    this.notificationService.showInfo('Comparaison des zones', message);
+
+    this.notificationService.showInfo("Comparaison des zones", message);
   }
 
   /**
    * Optimise les ressources d'une zone spécifique
    */
-  optimizeSpecificZone(zoneId: string, optimizationType: 'team' | 'vehicles' | 'schedule' | 'all' = 'all'): void {
+  optimizeSpecificZone(
+    zoneId: string,
+    optimizationType: "team" | "vehicles" | "schedule" | "all" = "all",
+  ): void {
     if (!this.currentUser?._id) return;
 
-    this.agencyService.optimizeZoneResources$(this.currentUser._id, zoneId, optimizationType).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          console.log('Optimisation de zone:', response.data);
-          this.displayOptimizationResults(response.data);
-        }
-      },
-      error: (error) => {
-        console.error('Erreur lors de l\'optimisation de la zone:', error);
-        this.notificationService.showError('Erreur', 'Impossible d\'optimiser la zone');
-      }
-    });
+    this.agencyService
+      .optimizeZoneResources$(this.currentUser._id, zoneId, optimizationType)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            console.log("Optimisation de zone:", response.data);
+            this.displayOptimizationResults(response.data);
+          }
+        },
+        error: (error) => {
+          console.error("Erreur lors de l'optimisation de la zone:", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible d'optimiser la zone",
+          );
+        },
+      });
   }
 
   /**
@@ -5692,37 +6089,50 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
        Gain de temps: ${improvements.timeReduction}%
       
       Étapes d'implémentation:
-      ${results.implementationSteps.map((step: string, i: number) => `${i + 1}. ${step}`).join('\n')}
+      ${results.implementationSteps.map((step: string, i: number) => `${i + 1}. ${step}`).join("\n")}
     `;
-    
-    this.notificationService.showSuccess('Optimisation réussie', message);
+
+    this.notificationService.showSuccess("Optimisation réussie", message);
   }
 
   /**
    * Génère un rapport pour une zone
    */
-  generateZoneReport(zoneId: string, reportType: 'performance' | 'financial' | 'operational' | 'complete' = 'complete'): void {
+  generateZoneReport(
+    zoneId: string,
+    reportType:
+      | "performance"
+      | "financial"
+      | "operational"
+      | "complete" = "complete",
+  ): void {
     if (!this.currentUser?._id) return;
 
-    this.agencyService.generateZoneReport$(this.currentUser._id, zoneId, reportType).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          console.log('Rapport généré:', response.data);
-          if (response.data.downloadUrl) {
-            // Ouvrir le lien de téléchargement
-            window.open(response.data.downloadUrl, '_blank');
+    this.agencyService
+      .generateZoneReport$(this.currentUser._id, zoneId, reportType)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            console.log("Rapport généré:", response.data);
+            if (response.data.downloadUrl) {
+              // Ouvrir le lien de téléchargement
+              window.open(response.data.downloadUrl, "_blank");
+            }
+            this.notificationService.showSuccess(
+              "Rapport généré",
+              "Le rapport a été généré avec succès",
+            );
           }
-          this.notificationService.showSuccess('Rapport généré', 'Le rapport a été généré avec succès');
-        }
-      },
-      error: (error) => {
-        console.error('Erreur lors de la génération du rapport:', error);
-        this.notificationService.showError('Erreur', 'Impossible de générer le rapport');
-      }
-    });
+        },
+        error: (error) => {
+          console.error("Erreur lors de la génération du rapport:", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de générer le rapport",
+          );
+        },
+      });
   }
-
-
 
   /**
    * Méthode pour actualiser toutes les données d'une zone
@@ -5732,7 +6142,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       this.loadZoneDetails(zoneId);
       this.loadZoneWorkloadMetrics(zoneId);
     } else {
-    
       this.refreshZoneAnalytics();
       this.loadSubscriptionEvolution();
     }
@@ -5745,13 +6154,19 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   getEstimatedCoverage(): number {
     const now = Date.now();
-    if (this._cachedEstimatedCoverage !== null && (now - this._cacheTimestamp < this.CACHE_DURATION)) {
+    if (
+      this._cachedEstimatedCoverage !== null &&
+      now - this._cacheTimestamp < this.CACHE_DURATION
+    ) {
       return this._cachedEstimatedCoverage;
     }
 
     // Calcul simple basé sur le nombre de zones définies
     const totalPossibleZones = 20; // Nombre estimé de zones possibles dans la ville
-    this._cachedEstimatedCoverage = Math.min(100, Math.round((this.zones.length / totalPossibleZones) * 100));
+    this._cachedEstimatedCoverage = Math.min(
+      100,
+      Math.round((this.zones.length / totalPossibleZones) * 100),
+    );
     this._cacheTimestamp = now;
     return this._cachedEstimatedCoverage;
   }
@@ -5761,11 +6176,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   getTotalZoneClients(): number {
     const now = Date.now();
-    if (this._cachedTotalZoneClients !== null && (now - this._cacheTimestamp < this.CACHE_DURATION)) {
+    if (
+      this._cachedTotalZoneClients !== null &&
+      now - this._cacheTimestamp < this.CACHE_DURATION
+    ) {
       return this._cachedTotalZoneClients;
     }
 
-    this._cachedTotalZoneClients = this.activeClients ? this.activeClients.length : 0;
+    this._cachedTotalZoneClients = this.activeClients
+      ? this.activeClients.length
+      : 0;
     this._cacheTimestamp = now;
     return this._cachedTotalZoneClients;
   }
@@ -5776,7 +6196,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   getZoneBusinessCount(zone: any): number {
     // Utilisation d'une valeur stable basée sur l'index/nom de la zone pour éviter ExpressionChangedAfterItHasBeenCheckedError
     const zoneIndex = this.zones.indexOf(zone);
-    const zoneIdentifier = zone._id || zone.id || zone.neighborhood || zone || zoneIndex;
+    const zoneIdentifier =
+      zone._id || zone.id || zone.neighborhood || zone || zoneIndex;
     const hash = this.getStableHash(zoneIdentifier.toString());
     return Math.floor(hash * 15) + 5; // Entre 5 et 20 entreprises
   }
@@ -5787,8 +6208,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   getZoneHouseholdCount(zone: any): number {
     // Utilisation d'une valeur stable basée sur l'index/nom de la zone pour éviter ExpressionChangedAfterItHasBeenCheckedError
     const zoneIndex = this.zones.indexOf(zone);
-    const zoneIdentifier = zone._id || zone.id || zone.neighborhood || zone || zoneIndex;
-    const hash = this.getStableHash(zoneIdentifier.toString() + '_households');
+    const zoneIdentifier =
+      zone._id || zone.id || zone.neighborhood || zone || zoneIndex;
+    const hash = this.getStableHash(zoneIdentifier.toString() + "_households");
     return Math.floor(hash * 50) + 20; // Entre 20 et 70 ménages
   }
 
@@ -5799,7 +6221,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash) / 2147483647; // Normaliser entre 0 et 1
@@ -5810,7 +6232,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    */
   selectZone(zone: any): void {
     this.selectedZoneForDisplay = zone;
-    console.log('Zone sélectionnée:', zone);
+    console.log("Zone sélectionnée:", zone);
   }
 
   /**
@@ -5820,6 +6242,115 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // Simulation d'une date de dernière collecte
     const today = new Date();
     const daysAgo = Math.floor(Math.random() * 7) + 1; // Entre 1 et 7 jours
-    return new Date(today.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+    return new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+  }
+
+  //Données pour les tests
+
+  expandedRows: any = {};
+  orders = [
+    {
+      id: "O1001",
+      customer: "John Doe",
+      date: "2025-01-10",
+      amount: 1200,
+      status: "DELIVERED",
+    },
+    {
+      id: "O1002",
+      customer: "Jane Smith",
+      date: "2025-01-15",
+      amount: 1200,
+      status: "PENDING",
+    },
+  ];
+
+  products = [
+    {
+      id: "P001",
+      name: "Laptop Pro",
+      image: "laptop.png",
+      price: 1200,
+      category: "Electronics",
+      rating: 4,
+      inventoryStatus: "INSTOCK",
+      orders: [
+        {
+          id: "O1001",
+          customer: "John Doe",
+          date: "2025-01-10",
+          amount: 1200,
+          status: "DELIVERED",
+        },
+        {
+          id: "O1002",
+          customer: "Jane Smith",
+          date: "2025-01-15",
+          amount: 1200,
+          status: "PENDING",
+        },
+      ],
+    },
+    {
+      id: "P002",
+      name: "Smartphone X",
+      image: "phone.png",
+      price: 800,
+      category: "Mobile",
+      rating: 5,
+      inventoryStatus: "LOWSTOCK",
+      orders: [
+        {
+          id: "O2001",
+          customer: "Alice Brown",
+          date: "2025-01-12",
+          amount: 800,
+          status: "CANCELLED",
+        },
+      ],
+    },
+  ];
+
+  expandAll() {
+    this.expandedRows = {};
+    this.filteredActiveClients.forEach((p: any) => {
+      this.expandedRows[p._id!] = true;
+    });
+  }
+
+  collapseAll() {
+    this.expandedRows = {};
+  }
+
+  onRowExpand(event: any) {
+    console.log("Row expanded", event.data);
+  }
+
+  onRowCollapse(event: any) {
+    console.log("Row collapsed", event.data);
+  }
+
+  getSeverity(status: string): "success" | "info" | "danger" {
+    switch (status) {
+      case "true":
+        return "success";
+      case "false":
+        return "danger";
+      default:
+        return "info";
+    }
+  }
+
+  getStatusSeverity(status: string) {
+    switch (status) {
+      case "DELIVERED":
+        return "success";
+      case "PENDING":
+        return "warning";
+      case "CANCELLED":
+        return "danger";
+      default:
+        return "info";
+    }
   }
 }

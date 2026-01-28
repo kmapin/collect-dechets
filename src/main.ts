@@ -10,9 +10,11 @@ import { authInterceptorInterceptor } from './app/auth-interceptor-interceptor';
 import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
+import { LOCALE_ID } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
 
-
-
+registerLocaleData(localeFr, 'fr-FR');
 bootstrapApplication(AppComponent, {
   providers: [
     provideAnimations(),
@@ -30,6 +32,8 @@ bootstrapApplication(AppComponent, {
     importProvidersFrom(
       BrowserAnimationsModule
     ),
-    MessageService
+    MessageService,
+    { provide: LOCALE_ID, useValue: 'fr-FR' }
+
   ]
 }).catch(err => console.error(err));
