@@ -246,7 +246,7 @@ export class AgencyService {
   }
 
   getAgencyById1(id: string): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/agences/recuperation/${id}`).pipe(
+    return this.http.get(`${environment.apiUrl}/agencies/${id}`).pipe(
       map((response: any) => {
         console.log('API > getAgencyById:', response);
         return response;

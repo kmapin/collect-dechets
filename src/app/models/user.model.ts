@@ -161,18 +161,19 @@ export interface RegisterUserData {
   };
 
   agency?: {
-    name: string;
-    agencyDescription: string;
-    zoneActivite: string[];
-    client: string;
-    collector: string;
-    slogan: string;
-    gestionnaires: string[];
-    owner: string;
-    documents: string[];
-    status: 'active' | 'inactive';
-    longitude: number;
-    latitude: number;
+    _id?: string;
+    name?: string;
+    agencyDescription?: string;
+    zoneActivite?: string[];
+    client?: string;
+    collector?: string;
+    slogan?: string;
+    gestionnaires?: string[];
+    owner?: string;
+    documents?: string[];
+    status?: 'active' | 'inactive';
+    longitude?: number;
+    latitude?: number;
   };
 }
 

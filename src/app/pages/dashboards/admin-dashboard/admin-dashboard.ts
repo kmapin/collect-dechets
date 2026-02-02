@@ -339,7 +339,7 @@ export class AdminDashboard implements OnInit {
     },
     acceptTerms: true,
     receiveOffers: false,
-    agencyId: "",
+    agencyId:"",
     status: "",
     nbGestionnaires: 0,
     isOwnerAgency: false,
@@ -358,6 +358,7 @@ export class AdminDashboard implements OnInit {
       province: "",
     },
     agency: {
+      _id: "",
       name: "",
       agencyDescription: "",
       zoneActivite: [],
@@ -942,22 +943,8 @@ export class AdminDashboard implements OnInit {
     this.adminService.getUserById(clientId).subscribe({
       next: (client: any) => {
         if (client.success) {
-          const user = client.user;
-          if(user.agencyId){
-            const id=user.agencyId;
-            if(id){
-              this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
-                if (response.success) {
-                  console.log('[DEBUG] Agency response in admin dashbord:', response.data);
-                  user.agency = response.data;
-                } else {
-                  console.error('Erreur lors du chargement de l\'agence');
-                }
-              });
-            }
-          }
-          this.selectedUser = user;
-          // console.log("voici les details du client:", this.selectedUser);
+          this.selectedUser = client?.user;
+          console.log("voici les details du client:", this.selectedUser);
           this.visible1 = true;
         } else {
           this.notificationService.showInfo(
@@ -1203,13 +1190,13 @@ export class AdminDashboard implements OnInit {
     this.adminService
       .getAllEmployees()
       .pipe(
-        timeout(30000), // 30 secondes
+        timeout(30000), 
         catchError((error) => {
           console.error("Erreur lors du chargement des collecteurs:", error);
           this.isLoadingCollectors = false;
           this.collectorsAudits = [];
           this.filteredCollectors = [];
-          return of({ data: [] }); // Retourner un observable vide
+          return of({ data: [] });
         })
       )
       .subscribe({
@@ -1222,66 +1209,11 @@ export class AdminDashboard implements OnInit {
             this.isLoadingCollectors = false;
             return;
           }
-
-          const collectorsWithAgencies$ = collectors.map((employee: any) => {
-            const agency$ = this.agencies.includes(employee.agencyId)
-              ? this.agencyService.getAgencyById1(employee.agencyId)
-              : of({ data: { agencyName: "" } });
-
-            return agency$.pipe(
-              timeout(10000), // 10 secondes par agence
-              catchError(() => of({ data: { agencyName: "" } })), // En cas d'erreur, retourner des données vides
-              map((agencyResponse: any) => {
-                return {
-                  agency: {
-                    agencyName: agencyResponse?.data?.agencyName || "",
-                    agencyId: agencyResponse?.data?._id || "",
-                    address: {
-                      city: agencyResponse?.data?.address?.city || "",
-                      quartier:
-                        agencyResponse?.data?.address?.neighborhood || "",
-                      postalCode:
-                        agencyResponse?.data?.address?.postalCode || "",
-                      sector: agencyResponse?.data?.address?.sector || "",
-                      street: agencyResponse?.data?.address?.street || "",
-                    },
-                  },
-                  createdAt: employee?.createdAt || "",
-                  email: employee?.email || "",
-                  firstName: employee?.firstName || "",
-                  hiredAt: employee?.hiredAt || "",
-                  isActive: employee?.isActive ? "active" : "inactive",
-                  lastName: employee?.lastName || "",
-                  phone: employee?.phone || "",
-                  role: employee?.role || "",
-                  updatedAt: employee?.updatedAt || "",
-                  userId: employee?.userId || "",
-                  zones: employee?.zones || [],
-                };
-              })
-            );
-          });
-
-          forkJoin(collectorsWithAgencies$)
-            .pipe(
-              timeout(60000), // 1 minute pour toutes les requêtes
-              catchError((error) => {
-                console.error(
-                  "Erreur lors du chargement des agences des collecteurs:",
-                  error
-                );
-                this.isLoadingCollectors = false;
-                this.collectorsAudits = [];
-                this.filteredCollectors = [];
-                return of([]);
-              })
-            )
-            .subscribe((result: any) => {
-              this.collectorsAudits = result || [];
-              this.filteredCollectors = [...this.collectorsAudits];
-              this.isLoadingCollectors = false;
-              console.log("collectors in dashboard", this.filteredCollectors);
-            });
+          this.collectorsAudits = collectors || [];
+          this.filteredCollectors = [...this.collectorsAudits];
+          this.isLoadingCollectors = false;
+          console.log("collectors in dashboard this.filteredCollectors", this.filteredCollectors);
+          console.log("users in dashboard ===>", collectors);
         },
         error: (error) => {
           console.error("Erreur lors du chargement des collecteurs:", error);
