@@ -1,4 +1,5 @@
 import { Routes } from "@angular/router";
+import { adminGuard,adminOrManagerGuard,managerGuard, authGuard, clientGuard, municipalityGuard }  from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -85,6 +86,7 @@ export const routes: Routes = [
   },
 
   {
+    canActivate: [authGuard],
     path: "subscription",
     loadComponent: () =>
       import("./pages/subscription/subscription").then((c) => c.Subscription),
@@ -104,6 +106,7 @@ export const routes: Routes = [
   // ================= DASHBOARDS =================
 
   {
+    canActivate: [clientGuard],
     path: "dashboard/client",
     loadComponent: () =>
       import("./pages/dashboards/client-dashboard/client-dashboard").then(
@@ -112,6 +115,7 @@ export const routes: Routes = [
   },
 
   {
+    canActivate: [adminOrManagerGuard],
     path: "dashboard/agency",
     loadComponent: () =>
       import("./pages/dashboards/agency-dashboard/agency-dashboard").then(
@@ -128,6 +132,7 @@ export const routes: Routes = [
   },
 
   {
+    canActivate: [municipalityGuard],
     path: "dashboard/municipality",
     loadComponent: () =>
       import("./pages/dashboards/municipality-dashboard/municipality-dashboard").then(
@@ -136,6 +141,7 @@ export const routes: Routes = [
   },
 
   {
+    canActivate: [adminGuard],
     path: "dashboard/admin",
     loadComponent: () =>
       import("./pages/dashboards/admin-dashboard/admin-dashboard").then(
@@ -146,6 +152,7 @@ export const routes: Routes = [
   // ================= AUTRES =================
 
   {
+    canActivate: [adminOrManagerGuard],
     path: "edit-agency/:id",
     loadComponent: () =>
       import("./pages/auth/register/register").then((c) => c.Register),

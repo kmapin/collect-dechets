@@ -39,7 +39,11 @@
   font-weight: bold;
   color: #333;
 }
-
+.nav-actions{
+  display: flex;
+  justify-self: end;
+  align-items: center;
+}
 .close-btn {
   background: none;
   border: none;
@@ -209,6 +213,7 @@
 
 .tabs-navigation {
   display: flex;
+  justify-content: space-evenly;
   gap: 4px;
   margin-bottom: 24px;
   background: var(--white);

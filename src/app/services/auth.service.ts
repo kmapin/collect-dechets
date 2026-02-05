@@ -16,15 +16,17 @@ export class AuthService {
   // public ProfileCurrentUser$ = this.currentUserSubjectLocalStorage.asObservable();
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
-
+  
   constructor(private http: HttpClient) {
     // Check for stored user on service initialization
+    console.log('Checking for stored user on service initialization', this.isAuthenticated$ );
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       this.currentUserSubject.next(JSON.parse(storedUser)?.user);
       this.isAuthenticatedSubject.next(true);
     }
   }
+
 
   login(email: string, password: string): Observable<{ success: boolean; user?: RegisterUserData; error?: string }> {
     // Simulate API call
@@ -154,6 +156,26 @@ export class AuthService {
     );
   }
 
+
+  /**
+   * Vérifier si l'utilisateur a au moins un certain niveau de rôle
+   */
+  hasMinimumRole(minimumRole: UserRole): Observable<boolean> {
+    const roleHierarchy: Record<UserRole, number> = {
+      client: 1,
+      manager: 2,
+      collector: 3,
+      municipality: 4,
+      super_admin: 5,
+    };
+
+    return this.currentUser$.pipe(
+      map(user => {
+        if (!user) return false;
+        return roleHierarchy[user.role as UserRole] >= roleHierarchy[minimumRole];
+      })
+    );
+  }
   /**
    * Inscription d'un client via l'API réelle (méthode legacy - utilisez register() de préférence)
    */

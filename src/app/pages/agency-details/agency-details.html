@@ -215,7 +215,7 @@
                 </div>
                 <div class="service-actions">
                   <button class="btn btn-primary btn-small"
-                    (click)="submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths[tariff?._id!], tariff.price )">
+                    (click)="isLogged()? showLoginRequired() : submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths[tariff?._id!], tariff.price )">
                     <i class="material-icons">add_shopping_cart</i>
                     Choisir ce tarif
                   </button>

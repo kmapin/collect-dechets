@@ -210,6 +210,15 @@
               {{ getTabBadge(tab.id) }}
             </span>
             </button>
+            <div class="nav-actions right">
+              <a
+                (click)="navigateToAddMunicipality()"
+                class="btn btn-primary nav-cta"
+              >
+                <i class="material-icons">person_add</i>
+                <span>Ajouter un agent de mairie</span>
+              </a>
+            </div>
           </div>
 
           <!-- Contenu des onglets -->
