@@ -629,7 +629,12 @@
   background: #e8f5e8;
   color: var(--success-color);
 }
-.status-pending {
+
+.status-collected {
+  background: #e8f5e8;
+  color: var(--success-color);
+}
+.status-pending , .status-reported, .status-scheduled {
   background: #fff3e0;
   color: #f57c00;
 }
@@ -990,6 +995,11 @@
 .incident-date {
   margin: 4px 0;
   color: var(--text-secondary);
+
+
+}
+.incident-agency span{
+    font-weight: 500;
 }
 
 .incident-assignment {

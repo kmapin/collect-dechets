@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit,signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -14,7 +14,7 @@ import { MatCardModule } from "@angular/material/card";
 import { ClientService } from "../../../services/client.service";
 import { SharedService } from "../../../services/shared-service";
 import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
-import { forkJoin, map, of, timeout, catchError } from "rxjs";
+import { forkJoin, map, of, timeout, catchError} from "rxjs";
 import {
   MOCK_CITIES,
   MOCK_ARRONDISSEMENTS,
@@ -91,20 +91,37 @@ interface GroupedZoneStatistics {
 interface Incident {
   id: string;
   agency?: {
-    id: string;
-    agencyName?: string;
+    _id: string;
+    name?: string;
   };
-  agencyId: string;
+  agencyId?: {
+    _id: string;
+    name?: string;
+  };
+  clientId?:{
+    _id: string;
+    firstName?: string;
+    lastName ?:string;
+    email?:string
+  };
+  collectorId?: {
+    _id: string;
+    firstName?: string;
+    lastName ?:string;
+    email?:string
+  }
+  photo?:[];
   agencyName: string;
   type:
     | "missed_collection"
     | "compliance_issue"
     | "complaint"
     | "technical_issue";
+  comment: string;
   description: string;
-  severity: "low" | "medium" | "high" | "critical";
+  severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
-  status: "open" | "pending" | "resolved";
+  status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
   assignedTo?: string;
 }
 
@@ -202,7 +219,7 @@ export class AdminDashboard implements OnInit {
   complianceFilter = "all";
   statisticsPeriod = "month";
   incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
-  severityFilter: "all" | "low" | "medium" | "high" | "critical" = "all";
+  severityFilter: "all" | "Low" | "Medium" | "High" | "Critical" = "all";
 
   usersFilterParams: FilterParams = {
     role: this.roleFilter,
@@ -553,32 +570,32 @@ export class AdminDashboard implements OnInit {
     });
   }
 
-  loadIncidents1(): void {
-    this.incidents = [
-      {
-        id: "1",
-        agencyId: "2",
-        agencyName: "GreenWaste Solutions",
-        type: "missed_collection",
-        description: "Collecte manquée dans le secteur Nord",
-        severity: "medium",
-        date: new Date(),
-        status: "open",
-      },
-      {
-        id: "2",
-        agencyId: "3",
-        agencyName: "WasteManager Pro",
-        type: "compliance_issue",
-        description: "Non-respect des horaires réglementaires",
-        severity: "high",
-        date: new Date(Date.now() - 86400000),
-        status: "pending",
-        assignedTo: "Inspecteur Martin",
-      },
-    ];
-    this.filteredIncidents = [...this.incidents];
-  }
+  // loadIncidents1(): void {
+  //   this.incidents = [
+  //     {
+  //       id: "1",
+  //       // agencyId: "2",
+  //       agencyName: "GreenWaste Solutions",
+  //       type: "missed_collection",
+  //       description: "Collecte manquée dans le secteur Nord",
+  //       severity: "medium",
+  //       date: new Date(),
+  //       status: "open",
+  //     },
+  //     {
+  //       id: "2",
+  //       // agencyId: "3",
+  //       agencyName: "WasteManager Pro",
+  //       type: "compliance_issue",
+  //       description: "Non-respect des horaires réglementaires",
+  //       severity: "high",
+  //       date: new Date(Date.now() - 86400000),
+  //       status: "pending",
+  //       assignedTo: "Inspecteur Martin",
+  //     },
+  //   ];
+  //   this.filteredIncidents = [...this.incidents];
+  // }
 
   loadCommunications(): void {
     this.communications = [
@@ -610,7 +627,7 @@ export class AdminDashboard implements OnInit {
   }
   getMunicipalityStatusText(status?: string): string {
     if (!status) {
-      return `${this.statisticsAdmin?.totalMunicipalities} actives`;
+      return `${this.statisticsAdmin?.totalMunicipalityAgents} actives`;
     }
     const statusTexts = {
       active: "Active",
@@ -747,6 +764,7 @@ export class AdminDashboard implements OnInit {
       complaint: "Réclamation",
       technical_issue: "Problème technique",
       problem: "Collecte manquée",
+      regular: "Collecte manquée",
     };
     return types[type as keyof typeof types] || type;
   }
@@ -755,7 +773,11 @@ export class AdminDashboard implements OnInit {
     const statuses = {
       // open: "Ouvert",
       pending: "En cours",
-      resolved: "Résolu",
+      resolved: "Résolue",
+      reported : "En cours",
+      scheduled: "En cours",
+      collected: "Collecté",
+
     };
     return statuses[status as keyof typeof statuses] || status;
   }
@@ -1280,16 +1302,19 @@ export class AdminDashboard implements OnInit {
     });
   }
   /**Listes des signalements des users */
+  totalIncidents = signal(0);
   loadAllSignalements() {
     this.isLoadingIncidents = true;
     this.adminService.getAllReports().subscribe({
       next: (response: any) => {
-        this.incidents = response.map((signalement: any) => {
-          return {
-            agencyId: signalement.agency._id,
-            ...signalement,
-          };
-        });
+        this.totalIncidents.set(response?.total)
+        this.incidents = response.collectes;
+        // .map((signalement: any) => {
+        //   return {
+        //     agencyId: signalement.agency?._id,
+        //     ...signalement,
+        //   };
+        // });
         this.filteredIncidents = [...this.incidents];
         this.isLoadingIncidents = false;
         console.log("signalements in response", response);

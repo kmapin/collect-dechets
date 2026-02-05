@@ -116,7 +116,7 @@ export class Admin {
   /**Tous les signalement sur la plateforme */
 
   getAllReports() {
-    return this.http.get(`${environment.apiUrl}/reports/all`).pipe(
+    return this.http.get(`${environment.apiUrl}/collecte/all`).pipe(
       map((response: any) => {
         console.log('API > getAllReports:', response);
         return response;

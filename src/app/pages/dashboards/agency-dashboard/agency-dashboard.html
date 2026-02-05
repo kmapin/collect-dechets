@@ -98,10 +98,10 @@
           </div>
           <div class="stat-info">
             <h3>Signalements</h3>
-            <p class="stat-value">{{ statistics.pendingSignalements || 0 }}</p>
+            <p class="stat-value">{{ statistics.totalReporting || 0 }}</p>
             <span
               class="stat-trend"
-              [class.negative]="statistics.totalSignalements"
+              [class.negative]="statistics.totalReporting > 0"
             >
               en attente
             </span>
@@ -122,8 +122,10 @@
           {{ tab.label }} @if (tab.label === 'Messages' && unreadMessageCount >=
           0) {
           <span class="tab-badge">{{ unreadMessageCount }}</span>
-          } @if (tab.badge) {
-          <span class="tab-badge">{{ tab.badge }}</span>
+          } @if (tab.label === 'Signalements' && statistics.totalReporting >= 0) {
+          <span class="tab-badge">{{ statistics.totalReporting }}</span>
+          }@if(tab.badge){
+            <span class="tab-badge">{{ tab.badge }}</span>
           }
         </button>
         }
@@ -1175,7 +1177,7 @@
         <div class="clients-tab">
           <div class="section-header">
             <h2>
-              Clients Actifs et leurs abonnements ({{ activeClients.length }})
+              Clients Actifs et leurs abonnements
             </h2>
             <div class="section-actions">
               <button
@@ -1561,12 +1563,10 @@
                   [class]="'severity-' + report?.severity"
                 >
                   <i class="material-icons"
-                    >{{ getSeverityIcon(report.severity) }}</i
-                  >
+                    >{{ getSeverityIcon(report.severity) }}</i>
                   <span
                     >{{ getSeverityText(report.severity) ?
-                    getSeverityText(report.severity) : "Faible" }}</span
-                  >
+                    getSeverityText(report.severity) : "Faible" }}</span>
                 </div>
                 <div class="incident-status">
                   <span

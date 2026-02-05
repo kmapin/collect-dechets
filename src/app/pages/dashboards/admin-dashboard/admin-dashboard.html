@@ -135,7 +135,7 @@
                 <h3>Collectes aujourd'hui</h3>
                 <p class="stat-value">
                   {{ statisticsAdmin?.completeCollections }}/{{
-                    statisticsAdmin?.totalCollections
+                    statisticsAdmin?.dailyCollections
                   }}
                 </p>
                 <span
@@ -390,7 +390,7 @@
                         {{ getIncidentTypeText(incident.type) }}
                       </div>
                       <div class="alert-agency">
-                        {{ incident?.agency?.agencyName }}
+                        {{ incident?.agency?.name }}
                       </div>
                       <div class="alert-time">
                         {{ incident.date | date : "dd/MM HH:mm" }}
@@ -1286,43 +1286,43 @@
                   <div class="incident-header">
                     <div
                       class="incident-severity"
-                      [class]="'severity-' + incident.severity"
+                      [class]="'severity-' + incident.severity.toLowerCase()"
                     >
                       <i class="material-icons">{{
-                        getSeverityIcon(incident.severity)
+                        getSeverityIcon(incident.severity.toLowerCase())
                       }}</i>
                       <span>{{
-                        getSeverityText(incident.severity)
-                          ? getSeverityText(incident.severity)
+                        getSeverityText(incident.severity.toLowerCase())
+                          ? getSeverityText(incident.severity.toLowerCase())
                           : "Faible"
                       }}</span>
                     </div>
                     <div class="incident-status">
                       <span
                         class="status-badge"
-                        [class]="'status-' + incident.status"
+                        [class]="'status-'+incident.status.toLowerCase()"
                       >
-                        {{ getIncidentStatusText(incident.status) }}
+                        {{ getIncidentStatusText(incident.status.toLowerCase()) }}
                       </span>
                     </div>
                   </div>
 
                   <div class="incident-content">
-                    <h4>{{ getIncidentTypeText(incident.type) }}</h4>
+                    <h4>{{ getIncidentTypeText(incident.type.toLowerCase()) }}</h4>
                     <p class="incident-agency">
-                      Agence: {{ incident?.agency?.agencyName }}
+                      <span class="agency-label">Agence: </span> {{incident?.agencyId?.name }}
                     </p>
                     <p class="incident-description">
-                      {{ incident.description }}
+                      {{ incident.comment }}
                     </p>
                     <p class="incident-date">
                       {{ incident.date | date : "dd/MM/yyyy HH:mm" }}
                     </p>
                   </div>
 
-                  <div class="incident-assignment" *ngIf="incident.assignedTo">
+                  <div class="incident-assignment" *ngIf="incident.collectorId?._id">
                     <i class="material-icons">person</i>
-                    <span>Assigné à {{ incident.assignedTo }}</span>
+                    <span>Assigné à {{ incident.collectorId?.firstName }} {{ incident.collectorId?.lastName }}</span>
                   </div>
 
                   <div class="incident-actions">
@@ -1352,7 +1352,7 @@
                     </button> -->
                     <button
                       class="btn btn-accent"
-                      (click)="contactAgencyForIncident(incident?.agencyId)"
+                      (click)="contactAgencyForIncident(incident?.agencyId?._id)"
                     >
                       <i class="material-icons">phone</i>
                       Contacter Agence

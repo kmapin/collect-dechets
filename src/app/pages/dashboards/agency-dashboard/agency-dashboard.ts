@@ -142,7 +142,7 @@ interface Statistics {
   totalCollectors: number;
   totalCollecteurs?: number;
   totalGestionnaires?: number;
-  totalSignalements: number;
+  totalReporting: number;
   resolvedSignalements?: number;
   activeCollectors: number;
   todayCollections: number;
@@ -264,7 +264,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     totalEmployees: 0,
     totalZones: 0,
     totalCollectors: 0,
-    totalSignalements: 0,
+    totalReporting: 0,
     activeCollectors: 0,
     todayCollections: 0,
     resolvedSignalements: 0,
@@ -1247,7 +1247,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService
-      .getUserUnreadMessagesCount(this.currentUser?._id || "")
+      .getUserUnreadMessagesCount(this.currentUser?.agencyId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
