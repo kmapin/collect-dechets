@@ -1554,7 +1554,9 @@
           >
           </app-loading-spinner>
           } @if (!isLoadingReports) {
-          <div class="reports-list">
+
+            <app-signalement [incidents]="agencyReports"></app-signalement>
+          <!-- <div class="reports-list">
             @for (report of agencyReports; track report) {
             <div class="report-card card">
               <div class="incident-header">
@@ -1590,7 +1592,7 @@
                   Heure : {{ report.createdAt | date : "HH:mm:ss" }}
                 </p>
               </div>
-              <!-- Affichage des photos -->
+              
               @if (report.photos && report.photos.length) {
               <div class="report-photos">
                 @for (photo of report.photos; track photo) {
@@ -1636,7 +1638,7 @@
               </div>
             </div>
             }
-          </div>
+          </div> -->
           }
           <!-- État vide pour les signalements -->
           @if (!isLoadingReports && !agencyReports.length) {

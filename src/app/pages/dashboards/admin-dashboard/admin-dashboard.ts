@@ -21,6 +21,7 @@ import {
 } from "../../../data/countries-org.mock";
 import { FilterParams } from "../../../models/filterParams.model";
 import { DrawerModule } from "primeng/drawer";
+import { Signalement } from "../../shared_pages/signalement/signalement";
 interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
@@ -89,7 +90,7 @@ interface GroupedZoneStatistics {
 }
 
 interface Incident {
-  id: string;
+  _id: string;
   agency?: {
     _id: string;
     name?: string;
@@ -161,6 +162,7 @@ interface User {
     MatCardModule,
     LoadingSpinnerComponent,
     DrawerModule,
+    Signalement
   ],
   templateUrl: "./admin-dashboard.html",
   styleUrl: "./admin-dashboard.scss",
@@ -530,6 +532,7 @@ export class AdminDashboard implements OnInit {
     }));
     console.log("this.zoneStatistics", this.zoneStatistics);
   }
+
 
   loadZoneStat(): void {
     this.adminService.getAllStatisticCity().subscribe({
@@ -1042,7 +1045,7 @@ export class AdminDashboard implements OnInit {
   }
 
   investigateIncident(incidentId: string): void {
-    const incident = this.incidents.find((i) => i.id === incidentId);
+    const incident = this.incidents.find((i) => i._id === incidentId);
     if (incident) {
       incident.status = "pending";
       incident.assignedTo = "Inspecteur Municipal";
@@ -1055,7 +1058,7 @@ export class AdminDashboard implements OnInit {
   }
 
   resolveIncident(incidentId: string): void {
-    const incident = this.incidents.find((i) => i.id === incidentId);
+    const incident = this.incidents.find((i) => i._id === incidentId);
     if (incident) {
       incident.status = "resolved";
       this.filterIncidents();

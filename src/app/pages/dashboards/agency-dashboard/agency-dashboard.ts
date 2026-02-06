@@ -77,6 +77,7 @@ import { TableModule } from "primeng/table";
 import { TagModule } from "primeng/tag";
 import { ToastModule } from "primeng/toast";
 import { RippleModule } from "primeng/ripple";
+import { Signalement } from "../../shared_pages/signalement/signalement";
 interface Client {
   id: string;
   name: string;
@@ -88,7 +89,42 @@ interface Client {
   totalPaid: number;
   joinDate: Date;
 }
-
+interface Incident {
+  _id: string;
+  agency?: {
+    _id: string;
+    name?: string;
+  };
+  agencyId?: {
+    _id: string;
+    name?: string;
+  };
+  clientId?:{
+    _id: string;
+    firstName?: string;
+    lastName ?:string;
+    email?:string
+  };
+  collectorId?: {
+    _id: string;
+    firstName?: string;
+    lastName ?:string;
+    email?:string
+  }
+  photos?:[];
+  agencyName: string;
+  type:
+    | "missed_collection"
+    | "compliance_issue"
+    | "complaint"
+    | "technical_issue";
+  comment: string;
+  description: string;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  date: Date;
+  status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
+  assignedTo?: string;
+}
 interface Report {
   _id: string;
   clientId: string;
@@ -186,6 +222,9 @@ type TabId =
     TagModule,
     ToastModule,
     RippleModule,
+
+
+    Signalement,
   ],
   templateUrl: "./agency-dashboard.html",
   styleUrl: "./agency-dashboard.scss",
@@ -233,7 +272,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   messageForm!: FormGroup;
 
   currentUser: RegisterUserData | null = null;
-  agencyReports: Report[] = [];
+  agencyReports: Incident[] = [];
   ouagaData: QuartierData[] = OUAGA_DATA;
   agency: Agency | null = null;
   activeTab: TabId = "employees"; // Changé pour debug - était "collections"

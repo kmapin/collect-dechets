@@ -622,7 +622,8 @@
               </select>
             </div>
           </div>
-          <div class="incidents-list">
+          <app-signalement [incidents]="incidents"] ></app-signalement>
+          <!-- <div class="incidents-list">
             @for (incident of filteredIncidents; track incident) {
               <div
                 class="incident-card card"
@@ -666,7 +667,7 @@
                       </div>
                     }
                     <div class="incident-actions">
-                      <!-- <button
+                      <button
                       class="btn btn-secondary"
                       (click)="assignIncident(incident.id)"
                       *ngIf="incident.status === 'open'"
@@ -689,7 +690,7 @@
                       >
                       <i class="material-icons">check</i>
                       Résoudre
-                    </button> -->
+                    </button>
                     <button
                       class="btn btn-accent"
                       (click)="contactAgencyForIncident(incident?.agencyId)"
@@ -700,7 +701,7 @@
                   </div>
                 </div>
               }
-            </div>
+            </div> -->
           </div>
         }
 

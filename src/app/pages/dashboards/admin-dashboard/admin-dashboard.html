@@ -1271,15 +1271,16 @@
                 size="medium">
               </app-loading-spinner>
 
-              <div *ngIf="!isLoadingIncidents" class="incidents-list grid-2">
+              <app-signalement [incidents]="filteredIncidents" [currentUser]="currentUser" (isLoadingIncidents)="isLoadingIncidents = $event"></app-signalement>
+              <!-- <div *ngIf="!isLoadingIncidents" class="incidents-list grid-2"> -->
                 <!-- État vide pour les incidents -->
-                <div *ngIf="!filteredIncidents.length" class="empty-state">
+                <!-- <div *ngIf="!filteredIncidents.length" class="empty-state">
                   <i class="material-icons">report_problem</i>
                   <h3>Aucun incident trouvé</h3>
                   <p>Aucun incident ne correspond aux critères sélectionnés pour le moment.</p>
-                </div>
-
-                <div
+                </div> -->
+                
+                <!-- <div
                   *ngFor="let incident of filteredIncidents"
                   class="incident-card card"
                 >
@@ -1334,22 +1335,22 @@
                       <i class="material-icons">assignment_ind</i>
                       Assigner
                     </button>
-                    <!-- <button
+                    <button
                       class="btn btn-primary"
                       (click)="investigateIncident(incident.id)"
                       *ngIf="incident.status === 'pending'"
                     >
                       <i class="material-icons">search</i>
                       Enquêter
-                    </button> -->
-                    <!-- <button
+                    </button> 
+                    <button
                       class="btn btn-success"
                       (click)="resolveIncident(incident.id)"
                       *ngIf="incident.status === 'resolved'"
                     >
                       <i class="material-icons">check</i>
                       Résoudre
-                    </button> -->
+                    </button>
                     <button
                       class="btn btn-accent"
                       (click)="contactAgencyForIncident(incident?.agencyId?._id)"
@@ -1358,8 +1359,8 @@
                       Contacter Agence
                     </button>
                   </div>
-                </div>
-              </div>
+                </div> -->
+              <!-- </div> -->
             </div>
 
             <!-- Onglet Communications -->

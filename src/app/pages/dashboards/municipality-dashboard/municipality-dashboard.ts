@@ -16,7 +16,43 @@ import {
   MOCK_ARRONDISSEMENTS,
 } from "../../../data/countries-org.mock";
 import { FilterParams } from "../../../models/filterParams.model";
-
+import { Signalement } from "../../shared_pages/signalement/signalement";
+interface Incident {
+  _id: string;
+  agency?: {
+    _id: string;
+    name?: string;
+  };
+  agencyId?: {
+    _id: string;
+    name?: string;
+  };
+  clientId?:{
+    _id: string;
+    firstName?: string;
+    lastName ?:string;
+    email?:string
+  };
+  collectorId?: {
+    _id: string;
+    firstName?: string;
+    lastName ?:string;
+    email?:string
+  }
+  photos?:[];
+  agencyName: string;
+  type:
+    | "missed_collection"
+    | "compliance_issue"
+    | "complaint"
+    | "technical_issue";
+  comment: string;
+  description: string;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  date: Date;
+  status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
+  assignedTo?: string;
+}
 interface MunicipalityStatistics {
   totalAgencies: number;
   activeAgencies: number;
@@ -75,26 +111,6 @@ interface GroupedZoneStatistics {
   cities: ZoneStatistic[];
 }
 
-interface Incident {
-  id: string;
-  agency?: {
-    id: string;
-    agencyName?: string;
-  };
-  agencyId: string;
-  agencyName: string;
-  type:
-    | "missed_collection"
-    | "compliance_issue"
-    | "complaint"
-    | "technical_issue";
-  description: string;
-  severity: "low" | "medium" | "high" | "critical";
-  date: Date;
-  status: "open" | "pending" | "resolved";
-  assignedTo?: string;
-}
-
 interface Communication {
   id: string;
   type: "notification" | "directive" | "alert";
@@ -108,7 +124,7 @@ interface Communication {
 
 @Component({
   selector: 'app-municipality-dashboard',
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, Signalement],
   templateUrl: './municipality-dashboard.html',
   styleUrl: './municipality-dashboard.scss'
 })
@@ -146,7 +162,7 @@ export class MunicipalityDashboard  implements OnInit {
   complianceFilter = "all";
   statisticsPeriod = "month";
   incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
-  severityFilter: "all" | "low" | "medium" | "high" | "critical" = "all";
+  severityFilter: "all" | "Low" | "Medium" | "High" | "Critical" = "all";
   searchTerm="";
   neighborhoodFilter="";
   // incidentsFilter = "all";
@@ -393,12 +409,7 @@ export class MunicipalityDashboard  implements OnInit {
   loadAllSignalements() {
     this.adminService.getAllReports().subscribe({
       next: (response: any) => {
-        this.incidents = response.map((signalement: any) => {
-          return {
-            agencyId: signalement?.agency?._id,
-            ...signalement,
-          };
-        });
+        this.incidents = response.collectes;
         this.filteredIncidents = [...this.incidents];
         console.log("signalements in response", response);
         console.log("signalements in dashboard", this.filteredIncidents);
@@ -635,6 +646,7 @@ export class MunicipalityDashboard  implements OnInit {
     this.loadAgencyAudits(this.agenciesFilterParams);
   }
 
+
   filterIncidents(): void {
     this.filteredIncidents = this.incidents.filter((incident) => {
       const statusMatch =
@@ -700,11 +712,11 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   investigateIncident(incidentId: string): void {
-    const incident = this.incidents.find((i) => i.id === incidentId);
+    const incident = this.incidents.find((i) => i._id === incidentId);
     if (incident) {
       incident.status = "pending";
       incident.assignedTo = "Inspecteur Municipal";
-      this.filterIncidents();
+      // this.filterIncidents();
       this.notificationService.showSuccess(
         "Enquête",
         "Incident pris en charge pour enquête"
@@ -713,10 +725,10 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   resolveIncident(incidentId: string): void {
-    const incident = this.incidents.find((i) => i.id === incidentId);
+    const incident = this.incidents.find((i) => i._id === incidentId);
     if (incident) {
       incident.status = "resolved";
-      this.filterIncidents();
+      // this.filterIncidents();
       this.statistics.pendingReports--;
       this.notificationService.showSuccess(
         "Résolu",
