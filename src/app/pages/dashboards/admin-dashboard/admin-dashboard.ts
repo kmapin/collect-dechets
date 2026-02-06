@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit,signal } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -14,7 +14,7 @@ import { MatCardModule } from "@angular/material/card";
 import { ClientService } from "../../../services/client.service";
 import { SharedService } from "../../../services/shared-service";
 import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
-import { forkJoin, map, of, timeout, catchError} from "rxjs";
+import { forkJoin, map, of, timeout, catchError } from "rxjs";
 import {
   MOCK_CITIES,
   MOCK_ARRONDISSEMENTS,
@@ -101,19 +101,19 @@ interface Incident {
     _id: string;
     name?: string;
   };
-  clientId?:{
+  clientId?: {
     _id: string;
     firstName?: string;
-    lastName ?:string;
-    email?:string
+    lastName?: string;
+    email?: string;
   };
   collectorId?: {
     _id: string;
     firstName?: string;
-    lastName ?:string;
-    email?:string
-  }
-  photo?:[];
+    lastName?: string;
+    email?: string;
+  };
+  photo?: [];
   agencyName: string;
   type:
     | "missed_collection"
@@ -124,7 +124,13 @@ interface Incident {
   description: string;
   severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
-  status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
+  status:
+    | "open"
+    | "pending"
+    | "resolved"
+    | "Collected"
+    | "Reported"
+    | "Scheduled";
   assignedTo?: string;
 }
 
@@ -164,7 +170,7 @@ interface User {
     MatCardModule,
     LoadingSpinnerComponent,
     DrawerModule,
-    Signalement
+    Signalement,
   ],
   templateUrl: "./admin-dashboard.html",
   styleUrl: "./admin-dashboard.scss",
@@ -306,7 +312,7 @@ export class AdminDashboard implements OnInit {
     private notificationService: NotificationService,
     private sharedService: SharedService,
     private router: Router,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
   ) {
     this.drawerWidth;
   }
@@ -362,7 +368,7 @@ export class AdminDashboard implements OnInit {
     },
     acceptTerms: true,
     receiveOffers: false,
-    agencyId:"",
+    agencyId: "",
     status: "",
     nbGestionnaires: 0,
     isOwnerAgency: false,
@@ -509,7 +515,7 @@ export class AdminDashboard implements OnInit {
     ];
   }
   get drawerWidth(): string {
-    return window.innerWidth <= 768 ? '100%' : '33%';
+    return window.innerWidth <= 768 ? "100%" : "33%";
   }
 
   loadZoneStatistics(): void {
@@ -536,7 +542,6 @@ export class AdminDashboard implements OnInit {
     }));
     console.log("this.zoneStatistics", this.zoneStatistics);
   }
-
 
   loadZoneStat(): void {
     this.adminService.getAllStatisticCity().subscribe({
@@ -644,6 +649,15 @@ export class AdminDashboard implements OnInit {
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
 
+  isPositiveAgenciesActive(): boolean {
+    const total = this.statisticsAdmin?.totalAgencies ?? 0;
+    const active = this.statisticsAdmin?.totalActiveAgencies ?? 0;
+
+    if (total === 0) return false;
+
+    return active / total > 0;
+  }
+
   getCollectorStatusText(status?: string): string {
     if (!status) {
       return `${this.statisticsAdmin?.totalCollectors} actives`;
@@ -703,7 +717,7 @@ export class AdminDashboard implements OnInit {
     return Math.round(
       (this.statistics.completedCollections /
         this.statistics.todayCollections) *
-        100
+        100,
     );
   }
 
@@ -781,10 +795,9 @@ export class AdminDashboard implements OnInit {
       // open: "Ouvert",
       pending: "En cours",
       resolved: "Résolue",
-      reported : "En cours",
+      reported: "En cours",
       scheduled: "Programmée",
       collected: "Collecté",
-
     };
     return statuses[status as keyof typeof statuses] || status;
   }
@@ -936,7 +949,7 @@ export class AdminDashboard implements OnInit {
   generateGlobalReport(): void {
     this.notificationService.showInfo(
       "Rapport",
-      "Génération du rapport global en cours..."
+      "Génération du rapport global en cours...",
     );
   }
   //   handleDisabledClick(event: MouseEvent) {
@@ -951,14 +964,14 @@ export class AdminDashboard implements OnInit {
   viewMunicipalityDetails(municipalityId: string): void {
     this.notificationService.showInfo(
       "Détails",
-      "Ouverture des détails de la mairie"
+      "Ouverture des détails de la mairie",
     );
     this.router.navigate(["/municipality", municipalityId]);
   }
   viewAgencyDetails(agencyId: string): void {
     this.notificationService.showInfo(
       "Détails",
-      "Ouverture des détails de l'agence"
+      "Ouverture des détails de l'agence",
     );
     this.router.navigate(["/agencies", agencyId]);
   }
@@ -966,7 +979,7 @@ export class AdminDashboard implements OnInit {
   viewUserDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",
-      "Récupération des détails du client..."
+      "Récupération des détails du client...",
     );
 
     this.adminService.getUserById(clientId).subscribe({
@@ -978,18 +991,18 @@ export class AdminDashboard implements OnInit {
         } else {
           this.notificationService.showInfo(
             "Erreur de recuperation",
-            "Impossible de recuperer les details du client."
+            "Impossible de recuperer les details du client.",
           );
         }
       },
       error: (err: any) => {
         console.error(
           "Erreur lors de la récupération des détails du client :",
-          err
+          err,
         );
         this.notificationService.showError(
           "Erreur",
-          "Impossible de récupérer les détails du client."
+          "Impossible de récupérer les détails du client.",
         );
       },
     });
@@ -997,54 +1010,54 @@ export class AdminDashboard implements OnInit {
   viewCollectorDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",
-      "Ouverture des détails du collecteur"
+      "Ouverture des détails du collecteur",
     );
   }
   auditMunicipality(municipalityId: string): void {
     this.notificationService.showInfo(
       "Audit",
-      "Lancement de l'audit de l'agence"
+      "Lancement de l'audit de l'agence",
     );
   }
   auditAgency(agencyId: string): void {
     this.notificationService.showInfo(
       "Audit",
-      "Lancement de l'audit de l'agence"
+      "Lancement de l'audit de l'agence",
     );
   }
 
   contactMunicipality(municipalityId: string): void {
     this.notificationService.showInfo(
       "Contact",
-      "Ouverture des informations de contact"
+      "Ouverture des informations de contact",
     );
   }
   contactAgency(agencyId?: string): void {
     this.router.navigate(["/agencies", agencyId]);
     this.notificationService.showInfo(
       "Contact",
-      "Ouverture des informations de contact"
+      "Ouverture des informations de contact",
     );
   }
 
   updateStatistics(): void {
     this.notificationService.showInfo(
       "Mise à jour",
-      "Actualisation des statistiques"
+      "Actualisation des statistiques",
     );
   }
 
   exportStatistics(): void {
     this.notificationService.showInfo(
       "Export",
-      "Génération du fichier d'export..."
+      "Génération du fichier d'export...",
     );
   }
 
   assignIncident(incidentId: string): void {
     this.notificationService.showInfo(
       "Attribution",
-      "Ouverture du formulaire d'attribution"
+      "Ouverture du formulaire d'attribution",
     );
   }
 
@@ -1056,7 +1069,7 @@ export class AdminDashboard implements OnInit {
       this.filterIncidents();
       this.notificationService.showSuccess(
         "Enquête",
-        "Incident pris en charge pour enquête"
+        "Incident pris en charge pour enquête",
       );
     }
   }
@@ -1069,7 +1082,7 @@ export class AdminDashboard implements OnInit {
       this.statistics.pendingReports--;
       this.notificationService.showSuccess(
         "Résolu",
-        "Incident marqué comme résolu"
+        "Incident marqué comme résolu",
       );
     }
   }
@@ -1093,7 +1106,7 @@ export class AdminDashboard implements OnInit {
     } else {
       this.newCommunication.recipients =
         this.newCommunication.recipients.filter(
-          (id: string) => id !== agencyId
+          (id: string) => id !== agencyId,
         );
     }
   }
@@ -1127,7 +1140,7 @@ export class AdminDashboard implements OnInit {
       };
       this.notificationService.showSuccess(
         "Envoyé",
-        "Communication envoyée avec succès"
+        "Communication envoyée avec succès",
       );
     }
   }
@@ -1219,14 +1232,14 @@ export class AdminDashboard implements OnInit {
     this.adminService
       .getAllEmployees()
       .pipe(
-        timeout(30000), 
+        timeout(30000),
         catchError((error) => {
           console.error("Erreur lors du chargement des collecteurs:", error);
           this.isLoadingCollectors = false;
           this.collectorsAudits = [];
           this.filteredCollectors = [];
           return of({ data: [] });
-        })
+        }),
       )
       .subscribe({
         next: (response: any) => {
@@ -1241,7 +1254,10 @@ export class AdminDashboard implements OnInit {
           this.collectorsAudits = collectors || [];
           this.filteredCollectors = [...this.collectorsAudits];
           this.isLoadingCollectors = false;
-          console.log("collectors in dashboard this.filteredCollectors", this.filteredCollectors);
+          console.log(
+            "collectors in dashboard this.filteredCollectors",
+            this.filteredCollectors,
+          );
           console.log("users in dashboard ===>", collectors);
         },
         error: (error) => {
@@ -1280,7 +1296,7 @@ export class AdminDashboard implements OnInit {
         if (response.message) {
           this.notificationService.showSuccess(
             "Activation",
-            "Agence activée avec succès"
+            "Agence activée avec succès",
           );
           this.loadAgencyAudits(this.agenciesFilterParams);
         }
@@ -1314,7 +1330,7 @@ export class AdminDashboard implements OnInit {
     this.isLoadingIncidents = true;
     this.adminService.getAllReports().subscribe({
       next: (response: any) => {
-        this.totalIncidents.set(response?.total)
+        this.totalIncidents.set(response?.total);
         this.incidents = response.collectes;
         // .map((signalement: any) => {
         //   return {
@@ -1384,15 +1400,15 @@ export class AdminDashboard implements OnInit {
   }
 
   // Recuperer l'agence d'un user
-  agency:any;
+  agency: any;
   loadAgencyFromApi(id: string | null): void {
     this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
       if (response.success && response.data) {
-        console.log('[DEBUG] Agency response:', response.data);
+        console.log("[DEBUG] Agency response:", response.data);
         this.agency = response.data;
       } else {
-        console.error('Erreur lors du chargement de l\'agence');
+        console.error("Erreur lors du chargement de l'agence");
       }
     });
-  } 
+  }
 }
