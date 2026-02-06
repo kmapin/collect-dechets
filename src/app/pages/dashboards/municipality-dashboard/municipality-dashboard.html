@@ -622,7 +622,7 @@
               </select>
             </div>
           </div>
-          <app-signalement [incidents]="incidents"] ></app-signalement>
+          <app-signalement [incidents]="incidents"] [currentUser]="currentUser" (isLoadingIncidents)="isLoadingIncidents = $event" ></app-signalement>
           <!-- <div class="incidents-list">
             @for (incident of filteredIncidents; track incident) {
               <div

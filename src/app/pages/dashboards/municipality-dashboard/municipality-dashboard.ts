@@ -146,7 +146,7 @@ export class MunicipalityDashboard  implements OnInit {
     complianceRate: 92,
   };
 
-
+  isLoadingIncidents = false;
  
   agencyAudits: AgencyAudit[] = [];
   filteredAgencies: AgencyAudit[] = [];
@@ -407,9 +407,11 @@ export class MunicipalityDashboard  implements OnInit {
 
   /**Listes des signalements des users */
   loadAllSignalements() {
+    this.isLoadingIncidents = true;
     this.adminService.getAllReports().subscribe({
       next: (response: any) => {
         this.incidents = response.collectes;
+        this.isLoadingIncidents = false;
         this.filteredIncidents = [...this.incidents];
         console.log("signalements in response", response);
         console.log("signalements in dashboard", this.filteredIncidents);

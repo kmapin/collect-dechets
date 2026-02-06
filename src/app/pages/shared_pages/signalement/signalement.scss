@@ -6,6 +6,9 @@
   overflow-y: auto;
 }
 .incident-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   padding: 20px;
   border-left: 4px solid var(--error-color);
 }
