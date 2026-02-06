@@ -1555,7 +1555,13 @@
           </app-loading-spinner>
           } @if (!isLoadingReports) {
 
-            <app-signalement [incidents]="agencyReports" [currentUser]="currentUser" (isLoadingIncidents)="isLoadingReports = $event"></app-signalement>
+            <app-signalement 
+              [incidents]="agencyReports" 
+              [currentUser]="currentUser" 
+              (isLoadingIncidents)="isLoadingReports = $event" 
+              (assignReport)="openAssignModal($event)"
+              (resolvedIncident)="resolveIncident($event)"
+            ></app-signalement>
           <!-- <div class="reports-list">
             @for (report of agencyReports; track report) {
             <div class="report-card card">

@@ -1716,7 +1716,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
 
-  assignIncident(): void {
+  assignIncident(reportId: string): void {
     this.notificationService.showInfo(
       "Attribution",
       "Ouverture du formulaire d'attribution",
@@ -4440,6 +4440,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       status: "resolved",
       // status:"pending"
     };
+    this.notificationService.showSuccess(
+      "Vérification",
+      "Système de validation non établie",
+    );
     console.log("Status envoyé :", body);
     this.agencyService.resolveIncident$(id, body).subscribe({
       next: (response: any) => {

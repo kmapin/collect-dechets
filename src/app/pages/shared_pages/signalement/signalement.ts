@@ -65,10 +65,11 @@ export class Signalement {
   //Loading states 
 
   @Output() isLoadingIncidents = new EventEmitter<boolean>()
-
-  // assigner un planning à un collecteur
-  showAssignModal: boolean = false;
-  selectedReportId: string = "";
+  // assigner un planning à un collecteur emetter
+  @Output() assignReport = new EventEmitter<string>() ;
+  // resoudre un incident signaler emetter
+  @Output() resolvedIncident = new EventEmitter<string>() ;
+ 
 
   selectedEmployee: string[] = [];
     constructor(
@@ -98,12 +99,6 @@ export class Signalement {
   }
 
   
-  assignIncident(incidentId: string): void {
-    this.notificationService.showInfo(
-      "Attribution",
-      "Ouverture du formulaire d'attribution"
-    );
-  }
 
   investigateIncident(incidentId: string): void {
     const incident = this.incidents.find((i) => i._id === incidentId);
@@ -173,7 +168,7 @@ export class Signalement {
     this.selectedImage = null;
   }
   resolveIncident(incidentId: string): void {
-    const incident = this.incidents.find((i) => i._id === incidentId);
+  this.resolvedIncident.emit(incidentId);
     
   }
 
@@ -190,16 +185,12 @@ export class Signalement {
     this.contactAgency(agencyId);
   }
 
+  //Assigner un incident à un collecteur
   openAssignModal(reportId: string): void {
-    this.selectedReportId = reportId;
-    this.selectedEmployee = [];
-    this.showAssignModal = true;
+    this.assignReport.emit(reportId);
+  } 
+  assignIncident(incidentId: string): void {
+    this.assignReport.emit(incidentId);
   }
-
-  closeAssignModal(): void {
-    this.showAssignModal = false;
-    this.selectedEmployee = [];
-  }
-  
 
 }
