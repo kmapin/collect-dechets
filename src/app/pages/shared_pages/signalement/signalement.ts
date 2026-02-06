@@ -43,7 +43,7 @@ interface Incident {
 }
 @Component({
   selector: 'app-signalement',
-  imports: [CommonModule,NgIf],
+  imports: [CommonModule],
   templateUrl: './signalement.html',
   styleUrl: './signalement.scss',
 })
