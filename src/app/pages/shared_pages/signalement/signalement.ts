@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../../services/notification.service';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe, NgIf } from '@angular/common';
 import { AuthService } from '../../../services/auth.service';
 import { AgencyService } from '../../../services/agency.service';
 import { RegisterUserData } from '../../../models/user.model';
@@ -43,7 +43,7 @@ interface Incident {
 }
 @Component({
   selector: 'app-signalement',
-  imports: [CommonModule],
+  imports: [CommonModule,NgIf],
   templateUrl: './signalement.html',
   styleUrl: './signalement.scss',
 })
