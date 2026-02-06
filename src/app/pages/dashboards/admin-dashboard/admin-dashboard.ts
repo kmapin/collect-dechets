@@ -26,6 +26,8 @@ interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
   monthlyClientPercentage: number;
+  totalCollectionsCollected: number;
+  totalCollectionsReported: number;
   dailyCollections: number;
   totalClients: number;
   totalCollectors: number;
@@ -180,6 +182,8 @@ export class AdminDashboard implements OnInit {
     dailyCollections: 10,
     totalActiveAgencies: 14,
     monthlyClientPercentage: 5,
+    totalCollectionsCollected: 0,
+    totalCollectionsReported: 0,
     totalClients: 12500,
     activeClients: 12000,
     totalCollectors: 85,
@@ -710,7 +714,7 @@ export class AdminDashboard implements OnInit {
   }
 
   getIncidentSeverity(): string {
-    const pending = this.statisticsAdmin?.reportsFromClients?.pending ?? 0;
+    const pending = this.statisticsAdmin?.totalCollectionsReported ?? 0;
     if (pending <= 5) return "Faible";
     if (pending <= 10) return "Modéré";
     return "Élevé";
@@ -767,7 +771,7 @@ export class AdminDashboard implements OnInit {
       complaint: "Réclamation",
       technical_issue: "Problème technique",
       problem: "Collecte manquée",
-      regular: "Collecte manquée",
+      regular: "Incident non précisé",
     };
     return types[type as keyof typeof types] || type;
   }
@@ -778,7 +782,7 @@ export class AdminDashboard implements OnInit {
       pending: "En cours",
       resolved: "Résolue",
       reported : "En cours",
-      scheduled: "En cours",
+      scheduled: "Programmée",
       collected: "Collecté",
 
     };

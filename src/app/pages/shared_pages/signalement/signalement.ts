@@ -73,8 +73,8 @@ export class Signalement {
 
   selectedEmployee: string[] = [];
     constructor(
-      private authService: AuthService,
-      private agencyService: AgencyService,
+      // private authService: AuthService,
+      // private agencyService: AgencyService,
       // private collectionService: CollectionService,
       // private adminService: Admin,
       // private clientService: ClientService,
@@ -140,7 +140,7 @@ export class Signalement {
       complaint: "Réclamation",
       technical_issue: "Problème technique",
       problem: "Collecte manquée",
-      regular: "Collecte manquée",
+      regular: "Incident non précisé",
     };
     return types[type as keyof typeof types] || type;
   }
@@ -151,8 +151,8 @@ export class Signalement {
       pending: "En cours",
       resolved: "Résolue",
       reported : "En cours",
-      scheduled: "En cours",
-      collected: "Collecté",
+      scheduled: "Programmée",
+      collected: "Effectuée",
 
     };
     return statuses[status as keyof typeof statuses] || status;

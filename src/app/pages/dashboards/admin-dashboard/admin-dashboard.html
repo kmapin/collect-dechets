@@ -134,7 +134,7 @@
               <div class="stat-info">
                 <h3>Collectes aujourd'hui</h3>
                 <p class="stat-value">
-                  {{ statisticsAdmin?.completeCollections }}/{{
+                  {{ statisticsAdmin?.totalCollectionsCollected }}/{{
                     statisticsAdmin?.dailyCollections
                   }}
                 </p>
@@ -185,11 +185,11 @@
               <div class="stat-info">
                 <h3>Incidents non resolus</h3>
                 <p class="stat-value">
-                  {{ statisticsAdmin?.reportsFromClients?.pending ?? 0 }}
+                  {{ statisticsAdmin?.totalCollectionsReported ?? 0 }}
                 </p>
                 <span
                   class="stat-trend"
-                  [class.negative]="(statisticsAdmin?.reportsFromClients?.pending ?? 0) > 10"
+                  [class.negative]="(statisticsAdmin?.totalCollectionsReported ?? 0) > 10"
                 >
                   {{ getIncidentSeverity() }}
                 </span>
@@ -375,19 +375,19 @@
 
                   <div
                     *ngFor="let incident of getRecentIncidents()"
-                    class="alert-item"
+                    class="alert-item "
                   >
                     <div
                       class="alert-severity"
-                      [class]="'severity-' + incident.severity"
+                      [class]="'severity-' + incident.severity.toLowerCase()"
                     >
                       <i class="material-icons">{{
-                        getSeverityIcon(incident.severity)
+                        getSeverityIcon(incident.severity.toLowerCase())
                       }}</i>
                     </div>
                     <div class="alert-content">
                       <div class="alert-title">
-                        {{ getIncidentTypeText(incident.type) }}
+                        {{ getIncidentTypeText(incident.type.toLowerCase()) }}
                       </div>
                       <div class="alert-agency">
                         {{ incident?.agency?.name }}
@@ -399,9 +399,9 @@
                     <div class="alert-status">
                       <span
                         class="status-badge"
-                        [class]="'status-' + incident.status"
+                        [class]="'status-' + incident.status.toLowerCase()"
                       >
-                        {{ getIncidentStatusText(incident.status) }}
+                        {{ getIncidentStatusText(incident.status.toLowerCase()) }}
                       </span>
                     </div>
                   </div>

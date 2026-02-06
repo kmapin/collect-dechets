@@ -174,7 +174,7 @@ interface Statistics {
   totalClients: number;
   totalClientsActifs?: number;
   totalEmployees: number;
-  totalZones: number;
+  totalZone: number;
   totalCollectors: number;
   totalCollecteurs?: number;
   totalGestionnaires?: number;
@@ -301,7 +301,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   statistics: Statistics = {
     totalClients: 0,
     totalEmployees: 0,
-    totalZones: 0,
+    totalZone: 0,
     totalCollectors: 0,
     totalReporting: 0,
     activeCollectors: 0,
