@@ -204,7 +204,14 @@ type TabId =
   | "clients"
   | "reports"
   | "messages";
-
+export enum CollectionStatus1 {
+  SCHEDULED = 'Scheduled',
+  IN_PROGRESS = 'In_progress',
+  COMPLETED = 'Completed',
+  MISSED = 'Missed',
+  CANCELLED = 'Cancelled',
+  REPORTED = 'Reported'
+}
 @Component({
   selector: "app-agency-dashboard",
   imports: [
@@ -3003,12 +3010,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   getStatusText(status: CollectionStatus): string {
     const statusTexts = {
-      [CollectionStatus.SCHEDULED]: "Programmé",
+      [CollectionStatus.SCHEDULED]: "Programmée",
       [CollectionStatus.IN_PROGRESS]: "En cours",
-      [CollectionStatus.COMPLETED]: "Terminé",
-      [CollectionStatus.MISSED]: "Manqué",
-      [CollectionStatus.CANCELLED]: "Annulé",
-      [CollectionStatus.REPORTED]: "Signalé",
+      [CollectionStatus.COMPLETED]: "Terminée",
+      [CollectionStatus.MISSED]: "Manquée",
+      [CollectionStatus.CANCELLED]: "Annulée",
+      [CollectionStatus.REPORTED]: "Signalée",
     };
     return statusTexts[status] || status;
   }
@@ -4984,7 +4991,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   // recuperations des collecte par jour d une agences
-  dayCollectes: any[] = [];
+  dayCollectes: any;
 
   loadCollectDay(): void {
     this.isLoadingCollections = true;
@@ -5003,7 +5010,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     }
     this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
       next: (response) => {
-        this.dayCollectes = response.data || [];
+        this.dayCollectes = response || [];
         console.log("Collectes journalières récupérées :", this.dayCollectes);
         const CollectesTab = this.tabs.find((tab) => tab.id === "collections");
         if (CollectesTab) {
@@ -6396,4 +6403,5 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         return "info";
     }
   }
+  
 }

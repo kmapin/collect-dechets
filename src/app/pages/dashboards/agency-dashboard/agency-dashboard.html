@@ -179,16 +179,16 @@
                 <div class="collection-status">
                   <span
                     class="status-badge"
-                    [class]="'status-' + collecte.status"
+                    [class]="'status-' + collecte.status.toLowerCase()"
                   >
-                    {{ collecte.status }}
+                    {{getStatusText(collecte.status.toLowerCase()) || collecte.status }}
                   </span>
                   <span class="collection-time">
                     {{ collecte.createdAt | date : "dd/MM/yyyy HH:mm" }}
                   </span>
                 </div>
                 <div class="collection-actions">
-                  @if (collecte.status === 'in_progress') {
+                  @if (collecte.status.toLowerCase() === 'scheduled') {
                   <button
                     class="action-btn"
                     (click)="trackCollection(collecte._id)"

@@ -6,7 +6,7 @@ import { RegisterUserData, User } from "../../models/user.model";
 import { OUAGA_DATA, QuartierData } from "../../data/mock-data";
 import { NotificationService } from "../../services/notification.service";
 import QRCode from "qrcode";
-import { jsPDF } from "jspdf";
+import jsPDF  from "jspdf";
 import {
   Arrondissement,
   City,

@@ -753,7 +753,7 @@ export class AgencyService {
   }
   //recuperation  des collecte journalieres
   getAgencyAllCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
-    const url = `${environment.apiUrl}/collecte/agency/${agencyId}`;
+    const url = `${environment.apiUrl}/collectes/agency/${agencyId}/collectes`;
 
     return this.http.get<PaginatedResponse<any>>(url).pipe(
       map(response => {
