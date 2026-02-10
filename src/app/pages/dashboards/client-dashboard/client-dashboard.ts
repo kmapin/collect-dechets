@@ -104,6 +104,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
     this.getUser();
     // console.log("Current User", this.currentUser);
     this.loadDashboardData();
+    
   }
 
   getUser() {
@@ -254,21 +255,52 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
     // const upcomingCollections = this.collectionHistory.filter(
     //   (col) => col.status === "scheduled"
     // ).length;
+    const now = new Date();
+
+    const isCurrentMonth = (date: Date | string) => {
+      const d = new Date(date);
+      return (
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      );
+    };
+
+    // const history = this.filteredHistories.filter((c: any) => isCurrentMonth(c.date)).length;
+    const upcoming = this.weeklySchedule.filter(c => isCurrentMonth(c.date!));
+
     const totalCollections = this.getMonthlyCollectionsLength();
     const completedCollections = this.getTotalCompletedCollectionsLength();
     const unCompletedCollections = this.getTotalUnCompletedCollectionLength();
     const upcomingCollections =
       totalCollections - (completedCollections + unCompletedCollections);
-    return upcomingCollections;
+    return upcoming.length;
   }
 
   // Taux de collectes complétées
   getCompletedCollectionRate() {
-    const totalCollections = this.getMonthlyCollectionsLength();
-    const completedCollections = this.getTotalCompletedCollectionsLength();
+    const now = new Date();
+
+    const isCurrentMonth = (date: Date | string) => {
+      const d = new Date(date);
+      return (
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      );
+    };
+
+    const history = this.filteredHistories.filter((c: any) => isCurrentMonth(c.date));
+    const upcoming = this.weeklySchedule.filter(c => isCurrentMonth(c.date!));
+
+    const completed = history.filter(
+     (c: any) => c.status === CollectionStatus.COMPLETED
+    ).length;
+    
+    // const totalCollections = this.getMonthlyCollectionsLength();
+    const totalCollections = upcoming.length + history.length;
+    // const completedCollections = this.getTotalCompletedCollectionsLength();
     if (totalCollections === 0) return 0;
 
-    return Math.round((completedCollections / totalCollections) * 100);
+    return Math.round((completed / totalCollections) * 100);
   }
   // Taux de collectes non complétées
   getUncompletedCollectionRate() {
@@ -281,10 +313,23 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
 
   // Taux de collectes à venir
   getUpcomingCollectionRate() {
-    const totalCollections = this.getMonthlyCollectionsLength();
+    const now = new Date();
+
+    const isCurrentMonth = (date: Date | string) => {
+      const d = new Date(date);
+      return (
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      );
+    };
+
+    const history = this.filteredHistories.filter((c: any) => isCurrentMonth(c.date));
+    const upcoming = this.weeklySchedule.filter(c => isCurrentMonth(c.date!));
+    // const totalCollections = this.getMonthlyCollectionsLength();
+    const totalCollections = upcoming.length + history.length;
     const upcomingCollections = this.getTotalUpcomingCollectionsLength();
     if (totalCollections === 0) return 0;
-    return Math.round((upcomingCollections / totalCollections) * 100);
+    return Math.round((upcoming.length / totalCollections) * 100);
   }
 
   // Recuperer l'historique des collectes déjà effectuées
@@ -295,16 +340,18 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
     this.clientService.getClientPlanningHistory(clientId).subscribe({
       next: (response: any) => {
         // this.collectionHistory = response.reports || [];
-        this.collectionHistory = (response.reports || []).map(
+        console.log("API > getClientPlanningHistory:", response);
+        this.collectionHistory = (response || []).map(
           (report: any) => ({
             id: report._id,
             clientId: report.clientId,
             agencyId: report.agencyId,
             collectorId: report.collectorId,
+            date: report.date,
             scheduledDate: report.createdAt ? new Date(report.createdAt) : null,
             collectedDate: report.scannedAt ? new Date(report.scannedAt) : null, // si dispo
             status: report.status === "Collected" ? "Completed" : report.status, // adapter au template
-            wasteTypes: report.wasteTypes || ["Déchets ménagers"], // valeur par défaut si absent
+            wasteTypes: report.type || ["Déchets ménagers"], // valeur par défaut si absent
             rating: report.rating || 0,
             photos: report.photos,
             positionGPS: report.positionGPS,
@@ -670,6 +717,29 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
   //   return `${completed} / ${total}`;
   // }
 
+
+  calculateMonthlyCollections() {
+    const now = new Date();
+
+    const isCurrentMonth = (date: Date | string) => {
+      const d = new Date(date);
+      return (
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      );
+    };
+
+    const history = this.filteredHistories.filter((c: any) => isCurrentMonth(c.date));
+    const upcoming = this.weeklySchedule.filter(c => isCurrentMonth(c.date!));
+
+    const completed = history.filter(
+     (c: any) => c.status === CollectionStatus.COMPLETED
+    ).length;
+
+    return`${completed} / ${history.length + upcoming.length}`;
+  }
+
+
   // getCollectionRate(): number {
   //   const completed = this.collectionHistory.filter(c => c.status === CollectionStatus.COMPLETED).length;
   //   const total = this.collectionHistory.length;
@@ -707,10 +777,15 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
       }) || ""
     );
   }
+  getWasteTypeName(wasteType: string): string {
+    const wasteTypes: Record<string, string> = {
+      Regular: "Collecte",
+      In_progress: "En cours",
+    };
 
-  getWasteTypeName(wasteType: any): string {
-    return wasteType?.name || "Type inconnu";
+    return wasteTypes[wasteType] ?? wasteType;
   }
+
 
   getStatusText(status: CollectionStatus1): string {
     const statusTexts = {

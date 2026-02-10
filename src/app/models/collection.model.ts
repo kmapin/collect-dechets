@@ -9,6 +9,7 @@ export interface Collection {
   address: Address;
   wasteTypes: WasteType[];
   notes?: string;
+  date?: Date;
   photos?: string[];
   code?:{
     _id: string;
@@ -25,7 +26,8 @@ export interface Collection {
 export enum CollectionStatus {
   SCHEDULED = 'scheduled',
   IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
+  COMPLETED = 'Completed',
+  COLLECTED = 'Collected',
   MISSED = 'missed',
   CANCELLED = 'cancelled',
   REPORTED = 'reported'

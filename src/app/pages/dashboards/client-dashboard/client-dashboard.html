@@ -71,8 +71,9 @@
           <div class="stat-info">
             <h3>Collectes de ce mois</h3>
             <p class="stat-value">
-              {{ getTotalCompletedCollectionsLength() }} / {{
-              getMonthlyCollectionsLength() }}
+              {{calculateMonthlyCollections()}}
+              <!-- {{ getTotalCompletedCollectionsLength() }} / {{
+              getMonthlyCollectionsLength() }} -->
             </p>
             <!-- <span class="stat-detail">{{ getCompletedCollectionRate() }}% de réussite ; {{ getUncompletedCollectionRate() }}% d'échecs</span> -->
             <span class="stat-detail"
@@ -268,7 +269,7 @@
                     </div>
                   </div>
                   <div class="history-info">
-                    <h4>{{ getWasteTypeName(collection.wasteTypes[0]) }}</h4>
+                    <h4>{{ getWasteTypeName(collection.wasteTypes) }}</h4>
                     <p class="history-time">
                       {{ collection.scheduledDate | date : "HH:mm" }}
                     </p>

@@ -125,12 +125,12 @@
                     <div
                       class="timeline-item"
                       [class.current]="currentCollectionIndex === i"
-                      [class.completed]="point.status === 'completed'"
+                      [class.completed]="point.status === 'Completed'"
                       [class.urgent]="point.priority === 'urgent'"
                       >
                       <div class="timeline-marker">
                         <div class="marker-icon">
-                          @if (point.status === 'completed') {
+                          @if (point.status === 'Completed') {
                             <i
                               class="material-icons"
                               >check_circle</i
@@ -188,7 +188,7 @@
                                     }
                                   </div>
                                 </div>
-                                @if (point.status !== 'completed') {
+                                @if (point.status !== 'Completed') {
                                   <div
                                     class="collection-actions"
                                     >

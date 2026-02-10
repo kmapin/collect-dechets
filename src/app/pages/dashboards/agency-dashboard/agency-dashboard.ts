@@ -3016,6 +3016,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       [CollectionStatus.MISSED]: "Manquée",
       [CollectionStatus.CANCELLED]: "Annulée",
       [CollectionStatus.REPORTED]: "Signalée",
+      [CollectionStatus.COLLECTED]: "Collectée",
     };
     return statusTexts[status] || status;
   }
