@@ -188,7 +188,7 @@
                         <p class="collection-time">
                           <i class="material-icons">access_time</i>
                           <!-- {{ collection.date }} -->
-                          {{ collection.startTime ?? collection.date | date:'HH:mm' }}
+                          {{ collection.code.startTime ? collection.code.startTime+ " - "  : ""}}  {{ collection.code.endTime ? collection.code.endTime : "" }}
                         </p>
                         <!-- <p class="collection-address">
                         <i class="material-icons">location_on</i>

@@ -10,6 +10,11 @@ export interface Collection {
   wasteTypes: WasteType[];
   notes?: string;
   photos?: string[];
+  code?:{
+    _id: string;
+    startTime: Date;
+    endTime: Date;
+  }
   rating?: number;
   feedback?: string;
   createdAt: Date;
