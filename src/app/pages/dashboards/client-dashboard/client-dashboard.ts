@@ -192,7 +192,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
         console.log("API > getClientPlanning:", response);
         this.weeklySchedule = response|| [];
         if (this.weeklySchedule.length) {
-          this.nextCollect = this.weeklySchedule[0];
+          this.nextCollect = this.weeklySchedule[this.weeklySchedule.length - 1];
           console.log("Next collect ==> ", this.nextCollect);
         }
         // Traiter le planning récupéré

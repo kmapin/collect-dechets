@@ -52,7 +52,7 @@
               <!-- <p class="stat-value">{{ getNextCollectionTime(nextCollect?.date)  }}</p> -->
               <!-- <span class="stat-detail">{{ getnextCollectionHour(nextCollect?.date) }}</span> -->
               <span class="stat-detail"
-                >entre {{ nextCollect?.startTime ?? '00:00' }} et {{ nextCollect?.endTime?? '00:00' }}
+                >entre {{ nextCollect?.code.startTime ?? '00:00' }} et {{ nextCollect?.code.endTime?? '00:00' }}
               </span>
             </div>
           } @else {
