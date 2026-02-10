@@ -282,11 +282,11 @@
                   <div class="history-status">
                     <span
                       class="status-badge"
-                      [class]="'status-' + collection.status"
+                      [class]="'status-'+collection.status.toLowerCase()"
                       >
                       {{ getStatusText(collection.status) }}
                     </span>
-                    @if (collection.status === 'completed') {
+                    @if (collection.status.toLowerCase() === 'completed') {
                       <div
                         class="history-rating"
                         >

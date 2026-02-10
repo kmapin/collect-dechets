@@ -349,7 +349,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
             collectorId: report.collectorId,
             date: report.date,
             scheduledDate: report.createdAt ? new Date(report.createdAt) : null,
-            collectedDate: report.scannedAt ? new Date(report.scannedAt) : null, // si dispo
+            collectedDate: report.updatedAt ? new Date(report.updatedAt) : null, // si dispo
             status: report.status === "Collected" ? "Completed" : report.status, // adapter au template
             wasteTypes: report.type || ["Déchets ménagers"], // valeur par défaut si absent
             rating: report.rating || 0,
@@ -789,12 +789,12 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
 
   getStatusText(status: CollectionStatus1): string {
     const statusTexts = {
-      [CollectionStatus1.SCHEDULED]: "Programmé",
+      [CollectionStatus1.SCHEDULED]: "Programmée",
       [CollectionStatus1.IN_PROGRESS]: "En cours",
-      [CollectionStatus1.COMPLETED]: "Collecté",
-      [CollectionStatus1.MISSED]: "Manqué",
-      [CollectionStatus1.CANCELLED]: "Annulé",
-      [CollectionStatus1.REPORTED]: "Signalé",
+      [CollectionStatus1.COMPLETED]: "Collectée",
+      [CollectionStatus1.MISSED]: "Manquée",
+      [CollectionStatus1.CANCELLED]: "Annulée",
+      [CollectionStatus1.REPORTED]: "Signalée",
     };
     return statusTexts[status] || status;
   }
