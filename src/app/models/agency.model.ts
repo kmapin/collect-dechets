@@ -256,9 +256,9 @@ export interface Address {
   longitude?: number;
 }
 export interface Statistics {
-  totalClients: number;
+  totalClientsActifs: number;
   totalEmployees: number;
-  totalZones: number;
+  totalZone: number;
   totalCollectors: number;
   totalSignalements: number;
   activeCollectors: number;

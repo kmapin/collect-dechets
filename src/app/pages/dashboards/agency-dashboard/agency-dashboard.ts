@@ -310,6 +310,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     totalEmployees: 0,
     totalZone: 0,
     totalCollectors: 0,
+    totalClientsActifs:0,
     totalReporting: 0,
     activeCollectors: 0,
     todayCollections: 0,

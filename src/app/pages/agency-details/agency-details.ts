@@ -1,8 +1,8 @@
-import { Component, OnInit, signal } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit, signal } from "@angular/core";
 
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { AgencyService } from "../../services/agency.service";
-import { Agency, Tarif } from "../../models/agency.model";
+import { Agency, Statistics, Tarif } from "../../models/agency.model";
 import { AuthService } from "../../services/auth.service";
 import { NotificationService } from "../../services/notification.service";
 import { RegisterUserData } from "../../models/user.model";
@@ -126,6 +126,23 @@ export class AgencyDetails implements OnInit {
   showPaymentDrawer: boolean = false;
 
   isLogged = signal(false);
+
+  isLoadingStatistics: boolean = false;
+  statistics: Statistics = {
+    totalClientsActifs: 0,
+    totalEmployees: 0,
+    totalZone: 0,
+    totalCollectors: 0,
+    totalSignalements: 0,
+    activeCollectors: 0,
+    todayCollections: 0,
+    completedCollections: 0,
+    monthlyRevenue: 0,
+    averageRating: 0,
+    pendingReports: 0,
+    totalpendingSignalements: 0,
+  };
+
   constructor(
     private route: ActivatedRoute,
     private countriesOrgMockService: CountriesOrgMockService,
@@ -135,15 +152,24 @@ export class AgencyDetails implements OnInit {
     private router: Router,
     private messageService: MessagesService,
     private adminService: Admin,
+        private cdr: ChangeDetectorRef,
   ) {
     this.drawerWidth;
     this.loadAgencyDataOnInit();
   }
 
   ngOnInit(): void {
+    
+    this.currentUser = this.authService.getCurrentUser();
+
+    console.log("currentUser", this.currentUser);
     this.loadAgencyDataOnInit();
     this.checkUserIsLooged();
     this.loadAgenciesFromApi();
+    this.loadAgencyStatistics(this.currentUser);
+    this.cdr.detectChanges();
+
+
   }
 
   checkUserIsLooged() {
@@ -865,5 +891,38 @@ export class AgencyDetails implements OnInit {
 
   goToAgencyDetails(agencyId: string): void {
     window.location.href = `/agencies/${agencyId}`;
+  }
+
+
+  //recuperations des statistiques de l'agence
+  loadAgencyStatistics(currentUser: any): void {
+    if (currentUser && currentUser.agencyId) {
+      this.isLoadingStatistics = true;
+      const agencyId = currentUser.agencyId;
+      this.agencyService.getAgencyStats$(agencyId).subscribe({
+        next: (stats) => {
+          if (!stats.success) return;
+          this.statistics = stats.data;
+          console.log("Statistiques de l'agence chargées details :", this.statistics);
+          this.isLoadingStatistics = false;
+          this.cdr.detectChanges();
+          console.log(" FIN loadAgencyStatistics - Succès");
+        },
+        error: (error) => {
+          console.error(
+            "Erreur lors du chargement des statistiques de l'agence :",
+            error,
+          );
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de charger les statistiques de l'agence. Veuillez réessayer.",
+          );
+          this.isLoadingStatistics = false;
+          console.log("🏁 FIN loadAgencyStatistics - Échec");
+        },
+      });
+    } else {
+      console.warn(" ID d'agence non disponible dans l'utilisateur courant.");
+    }
   }
 }
