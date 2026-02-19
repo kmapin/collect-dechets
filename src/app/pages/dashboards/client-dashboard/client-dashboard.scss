@@ -221,7 +221,12 @@
   font-weight: 500;
   text-transform: uppercase;
 }
-
+.subscription-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
 .status-scheduled {
   background: #e3f2fd;
   color: var(--primary-color);

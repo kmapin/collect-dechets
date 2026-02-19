@@ -610,6 +610,13 @@
                           >
                           {{ getSubscriptionStatusText((activeSubscription.isActive ? 'active' : 'inactive')) }}
                         </span>
+                        <button
+                          class="btn btn-secondary btn-small"
+                          routerLink="/agencies/{{ activeSubscription.agencyId?._id }}"
+                          >
+                          <i class="material-icons">visibility</i>
+                          Voir l'agence
+                        </button>
                       </div>
                       <!-- <div class="subscription-actions">
                       <button class="btn btn-primary btn-full" (click)="showPaymentModal = true">
