@@ -204,3 +204,169 @@
   border: 2px solid #ccc;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+
+/* ========== STYLES POUR LE DRAWER ========== */
+
+/* Overlay pour le drawer */
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Animation d'apparition de l'overlay */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Contenu du drawer */
+.drawer-content {
+  background: white;
+  width: 480px;
+  height: 100%;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.3s ease;
+  overflow: hidden;
+}
+
+/* Drawer plus large pour les formulaires complexes (comme ajouter employé) */
+.drawer-content-wide {
+  width: 680px;
+  max-width: 90vw;
+}
+
+/* Amélioration de la disposition pour les drawers larges */
+.drawer-content-wide .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.drawer-content-wide .form-section .form-row {
+  margin-bottom: 8px;
+}
+
+/* Pour les champs qui doivent prendre toute la largeur */
+.drawer-content-wide .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Animation de glissement depuis la droite */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Header du drawer */
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.drawer-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.drawer-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 1.5rem;
+  transition: color 0.2s ease;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.drawer-close-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Body du drawer (scrollable) */
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Footer du drawer */
+.drawer-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.incident-agency-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+/* Responsive pour le drawer */
+@media (max-width: 768px) {
+  .drawer-content,
+  .drawer-content-wide {
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .drawer-header,
+  .drawer-body,
+  .drawer-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .drawer-header h3 {
+    font-size: 1.125rem;
+  }
+
+  .drawer-actions {
+    flex-direction: column;
+  }
+
+  .drawer-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .incident-agency-container {
+    flex-direction: column;
+  }
+}

@@ -35,10 +35,22 @@
 
       <div class="incident-content">
         <h4>{{ getIncidentTypeText(incident.type.toLowerCase()) }}</h4>
-        <p class="incident-agency">
-          <span class="agency-label">Agence: </span> {{incident?.agencyId?.name
-          }}
-        </p>
+        <div class="incident-agency-container">
+          <p class="incident-agency">
+            <span class="agency-label">Agence: </span>
+            {{incident?.agencyId?.name }}
+          </p>
+          @if(incident.clientId){
+          <div class="incident-assignment status-badge" [class]="'status-success'" *ngIf="incident.clientId._id" >
+            <i class="material-icons">person</i>
+            <span
+              >Client {{ incident.clientId.firstName }} {{
+              incident.clientId.lastName }}</span
+            >
+          </div>
+          }
+        </div>
+
         <p class="incident-description">{{ incident.comment }}</p>
         <p class="incident-date">
           {{ incident.date | date : "dd/MM/yyyy HH:mm" }}
@@ -52,6 +64,7 @@
           incident.collectorId?.lastName }}</span
         >
       </div>
+
       <!-- Affichage des photos -->
       @if (incident.photos && incident.photos.length && showPicture) {
       <div class="report-photos">
@@ -90,7 +103,9 @@
         }
 
         <button class="btn btn-accent" (click)="showPictures()">
-          <i class="material-icons">{{ showPicture ?' visibility_off' : 'visibility'}}</i>
+          <i class="material-icons"
+            >{{ showPicture ?' visibility_off' : 'visibility'}}</i
+          >
           {{ showPicture ?'Masquer photos':'Voir photos'}}
         </button>
       </div>
@@ -121,7 +136,9 @@
         Contacter Agence
       </button>
       <button class="btn btn-success" (click)="showPictures()">
-        <i class="material-icons">{{ showPicture ?' visibility_off' : 'visibility'}}</i>
+        <i class="material-icons"
+          >{{ showPicture ?' visibility_off' : 'visibility'}}</i
+        >
         {{ showPicture ?'Masquer photos':'Voir photos'}}
       </button>
       }
@@ -129,12 +146,30 @@
   </div>
 </div>
 @if (selectedImage) {
-<div class="modal-overlay" (click)="closeImageModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <img [src]="selectedImage" alt="Image en plein écran" class="full-image" />
-    <button class="close-btn" (click)="closeImageModal()">
-      <i class="material-icons">close</i>
-    </button>
+<div class="drawer-overlay" (click)="closeImageModal()">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>Photo du signalement</h3>
+      <button class="drawer-close-btn" (click)="closeImageModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <!-- Zone d'affichage des erreurs améliorée -->
+      <img
+        [src]="selectedImage"
+        alt="Image en plein écran"
+        class="full-image"
+      />
+    </div>
+    <div class="drawer-footer">
+      <div class="drawer-actions">
+        <button class="btn btn-primary" (click)="closeImageModal()">
+          <i class="material-icons">cancel</i>
+          Fermer
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 }
