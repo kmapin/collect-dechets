@@ -16,6 +16,7 @@ export class AuthService {
   // public ProfileCurrentUser$ = this.currentUserSubjectLocalStorage.asObservable();
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+  currentUser: RegisterUserData | null = null;
   
   constructor(private http: HttpClient) {
     // Check for stored user on service initialization
@@ -133,10 +134,15 @@ export class AuthService {
         
         if (response && (response.user || response.success)) {
           const user = response.user || response;
-          localStorage.setItem('currentUser', JSON.stringify({ user }));
-          this.currentUserSubject.next(user);
-          this.isAuthenticatedSubject.next(true);
-          
+          this.currentUser$.subscribe((user: RegisterUserData | null) => {
+            this.currentUser = user;
+            console.log('[DEBUG] Connected currentUser:', this.currentUser);
+            if (!this.currentUser && this.currentUser===null ) {
+              localStorage.setItem('currentUser', JSON.stringify({ user }));
+              this.currentUserSubject.next(user);
+              this.isAuthenticatedSubject.next(true);
+            }
+          });
           return { 
             success: true, 
             user: user, 
