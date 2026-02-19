@@ -51,9 +51,11 @@
               </p>
               <!-- <p class="stat-value">{{ getNextCollectionTime(nextCollect?.date)  }}</p> -->
               <!-- <span class="stat-detail">{{ getnextCollectionHour(nextCollect?.date) }}</span> -->
+               @if(nextCollect?.code){
               <span class="stat-detail"
                 >entre {{ nextCollect?.code?.startTime ?? '00:00' }} et {{ nextCollect?.code?.endTime?? '00:00' }}
               </span>
+              }
             </div>
           } @else {
             <p>
@@ -186,11 +188,13 @@
                       <div class="collection-info">
                         <!-- <h4>{{ getWasteTypeName(collection.wasteTypes[0]) }}</h4> -->
                         <h4>Collecte standard</h4>
+                        @if (collection?.code) {
                         <p class="collection-time">
                           <i class="material-icons">access_time</i>
                           <!-- {{ collection.date }} -->
                           {{ collection?.code?.startTime ? collection?.code?.startTime+ " - "  : ""}}  {{ collection?.code?.endTime ? collection?.code?.endTime : "" }}
                         </p>
+                        }
                         <!-- <p class="collection-address">
                         <i class="material-icons">location_on</i>
                         {{ collection.zone }}
