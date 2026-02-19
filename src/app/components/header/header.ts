@@ -249,40 +249,40 @@ navigateToNotification(notif: any): void {
   if (!notif.read) {
     this.markAsRead(notif._id);
   }
-
+  const userRole = this.currentUser?.role?.toLowerCase();
   switch (notif.type.toLowerCase()) {
     case 'signalement':
-      this.router.navigate(['/dashboard/agency'], { 
+      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
         fragment: 'reports',
         queryParams: { source: 'notification' }
       });
       break;
     case 'planning':
-      this.router.navigate(['/dashboard/agency'], { 
+      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
         fragment: 'schedules',
         queryParams: { source: 'notification' }
       });
       break;
     case 'zones':
-      this.router.navigate(['/dashboard/agency'], { 
+      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
         fragment: 'zones',
         queryParams: { source: 'notification' }
       });
       break;
     case 'subscribed':
-      this.router.navigate(['/dashboard/agency'], { 
+      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
         fragment: 'clients',
         queryParams: { source: 'notification' }
       });
       break;
     case 'employee':
-      this.router.navigate(['/dashboard/agency'], { 
+      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
         fragment: 'employees',
         queryParams: { source: 'notification' }
       });
       break;
     default:
-      this.router.navigate(['/dashboard/agency']);
+      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`]);
       break;
   }
 }
