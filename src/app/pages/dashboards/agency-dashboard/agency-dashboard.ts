@@ -428,7 +428,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // assigner un planning à un collecteur
   showAssignModal: boolean = false;
   selectedReportId: string = "";
-
+  selectedReport: Incident|null = null;
   selectedEmployee: string[] = [];
   // Propriétés pour l'édition d'employé
   employeeToEdit: any = null;
@@ -1428,8 +1428,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   /**Gestion des messages recus par le client connecté fin */
 
-  openAssignModal(reportId: string): void {
-    this.selectedReportId = reportId;
+  openAssignModal(report: Incident): void {
+    this.selectedReport = report;
     this.selectedEmployee = [];
     this.showAssignModal = true;
   }

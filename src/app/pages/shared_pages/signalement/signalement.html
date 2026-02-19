@@ -90,12 +90,12 @@
     <div class="incident-actions">
       @if(incident.agencyId && currentUser?.role === 'manager') {
       <div class="incident-actions">
-        <button class="btn btn-primary" (click)="assignIncident(incident._id)">
+        <button class="btn btn-primary" (click)="assignIncident(incident)">
           <i class="material-icons">assignment_ind</i>
           Assigner
         </button>
         @if (!incident.collectorId?._id) {
-        <button class="btn btn-accent" (click)="openAssignModal(incident._id)">
+        <button class="btn btn-accent" (click)="openAssignModal(incident)">
           <i class="material-icons">assignment_ind</i>
           Traiter
         </button>

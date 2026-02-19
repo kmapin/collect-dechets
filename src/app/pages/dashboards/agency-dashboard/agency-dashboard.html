@@ -2608,10 +2608,20 @@
             </div>
           </div>
           } @if (showAssignModal) {
-          <div class="modal-backdrop" (click)="closeAssignModal()">
-            <div class="modal" (click)="$event.stopPropagation()">
-              <h3>Assigner un signalement</h3>
-              <p><strong>Signalement ID :</strong> {{ selectedReportId }}</p>
+          <div class="drawer-overlay" (click)="closeAssignModal()">
+            <div class="drawer-content" (click)="$event.stopPropagation()">
+              <div class="drawer-header">
+                <div>
+                  <h3>Assigner un signalement</h3>
+                  @if (selectedReport?.clientId) {
+                  <p>Signalement du(de la) client(e)  <strong> <em> {{ selectedReport?.clientId?.firstName }} {{ selectedReport?.clientId?.lastName }}</em></strong> </p>
+                  }
+                </div>
+                <button class="drawer-close-btn" (click)="closeAssignModal()">
+                  <i class="material-icons">close</i>
+                </button>
+              </div>
+              <div class="drawer-body">
               @if (allEmployees && allEmployees.length > 0) {
               <div class="employee-grid">
                 @for (employee of allEmployees; track employee) {
@@ -2633,15 +2643,19 @@
               } @else {
               <p>Aucun employé disponible.</p>
               }
-              <div class="modal-actions">
-                <button class="btn btn-primary" (click)="assignReport()">
-                  Assigner
-                </button>
+              </div>
+              <div class="drawer-footer">
+              <div class="drawer-actions">
                 <button class="btn btn-secondary" (click)="closeAssignModal()">
                   Annuler
                 </button>
+                <button class="btn btn-primary" (click)="assignReport()">
+                  Assigner
+                </button>
               </div>
             </div>
+            </div>
+            
           </div>
           }
           <!-- Drawer Mes Tarifs -->

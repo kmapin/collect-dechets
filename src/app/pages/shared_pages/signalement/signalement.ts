@@ -68,7 +68,7 @@ export class Signalement {
 
   @Output() isLoadingIncidents = new EventEmitter<boolean>()
   // assigner un planning à un collecteur emetter
-  @Output() assignReport = new EventEmitter<string>() ;
+  @Output() assignReport = new EventEmitter<Incident>() ;
   // resoudre un incident signaler emetter
   @Output() resolvedIncident = new EventEmitter<string>() ;
  
@@ -191,11 +191,11 @@ export class Signalement {
   }
 
   //Assigner un incident à un collecteur
-  openAssignModal(reportId: string): void {
-    this.assignReport.emit(reportId);
+  openAssignModal(report: Incident): void {
+    this.assignReport.emit(report);
   } 
-  assignIncident(incidentId: string): void {
-    this.assignReport.emit(incidentId);
+  assignIncident(incident: Incident): void {
+    this.assignReport.emit(incident);
   }
 
 }

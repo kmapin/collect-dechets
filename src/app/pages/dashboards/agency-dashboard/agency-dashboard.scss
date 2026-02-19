@@ -127,7 +127,7 @@
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* responsive */
   gap: 15px;
   margin: 20px 0;
-  max-height: 350px;
+  // max-height: 350px;
   overflow-y: auto; /* scroll si trop d’employés */
   padding-right: 5px;
 }
