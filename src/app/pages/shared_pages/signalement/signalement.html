@@ -53,7 +53,7 @@
         >
       </div>
       <!-- Affichage des photos -->
-      @if (incident.photos && incident.photos.length) {
+      @if (incident.photos && incident.photos.length && showPicture) {
       <div class="report-photos">
         @for (photo of incident.photos; track photo) {
         <img
@@ -64,7 +64,7 @@
         />
         }
       </div>
-      } @if (!incident.photos || !incident.photos.length) {
+      } @if ((!incident.photos || !incident.photos.length) && showPicture) {
       <div>
         <p><em>Aucune photo associée</em></p>
       </div>
@@ -88,6 +88,11 @@
           Résoudre
         </button>
         }
+
+        <button class="btn btn-accent" (click)="showPictures()">
+          <i class="material-icons">{{ showPicture ?' visibility_off' : 'visibility'}}</i>
+          {{ showPicture ?'Masquer photos':'Voir photos'}}
+        </button>
       </div>
       }
       <!-- <button
@@ -114,6 +119,10 @@
       >
         <i class="material-icons">phone</i>
         Contacter Agence
+      </button>
+      <button class="btn btn-success" (click)="showPictures()">
+        <i class="material-icons">{{ showPicture ?' visibility_off' : 'visibility'}}</i>
+        {{ showPicture ?'Masquer photos':'Voir photos'}}
       </button>
       }
     </div>

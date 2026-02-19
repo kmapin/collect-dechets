@@ -97,8 +97,10 @@ export class Signalement {
       return statusMatch && severityMatch;
     });
   }
-
-  
+  showPicture: boolean = false;
+  showPictures(): void {
+    this.showPicture = !this.showPicture
+  }
 
   investigateIncident(incidentId: string): void {
     const incident = this.incidents.find((i) => i._id === incidentId);
