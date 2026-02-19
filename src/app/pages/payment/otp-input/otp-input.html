@@ -72,15 +72,26 @@
             (click)="onVerifyOtp()"
             class="submit-button"
             [disabled]="otpForm.invalid || isProcessing">
-            <mat-spinner
-              *ngIf="isProcessing"
-              mode="indeterminate"
-              diameter="30">
-            </mat-spinner>
+            
 
-            <mat-icon>check</mat-icon>
-            <span>Valider</span>
-            <span>Validation...</span>
+            
+            @if(!isProcessing){
+            <div class="loading-indicator">
+              <mat-icon>check</mat-icon>
+              <span>Valider</span>
+            </div>
+            }
+            @if(isProcessing){
+            <div class="loading-indicator">
+              <mat-spinner
+                *ngIf="isProcessing"
+                mode="indeterminate"
+                diameter="30">
+              </mat-spinner>
+              <span>Validation...</span>
+            </div>
+            
+            }
           </button>
         </div>
       </form>

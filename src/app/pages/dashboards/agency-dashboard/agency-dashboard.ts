@@ -5407,7 +5407,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.zoneFormDetailedErrors = {};
   }
 
-  editZoneAgency(): void {
+  addZoneAgency(): void {
     // Réinitialiser les erreurs
     this.zoneFormError = null;
     this.zoneFormDetailedErrors = {};

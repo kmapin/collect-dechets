@@ -48,7 +48,7 @@
           >
             <i class="material-icons">person</i>
             <span
-              >Client {{ incident.clientId.firstName }} {{
+              >Client(e) {{ incident.clientId.firstName }} {{
               incident.clientId.lastName }}</span
             >
           </div>
@@ -57,7 +57,7 @@
 
         <p class="incident-description">{{ incident.comment }}</p>
         <p class="incident-date">
-          {{ incident.date | date : "dd/MM/yyyy HH:mm" }}
+          {{ incident.createdAt | date : "dd/MM/yyyy à HH:mm" }}
         </p>
       </div>
 

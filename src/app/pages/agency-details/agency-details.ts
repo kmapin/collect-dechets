@@ -1,12 +1,11 @@
-import { tarif } from "./../../models/agency.model";
-import { Component, OnInit, AfterViewInit, signal } from "@angular/core";
+import { Component, OnInit, signal } from "@angular/core";
 
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { AgencyService } from "../../services/agency.service";
 import { Agency, Tarif } from "../../models/agency.model";
 import { AuthService } from "../../services/auth.service";
 import { NotificationService } from "../../services/notification.service";
-import { RegisterUserData, User } from "../../models/user.model";
+import { RegisterUserData } from "../../models/user.model";
 import { MessagesService } from "../../services/messages.service";
 import { Message } from "../../models/message.model";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
@@ -21,7 +20,6 @@ import {
   Sector,
 } from "../../models/countries-org.model";
 import { Admin } from "../../services/admin";
-import { CdkAutofill } from "@angular/cdk/text-field";
 import { MobileMoneyFormComponent } from "../payment/mobile-money-form/mobile-money-form";
 
 @Component({

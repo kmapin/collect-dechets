@@ -337,7 +337,7 @@
                   <span class="contact-label">Adresse</span>
                   <span class="contact-value">
                     {{ agency?.address?.doorNumber }} {{ agency?.address?.street
-                    }}<br />
+                    }}<br/>
                     {{ agency?.address?.neighborhood }}, {{ agency?.address?.city }}
                     {{ agency?.address?.postalCode }}
                   </span>
@@ -468,163 +468,168 @@
     </div>
   </div>
 </div>
-<p-drawer header="Modifier votre agence" [(visible)]="visible2" position="right" [style]="{ width: drawerWidth }">
-  <form class="register-form" #editAgencyForm="ngForm">
-    <div class="form-section" style="margin-top: 0">
 
-      <div class="form-group">
-        <label class="form-label" for="agencyName">
-          <i class="material-icons">business</i>
-          Nom de l'agence <span class="required">*</span>
-        </label>
-        <input type="text" id="agencyName" name="agencyName" [(ngModel)]="userData.name" class="form-control"
-          placeholder="Nom de votre agence" required />
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="agencyDescription">
-          <i class="material-icons">description</i>
-          Description
-        </label>
-        <textarea id="agencyDescription" name="agencyDescription" [(ngModel)]="userData.agencyDescription"
-          class="form-control" placeholder="Décrivez vos services..." rows="3"></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="slogan">
-          <i class="material-icons">format_quote</i>
-          Slogan de l'agence <span class="required">*</span>
-        </label>
-        <input type="text" id="slogan" name="slogan" [(ngModel)]="userData.slogan" class="form-control"
-          placeholder="Slogan de votre agence" required />
-      </div>
+@if(visible2){
+<div class="drawer-overlay" (click)="visible2 = false">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>Modifier votre agence</h3>
+      <button class="drawer-close-btn" (click)="visible2 = false">
+        <i class="material-icons">close</i>
+      </button>
     </div>
-    <div class="form-section">
-      <h3>Adresse de localisation</h3>
+    <div class="drawer-body">
+      <!-- Zone d'affichage des erreurs améliorée -->
+      <form class="register-form" #editAgencyForm="ngForm">
+        <div class="form-section" style="margin-top: 0">
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="city">
-            <i class="material-icons">location_city</i>
-            Ville <span class="required">*</span>
-          </label>
-          <select id="city" name="city" [(ngModel)]="userData.address.city" class="form-control"
-            (change)="onCityChange(userData.address.city)" required>
-            <option value="">Sélectionner</option>
-            @for (city of cities; track city) {
-            <option [value]="city.name">
-              {{ city.name }}
-            </option>
-            }
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="postalBoite">
-            <i class="material-icons">markunread_mailbox</i>
-            Boite postal <span class="required">*</span>
-          </label>
-          <input type="text" id="postalBoite" name="postalBoite" [(ngModel)]="userData.address.postalCode"
-            class="form-control" placeholder="75001" required />
-        </div>
-      </div>
+          <div class="form-group">
+            <label class="form-label" for="agencyName">
+              <i class="material-icons">business</i>
+              Nom de l'agence <span class="required">*</span>
+            </label>
+            <input type="text" id="agencyName" name="agencyName" [(ngModel)]="userData.name" class="form-control"
+              placeholder="Nom de votre agence" required />
+          </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="arrondissement">
-            <i class="material-icons">map</i>
-            Arrondiss... <span class="required">*</span>
-          </label>
-          <select id="arrondissement" name="arrondissement" [(ngModel)]="userData.address.arrondissement"
-            (change)="onArrondissementChange(userData.address.arrondissement)" class="form-control"
-            [disabled]="!arrondissementss.length" required>
-            <option value="">Sélectionner</option>
-            @for (arr of arrondissementss; track arr) {
-            <option [value]="arr.name">
-              {{ arr.name }}
-            </option>
-            }
-          </select>
+          <div class="form-group">
+            <label class="form-label" for="agencyDescription">
+              <i class="material-icons">description</i>
+              Description
+            </label>
+            <textarea id="agencyDescription" name="agencyDescription" [(ngModel)]="userData.agencyDescription"
+              class="form-control" placeholder="Décrivez vos services..." rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="slogan">
+              <i class="material-icons">format_quote</i>
+              Slogan de l'agence <span class="required">*</span>
+            </label>
+            <input type="text" id="slogan" name="slogan" [(ngModel)]="userData.slogan" class="form-control"
+              placeholder="Slogan de votre agence" required />
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="sector">
-            <i class="material-icons">location_city</i>
-            Secteur <span class="required">*</span>
-          </label>
-          <select id="sector" name="sector" [(ngModel)]="userData.address.sector"
-            (change)="onSecteurChange(userData.address.sector)" class="form-control" [disabled]="!secteurss.length"
-            required>
-            <option value="">Sélectionner</option>
-            @for (secteur of secteurss; track secteur) {
-            <option [value]="secteur.name">
-              {{ secteur.name }}
-            </option>
-            }
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="neighborhood">
-            <i class="material-icons">location_city</i>
-            Quartier <span class="required">*</span>
-          </label>
-          <select id="neighborhood" name="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control"
-            [disabled]="!quartierss.length" required>
-            <option value="">Sélectionner</option>
-            @for (quartier of quartierss; track quartier) {
-            <option [value]="quartier.name">
-              {{ quartier.name }}
-            </option>
-            }
-          </select>
-        </div>
-      </div>
+        <div class="form-section">
+          <h3>Adresse de localisation</h3>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label" for="street">
-            <i class="material-icons">location_on</i>
-            Rue <span class="required">*</span>
-          </label>
-          <input type="text" id="street" name="street" [(ngModel)]="userData.address.street" class="form-control"
-            placeholder="Nom de la rue" required />
-        </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="city">
+                <i class="material-icons">location_city</i>
+                Ville <span class="required">*</span>
+              </label>
+              <select id="city" name="city" [(ngModel)]="userData.address.city" class="form-control"
+                (change)="onCityChange(userData.address.city)" required>
+                <option value="">Sélectionner</option>
+                @for (city of cities; track city) {
+                <option [value]="city.name">
+                  {{ city.name }}
+                </option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="postalBoite">
+                <i class="material-icons">markunread_mailbox</i>
+                Boite postal <span class="required">*</span>
+              </label>
+              <input type="text" id="postalBoite" name="postalBoite" [(ngModel)]="userData.address.postalCode"
+                class="form-control" placeholder="75001" required />
+            </div>
+          </div>
 
-        <div class="form-group">
-          <label class="form-label" for="doorNumber">
-            <i class="material-icons">home</i>
-            Numéro Porte <span class="required">*</span>
-          </label>
-          <input type="text" id="doorNumber" name="doorNumber" [(ngModel)]="userData.address.doorNumber"
-            class="form-control" placeholder="123" required />
-        </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="arrondissement">
+                <i class="material-icons">map</i>
+                Arrondiss... <span class="required">*</span>
+              </label>
+              <select id="arrondissement" name="arrondissement" [(ngModel)]="userData.address.arrondissement"
+                (change)="onArrondissementChange(userData.address.arrondissement)" class="form-control"
+                [disabled]="!arrondissementss.length" required>
+                <option value="">Sélectionner</option>
+                @for (arr of arrondissementss; track arr) {
+                <option [value]="arr.name">
+                  {{ arr.name }}
+                </option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="sector">
+                <i class="material-icons">location_city</i>
+                Secteur <span class="required">*</span>
+              </label>
+              <select id="sector" name="sector" [(ngModel)]="userData.address.sector"
+                (change)="onSecteurChange(userData.address.sector)" class="form-control" [disabled]="!secteurss.length"
+                required>
+                <option value="">Sélectionner</option>
+                @for (secteur of secteurss; track secteur) {
+                <option [value]="secteur.name">
+                  {{ secteur.name }}
+                </option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="neighborhood">
+                <i class="material-icons">location_city</i>
+                Quartier <span class="required">*</span>
+              </label>
+              <select id="neighborhood" name="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control"
+                [disabled]="!quartierss.length" required>
+                <option value="">Sélectionner</option>
+                @for (quartier of quartierss; track quartier) {
+                <option [value]="quartier.name">
+                  {{ quartier.name }}
+                </option>
+                }
+              </select>
+            </div>
+          </div>
 
-        <div class="form-group">
-          <label class="form-label" for="doorColor">
-            <i class="material-icons">palette</i>
-            Couleur porte
-          </label>
-          <select id="doorColor" name="doorColor" [(ngModel)]="userData.address.doorColor" class="form-control">
-            <option value="">Sélectionner</option>
-            <option value="blanc">Blanc</option>
-            <option value="noir">Noir</option>
-            <option value="marron">Marron</option>
-            <option value="bleu">Bleu</option>
-            <option value="rouge">Rouge</option>
-            <option value="vert">Vert</option>
-            <option value="autre">Autre</option>
-          </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="street">
+                <i class="material-icons">location_on</i>
+                Rue <span class="required">*</span>
+              </label>
+              <input type="text" id="street" name="street" [(ngModel)]="userData.address.street" class="form-control"
+                placeholder="Nom de la rue" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="doorNumber">
+                <i class="material-icons">home</i>
+                Numéro Porte <span class="required">*</span>
+              </label>
+              <input type="text" id="doorNumber" name="doorNumber" [(ngModel)]="userData.address.doorNumber"
+                class="form-control" placeholder="123" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="doorColor">
+                <i class="material-icons">palette</i>
+                Couleur porte
+              </label>
+              <select id="doorColor" name="doorColor" [(ngModel)]="userData.address.doorColor" class="form-control">
+                <option value="">Sélectionner</option>
+                <option value="blanc">Blanc</option>
+                <option value="noir">Noir</option>
+                <option value="marron">Marron</option>
+                <option value="bleu">Bleu</option>
+                <option value="rouge">Rouge</option>
+                <option value="vert">Vert</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
-    <!-- <button
-                              (click)="onUpdateAgency()"
-                              class="btn btn-primary btn-full"
-                              [disabled]="isButtonDisabled()"
-                              >
-                              <i class="material-icons" *ngIf="isLoading">hourglass_empty</i>
-                              <i class="material-icons" *ngIf="!isLoading">person_add</i>
-                              {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-                            </button> -->
     <div class="drawer-footer">
-      <button (click)="onUpdateAgency()" class="btn btn-primary btn-full" [disabled]="isButtonDisabled()">
+      <div class="drawer-actions">
+        <button (click)="onUpdateAgency()" class="btn btn-primary" [disabled]="isButtonDisabled()">
         @if (isLoading) {
         <i class="material-icons">hourglass_empty</i>
         }
@@ -633,48 +638,82 @@
         }
         {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
       </button>
+      </div>
     </div>
-  </form>
-</p-drawer>
+  </div>
+</div>
+}
 
 <!--Messagerie-->
-
-<p-drawer header="Envoyer un message à l'agence {{agency.name}}" [(visible)]="showReportModal" position="right"
-  [style]="{ width: drawerWidth }">
-  <!-- Message -->
-
-  <form class="report-form">
-    <!-- <div class="form-group">
-                            <label>Destinataire</label>
-                            <select [(ngModel)]="messageData.receiver" name="receiver" required>
-                              <option value="">Sélectionnez</option>
-                              <option value="missed_collection">Collecte manquée</option>
-                              <option value="compliance_issue">Non-conformité</option>
-                              <option value="technical_issue">Problème technique</option>
-                              <option value="complaint">Réclamation</option>
-                              <option value="other">Autre</option>
-                            </select>
-                          </div>-->
-
-    <div class="form-group">
-      <label>Message</label>
-      <textarea [(ngModel)]="messageData.content" name="content" rows="4" placeholder="Votre message..."
-        required></textarea>
-    </div>
-    <div class="form-actions">
-      <button type="button" class="btn btn-secondary" (click)="showReportModal = false">
-        Annuler
-      </button>
-      <button type="button" class="btn btn-primary" (click)="submitMessage(agency._id) ; showReportModal = false">
-        <i class="material-icons">send</i>
-        Envoyer
+@if(showReportModal){
+<div class="drawer-overlay" (click)="showReportModal = false">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>Envoyer un message à l'agence {{agency.name}}</h3>
+      <button class="drawer-close-btn" (click)="showReportModal = false">
+        <i class="material-icons">close</i>
       </button>
     </div>
-  </form>
+    <div class="drawer-body">
+      <!-- Zone d'affichage des erreurs améliorée -->
+      <form class="report-form">
+        <!-- <div class="form-group">
+          <label>Destinataire</label>
+          <select [(ngModel)]="messageData.receiver" name="receiver" required>
+            <option value="">Sélectionnez</option>
+            <option value="missed_collection">Collecte manquée</option>
+            <option value="compliance_issue">Non-conformité</option>
+            <option value="technical_issue">Problème technique</option>
+            <option value="complaint">Réclamation</option>
+            <option value="other">Autre</option>
+          </select>
+        </div>-->
 
-</p-drawer>
-<p-drawer header="Abonnement" [(visible)]="showPaymentDrawer" position="right" [style]="{ width: drawerWidth }">
-  @if(showPaymentDrawer && selectedTarif !== null) {
-    <app-mobile-money-form [tarifResponse]="selectedTarif" (showPaymentDrawer)="showPaymentDrawer = $event"></app-mobile-money-form>
-  }
-</p-drawer>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea [(ngModel)]="messageData.content" name="content" rows="4" placeholder="Votre message..."
+            required></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="drawer-footer">
+      <div class="drawer-actions">
+        <button type="button" class="btn btn-secondary" (click)="showReportModal = false">
+            Annuler
+          </button>
+          <button type="button" class="btn btn-primary" (click)="submitMessage(agency._id) ; showReportModal = false">
+            <i class="material-icons">send</i>
+            Envoyer
+          </button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+@if(showPaymentDrawer && selectedTarif !== null) {
+<div class="drawer-overlay" (click)="showPaymentDrawer = false">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>Abonnement</h3>
+      <button class="drawer-close-btn" (click)="showPaymentDrawer = false">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <!-- Zone d'affichage des erreurs améliorée -->
+      @if(showPaymentDrawer && selectedTarif !== null) {
+        <app-mobile-money-form [tarifResponse]="selectedTarif" (showPaymentDrawer)="showPaymentDrawer = $event"></app-mobile-money-form>
+      }
+    </div>
+    <!-- <div class="drawer-footer">
+      <div class="drawer-actions">
+        <button class="btn btn-primary" (click)="showPaymentDrawer = false">
+          <i class="material-icons">cancel</i>
+          Fermer
+        </button>
+      </div>
+    </div> -->
+  </div>
+</div>
+}
