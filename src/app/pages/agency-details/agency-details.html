@@ -23,7 +23,8 @@
           <div class="agency-logo">
             <img
               src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
-              [alt]="agency?.name" />
+              [alt]="agency?.name"
+            />
           </div>
           <div class="agency-details">
             <h1 class="agency-name">{{ agency?.name }}</h1>
@@ -36,36 +37,42 @@
                   }
                 </div>
                 <span class="rating-text">{{ agency?.rating }}/5</span>
-                <span class="reviews-count">({{ agency?.totalClients }} avis)</span>
+                <span class="reviews-count"
+                  >({{ agency?.totalClients }} avis)</span
+                >
               </div>
               <div class="agency-status">
                 @if (agency?.status) {
-                <span class="status-badge" [class.active]="agency?.status ==='active'? true : false">
-                  <i class="material-icons">{{ agency?.status ==='active' ? 'check_circle' : 'cancel' }}</i>
-                  {{ agency?.status === 'active' ? 'Agence active' : 'Agence inactive' }}
+                <span
+                  class="status-badge"
+                  [class.active]="agency?.status ==='active'? true : false"
+                >
+                  <i class="material-icons"
+                    >{{ agency?.status ==='active' ? 'check_circle' : 'cancel'
+                    }}</i
+                  >
+                  {{ agency?.status === 'active' ? 'Agence active' : 'Agence
+                  inactive' }}
                 </span>
-              }
+                }
               </div>
             </div>
           </div>
         </div>
         <div class="agency-actions">
-          @if (currentUser?.role === 'manager' &&
-          currentUser?.agencyId === agency?._id) {
+          @if (currentUser?.role === 'manager' && currentUser?.agencyId ===
+          agency?._id) {
           <button class="btn btn-success" (click)="editAgency()">
             <i class="material-icons">edit</i>
             Modifier
           </button>
-          }
-          @if (currentUser?.role === 'super_admin') {
+          } @if (currentUser?.role === 'super_admin') {
           <button class="btn btn-accent" (click)="activateAgency(agency?._id)">
             @if (agency?.status!== 'active' ) {
             <i class="material-icons">check</i>
-            Activer
-            } @else {
+            Activer } @else {
             <i class="material-icons">lock_open</i>
-            Desactiver
-            }
+            Desactiver }
           </button>
           }
           <button class="btn btn-secondary" (click)="shareAgency()">
@@ -75,8 +82,13 @@
           <!-- Buton of drawer to subscribe -->
           <!-- <button class="btn btn-primary btn-large" (click)="subscribeToAgency()"> -->
           @if (currentUser?.subscribedAgencyId == agency?._id) {
-          <div class="btn btn-primary btn-large" type="button" data-drawer-target="drawer-contact"
-            data-drawer-show="drawer-contact" aria-controls="drawer-contact">
+          <div
+            class="btn btn-primary btn-large"
+            type="button"
+            data-drawer-target="drawer-contact"
+            data-drawer-show="drawer-contact"
+            aria-controls="drawer-contact"
+          >
             <i class="material-icons">star</i>
             Déjà abonné(e)
           </div>
@@ -117,7 +129,9 @@
                 <i class="material-icons">map</i>
               </div>
               <div class="stat-info">
-                <span class="stat-number">{{ agency?.serviceZones?.length || 0 }}</span>
+                <span class="stat-number"
+                  >{{ agency?.serviceZones?.length || 0 }}</span
+                >
                 <span class="stat-label">Zones</span>
               </div>
             </div>
@@ -126,7 +140,9 @@
                 <i class="material-icons">local_shipping</i>
               </div>
               <div class="stat-info">
-                <span class="stat-number">{{ agency?.employees?.length || 0 }}</span>
+                <span class="stat-number"
+                  >{{ agency?.employees?.length || 0 }}</span
+                >
                 <span class="stat-label">Employés</span>
               </div>
             </div>
@@ -183,7 +199,9 @@
                 <i class="material-icons">receipt_long</i>
                 Tarifs d'abonnement
               </h2>
-              <span class="section-count">{{ tariffs.length || 0 }} tarif(s)</span>
+              <span class="section-count"
+                >{{ tariffs.length || 0 }} tarif(s)</span
+              >
             </div>
             <div class="services-grid">
               @for (tariff of tariffs; track tariff) {
@@ -191,7 +209,9 @@
                 <div class="service-header">
                   <h3>{{ tariff.planType }}</h3>
                   <div class="service-price">
-                    <span class="price-amount">{{ tariff.price }} <sup>FCFA</sup></span>
+                    <span class="price-amount"
+                      >{{ tariff.price }} <sup>FCFA</sup></span
+                    >
                     <span class="price-period">/mois</span>
                   </div>
                 </div>
@@ -204,18 +224,26 @@
                 </div>
                 <div class="form-group" style="margin: 12px 0">
                   <!-- <label>Nombre de mois :</label> -->
-                  <span class="text-sm font-small text-[--primary-color]">Saisir le nombre de mois pour l'abonnement à
-                    ce
-                    service</span>
-                  <input type="number" min="1" max="12" 
-                      [(ngModel)]="tariffSelectedMonths[tariff?._id!]"
-                      [ngModelOptions]="{ standalone: true }"
-                      (ngModelChange)="tariffSelectedMonths[tariff?._id!] ||= 1"
-                    [name]="'months_' + tariff?._id" style="width: 80px" />
+                  <span class="text-sm font-small text-[--primary-color]"
+                    >Saisir le nombre de mois pour l'abonnement à ce
+                    service</span
+                  >
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    [(ngModel)]="tariffSelectedMonths[tariff?._id!]"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="tariffSelectedMonths[tariff?._id!] ||= 1"
+                    [name]="'months_' + tariff?._id"
+                    style="width: 80px"
+                  />
                 </div>
                 <div class="service-actions">
-                  <button class="btn btn-primary btn-small"
-                    (click)="isLogged()? showLoginRequired() : submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths[tariff?._id!], tariff.price )">
+                  <button
+                    class="btn btn-primary btn-small"
+                    (click)="isLogged()? showLoginRequired() : submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths[tariff?._id!], tariff.price )"
+                  >
                     <i class="material-icons">add_shopping_cart</i>
                     Choisir ce tarif
                   </button>
@@ -280,7 +308,9 @@
                 <i class="material-icons">map</i>
                 Zones de couverture
               </h2>
-              <span class="section-count">{{ agencyZones.length || 0 }} zone(s)</span>
+              <span class="section-count"
+                >{{ agencyZones.length || 0 }} zone(s)</span
+              >
             </div>
             <div class="zones-grid">
               <div class="zones-by-city">
@@ -326,7 +356,9 @@
                 </div>
                 <div class="contact-info">
                   <span class="contact-label">Téléphone</span>
-                  <a href="tel:{{ agency?.phone }}" class="contact-value">{{ agency?.owner?.phone }}</a>
+                  <a href="tel:{{ agency?.phone }}" class="contact-value"
+                    >{{ agency?.owner?.phone }}</a
+                  >
                 </div>
               </div>
               <div class="contact-item">
@@ -337,27 +369,32 @@
                   <span class="contact-label">Adresse</span>
                   <span class="contact-value">
                     {{ agency?.address?.doorNumber }} {{ agency?.address?.street
-                    }}<br/>
-                    {{ agency?.address?.neighborhood }}, {{ agency?.address?.city }}
-                    {{ agency?.address?.postalCode }}
+                    }}<br />
+                    {{ agency?.address?.neighborhood }}, {{
+                    agency?.address?.city }} {{ agency?.address?.postalCode }}
                   </span>
                 </div>
               </div>
             </div>
             <div class="contact-actions">
-              <button class="btn btn-primary btn-full" (click)="contactAgency()">
+              <button
+                class="btn btn-primary btn-full"
+                (click)="contactAgency()"
+              >
                 <i class="material-icons">phone</i>
                 Contacter l'agence
               </button>
               @if (currentUser?.role === 'client') {
-              <button class="btn btn-primary btn-full" (click)="showReportModal = true">
+              <button
+                class="btn btn-primary btn-full"
+                (click)="showReportModal = true"
+              >
                 <i class="material-icons">message</i>
                 Envoyer message
               </button>
               }
             </div>
           </div>
-
 
           <!-- Location Map -->
           <!-- <div class="location-card card">
@@ -430,9 +467,10 @@
               </h3>
             </div>
             <div class="similar-agencies-list">
+              @for(agency of filteredAgencies; track agency) {
               <div class="similar-agency-item">
                 <div class="similar-agency-info">
-                  <h4>GreenWaste Solutions</h4>
+                  <h4>{{ agency.name }}</h4>
                   <div class="similar-agency-rating">
                     <div class="stars">
                       <i class="material-icons star">star</i>
@@ -443,24 +481,14 @@
                     <span>4.2/5</span>
                   </div>
                 </div>
-                <button class="btn btn-secondary btn-small">Voir</button>
+                <button
+                  class="btn btn-secondary btn-small"
+                  (click)="goToAgencyDetails(agency._id)"
+                >
+                  Voir
+                </button>
               </div>
-              <div class="similar-agency-item">
-                <div class="similar-agency-info">
-                  <h4>EcoClean Pro</h4>
-                  <div class="similar-agency-rating">
-                    <div class="stars">
-                      <i class="material-icons star">star</i>
-                      <i class="material-icons star">star</i>
-                      <i class="material-icons star">star</i>
-                      <i class="material-icons star">star</i>
-                      <i class="material-icons star">star</i>
-                    </div>
-                    <span>4.8/5</span>
-                  </div>
-                </div>
-                <button class="btn btn-secondary btn-small">Voir</button>
-              </div>
+              }
             </div>
           </div>
         </div>
@@ -482,14 +510,20 @@
       <!-- Zone d'affichage des erreurs améliorée -->
       <form class="register-form" #editAgencyForm="ngForm">
         <div class="form-section" style="margin-top: 0">
-
           <div class="form-group">
             <label class="form-label" for="agencyName">
               <i class="material-icons">business</i>
               Nom de l'agence <span class="required">*</span>
             </label>
-            <input type="text" id="agencyName" name="agencyName" [(ngModel)]="userData.name" class="form-control"
-              placeholder="Nom de votre agence" required />
+            <input
+              type="text"
+              id="agencyName"
+              name="agencyName"
+              [(ngModel)]="userData.name"
+              class="form-control"
+              placeholder="Nom de votre agence"
+              required
+            />
           </div>
 
           <div class="form-group">
@@ -497,16 +531,29 @@
               <i class="material-icons">description</i>
               Description
             </label>
-            <textarea id="agencyDescription" name="agencyDescription" [(ngModel)]="userData.agencyDescription"
-              class="form-control" placeholder="Décrivez vos services..." rows="3"></textarea>
+            <textarea
+              id="agencyDescription"
+              name="agencyDescription"
+              [(ngModel)]="userData.agencyDescription"
+              class="form-control"
+              placeholder="Décrivez vos services..."
+              rows="3"
+            ></textarea>
           </div>
           <div class="form-group">
             <label class="form-label" for="slogan">
               <i class="material-icons">format_quote</i>
               Slogan de l'agence <span class="required">*</span>
             </label>
-            <input type="text" id="slogan" name="slogan" [(ngModel)]="userData.slogan" class="form-control"
-              placeholder="Slogan de votre agence" required />
+            <input
+              type="text"
+              id="slogan"
+              name="slogan"
+              [(ngModel)]="userData.slogan"
+              class="form-control"
+              placeholder="Slogan de votre agence"
+              required
+            />
           </div>
         </div>
         <div class="form-section">
@@ -518,13 +565,17 @@
                 <i class="material-icons">location_city</i>
                 Ville <span class="required">*</span>
               </label>
-              <select id="city" name="city" [(ngModel)]="userData.address.city" class="form-control"
-                (change)="onCityChange(userData.address.city)" required>
+              <select
+                id="city"
+                name="city"
+                [(ngModel)]="userData.address.city"
+                class="form-control"
+                (change)="onCityChange(userData.address.city)"
+                required
+              >
                 <option value="">Sélectionner</option>
                 @for (city of cities; track city) {
-                <option [value]="city.name">
-                  {{ city.name }}
-                </option>
+                <option [value]="city.name">{{ city.name }}</option>
                 }
               </select>
             </div>
@@ -533,8 +584,15 @@
                 <i class="material-icons">markunread_mailbox</i>
                 Boite postal <span class="required">*</span>
               </label>
-              <input type="text" id="postalBoite" name="postalBoite" [(ngModel)]="userData.address.postalCode"
-                class="form-control" placeholder="75001" required />
+              <input
+                type="text"
+                id="postalBoite"
+                name="postalBoite"
+                [(ngModel)]="userData.address.postalCode"
+                class="form-control"
+                placeholder="75001"
+                required
+              />
             </div>
           </div>
 
@@ -544,14 +602,18 @@
                 <i class="material-icons">map</i>
                 Arrondiss... <span class="required">*</span>
               </label>
-              <select id="arrondissement" name="arrondissement" [(ngModel)]="userData.address.arrondissement"
-                (change)="onArrondissementChange(userData.address.arrondissement)" class="form-control"
-                [disabled]="!arrondissementss.length" required>
+              <select
+                id="arrondissement"
+                name="arrondissement"
+                [(ngModel)]="userData.address.arrondissement"
+                (change)="onArrondissementChange(userData.address.arrondissement)"
+                class="form-control"
+                [disabled]="!arrondissementss.length"
+                required
+              >
                 <option value="">Sélectionner</option>
                 @for (arr of arrondissementss; track arr) {
-                <option [value]="arr.name">
-                  {{ arr.name }}
-                </option>
+                <option [value]="arr.name">{{ arr.name }}</option>
                 }
               </select>
             </div>
@@ -560,14 +622,18 @@
                 <i class="material-icons">location_city</i>
                 Secteur <span class="required">*</span>
               </label>
-              <select id="sector" name="sector" [(ngModel)]="userData.address.sector"
-                (change)="onSecteurChange(userData.address.sector)" class="form-control" [disabled]="!secteurss.length"
-                required>
+              <select
+                id="sector"
+                name="sector"
+                [(ngModel)]="userData.address.sector"
+                (change)="onSecteurChange(userData.address.sector)"
+                class="form-control"
+                [disabled]="!secteurss.length"
+                required
+              >
                 <option value="">Sélectionner</option>
                 @for (secteur of secteurss; track secteur) {
-                <option [value]="secteur.name">
-                  {{ secteur.name }}
-                </option>
+                <option [value]="secteur.name">{{ secteur.name }}</option>
                 }
               </select>
             </div>
@@ -576,13 +642,17 @@
                 <i class="material-icons">location_city</i>
                 Quartier <span class="required">*</span>
               </label>
-              <select id="neighborhood" name="neighborhood" [(ngModel)]="userData.address.neighborhood" class="form-control"
-                [disabled]="!quartierss.length" required>
+              <select
+                id="neighborhood"
+                name="neighborhood"
+                [(ngModel)]="userData.address.neighborhood"
+                class="form-control"
+                [disabled]="!quartierss.length"
+                required
+              >
                 <option value="">Sélectionner</option>
                 @for (quartier of quartierss; track quartier) {
-                <option [value]="quartier.name">
-                  {{ quartier.name }}
-                </option>
+                <option [value]="quartier.name">{{ quartier.name }}</option>
                 }
               </select>
             </div>
@@ -594,8 +664,15 @@
                 <i class="material-icons">location_on</i>
                 Rue <span class="required">*</span>
               </label>
-              <input type="text" id="street" name="street" [(ngModel)]="userData.address.street" class="form-control"
-                placeholder="Nom de la rue" required />
+              <input
+                type="text"
+                id="street"
+                name="street"
+                [(ngModel)]="userData.address.street"
+                class="form-control"
+                placeholder="Nom de la rue"
+                required
+              />
             </div>
 
             <div class="form-group">
@@ -603,8 +680,15 @@
                 <i class="material-icons">home</i>
                 Numéro Porte <span class="required">*</span>
               </label>
-              <input type="text" id="doorNumber" name="doorNumber" [(ngModel)]="userData.address.doorNumber"
-                class="form-control" placeholder="123" required />
+              <input
+                type="text"
+                id="doorNumber"
+                name="doorNumber"
+                [(ngModel)]="userData.address.doorNumber"
+                class="form-control"
+                placeholder="123"
+                required
+              />
             </div>
 
             <div class="form-group">
@@ -612,7 +696,12 @@
                 <i class="material-icons">palette</i>
                 Couleur porte
               </label>
-              <select id="doorColor" name="doorColor" [(ngModel)]="userData.address.doorColor" class="form-control">
+              <select
+                id="doorColor"
+                name="doorColor"
+                [(ngModel)]="userData.address.doorColor"
+                class="form-control"
+              >
                 <option value="">Sélectionner</option>
                 <option value="blanc">Blanc</option>
                 <option value="noir">Noir</option>
@@ -629,15 +718,17 @@
     </div>
     <div class="drawer-footer">
       <div class="drawer-actions">
-        <button (click)="onUpdateAgency()" class="btn btn-primary" [disabled]="isButtonDisabled()">
-        @if (isLoading) {
-        <i class="material-icons">hourglass_empty</i>
-        }
-        @if (!isLoading) {
-        <i class="material-icons">person_add</i>
-        }
-        {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
-      </button>
+        <button
+          (click)="onUpdateAgency()"
+          class="btn btn-primary"
+          [disabled]="isButtonDisabled()"
+        >
+          @if (isLoading) {
+          <i class="material-icons">hourglass_empty</i>
+          } @if (!isLoading) {
+          <i class="material-icons">person_add</i>
+          } {{ isLoading ? 'Modification...' : 'Modifier le compte' }}
+        </button>
       </div>
     </div>
   </div>
@@ -671,27 +762,38 @@
 
         <div class="form-group">
           <label>Message</label>
-          <textarea [(ngModel)]="messageData.content" name="content" rows="4" placeholder="Votre message..."
-            required></textarea>
+          <textarea
+            [(ngModel)]="messageData.content"
+            name="content"
+            rows="4"
+            placeholder="Votre message..."
+            required
+          ></textarea>
         </div>
       </form>
     </div>
     <div class="drawer-footer">
       <div class="drawer-actions">
-        <button type="button" class="btn btn-secondary" (click)="showReportModal = false">
-            Annuler
-          </button>
-          <button type="button" class="btn btn-primary" (click)="submitMessage(agency._id) ; showReportModal = false">
-            <i class="material-icons">send</i>
-            Envoyer
-          </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="showReportModal = false"
+        >
+          Annuler
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="submitMessage(agency._id) ; showReportModal = false"
+        >
+          <i class="material-icons">send</i>
+          Envoyer
+        </button>
       </div>
     </div>
   </div>
 </div>
-}
-
-@if(showPaymentDrawer && selectedTarif !== null) {
+} @if(showPaymentDrawer && selectedTarif !== null) {
 <div class="drawer-overlay" (click)="showPaymentDrawer = false">
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
@@ -703,7 +805,10 @@
     <div class="drawer-body">
       <!-- Zone d'affichage des erreurs améliorée -->
       @if(showPaymentDrawer && selectedTarif !== null) {
-        <app-mobile-money-form [tarifResponse]="selectedTarif" (showPaymentDrawer)="showPaymentDrawer = $event"></app-mobile-money-form>
+      <app-mobile-money-form
+        [tarifResponse]="selectedTarif"
+        (showPaymentDrawer)="showPaymentDrawer = $event"
+      ></app-mobile-money-form>
       }
     </div>
     <!-- <div class="drawer-footer">

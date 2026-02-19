@@ -111,6 +111,10 @@ export class AgencyDetails implements OnInit {
     content: "",
   };
 
+  agencies: Agency[] = [];
+  filteredAgencies: Agency[] = [];
+  randomStarsList: number[] = [];
+
   showSubscriptionModal = false;
 
   showReportModal = false;
@@ -133,11 +137,13 @@ export class AgencyDetails implements OnInit {
     private adminService: Admin,
   ) {
     this.drawerWidth;
+    this.loadAgencyDataOnInit();
   }
 
   ngOnInit(): void {
     this.loadAgencyDataOnInit();
     this.checkUserIsLooged();
+    this.loadAgenciesFromApi();
   }
 
   checkUserIsLooged() {
@@ -145,12 +151,11 @@ export class AgencyDetails implements OnInit {
       next: (isAuth) => {
         console.log("user connected", isAuth);
         this.isLogged.set(!isAuth);
-        
       },
     });
   }
 
-  showLoginRequired(){
+  showLoginRequired() {
     if (this.isLogged()) {
       this.notificationService.showWarning(
         "Accès refusé",
@@ -725,7 +730,7 @@ export class AgencyDetails implements OnInit {
     //     "Erreurs de validation",
     //     "Veuillez corriger les erreurs dans le formulaire",
     //   );
-    // } else 
+    // } else
     if (typeof error === "string" && error.trim()) {
       // Handle general error message
       this.generalError = error;
@@ -794,7 +799,10 @@ export class AgencyDetails implements OnInit {
               "Votre agence a été modifiée avec succès !",
             );
           } else {
-            console.log("[DEBUG] modification de l'agence manque data:", response);
+            console.log(
+              "[DEBUG] modification de l'agence manque data:",
+              response,
+            );
             this.handleRegistrationError(response.message || response.error);
           }
         },
@@ -802,7 +810,6 @@ export class AgencyDetails implements OnInit {
           this.isLoading = false;
           console.log("[DEBUG] Modification agence error:", error);
           this.handleRegistrationError(error.error || error.message || error);
-
         },
       });
     return;
@@ -823,5 +830,40 @@ export class AgencyDetails implements OnInit {
         this.handleRegistrationError(error.error || error.message || error);
       },
     });
+  }
+
+  /**
+   * Charge les agences depuis l'API backend et remplace les données locales
+   */
+  generateRandomStarsList(): void {
+    this.randomStarsList = Array.from(
+      { length: this.filteredAgencies.length },
+      () => Math.floor(Math.random() * 5) + 1,
+    );
+  }
+  private getRandomAgencies(list: any[]): any[] {
+    const shuffled = [...list];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    return shuffled.slice(0, Math.min(4, shuffled.length));
+  }
+  loadAgenciesFromApi(): void {
+    this.agencyService.getAllAgenciesFromApi().subscribe((response: any) => {
+      this.agencies = (response.data || []).map((a: any) =>
+        this.mapApiAgency(a),
+      );
+      this.filteredAgencies = this.getRandomAgencies(this.agencies);
+      console.log("Agences chargées :", this.filteredAgencies);
+      this.generateRandomStarsList();
+      // this.applyFilters();
+    });
+  }
+
+  goToAgencyDetails(agencyId: string): void {
+    window.location.href = `/agencies/${agencyId}`;
   }
 }
