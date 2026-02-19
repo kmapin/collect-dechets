@@ -41,7 +41,11 @@
             {{incident?.agencyId?.name }}
           </p>
           @if(incident.clientId){
-          <div class="incident-assignment status-badge" [class]="'status-success'" *ngIf="incident.clientId._id" >
+          <div
+            class="incident-assignment status-badge"
+            [class]="'status-success'"
+            *ngIf="incident.clientId._id"
+          >
             <i class="material-icons">person</i>
             <span
               >Client {{ incident.clientId.firstName }} {{
@@ -157,10 +161,13 @@
     <div class="drawer-body">
       <!-- Zone d'affichage des erreurs améliorée -->
       @if(incidentSelected?.comment){
-       <p class="incident-description">{{incidentSelected?.comment}} </p>
-      }
-      @if(incidentSelected?.clientId){
-       <p class="incident-date">Signalé par: {{incidentSelected?.clientId?.firstName}} {{incidentSelected?.clientId?.lastName}} à {{incidentSelected?.createdAt | date : "dd/MM/yyyy HH:mm"}}</p>
+      <p class="incident-description">{{incidentSelected?.comment}}</p>
+      } @if(incidentSelected?.clientId){
+      <p class="incident-date">
+        Signalé par: {{incidentSelected?.clientId?.firstName}}
+        {{incidentSelected?.clientId?.lastName}} le
+        {{incidentSelected?.createdAt | date : "dd/MM/yyyy à HH:mm"}}
+      </p>
       }
       <img
         [src]="selectedImage"
