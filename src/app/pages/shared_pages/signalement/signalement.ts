@@ -40,6 +40,8 @@ interface Incident {
   date: Date;
   status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
   assignedTo?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 @Component({
   selector: 'app-signalement',
@@ -161,9 +163,10 @@ export class Signalement {
   }
 
   selectedImage: string | null = null;
-
-  openImageModal(imageUrl: string): void {
+  incidentSelected: Incident | null = null;
+  openImageModal(imageUrl: string, incident: Incident): void {
     this.selectedImage = imageUrl;
+    this.incidentSelected = incident;
   }
 
   closeImageModal(): void {

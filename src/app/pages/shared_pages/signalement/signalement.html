@@ -73,7 +73,7 @@
           [src]="photo"
           alt="Photo du signalement"
           class="report-photo circular-image"
-          (click)="openImageModal(photo)"
+          (click)="openImageModal(photo, incident)"
         />
         }
       </div>
@@ -156,6 +156,12 @@
     </div>
     <div class="drawer-body">
       <!-- Zone d'affichage des erreurs améliorée -->
+      @if(incidentSelected?.comment){
+       <p class="incident-description">{{incidentSelected?.comment}} </p>
+      }
+      @if(incidentSelected?.clientId){
+       <p class="incident-date">Signalé par: {{incidentSelected?.clientId?.firstName}} {{incidentSelected?.clientId?.lastName}} à {{incidentSelected?.createdAt | date : "dd/MM/yyyy HH:mm"}}</p>
+      }
       <img
         [src]="selectedImage"
         alt="Image en plein écran"
