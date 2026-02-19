@@ -275,7 +275,7 @@
           </a>
         </div>
         <div class="agencies-grid">
-          @for (agency of filteredAgencies; track agency) {
+          @for (agency of filteredAgencies; track $index) {
             <div class="agency-card">
               <div class="agency-header">
                 <div class="agency-logo">
@@ -298,7 +298,7 @@
                   </p>
                   <div class="agency-rating">
                     <div class="stars">
-                      @for (star of getStars(agency.rating); track star) {
+                      @for (star of getStars(agency.rating); track $index) {
                         <i class="material-icons star">star</i>
                       }
                     </div>
@@ -468,7 +468,7 @@
             <p class="testimonial-text">{{ testimonial.text }}</p>
             <div class="testimonial-rating">
               <div class="stars">
-                @for (star of getStars(testimonial.rating); track star) {
+                @for (star of getStars(testimonial.rating); track $index) {
                   <i class="material-icons star">star</i>
                 }
               </div>

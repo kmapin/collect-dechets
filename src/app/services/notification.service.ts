@@ -66,7 +66,7 @@ export class NotificationService {
     this.notificationSubject.next(notification);
   }
       getAllNotificationsAgency$(userId: string): Observable<any[]> {
-      const url=`${environment.apiUrl}/notifications/get/${userId}`;
+      const url=`${environment.apiUrl}/notifications/${userId}`;
       console.log("URL de la requête :", url); 
       return this.http.get<any[]>(url);
   

@@ -269,6 +269,12 @@ navigateToNotification(notif: any): void {
         queryParams: { source: 'notification' }
       });
       break;
+    case 'subscribed':
+      this.router.navigate(['/dashboard/agency'], { 
+        fragment: 'clients',
+        queryParams: { source: 'notification' }
+      });
+      break;
     case 'employee':
       this.router.navigate(['/dashboard/agency'], { 
         fragment: 'employees',
