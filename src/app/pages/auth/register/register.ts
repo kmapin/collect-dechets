@@ -243,7 +243,15 @@ export class Register implements OnInit {
     console.log('[DEBUG] - password match:', this.userData.password === this.userData.confirmPassword);
     return disabled;
   }
+  formatPhone(phone: any): string {
+    if (!phone) return '';
 
+    const phoneStr = String(phone).trim();
+
+    return phoneStr
+      .replace(/\s+/g, '')
+      .replace(/^\+?(226|225)?/, '');
+  }
   onRegister(): void {
     console.log('[DEBUG] onRegister() appelée');
     console.log('[DEBUG] Données utilisateur:', this.userData);
@@ -269,7 +277,7 @@ export class Register implements OnInit {
         firstName: this.userData.firstName,
         lastName: this.userData.lastName,
         email: this.userData.email,
-        phone: this.userData.phone,
+        phone: this.formatPhone(this.userData.phone),
         password: this.userData.password,
         role: this.userData.role,
         acceptTerms: this.userData.acceptTerms,

@@ -35,7 +35,15 @@ export class Login implements OnInit {
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
+  formatPhone(phone: any): string {
+    if (!phone) return '';
 
+    const phoneStr = String(phone).trim();
+
+    return phoneStr
+      .replace(/\s+/g, '')
+      .replace(/^\+?(226|225)?/, '');
+  }
   onLogin(): void {
     if (!(this.credentials.email || this.credentials.phone) || !this.credentials.password) {
       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs');
@@ -43,9 +51,11 @@ export class Login implements OnInit {
     }
 
     // Basic email validation
+
+    const phoneNumber= this.formatPhone(this.credentials.phone);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[0-9]{8,}$/;
-    if (!emailRegex.test(this.credentials.email ) && !phoneRegex.test(this.credentials.phone) ) {
+    if (!emailRegex.test(this.credentials.email ) && !phoneRegex.test(phoneNumber) ) {
       if(this.credentials.email){
         this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
         return;
@@ -57,7 +67,7 @@ export class Login implements OnInit {
     this.isLoading = true;
     console.log('[DEBUG] Login attempt with:', this.credentials.email);
     
-    this.authService.loginUser(this.credentials.email || this.credentials.phone, this.credentials.password).subscribe({
+    this.authService.loginUser(this.credentials.email || phoneNumber, this.credentials.password).subscribe({
       next: (response: any) => {
         console.log('[DEBUG] Login response:', response);
         this.isLoading = false;
