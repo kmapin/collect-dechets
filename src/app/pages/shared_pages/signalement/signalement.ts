@@ -75,7 +75,7 @@ export class Signalement {
 
   selectedEmployee: string[] = [];
     constructor(
-      // private authService: AuthService,
+      private authService: AuthService,
       // private agencyService: AgencyService,
       // private collectionService: CollectionService,
       // private adminService: Admin,
@@ -85,6 +85,7 @@ export class Signalement {
       private router: Router,
       private cd: ChangeDetectorRef
     ) {
+      this.currentUser = this.authService.getCurrentUser();
       console.log("currentUser", this.currentUser);
     }
 

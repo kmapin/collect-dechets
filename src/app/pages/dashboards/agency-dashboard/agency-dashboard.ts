@@ -6406,4 +6406,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     }
   }
   
+  // Utiliser une API tierce pour générer le QR code
+  generateQRCode(data: string): string {
+    return data ? data : "Pas de code QR généré";
+  }
 }

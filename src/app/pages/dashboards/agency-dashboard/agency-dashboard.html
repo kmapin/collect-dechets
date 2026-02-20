@@ -122,10 +122,11 @@
           {{ tab.label }} @if (tab.label === 'Messages' && unreadMessageCount >=
           0) {
           <span class="tab-badge">{{ unreadMessageCount }}</span>
-          } @if (tab.label === 'Signalements' && statistics.totalReporting >= 0) {
+          } @if (tab.label === 'Signalements' && statistics.totalReporting >= 0)
+          {
           <span class="tab-badge">{{ statistics.totalReporting }}</span>
           }@if(tab.badge){
-            <span class="tab-badge">{{ tab.badge }}</span>
+          <span class="tab-badge">{{ tab.badge }}</span>
           }
         </button>
         }
@@ -181,7 +182,8 @@
                     class="status-badge"
                     [class]="'status-' + collecte.status.toLowerCase()"
                   >
-                    {{getStatusText(collecte.status.toLowerCase()) || collecte.status }}
+                    {{getStatusText(collecte.status.toLowerCase()) ||
+                    collecte.status }}
                   </span>
                   <span class="collection-time">
                     {{ collecte.createdAt | date : "dd/MM/yyyy HH:mm" }}
@@ -440,7 +442,6 @@
                   "
             >
               <div class="employee-header">
-                
                 <div class="employee-info">
                   <h4>{{ employee.firstName }} {{ employee.lastName }}</h4>
                   <p class="employee-role">{{ getRoleText(employee.role) }}</p>
@@ -1112,7 +1113,9 @@
                     <div class="schedule-time">
                       <i class="material-icons">person</i>
                       <span
-                        >{{ getCollectorName(schedule.collectorId) || 'Nonassigné' }}</span>
+                        >{{ getCollectorName(schedule.collectorId) ||
+                        'Nonassigné' }}</span
+                      >
                     </div>
                     <!-- Actions avec effet glassmorphism -->
                     <div
@@ -1176,9 +1179,7 @@
         @if (activeTab === 'clients') {
         <div class="clients-tab">
           <div class="section-header">
-            <h2>
-              Clients Actifs et leurs abonnements
-            </h2>
+            <h2>Clients Actifs et leurs abonnements</h2>
             <div class="section-actions">
               <button
                 class="btn btn-outline search-toggle-btn"
@@ -1555,13 +1556,13 @@
           </app-loading-spinner>
           } @if (!isLoadingReports) {
 
-            <app-signalement 
-              [incidents]="agencyReports" 
-              [currentUser]="currentUser" 
-              (isLoadingIncidents)="isLoadingReports = $event" 
-              (assignReport)="openAssignModal($event)"
-              (resolvedIncident)="resolveIncident($event)"
-            ></app-signalement>
+          <app-signalement
+            [incidents]="agencyReports"
+            [currentUser]="currentUser"
+            (isLoadingIncidents)="isLoadingReports = $event"
+            (assignReport)="openAssignModal($event)"
+            (resolvedIncident)="resolveIncident($event)"
+          ></app-signalement>
           <!-- <div class="reports-list">
             @for (report of agencyReports; track report) {
             <div class="report-card card">
@@ -1721,7 +1722,8 @@
                     <div class="div5 chat-bubble">
                       <span> {{ message.content }}</span>
                       <span class="chat-time"
-                        >reçu le {{ message.timestamp | date : "dd/MMM/yyyyà HH:mm" }}
+                        >reçu le {{ message.timestamp | date : "dd/MMM/yyyyà
+                        HH:mm" }}
                         <mat-icon class="chat-read">
                           {{ message.read === "true" ? "done_all" : "done" }}
                         </mat-icon>
@@ -1732,7 +1734,9 @@
                   <div class="sent">
                     <div class="div6 chat-bubble">
                       <span> {{ message.content }}</span>
-                      <span class="chat-time">envoyé le {{ message.timestamp | date : "dd/MMM/yyyy à HH:mm" }}
+                      <span class="chat-time"
+                        >envoyé le {{ message.timestamp | date : "dd/MMM/yyyy à
+                        HH:mm" }}
                         <mat-icon class="chat-read">
                           {{ message.read === "true" ? "done_all" : "done" }}
                         </mat-icon>
@@ -1823,7 +1827,8 @@
               >
                 <div class="drawer-header">
                   <h3>
-                    {{ isEditingEmployee ? 'Modifier l\'Employé' : 'Ajouter unEmployé' }}
+                    {{ isEditingEmployee ? 'Modifier l\'Employé' : 'Ajouter
+                    unEmployé' }}
                   </h3>
                   <button
                     class="drawer-close-btn"
@@ -2166,7 +2171,9 @@
                           </div>
                           <div class="form-group">
                             <label class="form-label">
-                              <mat-icon class="field-icon">local_post_office</mat-icon>
+                              <mat-icon class="field-icon"
+                                >local_post_office</mat-icon
+                              >
                               Code postal
                             </label>
                             <input
@@ -2186,8 +2193,10 @@
                       <label class="form-label"
                         >Zones assignées (optionnel)</label
                       >
-                      <div class="zone-selection"
-                        [class.error]="hasFieldError('employee', 'zones')">
+                      <div
+                        class="zone-selection"
+                        [class.error]="hasFieldError('employee', 'zones')"
+                      >
                         <div class="form-checkbox-group">
                           @for (zone of serviceZones; track zone) {
                           <div
@@ -2207,8 +2216,10 @@
                         <small class="zone-summary"
                           >{{ getSelectedZonesText() }}</small
                         >
-                        <small class="form-help">Vous pouvez assigner des zones maintenant ou plus
-                          tard depuis la gestion des employés.</small>
+                        <small class="form-help"
+                          >Vous pouvez assigner des zones maintenant ou plus
+                          tard depuis la gestion des employés.</small
+                        >
                       </div>
                       @if (hasFieldError('employee', 'zones')) {
                       <span class="error-message"
@@ -2240,9 +2251,8 @@
                       <i class="material-icons"
                         >{{ isEditingEmployee ? 'edit' : 'person_add' }}</i
                       >
-                      } {{ isLoading ? (isEditingEmployee ?
-                         'Modification en cours...' : 
-                         'Ajout en cours...') : (isEditingEmployee ?
+                      } {{ isLoading ? (isEditingEmployee ? 'Modification en
+                      cours...' : 'Ajout en cours...') : (isEditingEmployee ?
                       'Modifier l\'employé' : 'Ajouter l\'employé') }}
                     </button>
                   </div>
@@ -2260,7 +2270,8 @@
               >
                 <div class="drawer-header">
                   <h3>
-                    {{ isEditingTariff ? 'Modifier le Tarif' : 'Ajouter un Tarif' }}
+                    {{ isEditingTariff ? 'Modifier le Tarif' : 'Ajouter un
+                    Tarif' }}
                   </h3>
                   <button
                     class="drawer-close-btn"
@@ -2367,8 +2378,9 @@
                       <i class="material-icons"
                         >{{ tariffToUpdate ? 'edit' : 'add_circle' }}
                       </i>
-                      } {{ isLoading ? (tariffToUpdate ? 'Modification en cours...' : 'Ajout en cours...') 
-                      : (tariffToUpdate ? 'Modifier le tarif' : 'Ajouter le tarif') }}
+                      } {{ isLoading ? (tariffToUpdate ? 'Modification en
+                      cours...' : 'Ajout en cours...') : (tariffToUpdate ?
+                      'Modifier le tarif' : 'Ajouter le tarif') }}
                     </button>
                   </div>
                 </div>
@@ -2382,8 +2394,8 @@
               <div class="drawer-content" (click)="$event.stopPropagation()">
                 <div class="drawer-header">
                   <h3>
-                    {{ isEditingSchedule ?
-                       'Modifier le Planning' : 'Nouveau Planning de Collecte' }}
+                    {{ isEditingSchedule ? 'Modifier le Planning' : 'Nouveau
+                    Planning de Collecte' }}
                   </h3>
                   <button
                     class="drawer-close-btn"
@@ -2529,11 +2541,10 @@
                       } @if (!isLoading) {
                       <i class="material-icons"
                         >{{ isEditingSchedule ? 'edit' : 'schedule' }}
-                        </i>
-                      } {{ isLoading ? (isEditingSchedule ?
-                         'Modification en cours...' : 'Création en cours...') 
-                         : (isEditingSchedule ?
-                          'Modifier Planning' : 'Créer Planning') }}
+                      </i>
+                      } {{ isLoading ? (isEditingSchedule ? 'Modification en
+                      cours...' : 'Création en cours...') : (isEditingSchedule ?
+                      'Modifier Planning' : 'Créer Planning') }}
                     </button>
                   </div>
                 </div>
@@ -2614,7 +2625,15 @@
                 <div>
                   <h3>Assigner un signalement</h3>
                   @if (selectedReport?.clientId) {
-                  <p>Signalement du(de la) client(e)  <strong> <em> {{ selectedReport?.clientId?.firstName }} {{ selectedReport?.clientId?.lastName }}</em></strong> </p>
+                  <p>
+                    Signalement du(de la) client(e)
+                    <strong>
+                      <em>
+                        {{ selectedReport?.clientId?.firstName }} {{
+                        selectedReport?.clientId?.lastName }}</em
+                      ></strong
+                    >
+                  </p>
                   }
                 </div>
                 <button class="drawer-close-btn" (click)="closeAssignModal()">
@@ -2622,40 +2641,42 @@
                 </button>
               </div>
               <div class="drawer-body">
-              @if (allEmployees && allEmployees.length > 0) {
-              <div class="employee-grid">
-                @for (employee of allEmployees; track employee) {
-                <label class="employee-card">
-                  <input
-                    type="checkbox"
-                    [value]="employee._id"
-                    (change)="onEmployeeToggle($event)"
-                  />
-                  <div class="employee-info">
-                    <span class="employee-name"
-                      >{{ employee.firstName }} {{ employee.lastName }}</span
-                    >
-                    <span class="employee-role">{{ employee.role }}</span>
-                  </div>
-                </label>
+                @if (allEmployees && allEmployees.length > 0) {
+                <div class="employee-grid">
+                  @for (employee of allEmployees; track employee) {
+                  <label class="employee-card">
+                    <input
+                      type="checkbox"
+                      [value]="employee._id"
+                      (change)="onEmployeeToggle($event)"
+                    />
+                    <div class="employee-info">
+                      <span class="employee-name"
+                        >{{ employee.firstName }} {{ employee.lastName }}</span
+                      >
+                      <span class="employee-role">{{ employee.role }}</span>
+                    </div>
+                  </label>
+                  }
+                </div>
+                } @else {
+                <p>Aucun employé disponible.</p>
                 }
               </div>
-              } @else {
-              <p>Aucun employé disponible.</p>
-              }
-              </div>
               <div class="drawer-footer">
-              <div class="drawer-actions">
-                <button class="btn btn-secondary" (click)="closeAssignModal()">
-                  Annuler
-                </button>
-                <button class="btn btn-primary" (click)="assignReport()">
-                  Assigner
-                </button>
+                <div class="drawer-actions">
+                  <button
+                    class="btn btn-secondary"
+                    (click)="closeAssignModal()"
+                  >
+                    Annuler
+                  </button>
+                  <button class="btn btn-primary" (click)="assignReport()">
+                    Assigner
+                  </button>
+                </div>
               </div>
             </div>
-            </div>
-            
           </div>
           }
           <!-- Drawer Mes Tarifs -->
@@ -2827,6 +2848,18 @@
             </div>
           </div>
         </div>
+      </div>
+      <!-- <h3>Code QR</h3> -->
+      <div class="form-section">
+        <div class="qr-code">
+          <img [src]="generateQRCode(selectedClient?.qrCode)" alt="QR Code" />
+        </div>
+        <a
+          [href]="generateQRCode(selectedClient?.qrCode)"
+          download="qrcode.png"
+          class="btn btn-primary mt-2"
+          >Télécharger le QR Code</a
+        >
       </div>
       <!-- Historique des souscriptions -->
       <!-- <div class="form-section" *ngIf="selectedClient?.subscriptionHistory?.length > 0">

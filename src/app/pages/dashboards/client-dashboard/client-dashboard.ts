@@ -22,6 +22,7 @@ import { Message } from "../../../models/message.model";
 import { MatIcon } from "@angular/material/icon";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { Signalement } from "../../shared_pages/signalement/signalement";
 
 interface PaymentHistory {
   id: string;
@@ -44,7 +45,7 @@ interface Subscription {
 
 @Component({
   selector: 'app-client-dashboard',
-  imports: [CommonModule, RouterModule, FormsModule, MatIcon],
+  imports: [CommonModule, RouterModule, FormsModule, MatIcon, Signalement],
   templateUrl: './client-dashboard.html',
   styleUrl: './client-dashboard.scss'
 })
@@ -422,8 +423,21 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
     this.loadSubscription();
     this.countUnreadMessages();
     this.userMessages();
+    this.loadClientReports();
   }
-
+  /**Récupération des signalements d'un client */
+  clientReports = [];
+  loadClientReports() {
+    this.clientService.getClientReports(this.currentUser?._id || "").subscribe({
+      next: (response: any) => {
+        this.clientReports = response || [];
+        console.log("API > getClientReports:", response);
+      },
+      error: (error: any) => {
+        console.error("API > getClientReports:", error);
+      },
+    })
+  }
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
     this.messageService

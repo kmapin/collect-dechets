@@ -1,4 +1,4 @@
-<div class="incidents-list grid-3">
+<div class=" {{currentUser?.role === 'client' ? 'incidents-list-client' : 'incident-list grid-3'}} ">
   <!-- État vide pour les incidents *ngIf="!isLoadingIncidents" -->
   <div *ngIf="!incidents.length" class="empty-state">
     <i class="material-icons">report_problem</i>
@@ -77,7 +77,7 @@
           [src]="photo"
           alt="Photo du signalement"
           class="report-photo circular-image"
-          (click)="openImageModal(photo, incident)"
+          (click)="this.currentUser?.role !== 'client' && openImageModal(photo, incident)"
         />
         }
       </div>

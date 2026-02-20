@@ -148,6 +148,14 @@ export class ClientService {
     );
   }
 
+  getClientReports(clientId: string){
+    return this.http.get(`${environment.apiUrl}/collectes/user/${clientId}/collecte-reporting`).pipe(
+      map((response: any) => {
+        console.log('API > clientService > getClientReports:', response);
+        return response;
+      })
+    );
+  }
   // Nouvelle méthode pour filtrer les clients de l'agence via l'API
   getFilteredClients(agencyId: string, filters: any): Observable<any> {
     let params = new HttpParams();

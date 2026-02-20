@@ -718,7 +718,30 @@
                 }
               </div>
             </section>
+              <!-- Modal de signalement ---->
+             <section class="payment-history card">
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">receipt</i>
+                  Historique de mes signalement
+                </h2>
+                
+              </div>
 
+              <div class="payments-list">
+                @if (clientReports.length > 0) {
+                  <app-signalement [incidents]="clientReports"></app-signalement>
+                }
+
+                @if (clientReports.length === 0) {
+                  <div class="empty-state">
+                    <i class="material-icons">receipt</i>
+                    <h3>Aucun paiement</h3>
+                    <p>Vos paiements apparaîtront ici</p>
+                  </div>
+                }
+              </div>
+            </section>
             <!-- Adresse de collecte -->
             <section class="collection-address flex flex-col card">
               <div class="section-header">
@@ -765,6 +788,8 @@
                 </div>
               </div> -->
             </section>
+
+            
           </div>
         </div>
       </div>
