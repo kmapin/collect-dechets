@@ -916,7 +916,9 @@
       .agency-header-section {
         padding: 24px 0;
       }
-
+      .agency-main-content {
+        margin-top: 64px;
+      }
       .agency-name {
         font-size: 1.8rem;
       }

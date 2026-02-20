@@ -148,6 +148,13 @@ import { Subscription } from 'rxjs';
       flex-direction: column;
       margin-top: 64px;
     }
+
+    @media ( max-width:768px) {
+      .main-content {
+        padding: 2px;
+        margin-top: 85px;
+      }
+    }
   `]
 })
 export class AppComponent implements OnInit, OnDestroy {
