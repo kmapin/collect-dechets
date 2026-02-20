@@ -1445,7 +1445,11 @@
   .container {
     padding: 0 16px;
   }
-
+  .rounded-circle{
+    font-size: 15px;
+    width: 40px;
+    height: 40px;
+  }
   .page-header {
     padding: 30px 0;
   }
@@ -1615,7 +1619,8 @@
   }
 
   .quick-actions {
-    flex-direction: column;
+
+    flex-direction: row;
     width: 100%;
   }
 
@@ -1661,10 +1666,6 @@
     padding: 6px 8px;
     font-size: 0.8rem;
     min-width: 80px;
-  }
-
-  .tab-btn span {
-    display: none;
   }
 
   .tab-btn i {

@@ -1402,9 +1402,10 @@
   }
 
   .tabs-navigation {
+    display: flex;
+    flex-direction: column;
     padding: 4px;
   }
-
   .tab-btn {
     padding: 6px 8px;
     font-size: 0.8rem;

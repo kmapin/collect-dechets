@@ -83,6 +83,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 24px;
+  padding: 20px;
 }
 .full-image {
   width: 100%;
@@ -3418,9 +3419,17 @@ form-row {
 
 @media (max-width: 768px) {
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
+  }
+  .tab-content {
+    padding: 3%;
   }
 
+  .rounded-circle{
+    font-size: 15px;
+    width: 40px;
+    height: 40px;
+  }
   .collections-filters,
   .clients-filters,
   .reports-filters,
@@ -3449,6 +3458,15 @@ form-row {
   .day-column {
     border-right: none;
     border-bottom: 1px solid var(--medium-gray);
+  }
+  .tabs-navigation {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .quick-actions{
+    flex-direction: column;
+    gap: 16px;
   }
 }
 

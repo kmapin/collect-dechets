@@ -862,7 +862,9 @@
   .stats-grid {
     grid-template-columns: 1fr;
   }
-
+  .quick-actions {
+    flex-direction: column;
+  }
   .collection-item,
   .history-item,
   .payment-item {
@@ -881,4 +883,5 @@
     margin: 20px;
     width: calc(100% - 40px);
   }
+
 }
