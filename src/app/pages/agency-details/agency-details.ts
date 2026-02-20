@@ -142,7 +142,6 @@ export class AgencyDetails implements OnInit {
     pendingReports: 0,
     totalpendingSignalements: 0,
   };
-
   constructor(
     private route: ActivatedRoute,
     private countriesOrgMockService: CountriesOrgMockService,
@@ -161,14 +160,10 @@ export class AgencyDetails implements OnInit {
   ngOnInit(): void {
     
     this.currentUser = this.authService.getCurrentUser();
-
-    console.log("currentUser", this.currentUser);
     this.loadAgencyDataOnInit();
     this.checkUserIsLooged();
     this.loadAgenciesFromApi();
-    this.loadAgencyStatistics(this.currentUser);
     this.cdr.detectChanges();
-
 
   }
 
@@ -200,6 +195,7 @@ export class AgencyDetails implements OnInit {
     if (this.agencyId) {
       this.loadAgencyFromApi(this.agencyId);
       this.loadTariffs(this.agencyId || "");
+      this.loadAgencyStatistics(this.agencyId || "")
     }
     this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
@@ -895,10 +891,9 @@ export class AgencyDetails implements OnInit {
 
 
   //recuperations des statistiques de l'agence
-  loadAgencyStatistics(currentUser: any): void {
-    if (currentUser && currentUser.agencyId) {
+  loadAgencyStatistics(agencyId: string): void {
+    if (agencyId) {
       this.isLoadingStatistics = true;
-      const agencyId = currentUser.agencyId;
       this.agencyService.getAgencyStats$(agencyId).subscribe({
         next: (stats) => {
           if (!stats.success) return;
