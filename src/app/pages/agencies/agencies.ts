@@ -210,8 +210,8 @@ applyFilters(): void {
 
   this.agencyService.searchAgencie(payload).subscribe({
     next: (response: any) => {
-      this.filteredAgencies = (response.results || []).map((a: any) => this.mapApiAgency(a));
-      console.log("Agences filtrées :", this.filteredAgencies);
+      this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
+      console.log("Agences filtrées dans applyFilters:", this.filteredAgencies);
       this.generateRandomStarsList();
       this.sortAgencies();
     },
