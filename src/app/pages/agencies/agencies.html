@@ -174,7 +174,7 @@
               <i class="material-icons star">star</i>
             }
           </div>
-          @if (currentUser?.subscribedAgencyId == agency._id) {
+          @if (currentUser?.agencyId === agency._id) {
             <div class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
               <!-- <span class="rating-text">{{ agency.randomStars }}/5 ({{ agency.totalClients }} avis)</span> -->
               <div class="stars">
@@ -188,10 +188,11 @@
               <i class="material-icons">location_on</i>
               <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{ agency.address.neighborhood || '-' }}</span>
             </div>
-            <div class="info-item">
+            <div class="info-item"></div>
+            <!-- <div class="info-item">
               <i class="material-icons">people</i>
               <span>{{ agency.totalClients || 0 }} clients</span>
-            </div>
+            </div> -->
             <!-- <div class="info-item">
             <i class="material-icons">build</i>
             <span>{{ agency.services.length || 0 }} services</span>
@@ -243,11 +244,11 @@
               <span class="rating-text">{{ agency.rating }}/5</span>
             </div> -->
             <div class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full" >
-              @for (star of getStars(agency.rating, agency.randomStars); track star) {
+              @for (star of getStars(agency.rating, agency.randomStars); track $index) {
                 <i class="material-icons star">star</i>
               }
             </div>
-            @if (currentUser?.subscribedAgencyId == agency._id) {
+            @if (currentUser?.agencyId === agency._id) {
               <div class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
                 <div class="stars">
                   <i  class="material-icons star">star</i>
