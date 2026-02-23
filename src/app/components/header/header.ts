@@ -40,10 +40,11 @@ export class Header  implements OnInit {
 
     this.authService.isAuthenticated$.subscribe(isAuth => {
       this.isAuthenticated = isAuth;
+      this.loadNotifications();
     });
-    this.loadNotifications();
-        // this.startAutoRefresh();
-           this.cdr.detectChanges();
+    
+    // this.startAutoRefresh();
+    this.cdr.detectChanges();
   }
 
   @HostListener('window:scroll', [])

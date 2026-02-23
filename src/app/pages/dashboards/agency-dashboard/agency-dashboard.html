@@ -445,12 +445,12 @@
                 <div class="employee-info">
                   <h4>{{ employee.firstName }} {{ employee.lastName }}</h4>
                   <p class="employee-role">{{ getRoleText(employee.role) }}</p>
-                  <p
+                  <!-- <p
                     class="employee-status"
                     [class]="employee.isActive ? 'active' : 'inactive'"
                   >
                     {{ employee.isActive ? "Actif" : "Inactif" }}
-                  </p>
+                  </p> -->
                 </div>
                 <div class="employee-avatar">
                   @if (employee?.avatar) {
