@@ -72,9 +72,9 @@ export class NotificationService {
   
     }
     //marquer un message comme lu 
-       markNotificationAsRead$(notificationId: string): Observable<any> {
-        const url = `${environment.apiUrl}/notifications/${notificationId}/read`;
-        return this.http.patch(url, notificationId);
+    markNotificationAsRead$(notificationId: string): Observable<any> {
+        const url = `${environment.apiUrl}/notifications/update/${notificationId}`;
+        return this.http.put(url, notificationId);
     }
 
     //suppressin d une notification

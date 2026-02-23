@@ -28,7 +28,7 @@
           type="text"
           [(ngModel)]="searchQuery"
           (input)="onSearch()"
-          placeholder="Rechercher par nom, ville, secteur, quartier..."
+          placeholder="Rechercher par nom..."
           class="search-input">
           <!-- Ajout de la liste des suggestions -->
           @if (suggestions.length > 0) {

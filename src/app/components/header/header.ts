@@ -118,6 +118,19 @@ export class Header  implements OnInit {
   closeMobileMenu(): void {
     this.isMobileMenuOpen = false;
   }
+
+  getNotificationType(type: string): string {
+    const types: { [key: string]: string } = {
+      'Subscribed': 'Abonnement',
+      'Unsubscribed': 'Désabonnement',
+      'Assingnment': 'Affectation',
+      'Planning': 'Collecte programmée',
+      'AgencyAdd': 'Agence ajoutée',
+      'Signalement': 'Signalement',
+
+    };
+    return types[type] || type;
+  }
   loadNotifications(): void {
     const userId = this.currentUser?._id;
     if (!userId) {
