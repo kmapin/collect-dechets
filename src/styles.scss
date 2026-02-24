@@ -315,6 +315,14 @@ body {
   font-weight: 500;
   cursor: pointer;
 }
+.btn-primary-tarif{
+  background: #0097a7;
+  color: white;
+}
+.btn-primary-tarif:hover{
+  background: #2c7f88;
+  transform: translateY(-1px);
+}
 .btn-primary {
   background: var(--primary-color);
   color: var(--white);
@@ -324,7 +332,14 @@ body {
   background: #0097a7;
   transform: translateY(-1px);
 }
-
+.btn-danger {
+  background: var(--error-color);
+  color: var(--white);
+}
+.btn-danger:hover {
+  background: #ca4d4d;
+  transform: translateY(-1px);
+}
 .btn-secondary {
   background: var(--secondary-color);
   color: var(--white);

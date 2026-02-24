@@ -130,6 +130,10 @@
           }
         </button>
         }
+        <button class="btn btn-primary-tarif" (click)="openTariffsModal()">
+          <i class="material-icons">visibility</i>
+          Voir nos tarifs
+        </button>
       </div>
 
       <!-- Contenu des onglets -->
@@ -599,10 +603,10 @@
           <div class="section-header">
             <h2>Gestion des Zones de Couverture</h2>
             <div class="section-actions">
-              <button class="btn btn-primary" (click)="openTariffsModal()">
+              <!-- <button class="btn btn-primary" (click)="openTariffsModal()">
                 <i class="material-icons">visibility</i>
                 Voir mes tarifs
-              </button>
+              </button> -->
               <button
                 class="btn btn-primary"
                 (click)="openZoneModalcouverture()"
@@ -2270,8 +2274,7 @@
               >
                 <div class="drawer-header">
                   <h3>
-                    {{ isEditingTariff ? 'Modifier le Tarif' : 'Ajouter un
-                    Tarif' }}
+                    {{ isEditingTariff ? 'Modifier le Tarif' : 'Ajouter un Tarif' }}
                   </h3>
                   <button
                     class="drawer-close-btn"
@@ -2378,8 +2381,7 @@
                       <i class="material-icons"
                         >{{ tariffToUpdate ? 'edit' : 'add_circle' }}
                       </i>
-                      } {{ isLoading ? (tariffToUpdate ? 'Modification en
-                      cours...' : 'Ajout en cours...') : (tariffToUpdate ?
+                      } {{ isLoading ? (tariffToUpdate ? 'Modification en cours...' : 'Ajout en cours...') : (tariffToUpdate ?
                       'Modifier le tarif' : 'Ajouter le tarif') }}
                     </button>
                   </div>
@@ -2394,8 +2396,7 @@
               <div class="drawer-content" (click)="$event.stopPropagation()">
                 <div class="drawer-header">
                   <h3>
-                    {{ isEditingSchedule ? 'Modifier le Planning' : 'Nouveau
-                    Planning de Collecte' }}
+                    {{ isEditingSchedule ? 'Modifier le Planning' : 'Nouveau Planning de Collecte' }}
                   </h3>
                   <button
                     class="drawer-close-btn"
@@ -2685,7 +2686,7 @@
             <div class="drawer-content" (click)="$event.stopPropagation()">
               <div class="drawer-header">
                 <h3>
-                  {{ tariffToUpdate ? 'Modifier le Tarif' : 'Ajouter un Tarif'
+                  {{ tariffToUpdate ? 'Modifier le Tarif' : 'Liste des tarifs'
                   }}
                 </h3>
                 <button class="drawer-close-btn" (click)="closeTariffsModal()">
@@ -2722,7 +2723,7 @@
                     <!-- Boutons d’action dans le modal -->
                     <div class="tariff-actions">
                       <button
-                        class="btn btn-warning flex items-center gap-1"
+                        class="btn btn-secondary flex items-center gap-1"
                         (click)="editTariff(tariff)"
                       >
                         <i class="material-icons text-base">edit</i>

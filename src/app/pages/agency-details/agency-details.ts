@@ -467,7 +467,26 @@ export class AgencyDetails implements OnInit {
     if (!rating || rating < 0) return [];
     return new Array(Math.floor(rating)).fill(0);
   }
+  deleteAgency(agencyId: string): void {
+    if (!this.agency) return;
 
+    this.agencyService.deleteAgency(agencyId).subscribe({
+      next: (response) => {
+        if(response.success){
+          this.notificationService.showSuccess(
+            "Agence supprimée",
+            "L'agence a bien été supprimée"
+          )
+        }
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          "Agence non supprimée",
+          error.error?.message
+        )
+      }
+    })
+  }
   getFrequencyText(frequency: string): string {
     const frequencies: { [key: string]: string } = {
       daily: "quotidienne",

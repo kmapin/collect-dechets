@@ -1214,6 +1214,25 @@ export class AdminDashboard implements OnInit {
       },
     });
   }
+
+  deleteUser(userId: string){
+    this.adminService.deleteUser(userId).subscribe({
+      next: (response: any) => {
+        console.log("user deleted", response);
+        this.notificationService.showSuccess(
+          "Supprimé",
+          "Utilisateur supprimé avec succès",
+        );
+        this.showAdminUsers(this.usersFilterParams);
+      },
+      error: (error) => {
+        this.notificationService.showError(
+          "Autorisation",
+          error.error?.message || "Une erreur est survenue lors de la suppression de l'utilisateur",
+        )
+      },
+    })
+  }
   agencies: any[] = [];
   getAllAgenciesIDs(): void {
     this.agencyService

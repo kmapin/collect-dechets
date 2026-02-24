@@ -60,12 +60,12 @@
         <div class="agency-actions">
           @if (currentUser?.role === 'manager' && currentUser?.agencyId ===
           agency?._id) {
-          <button class="btn btn-success" (click)="editAgency()">
+          <button class="btn btn-success btn-large" (click)="editAgency()">
             <i class="material-icons">edit</i>
             Modifier
           </button>
           } @if (currentUser?.role === 'super_admin') {
-          <button class="btn btn-accent" (click)="activateAgency(agency?._id)">
+          <button class="btn btn-accent btn-large" (click)="activateAgency(agency?._id)">
             @if (agency?.status!== 'active' ) {
             <i class="material-icons">check</i>
             Activer } @else {
@@ -73,12 +73,17 @@
             Desactiver }
           </button>
           }
-          <button class="btn btn-secondary" (click)="shareAgency()">
+          <button class="btn btn-secondary btn-large" (click)="shareAgency()">
             <i class="material-icons">share</i>
             Partager
           </button>
-          <!-- Buton of drawer to subscribe -->
-          <!-- <button class="btn btn-primary btn-large" (click)="subscribeToAgency()"> -->
+          <!-- Buton de suppression -->
+           @if (currentUser?.role === 'super_admin') {
+          <button class="btn btn-danger btn-large" (click)="deleteAgency(agency?._id)">
+            <i class="material-icons">delete</i>
+            Supprimer
+          </button>
+          }
           @if (currentUser?.agencyId === agency?._id) {
           <div
             class="btn btn-primary btn-large"

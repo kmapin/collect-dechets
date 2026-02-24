@@ -3782,7 +3782,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   tariffs: Tarif[] = [];
   loadTariffs(): void {
     this.isLoadingTariffs = true;
-    const agencyId = this.currentUser?._id;
+    const agencyId = this.currentUser?.agencyId;
 
     console.log("[DEBUG] LoadTariffs - currentUser:", this.currentUser);
     console.log("[DEBUG] LoadTariffs - agencyId utilisé:", agencyId);

@@ -36,7 +36,7 @@ export class Admin {
     );
 
   }
-    getAllUsers(fileterParams: FilterParams): Observable<any> {
+  getAllUsers(fileterParams: FilterParams): Observable<any> {
     let requestParams = new HttpParams()
     .append('limit', 25)
     .append('role', fileterParams.role ?? '')
@@ -45,6 +45,15 @@ export class Admin {
 
     console.log('API > getAllUsers params:', requestParams);
     return this.http.get(`${environment.apiUrl}/users`, { params: requestParams }).pipe(
+      map((response: any) => {
+        console.log('API > getAllClients:', response);
+        return response;
+      })
+    );
+  }
+
+  deleteUser(userId: string) {
+    return this.http.delete(`${environment.apiUrl}/user/${userId}`).pipe(
       map((response: any) => {
         console.log('API > getAllClients:', response);
         return response;

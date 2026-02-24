@@ -220,7 +220,7 @@ export class AgencyService {
     throw new Error('Agency not found');
   }
 
-  deleteAgency(id: string): Observable<boolean> {
+  deleteAgency1(id: string): Observable<boolean> {
     const index = this.agencies.findIndex(agency => agency._id === id);
     if (index !== -1) {
       this.agencies.splice(index, 1);
@@ -249,6 +249,15 @@ export class AgencyService {
     return this.http.get(`${environment.apiUrl}/agencies/${id}`).pipe(
       map((response: any) => {
         console.log('API > getAgencyById:', response);
+        return response;
+      })
+    );
+  }
+
+  deleteAgency(agencyId: string){
+    return this.http.delete(`${environment.apiUrl}/agencies/${agencyId}`).pipe(
+      map((response: any) => {
+        console.log('API > deleteAgency:', response);
         return response;
       })
     );
