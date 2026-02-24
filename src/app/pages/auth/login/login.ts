@@ -24,16 +24,22 @@ export class Login implements OnInit {
   rememberMe = false;
   isLoading = false;
 
+  // Error handling properties
+  validationErrors: { [key: string]: string[] } = {};
+  generalError: string = '';
   constructor(
     private authService: AuthService,
     private router: Router,
     private notificationService: NotificationService
   ) { }
 
-  ngOnInit(): void { }
+  ngOnInit(): void {}
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
+  }
+  clearError(): void {
+    this.generalError = '';
   }
   formatPhone(phone: any): string {
     if (!phone) return '';
@@ -84,21 +90,46 @@ export class Login implements OnInit {
           // Redirect based on user role
           this.redirectToDashboard(user.role);
         } else {
-          this.notificationService.showError(
-            'Erreur de connexion', 
-            response?.error || 'Email ou mot de passe incorrect'
-          );
+          this.isLoading = false;
+          console.error('[ERROR] Login failed:', response);
+          this.handleRegistrationError(response?.error || response?.error.message || response?.error);
         }
       },
       error: (error) => {
         console.error('[ERROR] Login failed:', error);
         this.isLoading = false;
+        this.handleRegistrationError(error.error || error.message || error);
         this.notificationService.showError(
           'Erreur de connexion', 
           'Une erreur est survenue lors de la connexion'
         );
       }
     });
+  }
+/**
+   * Handles registration errors and displays appropriate messages
+   */
+  private handleRegistrationError(error: string | { [key: string]: string[] } | undefined, fallbackMessage?: string): void {
+    this.validationErrors = {};
+    this.generalError = '';
+
+    if (typeof error === 'object' && error !== null) {
+      // Handle field-specific validation errors
+      this.validationErrors = error;
+      this.notificationService.showError(
+        'Erreurs de validation',
+        'Veuillez corriger les erreurs dans le formulaire'
+      );
+    } else if (typeof error === 'string' && error.trim()) {
+      // Handle general error message
+      this.generalError = error;
+      this.notificationService.showError('Erreur de connexion', error);
+    } else {
+      // Handle fallback error
+      const message = fallbackMessage || 'Une erreur inconnue s\'est produite';
+      this.generalError = message;
+      this.notificationService.showError('Erreur de connexion', message);
+    }
   }
 
   loginAsDemo(role: string): void {

@@ -120,7 +120,9 @@ export class Register implements OnInit {
     console.log(this.roleMunicipality);
 
   }
-
+  clearError(): void {
+    this.generalError = '';
+  }
   formCountriesDataInit() {
     this.getAllCountries();
     this.test();
@@ -550,11 +552,11 @@ export class Register implements OnInit {
     // Validation spécifique pour les agences
     if (this.userData.role === UserRole.MANAGER) {
       if (!this.userData.agencyName || this.userData.agencyName.trim() === '') {
-        this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+        this.handleRegistrationError('Le nom de l\'agence est requis');
         return false;
       }
       if (!this.userData.agencyDescription || this.userData.agencyDescription.trim() === '') {
-        this.notificationService.showError('Erreur', 'La description de l\'agence est requise');
+        this.handleRegistrationError('La description de l\'agence est requise');
         return false;
       }
     }
@@ -562,7 +564,7 @@ export class Register implements OnInit {
     // Validation spécifique pour les municipalités  
     if (this.userData.role === UserRole.MUNICIPALITY) {
       if (!this.userData.commune || !this.userData.commune.name || this.userData.commune.name.trim() === '') {
-        this.notificationService.showError('Erreur', 'Le nom de la commune est requis');
+        this.handleRegistrationError('Le nom de la commune est requis');
         return false;
       }
     }
@@ -582,13 +584,13 @@ export class Register implements OnInit {
       //   return false;
       // }
       if (!address.doorColor) {
-        this.notificationService.showError('Erreur', 'Veuillez indiquer la couleur de la porte');
+        this.handleRegistrationError('Veuillez indiquer la couleur de la porte');
         return false;
       }
     } else if (this.userData.role === UserRole.MANAGER) {
       // Validation agence
       if (!this.userData.agencyName) {
-        this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
+        this.handleRegistrationError('Le nom de l\'agence est requis');
         return false;
       }
     } else if (this.userData.role === UserRole.MUNICIPALITY) {
@@ -599,7 +601,8 @@ export class Register implements OnInit {
       // }
     } else {
       // Cas improbable, mais au cas où
-      this.notificationService.showError('Erreur', 'Rôle utilisateur invalide');
+
+      this.handleRegistrationError('Rôle utilisateur invalide');
       return false;
     }
 

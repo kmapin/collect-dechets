@@ -81,6 +81,7 @@
                     id="agencyName"
                     name="agencyName"
                     [(ngModel)]="userData.agencyName"
+                    (ngModelChange)="clearError()"
                     class="form-control"
                     placeholder="Nom de votre agence"
                     required
@@ -89,7 +90,7 @@
                   <div class="form-group">
                     <label class="form-label" for="agencyDescription">
                       <i class="material-icons">description</i>
-                      Description
+                      Description<span class="required">*</span>
                     </label>
                     <textarea
                       id="agencyDescription"
@@ -110,6 +111,7 @@
                       id="slogan"
                       name="slogan"
                       [(ngModel)]="userData.slogan"
+                      (ngModelChange)="clearError()"
                       class="form-control"
                       placeholder="Slogan de votre agence"
                       required
@@ -135,6 +137,7 @@
                     id="firstName"
                     name="firstName"
                     [(ngModel)]="userData.firstName"
+                    (ngModelChange)="clearError()"
                     class="form-control"
                     placeholder="Votre prénom"
                     required
@@ -167,6 +170,7 @@
                       id="lastName"
                       name="lastName"
                       [(ngModel)]="userData.lastName"
+                      (ngModelChange)="clearError()"
                       class="form-control"
                       placeholder="Votre nom"
                       required
@@ -201,6 +205,7 @@
                         id="email"
                         name="email"
                         [(ngModel)]="userData.email"
+                        (ngModelChange)="clearError()"
                         class="form-control"
                         placeholder="votre@email.com"
                         required
@@ -234,6 +239,7 @@
                         id="phone"
                         name="phone"
                         [(ngModel)]="userData.phone"
+                        (ngModelChange)="clearError()"
                         class="form-control"
                         placeholder="+226 XX XX XX XX"
                         required
@@ -270,6 +276,7 @@
                               id="region"
                               name="region"
                               [(ngModel)]="userData.commune.region"
+                              (ngModelChange)="clearError()"
                               class="form-control"
                               placeholder="Nom de la region"
                               required
@@ -289,6 +296,7 @@
                               id="province"
                               name="province"
                               [(ngModel)]="userData.commune.province"
+                              (ngModelChange)="clearError()"
                               class="form-control"
                               placeholder="Nom de la commune"
                               required
@@ -308,6 +316,7 @@
                             id="communeName"
                             name="communeName"
                             [(ngModel)]="userData.commune.name"
+                            (ngModelChange)="clearError()"
                             class="form-control"
                             placeholder="Nom de la commune"
                             required
@@ -333,6 +342,7 @@
                             id="city"
                             name="city"
                             [(ngModel)]="userData.address.city"
+                            (ngModelChange)="clearError()"
                             class="form-control"
                             (change)="onCityChange(userData.address.city)"
                             required
@@ -355,6 +365,7 @@
                             id="postalCode"
                             name="postalCode"
                             [(ngModel)]="userData.address.postalCode"
+                            (ngModelChange)="clearError()"
                             class="form-control"
                             placeholder="75001"
                             required
@@ -372,6 +383,7 @@
                               id="arrondissement"
                               name="arrondissement"
                               [(ngModel)]="userData.address.arrondissement"
+                              (ngModelChange)="clearError()"
                               (change)="onArrondissementChange(userData.address.arrondissement)"
                               class="form-control"
                               [disabled]="!arrondissementss.length"
@@ -394,6 +406,7 @@
                               id="sector"
                               name="sector"
                               [(ngModel)]="userData.address.sector"
+                              (ngModelChange)="clearError()"  
                               (change)="onSecteurChange(userData.address.sector)"
                               class="form-control"
                               [disabled]="!secteurss.length"
@@ -418,6 +431,7 @@
                               id="neighborhood"
                               name="neighborhood"
                               [(ngModel)]="userData.address.neighborhood"
+                              (ngModelChange)="clearError()"
                               class="form-control"
                               [disabled]="!quartierss.length"
                               required
@@ -445,6 +459,7 @@
                               id="street"
                               name="street"
                               [(ngModel)]="userData.address.street"
+                              (ngModelChange)="clearError()"
                               class="form-control"
                               placeholder="Nom de la rue"
                               required
@@ -464,6 +479,7 @@
                                   id="doorNumber"
                                   name="doorNumber"
                                   [(ngModel)]="userData.address.doorNumber"
+                                  (ngModelChange)="clearError()"
                                   class="form-control"
                                   placeholder="123"
                                   required
@@ -514,6 +530,7 @@
                                         id="password"
                                         name="password"
                                         [(ngModel)]="userData.password"
+                                        (ngModelChange)="clearError()"
                                         class="form-control"
                                         placeholder="Minimum 8 caractères"
                                         required
@@ -554,6 +571,7 @@
                                             id="confirmPassword"
                                             name="confirmPassword"
                                             [(ngModel)]="userData.confirmPassword"
+                                            (ngModelChange)="clearError()"
                                             class="form-control"
                                             placeholder="Répétez votre mot de passe"
                                             required
@@ -576,6 +594,7 @@
                                             <input
                                               type="checkbox"
                                               [(ngModel)]="userData.isOwnerAgency"
+                                              (ngModelChange)="clearError()"
                                               name="isOwnerAgency"
                                               />
                                               <span class="checkmark"></span>
@@ -587,6 +606,7 @@
                                               <input
                                                 type="checkbox"
                                                 [(ngModel)]="userData.acceptTerms"
+                                                (ngModelChange)="clearError()"
                                                 name="acceptTerms"
                                                 required
                                                 />

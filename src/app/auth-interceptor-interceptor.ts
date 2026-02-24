@@ -22,7 +22,7 @@ export const authInterceptorInterceptor: HttpInterceptorFn = (req: HttpRequest<u
       console.error("[JWTI-ERROR] ", error)
 
       // if (error.status === 408 || error.status === 401 || error.status === 403) {
-      if (error.status === 401) {
+      if (error.status === 403) {
         notificationService.showSuccess("Deconnexion","Votre session a expiré, Vous allez être déconnecté dans quelques instants");
         setTimeout(() => {
           authService.logout();

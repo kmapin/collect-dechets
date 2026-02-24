@@ -12,7 +12,7 @@
         </p>
       </div>
 
-      <form class="login-form" (ngSubmit)="onLogin()" #loginForm="ngForm">
+      <form class="login-form" (ngSubmit)="onLogin()" #loginForm="ngForm" >
 
         <div class="login-types">
           <label class="login-type-option">
@@ -41,7 +41,13 @@
               </label>
             </div>
 
-
+            <!-- General error message -->
+            @if (generalError) {
+              <div class="alert alert-error">
+                <i class="material-icons">error</i>
+                <span>{{ generalError }}</span>
+              </div>
+            }
 
             @if (loginType.type === 'email') {
               <div class="form-group">
@@ -54,6 +60,7 @@
                   id="email"
                   name="email"
                   [(ngModel)]="credentials.email"
+                  (ngModelChange)="clearError()"
                   class="form-control"
                   placeholder="votre@email.com"
                   required
@@ -80,6 +87,7 @@
                     id="phone"
                     name="phone"
                     [(ngModel)]="credentials.phone"
+                    (ngModelChange)="clearError()"
                     class="form-control"
                     placeholder="XX XX XX XX"
                     required
@@ -106,6 +114,7 @@
                       id="password"
                       name="password"
                       [(ngModel)]="credentials.password"
+                      (ngModelChange)="clearError()"
                       class="form-control"
                       placeholder="Votre mot de passe"
                       required
