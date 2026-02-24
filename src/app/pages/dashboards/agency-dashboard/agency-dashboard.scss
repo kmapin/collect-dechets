@@ -2817,10 +2817,10 @@ button:disabled {
   gap: 16px;
 }
 
-form-row {
+.form-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 14px;
 }
 .form-group {
   display: flex;
@@ -3182,7 +3182,6 @@ form-row {
   font-size: 10px;
   font-weight: bold;
 }
-
 .form-actions {
   display: flex;
   gap: 12px;
@@ -3443,7 +3442,8 @@ form-row {
     gap: 16px;
   }
   .form-row {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
 
   .modal-content {
@@ -3512,17 +3512,6 @@ form-row {
 .drawer-content-wide {
   width: 680px;
   max-width: 90vw;
-}
-
-/* Amélioration de la disposition pour les drawers larges */
-.drawer-content-wide .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.drawer-content-wide .form-section .form-row {
-  margin-bottom: 8px;
 }
 
 /* Pour les champs qui doivent prendre toute la largeur */
@@ -3599,7 +3588,7 @@ form-row {
 .drawer-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
 }
 
 .drawer-form .form-section {

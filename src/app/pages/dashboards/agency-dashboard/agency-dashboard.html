@@ -1726,8 +1726,8 @@
                     <div class="div5 chat-bubble">
                       <span> {{ message.content }}</span>
                       <span class="chat-time"
-                        >reçu le {{ message.timestamp | date : "dd/MMM/yyyyà
-                        HH:mm" }}
+                        >reçu le {{ message.timestamp | date : 
+                          "dd/MMM/yyyy à HH:mm" }}
                         <mat-icon class="chat-read">
                           {{ message.read === "true" ? "done_all" : "done" }}
                         </mat-icon>
@@ -1739,8 +1739,7 @@
                     <div class="div6 chat-bubble">
                       <span> {{ message.content }}</span>
                       <span class="chat-time"
-                        >envoyé le {{ message.timestamp | date : "dd/MMM/yyyy à
-                        HH:mm" }}
+                        >envoyé le {{ message.timestamp | date : "dd/MMM/yyyy à HH:mm" }}
                         <mat-icon class="chat-read">
                           {{ message.read === "true" ? "done_all" : "done" }}
                         </mat-icon>
@@ -1831,8 +1830,9 @@
               >
                 <div class="drawer-header">
                   <h3>
-                    {{ isEditingEmployee ? 'Modifier l\'Employé' : 'Ajouter
-                    unEmployé' }}
+                    {{ 
+                      isEditingEmployee ? 'Modifier l\'Employé' : 
+                      'Ajouter un Employé' }}
                   </h3>
                   <button
                     class="drawer-close-btn"
@@ -2121,7 +2121,7 @@
                           </div>
                         </div>
                         <!-- Informations spécifiques -->
-                        <div class="form-row">
+                        <!-- <div class="form-row">
                           <div class="form-group">
                             <label class="form-label required">
                               <mat-icon class="field-icon">way</mat-icon>
@@ -2187,7 +2187,7 @@
                               placeholder="Code postal"
                             />
                           </div>
-                        </div>
+                        </div> -->
                       </div>
                     </div>
                     }
@@ -2202,7 +2202,7 @@
                         [class.error]="hasFieldError('employee', 'zones')"
                       >
                         <div class="form-checkbox-group">
-                          @for (zone of serviceZones; track zone) {
+                          @for (zone of zones; track $index) {
                           <div
                             class="form-checkbox-item"
                             [class.selected]="isZoneSelected(zone.id)"
@@ -2213,7 +2213,7 @@
                               [checked]="isZoneSelected(zone.id)"
                               (change)="toggleZoneSelection(zone.id, $event)"
                             />
-                            <span>{{ zone.name }}</span>
+                            <span>{{ zone }}</span>
                           </div>
                           }
                         </div>
@@ -2247,17 +2247,13 @@
                       type="submit"
                       form="employee-form"
                       class="btn btn-primary"
-                      [disabled]="!isEmployeeFormValid() || isLoading"
-                    >
+                      [disabled]="!isEmployeeFormValid() || isLoading">
                       @if (isLoading) {
                       <span class="loading-spinner"></span>
                       } @if (!isLoading) {
                       <i class="material-icons"
-                        >{{ isEditingEmployee ? 'edit' : 'person_add' }}</i
-                      >
-                      } {{ isLoading ? (isEditingEmployee ? 'Modification en
-                      cours...' : 'Ajout en cours...') : (isEditingEmployee ?
-                      'Modifier l\'employé' : 'Ajouter l\'employé') }}
+                        >{{ isEditingEmployee ? 'edit' : 'person_add' }}</i>
+                      } {{ isLoading ? (isEditingEmployee ? 'Modification en cours...' : "Ajout en cours...") : (isEditingEmployee ?'Modifier l\'employé' : 'Ajouter l\'employé') }}
                     </button>
                   </div>
                 </div>

@@ -615,14 +615,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         role: ["", Validators.required],
         // Address fields (requis selon le schéma)
         address: this.fb.group({
-          street: ["", Validators.required],
+          street: [""],
           arrondissement: ["", Validators.required],
           sector: ["", Validators.required],
-          doorNumber: ["", Validators.required],
+          doorNumber: [""],
           doorColor: [""],
           neighborhood: ["", Validators.required],
           city: ["", Validators.required],
-          postalCode: ["", Validators.required],
+          postalCode: [""],
           latitude: [null],
           longitude: [null],
         }),
@@ -4748,10 +4748,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   //recuperation des zones
   loadZones(currentUser: any): void {
     // Éviter le rechargement si les zones sont déjà chargées
-    if (this.zones.length > 0 && !this.isLoadingZones) {
-      console.log("Zones déjà chargées, pas besoin de recharger");
-      return;
-    }
+    // if (this.zones.length > 0 && !this.isLoadingZones) {
+    //   console.log("Zones déjà chargées, pas besoin de recharger");
+    //   return;
+    // }
 
     this.isLoadingZones = true;
     this.scheduleForm.get("zone")?.disable();
@@ -4759,6 +4759,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       const agencyId = currentUser.agencyId;
       this.agencyService.getAllzones$(agencyId).subscribe({
         next: (zones: any) => {
+          console.log("zones charger>>>>>> :", zones);
           // S'assurer que zones est toujours un tableau
           if (zones && zones.data && Array.isArray(zones.data)) {
             this.zones = zones.data;
