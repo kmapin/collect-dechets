@@ -337,6 +337,7 @@ export class Register implements OnInit {
         lastName: this.userData.lastName,
         email: this.userData.email,
         phone: this.userData.phone,
+        agencyDescription: this.userData.agencyDescription,
         password: this.userData.password,
         role: this.userData.role,
         acceptTerms: this.userData.acceptTerms,

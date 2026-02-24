@@ -75,7 +75,7 @@ export class AuthService {
           
           localStorage.setItem('currentUser', JSON.stringify(loginData));
           if (token) {
-            localStorage.setItem('authToken', token);
+            localStorage.setItem('authWasteToken', token);
           }
           
           this.currentUserSubject.next(user);
@@ -137,11 +137,11 @@ export class AuthService {
           this.currentUser$.subscribe((user: RegisterUserData | null) => {
             this.currentUser = user;
             console.log('[DEBUG] Connected currentUser:', this.currentUser);
-            if (!this.currentUser && this.currentUser===null ) {
-              localStorage.setItem('currentUser', JSON.stringify({ user }));
-              this.currentUserSubject.next(user);
-              this.isAuthenticatedSubject.next(true);
-            }
+            // if (!this.currentUser && this.currentUser===null ) {
+            //   localStorage.setItem('currentUser', JSON.stringify({ user }));
+            //   this.currentUserSubject.next(user);
+            //   this.isAuthenticatedSubject.next(true);
+            // }
           });
           return { 
             success: true, 
@@ -345,6 +345,9 @@ export class AuthService {
     );
   }
   getCurrentUser(): RegisterUserData |null {
+    if(!this.isAuthenticatedSubject.value){ 
+      return null
+    }
     return this.currentUserSubject.value;
   }
 

@@ -242,6 +242,7 @@ export class AdminDashboard implements OnInit {
   agenciesFilterParams: FilterParams = {
     status: this.agenciesFilter,
     search: this.searchTerm,
+    getAll: true
   };
   // Loading states
   isLoadingStatistics = false;

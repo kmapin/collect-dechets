@@ -146,7 +146,7 @@ export class AgencyService {
  
   searchAgencie(params: {
       term?: string; city?: string; sector?: string; rating?: string;
-      neighborhood?: string; service?: string}): Observable<Agency[]> {
+      neighborhood?: string; service?: string,status?: string, limit?:number, getAll?:boolean}): Observable<Agency[]> {
     let httpParams = new HttpParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value) httpParams = httpParams.set(key, value);

@@ -5,4 +5,5 @@ export interface FilterParams {
     term?: string;
     status?: string;
     search?: string;
+    getAll?:boolean;
 };

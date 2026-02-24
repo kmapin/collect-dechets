@@ -182,7 +182,18 @@ currentUser!: any ;
    * Charge les agences depuis l'API backend et remplace les données locales
    */
   loadAgenciesFromApi(): void {
-    this.agencyService.getAllAgenciesFromApi().subscribe((response: any) => {
+    const payload: any = {
+    term: this.searchQuery || '',
+    city: this.selectedCity,
+    arrondissement: this.selectedArrondissement,
+    sector: this.selectedSector,
+    neighborhood: this.selectedNeighborhood,
+    rating: this.minRating ? parseFloat(this.minRating) : null,
+    status: 'active',
+    getAll: true
+    // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
+  };
+    this.agencyService.searchAgencie(payload).subscribe((response: any) => {
       this.agencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
       this.filteredAgencies = this.agencies;
       console.log("Agences chargées :", this.filteredAgencies);
@@ -204,7 +215,8 @@ applyFilters(): void {
     arrondissement: this.selectedArrondissement,
     sector: this.selectedSector,
     neighborhood: this.selectedNeighborhood,
-    rating: this.minRating ? parseFloat(this.minRating) : null
+    rating: this.minRating ? parseFloat(this.minRating) : null,
+    status: 'active',
     // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
   };
 
