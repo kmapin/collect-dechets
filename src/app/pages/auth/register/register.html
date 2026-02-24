@@ -570,7 +570,9 @@
                                         </div>
                                         <!-- Conditions -->
                                         <div class="form-section">
-                                          <label class="checkbox-label">
+                                            <h3>Conditions</h3>
+                                            @if(userData.role === 'manager') {
+                                            <label class="checkbox-label">
                                             <input
                                               type="checkbox"
                                               [(ngModel)]="userData.isOwnerAgency"
@@ -579,6 +581,8 @@
                                               <span class="checkmark"></span>
                                               Je suis propriétaire de l'agence
                                             </label>
+                                            }
+
                                             <label class="checkbox-label">
                                               <input
                                                 type="checkbox"

@@ -314,6 +314,7 @@ export class Register implements OnInit {
               this.router.navigate(['/login']);
             }, 2000);
           } else {
+            console.log(" Error response", response)
             this.handleRegistrationError(response.error, response.message);
           }
         },
@@ -392,6 +393,7 @@ export class Register implements OnInit {
         },
         error: (error) => {
           this.isLoading = false;
+          console.error('[DEBUG] Erreur inscription agence2:', error);
           this.handleRegistrationError(error.error || error.message || error);
         }
       });

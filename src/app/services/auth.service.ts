@@ -157,7 +157,7 @@ export class AuthService {
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('Registration Error:', error);
-        return of(this.handleRegistrationError(error));
+        return of(this.handleRegistrationError(error.error));
       })
     );
   }
