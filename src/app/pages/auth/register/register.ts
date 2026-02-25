@@ -563,12 +563,12 @@ export class Register implements OnInit {
     }
 
     // Validation spécifique pour les municipalités  
-    if (this.userData.role === UserRole.MUNICIPALITY) {
-      if (!this.userData.commune || !this.userData.commune.name || this.userData.commune.name.trim() === '') {
-        this.handleRegistrationError('Le nom de la commune est requis');
-        return false;
-      }
-    }
+    // if (this.userData.role === UserRole.MUNICIPALITY) {
+    //   if (!this.userData.commune || !this.userData.commune.name || this.userData.commune.name.trim() === '') {
+    //     this.handleRegistrationError('Le nom de la commune est requis');
+    //     return false;
+    //   }
+    // }
 
     // Validation arrondissement obligatoire
     // if (!this.userData.arrondissement) {

@@ -159,7 +159,7 @@ export interface RegisterUserData {
     region: string;
     province: string;
   };
-
+  data?: any;
   agency?: {
     _id?: string;
     name?: string;

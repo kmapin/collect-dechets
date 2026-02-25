@@ -1,3 +1,5 @@
+import { City } from './../../models/countries-org.model';
+import { map } from 'rxjs';
 import { Component, OnInit } from "@angular/core";
 
 import { FormsModule } from "@angular/forms";
@@ -9,7 +11,6 @@ import QRCode from "qrcode";
 import jsPDF  from "jspdf";
 import {
   Arrondissement,
-  City,
   Quartier,
   Sector,
 } from "../../models/countries-org.model";
@@ -105,6 +106,7 @@ export class Profile implements OnInit {
   ];
   allSecteurs: { secteur: string; quartiers: string[] }[] = [];
   isLoading: boolean = false;
+  currentUserId: string | null = null;
   constructor(
     private authService: AuthService,
     private notificationService: NotificationService,
@@ -113,8 +115,12 @@ export class Profile implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.getUser();
-    this.getAllCountries();
+    this.currentUserId = this.authService.getCurrentUser()?._id!;
+    if(this.currentUserId){
+      this.getUser(this.currentUserId);
+      this.getAllCountries();
+    }
+    
   }
 
   // generer code qr en image
@@ -122,7 +128,10 @@ export class Profile implements OnInit {
     // Utiliser une API tierce pour générer le QR code
     return data ? data : "Pas de code QR généré";
   }
-
+  renewQRCode(clientId: string) {
+    console.log("renewQRCode clientId>>>>>>>>>>>",clientId);
+    this.authService.generateQRCode(clientId).pipe();
+  }
   // generer code qr en pdf
   async downloadQRCodePDF(data: string) {
     if (!data) {
@@ -156,14 +165,20 @@ export class Profile implements OnInit {
   //   }
   // }
 
-  getUser() {
-    this.authService.currentUser$.subscribe((user: RegisterUserData | null) => {
-      this.user = user;
-      this.userData = user as RegisterUserData;
+  getUser(userID: string) {
+    this.authService.getUserProfile(userID).subscribe((response: RegisterUserData | null) => {
+      this.user = response?.data;
+      this.userData = response?.data as RegisterUserData;
       console.log("loggedUser::>", this.user);
+      console.log("loggedUser.address::>", this.user.address);
       // Sécurise l'accès à address
       if (!this.user.address) {
         this.user.address = {};
+      }
+      if (this.user.address.city) {
+        this.user.address.city = this.user.address.city;
+        console.log("loggedUser.address.city::>", this.user.address.city);
+        this.onCityChange(this.user.address.city);
       }
       // Pré-remplir les secteurs si adresse présente
       if (this.user?.address?.arrondissement) {
@@ -188,68 +203,69 @@ export class Profile implements OnInit {
     return roleLabels[role] || role;
   }
 
-  onSave(): void {
-    if (this.user.role === "client") {
-      const userEdit = {
-        firstName: this.user.firstName,
-        lastName: this.user.lastName,
-        phone: this.user.phone,
-        address: {
-          street: this.user.address?.street || "",
-          doorNumber: this.user.address?.doorNumber || "",
-          doorColor: this.user.address?.doorColor || "",
-          arrondissement: this.user.address?.arrondissement || "",
-          sector: this.user.address?.sector || "",
-          neighborhood: this.user.address?.neighborhood || "",
-          city: this.user.address?.city || "",
-          postalCode: this.user.address?.postalCode || "",
-        },
-        termsAccepted: !!this.user.termsAccepted,
-        receiveOffers: !!this.user.receiveOffers,
-      };
-      this.authService.updateClient(this.user?.id, userEdit).subscribe(
-        (response) => {
-          this.notificationService.showSuccess(
-            "Modification réussie",
-            "Votre profil a été mis à jour avec succès."
-          );
-          this.getUser(); // Recharger les données utilisateur
-        },
-        (error) => {
-          this.notificationService.showError(
-            "Erreur",
-            "Une erreur est survenue lors de la modification du profil."
-          );
-        }
-      );
-    } else if (this.user.role === "agency") {
-      const agencyEdit = {
-        agencyName: this.user.agencyName,
-        agencyDescription: this.user.agencyDescription,
-        phone: this.user.phone,
-        email: this.user.email,
-        serviceZones: this.user.serviceZones || [],
-        services: this.user.services || [],
-        termsAccepted: !!this.user.termsAccepted,
-        receiveOffers: !!this.user.receiveOffers,
-      };
-      this.authService.updateClient(this.user?.id, agencyEdit).subscribe(
-        (response) => {
-          this.notificationService.showSuccess(
-            "Modification réussie",
-            "Le profil de l’agence a été mis à jour avec succès."
-          );
-          this.getUser(); // Recharger les données utilisateur
-        },
-        (error) => {
-          this.notificationService.showError(
-            "Erreur",
-            "Une erreur est survenue lors de la modification du profil agence."
-          );
-        }
-      );
-    }
-  }
+  // onSave(): void {
+  //   if (this.user.role === "client") {
+  //     const userEdit = {
+  //       firstName: this.user.firstName,
+  //       lastName: this.user.lastName,
+  //       phone: this.user.phone,
+  //       address: {
+  //         street: this.user.address?.street || "",
+  //         doorNumber: this.user.address?.doorNumber || "",
+  //         doorColor: this.user.address?.doorColor || "",
+  //         arrondissement: this.user.address?.arrondissement || "",
+  //         sector: this.user.address?.sector || "",
+  //         neighborhood: this.user.address?.neighborhood || "",
+  //         city: this.user.address?.city || "",
+  //         postalCode: this.user.address?.postalCode || "",
+  //       },
+  //       termsAccepted: !!this.user.termsAccepted,
+  //       receiveOffers: !!this.user.receiveOffers,
+  //     };
+      
+  //     this.authService.updateClient(this.user?._id, userEdit).subscribe(
+  //       (response) => {
+  //         // this.notificationService.showSuccess(
+  //         //   "Modification réussie",
+  //         //   "Votre profil a été mis à jour avec succès."
+  //         // );
+  //         this.getUser(this.user?._id); // Recharger les données utilisateur
+  //       },
+  //       (error) => {
+  //         this.notificationService.showError(
+  //           "Erreur",
+  //           "Une erreur est survenue lors de la modification du profil."
+  //         );
+  //       }
+  //     );
+  //   } else if (this.user.role === "agency") {
+  //     const agencyEdit = {
+  //       agencyName: this.user.agencyName,
+  //       agencyDescription: this.user.agencyDescription,
+  //       phone: this.user.phone,
+  //       email: this.user.email,
+  //       serviceZones: this.user.serviceZones || [],
+  //       services: this.user.services || [],
+  //       termsAccepted: !!this.user.termsAccepted,
+  //       receiveOffers: !!this.user.receiveOffers,
+  //     };
+  //     this.authService.updateClient(this.user?._id, agencyEdit).subscribe(
+  //       (response) => {
+  //         // this.notificationService.showSuccess(
+  //         //   "Modification réussie",
+  //         //   "Le profil de l’agence a été mis à jour avec succès."
+  //         // );
+  //         this.getUser(this.user?._id); // Recharger les données utilisateur
+  //       },
+  //       (error) => {
+  //         this.notificationService.showError(
+  //           "Erreur",
+  //           "Une erreur est survenue lors de la modification du profil agence."
+  //         );
+  //       }
+  //     );
+  //   }
+  // }
 
   //Edit agency
   edit: boolean = false;
@@ -274,6 +290,7 @@ export class Profile implements OnInit {
   }
 
   onSecteurChange(secteur: string) {
+    console.log("sector", secteur);
     if (secteur) {
       const secteurObj = this.secteurss.find((s) => s.name === secteur);
       const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(
@@ -291,6 +308,7 @@ export class Profile implements OnInit {
   }
 
   onCityChange(city: string) {
+    console.log("city", city);
     if (city) {
       const cityObj = this.cities.find((c) => c.name === city);
       console.log("City Object ==> ", cityObj);
@@ -316,7 +334,7 @@ export class Profile implements OnInit {
       this.countriesOrgMockService.getCitiesByCountry("1")
     );
     this.cities = this.countriesOrgMockService.getCitiesByCountry("1");
-    this.onCityChange(this.userData.address.city);
+    // this.onCityChange(this.userData.address.city);
   }
   isButtonDisabled(): boolean {
     const disabled = this.isLoading;
@@ -398,8 +416,9 @@ export class Profile implements OnInit {
           if (isSuccess) {
             this.notificationService.showSuccess(
               "Modification agence réussie",
-              "Votre agence a été modifiée avec succès !"
+              "Votre profil a été mis à jour avec succès."
             );
+            this.getUser(this.user?._id);
           } else {
             this.handleRegistrationError(response.message || response.error);
           }

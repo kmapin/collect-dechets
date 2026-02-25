@@ -896,12 +896,7 @@
                             {{ user?.data?.lastName }} <span
                               class="status-badge"
                               [class]="'status-inconnu'"
-                              >{{ user?.data?.role==='client' ? 
-                              'Client': user?.data?.role==='manager' ? 
-                              'Manageur d\'Agence': user?.data?.role==='municipality' ?
-                              'Agent de Mairie': user?.data?.role==='collector' ?
-                              'Collecteur': 'Super admin'  
-                            }}</span>
+                              >{{ getUserRole(user?.data?.role)}}</span>
                           </mat-card-title>
                           <mat-card-subtitle>
                             Statut:
@@ -1532,7 +1527,7 @@
   <div class="drawer-overlay" (click)="visible1 = false">
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
-        <h3>Abonnement</h3>
+        <h3>Informations de l'utilisateur</h3>
         <button class="drawer-close-btn" (click)="visible1 = false">
           <i class="material-icons">close</i>
         </button>
@@ -1570,7 +1565,7 @@
             </div>
             <div class="info-item">
               <span class="info-label">Role</span>
-              <span class="info-value">{{ selectedUser.role }}</span>
+              <span class="info-value">{{ getUserRole(selectedUser.role!) }}</span>
             </div>
           </div>
         </div>

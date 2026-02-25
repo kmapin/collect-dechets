@@ -722,6 +722,16 @@ export class AdminDashboard implements OnInit {
     );
   }
 
+  getUserRole(userRole: string): string {
+    const roleTexts = {
+      super_admin: "Administrateur",
+      municipality: "Agent de Mairie",
+      manager: "Gestionnaire",
+      collector: "Collecteur",
+      client: "Client",
+    };
+    return roleTexts[userRole as keyof typeof roleTexts] || userRole;
+  }
   getComplianceText(): string {
     if (this.statistics.complianceRate >= 95) return "Excellent";
     if (this.statistics.complianceRate >= 85) return "Bon";

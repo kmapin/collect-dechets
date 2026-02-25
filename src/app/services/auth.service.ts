@@ -28,7 +28,22 @@ export class AuthService {
     }
   }
 
-
+  generateQRCode(clientId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/qrcode/${clientId}`).pipe(
+      map((response: any) => {
+        console.log('API > generateQRCode:', response);
+        return response;
+      })
+    );
+  }
+  getUserProfile(userId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/profile/${userId}`).pipe(
+      map((response: any) => {
+        console.log('API > getUserProfile:', response);
+        return response;
+      })
+    );
+  }
   login(email: string, password: string): Observable<{ success: boolean; user?: RegisterUserData; error?: string }> {
     // Simulate API call
     return of({ success: true, user: this.mockUser(email) }).pipe(
@@ -291,7 +306,7 @@ export class AuthService {
 
   /**Update client */
   updateClient(userId: string, userData: any): Observable<any> {
-    return this.http.put(`${environment.apiUrl}/profile/${userId}`, userData).pipe(
+    return this.http.put(`${environment.apiUrl}/user/${userId}`, userData).pipe(
       map((response) => {
         console.log("API > UpdateClient :", response);
         return response;

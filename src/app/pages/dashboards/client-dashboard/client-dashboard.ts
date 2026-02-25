@@ -30,7 +30,7 @@ interface PaymentHistory {
   amount: number;
   status: "completed" | "pending" | "failed";
   description: string;
-  method: string;
+  method?: string;
 }
 
 interface Subscription {
@@ -391,7 +391,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
           description: `Abonnement ${sub.pricingId.planType} - ${
             sub.agencyId?.name || ""
           }`,
-          method: "Orange Money", // ou autre selon tes données
+          // method: "Orange Money", // ou autre selon tes données
         }));
         // Pour la subscription active
         this.activeSubscription = this.subscriptions.length
@@ -994,7 +994,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
       body: this.paymentHistory.map((payment) => [
         payment.date ? new Date(payment.date).toLocaleDateString("fr-FR") : "",
         payment.description,
-        payment.method,
+        payment.method!,
         `${payment.amount} FCFA`,
         this.getPaymentStatusText(payment.status),
       ]),
