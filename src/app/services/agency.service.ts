@@ -741,9 +741,14 @@ export class AgencyService {
       })
     );
   }
-  updateEmployeeStatus(employeeId: string, payload: { agencyId: string; isActive: boolean }): Observable<{ message: string; employee: Employee }> {
-    const url = `${environment.apiUrl}/agences/employees/${employeeId}`;
-    return this.http.put<{ message: string; employee: Employee }>(url, payload);
+  updateEmployeeStatus$(employeeId: string): Observable<any> {
+    const url = `${environment.apiUrl}/users/agency/${employeeId}`;
+    return this.http.put<any>(url, {}).pipe(
+      catchError((error) => {
+        console.error("Erreur lors de la mise à jour du statut de l'employé:", error);
+        return throwError(() => error);
+      })
+    );
   }
   updateEmployee$(id: string, employeeData: any): Observable<Employee> {
     const url = `${environment.apiUrl}/agences/employees/${id}`;

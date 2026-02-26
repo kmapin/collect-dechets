@@ -449,12 +449,12 @@
                 <div class="employee-info">
                   <h4>{{ employee.firstName }} {{ employee.lastName }}</h4>
                   <p class="employee-role">{{ getRoleText(employee.role) }}</p>
-                  <!-- <p
+                  <p
                     class="employee-status"
-                    [class]="employee.isActive ? 'active' : 'inactive'"
+                    [class]="employee?.status==='active' ? 'active' : 'inactive'"
                   >
-                    {{ employee.isActive ? "Actif" : "Inactif" }}
-                  </p> -->
+                    {{ getEmployeeStatusText(employee?.status!) }}
+                  </p>
                 </div>
                 <div class="employee-avatar">
                   @if (employee?.avatar) {
@@ -510,12 +510,12 @@
                 </button>
                 <button
                   class="action-btn"
-                  [class.active]="employee.isActive"
+                  [class.active]="employee.status"
                   (click)="toggleEmployeeStatus(employee)"
-                  title="{{ employee.isActive ? 'Désactiver' : 'Activer' }} l'employé"
+                  title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }} l'employé"
                 >
                   <i class="material-icons"
-                    >{{ employee.isActive ? "toggle_on" : "toggle_off" }}</i
+                    >{{ employee.status=== 'active' ? "toggle_on" : "toggle_off" }}</i
                   >
                 </button>
               </div>

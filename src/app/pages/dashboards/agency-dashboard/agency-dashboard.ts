@@ -3009,6 +3009,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return new Array(Math.floor(rating)).fill(0);
   }
 
+  getEmployeeStatusText(status:string): string{
+    const statusTexts: Record<string, string> = {
+      active: "Actif",
+      inactive: "Inactif",
+      deleted: "Supprimé"
+    };
+    return statusTexts[status] || status;
+  }
+
   getStatusText(status: CollectionStatus): string {
     const statusTexts = {
       [CollectionStatus.SCHEDULED]: "Programmée",
@@ -5091,23 +5100,22 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
   //modification  du status de l employee
   toggleEmployeeStatus(employee: any): void {
-    const updatedStatus = !employee.isActive;
+    console.log("Toggle employee status:", employee);
+    // const updatedStatus = !employee.isActive;
     this.agencyService
-      .updateEmployee$(employee._id, { isActive: updatedStatus })
+      .updateEmployeeStatus$(employee._id)
       .subscribe({
-        next: () => {
-          employee.isActive = updatedStatus;
+        next: (response:any) => {
+          // employee.isActive = updatedStatus;
 
           // Recharger les collecteurs si c'est un collecteur dont le statut a changé
           if (employee.role === "collector" && this.currentUser?.agencyId) {
             this.loadCollectors(this.currentUser.agencyId);
           }
-
+          console.log("employee status change: ",response)
           this.notificationService.showSuccess(
             "Succès",
-            `L'employé a été ${
-              updatedStatus ? "activé" : "désactivé"
-            } avec succès.`,
+            response.message
           );
         },
         error: (error) => {

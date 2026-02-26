@@ -160,6 +160,7 @@ export interface Employee {
   isActive: boolean;
   hiredAt: Date;
   avatar?: string;
+  status?: string;
 }
 
 export interface Employees {
@@ -173,6 +174,7 @@ export interface Employees {
   isActive: boolean;
   hiredAt: Date;
   avatar?: string;
+  status?: string;
 }
 export interface Tarif {
   _id?: string;
