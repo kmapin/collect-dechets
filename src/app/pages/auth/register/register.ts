@@ -584,10 +584,10 @@ export class Register implements OnInit {
       //   this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
       //   return false;
       // }
-      if (!address.doorColor) {
-        this.handleRegistrationError('Veuillez indiquer la couleur de la porte');
-        return false;
-      }
+      // if (!address.doorColor) {
+      //   this.handleRegistrationError('Veuillez indiquer la couleur de la porte');
+      //   return false;
+      // }
     } else if (this.userData.role === UserRole.MANAGER) {
       // Validation agence
       if (!this.userData.agencyName) {

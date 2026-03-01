@@ -5117,6 +5117,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             "Succès",
             response.message
           );
+          this.loadEmployees(this.currentUser?.agencyId!);
         },
         error: (error) => {
           console.error("Erreur lors de la mise à jour du statut :", error);

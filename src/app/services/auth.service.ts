@@ -380,7 +380,7 @@ export class AuthService {
       return false;
     }
 
-    if (!userData.address || !userData.address.street || !userData.address.city || 
+    if (!userData.address || !userData.address.city || 
         !userData.address.neighborhood || !userData.address.arrondissement) {
       return false;
     }
