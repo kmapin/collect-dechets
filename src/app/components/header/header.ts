@@ -89,9 +89,11 @@ export class Header  implements OnInit {
 
   // }
   logout(): void {
-    localStorage.removeItem('currentUser');
-    window.location.href = '/';
-    this.router.navigate(['/']);
+    localStorage.clear()
+   
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 500);
     
     // this.authService.logout().subscribe({
     //   next: (response: any) => {
@@ -100,9 +102,11 @@ export class Header  implements OnInit {
     //     console.log('deconnexion', response);
     //     if (response?.message) {
     //       console.log('deconnexion', response);
-    //       this.router.navigate(['/']);
+    //       localStorage.clear()
     //       this.notificationService.showSuccess(`${response?.message} !`, 'Au revoir, à bientoît !');
-
+    //       setTimeout(() => {
+    //         window.location.href = '/login';
+    //       }, 500);
     //     } else {
     //       console.log('deconnexion', response);
     //       this.notificationService.showError('Erreur de connexion', response.error);

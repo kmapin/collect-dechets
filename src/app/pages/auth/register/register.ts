@@ -521,7 +521,7 @@ export class Register implements OnInit {
     }
 
     // Champs communs obligatoires
-    if (!this.userData.firstName || !this.userData.lastName || !this.userData.email || !this.userData.phone) {
+    if (!this.userData.firstName || !this.userData.lastName || !this.userData.phone) {
       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
       return false;
     }

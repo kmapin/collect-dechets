@@ -198,7 +198,7 @@
                     <div class="form-group">
                       <label class="form-label" for="email">
                         <i class="material-icons">email</i>
-                        Adresse email <span class="required">*</span>
+                        Adresse email
                       </label>
                       <input
                         type="email"
@@ -208,7 +208,6 @@
                         (ngModelChange)="clearError()"
                         class="form-control"
                         placeholder="votre@email.com"
-                        required
                         #emailInput="ngModel"
                         />
                         @if (emailInput.invalid && emailInput.touched) {
