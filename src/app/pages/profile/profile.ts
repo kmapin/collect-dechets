@@ -130,7 +130,12 @@ export class Profile implements OnInit {
   }
   renewQRCode(clientId: string) {
     console.log("renewQRCode clientId>>>>>>>>>>>",clientId);
-    this.authService.generateQRCode(clientId).pipe();
+    this.authService.generateQRCode(clientId).subscribe({
+      next:(response)=>{
+        this.getUser(this.currentUserId!);
+        console.log("Générer QR code", response);
+      }
+    });
   }
   // generer code qr en pdf
   async downloadQRCodePDF(data: string) {
