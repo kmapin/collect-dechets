@@ -128,7 +128,7 @@
             <div class="search-input-group">
               <i class="material-icons search-icon">location_on</i>
               <input type="text" [(ngModel)]="searchQuery" name="searchQuery" (input)="onSearch()"
-                placeholder="Saisissez la ville ou le secteur ici .." class="search-input">
+                placeholder="Saisissez le nom d'une agence ici  .." class="search-input">
                 <div class="input-glow"></div>
               </div>
               <button type="submit" class="btn btn-primary search-btn" [disabled]="isSearching">
@@ -184,7 +184,7 @@
           <div class="filters-grid">
             <div class="filter-group">
               <label class="filter-label">Ville</label>
-              <select [(ngModel)]="selectedCity" (change)="onCityChange(selectedCity)" class="filter-select">
+              <select [(ngModel)]="searchQuery" (change)="onCityChange(searchQuery)" class="filter-select">
                 <option value="">Aucune ...</option>
                 @for (city of cities; track city) {
                   <option [value]="city">{{ city }}</option>

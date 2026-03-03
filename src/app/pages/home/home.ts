@@ -364,7 +364,7 @@ startLiveNavigation(destLat: number, destLng: number, name: string) {
       const city = data.address.city || data.address.town || data.address.village || '';
       const sector = data.address.suburb || data.address.quarter || '';
       const neighborhood = data.address.neighbourhood || '';
-      this.searchQuery = city;
+      // this.searchQuery = city;
       // this.selectedCity = city;
       this.applyFilters();
       // alert(`Vous êtes à ${city}, secteur ${sector}, quartier ${neighborhood}`); 
@@ -448,7 +448,7 @@ private mapApiAgency(apiAgency: any): Agency {
 
   
 
-   onSearch(): void {
+  onSearch(): void {
     this.applyFilters();
   }
 
@@ -549,7 +549,7 @@ generateRandomStarsList(): void {
           const city = data.address.city || data.address.town || data.address.village || '';
           const sector = data.address.suburb || data.address.quarter || '';
           const neighborhood = data.address.neighbourhood || '';
-          this.searchQuery = city;
+          // this.searchQuery = city;
           this.selectedCity = city;
           console.log('selected city geolocated ==>', this.selectedCity);
           if(this.selectedCity){
@@ -557,7 +557,7 @@ generateRandomStarsList(): void {
           }
 
           // Utilisation des infos (ex : pré-remplir les filtres)
-          this.searchQuery = city;
+          // this.searchQuery = city;
           // Tu peux aussi filtrer directement
           this.applyFilters();
           // alert(`Vous êtes à ${city}, secteur ${sector}, quartier ${neighborhood}`);
