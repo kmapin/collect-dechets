@@ -453,33 +453,35 @@ private mapApiAgency(apiAgency: any): Agency {
   }
 
 applyFilters(): void {
+ 
   const payload: any = {
     term: this.searchQuery || '',
     city: this.selectedCity,
     arrondissement: this.selectedArrondissement,
     sector: this.selectedSector,
     neighborhood: this.selectedNeighborhood,
-    rating: this.minRating ? parseFloat(this.minRating) : null
+    rating: this.minRating ? parseFloat(this.minRating) : null,
+    status: 'active',
+    getAll: true
     // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
   };
-
   this.agencyService.searchAgencie(payload).subscribe({
     next: (response: any) => {
         console.log("responses filtrées :", response);
         this.filteredAgenciesOnMap = (response.data || []).map((a: any) => this.mapApiAgency(a));
         
-        this.filteredAgencies = (response.data || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
+        this.filteredAgencies =this.agencyService.getRandomAgencies((response.data || []).map((a: any) => this.mapApiAgency(a)));
         console.log("Agences filtrées :", this.filteredAgencies);
         this.loading = false;
         this.mapLoading = false;
 
-      if(response.data.length < 5){
+      // if(response.data.length < 5){
 
-        this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
-      } else {
+      //   this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
+      // } else {
 
-        this.filteredAgencies = (response.data || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
-      }
+      //   this.filteredAgencies = (response.data || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
+      // }
       this.generateRandomStarsList();
       this.sortAgencies();
     },
