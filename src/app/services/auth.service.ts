@@ -375,7 +375,7 @@ export class AuthService {
    * Validates registration data before sending to backend
    */
   private validateRegistrationData(userData: RegisterUserData): boolean {
-    if (!userData.firstName || !userData.lastName || !userData.email || 
+    if (!userData.firstName || !userData.lastName || 
         !userData.password || !userData.phone || !userData.role) {
       return false;
     }
@@ -391,7 +391,7 @@ export class AuthService {
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userData.email)) {
+    if ( userData.email && !emailRegex.test(userData.email)) {
       return false;
     }
 
@@ -531,7 +531,7 @@ export class AuthService {
       firstName: 'John',
       lastName: 'Doe',
       email: email,
-      phone: '+1234567890',
+      phone: '74567890',
       role: role,
       address: {
         street: 'Rue Test',

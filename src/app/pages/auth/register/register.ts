@@ -528,7 +528,7 @@ export class Register implements OnInit {
 
     // Validation format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(this.userData.email)) {
+    if (this.userData.email && !emailRegex.test(this.userData.email)) {
       this.notificationService.showError('Erreur', 'Veuillez saisir une adresse email valide');
       return false;
     }

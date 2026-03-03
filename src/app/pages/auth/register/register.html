@@ -210,13 +210,13 @@
                         placeholder="votre@email.com"
                         #emailInput="ngModel"
                         />
-                        @if (emailInput.invalid && emailInput.touched) {
+                        <!-- @if (emailInput.invalid && emailInput.touched) {
                           <div
                             class="form-error"
                             >
                             Veuillez saisir une adresse email valide
                           </div>
-                        }
+                        } -->
                         <!-- Backend validation error -->
                         @if (hasFieldError('email')) {
                           <div
