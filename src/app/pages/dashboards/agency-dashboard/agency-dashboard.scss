@@ -3377,6 +3377,8 @@ button:disabled {
 
 .chat-left-column-content-item {
   display: flex;
+  flex-direction:row;
+  justify-content: space-between;
   padding: 12px 16px;
   min-width: 100%;
   font-size: 14px;

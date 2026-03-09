@@ -445,7 +445,7 @@
                                 class="chat-left-column-content-item"
                                 (click)="userAndAgencyConversation(message)"
                                 >
-                                {{ message.name }}
+                                {{ message.name }} @if(message.unreadCount > 0){<span class="tab-badge">{{ message.unreadCount }}</span> } 
                               </button>
                             }
                           }

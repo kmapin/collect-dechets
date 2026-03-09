@@ -1345,8 +1345,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             (a: any, b: any) =>
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
           );
-          this.scrollToBottom();
           this.countUnreadMessages();
+          this.scrollToBottom();
+          
           if (!clientId) {
             this.receivedId = this.currentUser?.agencyId || "";
           } else {

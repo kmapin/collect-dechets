@@ -485,9 +485,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
         console.log("API >userAndAgencyConversation:", messages);
         if (messages) {
           console.log("API >userAndAgencyConversation:", messages);
+          this.countUnreadMessages();
           this.receivedMessages = (messages || []).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
           this.scrollToBottom()
-          this.countUnreadMessages();
           if (!agencyId) {
             this.receivedId = this.currentUser?._id;
           } else {
