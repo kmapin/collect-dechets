@@ -216,9 +216,14 @@ export interface CollectionSchedule {
   date: string;
   startTime: string;
   endTime: string;
-  collectorId: string;
+  collectorId?: string;
+  collectors?: string;
   agencyId: string;
   managerId: string; // Ajout du champ obligatoire managerId
+  pricingId?:string,
+  isRecurring?: boolean;
+  recurrenceType?: string;
+  numberOfWeeks?: number;
 }
 
 

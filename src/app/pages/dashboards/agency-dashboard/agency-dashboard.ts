@@ -7,6 +7,7 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  ViewEncapsulation,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
@@ -78,6 +79,7 @@ import { TagModule } from "primeng/tag";
 import { ToastModule } from "primeng/toast";
 import { RippleModule } from "primeng/ripple";
 import { Signalement } from "../../shared_pages/signalement/signalement";
+import { MatSelectModule } from "@angular/material/select";
 interface Client {
   id: string;
   name: string;
@@ -222,6 +224,7 @@ export enum CollectionStatus1 {
     MatExpansionModule,
     MatIcon,
     LoadingSpinnerComponent,
+    MatSelectModule,
 
     TableModule,
     ButtonModule,
@@ -268,6 +271,7 @@ export enum CollectionStatus1 {
       ]),
     ]),
   ],
+  encapsulation: ViewEncapsulation.None
 })
 export class AgencyDashboard implements OnInit, AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
@@ -596,7 +600,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         date: ["", Validators.required],
         startTime: ["", Validators.required],
         endTime: ["", Validators.required],
-        collectorId: ["", Validators.required],
+        collectorId: [[], Validators.required],
+        pricingId: ["", Validators.required],
+        isRecurring: [false],
+        recurrenceType: [""],
+        numberOfWeeks:[0]
       },
       {
         validators: [this.validateTimeOrder],
@@ -660,6 +668,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.setupFormErrorHandling();
   }
 
+  get recurrenceType(){
+    return this.scheduleForm.get('recurrenceType')!.value;
+  }
+
+  get isRecurring(){
+    return this.scheduleForm.get('isRecurring')!.value; 
+  }
   // Configuration de la gestion des erreurs pour tous les formulaires
   private setupFormErrorHandling(): void {
     const forms = [
@@ -3845,7 +3860,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
       next: (response: any) => {
-        console.log("Réponse complète du backend:", response);
+        console.log("Réponse complète planning de l'agence du backend:", response);
 
         // Gérer les deux formats possibles de réponse
         if (Array.isArray(response)) {
@@ -4267,9 +4282,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       date: formValues.date,
       startTime: formValues.startTime,
       endTime: formValues.endTime,
-      collectorId: formValues.collectorId, // Maintenant une simple chaîne de caractères
+      collectors: formValues.collectorId, // Maintenant une simple chaîne de caractères
       agencyId: this.currentUser?.agencyId || "",
       managerId: this.currentUser?._id || "", // ID du manager (utilisateur courant)
+      pricingId: formValues.pricingId,
+      isRecurring : formValues.isRecurring,
+      recurrenceType: formValues.recurrenceType,
+      numberOfWeeks: formValues.numberOfWeeks
     };
 
     // Debug : log des données envoyées

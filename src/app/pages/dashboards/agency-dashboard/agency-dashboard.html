@@ -1114,13 +1114,16 @@
                       >
                     </div>
                     <!-- Collecteur avec icône personne -->
+                    @for(collector of schedule.collectors; track collector){
                     <div class="schedule-time">
                       <i class="material-icons">person</i>
                       <span
-                        >{{ getCollectorName(schedule.collectorId) ||
+                        >{{ getCollectorName(collector._id) ||
                         'Nonassigné' }}</span
                       >
                     </div>
+                    }
+             
                     <!-- Actions avec effet glassmorphism -->
                     <div
                       class="schedule-actions"
@@ -2493,10 +2496,36 @@
                         }
                       </div>
                     </div>
+                    <!-- Tarif -->
+                  
+                    <div class="form-group">
+                      <label>Tarif concerné *</label>
+                      <select formControlName="pricingId">
+                        @if (tariffs && tariffs.length > 0) {
+                        <option value="">Sélectionner un tarif</option>
+                        } @if (!tariffs || tariffs.length === 0) {
+                        <option value="" disabled>
+                          Aucun tarif pour le moment
+                        </option>
+                        } @for (tariff of tariffs; track tariff) {
+                        <option [value]="tariff._id">
+                          <h4 class="price">
+                            {{ tariff.price | number : "1.0-0" }} FCFA
+                          </h4>
+                        </option>
+                        }
+                      </select>
+                      @if (scheduleForm.get('pricingId')?.invalid &&
+                      scheduleForm.get('pricingId')?.touched) {
+                      <small class="error-message">
+                        Veuillez sélectionner un tarif
+                      </small>
+                      }
+                    </div>
                     <!-- Collecteur -->
                     <div class="form-group">
                       <label>Collecteur *</label>
-                      <select formControlName="collectorId">
+                      <select formControlName="collectorId" multiple>
                         @if (collectors && collectors.length > 0) {
                         <option value="">Sélectionner un collecteur</option>
                         } @if (!collectors || collectors.length === 0) {
@@ -2516,6 +2545,55 @@
                       </small>
                       }
                     </div>
+                
+                    
+                    <!--Planning isRecurring-->
+                    <div class="form-group">
+                      <label>Planning répetitif ?</label>
+                      <input type="checkbox" formControlName="isRecurring" />
+                      @if (scheduleForm.get('isRecurring')?.invalid &&
+                      scheduleForm.get('isRecurring')?.touched) {
+                      <small class="error-message">
+                        Veuillez choisir si le planning est recurrent
+                      </small>
+                      }
+                    </div>
+                    @if(isRecurring) {
+                    
+                      <!-- Recurrence -->
+                      <div class="form-group">
+                        <label>Recurrence *</label>
+                        <select formControlName="recurrenceType">
+                          <option value="">Sélectionner une recurrence</option>
+                          <option value="weekly">Hebdomadaire</option>
+                          <option value="monthly">Mensuel</option>
+                        </select>
+                        @if (scheduleForm.get('recurrenceType')?.invalid &&
+                        scheduleForm.get('recurrenceType')?.touched) {
+                        <small class="error-message">
+                          Veuillez sélectionner une recurrence
+                        </small>
+                        }
+                      </div>
+                      <!-- Nombre de semaines -->
+                      <div class="form-group">
+                        <label>
+                          Nombre de @if (recurrenceType === 'weekly') {<span>semaines</span>}
+                          @if (recurrenceType === 'monthly') {<span>mois</span>} *
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          formControlName="numberOfWeeks"
+                        />
+                        @if (scheduleForm.get('numberOfWeeks')?.invalid &&
+                        scheduleForm.get('numberOfWeeks')?.touched) {
+                        <small class="error-message">
+                          Veuillez définir le nombre de jours
+                        </small>
+                        }
+                      </div>
+                    }
                   </form>
                 </div>
                 <div class="drawer-footer">
@@ -2539,8 +2617,8 @@
                       <i class="material-icons"
                         >{{ isEditingSchedule ? 'edit' : 'schedule' }}
                       </i>
-                      } {{ isLoading ? (isEditingSchedule ? 'Modification en
-                      cours...' : 'Création en cours...') : (isEditingSchedule ?
+                      } {{ isLoading ? (isEditingSchedule ? 
+                        'Modification en cours...' : 'Création en cours...') : (isEditingSchedule ?
                       'Modifier Planning' : 'Créer Planning') }}
                     </button>
                   </div>
