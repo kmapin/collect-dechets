@@ -79,7 +79,7 @@ import { TagModule } from "primeng/tag";
 import { ToastModule } from "primeng/toast";
 import { RippleModule } from "primeng/ripple";
 import { Signalement } from "../../shared_pages/signalement/signalement";
-import { MatSelectModule } from "@angular/material/select";
+import { MultiSelectModule } from 'primeng/multiselect';
 interface Client {
   id: string;
   name: string;
@@ -224,8 +224,8 @@ export enum CollectionStatus1 {
     MatExpansionModule,
     MatIcon,
     LoadingSpinnerComponent,
-    MatSelectModule,
-
+    
+    MultiSelectModule,
     TableModule,
     ButtonModule,
     RatingModule,
@@ -1521,11 +1521,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           if ((collectors as any)?.data) {
             const data = (collectors as any).data;
             // Prendre seulement les collectors de la réponse
-            this.collectors = data || [];
+            this.collectors = (data || []).map((c: any) =>({
+              ...c,
+              name:c.firstName + ' ' + c.lastName
+            }));
             console.log(" Collecteurs extraits:", this.collectors);
             console.log("   - Nombre de collecteurs:", this.collectors.length);
           } else if (Array.isArray(collectors)) {
-            this.collectors = collectors;
+            this.collectors = collectors.map((c: any) =>({
+              ...c,
+              name:c.firstName + ' ' + c.lastName
+            }));
             console.log(" Collecteurs reçus directement:", this.collectors);
           } else {
             console.warn(
@@ -3187,10 +3193,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     const targetDate = new Date(startOfWeek);
     targetDate.setDate(startOfWeek.getDate() + dayIndex);
 
-    console.log(
-      `Recherche plannings pour le jour ${dayIndex} (${targetDate.toLocaleDateString()})`,
-    );
-    console.log("Nombre total de plannings:", this.schedules.length);
+    // console.log(
+    //   `Recherche plannings pour le jour ${dayIndex} (${targetDate.toLocaleDateString()})`,
+    // );
+    // console.log("Nombre total de plannings:", this.schedules.length);
 
     const filteredSchedules = this.schedules.filter((schedule) => {
       if (!schedule.date) {
@@ -3203,17 +3209,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
       const isMatch = scheduleDate.getTime() === targetDate.getTime();
 
-      if (isMatch) {
-        console.log("Planning trouvé pour ce jour:", schedule);
-      }
+      // if (isMatch) {
+      //   // console.log("Planning trouvé pour ce jour:", schedule);
+      // }
 
       return isMatch;
     });
 
-    console.log(
-      `Plannings trouvés pour le jour ${dayIndex}:`,
-      filteredSchedules,
-    );
+    // console.log(
+    //   `Plannings trouvés pour le jour ${dayIndex}:`,
+    //   filteredSchedules,
+    // );
     return filteredSchedules;
   }
 

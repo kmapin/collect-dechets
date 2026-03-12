@@ -2523,7 +2523,7 @@
                       }
                     </div>
                     <!-- Collecteur -->
-                    <div class="form-group">
+                    <!-- <div class="form-group">
                       <label>Collecteur *</label>
                       <select formControlName="collectorId" multiple>
                         @if (collectors && collectors.length > 0) {
@@ -2544,8 +2544,38 @@
                         Veuillez sélectionner un collecteur
                       </small>
                       }
+                    </div> -->
+                    <!--  -->
+                    <div class="form-group">
+                      <label>Collecteur *</label>
+
+                      <p-multiSelect
+                        [options]="collectors"
+                        formControlName="collectorId"
+                        optionLabel="name"
+                        [maxSelectedLabels]="4"
+                        [filter]="true"
+                        filterBy="firstName,lastName"
+                        optionValue="_id"
+                        defaultLabel="Sélectionner un collecteur"
+                        display="chip"
+                      >
+
+                        <!-- Affichage dans la liste -->
+                        <ng-template let-collector pTemplate="item">
+                          {{ collector.firstName }} {{ collector.lastName }}
+                        </ng-template>
+
+                      </p-multiSelect>
+
+                      @if (scheduleForm.get('collectorId')?.invalid &&
+                      scheduleForm.get('collectorId')?.touched) {
+                      <small class="error-message">
+                        Veuillez sélectionner un collecteur
+                      </small>
+                      }
+
                     </div>
-                
                     
                     <!--Planning isRecurring-->
                     <div class="form-group">
