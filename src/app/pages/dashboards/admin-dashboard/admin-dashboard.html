@@ -862,9 +862,12 @@
                     class="filter-select"
                   >
                     <option value="">Tous quartiers</option>
-                    <option value="Karpala">Karpala</option>
-                    <option value="wemtenga">Wemtenga</option>
-                    <option value="Gounghin">Gounghin</option>
+                    @for (neighborhood of availableEmployeeNeighborhoods; track
+                    neighborhood) {
+                    <option [value]="neighborhood.name">
+                      {{ neighborhood.name }}
+                    </option>
+                    }
                   </select>
                 </div>
               </div>

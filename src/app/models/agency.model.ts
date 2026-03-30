@@ -1,9 +1,15 @@
+
+export interface SearchAgency {
+  data : Agency[];
+  pagination : any
+}
 export interface Agency {
   _id: string;
   userId: string;
   firstName: string;
   lastName: string;
   // agencyName: string;
+  pagination?: any;
   name: string;
   slogan?: string;
   status?:string;

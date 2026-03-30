@@ -22,6 +22,9 @@ import {
 import { FilterParams } from "../../../models/filterParams.model";
 import { DrawerModule } from "primeng/drawer";
 import { Signalement } from "../../shared_pages/signalement/signalement";
+import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
+import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
+import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
 interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
@@ -265,11 +268,29 @@ export class AdminDashboard implements OnInit {
     message: "",
     recipients: [],
   };
+
   //Statistics for admin
   statisticsAdmin: AdminStatistics | null = null;
   //List all clients for admin dashboard
   clients: any;
 
+  
+  // Listes pour les filtres déroulants
+  availableCities: string[] = [];
+  availableNeighborhoods: string[] = [];
+  filteredNeighborhoods: string[] = [];
+
+  // Nouveaux filtres basés sur l'API backend
+  employeesCityFilter: string = "";
+  employeesNeighborhoodFilter: string = "";
+  employeesArrondissementFilter: string = "";
+  employeesSectorFilter: number | null = null;
+
+  // Données pour les filtres (utilisant le même système que l'enregistrement)
+  availableEmployeeCities: City[] = [];
+  availableEmployeeArrondissements: Arrondissement[] = [];
+  availableEmployeeSectors: Sector[] = [];
+  availableEmployeeNeighborhoods: Quartier[] = [];
   tabs = [
     { id: "overview", label: "Vue d'ensemble", icon: "dashboard", badge: null },
     // {
@@ -314,6 +335,7 @@ export class AdminDashboard implements OnInit {
     private sharedService: SharedService,
     private router: Router,
     private cd: ChangeDetectorRef,
+    private countriesOrgMockService: CountriesOrgMockService,
   ) {
     this.drawerWidth;
   }
@@ -329,6 +351,11 @@ export class AdminDashboard implements OnInit {
     this.loadAllMunipalities();
     this.getClientGrowth();
     this.loadZoneStat();
+
+    
+    // Initialiser les listes de villes et quartiers
+    this.initializeCitiesAndNeighborhoods();
+    this.initializeFiltersData();
   }
 
   loadAdminData(): void {
@@ -1440,5 +1467,175 @@ export class AdminDashboard implements OnInit {
         console.error("Erreur lors du chargement de l'agence");
       }
     });
+  }
+
+
+  
+    /**
+     * Initialise les listes de villes et quartiers à partir des données mock
+     */
+    initializeCitiesAndNeighborhoods(): void {
+      try {
+        // S'assurer que OUAGA_DATA existe et est un tableau
+        if (!OUAGA_DATA || !Array.isArray(OUAGA_DATA)) {
+          console.warn("OUAGA_DATA non disponible ou incorrect");
+          this.availableCities = [];
+          this.availableNeighborhoods = [];
+          this.filteredNeighborhoods = [];
+          return;
+        }
+  
+        // Extraire les arrondissements comme "villes"
+        this.availableCities = OUAGA_DATA.map((data) => data.arrondissement);
+  
+        // Extraire tous les quartiers
+        this.availableNeighborhoods = [];
+        OUAGA_DATA.forEach((arrond) => {
+          if (arrond.secteurs && Array.isArray(arrond.secteurs)) {
+            arrond.secteurs.forEach((secteur) => {
+              if (secteur.quartiers && Array.isArray(secteur.quartiers)) {
+                this.availableNeighborhoods.push(...secteur.quartiers);
+              }
+            });
+          }
+        });
+  
+        // Supprimer les doublons et trier
+        this.availableNeighborhoods = [
+          ...new Set(this.availableNeighborhoods),
+        ].sort();
+        this.filteredNeighborhoods = [...this.availableNeighborhoods];
+      } catch (error) {
+        console.error(
+          "Erreur lors de l'initialisation des villes et quartiers:",
+          error,
+        );
+        this.availableCities = [];
+        this.availableNeighborhoods = [];
+        this.filteredNeighborhoods = [];
+      }
+    }
+
+
+
+  /**
+   * Obtenir la liste des quartiers uniques des employés
+   */
+  getUniqueEmployeeNeighborhoods(): string[] {
+    return this.availableEmployeeNeighborhoods.map((q) => q.name).sort();
+  }
+
+/**
+   * Initialise les données pour les filtres (même système que l'enregistrement)
+   */
+  initializeFiltersData(): void {
+    // Charger les villes du Burkina Faso (country id = '1')
+    this.availableEmployeeCities =
+      this.countriesOrgMockService.getCitiesByCountry("1");
+
+    // Par défaut, charger les arrondissements de Ouagadougou (city id = '1')
+    this.availableEmployeeArrondissements =
+      this.countriesOrgMockService.getArrondissementsByCity("1");
+
+    // Charger tous les quartiers de Ouagadougou par défaut
+    this.loadAllNeighborhoodsForCity("1");
+  }
+
+  /**
+   * Charge tous les quartiers d'une ville donnée
+   */
+  loadAllNeighborhoodsForCity(cityId: string): void {
+    const arrondissements =
+      this.countriesOrgMockService.getArrondissementsByCity(cityId);
+    this.availableEmployeeNeighborhoods = [];
+
+    arrondissements.forEach((arr) => {
+      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(
+        arr.id,
+      );
+      sectors.forEach((sector) => {
+        const neighborhoods =
+          this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
+        this.availableEmployeeNeighborhoods.push(...neighborhoods);
+      });
+    });
+  }
+  
+  /**
+   * Gère le changement de ville pour les filtres employés
+   */
+  onEmployeeCityFilterChange(): void {
+    // Réinitialiser les filtres dépendants
+    this.employeesArrondissementFilter = "";
+    this.employeesSectorFilter = null;
+    this.employeesNeighborhoodFilter = "";
+
+    if (this.employeesCityFilter) {
+      // Charger les arrondissements de la ville sélectionnée
+      this.availableEmployeeArrondissements =
+        this.countriesOrgMockService.getArrondissementsByCity(
+          this.employeesCityFilter,
+        );
+      this.loadAllNeighborhoodsForCity(this.employeesCityFilter);
+    } else {
+      this.availableEmployeeArrondissements = [];
+      this.availableEmployeeSectors = [];
+      this.availableEmployeeNeighborhoods = [];
+    }
+
+
+  }
+/**
+   * Gère le changement d'arrondissement pour les filtres employés
+   */
+  onEmployeeArrondissementFilterChange(): void {
+    // Réinitialiser les filtres dépendants
+    this.employeesSectorFilter = null;
+    this.employeesNeighborhoodFilter = "";
+
+    if (this.employeesArrondissementFilter) {
+      // Charger les secteurs de l'arrondissement sélectionné
+      this.availableEmployeeSectors =
+        this.countriesOrgMockService.getSectorsByArrondissement(
+          this.employeesArrondissementFilter,
+        );
+
+      // Charger les quartiers de cet arrondissement
+      this.availableEmployeeNeighborhoods = [];
+      this.availableEmployeeSectors.forEach((sector) => {
+        const neighborhoods =
+          this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
+        this.availableEmployeeNeighborhoods.push(...neighborhoods);
+      });
+    } else {
+      this.availableEmployeeSectors = [];
+      this.availableEmployeeNeighborhoods = [];
+    }
+
+
+  }
+
+  /**
+   * Gère le changement de secteur pour les filtres employés
+   */
+  onEmployeeSectorFilterChange(): void {
+    this.employeesNeighborhoodFilter = "";
+
+    if (this.employeesSectorFilter) {
+      // Charger les quartiers du secteur sélectionné
+      const sectorId = this.employeesSectorFilter.toString();
+      this.availableEmployeeNeighborhoods =
+        this.countriesOrgMockService.getNeighborhoodsBySector(sectorId);
+    } else {
+      // Si aucun secteur sélectionné, charger tous les quartiers de l'arrondissement
+      if (this.employeesArrondissementFilter) {
+        this.availableEmployeeNeighborhoods = [];
+        this.availableEmployeeSectors.forEach((sector) => {
+          const neighborhoods =
+            this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
+          this.availableEmployeeNeighborhoods.push(...neighborhoods);
+        });
+      }
+    }
   }
 }
