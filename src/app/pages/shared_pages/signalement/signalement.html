@@ -1,12 +1,12 @@
 <div class="{{ currentUser?.role === 'client' ? 'incidents-list-client' : 'incidents-list'}} grid-3">
   <!-- État vide pour les incidents *ngIf="!isLoadingIncidents" -->
-  <div *ngIf="!incidents.length" class="empty-state">
+  <!-- <div *ngIf="!incidents.length" class="empty-state">
     <i class="material-icons">report_problem</i>
     <h3>Aucun incident trouvé</h3>
     <p>
       Aucun incident ne correspond aux critères sélectionnés pour le moment.
     </p>
-  </div>
+  </div> -->
 
   <div *ngFor="let incident of incidents" class="incident-card card">
     <div>

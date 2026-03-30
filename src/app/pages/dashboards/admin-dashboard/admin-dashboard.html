@@ -1267,6 +1267,16 @@
               </app-loading-spinner>
 
               <app-signalement [incidents]="filteredIncidents" [currentUser]="currentUser" (isLoadingIncidents)="isLoadingIncidents = $event"></app-signalement>
+              @if (!filteredIncidents || filteredIncidents!.length==0) {
+              <div class="empty-state">
+                <i class="material-icons">report_off</i>
+                <h3>Aucun signalement</h3>
+                <p>
+                  Excellent ! Vous n'avez aucun signalement en cours. Les nouveaux
+                  signalements apparaîtront ici.
+                </p>
+              </div>
+              }
               <!-- <div *ngIf="!isLoadingIncidents" class="incidents-list grid-2"> -->
                 <!-- État vide pour les incidents -->
                 <!-- <div *ngIf="!filteredIncidents.length" class="empty-state">
