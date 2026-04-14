@@ -29,6 +29,7 @@ export interface Message {
   content: string;
   attachment_url?: string;
   attachment_type?: AttachmentType;
+  read?: boolean;
   created_at: Date;
   updated_at: Date;
 }

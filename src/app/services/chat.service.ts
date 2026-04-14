@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Conversation, Message, User, TypingIndicator } from '../models/chat.models';
+import { Webstockets, SocketMessage } from '../core/services/webstockets';
 
 @Injectable({
   providedIn: 'root'
@@ -57,8 +58,99 @@ export class ChatService {
     }
   ];
 
-  constructor() {
+  constructor(private websocketService: Webstockets) {
     this.initializeMockData();
+    this.setupWebSocketListeners();
+  }
+
+  /**
+   * Configure les listeners pour les événements WebSocket en temps réel
+   */
+  private setupWebSocketListeners(): void {
+    // Écouter les nouveaux messages
+    this.websocketService.onMessageSent().subscribe((socketMessage: SocketMessage) => {
+      console.log('💬 Nouveau message reçu via WebSocket:', socketMessage);
+      
+      // Convertir le message socket en Message de l'application
+      const newMessage = this.convertSocketMessageToMessage(socketMessage);
+      
+      // Ajouter le message si nous sommes dans la conversation
+      const currentConv = this.selectedConversationSubject.value;
+      if (currentConv && currentConv.id === socketMessage.conversation_id) {
+        const currentMessages = this.messagesSubject.value;
+        this.messagesSubject.next([...currentMessages, newMessage]);
+      }
+      
+      // Mettre à jour la liste des conversations
+      this.updateConversationWithNewMessage(newMessage);
+    });
+
+    // Écouter les messages lus
+    this.websocketService.onMessageRead().subscribe((socketMessage: SocketMessage) => {
+      console.log('👁️ Message lu via WebSocket:', socketMessage);
+      
+      // Mettre à jour le statut du message dans la liste actuelle
+      const currentMessages = this.messagesSubject.value;
+      const updatedMessages = currentMessages.map(msg =>
+        msg.id === socketMessage._id ? { ...msg, read: true } : msg
+      );
+      this.messagesSubject.next(updatedMessages);
+    });
+
+    // Écouter les messages supprimés
+    this.websocketService.onMessageDeleted().subscribe(({ messageId }) => {
+      console.log(' Message supprimé via WebSocket:', messageId);
+      
+      // Retirer le message de la liste
+      const currentMessages = this.messagesSubject.value;
+      const filteredMessages = currentMessages.filter(msg => msg.id !== messageId);
+      this.messagesSubject.next(filteredMessages);
+    });
+  }
+
+  /**
+   * Convertit un SocketMessage en Message de l'application
+   */
+  private convertSocketMessageToMessage(socketMessage: SocketMessage): Message {
+    // Trouver le sender depuis mockUsers ou créer un utilisateur temporaire
+    const sender = this.mockUsers.find(u => u.id === socketMessage.sender_id) || {
+      id: socketMessage.sender_id,
+      username: 'Unknown User',
+      role: 'citizen' as const,
+      status: 'online' as const,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+
+    return {
+      id: socketMessage._id,
+      conversation_id: socketMessage.conversation_id,
+      sender_id: socketMessage.sender_id,
+      sender: sender,
+      content: socketMessage.content,
+      read: socketMessage.read,
+      created_at: new Date(socketMessage.created_at),
+      updated_at: new Date(socketMessage.updated_at)
+    };
+  }
+
+  /**
+   * Met à jour la conversation avec un nouveau message
+   */
+  private updateConversationWithNewMessage(message: Message): void {
+    const updatedConversations = this.conversationsSubject.value.map(conv =>
+      conv.id === message.conversation_id
+        ? { 
+            ...conv, 
+            lastMessage: message, 
+            updated_at: new Date(),
+            unreadCount: conv.id !== this.selectedConversationSubject.value?.id 
+              ? (conv.unreadCount || 0) + 1 
+              : 0
+          }
+        : conv
+    );
+    this.conversationsSubject.next(updatedConversations);
   }
 
   private initializeMockData(): void {
