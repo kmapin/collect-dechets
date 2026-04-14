@@ -82,7 +82,7 @@ export class Webstockets {
       this.connected$.next(false);
     });
 
-    this.socket.on('connect_error', (error) => {
+    this.socket.on('connect_error', (error: Error) => {
       console.error('Erreur de connexion WebSocket:', error);
       this.connected$.next(false);
     });
