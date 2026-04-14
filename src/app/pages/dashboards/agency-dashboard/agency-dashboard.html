@@ -245,15 +245,24 @@
           <div class="section-header">
             <h2>Gestion des Employés</h2>
             <div class="section-actions">
+              <!-- Toggle carte / tableau -->
+              <div class="view-mode-toggle">
+                <button class="view-mode-btn" [class.active]="employeeViewMode === 'card'" (click)="employeeViewMode = 'card'" title="Vue cartes">
+                  <i class="material-icons">grid_view</i>
+                  <span>Cartes</span>
+                </button>
+                <button class="view-mode-btn" [class.active]="employeeViewMode === 'table'" (click)="employeeViewMode = 'table'" title="Vue tableau">
+                  <i class="material-icons">table_rows</i>
+                  <span>Tableau</span>
+                </button>
+              </div>
               <button
                 class="btn btn-outline search-toggle-btn"
                 (click)="toggleEmployeesSearch()"
                 [class.active]="showEmployeesSearch"
                 title="{{ showEmployeesSearch ? 'Masquer la recherche' : 'Afficher la recherche' }}"
               >
-                <i class="material-icons"
-                  >{{ showEmployeesSearch ? 'search_off' : 'search' }}</i
-                >
+                <i class="material-icons">{{ showEmployeesSearch ? 'search_off' : 'search' }}</i>
                 {{ showEmployeesSearch ? 'Masquer recherche' : 'Rechercher' }}
               </button>
               <button class="btn btn-primary" (click)="openAddEmployeeModal()">
@@ -435,6 +444,9 @@
           }
           <!-- Liste des employés -->
           @if (!isLoadingEmployees && !isLoadingFilteredEmployees) {
+
+          <!-- Vue cartes -->
+          @if (employeeViewMode === 'card') {
           <div class="employees-grid">
             @for (employee of filteredEmployees; track employee) {
             <div
@@ -509,19 +521,81 @@
                   >
                 </button>
                 <button
-                  class="action-btn"
-                  [class.active]="employee.status"
+                  class="action-btn toggle-btn"
+                  [class.toggle-active]="employee.status === 'active'"
+                  [class.toggle-inactive]="employee.status !== 'active'"
                   (click)="toggleEmployeeStatus(employee)"
                   title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }} l'employé"
                 >
                   <i class="material-icons"
-                    >{{ employee.status=== 'active' ? "toggle_on" : "toggle_off" }}</i
+                    >{{ employee.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i
                   >
                 </button>
               </div>
             </div>
             }
           </div>
+          }
+
+          <!-- Vue tableau -->
+          @if (employeeViewMode === 'table') {
+          <div class="employees-table-wrapper">
+            <table class="employees-table">
+              <thead>
+                <tr>
+                  <th>Employé</th>
+                  <th>Rôle</th>
+                  <th>Statut</th>
+                  <th>Email</th>
+                  <th>Téléphone</th>
+                  <!-- <th>Date d'embauche</th> -->
+                  <th class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (employee of filteredEmployees; track employee) {
+                <tr [class]="'emp-row-' + (employee.role || '')">
+                  <td class="cell-employee">
+                    <div class="table-avatar-wrap">
+                      @if (employee?.avatar) {
+                      <img [src]="employee.avatar" [alt]="employee.firstName" class="table-avatar-img" />
+                      } @else {
+                      <div class="table-avatar-initials" [style.background-color]="getRandomColor(employee)">
+                        {{ getInitials(employee?.firstName + ' ' + employee?.lastName) }}
+                      </div>
+                      }
+                      <span class="name-text">{{ employee.firstName }} {{ employee.lastName }}</span>
+                    </div>
+                  </td>
+                  <td><span class="role-badge role-{{ employee.role }}">{{ getRoleText(employee.role) }}</span></td>
+                  <td>
+                    <span class="status-badge-table" [class.status-active]="employee?.status === 'active'" [class.status-inactive]="employee?.status !== 'active'">
+                      {{ getEmployeeStatusText(employee?.status!) }}
+                    </span>
+                  </td>
+                  <td class="cell-email">{{ employee.email }}</td>
+                  <td>{{ employee.phone || '—' }}</td>
+                  <!-- <td>{{ employee.hiredAt ? (employee.hiredAt | date:'dd/MM/yyyy') : '—' }}</td> -->
+                  <td class="col-actions">
+                    <div class="table-actions">
+                      <button class="action-btn edit" (click)="editEmployee(employee)" title="Modifier"><i class="material-icons">edit</i></button>
+                      <button class="action-btn danger" [class.loading]="isDeleting" [disabled]="isDeleting" (click)="deleteEmployee(currentUser, employee)" title="Supprimer"><i class="material-icons">{{ isDeleting ? 'hourglass_empty' : 'delete' }}</i></button>
+                      <button
+                        class="action-btn toggle-btn"
+                        [class.toggle-active]="employee.status === 'active'"
+                        [class.toggle-inactive]="employee.status !== 'active'"
+                        (click)="toggleEmployeeStatus(employee)"
+                        title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }}"
+                      ><i class="material-icons">{{ employee.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i></button>
+                    </div>
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          }
+
           }
           <!-- État vide pour les employés -->
           @if (!isLoadingEmployees && !isLoadingFilteredEmployees &&
@@ -553,45 +627,41 @@
             }
           </div>
           }
-          <!-- Section de pagination -->
-          @if (!isLoadingEmployees && !isLoadingFilteredEmployees &&
-          filteredEmployees.length > 0 && totalPages > 1) {
+          <!-- Pagination employés -->
+          @if (!isLoadingEmployees && !isLoadingFilteredEmployees && totalEmployees > 0) {
           <div class="pagination-section">
-            <div class="pagination-info">
+            <div class="pagination-left">
               <span class="pagination-details">
-                Affichage {{ ((currentPage - 1) * itemsPerPage) + 1 }} à {{
-                getEndItemNumber() }} sur {{ totalEmployees }} employé(s)
+                @if (totalEmployees > 0) {
+                  {{ ((currentPage - 1) * itemsPerPage) + 1 }}–{{ getEndItemNumber() }}
+                  sur <strong>{{ totalEmployees }}</strong> employé(s)
+                }
               </span>
+              <div class="per-page-group">
+                <label class="per-page-label">Afficher</label>
+                <select class="per-page-select" [value]="itemsPerPage" (change)="changeItemsPerPage(+($any($event.target).value))">
+                  <option [value]="5">5</option>
+                  <option [value]="10">10</option>
+                  <option [value]="20">20</option>
+                  <option [value]="50">50</option>
+                  <option [value]="100">100</option>
+                </select>
+                <span class="per-page-label">par page</span>
+              </div>
             </div>
+            @if (totalPages > 1) {
             <div class="pagination-controls">
-              <button
-                class="pagination-btn"
-                [disabled]="currentPage === 1"
-                (click)="goToPreviousPage()"
-                title="Page précédente"
-              >
-                <i class="material-icons">chevron_left</i>
-              </button>
+              <button class="pagination-btn" [disabled]="currentPage === 1" (click)="goToPage(1)" title="Première page"><i class="material-icons">first_page</i></button>
+              <button class="pagination-btn" [disabled]="currentPage === 1" (click)="goToPreviousPage()" title="Page précédente"><i class="material-icons">chevron_left</i></button>
               <div class="pagination-numbers">
                 @for (page of getPageNumbers(); track page) {
-                <button
-                  class="pagination-btn page-number"
-                  [class.active]="page === currentPage"
-                  (click)="goToPage(page)"
-                >
-                  {{ page }}
-                </button>
+                <button class="pagination-btn page-number" [class.active]="page === currentPage" (click)="goToPage(page)">{{ page }}</button>
                 }
               </div>
-              <button
-                class="pagination-btn"
-                [disabled]="currentPage === totalPages"
-                (click)="goToNextPage()"
-                title="Page suivante"
-              >
-                <i class="material-icons">chevron_right</i>
-              </button>
+              <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="goToNextPage()" title="Page suivante"><i class="material-icons">chevron_right</i></button>
+              <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="goToPage(totalPages)" title="Dernière page"><i class="material-icons">last_page</i></button>
             </div>
+            }
           </div>
           }
         </div>

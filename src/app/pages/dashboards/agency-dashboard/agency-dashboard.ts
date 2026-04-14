@@ -384,11 +384,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   availableEmployeeSectors: Sector[] = [];
   availableEmployeeNeighborhoods: Quartier[] = [];
 
-  // Propriétés de pagination
+  // Propriétés de pagination employés
   currentPage: number = 1;
-  itemsPerPage: number = 20;
+  itemsPerPage: number = 5;
   totalEmployees: number = 0;
   totalPages: number = 0;
+  employeeViewMode: 'card' | 'table' = 'table';
+
+  // Propriétés vue / pagination collectes
+  collecteViewMode: 'card' | 'table' = 'table';
+  collectesCurrentPage: number = 1;
+  collectesItemsPerPage: number = 5;
+  collectesTotalItems: number = 0;
+  collectesTotalPages: number = 0;
+  pagedCollectes: any[] = [];
 
   // Chargement des données
   isLoadingFilteredEmployees: boolean = false;
@@ -1839,14 +1848,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
           console.log("loadEmployees > Total final:", this.allEmployees);
 
-          // Au chargement initial, afficher tous les employés localement
-          // L'API backend sera utilisée seulement quand l'utilisateur applique des filtres
-          this.filteredEmployees = [...this.allEmployees];
+          // Pagination côté client – afficher seulement la première page
           this.totalEmployees = this.allEmployees.length;
+          this.currentPage = 1;
           this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
+          this.filteredEmployees = this.allEmployees.slice(0, this.itemsPerPage);
           console.log(
-            "Employés initialisés localement:",
-            this.filteredEmployees.length,
+            `Employés initialisés : page 1/${this.totalPages}, ${this.filteredEmployees.length} affichés sur ${this.totalEmployees}`,
           );
 
           // COMMENTÉ : Utilisation immédiate de l'API backend au chargement
@@ -3357,6 +3365,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         collection.address.neighborhood === this.selectedZone;
       return statusMatch && zoneMatch;
     });
+    // Re-paginer les collectes journalières selon le filtre actif
+    this.collectesCurrentPage = 1;
+    this.applyCollectesPagination();
   }
 
   filterReports(): void {
@@ -5054,6 +5065,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         if (CollectesTab) {
           CollectesTab.badge = this.dayCollectes.length;
         }
+        // Initialiser la pagination côté client
+        this.collectesCurrentPage = 1;
+        this.applyCollectesPagination();
         this.isLoadingCollections = false;
       },
       error: (error) => {
@@ -5061,11 +5075,55 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         const message =
           error?.error?.message || "Impossible de récupérer les collectes.";
         this.notificationService.showError("Erreur", message);
-
         this.isLoadingCollections = false;
       },
     });
   }
+
+  /** Applique le filtre de statut + la pagination locale sur dayCollectes */
+  applyCollectesPagination(): void {
+    const all = Array.isArray(this.dayCollectes) ? this.dayCollectes : [];
+    const filtered =
+      this.collectionsFilter === 'all'
+        ? all
+        : all.filter((c: any) => c.status?.toLowerCase() === this.collectionsFilter);
+    this.collectesTotalItems = filtered.length;
+    this.collectesTotalPages = Math.ceil(this.collectesTotalItems / this.collectesItemsPerPage);
+    if (this.collectesCurrentPage > this.collectesTotalPages && this.collectesTotalPages > 0) {
+      this.collectesCurrentPage = this.collectesTotalPages;
+    }
+    if (this.collectesCurrentPage < 1) { this.collectesCurrentPage = 1; }
+    const start = (this.collectesCurrentPage - 1) * this.collectesItemsPerPage;
+    this.pagedCollectes = filtered.slice(start, start + this.collectesItemsPerPage);
+  }
+
+  goToCollectesPage(page: number): void {
+    if (page >= 1 && page <= this.collectesTotalPages) {
+      this.collectesCurrentPage = page;
+      this.applyCollectesPagination();
+    }
+  }
+
+  getCollectesPageNumbers(): number[] {
+    const max = 5;
+    let start = Math.max(1, this.collectesCurrentPage - Math.floor(max / 2));
+    const end = Math.min(this.collectesTotalPages, start + max - 1);
+    if (end - start + 1 < max) { start = Math.max(1, end - max + 1); }
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) { pages.push(i); }
+    return pages;
+  }
+
+  getCollectesEndItem(): number {
+    return Math.min(this.collectesCurrentPage * this.collectesItemsPerPage, this.collectesTotalItems);
+  }
+
+  changeCollectesItemsPerPage(size: number): void {
+    this.collectesItemsPerPage = size;
+    this.collectesCurrentPage = 1;
+    this.applyCollectesPagination();
+  }
+
   // recuperations des tarifs liee a une agences
   historyCollecte: any[] = [];
 
