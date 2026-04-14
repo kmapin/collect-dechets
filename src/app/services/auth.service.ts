@@ -5,6 +5,7 @@ import { ClientUser, User, UserRole, RegisterUserData, RegisterResponse, UserAdd
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Agency, Municipality } from '../models/agency.model';
+import { Webstockets } from '../core/services/webstockets';
 
 @Injectable({
   providedIn: 'root'
@@ -18,13 +19,25 @@ export class AuthService {
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
   currentUser: RegisterUserData | null = null;
   
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private websocketService: Webstockets
+  ) {
     // Check for stored user on service initialization
     console.log('Checking for stored user on service initialization', this.isAuthenticated$ );
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
-      this.currentUserSubject.next(JSON.parse(storedUser)?.user);
+      const userData = JSON.parse(storedUser);
+      this.currentUserSubject.next(userData?.user);
       this.isAuthenticatedSubject.next(true);
+      
+      // Reconnecter le WebSocket si l'utilisateur est déjà connecté
+      const userId = userData?.user?._id || userData?.user?.id;
+      if (userId) {
+        console.log('🔄 Reconnexion WebSocket pour l\'utilisateur:', userId);
+        this.websocketService.connect();
+        this.websocketService.joinRoom(userId);
+      }
     }
   }
 
@@ -95,6 +108,14 @@ export class AuthService {
           
           this.currentUserSubject.next(user);
           this.isAuthenticatedSubject.next(true);
+          
+          // Connecter le WebSocket et rejoindre la room utilisateur
+          const userId = user._id || user.id;
+          if (userId) {
+            console.log('🔌 Connexion WebSocket après login:', userId);
+            this.websocketService.connect();
+            this.websocketService.joinRoom(userId);
+          }
           
           return {
             success: true,
@@ -291,8 +312,13 @@ export class AuthService {
       map((response: any) => {
         console.log("API > Logout :", response);
         if (response) {
+          // Déconnecter le WebSocket
+          console.log('🔌 Déconnexion WebSocket après logout');
+          this.websocketService.disconnect();
+          
           localStorage.removeItem('currentUser');
           localStorage.removeItem('userRole');
+          localStorage.removeItem('authWasteToken');
           this.currentUserSubject.next(null);
           this.isAuthenticatedSubject.next(false);
           return response;
