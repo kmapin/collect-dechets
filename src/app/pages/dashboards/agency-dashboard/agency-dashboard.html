@@ -22,6 +22,10 @@
             <i class="material-icons">info</i>
             Portail Agence
           </button>
+          <button class="btn btn-finance" routerLink="/dashboard/agency/finance">
+            <i class="material-icons">account_balance_wallet</i>
+            Finance
+          </button>
         </div>
       </div>
     </div>
@@ -51,7 +55,7 @@
             <h3>Employes</h3>
             <p class="stat-value">{{ statistics.totalEmployees || 0 }}</p>
             <span class="stat-trend neutral"
-              >{{ getActiveCollectorsToday() }} en tournÃ©e</span
+              >{{ getActiveCollectorsToday() }} en tournée</span
             >
           </div>
         </div>
@@ -337,7 +341,7 @@
                 }
               </div>
             </div>
-            <!-- Filtres supplÃ©mentaires -->
+            <!-- Filtres supplémentaires -->
             <div class="employees-filters">
               <div class="filter-group">
                 <label for="cityFilter">Ville :</label>
@@ -432,7 +436,7 @@
                 </select>
               </div>
               <div class="filter-group">
-                <label for="itemsPerPageFilter">Ã‰lÃ©ments par page :</label>
+                <label for="itemsPerPageFilter">Éléments par page :</label>
                 <select
                   id="itemsPerPageFilter"
                   class="filter-select"
@@ -446,14 +450,14 @@
                 </select>
               </div>
             </div>
-            <!-- RÃ©sultats de la recherche -->
+            <!-- Résultats de la recherche -->
             @if (employeesSearch || employeesRoleFilter !== 'all' ||
             employeesStatusFilter !== 'all' || employeesCityFilter ||
             employeesNeighborhoodFilter) {
             <div class="search-results-info">
               <div class="results-summary">
                 <span class="results-count">
-                  {{ filteredEmployees.length }} Employe trouvÃ©(s) @if
+                  {{ filteredEmployees.length }} Employe trouvé(s) @if
                   (totalEmployees > filteredEmployees.length) {
                   <span> sur {{ totalEmployees }} total </span>
                   }
@@ -469,7 +473,7 @@
                 (click)="resetEmployeeFilters()"
               >
                 <i class="material-icons">refresh</i>
-                RÃ©initialiser les filtres
+                Réinitialiser les filtres
               </button>
             </div>
             }
@@ -533,7 +537,7 @@
                 </div>
                 <div class="detail-item">
                   <i class="material-icons">phone</i>
-                  <span>{{ employee.phone || 'Non renseignÃ©' }}</span>
+                  <span>{{ employee.phone || 'Non renseigné' }}</span>
                 </div>
                 @if (employee.hiredAt) {
                 <div class="detail-item">
@@ -566,7 +570,7 @@
                   [class.toggle-active]="employee.status === 'active'"
                   [class.toggle-inactive]="employee.status !== 'active'"
                   (click)="toggleEmployeeStatus(employee)"
-                  title="{{ employee.status === 'active' ? 'DÃ©sactiver' : 'Activer' }} l'Employe"
+                  title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }} l'Employe"
                 >
                   <i class="material-icons"
                     >{{ employee.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i
@@ -626,7 +630,7 @@
                         [class.toggle-active]="employee.status === 'active'"
                         [class.toggle-inactive]="employee.status !== 'active'"
                         (click)="toggleEmployeeStatus(employee)"
-                        title="{{ employee.status === 'active' ? 'DÃ©sactiver' : 'Activer' }}"
+                        title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }}"
                       ><i class="material-icons">{{ employee.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i></button>
                     </div>
                   </td>
@@ -638,7 +642,7 @@
           }
 
           }
-          <!-- Ã‰tat vide pour les Employes -->
+          <!-- État vide pour les Employes -->
           @if (!isLoadingEmployees && !isLoadingFilteredEmployees &&
           !filteredEmployees.length) {
           <div class="empty-state">
@@ -650,19 +654,19 @@
             } @if (employeesSearch || employeesRoleFilter !== 'all' ||
             employeesStatusFilter !== 'all' || employeesCityFilter ||
             employeesNeighborhoodFilter) {
-            <h3>Aucun rÃ©sultat</h3>
+            <h3>Aucun résultat</h3>
             } @if (!employeesSearch && employeesRoleFilter === 'all' &&
             employeesStatusFilter === 'all' && !employeesCityFilter &&
             !employeesNeighborhoodFilter) {
             <p>
-              Vous n'avez pas encore ajoutÃ© d'Employes Ã  votre agence. Cliquez
+              Vous n'avez pas encore ajouté d'Employes à votre agence. Cliquez
               sur "Ajouter Employe" pour commencer.
             </p>
             } @if (employeesSearch || employeesRoleFilter !== 'all' ||
             employeesStatusFilter !== 'all' || employeesCityFilter ||
             employeesNeighborhoodFilter) {
             <p>
-              Aucun Employe ne correspond Ã  vos critÃ¨res de recherche. Essayez
+              Aucun Employe ne correspond à vos critères de recherche. Essayez
               de modifier vos filtres.
             </p>
             }
@@ -692,15 +696,15 @@
             </div>
             @if (totalPages > 1) {
             <div class="pagination-controls">
-              <button class="pagination-btn" [disabled]="currentPage === 1" (click)="goToPage(1)" title="PremiÃ¨re page"><i class="material-icons">first_page</i></button>
-              <button class="pagination-btn" [disabled]="currentPage === 1" (click)="goToPreviousPage()" title="Page prÃ©cÃ©dente"><i class="material-icons">chevron_left</i></button>
+              <button class="pagination-btn" [disabled]="currentPage === 1" (click)="goToPage(1)" title="Première page"><i class="material-icons">first_page</i></button>
+              <button class="pagination-btn" [disabled]="currentPage === 1" (click)="goToPreviousPage()" title="Page précédente"><i class="material-icons">chevron_left</i></button>
               <div class="pagination-numbers">
                 @for (page of getPageNumbers(); track page) {
                 <button class="pagination-btn page-number" [class.active]="page === currentPage" (click)="goToPage(page)">{{ page }}</button>
                 }
               </div>
               <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="goToNextPage()" title="Page suivante"><i class="material-icons">chevron_right</i></button>
-              <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="goToPage(totalPages)" title="DerniÃ¨re page"><i class="material-icons">last_page</i></button>
+              <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="goToPage(totalPages)" title="Dernière page"><i class="material-icons">last_page</i></button>
             </div>
             }
           </div>
@@ -756,7 +760,7 @@
                   <i class="material-icons">home</i>
                 </div>
                 <div class="stat-info">
-                  <h4>Total MÃ©nages</h4>
+                  <h4>Total Ménages</h4>
                   <p class="stat-value">
                     {{ getTotalClientsByType('household') || 0 }}
                   </p>
@@ -813,13 +817,13 @@
                 </div>
               </div>
             </div>
-            <!-- DÃ©tails par zone -->
+            <!-- Détails par zone -->
             <div class="zone-details-section">
               <div class="zone-details-header">
-                <h4>RÃ©partition DÃ©taillÃ©e par Zone</h4>
+                <h4>Répartition Détaillée par Zone</h4>
                 <div class="legend">
                   <span class="legend-item household"
-                    ><i class="material-icons">home</i> MÃ©nages</span
+                    ><i class="material-icons">home</i> Ménages</span
                   >
                   <span class="legend-item business"
                     ><i class="material-icons">business</i> Entreprises</span
@@ -853,7 +857,7 @@
                     <div class="breakdown-item household">
                       <div class="breakdown-info">
                         <i class="material-icons">home</i>
-                        <span class="type-label">MÃ©nages</span>
+                        <span class="type-label">Ménages</span>
                       </div>
                       <div class="breakdown-stats">
                         <span class="count">{{ zone.households }}</span>
@@ -908,12 +912,12 @@
                       </div>
                     </div>
                   </div>
-                  <!-- MÃ©triques de capacitÃ© -->
+                  <!-- Métriques de capacité -->
                   <div class="capacity-metrics">
                     <div class="metric-item">
                       <i class="material-icons">schedule</i>
                       <div class="metric-info">
-                        <span class="metric-label">Temps estimÃ©</span>
+                        <span class="metric-label">Temps estimé</span>
                         <span class="metric-value"
                           >{{ zone.estimatedTime }}h</span
                         >
@@ -922,7 +926,7 @@
                     <div class="metric-item">
                       <i class="material-icons">group</i>
                       <div class="metric-info">
-                        <span class="metric-label">Ã‰quipe requise</span>
+                        <span class="metric-label">Équipe requise</span>
                         <span class="metric-value"
                           >{{ zone.requiredTeam }} personnes</span
                         >
@@ -931,7 +935,7 @@
                     <div class="metric-item">
                       <i class="material-icons">local_shipping</i>
                       <div class="metric-info">
-                        <span class="metric-label">VÃ©hicules</span>
+                        <span class="metric-label">Véhicules</span>
                         <span class="metric-value"
                           >{{ zone.requiredVehicles }}</span
                         >
@@ -940,7 +944,7 @@
                     <div class="metric-item">
                       <i class="material-icons">trending_up</i>
                       <div class="metric-info">
-                        <span class="metric-label">Ã‰volution</span>
+                        <span class="metric-label">Évolution</span>
                         <span
                           class="metric-value"
                           [class.positive]="zone.growth >= 0"
@@ -1018,7 +1022,7 @@
           <!-- Interface compacte des zones de couverture -->
           @if (!isLoadingZones) {
           <div class="compact-coverage-display">
-            <!-- En-tÃªte compact avec statistiques inline -->
+            <!-- En-tête compact avec statistiques inline -->
             <div class="compact-coverage-header">
               <div class="coverage-stats-inline">
                 <div class="inline-stat">
@@ -1082,7 +1086,7 @@
                 </div>
                 }
               </div>
-              <!-- Panneau de dÃ©tails latÃ©ral (si zone sÃ©lectionnÃ©e) -->
+              <!-- Panneau de détails latéral (si zone sélectionnée) -->
               @if (selectedZoneForDisplay) {
               <div class="zone-details-sidebar">
                 <div class="sidebar-header">
@@ -1147,13 +1151,13 @@
               }
             </div>
             }
-            <!-- Ã‰tat vide compact -->
+            <!-- État vide compact -->
             @if (zones.length === 0) {
             <div class="empty-zones-compact">
               <div class="empty-compact-content">
                 <i class="material-icons">location_off</i>
                 <div class="empty-text">
-                  <h4>Aucune zone dÃ©finie</h4>
+                  <h4>Aucune zone définie</h4>
                   <p>Ajoutez des zones pour organiser vos collectes</p>
                 </div>
                 <button
@@ -1191,98 +1195,90 @@
               <button class="calendar-nav" (click)="previousWeek()">
                 <i class="material-icons">chevron_left</i>
               </button>
-              <h3>{{ getCurrentWeekText() }}</h3>
+              <div class="calendar-week-info">
+                <span class="week-label">Semaine du</span>
+                <h3>{{ getCurrentWeekText() }}</h3>
+              </div>
               <button class="calendar-nav" (click)="nextWeek()">
                 <i class="material-icons">chevron_right</i>
               </button>
             </div>
             <div class="calendar-grid">
               <div class="calendar-days">
-                @for (day of weekDays; track day) {
-                <div class="day-header">{{ day }}</div>
+                @for (day of weekDays; track day; let i = $index) {
+                <div class="day-header" [class.today]="isToday(i)">
+                  <span class="day-name">{{ day.substring(0, 3) }}</span>
+                  <span class="day-number">{{ getFormattedDate(i).split(' ')[0] }}</span>
+                  @if (isToday(i)) {
+                  <span class="today-dot"></span>
+                  }
+                </div>
                 }
               </div>
               <div class="calendar-content">
                 @for (day of weekDays; track day; let i = $index) {
-                <div class="day-column">
+                <div class="day-column" [class.today-column]="isToday(i)">
                   @for (schedule of getSchedulesForDay(i); track schedule) {
                   <div
-                    class="schedule-item"
+                    class="schedule-card"
                     [class.new]="isNewSchedule(schedule)"
                     [class.loading]="isScheduleLoading(schedule)"
                     (click)="openScheduleDetails(schedule)"
                   >
-                    <!-- Localisation avec icÃ´ne moderne -->
-                    <div class="schedule-time">
-                      <i class="material-icons">place</i>
-                      <span>{{ getZoneName(schedule.zone) }}</span>
+                    <div class="sched-zone">
+                      <i class="material-icons">location_on</i>
+                      <span class="zone-name">{{ getZoneName(schedule.zone) }}</span>
                     </div>
-                    <!-- Horaires avec icÃ´ne horloge -->
-                    <div class="schedule-time">
-                      <i class="material-icons">schedule</i>
-                      <span
-                        >{{ schedule.startTime }} - {{ schedule.endTime }}</span
-                      >
+                    <div class="sched-time">
+                      <i class="material-icons">access_time</i>
+                      <span>{{ schedule.startTime }} – {{ schedule.endTime }}</span>
                     </div>
-                    <!-- Collecteur avec icÃ´ne personne -->
-                    @for(collector of schedule.collectors; track collector){
-                    <div class="schedule-time">
-                      <i class="material-icons">person</i>
-                      <span
-                        >{{ getCollectorName(collector._id) ||
-                        'NonassignÃ©' }}</span
-                      >
+                    @if (schedule.collectors?.length > 0) {
+                    <div class="sched-collectors">
+                      @for(collector of schedule.collectors; track collector){
+                      <span class="collector-chip">
+                        <i class="material-icons">person</i>
+                        {{ getCollectorName(collector._id) || 'Non assigné' }}
+                      </span>
+                      }
                     </div>
                     }
-             
-                    <!-- Actions avec effet glassmorphism -->
-                    <div
-                      class="schedule-actions"
-                      (click)="$event.stopPropagation()"
-                    >
+                    <div class="schedule-actions" (click)="$event.stopPropagation()">
                       <button
                         class="action-btn edit"
                         (click)="editSchedule(schedule)"
-                        title="Modifier le planning"
+                        title="Modifier"
                       >
                         <i class="material-icons">edit</i>
                       </button>
                       <button
                         class="action-btn danger"
                         (click)="deletePlanning(schedule._id)"
-                        title="Supprimer le planning"
+                        title="Supprimer"
                       >
                         <i class="material-icons">delete</i>
                       </button>
                     </div>
                   </div>
                   }
-                  <!-- Zone cliquable pour crÃ©er un nouveau planning -->
                   @if (getSchedulesForDay(i).length === 0) {
                   <div
                     class="empty-day-clickable"
                     (click)="createNewScheduleForDay(i)"
-                    title="Cliquer pour crÃ©er un planning pour {{ getDayName(i) }}"
+                    title="Créer un planning"
                   >
-                    <div class="empty-day-content">
-                      <i class="material-icons">add_circle_outline</i>
-                      <span>Nouveau planning</span>
-                      <small
-                        >{{ getDayName(i) }} {{ getFormattedDate(i) }}</small
-                      >
-                    </div>
+                    <i class="material-icons">add_circle_outline</i>
+                    <span>Planning</span>
                   </div>
                   }
-                  <!-- Bouton d'ajout rapide mÃªme quand il y a dÃ©jÃ  des plannings -->
                   @if (getSchedulesForDay(i).length > 0) {
-                  <div
-                    class="add-more-schedule"
+                  <button
+                    class="add-more-btn"
                     (click)="createNewScheduleForDay(i)"
-                    title="Ajouter un autre planning pour {{ getDayName(i) }}"
+                    title="Ajouter un planning"
                   >
                     <i class="material-icons">add</i>
-                    <span>Ajouter</span>
-                  </div>
+                  </button>
                   }
                 </div>
                 }
@@ -1337,7 +1333,7 @@
                 }
               </div>
             </div>
-            <!-- Filtres supplÃ©mentaires -->
+            <!-- Filtres supplémentaires -->
             <div class="clients-filters">
               <div class="filter-group">
                 <label for="clientCityFilter">Ville :</label>
@@ -1384,7 +1380,7 @@
               </div>
               <div class="filter-group">
                 <label for="clientItemsPerPageFilter"
-                  >Ã‰lÃ©ments par page :</label
+                  >Éléments par page :</label
                 >
                 <select
                   id="clientItemsPerPageFilter"
@@ -1399,14 +1395,14 @@
                 </select>
               </div>
             </div>
-            <!-- RÃ©sultats de la recherche -->
+            <!-- Résultats de la recherche -->
             @if (clientsSearch || clientsCityFilter !== 'all' ||
             clientsNeighborhoodFilter !== 'all' || clientsStatusFilter !==
             'all') {
             <div class="search-results-info" [@fadeInOut]>
               <div class="results-summary">
                 <span class="results-count">
-                  {{ filteredActiveClients.length }} client(s) trouvÃ©(s) @if
+                  {{ filteredActiveClients.length }} client(s) trouvé(s) @if
                   (clientsTotalItems > filteredActiveClients.length) {
                   <span> sur {{ clientsTotalItems }} total </span>
                   }
@@ -1419,7 +1415,7 @@
               </div>
               <button class="reset-filters-btn" (click)="resetClientFilters()">
                 <i class="material-icons">refresh</i>
-                RÃ©initialiser les filtres
+                Réinitialiser les filtres
               </button>
             </div>
             }
@@ -1521,7 +1517,7 @@
                             </th>
                             <th pSortableColumn="date">
                               <div class="flex items-center gap-2">
-                                Date dÃ©but
+                                Date début
                                 <p-sortIcon field="date" />
                               </div>
                             </th>
@@ -1598,7 +1594,7 @@
             <div class="pagination-info">
               <span class="pagination-details">
                 Affichage {{ ((clientsCurrentPage - 1) * clientsItemsPerPage) +
-                1 }} Ã  {{ getClientEndItemNumber() }} sur {{ clientsTotalItems
+                1 }} à {{ getClientEndItemNumber() }} sur {{ clientsTotalItems
                 }} client(s)
               </span>
             </div>
@@ -1607,7 +1603,7 @@
                 class="pagination-btn"
                 [disabled]="clientsCurrentPage === 1"
                 (click)="previousClientPage()"
-                title="Page prÃ©cÃ©dente"
+                title="Page précédente"
               >
                 <i class="material-icons">chevron_left</i>
               </button>
@@ -1650,16 +1646,16 @@
                 <option value="all">Tous les incidents</option>
                 <option value="open">Ouverts</option>
                 <option value="pending">En cours</option>
-                <option value="resolved">RÃ©solus</option>
+                <option value="resolved">Résolus</option>
               </select>
               <select
                 [(ngModel)]="severityFilter"
                 (change)="filterIncidents()"
                 class="filter-select"
               >
-                <option value="all">Toutes gravitÃ©s</option>
+                <option value="all">Toutes gravités</option>
                 <option value="critical">Critique</option>
-                <option value="high">Ã‰levÃ©e</option>
+                <option value="high">Élevée</option>
                 <option value="medium">Moyenne</option>
                 <option value="low">Faible</option>
               </select>
@@ -1731,7 +1727,7 @@
               </div>
               } @if (!report.photos || !report.photos.length) {
               <div>
-                <p><em>Aucune photo associÃ©e</em></p>
+                <p><em>Aucune photo associée</em></p>
               </div>
               } @if (agencyReports.length === 0) {
               <div class="empty-state">
@@ -1757,7 +1753,7 @@
                   (click)="resolveIncident(report._id)"
                 >
                   <i class="material-icons">check</i>
-                  RÃ©soudre
+                  Résoudre
                 </button>
                 }
               </div>
@@ -1765,14 +1761,14 @@
             }
           </div> -->
           }
-          <!-- Ã‰tat vide pour les signalements -->
+          <!-- État vide pour les signalements -->
           @if (!isLoadingReports && !agencyReports.length) {
           <div class="empty-state">
             <i class="material-icons">report_off</i>
             <h3>Aucun signalement</h3>
             <p>
               Excellent ! Vous n'avez aucun signalement en cours. Les nouveaux
-              signalements apparaÃ®tront ici.
+              signalements apparaîtront ici.
             </p>
           </div>
           }
@@ -1821,7 +1817,7 @@
                     <span>{{ message.firstName }} {{ message.lastName }}</span> @if(message.unreadCount > 0){<span class="tab-badge">{{ message.unreadCount }}</span> }
                   </button>
                   } }
-                  <!-- Ã‰tat vide pour les conversations -->
+                  <!-- État vide pour les conversations -->
                   @if (!connectedUserMessages.length) {
                   <div class="empty-conversations">
                     <i class="material-icons">chat_bubble_outline</i>
@@ -1840,8 +1836,8 @@
                     <div class="div5 chat-bubble">
                       <span> {{ message.content }}</span>
                       <span class="chat-time"
-                        >reÃ§u le {{ message.timestamp | date : 
-                          "dd/MMM/yyyy Ã  HH:mm" }}
+                        >reçu le {{ message.timestamp | date : 
+                          "dd/MMM/yyyy à HH:mm" }}
                         <mat-icon class="chat-read">
                           {{ message.read === "true" ? "done_all" : "done" }}
                         </mat-icon>
@@ -1853,7 +1849,7 @@
                     <div class="div6 chat-bubble">
                       <span> {{ message.content }}</span>
                       <span class="chat-time"
-                        >envoyÃ© le {{ message.timestamp | date : "dd/MMM/yyyy Ã  HH:mm" }}
+                        >envoyé le {{ message.timestamp | date : "dd/MMM/yyyy à HH:mm" }}
                         <mat-icon class="chat-read">
                           {{ message.read === "true" ? "done_all" : "done" }}
                         </mat-icon>
@@ -1862,7 +1858,7 @@
                   </div>
                   } }
                 </div>
-                <!-- Input fixÃ© en bas -->
+                <!-- Input fixé en bas -->
                 <div class="div7 chat-input-row">
                   <input
                     class="sendChatMessage"
@@ -1889,7 +1885,7 @@
           <div class="modal-overlay" (click)="showMessageModal = false">
             <div class="modal-content" (click)="$event.stopPropagation()">
               <div class="modal-header">
-                <h3>DÃ©crivez nous votre besoins</h3>
+                <h3>Décrivez nous votre besoins</h3>
                 <button class="close-btn" (click)="showMessageModal = false">
                   <i class="material-icons">close</i>
                 </button>
@@ -1986,14 +1982,14 @@
                   >
                     <div class="form-row">
                       <div class="form-group">
-                        <label class="form-label required">PrÃ©nom *</label>
+                        <label class="form-label required">Prénom *</label>
                         <input
                           type="text"
                           formControlName="firstName"
                           class="form-input"
                           [class.error]="hasFieldError('employee', 'firstName')"
                           [class.valid]="employeeForm.get('firstName')?.valid && employeeForm.get('firstName')?.touched"
-                          placeholder="Entrez le prÃ©nom"
+                          placeholder="Entrez le prénom"
                           autocomplete="off"
                         />
                         @if (hasFieldError('employee', 'firstName')) {
@@ -2073,7 +2069,7 @@
                             class="form-input"
                             [class.error]="hasFieldError('employee', 'password')"
                             [class.valid]="employeeForm.get('password')?.valid && employeeForm.get('password')?.touched"
-                            [placeholder]="isEditingEmployee ? 'Laisser vide pour conserver le mot de passe actuel' : 'Minimum 6 caractÃ¨res'"
+                            [placeholder]="isEditingEmployee ? 'Laisser vide pour conserver le mot de passe actuel' : 'Minimum 6 caractères'"
                             autocomplete="new-password"
                           />
                           <button
@@ -2140,7 +2136,7 @@
                         [class.valid]="employeeForm.get('role')?.valid && employeeForm.get('role')?.touched"
                         (change)="onRoleChange()"
                       >
-                        <option value="">SÃ©lectionner un Role</option>
+                        <option value="">Sélectionner un Role</option>
                         <option value="manager">Manager</option>
                         <option value="collector">Collecteur</option>
                       </select>
@@ -2150,12 +2146,12 @@
                       >
                       }
                     </div>
-                    <!-- Section Adresse avec sÃ©lection automatique - CachÃ©e en mode modification -->
+                    <!-- Section Adresse avec sélection automatique - Cachée en mode modification -->
                     @if (!isEditingEmployee) {
                     <div class="form-section">
                       <h4 class="section-title">Adresse</h4>
                       <div formGroupName="address">
-                        <!-- SÃ©lection Ville d'abord -->
+                        <!-- Sélection Ville d'abord -->
                         <div class="form-row">
                           <div class="form-group">
                             <label class="form-label required">
@@ -2198,7 +2194,7 @@
                             </select>
                           </div>
                         </div>
-                        <!-- SÃ©lection Secteur et Quartier -->
+                        <!-- Sélection Secteur et Quartier -->
                         <div class="form-row">
                           <div class="form-group">
                             <label class="form-label required">
@@ -2234,7 +2230,7 @@
                             </select>
                           </div>
                         </div>
-                        <!-- Informations spÃ©cifiques -->
+                        <!-- Informations spécifiques -->
                         <!-- <div class="form-row">
                           <div class="form-group">
                             <label class="form-label required">
@@ -2251,7 +2247,7 @@
                           <div class="form-group">
                             <label class="form-label required">
                               <mat-icon class="field-icon">numbers</mat-icon>
-                              NumÃ©ro de porte
+                              Numéro de porte
                             </label>
                             <input
                               type="text"
@@ -2305,11 +2301,11 @@
                       </div>
                     </div>
                     }
-                    <!-- SÃ©lection multiple des zones -->
+                    <!-- Sélection multiple des zones -->
                     @if (employeeForm.get('role')?.value === 'collector') {
                     <div class="form-group full-width">
                       <label class="form-label"
-                        >Zones assignÃ©es (optionnel)</label
+                        >Zones assignées (optionnel)</label
                       >
                       <div
                         class="zone-selection"
@@ -2409,7 +2405,7 @@
                         [class.error]="hasFieldError('tariff', 'type')"
                         [class.valid]="tariffForm.get('type')?.valid && tariffForm.get('type')?.touched"
                       >
-                        <option value="">SÃ©lectionner un type</option>
+                        <option value="">Sélectionner un type</option>
                         <option value="standard">Standard</option>
                         <option value="premium">Premium</option>
                         <option value="vip">VIP</option>
@@ -2461,7 +2457,7 @@
                         class="form-textarea"
                         [class.error]="hasFieldError('tariff', 'description')"
                         [class.valid]="tariffForm.get('description')?.valid && tariffForm.get('description')?.touched"
-                        placeholder="DÃ©crivez ce tarif..."
+                        placeholder="Décrivez ce tarif..."
                         rows="3"
                       ></textarea>
                       <span class="error-message"
@@ -2540,7 +2536,7 @@
                         @if (!isLoadingZones && zones.length === 0) {
                         <option value="">Aucune zone disponible</option>
                         } @if (!isLoadingZones && zones.length > 0) {
-                        <option value="">SÃ©lectionner une zone</option>
+                        <option value="">Sélectionner une zone</option>
                         } @if (isLoadingZones) {
                         <option value="">Chargement des zones...</option>
                         } @for (zone of zones; track zone) {
@@ -2559,7 +2555,7 @@
                       } @if ( scheduleForm.get('zone')?.invalid &&
                       scheduleForm.get('zone')?.touched) {
                       <small class="error-message">
-                        Veuillez sÃ©lectionner une zone
+                        Veuillez sélectionner une zone
                       </small>
                       }
                     </div>
@@ -2575,19 +2571,19 @@
                       @if ( scheduleForm.get('date')?.invalid &&
                       scheduleForm.get('date')?.touched ) {
                       <small class="error-message">
-                        Veuillez sÃ©lectionner une date
+                        Veuillez sélectionner une date
                       </small>
                       }
                     </div>
                     <!-- Heures -->
                     <div class="form-row">
                       <div class="form-group">
-                        <label>Heure de dÃ©but *</label>
+                        <label>Heure de début *</label>
                         <input type="time" formControlName="startTime" />
                         @if ( scheduleForm.get('startTime')?.invalid &&
                         scheduleForm.get('startTime')?.touched ) {
                         <small class="error-message">
-                          Veuillez dÃ©finir une heure de dÃ©but
+                          Veuillez définir une heure de début
                         </small>
                         }
                       </div>
@@ -2597,12 +2593,12 @@
                         @if ( scheduleForm.get('endTime')?.invalid &&
                         scheduleForm.get('endTime')?.touched) {
                         <small class="error-message">
-                          Veuillez dÃ©finir une heure de fin
+                          Veuillez définir une heure de fin
                         </small>
                         } @if (scheduleForm.hasError('invalidTimeOrder')) {
                         <small class="error-message">
-                          L'heure de fin doit Ãªtre postÃ©rieure Ã  l'heure de
-                          dÃ©but
+                          L'heure de fin doit être postérieure à l'heure de
+                          début
                         </small>
                         }
                       </div>
@@ -2610,10 +2606,10 @@
                     <!-- Tarif -->
                   
                     <div class="form-group">
-                      <label>Tarif concernÃ© *</label>
+                      <label>Tarif concerné *</label>
                       <select formControlName="pricingId">
                         @if (tariffs && tariffs.length > 0) {
-                        <option value="">SÃ©lectionner un tarif</option>
+                        <option value="">Sélectionner un tarif</option>
                         } @if (!tariffs || tariffs.length === 0) {
                         <option value="" disabled>
                           Aucun tarif pour le moment
@@ -2629,7 +2625,7 @@
                       @if (scheduleForm.get('pricingId')?.invalid &&
                       scheduleForm.get('pricingId')?.touched) {
                       <small class="error-message">
-                        Veuillez sÃ©lectionner un tarif
+                        Veuillez sélectionner un tarif
                       </small>
                       }
                     </div>
@@ -2638,7 +2634,7 @@
                       <label>Collecteur *</label>
                       <select formControlName="collectorId" multiple>
                         @if (collectors && collectors.length > 0) {
-                        <option value="">SÃ©lectionner un collecteur</option>
+                        <option value="">Sélectionner un collecteur</option>
                         } @if (!collectors || collectors.length === 0) {
                         <option value="" disabled>
                           Aucun collecteur pour le moment
@@ -2652,7 +2648,7 @@
                       @if (scheduleForm.get('collectorId')?.invalid &&
                       scheduleForm.get('collectorId')?.touched) {
                       <small class="error-message">
-                        Veuillez sÃ©lectionner un collecteur
+                        Veuillez sélectionner un collecteur
                       </small>
                       }
                     </div> -->
@@ -2668,7 +2664,7 @@
                         [filter]="true"
                         filterBy="firstName,lastName"
                         optionValue="_id"
-                        defaultLabel="SÃ©lectionner un collecteur"
+                        defaultLabel="Sélectionner un collecteur"
                         display="chip"
                       >
 
@@ -2682,7 +2678,7 @@
                       @if (scheduleForm.get('collectorId')?.invalid &&
                       scheduleForm.get('collectorId')?.touched) {
                       <small class="error-message">
-                        Veuillez sÃ©lectionner un collecteur
+                        Veuillez sélectionner un collecteur
                       </small>
                       }
 
@@ -2690,7 +2686,7 @@
                     
                     <!--Planning isRecurring-->
                     <div class="form-group">
-                      <label>Planning rÃ©petitif ?</label>
+                      <label>Planning répetitif ?</label>
                       <input type="checkbox" formControlName="isRecurring" />
                       @if (scheduleForm.get('isRecurring')?.invalid &&
                       scheduleForm.get('isRecurring')?.touched) {
@@ -2705,14 +2701,14 @@
                       <div class="form-group">
                         <label>Recurrence *</label>
                         <select formControlName="recurrenceType">
-                          <option value="">SÃ©lectionner une recurrence</option>
+                          <option value="">Sélectionner une recurrence</option>
                           <option value="weekly">Hebdomadaire</option>
                           <option value="monthly">Mensuel</option>
                         </select>
                         @if (scheduleForm.get('recurrenceType')?.invalid &&
                         scheduleForm.get('recurrenceType')?.touched) {
                         <small class="error-message">
-                          Veuillez sÃ©lectionner une recurrence
+                          Veuillez sélectionner une recurrence
                         </small>
                         }
                       </div>
@@ -2730,7 +2726,7 @@
                         @if (scheduleForm.get('numberOfWeeks')?.invalid &&
                         scheduleForm.get('numberOfWeeks')?.touched) {
                         <small class="error-message">
-                          Veuillez dÃ©finir le nombre de jours
+                          Veuillez définir le nombre de jours
                         </small>
                         }
                       </div>
@@ -2759,8 +2755,8 @@
                         >{{ isEditingSchedule ? 'edit' : 'schedule' }}
                       </i>
                       } {{ isLoading ? (isEditingSchedule ? 
-                        'Modification en cours...' : 'CrÃ©ation en cours...') : (isEditingSchedule ?
-                      'Modifier Planning' : 'CrÃ©er Planning') }}
+                        'Modification en cours...' : 'Création en cours...') : (isEditingSchedule ?
+                      'Modifier Planning' : 'Créer Planning') }}
                     </button>
                   </div>
                 </div>
@@ -2813,7 +2809,7 @@
           @if (selectedSchedule) {
           <div class="modal-backdrop" (click)="closeModal()">
             <div class="modal">
-              <h3>DÃ©tails du planning</h3>
+              <h3>Détails du planning</h3>
               <p>
                 <strong>Date :</strong>
                 {{ selectedSchedule.date | date : "fullDate" }}
@@ -2956,13 +2952,13 @@
                   }
                 </div>
                 }
-                <!-- Ã‰tat vide pour les tarifs -->
+                <!-- État vide pour les tarifs -->
                 @if (!isLoadingTariffs && tariffs.length === 0) {
                 <div class="empty-state">
                   <i class="material-icons">attach_money</i>
-                  <h3>Aucun tarif configurÃ©</h3>
+                  <h3>Aucun tarif configuré</h3>
                   <p>
-                    CrÃ©ez vos premiers tarifs pour proposer vos services aux
+                    Créez vos premiers tarifs pour proposer vos services aux
                     clients.
                   </p>
                 </div>
@@ -2979,12 +2975,12 @@
     </div>
   </div>
 </div>
-<!-- Drawer DÃ©tails du Client -->
+<!-- Drawer Détails du Client -->
 @if (showClientDetailsModal) {
 <div class="drawer-overlay" (click)="closeClientDetailsModal()">
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
-      <h3>DÃ©tails du Client</h3>
+      <h3>Détails du Client</h3>
       <button class="drawer-close-btn" (click)="closeClientDetailsModal()">
         <i class="material-icons">close</i>
       </button>
@@ -3033,7 +3029,7 @@
         <div class="info-item">
           <i class="material-icons">location_on</i>
           <div>
-            <span class="info-label">Adresse complÃ¨te</span>
+            <span class="info-label">Adresse complète</span>
             <span class="info-value"
               >{{ selectedClient?.address?.street }}, {{
               selectedClient?.address?.neighborhood }}</span
@@ -3074,7 +3070,7 @@
           [href]="generateQRCode(selectedClient?.qrCode)"
           download="qrcode.png"
           class="btn btn-primary mt-2"
-          >TÃ©lÃ©charger le QR Code</a
+          >Télécharger le QR Code</a
         >
       </div>
       <!-- Historique des souscriptions -->
@@ -3100,7 +3096,7 @@
 } @if (selectedImage) {
 <div class="modal-overlay" (click)="closeImageModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
-    <img [src]="selectedImage" alt="Image en plein Ã©cran" class="full-image" />
+    <img [src]="selectedImage" alt="Image en plein écran" class="full-image" />
     <button class="close-btn" (click)="closeImageModal()">
       <i class="material-icons">close</i>
     </button>
@@ -3136,18 +3132,18 @@
 </div>
 }
 
-<!-- Drawer pour gÃ©rer les zones -->
+<!-- Drawer pour gérer les zones -->
 @if (showZoneModalcouverture) {
 <div class="drawer-overlay" (click)="closeZoneModalcouverture()">
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
-      <h3>DÃ©finir les zones couvertes</h3>
+      <h3>Définir les zones couvertes</h3>
       <button class="drawer-close-btn" (click)="closeZoneModalcouverture()">
         <i class="material-icons">close</i>
       </button>
     </div>
     <div class="drawer-body">
-      <!-- Zone d'affichage des erreurs amÃ©liorÃ©e -->
+      <!-- Zone d'affichage des erreurs améliorée -->
       @if (zoneFormError) {
       <div class="error-alert">
         <div class="error-alert-header">
@@ -3165,11 +3161,11 @@
         </div>
         <div class="error-alert-body">
           <div class="error-message">{{ zoneFormError }}</div>
-          <!-- Affichage des erreurs dÃ©taillÃ©es si disponibles -->
+          <!-- Affichage des erreurs détaillées si disponibles -->
           @if (Object.keys(zoneFormDetailedErrors).length > 0) {
           <div class="detailed-errors">
             <strong style="color: #7f1d1d; margin-bottom: 8px; display: block"
-              >DÃ©tails de l'erreur :</strong
+              >Détails de l'erreur :</strong
             >
             <ul>
               @for (error of Object.keys(zoneFormDetailedErrors); track error) {
@@ -3196,8 +3192,8 @@
                 >info</i
               >
               <div style="color: #1e40af; font-size: 14px">
-                <strong>Conseil :</strong> Assurez-vous de sÃ©lectionner au moins
-                un quartier et vÃ©rifiez que tous les champs sont correctement
+                <strong>Conseil :</strong> Assurez-vous de sélectionner au moins
+                un quartier et vérifiez que tous les champs sont correctement
                 remplis.
               </div>
             </div>
@@ -3213,7 +3209,7 @@
           (change)="onCityChange(userData.address.city)"
           class="form-control"
         >
-          <option value="">SÃ©lectionner une ville</option>
+          <option value="">Sélectionner une ville</option>
           @for (city of cities; track city) {
           <option [value]="city.name">{{ city.name }}</option>
           }
@@ -3230,7 +3226,7 @@
           class="form-control"
           [disabled]="arrondissements.length === 0"
         >
-          <option value="">SÃ©lectionner un arrondissement</option>
+          <option value="">Sélectionner un arrondissement</option>
           @for (arr of arrondissements; track arr) {
           <option [value]="arr.arrondissement">{{ arr.arrondissement }}</option>
           }
@@ -3245,7 +3241,7 @@
           class="form-control"
           [disabled]="secteurs.length === 0"
         >
-          <option value="">SÃ©lectionner un secteur</option>
+          <option value="">Sélectionner un secteur</option>
           @for (secteur of secteurs; track secteur) {
           <option [value]="secteur.secteur">{{ secteur.secteur }}</option>
           }
@@ -3255,7 +3251,7 @@
         <label for="neighborhood">Quartier</label>
         <small class="form-help-text">
           <i class="material-icons">info_outline</i>
-          Maintenez Ctrl (ou Cmd sur Mac) pour sÃ©lectionner plusieurs quartiers
+          Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs quartiers
         </small>
         <select
           id="neighborhood"
@@ -3263,7 +3259,7 @@
           class="form-control"
           multiple
           [disabled]="quartiers.length === 0"
-          title="SÃ©lectionnez un ou plusieurs quartiers. Utilisez Ctrl+clic pour sÃ©lectionner plusieurs options."
+          title="Sélectionnez un ou plusieurs quartiers. Utilisez Ctrl+clic pour sélectionner plusieurs options."
         >
           @for (quartier of quartiers; track quartier) {
           <option [value]="quartier">{{ quartier }}</option>
@@ -3272,7 +3268,7 @@
         @if (userData.address.neighborhood &&
         userData.address.neighborhood.length > 0) {
         <small class="form-help-text">
-          {{ userData.address.neighborhood.length }} quartier(s) sÃ©lectionnÃ©(s)
+          {{ userData.address.neighborhood.length }} quartier(s) sélectionné(s)
         </small>
         }
       </div>
@@ -3314,13 +3310,13 @@
     </div>
     <div class="modal-body">
       <p class="confirmation-text">
-        ÃŠtes-vous sÃ»r de vouloir supprimer
+        Êtes-vous sûr de vouloir supprimer
         <strong>{{ employeeToDelete?.displayName }}</strong> ?
       </p>
       <p class="warning-text">
         <i class="material-icons">info</i>
-        Cette action est irrÃ©versible et supprimera dÃ©finitivement cet Employe
-        du systÃ¨me.
+        Cette action est irréversible et supprimera définitivement cet Employe
+        du système.
       </p>
     </div>
     <div class="modal-footer">
@@ -3339,7 +3335,7 @@
       >
         <i class="material-icons">delete_forever</i>
         @if (!isDeleting) {
-        <span>Supprimer dÃ©finitivement</span>
+        <span>Supprimer définitivement</span>
         } @if (isDeleting) {
         <span>Suppression...</span>
         }

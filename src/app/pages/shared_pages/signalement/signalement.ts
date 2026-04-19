@@ -27,7 +27,7 @@ interface Incident {
     lastName ?:string;
     email?:string
   }
-  photos?:[];
+  photos?: string[];
   agencyName: string;
   type:
     | "missed_collection"
@@ -74,6 +74,34 @@ export class Signalement {
  
 
   selectedEmployee: string[] = [];
+
+  // Pagination
+  pageSize = 10;
+  currentPage = 1;
+
+  get pagedIncidents(): Incident[] {
+    const source = this.filteredIncidents.length ? this.filteredIncidents : this.incidents;
+    const start = (this.currentPage - 1) * this.pageSize;
+    return source.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    const total = this.filteredIncidents.length ? this.filteredIncidents.length : this.incidents.length;
+    return Math.ceil(total / this.pageSize) || 1;
+  }
+
+  get pageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) this.currentPage = page;
+  }
+
+  changePageSize(size: number): void {
+    this.pageSize = size;
+    this.currentPage = 1;
+  }
     constructor(
       private authService: AuthService,
       // private agencyService: AgencyService,
@@ -99,6 +127,7 @@ export class Signalement {
         incident.severity === this.severityFilter;
       return statusMatch && severityMatch;
     });
+    this.currentPage = 1;
   }
   showPicture: boolean = false;
   showPictures(): void {

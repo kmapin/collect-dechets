@@ -1,154 +1,159 @@
-<div class="{{ currentUser?.role === 'client' ? 'incidents-list-client' : 'incidents-list'}} grid-3">
-  <!-- État vide pour les incidents *ngIf="!isLoadingIncidents" -->
-  <!-- <div *ngIf="!incidents.length" class="empty-state">
-    <i class="material-icons">report_problem</i>
-    <h3>Aucun incident trouvé</h3>
-    <p>
-      Aucun incident ne correspond aux critères sélectionnés pour le moment.
-    </p>
-  </div> -->
+<div class="sig-container" [class.sig-container--client]="currentUser?.role === 'client'">
 
-  <div *ngFor="let incident of incidents" class="incident-card card">
-    <div>
-      <div class="incident-header">
-        <div
-          class="incident-severity"
-          [class]="'severity-'+incident.severity.toLowerCase()"
-        >
-          <i class="material-icons"
-            >{{ getSeverityIcon(incident.severity.toLowerCase()) }}</i
-          >
-          <span
-            >{{ getSeverityText(incident.severity.toLowerCase()) ?
-            getSeverityText(incident.severity.toLowerCase()) : "Faible" }}</span
-          >
-        </div>
-        <div class="incident-status">
-          <span
-            class="status-badge"
-            [class]="'status-'+incident.status.toLowerCase()"
-          >
-            {{ getIncidentStatusText(incident.status.toLowerCase()) }}
-          </span>
-        </div>
-      </div>
+  <!-- List header -->
+  <div class="sig-list-header">
+    <span class="sig-col sig-col--severity">Gravité</span>
+    <span class="sig-col sig-col--type">Type</span>
+    <span class="sig-col sig-col--client">Client</span>
+    <span class="sig-col sig-col--assignee">Assigné à</span>
+    <span class="sig-col sig-col--date">Date</span>
+    <span class="sig-col sig-col--status">Statut</span>
+    <span class="sig-col sig-col--actions"></span>
+  </div>
 
-      <div class="incident-content">
-        <h4>{{ getIncidentTypeText(incident.type.toLowerCase()) }}</h4>
-        <div class="incident-agency-container">
-          <p class="incident-agency">
-            <span class="agency-label">Agence: </span>
-            {{incident?.agencyId?.name }}
-          </p>
-          @if(incident.clientId){
-          <div
-            class="incident-assignment status-badge"
-            [class]="'status-success'"
-            *ngIf="incident.clientId._id"
-          >
-            <i class="material-icons">person</i>
-            <span
-              >Client(e) {{ incident.clientId.firstName }} {{
-              incident.clientId.lastName }}</span
-            >
-          </div>
-          }
-        </div>
+  <!-- Rows -->
+  <div
+    *ngFor="let incident of pagedIncidents; let i = index"
+    class="sig-row"
+    [ngClass]="'sig-row--' + incident.severity.toLowerCase()"
+  >
+    <!-- Severity -->
+    <div class="sig-col sig-col--severity">
+      <span class="sig-severity" [ngClass]="'sig-severity--' + incident.severity.toLowerCase()">
+        <i class="material-icons">{{ getSeverityIcon(incident.severity.toLowerCase()) }}</i>
+        <span>{{ getSeverityText(incident.severity.toLowerCase()) || 'Faible' }}</span>
+      </span>
+    </div>
 
-        <p class="incident-description">{{ incident.comment }}</p>
-        <p class="incident-date">
-          {{ incident.createdAt | date : "dd/MM/yyyy à HH:mm" }}
-        </p>
-      </div>
+    <!-- Type + comment -->
+    <div class="sig-col sig-col--type">
+      <span class="sig-type">{{ getIncidentTypeText(incident.type.toLowerCase()) }}</span>
+      <span class="sig-comment" *ngIf="incident.comment">{{ incident.comment }}</span>
+    </div>
 
-      <div class="incident-assignment" *ngIf="incident.collectorId?._id">
-        <i class="material-icons">person</i>
-        <span
-          >Assigné à {{ incident.collectorId?.firstName }} {{
-          incident.collectorId?.lastName }}</span
-        >
+    <!-- Client -->
+    <div class="sig-col sig-col--client">
+      @if (incident.clientId?._id) {
+      <div class="sig-person">
+        <span class="sig-avatar">{{ (incident.clientId?.firstName || '?')[0] | uppercase }}</span>
+        <span>{{ incident.clientId?.firstName }} {{ incident.clientId?.lastName }}</span>
       </div>
-
-      <!-- Affichage des photos -->
-      @if (incident.photos && incident.photos.length && showPicture) {
-      <div class="report-photos">
-        @for (photo of incident.photos; track photo) {
-        <img
-          [src]="photo"
-          alt="Photo du signalement"
-          class="report-photo circular-image"
-          (click)=" currentUser?.role === 'client' ? null : openImageModal(photo, incident)"
-        />
-        }
-      </div>
-      } @if ((!incident.photos || !incident.photos.length) && showPicture) {
-      <div>
-        <p><em>Aucune photo associée</em></p>
-      </div>
+      } @else {
+      <span class="sig-empty">—</span>
       }
     </div>
-    <div class="incident-actions">
-      @if(incident.agencyId && currentUser?.role === 'manager') {
-      <div class="incident-actions">
-        <button class="btn btn-primary" (click)="assignIncident(incident)">
-          <i class="material-icons">assignment_ind</i>
-          Assigner
-        </button>
-        @if (!incident.collectorId?._id) {
-        <button class="btn btn-accent" (click)="openAssignModal(incident)">
-          <i class="material-icons">assignment_ind</i>
-          Traiter
-        </button>
-        } @if (!incident.collectorId?._id) {
-        <button class="btn btn-success" (click)="resolveIncident(incident._id)">
-          <i class="material-icons">check</i>
-          Résoudre
-        </button>
-        }
 
-        <button class="btn btn-accent" (click)="showPictures()">
-          <i class="material-icons"
-            >{{ showPicture ?' visibility_off' : 'visibility'}}</i
-          >
-          {{ showPicture ?'Masquer photos':'Voir photos'}}
-        </button>
+    <!-- Assignee -->
+    <div class="sig-col sig-col--assignee">
+      @if (incident.collectorId?._id) {
+      <div class="sig-person sig-person--assigned">
+        <span class="sig-avatar sig-avatar--green">{{ (incident.collectorId?.firstName || '?')[0] | uppercase }}</span>
+        <span>{{ incident.collectorId?.firstName }} {{ incident.collectorId?.lastName }}</span>
       </div>
+      } @else {
+      <span class="sig-unassigned">Non assigné</span>
       }
-      <!-- <button
-        class="btn btn-primary"
-        (click)="investigateIncident(incident.id)"
-        *ngIf="incident.status === 'pending'"
-        >
-        <i class="material-icons">search</i>
-        Enquêter
-        </button> -->
-      <!-- <button
-            class="btn btn-success"
-            (click)="resolveIncident(incident.id)"
-            *ngIf="incident.status === 'resolved'"
-        >
-            <i class="material-icons">check</i>
-            Résoudre
-        </button> -->
-      @if(currentUser?.role !== 'manager') {
+    </div>
 
-      <button
-        class="btn btn-accent"
-        (click)="contactAgencyForIncident(incident?.agencyId?._id)"
-      >
-        <i class="material-icons">phone</i>
-        Contacter Agence
-      </button>
-      <button class="btn btn-success" (click)="showPictures()">
-        <i class="material-icons"
-          >{{ showPicture ?' visibility_off' : 'visibility'}}</i
-        >
-        {{ showPicture ?'Masquer photos':'Voir photos'}}
-      </button>
-      }
+    <!-- Date -->
+    <div class="sig-col sig-col--date">
+      <span class="sig-date">{{ incident.createdAt | date : "dd MMM yyyy" }}</span>
+      <span class="sig-time">{{ incident.createdAt | date : "HH:mm" }}</span>
+    </div>
+
+    <!-- Status -->
+    <div class="sig-col sig-col--status">
+      <span class="sig-status" [ngClass]="'sig-status--' + incident.status.toLowerCase()">
+        {{ getIncidentStatusText(incident.status.toLowerCase()) }}
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div class="sig-col sig-col--actions">
+      <div class="sig-actions">
+        @if (incident.agencyId && currentUser?.role === 'manager') {
+          <button class="sig-action-btn sig-action-btn--blue" (click)="assignIncident(incident)" title="Assigner">
+            <i class="material-icons">assignment_ind</i>
+          </button>
+          @if (!incident.collectorId?._id) {
+          <button class="sig-action-btn sig-action-btn--orange" (click)="openAssignModal(incident)" title="Traiter">
+            <i class="material-icons">build</i>
+          </button>
+          <button class="sig-action-btn sig-action-btn--green" (click)="resolveIncident(incident._id)" title="Résoudre">
+            <i class="material-icons">check_circle</i>
+          </button>
+          }
+          @if (incident.photos && incident.photos.length) {
+          <button class="sig-action-btn sig-action-btn--gray" (click)="showPictures(); openImageModal(incident.photos[0], incident)" title="Voir photos">
+            <i class="material-icons">photo_library</i>
+          </button>
+          }
+        }
+        @if (currentUser?.role !== 'manager') {
+          <button class="sig-action-btn sig-action-btn--blue" (click)="contactAgencyForIncident(incident?.agencyId?._id)" title="Contacter l'agence">
+            <i class="material-icons">phone</i>
+          </button>
+          @if (incident.photos && incident.photos.length) {
+          <button class="sig-action-btn sig-action-btn--gray" (click)="showPictures(); openImageModal(incident.photos[0], incident)" title="Voir photos">
+            <i class="material-icons">photo_library</i>
+          </button>
+          }
+        }
+      </div>
     </div>
   </div>
+
+  <!-- Empty state -->
+  <div class="sig-empty-state" *ngIf="!incidents?.length">
+    <i class="material-icons">verified_user</i>
+    <p>Aucun signalement en cours</p>
+  </div>
+
+  <!-- Pagination -->
+  @if (incidents.length > 0) {
+  <div class="sig-pagination">
+    <div class="sig-pagination-left">
+      <span class="sig-page-info">
+        {{ (currentPage - 1) * pageSize + 1 }}–{{ currentPage * pageSize > incidents.length ? incidents.length : currentPage * pageSize }}
+        sur <strong>{{ incidents.length }}</strong>
+      </span>
+      <div class="sig-per-page">
+        <label>Afficher</label>
+        <select [value]="pageSize" (change)="changePageSize(+($any($event.target).value))">
+          <option [value]="5">5</option>
+          <option [value]="10">10</option>
+          <option [value]="20">20</option>
+          <option [value]="50">50</option>
+        </select>
+        <label>par page</label>
+      </div>
+    </div>
+    @if (totalPages > 1) {
+    <div class="sig-page-controls">
+      <button class="sig-page-btn" (click)="goToPage(1)" [disabled]="currentPage === 1" title="Première page">
+        <i class="material-icons">first_page</i>
+      </button>
+      <button class="sig-page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" title="Page précédente">
+        <i class="material-icons">chevron_left</i>
+      </button>
+      <div class="sig-page-numbers">
+        @for (p of pageNumbers; track p) {
+          <button class="sig-page-btn sig-page-num" [class.sig-page-btn--active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+        }
+      </div>
+      <button class="sig-page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" title="Page suivante">
+        <i class="material-icons">chevron_right</i>
+      </button>
+      <button class="sig-page-btn" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages" title="Dernière page">
+        <i class="material-icons">last_page</i>
+      </button>
+    </div>
+    }
+  </div>
+  }
+
 </div>
+
 @if (selectedImage) {
 <div class="drawer-overlay" (click)="closeImageModal()">
   <div class="drawer-content" (click)="$event.stopPropagation()">

@@ -23,6 +23,7 @@
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "@zxing/ngx-scanner": "^20.0.0",
+    "chart.js": "^4.5.1",
     "flowbite": "^3.1.2",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",

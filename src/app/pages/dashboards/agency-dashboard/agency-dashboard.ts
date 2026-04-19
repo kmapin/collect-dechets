@@ -113,7 +113,7 @@ interface Incident {
     lastName ?:string;
     email?:string
   }
-  photos?:[];
+  photos?: string[];
   agencyName: string;
   type:
     | "missed_collection"
@@ -3295,6 +3295,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     const targetDate = new Date(startOfWeek);
     targetDate.setDate(startOfWeek.getDate() + dayIndex);
     return targetDate;
+  }
+
+  /**
+   * Vérifie si le jour à l'index donné correspond à aujourd'hui
+   */
+  isToday(dayIndex: number): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dayDate = this.getDateForDay(dayIndex);
+    dayDate.setHours(0, 0, 0, 0);
+    return today.getTime() === dayDate.getTime();
   }
 
   /**
