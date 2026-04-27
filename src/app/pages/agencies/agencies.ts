@@ -3,20 +3,22 @@ import { Component, OnInit } from '@angular/core';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
-import { Agency, Tarif, WasteService } from '../../models/agency.model';
+import { Agency, SearchAgency, Tarif, WasteService } from '../../models/agency.model';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { Arrondissement, Quartier, Sector } from '../../models/countries-org.model';
 import { CountriesOrgMockService } from '../../services/countries-org-mock.service';
 import { AuthService } from '../../services/auth.service';
+import { PaginatorModule } from 'primeng/paginator';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-agencies',
-  imports: [RouterModule, FormsModule],
+  imports: [RouterModule, FormsModule, PaginatorModule, MatIconModule],
   templateUrl: './agencies.html',
   styleUrl: './agencies.css'
 })
 export class Agencies  implements OnInit {
-  agencies: Agency[] = [];
+  agencies: SearchAgency = { data: [], pagination: {} };
   filteredAgencies: Agency[] = [];
   searchQuery = '';
   selectedCity = '';
@@ -45,6 +47,27 @@ selectedSector: string = '';
 selectedNeighborhood: string = '';
 // minRating: string = '';
 
+//Pagination 
+rows = 6;
+totalRecords = 0;
+
+first = 0;
+last = 0;
+
+currentPage = 1;
+totalPages = 1;
+pagedAgencies: any[] = [];
+
+onPageChange(event: any) {
+
+  this.first = event.first;
+  this.rows = event.rows;
+
+  this.currentPage = event.page + 1;
+  this.totalPages = Math.ceil(this.totalRecords / this.rows);
+
+  this.applyFilters();
+}
 onCityChange(city: string) {
   const cityObj = this.cities.find(c => c === city);
   // this.arrondissementss = cityObj ? this.countriesOrgMockService.getArrondissementsByCityLabel(cityObj) : [];
@@ -123,13 +146,13 @@ currentUser!: any ;
     this.quartierss = this.countriesOrgMockService.getAllNeighborhoodsByVille(ville);
   }
 
-  loadAgencies(): void {
-    this.agencyService.getAgencies().subscribe(agencies => {
-      this.agencies = agencies;
-      this.filteredAgencies = agencies;
-      console.log("Agences chargées :", agencies);
-    });
-  }
+  // loadAgencies(): void {
+  //   this.agencyService.getAgencies().subscribe(agencies => {
+  //     this.agencies = agencies;
+  //     this.filteredAgencies = agencies;
+  //     console.log("Agences chargées :", agencies);
+  //   });
+  // }
 
   /**
    * Transforme une agence API en objet compatible avec le template
@@ -194,9 +217,10 @@ currentUser!: any ;
     // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
   };
     this.agencyService.searchAgencie(payload).subscribe((response: any) => {
-      this.agencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
-      this.filteredAgencies = this.agencies;
-      console.log("Agences chargées :", this.filteredAgencies);
+      this.agencies = response;
+      console.log("Agences chargées depuis l'API backend:", this.agencies);
+      this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));;
+      console.log("Agences chargées :", this.agencies);
       this.generateRandomStarsList()
       // this.applyFilters();
     });

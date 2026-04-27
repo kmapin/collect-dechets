@@ -7,6 +7,7 @@ import {
   ElementRef,
   OnInit,
   ViewChild,
+  ViewEncapsulation,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
@@ -78,6 +79,7 @@ import { TagModule } from "primeng/tag";
 import { ToastModule } from "primeng/toast";
 import { RippleModule } from "primeng/ripple";
 import { Signalement } from "../../shared_pages/signalement/signalement";
+import { MultiSelectModule } from 'primeng/multiselect';
 interface Client {
   id: string;
   name: string;
@@ -111,7 +113,7 @@ interface Incident {
     lastName ?:string;
     email?:string
   }
-  photos?:[];
+  photos?: string[];
   agencyName: string;
   type:
     | "missed_collection"
@@ -222,7 +224,8 @@ export enum CollectionStatus1 {
     MatExpansionModule,
     MatIcon,
     LoadingSpinnerComponent,
-
+    
+    MultiSelectModule,
     TableModule,
     ButtonModule,
     RatingModule,
@@ -268,6 +271,7 @@ export enum CollectionStatus1 {
       ]),
     ]),
   ],
+  encapsulation: ViewEncapsulation.None
 })
 export class AgencyDashboard implements OnInit, AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
@@ -380,11 +384,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   availableEmployeeSectors: Sector[] = [];
   availableEmployeeNeighborhoods: Quartier[] = [];
 
-  // Propriétés de pagination
+  // Propriétés de pagination employés
   currentPage: number = 1;
-  itemsPerPage: number = 20;
+  itemsPerPage: number = 5;
   totalEmployees: number = 0;
   totalPages: number = 0;
+  employeeViewMode: 'card' | 'table' = 'table';
+
+  // Propriétés vue / pagination collectes
+  collecteViewMode: 'card' | 'table' = 'table';
+  collectesCurrentPage: number = 1;
+  collectesItemsPerPage: number = 5;
+  collectesTotalItems: number = 0;
+  collectesTotalPages: number = 0;
+  pagedCollectes: any[] = [];
 
   // Chargement des données
   isLoadingFilteredEmployees: boolean = false;
@@ -596,7 +609,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         date: ["", Validators.required],
         startTime: ["", Validators.required],
         endTime: ["", Validators.required],
-        collectorId: ["", Validators.required],
+        collectorId: [[], Validators.required],
+        pricingId: ["", Validators.required],
+        isRecurring: [false],
+        recurrenceType: [""],
+        numberOfWeeks:[0]
       },
       {
         validators: [this.validateTimeOrder],
@@ -660,6 +677,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.setupFormErrorHandling();
   }
 
+  get recurrenceType(){
+    return this.scheduleForm.get('recurrenceType')!.value;
+  }
+
+  get isRecurring(){
+    return this.scheduleForm.get('isRecurring')!.value; 
+  }
   // Configuration de la gestion des erreurs pour tous les formulaires
   private setupFormErrorHandling(): void {
     const forms = [
@@ -1345,8 +1369,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             (a: any, b: any) =>
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
           );
-          this.scrollToBottom();
           this.countUnreadMessages();
+          this.scrollToBottom();
+          
           if (!clientId) {
             this.receivedId = this.currentUser?.agencyId || "";
           } else {
@@ -1505,11 +1530,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           if ((collectors as any)?.data) {
             const data = (collectors as any).data;
             // Prendre seulement les collectors de la réponse
-            this.collectors = data || [];
+            this.collectors = (data || []).map((c: any) =>({
+              ...c,
+              name:c.firstName + ' ' + c.lastName
+            }));
             console.log(" Collecteurs extraits:", this.collectors);
             console.log("   - Nombre de collecteurs:", this.collectors.length);
           } else if (Array.isArray(collectors)) {
-            this.collectors = collectors;
+            this.collectors = collectors.map((c: any) =>({
+              ...c,
+              name:c.firstName + ' ' + c.lastName
+            }));
             console.log(" Collecteurs reçus directement:", this.collectors);
           } else {
             console.warn(
@@ -1817,14 +1848,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
           console.log("loadEmployees > Total final:", this.allEmployees);
 
-          // Au chargement initial, afficher tous les employés localement
-          // L'API backend sera utilisée seulement quand l'utilisateur applique des filtres
-          this.filteredEmployees = [...this.allEmployees];
+          // Pagination côté client – afficher seulement la première page
           this.totalEmployees = this.allEmployees.length;
+          this.currentPage = 1;
           this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
+          this.filteredEmployees = this.allEmployees.slice(0, this.itemsPerPage);
           console.log(
-            "Employés initialisés localement:",
-            this.filteredEmployees.length,
+            `Employés initialisés : page 1/${this.totalPages}, ${this.filteredEmployees.length} affichés sur ${this.totalEmployees}`,
           );
 
           // COMMENTÉ : Utilisation immédiate de l'API backend au chargement
@@ -3171,10 +3201,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     const targetDate = new Date(startOfWeek);
     targetDate.setDate(startOfWeek.getDate() + dayIndex);
 
-    console.log(
-      `Recherche plannings pour le jour ${dayIndex} (${targetDate.toLocaleDateString()})`,
-    );
-    console.log("Nombre total de plannings:", this.schedules.length);
+    // console.log(
+    //   `Recherche plannings pour le jour ${dayIndex} (${targetDate.toLocaleDateString()})`,
+    // );
+    // console.log("Nombre total de plannings:", this.schedules.length);
 
     const filteredSchedules = this.schedules.filter((schedule) => {
       if (!schedule.date) {
@@ -3187,17 +3217,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
       const isMatch = scheduleDate.getTime() === targetDate.getTime();
 
-      if (isMatch) {
-        console.log("Planning trouvé pour ce jour:", schedule);
-      }
+      // if (isMatch) {
+      //   // console.log("Planning trouvé pour ce jour:", schedule);
+      // }
 
       return isMatch;
     });
 
-    console.log(
-      `Plannings trouvés pour le jour ${dayIndex}:`,
-      filteredSchedules,
-    );
+    // console.log(
+    //   `Plannings trouvés pour le jour ${dayIndex}:`,
+    //   filteredSchedules,
+    // );
     return filteredSchedules;
   }
 
@@ -3268,6 +3298,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   /**
+   * Vérifie si le jour à l'index donné correspond à aujourd'hui
+   */
+  isToday(dayIndex: number): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dayDate = this.getDateForDay(dayIndex);
+    dayDate.setHours(0, 0, 0, 0);
+    return today.getTime() === dayDate.getTime();
+  }
+
+  /**
    * Obtient le nom du jour en français
    */
   getDayName(dayIndex: number): string {
@@ -3335,6 +3376,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         collection.address.neighborhood === this.selectedZone;
       return statusMatch && zoneMatch;
     });
+    // Re-paginer les collectes journalières selon le filtre actif
+    this.collectesCurrentPage = 1;
+    this.applyCollectesPagination();
   }
 
   filterReports(): void {
@@ -3844,7 +3888,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
       next: (response: any) => {
-        console.log("Réponse complète du backend:", response);
+        console.log("Réponse complète planning de l'agence du backend:", response);
 
         // Gérer les deux formats possibles de réponse
         if (Array.isArray(response)) {
@@ -4266,9 +4310,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
       date: formValues.date,
       startTime: formValues.startTime,
       endTime: formValues.endTime,
-      collectorId: formValues.collectorId, // Maintenant une simple chaîne de caractères
+      collectors: formValues.collectorId, // Maintenant une simple chaîne de caractères
       agencyId: this.currentUser?.agencyId || "",
       managerId: this.currentUser?._id || "", // ID du manager (utilisateur courant)
+      pricingId: formValues.pricingId,
+      isRecurring : formValues.isRecurring,
+      recurrenceType: formValues.recurrenceType,
+      numberOfWeeks: formValues.numberOfWeeks
     };
 
     // Debug : log des données envoyées
@@ -5028,6 +5076,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         if (CollectesTab) {
           CollectesTab.badge = this.dayCollectes.length;
         }
+        // Initialiser la pagination côté client
+        this.collectesCurrentPage = 1;
+        this.applyCollectesPagination();
         this.isLoadingCollections = false;
       },
       error: (error) => {
@@ -5035,11 +5086,55 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         const message =
           error?.error?.message || "Impossible de récupérer les collectes.";
         this.notificationService.showError("Erreur", message);
-
         this.isLoadingCollections = false;
       },
     });
   }
+
+  /** Applique le filtre de statut + la pagination locale sur dayCollectes */
+  applyCollectesPagination(): void {
+    const all = Array.isArray(this.dayCollectes) ? this.dayCollectes : [];
+    const filtered =
+      this.collectionsFilter === 'all'
+        ? all
+        : all.filter((c: any) => c.status?.toLowerCase() === this.collectionsFilter);
+    this.collectesTotalItems = filtered.length;
+    this.collectesTotalPages = Math.ceil(this.collectesTotalItems / this.collectesItemsPerPage);
+    if (this.collectesCurrentPage > this.collectesTotalPages && this.collectesTotalPages > 0) {
+      this.collectesCurrentPage = this.collectesTotalPages;
+    }
+    if (this.collectesCurrentPage < 1) { this.collectesCurrentPage = 1; }
+    const start = (this.collectesCurrentPage - 1) * this.collectesItemsPerPage;
+    this.pagedCollectes = filtered.slice(start, start + this.collectesItemsPerPage);
+  }
+
+  goToCollectesPage(page: number): void {
+    if (page >= 1 && page <= this.collectesTotalPages) {
+      this.collectesCurrentPage = page;
+      this.applyCollectesPagination();
+    }
+  }
+
+  getCollectesPageNumbers(): number[] {
+    const max = 5;
+    let start = Math.max(1, this.collectesCurrentPage - Math.floor(max / 2));
+    const end = Math.min(this.collectesTotalPages, start + max - 1);
+    if (end - start + 1 < max) { start = Math.max(1, end - max + 1); }
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) { pages.push(i); }
+    return pages;
+  }
+
+  getCollectesEndItem(): number {
+    return Math.min(this.collectesCurrentPage * this.collectesItemsPerPage, this.collectesTotalItems);
+  }
+
+  changeCollectesItemsPerPage(size: number): void {
+    this.collectesItemsPerPage = size;
+    this.collectesCurrentPage = 1;
+    this.applyCollectesPagination();
+  }
+
   // recuperations des tarifs liee a une agences
   historyCollecte: any[] = [];
 

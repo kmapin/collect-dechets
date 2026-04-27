@@ -28,6 +28,7 @@
       <!-- Navigation Desktop -->
       <nav class="navbar-nav desktop-nav">
         <div class="nav-group">
+          @if (!currentUser ||  currentUser!.role !=="manager") {
           <a routerLink="/" class="nav-link">
             <i class="material-icons">home</i>
             <span>Accueil</span>
@@ -35,7 +36,7 @@
           <a routerLink="/agencies" class="nav-link" routerLinkActive="active">
             <i class="material-icons">business</i>
             <span>Agences</span>
-          </a>
+          </a>}
           <a
             routerLink="/waste-types"
             class="nav-link"

@@ -1,9 +1,15 @@
+
+export interface SearchAgency {
+  data : Agency[];
+  pagination : any
+}
 export interface Agency {
   _id: string;
   userId: string;
   firstName: string;
   lastName: string;
   // agencyName: string;
+  pagination?: any;
   name: string;
   slogan?: string;
   status?:string;
@@ -216,9 +222,14 @@ export interface CollectionSchedule {
   date: string;
   startTime: string;
   endTime: string;
-  collectorId: string;
+  collectorId?: string;
+  collectors?: string;
   agencyId: string;
   managerId: string; // Ajout du champ obligatoire managerId
+  pricingId?:string,
+  isRecurring?: boolean;
+  recurrenceType?: string;
+  numberOfWeeks?: number;
 }
 
 

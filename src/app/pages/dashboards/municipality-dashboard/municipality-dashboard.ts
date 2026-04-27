@@ -39,7 +39,7 @@ interface Incident {
     lastName ?:string;
     email?:string
   }
-  photos?:[];
+  photos?: string[];
   agencyName: string;
   type:
     | "missed_collection"

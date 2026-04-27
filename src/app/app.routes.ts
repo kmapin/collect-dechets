@@ -124,6 +124,15 @@ export const routes: Routes = [
   },
 
   {
+    canActivate: [adminOrManagerGuard],
+    path: "dashboard/agency/finance",
+    loadComponent: () =>
+      import("./pages/dashboards/agency-finance/agency-finance").then(
+        (c) => c.AgencyFinance,
+      ),
+  },
+
+  {
     path: "dashboard/collector",
     loadComponent: () =>
       import("./pages/dashboards/collector-dashboard/collector-dashboard").then(

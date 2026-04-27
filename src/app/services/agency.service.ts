@@ -1539,5 +1539,16 @@ export class AgencyService {
     );
   }
   
+  //Choisir les agences par hasard
 
+  public getRandomAgencies(list: any[]): any[] {
+    const shuffled = [...list];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    return shuffled.slice(0, Math.min(4, shuffled.length));
+  }
 }

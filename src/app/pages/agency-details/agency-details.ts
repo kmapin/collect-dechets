@@ -91,6 +91,17 @@ export class AgencyDetails implements OnInit {
       },
     },
   };
+
+  searchQuery = '';
+  selectedCity = '';
+  selectedService = '';
+  maxPrice = '';
+  minRating = '';
+  // selectedCity: string = '';
+  selectedArrondissement: string = '';
+  selectedSector: string = '';
+  selectedNeighborhood: string = '';
+
   arrondissements: QuartierData[] = OUAGA_DATA;
   arrondissementss: Arrondissement[] = [];
   cities: City[] = [];
@@ -882,22 +893,24 @@ export class AgencyDetails implements OnInit {
       () => Math.floor(Math.random() * 5) + 1,
     );
   }
-  private getRandomAgencies(list: any[]): any[] {
-    const shuffled = [...list];
 
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-
-    return shuffled.slice(0, Math.min(4, shuffled.length));
-  }
   loadAgenciesFromApi(): void {
-    this.agencyService.getAllAgenciesFromApi().subscribe((response: any) => {
+    const payload: any = {
+    term: this.searchQuery || '',
+    city: this.selectedCity,
+    arrondissement: this.selectedArrondissement,
+    sector: this.selectedSector,
+    neighborhood: this.selectedNeighborhood,
+    rating: this.minRating ? parseFloat(this.minRating) : null,
+    status: 'active',
+    getAll: true
+    // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
+  };
+    this.agencyService.getAllAgenciesFromApi(payload).subscribe((response: any) => {
       this.agencies = (response.data || []).map((a: any) =>
         this.mapApiAgency(a),
       );
-      this.filteredAgencies = this.getRandomAgencies(this.agencies);
+      this.filteredAgencies = this.agencyService.getRandomAgencies(this.agencies);
       console.log("Agences chargées :", this.filteredAgencies);
       this.generateRandomStarsList();
       // this.applyFilters();

@@ -22,6 +22,10 @@
             <i class="material-icons">info</i>
             Portail Agence
           </button>
+          <button class="btn btn-finance" routerLink="/dashboard/agency/finance">
+            <i class="material-icons">account_balance_wallet</i>
+            Finance
+          </button>
         </div>
       </div>
     </div>
@@ -48,7 +52,7 @@
             <i class="material-icons">local_shipping</i>
           </div>
           <div class="stat-info">
-            <h3>Employés</h3>
+            <h3>Employes</h3>
             <p class="stat-value">{{ statistics.totalEmployees || 0 }}</p>
             <span class="stat-trend neutral"
               >{{ getActiveCollectorsToday() }} en tournée</span
@@ -142,127 +146,177 @@
         @if (activeTab === 'collections') {
         <div class="collections-tab">
           <div class="section-header">
-            <h2>Suivi des Collectes en Temps Réel</h2>
+            <h2>Suivi des Collectes en Temps R&#233;el</h2>
             <div class="section-actions">
-              <select
-                [(ngModel)]="collectionsFilter"
-                (change)="filterCollections()"
-                class="filter-select"
-              >
+              <div class="view-mode-toggle">
+                <button class="view-mode-btn" [class.active]="collecteViewMode === 'card'" (click)="collecteViewMode = 'card'" title="Vue cartes">
+                  <i class="material-icons">grid_view</i>
+                  <span>Cartes</span>
+                </button>
+                <button class="view-mode-btn" [class.active]="collecteViewMode === 'table'" (click)="collecteViewMode = 'table'" title="Vue tableau">
+                  <i class="material-icons">table_rows</i>
+                  <span>Tableau</span>
+                </button>
+              </div>
+              <select [(ngModel)]="collectionsFilter" (change)="filterCollections()" class="filter-select">
                 <option value="all">Toutes les collectes</option>
-                <option value="scheduled">Programmées</option>
-                <!-- <option value="in_progress">En cours</option> -->
-                <option value="collected">Collectées</option>
-                <!-- <option value="missed">Manquées</option> -->
+                <option value="scheduled">Programm&#233;es</option>
+                <option value="collected">Collect&#233;es</option>
               </select>
-              <!-- Bouton historique -->
-              <button
-                class="action-btn"
-                title="Voir l’historique des collectes"
-                style="margin-left: 10px"
-                (click)="openHistoryModal()"
-              >
+              <button class="action-btn" title="Voir l'historique des collectes" (click)="openHistoryModal()">
                 <i class="material-icons">history</i>
               </button>
             </div>
           </div>
-          <!-- Indicateur de chargement pour les collectes -->
           @if (isLoadingCollections) {
-          <app-loading-spinner
-            message="Chargement des collectes..."
-            size="medium"
-          >
-          </app-loading-spinner>
+          <app-loading-spinner message="Chargement des collectes..." size="medium"></app-loading-spinner>
           }
-          <!-- Liste des collectes -->
           @if (!isLoadingCollections) {
-          <div class="collections-grid">
-            @for (collecte of dayCollectes; track collecte) {
-            <div class="collection-card card">
-              <!-- Header -->
-              <div class="collection-header">
-                <div class="collection-status">
-                  <span
-                    class="status-badge"
-                    [class]="'status-' + collecte.status.toLowerCase()"
-                  >
-                    {{getStatusText(collecte.status.toLowerCase()) ||
-                    collecte.status }}
-                  </span>
-                  <span class="collection-time">
-                    {{ collecte.createdAt | date : "dd/MM/yyyy HH:mm" }}
-                  </span>
+            @if (collecteViewMode === 'card') {
+            <div class="collections-grid">
+              @for (collecte of pagedCollectes; track collecte) {
+              <div class="collection-card card">
+                <div class="collection-header">
+                  <div class="collection-status">
+                    <span class="status-badge" [class]="'status-' + collecte.status.toLowerCase()">
+                      {{ getStatusText(collecte.status.toLowerCase()) || collecte.status }}
+                    </span>
+                    <span class="collection-time">{{ collecte.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </div>
+                  <div class="collection-actions">
+                    @if (collecte.status.toLowerCase() === 'scheduled') {
+                    <button class="action-btn" (click)="trackCollection(collecte._id)"><i class="material-icons">location_on</i></button>
+                    }
+                  </div>
                 </div>
-                <div class="collection-actions">
-                  @if (collecte.status.toLowerCase() === 'scheduled') {
-                  <button
-                    class="action-btn"
-                    (click)="trackCollection(collecte._id)"
-                  >
-                    <i class="material-icons">location_on</i>
-                  </button>
-                  }
+                <div class="collection-info">
+                  <i class="material-icons">group</i>
+                  {{ collecte.clientId.firstName + ' ' + collecte.clientId.lastName }}
+                  <p><i class="material-icons">person</i> Collecteur : {{ collecte.collectorId.firstName + ' ' + collecte.collectorId.lastName }}</p>
+                  <p><i class="material-icons">apartment</i> Agence : {{ collecte.agencyId.name }}</p>
+                  <p><i class="material-icons">schedule</i> Scann&#233;e &#224; : {{ collecte.scannedAt | date:'dd/MM/yyyy HH:mm' }}</p>
                 </div>
               </div>
-              <!-- Infos -->
-              <div class="collection-info">
-                <i class="material-icons">group</i>
-                {{ collecte.clientId.firstName + " " +
-                collecte.clientId.lastName }}
-                <p>
-                  <i class="material-icons">person</i>
-                  Collecteur : {{ collecte.collectorId.firstName + " " +
-                  collecte.collectorId.lastName }}
-                </p>
-                <p>
-                  <i class="material-icons">apartment</i>
-                  Agence : {{ collecte.agencyId.name }}
-                </p>
-                <p>
-                  <i class="material-icons">schedule</i>
-                  Scannée à : {{ collecte.scannedAt | date : "dd/MM/yyyy HH:mm"
-                  }}
-                </p>
-              </div>
+              }
             </div>
             }
-          </div>
-          }
-          <!-- État vide -->
-          @if (!isLoadingCollections && dayCollectes.length === 0) {
-          <div class="empty-state">
-            <i class="material-icons">event_available</i>
-            <h3>Aucune collecte</h3>
-            <p>Aucune collecte disponible pour l’instant</p>
-          </div>
+            @if (collecteViewMode === 'table') {
+            <div class="collectes-table-wrapper">
+              <table class="collectes-table">
+                <thead>
+                  <tr>
+                    <th>Client</th>
+                    <th>Collecteur</th>
+                    <th>Agence</th>
+                    <th>Statut</th>
+                    <th>Cr&#233;&#233;e le</th>
+                    <th>Scann&#233;e le</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (collecte of pagedCollectes; track collecte) {
+                  <tr>
+                    <td class="cell-name">{{ collecte.clientId.firstName }} {{ collecte.clientId.lastName }}</td>
+                    <td class="cell-name">{{ collecte.collectorId.firstName }} {{ collecte.collectorId.lastName }}</td>
+                    <td>{{ collecte.agencyId.name }}</td>
+                    <td>
+                      <span class="collecte-status-badge" [class]="'cstatus-' + collecte.status.toLowerCase()">
+                        {{ getStatusText(collecte.status.toLowerCase()) || collecte.status }}
+                      </span>
+                    </td>
+                    <td>{{ collecte.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ collecte.scannedAt ? (collecte.scannedAt | date:'dd/MM/yyyy HH:mm') : '&#8212;' }}</td>
+                    <td class="col-actions">
+                      @if (collecte.status.toLowerCase() === 'scheduled') {
+                      <button class="action-btn" (click)="trackCollection(collecte._id)" title="Localiser"><i class="material-icons">location_on</i></button>
+                      } @else {
+                      <span style="color:#9ca3af;font-size:0.85rem">&#8212;</span>
+                      }
+                    </td>
+                  </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            }
+            @if (pagedCollectes.length === 0) {
+            <div class="empty-state">
+              <i class="material-icons">event_available</i>
+              <h3>Aucune collecte</h3>
+              <p>Aucune collecte disponible pour l'instant</p>
+            </div>
+            }
+            @if (collectesTotalItems > 0) {
+            <div class="pagination-section">
+              <div class="pagination-left">
+                <span class="pagination-details">
+                  {{ (collectesCurrentPage - 1) * collectesItemsPerPage + 1 }}&#8211;{{ getCollectesEndItem() }}
+                  sur <strong>{{ collectesTotalItems }}</strong> collecte(s)
+                </span>
+                <div class="per-page-group">
+                  <label class="per-page-label">Afficher</label>
+                  <select class="per-page-select" [value]="collectesItemsPerPage" (change)="changeCollectesItemsPerPage(+($any($event.target).value))">
+                    <option [value]="5">5</option>
+                    <option [value]="10">10</option>
+                    <option [value]="20">20</option>
+                    <option [value]="50">50</option>
+                  </select>
+                  <span class="per-page-label">par page</span>
+                </div>
+              </div>
+              @if (collectesTotalPages > 1) {
+              <div class="pagination-controls">
+                <button class="pagination-btn" [disabled]="collectesCurrentPage === 1" (click)="goToCollectesPage(1)" title="Premi&#232;re page"><i class="material-icons">first_page</i></button>
+                <button class="pagination-btn" [disabled]="collectesCurrentPage === 1" (click)="goToCollectesPage(collectesCurrentPage - 1)"><i class="material-icons">chevron_left</i></button>
+                <div class="pagination-numbers">
+                  @for (page of getCollectesPageNumbers(); track page) {
+                  <button class="pagination-btn page-number" [class.active]="page === collectesCurrentPage" (click)="goToCollectesPage(page)">{{ page }}</button>
+                  }
+                </div>
+                <button class="pagination-btn" [disabled]="collectesCurrentPage === collectesTotalPages" (click)="goToCollectesPage(collectesCurrentPage + 1)"><i class="material-icons">chevron_right</i></button>
+                <button class="pagination-btn" [disabled]="collectesCurrentPage === collectesTotalPages" (click)="goToCollectesPage(collectesTotalPages)" title="Derni&#232;re page"><i class="material-icons">last_page</i></button>
+              </div>
+              }
+            </div>
+            }
           }
         </div>
         }
 
-        <!-- Onglet Gestion des Employés -->
+        <!-- Onglet Gestion des Employes -->
         @if (activeTab === 'employees') {
         <div class="employees-tab">
           <div class="section-header">
-            <h2>Gestion des Employés</h2>
+            <h2>Gestion des Employes</h2>
             <div class="section-actions">
+              <!-- Toggle carte / tableau -->
+              <div class="view-mode-toggle">
+                <button class="view-mode-btn" [class.active]="employeeViewMode === 'card'" (click)="employeeViewMode = 'card'" title="Vue cartes">
+                  <i class="material-icons">grid_view</i>
+                  <span>Cartes</span>
+                </button>
+                <button class="view-mode-btn" [class.active]="employeeViewMode === 'table'" (click)="employeeViewMode = 'table'" title="Vue tableau">
+                  <i class="material-icons">table_rows</i>
+                  <span>Tableau</span>
+                </button>
+              </div>
               <button
                 class="btn btn-outline search-toggle-btn"
                 (click)="toggleEmployeesSearch()"
                 [class.active]="showEmployeesSearch"
                 title="{{ showEmployeesSearch ? 'Masquer la recherche' : 'Afficher la recherche' }}"
               >
-                <i class="material-icons"
-                  >{{ showEmployeesSearch ? 'search_off' : 'search' }}</i
-                >
+                <i class="material-icons">{{ showEmployeesSearch ? 'search_off' : 'search' }}</i>
                 {{ showEmployeesSearch ? 'Masquer recherche' : 'Rechercher' }}
               </button>
               <button class="btn btn-primary" (click)="openAddEmployeeModal()">
                 <i class="material-icons">person_add</i>
-                Ajouter Employé
+                Ajouter Employe
               </button>
             </div>
           </div>
-          <!-- Barre de recherche des employés (conditionnelle) -->
+          <!-- Barre de recherche des Employes (conditionnelle) -->
           @if (showEmployeesSearch) {
           <div class="employees-search-section" [@slideInOut]>
             <div class="search-container">
@@ -271,7 +325,7 @@
                 <input
                   type="text"
                   class="search-input"
-                  placeholder="Rechercher un employé par nom, email ou rôle..."
+                  placeholder="Rechercher un Employe par nom, email ou Role..."
                   [(ngModel)]="employeesSearch"
                   (input)="filterEmployees()"
                   #searchInput
@@ -355,14 +409,14 @@
                 </select>
               </div>
               <div class="filter-group">
-                <label for="roleFilter">Rôle :</label>
+                <label for="roleFilter">Role :</label>
                 <select
                   id="roleFilter"
                   class="filter-select"
                   [(ngModel)]="employeesRoleFilter"
                   (change)="filterEmployees()"
                 >
-                  <option value="all">Tous les rôles</option>
+                  <option value="all">Tous les Roles</option>
                   <option value="manager">Managers</option>
                   <option value="gestionnaire">Gestionnaires</option>
                   <option value="collector">Collecteurs</option>
@@ -403,7 +457,7 @@
             <div class="search-results-info">
               <div class="results-summary">
                 <span class="results-count">
-                  {{ filteredEmployees.length }} employé(s) trouvé(s) @if
+                  {{ filteredEmployees.length }} Employe trouvé(s) @if
                   (totalEmployees > filteredEmployees.length) {
                   <span> sur {{ totalEmployees }} total </span>
                   }
@@ -425,16 +479,19 @@
             }
           </div>
           }
-          <!-- Indicateur de chargement pour les employés -->
+          <!-- Indicateur de chargement pour les Employes -->
           @if (isLoadingEmployees || isLoadingFilteredEmployees) {
           <app-loading-spinner
-            [message]="isLoadingFilteredEmployees ? 'Filtrage des employés...' : 'Chargement des employés...'"
+            [message]="isLoadingFilteredEmployees ? 'Filtrage des Employes...' : 'Chargement des Employes...'"
             size="medium"
           >
           </app-loading-spinner>
           }
-          <!-- Liste des employés -->
+          <!-- Liste des Employes -->
           @if (!isLoadingEmployees && !isLoadingFilteredEmployees) {
+
+          <!-- Vue cartes -->
+          @if (employeeViewMode === 'card') {
           <div class="employees-grid">
             @for (employee of filteredEmployees; track employee) {
             <div
@@ -493,7 +550,7 @@
                 <button
                   class="action-btn edit"
                   (click)="editEmployee(employee)"
-                  title="Modifier l'employé"
+                  title="Modifier l'Employe"
                 >
                   <i class="material-icons">edit</i>
                 </button>
@@ -502,20 +559,21 @@
                   [class.loading]="isDeleting"
                   [disabled]="isDeleting"
                   (click)="deleteEmployee(currentUser, employee)"
-                  title="Supprimer l'employé"
+                  title="Supprimer l'Employe"
                 >
                   <i class="material-icons"
                     >{{ isDeleting ? 'hourglass_empty' : 'delete' }}</i
                   >
                 </button>
                 <button
-                  class="action-btn"
-                  [class.active]="employee.status"
+                  class="action-btn toggle-btn"
+                  [class.toggle-active]="employee.status === 'active'"
+                  [class.toggle-inactive]="employee.status !== 'active'"
                   (click)="toggleEmployeeStatus(employee)"
-                  title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }} l'employé"
+                  title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }} l'Employe"
                 >
                   <i class="material-icons"
-                    >{{ employee.status=== 'active' ? "toggle_on" : "toggle_off" }}</i
+                    >{{ employee.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i
                   >
                 </button>
               </div>
@@ -523,7 +581,68 @@
             }
           </div>
           }
-          <!-- État vide pour les employés -->
+
+          <!-- Vue tableau -->
+          @if (employeeViewMode === 'table') {
+          <div class="employees-table-wrapper">
+            <table class="employees-table">
+              <thead>
+                <tr>
+                  <th>Employe</th>
+                  <th>Role</th>
+                  <th>Statut</th>
+                  <th>Email</th>
+                  <th>Telephone</th>
+                  <!-- <th>Date d'embauche</th> -->
+                  <th class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (employee of filteredEmployees; track employee) {
+                <tr [class]="'emp-row-' + (employee.role || '')">
+                  <td class="cell-employee">
+                    <div class="table-avatar-wrap">
+                      @if (employee?.avatar) {
+                      <img [src]="employee.avatar" [alt]="employee.firstName" class="table-avatar-img" />
+                      } @else {
+                      <div class="table-avatar-initials" [style.background-color]="getRandomColor(employee)">
+                        {{ getInitials(employee?.firstName + ' ' + employee?.lastName) }}
+                      </div>
+                      }
+                      <span class="name-text">{{ employee.firstName }} {{ employee.lastName }}</span>
+                    </div>
+                  </td>
+                  <td><span class="role-badge role-{{ employee.role }}">{{ getRoleText(employee.role) }}</span></td>
+                  <td>
+                    <span class="status-badge-table" [class.status-active]="employee?.status === 'active'" [class.status-inactive]="employee?.status !== 'active'">
+                      {{ getEmployeeStatusText(employee?.status!) }}
+                    </span>
+                  </td>
+                  <td class="cell-email">{{ employee.email }}</td>
+                  <td>{{ employee.phone || 'â€”' }}</td>
+                  <!-- <td>{{ employee.hiredAt ? (employee.hiredAt | date:'dd/MM/yyyy') : 'â€”' }}</td> -->
+                  <td class="col-actions">
+                    <div class="table-actions">
+                      <button class="action-btn edit" (click)="editEmployee(employee)" title="Modifier"><i class="material-icons">edit</i></button>
+                      <button class="action-btn danger" [class.loading]="isDeleting" [disabled]="isDeleting" (click)="deleteEmployee(currentUser, employee)" title="Supprimer"><i class="material-icons">{{ isDeleting ? 'hourglass_empty' : 'delete' }}</i></button>
+                      <button
+                        class="action-btn toggle-btn"
+                        [class.toggle-active]="employee.status === 'active'"
+                        [class.toggle-inactive]="employee.status !== 'active'"
+                        (click)="toggleEmployeeStatus(employee)"
+                        title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }}"
+                      ><i class="material-icons">{{ employee.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i></button>
+                    </div>
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          }
+
+          }
+          <!-- État vide pour les Employes -->
           @if (!isLoadingEmployees && !isLoadingFilteredEmployees &&
           !filteredEmployees.length) {
           <div class="empty-state">
@@ -531,7 +650,7 @@
             @if (!employeesSearch && employeesRoleFilter === 'all' &&
             employeesStatusFilter === 'all' && !employeesCityFilter &&
             !employeesNeighborhoodFilter) {
-            <h3>Aucun employé</h3>
+            <h3>Aucun Employe</h3>
             } @if (employeesSearch || employeesRoleFilter !== 'all' ||
             employeesStatusFilter !== 'all' || employeesCityFilter ||
             employeesNeighborhoodFilter) {
@@ -540,58 +659,54 @@
             employeesStatusFilter === 'all' && !employeesCityFilter &&
             !employeesNeighborhoodFilter) {
             <p>
-              Vous n'avez pas encore ajouté d'employés à votre agence. Cliquez
-              sur "Ajouter Employé" pour commencer.
+              Vous n'avez pas encore ajouté d'Employes à votre agence. Cliquez
+              sur "Ajouter Employe" pour commencer.
             </p>
             } @if (employeesSearch || employeesRoleFilter !== 'all' ||
             employeesStatusFilter !== 'all' || employeesCityFilter ||
             employeesNeighborhoodFilter) {
             <p>
-              Aucun employé ne correspond à vos critères de recherche. Essayez
+              Aucun Employe ne correspond à vos critères de recherche. Essayez
               de modifier vos filtres.
             </p>
             }
           </div>
           }
-          <!-- Section de pagination -->
-          @if (!isLoadingEmployees && !isLoadingFilteredEmployees &&
-          filteredEmployees.length > 0 && totalPages > 1) {
+          <!-- Pagination Employes -->
+          @if (!isLoadingEmployees && !isLoadingFilteredEmployees && totalEmployees > 0) {
           <div class="pagination-section">
-            <div class="pagination-info">
+            <div class="pagination-left">
               <span class="pagination-details">
-                Affichage {{ ((currentPage - 1) * itemsPerPage) + 1 }} à {{
-                getEndItemNumber() }} sur {{ totalEmployees }} employé(s)
+                @if (totalEmployees > 0) {
+                  {{ ((currentPage - 1) * itemsPerPage) + 1 }}â€“{{ getEndItemNumber() }}
+                  sur <strong>{{ totalEmployees }}</strong> Employe
+                }
               </span>
+              <div class="per-page-group">
+                <label class="per-page-label">Afficher</label>
+                <select class="per-page-select" [value]="itemsPerPage" (change)="changeItemsPerPage(+($any($event.target).value))">
+                  <option [value]="5">5</option>
+                  <option [value]="10">10</option>
+                  <option [value]="20">20</option>
+                  <option [value]="50">50</option>
+                  <option [value]="100">100</option>
+                </select>
+                <span class="per-page-label">par page</span>
+              </div>
             </div>
+            @if (totalPages > 1) {
             <div class="pagination-controls">
-              <button
-                class="pagination-btn"
-                [disabled]="currentPage === 1"
-                (click)="goToPreviousPage()"
-                title="Page précédente"
-              >
-                <i class="material-icons">chevron_left</i>
-              </button>
+              <button class="pagination-btn" [disabled]="currentPage === 1" (click)="goToPage(1)" title="Première page"><i class="material-icons">first_page</i></button>
+              <button class="pagination-btn" [disabled]="currentPage === 1" (click)="goToPreviousPage()" title="Page précédente"><i class="material-icons">chevron_left</i></button>
               <div class="pagination-numbers">
                 @for (page of getPageNumbers(); track page) {
-                <button
-                  class="pagination-btn page-number"
-                  [class.active]="page === currentPage"
-                  (click)="goToPage(page)"
-                >
-                  {{ page }}
-                </button>
+                <button class="pagination-btn page-number" [class.active]="page === currentPage" (click)="goToPage(page)">{{ page }}</button>
                 }
               </div>
-              <button
-                class="pagination-btn"
-                [disabled]="currentPage === totalPages"
-                (click)="goToNextPage()"
-                title="Page suivante"
-              >
-                <i class="material-icons">chevron_right</i>
-              </button>
+              <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="goToNextPage()" title="Page suivante"><i class="material-icons">chevron_right</i></button>
+              <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="goToPage(totalPages)" title="Dernière page"><i class="material-icons">last_page</i></button>
             </div>
+            }
           </div>
           }
         </div>
@@ -1080,95 +1195,90 @@
               <button class="calendar-nav" (click)="previousWeek()">
                 <i class="material-icons">chevron_left</i>
               </button>
-              <h3>{{ getCurrentWeekText() }}</h3>
+              <div class="calendar-week-info">
+                <span class="week-label">Semaine du</span>
+                <h3>{{ getCurrentWeekText() }}</h3>
+              </div>
               <button class="calendar-nav" (click)="nextWeek()">
                 <i class="material-icons">chevron_right</i>
               </button>
             </div>
             <div class="calendar-grid">
               <div class="calendar-days">
-                @for (day of weekDays; track day) {
-                <div class="day-header">{{ day }}</div>
+                @for (day of weekDays; track day; let i = $index) {
+                <div class="day-header" [class.today]="isToday(i)">
+                  <span class="day-name">{{ day.substring(0, 3) }}</span>
+                  <span class="day-number">{{ getFormattedDate(i).split(' ')[0] }}</span>
+                  @if (isToday(i)) {
+                  <span class="today-dot"></span>
+                  }
+                </div>
                 }
               </div>
               <div class="calendar-content">
                 @for (day of weekDays; track day; let i = $index) {
-                <div class="day-column">
+                <div class="day-column" [class.today-column]="isToday(i)">
                   @for (schedule of getSchedulesForDay(i); track schedule) {
                   <div
-                    class="schedule-item"
+                    class="schedule-card"
                     [class.new]="isNewSchedule(schedule)"
                     [class.loading]="isScheduleLoading(schedule)"
                     (click)="openScheduleDetails(schedule)"
                   >
-                    <!-- Localisation avec icône moderne -->
-                    <div class="schedule-time">
-                      <i class="material-icons">place</i>
-                      <span>{{ getZoneName(schedule.zone) }}</span>
+                    <div class="sched-zone">
+                      <i class="material-icons">location_on</i>
+                      <span class="zone-name">{{ getZoneName(schedule.zone) }}</span>
                     </div>
-                    <!-- Horaires avec icône horloge -->
-                    <div class="schedule-time">
-                      <i class="material-icons">schedule</i>
-                      <span
-                        >{{ schedule.startTime }} - {{ schedule.endTime }}</span
-                      >
+                    <div class="sched-time">
+                      <i class="material-icons">access_time</i>
+                      <span>{{ schedule.startTime }} – {{ schedule.endTime }}</span>
                     </div>
-                    <!-- Collecteur avec icône personne -->
-                    <div class="schedule-time">
-                      <i class="material-icons">person</i>
-                      <span
-                        >{{ getCollectorName(schedule.collectorId) ||
-                        'Nonassigné' }}</span
-                      >
+                    @if (schedule.collectors?.length > 0) {
+                    <div class="sched-collectors">
+                      @for(collector of schedule.collectors; track collector){
+                      <span class="collector-chip">
+                        <i class="material-icons">person</i>
+                        {{ getCollectorName(collector._id) || 'Non assigné' }}
+                      </span>
+                      }
                     </div>
-                    <!-- Actions avec effet glassmorphism -->
-                    <div
-                      class="schedule-actions"
-                      (click)="$event.stopPropagation()"
-                    >
+                    }
+                    <div class="schedule-actions" (click)="$event.stopPropagation()">
                       <button
                         class="action-btn edit"
                         (click)="editSchedule(schedule)"
-                        title="Modifier le planning"
+                        title="Modifier"
                       >
                         <i class="material-icons">edit</i>
                       </button>
                       <button
                         class="action-btn danger"
                         (click)="deletePlanning(schedule._id)"
-                        title="Supprimer le planning"
+                        title="Supprimer"
                       >
                         <i class="material-icons">delete</i>
                       </button>
                     </div>
                   </div>
                   }
-                  <!-- Zone cliquable pour créer un nouveau planning -->
                   @if (getSchedulesForDay(i).length === 0) {
                   <div
                     class="empty-day-clickable"
                     (click)="createNewScheduleForDay(i)"
-                    title="Cliquer pour créer un planning pour {{ getDayName(i) }}"
+                    title="Créer un planning"
                   >
-                    <div class="empty-day-content">
-                      <i class="material-icons">add_circle_outline</i>
-                      <span>Nouveau planning</span>
-                      <small
-                        >{{ getDayName(i) }} {{ getFormattedDate(i) }}</small
-                      >
-                    </div>
+                    <i class="material-icons">add_circle_outline</i>
+                    <span>Planning</span>
                   </div>
                   }
-                  <!-- Bouton d'ajout rapide même quand il y a déjà des plannings -->
                   @if (getSchedulesForDay(i).length > 0) {
-                  <div
-                    class="add-more-schedule"
+                  <button
+                    class="add-more-btn"
                     (click)="createNewScheduleForDay(i)"
-                    title="Ajouter un autre planning pour {{ getDayName(i) }}"
+                    title="Ajouter un planning"
                   >
                     <i class="material-icons">add</i>
-                    <span>Ajouter</span>
-                  </div>
+                  </button>
                   }
                 </div>
                 }
@@ -1207,7 +1317,7 @@
                 <input
                   type="text"
                   class="search-input"
-                  placeholder="Rechercher un client par nom, email ou téléphone..."
+                  placeholder="Rechercher un client par nom, email ou Telephone..."
                   [(ngModel)]="clientsSearch"
                   (input)="filterClients()"
                   #clientSearchInput
@@ -1349,7 +1459,7 @@
                   <th style="width: 5rem"></th>
                   <th>Nom</th>
                   <th>Email</th>
-                  <th>Téléphone</th>
+                  <th>Telephone</th>
                   <th>Adresse</th>
                   <th>Statut</th>
                   <th>Action</th>
@@ -1704,7 +1814,7 @@
                     class="chat-left-column-content-item"
                     (click)="userAndAgencyConversation(message)"
                   >
-                    {{ message.firstName }} {{ message.lastName }}
+                    <span>{{ message.firstName }} {{ message.lastName }}</span> @if(message.unreadCount > 0){<span class="tab-badge">{{ message.unreadCount }}</span> }
                   </button>
                   } }
                   <!-- État vide pour les conversations -->
@@ -1821,7 +1931,7 @@
           <div class="analytics-header"></div>
 
           <div class="analytics-content">
-            <!-- Drawer Ajouter Employé -->
+            <!-- Drawer Ajouter Employe -->
             @if (showAddEmployeeModal) {
             <div class="drawer-overlay" (click)="closeAddEmployeeModal()">
               <div
@@ -1831,8 +1941,8 @@
                 <div class="drawer-header">
                   <h3>
                     {{ 
-                      isEditingEmployee ? 'Modifier l\'Employé' : 
-                      'Ajouter un Employé' }}
+                      isEditingEmployee ? 'Modifier l\'Employe' : 
+                      'Ajouter un Employe' }}
                   </h3>
                   <button
                     class="drawer-close-btn"
@@ -1930,7 +2040,7 @@
                         }
                       </div>
                       <div class="form-group">
-                        <label class="form-label required">Téléphone *</label>
+                        <label class="form-label required">Telephone *</label>
                         <input
                           type="tel"
                           formControlName="phone"
@@ -2018,7 +2128,7 @@
                       </div>
                     </div>
                     <div class="form-group full-width">
-                      <label class="form-label required">Rôle *</label>
+                      <label class="form-label required">Role *</label>
                       <select
                         formControlName="role"
                         class="form-select"
@@ -2026,7 +2136,7 @@
                         [class.valid]="employeeForm.get('role')?.valid && employeeForm.get('role')?.touched"
                         (change)="onRoleChange()"
                       >
-                        <option value="">Sélectionner un rôle</option>
+                        <option value="">Sélectionner un Role</option>
                         <option value="manager">Manager</option>
                         <option value="collector">Collecteur</option>
                       </select>
@@ -2222,7 +2332,7 @@
                         >
                         <small class="form-help"
                           >Vous pouvez assigner des zones maintenant ou plus
-                          tard depuis la gestion des employés.</small
+                          tard depuis la gestion des Employes.</small
                         >
                       </div>
                       @if (hasFieldError('employee', 'zones')) {
@@ -2253,7 +2363,7 @@
                       } @if (!isLoading) {
                       <i class="material-icons"
                         >{{ isEditingEmployee ? 'edit' : 'person_add' }}</i>
-                      } {{ isLoading ? (isEditingEmployee ? 'Modification en cours...' : "Ajout en cours...") : (isEditingEmployee ?'Modifier l\'employé' : 'Ajouter l\'employé') }}
+                      } {{ isLoading ? (isEditingEmployee ? 'Modification en cours...' : "Ajout en cours...") : (isEditingEmployee ?'Modifier l\'Employe' : 'Ajouter l\'Employe') }}
                     </button>
                   </div>
                 </div>
@@ -2493,10 +2603,36 @@
                         }
                       </div>
                     </div>
-                    <!-- Collecteur -->
+                    <!-- Tarif -->
+                  
                     <div class="form-group">
+                      <label>Tarif concerné *</label>
+                      <select formControlName="pricingId">
+                        @if (tariffs && tariffs.length > 0) {
+                        <option value="">Sélectionner un tarif</option>
+                        } @if (!tariffs || tariffs.length === 0) {
+                        <option value="" disabled>
+                          Aucun tarif pour le moment
+                        </option>
+                        } @for (tariff of tariffs; track tariff) {
+                        <option [value]="tariff._id">
+                          <h4 class="price">
+                            {{ tariff.price | number : "1.0-0" }} FCFA
+                          </h4>
+                        </option>
+                        }
+                      </select>
+                      @if (scheduleForm.get('pricingId')?.invalid &&
+                      scheduleForm.get('pricingId')?.touched) {
+                      <small class="error-message">
+                        Veuillez sélectionner un tarif
+                      </small>
+                      }
+                    </div>
+                    <!-- Collecteur -->
+                    <!-- <div class="form-group">
                       <label>Collecteur *</label>
-                      <select formControlName="collectorId">
+                      <select formControlName="collectorId" multiple>
                         @if (collectors && collectors.length > 0) {
                         <option value="">Sélectionner un collecteur</option>
                         } @if (!collectors || collectors.length === 0) {
@@ -2515,7 +2651,86 @@
                         Veuillez sélectionner un collecteur
                       </small>
                       }
+                    </div> -->
+                    <!--  -->
+                    <div class="form-group">
+                      <label>Collecteur *</label>
+
+                      <p-multiSelect
+                        [options]="collectors"
+                        formControlName="collectorId"
+                        optionLabel="name"
+                        [maxSelectedLabels]="4"
+                        [filter]="true"
+                        filterBy="firstName,lastName"
+                        optionValue="_id"
+                        defaultLabel="Sélectionner un collecteur"
+                        display="chip"
+                      >
+
+                        <!-- Affichage dans la liste -->
+                        <ng-template let-collector pTemplate="item">
+                          {{ collector.firstName }} {{ collector.lastName }}
+                        </ng-template>
+
+                      </p-multiSelect>
+
+                      @if (scheduleForm.get('collectorId')?.invalid &&
+                      scheduleForm.get('collectorId')?.touched) {
+                      <small class="error-message">
+                        Veuillez sélectionner un collecteur
+                      </small>
+                      }
+
                     </div>
+                    
+                    <!--Planning isRecurring-->
+                    <div class="form-group">
+                      <label>Planning répetitif ?</label>
+                      <input type="checkbox" formControlName="isRecurring" />
+                      @if (scheduleForm.get('isRecurring')?.invalid &&
+                      scheduleForm.get('isRecurring')?.touched) {
+                      <small class="error-message">
+                        Veuillez choisir si le planning est recurrent
+                      </small>
+                      }
+                    </div>
+                    @if(isRecurring) {
+                    
+                      <!-- Recurrence -->
+                      <div class="form-group">
+                        <label>Recurrence *</label>
+                        <select formControlName="recurrenceType">
+                          <option value="">Sélectionner une recurrence</option>
+                          <option value="weekly">Hebdomadaire</option>
+                          <option value="monthly">Mensuel</option>
+                        </select>
+                        @if (scheduleForm.get('recurrenceType')?.invalid &&
+                        scheduleForm.get('recurrenceType')?.touched) {
+                        <small class="error-message">
+                          Veuillez sélectionner une recurrence
+                        </small>
+                        }
+                      </div>
+                      <!-- Nombre de semaines -->
+                      <div class="form-group">
+                        <label>
+                          Nombre de @if (recurrenceType === 'weekly') {<span>semaines</span>}
+                          @if (recurrenceType === 'monthly') {<span>mois</span>} *
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          formControlName="numberOfWeeks"
+                        />
+                        @if (scheduleForm.get('numberOfWeeks')?.invalid &&
+                        scheduleForm.get('numberOfWeeks')?.touched) {
+                        <small class="error-message">
+                          Veuillez définir le nombre de jours
+                        </small>
+                        }
+                      </div>
+                    }
                   </form>
                 </div>
                 <div class="drawer-footer">
@@ -2539,8 +2754,8 @@
                       <i class="material-icons"
                         >{{ isEditingSchedule ? 'edit' : 'schedule' }}
                       </i>
-                      } {{ isLoading ? (isEditingSchedule ? 'Modification en
-                      cours...' : 'Création en cours...') : (isEditingSchedule ?
+                      } {{ isLoading ? (isEditingSchedule ? 
+                        'Modification en cours...' : 'Création en cours...') : (isEditingSchedule ?
                       'Modifier Planning' : 'Créer Planning') }}
                     </button>
                   </div>
@@ -2550,13 +2765,13 @@
               <div class="modal-overlay" (click)="showAssignModal = false">
                 <div class="modal-content" (click)="$event.stopPropagation()">
                   <div class="modal-header">
-                    <h3>Assigner des employés</h3>
+                    <h3>Assigner des Employes</h3>
                     <button class="close-btn" (click)="showAssignModal = false">
                       <i class="material-icons">close</i>
                     </button>
                   </div>
                   <div class="modal-body">
-                    <label>Employés disponibles :</label>
+                    <label>Employes disponibles :</label>
                     @for (employee of allEmployees; track employee) {
                     <div class="checkbox-group">
                       <input
@@ -2657,7 +2872,7 @@
                   }
                 </div>
                 } @else {
-                <p>Aucun employé disponible.</p>
+                <p>Aucun Employe disponible.</p>
                 }
               </div>
               <div class="drawer-footer">
@@ -2716,7 +2931,7 @@
                       <i class="material-icons text-sm align-middle">info</i>
                       {{ tariff.description }}
                     </p>
-                    <!-- Boutons d’action dans le modal -->
+                    <!-- Boutons dâ€™action dans le modal -->
                     <div class="tariff-actions">
                       <button
                         class="btn btn-secondary flex items-center gap-1"
@@ -2795,14 +3010,14 @@
           <div class="info-item">
             <i class="material-icons">phone</i>
             <div>
-              <span class="info-label">Téléphone</span>
+              <span class="info-label">Telephone</span>
               <span class="info-value">{{ selectedClient?.phone }}</span>
             </div>
           </div>
           <div class="info-item">
             <i class="material-icons">badge</i>
             <div>
-              <span class="info-label">Rôle</span>
+              <span class="info-label">Role</span>
               <span class="info-value">{{ selectedClient?.role }}</span>
             </div>
           </div>
@@ -3100,7 +3315,7 @@
       </p>
       <p class="warning-text">
         <i class="material-icons">info</i>
-        Cette action est irréversible et supprimera définitivement cet employé
+        Cette action est irréversible et supprimera définitivement cet Employe
         du système.
       </p>
     </div>
