@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import {
   FinancialSummary,
@@ -156,4 +156,17 @@ export class FinanceService {
       commissions: labels.map(() => Math.floor(Math.random() * 20_000  + 5_000)),
     };
   }
+
+   /* the error handler func just rethrows the error  */
+    public newGlobalErrorHandler = (error: HttpErrorResponse): Observable<never> => {
+        return throwError(() => error);
+    }
+
+ public payment$( payload: any): Observable<any> {
+        const url = `${this.api}/transactions/send-money`;
+        return this.http.post<any>(url, payload).pipe(
+            tap((data) => console.log('[API] payment$ > tap :', data)),
+            catchError(this.newGlobalErrorHandler)
+        );
+    }
 }

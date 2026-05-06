@@ -20,7 +20,7 @@ export enum PaymentMethod {
   ORANGE_MONEY  = 'ORANGE_MONEY',
   MOOV_MONEY    = 'MOOV_MONEY',
   TELECEL_MONEY = 'TELECEL_MONEY',
-  BANK_TRANSFER = 'BANK_TRANSFER',
+
 }
 
 // ── Résumé financier ─────────────────────────────────────────

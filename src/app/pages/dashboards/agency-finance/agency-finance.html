@@ -69,24 +69,8 @@
       }
     </div>
 
-    <!-- Commission plateforme -->
-    <div class="kpi-card kpi-card--orange">
-      <div class="kpi-card__header">
-        <span class="kpi-card__label">Commission plateforme</span>
-        <span class="kpi-card__icon kpi-card__icon--orange">
-          <i class="material-icons">percent</i>
-        </span>
-      </div>
-      @if (isLoadingSummary) {
-        <p-skeleton height="2.5rem" styleClass="mt-2" />
-      } @else {
-        <p class="kpi-card__value">{{ formatCurrency(summary?.totalCommission ?? null) }}</p>
-        <div class="kpi-progress">
-          <p-progress-bar [value]="commissionRate()" styleClass="kpi-progress__bar" />
-          <span class="kpi-progress__label">{{ commissionRate() }}% du total</span>
-        </div>
-      }
-    </div>
+
+  
 
     <!-- Revenus nets -->
     <div class="kpi-card kpi-card--purple">
@@ -100,7 +84,7 @@
         <p-skeleton height="2.5rem" styleClass="mt-2" />
       } @else {
         <p class="kpi-card__value">{{ formatCurrency(summary?.netEarnings ?? null) }}</p>
-        <span class="kpi-card__sub">Après déduction des commissions</span>
+        <!-- <span class="kpi-card__sub">Après déduction des commissions</span> -->
       }
     </div>
 
@@ -222,8 +206,8 @@
             <th>Client</th>
             <th>Téléphone</th>
             <th class="text-right">Montant</th>
-            <th class="text-right">Commission</th>
-            <th class="text-right">Net</th>
+            <!-- <th class="text-right">Commission</th> -->
+            <!-- <th class="text-right">Net</th> -->
             <th>Mode</th>
             <th>Statut</th>
             <th>Date</th>
@@ -241,8 +225,8 @@
             </td>
             <td>{{ tx.clientPhone ?? '—' }}</td>
             <td class="text-right amount-col">{{ formatCurrency(tx.amount) }}</td>
-            <td class="text-right commission-col">- {{ formatCurrency(tx.commission) }}</td>
-            <td class="text-right net-col">{{ formatCurrency(tx.netAmount) }}</td>
+            <!-- <td class="text-right commission-col">- {{ formatCurrency(tx.commission) }}</td> -->
+            <!-- <td class="text-right net-col">{{ formatCurrency(tx.netAmount) }}</td> -->
             <td>
               <span class="method-badge method-badge--{{ tx.method | lowercase }}">
                 {{ getMethodLabel(tx.method) }}
@@ -320,7 +304,7 @@
             <th>Compte</th>
             <th>Statut</th>
             <th>Date demande</th>
-            <th>Date traitement</th>
+            <!-- <th>Date traitement</th> -->
           </tr>
         </ng-template>
 
@@ -348,9 +332,9 @@
                 styleClass="status-tag" />
             </td>
             <td class="date-col">{{ wd.requestedAt | date:'dd/MM/yyyy HH:mm' }}</td>
-            <td class="date-col">
+            <!-- <td class="date-col">
               {{ wd.processedAt ? (wd.processedAt | date:'dd/MM/yyyy HH:mm') : '—' }}
-            </td>
+            </td> -->
           </tr>
         </ng-template>
 
@@ -427,7 +411,7 @@
     </div>
 
     <!-- Nom du compte -->
-    <div class="wd-field">
+    <!-- <div class="wd-field">
       <label class="wd-label">Nom du bénéficiaire <span class="req">*</span></label>
       <input
         pInputText
@@ -437,10 +421,10 @@
       @if (withdrawalForm.get('accountName')?.invalid && withdrawalForm.get('accountName')?.touched) {
         <span class="wd-error">Nom requis (min. 3 caractères)</span>
       }
-    </div>
+    </div> -->
 
     <!-- Note optionnelle -->
-    <div class="wd-field">
+    <!-- <div class="wd-field">
       <label class="wd-label">Note (optionnel)</label>
       <textarea
         pTextarea
@@ -449,7 +433,7 @@
         placeholder="Précisions sur la demande..."
         class="wd-textarea w-full">
       </textarea>
-    </div>
+    </div> -->
 
   </form>
 
@@ -462,11 +446,6 @@
         class="btn-submit"
         (click)="submitWithdrawal()"
         [disabled]="isSubmittingWd">
-        @if (isSubmittingWd) {
-          <i class="material-icons spin">refresh</i>
-        } @else {
-          <i class="material-icons">send</i>
-        }
         {{ isSubmittingWd ? 'Envoi...' : 'Soumettre la demande' }}
       </button>
     </div>

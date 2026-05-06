@@ -116,12 +116,12 @@ export class AgencyFinance implements OnInit, OnDestroy {
   ];
 
   // ── Withdrawal form ──────────────────────────────────────────
-  withdrawalForm!: FormGroup;
+  withdrawalForm1!: FormGroup;
   readonly methodOptions = [
     { label: 'Orange Money',  value: PaymentMethod.ORANGE_MONEY  },
     { label: 'Moov Money',    value: PaymentMethod.MOOV_MONEY    },
     { label: 'Telecel Money', value: PaymentMethod.TELECEL_MONEY },
-    { label: 'Virement Bancaire', value: PaymentMethod.BANK_TRANSFER },
+
   ];
 
   // ── Collapse state ───────────────────────────────────────────
@@ -132,6 +132,7 @@ export class AgencyFinance implements OnInit, OnDestroy {
   // ── Tx filters ───────────────────────────────────────────────
   txFilters: FinanceFilters = { page: 1, limit: this.pageSize };
   wdFilters: FinanceFilters = { page: 1, limit: this.pageSize };
+  withdrawalForm!: FormGroup;
 
   constructor(
     private authService: AuthService,
@@ -246,17 +247,6 @@ export class AgencyFinance implements OnInit, OnDestroy {
           pointBackgroundColor: '#22c55e',
           pointRadius: 4,
         },
-        {
-          label: 'Commissions (XOF)',
-          data: d.commissions,
-          backgroundColor:  'rgba(239, 68, 68, 0.12)',
-          borderColor:      '#ef4444',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.4,
-          pointBackgroundColor: '#ef4444',
-          pointRadius: 4,
-        },
       ],
     };
   }
@@ -304,8 +294,6 @@ export class AgencyFinance implements OnInit, OnDestroy {
       amount:        [null, [Validators.required, Validators.min(1_000)]],
       method:        [PaymentMethod.ORANGE_MONEY, Validators.required],
       accountNumber: ['', [Validators.required, Validators.minLength(8)]],
-      accountName:   ['', [Validators.required, Validators.minLength(3)]],
-      note:          [''],
     });
   }
 
@@ -328,11 +316,20 @@ export class AgencyFinance implements OnInit, OnDestroy {
       return;
     }
 
-    this.isSubmittingWd = true;
-    const payload: WithdrawalRequest = this.withdrawalForm.value;
+    const user = this.authService.currentUser;
+    const userId = (user as any)?._id ?? '';
+    const { amount, method, accountNumber } = this.withdrawalForm.value;
 
+    const payload = {
+      operator: method,
+      destination: accountNumber,
+      amount,
+      userId,
+    };
+
+    this.isSubmittingWd = true;
     this.financeService
-      .requestWithdrawal(this.agencyId, payload)
+      .payment$(payload)
       .pipe(finalize(() => (this.isSubmittingWd = false)))
       .subscribe({
         next: () => {
