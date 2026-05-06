@@ -61,18 +61,16 @@ export interface WithdrawalRequest {
 }
 
 export interface WithdrawalRecord {
-  _id:           string;
-  agencyId:      string;
-  amount:        number;
-  method:        PaymentMethod;
-  accountNumber: string;
-  accountName:   string;
-  status:        WithdrawalStatus;
-  note?:         string;
-  rejectionNote?:string;
-  requestedAt:   string;
-  processedAt?:  string;
-  reference?:    string;
+  _id:              string;
+  agencyId:         string;
+  userId:           string;
+  amount:           number;
+  operator:         PaymentMethod;
+  customerMsisdn:   string;
+  status:           string;
+  reference?:       string;
+  createdAt:        string;
+  updatedAt:        string;
 }
 
 // ── Données pour graphique paiements ─────────────────────────
@@ -84,6 +82,8 @@ export interface PaymentChartData {
 
 // ── Filtres ───────────────────────────────────────────────────
 export interface FinanceFilters {
+  operator?:  string;
+  userId?:    string;
   startDate?: string;
   endDate?:   string;
   status?:    string;

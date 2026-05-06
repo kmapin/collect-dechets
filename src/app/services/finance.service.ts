@@ -8,7 +8,6 @@ import {
   PaymentTransaction,
   WithdrawalRequest,
   WithdrawalRecord,
-  WithdrawalStatus,
   PaymentChartData,
   FinanceFilters,
   PaginatedFinanceResponse,
@@ -30,24 +29,29 @@ export class FinanceService {
       );
   }
 
-  // ── Transactions de paiements ───────────────────────────────
+  // ── Historique des paiements de l'agence ───────────────────
+  // GET /api/transactions/agency/{agencyId}?operator=&userId=&page=&limit=
   getTransactions(
     agencyId: string,
     filters: FinanceFilters = {}
   ): Observable<PaginatedFinanceResponse<PaymentTransaction>> {
     let params = new HttpParams();
-    if (filters.startDate) params = params.set('startDate', filters.startDate);
-    if (filters.endDate)   params = params.set('endDate',   filters.endDate);
-    if (filters.status)    params = params.set('status',    filters.status);
-    if (filters.method)    params = params.set('method',    filters.method);
-    if (filters.page)      params = params.set('page',      String(filters.page));
-    if (filters.limit)     params = params.set('limit',     String(filters.limit));
+    if (filters.operator) params = params.set('operator', filters.operator);
+    if (filters.userId)   params = params.set('userId',   filters.userId);
+    if (filters.page)     params = params.set('page',     String(filters.page));
+    if (filters.limit)    params = params.set('limit',    String(filters.limit));
 
     return this.http
-      .get<any>(`${this.api}/finance/agency/${agencyId}/transactions`, { params })
+      .get<any>(`${this.api}/transactions/agency/${agencyId}`, { params })
       .pipe(
-        map((r) => r.data ?? r),
-        catchError(() => of(this.mockTransactions()))
+        map((r) => {
+          if (Array.isArray(r)) return { success: true, data: r, total: r.length, page: 1, pages: 1 };
+          return r.data !== undefined ? r : { success: true, data: r, total: r.length ?? 0, page: 1, pages: 1 };
+        }),
+        catchError((err) => {
+          console.error('[FinanceService] getTransactions:', err);
+          return of({ success: false, data: [], total: 0, page: 1, pages: 0 } as PaginatedFinanceResponse<PaymentTransaction>);
+        })
       );
   }
 
@@ -72,23 +76,29 @@ export class FinanceService {
     );
   }
 
-  // ── Historique des retraits ─────────────────────────────────
+  // ── Historique des retraits de l'agence ────────────────────
+  // GET /api/transactions/withdraws/agency/{agencyId}?operator=&userId=&page=&limit=
   getWithdrawals(
     agencyId: string,
     filters: FinanceFilters = {}
   ): Observable<PaginatedFinanceResponse<WithdrawalRecord>> {
     let params = new HttpParams();
-    if (filters.startDate) params = params.set('startDate', filters.startDate);
-    if (filters.endDate)   params = params.set('endDate',   filters.endDate);
-    if (filters.status)    params = params.set('status',    filters.status);
-    if (filters.page)      params = params.set('page',      String(filters.page ?? 1));
-    if (filters.limit)     params = params.set('limit',     String(filters.limit ?? 10));
+    if (filters.operator) params = params.set('operator', filters.operator);
+    if (filters.userId)   params = params.set('userId',   filters.userId);
+    if (filters.page)     params = params.set('page',     String(filters.page ?? 1));
+    if (filters.limit)    params = params.set('limit',    String(filters.limit ?? 10));
 
     return this.http
-      .get<any>(`${this.api}/finance/agency/${agencyId}/withdrawals`, { params })
+      .get<any>(`${this.api}/transactions/withdraws/agency/${agencyId}`, { params })
       .pipe(
-        map((r) => r.data ?? r),
-        catchError(() => of(this.mockWithdrawals()))
+        map((r) => {
+          if (Array.isArray(r)) return { success: true, data: r, total: r.length, page: 1, pages: 1 };
+          return r.data !== undefined ? r : { success: true, data: r, total: r.length ?? 0, page: 1, pages: 1 };
+        }),
+        catchError((err) => {
+          console.error('[FinanceService] getWithdrawals:', err);
+          return of({ success: false, data: [], total: 0, page: 1, pages: 0 } as PaginatedFinanceResponse<WithdrawalRecord>);
+        })
       );
   }
 
@@ -107,41 +117,6 @@ export class FinanceService {
     };
   }
 
-  private mockTransactions(): PaginatedFinanceResponse<PaymentTransaction> {
-    const rows: PaymentTransaction[] = Array.from({ length: 12 }, (_, i) => ({
-      _id: `txn_${i}`,
-      agencyId: 'agency1',
-      clientId: `client_${i}`,
-      clientName: `Client ${i + 1}`,
-      clientPhone: `+226 70 ${String(i).padStart(2, '0')} 00 00`,
-      amount: (i + 1) * 5_000,
-      commission: (i + 1) * 500,
-      netAmount: (i + 1) * 4_500,
-      method: i % 2 === 0 ? ('ORANGE_MONEY' as any) : ('MOOV_MONEY' as any),
-      status: 'SUCCESS',
-      reference: `REF-2024-${String(i + 1).padStart(4, '0')}`,
-      description: 'Abonnement collecte déchets',
-      createdAt: new Date(Date.now() - i * 86_400_000).toISOString(),
-    }));
-    return { success: true, data: rows, total: rows.length, page: 1, pages: 1 };
-  }
-
-  private mockWithdrawals(): PaginatedFinanceResponse<WithdrawalRecord> {
-    const statuses: WithdrawalStatus[] = [WithdrawalStatus.PENDING, WithdrawalStatus.APPROVED, WithdrawalStatus.PROCESSED, WithdrawalStatus.REJECTED];
-    const rows: WithdrawalRecord[] = Array.from({ length: 8 }, (_, i) => ({
-      _id: `wd_${i}`,
-      agencyId: 'agency1',
-      amount: (i + 1) * 50_000,
-      method: 'ORANGE_MONEY' as any,
-      accountNumber: `+226 70 00 00 0${i}`,
-      accountName: 'Agence ECO-COLLECT',
-      status: statuses[i % 4],
-      requestedAt: new Date(Date.now() - i * 7 * 86_400_000).toISOString(),
-      processedAt: i % 2 === 0 ? new Date().toISOString() : undefined,
-      reference: i % 4 !== 3 ? `WD-2024-${String(i + 1).padStart(4, '0')}` : undefined,
-    }));
-    return { success: true, data: rows, total: rows.length, page: 1, pages: 1 };
-  }
 
   private mockChartData(period: string): PaymentChartData {
     const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',

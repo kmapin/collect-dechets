@@ -186,6 +186,29 @@
     </div>
 
     @if (txExpanded) {
+    <!-- Filtres paiements -->
+    <div class="fin-filter-bar">
+      <p-select
+        [(ngModel)]="txFilters.operator"
+        [options]="methodOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Opérateur"
+        [showClear]="true"
+        styleClass="filter-select" />
+      <input
+        pInputText
+        [(ngModel)]="txFilters.userId"
+        placeholder="ID client"
+        class="filter-input" />
+      <button class="btn-filter" (click)="applyTxFilters()" pTooltip="Appliquer les filtres">
+        <i class="material-icons">search</i> Filtrer
+      </button>
+      <button class="btn-filter-reset" (click)="resetTxFilters()" pTooltip="Réinitialiser">
+        <i class="material-icons">refresh</i>
+      </button>
+    </div>
+
     <div class="fin-table-wrapper">
       <p-table
         [value]="transactions"
@@ -198,7 +221,7 @@
         styleClass="fin-table"
         [rowHover]="true"
         responsiveLayout="scroll"
-        emptyMessage="Aucune transaction trouvée.">
+        emptyMessage="Aucune transaction.">
 
         <ng-template pTemplate="header">
           <tr>
@@ -282,6 +305,29 @@
     </div>
 
     @if (wdExpanded) {
+    <!-- Filtres retraits -->
+    <div class="fin-filter-bar">
+      <p-select
+        [(ngModel)]="wdFilters.operator"
+        [options]="methodOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Opérateur"
+        [showClear]="true"
+        styleClass="filter-select" />
+      <input
+        pInputText
+        [(ngModel)]="wdFilters.userId"
+        placeholder="ID utilisateur"
+        class="filter-input" />
+      <button class="btn-filter" (click)="applyWdFilters()" pTooltip="Appliquer les filtres">
+        <i class="material-icons">search</i> Filtrer
+      </button>
+      <button class="btn-filter-reset" (click)="resetWdFilters()" pTooltip="Réinitialiser">
+        <i class="material-icons">refresh</i>
+      </button>
+    </div>
+
     <div class="fin-table-wrapper">
       <p-table
         [value]="withdrawals"
@@ -294,17 +340,16 @@
         styleClass="fin-table"
         [rowHover]="true"
         responsiveLayout="scroll"
-        emptyMessage="Aucun retrait trouvé.">
+        emptyMessage="Aucun retrait.">
 
         <ng-template pTemplate="header">
           <tr>
             <th>Référence</th>
             <th class="text-right">Montant</th>
-            <th>Mode</th>
-            <th>Compte</th>
+            <th>Opérateur</th>
+            <th>Téléphone</th>
             <th>Statut</th>
-            <th>Date demande</th>
-            <!-- <th>Date traitement</th> -->
+            <th>Date</th>
           </tr>
         </ng-template>
 
@@ -315,26 +360,18 @@
             </td>
             <td class="text-right amount-col">{{ formatCurrency(wd.amount) }}</td>
             <td>
-              <span class="method-badge method-badge--{{ wd.method | lowercase }}">
-                {{ getMethodLabel(wd.method) }}
+              <span class="method-badge method-badge--{{ wd.operator | lowercase }}">
+                {{ getMethodLabel(wd.operator) }}
               </span>
             </td>
-            <td>
-              <div class="account-cell">
-                <span class="account-name">{{ wd.accountName }}</span>
-                <span class="account-number">{{ wd.accountNumber }}</span>
-              </div>
-            </td>
+            <td>{{ wd.customerMsisdn }}</td>
             <td>
               <p-tag
                 [value]="getStatusLabel(wd.status)"
                 [severity]="getStatusSeverity(wd.status)"
                 styleClass="status-tag" />
             </td>
-            <td class="date-col">{{ wd.requestedAt | date:'dd/MM/yyyy HH:mm' }}</td>
-            <!-- <td class="date-col">
-              {{ wd.processedAt ? (wd.processedAt | date:'dd/MM/yyyy HH:mm') : '—' }}
-            </td> -->
+            <td class="date-col">{{ wd.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
           </tr>
         </ng-template>
 

@@ -42,11 +42,8 @@ import {
   FinancialSummary,
   PaymentTransaction,
   WithdrawalRecord,
-  WithdrawalRequest,
-  WithdrawalStatus,
   PaymentMethod,
   FinanceFilters,
-  PaginatedFinanceResponse,
 } from '../../../models/finance.model';
 
 // jsPDF for export
@@ -116,7 +113,6 @@ export class AgencyFinance implements OnInit, OnDestroy {
   ];
 
   // ── Withdrawal form ──────────────────────────────────────────
-  withdrawalForm1!: FormGroup;
   readonly methodOptions = [
     { label: 'Orange Money',  value: PaymentMethod.ORANGE_MONEY  },
     { label: 'Moov Money',    value: PaymentMethod.MOOV_MONEY    },
@@ -316,15 +312,12 @@ export class AgencyFinance implements OnInit, OnDestroy {
       return;
     }
 
-    const user = this.authService.currentUser;
-    const userId = (user as any)?._id ?? '';
     const { amount, method, accountNumber } = this.withdrawalForm.value;
-
     const payload = {
       operator: method,
       destination: accountNumber,
       amount,
-      userId,
+      userId: this.authService.getCurrentUser()?._id ?? '',
     };
 
     this.isSubmittingWd = true;
@@ -363,6 +356,28 @@ export class AgencyFinance implements OnInit, OnDestroy {
     this.loadWithdrawals();
   }
 
+  // ── Filtres paiements ────────────────────────────────────────
+  applyTxFilters(): void {
+    this.txFilters.page = 1;
+    this.loadTransactions();
+  }
+
+  resetTxFilters(): void {
+    this.txFilters = { page: 1, limit: this.pageSize };
+    this.loadTransactions();
+  }
+
+  // ── Filtres retraits ─────────────────────────────────────────
+  applyWdFilters(): void {
+    this.wdFilters.page = 1;
+    this.loadWithdrawals();
+  }
+
+  resetWdFilters(): void {
+    this.wdFilters = { page: 1, limit: this.pageSize };
+    this.loadWithdrawals();
+  }
+
   // ── Helpers ──────────────────────────────────────────────────
   formatCurrency(value: number | null | undefined): string {
     if (value == null) return '—';
@@ -376,13 +391,14 @@ export class AgencyFinance implements OnInit, OnDestroy {
     status: string
   ): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
     const map: Record<string, 'success' | 'info' | 'warn' | 'danger' | 'secondary'> = {
-      SUCCESS:   'success',
-      APPROVED:  'success',
-      PROCESSED: 'info',
-      PENDING:   'warn',
+      SUCCESS:     'success',
+      APPROVED:    'success',
+      PROCESSED:   'info',
+      INITIATED:   'info',
+      PENDING:     'warn',
       PENDING_OTP: 'warn',
-      FAILED:    'danger',
-      REJECTED:  'danger',
+      FAILED:      'danger',
+      REJECTED:    'danger',
     };
     return map[status] ?? 'secondary';
   }
@@ -420,18 +436,17 @@ export class AgencyFinance implements OnInit, OnDestroy {
     const isWd = type === 'withdrawals';
     const data = isWd ? this.withdrawals : this.transactions;
     const headers = isWd
-      ? ['Référence', 'Montant (XOF)', 'Mode', 'Compte', 'Statut', 'Date demande', 'Date traitement']
+      ? ['Référence', 'Montant (XOF)', 'Opérateur', 'Téléphone', 'Statut', 'Date']
       : ['Référence', 'Client', 'Téléphone', 'Montant', 'Commission', 'Net', 'Mode', 'Statut', 'Date'];
 
     const rows = isWd
       ? (data as WithdrawalRecord[]).map((w) => [
           w.reference ?? '—',
           w.amount,
-          this.getMethodLabel(w.method),
-          w.accountNumber,
+          this.getMethodLabel(w.operator),
+          w.customerMsisdn,
           this.getStatusLabel(w.status),
-          this.datePipe.transform(w.requestedAt, 'dd/MM/yyyy HH:mm') ?? '',
-          w.processedAt ? (this.datePipe.transform(w.processedAt, 'dd/MM/yyyy HH:mm') ?? '') : '—',
+          this.datePipe.transform(w.createdAt, 'dd/MM/yyyy HH:mm') ?? '',
         ])
       : (data as PaymentTransaction[]).map((t) => [
           t.reference,
@@ -461,18 +476,17 @@ export class AgencyFinance implements OnInit, OnDestroy {
     const isWd = type === 'withdrawals';
     const data = isWd ? this.withdrawals : this.transactions;
     const headers = isWd
-      ? ['Référence', 'Montant (XOF)', 'Mode', 'Compte', 'Statut', 'Date demande', 'Date traitement']
+      ? ['Référence', 'Montant (XOF)', 'Opérateur', 'Téléphone', 'Statut', 'Date']
       : ['Référence', 'Client', 'Téléphone', 'Montant', 'Commission', 'Net', 'Mode', 'Statut', 'Date'];
 
     const rows = isWd
       ? (data as WithdrawalRecord[]).map((w) => [
           w.reference ?? '—',
           w.amount,
-          this.getMethodLabel(w.method),
-          w.accountNumber,
+          this.getMethodLabel(w.operator),
+          w.customerMsisdn,
           this.getStatusLabel(w.status),
-          this.datePipe.transform(w.requestedAt, 'dd/MM/yyyy HH:mm') ?? '',
-          w.processedAt ? (this.datePipe.transform(w.processedAt, 'dd/MM/yyyy HH:mm') ?? '') : '—',
+          this.datePipe.transform(w.createdAt, 'dd/MM/yyyy HH:mm') ?? '',
         ])
       : (data as PaymentTransaction[]).map((t) => [
           t.reference,
@@ -511,18 +525,17 @@ export class AgencyFinance implements OnInit, OnDestroy {
     doc.text(`Exporté le ${this.datePipe.transform(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 26);
 
     const head = isWd
-      ? [['Référence', 'Montant (XOF)', 'Mode', 'Compte', 'Statut', 'Date demande', 'Date traitement']]
+      ? [['Référence', 'Montant (XOF)', 'Opérateur', 'Téléphone', 'Statut', 'Date']]
       : [['Référence', 'Client', 'Téléphone', 'Montant', 'Commission', 'Net', 'Mode', 'Statut', 'Date']];
 
     const body = isWd
       ? (data as WithdrawalRecord[]).map((w) => [
           w.reference ?? '—',
           this.formatCurrency(w.amount),
-          this.getMethodLabel(w.method),
-          w.accountNumber,
+          this.getMethodLabel(w.operator),
+          w.customerMsisdn,
           this.getStatusLabel(w.status),
-          this.datePipe.transform(w.requestedAt, 'dd/MM/yyyy') ?? '',
-          w.processedAt ? (this.datePipe.transform(w.processedAt, 'dd/MM/yyyy') ?? '') : '—',
+          this.datePipe.transform(w.createdAt, 'dd/MM/yyyy') ?? '',
         ])
       : (data as PaymentTransaction[]).map((t) => [
           t.reference,

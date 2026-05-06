@@ -623,6 +623,51 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin .7s linear infinite; display: inline-block; }
 
+// ── BARRE DE FILTRE ──────────────────────────────────────────
+.fin-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1.5rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+
+  .filter-select { min-width: 170px; }
+
+  .filter-input {
+    height: 38px;
+    padding: 0 .75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: .875rem;
+    color: #374151;
+    min-width: 180px;
+    &:focus { outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
+  }
+
+  .btn-filter {
+    display: flex; align-items: center; gap: .3rem;
+    padding: 0 1rem; height: 38px;
+    background: #22c55e; color: #fff;
+    border: none; border-radius: 6px;
+    font-size: .875rem; font-weight: 500;
+    cursor: pointer; transition: background .2s;
+    .material-icons { font-size: 1rem; }
+    &:hover { background: #16a34a; }
+  }
+
+  .btn-filter-reset {
+    display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px;
+    background: #f3f4f6; color: #6b7280;
+    border: 1px solid #d1d5db; border-radius: 6px;
+    cursor: pointer; transition: all .2s;
+    .material-icons { font-size: 1.1rem; }
+    &:hover { background: #e5e7eb; color: #374151; }
+  }
+}
+
 // ── RESPONSIVE ───────────────────────────────────────────────
 @media (max-width: 768px) {
   .fin-kpi-grid { padding: 0 1rem; }
