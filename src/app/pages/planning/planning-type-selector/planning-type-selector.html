@@ -1,0 +1,84 @@
+<div class="pts-root" [class.pts-disabled]="isDisabled()">
+
+  <!-- ── Hint bar ───────────────────────────────────────────── -->
+  <div class="pts-hint" [class.pts-hint--active]="selected()">
+    @if (selected()) {
+      <div class="pts-hint__inner pts-hint__inner--ok">
+        <mat-icon>check_circle</mat-icon>
+        <span>Type sélectionné — vous pouvez passer à l'étape suivante</span>
+      </div>
+    } @else {
+      <div class="pts-hint__inner">
+        <mat-icon>touch_app</mat-icon>
+        <span>Sélectionnez un type de planning pour continuer</span>
+      </div>
+    }
+  </div>
+
+  <!-- ── Cards grid ─────────────────────────────────────────── -->
+  <div class="pts-grid">
+    @for (card of cards; track card.value) {
+      <button
+        type="button"
+        class="pts-card"
+        [class.pts-card--selected]="isSelected(card.value)"
+        [class.pts-card--hover]="isHovering(card.value)"
+        (click)="select(card.value)"
+        (mouseenter)="setHover(card.value)"
+        (mouseleave)="clearHover()"
+        [style.--c]="card.color"
+        [style.--bg]="card.bgLight"
+        [style.--bd]="card.borderColor"
+        [style.--gr]="card.gradient"
+        [style.--bb]="card.badgeBg"
+        [attr.aria-pressed]="isSelected(card.value)"
+      >
+
+        <!-- Glow ring (selected) -->
+        <span class="pts-glow" aria-hidden="true"></span>
+
+        <!-- ── Top row ── -->
+        <div class="pts-card__top">
+
+          <!-- Icon blob -->
+          <div class="pts-icon" [class.pts-icon--active]="isSelected(card.value) || isHovering(card.value)">
+            <span class="pts-icon__bg" aria-hidden="true"></span>
+            <mat-icon>{{ card.icon }}</mat-icon>
+          </div>
+
+          <!-- Badge + check -->
+          <div class="pts-card__top-right">
+            <span class="pts-badge">{{ card.badge }}</span>
+            <span class="pts-check" [class.pts-check--visible]="isSelected(card.value)">
+              <mat-icon>check</mat-icon>
+            </span>
+          </div>
+
+        </div>
+
+        <!-- ── Body ── -->
+        <div class="pts-card__body">
+          <h3 class="pts-title">{{ card.label }}</h3>
+          <p class="pts-desc">{{ card.description }}</p>
+          <p class="pts-detail">{{ card.detail }}</p>
+        </div>
+
+        <!-- ── Footer ── -->
+        <div class="pts-card__footer">
+          <div class="pts-counter">
+            <span class="pts-counter__num">{{ getCount(card.value) }}</span>
+            <span class="pts-counter__lbl">planning{{ getCount(card.value) !== 1 ? 's' : '' }}</span>
+          </div>
+          <span class="pts-arrow" [class.pts-arrow--visible]="isSelected(card.value) || isHovering(card.value)">
+            <mat-icon>arrow_forward</mat-icon>
+          </span>
+        </div>
+
+        <!-- Subtle corner gradient overlay -->
+        <span class="pts-overlay" aria-hidden="true"></span>
+
+      </button>
+    }
+  </div>
+
+</div>

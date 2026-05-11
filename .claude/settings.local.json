@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx ng *)",
+      "Bash(node -e \"const a=require\\('./angular.json'\\); const styles=a.projects['collect-dechets'].architect.build.options.styles; console.log\\(JSON.stringify\\(styles, null, 2\\)\\);\")",
+      "Bash(npm install *)"
+    ]
+  }
+}

@@ -103,6 +103,15 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/report/report").then((c) => c.Report),
   },
 
+  // ================= MODULE PLANNING =================
+
+  {
+    // canActivate: [adminOrManagerGuard],
+    path: 'planning',
+    loadChildren: () =>
+      import('./pages/planning/planning.routes').then(m => m.PLANNING_ROUTES),
+  },
+
   // ================= DASHBOARDS =================
 
   {

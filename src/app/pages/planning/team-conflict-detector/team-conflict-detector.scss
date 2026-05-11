@@ -1,0 +1,645 @@
+/* ============================================================
+   Team Conflict Detector — Uber Fleet / Logistics Dashboard
+   ============================================================ */
+
+$ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+// ── Root ──────────────────────────────────────────────────────
+.tcd-root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+// ── Header KPI cards ──────────────────────────────────────────
+.tcd-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tcd-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+
+  @media (max-width: 640px) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.tcd-kpi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+
+  &--green  { background: #f0fdf4; border-color: #bbf7d0; .kpi-icon { color: #16a34a; } .kpi-val { color: #15803d; } }
+  &--amber  { background: #fffbeb; border-color: #fde68a; .kpi-icon { color: #d97706; } .kpi-val { color: #b45309; } }
+  &--red    { background: #fef2f2; border-color: #fecaca; .kpi-icon { color: #ef4444; } .kpi-val { color: #dc2626; } }
+  &--danger { background: #fef2f2; border-color: #fca5a5; animation: pulse-red 1.5s ease-in-out infinite; .kpi-icon { color: #ef4444; } .kpi-val { color: #dc2626; } }
+  &--neutral{ background: #f8fafc; border-color: #f1f5f9; .kpi-icon { color: #64748b; } .kpi-val { color: #475569; } }
+}
+
+.kpi-icon {
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+}
+
+.kpi-body { display: flex; flex-direction: column; gap: 1px; }
+.kpi-val  { font-size: 22px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.kpi-lbl  { font-size: 11px; font-weight: 500; color: #64748b; }
+
+// ── Selection bar ─────────────────────────────────────────────
+.tcd-sel-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  flex-wrap: wrap;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: #64748b; }
+  span:first-of-type { font-size: 13px; color: #475569; }
+}
+
+.sel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border: 1.5px solid;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  background: #fff;
+}
+
+.sel-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sel-chip-warn {
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+  color: #ef4444 !important;
+}
+
+.sel-chip-alert {
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+  color: #f59e0b !important;
+}
+
+.sel-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+}
+
+// ── Main grid ─────────────────────────────────────────────────
+.tcd-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+// ── Suggestion banner ──────────────────────────────────────────
+.tcd-suggest-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: all .2s ease;
+
+  &:hover { border-color: #3b82f6; box-shadow: 0 2px 8px rgba(59,130,246,.15); }
+
+  mat-icon { color: #3b82f6; font-size: 20px; width: 20px; height: 20px; flex-shrink: 0; }
+}
+
+.sb-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.sb-title { font-size: 13px; font-weight: 700; color: #1e293b; }
+.sb-sub   { font-size: 11px; color: #64748b; }
+
+.sb-btn {
+  padding: 5px 12px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s ease;
+  &:hover { background: #2563eb; }
+}
+
+// ── Team cards ────────────────────────────────────────────────
+.tcd-teams-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tcd-team-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1.5px solid #f1f5f9;
+  border-radius: 14px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all .2s $ease;
+
+  &:hover:not(.tcd-team-card--disabled) {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    transform: translateY(-1px);
+  }
+
+  &--selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px #3b82f6, 0 4px 16px rgba(59,130,246,.12);
+  }
+
+  &--conflict {
+    border-color: #fca5a5;
+    background: #fff5f5;
+    animation: shake .4s ease;
+  }
+
+  &--warning { border-color: #fde68a; background: #fffdf0; }
+
+  &--disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+// Status line (left border indicator)
+.tc-status-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 14px 0 0 14px;
+}
+
+// Header
+.tc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 8px;
+}
+
+.tc-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.tc-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tc-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tc-vehicle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #64748b;
+  mat-icon { font-size: 12px; width: 12px; height: 12px; }
+}
+
+.tc-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tc-check {
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: #3b82f6; }
+}
+
+// Stats row
+.tc-stats-row {
+  display: flex;
+  gap: 12px;
+  padding-left: 8px;
+  flex-wrap: wrap;
+}
+
+.tc-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #64748b;
+  mat-icon { font-size: 13px; width: 13px; height: 13px; }
+}
+
+// Workload
+.tc-load-wrap {
+  padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tc-load-bar {
+  height: 5px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tc-load-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .5s $ease;
+}
+
+.tc-load-val {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+// Conflict chips
+.tc-conflicts {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-left: 8px;
+}
+
+.tc-conflict-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  background: color-mix(in srgb, var(--cc) 10%, white);
+  border: 1px solid color-mix(in srgb, var(--cc) 30%, #f1f5f9);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--cc);
+  font-weight: 500;
+
+  mat-icon { font-size: 14px; width: 14px; height: 14px; flex-shrink: 0; }
+}
+
+// Blocked overlay
+.tc-blocked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 600;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+}
+
+// ── Right column ───────────────────────────────────────────────
+.tcd-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// Card shared header
+.tc-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: #64748b; }
+  span:first-of-type { font-size: 14px; font-weight: 700; color: #0f172a; flex: 1; }
+}
+
+.tc-card-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.alert-cnt {
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  &--critical { background: #fef2f2; color: #ef4444; }
+  &--warning  { background: #fffbeb; color: #d97706; }
+}
+
+// ── Daily timeline ────────────────────────────────────────────
+.tcd-timeline-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.tl-axis {
+  display: flex;
+  margin-left: 36px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.tl-hour {
+  flex: 1;
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+  text-align: center;
+}
+
+.tl-rows { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; }
+
+.tl-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  border-radius: 6px;
+  transition: background .15s ease;
+
+  &--selected { background: #eff6ff; }
+}
+
+.tl-label {
+  width: 28px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tl-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tl-label span:last-child { font-size: 11px; font-weight: 700; color: #475569; }
+
+.tl-track {
+  flex: 1;
+  position: relative;
+  height: 22px;
+  background: #f8fafc;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+}
+
+.tl-grid-line {
+  flex: 1;
+  border-right: 1px solid #f1f5f9;
+}
+
+.tl-block {
+  position: absolute;
+  top: 2px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all .2s ease;
+
+  &--exist { opacity: .85; }
+
+  &--new {
+    background: repeating-linear-gradient(
+      -45deg,
+      rgba(59,130,246,.7),
+      rgba(59,130,246,.7) 4px,
+      rgba(59,130,246,.3) 4px,
+      rgba(59,130,246,.3) 8px
+    ) !important;
+    border: 1.5px dashed #3b82f6;
+    color: #1d4ed8;
+    animation: pulse-blue .8s ease-in-out infinite alternate;
+  }
+
+  &--conflict {
+    background: repeating-linear-gradient(
+      -45deg,
+      rgba(239,68,68,.7),
+      rgba(239,68,68,.7) 4px,
+      rgba(239,68,68,.3) 4px,
+      rgba(239,68,68,.3) 8px
+    ) !important;
+    border-color: #ef4444;
+    color: #dc2626;
+  }
+}
+
+// ── Alerts card (PrimeNG Timeline) ────────────────────────────
+.tcd-alerts-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+::ng-deep .tcd-ptl {
+  .p-timeline {
+    .p-timeline-event-separator { padding: 0 8px; }
+    .p-timeline-event-content   { padding-bottom: 14px; }
+  }
+}
+
+.ptl-marker {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+}
+
+.ptl-content {
+  padding: 2px 0 2px 4px;
+}
+
+.ptl-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.ptl-team {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ptl-sev {
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ptl-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.ptl-detail {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+// ── Suggestions card ──────────────────────────────────────────
+.tcd-suggestions-card {
+  background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.sug-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+  color: #1e293b;
+}
+
+.sug-dot {
+  width: 6px;
+  height: 6px;
+  background: #3b82f6;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+// ── Workload chart ────────────────────────────────────────────
+.tcd-chart-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.tcd-chart-wrap {
+  height: 160px;
+}
+
+// ── Animations ────────────────────────────────────────────────
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,.0); }
+  50%       { box-shadow: 0 0 0 4px rgba(239,68,68,.12); }
+}
+
+@keyframes pulse-blue {
+  from { opacity: .7; }
+  to   { opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-4px); }
+  75%       { transform: translateX(4px); }
+}
+
+// ── Mobile ────────────────────────────────────────────────────
+@media (max-width: 640px) {
+  .tcd-kpi-grid { grid-template-columns: 1fr 1fr; }
+  .tl-label span:last-child { display: none; }
+}

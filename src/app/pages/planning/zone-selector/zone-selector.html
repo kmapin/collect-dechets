@@ -1,0 +1,210 @@
+<div class="zs-root">
+
+  <!-- ════════════════════════════════════════════════════════
+       GLOBAL STATS BAR
+       ════════════════════════════════════════════════════════ -->
+  <div class="zs-statsbar">
+    <div class="zs-stat">
+      <mat-icon class="stat-icon" style="color:#3b82f6">home</mat-icon>
+      <div class="stat-body">
+        <span class="stat-val">{{ globalHouseholds() }}</span>
+        <span class="stat-lbl">Ménages</span>
+      </div>
+    </div>
+    <div class="zs-stat">
+      <mat-icon class="stat-icon" style="color:#16a34a">verified</mat-icon>
+      <div class="stat-body">
+        <span class="stat-val">{{ globalActive() }}</span>
+        <span class="stat-lbl">Abonnés actifs</span>
+      </div>
+    </div>
+    <div class="zs-stat">
+      <mat-icon class="stat-icon" style="color:#8b5cf6">pie_chart</mat-icon>
+      <div class="stat-body">
+        <span class="stat-val">{{ globalCoverage() }}%</span>
+        <span class="stat-lbl">Couverture</span>
+      </div>
+    </div>
+    <div class="zs-stat">
+      <mat-icon class="stat-icon" style="color:#f59e0b">grid_view</mat-icon>
+      <div class="stat-body">
+        <span class="stat-val">{{ totalSecteurs() }}</span>
+        <span class="stat-lbl">Secteurs</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+       MAIN SPLIT LAYOUT
+       ════════════════════════════════════════════════════════ -->
+  <div class="zs-split">
+
+    <!-- ── LEFT SIDEBAR ──────────────────────────────────────── -->
+    <aside class="zs-sidebar">
+
+      <!-- Search + filter -->
+      <div class="zs-controls">
+        <div class="zs-search-wrap">
+          <mat-icon class="search-ico">search</mat-icon>
+          <input
+            type="text"
+            class="zs-search"
+            placeholder="Rechercher une zone…"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="onSearch($event)"
+          />
+          @if (searchQuery()) {
+            <button type="button" class="search-clear" (click)="onSearch('')">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </div>
+        <button
+          type="button"
+          class="zs-filter-btn"
+          [class.active]="activeOnly()"
+          (click)="toggleActiveFilter()"
+          pTooltip="Afficher uniquement les zones avec abonnements actifs"
+          tooltipPosition="right"
+        >
+          <mat-icon>filter_list</mat-icon>
+          <span>Actifs uniquement</span>
+          <span class="filter-dot" [class.on]="activeOnly()"></span>
+        </button>
+      </div>
+
+      <!-- Legend -->
+      <div class="zs-legend">
+        @for (lvl of ['ville','arrondissement','secteur','quartier']; track lvl) {
+          <div class="leg-item">
+            <span class="leg-dot" [style.background]="getLevelColor(lvl)"></span>
+            <span>{{ getLevelLabel(lvl) }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Tree -->
+      <div class="zs-tree-wrap">
+        @if (filteredTree().length === 0) {
+          <div class="zs-empty">
+            <mat-icon>search_off</mat-icon>
+            <span>Aucune zone trouvée</span>
+          </div>
+        }
+        <p-tree
+          [value]="filteredTree()"
+          selectionMode="single"
+          [selection]="selectedNode()"
+          (onNodeSelect)="onNodeSelect($event)"
+          (onNodeUnselect)="onNodeUnselect()"
+          styleClass="zs-ptree"
+        >
+          <ng-template pTemplate="default" let-node>
+            <div
+              class="zs-tnode"
+              [class.zs-tnode--selected]="isSelected(node.key)"
+              [style.--lc]="getLevelColor(node.data.level)"
+            >
+              <mat-icon class="tnode-icon" [style.color]="getLevelColor(node.data.level)">
+                {{ getLevelIcon(node.data.level) }}
+              </mat-icon>
+              <span class="tnode-label">{{ node.label }}</span>
+              <div class="tnode-stats">
+                <span class="tnode-hh">{{ node.data.households }}</span>
+                <mat-icon class="tnode-hh-ico">home</mat-icon>
+                @if (node.data.active > 0) {
+                  <span class="tnode-active">{{ node.data.active }} actifs</span>
+                }
+              </div>
+            </div>
+          </ng-template>
+        </p-tree>
+      </div>
+
+      <!-- Selected info card -->
+      @if (selectedNode()) {
+        <div class="zs-sel-card" [style.--sc]="getLevelColor(selectedNode()!.data.level)">
+          <div class="sel-card-header">
+            <mat-icon [style.color]="getLevelColor(selectedNode()!.data.level)">
+              {{ getLevelIcon(selectedNode()!.data.level) }}
+            </mat-icon>
+            <div class="sel-card-title">
+              <span class="sel-name">{{ selectedNode()!.label }}</span>
+              <span class="sel-level">{{ getLevelLabel(selectedNode()!.data.level) }}</span>
+            </div>
+            <button type="button" class="sel-close" (click)="clearSelection()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <!-- Breadcrumb -->
+          @if (selBreadcrumb().length > 1) {
+            <div class="sel-breadcrumb">
+              @for (bc of selBreadcrumb(); track bc; let last = $last) {
+                <span class="bc-item">{{ bc }}</span>
+                @if (!last) { <mat-icon class="bc-sep">chevron_right</mat-icon> }
+              }
+            </div>
+          }
+
+          <!-- Metrics -->
+          <div class="sel-metrics">
+            <div class="sel-metric">
+              <span class="met-val">{{ selHouseholds() }}</span>
+              <span class="met-lbl">Ménages</span>
+            </div>
+            <div class="sel-metric">
+              <span class="met-val" style="color:#16a34a">{{ selActive() }}</span>
+              <span class="met-lbl">Actifs</span>
+            </div>
+            <div class="sel-metric">
+              <span class="met-val" style="color:#8b5cf6">{{ selCoverage() }}%</span>
+              <span class="met-lbl">Couverture</span>
+            </div>
+          </div>
+
+          <!-- Coverage bar -->
+          <div class="sel-bar-wrap">
+            <div class="sel-bar">
+              <div class="sel-bar-fill" [style.width.%]="selCoverage()" [style.background]="getLevelColor(selectedNode()!.data.level)"></div>
+            </div>
+            <span class="sel-bar-lbl">{{ selCoverage() }}% des ménages abonnés</span>
+          </div>
+        </div>
+      }
+
+    </aside>
+
+    <!-- ── RIGHT MAP ──────────────────────────────────────────── -->
+    <div class="zs-map-panel">
+
+      <!-- Map legend overlay -->
+      <div class="map-legend-overlay">
+        <div class="mlo-title"><mat-icon>info_outline</mat-icon> Cliquez sur un cercle pour sélectionner</div>
+        <div class="mlo-items">
+          @for (lvl of ['ville','arrondissement','secteur','quartier']; track lvl) {
+            <div class="mlo-item">
+              <span class="mlo-dot" [style.background]="getLevelColor(lvl)"></span>
+              {{ getLevelLabel(lvl) }}
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Map container -->
+      <div #mapEl class="zs-map"></div>
+
+      <!-- Selected overlay badge -->
+      @if (selectedNode()) {
+        <div class="map-sel-badge" [style.--sc]="getLevelColor(selectedNode()!.data.level)">
+          <mat-icon>place</mat-icon>
+          <span>{{ selectedNode()!.label }}</span>
+          <span class="map-sel-hh">{{ selHouseholds() }} ménages</span>
+        </div>
+      }
+
+    </div>
+
+  </div>
+
+</div>

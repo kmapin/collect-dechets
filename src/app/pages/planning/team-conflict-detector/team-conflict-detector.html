@@ -1,0 +1,304 @@
+<div class="tcd-root">
+
+  <!-- ════════════════════════════════════════════════════
+       STATUS HEADER
+       ════════════════════════════════════════════════════ -->
+  <div class="tcd-header">
+
+    <div class="tcd-kpi-grid">
+      <div class="tcd-kpi tcd-kpi--green">
+        <div class="kpi-icon"><mat-icon>check_circle</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-val">{{ availableCount() }}</span>
+          <span class="kpi-lbl">Disponibles</span>
+        </div>
+      </div>
+      <div class="tcd-kpi tcd-kpi--amber">
+        <div class="kpi-icon"><mat-icon>sync</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-val">{{ inServiceCount() }}</span>
+          <span class="kpi-lbl">En service</span>
+        </div>
+      </div>
+      <div class="tcd-kpi tcd-kpi--red">
+        <div class="kpi-icon"><mat-icon>cancel</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-val">{{ unavailCount() }}</span>
+          <span class="kpi-lbl">Indisponibles</span>
+        </div>
+      </div>
+      <div class="tcd-kpi" [class.tcd-kpi--danger]="criticalCount() > 0" [class.tcd-kpi--neutral]="criticalCount() === 0">
+        <div class="kpi-icon"><mat-icon>{{ criticalCount() > 0 ? 'warning' : 'shield' }}</mat-icon></div>
+        <div class="kpi-body">
+          <span class="kpi-val">{{ criticalCount() }}</span>
+          <span class="kpi-lbl">Conflit{{ criticalCount() !== 1 ? 's' : '' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selection summary -->
+    @if (selectedTeams().length > 0) {
+      <div class="tcd-sel-bar">
+        <mat-icon>groups</mat-icon>
+        <span><strong>{{ selectedTeams().length }}</strong> équipe(s) sélectionnée(s)</span>
+        @for (t of selectedTeams(); track t.id) {
+          <span class="sel-chip" [style.border-color]="statusColor(t.status)">
+            <span class="sel-chip-dot" [style.background]="statusColor(t.status)"></span>
+            {{ t.name }}
+            @if (isCritical(t.id)) { <mat-icon class="sel-chip-warn">error</mat-icon> }
+            @if (isWarning(t.id) && !isCritical(t.id)) { <mat-icon class="sel-chip-alert">warning</mat-icon> }
+          </span>
+        }
+        @if (estimatedDuration() !== '--') {
+          <span class="sel-duration">
+            <mat-icon>timer</mat-icon> {{ estimatedDuration() }} estimé
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ════════════════════════════════════════════════════
+       MAIN GRID: Teams (left) + Timeline+Alerts (right)
+       ════════════════════════════════════════════════════ -->
+  <div class="tcd-grid">
+
+    <!-- ── LEFT: Team cards ───────────────────────────────── -->
+    <div class="tcd-teams-col">
+
+      <!-- Suggested banner -->
+      @if (criticalCount() === 0 && selectedTeams().length === 0) {
+        <div class="tcd-suggest-banner" (click)="applySuggested()">
+          <mat-icon>auto_awesome</mat-icon>
+          <div class="sb-body">
+            <span class="sb-title">Sélection automatique recommandée</span>
+            <span class="sb-sub">{{ countSuggested() }} équipe(s) optimales détectées</span>
+          </div>
+          <button type="button" class="sb-btn">Appliquer</button>
+        </div>
+      }
+
+      @for (team of teamsEnriched(); track team.id) {
+        <div
+          class="tcd-team-card"
+          [class.tcd-team-card--selected]="isSelected(team.id)"
+          [class.tcd-team-card--conflict]="isCritical(team.id)"
+          [class.tcd-team-card--warning]="isWarning(team.id) && !isCritical(team.id)"
+          [class.tcd-team-card--disabled]="team.status === 'indisponible' || team.vehicleStatus === 'unavailable'"
+          (click)="toggleTeam(team.id)"
+          [pTooltip]="team.status === 'indisponible' ? 'Équipe indisponible' : team.vehicleStatus === 'unavailable' ? 'Véhicule hors service' : ''"
+          tooltipPosition="right"
+        >
+          <!-- Status line -->
+          <div class="tc-status-line" [style.background]="statusColor(team.status)"></div>
+
+          <!-- Header -->
+          <div class="tc-head">
+            <div class="tc-avatar" [style.background]="statusColor(team.status) + '20'" [style.color]="statusColor(team.status)">
+              {{ team.initials }}
+            </div>
+            <div class="tc-info">
+              <span class="tc-name">{{ team.name }}</span>
+              <span class="tc-vehicle">
+                <mat-icon>local_shipping</mat-icon>{{ team.vehicle }}
+              </span>
+            </div>
+            <div class="tc-badges">
+              <!-- Status badge -->
+              <span class="tc-badge" [style.background]="statusColor(team.status) + '18'" [style.color]="statusColor(team.status)">
+                <span class="badge-dot" [style.background]="statusColor(team.status)"></span>
+                {{ statusLabel(team.status) }}
+              </span>
+              <!-- Selection check -->
+              @if (isSelected(team.id)) {
+                <span class="tc-check"><mat-icon>check_circle</mat-icon></span>
+              }
+            </div>
+          </div>
+
+          <!-- Stats row -->
+          <div class="tc-stats-row">
+            <div class="tc-stat-item">
+              <mat-icon>person</mat-icon>
+              <span>{{ team.membersCount }} membres</span>
+            </div>
+            <div class="tc-stat-item">
+              <mat-icon [style.color]="vehicleColor(team.vehicleStatus)">{{ team.vehicleStatus === 'ok' ? 'check' : team.vehicleStatus === 'maintenance' ? 'build' : 'report' }}</mat-icon>
+              <span [style.color]="vehicleColor(team.vehicleStatus)">{{ vehicleLabel(team.vehicleStatus) }}</span>
+            </div>
+            <div class="tc-stat-item">
+              <mat-icon>event</mat-icon>
+              <span>{{ team.assignments.length }} mission(s)</span>
+            </div>
+          </div>
+
+          <!-- Workload bar -->
+          <div class="tc-load-wrap">
+            <div class="tc-load-bar">
+              <div class="tc-load-fill"
+                   [style.width.%]="team.workloadPercent"
+                   [style.background]="loadColor(team.workloadPercent)"></div>
+            </div>
+            <span class="tc-load-val" [style.color]="loadColor(team.workloadPercent)">
+              {{ team.workloadPercent }}% — {{ loadLabel(team.workloadPercent) }}
+            </span>
+          </div>
+
+          <!-- Conflict chips -->
+          @if (teamConflicts(team.id).length > 0) {
+            <div class="tc-conflicts">
+              @for (c of teamConflicts(team.id); track c.kind) {
+                <div class="tc-conflict-chip" [style.--cc]="sevColor(c.severity)">
+                  <mat-icon>{{ kindIcon(c.kind) }}</mat-icon>
+                  <span>{{ c.message }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Blocked overlay -->
+          @if (team.status === 'indisponible' || team.vehicleStatus === 'unavailable') {
+            <div class="tc-blocked">
+              <mat-icon>block</mat-icon>
+              <span>{{ team.status === 'indisponible' ? 'Équipe indisponible' : 'Véhicule hors service' }}</span>
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+
+    <!-- ── RIGHT: Timeline + Alerts ───────────────────────── -->
+    <div class="tcd-right-col">
+
+      <!-- Daily timeline -->
+      <div class="tcd-timeline-card">
+        <div class="tc-card-header">
+          <mat-icon>view_timeline</mat-icon>
+          <span>Planning du jour</span>
+          <span class="tc-card-sub">{{ formatHour(TL_START) }} – {{ formatHour(TL_END) }}</span>
+        </div>
+
+        <!-- Hour axis -->
+        <div class="tl-axis">
+          @for (h of TL_HOURS; track h) {
+            <div class="tl-hour">{{ formatHour(h) }}</div>
+          }
+        </div>
+
+        <!-- Team rows -->
+        <div class="tl-rows">
+          @for (team of teamsEnriched(); track team.id) {
+            <div class="tl-row" [class.tl-row--selected]="isSelected(team.id)">
+              <div class="tl-label">
+                <span class="tl-dot" [style.background]="statusColor(team.status)"></span>
+                <span>{{ team.initials }}</span>
+              </div>
+              <div class="tl-track">
+                <!-- Grid lines -->
+                @for (h of TL_HOURS; track h) {
+                  <div class="tl-grid-line"></div>
+                }
+                <!-- Existing assignments -->
+                @for (a of team.assignments; track a.planningId) {
+                  <div
+                    class="tl-block tl-block--exist"
+                    [style.left.%]="getLeft(a.startTime)"
+                    [style.width.%]="getWidth(a.startTime, a.endTime)"
+                    [style.background]="a.color + 'cc'"
+                    [pTooltip]="a.label + ' (' + a.startTime + '–' + a.endTime + ')'"
+                    tooltipPosition="top"
+                  >
+                    <span>{{ a.label }}</span>
+                  </div>
+                }
+                <!-- New planning slot -->
+                @if (isSelected(team.id) && estimatedHouseholds > 0) {
+                  <div
+                    class="tl-block tl-block--new"
+                    [class.tl-block--conflict]="isCritical(team.id)"
+                    [style.left.%]="getNewPlanningLeft()"
+                    [style.width.%]="getNewPlanningWidth()"
+                    [pTooltip]="'Nouveau planning: ' + newStartTime + '–' + getNewPlanningEnd()"
+                    tooltipPosition="top"
+                  >
+                    <span>Nouveau</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Alerts timeline (PrimeNG) -->
+      @if (alertEvents().length > 0) {
+        <div class="tcd-alerts-card">
+          <div class="tc-card-header">
+            <mat-icon [style.color]="criticalCount() > 0 ? '#ef4444' : '#f59e0b'">
+              {{ criticalCount() > 0 ? 'error' : 'warning' }}
+            </mat-icon>
+            <span>Alertes détectées</span>
+            @if (criticalCount() > 0) {
+              <span class="alert-cnt alert-cnt--critical">{{ criticalCount() }} critique(s)</span>
+            }
+            @if (warningCount() > 0) {
+              <span class="alert-cnt alert-cnt--warning">{{ warningCount() }} attention</span>
+            }
+          </div>
+
+          <p-timeline [value]="alertEvents()" styleClass="tcd-ptl">
+            <ng-template pTemplate="marker" let-ev>
+              <div class="ptl-marker" [style.background]="ev.color + '20'" [style.border-color]="ev.color">
+                <mat-icon [style.color]="ev.color">{{ ev.icon }}</mat-icon>
+              </div>
+            </ng-template>
+            <ng-template pTemplate="content" let-ev>
+              <div class="ptl-content">
+                <div class="ptl-header">
+                  <span class="ptl-team">{{ ev.teamName }}</span>
+                  <span class="ptl-sev" [style.background]="ev.color + '18'" [style.color]="ev.color">
+                    {{ sevLabel(ev.severity) }}
+                  </span>
+                </div>
+                <p class="ptl-title">{{ ev.title }}</p>
+                @if (ev.detail) {
+                  <p class="ptl-detail">{{ ev.detail }}</p>
+                }
+              </div>
+            </ng-template>
+          </p-timeline>
+        </div>
+      }
+
+      <!-- Suggestions -->
+      @if (suggestions().length > 0) {
+        <div class="tcd-suggestions-card">
+          <div class="tc-card-header">
+            <mat-icon style="color:#3b82f6">lightbulb</mat-icon>
+            <span>Suggestions d'optimisation</span>
+          </div>
+          @for (s of suggestions(); track s) {
+            <div class="sug-item">
+              <span class="sug-dot"></span>
+              <span>{{ s }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Workload chart -->
+      <div class="tcd-chart-card">
+        <div class="tc-card-header">
+          <mat-icon style="color:#8b5cf6">bar_chart</mat-icon>
+          <span>Charge journalière des équipes</span>
+        </div>
+        <div class="tcd-chart-wrap">
+          <p-chart type="bar" [data]="workloadChartData()" [options]="workloadChartOpts"></p-chart>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
