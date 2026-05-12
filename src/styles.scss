@@ -77,15 +77,37 @@ gère les bordures des champs de saisie material et
 conflits entre tailwind et material
 */
 
-.mdc-text-field--outlined:not(.mdc-text-field--disabled)
-  .mdc-notched-outline
-  .mdc-notched-outline__trailing {
-  border-left-style: none;
+/*
+  Fix complet : Angular Material outlined input ↔ Tailwind CSS
+  ─────────────────────────────────────────────────────────────
+  Le outline Material se compose de 3 segments (leading / notch / trailing).
+  Tailwind reset `border-style: solid` sur `*` ce qui force les bordures
+  internes (jonctions entre segments) à s'afficher, cassant l'apparence.
+
+  Solution : cacher explicitement la bordure intérieure de chaque segment.
+  On cible directement les classes MDC sans contrainte de statut afin de
+  couvrir également les champs disabled, focused, error, etc.
+*/
+
+/* segment gauche → pas de bordure droite */
+.mdc-notched-outline__leading {
+  border-right: none;
 }
-.mdc-text-field--outlined:not(.mdc-text-field--disabled)
-  .mdc-notched-outline
-  .mdc-notched-outline__notch {
-  border-right-style: none;
+
+/* segment central → pas de bordure gauche ni droite */
+.mdc-notched-outline__notch {
+  border-left: none;
+  border-right: none;
+}
+
+/* label flottant → cacher la bordure du haut du segment central */
+.mdc-notched-outline--notched .mdc-notched-outline__notch {
+  border-top: none;
+}
+
+/* segment droit → pas de bordure gauche */
+.mdc-notched-outline__trailing {
+  border-left: none;
 }
 
 /* loader global */

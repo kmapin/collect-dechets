@@ -27,7 +27,7 @@ export class PlanningLayout {
     { label: 'Tableau de bord', icon: 'dashboard',      route: '/planning/dashboard' },
     { label: 'Plannings',       icon: 'list_alt',        route: '/planning/list' },
     { label: 'Calendrier',      icon: 'calendar_month',  route: '/planning/calendar' },
-    { label: 'Équipes',         icon: 'groups',          route: '/planning/teams' },
+    { label: 'Équipes',         icon: 'groups',          route: '/teams' },
     { label: 'Clients',         icon: 'people',          route: '/planning/clients' },
     { label: 'Zones',           icon: 'map',             route: '/planning/zones' },
     { label: 'Secteurs',        icon: 'grid_view',       route: '/planning/sectors' },
