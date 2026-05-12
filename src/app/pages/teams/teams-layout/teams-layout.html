@@ -1,0 +1,121 @@
+<div class="tl-shell" [class.tl-shell--collapsed]="collapsed()" [class.tl-shell--mobile-open]="mobileOpen()">
+
+  <!-- Mobile overlay -->
+  @if (mobileOpen()) {
+    <div class="tl-overlay" (click)="closeMobile()"></div>
+  }
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside class="tl-sidebar">
+
+    <!-- Brand -->
+    <div class="tls-brand">
+      <div class="tls-logo">
+        <mat-icon>recycling</mat-icon>
+      </div>
+      @if (!collapsed()) {
+        <div class="tls-brand-text">
+          <span class="tls-brand-title">SAHELYS</span>
+          <span class="tls-brand-sub">Gestion Équipes</span>
+        </div>
+      }
+      <button class="tls-collapse desktop-only" (click)="toggleCollapse()" [pTooltip]="collapsed() ? 'Déplier' : ''" tooltipPosition="right">
+        <mat-icon>{{ collapsed() ? 'menu' : 'menu_open' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- Nav items -->
+    <nav class="tls-nav">
+      @if (!collapsed()) { <div class="tls-nav-label">Navigation</div> }
+
+      <a class="tls-nav-item"
+         routerLink="/teams/list"
+         routerLinkActive="tls-nav-item--active"
+         [routerLinkActiveOptions]="{ exact: false }"
+         [pTooltip]="collapsed() ? 'Équipes' : ''"
+         tooltipPosition="right"
+         (click)="closeMobile()">
+        <mat-icon>groups</mat-icon>
+        @if (!collapsed()) { <span>Équipes</span> }
+        @if (!collapsed() && onMissionCount() > 0) {
+          <span class="nav-badge nav-badge--amber">{{ onMissionCount() }} en mission</span>
+        }
+      </a>
+
+      <a class="tls-nav-item"
+         routerLink="/teams/availability"
+         routerLinkActive="tls-nav-item--active"
+         [pTooltip]="collapsed() ? 'Disponibilités' : ''"
+         tooltipPosition="right"
+         (click)="closeMobile()">
+        <mat-icon>calendar_view_week</mat-icon>
+        @if (!collapsed()) { <span>Disponibilités</span> }
+      </a>
+
+      <a class="tls-nav-item"
+         routerLink="/planning/dashboard"
+         [pTooltip]="collapsed() ? 'Plannings' : ''"
+         tooltipPosition="right"
+         (click)="closeMobile()">
+        <mat-icon>calendar_month</mat-icon>
+        @if (!collapsed()) { <span>Plannings</span> }
+      </a>
+
+      <a class="tls-nav-item"
+         routerLink="/planning/calendar"
+         [pTooltip]="collapsed() ? 'Calendrier' : ''"
+         tooltipPosition="right"
+         (click)="closeMobile()">
+        <mat-icon>event</mat-icon>
+        @if (!collapsed()) { <span>Calendrier</span> }
+      </a>
+    </nav>
+
+    <!-- Status summary -->
+    @if (!collapsed()) {
+      <div class="tls-status-summary">
+        <div class="tss-item tss-item--green">
+          <span class="tss-dot"></span>
+          <span>{{ svc.stats().active }} actives</span>
+        </div>
+        <div class="tss-item tss-item--amber">
+          <span class="tss-dot"></span>
+          <span>{{ svc.stats().onMission }} en mission</span>
+        </div>
+        @if (svc.stats().maintenance > 0) {
+          <div class="tss-item tss-item--red">
+            <span class="tss-dot"></span>
+            <span>{{ svc.stats().maintenance }} maintenance</span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Bottom: new team -->
+    <div class="tls-bottom">
+      <a class="tls-new-btn"
+         routerLink="/teams/create"
+         [pTooltip]="collapsed() ? 'Nouvelle équipe' : ''"
+         tooltipPosition="right"
+         (click)="closeMobile()">
+        <mat-icon>add_circle</mat-icon>
+        @if (!collapsed()) { <span>Nouvelle équipe</span> }
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── CONTENT ────────────────────────────────────────── -->
+  <div class="tl-content">
+
+    <!-- Mobile top bar -->
+    @if (isMobile()) {
+      <div class="tl-mobile-bar">
+        <button (click)="toggleMobile()"><mat-icon>menu</mat-icon></button>
+        <span>Équipes</span>
+      </div>
+    }
+
+    <router-outlet />
+  </div>
+
+</div>

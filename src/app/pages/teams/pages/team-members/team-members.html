@@ -1,0 +1,497 @@
+<p-toast />
+
+<div class="tm-root">
+
+  <!-- ══════════════════════════ HEADER ══════════════════════════ -->
+  <header class="tm-header">
+    <div class="tmh-left">
+      <button class="tmh-back" (click)="router.navigate(['/teams/list'])" pTooltip="Retour aux équipes" tooltipPosition="right">
+        <mat-icon>arrow_back_ios_new</mat-icon>
+      </button>
+      @if (team()) {
+        <div class="tmh-avatar" [style.background]="team()!.color + '22'" [style.color]="team()!.color">
+          {{ team()!.name.charAt(0) }}
+        </div>
+        <div class="tmh-info">
+          <h1>{{ team()!.name }}</h1>
+          <div class="tmh-meta">
+            <span class="tmh-status-dot" [style.background]="teamStatusColor(team()!.status)"></span>
+            <span [style.color]="teamStatusColor(team()!.status)" style="font-weight:600">
+              {{ teamStatusLabel(team()!.status) }}
+            </span>
+            <span class="tmh-sep">·</span>
+            <span>{{ members().length }} membre{{ members().length !== 1 ? 's' : '' }}</span>
+            @if (stats().avgRate > 0) {
+              <span class="tmh-sep">·</span>
+              <span>Taux moyen&nbsp;<strong [style.color]="perfColor(stats().avgRate)">{{ stats().avgRate }}%</strong></span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+    <div class="tmh-right">
+      <button class="tm-add-btn" (click)="addOpen.set(true)">
+        <mat-icon>person_add</mat-icon>
+        <span class="btn-lbl">Ajouter un membre</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════ CONTROLS ════════════════════════ -->
+  <div class="tm-controls">
+    <!-- Search -->
+    <div class="tmc-search">
+      <mat-icon>search</mat-icon>
+      <input type="text" placeholder="Rechercher nom, téléphone…"
+             [value]="search()"
+             (input)="search.set($any($event.target).value)" />
+      @if (search()) {
+        <button class="tmc-clear" (click)="search.set('')"><mat-icon>close</mat-icon></button>
+      }
+    </div>
+
+    <!-- Role chips -->
+    <div class="tmc-chips">
+      <button class="ctrl-chip" [class.ctrl-chip--all]="!roleFilter()" (click)="roleFilter.set('')">
+        <mat-icon>group</mat-icon>Tous
+      </button>
+      @for (r of allRoles; track r.value) {
+        <button class="ctrl-chip"
+                [class.ctrl-chip--active]="roleFilter() === r.value"
+                [style.--cc]="r.color"
+                (click)="roleFilter.set(roleFilter() === r.value ? '' : r.value)">
+          <mat-icon>{{ r.icon }}</mat-icon>{{ r.label }}
+        </button>
+      }
+    </div>
+
+    <!-- Availability dots + active toggle -->
+    <div class="tmc-right">
+      <div class="avf-wrap">
+        @for (a of allAvails; track a.value) {
+          <button class="avf-btn"
+                  [class.avf-btn--on]="availFilter() === a.value"
+                  [style.--ac]="a.color"
+                  [pTooltip]="a.label" tooltipPosition="bottom"
+                  (click)="availFilter.set(availFilter() === a.value ? '' : a.value)">
+            <span class="avf-dot"></span>
+          </button>
+        }
+      </div>
+      <label class="active-toggle">
+        <input type="checkbox" [checked]="activeOnly()" (change)="activeOnly.set(!activeOnly())" />
+        <span class="at-track"><span class="at-thumb"></span></span>
+        <span class="at-lbl">Actifs</span>
+      </label>
+      @if (search() || roleFilter() || availFilter() || activeOnly()) {
+        <button class="tmc-reset" (click)="clearFilters()" pTooltip="Effacer filtres">
+          <mat-icon>filter_list_off</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ STATS STRIP ═════════════════════ -->
+  <div class="tm-stats">
+    <div class="tms-card">
+      <div class="tms-ico" style="color:#3b82f6;background:#3b82f612"><mat-icon>group</mat-icon></div>
+      <div>
+        <div class="tms-val">{{ stats().total }}</div>
+        <div class="tms-lbl">Total</div>
+      </div>
+    </div>
+    <div class="tms-card">
+      <div class="tms-ico" style="color:#16a34a;background:#16a34a12"><mat-icon>check_circle</mat-icon></div>
+      <div>
+        <div class="tms-val" style="color:#16a34a">{{ stats().disponible }}</div>
+        <div class="tms-lbl">Disponibles</div>
+      </div>
+      <div class="tms-bar" [style.width]="(stats().disponible / (stats().total || 1) * 100) + '%'" style="background:#16a34a"></div>
+    </div>
+    <div class="tms-card">
+      <div class="tms-ico" style="color:#f59e0b;background:#f59e0b12"><mat-icon>directions_run</mat-icon></div>
+      <div>
+        <div class="tms-val" style="color:#f59e0b">{{ stats().occupe }}</div>
+        <div class="tms-lbl">En mission</div>
+      </div>
+      <div class="tms-bar" [style.width]="(stats().occupe / (stats().total || 1) * 100) + '%'" style="background:#f59e0b"></div>
+    </div>
+    <div class="tms-card">
+      <div class="tms-ico" style="color:#ef4444;background:#ef444412"><mat-icon>person_off</mat-icon></div>
+      <div>
+        <div class="tms-val" style="color:#ef4444">{{ stats().absent }}</div>
+        <div class="tms-lbl">Absents</div>
+      </div>
+      <div class="tms-bar" [style.width]="(stats().absent / (stats().total || 1) * 100) + '%'" style="background:#ef4444"></div>
+    </div>
+    <div class="tms-card">
+      <div class="tms-ico" style="color:#8b5cf6;background:#8b5cf612"><mat-icon>insights</mat-icon></div>
+      <div>
+        <div class="tms-val" [style.color]="perfColor(stats().avgRate)">{{ stats().avgRate }}%</div>
+        <div class="tms-lbl">Moy. perf.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- drag hint -->
+  @if (canDragDrop() && members().length > 1) {
+    <div class="tm-drag-hint">
+      <mat-icon>drag_indicator</mat-icon>
+      Glisser-déposer pour réorganiser
+    </div>
+  }
+
+  <!-- ══════════════════════════ MEMBER LIST ═════════════════════ -->
+  <div class="tm-list"
+       cdkDropList
+       [cdkDropListData]="members()"
+       (cdkDropListDropped)="onDrop($event)">
+
+    @for (member of filteredMembers(); track member.id) {
+      <div class="mc"
+           cdkDrag
+           [cdkDragData]="member"
+           [cdkDragDisabled]="!canDragDrop()"
+           [class.mc--inactive]="!member.active">
+
+        <!-- role color stripe -->
+        <div class="mc-stripe" [style.background]="roleMeta(member.role).color"></div>
+
+        <!-- drag handle -->
+        <div class="mc-drag" cdkDragHandle [class.mc-drag--off]="!canDragDrop()"
+             pTooltip="Réorganiser" tooltipPosition="right">
+          <mat-icon>drag_indicator</mat-icon>
+        </div>
+
+        <!-- avatar -->
+        <div class="mc-avatar"
+             [style.background]="roleMeta(member.role).color + '1a'"
+             [style.color]="roleMeta(member.role).color">
+          {{ initials(member.name) }}
+          <span class="mc-avail-dot"
+                [style.background]="availColor(member.availability)"
+                [pTooltip]="availLabel(member.availability)"
+                tooltipPosition="top"></span>
+        </div>
+
+        <!-- main body -->
+        <div class="mc-body">
+          <div class="mc-head">
+            <span class="mc-name">{{ member.name }}</span>
+            @if (!member.active) {
+              <span class="mc-badge mc-badge--off">Inactif</span>
+            }
+
+            <!-- role badge + dropdown -->
+            <div class="mc-role-wrap" (click)="$event.stopPropagation()">
+              <button class="mc-role-btn"
+                      [style.background]="roleMeta(member.role).color + '15'"
+                      [style.color]="roleMeta(member.role).color"
+                      (click)="toggleRoleMenu(member.id, $event)">
+                <mat-icon>{{ roleMeta(member.role).icon }}</mat-icon>
+                {{ roleMeta(member.role).label }}
+                <mat-icon class="mc-caret">expand_more</mat-icon>
+              </button>
+              @if (roleMenuId() === member.id) {
+                <div class="mc-role-menu">
+                  @for (r of allRoles; track r.value) {
+                    <button class="mrm-item"
+                            [class.mrm-item--active]="member.role === r.value"
+                            (click)="setRole(member, r.value, $event)">
+                      <span class="mrm-ico" [style.color]="r.color"><mat-icon>{{ r.icon }}</mat-icon></span>
+                      <span>{{ r.label }}</span>
+                      @if (member.role === r.value) {
+                        <mat-icon class="mrm-check">check</mat-icon>
+                      }
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- details row -->
+          <div class="mc-details">
+            <span class="mc-det"><mat-icon>phone</mat-icon>{{ member.phone }}</span>
+            <span class="mc-det"><mat-icon>location_on</mat-icon>{{ memberZone(member) }}</span>
+            @if (memberVehicle(member)) {
+              <span class="mc-det mc-det--veh"><mat-icon>local_shipping</mat-icon>{{ memberVehicle(member) }}</span>
+            }
+            <span class="mc-det mc-det--muted"><mat-icon>calendar_today</mat-icon>{{ member.joinedAt }}</span>
+          </div>
+        </div>
+
+        <!-- availability quick-change -->
+        <div class="mc-avail">
+          <div class="mav-lbl">Disponibilité</div>
+          <div class="mav-btns">
+            @for (a of allAvails; track a.value) {
+              <button class="mav-btn"
+                      [class.mav-btn--on]="member.availability === a.value"
+                      [style.--ac]="a.color"
+                      [pTooltip]="a.label" tooltipPosition="top"
+                      (click)="setAvail(member, a.value)">
+                <mat-icon>{{ a.icon }}</mat-icon>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- performance ring -->
+        <div class="mc-perf">
+          <div class="perf-ring">
+            <svg viewBox="0 0 40 40">
+              <circle cx="20" cy="20" r="16" fill="none" stroke="#f1f5f9" stroke-width="4.5"/>
+              <circle cx="20" cy="20" r="16" fill="none"
+                      [attr.stroke]="perfColor(member.performance.successRate)"
+                      stroke-width="4.5" stroke-linecap="round"
+                      stroke-dasharray="100.53"
+                      [attr.stroke-dashoffset]="perfOffset(member.performance.successRate)"
+                      transform="rotate(-90 20 20)"/>
+            </svg>
+            <div class="perf-ring-text" [style.color]="perfColor(member.performance.successRate)">
+              {{ member.performance.successRate }}%
+            </div>
+          </div>
+          <div class="perf-meta">
+            <div class="pm-val">{{ member.performance.missionsCompleted }}</div>
+            <div class="pm-lbl">missions</div>
+            <div class="pm-hours">{{ member.performance.hoursWorked }}h</div>
+          </div>
+        </div>
+
+        <!-- actions -->
+        <div class="mc-actions">
+          <label class="mc-toggle" [pTooltip]="member.active ? 'Désactiver' : 'Activer'" tooltipPosition="top">
+            <input type="checkbox" [checked]="member.active" (change)="toggleActive(member)"/>
+            <span class="mct-track"><span class="mct-thumb"></span></span>
+          </label>
+          <button class="mca-btn" pTooltip="Affecter véhicule" tooltipPosition="top"
+                  (click)="vehicleTarget.set(member)">
+            <mat-icon>local_shipping</mat-icon>
+          </button>
+          <button class="mca-btn mca-btn--del" pTooltip="Retirer de l'équipe" tooltipPosition="top"
+                  (click)="deleteTarget.set(member)">
+            <mat-icon>person_remove</mat-icon>
+          </button>
+        </div>
+
+        <!-- CDK drag placeholder -->
+        <div *cdkDragPlaceholder class="mc-placeholder"></div>
+
+      </div><!-- /mc -->
+    }
+
+    <!-- empty state -->
+    @if (filteredMembers().length === 0) {
+      <div class="tm-empty">
+        <mat-icon>group_off</mat-icon>
+        <p>Aucun membre trouvé</p>
+        @if (search() || roleFilter() || availFilter() || activeOnly()) {
+          <button class="empty-btn" (click)="clearFilters()">
+            <mat-icon>filter_list_off</mat-icon>Effacer les filtres
+          </button>
+        } @else {
+          <button class="empty-btn empty-btn--primary" (click)="addOpen.set(true)">
+            <mat-icon>person_add</mat-icon>Ajouter le premier membre
+          </button>
+        }
+      </div>
+    }
+
+  </div><!-- /tm-list -->
+
+</div><!-- /tm-root -->
+
+<!-- ═══════════════════════ ADD MEMBER DRAWER ════════════════════ -->
+@if (addOpen()) {
+  <div class="drawer-overlay" (click)="addOpen.set(false)"></div>
+}
+<aside class="tm-drawer" [class.tm-drawer--open]="addOpen()">
+
+  <div class="tmd-head">
+    <div class="tmd-head-ico"><mat-icon>person_add</mat-icon></div>
+    <div>
+      <h2>Nouveau membre</h2>
+      <p>{{ team()?.name }}</p>
+    </div>
+    <button class="tmd-close" (click)="addOpen.set(false)"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <form [formGroup]="addForm" (ngSubmit)="submitAdd()" class="tmd-form">
+
+    <!-- Name -->
+    <div class="tmd-field">
+      <label>Nom complet <span class="req">*</span></label>
+      <div class="tmd-inp" [class.tmd-inp--err]="addForm.get('name')!.invalid && addForm.get('name')!.touched">
+        <mat-icon>person</mat-icon>
+        <input type="text" formControlName="name" placeholder="Prénom Nom"/>
+      </div>
+    </div>
+
+    <!-- Phone -->
+    <div class="tmd-field">
+      <label>Téléphone <span class="req">*</span></label>
+      <div class="tmd-inp" [class.tmd-inp--err]="addForm.get('phone')!.invalid && addForm.get('phone')!.touched">
+        <mat-icon>phone</mat-icon>
+        <input type="tel" formControlName="phone" placeholder="+226 70 00 00 00"/>
+      </div>
+    </div>
+
+    <!-- Role cards -->
+    <div class="tmd-field">
+      <label>Rôle <span class="req">*</span></label>
+      <div class="tmd-role-grid">
+        @for (r of allRoles; track r.value) {
+          <label class="tmd-role-card"
+                 [class.tmd-role-card--on]="addForm.get('role')!.value === r.value"
+                 [style.--rc]="r.color">
+            <input type="radio" formControlName="role" [value]="r.value" style="display:none"/>
+            <mat-icon>{{ r.icon }}</mat-icon>
+            <span>{{ r.label }}</span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <!-- Availability -->
+    <div class="tmd-field">
+      <label>Disponibilité initiale</label>
+      <div class="tmd-avail-row">
+        @for (a of allAvails; track a.value) {
+          <label class="tmd-avail-opt"
+                 [class.tmd-avail-opt--on]="addForm.get('availability')!.value === a.value"
+                 [style.--ac]="a.color">
+            <input type="radio" formControlName="availability" [value]="a.value" style="display:none"/>
+            <span class="tao-dot" [style.background]="a.color"></span>
+            {{ a.label }}
+          </label>
+        }
+      </div>
+    </div>
+
+    <!-- Zone -->
+    <div class="tmd-field">
+      <label>Zone affectée</label>
+      <div class="tmd-inp">
+        <mat-icon>location_on</mat-icon>
+        <select formControlName="zoneId">
+          <option value="">— Même zone que l'équipe —</option>
+          @for (z of svc.availableZones(); track z.id) {
+            <option [value]="z.id">{{ z.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Vehicle (chauffeur only) -->
+    @if (addForm.get('role')!.value === 'chauffeur') {
+      <div class="tmd-field">
+        <label>Véhicule affecté</label>
+        <div class="tmd-inp">
+          <mat-icon>local_shipping</mat-icon>
+          <select formControlName="vehicleId">
+            <option value="">— Aucun véhicule —</option>
+            @if (team()?.vehicle) {
+              <option [value]="team()!.vehicle!.id">{{ team()!.vehicle!.plate }} (véhicule équipe)</option>
+            }
+            @for (v of svc.availableVehicles(); track v.id) {
+              <option [value]="v.id">{{ v.plate }} – {{ v.model }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    }
+
+    <div class="tmd-footer">
+      <button type="button" class="tmd-btn tmd-btn--ghost" (click)="addOpen.set(false)">Annuler</button>
+      <button type="submit" class="tmd-btn tmd-btn--primary" [disabled]="addForm.invalid || saving()">
+        @if (saving()) {
+          <mat-icon class="spin">autorenew</mat-icon>Ajout…
+        } @else {
+          <mat-icon>person_add</mat-icon>Ajouter
+        }
+      </button>
+    </div>
+
+  </form>
+</aside>
+
+<!-- ══════════════════════ VEHICLE ASSIGN MODAL ════════════════════ -->
+@if (vehicleTarget()) {
+  <div class="vm-bg" (click)="vehicleTarget.set(null)"></div>
+  <div class="vm-modal">
+    <div class="vmm-head">
+      <div class="vmm-ico"><mat-icon>local_shipping</mat-icon></div>
+      <div>
+        <h3>Affecter un véhicule</h3>
+        <p>{{ vehicleTarget()!.name }}</p>
+      </div>
+      <button class="vmm-close" (click)="vehicleTarget.set(null)"><mat-icon>close</mat-icon></button>
+    </div>
+    <div class="vmm-list">
+      <!-- No vehicle -->
+      <button class="vmc"
+              [class.vmc--on]="!vehicleTarget()!.vehicleId"
+              (click)="assignVehicle('')">
+        <div class="vmc-ico vmc-ico--none"><mat-icon>block</mat-icon></div>
+        <div class="vmc-info">
+          <div class="vmc-plate">Aucun véhicule</div>
+          <div class="vmc-model">Désaffecter</div>
+        </div>
+        <mat-icon class="vmc-check">check_circle</mat-icon>
+      </button>
+
+      <!-- Team vehicle -->
+      @if (team()?.vehicle) {
+        <button class="vmc"
+                [class.vmc--on]="vehicleTarget()!.vehicleId === team()!.vehicle!.id"
+                (click)="assignVehicle(team()!.vehicle!.id)">
+          <div class="vmc-ico"><mat-icon>local_shipping</mat-icon></div>
+          <div class="vmc-info">
+            <div class="vmc-plate">{{ team()!.vehicle!.plate }}</div>
+            <div class="vmc-model">{{ team()!.vehicle!.model }} · {{ team()!.vehicle!.capacityTons }}T</div>
+            <div class="vmc-status" [style.color]="vhStatusColor(team()!.vehicle!.status)">
+              {{ vhStatusLabel(team()!.vehicle!.status) }} · véhicule équipe
+            </div>
+          </div>
+          <mat-icon class="vmc-check">check_circle</mat-icon>
+        </button>
+      }
+
+      <!-- Available vehicles -->
+      @for (v of svc.availableVehicles(); track v.id) {
+        <button class="vmc"
+                [class.vmc--on]="vehicleTarget()!.vehicleId === v.id"
+                (click)="assignVehicle(v.id)">
+          <div class="vmc-ico"><mat-icon>local_shipping</mat-icon></div>
+          <div class="vmc-info">
+            <div class="vmc-plate">{{ v.plate }}</div>
+            <div class="vmc-model">{{ v.model }} · {{ v.capacityTons }}T</div>
+            <div class="vmc-status" [style.color]="vhStatusColor(v.status)">{{ vhStatusLabel(v.status) }}</div>
+          </div>
+          <mat-icon class="vmc-check">check_circle</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+}
+
+<!-- ══════════════════════ DELETE CONFIRM ══════════════════════════ -->
+@if (deleteTarget()) {
+  <div class="del-bg" (click)="deleteTarget.set(null)"></div>
+  <div class="del-modal">
+    <div class="del-ico"><mat-icon>person_remove</mat-icon></div>
+    <h3>Retirer ce membre ?</h3>
+    <p>
+      <strong>{{ deleteTarget()!.name }}</strong> sera retiré de l'équipe
+      <strong>{{ team()?.name }}</strong>. Cette action est réversible.
+    </p>
+    <div class="del-btns">
+      <button class="del-btn del-btn--ghost" (click)="deleteTarget.set(null)">Annuler</button>
+      <button class="del-btn del-btn--danger" (click)="doDelete()">
+        <mat-icon>person_remove</mat-icon>Retirer
+      </button>
+    </div>
+  </div>
+}

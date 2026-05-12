@@ -1,0 +1,396 @@
+<p-toast />
+
+<div class="av-root">
+
+  <!-- ══════════════════════ HEADER – UBER FLEET DARK ══════════════ -->
+  <header class="av-header">
+    <div class="avh-left">
+      <button class="avh-back" (click)="router.navigate(['/teams/list'])">
+        <mat-icon>arrow_back_ios_new</mat-icon>
+      </button>
+      <div class="avh-brand">
+        <mat-icon>calendar_view_week</mat-icon>
+        <div>
+          <h1>Disponibilités équipes</h1>
+          <p>{{ currentTime() | date:'EEEE d MMMM yyyy':'':'fr-FR' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="avh-right">
+      <div class="avh-live">
+        <span class="avh-live-dot"></span>LIVE
+      </div>
+      <div class="avh-clock">{{ currentTime() | date:'HH:mm' }}</div>
+      <button class="avh-refresh" (click)="refresh()" [class.avh-refresh--spin]="refreshing()"
+              pTooltip="Actualiser" tooltipPosition="bottom">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════ KPI STRIP + TABS ══════════════════════ -->
+  <div class="av-strip">
+
+    <!-- KPI chips – clickable to filter -->
+    <div class="kpi-row">
+      @for (s of statusOpts; track s.val) {
+        <button class="kpi-chip"
+                [class.kpi-chip--active]="statusFilter() === s.val"
+                [style.--kc]="s.clr"
+                (click)="toggleStatus(s.val)">
+          <span class="kc-dot" [style.background]="s.clr"
+                [class.kc-dot--pulse]="s.val === 'active' && statusCounts().active > 0"></span>
+          <span class="kc-count">
+            {{ s.val === '' ? statusCounts().total
+             : s.val === 'active'      ? statusCounts().active
+             : s.val === 'on_mission'  ? statusCounts().on_mission
+             : s.val === 'maintenance' ? statusCounts().maintenance
+             :                          statusCounts().inactive }}
+          </span>
+          {{ s.lbl }}
+        </button>
+      }
+
+      <div class="kpi-sep"></div>
+
+      <div class="kpi-coverage">
+        <mat-icon>signal_cellular_alt</mat-icon>
+        Couverture&nbsp;<strong [style.color]="statusCounts().coverage >= 60 ? '#16a34a' : '#f59e0b'">
+          {{ statusCounts().coverage }}%
+        </strong>
+      </div>
+
+      <div class="kpi-coverage" style="color:#64748b">
+        <mat-icon>groups</mat-icon>
+        <strong>{{ filteredTeams().length }}</strong>/{{ statusCounts().total }} affichées
+      </div>
+    </div>
+
+    <!-- View tabs -->
+    <div class="av-tabs">
+      @for (v of views; track v.key) {
+        <button class="av-tab" [class.av-tab--on]="view() === v.key" (click)="setView(v.key)">
+          <mat-icon>{{ v.icon }}</mat-icon>
+          <span>{{ v.label }}</span>
+          @if (v.key === 'alertes' && conflictCounts().total > 0) {
+            <span class="av-tab-badge"
+                  [class.av-tab-badge--crit]="conflictCounts().critical > 0">
+              {{ conflictCounts().total }}
+            </span>
+          }
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ══════════════════════ FILTERS BAR ═══════════════════════════ -->
+  <div class="av-filters">
+    <div class="avf-search">
+      <mat-icon>search</mat-icon>
+      <input type="text" placeholder="Équipe, code…"
+             [value]="teamSearch()"
+             (input)="teamSearch.set($any($event.target).value)"/>
+      @if (teamSearch()) {
+        <button class="avf-clr" (click)="teamSearch.set('')"><mat-icon>close</mat-icon></button>
+      }
+    </div>
+
+    <div class="avf-field">
+      <mat-icon>today</mat-icon>
+      <input type="date" [value]="selectedDate()"
+             (change)="selectedDate.set($any($event.target).value)"/>
+    </div>
+
+    <div class="avf-field">
+      <mat-icon>location_city</mat-icon>
+      <select [ngModel]="zoneFilter()" (ngModelChange)="zoneFilter.set($event)">
+        <option value="">Toutes les villes</option>
+        @for (z of allZones(); track z) { <option [value]="z">{{ z }}</option> }
+      </select>
+    </div>
+
+    <div class="avf-field">
+      <mat-icon>local_shipping</mat-icon>
+      <select [ngModel]="vehicleFilter()" (ngModelChange)="vehicleFilter.set($event)">
+        <option value="all">Tous véhicules</option>
+        <option value="with">Avec véhicule</option>
+        <option value="without">Sans véhicule</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ CONTENT ═══════════════════════════════ -->
+  <div class="av-content">
+
+    <!-- ─────────────── TIMELINE ─────────────── -->
+    @if (view() === 'timeline') {
+      <div class="tl-wrap">
+
+        <!-- Hour ruler -->
+        <div class="tl-ruler">
+          <div class="tl-team-col"></div>
+          <div class="tl-track-wrap">
+            @for (h of tlHours; track h) {
+              <div class="tl-ruler-cell" [class.tl-ruler-cell--now]="isNowHour(h)">
+                {{ fmtH(h) }}
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Rows container (contains now-line + team rows) -->
+        <div class="tl-body">
+
+          <!-- "Now" red line overlay -->
+          @if (nowLeft() >= 0) {
+            <div class="tl-now-overlay">
+              <div class="tl-now-spacer"></div>
+              <div class="tl-now-area" [style]="'--np:' + nowLeft() + '%'">
+                <div class="tl-now-line">
+                  <div class="tl-now-dot"></div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Team rows -->
+          @for (line of timeline(); track line.team.id) {
+            <div class="tl-row">
+              <!-- Team label -->
+              <div class="tl-team-col">
+                <div class="tl-avatar"
+                     [style.background]="line.team.color + '22'"
+                     [style.color]="line.team.color">
+                  {{ teamInitials(line.team.name) }}
+                </div>
+                <div class="tl-team-info">
+                  <span class="tl-team-name">{{ line.team.name }}</span>
+                  <span class="tl-team-sub">
+                    <span class="tl-sub-dot" [style.background]="statusColor(line.team.status)"></span>
+                    {{ statusLabel(line.team.status) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Track -->
+              <div class="tl-track">
+                <!-- Grid lines -->
+                @for (h of tlHours; track h) {
+                  <div class="tl-grid-line" [class.tl-grid-line--now]="isNowHour(h)"></div>
+                }
+
+                <!-- Status blocks -->
+                @for (block of line.blocks; track block.startH) {
+                  <div class="tl-block"
+                       [style.left]="blockLeft(block) + '%'"
+                       [style.width]="blockWidth(block) + '%'"
+                       [style.background]="blockBg(block.status)"
+                       [style.border-left-color]="blockColor(block.status)"
+                       (mouseenter)="showTooltip(block, line.team, $event)"
+                       (mouseleave)="hideTooltip()">
+                    <span class="tl-block-txt" [style.color]="blockColor(block.status)">
+                      {{ block.label }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (timeline().length === 0) {
+            <div class="tl-empty">
+              <mat-icon>event_busy</mat-icon>
+              <p>Aucune équipe à afficher</p>
+            </div>
+          }
+        </div>
+
+        <!-- Legend -->
+        <div class="tl-legend">
+          @for (s of statusOpts.slice(1); track s.val) {
+            <div class="tl-leg-item">
+              <span class="tl-leg-dot" [style.background]="s.clr"></span>
+              {{ s.lbl }}
+            </div>
+          }
+          <div class="tl-leg-item tl-leg-item--now">
+            <span class="tl-leg-now-line"></span>
+            Heure actuelle
+          </div>
+        </div>
+
+      </div>
+    }
+
+    <!-- ─────────────── CALENDAR ─────────────── -->
+    @if (view() === 'calendar') {
+      <div class="cal-wrap">
+        <full-calendar [options]="calendarOpts()" />
+      </div>
+    }
+
+    <!-- ─────────────── HEATMAP ─────────────── -->
+    @if (view() === 'heatmap') {
+      <div class="heat-wrap">
+        <div class="heat-head">
+          <div class="heat-title-row">
+            <mat-icon>grid_on</mat-icon>
+            <h2>Charge de travail · semaine en cours</h2>
+          </div>
+          <div class="heat-scale">
+            <span>0%</span>
+            <div class="heat-scale-bar"></div>
+            <span>100%</span>
+          </div>
+        </div>
+
+        <div class="heat-grid">
+          <!-- Corner + day headers -->
+          <div class="heat-corner"></div>
+          @for (day of heatDays; track day) {
+            <div class="heat-day-hd">{{ day }}</div>
+          }
+
+          <!-- Hour rows -->
+          @for (row of heatGrid(); track $index) {
+            <div class="heat-hour-hd">{{ row[0].hour }}h</div>
+            @for (cell of row; track $index) {
+              <div class="heat-cell"
+                   [style.background]="heatColor(cell.load)"
+                   [style.color]="heatFg(cell.load)"
+                   [pTooltip]="heatTip(cell)"
+                   tooltipPosition="top">
+                @if (cell.load > 0) { <span>{{ cell.load }}%</span> }
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Stats summary -->
+        <div class="heat-stats">
+          <div class="hs-card">
+            <mat-icon style="color:#f59e0b">bolt</mat-icon>
+            <div>
+              <div class="hsc-val">{{ heatGrid()[1][0].load + heatGrid()[1][2].load }}%</div>
+              <div class="hsc-lbl">Pic lun-mer matin</div>
+            </div>
+          </div>
+          <div class="hs-card">
+            <mat-icon style="color:#3b82f6">weekend</mat-icon>
+            <div>
+              <div class="hsc-val">{{ heatGrid()[6][5].load }}%</div>
+              <div class="hsc-lbl">Charge week-end</div>
+            </div>
+          </div>
+          <div class="hs-card">
+            <mat-icon style="color:#16a34a">schedule</mat-icon>
+            <div>
+              <div class="hsc-val">08h–10h</div>
+              <div class="hsc-lbl">Créneau le plus chargé</div>
+            </div>
+          </div>
+          <div class="hs-card">
+            <mat-icon style="color:#8b5cf6">analytics</mat-icon>
+            <div>
+              <div class="hsc-val">{{ statusCounts().coverage }}%</div>
+              <div class="hsc-lbl">Couverture globale</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ─────────────── ALERTES ─────────────── -->
+    @if (view() === 'alertes') {
+      <div class="alerts-wrap">
+        <div class="alerts-head">
+          <div class="ah-left">
+            <mat-icon>warning_amber</mat-icon>
+            <h2>Alertes & conflits</h2>
+          </div>
+          <div class="ah-badges">
+            @if (conflictCounts().critical > 0) {
+              <span class="ah-badge ah-badge--crit">
+                <mat-icon>error</mat-icon>{{ conflictCounts().critical }} critique{{ conflictCounts().critical > 1 ? 's' : '' }}
+              </span>
+            }
+            @if (conflictCounts().warning > 0) {
+              <span class="ah-badge ah-badge--warn">
+                <mat-icon>warning</mat-icon>{{ conflictCounts().warning }} alerte{{ conflictCounts().warning > 1 ? 's' : '' }}
+              </span>
+            }
+            @if (conflictCounts().info > 0) {
+              <span class="ah-badge ah-badge--info">
+                <mat-icon>info</mat-icon>{{ conflictCounts().info }} info
+              </span>
+            }
+          </div>
+        </div>
+
+        @if (conflicts().length === 0) {
+          <div class="alerts-empty">
+            <mat-icon>check_circle</mat-icon>
+            <h3>Aucun conflit détecté</h3>
+            <p>Toutes les équipes sont correctement configurées</p>
+          </div>
+        } @else {
+          <div class="alerts-list">
+            @for (c of conflicts(); track c.id) {
+              <div class="alert-card" [class]="'alert-card--' + c.severity">
+                <!-- Severity icon -->
+                <div class="ac-sev-ico" [style.background]="sevColor(c.severity) + '18'" [style.color]="sevColor(c.severity)">
+                  <mat-icon>{{ sevIcon(c.severity) }}</mat-icon>
+                </div>
+
+                <!-- Body -->
+                <div class="ac-body">
+                  <div class="ac-toprow">
+                    <span class="ac-type-ico"><mat-icon>{{ conflictIcon(c.type) }}</mat-icon></span>
+                    <span class="ac-title">{{ c.title }}</span>
+                    <span class="ac-sev-badge"
+                          [style.background]="sevColor(c.severity) + '18'"
+                          [style.color]="sevColor(c.severity)">
+                      {{ sevLabel(c.severity) }}
+                    </span>
+                  </div>
+                  <p class="ac-desc">{{ c.desc }}</p>
+                  @if (c.teams.length > 0) {
+                    <div class="ac-teams">
+                      @for (t of c.teams; track t) {
+                        <span class="ac-team-tag">{{ t }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div class="ac-time">{{ c.time }}</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+  </div><!-- /av-content -->
+
+</div><!-- /av-root -->
+
+<!-- ══════════════════════ FLOATING TOOLTIP ══════════════════════ -->
+@if (tooltip()) {
+  <div class="av-tooltip"
+       [style.left]="tooltip()!.x + 14 + 'px'"
+       [style.top]="tooltip()!.y - 72 + 'px'">
+    <div class="avt-head">
+      <span class="avt-dot" [style.background]="blockColor(tooltip()!.block.status)"></span>
+      <strong>{{ tooltip()!.team.name }}</strong>
+    </div>
+    <div class="avt-label">{{ tooltip()!.block.label }}</div>
+    <div class="avt-time">
+      {{ fmtH(tooltip()!.block.startH) }} – {{ fmtH(tooltip()!.block.endH) }}
+    </div>
+    @if (tooltip()!.block.zone) {
+      <div class="avt-zone"><mat-icon>location_on</mat-icon>{{ tooltip()!.block.zone }}</div>
+    }
+  </div>
+}

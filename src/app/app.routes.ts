@@ -112,6 +112,15 @@ export const routes: Routes = [
       import('./pages/planning/planning.routes').then(m => m.PLANNING_ROUTES),
   },
 
+  // ================= MODULE ÉQUIPES =================
+
+  {
+    // canActivate: [adminOrManagerGuard],
+    path: 'teams',
+    loadChildren: () =>
+      import('./pages/teams/teams.routes').then(m => m.TEAMS_ROUTES),
+  },
+
   // ================= DASHBOARDS =================
 
   {

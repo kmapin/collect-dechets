@@ -1,0 +1,728 @@
+<p-toast />
+
+<div class="tc-page">
+
+  <!-- ══════════════════════════════════════════════════════════
+       PAGE HEADER
+       ══════════════════════════════════════════════════════════ -->
+  <div class="tc-page-header">
+    <div class="tph-left">
+      <button class="tph-back" type="button" (click)="cancel()" pTooltip="Retour à la liste" tooltipPosition="bottom">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="tph-title">
+        <span class="tph-breadcrumb" (click)="cancel()">Équipes</span>
+        <mat-icon class="tph-sep">chevron_right</mat-icon>
+        <h1>Nouvelle équipe</h1>
+      </div>
+    </div>
+    <div class="tph-right">
+      @if (autosaveStatus() !== 'idle') {
+        <div class="tph-autosave" [class.tph-autosave--saving]="autosaveStatus() === 'saving'">
+          @if (autosaveStatus() === 'saving') {
+            <mat-icon class="spin">sync</mat-icon><span>Sauvegarde…</span>
+          } @else {
+            <mat-icon>cloud_done</mat-icon><span>Brouillon sauvegardé</span>
+          }
+        </div>
+      }
+      @if (hasDraft()) {
+        <div class="tph-draft-banner">
+          <mat-icon>history</mat-icon>
+          <span>Brouillon disponible</span>
+          <button type="button" (click)="loadDraft()">Restaurer</button>
+          <button type="button" class="ghost" (click)="discardDraft()"><mat-icon>close</mat-icon></button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       STEPPER
+       ══════════════════════════════════════════════════════════ -->
+  <div class="tc-stepper">
+    @for (step of steps; track step.key) {
+      <button type="button" class="tcs-step"
+              [class.tcs-step--active]="currentStep() === step.key"
+              [class.tcs-step--done]="step.key < currentStep()"
+              (click)="goToStep(step.key)">
+        <div class="tcs-circle">
+          @if (step.key < currentStep() && isStepComplete(step.key)) {
+            <mat-icon>check</mat-icon>
+          } @else {
+            <span>{{ step.key + 1 }}</span>
+          }
+        </div>
+        <span class="tcs-label">{{ step.label }}</span>
+      </button>
+      @if (step.key < steps.length - 1) {
+        <div class="tcs-connector" [class.tcs-connector--done]="step.key < currentStep()"></div>
+      }
+    }
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       FORM
+       ══════════════════════════════════════════════════════════ -->
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+    <!-- ─────────────────────────────────────────────────────────
+         STEP 1 · INFOS DE BASE
+         ───────────────────────────────────────────────────────── -->
+    @if (currentStep() === 0) {
+      <div class="tc-panel step-enter">
+        <div class="tc-panel-header">
+          <div class="tc-panel-ico" style="background:#3b82f618;color:#3b82f6">
+            <mat-icon>info</mat-icon>
+          </div>
+          <div>
+            <h2>Informations de base</h2>
+            <p>Identifiez et configurez votre nouvelle équipe de collecte</p>
+          </div>
+        </div>
+
+        <div class="tc-two-cols">
+
+          <!-- ── Left: photo + color ── -->
+          <div class="tc-col-left">
+
+            <div class="tc-field-group">
+              <label class="tc-label">Photo de l'équipe</label>
+              <div class="tc-dropzone"
+                   [class.tc-dropzone--hover]="isDragOver()"
+                   [class.tc-dropzone--filled]="!!photoPreview()"
+                   (dragover)="onDragOver($event)"
+                   (dragleave)="onDragLeave()"
+                   (drop)="onDrop($event)">
+                @if (photoPreview()) {
+                  <img [src]="photoPreview()!" alt="Photo équipe" class="tc-dropzone__preview" />
+                  <div class="tc-dropzone__overlay">
+                    <button type="button" (click)="removePhoto()" pTooltip="Supprimer la photo">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                    <label for="photoInput2" pTooltip="Changer la photo" style="cursor:pointer">
+                      <mat-icon>edit</mat-icon>
+                    </label>
+                    <input id="photoInput2" type="file" accept="image/*" (change)="onPhotoInput($event)" hidden />
+                  </div>
+                } @else {
+                  <label class="tc-dropzone__inner" for="photoInput">
+                    <div class="tc-dropzone__icon"><mat-icon>add_photo_alternate</mat-icon></div>
+                    <span class="tc-dropzone__title">Glissez une photo ici</span>
+                    <small class="tc-dropzone__hint">ou cliquez pour parcourir · PNG, JPG max 5 Mo</small>
+                  </label>
+                  <input id="photoInput" type="file" accept="image/*" (change)="onPhotoInput($event)" hidden />
+                }
+              </div>
+            </div>
+
+            <div class="tc-field-group">
+              <label class="tc-label">Couleur de l'équipe</label>
+              <div class="tc-color-palette">
+                @for (c of teamColors; track c) {
+                  <button type="button" class="tc-swatch"
+                          [style.background]="c"
+                          [class.tc-swatch--active]="form.get('color')?.value === c"
+                          (click)="form.get('color')!.setValue(c)"
+                          [pTooltip]="c" tooltipPosition="top">
+                    @if (form.get('color')?.value === c) {
+                      <mat-icon>check</mat-icon>
+                    }
+                  </button>
+                }
+              </div>
+              <!-- Color preview -->
+              <div class="tc-color-preview" [style.background]="form.get('color')?.value + '18'" [style.border-color]="form.get('color')?.value + '44'">
+                <span [style.color]="form.get('color')?.value" style="font-weight:700">EQ</span>
+                <span [style.color]="form.get('color')?.value">Aperçu couleur de l'équipe</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Right: form fields ── -->
+          <div class="tc-col-right">
+
+            <div class="tc-row-2">
+              <!-- Nom -->
+              <div class="tc-field">
+                <label class="tc-label">Nom de l'équipe <span class="req">*</span></label>
+                <div class="tc-input-wrap" [class.error]="hasError('name')" [class.valid]="form.get('name')?.valid && form.get('name')?.touched">
+                  <mat-icon>groups</mat-icon>
+                  <input formControlName="name" type="text" placeholder="Ex : Équipe Alpha"
+                         (blur)="generateCode()" autocomplete="off" />
+                  @if (form.get('name')?.valid && form.get('name')?.touched) {
+                    <mat-icon class="input-ok">check_circle</mat-icon>
+                  }
+                </div>
+                @if (hasError('name')) {
+                  <span class="tc-err">
+                    @if (form.get('name')?.errors?.['required']) { Nom requis }
+                    @else if (form.get('name')?.errors?.['minlength']) { Minimum 3 caractères }
+                    @else if (form.get('name')?.errors?.['maxlength']) { Maximum 50 caractères }
+                  </span>
+                }
+              </div>
+
+              <!-- Code -->
+              <div class="tc-field">
+                <label class="tc-label">
+                  Code équipe <span class="req">*</span>
+                  <button type="button" class="tc-label-action" (click)="generateCode()" pTooltip="Générer depuis le nom" tooltipPosition="top">
+                    <mat-icon>auto_fix_high</mat-icon>Générer
+                  </button>
+                </label>
+                <div class="tc-input-wrap" [class.error]="hasError('code')" [class.valid]="form.get('code')?.valid && form.get('code')?.touched">
+                  <mat-icon>tag</mat-icon>
+                  <input formControlName="code" type="text" placeholder="Ex : EQ-001"
+                         style="font-family:monospace;text-transform:uppercase;letter-spacing:1px" />
+                </div>
+                @if (hasError('code')) {
+                  <span class="tc-err">Format attendu : 2-4 lettres + tiret + 2-4 chiffres (ex : EQ-001)</span>
+                }
+              </div>
+            </div>
+
+            <div class="tc-row-2">
+              <!-- Chef d'équipe -->
+              <div class="tc-field">
+                <label class="tc-label">Chef d'équipe <span class="req">*</span></label>
+                <div class="tc-input-wrap" [class.error]="hasError('supervisor')" [class.valid]="form.get('supervisor')?.valid && form.get('supervisor')?.touched">
+                  <mat-icon>person</mat-icon>
+                  <input formControlName="supervisor" type="text" placeholder="Nom du superviseur" />
+                </div>
+                @if (hasError('supervisor')) {
+                  <span class="tc-err">Chef d'équipe requis</span>
+                }
+              </div>
+
+              <!-- Téléphone -->
+              <div class="tc-field">
+                <label class="tc-label">Téléphone</label>
+                <div class="tc-input-wrap">
+                  <mat-icon>phone</mat-icon>
+                  <input formControlName="phone" type="tel" placeholder="+226 70 00 00 00" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Statut -->
+            <div class="tc-field">
+              <label class="tc-label">Statut initial</label>
+              <div class="tc-status-row">
+                @for (s of [
+                  { v: 'active',      l: 'Active',      c: '#16a34a', i: 'play_circle'  },
+                  { v: 'inactive',    l: 'Inactive',    c: '#94a3b8', i: 'pause_circle' },
+                  { v: 'maintenance', l: 'Maintenance', c: '#ef4444', i: 'build_circle' }
+                ]; track s.v) {
+                  <label class="tc-status-card" [class.tc-status-card--active]="form.get('status')?.value === s.v" [style.--sc]="s.c">
+                    <input type="radio" formControlName="status" [value]="s.v" hidden />
+                    <mat-icon [style.color]="s.c">{{ s.i }}</mat-icon>
+                    <span>{{ s.l }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="tc-field">
+              <label class="tc-label">
+                Description
+                <span class="tc-char-hint">{{ (form.get('description')?.value ?? '').length }}/200</span>
+              </label>
+              <div class="tc-textarea-wrap">
+                <textarea formControlName="description" rows="3" maxlength="200"
+                          placeholder="Décrivez la mission de cette équipe…"></textarea>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ─────────────────────────────────────────────────────────
+         STEP 2 · VÉHICULE & ZONES
+         ───────────────────────────────────────────────────────── -->
+    @if (currentStep() === 1) {
+      <div class="tc-panel step-enter">
+        <div class="tc-panel-header">
+          <div class="tc-panel-ico" style="background:#f59e0b18;color:#f59e0b">
+            <mat-icon>local_shipping</mat-icon>
+          </div>
+          <div>
+            <h2>Véhicule & Zones</h2>
+            <p>Affectez un véhicule et définissez les zones d'intervention</p>
+          </div>
+        </div>
+
+        <!-- Vehicle conflict alert -->
+        @if (vehicleConflict()) {
+          <div class="tc-alert tc-alert--warn">
+            <mat-icon>warning_amber</mat-icon>
+            <div>
+              <strong>Attention :</strong> {{ vehicleConflict() }}
+              <br><small>Vous pouvez quand même continuer, mais vérifiez la disponibilité.</small>
+            </div>
+          </div>
+        }
+
+        <!-- ── Véhicule ── -->
+        <section class="tc-section">
+          <h3 class="tc-section-title"><mat-icon>local_shipping</mat-icon>Véhicule affecté</h3>
+          <div class="tc-vehicle-grid">
+
+            <!-- Option: aucun véhicule -->
+            <label class="tc-vehicle-card" [class.tc-vehicle-card--selected]="!form.get('vehicleId')?.value">
+              <input type="radio" formControlName="vehicleId" value="" hidden />
+              <div class="tvc-top">
+                <div class="tvc-icon" style="background:#f1f5f9;color:#94a3b8">
+                  <mat-icon>remove_circle_outline</mat-icon>
+                </div>
+                <div class="tvc-title">
+                  <span class="tvc-plate">Aucun véhicule</span>
+                </div>
+                @if (!form.get('vehicleId')?.value) {
+                  <mat-icon class="tvc-check">check_circle</mat-icon>
+                }
+              </div>
+              <p class="tvc-model" style="color:#94a3b8;font-style:italic">Équipe sans véhicule assigné</p>
+            </label>
+
+            @for (v of svc.availableVehicles(); track v.id) {
+              <label class="tc-vehicle-card"
+                     [class.tc-vehicle-card--selected]="form.get('vehicleId')?.value === v.id"
+                     [class.tc-vehicle-card--warn]="vehicleConflict() !== null && form.get('vehicleId')?.value === v.id">
+                <input type="radio" formControlName="vehicleId" [value]="v.id" hidden />
+                <div class="tvc-top">
+                  <div class="tvc-icon" [style.background]="vehicleStatusColor(v.status) + '18'" [style.color]="vehicleStatusColor(v.status)">
+                    <mat-icon>{{ vehicleTypeIcon(v.type) }}</mat-icon>
+                  </div>
+                  <div class="tvc-title">
+                    <span class="tvc-plate">{{ v.plate }}</span>
+                    <span class="tvc-status-badge" [style.color]="vehicleStatusColor(v.status)">
+                      <span class="tvc-dot" [style.background]="vehicleStatusColor(v.status)"></span>
+                      {{ vehicleStatusLabel(v.status) }}
+                    </span>
+                  </div>
+                  @if (form.get('vehicleId')?.value === v.id) {
+                    <mat-icon class="tvc-check">check_circle</mat-icon>
+                  }
+                </div>
+                <p class="tvc-model">{{ v.model }}</p>
+                <div class="tvc-meta">
+                  <span><mat-icon>scale</mat-icon>{{ v.capacityTons }}T</span>
+                  <span><mat-icon>category</mat-icon>{{ v.type }}</span>
+                </div>
+              </label>
+            }
+          </div>
+        </section>
+
+        <!-- ── Zones ── -->
+        <section class="tc-section">
+          <h3 class="tc-section-title">
+            <mat-icon>place</mat-icon>Zones d'intervention
+            @if (selectedZones().length > 0) {
+              <span class="tc-badge">{{ selectedZones().length }} sélectionnée(s)</span>
+            }
+          </h3>
+
+          <div class="tc-zone-search">
+            <mat-icon>search</mat-icon>
+            <input type="text" placeholder="Rechercher une zone…"
+                   [value]="zoneSearch()"
+                   (input)="zoneSearch.set($any($event.target).value)" />
+          </div>
+
+          <div class="tc-zone-grid">
+            @for (z of filteredZones(); track z.id) {
+              <label class="tc-zone-card" [class.tc-zone-card--selected]="isZoneSelected(z.id)">
+                <input type="checkbox" [checked]="isZoneSelected(z.id)" (change)="toggleZone(z.id)" hidden />
+                <div class="tzc-top">
+                  <mat-icon>place</mat-icon>
+                  <div class="tzc-text">
+                    <span class="tzc-name">{{ z.name.split('–')[0].trim() }}</span>
+                    <span class="tzc-sub">{{ z.ville }}{{ z.arrondissement ? ' · ' + z.arrondissement : '' }}</span>
+                  </div>
+                  @if (isZoneSelected(z.id)) {
+                    <mat-icon class="tzc-check">check_circle</mat-icon>
+                  }
+                </div>
+                @if (z.householdsCount > 0) {
+                  <div class="tzc-count"><mat-icon>home</mat-icon>{{ z.householdsCount }} ménages</div>
+                }
+              </label>
+            }
+          </div>
+
+          @if (selectedZones().length > 0) {
+            <div class="tc-selected-tags">
+              <span class="tc-tags-label">Sélectionnées :</span>
+              @for (z of selectedZones(); track z.id) {
+                <span class="tc-tag">
+                  {{ z.name.split('–')[0].trim() }}
+                  <button type="button" (click)="toggleZone(z.id)"><mat-icon>close</mat-icon></button>
+                </span>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    }
+
+    <!-- ─────────────────────────────────────────────────────────
+         STEP 3 · MEMBRES & HORAIRES
+         ───────────────────────────────────────────────────────── -->
+    @if (currentStep() === 2) {
+      <div class="tc-panel step-enter">
+        <div class="tc-panel-header">
+          <div class="tc-panel-ico" style="background:#8b5cf618;color:#8b5cf6">
+            <mat-icon>group</mat-icon>
+          </div>
+          <div>
+            <h2>Membres & Horaires</h2>
+            <p>Composez votre équipe et définissez les plages de travail</p>
+          </div>
+        </div>
+
+        <div class="tc-members-layout">
+
+          <!-- ── Left: candidates ── -->
+          <div class="tc-candidates-panel">
+            <h3 class="tc-section-title"><mat-icon>person_search</mat-icon>Personnel disponible</h3>
+            <div class="tc-member-search">
+              <mat-icon>search</mat-icon>
+              <input type="text" placeholder="Rechercher un agent…"
+                     [value]="memberSearch()"
+                     (input)="memberSearch.set($any($event.target).value)" />
+            </div>
+            <div class="tc-candidate-list">
+              @for (c of filteredCandidates(); track c.id) {
+                <div class="tc-candidate" [class.tc-candidate--selected]="isCandidateSelected(c.id)"
+                     (click)="toggleCandidate(c)">
+                  <div class="tcc-avatar" [style.background]="isCandidateSelected(c.id) ? form.get('color')?.value + '20' : '#f1f5f9'"
+                       [style.color]="isCandidateSelected(c.id) ? form.get('color')?.value : '#64748b'">
+                    {{ c.name.charAt(0) }}
+                  </div>
+                  <div class="tcc-body">
+                    <span class="tcc-name">{{ c.name }}</span>
+                    <span class="tcc-role">{{ c.label }}</span>
+                  </div>
+                  <div class="tcc-action">
+                    @if (isCandidateSelected(c.id)) {
+                      <mat-icon class="tcc-icon--added">check_circle</mat-icon>
+                    } @else {
+                      <mat-icon class="tcc-icon--add">add_circle_outline</mat-icon>
+                    }
+                  </div>
+                </div>
+              }
+              @if (filteredCandidates().length === 0) {
+                <p class="tc-no-results">Aucun résultat pour « {{ memberSearch() }} »</p>
+              }
+            </div>
+            <button type="button" class="tc-manual-btn" (click)="addCustomMember()">
+              <mat-icon>person_add_alt_1</mat-icon>Ajouter manuellement
+            </button>
+          </div>
+
+          <!-- ── Right: selected + schedule ── -->
+          <div class="tc-team-panel">
+
+            <h3 class="tc-section-title">
+              <mat-icon>group</mat-icon>Équipe composée
+              @if (membersArray.length > 0) {
+                <span class="tc-badge">{{ membersArray.length }} membre(s)</span>
+              }
+            </h3>
+
+            @if (membersArray.length === 0) {
+              <div class="tc-empty-team">
+                <mat-icon>group_off</mat-icon>
+                <p>Aucun membre sélectionné</p>
+                <small>Cliquez sur un agent à gauche ou ajoutez manuellement</small>
+              </div>
+            }
+
+            <div class="tc-member-rows" formArrayName="members">
+              @for (ctrl of membersArray.controls; track ctrl; let i = $index) {
+                <div class="tc-member-row" [formGroupName]="i">
+                  <div class="tmr-avatar"
+                       [style.background]="form.get('color')?.value + '20'"
+                       [style.color]="form.get('color')?.value">
+                    {{ ctrl.get('name')?.value?.charAt(0) || '?' }}
+                  </div>
+                  <div class="tmr-fields">
+                    <input formControlName="name" type="text" class="tmr-input"
+                           [class.tmr-input--err]="memberHasError(i, 'name')"
+                           placeholder="Nom complet *" />
+                    <input formControlName="phone" type="tel" class="tmr-input tmr-input--sm"
+                           placeholder="Téléphone" />
+                    <select formControlName="role" class="tmr-select">
+                      @for (r of roles; track r.value) {
+                        <option [value]="r.value">{{ r.label }}</option>
+                      }
+                    </select>
+                  </div>
+                  <button type="button" class="tmr-del" (click)="removeMember(i)" pTooltip="Retirer">
+                    <mat-icon>remove_circle_outline</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Capacity -->
+            <div class="tc-capacity-row">
+              <label class="tc-label">Capacité maximale</label>
+              <div class="tc-capacity-ctrl">
+                <button type="button" class="tc-cap-btn" (click)="decCapacity()">
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <div class="tc-cap-display">
+                  <span class="tc-cap-num">{{ form.get('maxCapacity')?.value }}</span>
+                  <span class="tc-cap-unit">membres max</span>
+                </div>
+                <button type="button" class="tc-cap-btn" (click)="incCapacity()">
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+              @if (membersArray.length > 0) {
+                <div class="tc-cap-progress">
+                  <div class="tc-cap-bar">
+                    <div class="tc-cap-fill"
+                         [style.width]="((membersArray.length / (form.get('maxCapacity')?.value || 1)) * 100) + '%'"
+                         [style.background]="membersArray.length >= (form.get('maxCapacity')?.value ?? 1) ? '#ef4444' : form.get('color')?.value">
+                    </div>
+                  </div>
+                  <span>{{ membersArray.length }}/{{ form.get('maxCapacity')?.value }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Schedule -->
+            <div class="tc-schedule-block">
+              <h4 class="tc-section-title" style="margin-top:0"><mat-icon>schedule</mat-icon>Horaires de travail</h4>
+              <div class="tc-day-chips">
+                @for (d of workDayList; track d.key) {
+                  <button type="button" class="tc-day-chip"
+                          [class.tc-day-chip--on]="isDaySelected(d.key)"
+                          [style.--dc]="form.get('color')?.value"
+                          (click)="toggleWorkDay(d.key)">
+                    {{ d.label }}
+                  </button>
+                }
+              </div>
+              <div class="tc-time-row">
+                <div class="tc-field">
+                  <label class="tc-label">Début</label>
+                  <div class="tc-input-wrap">
+                    <mat-icon>schedule</mat-icon>
+                    <input formControlName="startTime" type="time" />
+                  </div>
+                </div>
+                <div class="tc-time-sep"><mat-icon>arrow_forward</mat-icon></div>
+                <div class="tc-field">
+                  <label class="tc-label">Fin</label>
+                  <div class="tc-input-wrap">
+                    <mat-icon>schedule</mat-icon>
+                    <input formControlName="endTime" type="time" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ─────────────────────────────────────────────────────────
+         STEP 4 · APERÇU & CONFIRMATION
+         ───────────────────────────────────────────────────────── -->
+    @if (currentStep() === 3) {
+      <div class="tc-panel step-enter">
+        <div class="tc-panel-header">
+          <div class="tc-panel-ico" style="background:#16a34a18;color:#16a34a">
+            <mat-icon>preview</mat-icon>
+          </div>
+          <div>
+            <h2>Aperçu & Confirmation</h2>
+            <p>Vérifiez les informations avant de créer l'équipe</p>
+          </div>
+        </div>
+
+        <div class="tc-preview-layout">
+
+          <!-- ── Preview card ── -->
+          <div class="tc-preview-card">
+            <!-- Hero banner -->
+            <div class="tpc-hero" [style.background]="'linear-gradient(135deg, ' + form.get('color')?.value + 'ee 0%, ' + form.get('color')?.value + '88 100%)'">
+              @if (photoPreview()) {
+                <img [src]="photoPreview()!" alt="" class="tpc-photo" />
+              } @else {
+                <div class="tpc-initials">{{ (form.get('name')?.value ?? 'N').charAt(0) }}</div>
+              }
+              <div class="tpc-hero-text">
+                <div class="tpc-name">{{ form.get('name')?.value || '(Sans nom)' }}</div>
+                <div class="tpc-code">{{ form.get('code')?.value || '—' }}</div>
+                <div class="tpc-status">{{ form.get('status')?.value }}</div>
+              </div>
+            </div>
+
+            <!-- Detail rows -->
+            <div class="tpc-rows">
+              <div class="tpc-row">
+                <mat-icon>person</mat-icon>
+                <div class="tpc-row-body">
+                  <span class="tpc-lbl">Chef d'équipe</span>
+                  <span class="tpc-val">{{ form.get('supervisor')?.value || '—' }}</span>
+                </div>
+              </div>
+              @if (form.get('phone')?.value) {
+                <div class="tpc-row">
+                  <mat-icon>phone</mat-icon>
+                  <div class="tpc-row-body">
+                    <span class="tpc-lbl">Téléphone</span>
+                    <span class="tpc-val">{{ form.get('phone')?.value }}</span>
+                  </div>
+                </div>
+              }
+              <div class="tpc-row">
+                <mat-icon>group</mat-icon>
+                <div class="tpc-row-body">
+                  <span class="tpc-lbl">Membres</span>
+                  <span class="tpc-val">{{ membersArray.length }} / {{ form.get('maxCapacity')?.value }} max</span>
+                </div>
+              </div>
+              @if (selectedVehicle()) {
+                <div class="tpc-row">
+                  <mat-icon>local_shipping</mat-icon>
+                  <div class="tpc-row-body">
+                    <span class="tpc-lbl">Véhicule</span>
+                    <span class="tpc-val">{{ selectedVehicle()!.plate }} – {{ selectedVehicle()!.model }}</span>
+                  </div>
+                </div>
+              }
+              @if (selectedZones().length > 0) {
+                <div class="tpc-row">
+                  <mat-icon>place</mat-icon>
+                  <div class="tpc-row-body">
+                    <span class="tpc-lbl">Zones ({{ selectedZones().length }})</span>
+                    <div class="tpc-zone-chips">
+                      @for (z of selectedZones(); track z.id) {
+                        <span class="tpc-zone-chip">{{ z.name.split('–')[0].trim() }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+              <div class="tpc-row">
+                <mat-icon>schedule</mat-icon>
+                <div class="tpc-row-body">
+                  <span class="tpc-lbl">Horaires</span>
+                  <span class="tpc-val">{{ form.get('startTime')?.value }} – {{ form.get('endTime')?.value }} · {{ selectedWorkDays }}</span>
+                </div>
+              </div>
+              @if (form.get('description')?.value) {
+                <div class="tpc-row">
+                  <mat-icon>notes</mat-icon>
+                  <div class="tpc-row-body">
+                    <span class="tpc-lbl">Description</span>
+                    <span class="tpc-val">{{ form.get('description')?.value }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- ── Right column ── -->
+          <div class="tc-right-col">
+
+            <!-- Members preview -->
+            @if (membersArray.length > 0) {
+              <div class="tc-members-recap">
+                <h4 class="tc-section-title"><mat-icon>badge</mat-icon>Membres de l'équipe</h4>
+                <div class="tmr-list">
+                  @for (ctrl of membersArray.controls; track ctrl; let i = $index) {
+                    <div class="tmr-item">
+                      <div class="tmr-av"
+                           [style.background]="form.get('color')?.value + '20'"
+                           [style.color]="form.get('color')?.value">
+                        {{ ctrl.get('name')?.value?.charAt(0) || '?' }}
+                      </div>
+                      <div class="tmr-detail">
+                        <span class="tmr-name">{{ ctrl.get('name')?.value || '(sans nom)' }}</span>
+                        <span class="tmr-role">{{ roleLabel(ctrl.get('role')?.value) }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Notes -->
+            <div class="tc-field">
+              <label class="tc-label">Notes internes <span class="tc-opt">(optionnel)</span></label>
+              <div class="tc-textarea-wrap">
+                <textarea formControlName="notes" rows="4"
+                          placeholder="Consignes particulières, informations opérationnelles…"></textarea>
+              </div>
+            </div>
+
+            <!-- Validation errors -->
+            @if (form.invalid && form.touched) {
+              <div class="tc-alert tc-alert--error">
+                <mat-icon>error_outline</mat-icon>
+                <span>Corrigez les erreurs dans les étapes précédentes avant de soumettre.</span>
+              </div>
+            }
+          </div>
+
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════
+         NAVIGATION FOOTER
+         ══════════════════════════════════════════════════════════ -->
+    <div class="tc-footer">
+      <button type="button" class="tc-btn tc-btn--ghost" (click)="cancel()">
+        <mat-icon>close</mat-icon>Annuler
+      </button>
+
+      <div class="tc-footer-nav">
+        <!-- Step dots -->
+        <div class="tc-dots">
+          @for (s of steps; track s.key) {
+            <div class="tc-dot"
+                 [class.tc-dot--active]="currentStep() === s.key"
+                 [class.tc-dot--done]="s.key < currentStep()">
+            </div>
+          }
+        </div>
+
+        <button type="button" class="tc-btn tc-btn--outline"
+                [disabled]="currentStep() === 0"
+                (click)="prevStep()">
+          <mat-icon>arrow_back</mat-icon>Précédent
+        </button>
+
+        @if (currentStep() < steps.length - 1) {
+          <button type="button" class="tc-btn tc-btn--primary"
+                  (click)="nextStep()">
+            Suivant<mat-icon>arrow_forward</mat-icon>
+          </button>
+        } @else {
+          <button type="submit" class="tc-btn tc-btn--success" [disabled]="saving()">
+            @if (saving()) {
+              <mat-icon class="spin">sync</mat-icon>Création en cours…
+            } @else {
+              <mat-icon>check_circle</mat-icon>Créer l'équipe
+            }
+          </button>
+        }
+      </div>
+    </div>
+
+  </form>
+</div>
