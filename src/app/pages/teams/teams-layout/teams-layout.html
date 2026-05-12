@@ -29,6 +29,16 @@
       @if (!collapsed()) { <div class="tls-nav-label">Navigation</div> }
 
       <a class="tls-nav-item"
+         routerLink="/teams/dashboard"
+         routerLinkActive="tls-nav-item--active"
+         [pTooltip]="collapsed() ? 'Supervision' : ''"
+         tooltipPosition="right"
+         (click)="closeMobile()">
+        <mat-icon>dashboard</mat-icon>
+        @if (!collapsed()) { <span>Supervision</span> }
+      </a>
+
+      <a class="tls-nav-item"
          routerLink="/teams/list"
          routerLinkActive="tls-nav-item--active"
          [routerLinkActiveOptions]="{ exact: false }"

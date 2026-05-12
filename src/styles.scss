@@ -6,6 +6,7 @@
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 @use "tailwindcss";
+@import 'leaflet/dist/leaflet.css';
 
 html {
   @include mat.theme((
@@ -714,7 +715,7 @@ body {
 .main-content {
   margin: 0;
   /* margin-left: 280px; */
-  // padding: 24px 0 0 0 ;
+  padding: 14px 0 0 0;
 }
 
 @media (max-width: 1024px) {

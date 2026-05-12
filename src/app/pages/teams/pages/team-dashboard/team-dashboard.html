@@ -1,0 +1,360 @@
+<p-toast />
+
+<div class="td-root" [class.td-dark]="darkMode()">
+
+  <!-- ══════════════════ HEADER ════════════════════════════ -->
+  <header class="td-header">
+    <div class="tdh-left">
+      <button class="tdh-back" (click)="router.navigate(['/teams/list'])"
+              pTooltip="Retour aux équipes" tooltipPosition="right">
+        <mat-icon>arrow_back_ios_new</mat-icon>
+      </button>
+      <div class="tdh-brand">
+        <div class="tdh-brand-ico"><mat-icon>dashboard</mat-icon></div>
+        <div>
+          <h1>Supervision des équipes</h1>
+          <p>{{ currentTime() | date:'EEEE d MMMM yyyy':'':'fr-FR' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tdh-right">
+      <!-- Live indicator -->
+      <div class="tdh-live">
+        <span class="tdh-live-dot"></span>LIVE
+      </div>
+
+      <!-- Clock -->
+      <div class="tdh-clock">{{ currentTime() | date:'HH:mm:ss' }}</div>
+
+      <!-- Coverage -->
+      <div class="tdh-kpi-pill"
+           [style.color]="coverage() >= 60 ? '#4ade80' : '#fbbf24'"
+           [style.border-color]="coverage() >= 60 ? '#4ade8044' : '#fbbf2444'">
+        <mat-icon>signal_cellular_alt</mat-icon>
+        Couverture&nbsp;<strong>{{ coverage() }}%</strong>
+      </div>
+
+      <!-- Dark mode toggle -->
+      <button class="tdh-btn" (click)="toggleDark()"
+              [pTooltip]="darkMode() ? 'Mode clair' : 'Mode sombre'"
+              tooltipPosition="bottom">
+        <mat-icon>{{ darkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
+      <!-- Refresh -->
+      <button class="tdh-btn" (click)="refresh()"
+              [class.tdh-btn--spin]="refreshing()"
+              pTooltip="Actualiser" tooltipPosition="bottom">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════ KPI STRIP ═════════════════════════ -->
+  <div class="td-kpi">
+
+    <div class="kpi-card kpi-card--green">
+      <div class="kc-icon"><mat-icon>groups</mat-icon></div>
+      <div class="kc-body">
+        <div class="kc-val">{{ kpis().active }}</div>
+        <div class="kc-lbl">Équipes actives</div>
+      </div>
+      <div class="kc-foot kc-foot--up">
+        <mat-icon>trending_up</mat-icon>
+        {{ kpis().active }}/{{ kpis().total }} équipes
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-card--sky">
+      <div class="kc-icon"><mat-icon>check_circle</mat-icon></div>
+      <div class="kc-body">
+        <div class="kc-val">{{ kpis().available }}</div>
+        <div class="kc-lbl">Disponibles</div>
+      </div>
+      <div class="kc-foot">
+        <mat-icon>person_check</mat-icon>Prêtes à déployer
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-card--amber">
+      <div class="kc-icon"><mat-icon>local_shipping</mat-icon></div>
+      <div class="kc-body">
+        <div class="kc-val">{{ kpis().onMission }}</div>
+        <div class="kc-lbl">Tournées en cours</div>
+      </div>
+      <div class="kc-foot kc-foot--up">
+        <mat-icon>route</mat-icon>En route
+      </div>
+    </div>
+
+    <div class="kpi-card" [class.kpi-card--red]="kpis().incidents > 0"
+                          [class.kpi-card--green]="kpis().incidents === 0">
+      <div class="kc-icon"><mat-icon>warning_amber</mat-icon></div>
+      <div class="kc-body">
+        <div class="kc-val">{{ kpis().incidents }}</div>
+        <div class="kc-lbl">Incidents actifs</div>
+      </div>
+      <div class="kc-foot" [class.kc-foot--down]="kpis().incidents > 2">
+        <mat-icon>{{ kpis().incidents === 0 ? 'verified' : 'priority_high' }}</mat-icon>
+        {{ kpis().incidents === 0 ? 'RAS' : 'À traiter' }}
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-card--purple">
+      <div class="kc-icon"><mat-icon>analytics</mat-icon></div>
+      <div class="kc-body">
+        <div class="kc-val">{{ kpis().avgPerf }}%</div>
+        <div class="kc-lbl">Perf. moyenne</div>
+      </div>
+      <div class="kc-foot kc-foot--up">
+        <mat-icon>trending_up</mat-icon>+3% sem.
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-card--teal">
+      <div class="kc-icon"><mat-icon>garage</mat-icon></div>
+      <div class="kc-body">
+        <div class="kc-val">{{ kpis().vehicles }}</div>
+        <div class="kc-lbl">Véhicules dispos</div>
+      </div>
+      <div class="kc-foot">
+        <mat-icon>directions_car</mat-icon>Parc {{ svc.availableVehicles().length }} au total
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════ MAIN BODY ═════════════════════════ -->
+  <div class="td-body">
+
+    <!-- ── LEFT COLUMN ─────────────────────────────────── -->
+    <div class="td-left">
+
+      <!-- MAP -->
+      <div class="td-panel">
+        <div class="tdp-head">
+          <div class="tdp-head-left">
+            <mat-icon>map</mat-icon>
+            <span>Carte GPS – Positions temps réel</span>
+          </div>
+          <div class="tdp-legend">
+            @for (s of ['active','on_mission','maintenance','inactive']; track s) {
+              <span class="tdp-leg-dot" [style.background]="statusColor(s)"></span>
+              <span class="tdp-leg-lbl">{{ statusLabel(s) }}</span>
+            }
+          </div>
+        </div>
+        <div id="td-map"></div>
+      </div>
+
+      <!-- CHARTS 2×2 -->
+      <div class="td-charts">
+
+        <div class="chart-card">
+          <div class="cc-head">
+            <mat-icon>bar_chart</mat-icon>
+            <span>Charge hebdomadaire</span>
+          </div>
+          <div class="cc-body">
+            <canvas #chartWeekly></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="cc-head">
+            <mat-icon>leaderboard</mat-icon>
+            <span>Performance équipes</span>
+          </div>
+          <div class="cc-body">
+            <canvas #chartPerf></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card chart-card--donut">
+          <div class="cc-head">
+            <mat-icon>donut_large</mat-icon>
+            <span>Taux d'exécution</span>
+            <span class="cc-badge"
+                  [style.background]="coverage() >= 60 ? '#16a34a22' : '#f59e0b22'"
+                  [style.color]="coverage() >= 60 ? '#4ade80' : '#fbbf24'">
+              {{ coverage() }}%
+            </span>
+          </div>
+          <div class="cc-body cc-body--center">
+            <div class="cc-donut-wrap">
+              <canvas #chartExec></canvas>
+              <div class="cc-donut-center">
+                <span class="cc-donut-val"
+                      [style.color]="coverage() >= 60 ? '#4ade80' : '#fbbf24'">
+                  {{ coverage() }}%
+                </span>
+                <span class="cc-donut-sub">Couverture</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="cc-head">
+            <mat-icon>location_on</mat-icon>
+            <span>Incidents par zone</span>
+          </div>
+          <div class="cc-body">
+            <canvas #chartZones></canvas>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── RIGHT COLUMN ────────────────────────────────── -->
+    <div class="td-right">
+
+      <!-- TABS -->
+      <div class="tdr-tabs">
+        <button class="tdr-tab" [class.tdr-tab--on]="activeTab() === 'activity'"
+                (click)="activeTab.set('activity')">
+          <mat-icon>timeline</mat-icon>
+          <span>Activité</span>
+        </button>
+        <button class="tdr-tab" [class.tdr-tab--on]="activeTab() === 'notifs'"
+                (click)="activeTab.set('notifs')">
+          <mat-icon>notifications_active</mat-icon>
+          <span>Alertes</span>
+          @if (unreadCount() > 0) {
+            <span class="tdr-badge">{{ unreadCount() }}</span>
+          }
+        </button>
+        <button class="tdr-tab" [class.tdr-tab--on]="activeTab() === 'alerts'"
+                (click)="activeTab.set('alerts')">
+          <mat-icon>build_circle</mat-icon>
+          <span>Maintenance</span>
+          @if (maintAlerts().length > 0) {
+            <span class="tdr-badge tdr-badge--warn">{{ maintAlerts().length }}</span>
+          }
+        </button>
+      </div>
+
+      <!-- ACTIVITY FEED -->
+      @if (activeTab() === 'activity') {
+        <div class="tdr-scroll">
+          @for (a of activities(); track a.id) {
+            <div class="feed-row">
+              <div class="fr-ico" [style.background]="a.color + '22'" [style.color]="a.color">
+                <mat-icon>{{ a.icon }}</mat-icon>
+              </div>
+              <div class="fr-body">
+                <div class="fr-title">{{ a.title }}</div>
+                <div class="fr-sub">{{ a.sub }}</div>
+              </div>
+              <div class="fr-time">{{ timeAgo(a.time) }}</div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- NOTIFICATIONS -->
+      @if (activeTab() === 'notifs') {
+        <div class="tdr-scroll">
+          @if (unreadCount() > 0) {
+            <button class="tdr-mark-btn" (click)="markAllRead()">
+              <mat-icon>done_all</mat-icon> Tout marquer lu ({{ unreadCount() }})
+            </button>
+          }
+          @for (n of notifs(); track n.id) {
+            <div class="notif-row" [class.notif-row--unread]="!n.read"
+                 [style.--nc]="sevColor(n.sev)">
+              <div class="nr-ico" [style.color]="sevColor(n.sev)">
+                <mat-icon>{{ sevIcon(n.sev) }}</mat-icon>
+              </div>
+              <div class="nr-body">
+                <div class="nr-head">
+                  <span class="nr-title">{{ n.title }}</span>
+                  <span class="nr-sev"
+                        [style.background]="sevColor(n.sev) + '22'"
+                        [style.color]="sevColor(n.sev)">
+                    {{ sevLabel(n.sev) }}
+                  </span>
+                </div>
+                <div class="nr-text">{{ n.body }}</div>
+                <div class="nr-time">{{ timeAgo(n.time) }}</div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- MAINTENANCE ALERTS -->
+      @if (activeTab() === 'alerts') {
+        <div class="tdr-scroll">
+          @for (a of maintAlerts(); track a.id) {
+            <div class="maint-row" [style.--mc]="sevColor(a.sev)">
+              <div class="mr-ico" [style.color]="sevColor(a.sev)">
+                <mat-icon>{{ a.kind === 'vehicle' ? 'local_shipping' : 'groups' }}</mat-icon>
+              </div>
+              <div class="mr-body">
+                <div class="mr-title">{{ a.title }}</div>
+                <div class="mr-detail">{{ a.detail }}</div>
+              </div>
+              <div class="mr-right">
+                <span class="mr-due" [style.color]="sevColor(a.sev)">{{ a.due }}</span>
+                <button class="mr-dismiss" (click)="dismissAlert(a.id)"
+                        pTooltip="Ignorer" tooltipPosition="left">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
+          }
+          @if (maintAlerts().length === 0) {
+            <div class="tdr-empty">
+              <mat-icon>verified</mat-icon>
+              <p>Aucune alerte de maintenance</p>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TEAM MINI-LIST -->
+      <div class="td-mini">
+        <div class="tdm-head">
+          <mat-icon>format_list_bulleted</mat-icon>
+          <span>État des équipes</span>
+          <button class="tdm-all" (click)="router.navigate(['/teams/list'])">
+            Tout voir <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+        <div class="tdm-list">
+          @for (t of svc.teams().slice(0, 9); track t.id) {
+            <div class="tdm-row" (click)="router.navigate(['/teams/detail', t.id])"
+                 [pTooltip]="t.name + ' · ' + statusLabel(t.status)" tooltipPosition="left">
+              <div class="tdm-status-bar" [style.background]="statusColor(t.status)"></div>
+              <div class="tdm-avatar"
+                   [style.background]="statusColor(t.status) + '22'"
+                   [style.color]="statusColor(t.status)">
+                {{ t.name.charAt(0) }}
+              </div>
+              <div class="tdm-info">
+                <div class="tdm-name">{{ t.name }}</div>
+                <div class="tdm-sub">{{ t.members.length }} mbr · {{ primaryZone(t) }}</div>
+              </div>
+              <div class="tdm-right">
+                <!-- workload bar -->
+                <div class="tdm-bar-wrap">
+                  <div class="tdm-bar" [style.width]="t.workload + '%'"
+                       [style.background]="workloadColor(t.workload)"></div>
+                </div>
+                <span class="tdm-perf" [style.color]="workloadColor(t.successRate)">
+                  {{ t.successRate }}%
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div><!-- /td-right -->
+
+  </div><!-- /td-body -->
+
+</div><!-- /td-root -->

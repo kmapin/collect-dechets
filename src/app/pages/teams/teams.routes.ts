@@ -37,6 +37,12 @@ export const TEAMS_ROUTES: Routes = [
           import('./pages/team-availability/team-availability').then(m => m.TeamAvailability),
         title: 'Équipes – Disponibilités',
       },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./pages/team-dashboard/team-dashboard').then(m => m.TeamDashboard),
+        title: 'Équipes – Supervision',
+      },
       { path: '**', redirectTo: 'list' },
     ],
   },
