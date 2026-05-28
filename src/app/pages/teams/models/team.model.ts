@@ -1,8 +1,56 @@
-export type TeamStatus      = 'active' | 'inactive' | 'on_mission' | 'maintenance';
-export type MemberRole      = 'chef' | 'chauffeur' | 'agent' | 'assistant';
-export type VehicleStatus   = 'disponible' | 'en_service' | 'maintenance' | 'hors_service';
-export type VehicleType     = 'camion' | 'pickup' | 'moto' | 'tricycle';
+// ── Local UI enums (2 extra statuses are UI-only, API only knows active/inactive) ──
+export type TeamStatus       = 'active' | 'inactive' | 'on_mission' | 'maintenance';
+export type MemberRole       = 'chef' | 'chauffeur' | 'agent' | 'assistant';
+export type VehicleStatus    = 'disponible' | 'en_service' | 'maintenance' | 'hors_service';
+export type VehicleType      = 'camion' | 'pickup' | 'moto' | 'tricycle';
 export type MemberAvailability = 'disponible' | 'occupe' | 'absent';
+
+// ── API V1 — Team response ──────────────────────────────────────
+export interface TeamApi {
+  _id: string;
+  name: string;
+  agencyId: string;
+  leaderId: string;
+  collectors: string[];
+  zones: string[];
+  maxClientsPerDay: number;
+  status: 'active' | 'inactive';
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── API — Team create/update body ──────────────────────────────
+export interface TeamCreateBody {
+  name: string;
+  agencyId: string;
+  leaderId?: string;
+  collectors: string[];
+  zones: string[];
+  maxClientsPerDay?: number;
+  description?: string;
+  status?: 'active' | 'inactive';
+}
+
+// ── API — Team stats (from /api/teams/{id}/stats) ─────────────
+export interface TeamApiStats {
+  activeClientGroups: number;
+  totalClients: number;
+  totalCollectors: number;
+  zonesCount: number;
+}
+
+// ── API — Collector user (from /api/agency_employees/{id}/collectors) ─
+export interface CollectorUser {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+}
+
+// ── Local UI models ────────────────────────────────────────────
 
 export interface MemberPerformance {
   missionsCompleted: number;
@@ -55,6 +103,7 @@ export interface Mission {
   duration?: string;
 }
 
+// ── UI Team (mapped from TeamApi + local enrichment) ───────────
 export interface Team {
   id: string;
   code: string;
@@ -62,6 +111,12 @@ export interface Team {
   status: TeamStatus;
   color: string;
   description?: string;
+  // API-sourced fields
+  agencyId?: string;
+  leaderId?: string;
+  collectorIds?: string[];    // raw IDs from API
+  maxClientsPerDay?: number;
+  // UI-only / locally enriched
   members: TeamMember[];
   vehicle?: Vehicle;
   zones: AssignedZone[];
@@ -77,6 +132,7 @@ export interface Team {
   updatedAt: string;
 }
 
+// ── UI stats (computed locally from teams signal) ──────────────
 export interface TeamStats {
   total: number;
   active: number;
@@ -86,6 +142,17 @@ export interface TeamStats {
   totalMembers: number;
   availableVehicles: number;
   avgWorkload: number;
+}
+
+// ── API stats (from /api/teams/{id}/stats) ─────────────────────
+export interface TeamStatsApi {
+  teamId?: string;
+  teamName?: string;
+  collectorsCount?: number;
+  clientGroups?: number;
+  totalClients?: number;
+  activePlannings?: number;
+  collectesThisMonth?: number;
 }
 
 export interface TeamFilter {
@@ -119,8 +186,11 @@ export interface TeamFormData {
   status: TeamStatus;
   description: string;
   supervisor: string;
+  leaderId?: string;
   phone: string;
   vehicleId: string;
   zoneIds: string[];
+  collectorIds?: string[];
+  maxClientsPerDay?: number;
   members: Array<{ name: string; phone: string; role: MemberRole }>;
 }

@@ -109,23 +109,10 @@ export class TeamMembers implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) { this.router.navigate(['/teams/list']); return; }
-
-    // Check cache first
-    const cached = this.svc.getById(id);
-    if (cached) {
-      this.team.set(cached);
-      this.members.set(cached.members.map(m => this._enrich(m)));
-      return;
-    }
-
-    // Fallback: fetch from API
-    this.svc.getTeam(id).subscribe({
-      next: team => {
-        this.team.set(team);
-        this.members.set(team.members.map(m => this._enrich(m)));
-      },
-      error: () => this.router.navigate(['/teams/list']),
-    });
+    const team = this.svc.getById(id);
+    if (!team) { this.router.navigate(['/teams/list']); return; }
+    this.team.set(team);
+    this.members.set(team.members.map(m => this._enrich(m)));
   }
 
   @HostListener('document:click')
@@ -180,37 +167,24 @@ export class TeamMembers implements OnInit {
   submitAdd(): void {
     if (this.addForm.invalid || this.saving()) return;
     this.saving.set(true);
-    const v   = this.addForm.getRawValue();
-    const teamId = this.team()!.id;
-
-    // If user entered a known collector ID, use addCollectors API
-    // Otherwise treat as local-only member
+    const v = this.addForm.getRawValue();
     const nm: TeamMember = {
-      id:           `LOCAL-${Date.now()}`,
-      name:         v.name!.trim(),
-      phone:        v.phone!.trim(),
-      role:         v.role as MemberRole,
+      id: `M-${Date.now()}`,
+      name: v.name!.trim(), phone: v.phone!.trim(),
+      role: v.role as MemberRole,
       availability: v.availability as MemberAvailability,
-      active:       true,
-      zoneId:       v.zoneId    || undefined,
-      vehicleId:    v.vehicleId || undefined,
-      joinedAt:     new Date().toISOString().split('T')[0],
-      performance:  { missionsCompleted: 0, successRate: 0, hoursWorked: 0 },
+      active: true,
+      zoneId:    v.zoneId    || undefined,
+      vehicleId: v.vehicleId || undefined,
+      joinedAt: new Date().toISOString().split('T')[0],
+      performance: { missionsCompleted: 0, successRate: 0, hoursWorked: 0 },
     };
-
-    this.svc.addMember(teamId, nm).subscribe({
-      next: added => {
-        this.members.update(list => [...list, this._enrich(added)]);
-        this.msg.add({ severity: 'success', summary: 'Membre ajouté', detail: added.name });
-        this.addOpen.set(false);
-        this.addForm.reset({ role: 'agent', availability: 'disponible' });
-        this.saving.set(false);
-      },
-      error: err => {
-        const detail = err?.error?.message ?? 'Impossible d\'ajouter le membre';
-        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
-        this.saving.set(false);
-      },
+    this.svc.addMember(this.team()!.id, nm).subscribe(added => {
+      this.members.update(list => [...list, this._enrich(added)]);
+      this.msg.add({ severity: 'success', summary: 'Membre ajouté', detail: added.name });
+      this.addOpen.set(false);
+      this.addForm.reset({ role: 'agent', availability: 'disponible' });
+      this.saving.set(false);
     });
   }
 
@@ -218,16 +192,10 @@ export class TeamMembers implements OnInit {
   doDelete(): void {
     const m = this.deleteTarget();
     if (!m) return;
-    this.svc.removeMember(this.team()!.id, m.id).subscribe({
-      next: () => {
-        this.members.update(list => list.filter(x => x.id !== m.id));
-        this.msg.add({ severity: 'warn', summary: 'Retiré', detail: `${m.name} retiré de l'équipe` });
-        this.deleteTarget.set(null);
-      },
-      error: err => {
-        const detail = err?.error?.message ?? 'Impossible de retirer le membre';
-        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
-      },
+    this.svc.removeMember(this.team()!.id, m.id).subscribe(() => {
+      this.members.update(list => list.filter(x => x.id !== m.id));
+      this.msg.add({ severity: 'warn', summary: 'Retiré', detail: `${m.name} retiré de l'équipe` });
+      this.deleteTarget.set(null);
     });
   }
 

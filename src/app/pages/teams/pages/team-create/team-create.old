@@ -13,7 +13,7 @@ import { MessageService } from 'primeng/api';
 import { debounceTime } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TeamService } from '../../services/team.service';
-import { MemberRole, TeamStatus, CollectorUser } from '../../models/team.model';
+import { MemberRole, TeamStatus } from '../../models/team.model';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 interface CandidateMember { id: string; name: string; phone: string; role: MemberRole; label: string; }
@@ -70,12 +70,8 @@ export class TeamCreate {
   // ── Constants exposed to template ────────────────────────────
   readonly steps       = STEPS;
   readonly teamColors  = TEAM_COLORS;
+  readonly candidates  = CANDIDATE_STAFF;
   readonly workDayList = WORK_DAYS;
-
-  // Candidates loaded from API (falls back to static list if empty)
-  apiCandidates = signal<CandidateMember[]>(CANDIDATE_STAFF);
-
-  get candidates() { return this.apiCandidates(); }
   readonly roles: { value: MemberRole; label: string; icon: string }[] = [
     { value: 'chef',      label: 'Chef d\'équipe', icon: 'star'           },
     { value: 'chauffeur', label: 'Chauffeur',       icon: 'drive_eta'      },
@@ -165,12 +161,6 @@ export class TeamCreate {
   ]);
 
   constructor() {
-    // Load real collectors from API for step 3 member selection
-    this.svc.loadCollectors();
-    // Watch for collectors from the service and map to CandidateMember
-    // We read the signal in an effect-like manner via the template's computed
-    this._syncCandidatesFromApi();
-
     // Autosave on form changes
     this.form.valueChanges.pipe(
       debounceTime(1500),
@@ -355,68 +345,29 @@ export class TeamCreate {
     const zones = (raw.zoneIds as string[])
       .map(id => this.svc.availableZones().find(z => z.id === id))
       .filter(Boolean) as any[];
-
-    // Extract real API collector IDs from selected candidates
-    const collectorIds: string[] = (raw.members as any[])
-      .map(m => m._id as string)
-      .filter(id => id && !id.startsWith('LOCAL-') && !id.startsWith('NEW-'));
-
     const members = (raw.members as any[]).map((m, i) => ({
-      id:           collectorIds[i] ?? `LOCAL-${Date.now()}-${i}`,
-      name:         m.name,
-      phone:        m.phone || '—',
-      role:         m.role,
-      availability: 'disponible' as const,
-      joinedAt:     new Date().toISOString().split('T')[0],
+      id: `NEW-${Date.now()}-${i}`, name: m.name, phone: m.phone || '—',
+      role: m.role, availability: 'disponible' as const,
+      joinedAt: new Date().toISOString().split('T')[0],
     }));
 
     this.svc.create({
-      name:         raw.name ?? '',
-      status:       (raw.status ?? 'active') as TeamStatus,
-      color:        raw.color ?? '#3b82f6',
-      description:  raw.description ?? '',
-      supervisor:   raw.supervisor ?? '',
-      phone:        raw.phone ?? '',
-      collectorIds,
-      members,
-      zones,
-      maxClientsPerDay: raw.maxCapacity as number ?? 50,
-      vehicle: vehicle
-        ? { ...vehicle, lastMaintenance: '—', fuelLevel: 80, mileage: 0 }
-        : undefined,
-    }).subscribe({
-      next: team => {
-        this.saving.set(false);
-        localStorage.removeItem(DRAFT_KEY);
-        this.msg.add({ severity: 'success', summary: 'Équipe créée !', detail: `${team.name} a été créée avec succès.` });
-        setTimeout(() => this.router.navigate(['/teams/detail', team.id]), 1400);
-      },
-      error: err => {
-        this.saving.set(false);
-        const detail = err?.error?.message ?? 'Impossible de créer l\'équipe';
-        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
-      },
+      name: raw.name ?? '',
+      code: raw.code ?? '',
+      status: (raw.status ?? 'active') as TeamStatus,
+      color: raw.color ?? '#3b82f6',
+      description: raw.description ?? '',
+      supervisor: raw.supervisor ?? '',
+      phone: raw.phone ?? '',
+      members, zones,
+      vehicle: vehicle ? { ...vehicle, lastMaintenance: '—', fuelLevel: 80, mileage: 0 } : undefined,
+    }).subscribe(team => {
+      this.saving.set(false);
+      localStorage.removeItem(DRAFT_KEY);
+      this.msg.add({ severity: 'success', summary: 'Équipe créée !', detail: `${team.name} a été créée avec succès.` });
+      setTimeout(() => this.router.navigate(['/teams/detail', team.id]), 1400);
     });
   }
 
   cancel(): void { this.router.navigate(['/teams/list']); }
-
-  // ── Private ─────────────────────────────────────────────────
-  private _syncCandidatesFromApi(): void {
-    // Poll once after a short delay to let the API response arrive
-    setTimeout(() => {
-      const apiCollectors = this.svc.collectors();
-      if (apiCollectors.length > 0) {
-        this.apiCandidates.set(
-          apiCollectors.map(c => ({
-            id:    c._id,
-            name:  `${c.firstName} ${c.lastName}`.trim(),
-            phone: c.phone ?? '',
-            role:  'agent' as MemberRole,
-            label: 'Collecteur',
-          }))
-        );
-      }
-    }, 1500);
-  }
 }

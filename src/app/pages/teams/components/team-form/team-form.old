@@ -67,24 +67,19 @@ export class TeamForm implements OnInit, OnChanges {
   private _fill(): void {
     if (!this.team) return;
     this.form.patchValue({
-      name:        this.team.name,
-      color:       this.team.color,
-      status:      this.team.status,
-      description: this.team.description ?? '',
-      supervisor:  this.team.supervisor ?? '',
-      phone:       this.team.phone ?? '',
-      vehicleId:   this.team.vehicle?.id ?? '',
-      zoneIds:     this.team.zones.map(z => z.id),
+      name: this.team.name, color: this.team.color, status: this.team.status,
+      description: this.team.description ?? '', supervisor: this.team.supervisor ?? '',
+      phone: this.team.phone ?? '', vehicleId: this.team.vehicle?.id ?? '',
+      zoneIds: this.team.zones.map(z => z.id),
     });
     this.membersArray.clear();
     this.team.members.forEach(m =>
-      this.membersArray.push(this._memberGroup(m.id, m.name, m.phone, m.role))
+      this.membersArray.push(this._memberGroup(m.name, m.phone, m.role))
     );
   }
 
-  private _memberGroup(id = '', name = '', phone = '', role: MemberRole = 'agent') {
+  private _memberGroup(name = '', phone = '', role: MemberRole = 'agent') {
     return this.fb.group({
-      _id:   [id],
       name:  [name,  Validators.required],
       phone: [phone, Validators.required],
       role:  [role,  Validators.required],
@@ -111,24 +106,7 @@ export class TeamForm implements OnInit, OnChanges {
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
-    const raw = this.form.getRawValue() as any;
-
-    // Build collectorIds from member _id fields (real API IDs)
-    const collectorIds: string[] = (raw.members ?? [])
-      .map((m: any) => m._id as string)
-      .filter((id: string) => !!id && !id.startsWith('LOCAL-'));
-
-    // Find leader: first member with role 'chef', else existing leaderId
-    const chefMember = (raw.members ?? []).find((m: any) => m.role === 'chef');
-    const leaderId   = chefMember?._id || this.team?.leaderId || undefined;
-
-    const data: TeamFormData = {
-      ...raw,
-      collectorIds,
-      leaderId,
-      maxClientsPerDay: this.team?.maxClientsPerDay,
-    };
-    this.save.emit(data);
+    this.save.emit(this.form.getRawValue() as unknown as TeamFormData);
   }
 
   hasError(ctrl: string): boolean {

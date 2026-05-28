@@ -89,13 +89,7 @@ export class TeamList implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.svc.loadTeams();
-    // Bind loading to service signal and fall back after timeout
-    const unsub = setInterval(() => {
-      if (!this.svc.loading()) { this.loading.set(false); clearInterval(unsub); }
-    }, 100);
-    setTimeout(() => { this.loading.set(false); clearInterval(unsub); }, 5000);
-
+    setTimeout(() => this.loading.set(false), 800);
     const qs = this.route.snapshot.queryParamMap;
     if (qs.get('create') === '1') {
       this.openCreate();
@@ -150,61 +144,26 @@ export class TeamList implements OnInit {
     const vehicle = data.vehicleId
       ? this.svc.availableVehicles().find(v => v.id === data.vehicleId)
       : undefined;
-    const zones = (data.zoneIds ?? [])
-      .map(id => this.svc.availableZones().find(z => z.id === id))
-      .filter(Boolean) as any[];
-
-    // Collect real user IDs for the API (collectorIds)
-    const collectorIds: string[] = data.collectorIds ?? [];
-
-    // Build local member objects for immediate UI display
+    const zones   = (data.zoneIds ?? []).map(id => this.svc.availableZones().find(z => z.id === id)).filter(Boolean) as any[];
     const members = (data.members ?? []).map((m, i) => ({
-      id:           collectorIds[i] ?? `LOCAL-${Date.now()}-${i}`,
-      name:         m.name,
-      phone:        m.phone,
-      role:         m.role,
-      availability: 'disponible' as const,
-      joinedAt:     new Date().toISOString().split('T')[0],
+      id: `NEW-${Date.now()}-${i}`, name: m.name, phone: m.phone,
+      role: m.role, availability: 'disponible' as const, joinedAt: new Date().toISOString().split('T')[0],
     }));
-
-    const payload: Partial<Team> & { name: string } = {
-      name:         data.name,
-      color:        data.color,
-      status:       data.status as TeamStatus,
-      description:  data.description,
-      supervisor:   data.supervisor,
-      leaderId:     data.leaderId,
-      phone:        data.phone,
-      collectorIds,
-      members,
-      zones,
-      maxClientsPerDay: data.maxClientsPerDay,
-      vehicle: vehicle
-        ? { ...vehicle, lastMaintenance: '—', fuelLevel: 80, mileage: 0 }
-        : undefined,
+    const payload: Partial<Team> = {
+      name: data.name, color: data.color, status: data.status as TeamStatus,
+      description: data.description, supervisor: data.supervisor, phone: data.phone,
+      members, zones,
+      vehicle: vehicle ? { ...vehicle, lastMaintenance: '—', fuelLevel: 80, mileage: 0 } : undefined,
     };
-
     if (editing) {
-      this.svc.update(editing.id, payload).subscribe({
-        next: () => {
-          this.msg.add({ severity: 'success', summary: 'Modifié', detail: `${data.name} mis à jour` });
-          this.formOpen.set(false);
-        },
-        error: err => {
-          const detail = err?.error?.error?.message ?? 'Impossible de mettre à jour';
-          this.msg.add({ severity: 'error', summary: 'Erreur', detail });
-        },
+      this.svc.update(editing.id, payload).subscribe(() => {
+        this.msg.add({ severity: 'success', summary: 'Modifié', detail: `${data.name} mis à jour` });
+        this.formOpen.set(false);
       });
     } else {
-      this.svc.create(payload).subscribe({
-        next: t => {
-          this.msg.add({ severity: 'success', summary: 'Créé !', detail: `Équipe ${t.name} créée` });
-          this.formOpen.set(false);
-        },
-        error: err => {
-          const detail = err?.error?.message ?? 'Impossible de créer l\'équipe';
-          this.msg.add({ severity: 'error', summary: 'Erreur', detail });
-        },
+      this.svc.create(payload).subscribe(t => {
+        this.msg.add({ severity: 'success', summary: 'Créé !', detail: `Équipe ${t.name} créée` });
+        this.formOpen.set(false);
       });
     }
   }

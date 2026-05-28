@@ -11,7 +11,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { BadgeModule } from 'primeng/badge';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { PlanningService } from '../services/planning.service';
-import { Planning, PlanningAlert } from '../models/planning.model';
+import { Planning, PlanningAlert, PlanningTeam } from '../models/planning.model';
 
 interface StatCard {
   label: string;
@@ -40,26 +40,14 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
   isLoading = signal(true);
 
-  // ── Data from service (signals) ────────────────────────────
-  stats   = this.svc.stats;
-  alerts  = this.svc.alerts;
-  zones   = this.svc.zones;
+  // ---- Data from service (signals) ----
+  stats       = this.svc.stats;
+  alerts      = this.svc.alerts;
+  teams       = this.svc.teams;
   recentPlannings = signal<Planning[]>([]);
+  zones = this.svc.zones;
 
-  // ── Teams mapped for display ─────────────────────────────────
-  teams = computed(() =>
-    this.svc.teams().map(t => ({
-      id:               t._id,
-      name:             t.name,
-      membersCount:     t.collectors?.length ?? 0,
-      status:           t.status === 'active' ? 'disponible' : 'indisponible',
-      currentZone:      t.zones?.[0] ?? '—',
-      collectionsToday: (t.collectors?.length ?? 0) * 2,
-      completionRate:   t.status === 'active' ? 75 : 0,
-    }))
-  );
-
-  // ── Stat cards ──────────────────────────────────────────────
+  // ---- Stat cards ----
   statCards = computed<StatCard[]>(() => {
     const s = this.stats();
     return [
@@ -102,7 +90,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     ];
   });
 
-  // ── Charts ──────────────────────────────────────────────────
+  // ---- Charts ----
   typeChartData: any;
   typeChartOptions: any;
   statusChartData: any;
@@ -112,30 +100,21 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   teamWorkloadData: any;
   teamWorkloadOptions: any;
 
-  // ── Notifications overlay ────────────────────────────────────
+  // ---- Notifications overlay ----
   notifOpen = signal(false);
-  toggleNotif(): void { this.notifOpen.update(v => !v); }
 
+  toggleNotif(): void { this.notifOpen.update(v => !v); }
   private refreshTimer: any;
 
   ngOnInit(): void {
-    // Load all data from real API
-    this.svc.loadStats();
-    this.svc.loadZones();
-    this.svc.loadTeams();
-    this.svc.loadPlannings();
-
-    // Wait for data then init charts
+    this.recentPlannings.set(this.svc.getRecentPlannings(6));
     setTimeout(() => {
-      this.recentPlannings.set(this.svc.getRecentPlannings(6));
       this.isLoading.set(false);
       this._initCharts();
-    }, 1200);
+    }, 600);
 
-    // Refresh recent plannings periodically
     this.refreshTimer = setInterval(() => {
       this.recentPlannings.set(this.svc.getRecentPlannings(6));
-      this._initCharts();
     }, 30_000);
   }
 
@@ -148,7 +127,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     const byStatus = this.svc.planningsByStatus();
     const workload = this.svc.teamWorkload();
 
-    // ── Donut – par type ──────────────────────────────────────
+    // ---- Donut – par type ----
     this.typeChartData = {
       labels: ['Client individuel', 'Groupe de clients', 'Par zone', 'Par secteur'],
       datasets: [{
@@ -159,22 +138,22 @@ export class PlanningDashboard implements OnInit, OnDestroy {
         borderColor: '#ffffff',
       }],
     };
-    this.typeChartOptions = this._donutOptions();
+    this.typeChartOptions = this._donutOptions('Répartition par type');
 
-    // ── Donut – par statut ────────────────────────────────────
+    // ---- Donut – par statut ----
     this.statusChartData = {
-      labels: ['Brouillon', 'Planifié', 'En cours', 'Terminé'],
+      labels: ['Brouillon', 'Publié', 'En cours', 'Terminé'],
       datasets: [{
-        data: [byStatus.brouillon, byStatus.planifie, byStatus.en_cours, byStatus.termine],
+        data: [byStatus.brouillon, byStatus.publie, byStatus.en_cours, byStatus.termine],
         backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#16a34a'],
         hoverBackgroundColor: ['#64748b', '#2563eb', '#d97706', '#15803d'],
         borderWidth: 2,
         borderColor: '#ffffff',
       }],
     };
-    this.statusChartOptions = this._donutOptions();
+    this.statusChartOptions = this._donutOptions('Répartition par statut');
 
-    // ── Line – évolution hebdomadaire ─────────────────────────
+    // ---- Line – évolution des collectes ----
     this.evolutionChartData = {
       labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
       datasets: [
@@ -213,13 +192,13 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       },
     };
 
-    // ── Bar – charge des équipes ──────────────────────────────
+    // ---- Bar – charge des équipes ----
     this.teamWorkloadData = {
       labels: workload.map(t => t.name),
       datasets: [{
-        label: 'Collecteurs',
+        label: 'Collectes du jour',
         data: workload.map(t => t.value),
-        backgroundColor: ['#3b82f6', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+        backgroundColor: ['#3b82f6', '#16a34a', '#f59e0b', '#ef4444'],
         borderRadius: 6,
         borderSkipped: false,
       }],
@@ -229,7 +208,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} collecteurs` } },
+        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} collectes` } },
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
@@ -238,7 +217,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
   }
 
-  private _donutOptions(): any {
+  private _donutOptions(title: string): any {
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -250,25 +229,25 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
   }
 
-  // ── UI helpers ──────────────────────────────────────────────
+  // ---- UI helpers ----
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
     const map: Record<string, any> = {
-      planifie: 'info',
+      publie: 'info',
       en_cours: 'warn',
-      termine:  'success',
-      brouillon:'secondary',
-      annule:   'danger',
+      termine: 'success',
+      brouillon: 'secondary',
+      annule: 'danger',
     };
     return map[status] ?? 'secondary';
   }
 
   getStatusLabel(status: string): string {
     const map: Record<string, string> = {
-      planifie: 'Planifié',
+      publie: 'Publié',
       en_cours: 'En cours',
-      termine:  'Terminé',
-      brouillon:'Brouillon',
-      annule:   'Annulé',
+      termine: 'Terminé',
+      brouillon: 'Brouillon',
+      annule: 'Annulé',
     };
     return map[status] ?? status;
   }
@@ -276,9 +255,9 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   getTypeLabel(type: string): string {
     const map: Record<string, string> = {
       individuel: 'Individuel',
-      groupe:     'Groupe',
-      zone:       'Par zone',
-      secteur:    'Par secteur',
+      groupe: 'Groupe',
+      zone: 'Par zone',
+      secteur: 'Par secteur',
     };
     return map[type] ?? type;
   }
@@ -286,9 +265,9 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   getTypeIcon(type: string): string {
     const map: Record<string, string> = {
       individuel: 'person',
-      groupe:     'groups',
-      zone:       'map',
-      secteur:    'grid_view',
+      groupe: 'groups',
+      zone: 'map',
+      secteur: 'grid_view',
     };
     return map[type] ?? 'list_alt';
   }
@@ -296,9 +275,9 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   getTypeColor(type: string): string {
     const map: Record<string, string> = {
       individuel: '#3b82f6',
-      groupe:     '#8b5cf6',
-      zone:       '#16a34a',
-      secteur:    '#f59e0b',
+      groupe: '#8b5cf6',
+      zone: '#16a34a',
+      secteur: '#f59e0b',
     };
     return map[type] ?? '#64748b';
   }
@@ -306,22 +285,34 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   getAlertIcon(type: string): string {
     const map: Record<string, string> = {
       warning: 'warning',
-      danger:  'error',
-      info:    'info',
+      danger: 'error',
+      info: 'info',
       success: 'check_circle',
     };
     return map[type] ?? 'notifications';
   }
 
   getTeamStatusColor(status: string): string {
-    return ({ disponible: '#16a34a', en_service: '#f59e0b', indisponible: '#ef4444' } as Record<string,string>)[status] ?? '#64748b';
+    const map: Record<string, string> = {
+      disponible: '#16a34a',
+      en_service: '#f59e0b',
+      indisponible: '#ef4444',
+    };
+    return map[status] ?? '#64748b';
   }
 
   getTeamStatusLabel(status: string): string {
-    return ({ disponible: 'Disponible', en_service: 'En service', indisponible: 'Indisponible' } as Record<string,string>)[status] ?? status;
+    const map: Record<string, string> = {
+      disponible: 'Disponible',
+      en_service: 'En service',
+      indisponible: 'Indisponible',
+    };
+    return map[status] ?? status;
   }
 
-  dismissAlert(id: string): void { this.svc.dismissAlert(id); }
+  dismissAlert(id: string): void {
+    this.svc.dismissAlert(id);
+  }
+
   trackByRef(_i: number, p: Planning): string { return p.id; }
-  trackByAlert(_i: number, a: PlanningAlert): string { return a.id; }
 }

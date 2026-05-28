@@ -322,17 +322,41 @@
             </div>
             <div>
               <h2>Affectation des équipes</h2>
-              <p>Détection automatique des conflits et suggestions d'optimisation</p>
+              <p>Sélectionnez une ou plusieurs équipes disponibles pour ce planning</p>
             </div>
+            @if (selectedTeams().length > 0) {
+              <div class="count-badge" style="--cb-c:#8b5cf6;--cb-bg:#f5f3ff">
+                <mat-icon>groups</mat-icon>
+                {{ selectedTeams().length }} équipe(s) sélectionnée(s)
+              </div>
+            }
           </div>
 
-          <app-team-conflict-detector
-            [selectedDate]="formValue()['date']"
-            [selectedTeamIds]="selectedTeams()"
-            [newStartTime]="formValue()['startTime'] ?? '08:00'"
-            [estimatedHouseholds]="estimatedHouseholds()"
-            (teamsChange)="onTeamsChange($event)"
-          ></app-team-conflict-detector>
+          <!-- Squelette chargement équipes -->
+          @if (isLoadingTeams()) {
+            <div class="teams-loading">
+              @for (i of [1,2,3,4]; track i) {
+                <div class="team-skeleton">
+                  <p-skeleton height="120px" borderRadius="12px" />
+                </div>
+              }
+            </div>
+          } @else if (apiTeams().length === 0) {
+            <div class="teams-empty">
+              <mat-icon>groups_off</mat-icon>
+              <p>Aucune équipe disponible pour votre agence.</p>
+              <small>Créez d'abord des équipes dans le module Équipes.</small>
+            </div>
+          } @else {
+            <app-team-conflict-detector
+              [selectedDate]="formValue()['date']"
+              [selectedTeamIds]="selectedTeams()"
+              [newStartTime]="formValue()['startTime'] ?? '08:00'"
+              [estimatedHouseholds]="estimatedHouseholds()"
+              [externalTeams]="apiTeams()"
+              (teamsChange)="onTeamsChange($event)"
+            ></app-team-conflict-detector>
+          }
         </div>
       }
 
@@ -429,7 +453,7 @@
                 @if (getTeamById(id); as team) {
                   <div class="sum-row" [class.conflict-row]="isTeamConflicting(id)">
                     <span class="sum-lbl">{{ team.name }}</span>
-                    <span class="sum-val">{{ team.membersCount }} membres · {{ team.vehicle }}</span>
+                    <span class="sum-val">{{ team.collectors.length }} membres</span>
                   </div>
                 }
               }

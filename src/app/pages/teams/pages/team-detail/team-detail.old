@@ -50,32 +50,13 @@ export class TeamDetail implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
-
-    // Check local cache first for instant display
-    const cached = this.svc.getById(id);
-    if (cached) {
-      this.team.set(cached);
-      setTimeout(() => {
-        this.isLoading.set(false);
-        if (this.mapElRef?.nativeElement) this._initMap();
-      }, 300);
-      return;
-    }
-
-    // Fallback: fetch from API
-    this.svc.getTeam(id).subscribe({
-      next: team => {
-        this.team.set(team);
-        setTimeout(() => {
-          this.isLoading.set(false);
-          if (this.mapElRef?.nativeElement) this._initMap();
-        }, 300);
-      },
-      error: () => {
-        this.notFound.set(true);
-        this.isLoading.set(false);
-      },
-    });
+    const found = this.svc.getById(id);
+    if (found) { this.team.set(found); }
+    else { this.notFound.set(true); }
+    setTimeout(() => {
+      this.isLoading.set(false);
+      if (!this.notFound() && this.mapElRef?.nativeElement) this._initMap();
+    }, 300);
   }
 
   ngOnDestroy(): void {
@@ -110,55 +91,30 @@ export class TeamDetail implements OnInit, OnDestroy {
     const zones = (data.zoneIds ?? [])
       .map(id => this.svc.availableZones().find(z => z.id === id))
       .filter(Boolean) as any[];
-    const collectorIds: string[] = data.collectorIds ?? t.collectorIds ?? [];
     const members = (data.members ?? []).map((m, i) => ({
-      id:           collectorIds[i] ?? t.members[i]?.id ?? `LOCAL-${Date.now()}-${i}`,
-      name:         m.name,
-      phone:        m.phone,
-      role:         m.role,
+      id: t.members[i]?.id ?? `NEW-${Date.now()}-${i}`,
+      name: m.name, phone: m.phone, role: m.role,
       availability: 'disponible' as const,
-      joinedAt:     t.members[i]?.joinedAt ?? new Date().toISOString().split('T')[0],
+      joinedAt: t.members[i]?.joinedAt ?? new Date().toISOString().split('T')[0],
     }));
     this.svc.update(t.id, {
-      name:         data.name,
-      color:        data.color,
-      status:       data.status as TeamStatus,
-      description:  data.description,
-      supervisor:   data.supervisor,
-      leaderId:     data.leaderId,
-      phone:        data.phone,
-      collectorIds,
-      members,
-      zones,
-      maxClientsPerDay: data.maxClientsPerDay,
-      vehicle: vehicle
-        ? { ...vehicle, lastMaintenance: t.vehicle?.lastMaintenance ?? '—', fuelLevel: t.vehicle?.fuelLevel ?? 80, mileage: t.vehicle?.mileage ?? 0 }
-        : undefined,
-    }).subscribe({
-      next: updated => {
-        this.team.set(updated);
-        this.msg.add({ severity: 'success', summary: 'Sauvegardé', detail: `${updated.name} mis à jour` });
-        this.formOpen.set(false);
-      },
-      error: err => {
-        const detail = err?.error?.error?.message ?? 'Impossible de mettre à jour';
-        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
-      },
+      name: data.name, color: data.color, status: data.status as TeamStatus,
+      description: data.description, supervisor: data.supervisor, phone: data.phone,
+      members, zones,
+      vehicle: vehicle ? { ...vehicle, lastMaintenance: t.vehicle?.lastMaintenance ?? '—', fuelLevel: t.vehicle?.fuelLevel ?? 80, mileage: t.vehicle?.mileage ?? 0 } : undefined,
+    }).subscribe(updated => {
+      this.team.set(updated);
+      this.msg.add({ severity: 'success', summary: 'Sauvegardé', detail: `${updated.name} mis à jour` });
+      this.formOpen.set(false);
     });
   }
 
   doDelete(): void {
     const t = this.team();
     if (!t) return;
-    this.svc.delete(t.id).subscribe({
-      next: () => {
-        this.showDelDlg.set(false);
-        this.router.navigate(['/teams/list']);
-      },
-      error: err => {
-        const detail = err?.error?.error?.message ?? 'Impossible de supprimer';
-        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
-      },
+    this.svc.delete(t.id).subscribe(() => {
+      this.showDelDlg.set(false);
+      this.router.navigate(['/teams/list']);
     });
   }
 
