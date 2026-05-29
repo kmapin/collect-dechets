@@ -289,12 +289,17 @@ export class TeamService {
     colorIndex = 0,
     localOverrides: Partial<Team> = {}
   ): Team {
-    // Build member objects from collector IDs
-    const members: TeamMember[] = (api.collectors ?? []).map(colId => {
-      const user = allCollectors.find(c => c._id === colId);
+    // Build member objects from collector IDs (API may return strings or populated objects)
+    const members: TeamMember[] = (api.collectors ?? []).map((col: any) => {
+      const isObj = col !== null && typeof col === 'object';
+      const colId: string = isObj ? col._id : col;
+      // Try the preloaded collectors list first, fall back to inline data if populated
+      const user: CollectorUser | undefined =
+        allCollectors.find(c => c._id === colId) ??
+        (isObj ? col as CollectorUser : undefined);
       return {
         id:           colId,
-        name:         user ? `${user.firstName} ${user.lastName}`.trim() : colId,
+        name:         user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || colId : colId,
         phone:        user?.phone ?? '',
         email:        user?.email,
         role:         'agent' as const,
