@@ -336,6 +336,7 @@
     [team]="team()"
     [availableVehicles]="svc.availableVehicles()"
     [availableZones]="svc.availableZones()"
+    [availableCollectors]="svc.collectors()"
     (save)="onFormSave($event)"
     (cancel)="formOpen.set(false)">
   </app-team-form>

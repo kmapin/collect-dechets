@@ -1,11 +1,11 @@
 import {
-  Component, Input, Output, EventEmitter, OnInit, OnChanges, inject,
+  Component, Input, Output, EventEmitter, OnInit, OnChanges, inject, HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { TooltipModule } from 'primeng/tooltip';
-import { Team, TeamFormData, AvailableVehicle, AvailableZone, MemberRole } from '../../models/team.model';
+import { Team, TeamFormData, AvailableVehicle, AvailableZone, MemberRole, CollectorUser } from '../../models/team.model';
 
 const TEAM_COLORS = [
   '#3b82f6','#16a34a','#f59e0b','#ef4444',
@@ -24,6 +24,7 @@ export class TeamForm implements OnInit, OnChanges {
   @Input() team: Team | null = null;
   @Input({ required: true }) availableVehicles!: AvailableVehicle[];
   @Input({ required: true }) availableZones!: AvailableZone[];
+  @Input() availableCollectors: CollectorUser[] = [];
   @Output() save   = new EventEmitter<TeamFormData>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -44,6 +45,35 @@ export class TeamForm implements OnInit, OnChanges {
 
   saving = false;
   activeTab = 0;
+  memberSearches: string[] = [];
+  openDropdownIdx: number | null = null;
+
+  @HostListener('document:click')
+  closeDropdown(): void { this.openDropdownIdx = null; }
+
+  toggleDropdown(idx: number, event: Event): void {
+    event.stopPropagation();
+    this.openDropdownIdx = this.openDropdownIdx === idx ? null : idx;
+  }
+
+  filteredCollectors(idx: number): CollectorUser[] {
+    const q = (this.memberSearches[idx] ?? '').toLowerCase().trim();
+    if (!q) return this.availableCollectors;
+    return this.availableCollectors.filter(c =>
+      `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
+      (c.phone ?? '').toLowerCase().includes(q)
+    );
+  }
+
+  selectCollector(idx: number, c: CollectorUser): void {
+    this.membersArray.at(idx).patchValue({
+      _id:   c._id,
+      name:  `${c.firstName} ${c.lastName}`.trim(),
+      phone: c.phone ?? '',
+    });
+    this.memberSearches[idx] = '';
+    this.openDropdownIdx = null;
+  }
 
   form = this.fb.group({
     name:        ['', [Validators.required, Validators.minLength(3)]],
@@ -77,25 +107,31 @@ export class TeamForm implements OnInit, OnChanges {
       zoneIds:     this.team.zones.map(z => z.id),
     });
     this.membersArray.clear();
-    this.team.members.forEach(m =>
-      this.membersArray.push(this._memberGroup(m.id, m.name, m.phone, m.role))
-    );
+    this.memberSearches = [];
+    this.team.members.forEach(m => {
+      this.membersArray.push(this._memberGroup(m.id, m.name, m.phone, m.role));
+      this.memberSearches.push('');
+    });
   }
 
   private _memberGroup(id = '', name = '', phone = '', role: MemberRole = 'agent') {
     return this.fb.group({
       _id:   [id],
       name:  [name,  Validators.required],
-      phone: [phone, Validators.required],
+      phone: [phone],
       role:  [role,  Validators.required],
     });
   }
 
   addMember(): void {
     this.membersArray.push(this._memberGroup());
+    this.memberSearches.push('');
   }
   removeMember(i: number): void {
     this.membersArray.removeAt(i);
+    this.memberSearches.splice(i, 1);
+    if (this.openDropdownIdx === i) this.openDropdownIdx = null;
+    else if (this.openDropdownIdx !== null && this.openDropdownIdx > i) this.openDropdownIdx--;
   }
 
   toggleZone(id: string): void {
