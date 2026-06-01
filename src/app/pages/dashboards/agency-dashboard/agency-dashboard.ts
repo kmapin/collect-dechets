@@ -205,7 +205,22 @@ type TabId =
   | "schedules"
   | "clients"
   | "reports"
-  | "messages";
+  | "messages"
+  | "vehicles";
+
+interface Vehicle {
+  _id?: string;
+  immatriculation: string;
+  marque: string;
+  modele?: string;
+  type: 'tricycle' | 'camion' | 'moto' | 'charrette' | 'benne' | 'fourgonnette';
+  capacite: number;
+  statut: 'disponible' | 'en_service' | 'en_maintenance' | 'hors_service';
+  annee?: number;
+  derniereRevision?: string;
+  prochainRevision?: string;
+  notes?: string;
+}
 export enum CollectionStatus1 {
   SCHEDULED = 'Scheduled',
   IN_PROGRESS = 'In_progress',
@@ -545,6 +560,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     { id: "schedules", label: "Plannings", icon: "schedule", badge: null },
     { id: "clients", label: "Clients", icon: "person", badge: null },
     { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
+    { id: "vehicles", label: "Mobilité", icon: "directions_car", badge: null },
     { id: "messages", label: "Messages", icon: "message", badge: 0 },
     // { id: "analytics", label: "Rapports", icon: "analytics", badge: null },
   ];
@@ -573,6 +589,145 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   receivedId: string = "";
   client: any;
   displayAgencyName: string = "";
+
+  // ─── Mobilité / Véhicules ────────────────────────────────────
+  vehicles: Vehicle[] = [
+    { _id: 'v1', immatriculation: 'BF-2341-A', marque: 'Jinpeng', modele: 'JP-C150', type: 'tricycle', capacite: 300, statut: 'disponible', annee: 2022 },
+    { _id: 'v2', immatriculation: 'BF-5870-B', marque: 'Dong Feng', modele: 'DF-500', type: 'camion', capacite: 5000, statut: 'en_service', annee: 2020 },
+    { _id: 'v3', immatriculation: 'BF-1102-C', marque: 'Honda', modele: 'CB150', type: 'moto', capacite: 0, statut: 'en_maintenance', annee: 2021 },
+  ];
+  filteredVehicles: Vehicle[] = [...this.vehicles];
+  vehicleViewMode: 'card' | 'table' = 'table';
+  showVehicleModal = false;
+  isEditingVehicle = false;
+  selectedVehicle: Vehicle | null = null;
+  vehiclesSearch = '';
+  vehiclesTypeFilter = 'all';
+  vehiclesStatusFilter = 'all';
+  vehicleForm: { immatriculation: string; marque: string; modele: string; type: string; capacite: number; statut: string; annee: number; derniereRevision: string; prochainRevision: string; notes: string } = this.emptyVehicleForm();
+
+  private emptyVehicleForm() {
+    return { immatriculation: '', marque: '', modele: '', type: '', capacite: 0, statut: 'disponible', annee: new Date().getFullYear(), derniereRevision: '', prochainRevision: '', notes: '' };
+  }
+
+  openAddVehicleModal(): void {
+    this.isEditingVehicle = false;
+    this.selectedVehicle = null;
+    this.vehicleForm = this.emptyVehicleForm();
+    this.showVehicleModal = true;
+  }
+
+  openEditVehicleModal(vehicle: Vehicle): void {
+    this.isEditingVehicle = true;
+    this.selectedVehicle = vehicle;
+    this.vehicleForm = {
+      immatriculation: vehicle.immatriculation,
+      marque: vehicle.marque,
+      modele: vehicle.modele || '',
+      type: vehicle.type,
+      capacite: vehicle.capacite,
+      statut: vehicle.statut,
+      annee: vehicle.annee || new Date().getFullYear(),
+      derniereRevision: vehicle.derniereRevision || '',
+      prochainRevision: vehicle.prochainRevision || '',
+      notes: vehicle.notes || '',
+    };
+    this.showVehicleModal = true;
+  }
+
+  closeVehicleModal(): void {
+    this.showVehicleModal = false;
+    this.selectedVehicle = null;
+  }
+
+  saveVehicle(): void {
+    if (!this.vehicleForm.immatriculation || !this.vehicleForm.marque || !this.vehicleForm.type) {
+      this.notificationService.showError('Erreur', 'Veuillez remplir les champs obligatoires.');
+      return;
+    }
+    if (this.isEditingVehicle && this.selectedVehicle) {
+      const idx = this.vehicles.findIndex(v => v._id === this.selectedVehicle!._id);
+      if (idx !== -1) {
+        this.vehicles[idx] = { ...this.selectedVehicle, ...this.vehicleForm, type: this.vehicleForm.type as Vehicle['type'], statut: this.vehicleForm.statut as Vehicle['statut'] };
+      }
+      this.notificationService.showSuccess('Succès', 'Engin modifié avec succès.');
+    } else {
+      const newVehicle: Vehicle = {
+        _id: 'v' + Date.now(),
+        ...this.vehicleForm,
+        type: this.vehicleForm.type as Vehicle['type'],
+        statut: this.vehicleForm.statut as Vehicle['statut'],
+      };
+      this.vehicles.push(newVehicle);
+      const vehiclesTab = this.tabs.find(t => t.id === 'vehicles');
+      if (vehiclesTab) vehiclesTab.badge = this.vehicles.length;
+      this.notificationService.showSuccess('Succès', 'Engin ajouté avec succès.');
+    }
+    this.filterVehicles();
+    this.closeVehicleModal();
+    this.cdr.detectChanges();
+  }
+
+  deleteVehicle(vehicle: Vehicle): void {
+    if (!confirm(`Supprimer l'engin ${vehicle.immatriculation} ?`)) return;
+    this.vehicles = this.vehicles.filter(v => v._id !== vehicle._id);
+    this.filterVehicles();
+    const vehiclesTab = this.tabs.find(t => t.id === 'vehicles');
+    if (vehiclesTab) vehiclesTab.badge = this.vehicles.length;
+    this.notificationService.showSuccess('Succès', 'Engin supprimé.');
+    this.cdr.detectChanges();
+  }
+
+  toggleVehicleStatus(vehicle: Vehicle): void {
+    const cycleOrder: Vehicle['statut'][] = ['disponible', 'en_service', 'en_maintenance', 'hors_service'];
+    const currentIndex = cycleOrder.indexOf(vehicle.statut);
+    vehicle.statut = cycleOrder[(currentIndex + 1) % cycleOrder.length];
+    this.filterVehicles();
+    this.cdr.detectChanges();
+  }
+
+  filterVehicles(): void {
+    let result = [...this.vehicles];
+    if (this.vehiclesSearch) {
+      const q = this.vehiclesSearch.toLowerCase();
+      result = result.filter(v =>
+        v.immatriculation.toLowerCase().includes(q) ||
+        v.marque.toLowerCase().includes(q) ||
+        (v.modele || '').toLowerCase().includes(q)
+      );
+    }
+    if (this.vehiclesTypeFilter !== 'all') {
+      result = result.filter(v => v.type === this.vehiclesTypeFilter);
+    }
+    if (this.vehiclesStatusFilter !== 'all') {
+      result = result.filter(v => v.statut === this.vehiclesStatusFilter);
+    }
+    this.filteredVehicles = result;
+  }
+
+  getVehicleTypeText(type: string): string {
+    const map: Record<string, string> = { tricycle: 'Tricycle', camion: 'Camion', moto: 'Moto', charrette: 'Charrette', benne: 'Benne', fourgonnette: 'Fourgonnette' };
+    return map[type] || type;
+  }
+
+  getVehicleStatusText(statut: string): string {
+    const map: Record<string, string> = { disponible: 'Disponible', en_service: 'En service', en_maintenance: 'En maintenance', hors_service: 'Hors service' };
+    return map[statut] || statut;
+  }
+
+  getVehicleStatusClass(statut: string): string {
+    const map: Record<string, string> = { disponible: 'vstatus-disponible', en_service: 'vstatus-en-service', en_maintenance: 'vstatus-maintenance', hors_service: 'vstatus-hors-service' };
+    return map[statut] || '';
+  }
+
+  getVehicleTypeIcon(type: string): string {
+    const map: Record<string, string> = { tricycle: 'electric_rickshaw', camion: 'local_shipping', moto: 'two_wheeler', charrette: 'agriculture', benne: 'local_shipping', fourgonnette: 'airport_shuttle' };
+    return map[type] || 'directions_car';
+  }
+
+  countVehiclesByStatus(statut: string): number {
+    return this.vehicles.filter(v => v.statut === statut).length;
+  }
 
   // Error handling
   formErrors: { [key: string]: string } = {};

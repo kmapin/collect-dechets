@@ -1926,6 +1926,277 @@
         </div>
         }
 
+        <!-- ═══════════════ Onglet Mobilité / Véhicules ═══════════════ -->
+        @if (activeTab === 'vehicles') {
+        <div class="vehicles-tab">
+          <div class="section-header">
+            <h2>Gestion de la Flotte (Mobilité)</h2>
+            <div class="section-actions">
+              <div class="view-mode-toggle">
+                <button class="view-mode-btn" [class.active]="vehicleViewMode === 'card'" (click)="vehicleViewMode = 'card'" title="Vue cartes">
+                  <i class="material-icons">grid_view</i><span>Cartes</span>
+                </button>
+                <button class="view-mode-btn" [class.active]="vehicleViewMode === 'table'" (click)="vehicleViewMode = 'table'" title="Vue tableau">
+                  <i class="material-icons">table_rows</i><span>Tableau</span>
+                </button>
+              </div>
+              <button class="btn btn-primary" (click)="openAddVehicleModal()">
+                <i class="material-icons">add</i> Ajouter un Engin
+              </button>
+            </div>
+          </div>
+
+          <!-- Statistiques rapides -->
+          <div class="vehicle-stats-bar">
+            <div class="vstat-item">
+              <i class="material-icons">directions_car</i>
+              <span class="vstat-value">{{ vehicles.length }}</span>
+              <span class="vstat-label">Total</span>
+            </div>
+            <div class="vstat-item vstatus-disponible">
+              <i class="material-icons">check_circle</i>
+              <span class="vstat-value">{{ countVehiclesByStatus('disponible') }}</span>
+              <span class="vstat-label">Disponibles</span>
+            </div>
+            <div class="vstat-item vstatus-en-service">
+              <i class="material-icons">local_shipping</i>
+              <span class="vstat-value">{{ countVehiclesByStatus('en_service') }}</span>
+              <span class="vstat-label">En service</span>
+            </div>
+            <div class="vstat-item vstatus-maintenance">
+              <i class="material-icons">build</i>
+              <span class="vstat-value">{{ countVehiclesByStatus('en_maintenance') }}</span>
+              <span class="vstat-label">Maintenance</span>
+            </div>
+            <div class="vstat-item vstatus-hors-service">
+              <i class="material-icons">cancel</i>
+              <span class="vstat-value">{{ countVehiclesByStatus('hors_service') }}</span>
+              <span class="vstat-label">Hors service</span>
+            </div>
+          </div>
+
+          <!-- Filtres de recherche -->
+          <div class="vehicle-filters">
+            <div class="search-input-wrapper">
+              <i class="material-icons search-icon">search</i>
+              <input type="text" class="search-input" placeholder="Rechercher par immatriculation, marque..." [(ngModel)]="vehiclesSearch" (input)="filterVehicles()" />
+              @if (vehiclesSearch) {
+              <button class="clear-search-btn" (click)="vehiclesSearch = ''; filterVehicles()"><i class="material-icons">clear</i></button>
+              }
+            </div>
+            <select class="filter-select" [(ngModel)]="vehiclesTypeFilter" (change)="filterVehicles()">
+              <option value="all">Tous les types</option>
+              <option value="tricycle">Tricycle</option>
+              <option value="camion">Camion</option>
+              <option value="moto">Moto</option>
+              <option value="charrette">Charrette</option>
+              <option value="benne">Benne</option>
+              <option value="fourgonnette">Fourgonnette</option>
+            </select>
+            <select class="filter-select" [(ngModel)]="vehiclesStatusFilter" (change)="filterVehicles()">
+              <option value="all">Tous les statuts</option>
+              <option value="disponible">Disponible</option>
+              <option value="en_service">En service</option>
+              <option value="en_maintenance">En maintenance</option>
+              <option value="hors_service">Hors service</option>
+            </select>
+          </div>
+
+          <!-- Vue Tableau -->
+          @if (vehicleViewMode === 'table') {
+          <div class="vehicles-table-wrapper">
+            <table class="vehicles-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Immatriculation</th>
+                  <th>Marque / Modèle</th>
+                  <th>Capacité</th>
+                  <th>Année</th>
+                  <th>Statut</th>
+                  <th>Dernière révision</th>
+                  <th class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (vehicle of filteredVehicles; track vehicle._id) {
+                <tr>
+                  <td>
+                    <div class="vehicle-type-cell">
+                      <i class="material-icons">{{ getVehicleTypeIcon(vehicle.type) }}</i>
+                      <span>{{ getVehicleTypeText(vehicle.type) }}</span>
+                    </div>
+                  </td>
+                  <td class="cell-immat">{{ vehicle.immatriculation }}</td>
+                  <td>{{ vehicle.marque }}{{ vehicle.modele ? ' – ' + vehicle.modele : '' }}</td>
+                  <td>{{ vehicle.capacite > 0 ? vehicle.capacite + ' kg' : '—' }}</td>
+                  <td>{{ vehicle.annee || '—' }}</td>
+                  <td>
+                    <span class="vehicle-status-badge" [class]="getVehicleStatusClass(vehicle.statut)">
+                      {{ getVehicleStatusText(vehicle.statut) }}
+                    </span>
+                  </td>
+                  <td>{{ vehicle.derniereRevision || '—' }}</td>
+                  <td class="col-actions">
+                    <div class="table-actions">
+                      <button class="action-btn edit" (click)="openEditVehicleModal(vehicle)" title="Modifier"><i class="material-icons">edit</i></button>
+                      <button class="action-btn danger" (click)="deleteVehicle(vehicle)" title="Supprimer"><i class="material-icons">delete</i></button>
+                      <button class="action-btn toggle-btn"
+                        [class.toggle-active]="vehicle.statut === 'disponible'"
+                        [class.toggle-inactive]="vehicle.statut !== 'disponible'"
+                        (click)="toggleVehicleStatus(vehicle)"
+                        title="Changer le statut"><i class="material-icons">{{ vehicle.statut === 'disponible' ? 'toggle_on' : 'toggle_off' }}</i></button>
+                    </div>
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          }
+
+          <!-- Vue Cartes -->
+          @if (vehicleViewMode === 'card') {
+          <div class="vehicles-grid">
+            @for (vehicle of filteredVehicles; track vehicle._id) {
+            <div class="vehicle-card card">
+              <div class="vehicle-card-header">
+                <div class="vehicle-icon-wrap">
+                  <i class="material-icons">{{ getVehicleTypeIcon(vehicle.type) }}</i>
+                </div>
+                <span class="vehicle-status-badge" [class]="getVehicleStatusClass(vehicle.statut)">
+                  {{ getVehicleStatusText(vehicle.statut) }}
+                </span>
+              </div>
+              <div class="vehicle-card-body">
+                <h4 class="vehicle-immat">{{ vehicle.immatriculation }}</h4>
+                <p class="vehicle-brand">{{ vehicle.marque }}{{ vehicle.modele ? ' – ' + vehicle.modele : '' }}</p>
+                <div class="vehicle-meta">
+                  <span><i class="material-icons">category</i> {{ getVehicleTypeText(vehicle.type) }}</span>
+                  <span><i class="material-icons">fitness_center</i> {{ vehicle.capacite > 0 ? vehicle.capacite + ' kg' : '—' }}</span>
+                  <span><i class="material-icons">calendar_today</i> {{ vehicle.annee || '—' }}</span>
+                  @if (vehicle.prochainRevision) {
+                  <span class="revision-alert"><i class="material-icons">build</i> Rev. {{ vehicle.prochainRevision }}</span>
+                  }
+                </div>
+                @if (vehicle.notes) {
+                <p class="vehicle-notes">{{ vehicle.notes }}</p>
+                }
+              </div>
+              <div class="vehicle-card-actions">
+                <button class="action-btn edit" (click)="openEditVehicleModal(vehicle)" title="Modifier"><i class="material-icons">edit</i></button>
+                <button class="action-btn danger" (click)="deleteVehicle(vehicle)" title="Supprimer"><i class="material-icons">delete</i></button>
+                <button class="action-btn toggle-btn"
+                  [class.toggle-active]="vehicle.statut === 'disponible'"
+                  [class.toggle-inactive]="vehicle.statut !== 'disponible'"
+                  (click)="toggleVehicleStatus(vehicle)"
+                  title="Changer le statut"><i class="material-icons">{{ vehicle.statut === 'disponible' ? 'toggle_on' : 'toggle_off' }}</i></button>
+              </div>
+            </div>
+            }
+          </div>
+          }
+
+          <!-- État vide -->
+          @if (filteredVehicles.length === 0) {
+          <div class="empty-state">
+            <i class="material-icons">directions_car</i>
+            <h3>Aucun engin trouvé</h3>
+            <p>{{ vehiclesSearch || vehiclesTypeFilter !== 'all' || vehiclesStatusFilter !== 'all' ? 'Modifiez vos filtres.' : 'Ajoutez votre premier engin de collecte.' }}</p>
+            @if (!vehiclesSearch && vehiclesTypeFilter === 'all' && vehiclesStatusFilter === 'all') {
+            <button class="btn btn-primary" (click)="openAddVehicleModal()"><i class="material-icons">add</i> Ajouter un Engin</button>
+            }
+          </div>
+          }
+
+          <!-- Drawer Ajouter / Modifier Engin -->
+          @if (showVehicleModal) {
+          <div class="drawer-overlay" (click)="closeVehicleModal()">
+            <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+              <div class="drawer-header">
+                <h3>{{ isEditingVehicle ? 'Modifier l\'engin' : 'Ajouter un engin' }}</h3>
+                <button class="drawer-close-btn" (click)="closeVehicleModal()"><i class="material-icons">close</i></button>
+              </div>
+              <div class="drawer-body">
+                <div class="drawer-form">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label required">Immatriculation *</label>
+                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.immatriculation" placeholder="Ex: BF-1234-A" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label required">Marque *</label>
+                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.marque" placeholder="Ex: Jinpeng, Dong Feng..." />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Modèle</label>
+                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.modele" placeholder="Ex: JP-C150" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Année</label>
+                      <input type="number" class="form-input" [(ngModel)]="vehicleForm.annee" placeholder="Ex: 2022" min="2000" [max]="2030" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label required">Type d'engin *</label>
+                      <select class="form-select" [(ngModel)]="vehicleForm.type">
+                        <option value="">Sélectionner...</option>
+                        <option value="tricycle">Tricycle</option>
+                        <option value="camion">Camion</option>
+                        <option value="moto">Moto</option>
+                        <option value="charrette">Charrette</option>
+                        <option value="benne">Benne</option>
+                        <option value="fourgonnette">Fourgonnette</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Capacité (kg)</label>
+                      <input type="number" class="form-input" [(ngModel)]="vehicleForm.capacite" placeholder="Ex: 500" min="0" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label required">Statut *</label>
+                      <select class="form-select" [(ngModel)]="vehicleForm.statut">
+                        <option value="disponible">Disponible</option>
+                        <option value="en_service">En service</option>
+                        <option value="en_maintenance">En maintenance</option>
+                        <option value="hors_service">Hors service</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Dernière révision</label>
+                      <input type="date" class="form-input" [(ngModel)]="vehicleForm.derniereRevision" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Prochaine révision</label>
+                      <input type="date" class="form-input" [(ngModel)]="vehicleForm.prochainRevision" />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Notes</label>
+                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.notes" placeholder="Remarques..." />
+                    </div>
+                  </div>
+                  <div class="drawer-footer">
+                    <button type="button" class="btn btn-secondary" (click)="closeVehicleModal()">Annuler</button>
+                    <button type="button" class="btn btn-primary" (click)="saveVehicle()">
+                      <i class="material-icons">save</i>
+                      {{ isEditingVehicle ? 'Enregistrer' : 'Ajouter' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+        }
+
         <!-- Onglet tarif -->
         <div class="analytics-tab">
           <div class="analytics-header"></div>
