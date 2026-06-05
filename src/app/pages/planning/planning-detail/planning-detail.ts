@@ -14,14 +14,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
 import * as L from 'leaflet';
 import { PlanningService } from '../services/planning.service';
-import { Planning } from '../models/planning.model';
-
-// ── Local types ────────────────────────────────────────────────
-interface TeamDetail {
-  id: string; name: string; initials: string; membersCount: number;
-  vehicle: string; status: 'disponible' | 'en_service' | 'indisponible';
-  workload: number; lastPosition: string; phone: string;
-}
+import { Planning, TeamApi } from '../models/planning.model';
 interface Incident {
   id: string; severity: 'critical' | 'warning' | 'info';
   title: string; description: string; reporter: string;
@@ -65,13 +58,37 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   isLoading     = signal(true);
   notFound      = signal(false);
   activeSection = signal('info');
-  showCancelDlg = signal(false);
-  showDupDlg    = signal(false);
+  showCancelDlg  = signal(false);
+  showDupDlg     = signal(false);
+  showDeleteDlg  = signal(false);
   isActioning   = signal(false);
   planning      = signal<Planning | null>(null);
 
-  // ── Enriched mock data (kept local — no API endpoint) ─────────
-  teams         = signal<TeamDetail[]>([]);
+  // ── Teams (real API data) ─────────────────────────────────────
+  allTeams         = signal<TeamApi[]>([]);
+  isLoadingTeams   = signal(false);
+  addTeamOpen      = signal(false);
+  teamSaving       = signal(false);
+  teamSearch       = signal('');
+
+  assignedTeams = computed(() => {
+    const tid = this.planning()?.teamV2Id;
+    if (!tid) return [];
+    const t = this.allTeams().find(x => x._id === tid);
+    return t ? [t] : [];
+  });
+  availableTeams = computed(() => {
+    const tid = this.planning()?.teamV2Id;
+    const q   = this.teamSearch().toLowerCase();
+    return this.allTeams()
+      .filter(t => t._id !== tid)
+      .filter(t => !q || t.name.toLowerCase().includes(q));
+  });
+  canEditTeams = computed(() =>
+    ['brouillon', 'planifie'].includes(this.planning()?.status ?? '')
+  );
+
+  // ── Mock detail data (incidents, history, notifications) ──────
   incidents     = signal<Incident[]>([]);
   activities    = signal<ActivityEvent[]>([]);
   history       = signal<RoundHistory[]>([]);
@@ -127,7 +144,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   canStart    = computed(() => this.planning()?.status === 'planifie');
   canComplete = computed(() => this.planning()?.status === 'en_cours');
   canCancel   = computed(() => ['planifie', 'en_cours'].includes(this.planning()?.status ?? ''));
-  canDelete   = computed(() => this.planning()?.status === 'brouillon');
+  canDelete   = computed(() => ['brouillon', 'annule'].includes(this.planning()?.status ?? ''));
 
   // ── Charts ────────────────────────────────────────────────────
   completionChartData = computed(() => {
@@ -165,6 +182,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this._fetchPlanning(id);
+    this._loadTeams();
   }
 
   ngAfterViewInit(): void {
@@ -199,6 +217,64 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
         this.isLoading.set(false);
       },
     });
+  }
+
+  // ── Teams loader ─────────────────────────────────────────────
+  private _loadTeams(): void {
+    this.isLoadingTeams.set(true);
+    this.svc.getTeamsForAgency().subscribe({
+      next:  teams => { this.allTeams.set(teams); this.isLoadingTeams.set(false); },
+      error: ()    => this.isLoadingTeams.set(false),
+    });
+  }
+
+  // ── Team add / remove ─────────────────────────────────────────
+  openAddTeamDrawer(): void {
+    this.teamSearch.set('');
+    this.addTeamOpen.set(true);
+  }
+
+  assignTeam(teamId: string): void {
+    const pid = this.planning()?.id;
+    if (!pid || this.teamSaving()) return;
+    this.teamSaving.set(true);
+    this.svc.addTeamToPlanning(pid, teamId).subscribe({
+      next: p => {
+        this.planning.update(prev => prev ? { ...prev, teamV2Id: p.teamV2Id, equipeIds: p.equipeIds, teams: p.teams } : prev);
+        this.msg.add({ severity: 'success', summary: 'Équipe affectée', detail: `${this.allTeams().find(t => t._id === teamId)?.name ?? teamId} assignée` });
+        this.teamSaving.set(false);
+        this.addTeamOpen.set(false);
+      },
+      error: err => {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.message ?? 'Assignation impossible', life: 5000 });
+        this.teamSaving.set(false);
+      },
+    });
+  }
+
+  removeTeam(): void {
+    const pid = this.planning()?.id;
+    if (!pid || this.teamSaving()) return;
+    this.teamSaving.set(true);
+    this.svc.removeTeamFromPlanning(pid).subscribe({
+      next: p => {
+        this.planning.update(prev => prev ? { ...prev, teamV2Id: p.teamV2Id, equipeIds: p.equipeIds, teams: p.teams } : prev);
+        this.teamSaving.set(false);
+      },
+      error: err => {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.message ?? 'Impossible de retirer l\'équipe' });
+        this.teamSaving.set(false);
+      },
+    });
+  }
+
+  teamMembersCount(t: TeamApi): number { return t.members?.length ?? t.collectors?.length ?? 0; }
+
+  teamStatusBadgeColor(status: string): string {
+    return ({ active: '#16a34a', on_mission: '#f59e0b', inactive: '#ef4444', maintenance: '#64748b' } as Record<string,string>)[status] ?? '#94a3b8';
+  }
+  teamStatusBadgeLabel(status: string): string {
+    return ({ active: 'Disponible', on_mission: 'En mission', inactive: 'Indisponible', maintenance: 'Maintenance' } as Record<string,string>)[status] ?? status;
   }
 
   // ── Scroll to section ─────────────────────────────────────────
@@ -280,6 +356,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   deletePlanning(): void {
     const p = this.planning();
     if (!p || this.isActioning()) return;
+    this.showDeleteDlg.set(false);
     this.isActioning.set(true);
     this.svc.deletePlanning(p.id).subscribe({
       next: () => {
@@ -430,10 +507,6 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
 
   // ── Mock enrichment (static detail data not covered by API) ───
   private _enrichWithMockData(p: Planning): void {
-    this.teams.set([
-      { id: 'T1', name: p.teams[0] ?? 'Équipe Alpha', initials: 'α', membersCount: 4, vehicle: 'Camion 01 – 5T', status: 'en_service', workload: 65, lastPosition: this.locationLabel(), phone: '+226 70 00 00 01' },
-      ...(p.teams[1] ? [{ id: 'T2', name: p.teams[1], initials: 'β', membersCount: 3, vehicle: 'Camion 02 – 3T', status: 'disponible' as const, workload: 20, lastPosition: 'Base principale', phone: '+226 70 00 00 02' }] : []),
-    ]);
 
     this.activities.set([
       { date: p.createdAt,   icon: 'add_circle',  color: '#3b82f6', title: 'Planning créé',              detail: `Créé par le gestionnaire` },

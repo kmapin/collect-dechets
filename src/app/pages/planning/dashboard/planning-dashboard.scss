@@ -634,9 +634,13 @@ $shadow-md: 0 4px 24px rgba(0,0,0,0.1);
 
     mat-icon { font-size: 15px; width: 15px; height: 15px; }
 
-    &.view    { color: $primary;  &:hover { background: #eff6ff;  border-color: $primary; } }
-    &.edit    { color: $amber;    &:hover { background: #fffbeb;  border-color: $amber; } }
-    &.publish { color: $green;    &:hover { background: #f0fdf4;  border-color: $green; } }
+    &.view    { color: $primary;   &:hover { background: #eff6ff;  border-color: $primary; } }
+    &.edit    { color: $amber;     &:hover { background: #fffbeb;  border-color: $amber; } }
+    &.publish { color: $green;     &:hover { background: #f0fdf4;  border-color: $green; } }
+    &.start   { color: $green;     &:hover { background: #f0fdf4;  border-color: $green; } }
+    &.complete{ color: $green;     &:hover { background: #f0fdf4;  border-color: $green; } }
+    &.cancel  { color: $amber;     &:hover { background: #fffbeb;  border-color: $amber; } }
+    &.delete  { color: #ef4444;    &:hover { background: #fef2f2;  border-color: #ef4444; } }
   }
 }
 

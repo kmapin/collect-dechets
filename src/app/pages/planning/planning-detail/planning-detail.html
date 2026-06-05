@@ -102,6 +102,12 @@
             <mat-icon>edit</mat-icon>Modifier
           </button>
         }
+        @if (canDelete()) {
+          <button type="button" class="tb-btn tb-btn--ghost tb-btn--danger" (click)="showDeleteDlg.set(true)"
+                  pTooltip="Supprimer ce planning" tooltipPosition="bottom">
+            <mat-icon>delete_outline</mat-icon>Supprimer
+          </button>
+        }
       </div>
     </div>
 
@@ -216,58 +222,159 @@
         <section id="section-teams" class="pd-section">
           <div class="sec-header">
             <mat-icon class="sec-icon" style="--ic:#8b5cf6">groups</mat-icon>
-            <h2>Équipes affectées</h2>
-            <span class="sec-count">{{ teams().length }}</span>
-          </div>
-
-          <div class="teams-grid">
-            @for (team of teams(); track team.id) {
-              <div class="team-card">
-                <div class="tc-header">
-                  <div class="tc-avatar" [style.background]="team.status === 'en_service' ? '#f59e0b18' : team.status === 'disponible' ? '#16a34a18' : '#ef444418'"
-                       [style.color]="team.status === 'en_service' ? '#f59e0b' : team.status === 'disponible' ? '#16a34a' : '#ef4444'">
-                    {{ team.initials }}
-                  </div>
-                  <div class="tc-info">
-                    <h4>{{ team.name }}</h4>
-                    <span class="tc-status" [style.color]="teamStatusColor(team.status)">
-                      <span class="tc-dot" [style.background]="teamStatusColor(team.status)"></span>
-                      {{ teamStatusLabel(team.status) }}
-                    </span>
-                  </div>
-                  <button type="button" class="tc-call" [attr.href]="'tel:' + team.phone" pTooltip="{{ team.phone }}" tooltipPosition="left">
-                    <mat-icon>phone</mat-icon>
-                  </button>
-                </div>
-                <div class="tc-body">
-                  <div class="tc-row">
-                    <mat-icon>directions_car</mat-icon>
-                    <span>{{ team.vehicle }}</span>
-                  </div>
-                  <div class="tc-row">
-                    <mat-icon>group</mat-icon>
-                    <span>{{ team.membersCount }} membres</span>
-                  </div>
-                  <div class="tc-row">
-                    <mat-icon>location_on</mat-icon>
-                    <span>{{ team.lastPosition }}</span>
-                  </div>
-                </div>
-                <div class="tc-workload">
-                  <div class="tc-wl-header">
-                    <span>Charge de travail</span>
-                    <span [style.color]="team.workload > 70 ? '#ef4444' : team.workload > 40 ? '#f59e0b' : '#16a34a'">{{ team.workload }}%</span>
-                  </div>
-                  <div class="tc-wl-bar">
-                    <div class="tc-wl-fill"
-                         [style.width]="team.workload + '%'"
-                         [style.background]="team.workload > 70 ? '#ef4444' : team.workload > 40 ? '#f59e0b' : '#16a34a'">
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <h2>Équipe affectée</h2>
+            @if (canEditTeams()) {
+              <button type="button" class="sec-action-btn" (click)="openAddTeamDrawer()">
+                <mat-icon>{{ assignedTeams().length > 0 ? 'swap_horiz' : 'add' }}</mat-icon>
+                {{ assignedTeams().length > 0 ? 'Changer' : 'Affecter' }}
+              </button>
             }
           </div>
+
+          <!-- Skeleton teams -->
+          @if (isLoadingTeams()) {
+            <div class="teams-grid">
+              @for (i of [1,2]; track i) {
+                <div class="team-card" style="min-height:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px"></div>
+              }
+            </div>
+          } @else if (assignedTeams().length === 0) {
+            <div class="teams-empty">
+              <mat-icon>groups_off</mat-icon>
+              <p>Aucune équipe affectée à ce planning.</p>
+              @if (canEditTeams()) {
+                <button type="button" class="sec-action-btn" (click)="openAddTeamDrawer()">
+                  <mat-icon>add</mat-icon> Affecter une équipe
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="teams-grid">
+              @for (team of assignedTeams(); track team._id) {
+                <div class="team-card">
+                  <div class="tc-header">
+                    <div class="tc-avatar"
+                         [style.background]="teamStatusBadgeColor(team.status) + '18'"
+                         [style.color]="teamStatusBadgeColor(team.status)">
+                      {{ team.name.substring(0,2).toUpperCase() }}
+                    </div>
+                    <div class="tc-info">
+                      <h4>{{ team.name }}</h4>
+                      <span class="tc-status" [style.color]="teamStatusBadgeColor(team.status)">
+                        <span class="tc-dot" [style.background]="teamStatusBadgeColor(team.status)"></span>
+                        {{ teamStatusBadgeLabel(team.status) }}
+                      </span>
+                    </div>
+                    @if (canEditTeams()) {
+                      <button type="button" class="tc-remove-btn"
+                              [disabled]="teamSaving()"
+                              (click)="removeTeam()"
+                              pTooltip="Retirer du planning" tooltipPosition="left">
+                        <mat-icon>person_remove</mat-icon>
+                      </button>
+                    }
+                  </div>
+                  <div class="tc-body">
+                    <div class="tc-row">
+                      <mat-icon>group</mat-icon>
+                      <span>{{ teamMembersCount(team) }} membres</span>
+                    </div>
+                    @if (team.phone) {
+                      <div class="tc-row">
+                        <mat-icon>phone</mat-icon>
+                        <span>{{ team.phone }}</span>
+                      </div>
+                    }
+                    @if (team.description) {
+                      <div class="tc-row">
+                        <mat-icon>info_outline</mat-icon>
+                        <span>{{ team.description }}</span>
+                      </div>
+                    }
+                  </div>
+                  @if ((team.workload ?? 0) > 0) {
+                    <div class="tc-workload">
+                      <div class="tc-wl-header">
+                        <span>Charge</span>
+                        <span [style.color]="(team.workload ?? 0) > 70 ? '#ef4444' : (team.workload ?? 0) > 40 ? '#f59e0b' : '#16a34a'">
+                          {{ team.workload }}%
+                        </span>
+                      </div>
+                      <div class="tc-wl-bar">
+                        <div class="tc-wl-fill"
+                             [style.width]="(team.workload ?? 0) + '%'"
+                             [style.background]="(team.workload ?? 0) > 70 ? '#ef4444' : (team.workload ?? 0) > 40 ? '#f59e0b' : '#16a34a'">
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ── Drawer sélection équipe (une seule) ──────────── -->
+          @if (addTeamOpen()) {
+            <div class="tmd-overlay" (click)="addTeamOpen.set(false)"></div>
+            <div class="tmd-drawer">
+              <div class="tmd-head">
+                <div>
+                  <h3>{{ assignedTeams().length > 0 ? 'Changer l\'équipe' : 'Affecter une équipe' }}</h3>
+                  <small>{{ availableTeams().length }} équipe(s) disponible(s)</small>
+                </div>
+                <button type="button" class="tmd-close" (click)="addTeamOpen.set(false)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+
+              <!-- Search -->
+              <div class="tmd-search">
+                <mat-icon>search</mat-icon>
+                <input type="text" placeholder="Rechercher une équipe…"
+                       [value]="teamSearch()"
+                       (input)="teamSearch.set($any($event.target).value)" />
+              </div>
+
+              <!-- Team list — clic direct pour assigner -->
+              <div class="tmd-list">
+                @if (availableTeams().length === 0) {
+                  <div class="tmd-empty">
+                    <mat-icon>groups_off</mat-icon>
+                    <span>Aucune équipe disponible</span>
+                  </div>
+                }
+                @for (t of availableTeams(); track t._id) {
+                  <div class="tmd-row" [class.tmd-row--loading]="teamSaving()"
+                       (click)="assignTeam(t._id)">
+                    <div class="tmd-row-avatar"
+                         [style.background]="teamStatusBadgeColor(t.status) + '18'"
+                         [style.color]="teamStatusBadgeColor(t.status)">
+                      {{ t.name.substring(0,2).toUpperCase() }}
+                    </div>
+                    <div class="tmd-row-info">
+                      <span class="tmd-row-name">{{ t.name }}</span>
+                      <span class="tmd-row-meta">
+                        {{ teamMembersCount(t) }} membres ·
+                        <span [style.color]="teamStatusBadgeColor(t.status)">{{ teamStatusBadgeLabel(t.status) }}</span>
+                      </span>
+                    </div>
+                    <div class="tmd-row-check">
+                      @if (teamSaving()) {
+                        <mat-icon style="animation:spin 1s linear infinite;font-size:16px;color:#8b5cf6">sync</mat-icon>
+                      } @else {
+                        <mat-icon style="color:#8b5cf6;opacity:.5">arrow_forward</mat-icon>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Footer -->
+              <div class="tmd-footer">
+                <button type="button" class="tmd-cancel-btn" (click)="addTeamOpen.set(false)">Annuler</button>
+              </div>
+            </div>
+          }
         </section>
 
         <!-- ════════════════ SECTION MAP ════════════════════ -->
@@ -442,7 +549,7 @@
             </div>
             <div class="kpi-card">
               <div class="kpi-icon" style="background:#06b6d418;color:#06b6d4"><mat-icon>groups</mat-icon></div>
-              <div class="kpi-val">{{ teams().length }}</div>
+              <div class="kpi-val">{{ assignedTeams().length }}</div>
               <div class="kpi-lbl">Équipes mobilisées</div>
             </div>
 
@@ -530,6 +637,28 @@
         <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showCancelDlg.set(false)">Retour</button>
         <button type="button" class="dlg-btn dlg-btn--danger" (click)="cancelPlanning()">
           <mat-icon>cancel</mat-icon>Confirmer l'annulation
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════════
+       DELETE DIALOG
+       ════════════════════════════════════════════════════════ -->
+  @if (showDeleteDlg()) {
+    <div class="dlg-backdrop" (click)="showDeleteDlg.set(false)"></div>
+    <div class="dlg-box dlg-box--danger">
+      <div class="dlg-icon"><mat-icon>delete_forever</mat-icon></div>
+      <h3>Supprimer ce planning ?</h3>
+      <p>Le planning <strong>{{ planning()!.reference }}</strong> sera définitivement supprimé. Cette action est irréversible.</p>
+      <div class="dlg-actions">
+        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showDeleteDlg.set(false)">Annuler</button>
+        <button type="button" class="dlg-btn dlg-btn--danger" [disabled]="isActioning()" (click)="deletePlanning()">
+          @if (isActioning()) {
+            <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Suppression…
+          } @else {
+            <mat-icon>delete_forever</mat-icon> Supprimer définitivement
+          }
         </button>
       </div>
     </div>

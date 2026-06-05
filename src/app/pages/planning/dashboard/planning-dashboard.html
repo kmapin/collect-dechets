@@ -319,6 +319,16 @@
                     </button>
                   }
 
+                  <!-- Supprimer : brouillon ou annulé -->
+                  @if (p.status === 'brouillon' || p.status === 'annule') {
+                    <button class="action-btn delete"
+                            pTooltip="Supprimer" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="deletePlanning(p)">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  }
+
                   <!-- Spinner pendant l'action -->
                   @if (actionLoading() === p.id) {
                     <mat-icon class="action-spin">sync</mat-icon>

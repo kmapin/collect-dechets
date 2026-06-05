@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, forkJoin, of } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
+import { map, catchError, tap, switchMap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
   Planning, PlanningStats, PlanningAlert,
@@ -274,11 +274,10 @@ export class PlanningService {
   }
 
   updatePlanning(id: string, body: Partial<PlanningV2CreateBody>): Observable<Planning> {
-    return this.http.put<{ success: boolean; data: PlanningV2Api }>(
-      `${this.api}/planning/v2/${id}`, body
-    ).pipe(
+    return this.http.put<any>(`${this.api}/planning/v2/${id}`, body).pipe(
       map(res => {
-        const planning = this._mapPlanningV2(res.data, this._teams());
+        const api: PlanningV2Api = res?.data ?? res;
+        const planning = this._mapPlanningV2(api, this._teams());
         this._plannings.update(list => list.map(p => p.id === id ? planning : p));
         return planning;
       })
@@ -345,6 +344,36 @@ export class PlanningService {
     );
   }
 
+  // ── Team ↔ Planning (read-modify-write) ──────────────────────
+
+  addTeamToPlanning(planningId: string, teamId: string): Observable<Planning> {
+    return this._setTeamOnPlanning(planningId, teamId);
+  }
+
+  removeTeamFromPlanning(planningId: string): Observable<Planning> {
+    return this._setTeamOnPlanning(planningId, null);
+  }
+
+  private _setTeamOnPlanning(planningId: string, teamV2Id: string | null): Observable<Planning> {
+    return this.http.get<any>(`${this.api}/planning/v2/${planningId}`).pipe(
+      switchMap(res => {
+        const api: PlanningV2Api = res?.data ?? res;
+        if (teamV2Id && (api.teamV2Id === teamV2Id)) {
+          return of(this._mapPlanningV2(api, this._teams()));
+        }
+        const body = this._buildUpdateBody(api, { teamV2Id });
+        return this.http.put<any>(`${this.api}/planning/v2/${planningId}`, body).pipe(
+          map(r => {
+            const updated: PlanningV2Api = r?.data ?? r;
+            const p = this._mapPlanningV2(updated, this._teams());
+            this._plannings.update(list => list.map(x => x.id === planningId ? p : x));
+            return p;
+          })
+        );
+      })
+    );
+  }
+
   // ── Conflict check ────────────────────────────────────────────
 
   checkConflicts(
@@ -371,22 +400,14 @@ export class PlanningService {
   // ── Private helpers ───────────────────────────────────────────
 
   private _mapPlanningV2(api: PlanningV2Api, teams: TeamApi[] = []): Planning {
-    const rawEquipes = api.equipeIds ?? [];
+    // Champ principal pour l'équipe; fallback sur equipeIds[0] pour les anciens enregistrements
+    const legacyIds  = this._extractEquipeIds(api);
+    const teamV2Id   = api.teamV2Id ?? (legacyIds.length ? legacyIds[0] : null) ?? null;
+    const equipeIds  = teamV2Id ? [teamV2Id] : [];
 
-    // L'API peut renvoyer des objets peuplés {_id, name} ou de simples strings
-    const teamNames = rawEquipes.map(eq => {
-      if (typeof eq === 'object' && eq !== null && 'name' in eq) {
-        return (eq as any).name as string;          // déjà peuplé → nom direct
-      }
-      const id = typeof eq === 'string' ? eq : (eq as any)._id as string;
-      const cached = teams.find(x => x._id === id);
-      return cached?.name ?? id;                    // fallback: ID ou cache
-    });
-
-    // Extraire les IDs propres pour les appels API ultérieurs
-    const equipeIds = rawEquipes.map(eq =>
-      typeof eq === 'string' ? eq : (eq as any)._id as string
-    );
+    const teamName = teamV2Id
+      ? (teams.find(x => x._id === teamV2Id)?.name ?? teamV2Id)
+      : undefined;
 
     const wasteLabels = (api.typeDechets ?? []).map(t => WASTE_TYPE_LABELS[t] ?? t);
 
@@ -400,7 +421,8 @@ export class PlanningService {
       startTime:        api.startTime,
       endTime:          api.endTime,
       frequency:        api.frequency,
-      teams:            teamNames,
+      teamV2Id,
+      teams:            teamName ? [teamName] : [],
       equipeIds,
       wasteTypes:       wasteLabels,
       typeDechets:      api.typeDechets ?? [],
@@ -423,6 +445,34 @@ export class PlanningService {
       managerId:        api.managerId,
       createdAt:        api.createdAt,
       updatedAt:        api.updatedAt,
+    };
+  }
+
+  private _extractEquipeIds(api: PlanningV2Api): string[] {
+    return (api.equipeIds ?? []).map(eq =>
+      typeof eq === 'string' ? eq : (eq as any)._id as string
+    );
+  }
+
+  private _buildUpdateBody(api: PlanningV2Api, overrides: Partial<PlanningV2CreateBody> = {}): Partial<PlanningV2CreateBody> {
+    const currentTeamId = api.teamV2Id ?? this._extractEquipeIds(api)[0] ?? null;
+    return {
+      type:             api.type,
+      libelle:          api.libelle,
+      frequency:        api.frequency,
+      date:             api.date,
+      startTime:        api.startTime,
+      endTime:          api.endTime ?? undefined,
+      typeDechets:      api.typeDechets ?? [],
+      teamV2Id:         currentTeamId ?? undefined,
+      clientId:         api.clientId ?? undefined,
+      groupeId:         api.groupeId ?? undefined,
+      villeId:          this._refId(api.villeId),
+      arrondissementId: this._refId(api.arrondissementId),
+      secteurId:        this._refId(api.secteurId),
+      quartierId:       this._refId(api.quartierId),
+      notes:            api.notes ?? undefined,
+      ...overrides,
     };
   }
 

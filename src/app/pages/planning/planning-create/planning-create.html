@@ -339,13 +339,13 @@
               <mat-icon>groups</mat-icon>
             </div>
             <div>
-              <h2>Affectation des équipes</h2>
-              <p>Sélectionnez une ou plusieurs équipes disponibles pour ce planning</p>
+              <h2>Affectation de l'équipe</h2>
+              <p>Sélectionnez l'équipe disponible pour ce planning</p>
             </div>
-            @if (selectedTeams().length > 0) {
+            @if (selectedTeamId()) {
               <div class="count-badge" style="--cb-c:#8b5cf6;--cb-bg:#f5f3ff">
                 <mat-icon>groups</mat-icon>
-                {{ selectedTeams().length }} équipe(s) sélectionnée(s)
+                1 équipe sélectionnée
               </div>
             }
           </div>
@@ -365,10 +365,57 @@
               <p>Aucune équipe disponible pour votre agence.</p>
               <small>Créez d'abord des équipes dans le module Équipes.</small>
             </div>
+          } @else if (isEditMode()) {
+
+            <!-- ── Mode édition : chip + sélecteur ── -->
+            <div class="team-edit-wrap">
+
+              <!-- Chip équipe sélectionnée (unique) -->
+              @if (selectedTeamId(); as id) {
+                <div class="team-chips">
+                  <div class="team-chip" [class.team-chip--conflict]="isTeamConflicting(id)">
+                    <span class="tc-dot" [style.background]="teamStatusColor(getTeamById(id)?.status ?? 'active')"></span>
+                    <span class="tc-name">{{ getTeamById(id)?.name ?? id }}</span>
+                    <span class="tc-count">{{ getTeamById(id)?.members?.length ?? 0 }} membres</span>
+                    @if (isTeamConflicting(id)) {
+                      <mat-icon class="tc-warn" pTooltip="Conflit détecté" tooltipPosition="top">warning</mat-icon>
+                    }
+                    <button class="tc-remove" type="button"
+                            [disabled]="teamSaving()"
+                            (click)="removeTeamChip()"
+                            pTooltip="Retirer" tooltipPosition="top">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="teams-empty">
+                  <mat-icon>groups_off</mat-icon>
+                  <p>Aucune équipe assignée.</p>
+                </div>
+              }
+
+              <!-- Sélecteur : assigner ou changer l'équipe -->
+              <div class="team-add-row">
+                <mat-icon>{{ selectedTeamId() ? 'swap_horiz' : 'add_circle_outline' }}</mat-icon>
+                <select class="form-inp team-add-select" #addSel
+                        [disabled]="teamSaving()"
+                        (change)="addTeamChip(addSel.value); addSel.value = ''">
+                  <option value="">— {{ selectedTeamId() ? 'Changer l\'équipe' : 'Sélectionner une équipe' }} —</option>
+                  @for (t of availableTeamsToAdd(); track t._id) {
+                    <option [value]="t._id">{{ t.name }} ({{ t.members?.length ?? 0 }} membres)</option>
+                  }
+                </select>
+                @if (teamSaving()) {
+                  <mat-icon class="spin" style="color:#8b5cf6">sync</mat-icon>
+                }
+              </div>
+            </div>
+
           } @else {
             <app-team-conflict-detector
               [selectedDate]="formValue()['date']"
-              [selectedTeamIds]="selectedTeams()"
+              [selectedTeamIds]="selectedTeamId() ? [selectedTeamId()!] : []"
               [newStartTime]="formValue()['startTime'] ?? '08:00'"
               [estimatedHouseholds]="estimatedHouseholds()"
               [externalTeams]="apiTeams()"
@@ -459,21 +506,21 @@
               }
             </div>
 
-            <!-- Équipes -->
+            <!-- Équipe -->
             <div class="sum-card" [class.card-conflict]="conflictingTeamIds().length > 0">
               <div class="sum-title">
-                <mat-icon>groups</mat-icon> Équipes
+                <mat-icon>groups</mat-icon> Équipe
                 @if (conflictingTeamIds().length > 0) {
-                  <span class="conflict-chip"><mat-icon>warning</mat-icon> {{ conflictingTeamIds().length }} conflit(s)</span>
+                  <span class="conflict-chip"><mat-icon>warning</mat-icon> conflit détecté</span>
                 }
               </div>
-              @for (id of selectedTeams(); track id) {
-                @if (getTeamById(id); as team) {
-                  <div class="sum-row" [class.conflict-row]="isTeamConflicting(id)">
-                    <span class="sum-lbl">{{ team.name }}</span>
-                    <span class="sum-val">{{ (team.members?.length ?? team.collectors?.length ?? 0) }} membres</span>
-                  </div>
-                }
+              @if (selectedTeamId(); as id) {
+                <div class="sum-row" [class.conflict-row]="isTeamConflicting(id)">
+                  <span class="sum-lbl">{{ getTeamById(id)?.name ?? id }}</span>
+                  <span class="sum-val">{{ getTeamById(id)?.members?.length ?? 0 }} membres</span>
+                </div>
+              } @else {
+                <div class="sum-row"><span class="sum-lbl" style="color:#94a3b8">Aucune équipe</span></div>
               }
             </div>
 
@@ -506,6 +553,48 @@
               <p>Finalisez et publiez votre planning de collecte</p>
             </div>
           </div>
+
+          <!-- Bandeau conflits -->
+          @if (checkingConflicts()) {
+            <div class="conflict-checking">
+              <mat-icon class="spin">sync</mat-icon>
+              Vérification des conflits d'équipes…
+            </div>
+          } @else if (conflicts().length > 0) {
+            <div class="conflict-banner">
+              <div class="cb-head">
+                <mat-icon>warning</mat-icon>
+                <strong>{{ conflicts().length }} conflit(s) détecté(s)</strong>
+              </div>
+              @for (c of conflicts(); track c.equipeId) {
+                <div class="cb-row">
+                  <span class="cb-team">{{ c.equipeName }}</span>
+                  <span class="cb-msg">{{ c.message }}</span>
+                </div>
+              }
+              <button type="button" class="btn-ghost-sm" (click)="goToStep(4)">
+                <mat-icon>edit</mat-icon> Modifier les équipes
+              </button>
+            </div>
+          }
+
+          <!-- Publier (mode édition uniquement) -->
+          @if (isEditMode()) {
+            <div class="publish-now-row">
+              <button type="button" class="btn-publish-now"
+                      [disabled]="isPublishing() || !selectedTeamId()"
+                      (click)="publishDraft()">
+                @if (isPublishing()) {
+                  <mat-icon class="spin">autorenew</mat-icon> Publication…
+                } @else {
+                  <mat-icon>rocket_launch</mat-icon> Publier maintenant
+                }
+              </button>
+              @if (!selectedTeamId()) {
+                <span class="publish-hint">Une équipe est requise</span>
+              }
+            </div>
+          }
 
           <div class="publish-form">
             <div class="form-group">

@@ -30,8 +30,10 @@ export interface PlanningV2Api {
   endTime?: string;
   clientsCount?: number;
   estimatedDuration?: number;
-  // L'API peut renvoyer des IDs (string) ou des objets peuplés
-  equipeIds: (string | EquipeRef)[];
+  // Champ principal : une seule équipe
+  teamV2Id?: string | null;
+  // Héritage : certains anciens enregistrements ont encore equipeIds
+  equipeIds?: (string | EquipeRef)[];
   typeDechets: WasteType[];
   notes?: string;
   agencyId?: string;
@@ -55,7 +57,7 @@ export interface PlanningV2CreateBody {
   startTime: string;
   endTime?: string;
   typeDechets: WasteType[];
-  equipeIds: string[];
+  teamV2Id?: string | null;
   agencyId: string;
   managerId?: string;
   clientId?: string;
@@ -199,9 +201,10 @@ export interface Planning {
   startTime: string;
   endTime?: string;
   frequency: PlanningFrequency;
-  // Teams
-  teams: string[];       // names for display
-  equipeIds: string[];   // IDs for API
+  // Teams (une seule équipe par planning)
+  teamV2Id?: string | null; // ID pour l'API
+  teams: string[];           // noms pour l'affichage (1 élément max)
+  equipeIds: string[];       // alias dérivé de teamV2Id (rétrocompat)
   // Waste
   wasteTypes: string[];  // labels for display
   typeDechets: WasteType[]; // codes for API

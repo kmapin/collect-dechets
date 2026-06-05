@@ -13,7 +13,7 @@ import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
 import { PlanningService } from '../services/planning.service';
-import { PlanningType, WasteType, TeamApi } from '../models/planning.model';
+import { PlanningType, WasteType, TeamApi, ConflictResult } from '../models/planning.model';
 import { PlanningTypeSelectorComponent } from '../planning-type-selector/planning-type-selector';
 import { ZoneSelectorComponent, ZoneSelection } from '../zone-selector/zone-selector';
 import { TeamConflictDetectorComponent } from '../team-conflict-detector/team-conflict-detector';
@@ -123,9 +123,17 @@ export class PlanningCreate implements OnInit {
   apiTeams   = signal<TeamApi[]>([]);
   apiClients = signal<ClientOpt[]>([]);
 
+  // ── Conflict check ────────────────────────────────────────────
+  conflicts         = signal<ConflictResult[]>([]);
+  checkingConflicts = signal(false);
+
+  // ── Team operations (edit mode) ───────────────────────────────
+  teamSaving   = signal(false);
+  isPublishing = signal(false);
+
   // ── Selection signals ────────────────────────────────────────
   selectedWasteTypes = signal<WasteType[]>([]);
-  selectedTeams      = signal<string[]>([]);
+  selectedTeamId     = signal<string | null>(null);
   selectedClients    = signal<ClientOpt[]>([]);
   frequencyDaysSel   = signal<string[]>([]);
   filteredClients    = signal<ClientOpt[]>([]);
@@ -151,9 +159,8 @@ export class PlanningCreate implements OnInit {
 
   estimatedDuration = computed<string>(() => {
     const h = this.estimatedHouseholds();
-    const t = this.selectedTeams().length || 1;
     if (!h) return '--';
-    const totalMin = Math.ceil((h * 5) / t);
+    const totalMin = Math.ceil(h * 5);
     const hh = Math.floor(totalMin / 60);
     const mm = totalMin % 60;
     return hh > 0 ? `${hh}h${String(mm).padStart(2, '0')}` : `${mm} min`;
@@ -179,10 +186,13 @@ export class PlanningCreate implements OnInit {
   // Alias for template compatibility
   get mockClients() { return this.apiClients(); }
 
-  conflictingTeamIds = computed<string[]>(() => {
-    // After checkConflicts call, service returns conflicts; simplified local detection
-    return [];
-  });
+  conflictingTeamIds = computed<string[]>(() =>
+    this.conflicts().map(c => c.equipeId)
+  );
+
+  availableTeamsToAdd = computed<TeamApi[]>(() =>
+    this.apiTeams().filter(t => t._id !== this.selectedTeamId())
+  );
 
   isTeamConflicting(id: string): boolean { return this.conflictingTeamIds().includes(id); }
 
@@ -231,9 +241,9 @@ export class PlanningCreate implements OnInit {
           groupName:        planning.groupeId ?? '',
           publishImmediately: false, // pas de publication auto en mode edit
         });
-        // Remplir les signaux multi-select
+        // Remplir les signaux de sélection
         if (planning.typeDechets?.length) this.selectedWasteTypes.set(planning.typeDechets);
-        if (planning.equipeIds?.length)   this.selectedTeams.set(planning.equipeIds);
+        this.selectedTeamId.set(planning.teamV2Id ?? planning.equipeIds?.[0] ?? null);
         // Aller à l'étape récap pour permettre la modification directe
         this.currentStep.set(5);
         this.isLoadingEdit.set(false);
@@ -307,7 +317,7 @@ export class PlanningCreate implements OnInit {
       const d = JSON.parse(raw);
       this.form.patchValue(d);
       if (d.wasteTypes?.length)    this.selectedWasteTypes.set(d.wasteTypes);
-      if (d.teams?.length)         this.selectedTeams.set(d.teams);
+      if (d.teams?.length)         this.selectedTeamId.set(d.teams[0] ?? null);
       if (d.frequencyDays?.length) this.frequencyDaysSel.set(d.frequencyDays);
     } catch { /* ignore */ }
   }
@@ -348,6 +358,7 @@ export class PlanningCreate implements OnInit {
   nextStep(): void {
     if (this._isStepValid(this.currentStep()) && this.currentStep() < this.steps.length - 1) {
       this.currentStep.update(s => s + 1);
+      if (this.currentStep() === 5) this.runConflictCheck();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
@@ -373,7 +384,7 @@ export class PlanningCreate implements OnInit {
       case 1: return this._validateTarget(fv);
       case 2: return !!fv['date'] && !!fv['startTime'];
       case 3: return this.selectedWasteTypes().length > 0;
-      case 4: return this.selectedTeams().length > 0;
+      case 4: return !!this.selectedTeamId();
       case 5: return true;
       case 6: return !!fv['libelle'];
       default: return true;
@@ -407,7 +418,7 @@ export class PlanningCreate implements OnInit {
         if (!fv['startTime']) errs.push("Entrez l'heure de début");
         break;
       case 3: if (!this.selectedWasteTypes().length) errs.push('Sélectionnez au moins un type de déchet'); break;
-      case 4: if (!this.selectedTeams().length)      errs.push('Affectez au moins une équipe'); break;
+      case 4: if (!this.selectedTeamId())            errs.push('Sélectionnez une équipe'); break;
       case 6: if (!fv['libelle'])                    errs.push('Entrez un nom pour le planning'); break;
     }
     return errs;
@@ -481,28 +492,118 @@ export class PlanningCreate implements OnInit {
   }
   isWasteTypeSelected(id: WasteType): boolean { return this.selectedWasteTypes().includes(id); }
 
+  // ── Conflict check ────────────────────────────────────────────
+  runConflictCheck(): void {
+    const teamId  = this.selectedTeamId();
+    const dateVal = this.formValue()['date'];
+    if (!teamId || !dateVal) { this.conflicts.set([]); return; }
+    this.checkingConflicts.set(true);
+    this.svc.checkConflicts(
+      this._dateToApiStr(dateVal), [teamId], this.editId() ?? undefined
+    ).subscribe({
+      next:  res => { this.conflicts.set(res.conflicts ?? []); this.checkingConflicts.set(false); },
+      error: ()  => { this.conflicts.set([]);                  this.checkingConflicts.set(false); },
+    });
+  }
+
+  // ── Team add / remove (persiste immédiatement en mode édition) ─
+  addTeamChip(teamId: string): void {
+    if (!teamId || this.teamSaving()) return;
+    if (this.isEditMode()) {
+      if (this.selectedTeamId() === teamId) return;
+      this.teamSaving.set(true);
+      const body = this._buildEditBody(teamId);
+      this.svc.updatePlanning(this.editId()!, body).subscribe({
+        next:  p   => { this.selectedTeamId.set(p.teamV2Id ?? null); this.teamSaving.set(false); },
+        error: err => {
+          this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.message ?? err?.error?.error?.message ?? 'Impossible d\'ajouter l\'équipe' });
+          this.teamSaving.set(false);
+        },
+      });
+    } else {
+      this.toggleTeam(teamId);
+    }
+  }
+
+  removeTeamChip(): void {
+    if (this.teamSaving()) return;
+    if (this.isEditMode()) {
+      this.teamSaving.set(true);
+      const body = this._buildEditBody(null);
+      this.svc.updatePlanning(this.editId()!, body).subscribe({
+        next:  p   => { this.selectedTeamId.set(p.teamV2Id ?? null); this.teamSaving.set(false); },
+        error: err => {
+          this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.message ?? err?.error?.error?.message ?? 'Impossible de retirer l\'équipe' });
+          this.teamSaving.set(false);
+        },
+      });
+    } else {
+      this.selectedTeamId.set(null);
+      this.form.get('teams')?.setValue([]);
+    }
+  }
+
+  private _buildEditBody(teamV2Id: string | null): any {
+    const v = this.form.getRawValue();
+    const body: any = {
+      type:        v.type,
+      libelle:     v.libelle,
+      frequency:   v.frequency,
+      date:        this._dateToApiStr(v.date),
+      startTime:   v.startTime,
+      endTime:     v.endTime || undefined,
+      typeDechets: this.selectedWasteTypes(),
+      teamV2Id:    teamV2Id ?? undefined,
+      notes:       v.notes || undefined,
+    };
+    if (v.clientId)          body.clientId          = v.clientId;
+    if (v.groupName)         body.groupeId          = v.groupName;
+    if (v.villeId)           body.villeId           = v.villeId;
+    if (v.arrondissementId)  body.arrondissementId  = v.arrondissementId;
+    if (v.secteurId)         body.secteurId         = v.secteurId;
+    if (v.quartierId)        body.quartierId        = v.quartierId;
+    return body;
+  }
+
+  // ── Publication directe (mode édition) ───────────────────────
+  publishDraft(): void {
+    if (this.isPublishing() || !this.editId()) return;
+    this.isPublishing.set(true);
+    this.svc.publishPlanning(this.editId()!).subscribe({
+      next: () => {
+        this.msgSvc.add({ severity: 'success', summary: 'Publié', detail: 'Planning publié avec succès' });
+        this.isPublishing.set(false);
+        setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500);
+      },
+      error: err => {
+        const detail = err?.error?.message ?? err?.error?.error?.message ?? 'Erreur lors de la publication';
+        this.msgSvc.add({ severity: 'error', summary: 'Erreur de publication', detail });
+        this.isPublishing.set(false);
+      },
+    });
+  }
+
   // ── Team conflict detector output ────────────────────────────
   onTeamsChange(ids: string[]): void {
-    this.selectedTeams.set(ids);
-    this.form.get('teams')?.setValue(ids);
+    const id = ids[0] ?? null;
+    this.selectedTeamId.set(id);
+    this.form.get('teams')?.setValue(id ? [id] : []);
   }
 
   toggleTeam(id: string): void {
-    const cur  = this.selectedTeams();
-    const next = cur.includes(id) ? cur.filter(t => t !== id) : [...cur, id];
-    this.selectedTeams.set(next);
-    this.form.get('teams')?.setValue(next);
+    const next = this.selectedTeamId() === id ? null : id;
+    this.selectedTeamId.set(next);
+    this.form.get('teams')?.setValue(next ? [next] : []);
   }
-  isTeamSelected(id: string): boolean { return this.selectedTeams().includes(id); }
+  isTeamSelected(id: string): boolean { return this.selectedTeamId() === id; }
 
   // ── End time auto-calc ───────────────────────────────────────
   calculateEndTime(): void {
     const start = this.form.get('startTime')?.value as string;
     const h = this.estimatedHouseholds();
-    const t = this.selectedTeams().length || 1;
     if (!start || !h) return;
     const [hh, mm] = start.split(':').map(Number);
-    const endMin   = hh * 60 + mm + Math.ceil((h * 5) / t);
+    const endMin   = hh * 60 + mm + Math.ceil(h * 5);
     const eh = Math.floor(endMin / 60) % 24;
     const em = endMin % 60;
     this.form.get('endTime')?.setValue(`${String(eh).padStart(2,'0')}:${String(em).padStart(2,'0')}`);
@@ -535,7 +636,7 @@ export class PlanningCreate implements OnInit {
       startTime:   v.startTime,
       endTime:     v.endTime || undefined,
       typeDechets: this.selectedWasteTypes(),
-      equipeIds:   this.selectedTeams(),
+      teamV2Id:    this.selectedTeamId() ?? undefined,
       agencyId,
       managerId:   managerId || undefined,
       notes:       v.notes || undefined,
@@ -592,7 +693,7 @@ export class PlanningCreate implements OnInit {
     localStorage.removeItem('planning_draft');
     this.form.reset({ startTime: '08:00', frequency: 'unique', publishImmediately: true, notifyClients: true, notifyTeams: true });
     this.selectedWasteTypes.set([]);
-    this.selectedTeams.set([]);
+    this.selectedTeamId.set(null);
     this.selectedClients.set([]);
     this.frequencyDaysSel.set([]);
     this.currentStep.set(0);

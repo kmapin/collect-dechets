@@ -431,6 +431,32 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     this.router.navigate(['/planning/create'], { queryParams: { edit: p.id } });
   }
 
+  /** brouillon → supprimé */
+  deletePlanning(p: Planning): void {
+    this.confirm.confirm({
+      message: `Supprimer définitivement le planning <strong>${p.reference}</strong> ?<br>Cette action est irréversible.`,
+      header: 'Confirmer la suppression',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Supprimer',
+      rejectLabel: 'Annuler',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.actionLoading.set(p.id);
+        this.svc.deletePlanning(p.id).subscribe({
+          next: () => {
+            this.recentPlannings.update(list => list.filter(x => x.id !== p.id));
+            this.msg.add({ severity: 'success', summary: 'Supprimé', detail: `Planning ${p.reference} supprimé.` });
+          },
+          error: (err) => {
+            const detail = err?.error?.error?.message ?? 'Impossible de supprimer ce planning';
+            this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+          },
+          complete: () => this.actionLoading.set(null),
+        });
+      },
+    });
+  }
+
   private _refreshPlannings(id: string, newStatus: PlanningStatus): void {
     this.recentPlannings.update(list =>
       list.map(x => x.id === id ? { ...x, status: newStatus } : x)
