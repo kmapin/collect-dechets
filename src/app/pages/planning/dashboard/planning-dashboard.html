@@ -1,0 +1,429 @@
+<p-toast position="top-right" />
+<p-confirmDialog />
+
+<div class="pd-container">
+
+  <!-- ========================================================
+       HEADER
+  ======================================================== -->
+  <div class="pd-header">
+    <div class="pd-header-left">
+      <h1 class="pd-title">Tableau de bord <span class="pd-title-accent">– Planning</span></h1>
+      <p class="pd-subtitle">Vue d'ensemble des plannings de collecte · Burkina Faso</p>
+    </div>
+
+    <div class="pd-header-right">
+      <!-- Supervisor badge -->
+      <div class="supervisor-badge">
+        <mat-icon>verified_user</mat-icon>
+        <span>Superviseur</span>
+      </div>
+
+      <!-- Notifications -->
+      <button class="icon-btn notif-btn" (click)="toggleNotif()">
+        <mat-icon>notifications</mat-icon>
+        @if (alerts().length) {
+          <span class="notif-count">{{ alerts().length }}</span>
+        }
+      </button>
+
+      <!-- Create button -->
+      <button class="btn-primary" [routerLink]="'/planning/create'">
+        <mat-icon>add</mat-icon>
+        Nouveau planning
+      </button>
+    </div>
+  </div>
+
+  <!-- Notification dropdown -->
+  @if (notifOpen()) {
+    <div class="notif-dropdown">
+      <div class="notif-header">
+        <span>Notifications</span>
+        <button class="close-notif" (click)="notifOpen.set(false)"><mat-icon>close</mat-icon></button>
+      </div>
+      @for (alert of alerts(); track alert.id) {
+        <div class="notif-item" [class]="'notif-' + alert.type">
+          <mat-icon class="notif-icon">{{ getAlertIcon(alert.type) }}</mat-icon>
+          <div class="notif-body">
+            <span class="notif-title">{{ alert.title }}</span>
+            <span class="notif-msg">{{ alert.message }}</span>
+            <span class="notif-time">{{ alert.time }}</span>
+          </div>
+          <button class="notif-dismiss" (click)="dismissAlert(alert.id)"><mat-icon>close</mat-icon></button>
+        </div>
+      }
+      @if (!alerts().length) {
+        <div class="notif-empty">
+          <mat-icon>check_circle</mat-icon>
+          <span>Aucune notification</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ========================================================
+       STAT CARDS
+  ======================================================== -->
+  @if (isLoading()) {
+    <div class="stats-grid">
+      @for (i of [1,2,3,4]; track i) {
+        <p-skeleton height="100px" borderRadius="12px" />
+      }
+    </div>
+  } @else {
+    <div class="stats-grid">
+      @for (card of statCards(); track card.label) {
+        <div class="stat-card" [style.--card-color]="card.color" [style.--card-bg]="card.bgColor">
+          <div class="stat-icon-wrap">
+            <mat-icon [style.color]="card.color">{{ card.icon }}</mat-icon>
+          </div>
+          <div class="stat-body">
+            <span class="stat-value">{{ card.value }}</span>
+            <span class="stat-label">{{ card.label }}</span>
+            <div class="stat-trend" [class.positive]="card.trend > 0" [class.negative]="card.trend < 0">
+              <mat-icon>{{ card.trend > 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+              <span>{{ card.trend > 0 ? '+' : '' }}{{ card.trend }}% {{ card.trendLabel }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ========================================================
+       CHARTS ROW 1 – Donut Type + Donut Statut
+  ======================================================== -->
+  @if (!isLoading()) {
+    <div class="charts-row">
+
+      <!-- Donut – par type -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">Plannings par type</span>
+          <div class="chart-legend-pills">
+            @for (lbl of ['Individuel','Groupe','Zone','Secteur']; track lbl) {
+              <span class="legend-pill">{{ lbl }}</span>
+            }
+          </div>
+        </div>
+        <div class="chart-body donut-chart">
+          <p-chart type="doughnut" [data]="typeChartData" [options]="typeChartOptions" />
+        </div>
+      </div>
+
+      <!-- Donut – par statut -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">Plannings par statut</span>
+        </div>
+        <div class="chart-body donut-chart">
+          <p-chart type="doughnut" [data]="statusChartData" [options]="statusChartOptions" />
+        </div>
+      </div>
+
+      <!-- Line – évolution -->
+      <div class="chart-card wide">
+        <div class="chart-header">
+          <span class="chart-title">Évolution des collectes (7 jours)</span>
+          <div class="chart-period-pills">
+            <button class="period-pill active">Semaine</button>
+            <button class="period-pill">Mois</button>
+          </div>
+        </div>
+        <div class="chart-body line-chart">
+          <p-chart type="line" [data]="evolutionChartData" [options]="evolutionChartOptions" />
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================
+       CHARTS ROW 2 – Charge des équipes + Taux exécution
+  ======================================================== -->
+  @if (!isLoading()) {
+    <div class="charts-row-2">
+
+      <!-- Bar – charge équipes -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">Charge des équipes</span>
+          <span class="chart-subtitle">Collectes du jour</span>
+        </div>
+        <div class="chart-body bar-chart">
+          <p-chart type="bar" [data]="teamWorkloadData" [options]="teamWorkloadOptions" />
+        </div>
+      </div>
+
+      <!-- Execution rate + Teams status -->
+      <div class="kpi-side">
+        <!-- Global execution rate -->
+        <div class="kpi-card exec-rate">
+          <div class="kpi-header">
+            <mat-icon>speed</mat-icon>
+            <span>Taux d'exécution global</span>
+          </div>
+          <div class="exec-value">{{ stats().executionRate }}<span class="exec-pct">%</span></div>
+          <p-progressBar [value]="stats().executionRate" [showValue]="false" styleClass="exec-bar" />
+          <div class="exec-labels">
+            <span>0%</span>
+            <span class="exec-target">Objectif: 90%</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        <!-- Teams status -->
+        <div class="kpi-card teams-status">
+          <div class="kpi-header">
+            <mat-icon>groups</mat-icon>
+            <span>Statut des équipes</span>
+          </div>
+          <div class="teams-list">
+            @for (team of teams(); track team.id) {
+              <div class="team-row">
+                <div class="team-dot" [style.background]="getTeamStatusColor(team.status)"></div>
+                <span class="team-name">{{ team.name }}</span>
+                <span class="team-status-label" [style.color]="getTeamStatusColor(team.status)">
+                  {{ getTeamStatusLabel(team.status) }}
+                </span>
+                <span class="team-count">{{ team.collectionsToday }} coll.</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================
+       BOTTOM – Table plannings récents + Alertes
+  ======================================================== -->
+  @if (!isLoading()) {
+    <div class="bottom-row">
+
+      <!-- Table plannings récents -->
+      <div class="table-card">
+        <div class="table-header">
+          <div>
+            <span class="section-title">Plannings récents</span>
+            <span class="section-count">{{ recentPlannings().length }} plannings</span>
+          </div>
+          <button class="btn-outline" [routerLink]="'/planning/list'">
+            Voir tout <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </div>
+
+        <p-table [value]="recentPlannings()" [rows]="6" [rowHover]="true"
+                 styleClass="planning-table" responsiveLayout="scroll"
+                 dataKey="id">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>ID</th>
+              <th>Libellé</th>
+              <th>Type</th>
+              <th>Zone / Secteur</th>
+              <th>Date</th>
+              <th>Équipe(s)</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-p>
+            <tr>
+              <td>
+                <span class="planning-ref">{{ p.reference }}</span>
+              </td>
+              <td>
+                <span class="planning-libelle">{{ p.libelle }}</span>
+              </td>
+              <td>
+                <div class="type-cell">
+                  <mat-icon class="type-icon" [style.color]="getTypeColor(p.type)">{{ getTypeIcon(p.type) }}</mat-icon>
+                  <span>{{ getTypeLabel(p.type) }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="zone-text">{{ p.zone || p.secteur || p.clientName || p.groupName || '—' }}</span>
+              </td>
+              <td>
+                <span class="date-text">{{ p.date }}</span>
+                @if (p.startTime) {
+                  <span class="time-text">{{ p.startTime }}</span>
+                }
+              </td>
+              <td>
+                <div class="teams-cell">
+                  @for (team of p.teams; track team) {
+                    <span class="team-chip">{{ team }}</span>
+                  }
+                </div>
+              </td>
+              <td>
+                <p-tag [value]="getStatusLabel(p.status)"
+                       [severity]="getStatusSeverity(p.status)"
+                       styleClass="planning-tag" />
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <!-- Voir -->
+                  <button class="action-btn view" pTooltip="Voir le détail" tooltipPosition="top"
+                          [routerLink]="['/planning/detail', p.id]">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+
+                  <!-- Modifier (brouillon uniquement) -->
+                  @if (p.status === 'brouillon') {
+                    <button class="action-btn edit" pTooltip="Modifier" tooltipPosition="top"
+                            (click)="navigateToEdit(p)">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Publier : brouillon → planifie -->
+                  @if (p.status === 'brouillon') {
+                    <button class="action-btn publish"
+                            pTooltip="Publier" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="publishPlanning(p)">
+                      <mat-icon>send</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Démarrer : planifie → en_cours -->
+                  @if (p.status === 'planifie') {
+                    <button class="action-btn start"
+                            pTooltip="Démarrer" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="startPlanning(p)">
+                      <mat-icon>play_arrow</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Terminer : en_cours → termine -->
+                  @if (p.status === 'en_cours') {
+                    <button class="action-btn complete"
+                            pTooltip="Terminer" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="completePlanning(p)">
+                      <mat-icon>check_circle</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Annuler : brouillon | planifie | en_cours -->
+                  @if (p.status !== 'termine' && p.status !== 'annule') {
+                    <button class="action-btn cancel"
+                            pTooltip="Annuler" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="cancelPlanning(p)">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Supprimer : brouillon ou annulé -->
+                  @if (p.status === 'brouillon' || p.status === 'annule') {
+                    <button class="action-btn delete"
+                            pTooltip="Supprimer" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="deletePlanning(p)">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Spinner pendant l'action -->
+                  @if (actionLoading() === p.id) {
+                    <mat-icon class="action-spin">sync</mat-icon>
+                  }
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="8" class="empty-table">
+                <mat-icon>inbox</mat-icon>
+                <span>Aucun planning trouvé</span>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <!-- Alertes & Incidents -->
+      <div class="alerts-panel">
+        <div class="alerts-header">
+          <mat-icon>warning_amber</mat-icon>
+          <span>Alertes & incidents</span>
+          @if (alerts().length) {
+            <span class="alerts-badge">{{ alerts().length }}</span>
+          }
+        </div>
+
+        <div class="alerts-list">
+          @for (alert of alerts(); track alert.id) {
+            <div class="alert-item" [class]="'alert-' + alert.type">
+              <div class="alert-left">
+                <div class="alert-icon-wrap" [class]="'alert-icon-' + alert.type">
+                  <mat-icon>{{ getAlertIcon(alert.type) }}</mat-icon>
+                </div>
+              </div>
+              <div class="alert-body">
+                <div class="alert-title">{{ alert.title }}</div>
+                <div class="alert-msg">{{ alert.message }}</div>
+                <div class="alert-meta">
+                  @if (alert.planningRef) {
+                    <span class="alert-ref">{{ alert.planningRef }}</span>
+                  }
+                  <span class="alert-time">{{ alert.time }}</span>
+                </div>
+              </div>
+              <button class="alert-dismiss" (click)="dismissAlert(alert.id)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+
+          @if (!alerts().length) {
+            <div class="alerts-empty">
+              <mat-icon>check_circle_outline</mat-icon>
+              <span>Aucune alerte active</span>
+            </div>
+          }
+        </div>
+
+        <!-- Map placeholder -->
+        <div class="map-placeholder">
+          <div class="map-header">
+            <mat-icon>map</mat-icon>
+            <span>Zones couvertes</span>
+            <button class="btn-outline-sm" [routerLink]="'/planning/zones'">
+              Voir la carte <mat-icon>open_in_new</mat-icon>
+            </button>
+          </div>
+          <div class="map-zones">
+            @for (zone of zones(); track zone.name) {
+              <div class="zone-row">
+                <div class="zone-dot" [class]="'zone-' + zone.status"></div>
+                <span class="zone-name">{{ zone.name }}</span>
+                <div class="zone-bar-wrap">
+                  <div class="zone-bar" [style.width.%]="zone.completionRate"
+                       [class]="'zone-bar-' + zone.status"></div>
+                </div>
+                <span class="zone-pct">{{ zone.completionRate }}%</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+    </div>
+  }
+
+  <!-- Loading skeleton for bottom row -->
+  @if (isLoading()) {
+    <div class="bottom-row">
+      <p-skeleton height="350px" borderRadius="12px" styleClass="flex-1" />
+      <p-skeleton height="350px" borderRadius="12px" width="340px" />
+    </div>
+  }
+
+</div>

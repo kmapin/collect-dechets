@@ -1,0 +1,161 @@
+.status-card {
+    // max-width: 600px;
+    margin: 2rem auto;
+    border-radius: 16px;
+    // box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.4s ease-out;
+  }
+  
+  .status-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .status-icon {
+    margin-bottom: 1.5rem;
+    
+    mat-icon {
+      font-size: 80px;
+      width: 80px;
+      height: 80px;
+      animation: scaleIn 0.5s ease-out;
+    }
+  }
+  
+  .status-details {
+    width: 100%;
+  }
+  
+  .status-title {
+    font-size: 1.8rem;
+    font-weight: 500;
+    margin: 0 0 1rem 0;
+  }
+  
+  .status-message {
+    font-size: 1rem;
+    margin: 0 0 2rem 0;
+    color: #666;
+    line-height: 1.5;
+  }
+  
+  .transaction-info {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  
+  .info-label {
+    font-weight: 500;
+    color: #666;
+  }
+  
+  .info-value {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  /* Status-specific styles */
+  .status-success {
+    border-top: 4px solid #4caf50;
+    
+    .status-icon mat-icon {
+      color: #4caf50;
+    }
+    
+    .status-title {
+      color: #4caf50;
+    }
+  }
+  
+  .status-failed {
+    border-top: 4px solid #f44336;
+    
+    .status-icon mat-icon {
+      color: #f44336;
+    }
+    
+    .status-title {
+      color: #f44336;
+    }
+  }
+  
+  .status-pending {
+    border-top: 4px solid #ff9800;
+    
+    .status-icon mat-icon {
+      color: #ff9800;
+    }
+    
+    .status-title {
+      color: #ff9800;
+    }
+  }
+  
+  /* Animations */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes scaleIn {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .status-card {
+      margin: 1rem;
+    }
+    
+    .status-container {
+      padding: 1.5rem;
+    }
+    
+    .status-icon mat-icon {
+      font-size: 60px;
+      width: 60px;
+      height: 60px;
+    }
+    
+    .status-title {
+      font-size: 1.5rem;
+    }
+    
+    .transaction-info {
+      padding: 1rem;
+    }
+    
+    .info-row {
+      flex-direction: column;
+      gap: 0.25rem;
+      text-align: left;
+    }
+  }
+  

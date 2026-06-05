@@ -1,0 +1,357 @@
+<footer class="footer">
+  <!-- Particules d'arrière-plan -->
+  <div class="footer-particles">
+    @for (particle of particles; track particle) {
+      <div
+        class="particle"
+        [style.left.%]="particle.x"
+        [style.top.%]="particle.y"
+        [style.animation-delay.s]="particle.delay"
+      ></div>
+    }
+  </div>
+
+  <div class="container">
+    <!-- Section principale du footer -->
+    <div class="footer-main">
+      <div class="footer-content">
+        <!-- Section Brand -->
+        <div class="footer-section brand-section">
+          <div class="footer-brand">
+            <!-- <div class="brand-icon">
+            <i class="material-icons">eco</i>
+          </div> -->
+          <div class="brand-logo">
+            <img
+              src="assets/homeUseCases/Zéro_Déchet.png"
+              alt="Logo ZéroDéchet+"
+              class="logo"
+              />
+            </div>
+            <div class="brand-text">
+              <span class="brand-name">ZéroDéchet+</span>
+              <span class="brand-tagline">Gestion Facile</span>
+            </div>
+          </div>
+          <p class="footer-description">
+            <strong>Facilitez</strong> votre gestion des déchets avec notre
+            plateforme intelligente. Connectant citoyens, entreprises et
+            collecteurs pour un avenir plus propre et durable.
+          </p>
+
+          <!-- Réseaux sociaux -->
+          <div class="social-section">
+            <h4>Suivez-nous</h4>
+            <div class="social-links">
+              <a href="#" class="social-link facebook" aria-label="Facebook">
+                <i class="material-icons">facebook</i>
+              </a>
+              <a href="#" class="social-link twitter" aria-label="Twitter">
+                <i class="material-icons">alternate_email</i>
+              </a>
+              <a href="#" class="social-link linkedin" aria-label="LinkedIn">
+                <i class="material-icons">business</i>
+              </a>
+              <a href="#" class="social-link instagram" aria-label="Instagram">
+                <i class="material-icons">photo_camera</i>
+              </a>
+              <a href="#" class="social-link youtube" aria-label="YouTube">
+                <i class="material-icons">play_circle_filled</i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Services -->
+        <div class="footer-section">
+          <h4 class="footer-section-title">
+            <i class="material-icons">build</i>
+            Services
+          </h4>
+          <ul class="footer-links">
+            <li>
+              <a routerLink="/agencies" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Trouver une agence
+              </a>
+            </li>
+            <li>
+              <a routerLink="/waste-types" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Guide du tri
+              </a>
+            </li>
+            <li>
+              <a routerLink="/schedule" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Calendrier collecte
+              </a>
+            </li>
+            <li>
+              <a routerLink="/subscription" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Abonnements
+              </a>
+            </li>
+            <li>
+              <a href="#" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Collecte express
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Support -->
+        <div class="footer-section">
+          <h4 class="footer-section-title">
+            <i class="material-icons">support_agent</i>
+            Support
+          </h4>
+          <ul class="footer-links">
+            <li>
+              <a routerLink="/faq" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Questions fréquentes
+              </a>
+            </li>
+            <li>
+              <a routerLink="/help" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Centre d'aide
+              </a>
+            </li>
+            <li>
+              <a routerLink="/contact" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Nous contacter
+              </a>
+            </li>
+            <li>
+              <a routerLink="/report" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Signaler un problème
+              </a>
+            </li>
+            <li>
+              <a href="#" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Chat en direct
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Entreprise -->
+        <div class="footer-section">
+          <h4 class="footer-section-title">
+            <i class="material-icons">business</i>
+            Entreprise
+          </h4>
+          <ul class="footer-links">
+            <li>
+              <a routerLink="/about" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                À propos de nous
+              </a>
+            </li>
+            <li>
+              <a href="#" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Notre équipe
+              </a>
+            </li>
+            <li>
+              <a href="#" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Carrières
+              </a>
+            </li>
+            <li>
+              <a href="#" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Partenaires
+              </a>
+            </li>
+            <li>
+              <a href="#" class="footer-link">
+                <i class="material-icons">chevron_right</i>
+                Investisseurs
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Newsletter -->
+        <div class="footer-section newsletter-section">
+          <h4 class="footer-section-title">
+            <i class="material-icons">mail</i>
+            Newsletter
+          </h4>
+          <p class="newsletter-description">
+            Restez informé des dernières actualités, conseils écologiques et
+            nouvelles fonctionnalités.
+          </p>
+
+          <form class="newsletter-form" (ngSubmit)="onNewsletterSubmit($event)">
+            <div class="newsletter-input-group">
+              <input
+                type="email"
+                [(ngModel)]="newsletterEmail"
+                name="email"
+                placeholder="Votre adresse email"
+                class="newsletter-input"
+                required
+                />
+                <button
+                  type="submit"
+                  class="newsletter-btn"
+                  [disabled]="isSubmitting"
+                  >
+                  @if (!isSubmitting) {
+                    <i class="material-icons">send</i>
+                  }
+                  @if (isSubmitting) {
+                    <i class="material-icons rotating"
+                      >hourglass_empty</i
+                      >
+                  }
+                </button>
+              </div>
+              <div class="newsletter-benefits">
+                <div class="benefit-item">
+                  <i class="material-icons">check_circle</i>
+                  <span>Conseils écologiques hebdomadaires</span>
+                </div>
+                <div class="benefit-item">
+                  <i class="material-icons">check_circle</i>
+                  <span>Alertes nouvelles fonctionnalités</span>
+                </div>
+                <div class="benefit-item">
+                  <i class="material-icons">check_circle</i>
+                  <span>Pas de spam, désabonnement facile</span>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section contact rapide -->
+      <div class="footer-contact">
+        <div class="contact-cards">
+          <div class="contact-card">
+            <div class="contact-icon">
+              <i class="material-icons">phone</i>
+            </div>
+            <div class="contact-info">
+              <span class="contact-label">Support 24/7</span>
+              <a href="tel:+22655540202" class="contact-value">55 54 02 02</a>
+            </div>
+          </div>
+
+          <div class="contact-card">
+            <div class="contact-icon">
+              <i class="material-icons">email</i>
+            </div>
+            <div class="contact-info">
+              <span class="contact-label">Email</span>
+              <a href="mailto:contact&#64;wastemanager.bf" class="contact-value"
+                >contact&#64;zerodechet.bf</a
+                >
+              </div>
+            </div>
+
+            <div class="contact-card">
+              <div class="contact-icon">
+                <i class="material-icons">location_on</i>
+              </div>
+              <div class="contact-info">
+                <span class="contact-label">Siège social</span>
+                <span class="contact-value">Ouagadougou, Burkina Faso</span>
+              </div>
+            </div>
+
+            <div class="contact-card">
+              <div class="contact-icon">
+                <i class="material-icons">schedule</i>
+              </div>
+              <div class="contact-info">
+                <span class="contact-label">Horaires</span>
+                <span class="contact-value">Lun-Ven 8h-20h</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section certifications -->
+        <!-- <div class="footer-certifications">
+        <div class="certifications-content">
+          <h4>Certifications & Partenaires</h4>
+          <div class="certifications-grid">
+            <div class="certification-item">
+              <div class="cert-icon">
+                <i class="material-icons">verified</i>
+              </div>
+              <span>ISO 14001</span>
+            </div>
+            <div class="certification-item">
+              <div class="cert-icon">
+                <i class="material-icons">eco</i>
+              </div>
+              <span>Label Vert</span>
+            </div>
+            <div class="certification-item">
+              <div class="cert-icon">
+                <i class="material-icons">security</i>
+              </div>
+              <span>RGPD Conforme</span>
+            </div>
+            <div class="certification-item">
+              <div class="cert-icon">
+                <i class="material-icons">star</i>
+              </div>
+              <span>Élu Service Client</span>
+            </div>
+          </div>
+        </div>
+      </div> -->
+
+      <!-- Footer bottom -->
+      <div class="footer-bottom">
+        <div class="footer-bottom-content">
+          <div class="copyright">
+            <p>© 2025 ZéroDéchet+. Tous droits réservés.</p>
+            <p class="made-with">
+              Fait avec <i class="material-icons heart">favorite</i> pour un monde
+              plus propre
+            </p>
+          </div>
+
+          <div class="footer-bottom-links">
+            <a routerLink="/privacy" class="footer-bottom-link"
+              >Confidentialité</a
+              >
+              <a routerLink="/terms" class="footer-bottom-link">Conditions</a>
+              <a href="#" class="footer-bottom-link">Cookies</a>
+              <a href="#" class="footer-bottom-link">Plan du site</a>
+            </div>
+
+            <div class="footer-stats">
+              <div class="stat-item">
+                <span class="stat-number">50K+</span>
+                <span class="stat-label">Utilisateurs</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">200+</span>
+                <span class="stat-label">Agences</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">1M+</span>
+                <span class="stat-label">Collectes</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>

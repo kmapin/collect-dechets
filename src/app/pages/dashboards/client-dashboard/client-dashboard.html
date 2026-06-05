@@ -1,0 +1,1018 @@
+<div class="client-dashboard">
+  <div class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Bonjour {{ currentUser?.firstName }} !</h1>
+          <p class="page-subtitle">
+            Gérez vos collectes et abonnements en toute simplicité
+          </p>
+        </div>
+        <div class="quick-actions">
+          <button class="btn btn-primary" (click)="scrollToChat()">
+            <i class="material-icons">message</i>Mes messages
+            <span class="tab-badge">{{ unreadMessageCount ? unreadMessageCount : 0 }}</span>
+          </button>
+          @if (currentUser?.subscribedAgencyId) {
+            <button
+              class="btn btn-primary"
+              routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}"
+              >
+              <i class="material-icons">business</i>
+              Mon agence
+            </button>
+          }
+          <!-- <button class="btn btn-primary" (click)="showReportModal = true">
+            <i class="material-icons">report_problem</i>
+            Signaler un problème
+          </button> -->
+          <button class="btn btn-secondary" routerLink="/profile">
+            <i class="material-icons">settings</i>
+            Mon profil
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="dashboard-content">
+      <!-- Statistiques rapides -->
+      <div class="stats-grid">
+        <div class="stat-card card">
+          <div class="stat-icon next-collection">
+            <i class="material-icons">event</i>
+          </div>
+          @if (nextCollect) {
+            <div class="stat-info">
+              <h3>Prochaine collecte</h3>
+              <p class="stat-value">
+                {{ nextCollect?.date | date : "dd MMMM" : "fr-FR" }}
+              </p>
+              <!-- <p class="stat-value">{{ getNextCollectionTime(nextCollect?.date)  }}</p> -->
+              <!-- <span class="stat-detail">{{ getnextCollectionHour(nextCollect?.date) }}</span> -->
+               @if(nextCollect?.code){
+              <span class="stat-detail"
+                >entre {{ nextCollect?.code?.startTime ?? '00:00' }} et {{ nextCollect?.code?.endTime?? '00:00' }}
+              </span>
+              }
+            </div>
+          } @else {
+            <p>
+              Pas de collecte prévue.<br />
+              <sub>Veuillez vérifier plus tard </sub>
+              <sub>ou contactez votre agence pour avoir un planning.</sub>
+            </p>
+          }
+        </div>
+
+        <div class="stat-card card">
+          <div class="stat-icon collections">
+            <i class="material-icons">check_circle</i>
+          </div>
+          <div class="stat-info">
+            <h3>Collectes de ce mois</h3>
+            <p class="stat-value">
+              {{calculateMonthlyCollections()}}
+              <!-- {{ getTotalCompletedCollectionsLength() }} / {{
+              getMonthlyCollectionsLength() }} -->
+            </p>
+            <!-- <span class="stat-detail">{{ getCompletedCollectionRate() }}% de réussite ; {{ getUncompletedCollectionRate() }}% d'échecs</span> -->
+            <span class="stat-detail"
+              ><i
+              class="material-icons"
+              style="color: var(--success-color); vertical-align: middle"
+              >check_circle</i
+              >
+              {{ getCompletedCollectionRate() }}% &nbsp;;&nbsp;
+              <i
+                class="material-icons"
+                style="color: var(--error-color); vertical-align: middle"
+                >cancel</i
+                >
+                {{ getUncompletedCollectionRate() }} % &nbsp;;&nbsp;
+                <i
+                  class="material-icons"
+                  style="color: var(--info-color); vertical-align: middle"
+                  >schedule</i
+                  >
+                  {{ getUpcomingCollectionRate() }} %
+                </span>
+              </div>
+            </div>
+
+            <!-- <div class="stat-card card">
+            <div class="stat-icon subscription">
+              <i class="material-icons">card_membership</i>
+            </div>
+            <div class="stat-info">
+              <h3>Abonnement</h3>
+              <p class="stat-value">{{ subscription?.serviceName }}</p>
+              <span class="stat-detail">{{ subscription?.price }}€/mois</span>
+            </div>
+          </div> -->
+
+          <div class="stat-card card">
+            <div class="stat-icon payment">
+              <i class="material-icons">payment</i>
+            </div>
+            @if (activeSubscription) {
+              <div
+                class="stat-info"
+                >
+                <h3>Prochain paiement</h3>
+                <p class="stat-value">
+                  {{ getNextPayment( activeSubscription?.endDate) }}
+                </p>
+                <span class="stat-detail"
+                  >{{ activeSubscription?.pricingId.price }} F CFA</span
+                  >
+                </div>
+              } @else {
+                <p>
+                  Aucun abonnement actif.<br />
+                  <sub>
+                    Veuillez souscrire à un abonnement pour bénéficier de nos
+                    services.
+                  </sub>
+                </p>
+              }
+            </div>
+
+            <div class="stat-card card">
+              <div class="stat-icon collections">
+                <i class="material-icons">wallet</i>
+              </div>
+              <div class="stat-info">
+                <h3>Wallet</h3>
+                <p class="stat-value">{{ clientBalance | number }} FCFA</p>
+                <button
+                  class="btn btn-secondary btn-small"
+                  (click)="showRechargeModal = true"
+                  >
+                  <i class="material-icons">refresh</i>
+                  Recharger
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contenu principal -->
+          <div class="main-content">
+            <div class="left-column">
+              <!-- Prochains passages -->
+              <section class="upcoming-collections card">
+                <div class="section-header">
+                  <h2>
+                    <i class="material-icons">schedule</i>
+                    Planning de la semaine
+                  </h2>
+                  <button
+                    class="btn btn-secondary btn-small"
+                    (click)="refreshCollections()"
+                    >
+                    <i class="material-icons">refresh</i>
+                    Actualiser
+                  </button>
+                </div>
+
+                <div class="collections-list">
+                  @for (collection of weeklySchedule; track collection) {
+                    <div
+                      class="collection-item"
+                      >
+                      <div class="collection-date">
+                        <div class="day">{{ collection.date | date : "dd" }}</div>
+                        <div class="month">{{ collection.date | date : "MMM" }}</div>
+                      </div>
+                      <div class="collection-info">
+                        <!-- <h4>{{ getWasteTypeName(collection.wasteTypes[0]) }}</h4> -->
+                        <h4>Collecte standard</h4>
+                        @if (collection?.code) {
+                        <p class="collection-time">
+                          <i class="material-icons">access_time</i>
+                          <!-- {{ collection.date }} -->
+                          {{ collection?.code?.startTime ? collection?.code?.startTime+ " - "  : ""}}  {{ collection?.code?.endTime ? collection?.code?.endTime : "" }}
+                        </p>
+                        }
+                        <!-- <p class="collection-address">
+                        <i class="material-icons">location_on</i>
+                        {{ collection.zone }}
+                      </p> -->
+                    </div>
+                    <div class="collection-status">
+                      <span class="status-badge" [class]="'status-scheduled'">
+                        {{ getStatusText(collection.status)}}
+                      </span>
+                      <div class="collection-actions">
+                        @if (collection.status === 'in_progress') {
+                          <button
+                            class="action-btn"
+                            (click)="trackCollection(collection._id)"
+                            >
+                            <i class="material-icons">location_on</i>
+                            Suivre
+                          </button>
+                        }
+                        @if (collection.status === 'Scheduled' || collection.status === 'In_progress') {
+                          <button
+                            class="action-btn"
+                            (click)="reportIssue(collection._id)"
+                            >
+                            <i class="material-icons">report</i>
+                            Signaler
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                @if (weeklySchedule.length === 0) {
+                  <div class="empty-state">
+                    <i class="material-icons">event_available</i>
+                    <h3>Aucune collecte programmée</h3>
+                    <p>Vos prochaines collectes de la semaine apparaîtront ici</p>
+                  </div>
+                }
+              </div>
+            </section>
+
+            <!-- Historique des collectes -->
+            <section class="collection-history card">
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">history</i>
+                  Historique des collectes
+                </h2>
+                <!-- <div class="filter-controls">
+                <select
+                  [(ngModel)]="historyFilter"
+                  (change)="filterHistory()"
+                  class="filter-select"
+                  >
+                  <option value="all">Toutes</option>
+                  <option value="completed">Réalisées</option>
+                  <option value="missed">Manquées</option>
+                  <option value="cancelled">Annulées</option>
+                </select>
+              </div> -->
+            </div>
+
+            <div class="history-list">
+              @for (collection of filteredHistories; track collection) {
+                <div
+                  class="history-item"
+                  >
+                  <div class="history-date">
+                    <div class="day">
+                      {{ collection.scheduledDate | date : "dd" }}
+                    </div>
+                    <div class="month">
+                      {{ collection.scheduledDate | date : "MMM" }}
+                    </div>
+                  </div>
+                  <div class="history-info">
+                    <h4>{{ getWasteTypeName(collection.wasteTypes) }}</h4>
+                    <p class="history-time">
+                      {{ collection.scheduledDate | date : "HH:mm" }}
+                    </p>
+                    @if (collection.collectedDate) {
+                      <p class="history-collector">
+                        Collecté le {{ collection.collectedDate | date : "dd/MM à HH:mm" }}
+                      </p>
+                    }
+                  </div>
+                  <div class="history-status">
+                    <span
+                      class="status-badge"
+                      [class]="'status-'+collection.status.toLowerCase()"
+                      >
+                      {{ getStatusText(collection.status) }}
+                    </span>
+                    @if (collection.status.toLowerCase() === 'completed') {
+                      <div
+                        class="history-rating"
+                        >
+                        <div class="stars">
+                          @for (
+                            star of getStars(collection.rating || 0)
+                            ; track
+                            star) {
+                            <i
+                              class="material-icons star"
+                              >star</i
+                              >
+                            }
+                          </div>
+                          @if (!collection.rating) {
+                            <button
+                              class="rate-btn"
+                              (click)="rateCollection(collection.id)"
+                              >
+                              Noter
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                @if (filteredHistories?.length === 0) {
+                  <div class="empty-state">
+                    <i class="material-icons">history</i>
+                    <h3>Aucun historique</h3>
+                    <p>Vos collectes passées apparaîtront ici</p>
+                  </div>
+                }
+              </div>
+            </section>
+
+            <!-- Messages -->
+            <!-- <section class="collection-message card">
+            <div class="section-header">
+              <h2>
+                <i class="material-icons">message</i>
+                Messagerie
+              </h2>
+              <div class="filter-controls">
+                <span class="section-count"
+                  >{{ unreadMessageCount }} message(s) non lu(s)</span
+                  >
+                </div>
+              </div>
+
+              <div class="history-list history-message">
+                <div
+                  *ngFor="let message of connectedUserMessages"
+                  class="history-item"
+                  >
+                  <div class="history-date">
+                    <div class="day">
+                      {{ message.timestamp | date : "dd" }}
+                    </div>
+                    <div class="month">
+                      {{ message.timestamp | date : "MMM" }}
+                    </div>
+                  </div>
+                  <div class="history-info">
+                    <h4>{{ message.content }}</h4>
+                    <p class="history-time">
+                      {{ message.timestamp | date : "HH:mm" }}
+                    </p>
+                    <p
+                      class="history-collector"
+                      *ngIf="message.sender !== currentUser?._id"
+                      >
+                      Reçu de
+                      <span class="sender-name">{{
+                        message.senderName
+                      }}</span>
+                    </p>
+                    <p
+                      class="history-collector"
+                      *ngIf="message.sender === currentUser?._id"
+                      >
+                      Moi
+                    </p>
+                  </div>
+                  <div class="history-status">
+                    <span class="status-badge">
+                      {{ message.read === "false" ? "Non lu" : "Lu" }}
+                    </span>
+                    <div
+                      class="history-rating"
+                      *ngIf="message.read === 'false'"
+                      >
+                      <button
+                        class="rate-btn"
+                        (click)="readAndRespondMessage(message)"
+                        *ngIf="!message.rating"
+                        >
+                        Repondre
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div *ngIf="unreadMessageCount === 0" class="empty-state">
+                  <i class="material-icons">history</i>
+                  <h3>Aucun message</h3>
+                  <p>Vos messages apparaîtront ici</p>
+                </div>
+              </div>
+            </section>
+            -->
+            <!-- Messages 2 -->
+            <section class="collection-message card" #chatMessages>
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">message</i>
+                  Messagerie
+                </h2>
+                <div class="filter-controls">
+                  <span class="section-count"
+                    >{{ unreadMessageCount }} message(s) non lu(s)</span
+                    >
+                  </div>
+                </div>
+
+                <!-- <div class="history-list history-message"> -->
+                <div class="parent">
+                  <!-- Header -->
+                  <div class="chat-header-column">
+                    @if (displayAgencyName) {
+                      <span
+                        >Vous discutez avec {{ displayAgencyName }}</span
+                        >
+                      }
+                    </div>
+
+                    <div class="message-content">
+                      <!-- Sidebar -->
+                      <div class="chat-left-column">
+                        <div class="chat-left-column-header">
+                          <div class="chat-left-column-header-title">
+                            Mes discussions
+                          </div>
+                        </div>
+
+                        <div class="chat-left-column-content">
+                          @for (message of connectedUserMessages; track message) {
+                            @if (message.name) {
+                              <button
+                                class="chat-left-column-content-item"
+                                (click)="userAndAgencyConversation(message)"
+                                >
+                                {{ message.name }} @if(message.unreadCount > 0){<span class="tab-badge">{{ message.unreadCount }}</span> } 
+                              </button>
+                            }
+                          }
+                        </div>
+                      </div>
+                      <!-- Messages + Input -->
+                      <div class="chat-area">
+                        <div class="chat-messages" #scrollMe>
+                          @for (message of receivedMessages; track message) {
+                            @if (message.sender !== currentUser?._id) {
+                              <div
+                                class="received"
+                                >
+                                <div class="div5 chat-bubble">
+                                  <span> {{ message.content }}</span>
+                                  <span class="chat-time"
+                                    >reçu le {{ message.timestamp | date : "dd/MMM/yyyy à HH:mm" }}
+                                    <mat-icon class="chat-read">
+                                      {{ message.read === "true" ? "done_all" : "done"
+                                      }}
+                                    </mat-icon>
+                                  </span>
+                                </div>
+                              </div>
+                            }
+                            @if (message.sender === currentUser?._id) {
+                              <div
+                                class="sent"
+                                >
+                                <div class="div6 chat-bubble">
+                                  <span> {{ message.content }}</span>
+                                  <span class="chat-time"
+                                    >envoyé le {{ message.timestamp | date :
+                                    "dd/MMM/yyyy à HH:mm" }}
+                                    <mat-icon class="chat-read">
+                                      {{ message.read === "true" ? "done_all" : "done"
+                                      }}
+                                    </mat-icon>
+                                  </span>
+                                </div>
+                              </div>
+                            }
+                          }
+                        </div>
+                        <!-- Input fixé en bas -->
+                        <div class="div7 chat-input-row">
+                          <input
+                            class="sendChatMessage"
+                            [(ngModel)]="messageData.content"
+                            name="content"
+                            type="text"
+                            placeholder="Composez votre message"
+                            />
+                            <div class="chat-actions">
+                              <button
+                                type="button"
+                                (click)="submitMessage()"
+                                class="btn_send btn-secondary"
+                                >
+                                <mat-icon class="material-icons">send</mat-icon>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Message -->
+                  @if (showMessageModal) {
+                    <div
+                      class="modal-overlay"
+                      (click)="showMessageModal = false"
+                      >
+                      <div class="modal-content" (click)="$event.stopPropagation()">
+                        <div class="modal-header">
+                          <h3>Décrivez nous votre besoins</h3>
+                          <button class="close-btn" (click)="showMessageModal = false">
+                            <i class="material-icons">close</i>
+                          </button>
+                        </div>
+                        <form class="report-form">
+                          <!-- <div class="form-group">
+                          <label>Destinataire</label>
+                          <select [(ngModel)]="messageData.receiver" name="receiver" required>
+                            <option value="">Sélectionnez</option>
+                            <option value="missed_collection">Collecte manquée</option>
+                            <option value="compliance_issue">Non-conformité</option>
+                            <option value="technical_issue">Problème technique</option>
+                            <option value="complaint">Réclamation</option>
+                            <option value="other">Autre</option>
+                          </select>
+                        </div>-->
+                        <div class="form-group">
+                          <label>Message</label>
+                          <textarea
+                            [(ngModel)]="messageData.content"
+                            name="content"
+                            rows="4"
+                            placeholder="Votre message..."
+                            required
+                          ></textarea>
+                        </div>
+                        <div class="form-actions">
+                          <button
+                            type="button"
+                            class="btn btn-secondary"
+                            (click)="showMessageModal = false"
+                            >
+                            Annuler
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-primary"
+                            (click)="submitMessage(); showMessageModal = false"
+                            >
+                            <i class="material-icons">send</i>
+                            Envoyer
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="right-column">
+                <!-- Informations d'abonnement -->
+                <section class="subscription-info card bg-blue-100">
+                  <div class="section-header">
+                    <h2>
+                      <i class="material-icons">card_membership</i>
+                      Mon abonnement
+                    </h2>
+                    <button
+                      class="btn btn-secondary btn-small"
+                      routerLink="/subscription"
+                      >
+                      <i class="material-icons">edit</i>
+                      Changer de forfait
+                    </button>
+                  </div>
+
+                  @if (activeSubscription) {
+                    <div
+                      class="subscription-details"
+                      >
+                      <div class="subscription-service">
+                        <h3>Collecte {{ activeSubscription.pricingId?.planType }}</h3>
+                        <p>{{ activeSubscription.agencyId?.name }}</p>
+                      </div>
+                      <div class="subscription-pricing">
+                        <div class="price">
+                          {{ activeSubscription.pricingId?.price }} <sup>F CFA</sup>
+                        </div>
+                        <div class="frequency">par mois</div>
+                      </div>
+                      <div class="subscription-status">
+                        <span
+                          class="status-badge"
+                          [class]="'status-' + (activeSubscription.isActive ? 'active' : 'inactive')"
+                          >
+                          {{ getSubscriptionStatusText((activeSubscription.isActive ? 'active' : 'inactive')) }}
+                        </span>
+                        <button
+                          class="btn btn-secondary btn-small"
+                          routerLink="/agencies/{{ activeSubscription.agencyId?._id }}"
+                          >
+                          <i class="material-icons">visibility</i>
+                          Voir l'agence
+                        </button>
+                      </div>
+                      <!-- <div class="subscription-actions">
+                      <button class="btn btn-primary btn-full" (click)="showPaymentModal = true">
+                        <i class="material-icons">payment</i>
+                        Payer maintenant
+                      </button>
+                      <button class="btn btn-secondary btn-small" routerLink="/subscription">
+                        <i class="material-icons">edit</i>
+                        Se réabonner
+                      </button>
+                    </div> -->
+                  </div>
+                } @else {
+                  <div class="info-item">
+                    <span>Aucun abonnement actif.</span>
+                  </div>
+                }
+              </section>
+
+              <!-- Paiement en ligne -->
+              <!-- <section class="payment-section card">
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">payment</i>
+                  Paiement
+                </h2>
+              </div>
+
+              <div class="payment-info" *ngIf="activeSubscription">
+                <div class="next-payment">
+                  <h4>Prochain paiement</h4>
+                  <p class="payment-date">{{ getNextPayment(activeSubscription?.endDate) }}</p>
+                  <p class="payment-amount">{{ activeSubscription?.amount }} <sup>F CFA</sup></p>
+                </div>
+
+                <div class="payment-method">
+                  <h4>Mode de paiement</h4>
+                  <div class="payment-card">
+                    <i class="material-icons">credit_card</i>
+                    <span>**** **** **** 1234</span>
+                    <button class="change-btn" (click)="changePaymentMethod()">Modifier</button>
+                  </div>
+                </div>
+              </div>
+            </section> -->
+
+            <!-- Historique des paiements -->
+            <section class="payment-history card">
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">receipt</i>
+                  Historique des paiements
+                </h2>
+                <button
+                  class="btn btn-secondary btn-small"
+                  (click)="downloadInvoices()"
+                  >
+                  <i class="material-icons">download</i>
+                  Télécharger
+                </button>
+              </div>
+
+              <div class="payments-list">
+                @for (payment of paymentHistory; track payment) {
+                  <div class="payment-item">
+                    <div class="payment-date">
+                      <div class="day">{{ payment.date | date : "dd" }}</div>
+                      <div class="month">{{ payment.date | date : "MMM" }}</div>
+                    </div>
+                    <div class="payment-details">
+                      <h4>{{ payment.description }}</h4>
+                      <p class="payment-method-text">{{ payment.method }}</p>
+                    </div>
+                    <div class="payment-amount">
+                      <span class="amount">{{ payment.amount }} FCFA</span>
+                      <span
+                        class="status-badge"
+                        [class]="'status-' + (payment.status ? 'active' : 'inactive')"
+                        >
+                        {{ getPaymentStatusText((payment.status? 'active' :'')) === "active" ?
+                        "Actif" : getPaymentStatusText((payment.status? 'inactive' :'')) ===
+                        "inactive" ? "Inactif" :
+                        getPaymentStatusText(payment.status) === "cancelled" ?
+                        "Annulé" : getPaymentStatusText(payment.status) ===
+                        "refunded" ? "Remboursé" :
+                        getPaymentStatusText(payment.status) === "expired" ?
+                        "Expiré" : "En attente de réabonnement" }}
+                      </span>
+                    </div>
+                  </div>
+                }
+
+                @if (paymentHistory.length === 0) {
+                  <div class="empty-state">
+                    <i class="material-icons">receipt</i>
+                    <h3>Aucun paiement</h3>
+                    <p>Vos paiements apparaîtront ici</p>
+                  </div>
+                }
+              </div>
+            </section>
+              <!-- Modal de signalement ---->
+             <section class="payment-history card">
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">receipt</i>
+                  Historique de mes signalements
+                </h2>
+                
+              </div>
+
+              <div class="payments-list">
+                @if (clientReports.length > 0) {
+                  <app-signalement [incidents]="clientReports"></app-signalement>
+                }
+
+                @if (clientReports.length === 0) {
+                  <div class="empty-state">
+                    <i class="material-icons">receipt</i>
+                    <h3>Aucun paiement</h3>
+                    <p>Vos paiements apparaîtront ici</p>
+                  </div>
+                }
+              </div>
+            </section>
+            <!-- Adresse de collecte -->
+            <section class="collection-address flex flex-col card">
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">home</i>
+                  Adresse de collecte
+                </h2>
+                <!-- <button class="btn btn-secondary btn-small" routerLink="/profile" (click)="editAddress()"> -->
+                <button class="btn btn-secondary btn-small" routerLink="/profile">
+                  <i class="material-icons">edit</i>
+                  Modifier
+                </button>
+              </div>
+
+              @if (currentUser) {
+                <div class="address-details">
+                  <div class="address-line">
+                    <i class="material-icons">location_city</i>
+                    <span>{{ currentUser.address?.city }}</span>
+                  </div>
+                  <div class="address-line">
+                    <i class="material-icons">location_on</i>
+                    <span>{{ currentUser?.address.arrondissement }} </span>
+                  </div>
+                  <div class="address-line">
+                    <i class="material-icons">home</i>
+                    <span
+                      >{{ currentUser.address?.sector }}, {{
+                      currentUser.address?.street }}, {{
+                      currentUser.address?.neighborhood }}</span
+                      >
+                    </div>
+                    <div class="address-line">
+                      <i class="material-icons">palette</i>
+                      <span>Porte : {{ currentUser.address?.doorColor }}</span>
+                    </div>
+                  </div>
+                }
+
+                <!-- <div class="address-map">
+                <div class="map-placeholder">
+                  <i class="material-icons">map</i>
+                  <p>Localisation précise</p>
+                </div>
+              </div> -->
+            </section>
+
+            
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de signalement -->
+    @if (showReportModal) {
+      <div
+        class="modal-overlay"
+        (click)="showReportModal = false"
+        >
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Signaler un problème</h3>
+            <button class="close-btn" (click)="showReportModal = false">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <form class="report-form" (ngSubmit)="submitReport()">
+            <div class="form-group">
+              <label>Type de problème</label>
+              <select [(ngModel)]="reportData.type" name="type" required>
+                <option value="">Sélectionnez</option>
+                <option value="missed_collection">Collecte manquée</option>
+                <option value="compliance_issue">Non-conformité</option>
+                <option value="technical_issue">Problème technique</option>
+                <option value="complaint">Réclamation</option>
+                <option value="other">Autre</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea
+                [(ngModel)]="reportData.description"
+                name="description"
+                rows="4"
+                placeholder="Décrivez le problème..."
+                required
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label>Etat du problème</label>
+              <select [(ngModel)]="reportData.severity" name="severity" required>
+                <option value="">Sélectionnez</option>
+                <option value="low">Faible</option>
+                <option value="medium">Moyen</option>
+                <option value="high">Elevé</option>
+                <option value="critical">Critique</option>
+                <option value="other">Autre</option>
+              </select>
+            </div>
+            <!--<div class="form-group">
+            <label>Date du problème</label>
+            <input type="date" [(ngModel)]="reportData.date" name="date" required>
+          </div>-->
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="showReportModal = false"
+              >
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <i class="material-icons">send</i>
+              Envoyer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal de paiement -->
+  @if (showPaymentModal) {
+    <div
+      class="modal-overlay"
+      (click)="showPaymentModal = false"
+      >
+      <div class="modal-content payment-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Paiement sécurisé</h3>
+          <button class="close-btn" (click)="showPaymentModal = false">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="payment-form">
+          <div class="payment-summary">
+            <h4>Récapitulatif</h4>
+            <div class="summary-item">
+              <span>{{ subscription?.serviceName }}</span>
+              <span>{{ subscription?.price }}€</span>
+            </div>
+            <div class="summary-total">
+              <span>Total</span>
+              <span>{{ subscription?.price }}€</span>
+            </div>
+          </div>
+          <div class="payment-methods">
+            <h4>Mode de paiement</h4>
+            <div class="payment-option">
+              <input type="radio" id="card" name="payment" value="card" checked />
+              <label for="card">
+                <i class="material-icons">credit_card</i>
+                Carte bancaire
+              </label>
+            </div>
+            <div class="payment-option">
+              <input type="radio" id="transfer" name="payment" value="transfer" />
+              <label for="transfer">
+                <i class="material-icons">account_balance</i>
+                Virement bancaire
+              </label>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="showPaymentModal = false"
+              >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="processPayment()"
+              >
+              <i class="material-icons">lock</i>
+              Payer {{ subscription?.price }}€
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal de de recharge du wallet -->
+  @if (showRechargeModal) {
+    <div
+      class="modal-overlay"
+      (click)="showRechargeModal = false"
+      >
+      <div class="modal-content payment-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Recharger mon compte</h3>
+          <button class="close-btn" (click)="showRechargeModal = false">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="payment-form">
+          <div class="payment-methods">
+            <h4>Mode de paiement</h4>
+            <div class="payment-option">
+              <input type="radio" id="card" name="payment" value="card" checked />
+              <label for="card">
+                <i class="material-icons">billet</i>
+                Orange money
+              </label>
+            </div>
+            <div class="payment-option">
+              <label for="amount">Montant :</label>
+              <input
+                type="number"
+                min="100"
+                id="amount"
+                name="amount"
+                [(ngModel)]="rechargeAmount"
+                placeholder="Entrez le montant en FCFA"
+                />
+              </div>
+              <!-- <div class="payment-option" >
+              <input type="radio" id="transfer" name="payment" value="transfer" [disabled]="true">
+              <label for="transfer">
+                <i class="material-icons">account_balance</i>
+                Virement bancaire
+              </label>
+            </div>
+            <div class="payment-option">
+              <input type="radio" id="card" name="payment" value="card"  [disabled]="true">
+              <label for="card">
+                <i class="material-icons">credit_card</i>
+                Carte bancaire
+              </label>
+            </div> -->
+          </div>
+          <div class="payment-summary">
+            <h4>Récapitulatif</h4>
+            <div class="summary-item">
+              <span>Solde actuel</span>
+              <span>{{ clientBalance | number }} <sup>FCFA</sup></span>
+            </div>
+            <div class="summary-item">
+              <span>Ajout</span>
+              <span>{{ rechargeAmount | number }} <sup>FCFA</sup></span>
+            </div>
+            <div class="summary-total">
+              <span>Total</span>
+              <span
+                >{{ clientBalance + rechargeAmount | number }}
+                <sup>FCFA</sup></span
+                >
+              </div>
+            </div>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="showRechargeModal = false"
+                >
+                Annuler
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                (click)="walletPayment()"
+                >
+                <i class="material-icons">lock</i>
+                Payer {{ rechargeAmount | number }} FCFA
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>

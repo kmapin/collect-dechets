@@ -1,0 +1,684 @@
+<p-toast />
+
+<!-- ══════════════════════════════════════════════════════════
+     LOADING SKELETON
+     ══════════════════════════════════════════════════════════ -->
+@if (isLoading()) {
+  <div class="pd-skeleton">
+    <div class="sk-topbar"></div>
+    <div class="sk-body">
+      <div class="sk-nav"></div>
+      <div class="sk-content">
+        <div class="sk-hero"></div>
+        <div class="sk-card"></div>
+        <div class="sk-card sk-card--sm"></div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══════════════════════════════════════════════════════════
+     NOT FOUND
+     ══════════════════════════════════════════════════════════ -->
+@else if (notFound()) {
+  <div class="pd-notfound">
+    <div class="nf-icon"><mat-icon>search_off</mat-icon></div>
+    <h2>Planning introuvable</h2>
+    <p>Ce planning n'existe pas ou a été supprimé.</p>
+    <a routerLink="/planning/dashboard" class="nf-back">
+      <mat-icon>arrow_back</mat-icon>Retour au tableau de bord
+    </a>
+  </div>
+}
+
+<!-- ══════════════════════════════════════════════════════════
+     MAIN PAGE
+     ══════════════════════════════════════════════════════════ -->
+@else if (planning()) {
+  <div class="pd-root">
+
+    <!-- ──────────────────────────────────────────────────────
+         TOP BAR
+         ────────────────────────────────────────────────────── -->
+    <div class="pd-topbar">
+      <div class="pd-topbar__left">
+        <a routerLink="/planning/dashboard" class="tb-back">
+          <mat-icon>arrow_back</mat-icon>
+        </a>
+        <div class="tb-breadcrumb">
+          <a routerLink="/planning/dashboard" class="tb-bc-link">
+            <mat-icon>dashboard</mat-icon><span>Planning</span>
+          </a>
+          <mat-icon class="tb-bc-sep">chevron_right</mat-icon>
+          <span class="tb-bc-current">{{ planning()!.reference }}</span>
+        </div>
+      </div>
+
+      <div class="pd-topbar__center">
+        <div class="tb-title-row">
+          <div class="tb-type-ico" [style.background]="typeColor() + '18'" [style.color]="typeColor()">
+            <mat-icon>{{ typeIcon() }}</mat-icon>
+          </div>
+          <div>
+            <h1 class="tb-title">{{ planning()!.libelle }}</h1>
+            <div class="tb-meta">
+              <span class="tb-ref">{{ planning()!.reference }}</span>
+              <span class="tb-dot">·</span>
+              <span class="tb-date">{{ planning()!.date }}</span>
+              <span class="tb-dot">·</span>
+              <span class="tb-freq">{{ frequencyLabel() }}</span>
+            </div>
+          </div>
+          <span class="tb-status-badge"
+                [style.background]="statusColor() + '18'"
+                [style.color]="statusColor()"
+                [style.border-color]="statusColor() + '40'">
+            <span class="badge-dot" [style.background]="statusColor()"></span>
+            {{ statusLabel() }}
+          </span>
+        </div>
+      </div>
+
+      <div class="pd-topbar__right">
+        @if (criticalIncidents() > 0) {
+          <div class="tb-alert-chip">
+            <mat-icon>warning</mat-icon>
+            {{ criticalIncidents() }} incident{{ criticalIncidents() > 1 ? 's' : '' }} critique{{ criticalIncidents() > 1 ? 's' : '' }}
+          </div>
+        }
+        <button type="button" class="tb-btn tb-btn--ghost" (click)="exportPDF()" pTooltip="Exporter PDF" tooltipPosition="bottom">
+          <mat-icon>picture_as_pdf</mat-icon>PDF
+        </button>
+        <button type="button" class="tb-btn tb-btn--ghost" (click)="showDupDlg.set(true)" pTooltip="Dupliquer" tooltipPosition="bottom">
+          <mat-icon>content_copy</mat-icon>Dupliquer
+        </button>
+        @if (planning()!.status !== 'annule' && planning()!.status !== 'termine') {
+          <button type="button" class="tb-btn tb-btn--ghost tb-btn--danger" (click)="showCancelDlg.set(true)">
+            <mat-icon>cancel</mat-icon>Annuler
+          </button>
+        }
+        @if (planning()!.status === 'brouillon') {
+          <button type="button" class="tb-btn tb-btn--primary" (click)="editPlanning()">
+            <mat-icon>edit</mat-icon>Modifier
+          </button>
+        }
+        @if (canDelete()) {
+          <button type="button" class="tb-btn tb-btn--ghost tb-btn--danger" (click)="showDeleteDlg.set(true)"
+                  pTooltip="Supprimer ce planning" tooltipPosition="bottom">
+            <mat-icon>delete_outline</mat-icon>Supprimer
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ──────────────────────────────────────────────────────
+         BODY
+         ────────────────────────────────────────────────────── -->
+    <div class="pd-body">
+
+      <!-- ── LEFT NAV ─────────────────────────────────────── -->
+      <nav class="pd-sidenav">
+        @for (sec of navSections; track sec.id) {
+          <button type="button"
+                  class="sn-item"
+                  [class.sn-item--active]="activeSection() === sec.id"
+                  (click)="scrollTo(sec.id)">
+            <mat-icon>{{ sec.icon }}</mat-icon>
+            <span>{{ sec.label }}</span>
+            @if (sec.id === 'incidents' && criticalIncidents() > 0) {
+              <span class="sn-badge">{{ criticalIncidents() }}</span>
+            }
+          </button>
+        }
+      </nav>
+
+      <!-- ── CONTENT ─────────────────────────────────────── -->
+      <div class="pd-content">
+
+        <!-- ════════════════ SECTION INFO ═══════════════════ -->
+        <section id="section-info" class="pd-section">
+          <div class="sec-header">
+            <mat-icon class="sec-icon" style="--ic:#3b82f6">info</mat-icon>
+            <h2>Informations générales</h2>
+          </div>
+
+          <div class="info-grid">
+            <!-- Carte statut/type -->
+            <div class="info-hero-card">
+              <div class="ihc-type" [style.background]="typeColor() + '12'" [style.border-color]="typeColor() + '30'">
+                <div class="ihc-type-ico" [style.background]="typeColor() + '18'" [style.color]="typeColor()">
+                  <mat-icon>{{ typeIcon() }}</mat-icon>
+                </div>
+                <div>
+                  <div class="ihc-type-label">Type</div>
+                  <div class="ihc-type-val">{{ typeLabel() }}</div>
+                </div>
+              </div>
+              <div class="ihc-divider"></div>
+              <div class="ihc-status" [style.background]="statusColor() + '08'">
+                <div class="ihc-status-ring" [style.border-color]="statusColor()">
+                  <span class="ihc-pct">{{ completionRate() }}<small>%</small></span>
+                </div>
+                <div>
+                  <div class="ihc-status-label">Avancement</div>
+                  <div class="ihc-status-val" [style.color]="statusColor()">{{ statusLabel() }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Champs -->
+            <div class="info-fields-card">
+              <div class="ifc-row">
+                <div class="ifc-item">
+                  <mat-icon>calendar_today</mat-icon>
+                  <div>
+                    <span class="ifc-label">Date</span>
+                    <span class="ifc-val">{{ planning()!.date }}</span>
+                  </div>
+                </div>
+                <div class="ifc-item">
+                  <mat-icon>schedule</mat-icon>
+                  <div>
+                    <span class="ifc-label">Horaire</span>
+                    <span class="ifc-val">{{ planning()!.startTime }}{{ planning()!.endTime ? ' – ' + planning()!.endTime : '' }}</span>
+                  </div>
+                </div>
+                <div class="ifc-item">
+                  <mat-icon>repeat</mat-icon>
+                  <div>
+                    <span class="ifc-label">Fréquence</span>
+                    <span class="ifc-val">{{ frequencyLabel() }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ifc-row">
+                <div class="ifc-item">
+                  <mat-icon>place</mat-icon>
+                  <div>
+                    <span class="ifc-label">Localisation</span>
+                    <span class="ifc-val">{{ locationLabel() }}</span>
+                  </div>
+                </div>
+                <div class="ifc-item">
+                  <mat-icon>home</mat-icon>
+                  <div>
+                    <span class="ifc-label">Ménages ciblés</span>
+                    <span class="ifc-val">{{ planning()!.clientsCount ?? '—' }}</span>
+                  </div>
+                </div>
+                <div class="ifc-item">
+                  <mat-icon>delete_outline</mat-icon>
+                  <div>
+                    <span class="ifc-label">Types de déchets</span>
+                    <span class="ifc-val">{{ planning()!.wasteTypes.join(', ') }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ SECTION TEAMS ══════════════════ -->
+        <section id="section-teams" class="pd-section">
+          <div class="sec-header">
+            <mat-icon class="sec-icon" style="--ic:#8b5cf6">groups</mat-icon>
+            <h2>Équipe affectée</h2>
+            @if (canEditTeams()) {
+              <button type="button" class="sec-action-btn" (click)="openAddTeamDrawer()">
+                <mat-icon>{{ assignedTeams().length > 0 ? 'swap_horiz' : 'add' }}</mat-icon>
+                {{ assignedTeams().length > 0 ? 'Changer' : 'Affecter' }}
+              </button>
+            }
+          </div>
+
+          <!-- Skeleton teams -->
+          @if (isLoadingTeams()) {
+            <div class="teams-grid">
+              @for (i of [1,2]; track i) {
+                <div class="team-card" style="min-height:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px"></div>
+              }
+            </div>
+          } @else if (assignedTeams().length === 0) {
+            <div class="teams-empty">
+              <mat-icon>groups_off</mat-icon>
+              <p>Aucune équipe affectée à ce planning.</p>
+              @if (canEditTeams()) {
+                <button type="button" class="sec-action-btn" (click)="openAddTeamDrawer()">
+                  <mat-icon>add</mat-icon> Affecter une équipe
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="teams-grid">
+              @for (team of assignedTeams(); track team._id) {
+                <div class="team-card">
+                  <div class="tc-header">
+                    <div class="tc-avatar"
+                         [style.background]="teamStatusBadgeColor(team.status) + '18'"
+                         [style.color]="teamStatusBadgeColor(team.status)">
+                      {{ team.name.substring(0,2).toUpperCase() }}
+                    </div>
+                    <div class="tc-info">
+                      <h4>{{ team.name }}</h4>
+                      <span class="tc-status" [style.color]="teamStatusBadgeColor(team.status)">
+                        <span class="tc-dot" [style.background]="teamStatusBadgeColor(team.status)"></span>
+                        {{ teamStatusBadgeLabel(team.status) }}
+                      </span>
+                    </div>
+                    @if (canEditTeams()) {
+                      <button type="button" class="tc-remove-btn"
+                              [disabled]="teamSaving()"
+                              (click)="removeTeam()"
+                              pTooltip="Retirer du planning" tooltipPosition="left">
+                        <mat-icon>person_remove</mat-icon>
+                      </button>
+                    }
+                  </div>
+                  <div class="tc-body">
+                    <div class="tc-row">
+                      <mat-icon>group</mat-icon>
+                      <span>{{ teamMembersCount(team) }} membres</span>
+                    </div>
+                    @if (team.phone) {
+                      <div class="tc-row">
+                        <mat-icon>phone</mat-icon>
+                        <span>{{ team.phone }}</span>
+                      </div>
+                    }
+                    @if (team.description) {
+                      <div class="tc-row">
+                        <mat-icon>info_outline</mat-icon>
+                        <span>{{ team.description }}</span>
+                      </div>
+                    }
+                  </div>
+                  @if ((team.workload ?? 0) > 0) {
+                    <div class="tc-workload">
+                      <div class="tc-wl-header">
+                        <span>Charge</span>
+                        <span [style.color]="(team.workload ?? 0) > 70 ? '#ef4444' : (team.workload ?? 0) > 40 ? '#f59e0b' : '#16a34a'">
+                          {{ team.workload }}%
+                        </span>
+                      </div>
+                      <div class="tc-wl-bar">
+                        <div class="tc-wl-fill"
+                             [style.width]="(team.workload ?? 0) + '%'"
+                             [style.background]="(team.workload ?? 0) > 70 ? '#ef4444' : (team.workload ?? 0) > 40 ? '#f59e0b' : '#16a34a'">
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ── Drawer sélection équipe (une seule) ──────────── -->
+          @if (addTeamOpen()) {
+            <div class="tmd-overlay" (click)="addTeamOpen.set(false)"></div>
+            <div class="tmd-drawer">
+              <div class="tmd-head">
+                <div>
+                  <h3>{{ assignedTeams().length > 0 ? 'Changer l\'équipe' : 'Affecter une équipe' }}</h3>
+                  <small>{{ availableTeams().length }} équipe(s) disponible(s)</small>
+                </div>
+                <button type="button" class="tmd-close" (click)="addTeamOpen.set(false)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+
+              <!-- Search -->
+              <div class="tmd-search">
+                <mat-icon>search</mat-icon>
+                <input type="text" placeholder="Rechercher une équipe…"
+                       [value]="teamSearch()"
+                       (input)="teamSearch.set($any($event.target).value)" />
+              </div>
+
+              <!-- Team list — clic direct pour assigner -->
+              <div class="tmd-list">
+                @if (availableTeams().length === 0) {
+                  <div class="tmd-empty">
+                    <mat-icon>groups_off</mat-icon>
+                    <span>Aucune équipe disponible</span>
+                  </div>
+                }
+                @for (t of availableTeams(); track t._id) {
+                  <div class="tmd-row" [class.tmd-row--loading]="teamSaving()"
+                       (click)="assignTeam(t._id)">
+                    <div class="tmd-row-avatar"
+                         [style.background]="teamStatusBadgeColor(t.status) + '18'"
+                         [style.color]="teamStatusBadgeColor(t.status)">
+                      {{ t.name.substring(0,2).toUpperCase() }}
+                    </div>
+                    <div class="tmd-row-info">
+                      <span class="tmd-row-name">{{ t.name }}</span>
+                      <span class="tmd-row-meta">
+                        {{ teamMembersCount(t) }} membres ·
+                        <span [style.color]="teamStatusBadgeColor(t.status)">{{ teamStatusBadgeLabel(t.status) }}</span>
+                      </span>
+                    </div>
+                    <div class="tmd-row-check">
+                      @if (teamSaving()) {
+                        <mat-icon style="animation:spin 1s linear infinite;font-size:16px;color:#8b5cf6">sync</mat-icon>
+                      } @else {
+                        <mat-icon style="color:#8b5cf6;opacity:.5">arrow_forward</mat-icon>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Footer -->
+              <div class="tmd-footer">
+                <button type="button" class="tmd-cancel-btn" (click)="addTeamOpen.set(false)">Annuler</button>
+              </div>
+            </div>
+          }
+        </section>
+
+        <!-- ════════════════ SECTION MAP ════════════════════ -->
+        <section id="section-map" class="pd-section">
+          <div class="sec-header">
+            <mat-icon class="sec-icon" style="--ic:#16a34a">map</mat-icon>
+            <h2>Carte de la tournée</h2>
+          </div>
+          <div class="map-card">
+            <div class="map-legend">
+              <div class="ml-item"><span class="ml-dot" style="background:#16a34a"></span>Départ</div>
+              <div class="ml-item"><span class="ml-line" style="border-color:#3b82f6"></span>Itinéraire</div>
+              <div class="ml-item"><span class="ml-dot" style="background:#3b82f6"></span>Points de collecte</div>
+              <div class="ml-item"><span class="ml-dot" style="background:#f59e0b"></span>Équipe en cours</div>
+              <div class="ml-item"><span class="ml-circle" style="border-color:#16a34a"></span>Zone de couverture</div>
+            </div>
+            <div #mapEl class="pd-map"></div>
+          </div>
+        </section>
+
+        <!-- ════════════════ SECTION HISTORY ════════════════ -->
+        <section id="section-history" class="pd-section">
+          <div class="sec-header">
+            <mat-icon class="sec-icon" style="--ic:#f59e0b">history</mat-icon>
+            <h2>Historique des tournées</h2>
+            <span class="sec-count">{{ history().length }} passages</span>
+          </div>
+
+          <div class="history-table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Équipes</th>
+                  <th>Statut</th>
+                  <th>Ménages</th>
+                  <th>Durée</th>
+                  <th>Taux</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (h of history(); track h.date) {
+                  <tr [class.row--cancelled]="h.status === 'annule'">
+                    <td class="ht-date">{{ h.date }}</td>
+                    <td class="ht-teams">
+                      @for (t of h.teams; track t) {
+                        <span class="team-pill">{{ t }}</span>
+                      }
+                    </td>
+                    <td>
+                      <span class="ht-status"
+                            [style.background]="h.status === 'termine' ? '#16a34a18' : '#ef444418'"
+                            [style.color]="h.status === 'termine' ? '#16a34a' : '#ef4444'">
+                        {{ h.status === 'termine' ? 'Terminé' : 'Annulé' }}
+                      </span>
+                    </td>
+                    <td class="ht-num">{{ h.householdsCollected }}</td>
+                    <td class="ht-dur">{{ h.duration }}</td>
+                    <td>
+                      <div class="rate-cell">
+                        <div class="rate-bar">
+                          <div class="rate-fill"
+                               [style.width]="h.completionRate + '%'"
+                               [style.background]="h.completionRate >= 90 ? '#16a34a' : h.completionRate >= 50 ? '#f59e0b' : '#ef4444'">
+                          </div>
+                        </div>
+                        <span class="rate-pct">{{ h.completionRate }}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ════════════════ SECTION INCIDENTS ══════════════ -->
+        <section id="section-incidents" class="pd-section">
+          <div class="sec-header">
+            <mat-icon class="sec-icon" style="--ic:#ef4444">warning</mat-icon>
+            <h2>Incidents</h2>
+            @if (criticalIncidents() > 0) {
+              <span class="sec-alert">{{ criticalIncidents() }} critique{{ criticalIncidents() > 1 ? 's' : '' }}</span>
+            } @else {
+              <span class="sec-count">{{ incidents().length }}</span>
+            }
+          </div>
+
+          <div class="incidents-list">
+            @for (inc of incidents(); track inc.id) {
+              <div class="incident-card" [class.incident-card--resolved]="inc.resolved"
+                   [style.--ic]="incidentColor(inc.severity)">
+                <div class="inc-severity">
+                  <mat-icon [style.color]="incidentColor(inc.severity)">
+                    {{ inc.severity === 'critical' ? 'error' : inc.severity === 'warning' ? 'warning' : 'info' }}
+                  </mat-icon>
+                </div>
+                <div class="inc-body">
+                  <div class="inc-header">
+                    <span class="inc-badge"
+                          [style.background]="incidentColor(inc.severity) + '18'"
+                          [style.color]="incidentColor(inc.severity)">
+                      {{ incidentLabel(inc.severity) }}
+                    </span>
+                    @if (inc.resolved) {
+                      <span class="inc-resolved">
+                        <mat-icon>check_circle</mat-icon>Résolu {{ inc.resolvedAt }}
+                      </span>
+                    }
+                  </div>
+                  <h4 class="inc-title">{{ inc.title }}</h4>
+                  <p class="inc-desc">{{ inc.description }}</p>
+                  <div class="inc-footer">
+                    <span><mat-icon>person</mat-icon>{{ inc.reporter }}</span>
+                    <span><mat-icon>access_time</mat-icon>{{ inc.reportedAt }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- ════════════════ SECTION TIMELINE ═══════════════ -->
+        <section id="section-timeline" class="pd-section">
+          <div class="sec-header">
+            <mat-icon class="sec-icon" style="--ic:#06b6d4">timeline</mat-icon>
+            <h2>Journal d'activités</h2>
+          </div>
+
+          <div class="activity-timeline">
+            @for (act of activities(); track act.date; let last = $last) {
+              <div class="at-item" [class.at-item--last]="last">
+                <div class="at-line-wrap">
+                  <div class="at-dot" [style.background]="act.color" [style.box-shadow]="'0 0 0 4px ' + act.color + '20'">
+                    <mat-icon [style.font-size]="'14px'" [style.line-height]="'1'">{{ act.icon }}</mat-icon>
+                  </div>
+                  @if (!last) { <div class="at-line"></div> }
+                </div>
+                <div class="at-content">
+                  <div class="at-title">{{ act.title }}</div>
+                  <div class="at-detail">{{ act.detail }}</div>
+                  <div class="at-date">{{ act.date }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- ════════════════ SECTION STATS ══════════════════ -->
+        <section id="section-stats" class="pd-section">
+          <div class="sec-header">
+            <mat-icon class="sec-icon" style="--ic:#8b5cf6">bar_chart</mat-icon>
+            <h2>Statistiques</h2>
+          </div>
+
+          <div class="stats-grid">
+            <!-- KPI cards -->
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:#16a34a18;color:#16a34a"><mat-icon>check_circle</mat-icon></div>
+              <div class="kpi-val">{{ completionRate() }}<span>%</span></div>
+              <div class="kpi-lbl">Taux de complétion</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:#3b82f618;color:#3b82f6"><mat-icon>home</mat-icon></div>
+              <div class="kpi-val">{{ planning()!.clientsCount ?? 0 }}<span> ménages</span></div>
+              <div class="kpi-lbl">Ménages ciblés</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:#f59e0b18;color:#f59e0b"><mat-icon>warning</mat-icon></div>
+              <div class="kpi-val">{{ incidents().length }}</div>
+              <div class="kpi-lbl">Incidents déclarés</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:#06b6d418;color:#06b6d4"><mat-icon>groups</mat-icon></div>
+              <div class="kpi-val">{{ assignedTeams().length }}</div>
+              <div class="kpi-lbl">Équipes mobilisées</div>
+            </div>
+
+            <!-- Donut chart -->
+            <div class="chart-card chart-card--donut">
+              <h4>Progression collecte</h4>
+              <div class="donut-wrap">
+                <p-chart type="doughnut"
+                         [data]="completionChartData()"
+                         [options]="completionChartOpts"
+                         height="180">
+                </p-chart>
+                <div class="donut-center">
+                  <span class="dc-val">{{ completionRate() }}%</span>
+                  <span class="dc-lbl">collectés</span>
+                </div>
+              </div>
+              <div class="donut-legend">
+                <div class="dl-item"><span class="dl-dot" style="background:#16a34a"></span>Collectés</div>
+                <div class="dl-item"><span class="dl-dot" style="background:#f1f5f9"></span>Restants</div>
+              </div>
+            </div>
+
+            <!-- History line chart -->
+            <div class="chart-card chart-card--line">
+              <h4>Ménages collectés — 5 dernières tournées</h4>
+              <div class="line-wrap">
+                <p-chart type="bar"
+                         [data]="historyChartData()"
+                         [options]="historyChartOpts"
+                         height="200">
+                </p-chart>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ SECTION NOTIFICATIONS ══════════ -->
+        <section id="section-notifs" class="pd-section">
+          <div class="sec-header">
+            <mat-icon class="sec-icon" style="--ic:#f59e0b">notifications</mat-icon>
+            <h2>Notifications envoyées</h2>
+            <span class="sec-count">{{ notifications().length }}</span>
+          </div>
+
+          <div class="notifs-list">
+            @for (n of notifications(); track n.id) {
+              <div class="notif-row">
+                <div class="nr-channel"
+                     [style.background]="n.channel === 'sms' ? '#16a34a18' : n.channel === 'email' ? '#3b82f618' : '#8b5cf618'"
+                     [style.color]="n.channel === 'sms' ? '#16a34a' : n.channel === 'email' ? '#3b82f6' : '#8b5cf6'">
+                  <mat-icon>{{ notifIcon(n.channel) }}</mat-icon>
+                </div>
+                <div class="nr-body">
+                  <div class="nr-recipient">{{ n.recipient }}</div>
+                  <div class="nr-message">{{ n.message }}</div>
+                  <div class="nr-meta">
+                    <mat-icon>access_time</mat-icon>{{ n.sentAt }}
+                  </div>
+                </div>
+                <div class="nr-status"
+                     [style.background]="notifStatusColor(n.status) + '18'"
+                     [style.color]="notifStatusColor(n.status)">
+                  {{ notifStatusLabel(n.status) }}
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+      </div><!-- /pd-content -->
+    </div><!-- /pd-body -->
+  </div><!-- /pd-root -->
+
+  <!-- ════════════════════════════════════════════════════════
+       CANCEL DIALOG
+       ════════════════════════════════════════════════════════ -->
+  @if (showCancelDlg()) {
+    <div class="dlg-backdrop" (click)="showCancelDlg.set(false)"></div>
+    <div class="dlg-box dlg-box--danger">
+      <div class="dlg-icon"><mat-icon>cancel</mat-icon></div>
+      <h3>Annuler ce planning ?</h3>
+      <p>Cette action est irréversible. Le planning <strong>{{ planning()!.reference }}</strong> sera marqué comme annulé.</p>
+      <div class="dlg-actions">
+        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showCancelDlg.set(false)">Retour</button>
+        <button type="button" class="dlg-btn dlg-btn--danger" (click)="cancelPlanning()">
+          <mat-icon>cancel</mat-icon>Confirmer l'annulation
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════════
+       DELETE DIALOG
+       ════════════════════════════════════════════════════════ -->
+  @if (showDeleteDlg()) {
+    <div class="dlg-backdrop" (click)="showDeleteDlg.set(false)"></div>
+    <div class="dlg-box dlg-box--danger">
+      <div class="dlg-icon"><mat-icon>delete_forever</mat-icon></div>
+      <h3>Supprimer ce planning ?</h3>
+      <p>Le planning <strong>{{ planning()!.reference }}</strong> sera définitivement supprimé. Cette action est irréversible.</p>
+      <div class="dlg-actions">
+        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showDeleteDlg.set(false)">Annuler</button>
+        <button type="button" class="dlg-btn dlg-btn--danger" [disabled]="isActioning()" (click)="deletePlanning()">
+          @if (isActioning()) {
+            <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Suppression…
+          } @else {
+            <mat-icon>delete_forever</mat-icon> Supprimer définitivement
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════════
+       DUPLICATE DIALOG
+       ════════════════════════════════════════════════════════ -->
+  @if (showDupDlg()) {
+    <div class="dlg-backdrop" (click)="showDupDlg.set(false)"></div>
+    <div class="dlg-box">
+      <div class="dlg-icon dlg-icon--blue"><mat-icon>content_copy</mat-icon></div>
+      <h3>Dupliquer ce planning ?</h3>
+      <p>Une copie de <strong>{{ planning()!.libelle }}</strong> sera créée pour la semaine prochaine (+7 jours).</p>
+      <div class="dlg-actions">
+        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showDupDlg.set(false)">Annuler</button>
+        <button type="button" class="dlg-btn dlg-btn--primary" (click)="duplicatePlanning()">
+          <mat-icon>content_copy</mat-icon>Dupliquer
+        </button>
+      </div>
+    </div>
+  }
+}

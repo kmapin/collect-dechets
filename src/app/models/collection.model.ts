@@ -9,22 +9,37 @@ export interface Collection {
   address: Address;
   wasteTypes: WasteType[];
   notes?: string;
+  date?: Date;
   photos?: string[];
+  code?:{
+    _id: string;
+    startTime: Date;
+    endTime: Date;
+  }
   rating?: number;
   feedback?: string;
   createdAt: Date;
   updatedAt: Date;
+  // reports: CollectionReport[];
 }
 
 export enum CollectionStatus {
   SCHEDULED = 'scheduled',
   IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
+  COMPLETED = 'Completed',
+  COLLECTED = 'Collected',
   MISSED = 'missed',
   CANCELLED = 'cancelled',
   REPORTED = 'reported'
 }
-
+export enum CollectionStatus1 {
+  SCHEDULED = 'Scheduled',
+  IN_PROGRESS = 'In_progress',
+  COMPLETED = 'Completed',
+  MISSED = 'Missed',
+  CANCELLED = 'Cancelled',
+  REPORTED = 'Reported'
+}
 export interface CollectionRoute {
   id: string;
   collectorId: string;
@@ -47,6 +62,7 @@ export enum RouteStatus {
 
 export interface CollectionReport {
   id: string;
+  // _id: string;
   collectionId: string;
   clientId: string;
   agencyId: string;
@@ -57,6 +73,12 @@ export interface CollectionReport {
   resolution?: string;
   createdAt: Date;
   resolvedAt?: Date;
+  // updatedAt: Date;
+  // scannedAt?: Date;
+  // positionGPS?: {
+  //   latitude: number;
+  //   longitude: number;
+  // };
 }
 
 export enum ReportType {

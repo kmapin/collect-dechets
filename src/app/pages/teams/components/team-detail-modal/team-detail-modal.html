@@ -1,0 +1,638 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="visibleChange.emit($event)"
+  [modal]="true"
+  [closable]="false"
+  [draggable]="false"
+  [resizable]="false"
+  [showHeader]="false"
+  [appendTo]="'body'"
+  [style]="{ width: 'min(920px, 96vw)', maxHeight: '92vh', padding: '0', borderRadius: '20px', overflow: 'hidden' }"
+  [contentStyle]="{ padding: '0', overflow: 'hidden', borderRadius: '20px' }"
+  styleClass="tdm-dialog">
+
+  @if (team) {
+    <div class="tdm-shell">
+
+      <!-- ══════════════════════════════════════════════════════
+           HERO BANNER
+           ══════════════════════════════════════════════════════ -->
+      <div class="tdm-hero" [style.--tc]="team.color">
+
+        <!-- Top controls -->
+        <div class="tdm-hero-controls">
+          <button class="tdm-ctrl-btn" (click)="navigateDetail.emit(team.id); close()"
+                  pTooltip="Ouvrir la page complète" tooltipPosition="bottom">
+            <mat-icon>open_in_full</mat-icon>
+          </button>
+          <button class="tdm-ctrl-btn tdm-ctrl-btn--close" (click)="close()" pTooltip="Fermer">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Team identity -->
+        <div class="tdm-hero-id">
+          <div class="tdm-hero-avatar">{{ team.name.charAt(0) }}</div>
+          <div class="tdm-hero-info">
+            <h2 class="tdm-hero-name">{{ team.name }}</h2>
+            <div class="tdm-hero-meta">
+              <span class="tdm-code-badge">{{ team.code }}</span>
+              <span class="tdm-status-badge"
+                    [style.background]="'rgba(255,255,255,0.2)'"
+                    [class.tdm-status-badge--pulse]="team.status === 'on_mission'">
+                <span class="tdm-sdot" [class.tdm-sdot--pulse]="team.status === 'on_mission'"></span>
+                {{ statusLabel() }}
+              </span>
+            </div>
+            @if (team.supervisor) {
+              <div class="tdm-hero-sup">
+                <mat-icon>person</mat-icon>{{ team.supervisor }}
+                @if (team.phone) { <span class="tdm-hero-phone">· {{ team.phone }}</span> }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- KPI glass cards -->
+        <div class="tdm-kpis">
+          <div class="tdm-kpi-card">
+            <mat-icon>group</mat-icon>
+            <span class="tdm-kpi-val">{{ team.members.length }}</span>
+            <span class="tdm-kpi-lbl">Membres</span>
+          </div>
+          <div class="tdm-kpi-card">
+            <mat-icon>check_circle</mat-icon>
+            <span class="tdm-kpi-val">{{ team.completedMissions }}</span>
+            <span class="tdm-kpi-lbl">Missions</span>
+          </div>
+          <div class="tdm-kpi-card" [class.tdm-kpi-card--warn]="team.workload >= 80">
+            <mat-icon>speed</mat-icon>
+            <span class="tdm-kpi-val">{{ team.workload }}%</span>
+            <span class="tdm-kpi-lbl">Charge</span>
+          </div>
+          <div class="tdm-kpi-card">
+            <mat-icon>insights</mat-icon>
+            <span class="tdm-kpi-val">{{ team.successRate }}%</span>
+            <span class="tdm-kpi-lbl">Réussite</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB BAR
+           ══════════════════════════════════════════════════════ -->
+      <div class="tdm-tabbar">
+        @for (tab of tabs; track tab.key) {
+          <button class="tdm-tab" [class.tdm-tab--active]="activeTab() === tab.key" (click)="setTab(tab.key)">
+            <mat-icon>{{ tab.icon }}</mat-icon>
+            <span>{{ tab.label }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           TAB CONTENT
+           ══════════════════════════════════════════════════════ -->
+      <div class="tdm-body">
+
+        <!-- ─────────────── TAB: APERÇU ─────────────── -->
+        @if (activeTab() === 'apercu') {
+          <div class="tdm-pane tab-enter">
+            <div class="tdm-two-cols">
+
+              <!-- Left: info + zones -->
+              <div class="tdm-col">
+                <!-- Info card -->
+                <div class="tdm-card">
+                  <div class="tdm-card-title"><mat-icon>info</mat-icon>Informations</div>
+                  @if (team.description) {
+                    <p class="tdm-desc">{{ team.description }}</p>
+                  }
+                  <div class="tdm-info-rows">
+                    @if (team.supervisor) {
+                      <div class="tdm-info-row">
+                        <mat-icon>person</mat-icon>
+                        <div><span class="tdm-ir-lbl">Chef d'équipe</span><span class="tdm-ir-val">{{ team.supervisor }}</span></div>
+                      </div>
+                    }
+                    @if (team.phone) {
+                      <div class="tdm-info-row">
+                        <mat-icon>phone</mat-icon>
+                        <div><span class="tdm-ir-lbl">Téléphone</span><span class="tdm-ir-val">{{ team.phone }}</span></div>
+                      </div>
+                    }
+                    <div class="tdm-info-row">
+                      <mat-icon>calendar_today</mat-icon>
+                      <div><span class="tdm-ir-lbl">Créée le</span><span class="tdm-ir-val">{{ team.createdAt | date:'dd/MM/yyyy' }}</span></div>
+                    </div>
+                    <div class="tdm-info-row">
+                      <mat-icon>update</mat-icon>
+                      <div><span class="tdm-ir-lbl">Mise à jour</span><span class="tdm-ir-val">{{ team.updatedAt | date:'dd/MM/yyyy' }}</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Zones -->
+                @if (team.zones.length > 0) {
+                  <div class="tdm-card">
+                    <div class="tdm-card-title"><mat-icon>place</mat-icon>Zones d'intervention</div>
+                    <div class="tdm-zone-list">
+                      @for (z of team.zones; track z.id) {
+                        <div class="tdm-zone-row">
+                          <div class="tdm-zone-dot" [style.background]="team.color"></div>
+                          <div>
+                            <span class="tdm-zone-name">{{ z.name }}</span>
+                            <span class="tdm-zone-sub">{{ z.ville }}{{ z.arrondissement ? ' · ' + z.arrondissement : '' }}</span>
+                          </div>
+                          @if (z.householdsCount > 0) {
+                            <span class="tdm-zone-count">{{ z.householdsCount }} ménages</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Right: timeline -->
+              <div class="tdm-col">
+                <div class="tdm-card tdm-card--full">
+                  <div class="tdm-card-title"><mat-icon>history</mat-icon>Activité récente</div>
+                  <div class="tdm-timeline">
+                    @for (evt of timeline(); track evt.text; let last = $last) {
+                      <div class="tdm-tl-item">
+                        <div class="tdm-tl-left">
+                          <div class="tdm-tl-icon" [style.background]="evt.color + '20'" [style.color]="evt.color">
+                            <mat-icon>{{ evt.icon }}</mat-icon>
+                          </div>
+                          @if (!last) { <div class="tdm-tl-line"></div> }
+                        </div>
+                        <div class="tdm-tl-body">
+                          <span class="tdm-tl-text">{{ evt.text }}</span>
+                          <span class="tdm-tl-time">{{ evt.time }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Availability donut -->
+                <div class="tdm-card">
+                  <div class="tdm-card-title"><mat-icon>donut_large</mat-icon>Disponibilité</div>
+                  <div class="tdm-avail-row">
+                    <div class="tdm-donut-wrap">
+                      <div class="tdm-donut" [style.background]="donutBackground()"></div>
+                      <div class="tdm-donut-center">
+                        <span class="tdm-donut-pct">{{ availStats().pct }}%</span>
+                        <span class="tdm-donut-lbl">dispo</span>
+                      </div>
+                    </div>
+                    <div class="tdm-avail-legend">
+                      <div class="tdm-avail-item">
+                        <span class="tdm-avail-dot" style="background:#16a34a"></span>
+                        <span>Disponible</span>
+                        <strong>{{ availStats().disponible }}</strong>
+                      </div>
+                      <div class="tdm-avail-item">
+                        <span class="tdm-avail-dot" style="background:#f59e0b"></span>
+                        <span>Occupé</span>
+                        <strong>{{ availStats().occupe }}</strong>
+                      </div>
+                      <div class="tdm-avail-item">
+                        <span class="tdm-avail-dot" style="background:#ef4444"></span>
+                        <span>Absent</span>
+                        <strong>{{ availStats().absent }}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ─────────────── TAB: MEMBRES ─────────────── -->
+        @if (activeTab() === 'membres') {
+          <div class="tdm-pane tab-enter">
+            <div class="tdm-members-header">
+              <span class="tdm-members-count">{{ team.members.length }} membres</span>
+              <div class="tdm-avail-pills">
+                <span class="tdm-pill tdm-pill--green">{{ availStats().disponible }} disponibles</span>
+                <span class="tdm-pill tdm-pill--amber">{{ availStats().occupe }} occupés</span>
+                <span class="tdm-pill tdm-pill--red">{{ availStats().absent }} absents</span>
+              </div>
+            </div>
+            <div class="tdm-members-grid">
+              @for (m of team.members; track m.id) {
+                <div class="tdm-member-card">
+                  <div class="tdm-mc-top">
+                    <div class="tdm-mc-avatar"
+                         [style.background]="roleColor(m.role) + '18'"
+                         [style.color]="roleColor(m.role)">
+                      {{ m.name.charAt(0) }}
+                    </div>
+                    <div class="tdm-mc-info">
+                      <span class="tdm-mc-name">{{ m.name }}</span>
+                      <span class="tdm-mc-role" [style.color]="roleColor(m.role)">
+                        <mat-icon>{{ roleIcon(m.role) }}</mat-icon>{{ roleLabel(m.role) }}
+                      </span>
+                    </div>
+                    <span class="tdm-mc-avail" [style.background]="availColor(m.availability) + '18'" [style.color]="availColor(m.availability)">
+                      <mat-icon>{{ availIcon(m.availability) }}</mat-icon>
+                      {{ availLabel(m.availability) }}
+                    </span>
+                  </div>
+                  <div class="tdm-mc-foot">
+                    <span><mat-icon>phone</mat-icon>{{ m.phone }}</span>
+                    <span><mat-icon>calendar_today</mat-icon>depuis {{ m.joinedAt }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ─────────────── TAB: VÉHICULE ─────────────── -->
+        @if (activeTab() === 'vehicule') {
+          <div class="tdm-pane tab-enter">
+            @if (team.vehicle) {
+              <div class="tdm-vehicle-hero" [style.--tc]="team.color">
+                <div class="tdm-vh-left">
+                  <div class="tdm-vh-icon">
+                    <mat-icon>{{ vhTypeIcon(team.vehicle.type) }}</mat-icon>
+                  </div>
+                  <div class="tdm-vh-id">
+                    <h3 class="tdm-vh-plate">{{ team.vehicle.plate }}</h3>
+                    <span class="tdm-vh-model">{{ team.vehicle.model }}</span>
+                    <span class="tdm-vh-status" [style.background]="vhStatusColor(team.vehicle.status) + '20'" [style.color]="vhStatusColor(team.vehicle.status)">
+                      {{ vhStatusLabel(team.vehicle.status) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="tdm-vh-stats">
+                  <div class="tdm-vh-stat"><mat-icon>scale</mat-icon><span>{{ team.vehicle.capacityTons }}T</span><small>Capacité</small></div>
+                  <div class="tdm-vh-stat"><mat-icon>speed</mat-icon><span>{{ team.vehicle.mileage.toLocaleString() }}</span><small>km</small></div>
+                  <div class="tdm-vh-stat"><mat-icon>build</mat-icon><span>{{ team.vehicle.lastMaintenance }}</span><small>Révision</small></div>
+                </div>
+              </div>
+
+              <!-- Fuel gauge -->
+              <div class="tdm-card">
+                <div class="tdm-card-title"><mat-icon>local_gas_station</mat-icon>Niveau de carburant</div>
+                <div class="tdm-fuel-row">
+                  <div class="tdm-fuel-bar-wrap">
+                    <div class="tdm-fuel-bar">
+                      <div class="tdm-fuel-fill"
+                           [style.width]="team.vehicle.fuelLevel + '%'"
+                           [style.background]="fuelColor(team.vehicle.fuelLevel)">
+                      </div>
+                    </div>
+                    <div class="tdm-fuel-labels">
+                      <span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span>
+                    </div>
+                  </div>
+                  <div class="tdm-fuel-pct" [style.color]="fuelColor(team.vehicle.fuelLevel)">
+                    {{ team.vehicle.fuelLevel }}%
+                  </div>
+                </div>
+                @if (team.vehicle.fuelLevel <= 25) {
+                  <div class="tdm-fuel-alert">
+                    <mat-icon>warning_amber</mat-icon>Niveau bas – prévoir ravitaillement
+                  </div>
+                }
+              </div>
+
+              <!-- Vehicle type info -->
+              <div class="tdm-vh-meta-grid">
+                <div class="tdm-vh-meta-card">
+                  <mat-icon>category</mat-icon>
+                  <span>{{ team.vehicle.type | titlecase }}</span>
+                  <small>Type véhicule</small>
+                </div>
+                <div class="tdm-vh-meta-card">
+                  <mat-icon>scale</mat-icon>
+                  <span>{{ team.vehicle.capacityTons }} T</span>
+                  <small>Capacité charge</small>
+                </div>
+                <div class="tdm-vh-meta-card">
+                  <mat-icon>speed</mat-icon>
+                  <span>{{ team.vehicle.mileage | number }}</span>
+                  <small>Kilométrage (km)</small>
+                </div>
+                <div class="tdm-vh-meta-card">
+                  <mat-icon>build</mat-icon>
+                  <span>{{ team.vehicle.lastMaintenance }}</span>
+                  <small>Dernière révision</small>
+                </div>
+              </div>
+            } @else {
+              <div class="tdm-empty">
+                <mat-icon>no_crash</mat-icon>
+                <p>Aucun véhicule affecté à cette équipe</p>
+                <button class="tdm-empty-btn" (click)="edit.emit(team)">
+                  <mat-icon>add</mat-icon>Affecter un véhicule
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ─────────────── TAB: TOURNÉES ─────────────── -->
+        @if (activeTab() === 'tournees') {
+          <div class="tdm-pane tab-enter">
+            <div class="tdm-two-cols">
+
+              <!-- Left: recent missions timeline -->
+              <div class="tdm-col">
+                <div class="tdm-card tdm-card--full">
+                  <div class="tdm-card-title"><mat-icon>route</mat-icon>Missions récentes</div>
+                  @if (team.recentMissions.length > 0) {
+                    <div class="tdm-msn-list">
+                      @for (m of team.recentMissions; track m.id; let last = $last) {
+                        <div class="tdm-msn-item" [class.tdm-msn-item--last]="last">
+                          <div class="tdm-msn-line-dot" [style.background]="msnColor(m.status)"></div>
+                          <div class="tdm-msn-body">
+                            <div class="tdm-msn-top">
+                              <span class="tdm-msn-ref">{{ m.reference }}</span>
+                              <span class="tdm-msn-badge" [style.background]="msnColor(m.status) + '20'" [style.color]="msnColor(m.status)">
+                                {{ msnLabel(m.status) }}
+                              </span>
+                            </div>
+                            <div class="tdm-msn-meta">
+                              <mat-icon>place</mat-icon>{{ m.zone }}
+                              <mat-icon>calendar_today</mat-icon>{{ m.date }}
+                              @if (m.duration) { <mat-icon>schedule</mat-icon>{{ m.duration }} }
+                            </div>
+                            <div class="tdm-msn-progress">
+                              <div class="tdm-msn-bar">
+                                <div [style.width]="msnPct(m.householdsCollected, m.totalHouseholds) + '%'"
+                                     [style.background]="msnColor(m.status)"></div>
+                              </div>
+                              <span>{{ m.householdsCollected }}/{{ m.totalHouseholds }} ménages</span>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <p class="tdm-no-data">Aucune mission récente</p>
+                  }
+                </div>
+              </div>
+
+              <!-- Right: charts -->
+              <div class="tdm-col">
+                <!-- Monthly bar chart -->
+                <div class="tdm-card">
+                  <div class="tdm-card-title"><mat-icon>bar_chart</mat-icon>Missions / mois</div>
+                  <div class="tdm-bar-chart">
+                    @for (bar of monthlyMissions(); track bar.month) {
+                      <div class="tdm-bar-col">
+                        <div class="tdm-bar-track">
+                          <div class="tdm-bar-fill"
+                               [style.height]="(bar.count / maxMonthCount() * 100) + '%'"
+                               [style.background]="team.color"
+                               [pTooltip]="bar.count + ' missions'" tooltipPosition="top">
+                          </div>
+                        </div>
+                        <span class="tdm-bar-lbl">{{ bar.month }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Sparkline success rate -->
+                <div class="tdm-card">
+                  <div class="tdm-card-title"><mat-icon>trending_up</mat-icon>Taux de réussite</div>
+                  <div class="tdm-spark-wrap">
+                    <svg viewBox="0 0 160 48" class="tdm-sparkline" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient [id]="'sg-' + team.id" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" [attr.stop-color]="team.color" stop-opacity="0.35" />
+                          <stop offset="100%" [attr.stop-color]="team.color" stop-opacity="0.02" />
+                        </linearGradient>
+                      </defs>
+                      <path [attr.d]="sparkPath()" [attr.fill]="'url(#sg-' + team.id + ')'" />
+                      <polyline [attr.points]="sparkPoints()" fill="none"
+                                [attr.stroke]="team.color" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                      <!-- Last point dot -->
+                    </svg>
+                    <div class="tdm-spark-footer">
+                      <span>6 derniers mois</span>
+                      <strong [style.color]="team.color">{{ team.successRate }}%</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Mission stats -->
+                <div class="tdm-card">
+                  <div class="tdm-card-title"><mat-icon>equalizer</mat-icon>Statistiques globales</div>
+                  <div class="tdm-stat-rows">
+                    <div class="tdm-stat-row">
+                      <span>Missions planifiées</span>
+                      <strong>{{ team.totalMissions }}</strong>
+                    </div>
+                    <div class="tdm-stat-row">
+                      <span>Missions terminées</span>
+                      <strong style="color:#16a34a">{{ team.completedMissions }}</strong>
+                    </div>
+                    <div class="tdm-stat-row">
+                      <span>En cours / annulées</span>
+                      <strong style="color:#f59e0b">{{ team.totalMissions - team.completedMissions }}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ─────────────── TAB: PERFORMANCES ─────────────── -->
+        @if (activeTab() === 'performances') {
+          <div class="tdm-pane tab-enter">
+            <div class="tdm-two-cols">
+              <div class="tdm-col">
+                <!-- Score card -->
+                <div class="tdm-score-card" [style.--tc]="team.color">
+                  <div class="tdm-score-ring">
+                    <svg viewBox="0 0 100 100" class="tdm-ring-svg">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="8" />
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="8"
+                              stroke-linecap="round"
+                              [attr.stroke-dasharray]="251.2"
+                              [attr.stroke-dashoffset]="251.2 - (team.successRate / 100 * 251.2)"
+                              transform="rotate(-90 50 50)" />
+                    </svg>
+                    <div class="tdm-ring-center">
+                      <span class="tdm-ring-val">{{ team.successRate }}%</span>
+                      <span class="tdm-ring-lbl">Réussite</span>
+                    </div>
+                  </div>
+                  <div class="tdm-score-detail">
+                    <h3>Score de performance</h3>
+                    @if (team.successRate >= 95) {
+                      <span class="tdm-perf-badge tdm-perf-badge--excellent">Excellent</span>
+                    } @else if (team.successRate >= 85) {
+                      <span class="tdm-perf-badge tdm-perf-badge--good">Bon</span>
+                    } @else {
+                      <span class="tdm-perf-badge tdm-perf-badge--avg">Moyen</span>
+                    }
+                    <p>{{ team.completedMissions }} missions réussies sur {{ team.totalMissions }}</p>
+                  </div>
+                </div>
+
+                <!-- Workload card -->
+                <div class="tdm-card">
+                  <div class="tdm-card-title"><mat-icon>speed</mat-icon>Charge de travail</div>
+                  <div class="tdm-workload-row">
+                    <div class="tdm-wl-gauge">
+                      <div class="tdm-wl-track">
+                        <div class="tdm-wl-fill"
+                             [style.width]="team.workload + '%'"
+                             [style.background]="workloadColor(team.workload)">
+                        </div>
+                      </div>
+                      <div class="tdm-wl-labels">
+                        <span>0%</span><span>50%</span><span>100%</span>
+                      </div>
+                    </div>
+                    <div class="tdm-wl-pct" [style.color]="workloadColor(team.workload)">{{ team.workload }}%</div>
+                  </div>
+                  @if (team.workload >= 80) {
+                    <div class="tdm-wl-alert"><mat-icon>warning_amber</mat-icon>Charge élevée – risque de surcharge</div>
+                  }
+                </div>
+              </div>
+
+              <div class="tdm-col">
+                <!-- KPI metrics -->
+                <div class="tdm-card">
+                  <div class="tdm-card-title"><mat-icon>bar_chart</mat-icon>Indicateurs clés</div>
+                  <div class="tdm-kpi-bars">
+                    @for (kpi of [
+                      { label: 'Taux de réussite', value: team.successRate, color: '#16a34a', icon: 'check_circle' },
+                      { label: 'Charge de travail', value: team.workload, color: workloadColor(team.workload), icon: 'speed' },
+                      { label: 'Disponibilité membres', value: availStats().pct, color: availStats().pct >= 70 ? '#16a34a' : '#f59e0b', icon: 'group' },
+                      { label: 'Missions complétées', value: team.totalMissions > 0 ? (team.completedMissions / team.totalMissions * 100) : 0, color: team.color, icon: 'route' }
+                    ]; track kpi.label) {
+                      <div class="tdm-kpi-bar-row">
+                        <div class="tdm-kpi-bar-header">
+                          <mat-icon [style.color]="kpi.color">{{ kpi.icon }}</mat-icon>
+                          <span>{{ kpi.label }}</span>
+                          <strong [style.color]="kpi.color">{{ kpi.value | number:'1.0-0' }}%</strong>
+                        </div>
+                        <div class="tdm-kpi-bar-track">
+                          <div class="tdm-kpi-bar-fill"
+                               [style.width]="kpi.value + '%'"
+                               [style.background]="kpi.color">
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Member composition -->
+                <div class="tdm-card">
+                  <div class="tdm-card-title"><mat-icon>military_tech</mat-icon>Composition équipe</div>
+                  <div class="tdm-role-distribution">
+                    @for (role of ['chef','chauffeur','agent','assistant']; track role) {
+                      @if (memberCountByRole(role) > 0) {
+                        <div class="tdm-role-row">
+                          <mat-icon [style.color]="roleColor(role)">{{ roleIcon(role) }}</mat-icon>
+                          <span>{{ roleLabel(role) }}</span>
+                          <div class="tdm-role-dots">
+                            @for (n of range(memberCountByRole(role)); track $index) {
+                              <span class="tdm-role-dot" [style.background]="roleColor(role)"></span>
+                            }
+                          </div>
+                          <strong>{{ memberCountByRole(role) }}</strong>
+                        </div>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ─────────────── TAB: INCIDENTS ─────────────── -->
+        @if (activeTab() === 'incidents') {
+          <div class="tdm-pane tab-enter">
+            <div class="tdm-incidents-header">
+              <span class="tdm-inc-total">{{ incidents().length }} incidents signalés</span>
+              <span class="tdm-inc-period">30 derniers jours</span>
+            </div>
+            <div class="tdm-incidents-list">
+              @for (inc of incidents(); track inc.id) {
+                <div class="tdm-inc-card" [class.tdm-inc-card--high]="inc.severity === 'high'">
+                  <div class="tdm-inc-left">
+                    <div class="tdm-inc-icon" [style.background]="sevColor(inc.severity) + '18'" [style.color]="sevColor(inc.severity)">
+                      <mat-icon>{{ incIcon(inc.type) }}</mat-icon>
+                    </div>
+                    <div class="tdm-inc-connector"></div>
+                  </div>
+                  <div class="tdm-inc-body">
+                    <div class="tdm-inc-top">
+                      <span class="tdm-inc-type">{{ inc.type | titlecase }}</span>
+                      <span class="tdm-inc-badge" [style.background]="sevColor(inc.severity) + '18'" [style.color]="sevColor(inc.severity)">
+                        <mat-icon>circle</mat-icon>{{ sevLabel(inc.severity) }}
+                      </span>
+                      <span class="tdm-inc-date">{{ inc.date }}</span>
+                    </div>
+                    <p class="tdm-inc-desc">{{ inc.desc }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Incident summary -->
+            <div class="tdm-inc-summary">
+              <div class="tdm-inc-sum-card" style="border-color:#16a34a40">
+                <span style="color:#16a34a;font-size:20px;font-weight:800">{{ incidentCountBySeverity('low') }}</span>
+                <small>Faible gravité</small>
+              </div>
+              <div class="tdm-inc-sum-card" style="border-color:#f59e0b40">
+                <span style="color:#f59e0b;font-size:20px;font-weight:800">{{ incidentCountBySeverity('medium') }}</span>
+                <small>Modéré</small>
+              </div>
+              <div class="tdm-inc-sum-card" style="border-color:#ef444440">
+                <span style="color:#ef4444;font-size:20px;font-weight:800">{{ incidentCountBySeverity('high') }}</span>
+                <small>Critique</small>
+              </div>
+            </div>
+          </div>
+        }
+
+      </div><!-- /tdm-body -->
+
+      <!-- ══════════════════════════════════════════════════════
+           FOOTER ACTIONS
+           ══════════════════════════════════════════════════════ -->
+      <div class="tdm-footer">
+        <div class="tdm-footer-left">
+          <button class="tdm-act tdm-act--primary" (click)="edit.emit(team); close()">
+            <mat-icon>edit</mat-icon><span>Modifier</span>
+          </button>
+          <button class="tdm-act" (click)="toggleStatus.emit(team)">
+            <mat-icon>{{ team.status === 'active' ? 'pause_circle' : 'play_circle' }}</mat-icon>
+            <span>{{ team.status === 'active' ? 'Désactiver' : 'Activer' }}</span>
+          </button>
+          <button class="tdm-act" (click)="navigateDetail.emit(team.id); close()">
+            <mat-icon>assignment_add</mat-icon><span>Affecter tournée</span>
+          </button>
+          <button class="tdm-act" [routerLink]="['/teams/detail', team.id]" (click)="close()">
+            <mat-icon>open_in_full</mat-icon><span>Page complète</span>
+          </button>
+        </div>
+        <button class="tdm-act tdm-act--danger" (click)="confirmDelete.emit(team); close()">
+          <mat-icon>delete_outline</mat-icon><span>Supprimer</span>
+        </button>
+      </div>
+
+    </div>
+  }
+
+</p-dialog>

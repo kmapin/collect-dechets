@@ -1,0 +1,40 @@
+@if (paymentResponse) {
+  <mat-card class="status-card" [class]="getStatusClass()">
+    <mat-card-content>
+      <div class="status-container">
+        <div class="status-icon">
+          <mat-icon>{{ getStatusIcon() }}</mat-icon>
+        </div>
+        <div class="status-details">
+          <h2 class="status-title">
+            @switch (paymentResponse.status) {
+              @case (PaymentStatus.SUCCESS) { <span>Paiement Réussi</span> }
+              @case (PaymentStatus.FAILED) { <span>Paiement Échoué</span> }
+              @case (PaymentStatus.PENDING) { <span>Paiement en Attente</span> }
+              @case (PaymentStatus.PENDING_OTP) { <span>Validation OTP Requise</span> }
+            }
+          </h2>
+          <p class="status-message">{{ paymentResponse.message }}</p>
+          <div class="transaction-info">
+            <div class="info-row">
+              <span class="info-label">ID Transaction:</span>
+              <span class="info-value">{{ paymentResponse.transactionId }}</span>
+            </div>
+            @if (paymentResponse.amount) {
+              <div class="info-row">
+                <span class="info-label">Montant:</span>
+                <span class="info-value">{{ paymentResponse.amount | number:'1.0-0' }} FCFA</span>
+              </div>
+            }
+            @if (paymentResponse.timestamp) {
+              <div class="info-row">
+                <span class="info-label">Date:</span>
+                <span class="info-value">{{ paymentResponse.timestamp! | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}

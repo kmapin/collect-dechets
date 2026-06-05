@@ -1,0 +1,258 @@
+.form-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.payment-card {
+  border-radius: 16px;
+  // box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.5s ease-out;
+
+  mat-card-header {
+    background: linear-gradient(135deg, #3b84ed 0%, #4bac5b 100%);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 16px 16px 0 0;
+    // margin: -16px -16px 0 -16px;
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+
+      mat-icon {
+        font-size: 1.8rem;
+        width: 1.8rem;
+        height: 1.8rem;
+      }
+    }
+  
+    mat-card-subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0;
+    }
+  }
+
+  mat-card-content {
+    padding: 2rem;
+  }
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.operator-selection {
+  margin-bottom: 0.5rem;
+}
+
+.operators-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.operator-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: white;
+
+  &:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &.selected {
+    border-color: #667eea;
+    background-color: #f5f7ff;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  }
+
+  .operator-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .operator-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    color: #333;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.operator-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  .operator-icon {
+    font-size: 1.5rem;
+  }
+
+  .operator-label {
+    font-weight: 500;
+  }
+}
+
+.form-actions {
+  margin-top: 1rem;
+
+  .submit-button {
+    width: 100%;
+    height: 56px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    border-radius: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+
+    &:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+    }
+
+    .button-spinner {
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+
+  .new-payment-button {
+    height: 48px;
+    padding: 0 2rem;
+    border-radius: 24px;
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+  }
+}
+
+/* Material form field customization */
+::ng-deep {
+  .mat-mdc-form-field {
+    .mat-mdc-text-field-wrapper {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .mat-mdc-form-field-focus-overlay {
+      background-color: transparent;
+    }
+  }
+
+  .mat-mdc-outlined-button:not(:disabled) {
+    border-color: rgba(102, 126, 234, 0.5);
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .form-container {
+    padding: 0.5rem;
+  }
+
+  .payment-card {
+    mat-card-header {
+      padding: 1.5rem;
+
+      mat-card-title {
+        font-size: 1.3rem;
+
+        mat-icon {
+          font-size: 1.5rem;
+          width: 1.5rem;
+          height: 1.5rem;
+        }
+      }
+    }
+
+    mat-card-content {
+      padding: 1.5rem;
+    }
+  }
+
+  form {
+    gap: 1rem;
+  }
+
+  .form-actions .submit-button {
+    height: 48px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-card {
+    mat-card-header {
+      padding: 1rem;
+
+      mat-card-title {
+        font-size: 1.1rem;
+      }
+    }
+
+    mat-card-content {
+      padding: 1rem;
+    }
+  }
+}

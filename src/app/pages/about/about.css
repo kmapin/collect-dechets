@@ -1,0 +1,45 @@
+
+    .about-page {
+      min-height: 100vh;
+      background: var(--light-gray);
+    }
+
+    .about-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .mission-section,
+    .values-section {
+      margin-bottom: 32px;
+      padding: 32px;
+    }
+
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .value-item {
+      text-align: center;
+    }
+
+    .value-item i {
+      font-size: 48px;
+      color: var(--primary-color);
+      margin-bottom: 16px;
+    }
+
+    .value-item h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .value-item p {
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }

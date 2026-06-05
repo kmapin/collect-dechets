@@ -1,0 +1,702 @@
+<p-toast />
+
+<div class="pc-wrapper">
+
+  <!-- Overlay de chargement en mode édition -->
+  @if (isLoadingEdit()) {
+    <div style="position:fixed;inset:0;background:rgba(255,255,255,.7);z-index:999;display:flex;align-items:center;justify-content:center;gap:12px;font-size:16px;color:#1e293b">
+      <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
+      Chargement du planning…
+    </div>
+  }
+
+  <!-- =================== HEADER =================== -->
+  <div class="pc-header">
+    <div class="pc-breadcrumb">
+      <a routerLink="/planning/dashboard" class="bc-link">
+        <mat-icon>dashboard</mat-icon><span>Planning</span>
+      </a>
+      <mat-icon class="bc-sep">chevron_right</mat-icon>
+      <span class="bc-current">{{ isEditMode() ? 'Modifier le planning' : 'Nouveau planning' }}</span>
+    </div>
+    <div class="pc-header-actions">
+      @if (draftSaved()) {
+        <span class="draft-badge"><mat-icon>cloud_done</mat-icon> Brouillon sauvegardé</span>
+      }
+      <button class="btn-ghost" (click)="clearDraft()" type="button">
+        <mat-icon>delete_outline</mat-icon> Effacer
+      </button>
+      <button class="btn-ghost" routerLink="/planning/list" type="button">
+        <mat-icon>close</mat-icon> Annuler
+      </button>
+    </div>
+  </div>
+
+  <!-- =================== STEPPER =================== -->
+  <div class="stepper-wrapper">
+    <div class="stepper-track">
+      @for (step of steps; track step.index; let last = $last) {
+        <div class="step-node"
+             [class.active]="isStepActive(step.index)"
+             [class.completed]="isStepCompleted(step.index)"
+             [class.clickable]="step.index <= currentStep()"
+             (click)="goToStep(step.index)">
+          <div class="step-circle">
+            @if (isStepCompleted(step.index)) {
+              <mat-icon>check</mat-icon>
+            } @else {
+              <mat-icon>{{ step.icon }}</mat-icon>
+            }
+          </div>
+          <div class="step-meta">
+            <span class="step-num">Étape {{ step.index + 1 }}</span>
+            <span class="step-lbl">{{ step.label }}</span>
+          </div>
+          @if (!last) { <div class="step-line" [class.done]="isStepCompleted(step.index)"></div> }
+        </div>
+      }
+    </div>
+    <div class="global-prog-bar">
+      <div class="global-prog-fill" [style.width.%]="stepProgress()"></div>
+    </div>
+    <div class="prog-label">Étape {{ currentStep() + 1 }} sur {{ steps.length }} — {{ steps[currentStep()].description }}</div>
+  </div>
+
+  <!-- =================== FORM STEPS =================== -->
+  <div class="steps-body">
+    <form [formGroup]="form" autocomplete="off">
+
+      <!-- ================================================
+           ÉTAPE 0 – TYPE DE PLANNING
+           ================================================ -->
+      @if (currentStep() === 0) {
+        <div class="step-panel">
+          <div class="step-header">
+            <div class="step-header-icon" style="--hi-bg:#eff6ff;--hi-c:#3b82f6">
+              <mat-icon>category</mat-icon>
+            </div>
+            <div>
+              <h2>Type de planning</h2>
+              <p>Choisissez le type de planning que vous souhaitez créer</p>
+            </div>
+          </div>
+
+          <app-planning-type-selector formControlName="type"></app-planning-type-selector>
+        </div>
+      }
+
+      <!-- ================================================
+           ÉTAPE 1 – SÉLECTION CIBLE
+           ================================================ -->
+      @if (currentStep() === 1) {
+        <div class="step-panel">
+          <div class="step-header">
+            <div class="step-header-icon" style="--hi-bg:#f0fdf4;--hi-c:#16a34a">
+              <mat-icon>location_on</mat-icon>
+            </div>
+            <div>
+              <h2>Sélection de la cible</h2>
+              <p>Définissez la cible de ce planning de collecte</p>
+            </div>
+            @if (estimatedHouseholds() > 0) {
+              <div class="hh-badge">
+                <mat-icon>home</mat-icon>
+                <strong>{{ estimatedHouseholds() }}</strong> ménage(s)
+              </div>
+            }
+          </div>
+
+          <!-- ---- Individuel ---- -->
+          @if (form.get('type')?.value === 'individuel') {
+            <div class="target-section">
+              <div class="form-group">
+                <label class="form-lbl">Rechercher un client <span class="req">*</span></label>
+                <div class="search-wrap">
+                  <mat-icon class="search-icon">search</mat-icon>
+                  <input class="search-inp" type="text" placeholder="Nom, adresse…"
+                         [value]="clientSearchQuery()"
+                         (input)="searchClients($any($event.target).value)" />
+                  @if (selectedClients().length > 0) {
+                    <button type="button" class="clear-search" (click)="clearClient()">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  }
+                </div>
+                @if (filteredClients().length > 0) {
+                  <div class="client-results">
+                    @for (c of filteredClients(); track c.id) {
+                      <div class="cr-item" (click)="selectClient(c)">
+                        <div class="cr-avatar">{{ c.name.charAt(0) }}</div>
+                        <div class="cr-info">
+                          <span class="cr-name">{{ c.name }}</span>
+                          <span class="cr-addr">{{ c.address }}</span>
+                        </div>
+                        <span class="cr-zone">{{ c.zone }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+              @if (selectedClients().length > 0) {
+                <div class="selected-client-card">
+                  <div class="sc-avatar">{{ selectedClients()[0].name.charAt(0) }}</div>
+                  <div class="sc-info">
+                    <span class="sc-name">{{ selectedClients()[0].name }}</span>
+                    <span class="sc-addr">{{ selectedClients()[0].address }}</span>
+                    @if (selectedClients()[0].phone) {
+                      <span class="sc-phone"><mat-icon>phone</mat-icon>{{ selectedClients()[0].phone }}</span>
+                    }
+                  </div>
+                  <button type="button" class="sc-remove" (click)="clearClient()"><mat-icon>close</mat-icon></button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ---- Groupe ---- -->
+          @if (form.get('type')?.value === 'groupe') {
+            <div class="target-section">
+              <div class="form-group">
+                <label class="form-lbl">Nom du groupe <span class="req">*</span></label>
+                <input type="text" class="form-inp" placeholder="Ex: Groupe Résidentiel A" formControlName="groupName" />
+              </div>
+              <div class="form-group">
+                <label class="form-lbl">Sélectionner les clients <span class="req">*</span></label>
+                <div class="clients-grid">
+                  @for (c of mockClients; track c.id) {
+                    <div class="gc-card" [class.selected]="isClientSelected(c.id)" (click)="toggleGroupClient(c)">
+                      <div class="gc-avatar">{{ c.name.charAt(0) }}</div>
+                      <span class="gc-name">{{ c.name }}</span>
+                      <span class="gc-zone">{{ c.zone }}</span>
+                      @if (isClientSelected(c.id)) {
+                        <div class="gc-check"><mat-icon>check</mat-icon></div>
+                      }
+                    </div>
+                  }
+                </div>
+                <div class="sel-count" [class.warn]="selectedClients().length < 2">
+                  <mat-icon>groups</mat-icon>
+                  {{ selectedClients().length }} client(s) sélectionné(s)
+                  @if (selectedClients().length < 2) { <span class="min-warn">– min. 2 requis</span> }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- ---- Zone ---- -->
+          @if (form.get('type')?.value === 'zone') {
+            <div class="target-section target-section--wide">
+              <app-zone-selector
+                mode="zone"
+                (selectionChange)="onZoneSelected($event)"
+              ></app-zone-selector>
+            </div>
+          }
+
+          <!-- ---- Secteur ---- -->
+          @if (form.get('type')?.value === 'secteur') {
+            <div class="target-section target-section--wide">
+              <app-zone-selector
+                mode="secteur"
+                (selectionChange)="onZoneSelected($event)"
+              ></app-zone-selector>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ================================================
+           ÉTAPE 2 – PARAMÈTRES TEMPORELS
+           ================================================ -->
+      @if (currentStep() === 2) {
+        <div class="step-panel">
+          <div class="step-header">
+            <div class="step-header-icon" style="--hi-bg:#fffbeb;--hi-c:#f59e0b">
+              <mat-icon>calendar_today</mat-icon>
+            </div>
+            <div>
+              <h2>Paramètres temporels</h2>
+              <p>Définissez quand et à quelle fréquence la collecte aura lieu</p>
+            </div>
+            @if (estimatedDuration() !== '--') {
+              <div class="duration-badge">
+                <mat-icon>timer</mat-icon> Durée estimée : <strong>{{ estimatedDuration() }}</strong>
+              </div>
+            }
+          </div>
+
+          <div class="time-grid">
+            <div class="form-group">
+              <label class="form-lbl">Date de collecte <span class="req">*</span></label>
+              <p-datepicker formControlName="date"
+                            [showIcon]="true"
+                            [inline]="false"
+                            dateFormat="dd/mm/yy"
+                            [minDate]="today"
+                            placeholder="Sélectionner une date"
+                            styleClass="w-full"
+                            [appendTo]="'body'" />
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Fréquence <span class="req">*</span></label>
+              <p-select formControlName="frequency" [options]="frequencies"
+                        optionLabel="label" optionValue="value"
+                        placeholder="Choisir la fréquence" styleClass="w-full" />
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Heure de début <span class="req">*</span></label>
+              <div class="time-wrap">
+                <mat-icon>schedule</mat-icon>
+                <input type="time" class="time-inp" formControlName="startTime" (change)="calculateEndTime()" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-lbl">Heure de fin</label>
+              <div class="time-wrap">
+                <mat-icon>schedule</mat-icon>
+                <input type="time" class="time-inp" formControlName="endTime" />
+                <button type="button" class="calc-btn" (click)="calculateEndTime()"
+                        pTooltip="Calculer automatiquement" tooltipPosition="top">
+                  <mat-icon>auto_fix_high</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          @if (form.get('frequency')?.value !== 'unique') {
+            <div class="repeat-section">
+              <h3>Jours de collecte</h3>
+              <div class="day-pills">
+                @for (d of frequencyDays; track d.value) {
+                  <button type="button" class="day-pill" [class.active]="isDaySelected(d.value)"
+                          (click)="toggleFreqDay(d.value)">{{ d.label }}</button>
+                }
+              </div>
+              <div class="form-group" style="margin-top:16px; max-width:280px">
+                <label class="form-lbl">Date de fin (optionnel)</label>
+                <p-datepicker formControlName="endDate"
+                              [showIcon]="true"
+                              [inline]="false"
+                              dateFormat="dd/mm/yy"
+                              placeholder="Date de fin"
+                              styleClass="w-full"
+                              [appendTo]="'body'" />
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ================================================
+           ÉTAPE 3 – TYPES DE DÉCHETS
+           ================================================ -->
+      @if (currentStep() === 3) {
+        <div class="step-panel">
+          <div class="step-header">
+            <div class="step-header-icon" style="--hi-bg:#f0fdf4;--hi-c:#16a34a">
+              <mat-icon>delete_outline</mat-icon>
+            </div>
+            <div>
+              <h2>Types de déchets</h2>
+              <p>Sélectionnez les types de déchets à collecter (plusieurs possibles)</p>
+            </div>
+            @if (selectedWasteTypes().length > 0) {
+              <div class="count-badge">{{ selectedWasteTypes().length }} sélectionné(s)</div>
+            }
+          </div>
+
+          <div class="waste-grid">
+            @for (w of wasteTypeOpts; track w.id) {
+              <div class="waste-card" [class.selected]="isWasteTypeSelected(w.id)"
+                   [style.--wc]="w.color" [style.--wb]="w.bg"
+                   (click)="toggleWasteType(w.id)">
+                <div class="wc-icon" [style.background]="w.bg">
+                  <mat-icon [style.color]="w.color">{{ w.icon }}</mat-icon>
+                </div>
+                <span class="wc-label">{{ w.label }}</span>
+                @if (isWasteTypeSelected(w.id)) {
+                  <div class="wc-check"><mat-icon>check_circle</mat-icon></div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="form-group" style="margin-top:24px">
+            <label class="form-lbl">Instructions spéciales (optionnel)</label>
+            <textarea class="form-ta" formControlName="specialInstructions" rows="3"
+                      placeholder="Instructions spécifiques pour cette collecte…"></textarea>
+          </div>
+        </div>
+      }
+
+      <!-- ================================================
+           ÉTAPE 4 – AFFECTATION ÉQUIPES
+           ================================================ -->
+      @if (currentStep() === 4) {
+        <div class="step-panel">
+          <div class="step-header">
+            <div class="step-header-icon" style="--hi-bg:#f5f3ff;--hi-c:#8b5cf6">
+              <mat-icon>groups</mat-icon>
+            </div>
+            <div>
+              <h2>Affectation de l'équipe</h2>
+              <p>Sélectionnez l'équipe disponible pour ce planning</p>
+            </div>
+            @if (selectedTeamId()) {
+              <div class="count-badge" style="--cb-c:#8b5cf6;--cb-bg:#f5f3ff">
+                <mat-icon>groups</mat-icon>
+                1 équipe sélectionnée
+              </div>
+            }
+          </div>
+
+          <!-- Squelette chargement équipes -->
+          @if (isLoadingTeams()) {
+            <div class="teams-loading">
+              @for (i of [1,2,3,4]; track i) {
+                <div class="team-skeleton">
+                  <p-skeleton height="120px" borderRadius="12px" />
+                </div>
+              }
+            </div>
+          } @else if (apiTeams().length === 0) {
+            <div class="teams-empty">
+              <mat-icon>groups_off</mat-icon>
+              <p>Aucune équipe disponible pour votre agence.</p>
+              <small>Créez d'abord des équipes dans le module Équipes.</small>
+            </div>
+          } @else if (isEditMode()) {
+
+            <!-- ── Mode édition : chip + sélecteur ── -->
+            <div class="team-edit-wrap">
+
+              <!-- Chip équipe sélectionnée (unique) -->
+              @if (selectedTeamId(); as id) {
+                <div class="team-chips">
+                  <div class="team-chip" [class.team-chip--conflict]="isTeamConflicting(id)">
+                    <span class="tc-dot" [style.background]="teamStatusColor(getTeamById(id)?.status ?? 'active')"></span>
+                    <span class="tc-name">{{ getTeamById(id)?.name ?? id }}</span>
+                    <span class="tc-count">{{ getTeamById(id)?.members?.length ?? 0 }} membres</span>
+                    @if (isTeamConflicting(id)) {
+                      <mat-icon class="tc-warn" pTooltip="Conflit détecté" tooltipPosition="top">warning</mat-icon>
+                    }
+                    <button class="tc-remove" type="button"
+                            [disabled]="teamSaving()"
+                            (click)="removeTeamChip()"
+                            pTooltip="Retirer" tooltipPosition="top">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="teams-empty">
+                  <mat-icon>groups_off</mat-icon>
+                  <p>Aucune équipe assignée.</p>
+                </div>
+              }
+
+              <!-- Sélecteur : assigner ou changer l'équipe -->
+              <div class="team-add-row">
+                <mat-icon>{{ selectedTeamId() ? 'swap_horiz' : 'add_circle_outline' }}</mat-icon>
+                <select class="form-inp team-add-select" #addSel
+                        [disabled]="teamSaving()"
+                        (change)="addTeamChip(addSel.value); addSel.value = ''">
+                  <option value="">— {{ selectedTeamId() ? 'Changer l\'équipe' : 'Sélectionner une équipe' }} —</option>
+                  @for (t of availableTeamsToAdd(); track t._id) {
+                    <option [value]="t._id">{{ t.name }} ({{ t.members?.length ?? 0 }} membres)</option>
+                  }
+                </select>
+                @if (teamSaving()) {
+                  <mat-icon class="spin" style="color:#8b5cf6">sync</mat-icon>
+                }
+              </div>
+            </div>
+
+          } @else {
+            <app-team-conflict-detector
+              [selectedDate]="formValue()['date']"
+              [selectedTeamIds]="selectedTeamId() ? [selectedTeamId()!] : []"
+              [newStartTime]="formValue()['startTime'] ?? '08:00'"
+              [estimatedHouseholds]="estimatedHouseholds()"
+              [externalTeams]="apiTeams()"
+              (teamsChange)="onTeamsChange($event)"
+            ></app-team-conflict-detector>
+          }
+        </div>
+      }
+
+      <!-- ================================================
+           ÉTAPE 5 – RÉCAPITULATIF
+           ================================================ -->
+      @if (currentStep() === 5) {
+        <div class="step-panel">
+          <div class="step-header">
+            <div class="step-header-icon" style="--hi-bg:#eff6ff;--hi-c:#3b82f6">
+              <mat-icon>summarize</mat-icon>
+            </div>
+            <div>
+              <h2>Récapitulatif</h2>
+              <p>Vérifiez toutes les informations avant de continuer</p>
+            </div>
+          </div>
+
+          <div class="summary-grid">
+
+            <!-- Type & cible -->
+            <div class="sum-card">
+              <div class="sum-title"><mat-icon>category</mat-icon> Type &amp; Cible</div>
+              @if (getTypeOption(form.get('type')?.value); as t) {
+                <div class="sum-row">
+                  <span class="sum-lbl">Type</span>
+                  <span class="type-chip" [style.background]="t.bg" [style.color]="t.color">
+                    <mat-icon>{{ t.icon }}</mat-icon> {{ t.label }}
+                  </span>
+                </div>
+              }
+              @if (form.get('type')?.value === 'individuel' && selectedClients()[0]) {
+                <div class="sum-row"><span class="sum-lbl">Client</span><span class="sum-val">{{ selectedClients()[0].name }}</span></div>
+              }
+              @if (form.get('type')?.value === 'groupe') {
+                <div class="sum-row"><span class="sum-lbl">Groupe</span><span class="sum-val">{{ form.get('groupName')?.value }}</span></div>
+                <div class="sum-row"><span class="sum-lbl">Clients</span><span class="sum-val">{{ selectedClients().length }} client(s)</span></div>
+              }
+              @if (form.get('ville')?.value) {
+                <div class="sum-row">
+                  <span class="sum-lbl">Localisation</span>
+                  <span class="sum-val sum-loc">
+                    {{ joinLocation([form.get('ville')?.value, form.get('arrondissement')?.value, form.get('secteur')?.value, form.get('quartier')?.value]) }}
+                  </span>
+                </div>
+              }
+              <div class="sum-row"><span class="sum-lbl">Ménages est.</span><span class="sum-val sum-bold">{{ estimatedHouseholds() }}</span></div>
+            </div>
+
+            <!-- Calendrier -->
+            <div class="sum-card">
+              <div class="sum-title"><mat-icon>calendar_today</mat-icon> Calendrier</div>
+              <div class="sum-row"><span class="sum-lbl">Date</span><span class="sum-val">{{ formatDate(form.get('date')?.value) }}</span></div>
+              <div class="sum-row">
+                <span class="sum-lbl">Horaire</span>
+                <span class="sum-val">
+                  {{ form.get('startTime')?.value }}{{ form.get('endTime')?.value ? ' – ' + form.get('endTime')?.value : '' }}
+                </span>
+              </div>
+              <div class="sum-row"><span class="sum-lbl">Fréquence</span><span class="sum-val">{{ getFrequencyLabel(form.get('frequency')?.value) }}</span></div>
+              @if (estimatedDuration() !== '--') {
+                <div class="sum-row"><span class="sum-lbl">Durée est.</span><span class="sum-val sum-bold">{{ estimatedDuration() }}</span></div>
+              }
+            </div>
+
+            <!-- Déchets -->
+            <div class="sum-card">
+              <div class="sum-title"><mat-icon>delete_outline</mat-icon> Déchets</div>
+              <div class="sum-row">
+                <span class="sum-lbl">Types</span>
+                <div class="waste-chips">
+                  @for (id of selectedWasteTypes(); track id) {
+                    <span class="waste-chip">{{ getWasteTypeLabel(id) }}</span>
+                  }
+                </div>
+              </div>
+              @if (form.get('specialInstructions')?.value) {
+                <div class="sum-row">
+                  <span class="sum-lbl">Instructions</span>
+                  <span class="sum-val">{{ form.get('specialInstructions')?.value }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Équipe -->
+            <div class="sum-card" [class.card-conflict]="conflictingTeamIds().length > 0">
+              <div class="sum-title">
+                <mat-icon>groups</mat-icon> Équipe
+                @if (conflictingTeamIds().length > 0) {
+                  <span class="conflict-chip"><mat-icon>warning</mat-icon> conflit détecté</span>
+                }
+              </div>
+              @if (selectedTeamId(); as id) {
+                <div class="sum-row" [class.conflict-row]="isTeamConflicting(id)">
+                  <span class="sum-lbl">{{ getTeamById(id)?.name ?? id }}</span>
+                  <span class="sum-val">{{ getTeamById(id)?.members?.length ?? 0 }} membres</span>
+                </div>
+              } @else {
+                <div class="sum-row"><span class="sum-lbl" style="color:#94a3b8">Aucune équipe</span></div>
+              }
+            </div>
+
+          </div>
+
+          @if (conflictingTeamIds().length > 0) {
+            <div class="conflict-alert">
+              <mat-icon>warning</mat-icon>
+              <div>
+                <strong>Conflits d'équipes détectés</strong>
+                <p>Certaines équipes ont déjà un planning à cette date. Vous pouvez continuer ou modifier les équipes.</p>
+              </div>
+              <button type="button" class="btn-ghost-sm" (click)="goToStep(4)">Modifier</button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ================================================
+           ÉTAPE 6 – PUBLICATION
+           ================================================ -->
+      @if (currentStep() === 6) {
+        <div class="step-panel">
+          <div class="step-header">
+            <div class="step-header-icon" style="--hi-bg:#f0fdf4;--hi-c:#16a34a">
+              <mat-icon>publish</mat-icon>
+            </div>
+            <div>
+              <h2>Publication</h2>
+              <p>Finalisez et publiez votre planning de collecte</p>
+            </div>
+          </div>
+
+          <!-- Bandeau conflits -->
+          @if (checkingConflicts()) {
+            <div class="conflict-checking">
+              <mat-icon class="spin">sync</mat-icon>
+              Vérification des conflits d'équipes…
+            </div>
+          } @else if (conflicts().length > 0) {
+            <div class="conflict-banner">
+              <div class="cb-head">
+                <mat-icon>warning</mat-icon>
+                <strong>{{ conflicts().length }} conflit(s) détecté(s)</strong>
+              </div>
+              @for (c of conflicts(); track c.equipeId) {
+                <div class="cb-row">
+                  <span class="cb-team">{{ c.equipeName }}</span>
+                  <span class="cb-msg">{{ c.message }}</span>
+                </div>
+              }
+              <button type="button" class="btn-ghost-sm" (click)="goToStep(4)">
+                <mat-icon>edit</mat-icon> Modifier les équipes
+              </button>
+            </div>
+          }
+
+          <!-- Publier (mode édition uniquement) -->
+          @if (isEditMode()) {
+            <div class="publish-now-row">
+              <button type="button" class="btn-publish-now"
+                      [disabled]="isPublishing() || !selectedTeamId()"
+                      (click)="publishDraft()">
+                @if (isPublishing()) {
+                  <mat-icon class="spin">autorenew</mat-icon> Publication…
+                } @else {
+                  <mat-icon>rocket_launch</mat-icon> Publier maintenant
+                }
+              </button>
+              @if (!selectedTeamId()) {
+                <span class="publish-hint">Une équipe est requise</span>
+              }
+            </div>
+          }
+
+          <div class="publish-form">
+            <div class="form-group">
+              <label class="form-lbl">Nom du planning <span class="req">*</span></label>
+              <div class="libelle-wrap">
+                <input type="text" class="form-inp" formControlName="libelle" placeholder="Nom du planning" />
+                <button type="button" class="auto-btn" (click)="useAutoName()"
+                        pTooltip="Générer automatiquement" tooltipPosition="top">
+                  <mat-icon>auto_fix_high</mat-icon>
+                </button>
+              </div>
+              @if (autoName()) {
+                <span class="input-hint">Suggestion : <em>{{ autoName() }}</em></span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-lbl">Notes internes (optionnel)</label>
+              <textarea class="form-ta" formControlName="notes" rows="3"
+                        placeholder="Notes, instructions supplémentaires…"></textarea>
+            </div>
+
+            <div class="publish-options">
+              <div class="pub-option">
+                <div class="pub-option-info">
+                  <div class="pub-icon"><mat-icon>rocket_launch</mat-icon></div>
+                  <div>
+                    <span class="pub-title">Publier immédiatement</span>
+                    <span class="pub-desc">Le planning sera visible par les équipes dès la création</span>
+                  </div>
+                </div>
+                <div class="toggle" [class.on]="form.get('publishImmediately')?.value"
+                     (click)="toggleField('publishImmediately')">
+                  <div class="toggle-thumb"></div>
+                </div>
+              </div>
+
+              <div class="pub-option">
+                <div class="pub-option-info">
+                  <div class="pub-icon"><mat-icon>notifications</mat-icon></div>
+                  <div>
+                    <span class="pub-title">Notifier les clients</span>
+                    <span class="pub-desc">Envoyer une notification SMS/app aux clients concernés</span>
+                  </div>
+                </div>
+                <div class="toggle" [class.on]="form.get('notifyClients')?.value"
+                     (click)="toggleField('notifyClients')">
+                  <div class="toggle-thumb"></div>
+                </div>
+              </div>
+
+              <div class="pub-option">
+                <div class="pub-option-info">
+                  <div class="pub-icon"><mat-icon>groups</mat-icon></div>
+                  <div>
+                    <span class="pub-title">Notifier les équipes</span>
+                    <span class="pub-desc">Envoyer les instructions aux équipes assignées</span>
+                  </div>
+                </div>
+                <div class="toggle" [class.on]="form.get('notifyTeams')?.value"
+                     (click)="toggleField('notifyTeams')">
+                  <div class="toggle-thumb"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+    </form>
+  </div>
+
+  <!-- =================== NAVIGATION =================== -->
+  <div class="step-nav">
+    <button class="btn-prev" type="button" (click)="prevStep()" [disabled]="currentStep() === 0">
+      <mat-icon>arrow_back</mat-icon> Précédent
+    </button>
+
+    <div class="nav-center">
+      @if (!canGoNext() && stepErrors().length > 0) {
+        <div class="step-error-hint">
+          <mat-icon>info</mat-icon> {{ stepErrors()[0] }}
+        </div>
+      }
+    </div>
+
+    @if (currentStep() < steps.length - 1) {
+      <button class="btn-next" type="button" (click)="nextStep()" [disabled]="!canGoNext()">
+        Suivant <mat-icon>arrow_forward</mat-icon>
+      </button>
+    } @else {
+      <button class="btn-submit" type="button" (click)="submitForm()" [disabled]="!canGoNext() || isSubmitting()">
+        @if (isSubmitting()) {
+          <span class="spin-sm"></span> {{ isEditMode() ? 'Mise à jour…' : 'Création en cours…' }}
+        } @else if (isEditMode()) {
+          <mat-icon>save</mat-icon> Enregistrer les modifications
+        } @else {
+          <mat-icon>check_circle</mat-icon>
+          {{ form.get('publishImmediately')?.value ? 'Créer et publier' : 'Créer en brouillon' }}
+        }
+      </button>
+    }
+  </div>
+
+</div>

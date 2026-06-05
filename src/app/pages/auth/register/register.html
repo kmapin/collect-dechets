@@ -1,0 +1,669 @@
+<div class="register-page">
+  <div class="register-container">
+    <div class="register-card card">
+      <div class="register-header">
+        <div class="logo">
+          <i class="material-icons">recycling</i>
+          <span>ZéroDéchet+</span>
+        </div>
+        <h1 class="register-title">
+          {{ agencyId ? 'Modifier un compte' : 'Créer un compte'}}
+        </h1>
+        <p class="register-subtitle">
+          Rejoignez notre plateforme pour une gestion intelligente de vos
+          déchets
+        </p>
+      </div>
+
+      <!-- Sélection du type de compte -->
+      @if (userData.role!=='municipality') {
+        <div class="account-type-section">
+          <h3>Type de compte</h3>
+          <div class="account-types">
+            <label class="account-type-option">
+              <input
+                type="radio"
+                name="accountType"
+                value="client"
+                [(ngModel)]="userData.role"
+                />
+                <div class="account-type-card">
+                  <i class="material-icons">person</i>
+                  <h4>Client</h4>
+                  <p>
+                    Particulier ou entreprise souhaitant souscrire à un service de
+                    collecte
+                  </p>
+                </div>
+              </label>
+              <label class="account-type-option">
+                <input
+                  type="radio"
+                  name="accountType"
+                  value="manager"
+                  [(ngModel)]="userData.role"
+                  />
+                  <div class="account-type-card">
+                    <i class="material-icons">business</i>
+                    <h4>Agence</h4>
+                    <p>Entreprise de collecte de déchets proposant ses services</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          }
+
+          <form
+            class="register-form"
+            (ngSubmit)="onRegister()"
+            #registerForm="ngForm"
+            >
+            <!-- General error message -->
+            @if (generalError) {
+              <div class="alert alert-error">
+                <i class="material-icons">error</i>
+                <span>{{ generalError }}</span>
+              </div>
+            }
+
+
+            <!-- Informations agence -->
+            @if (userData.role === 'manager') {
+              <div class="form-section">
+                <h3>Informations de l'agence</h3>
+                <div class="form-group">
+                  <label class="form-label" for="agencyName">
+                    <i class="material-icons">business</i>
+                    Nom de l'agence <span class="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="agencyName"
+                    name="agencyName"
+                    [(ngModel)]="userData.agencyName"
+                    (ngModelChange)="clearError()"
+                    class="form-control"
+                    placeholder="Nom de votre agence"
+                    required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="agencyDescription">
+                      <i class="material-icons">description</i>
+                      Description<span class="required">*</span>
+                    </label>
+                    <textarea
+                      id="agencyDescription"
+                      name="agencyDescription"
+                      [(ngModel)]="userData.agencyDescription"
+                      class="form-control"
+                      placeholder="Décrivez vos services..."
+                      rows="3"
+                    ></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="slogan">
+                      <i class="material-icons">format_quote</i>
+                      Slogan de l'agence <span class="required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="slogan"
+                      name="slogan"
+                      [(ngModel)]="userData.slogan"
+                      (ngModelChange)="clearError()"
+                      class="form-control"
+                      placeholder="Slogan de votre agence"
+                      required
+                      />
+                    </div>
+                  </div>
+                }
+
+
+
+            <!-- Informations personnelles -->
+            <div class="form-section">
+              <h3>Informations  <span>{{ userData.role === 'manager' ? 'manager de l\'agence' : 'personnelles' }}</span></h3>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="firstName">
+                    <i class="material-icons">person</i>
+                    Prénom <span class="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    [(ngModel)]="userData.firstName"
+                    (ngModelChange)="clearError()"
+                    class="form-control"
+                    placeholder="Votre prénom"
+                    required
+                    #firstNameInput="ngModel"
+                    />
+                    @if (firstNameInput.invalid && firstNameInput.touched) {
+                      <div
+                        class="form-error"
+                        >
+                        Le prénom est requis
+                      </div>
+                    }
+                    <!-- Backend validation error -->
+                    @if (hasFieldError('firstName')) {
+                      <div
+                        class="form-error backend-error"
+                        >
+                        {{ getFieldError('firstName') }}
+                      </div>
+                    }
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="lastName">
+                      <i class="material-icons">person</i>
+                      Nom <span class="required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      [(ngModel)]="userData.lastName"
+                      (ngModelChange)="clearError()"
+                      class="form-control"
+                      placeholder="Votre nom"
+                      required
+                      #lastNameInput="ngModel"
+                      />
+                      @if (lastNameInput.invalid && lastNameInput.touched) {
+                        <div
+                          class="form-error"
+                          >
+                          Le nom est requis
+                        </div>
+                      }
+                      <!-- Backend validation error -->
+                      @if (hasFieldError('lastName')) {
+                        <div
+                          class="form-error backend-error"
+                          >
+                          {{ getFieldError('lastName') }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  @if (!agencyId) {
+                    <div class="form-group">
+                      <label class="form-label" for="email">
+                        <i class="material-icons">email</i>
+                        Adresse email
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        [(ngModel)]="userData.email"
+                        (ngModelChange)="clearError()"
+                        class="form-control"
+                        placeholder="votre@email.com"
+                        #emailInput="ngModel"
+                        />
+                        <!-- @if (emailInput.invalid && emailInput.touched) {
+                          <div
+                            class="form-error"
+                            >
+                            Veuillez saisir une adresse email valide
+                          </div>
+                        } -->
+                        <!-- Backend validation error -->
+                        @if (hasFieldError('email')) {
+                          <div
+                            class="form-error backend-error"
+                            >
+                            {{ getFieldError('email') }}
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <div class="form-group">
+                      <label class="form-label" for="phone">
+                        <i class="material-icons">phone</i>
+                        Téléphone <span class="required">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        [(ngModel)]="userData.phone"
+                        (ngModelChange)="clearError()"
+                        class="form-control"
+                        placeholder="+226 XX XX XX XX"
+                        required
+                        #phoneInput="ngModel"
+                        />
+                        @if (phoneInput.invalid && phoneInput.touched) {
+                          <div
+                            class="form-error"
+                            >
+                            Le numéro de téléphone est requis
+                          </div>
+                        }
+                        <!-- Backend validation error -->
+                        @if (hasFieldError('phone')) {
+                          <div
+                            class="form-error backend-error"
+                            >
+                            {{ getFieldError('phone') }}
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    <!-- @if (userData.role==='municipality') {
+                      <div class="form-section">
+                        <h3>Informations de la commune</h3>
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label" for="region">
+                              <i class="material-icons">markunread_mailbox</i>
+                              Region <span class="required">*</span>
+                            </label>
+                            <select
+                              type="text"
+                              id="region"
+                              name="region"
+                              [(ngModel)]="userData.commune.region"
+                              (ngModelChange)="clearError()"
+                              class="form-control"
+                              placeholder="Nom de la region"
+                              required
+                              >
+                              <option value="">Sélectionner</option>
+                              <option value="region du centre">Region du centre</option>
+                              <option value="region du nord">Region du nord</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label" for="province">
+                              <i class="material-icons">location_city</i>
+                              Province <span class="required">*</span>
+                            </label>
+                            <select
+                              type="text"
+                              id="province"
+                              name="province"
+                              [(ngModel)]="userData.commune.province"
+                              (ngModelChange)="clearError()"
+                              class="form-control"
+                              placeholder="Nom de la commune"
+                              required
+                              >
+                              <option value="">Sélectionner</option>
+                              <option value="province 1">Province 1</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label" for="communeName">
+                            <i class="material-icons">location_city</i>
+                            Commune <span class="required">*</span>
+                          </label>
+                          <select
+                            type="text"
+                            id="communeName"
+                            name="communeName"
+                            [(ngModel)]="userData.commune.name"
+                            (ngModelChange)="clearError()"
+                            class="form-control"
+                            placeholder="Nom de la commune"
+                            required
+                            >
+                            <option value="">Sélectionner</option>
+                            <option value="ouagadoudou">Ouagadoudou</option>
+                          </select>
+                        </div>
+                      </div>
+                    } -->
+                    <!-- Adresse (pour les clients) -->
+                    <!-- <div class="form-section" *ngIf="userData.role === 'client'"> -->
+                    <div class="form-section">
+                      <h3>Adresse de localisation</h3>
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label" for="city">
+                            <i class="material-icons">location_city</i>
+                            Ville <span class="required">*</span>
+                          </label>
+                          <select
+                            id="city"
+                            name="city"
+                            [(ngModel)]="userData.address.city"
+                            (ngModelChange)="clearError()"
+                            class="form-control"
+                            (change)="onCityChange(userData.address.city)"
+                            required
+                            >
+                            <option value="">Sélectionner</option>
+                            @for (city of cities; track city) {
+                              <option [value]="city.name">
+                                {{ city.name }}
+                              </option>
+                            }
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label" for="postalCode">
+                            <i class="material-icons">markunread_mailbox</i>
+                            Code postal
+                          </label>
+                          <input
+                            type="text"
+                            id="postalCode"
+                            name="postalCode"
+                            [(ngModel)]="userData.address.postalCode"
+                            (ngModelChange)="clearError()"
+                            class="form-control"
+                            placeholder="75001"
+                            />
+                          </div>
+                        </div>
+
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label" for="arrondissement">
+                              <i class="material-icons">map</i>
+                              Arrondiss... <span class="required">*</span>
+                            </label>
+                            <select
+                              id="arrondissement"
+                              name="arrondissement"
+                              [(ngModel)]="userData.address.arrondissement"
+                              (ngModelChange)="clearError()"
+                              (change)="onArrondissementChange(userData.address.arrondissement)"
+                              class="form-control"
+                              [disabled]="!arrondissementss.length"
+                              required
+                              >
+                              <option value="">Sélectionner</option>
+                              @for (arr of arrondissementss; track arr) {
+                                <option [value]="arr.name">
+                                  {{ arr.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label" for="sector">
+                              <i class="material-icons">location_city</i>
+                              Secteur <span class="required">*</span>
+                            </label>
+                            <select
+                              id="sector"
+                              name="sector"
+                              [(ngModel)]="userData.address.sector"
+                              (ngModelChange)="clearError()"  
+                              (change)="onSecteurChange(userData.address.sector)"
+                              class="form-control"
+                              [disabled]="!secteurss.length"
+                              required
+                              >
+                              <option value="">Sélectionner</option>
+                              @for (secteur of secteurss; track secteur) {
+                                <option
+                                  [value]="secteur.name"
+                                  >
+                                  {{ secteur.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label" for="neighborhood">
+                              <i class="material-icons">location_city</i>
+                              Quartier <span class="required">*</span>
+                            </label>
+                            <select
+                              id="neighborhood"
+                              name="neighborhood"
+                              [(ngModel)]="userData.address.neighborhood"
+                              (ngModelChange)="clearError()"
+                              class="form-control"
+                              [disabled]="!quartierss.length"
+                              required
+                              >
+                              <option value="">Sélectionner</option>
+                              @for (quartier of quartierss; track quartier) {
+                                <option
+                                  [value]="quartier.name"
+                                  >
+                                  {{ quartier.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label" for="street">
+                              <i class="material-icons">location_on</i>
+                              Rue
+                            </label>
+                            <input
+                              type="text"
+                              id="street"
+                              name="street"
+                              [(ngModel)]="userData.address.street"
+                              (ngModelChange)="clearError()"
+                              class="form-control"
+                              placeholder="Nom de la rue"
+                              />
+                            </div>
+
+                            @if (userData.role !== 'manager' && userData.role !== 'municipality') {
+                              <div
+                                class="form-group"
+                                >
+                                <label class="form-label" for="doorNumber">
+                                  <i class="material-icons">home</i>
+                                  Numéro Porte
+                                </label>
+                                <input
+                                  type="text"
+                                  id="doorNumber"
+                                  name="doorNumber"
+                                  [(ngModel)]="userData.address.doorNumber"
+                                  (ngModelChange)="clearError()"
+                                  class="form-control"
+                                  placeholder="123"
+                                  />
+                                </div>
+                              }
+
+                              @if (userData.role !== 'manager'  && userData.role !== 'municipality') {
+                                <div
+                                  class="form-group"
+                                  >
+                                  <label class="form-label" for="doorColor">
+                                    <i class="material-icons">palette</i>
+                                    Couleur porte
+                                  </label>
+                                  <select
+                                    id="doorColor"
+                                    name="doorColor"
+                                    [(ngModel)]="userData.address.doorColor"
+                                    class="form-control"
+                                    >
+                                    <option value="">Sélectionner</option>
+                                    <option value="blanc">Blanc</option>
+                                    <option value="noir">Noir</option>
+                                    <option value="marron">Marron</option>
+                                    <option value="bleu">Bleu</option>
+                                    <option value="rouge">Rouge</option>
+                                    <option value="vert">Vert</option>
+                                    <option value="autre">Autre</option>
+                                  </select>
+                                </div>
+                              }
+                            </div>
+                          </div>
+
+                              <!-- Mot de passe -->
+                              @if (!agencyId) {
+                                <div class="form-section">
+                                  <h3>Sécurité</h3>
+                                  <div class="form-group">
+                                    <label class="form-label" for="password">
+                                      <i class="material-icons">lock</i>
+                                      Mot de passe <span class="required">*</span>
+                                    </label>
+                                    <div class="password-input">
+                                      <input
+                                        [type]="showPassword ? 'text' : 'password'"
+                                        id="password"
+                                        name="password"
+                                        [(ngModel)]="userData.password"
+                                        (ngModelChange)="clearError()"
+                                        class="form-control"
+                                        placeholder="Minimum 8 caractères"
+                                        required
+                                        minlength="8"
+                                        #passwordInput="ngModel"
+                                        />
+                                        <button
+                                          type="button"
+                                          class="password-toggle"
+                                          (click)="togglePassword()"
+                                          >
+                                          <i class="material-icons"
+                                            >{{ showPassword ? 'visibility_off' : 'visibility' }}</i
+                                            >
+                                          </button>
+                                        </div>
+                                        <div class="password-strength">
+                                          <div class="strength-bar" [class]="getPasswordStrength()"></div>
+                                          <span class="strength-text"
+                                            >{{ getPasswordStrengthText() }}</span
+                                            >
+                                          </div>
+                                          @if (passwordInput.invalid && passwordInput.touched) {
+                                            <div
+                                              class="form-error"
+                                              >
+                                              Le mot de passe doit contenir au moins 8 caractères
+                                            </div>
+                                          }
+                                        </div>
+                                        <div class="form-group">
+                                          <label class="form-label" for="confirmPassword">
+                                            <i class="material-icons">lock</i>
+                                            Confirmer le mot de passe <span class="required">*</span>
+                                          </label>
+                                          <input
+                                            type="password"
+                                            id="confirmPassword"
+                                            name="confirmPassword"
+                                            [(ngModel)]="userData.confirmPassword"
+                                            (ngModelChange)="clearError()"
+                                            class="form-control"
+                                            placeholder="Répétez votre mot de passe"
+                                            required
+                                            #confirmPasswordInput="ngModel"
+                                            />
+                                            @if (confirmPasswordInput.touched && userData.password !== userData.confirmPassword) {
+                                              <div
+                                                class="form-error"
+                                                >
+                                                Les mots de passe ne correspondent pas
+                                              </div>
+                                            }
+                                          </div>
+                                        </div>
+                                        <!-- Conditions -->
+                                        <div class="form-section">
+                                            <h3>Conditions</h3>
+                                            @if(userData.role === 'manager') {
+                                            <label class="checkbox-label">
+                                            <input
+                                              type="checkbox"
+                                              [(ngModel)]="userData.isOwnerAgency"
+                                              (ngModelChange)="clearError()"
+                                              name="isOwnerAgency"
+                                              />
+                                              <span class="checkmark"></span>
+                                              Je suis propriétaire de l'agence
+                                            </label>
+                                            }
+
+                                            <label class="checkbox-label">
+                                              <input
+                                                type="checkbox"
+                                                [(ngModel)]="userData.acceptTerms"
+                                                (ngModelChange)="clearError()"
+                                                name="acceptTerms"
+                                                required
+                                                />
+                                                <span class="checkmark"></span>
+                                                J'accepte les
+                                                <a routerLink="/terms" target="_blank"
+                                                  >conditions d'utilisation</a
+                                                  >
+                                                  et la
+                                                  <a routerLink="/privacy" target="_blank"
+                                                    >politique de confidentialité</a
+                                                    >
+                                                  </label>
+                                                  <label class="checkbox-label">
+                                                    <input
+                                                      type="checkbox"
+                                                      [(ngModel)]="userData.receiveOffers"
+                                                      name="receiveOffers"
+                                                      />
+                                                      <span class="checkmark"></span>
+                                                      Je souhaite recevoir les actualités et offres par email
+                                                    </label>
+                                                  </div>
+                                                }
+                                                @if (!agencyId) {
+                                                  <button
+                                                    type="submit"
+                                                    class="btn btn-primary btn-full"
+                                                    [disabled]="isButtonDisabled()"
+                                                    >
+                                                    @if (isLoading) {
+                                                      <i class="material-icons">hourglass_empty</i>
+                                                    }
+                                                    @if (!isLoading) {
+                                                      <i class="material-icons">person_add</i>
+                                                    }
+                                                    {{ isLoading ? 'Création...' : 'Créer mon compte' }}
+                                                  </button>
+                                                }
+                                                @if (agencyId) {
+                                                  <button type="submit" class="btn btn-primary btn-full">
+                                                    @if (isLoading) {
+                                                      <i class="material-icons">hourglass_empty</i>
+                                                    }
+                                                    @if (!isLoading) {
+                                                      <i class="material-icons">person_add</i>
+                                                    }
+                                                    {{ isLoading ? 'Création...' : 'Modifier le compte' }}
+                                                  </button>
+                                                }
+
+
+                                              </form>
+                                              @if (!agencyId) {
+                                                <div class="register-footer">
+                                                  <p>
+                                                    Déjà un compte ?
+                                                    <a routerLink="/login" class="login-link">Se connecter</a>
+                                                  </p>
+                                                </div>
+                                              }
+                                            </div>
+                                          </div>
+                                        </div>

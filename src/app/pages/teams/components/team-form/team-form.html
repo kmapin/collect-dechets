@@ -1,0 +1,278 @@
+<!-- BACKDROP -->
+<div class="tf-backdrop" (click)="cancel.emit()"></div>
+
+<!-- DRAWER -->
+<div class="tf-drawer">
+
+  <!-- Header -->
+  <div class="tf-header">
+    <div class="tf-header-icon" [style.background]="form.get('color')!.value + '20'" [style.color]="form.get('color')!.value">
+      <mat-icon>groups</mat-icon>
+    </div>
+    <div class="tf-header-text">
+      <h2>{{ title }}</h2>
+      <p>{{ isEdit ? 'Modifiez les informations de l\'équipe' : 'Créez une nouvelle équipe de collecte' }}</p>
+    </div>
+    <button class="tf-close" (click)="cancel.emit()"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tf-tabs">
+    <button [class.active]="activeTab === 0" (click)="activeTab = 0">
+      <mat-icon>info</mat-icon>Infos
+    </button>
+    <button [class.active]="activeTab === 1" (click)="activeTab = 1">
+      <mat-icon>group</mat-icon>Membres
+      @if (membersArray.length > 0) { <span class="tab-badge">{{ membersArray.length }}</span> }
+    </button>
+    <button [class.active]="activeTab === 2" (click)="activeTab = 2">
+      <mat-icon>local_shipping</mat-icon>Véhicule & Zones
+    </button>
+  </div>
+
+  <!-- Form body -->
+  <div class="tf-body" [formGroup]="form">
+
+    <!-- ── TAB 0: BASIC INFO ──────────────────────────────── -->
+    @if (activeTab === 0) {
+      <div class="tf-section">
+
+        <!-- Name -->
+        <div class="tf-field" [class.tf-field--error]="hasError('name')">
+          <label>Nom de l'équipe <span class="req">*</span></label>
+          <div class="tf-input-wrap">
+            <mat-icon>badge</mat-icon>
+            <input type="text" formControlName="name" placeholder="Ex: Équipe Alpha" />
+          </div>
+          @if (hasError('name')) {
+            <span class="tf-error">Le nom est obligatoire (min. 3 caractères)</span>
+          }
+        </div>
+
+        <!-- Status -->
+        <div class="tf-field">
+          <label>Statut</label>
+          <div class="tf-radio-group">
+            @for (s of statuses; track s.value) {
+              <label class="tf-radio" [class.tf-radio--active]="form.get('status')!.value === s.value">
+                <input type="radio" formControlName="status" [value]="s.value" />
+                <span>{{ s.label }}</span>
+              </label>
+            }
+          </div>
+        </div>
+
+        <!-- Color -->
+        <div class="tf-field">
+          <label>Couleur de l'équipe</label>
+          <div class="tf-color-palette">
+            @for (c of colors; track c) {
+              <button type="button"
+                      class="tf-color-dot"
+                      [style.background]="c"
+                      [class.tf-color-dot--active]="form.get('color')!.value === c"
+                      (click)="form.get('color')!.setValue(c)">
+                @if (form.get('color')!.value === c) {
+                  <mat-icon>check</mat-icon>
+                }
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Supervisor -->
+        <div class="tf-field">
+          <label>Superviseur</label>
+          <div class="tf-input-wrap">
+            <mat-icon>manage_accounts</mat-icon>
+            <input type="text" formControlName="supervisor" placeholder="Nom du superviseur" />
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class="tf-field">
+          <label>Téléphone équipe</label>
+          <div class="tf-input-wrap">
+            <mat-icon>phone</mat-icon>
+            <input type="tel" formControlName="phone" placeholder="+226 70 00 00 00" />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="tf-field">
+          <label>Description</label>
+          <textarea formControlName="description" rows="3" placeholder="Description de l'équipe, zone d'intervention, particularités…"></textarea>
+        </div>
+      </div>
+    }
+
+    <!-- ── TAB 1: MEMBERS ─────────────────────────────────── -->
+    @if (activeTab === 1) {
+      <div class="tf-section">
+
+        <div class="tf-members-header">
+          <span>{{ membersArray.length }} membre{{ membersArray.length > 1 ? 's' : '' }}</span>
+          <button type="button" class="tf-add-member" (click)="addMember()">
+            <mat-icon>add</mat-icon>Ajouter un membre
+          </button>
+        </div>
+
+        <div formArrayName="members" class="tf-members-list">
+          @for (ctrl of membersArray.controls; track memberIdx; let memberIdx = $index) {
+            <div class="tf-member-row" [formGroupName]="memberIdx">
+              <div class="tmr-index">{{ memberIdx + 1 }}</div>
+              <div class="tmr-fields">
+
+                <!-- Collector picker -->
+                <div class="tf-collector-pick-wrap" (click)="$event.stopPropagation()">
+                  <button type="button"
+                          class="tf-collector-pick"
+                          [class.has-value]="ctrl.get('name')?.value"
+                          (click)="toggleDropdown(memberIdx, $event)">
+                    <mat-icon>person_search</mat-icon>
+                    @if (ctrl.get('name')?.value) {
+                      <span class="tcp-name">{{ ctrl.get('name')?.value }}</span>
+                      @if (ctrl.get('phone')?.value) {
+                        <span class="tcp-phone">{{ ctrl.get('phone')?.value }}</span>
+                      }
+                    } @else {
+                      <span class="tcp-placeholder">Choisir un collecteur…</span>
+                    }
+                    <mat-icon class="tcp-chevron" [class.open]="openDropdownIdx === memberIdx">expand_more</mat-icon>
+                  </button>
+
+                  @if (openDropdownIdx === memberIdx) {
+                    <div class="tf-collector-dropdown">
+                      <div class="tcd-search tf-input-wrap">
+                        <mat-icon>search</mat-icon>
+                        <input type="text"
+                               [value]="memberSearches[memberIdx]"
+                               (input)="memberSearches[memberIdx] = $any($event.target).value"
+                               placeholder="Rechercher un collecteur…"
+                               autofocus />
+                      </div>
+                      <div class="tcd-list">
+                        @for (c of filteredCollectors(memberIdx); track c._id) {
+                          <button type="button"
+                                  class="tcd-item"
+                                  [class.selected]="ctrl.get('_id')?.value === c._id"
+                                  (click)="selectCollector(memberIdx, c)">
+                            <div class="tcd-avatar">{{ c.firstName[0] }}{{ c.lastName[0] }}</div>
+                            <div class="tcd-info">
+                              <span class="tcd-name">{{ c.firstName }} {{ c.lastName }}</span>
+                              @if (c.phone) { <span class="tcd-sub">{{ c.phone }}</span> }
+                            </div>
+                            @if (ctrl.get('_id')?.value === c._id) {
+                              <mat-icon class="tcd-check">check_circle</mat-icon>
+                            }
+                          </button>
+                        }
+                        @if (filteredCollectors(memberIdx).length === 0) {
+                          <p class="tcd-empty">Aucun collecteur trouvé</p>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Role select -->
+                <select formControlName="role" class="tf-select">
+                  @for (r of roles; track r.value) {
+                    <option [value]="r.value">{{ r.label }}</option>
+                  }
+                </select>
+              </div>
+              <button type="button" class="tmr-remove" (click)="removeMember(memberIdx)">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          }
+
+          @if (membersArray.length === 0) {
+            <div class="tf-empty-members">
+              <mat-icon>group_off</mat-icon>
+              <p>Aucun membre. Cliquez sur « Ajouter un membre » pour commencer.</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ── TAB 2: VEHICLE & ZONES ─────────────────────────── -->
+    @if (activeTab === 2) {
+      <div class="tf-section">
+
+        <!-- Vehicle -->
+        <div class="tf-field">
+          <label>Véhicule assigné</label>
+          <div class="tf-vehicle-list">
+            <!-- No vehicle option -->
+            <label class="tf-vehicle-opt" [class.tf-vehicle-opt--active]="!form.get('vehicleId')!.value">
+              <input type="radio" formControlName="vehicleId" value="" />
+              <mat-icon class="tvo-icon" style="color:#94a3b8">no_crash</mat-icon>
+              <div>
+                <span class="tvo-name">Aucun véhicule</span>
+                <span class="tvo-detail">Pas de véhicule pour l'instant</span>
+              </div>
+            </label>
+            @for (v of availableVehicles; track v.id) {
+              <label class="tf-vehicle-opt" [class.tf-vehicle-opt--active]="form.get('vehicleId')!.value === v.id">
+                <input type="radio" formControlName="vehicleId" [value]="v.id" />
+                <mat-icon class="tvo-icon" style="color:#3b82f6">local_shipping</mat-icon>
+                <div>
+                  <span class="tvo-name">{{ v.plate }}</span>
+                  <span class="tvo-detail">{{ v.model }} · {{ v.capacityTons }}T</span>
+                </div>
+                <span class="tvo-status" style="background:#16a34a18;color:#16a34a">Disponible</span>
+              </label>
+            }
+          </div>
+        </div>
+
+        <!-- Zones -->
+        <div class="tf-field">
+          <label>Zones assignées
+            <span class="tf-count">{{ (form.get('zoneIds')!.value ?? []).length }} sélectionnées</span>
+          </label>
+          <div class="tf-zone-list">
+            @for (z of availableZones; track z.id) {
+              <label class="tf-zone-opt" [class.tf-zone-opt--active]="isZoneSelected(z.id)" (click)="toggleZone(z.id)">
+                <div class="tzo-check" [class.checked]="isZoneSelected(z.id)">
+                  <mat-icon>check</mat-icon>
+                </div>
+                <div class="tzo-info">
+                  <span class="tzo-name">{{ z.name }}</span>
+                  <span class="tzo-meta">{{ z.ville }}@if(z.arrondissement){ · {{ z.arrondissement }} } · {{ z.householdsCount }} ménages</span>
+                </div>
+              </label>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+  </div><!-- /tf-body -->
+
+  <!-- Footer -->
+  <div class="tf-footer">
+    <button type="button" class="tf-btn tf-btn--ghost" (click)="cancel.emit()">Annuler</button>
+    <div class="tf-footer-right">
+      @if (activeTab > 0) {
+        <button type="button" class="tf-btn tf-btn--secondary" (click)="activeTab = activeTab - 1">
+          <mat-icon>arrow_back</mat-icon>Précédent
+        </button>
+      }
+      @if (activeTab < 2) {
+        <button type="button" class="tf-btn tf-btn--primary" (click)="activeTab = activeTab + 1">
+          Suivant<mat-icon>arrow_forward</mat-icon>
+        </button>
+      } @else {
+        <button type="button" class="tf-btn tf-btn--save" [disabled]="saving" (click)="onSubmit()">
+          <mat-icon>{{ saving ? 'hourglass_empty' : 'save' }}</mat-icon>
+          {{ saving ? 'Enregistrement…' : (isEdit ? 'Enregistrer' : 'Créer l\'équipe') }}
+        </button>
+      }
+    </div>
+  </div>
+
+</div>

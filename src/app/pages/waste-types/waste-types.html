@@ -1,0 +1,228 @@
+<div class="waste-types-page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">Types de Déchets</h1>
+      <p class="page-subtitle">
+        Guide complet pour le tri et la gestion de vos déchets. Apprenez à
+        identifier, trier et présenter correctement chaque type de déchet pour
+        une collecte efficace et respectueuse de l'environnement.
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Navigation par catégories -->
+    <div class="categories-nav">
+      @for (category of categories; track category) {
+        <button
+          class="category-btn"
+          [class.active]="selectedCategory === category.id"
+          (click)="selectCategory(category.id)"
+          >
+          <i class="material-icons">{{ category.icon }}</i>
+          <span>{{ category.name }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Types de déchets -->
+    <div class="waste-types-grid">
+      @for (wasteType of getFilteredWasteTypes(); track wasteType) {
+        <div
+          class="waste-type-card card"
+          >
+          <div
+            class="waste-type-header"
+            [style.background-color]="wasteType.color"
+            >
+            <div class="waste-type-icon">
+              <i class="material-icons">{{ wasteType.icon }}</i>
+            </div>
+            <div class="waste-type-info">
+              <h3 class="waste-type-name">{{ wasteType.name }}</h3>
+              <p class="waste-type-description">{{ wasteType.description }}</p>
+            </div>
+            <div class="bin-indicator">
+              <div class="bin-icon" [style.background-color]="wasteType.binColor">
+                <i class="material-icons">delete</i>
+              </div>
+              <span class="bin-label"
+                >Bac {{ getBinColorName(wasteType.binColor) }}</span
+                >
+              </div>
+            </div>
+            <div class="waste-type-content">
+              <div class="content-section">
+                <h4 class="section-title">
+                  <i class="material-icons">rule</i>
+                  Instructions de tri
+                </h4>
+                <ul class="instructions-list">
+                  @for (instruction of wasteType.instructions; track instruction) {
+                    <li>
+                      {{ instruction }}
+                    </li>
+                  }
+                </ul>
+              </div>
+              <div class="content-section">
+                <h4 class="section-title">
+                  <i class="material-icons">check_circle</i>
+                  Accepté
+                </h4>
+                <div class="items-grid accepted">
+                  @for (item of wasteType.acceptedItems; track item) {
+                    <span
+                      class="item-tag accepted"
+                      >
+                      {{ item }}
+                    </span>
+                  }
+                </div>
+              </div>
+              <div class="content-section">
+                <h4 class="section-title">
+                  <i class="material-icons">cancel</i>
+                  Refusé
+                </h4>
+                <div class="items-grid rejected">
+                  @for (item of wasteType.rejectedItems; track item) {
+                    <span
+                      class="item-tag rejected"
+                      >
+                      {{ item }}
+                    </span>
+                  }
+                </div>
+              </div>
+              <div class="content-section">
+                <h4 class="section-title">
+                  <i class="material-icons">lightbulb</i>
+                  Conseils pratiques
+                </h4>
+                <ul class="tips-list">
+                  @for (tip of wasteType.tips; track tip) {
+                    <li>{{ tip }}</li>
+                  }
+                </ul>
+              </div>
+              <div class="collection-info">
+                <div class="collection-frequency">
+                  <i class="material-icons">schedule</i>
+                  <span>Collecte {{ wasteType.frequency }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Section informations générales -->
+      <div class="general-info-section">
+        <h2 class="section-title">Informations Générales</h2>
+
+        <div class="info-cards-grid">
+          <div class="info-card card">
+            <div class="info-icon">
+              <i class="material-icons">schedule</i>
+            </div>
+            <h3>Horaires de Sortie</h3>
+            <ul>
+              <li>Sortir les bacs la veille au soir après 19h</li>
+              <li>Ou le matin avant 7h le jour de collecte</li>
+              <li>Rentrer les bacs dans les 24h après collecte</li>
+              <li>Respecter les jours fériés (pas de collecte)</li>
+            </ul>
+          </div>
+
+          <div class="info-card card">
+            <div class="info-icon">
+              <i class="material-icons">place</i>
+            </div>
+            <h3>Emplacement des Bacs</h3>
+            <ul>
+              <li>Placer devant votre domicile, côté rue</li>
+              <li>Laisser 50cm entre chaque bac</li>
+              <li>Éviter les obstacles (voitures, poteaux)</li>
+              <li>Couvercle bien fermé et orienté vers la rue</li>
+            </ul>
+          </div>
+
+          <div class="info-card card">
+            <div class="info-icon">
+              <i class="material-icons">cleaning_services</i>
+            </div>
+            <h3>Entretien des Bacs</h3>
+            <ul>
+              <li>Nettoyer régulièrement avec de l'eau</li>
+              <li>Utiliser du vinaigre blanc pour désinfecter</li>
+              <li>Éviter les produits chimiques agressifs</li>
+              <li>Signaler tout dommage à votre agence</li>
+            </ul>
+          </div>
+
+          <div class="info-card card">
+            <div class="info-icon">
+              <i class="material-icons">report_problem</i>
+            </div>
+            <h3>Que Faire en Cas de Problème</h3>
+            <ul>
+              <li>Collecte manquée : signaler dans les 48h</li>
+              <li>Bac endommagé : demander un remplacement</li>
+              <li>Refus de collecte : vérifier le tri</li>
+              <li>Contacter votre agence pour toute question</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section réglementation -->
+      <div class="regulations-section">
+        <h2 class="section-title">Réglementation et Sanctions</h2>
+
+        <div class="regulations-content card">
+          <div class="regulation-item">
+            <div class="regulation-icon warning">
+              <i class="material-icons">warning</i>
+            </div>
+            <div class="regulation-content">
+              <h4>Tri Incorrect</h4>
+              <p>
+                Le non-respect des consignes de tri peut entraîner le refus de
+                collecte. Les bacs mal triés seront étiquetés et laissés sur
+                place.
+              </p>
+            </div>
+          </div>
+
+          <div class="regulation-item">
+            <div class="regulation-icon error">
+              <i class="material-icons">gavel</i>
+            </div>
+            <div class="regulation-content">
+              <h4>Sanctions Municipales</h4>
+              <p>
+                Les infractions répétées peuvent faire l'objet d'amendes de 3000
+                fcfa à 5000 fcfa selon la gravité (dépôt sauvage, non-respect des
+                horaires, etc.).
+              </p>
+            </div>
+          </div>
+
+          <div class="regulation-item">
+            <div class="regulation-icon success">
+              <i class="material-icons">eco</i>
+            </div>
+            <div class="regulation-content">
+              <h4>Bonne Pratique Récompensée</h4>
+              <p>
+                Les foyers exemplaires dans le tri peuvent bénéficier de
+                réductions sur leur facture de collecte et d'avantages auprès de
+                leur agence.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

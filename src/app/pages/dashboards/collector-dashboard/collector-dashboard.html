@@ -1,0 +1,745 @@
+<div class="collector-dashboard">
+  <div class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Interface Collecteur</h1>
+          <p class="page-subtitle">
+            {{ currentUser?.firstName }}, 
+            votre tournée du {{ today | date : "dd MMMM yyyy" }}
+          </p>
+        </div>
+        <div class="quick-actions">
+          <button
+            class="btn btn-primary"
+            (click)="startRoute()"
+            [disabled]="routeStarted"
+            >
+            <i class="material-icons">play_arrow</i>
+            {{ routeStarted ? "Tournée en cours" : "Démarrer la tournée" }}
+          </button>
+          <button class="btn btn-secondary" (click)="showIncidentModal = true">
+            <i class="material-icons">report_problem</i>
+            Signaler un incident
+          </button>
+          <button class="btn btn-secondary qr-btn" (click)="openQrScanner()">
+            <i class="material-icons">qr_code</i>
+            Scanner QR
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="dashboard-content">
+      <!-- Statistiques de la tournée -->
+      <div class="stats-grid">
+        <div class="stat-card card">
+          <div class="stat-icon progress">
+            <i class="material-icons">assignment</i>
+          </div>
+          <div class="stat-info">
+            <h3>Progression</h3>
+            <p class="stat-value">
+              {{ completedCollections }} / {{ totalCollections }}
+            </p>
+            <div class="progress-bar">
+              <div
+                class="progress-fill"
+                [style.width.%]="getProgressPercentage()"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card card">
+          <div class="stat-icon time">
+            <i class="material-icons">schedule</i>
+          </div>
+          <div class="stat-info">
+            <h3>Temps restant</h3>
+            <p class="stat-value">{{ getRemainingTime() }}</p>
+            <span class="stat-detail"
+              >Fin prévue: {{ getEstimatedEndTime() }}</span
+              >
+            </div>
+          </div>
+
+          <div class="stat-card card">
+            <div class="stat-icon distance">
+              <i class="material-icons">directions</i>
+            </div>
+            <div class="stat-info">
+              <h3>Distance parcourue</h3>
+              <p class="stat-value">{{ routeOptimization.totalDistance }} km</p>
+              <span class="stat-detail"
+                >{{ getRemainingDistance() }} km restants</span
+                >
+              </div>
+            </div>
+
+            <div class="stat-card card">
+              <div class="stat-icon incidents">
+                <i class="material-icons">warning</i>
+              </div>
+              <div class="stat-info">
+                <h3>Incidents</h3>
+                <p class="stat-value">{{ todayIncidents.length }}</p>
+                <span class="stat-detail">{{ getOpenIncidents() }} en cours</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contenu principal -->
+          <div class="main-content">
+            <div class="left-column">
+              <!-- Planning de collecte -->
+              <section class="collection-schedule card">
+                <div class="section-header">
+                  <h2>
+                    <i class="material-icons">event</i>
+                    Planning de collecte
+                  </h2>
+                  <div class="schedule-controls">
+                    <select
+                      [(ngModel)]="selectedView"
+                      (change)="updateView()"
+                      class="view-select"
+                      >
+                      <option value="today">Aujourd'hui</option>
+                      <option value="week">Cette semaine</option>
+                    </select>
+                    <button
+                      class="btn btn-secondary btn-small"
+                      (click)="optimizeRoute()"
+                      >
+                      <i class="material-icons">route</i>
+                      Optimiser
+                    </button>
+                  </div>
+                </div>
+
+                <div class="schedule-timeline">
+                  @for (point of collectionPoints; track point; let i = $index) {
+                    <div
+                      class="timeline-item"
+                      [class.current]="currentCollectionIndex === i"
+                      [class.completed]="point.status === 'Completed'"
+                      [class.urgent]="point.priority === 'urgent'"
+                      >
+                      <div class="timeline-marker">
+                        <div class="marker-icon">
+                          @if (point.status === 'Completed') {
+                            <i
+                              class="material-icons"
+                              >check_circle</i
+                              >
+                            }
+                            @if (point.status === 'in_progress') {
+                              <i
+                                class="material-icons"
+                                >radio_button_checked</i
+                                >
+                              }
+                              @if (point.status === 'scheduled') {
+                                <i
+                                  class="material-icons"
+                                  >radio_button_unchecked</i
+                                  >
+                                }
+                              </div>
+                              <div class="marker-time">
+                                {{ point.scheduledTime | date : "HH:mm" }}
+                              </div>
+                            </div>
+                            <div class="timeline-content">
+                              <div class="collection-header">
+                                <h4>{{ point.clientName }}</h4>
+                                <div class="collection-badges">
+                                  <span
+                                    class="priority-badge"
+                                    [class]="'priority-' + point.priority"
+                                    >
+                                    {{ point.priority === "urgent" ? "Urgent" : "Normal" }}
+                                  </span>
+                                  <span class="duration-badge"
+                                    >{{ point.estimatedDuration }}min</span
+                                    >
+                                  </div>
+                                </div>
+                                <div class="collection-details">
+                                  <div class="address-info">
+                                    <i class="material-icons">location_on</i>
+                                    <span>{{ point.address }}</span>
+                                    @if (point.doorColor) {
+                                      <span class="door-info">
+                                        (Porte {{ point.doorColor }})
+                                      </span>
+                                    }
+                                  </div>
+                                  <div class="waste-types">
+                                    @for (type of point.wasteTypes; track type) {
+                                      <span
+                                        class="waste-tag"
+                                        >
+                                        {{ type }}
+                                      </span>
+                                    }
+                                  </div>
+                                </div>
+                                @if (point.status !== 'Completed') {
+                                  <div
+                                    class="collection-actions"
+                                    >
+                                    <button
+                                      class="action-btn navigate"
+                                      (click)="navigateToPoint(point.id)"
+                                      >
+                                      <i class="material-icons">directions</i>
+                                      Navigation
+                                    </button>
+                                    <button
+                                      class="action-btn collect"
+                                      (click)="confirmCollection(point.id)"
+                                      [disabled]="point.status === 'in_progress'"
+                                      >
+                                      <i class="material-icons">check</i>
+                                      {{ point.status === "in_progress" ? "En cours..." :
+                                      "Confirmer" }}
+                                    </button>
+                                  </div>
+                                }
+                                @if (point.notes) {
+                                  <div class="collection-notes">
+                                    <i class="material-icons">note</i>
+                                    <span>{{ point.notes }}</span>
+                                  </div>
+                                }
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </section>
+
+                      <!-- Navigation et itinéraire -->
+                      <section class="navigation-section card">
+                        <div class="section-header">
+                          <h2>
+                            <i class="material-icons">navigation</i>
+                            Navigation
+                          </h2>
+                          <button
+                            class="btn btn-secondary btn-small"
+                            (click)="recalculateRoute()"
+                            >
+                            <i class="material-icons">refresh</i>
+                            Recalculer
+                          </button>
+                        </div>
+
+                        <div class="navigation-content">
+                          @if (currentDestination) {
+                            <div class="current-destination">
+                              <h3>Prochaine destination</h3>
+                              <div class="destination-info">
+                                <div class="destination-address">
+                                  <i class="material-icons">place</i>
+                                  <span>{{ currentDestination.address }}</span>
+                                </div>
+                                <div class="destination-distance">
+                                  <i class="material-icons">directions_walk</i>
+                                  <span
+                                    >{{ currentDestination.distance }} km - {{
+                                    currentDestination.estimatedDuration }} min</span
+                                    >
+                                  </div>
+                                </div>
+                                <button
+                                  class="btn btn-primary btn-full"
+                                  (click)="openMapsNavigation()"
+                                  >
+                                  <i class="material-icons">map</i>
+                                  Ouvrir dans Maps
+                                </button>
+                              </div>
+                            }
+
+                            <div class="route-summary">
+                              <h4>Résumé de l'itinéraire</h4>
+                              <div class="route-stats">
+                                <div class="route-stat">
+                                  <span class="stat-label">Distance totale:</span>
+                                  <span class="stat-value"
+                                    >{{ routeOptimization.totalDistance }} km</span
+                                    >
+                                  </div>
+                                  <div class="route-stat">
+                                    <span class="stat-label">Durée estimée:</span>
+                                    <span class="stat-value"
+                                      >{{ routeOptimization.estimatedDuration }} min</span
+                                      >
+                                    </div>
+                                    <div class="route-stat">
+                                      <span class="stat-label">Points restants:</span>
+                                      <span class="stat-value">{{ getRemainingPoints() }}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </section>
+                          </div>
+
+                          <div class="right-column">
+                            <!-- Confirmation de collecte -->
+                            <section class="collection-confirmation card">
+                              <div class="section-header">
+                                <h2>
+                                  <i class="material-icons">fact_check</i>
+                                  Confirmation de collecte
+                                </h2>
+                              </div>
+
+                              @if (currentCollection) {
+                                <div class="confirmation-form">
+                                  <div class="collection-info">
+                                    <h3>{{ currentCollection.clientName }}</h3>
+                                    <p>{{ currentCollection.address }}</p>
+                                  </div>
+                                  <div class="form-group">
+                                    <label>Notes (optionnel)</label>
+                                    <textarea
+                                      [(ngModel)]="collectionNotes"
+                                      placeholder="Observations, remarques..."
+                                      rows="3"
+                                    ></textarea>
+                                  </div>
+                                  <div class="form-group">
+                                    <label>Photos (optionnel)</label>
+                                    <div class="photo-upload">
+                                      <input
+                                        type="file"
+                                        #photoInput
+                                        multiple
+                                        accept="image/*"
+                                        (change)="onPhotosSelected($event)"
+                                        style="display: none"
+                                        />
+                                        <button class="upload-btn" (click)="photoInput.click()">
+                                          <i class="material-icons">camera_alt</i>
+                                          Ajouter des photos
+                                        </button>
+                                        @if (selectedPhotos.length > 0) {
+                                          <div class="photo-preview">
+                                            @for (photo of selectedPhotos; track photo) {
+                                              <div
+                                                class="photo-item"
+                                                >
+                                                <img [src]="photo.preview" alt="Photo" />
+                                                <button class="remove-photo" (click)="removePhoto(photo)">
+                                                  <i class="material-icons">close</i>
+                                                </button>
+                                              </div>
+                                            }
+                                          </div>
+                                        }
+                                      </div>
+                                    </div>
+                                    <div class="geolocation-info">
+                                      <div class="location-status" [class.active]="locationEnabled">
+                                        <i class="material-icons"
+                                          >{{ locationEnabled ? "location_on" : "location_off" }}</i
+                                          >
+                                          <span
+                                            >{{ locationEnabled ? "Géolocalisation activée" :
+                                            "Géolocalisation désactivée" }}</span
+                                            >
+                                          </div>
+                                          @if (!locationEnabled) {
+                                            <button
+                                              class="btn btn-secondary btn-small"
+                                              (click)="enableLocation()"
+                                              >
+                                              Activer la géolocalisation
+                                            </button>
+                                          }
+                                        </div>
+                                        <div class="confirmation-actions">
+                                          <button
+                                            class="btn btn-success btn-full"
+                                            (click)="confirmCurrentCollection()"
+                                            >
+                                            <i class="material-icons">check_circle</i>
+                                            Confirmer la collecte
+                                          </button>
+                                        </div>
+                                      </div>
+                                    }
+
+                                    @if (!currentCollection) {
+                                      <div class="no-current-collection">
+                                        <i class="material-icons">assignment_turned_in</i>
+                                        <p>Sélectionnez une collecte dans le planning</p>
+                                      </div>
+                                    }
+                                  </section>
+
+                                  <!-- Incidents du jour -->
+                                  <section class="incidents-section card">
+                                    <div class="section-header">
+                                      <h2>
+                                        <i class="material-icons">report_problem</i>
+                                        Incidents du jour
+                                      </h2>
+                                      <button
+                                        class="btn btn-secondary btn-small"
+                                        (click)="showIncidentModal = true"
+                                        >
+                                        <i class="material-icons">add</i>
+                                        Nouveau
+                                      </button>
+                                    </div>
+
+                                    <div class="incidents-list">
+                                      @for (incident of todayIncidents; track incident) {
+                                        <div
+                                          class="incident-item"
+                                          >
+                                          <div
+                                            class="incident-icon"
+                                            [class]="'incident-' + incident.type"
+                                            >
+                                            <i class="material-icons"
+                                              >{{ getIncidentIcon(incident.type) }}</i
+                                              >
+                                            </div>
+                                            <div class="incident-content">
+                                              <h4>{{ getIncidentTypeText(incident.type) }}</h4>
+                                              <p>{{ incident.description }}</p>
+                                              <div class="incident-meta">
+                                                <span class="incident-time"
+                                                  >{{ incident.timestamp | date : "HH:mm" }}</span
+                                                  >
+                                                  <span
+                                                    class="incident-status"
+                                                    [class]="'status-' + incident.status"
+                                                    >
+                                                    {{ incident.status === "open" ? "Ouvert" : "Résolu" }}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                              @if (incident.status === 'open') {
+                                                <button
+                                                  class="resolve-btn"
+                                                  (click)="resolveIncident(incident.id)"
+                                                  >
+                                                  <i class="material-icons">check</i>
+                                                </button>
+                                              }
+                                            </div>
+                                          }
+
+                                          @if (todayIncidents.length === 0) {
+                                            <div class="empty-incidents">
+                                              <i class="material-icons">check_circle</i>
+                                              <p>Aucun incident signalé aujourd'hui</p>
+                                            </div>
+                                          }
+                                        </div>
+                                      </section>
+
+                                      <!-- Historique des collectes -->
+                                      <section class="collection-history card">
+                                        <div class="section-header">
+                                          <h2>
+                                            <i class="material-icons">history</i>
+                                            Historique récent
+                                          </h2>
+                                          <button
+                                            class="btn btn-secondary btn-small"
+                                            routerLink="/collector/history"
+                                            >
+                                            <i class="material-icons">open_in_new</i>
+                                            Voir tout
+                                          </button>
+                                        </div>
+
+                                        <div class="history-list">
+                                          @for (collection of recentHistory; track collection) {
+                                            <div
+                                              class="history-item"
+                                              >
+                                              <div class="history-date">
+                                                <div class="day">
+                                                  {{ collection.collectedDate | date : "dd" }}
+                                                </div>
+                                                <div class="month">
+                                                  {{ collection.collectedDate | date : "MMM" }}
+                                                </div>
+                                              </div>
+                                              <div class="history-info">
+                                                <h4>{{ collection.clientName }}</h4>
+                                                <p>{{ collection.address }}</p>
+                                                <div class="history-meta">
+                                                  <span class="collection-time"
+                                                    >{{ collection.collectedDate | date : "HH:mm" }}</span
+                                                    >
+                                                    <span class="waste-types"
+                                                      >{{ collection.wasteTypes.join(", ") }}</span
+                                                      >
+                                                    </div>
+                                                  </div>
+                                                  <div class="history-status">
+                                                    <span class="status-badge status-completed">Collecté</span>
+                                                  </div>
+                                                </div>
+                                              }
+
+                                              @if (recentHistory.length === 0) {
+                                                <div class="empty-history">
+                                                  <i class="material-icons">history</i>
+                                                  <p>Aucun historique récent</p>
+                                                </div>
+                                              }
+                                            </div>
+                                          </section>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <!-- Modal de signalement d'incident -->
+                                  @if (showIncidentModal) {
+                                    <div
+                                      class="modal-overlay"
+                                      (click)="showIncidentModal = false"
+                                      >
+                                      <div class="modal-content" (click)="$event.stopPropagation()">
+                                        <div class="modal-header">
+                                          <h3>Signaler un incident</h3>
+                                          <button class="close-btn" (click)="showIncidentModal = false">
+                                            <i class="material-icons">close</i>
+                                          </button>
+                                        </div>
+                                        <form class="incident-form" (ngSubmit)="submitIncident()">
+                                          <div class="form-group">
+                                            <label>Type d'incident</label>
+                                            <select [(ngModel)]="incidentData.type" name="type" required>
+                                              <option value="">Sélectionnez un type</option>
+                                              <option value="non_compliant">Déchets non conformes</option>
+                                              <option value="access_blocked">Accès bloqué</option>
+                                              <option value="equipment_issue">Problème d'équipement</option>
+                                              <option value="other">Autre</option>
+                                            </select>
+                                          </div>
+                                          <div class="form-group">
+                                            <label>Collection concernée</label>
+                                            <select
+                                              [(ngModel)]="incidentData.collectionId"
+                                              name="collectionId"
+                                              required
+                                              >
+                                              <option value="">Sélectionnez une collecte</option>
+                                              @for (point of collectionPoints; track point) {
+                                                <option [value]="point.id">
+                                                  {{ point.clientName }} - {{ point.address }}
+                                                </option>
+                                              }
+                                            </select>
+                                          </div>
+                                          <div class="form-group">
+                                            <label>Description</label>
+                                            <textarea
+                                              [(ngModel)]="incidentData.description"
+                                              name="description"
+                                              rows="4"
+                                              placeholder="Décrivez l'incident..."
+                                              required
+                                            ></textarea>
+                                          </div>
+                                          <div class="form-group">
+                                            <label>Photos (optionnel)</label>
+                                            <div class="photo-upload">
+                                              <input
+                                                type="file"
+                                                #incidentPhotoInput
+                                                multiple
+                                                accept="image/*"
+                                                (change)="onIncidentPhotosSelected($event)"
+                                                style="display: none"
+                                                />
+                                                <button
+                                                  type="button"
+                                                  class="upload-btn"
+                                                  (click)="incidentPhotoInput.click()"
+                                                  >
+                                                  <i class="material-icons">camera_alt</i>
+                                                  Ajouter des photos
+                                                </button>
+                                                @if (incidentPhotos.length > 0) {
+                                                  <div class="photo-preview">
+                                                    @for (photo of incidentPhotos; track photo) {
+                                                      <div class="photo-item">
+                                                        <img [src]="photo.preview" alt="Photo incident" />
+                                                        <button
+                                                          type="button"
+                                                          class="remove-photo"
+                                                          (click)="removeIncidentPhoto(photo)"
+                                                          >
+                                                          <i class="material-icons">close</i>
+                                                        </button>
+                                                      </div>
+                                                    }
+                                                  </div>
+                                                }
+                                              </div>
+                                            </div>
+                                            <div class="form-actions">
+                                              <button
+                                                type="button"
+                                                class="btn btn-secondary"
+                                                (click)="showIncidentModal = false"
+                                                >
+                                                Annuler
+                                              </button>
+                                              <button type="submit" class="btn btn-primary">
+                                                <i class="material-icons">send</i>
+                                                Signaler
+                                              </button>
+                                            </div>
+                                          </form>
+                                        </div>
+                                      </div>
+                                    }
+
+                                    <!-- Modal QR Scanner -->
+                                    @if (showQrScanner) {
+                                      <div
+                                        class="modal-overlay"
+                                        (click)="showQrScanner = !showQrScanner"
+                                        >
+                                        <div class="modal-content" (click)="$event.stopPropagation()">
+                                          <div class="modal-header">
+                                            <h3>Scanner un QR Code</h3>
+                                            <button class="close-btn" (click)="showQrScanner = !showQrScanner">
+                                              <i class="material-icons">close</i>
+                                            </button>
+                                          </div>
+                                          <div class="scanner-container">
+                                            @if (!cameraError) {
+                                              <zxing-scanner
+                                                [formats]="qrFormats"
+                                                (scanSuccess)="onQrCodeResult($event)"
+                                                (scanError)="onScanError($event)"
+                                                (camerasFound)="onCamerasFound($event)"
+                                                [torch]="false"
+                                                [tryHarder]="true"
+                                                [device]="selectedDevice"
+                                                [autostart]="true"
+                                                [previewFitMode]="'cover'"
+                                              ></zxing-scanner>
+                                            }
+                                            <!-- Message d'erreur de caméra -->
+                                            @if (cameraError) {
+                                              <div class="camera-error">
+                                                <div class="error-content">
+                                                  <i class="material-icons error-icon">videocam_off</i>
+                                                  <h3>Caméra inaccessible</h3>
+                                                  <p>{{ cameraErrorMessage }}</p>
+                                                  <div class="error-actions">
+                                                    <button class="btn btn-primary" (click)="retryCamera()">
+                                                      <i class="material-icons">refresh</i>
+                                                      Réessayer
+                                                    </button>
+                                                    <button class="btn btn-secondary" (click)="useFileImport()">
+                                                      <i class="material-icons">upload_file</i>
+                                                      Importer une image
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            }
+                                          </div>
+                                          <div class="scanner-controls">
+                                            <button
+                                              class="btn btn-secondary"
+                                              (click)="showQrScanner = !showQrScanner"
+                                              >
+                                              Fermer
+                                            </button>
+                                            <button class="btn btn-info btn-full" (click)="importQrFromFile()">
+                                              <i class="material-icons">upload_file</i>
+                                              Importer QR Code
+                                            </button>
+                                          </div>
+                                          <!-- Input file caché pour l'import de QR code -->
+                                          <input
+                                            #fileInput
+                                            type="file"
+                                            accept="image/*"
+                                            style="display: none"
+                                            (change)="onFileSelected($event)"
+                                            />
+                                          </div>
+                                        </div>
+                                      }
+                                      <!-- Modal infos client scanné -->
+                                      @if (showClientModal) {
+                                        <div
+                                          class="modal-overlay"
+                                          (click)="showClientModal = false"
+                                          >
+                                          <div class="modal-content" (click)="$event.stopPropagation()">
+                                            <div class="modal-header">
+                                              <h3>Informations du client</h3>
+                                              <button class="close-btn" (click)="showClientModal = false">
+                                                <i class="material-icons">close</i>
+                                              </button>
+                                            </div>
+                                            @if (scannedClient) {
+                                              <div>
+                                                <p>
+                                                  <strong>Nom :</strong> {{ scannedClient?.firstName }} {{
+                                                  scannedClient?.lastName }}
+                                                </p>
+                                                <p><strong>Téléphone :</strong> {{ scannedClient?.phone }}</p>
+                                                <p><strong>Statut :</strong> {{ scannedClient?.subscriptionStatus }}</p>
+                                                <p>
+                                                  <strong>Adresse :</strong>
+                                                  {{ scannedClient?.address?.doorNumber }} {{
+                                                  scannedClient?.address?.street }}, {{
+                                                  scannedClient?.address?.neighborhood }}, {{
+                                                  scannedClient?.address?.city }}
+                                                </p>
+                                                <p>
+                                                  <strong>Couleur porte :</strong>
+                                                  {{ scannedClient?.address?.doorColor }}
+                                                </p>
+                                                <p>
+                                                  <strong>Arrondissement :</strong>
+                                                  {{ scannedClient?.address?.arrondissement }}
+                                                </p>
+                                                <p><strong>Secteur :</strong> {{ scannedClient?.address?.sector }}</p>
+                                                <p>
+                                                  <strong>Code postal :</strong>
+                                                  {{ scannedClient?.address?.postalCode }}
+                                                </p>
+                                              </div>
+                                            }
+                                            <div class="confirmation-actions">
+                                              <button
+                                                class="btn btn-success btn-full"
+                                                (click)="confirmCurrentCollection()"
+                                                >
+                                                <i class="material-icons">check_circle</i>
+                                                Confirmer la collecte
+                                              </button>
+                                              <button class="btn btn-secondary btn-full" (click)="cancelCollection()">
+                                                <i class="material-icons">cancel</i>
+                                                Annuler
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      }
+                                    </div>

@@ -1,0 +1,403 @@
+<p-toast />
+
+<div class="tl-root">
+
+  <!-- ══════════════════════════════════════════════════════════
+       TOP BAR
+       ══════════════════════════════════════════════════════════ -->
+  <div class="tl-topbar">
+    <div class="tl-topbar__left">
+      <div class="tl-title-ico"><mat-icon>groups</mat-icon></div>
+      <div>
+        <h1>Gestion des équipes</h1>
+        <p>{{ stats().total }} équipes · {{ stats().totalMembers }} membres au total</p>
+      </div>
+    </div>
+
+    <div class="tl-topbar__right">
+      <!-- Search -->
+      <div class="tl-search">
+        <mat-icon>search</mat-icon>
+        <input type="text" placeholder="Rechercher une équipe…"
+               [value]="store.filter().search"
+               (input)="setSearch($any($event.target).value)" />
+        @if (store.filter().search) {
+          <button (click)="setSearch('')"><mat-icon>close</mat-icon></button>
+        }
+      </div>
+
+      <!-- View toggle -->
+      <div class="tl-view-toggle">
+        <button [class.active]="store.viewMode() === 'table'" (click)="store.viewMode.set('table')" pTooltip="Tableau" tooltipPosition="bottom">
+          <mat-icon>table_rows</mat-icon>
+        </button>
+        <button [class.active]="store.viewMode() === 'grid'" (click)="store.viewMode.set('grid')" pTooltip="Cartes" tooltipPosition="bottom">
+          <mat-icon>grid_view</mat-icon>
+        </button>
+      </div>
+
+      <!-- Filters toggle -->
+      <button class="tl-filter-btn" [class.active]="store.showFilters()" (click)="toggleFilters()">
+        <mat-icon>filter_list</mat-icon>Filtres
+        @if (store.activeFilterCount() > 0) {
+          <span class="filter-count">{{ store.activeFilterCount() }}</span>
+        }
+      </button>
+
+      <!-- Exports -->
+      <button class="tl-export-btn" (click)="exportCSV()" pTooltip="Exporter CSV" tooltipPosition="bottom">
+        <mat-icon>table_view</mat-icon>CSV
+      </button>
+      <button class="tl-export-btn" (click)="exportPDF()" pTooltip="Exporter PDF" tooltipPosition="bottom">
+        <mat-icon>picture_as_pdf</mat-icon>PDF
+      </button>
+
+      <!-- New team -->
+      <button class="tl-new-btn" (click)="openCreate()">
+        <mat-icon>add</mat-icon>Nouvelle équipe
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       KPI CARDS
+       ══════════════════════════════════════════════════════════ -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#3b82f618;color:#3b82f6"><mat-icon>groups</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-val">{{ stats().total }}</div>
+        <div class="kpi-lbl">Total équipes</div>
+      </div>
+      <div class="kpi-trend kpi-trend--neutral">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#16a34a18;color:#16a34a"><mat-icon>check_circle</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-val">{{ stats().active }}</div>
+        <div class="kpi-lbl">Actives</div>
+      </div>
+      <div class="kpi-mini-bar" style="--c:#16a34a;--p:{{ (stats().active / stats().total * 100) | number:'1.0-0' }}%"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#f59e0b18;color:#f59e0b"><mat-icon>directions_run</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-val">{{ stats().onMission }}</div>
+        <div class="kpi-lbl">En mission</div>
+      </div>
+      @if (stats().onMission > 0) {
+        <span class="kpi-pulse"></span>
+      }
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#8b5cf618;color:#8b5cf6"><mat-icon>person</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-val">{{ stats().totalMembers }}</div>
+        <div class="kpi-lbl">Membres</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#06b6d418;color:#06b6d4"><mat-icon>local_shipping</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-val">{{ stats().availableVehicles }}</div>
+        <div class="kpi-lbl">Véhicules actifs</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#ef444418;color:#ef4444"><mat-icon>build</mat-icon></div>
+      <div class="kpi-body">
+        <div class="kpi-val">{{ stats().maintenance }}</div>
+        <div class="kpi-lbl">En maintenance</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       FILTER BAR
+       ══════════════════════════════════════════════════════════ -->
+  @if (store.showFilters()) {
+    <div class="filter-bar">
+      <!-- Status chips -->
+      <div class="fb-group">
+        <span class="fb-label">Statut</span>
+        <div class="fb-chips">
+          <button class="fb-chip" [class.fb-chip--active]="!store.filter().status" (click)="setStatus('')">
+            Tous
+          </button>
+          @for (s of teamStatuses; track s.value) {
+            <button class="fb-chip"
+                    [class.fb-chip--active]="store.filter().status === s.value"
+                    [style.--cc]="s.color"
+                    (click)="setStatus(s.value)">
+              <span class="chip-dot" [style.background]="s.color"></span>
+              {{ s.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Vehicle filter -->
+      <div class="fb-group">
+        <span class="fb-label">Véhicule</span>
+        <div class="fb-chips">
+          <button class="fb-chip" [class.fb-chip--active]="store.filter().hasVehicle === null" (click)="setHasVehicle(null)">Tous</button>
+          <button class="fb-chip" [class.fb-chip--active]="store.filter().hasVehicle === true"  (click)="setHasVehicle(true)">Avec véhicule</button>
+          <button class="fb-chip" [class.fb-chip--active]="store.filter().hasVehicle === false" (click)="setHasVehicle(false)">Sans véhicule</button>
+        </div>
+      </div>
+
+      <!-- Sort -->
+      <div class="fb-group fb-group--right">
+        <span class="fb-label">Trier</span>
+        <select [ngModel]="store.filter().sortBy" (ngModelChange)="setSortBy($event)" class="fb-select">
+          <option value="name">Nom</option>
+          <option value="workload">Charge</option>
+          <option value="members">Membres</option>
+          <option value="missions">Missions</option>
+        </select>
+        <button class="fb-sort-dir" (click)="toggleSortDir()" pTooltip="Inverser l'ordre">
+          <mat-icon>{{ store.filter().sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+        </button>
+      </div>
+
+      @if (store.activeFilterCount() > 0) {
+        <button class="fb-clear-all" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon>Effacer
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Result count -->
+  <div class="result-bar">
+    <span class="rb-count">{{ filteredTeams().length }} équipe{{ filteredTeams().length > 1 ? 's' : '' }}</span>
+    @if (store.filter().search) {
+      <span class="rb-query">pour « {{ store.filter().search }} »</span>
+    }
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       TABLE VIEW
+       ══════════════════════════════════════════════════════════ -->
+  @if (store.viewMode() === 'table') {
+    <div class="teams-table-wrap">
+      <table class="teams-table">
+        <thead>
+          <tr>
+            <th style="width:44px"></th>
+            <th>Équipe</th>
+            <th>Statut</th>
+            <th>Membres</th>
+            <th>Véhicule</th>
+            <th>Zones</th>
+            <th>Charge</th>
+            <th>Missions</th>
+            <th style="width:130px">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (team of paginatedTeams(); track team.id) {
+            <tr (click)="openModal(team)">
+              <td>
+                <div class="row-avatar" [style.background]="team.color + '18'" [style.color]="team.color">
+                  {{ team.name.charAt(0) }}
+                </div>
+              </td>
+              <td>
+                <div class="row-name">
+                  <span class="rn-name">{{ team.name }}</span>
+                  <span class="rn-code">{{ team.code }}</span>
+                  @if (team.supervisor) {
+                    <span class="rn-sup">{{ team.supervisor }}</span>
+                  }
+                </div>
+              </td>
+              <td>
+                <span class="row-status" [style.background]="statusColor(team.status) + '18'" [style.color]="statusColor(team.status)">
+                  <span class="rs-dot" [style.background]="statusColor(team.status)"
+                        [class.rs-dot--pulse]="team.status === 'on_mission'"></span>
+                  {{ statusLabel(team.status) }}
+                </span>
+              </td>
+              <td>
+                <div class="row-members">
+                  <mat-icon>group</mat-icon>{{ team.members.length }}
+                </div>
+              </td>
+              <td>
+                @if (team.vehicle) {
+                  <div class="row-vehicle">
+                    <mat-icon>local_shipping</mat-icon>
+                    <span>{{ team.vehicle.plate }}</span>
+                    <span class="rv-capacity">{{ team.vehicle.capacityTons }}T</span>
+                  </div>
+                } @else {
+                  <span class="row-na">—</span>
+                }
+              </td>
+              <td>
+                <div class="row-zones">
+                  @for (z of team.zones.slice(0, 2); track z.id) {
+                    <span class="zone-chip">{{ z.name.split('–')[0].trim() }}</span>
+                  }
+                  @if (team.zones.length > 2) {
+                    <span class="zone-chip zone-chip--more">+{{ team.zones.length - 2 }}</span>
+                  }
+                  @if (team.zones.length === 0) { <span class="row-na">—</span> }
+                </div>
+              </td>
+              <td>
+                <div class="row-workload">
+                  <div class="rw-bar">
+                    <div class="rw-fill"
+                         [style.width]="team.workload + '%'"
+                         [style.background]="workloadColor(team.workload)">
+                    </div>
+                  </div>
+                  <span class="rw-pct" [style.color]="workloadColor(team.workload)">{{ team.workload }}%</span>
+                </div>
+              </td>
+              <td>
+                <div class="row-missions">
+                  <span class="rm-done">{{ team.completedMissions }}</span>
+                  <span class="rm-sep">/</span>
+                  <span class="rm-total">{{ team.totalMissions }}</span>
+                  <span class="rm-rate" [style.color]="team.successRate >= 90 ? '#16a34a' : '#f59e0b'">
+                    {{ team.successRate }}%
+                  </span>
+                </div>
+              </td>
+              <td (click)="$event.stopPropagation()">
+                <div class="row-actions">
+                  <button class="ra-btn" pTooltip="Voir" tooltipPosition="top" (click)="goToDetail(team.id)">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <button class="ra-btn" pTooltip="Gérer les membres" tooltipPosition="top"
+                          (click)="router.navigate(['/teams/members', team.id])">
+                    <mat-icon>group</mat-icon>
+                  </button>
+                  <button class="ra-btn" pTooltip="Modifier" tooltipPosition="top" (click)="openEdit(team)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button class="ra-btn"
+                          [pTooltip]="team.status === 'active' ? 'Désactiver' : 'Activer'"
+                          tooltipPosition="top"
+                          (click)="toggleStatus(team)">
+                    <mat-icon>{{ team.status === 'active' ? 'pause_circle' : 'play_circle' }}</mat-icon>
+                  </button>
+                  <button class="ra-btn ra-btn--danger" pTooltip="Supprimer" tooltipPosition="top" (click)="confirmDelete(team)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (paginatedTeams().length === 0) {
+        <div class="empty-state">
+          <mat-icon>group_off</mat-icon>
+          <p>Aucune équipe trouvée</p>
+          @if (store.activeFilterCount() > 0) {
+            <button (click)="clearFilters()">Effacer les filtres</button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════
+       GRID VIEW
+       ══════════════════════════════════════════════════════════ -->
+  @if (store.viewMode() === 'grid') {
+    <div class="teams-grid">
+      @for (team of paginatedTeams(); track team.id) {
+        <app-team-card
+          [team]="team"
+          (edit)="openEdit($event)"
+          (delete)="confirmDelete($event)"
+          (toggle)="toggleStatus($event)"
+          (detail)="goToDetail($event.id)">
+        </app-team-card>
+      }
+      @if (paginatedTeams().length === 0) {
+        <div class="empty-state empty-state--grid">
+          <mat-icon>group_off</mat-icon>
+          <p>Aucune équipe trouvée</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════
+       PAGINATION
+       ══════════════════════════════════════════════════════════ -->
+  @if (filteredTeams().length > store.pageSize) {
+    <div class="pagination">
+      <span class="pg-info">{{ pageStart() }}–{{ pageEnd() }} sur {{ filteredTeams().length }}</span>
+      <div class="pg-btns">
+        <button [disabled]="store.currentPage() === 1" (click)="prevPage()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        @for (p of pages(); track p) {
+          @if (pages().length <= 7 || p === 1 || p === totalPages() || (p >= store.currentPage() - 1 && p <= store.currentPage() + 1)) {
+            <button [class.active]="p === store.currentPage()" (click)="store.currentPage.set(p)">{{ p }}</button>
+          }
+        }
+        <button [disabled]="store.currentPage() === totalPages()" (click)="nextPage()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    </div>
+  }
+
+</div><!-- /tl-root -->
+
+<!-- ══════════════════════════════════════════════════════════
+     TEAM DETAIL MODAL
+     ══════════════════════════════════════════════════════════ -->
+<app-team-detail-modal
+  [team]="modalTeam()"
+  [visible]="modalOpen()"
+  (visibleChange)="modalOpen.set($event)"
+  (edit)="openEdit($event); modalOpen.set(false)"
+  (toggleStatus)="toggleStatus($event)"
+  (confirmDelete)="confirmDelete($event); modalOpen.set(false)"
+  (navigateDetail)="goToDetail($event)">
+</app-team-detail-modal>
+
+<!-- ══════════════════════════════════════════════════════════
+     TEAM FORM DRAWER
+     ══════════════════════════════════════════════════════════ -->
+@if (formOpen()) {
+  <app-team-form
+    [team]="editingTeam()"
+    [availableVehicles]="svc.unassignedVehicles()"
+    [availableZones]="svc.availableZones()"
+    [availableCollectors]="svc.collectors()"
+    (save)="onFormSave($event)"
+    (cancel)="formOpen.set(false)">
+  </app-team-form>
+}
+
+<!-- ══════════════════════════════════════════════════════════
+     DELETE CONFIRM
+     ══════════════════════════════════════════════════════════ -->
+@if (confirmDeleteOpen() && deletingTeam()) {
+  <div class="dlg-backdrop" (click)="confirmDeleteOpen.set(false)"></div>
+  <div class="dlg-box">
+    <div class="dlg-icon"><mat-icon>delete_forever</mat-icon></div>
+    <h3>Supprimer l'équipe ?</h3>
+    <p>
+      <strong>{{ deletingTeam()!.name }}</strong> sera définitivement supprimée.
+      Cette action est irréversible.
+    </p>
+    <div class="dlg-actions">
+      <button class="dlg-btn dlg-btn--ghost" (click)="confirmDeleteOpen.set(false)">Annuler</button>
+      <button class="dlg-btn dlg-btn--danger" (click)="doDelete()">
+        <mat-icon>delete_forever</mat-icon>Supprimer
+      </button>
+    </div>
+  </div>
+}

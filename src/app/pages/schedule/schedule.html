@@ -1,0 +1,37 @@
+<div class="schedule-page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">Calendrier de Collecte</h1>
+      <p class="page-subtitle">
+        Consultez les prochaines collectes programmées
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="schedule-content">
+      <div class="schedule-card card">
+        <h2>Prochaines Collectes</h2>
+        <div class="schedule-list">
+          @for (item of scheduleItems; track item) {
+            <div class="schedule-item">
+              <div class="schedule-date">
+                <div class="day">{{ item.day }}</div>
+                <div class="month">{{ item.month }}</div>
+              </div>
+              <div class="schedule-info">
+                <h4>{{ item.type }}</h4>
+                <p>{{ item.time }}</p>
+              </div>
+              <div class="schedule-status">
+                <span [class]="'status-' + item.status"
+                  >{{ item.statusText }}</span
+                  >
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

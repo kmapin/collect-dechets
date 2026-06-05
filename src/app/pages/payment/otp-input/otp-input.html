@@ -1,0 +1,99 @@
+<mat-card class="otp-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon class="orange-icon">lock</mat-icon>
+      Validation {{paymentOperator(operator)}}
+    </mat-card-title>
+    <mat-card-subtitle>
+      Saisissez le code OTP reçu par SMS
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="transaction-info">
+      <div class="info-item">
+        <span class="label">Transaction:</span>
+        <span class="value">{{ transactionId }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Montant:</span>
+        <span class="value">{{ amount | number:'1.0-0' }} FCFA</span>
+      </div>
+    </div>
+
+    <form [formGroup]="otpForm">
+      <mat-form-field appearance="outline" class="otp-field">
+        <mat-label>Code OTP</mat-label>
+        <input
+          matInput
+          formControlName="otp"
+          placeholder="000000"
+          type="text"
+          inputmode="numeric"
+          maxlength="6"
+          required
+          autocomplete="one-time-code">
+
+          <mat-icon matPrefix>dialpad</mat-icon>
+          @if (otpForm.get('otp')?.invalid) {
+            <mat-error>
+              {{ getOtpErrorMessage() }}
+            </mat-error>
+          }
+          <mat-hint>Code à 6 chiffres</mat-hint>
+        </mat-form-field>
+
+        @if (errorMessage) {
+          <div class="error-message">
+            <mat-icon>error</mat-icon>
+            <span>{{ errorMessage }}</span>
+          </div>
+        }
+
+        <div class="info-message">
+          <mat-icon>info</mat-icon>
+          <p>{{message }}</p>
+        </div>
+
+        <div class="form-actions">
+          <button
+            mat-stroked-button
+            type="button"
+            class="cancel-button"
+            (click)="onCancel()"
+            [disabled]="isProcessing">
+            <mat-icon>close</mat-icon>
+            Annuler
+          </button>
+
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="onVerifyOtp()"
+            class="submit-button"
+            [disabled]="otpForm.invalid || isProcessing">
+            
+
+            
+            @if(!isProcessing){
+            <div class="loading-indicator">
+              <mat-icon>check</mat-icon>
+              <span>Valider</span>
+            </div>
+            }
+            @if(isProcessing){
+            <div class="loading-indicator">
+              <mat-spinner
+                *ngIf="isProcessing"
+                mode="indeterminate"
+                diameter="30">
+              </mat-spinner>
+              <span>Validation...</span>
+            </div>
+            
+            }
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>

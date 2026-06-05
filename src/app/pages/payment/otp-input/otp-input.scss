@@ -1,0 +1,228 @@
+.otp-card {
+    // max-width: 500px;
+    margin: 0 auto;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.98);
+    // box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.4s ease-out;
+    border-top: 4px solid #3b84ed;
+    
+    mat-card-header {
+      background: linear-gradient(135deg, #3b84ed 0%, #4bac5b 100%);
+      color: white;
+      padding: 0.5rem;
+      border-radius: 16px 16px 0 0;
+      // margin: -16px -16px 0 -16px;
+      
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        
+        .orange-icon {
+          font-size: 1.8rem;
+          width: 1.8rem;
+          height: 1.8rem;
+        }
+      }
+      
+      mat-card-subtitle {
+        color: rgba(255, 255, 255, 0.95);
+        margin: 0;
+      }
+    }
+    
+    mat-card-content {
+      padding: 2rem;
+    }
+  }
+  .loading-indicator {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.5rem;
+    align-items: center;
+    height: 100px;
+  }
+  .transaction-info {
+    background: rgba(0, 26, 255, 0.05);
+    border-left: 3px solid #3b84ed;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      
+      &:not(:last-child) {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      }
+      
+      .label {
+        font-weight: 500;
+        color: #666;
+      }
+      
+      .value {
+        font-weight: 600;
+        color: #162c0d;
+        font-family: monospace;
+      }
+    }
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .full-width {
+    width: 100%;
+  }
+  
+  .otp-field {
+    ::ng-deep {
+      input {
+        font-size: 1.5rem;
+        letter-spacing: 0.5rem;
+        text-align: center;
+        font-weight: 600;
+        font-family: monospace;
+      }
+    }
+  }
+  
+  .error-message {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    color: #f44336;
+    background: rgba(244, 67, 54, 0.1);
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    
+    mat-icon {
+      font-size: 1.2rem;
+      width: 1.2rem;
+      height: 1.2rem;
+    }
+    
+    span {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+  }
+  
+  .info-message {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: rgba(33, 150, 243, 0.05);
+    border-left: 3px solid #2196F3;
+    padding: 1rem;
+    border-radius: 8px;
+    
+    mat-icon {
+      color: #2196F3;
+      flex-shrink: 0;
+    }
+    
+    p {
+      margin: 0;
+      color: #555;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+  }
+  
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    
+    button {
+      flex: 1;
+      height: 48px;
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+    
+    .cancel-button {
+      border-color: rgba(0, 0, 0, 0.2);
+      
+      &:hover:not(:disabled) {
+        background: rgba(0, 0, 0, 0.05);
+        border-color: rgba(0, 0, 0, 0.4);
+      }
+    }
+    
+    .submit-button {
+      background: linear-gradient(135deg,  #3b84ed 0%,  #4bac5b 100%);
+      color: aliceblue;
+      &:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 119, 255, 0.4);
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+      }
+      
+      .button-spinner {
+        display: inline-block;
+        margin-right: 0.5rem;
+      }
+    }
+  }
+  
+  /* Animations */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .otp-card {
+      margin: 1rem;
+      
+      mat-card-header {
+        padding: 1.5rem;
+        
+        mat-card-title {
+          font-size: 1.3rem;
+        }
+      }
+      
+      mat-card-content {
+        padding: 1.5rem;
+      }
+    }
+    
+    .form-actions {
+      flex-direction: column;
+      
+      button {
+        width: 100%;
+      }
+    }
+  }
+  

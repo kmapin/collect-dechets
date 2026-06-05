@@ -1,0 +1,2298 @@
+    <div class="admin-dashboard">
+      <div class="page-header">
+        <div class="container">
+          <div class="header-content">
+            <div class="welcome-section">
+              <h1 class="page-title">Tableau de Bord Administrateur</h1>
+              <p class="page-subtitle">
+                Audit et contrôle des agences de collecte -
+                {{ currentUser?.firstName }} {{ currentUser?.lastName }}
+              </p>
+            </div>
+            <div class="quick-actions">
+              <!-- <button
+                class="btn btn-primary"
+                (click)="showCommunicationModal = true"
+              >
+                <i class="material-icons">campaign</i>
+                Nouvelle Communication
+              </button> -->
+              <!-- <button
+                class="btn btn-secondary"
+                (click)="generateGlobalReport()"
+              >
+                <i class="material-icons">assessment</i>
+                Rapport Global
+              </button> -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="dashboard-content">
+          <!-- Statistiques principales -->
+          <!-- Indicateur de chargement pour les statistiques -->
+          <app-loading-spinner 
+            *ngIf="isLoadingStatistics" 
+            message="Chargement des statistiques..." 
+            size="large">
+          </app-loading-spinner>
+
+          <div *ngIf="!isLoadingStatistics" class="stats-grid">
+            <div class="stat-card card">
+              <div class="stat-icon agencies">
+                <i class="material-icons">business</i>
+              </div>
+              <div class="stat-info">
+                <h3>Agents(s) de mairie</h3>
+                <p class="stat-value">
+                  {{ statisticsAdmin?.totalMunicipalityAgents }}
+                </p>
+                <span
+                  class="stat-trend"
+                  [class.positive]="
+                    statisticsAdmin?.totalMunicipalityAgents ===
+                    statisticsAdmin?.totalMunicipalityAgents
+                  "
+                >
+                  {{ getMunicipalityStatusText() }}
+                </span>
+              </div>
+            </div>
+            <div class="stat-card card">
+              <div class="stat-icon agencies">
+                <i class="material-icons">business</i>
+              </div>
+              <div class="stat-info">
+                <h3>Agences</h3>
+                <p class="stat-value">
+                  {{ statisticsAdmin?.totalActiveAgencies }}/{{
+                    statisticsAdmin?.totalAgencies
+                  }}
+                </p>
+                <span
+                  class="stat-trend"
+                  [class.positive]="isPositiveAgenciesActive()"
+                >
+                  {{ getAgencyStatusText() }}
+                </span>
+              </div>
+            </div>
+            <div class="stat-card card">
+              <div class="stat-icon agencies">
+                <i class="material-icons">business</i>
+              </div>
+              <div class="stat-info">
+                <h3>Collecteurs totaux</h3>
+                <p class="stat-value">{{ statisticsAdmin?.totalCollectors }}</p>
+                <span
+                  class="stat-trend"
+                  [class.positive]="
+                    statisticsAdmin?.totalCollectors ===
+                    statisticsAdmin?.totalCollectors
+                  "
+                >
+                  {{ getCollectorStatusText() }}
+                </span>
+              </div>
+            </div>
+            <div class="stat-card card">
+              <div class="stat-icon clients">
+                <i class="material-icons">people</i>
+              </div>
+              <div class="stat-info">
+                <h3>Clients totaux</h3>
+                <p class="stat-value">
+                  {{ statisticsAdmin?.totalClients | number }}
+                </p>
+                <p>
+                  <span class="stat-trend positive"
+                    >+{{ statisticsAdmin?.monthlyClientPercentage }}% ce mois</span
+                  >
+                  
+                  <!--| <span
+                    class="stat-trend"
+                    [class.positive]="
+                      statisticsAdmin?.totalClients ===
+                      statisticsAdmin?.activeClients
+                    "
+                  >
+                    {{ getClientStatusText() }}
+                  </span> -->
+                </p>
+              </div>
+            </div>
+
+            <div class="stat-card card">
+              <div class="stat-icon collections">
+                <i class="material-icons">local_shipping</i>
+              </div>
+              <div class="stat-info">
+                <h3>Collectes aujourd'hui</h3>
+                <p class="stat-value">
+                  {{ statisticsAdmin?.totalCollectionsCollected }}/{{
+                    statisticsAdmin?.dailyCollections
+                  }}
+                </p>
+                <span
+                  class="stat-trend"
+                  [class.positive]="getCollectionRate() >= 90"
+                  [class.negative]="getCollectionRate() < 80"
+                >
+                  {{ getCollectionRate() }}% réalisées
+                </span>
+              </div>
+            </div>
+
+            <!-- <div class="stat-card card">
+              <div class="stat-icon revenue">
+                <i class="material-icons">euro</i>
+              </div>
+              <div class="stat-info">
+                <h3>Revenus totaux</h3>
+                <p class="stat-value">
+                  {{ statistics.totalRevenue | number : "1.0-0" }}€
+                </p>
+                <span class="stat-trend positive">+12.3% vs mois dernier</span>
+              </div>
+            </div> -->
+
+            <!-- <div class="stat-card card">
+              <div class="stat-icon compliance">
+                <i class="material-icons">verified</i>
+              </div>
+              <div class="stat-info">
+                <h3>Conformité</h3>
+                <p class="stat-value">{{ statistics.complianceRate }}%</p>
+                <span
+                  class="stat-trend"
+                  [class.positive]="statistics.complianceRate >= 95"
+                  [class.negative]="statistics.complianceRate < 85"
+                >
+                  {{ getComplianceText() }}
+                </span>
+              </div>
+            </div> -->
+
+            <div class="stat-card card">
+              <div class="stat-icon incidents">
+                <i class="material-icons">report_problem</i>
+              </div>
+              <div class="stat-info">
+                <h3>Incidents non resolus</h3>
+                <p class="stat-value">
+                  {{ statisticsAdmin?.totalCollectionsReported ?? 0 }}
+                </p>
+                <span
+                  class="stat-trend"
+                  [class.negative]="(statisticsAdmin?.totalCollectionsReported ?? 0) > 10"
+                >
+                  {{ getIncidentSeverity() }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation par onglets -->
+          <div class="tabs-navigation">
+            <button
+              *ngFor="let tab of tabs"
+              class="tab-btn"
+              [class.active]="activeTab === tab.id"
+              (click)="activeTab = tab.id">
+              <i class="material-icons">{{ tab.icon }}</i>
+              {{ tab.label }}
+            <span *ngIf="getTabBadge(tab.id) > 0" class="tab-badge">
+              {{ getTabBadge(tab.id) }}
+            </span>
+            </button>
+            <div class="nav-actions right">
+              <a
+                (click)="navigateToAddMunicipality()"
+                class="btn btn-primary nav-cta"
+              >
+                <i class="material-icons">person_add</i>
+                <span>Ajouter un agent de mairie</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Contenu des onglets -->
+          <div class="tab-content">
+            <!-- Onglet Vue d'ensemble -->
+            <div *ngIf="activeTab === 'overview'" class="overview-tab">
+              <div class="overview-grid">
+                <!-- <div class="overview-section card">
+                  <h3>
+                    <i class="material-icons">trending_up</i>
+                    Performance Globale
+                  </h3>
+                  <div class="performance-metrics">
+                    <div class="metric-item">
+                      <div class="metric-label">Taux de collecte</div>
+                      <div class="metric-value">{{ getCollectionRate() }}%</div>
+                      <div class="metric-bar">
+                        <div
+                          class="metric-fill"
+                          [style.width]="getCollectionRate() + '%'"
+                        ></div>
+                      </div>
+                    </div>
+                    <div class="metric-item">
+                      <div class="metric-label">Satisfaction client</div>
+                      <div class="metric-value">
+                        {{ statistics.averageRating }}/5
+                      </div>
+                      <div class="rating-stars">
+                        <i
+                          *ngFor="
+                            let star of getStars(statistics.averageRating)
+                          "
+                          class="material-icons star"
+                          >star</i
+                        >
+                      </div>
+                    </div>
+                    <div class="metric-item">
+                      <div class="metric-label">Conformité réglementaire</div>
+                      <div class="metric-value">
+                        {{ statistics.complianceRate }}%
+                      </div>
+                      <div class="metric-bar">
+                        <div
+                          class="metric-fill compliance"
+                          [style.width]="statistics.complianceRate + '%'"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div> -->
+
+                <div class="overview-section card">
+                  <h3>
+                    <i class="material-icons">pie_chart</i>
+                    Répartition des Déchets
+                  </h3>
+                  <div class="waste-chart">
+                    <div
+                      *ngFor="let waste of wasteStatistics"
+                      class="waste-item"
+                    >
+                      <div
+                        class="waste-color"
+                        [style.background-color]="waste.color"
+                      ></div>
+                      <div class="waste-info">
+                        <div class="waste-type">{{ waste.type }}</div>
+                        <div class="waste-quantity">
+                          {{ waste.quantity }}t ({{ waste.percentage }}%)
+                        </div>
+                      </div>
+                      <div class="waste-trend">
+                        <i
+                          class="material-icons"
+                          [class]="'trend-' + waste.trend"
+                        >
+                          {{ getTrendIcon(waste.trend) }}
+                        </i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="overview-section card">
+                  <h3>
+                    <i class="material-icons">map</i>
+                    Couverture Territoriale
+                  </h3>
+                  <div class="territory-stats scrollable-container">
+                    <!-- État vide pour la couverture territoriale -->
+                    <div *ngIf="!zoneStatistics.length" class="empty-state">
+                      <i class="material-icons">map</i>
+                      <h3>Aucune donnée territoriale</h3>
+                      <p>Les données de couverture territoriale ne sont pas encore disponibles.</p>
+                    </div>
+
+                    <!-- Boucle sur les pays -->
+                    <div
+                      *ngFor="let zone of zoneStatistics"
+                      class="country-block"
+                    >
+                      <h2 class="country-title">{{ zone.country }}</h2>
+
+                      <!-- Boucle sur les villes du pays -->
+                      <div *ngFor="let city of zone.cities" class="zone-item">
+                        <div class="zone-header">
+                          <h4>{{ city.name }}</h4>
+                          <span
+                            class="coverage-badge"
+                            [class]="getCoverageBadgeClass(city.coverage)"
+                          >
+                            {{ city.coverage }}% couvert
+                          </span>
+                        </div>
+
+                        <div class="zone-metrics">
+                          <div class="zone-metric">
+                            <i class="material-icons">business</i>
+                            <span>{{ city.agencies }} agences</span>
+                          </div>
+                          <div class="zone-metric">
+                            <i class="material-icons">people</i>
+                            <span>{{ city.clients }} clients</span>
+                          </div>
+                          <div class="zone-metric">
+                            <i class="material-icons">local_shipping</i>
+                            <span>{{ city.collections }} collectes</span>
+                          </div>
+                          <div class="zone-metric" *ngIf="city.incidents > 0">
+                            <i class="material-icons">warning</i>
+                            <span>{{ city.incidents }} incidents</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="overview-section card">
+                <h3>
+                  <i class="material-icons">notifications</i>
+                  Alertes Récentes
+                </h3>
+                <div class="alerts-list">
+                  <!-- État vide pour les alertes récentes -->
+                  <div *ngIf="!getRecentIncidents().length" class="empty-state">
+                    <i class="material-icons">notifications_none</i>
+                    <h3>Aucune alerte récente</h3>
+                    <p>Aucun incident ou alerte n'a été signalé récemment.</p>
+                  </div>
+
+                  <div
+                    *ngFor="let incident of getRecentIncidents()"
+                    class="alert-item "
+                  >
+                    <div
+                      class="alert-severity"
+                      [class]="'severity-' + incident.severity.toLowerCase()"
+                    >
+                      <i class="material-icons">{{
+                        getSeverityIcon(incident.severity.toLowerCase())
+                      }}</i>
+                    </div>
+                    <div class="alert-content">
+                      <div class="alert-title">
+                        {{ getIncidentTypeText(incident.type.toLowerCase()) }}
+                      </div>
+                      <div class="alert-agency">
+                        {{ incident?.agency?.name }}
+                      </div>
+                      <div class="alert-time">
+                        {{ incident.date | date : "dd/MM HH:mm" }}
+                      </div>
+                    </div>
+                    <div class="alert-status">
+                      <span
+                        class="status-badge"
+                        [class]="'status-' + incident.status.toLowerCase()"
+                      >
+                        {{ getIncidentStatusText(incident.status.toLowerCase()) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="activeTab === 'municipalities'" class="agencies-tab">
+              <div class="agencies-header">
+                <h2>Audit des Municipalités</h2>
+                <div class="agencies-filters">
+                  <div class="nav-actions">
+                    <a
+                      (click)="navigateToAddMunicipality()"
+                      class="btn btn-primary nav-cta"
+                    >
+                      <i class="material-icons">person_add</i>
+                      <span>Ajouter un agent de mairie</span>
+                    </a>
+                  </div>
+                  <!--<select
+                    [(ngModel)]="agenciesFilter"
+                    (change)="filterAgencies()"
+                    class="filter-select"
+                  >
+                    <option value="all">Toutes les Municipalités</option>
+                    <option value="active">Actives</option>
+                    <option value="inactive">Inactives</option>
+                    <option value="suspended">Suspendues</option>
+                  </select>
+                   <select
+                    [(ngModel)]="complianceFilter"
+                    (change)="filterAgencies()"
+                    class="filter-select"
+                  >
+                    <option value="all">Tous niveaux</option>
+                    <option value="excellent">Excellent (95%+)</option>
+                    <option value="good">Bon (85-94%)</option>
+                    <option value="poor">Faible (<85%)</option>
+                  </select> -->
+                </div>
+              </div>
+
+              <div class="agencies-grid">
+                <div
+                  *ngFor="let municipality of filteredMunicipalities"
+                  class="agency-audit-card card"
+                >
+                  <div class="agency-audit-header">
+                    <div class="agency-basic-info">
+                      <h4>Mairie centrale de Ouagadougou</h4>
+                      <span class="municipality-name"
+                        >Administrateur:
+                        <h6>{{ municipality?.data?.name }}</h6></span
+                      >
+                      <span class="municipality-name"
+                        >Telephone:
+                        <h5>{{ municipality?.data?.phone }}</h5></span
+                      >
+                    </div>
+                  </div>
+
+                  <div class="agency-actions">
+                    <button
+                      class="btn btn-secondary"
+                      (click)="viewMunicipalityDetails(municipality._id)"
+                    >
+                      <i class="material-icons">visibility</i>
+                      Détails
+                    </button>
+                    <!-- <button
+                      class="btn btn-primary"
+                      (click)="auditMunicipality(municipality._id)"
+                    >
+                      <i class="material-icons">fact_check</i>
+                      Auditer
+                    </button> -->
+                    <button
+                      class="btn btn-accent"
+                      (click)="contactMunicipality(municipality._id)"
+                    >
+                      <i class="material-icons">message</i>
+                      Contacter
+                    </button>
+                  </div>
+
+                  <!-- <div class="agency-footer">
+                    <span class="last-audit"
+                      >Dernier audit:
+                      {{ municipality.lastAudit | date : "dd/MM/yyyy" }}</span
+                    >
+                    <span class="revenue"
+                      >{{ municipality.revenue | number : "1.0-0" }}€/mois</span
+                    >
+                  </div> -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Onglet Audit des Agences -->
+            <div *ngIf="activeTab === 'agencies'" class="agencies-tab">
+              <div class="agencies-header">
+                <h2>Audit des Agences</h2>
+                <div class="agencies-filters">
+                  <!-- Toggle carte / tableau -->
+                  <div class="view-mode-toggle">
+                    <button class="view-mode-btn" [class.active]="agenciesViewMode === 'card'" (click)="agenciesViewMode = 'card'">
+                      <i class="material-icons">grid_view</i><span>Cartes</span>
+                    </button>
+                    <button class="view-mode-btn" [class.active]="agenciesViewMode === 'table'" (click)="agenciesViewMode = 'table'">
+                      <i class="material-icons">table_rows</i><span>Tableau</span>
+                    </button>
+                  </div>
+                  <div class="search">
+                    <i class="material-icons search-icon">search</i>
+                    <input
+                      type="text"
+                      id="search"
+                      class="search-input"
+                      name="search"
+                      placeholder="Rechercher par nom"
+                      [(ngModel)]="searchTerm"
+                      (input)="filterAgencies()"
+                    />
+                  </div>
+                  <select
+                    [(ngModel)]="agenciesFilter"
+                    (change)="filterAgencies()"
+                    class="filter-select"
+                  >
+                    <option value="">Toutes les Agences</option>
+                    <option value="active">Actives</option>
+                    <option value="inactive">Inactives</option>
+                    <option value="deleted">Supprimées</option>
+                  </select>
+                </div>
+              </div>
+
+              <app-loading-spinner
+                *ngIf="isLoadingAgencies"
+                message="Chargement des agences..."
+                size="medium">
+              </app-loading-spinner>
+
+              <!-- Vue Tableau Agences -->
+              @if (!isLoadingAgencies && agenciesViewMode === 'table') {
+              <div class="admin-table-wrapper">
+                @if (!filteredAgencies.length) {
+                <div class="empty-state">
+                  <i class="material-icons">business</i>
+                  <h3>Aucune agence trouvée</h3>
+                  <p>Aucune agence ne correspond aux critères sélectionnés.</p>
+                </div>
+                }
+                @if (filteredAgencies.length) {
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Agence</th>
+                      <th>Statut</th>
+                      <th>Clients</th>
+                      <th>Collecteurs</th>
+                      <th>Zones</th>
+                      <th>Conformité</th>
+                      <th class="col-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (agency of filteredAgencies; track agency.id) {
+                    <tr>
+                      <td><strong>{{ agency.name }}</strong></td>
+                      <td><span class="status-badge" [class]="'status-' + agency.status">{{ getAgencyStatusText(agency.status) }}</span></td>
+                      <td>{{ agency.clients }}</td>
+                      <td>{{ agency.collectors }}</td>
+                      <td>{{ agency.zones }}</td>
+                      <td><span [class]="getComplianceClass(agency.complianceScore)" style="font-weight:600;">{{ agency.complianceScore }}%</span></td>
+                      <td class="col-actions">
+                        <div class="table-actions">
+                          <button class="action-btn" (click)="viewAgencyDetails(agency.id)" title="Détails"><i class="material-icons">visibility</i></button>
+                          <ng-container *ngIf="agency?.status === 'active'; else actTpl">
+                            <button class="action-btn" (click)="contactAgency(agency.id)" title="Contacter"><i class="material-icons">message</i></button>
+                          </ng-container>
+                          <ng-template #actTpl>
+                            <button class="action-btn toggle-btn toggle-inactive" (click)="activateAgency(agency.id)" title="Activer"><i class="material-icons">check_circle</i></button>
+                          </ng-template>
+                        </div>
+                      </td>
+                    </tr>
+                    }
+                  </tbody>
+                </table>
+                }
+              </div>
+              }
+
+              <!-- Vue Cartes Agences -->
+              <div *ngIf="!isLoadingAgencies && agenciesViewMode === 'card'" class="agencies-grid">
+                <!-- État vide pour les agences -->
+                <div *ngIf="!filteredAgencies.length" class="empty-state">
+                  <i class="material-icons">business</i>
+                  <h3>Aucune agence trouvée</h3>
+                  <p>Aucune agence ne correspond aux critères sélectionnés pour le moment.</p>
+                </div>
+
+                <div
+                  *ngFor="let agency of filteredAgencies"
+                  class="agency-audit-card card"
+                >
+                  <div class="agency-audit-header">
+                    <div class="agency-basic-info">
+                      <h4>{{ agency.name }}</h4>
+                      <span
+                        class="status-badge"
+                        [class]="'status-' + agency.status"
+                      >
+                        {{ getAgencyStatusText(agency.status) }}
+                      </span>
+                    </div>
+                    <div class="agency-compliance">
+                      <div
+                        class="compliance-score"
+                        [class]="getComplianceClass(agency.complianceScore)"
+                      >
+                        {{ agency.complianceScore }}%
+                      </div>
+                      <div class="compliance-label">Conformité</div>
+                    </div>
+                  </div>
+
+                  <div class="agency-metrics">
+                    <div class="metric-row">
+                      <div class="metric">
+                        <i class="material-icons">people</i>
+                        <span>{{ agency.clients }}{{agency.clients > 1 ? ' clients' : ' client'}}</span>
+                      </div>
+                      <div class="metric">
+                        <i class="material-icons">person</i>
+                        <span>{{ agency.collectors }} {{ agency.collectors > 1 ? 'collecteurs' : 'collecteur'}}</span>
+                      </div>
+                      <div class="metric">
+                        <i class="material-icons">map</i>
+                        <span>{{ agency.zones }} {{ agency.zones > 1 ? 'zones' : 'zone' }}</span>
+                      </div>
+                    </div>
+                    <div class="metric-row">
+                      <div class="metric">
+                        <i class="material-icons">local_shipping</i>
+                        <span>{{ agency.collectionsToday }} {{  agency.collectionsToday > 1 ? 'collectes' : 'collecte'}}</span>
+                      </div>
+                      <div class="metric">
+                        <i class="material-icons">check_circle</i>
+                        <span>{{ agency.completionRate }}% réalisées</span>
+                      </div>
+                      <div class="metric">
+                        <i class="material-icons">star</i>
+                        <span>{{ agency.rating }}/5</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="agency-issues" *ngIf="agency.issues.length > 0">
+                    <h5>Problèmes identifiés</h5>
+                    <div class="issues-list">
+                      <div
+                        *ngFor="let issue of agency.issues"
+                        class="issue-item"
+                      >
+                        <i class="material-icons">warning</i>
+                        <span>{{ issue }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="agency-actions">
+                    <button
+                      class="btn btn-secondary"
+                      (click)="viewAgencyDetails(agency.id)"
+                    >
+                      <i class="material-icons">visibility</i>
+                      Détails
+                    </button>
+                    <ng-container
+                      *ngIf="agency?.status === 'active'; else activation"
+                    >
+                      <!-- <button
+                        class="btn btn-primary"
+                        (click)="auditAgency(agency.id)"
+                      >
+                        <i class="material-icons">fact_check</i>
+                        Auditer
+                      </button> -->
+                      <button
+                        class="btn btn-accent"
+                        (click)="contactAgency(agency.id)"
+                      >
+                        <i class="material-icons">message</i>
+                        Contacter
+                      </button>
+                    </ng-container>
+                    <ng-template #activation>
+                      <button
+                        class="btn btn-accent"
+                        (click)="activateAgency(agency.id)"
+                      >
+                        <i class="material-icons">check</i>
+                        Activer
+                      </button>
+                    </ng-template>
+                  </div>
+
+                  <!-- <div class="agency-footer">
+                    <span class="last-audit"
+                      >Dernier audit:
+                      {{ agency.lastAudit | date : "dd/MM/yyyy" }}</span
+                    >
+                    <span class="revenue"
+                      >{{ agency.revenue | number : "1.0-0" }}€/mois</span
+                    >
+                  </div> -->
+                </div>
+              </div><!-- fin vue cartes agences -->
+
+              <!-- ── Pagination Agences ── -->
+              @if (!isLoadingAgencies && agenciesTotalItems > 0) {
+              <div class="pagination-section">
+                <div class="pagination-left">
+                  <span class="pagination-details">
+                    {{ (agenciesCurrentPage - 1) * agenciesItemsPerPage + 1 }}–{{ getAgenciesEndItem() }}
+                    sur <strong>{{ agenciesTotalItems }}</strong> agence(s)
+                  </span>
+                  <div class="per-page-group">
+                    <label class="per-page-label">Afficher</label>
+                    <select class="per-page-select"
+                            [value]="agenciesItemsPerPage"
+                            (change)="changeAgenciesItemsPerPage(+($any($event.target).value))">
+                      <option [value]="5">5</option>
+                      <option [value]="10">10</option>
+                      <option [value]="20">20</option>
+                      <option [value]="50">50</option>
+                    </select>
+                    <span class="per-page-label">par page</span>
+                  </div>
+                </div>
+                @if (agenciesTotalPages > 1) {
+                <div class="pagination-controls">
+                  <button class="pagination-btn"
+                          [disabled]="agenciesCurrentPage === 1"
+                          (click)="goToAgenciesPage(1)"
+                          title="Première page">
+                    <i class="material-icons">first_page</i>
+                  </button>
+                  <button class="pagination-btn"
+                          [disabled]="agenciesCurrentPage === 1"
+                          (click)="goToAgenciesPage(agenciesCurrentPage - 1)"
+                          title="Page précédente">
+                    <i class="material-icons">chevron_left</i>
+                  </button>
+                  <div class="pagination-numbers">
+                    @for (page of getAgenciesPageNumbers(); track page) {
+                    <button class="pagination-btn page-number"
+                            [class.active]="page === agenciesCurrentPage"
+                            (click)="goToAgenciesPage(page)">
+                      {{ page }}
+                    </button>
+                    }
+                  </div>
+                  <button class="pagination-btn"
+                          [disabled]="agenciesCurrentPage === agenciesTotalPages"
+                          (click)="goToAgenciesPage(agenciesCurrentPage + 1)"
+                          title="Page suivante">
+                    <i class="material-icons">chevron_right</i>
+                  </button>
+                  <button class="pagination-btn"
+                          [disabled]="agenciesCurrentPage === agenciesTotalPages"
+                          (click)="goToAgenciesPage(agenciesTotalPages)"
+                          title="Dernière page">
+                    <i class="material-icons">last_page</i>
+                  </button>
+                </div>
+                }
+              </div>
+              }
+
+            </div>
+
+            <!-- Onglet Audit des Clients -->
+            <div *ngIf="activeTab === 'clients'" class="agencies-tab">
+              <div class="agencies-header">
+                <h2>Audit des Clients</h2>
+                <div class="agencies-filters">
+                  <select
+                    [(ngModel)]="clientsFilter"
+                    (change)="filterClients()"
+                    class="filter-select"
+                  >
+                    <option value="all">Toutes les Clients</option>
+                    <option value="active">Abonnement actif</option>
+                    <option value="pending">Abonnement en attente</option>
+                    <option value="cancelled">Abonnement annulé</option>
+                  </select>
+                  <!-- <select
+                    [(ngModel)]="complianceFilter"
+                    (change)="filterClients()"
+                    class="filter-select"
+                  >
+                    <option value="all">Tous niveaux</option>
+                    <option value="excellent">Excellent (95%+)</option>
+                    <option value="good">Bon (85-94%)</option>
+                    <option value="poor">Faible (<85%)</option>
+                  </select> -->
+                </div>
+              </div>
+
+              <!-- Indicateur de chargement pour les clients -->
+              <app-loading-spinner 
+                *ngIf="isLoadingClients" 
+                message="Chargement des clients..." 
+                size="medium">
+              </app-loading-spinner>
+
+              <div *ngIf="!isLoadingClients" class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+                <!-- État vide pour les clients -->
+                <div *ngIf="!filteredClients.length" class="empty-state">
+                  <i class="material-icons">people</i>
+                  <h3>Aucun client trouvé</h3>
+                  <p>Aucun client ne correspond aux critères sélectionnés pour le moment.</p>
+                </div>
+
+                <ng-container
+                  *ngIf="filteredClients.length > 0; else noClients"
+                >
+                  <div class="col" *ngFor="let client of filteredClients">
+                    <mat-card class=" client-audit-card client-card">
+                      <mat-card-header>
+                        <mat-card-title-group class="w-100 pb-3">
+                          <mat-card-title>
+                            {{ client?.data?.firstName }}
+                            {{ client?.data?.lastName }}
+                          </mat-card-title>
+                          <mat-card-subtitle>
+                            Abonnement:
+                            <span
+                              class="status-badge"
+                              [class]="
+                                client?.data?.subscribedAgencyId
+                                  ? 'status-success'
+                                  : 'status-inconnu'
+                              "
+                              >{{
+                                getClientSubscriptionText(
+                                  client?.data?.subscribedAgencyId
+                                )
+                              }}</span>
+                            </mat-card-subtitle>
+
+                          <!--<mat-card-subtitle--
+                            >Abonnement actif:
+                            <span
+                              class="subscription-badge"
+                              [class]="
+                                Math.round(
+                                  (client?.active_subscription?.length /
+                                    client?.data?.subscriptionHistory?.length) *
+                                    100
+                                ) > 50
+                                  ? 'status-success'
+                                  : 'status-inconnu'
+                              "
+                              >{{ client?.active_subscription?.length }}/{{
+                                client?.data?.subscriptionHistory?.length
+                              }}</span
+                            ></mat-card-subtitle-->
+                          <ng-container
+                            *ngIf="client?.data?.avatar; else noImage"
+                          >
+                            <img
+                              mat-card-md-image
+                              class="rounded"
+                              src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
+                              alt="Image of a Shiba Inu"
+                            />
+                          </ng-container>
+                          <ng-template #noImage>
+                            <div
+                              class="rounded-circle text-white font-bold uppercase"
+                              [style.background-color]="
+                                getRandomColor(client.data)
+                              "
+                            >
+                              {{
+                                getInitials(
+                                  client?.data?.firstName +
+                                    " " +
+                                    client?.data?.lastName
+                                )
+                              }}
+                            </div>
+                          </ng-template>
+                        </mat-card-title-group>
+                      </mat-card-header>
+                      <mat-card-content>
+                        <div *ngIf="client?.data?.address?.city">
+                          <h4 class="text-start">
+                            Ville/Quartier :
+                            {{ client?.data?.address?.city }}/{{
+                              client?.data?.address?.neighborhood
+                            }}
+                          </h4>
+                        </div>
+                        <div>
+                          <h5 class="text-start">
+                            Tel: {{ client?.data?.phone }}
+                          </h5>
+                        </div>
+                        <div
+                          class="agency-actions d-flex justify-content-end align-items"
+                        >
+                          <button
+                            class="btn btn-secondary"
+                            (click)="viewUserDetails(client?._id)"
+                          >
+                            <i class="material-icons">visibility</i>
+                            Détails
+                          </button>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+                  </div>
+                </ng-container>
+                <ng-template #noClients>
+                  <div>
+                    <h4 class="text-center">Aucun Client</h4>
+                  </div>
+                </ng-template>
+              </div>
+              <!--end row-->
+
+              <div class="agencies-grid"></div>
+            </div>
+
+            <!-- Onglet Audit devtoutes les utilisateus -->
+            <div *ngIf="activeTab === 'all_users'" class="agencies-tab">
+              <div class="agencies-header">
+                <h2>Audit des Utilisateurs ({{' '}} {{ filteredUsers.length }} {{ getRoleLabel() }})</h2>
+                <div class="agencies-filters">
+                  <div class="search">
+                    <i class="material-icons search-icon">search</i>
+                    <input
+                      type="text"
+                      id="search"
+                      class="search-input"
+                      name="search"
+                      placeholder="Rechercher par nom"
+                      [(ngModel)]="searchTerm"
+                      (input)="filterUsers()"
+                    />
+                  </div>
+                
+                  <select
+                    [(ngModel)]="roleFilter"
+                    (change)="filterUsers()"
+                    class="filter-select"
+                  >
+                    <option value="">Toutes les Utisateurs</option>
+                    <option value="client">Client</option>
+                    <option value="manager">Manageur</option>
+                    <option value="collector">Collecteur</option>
+                    <option value="municipality">Agent de Mairie</option>
+                  </select>
+                  <select
+                    [(ngModel)]="neighborhoodFilter"
+                    (change)="filterUsers()"
+                    class="filter-select"
+                  >
+                    <option value="">Tous quartiers</option>
+                    @for (neighborhood of availableEmployeeNeighborhoods; track neighborhood) {
+                    <option [value]="neighborhood.name">{{ neighborhood.name }}</option>
+                    }
+                  </select>
+                  <!-- Toggle carte / tableau -->
+                  <div class="view-mode-toggle">
+                    <button class="view-mode-btn" [class.active]="usersViewMode === 'card'" (click)="usersViewMode = 'card'">
+                      <i class="material-icons">grid_view</i><span>Cartes</span>
+                    </button>
+                    <button class="view-mode-btn" [class.active]="usersViewMode === 'table'" (click)="usersViewMode = 'table'">
+                      <i class="material-icons">table_rows</i><span>Tableau</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <app-loading-spinner
+                *ngIf="isLoadingClients"
+                message="Chargement des utilisateurs..."
+                size="medium">
+              </app-loading-spinner>
+
+              <!-- Vue Tableau Utilisateurs -->
+              @if (!isLoadingClients && usersViewMode === 'table') {
+              <div class="admin-table-wrapper">
+                @if (!filteredUsers.length) {
+                <div class="empty-state">
+                  <i class="material-icons">people</i>
+                  <h3>Aucun utilisateur trouvé</h3>
+                  <p>Aucun utilisateur ne correspond aux critères sélectionnés.</p>
+                </div>
+                }
+                @if (filteredUsers.length) {
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Utilisateur</th>
+                      <th>Rôle</th>
+                      <th>Statut</th>
+                      <th>Ville / Quartier</th>
+                      <th>Téléphone</th>
+                      <th class="col-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (user of filteredUsers; track user._id) {
+                    <tr>
+                      <td>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <div class="rounded-circle text-white font-bold uppercase"
+                               style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0;"
+                               [style.background-color]="getRandomColor(user.data)">
+                            {{ getInitials((user.data?.firstName || '') + ' ' + (user.data?.lastName || '')) }}
+                          </div>
+                          <span style="font-weight:500;">{{ user.data?.firstName }} {{ user.data?.lastName }}</span>
+                        </div>
+                      </td>
+                      <td><span class="status-badge status-inconnu">{{ getUserRole(user.data?.role) }}</span></td>
+                      <td>
+                        <span class="status-badge"
+                              [class.status-success]="user.data?.status === 'active'"
+                              [class.status-inconnu]="user.data?.status !== 'active'">
+                          {{ user.data?.status === 'active' ? 'Actif' : 'Inactif' }}
+                        </span>
+                      </td>
+                      <td>{{ user.data?.address?.city || '—' }} / {{ user.data?.address?.neighborhood || '—' }}</td>
+                      <td>{{ user.data?.phone || '—' }}</td>
+                      <td class="col-actions">
+                        <div class="table-actions">
+                          <button class="action-btn" (click)="quickViewUser(user.data)" title="Voir détails">
+                            <i class="material-icons">visibility</i>
+                          </button>
+                          <button class="action-btn edit" (click)="quickEditUser(user.data)" title="Modifier">
+                            <i class="material-icons">edit</i>
+                          </button>
+                          <button class="action-btn toggle-btn"
+                                  [class.toggle-active]="user.data?.status === 'active'"
+                                  [class.toggle-inactive]="user.data?.status !== 'active'"
+                                  (click)="quickToggleUserStatus(user.data)"
+                                  title="{{ user.data?.status === 'active' ? 'Désactiver' : 'Activer' }}">
+                            <i class="material-icons">{{ user.data?.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i>
+                          </button>
+                          <button class="action-btn danger"
+                                  (click)="quickDeleteUser(user._id, (user.data?.firstName || '') + ' ' + (user.data?.lastName || ''), user.data?.role || '')"
+                                  title="Supprimer">
+                            <i class="material-icons">delete</i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    }
+                  </tbody>
+                </table>
+                }
+              </div>
+              }
+
+              <!-- Vue Cartes Utilisateurs -->
+              <div *ngIf="!isLoadingClients && usersViewMode === 'card'" class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+                <!-- État vide pour les clients -->
+                <div *ngIf="!filteredUsers.length" class="empty-state">
+                  <i class="material-icons">people</i>
+                  <h3>Aucun utilisateur trouvé</h3>
+                  <p>Aucun client ne correspond aux critères sélectionnés pour le moment.</p>
+                </div>
+
+                <ng-container
+                  *ngIf="filteredUsers.length > 0"
+                >
+                  <div class="col" *ngFor="let user of filteredUsers">
+                    <mat-card class=" client-audit-card client-card">
+                      <mat-card-header>
+                        <mat-card-title-group class="w-100 pb-3">
+                          <mat-card-title>
+                            {{ user?.data?.firstName }}
+                            {{ user?.data?.lastName }} <span
+                              class="status-badge"
+                              [class]="'status-inconnu'"
+                              >{{ getUserRole(user?.data?.role)}}</span>
+                          </mat-card-title>
+                          <mat-card-subtitle>
+                            Statut:
+                            <span
+                              class="status-badge"
+                              [class]="
+                                user?.data?.status === 'active'
+                                  ? 'status-success'
+                                  : 'status-inconnu'
+                              "
+                              >{{ user?.data?.status==='active' ? 'Actif':'Inactif' }}</span>
+                            </mat-card-subtitle>
+
+                          <!--<mat-card-subtitle--
+                            >Abonnement actif:
+                            <span
+                              class="subscription-badge"
+                              [class]="
+                                Math.round(
+                                  (client?.active_subscription?.length /
+                                    client?.data?.subscriptionHistory?.length) *
+                                    100
+                                ) > 50
+                                  ? 'status-success'
+                                  : 'status-inconnu'
+                              "
+                              >{{ client?.active_subscription?.length }}/{{
+                                client?.data?.subscriptionHistory?.length
+                              }}</span
+                            ></mat-card-subtitle-->
+                          <ng-container
+                            *ngIf="user?.data?.avatar; else noImage"
+                          >
+                            <img
+                              mat-card-md-image
+                              class="rounded"
+                              src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
+                              alt="Image of a Shiba Inu"
+                            />
+                          </ng-container>
+                          <ng-template #noImage>
+                            <div
+                              class="rounded-circle text-white font-bold uppercase"
+                              [style.background-color]="
+                                getRandomColor(user.data)
+                              "
+                            >
+                              {{
+                                getInitials(
+                                  user?.data?.firstName +
+                                    " " +
+                                    user?.data?.lastName
+                                )
+                              }}
+                            </div>
+                          </ng-template>
+                        </mat-card-title-group>
+                      </mat-card-header>
+                      <mat-card-content>
+                        <div *ngIf="user?.data?.address?.city">
+                          <h4 class="text-start">
+                            Ville/Quartier :
+                            {{ user?.data?.address?.city }}/{{
+                              user?.data?.address?.neighborhood
+                            }}
+                          </h4>
+                        </div>
+                        <div>
+                          <h5 class="text-start">
+                            Tel: {{ user?.data?.phone }}
+                          </h5>
+                        </div>
+                        <div class="agency-actions d-flex justify-content-end align-items gap-2 flex-wrap mt-2">
+                          <button class="action-btn" (click)="quickViewUser(user?.data)" title="Voir détails">
+                            <i class="material-icons">visibility</i>
+                          </button>
+                          <button class="action-btn edit" (click)="quickEditUser(user?.data)" title="Modifier">
+                            <i class="material-icons">edit</i>
+                          </button>
+                          <button class="action-btn toggle-btn"
+                                  [class.toggle-active]="user?.data?.status === 'active'"
+                                  [class.toggle-inactive]="user?.data?.status !== 'active'"
+                                  (click)="quickToggleUserStatus(user?.data)"
+                                  title="{{ user?.data?.status === 'active' ? 'Désactiver' : 'Activer' }}">
+                            <i class="material-icons">{{ user?.data?.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i>
+                          </button>
+                          <button class="action-btn danger"
+                                  (click)="quickDeleteUser(user?._id, (user?.data?.firstName || '') + ' ' + (user?.data?.lastName || ''))"
+                                  title="Supprimer">
+                            <i class="material-icons">delete</i>
+                          </button>
+                        </div>
+                      </mat-card-content>
+                    </mat-card>
+                  </div>
+                </ng-container>
+                <!-- <ng-template #noUsers>
+                  <div>
+                    <h4 class="text-center">Aucun utilisateur trouvé</h4>
+                  </div>
+                </ng-template> -->
+              </div>
+              <!--end row-->
+
+              <!-- ── Pagination Utilisateurs ── -->
+              @if (!isLoadingClients && usersTotalItems > 0) {
+              <div class="pagination-section">
+                <div class="pagination-left">
+                  <span class="pagination-details">
+                    {{ (usersCurrentPage - 1) * usersItemsPerPage + 1 }}–{{ getUsersEndItem() }}
+                    sur <strong>{{ usersTotalItems }}</strong> utilisateur(s)
+                  </span>
+                  <div class="per-page-group">
+                    <label class="per-page-label">Afficher</label>
+                    <select class="per-page-select"
+                            [value]="usersItemsPerPage"
+                            (change)="changeUsersItemsPerPage(+($any($event.target).value))">
+                      <option [value]="5">5</option>
+                      <option [value]="10">10</option>
+                      <option [value]="20">20</option>
+                      <option [value]="50">50</option>
+                    </select>
+                    <span class="per-page-label">par page</span>
+                  </div>
+                </div>
+                @if (usersTotalPages > 1) {
+                <div class="pagination-controls">
+                  <button class="pagination-btn"
+                          [disabled]="usersCurrentPage === 1"
+                          (click)="goToUsersPage(1)"
+                          title="Première page">
+                    <i class="material-icons">first_page</i>
+                  </button>
+                  <button class="pagination-btn"
+                          [disabled]="usersCurrentPage === 1"
+                          (click)="goToUsersPage(usersCurrentPage - 1)"
+                          title="Page précédente">
+                    <i class="material-icons">chevron_left</i>
+                  </button>
+                  <div class="pagination-numbers">
+                    @for (page of getUsersPageNumbers(); track page) {
+                    <button class="pagination-btn page-number"
+                            [class.active]="page === usersCurrentPage"
+                            (click)="goToUsersPage(page)">
+                      {{ page }}
+                    </button>
+                    }
+                  </div>
+                  <button class="pagination-btn"
+                          [disabled]="usersCurrentPage === usersTotalPages"
+                          (click)="goToUsersPage(usersCurrentPage + 1)"
+                          title="Page suivante">
+                    <i class="material-icons">chevron_right</i>
+                  </button>
+                  <button class="pagination-btn"
+                          [disabled]="usersCurrentPage === usersTotalPages"
+                          (click)="goToUsersPage(usersTotalPages)"
+                          title="Dernière page">
+                    <i class="material-icons">last_page</i>
+                  </button>
+                </div>
+                }
+              </div>
+              }
+
+              <div class="agencies-grid"></div>
+            </div>
+
+            <!-- Onglet Audit des Collecteurs -->
+            <div *ngIf="activeTab === 'collectors'" class="agencies-tab">
+              <div class="agencies-header">
+                <h2>Audit des Collecteurs</h2>
+                <div class="agencies-filters">
+                  <select
+                    [(ngModel)]="collectorsFilter"
+                    (change)="filterCollectors()"
+                    class="filter-select"
+                  >
+                    <option value="all">les Collecteurs</option>
+                    <option value="active">actif</option>
+                    <option value="inactive">Inactif</option>
+                  </select>
+                  <!-- <select
+                    [(ngModel)]="complianceFilter"
+                    (change)="filterCollectors()"
+                    class="filter-select"
+                  >
+                    <option value="all">Tous niveaux</option>
+                    <option value="excellent">Excellent (95%+)</option>
+                    <option value="good">Bon (85-94%)</option>
+                    <option value="poor">Faible (<85%)</option>
+                  </select> -->
+                </div>
+              </div>
+
+              <!-- Indicateur de chargement pour les collecteurs -->
+              <app-loading-spinner 
+                *ngIf="isLoadingCollectors" 
+                message="Chargement des collecteurs..." 
+                size="medium">
+              </app-loading-spinner>
+
+              <div *ngIf="!isLoadingCollectors" class="row row-cols-1 row-cols-lg-3 g-3 agencies-grid">
+                <!-- État vide pour les collecteurs -->
+                <div *ngIf="!filteredCollectors.length" class="empty-state">
+                  <i class="material-icons">local_shipping</i>
+                  <h3>Pas de collecteur pour l'instant</h3>
+                  <p>Aucun collecteur disponible actuellement.</p>
+                </div>
+
+                <div class="col" *ngFor="let collector of filteredCollectors">
+                  <mat-card class=" client-audit-card client-card">
+                    <mat-card-header>
+                      <mat-card-title-group class="w-100 pb-3">
+                        <mat-card-title
+                          >{{ collector.firstName }} {{ collector.lastName }}
+                          <span
+                            class="status-badge"
+                            [class]="'status-' + collector.isActive"
+                            >{{
+                              getCollectorSubscriptionText(collector.isActive)
+                            }}</span
+                          ></mat-card-title
+                        >
+                        <mat-card-subtitle
+                          ><span class="status-pending">{{
+                            collector.email
+                          }}</span>
+                          <div>
+                            <h5 class="text-start">Tel: {{ collector?.phone }}</h5>
+                          </div>
+                          </mat-card-subtitle
+                        >
+                        <ng-container *ngIf="collector?.avatar; else noImage">
+                          <img
+                            mat-card-md-image
+                            class="rounded"
+                            src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
+                            alt="Image"
+                          />
+                        </ng-container>
+                        <ng-template #noImage>
+                          <div
+                            class="rounded-circle text-white font-bold uppercase"
+                            [style.background-color]="getRandomColor(collector)"
+                          >
+                            {{
+                              getInitials(
+                                collector?.firstName + " " + collector?.lastName
+                              )
+                            }}
+                          </div>
+                        </ng-template>
+                      </mat-card-title-group>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div>
+                        <h5 class="text-start">
+                          Agence: {{ collector?.agency?.agencyName }}
+                        </h5>
+                      </div>
+                      <div *ngIf="collector?.agency?.agencyId"></div>
+                      <div>
+                        <h5 class="text-start">
+                          Ville/Quartier:
+                          {{ collector?.agency?.address?.city }}/{{
+                            collector?.agency?.address?.quartier
+                          }}
+                        </h5>
+                      </div>
+                      <div
+                        class="agency-actions d-flex justify-content-end align-items"
+                      >
+                        <button
+                          class="btn btn-secondary"
+                          (click)="viewCollectorDetails(collector._id)"
+                        >
+                          <i class="material-icons">visibility</i>
+                          Détails
+                        </button>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+              <!--end row-->
+              <div class="agencies-grid"></div>
+            </div>
+
+            <!-- Onglet Statistiques -->
+            <div *ngIf="activeTab === 'statistics'" class="statistics-tab">
+              <div class="statistics-header">
+                <h2>Statistiques Consolidées</h2>
+                <!-- <div class="statistics-filters" 
+>
+                  <select
+                    [(ngModel)]="statisticsPeriod"
+                    (change)="updateStatistics()"
+                    class="filter-select"
+                        [disabled]="isDisabled"
+
+                  >
+                    <option value="today">Aujourd'hui</option>
+                    <option value="week">Cette semaine</option>
+                    <option value="month">Ce mois</option>
+                    <option value="quarter">Ce trimestre</option>
+                    <option value="year">Cette année</option>
+                  </select>
+                  <button
+                    class="btn btn-secondary"
+                    (click)="exportStatistics()"
+                 
+                  >
+                    <i class="material-icons">download</i>
+                    Exporter
+                  </button>
+                </div> -->
+              </div>
+
+              <div class="statistics-content">
+                <div class="statistics-cards">
+                  <div class="statistics-card card">
+                    <h3>Collectes par Type de Déchets</h3>
+                    <div class="chart-container">
+                      <div class="chart-placeholder">
+                        <i class="material-icons">donut_large</i>
+                        <p>Graphique en secteurs des types de déchets</p>
+                      </div>
+                    </div>
+                    <div class="chart-legend">
+                      <div
+                        *ngFor="let waste of wasteStatistics"
+                        class="legend-item"
+                      >
+                        <div
+                          class="legend-color"
+                          [style.background-color]="waste.color"
+                        ></div>
+                        <span>{{ waste.type }}: {{ waste.quantity }}t</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="statistics-card card">
+                    <h3>Performance par Agence</h3>
+                    <div class="performance-chart">
+                      <div
+                        *ngFor="let agency of getTopPerformingAgencies()"
+                        class="performance-bar"
+                      >
+                        <div class="agency-name">{{ agency.name }}</div>
+                        <div class="performance-bar-container">
+                          <div
+                            class="performance-bar-fill"
+                            [style.width]="agency.completionRate + '%'"
+                          ></div>
+                        </div>
+                        <div class="performance-value">
+                          {{ agency.completionRate }}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="statistics-card card">
+                    <h3>Évolution des Collectes</h3>
+                    <div class="chart-container">
+                      <div class="chart-placeholder">
+                        <i class="material-icons">show_chart</i>
+                        <p>Graphique linéaire de l'évolution des collectes</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="statistics-card card">
+                    <h3>Incidents par Catégorie</h3>
+                    <div class="incidents-breakdown">
+                      <div
+                        *ngFor="let incident of getIncidentBreakdown()"
+                        class="incident-category"
+                      >
+                        <div class="incident-header">
+                          <span class="incident-type">{{ incident.type }}</span>
+                          <span class="incident-count">{{
+                            incident.count
+                          }}</span>
+                        </div>
+                        <div class="incident-bar">
+                          <div
+                            class="incident-fill"
+                            [style.width]="incident.percentage + '%'"
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Onglet Incidents -->
+            <div *ngIf="activeTab === 'incidents'" class="incidents-tab">
+              <div class="incidents-header">
+                <h2>Gestion des Incidents</h2>
+                <div class="incidents-filters">
+                  <select
+                    [(ngModel)]="incidentsFilter"
+                    (change)="filterIncidents()"
+                    class="filter-select"
+                  >
+                    <option value="all">Tous les incidents</option>
+                    <!-- <option value="open">Ouverts</option> -->
+                    <option value="pending">En cours</option>
+                    <option value="resolved">Résolus</option>
+                  </select>
+                  <select
+                    [(ngModel)]="severityFilter"
+                    (change)="filterIncidents()"
+                    class="filter-select"
+                  >
+                    <option value="all">Toutes gravités</option>
+                    <option value="critical">Critique</option>
+                    <option value="high">Élevée</option>
+                    <option value="medium">Moyenne</option>
+                    <option value="low">Faible</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Indicateur de chargement pour les incidents -->
+              <app-loading-spinner 
+                *ngIf="isLoadingIncidents" 
+                message="Chargement des incidents..." 
+                size="medium">
+              </app-loading-spinner>
+
+              <app-signalement [incidents]="filteredIncidents" [currentUser]="currentUser" (isLoadingIncidents)="isLoadingIncidents = $event"></app-signalement>
+              @if (!filteredIncidents || filteredIncidents!.length==0) {
+              <div class="empty-state">
+                <i class="material-icons">report_off</i>
+                <h3>Aucun signalement</h3>
+                <p>
+                  Excellent ! Vous n'avez aucun signalement en cours. Les nouveaux
+                  signalements apparaîtront ici.
+                </p>
+              </div>
+              }
+              <!-- <div *ngIf="!isLoadingIncidents" class="incidents-list grid-2"> -->
+                <!-- État vide pour les incidents -->
+                <!-- <div *ngIf="!filteredIncidents.length" class="empty-state">
+                  <i class="material-icons">report_problem</i>
+                  <h3>Aucun incident trouvé</h3>
+                  <p>Aucun incident ne correspond aux critères sélectionnés pour le moment.</p>
+                </div> -->
+                
+                <!-- <div
+                  *ngFor="let incident of filteredIncidents"
+                  class="incident-card card"
+                >
+                  <div class="incident-header">
+                    <div
+                      class="incident-severity"
+                      [class]="'severity-' + incident.severity.toLowerCase()"
+                    >
+                      <i class="material-icons">{{
+                        getSeverityIcon(incident.severity.toLowerCase())
+                      }}</i>
+                      <span>{{
+                        getSeverityText(incident.severity.toLowerCase())
+                          ? getSeverityText(incident.severity.toLowerCase())
+                          : "Faible"
+                      }}</span>
+                    </div>
+                    <div class="incident-status">
+                      <span
+                        class="status-badge"
+                        [class]="'status-'+incident.status.toLowerCase()"
+                      >
+                        {{ getIncidentStatusText(incident.status.toLowerCase()) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="incident-content">
+                    <h4>{{ getIncidentTypeText(incident.type.toLowerCase()) }}</h4>
+                    <p class="incident-agency">
+                      <span class="agency-label">Agence: </span> {{incident?.agencyId?.name }}
+                    </p>
+                    <p class="incident-description">
+                      {{ incident.comment }}
+                    </p>
+                    <p class="incident-date">
+                      {{ incident.date | date : "dd/MM/yyyy HH:mm" }}
+                    </p>
+                  </div>
+
+                  <div class="incident-assignment" *ngIf="incident.collectorId?._id">
+                    <i class="material-icons">person</i>
+                    <span>Assigné à {{ incident.collectorId?.firstName }} {{ incident.collectorId?.lastName }}</span>
+                  </div>
+
+                  <div class="incident-actions">
+                    <button
+                      class="btn btn-secondary"
+                      (click)="assignIncident(incident.id)"
+                      *ngIf="incident.status === 'open'"
+                    >
+                      <i class="material-icons">assignment_ind</i>
+                      Assigner
+                    </button>
+                    <button
+                      class="btn btn-primary"
+                      (click)="investigateIncident(incident.id)"
+                      *ngIf="incident.status === 'pending'"
+                    >
+                      <i class="material-icons">search</i>
+                      Enquêter
+                    </button> 
+                    <button
+                      class="btn btn-success"
+                      (click)="resolveIncident(incident.id)"
+                      *ngIf="incident.status === 'resolved'"
+                    >
+                      <i class="material-icons">check</i>
+                      Résoudre
+                    </button>
+                    <button
+                      class="btn btn-accent"
+                      (click)="contactAgencyForIncident(incident?.agencyId?._id)"
+                    >
+                      <i class="material-icons">phone</i>
+                      Contacter Agence
+                    </button>
+                  </div>
+                </div> -->
+              <!-- </div> -->
+            </div>
+
+            <!-- Onglet Communications -->
+            <div
+              *ngIf="activeTab === 'communications'"
+              class="communications-tab"
+            >
+              <div class="communications-header">
+                <h2>Communications</h2>
+                <div class="communications-actions">
+                  <button
+                    class="btn btn-primary"
+                    (click)="showCommunicationModal = true"
+                  >
+                    <i class="material-icons">add</i>
+                    Nouvelle Communication
+                  </button>
+                </div>
+              </div>
+
+              <div class="communications-list">
+                <div
+                  *ngFor="let comm of communications"
+                  class="communication-card card"
+                >
+                  <div class="communication-header">
+                    <div class="communication-type">
+                      <i class="material-icons">{{
+                        getCommunicationIcon(comm.type)
+                      }}</i>
+                      <span>{{ getCommunicationTypeText(comm.type) }}</span>
+                    </div>
+                    <div
+                      class="communication-priority"
+                      [class]="'priority-' + comm.priority"
+                    >
+                      {{ getPriorityText(comm.priority) }}
+                    </div>
+                  </div>
+
+                  <div class="communication-content">
+                    <h4>{{ comm.title }}</h4>
+                    <p>{{ comm.message }}</p>
+                    <div class="communication-meta">
+                      <span
+                        >Envoyé le
+                        {{ comm.sentAt | date : "dd/MM/yyyy HH:mm" }}</span
+                      >
+                      <span>{{ comm.recipients.length }} destinataire(s)</span>
+                      <span>{{ comm.readBy.length }} lu(s)</span>
+                    </div>
+                  </div>
+
+                  <div class="communication-recipients">
+                    <h5>Destinataires</h5>
+                    <div class="recipients-list">
+                      <span
+                        *ngFor="let recipient of comm.recipients"
+                        class="recipient-tag"
+                      >
+
+                      
+                        {{ getAgencyName(recipient) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Communication -->
+      <div
+        class="modal-overlay"
+        *ngIf="showCommunicationModal"
+        (click)="showCommunicationModal = false"
+      >
+        <div
+          class="modal-content communication-modal"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="modal-header">
+            <h3>Nouvelle Communication</h3>
+            <button class="close-btn" (click)="showCommunicationModal = false">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <form class="communication-form" (ngSubmit)="sendCommunication()">
+            <div class="form-group">
+              <label>Type de communication *</label>
+              <select [(ngModel)]="newCommunication.type" name="type" required>
+                <option value="">Sélectionner un type</option>
+                <option value="notification">Notification</option>
+                <option value="directive">Directive</option>
+                <option value="alert">Alerte</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Priorité *</label>
+              <select
+                [(ngModel)]="newCommunication.priority"
+                name="priority"
+                required
+              >
+                <option value="low">Faible</option>
+                <option value="medium">Moyenne</option>
+                <option value="high">Élevée</option>
+                <option value="urgent">Urgente</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Titre *</label>
+              <input
+                type="text"
+                [(ngModel)]="newCommunication.title"
+                name="title"
+                placeholder="Titre de la communication"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Message *</label>
+              <textarea
+                [(ngModel)]="newCommunication.message"
+                name="message"
+                rows="4"
+                placeholder="Contenu du message..."
+                required
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label>Destinataires *</label>
+              <div class="recipients-checkboxes">
+                <label class="checkbox-label">
+                  <input type="checkbox" (change)="toggleAllAgencies($event)" />
+                  <span class="checkmark"></span>
+                  Toutes les agences
+                </label>
+                <label
+                  *ngFor="let agency of agencyAudits"
+                  class="checkbox-label"
+                >
+                  <input
+                    type="checkbox"
+                    [value]="agency.id"
+                    (change)="toggleRecipient(agency.id, $event)"
+                  />
+                  <span class="checkmark"></span>
+                  {{ agency.name }}
+                </label>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="showCommunicationModal = false"
+              >
+                Annuler
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="material-icons">send</i>
+                Envoyer
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+  @if(visible1){
+  <div class="drawer-overlay" (click)="visible1 = false">
+    <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+
+      <!-- ── En-tête ── -->
+      <div class="drawer-header">
+        <h3>Fiche Utilisateur</h3>
+        <button class="drawer-close-btn" (click)="visible1 = false">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <!-- ── Corps ── -->
+      <div class="drawer-body">
+        <div class="drawer-card">
+
+          <!-- Avatar + nom + badges -->
+          <div class="user-detail-hero">
+            <div class="user-detail-avatar"
+                 [style.background-color]="getRandomColor(selectedUser)">
+              {{ getInitials((selectedUser.firstName || '') + ' ' + (selectedUser.lastName || '')) }}
+            </div>
+            <div class="user-detail-hero-info">
+              <h2 class="user-detail-name">{{ selectedUser.firstName }} {{ selectedUser.lastName }}</h2>
+              <div class="user-detail-badges">
+                <span class="role-badge role-{{ selectedUser.role }}">
+                  {{ getUserRole(selectedUser.role!) }}
+                </span>
+                <span class="status-badge"
+                      [class.status-success]="selectedUser.status === 'active'"
+                      [class.status-inconnu]="selectedUser.status !== 'active'">
+                  <i class="material-icons" style="font-size:13px;vertical-align:middle;">
+                    {{ selectedUser.status === 'active' ? 'check_circle' : 'cancel' }}
+                  </i>
+                  {{ selectedUser.status === 'active' ? 'Actif' : 'Inactif' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Section : Informations générales -->
+          <div class="section general-info">
+            <div class="section-header">
+              <i class="material-icons section-icon-mat">person</i>
+              <h4>Informations Générales</h4>
+            </div>
+            <div class="section-content">
+              <div class="info-row">
+                <div class="info-item">
+                  <span class="info-label">Prénom</span>
+                  <span class="info-value">{{ selectedUser.firstName || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Nom</span>
+                  <span class="info-value">{{ selectedUser.lastName || '—' }}</span>
+                </div>
+              </div>
+              <div class="info-row">
+                <div class="info-item">
+                  <span class="info-label">Email</span>
+                  <span class="info-value">{{ selectedUser.email || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Téléphone</span>
+                  <span class="info-value">{{ selectedUser.phone || '—' }}</span>
+                </div>
+              </div>
+              <div class="info-row">
+                <div class="info-item">
+                  <span class="info-label">Rôle</span>
+                  <span class="info-value">{{ getUserRole(selectedUser.role!) }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Statut</span>
+                  <span class="info-value"
+                        [style.color]="selectedUser.status === 'active' ? '#16a34a' : '#dc2626'"
+                        style="font-weight:600;">
+                    {{ selectedUser.status === 'active' ? 'Actif' : 'Inactif' }}
+                  </span>
+                </div>
+              </div>
+              <div class="info-row" *ngIf="selectedUser.createdAt">
+                <div class="info-item">
+                  <span class="info-label">Date d'inscription</span>
+                  <span class="info-value">{{ selectedUser.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Dernière mise à jour</span>
+                  <span class="info-value">{{ selectedUser.updatedAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Section : Adresse -->
+          <div class="section address-info">
+            <div class="section-header">
+              <i class="material-icons section-icon-mat">location_on</i>
+              <h4>Adresse de Localisation</h4>
+            </div>
+            <div class="section-content">
+              <div class="info-row">
+                <div class="info-item">
+                  <span class="info-label">Rue</span>
+                  <span class="info-value">{{ selectedUser.address.street || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Ville</span>
+                  <span class="info-value">{{ selectedUser.address.city || '—' }}</span>
+                </div>
+              </div>
+              <div class="info-row">
+                <div class="info-item">
+                  <span class="info-label">Quartier</span>
+                  <span class="info-value">{{ selectedUser.address.neighborhood || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Secteur</span>
+                  <span class="info-value">{{ selectedUser.address.sector || '—' }}</span>
+                </div>
+              </div>
+              <div class="info-row">
+                <div class="info-item">
+                  <span class="info-label">Arrondissement</span>
+                  <span class="info-value">{{ selectedUser.address.arrondissement || '—' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">N° Porte</span>
+                  <span class="info-value">{{ selectedUser.address.doorNumber || '—' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section : Agence (si applicable) -->
+          @if (selectedUser.agency?.name || selectedUser.agencyName) {
+          <div class="divider"></div>
+          <div class="section contact-info">
+            <div class="section-header">
+              <i class="material-icons section-icon-mat">business</i>
+              <h4>Agence rattachée</h4>
+            </div>
+            <div class="section-content">
+              <div class="info-row">
+                <div class="info-item">
+                  <span class="info-label">Nom de l'agence</span>
+                  <span class="info-value">{{ selectedUser.agency?.name || selectedUser.agencyName || '—' }}</span>
+                </div>
+                <div class="info-item" *ngIf="selectedUser.agency?.slogan">
+                  <span class="info-label">Slogan</span>
+                  <span class="info-value">{{ selectedUser.agency?.slogan }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+
+        </div>
+      </div>
+
+      <!-- ── Pied du drawer : actions ── -->
+      <div class="drawer-footer">
+        <div class="drawer-actions">
+          <!-- Modifier -->
+          <button class="btn btn-primary" (click)="visible1 = false; openEditUserDrawer()">
+            <i class="material-icons">edit</i>
+            Modifier
+          </button>
+
+          <!-- Réinitialiser MDP -->
+          <button class="btn btn-reset-pwd" (click)="openPasswordResetDialog()">
+            <i class="material-icons">lock_reset</i>
+            Mot de passe
+          </button>
+
+          <!-- Activer / Désactiver -->
+          <button class="btn"
+            [class.btn-success]="selectedUser.status !== 'active'"
+            [class.btn-warning]="selectedUser.status === 'active'"
+            [disabled]="isTogglingUserStatus"
+            (click)="toggleUserStatus()">
+            <i class="material-icons">{{ isTogglingUserStatus ? 'hourglass_empty' : (selectedUser.status === 'active' ? 'toggle_off' : 'toggle_on') }}</i>
+            {{ isTogglingUserStatus ? 'En cours...' : (selectedUser.status === 'active' ? 'Désactiver' : 'Activer') }}
+          </button>
+
+          <!-- Supprimer -->
+          <button class="btn btn-danger"
+            (click)="openDeleteDialog(selectedUser._id || selectedUser.id!, (selectedUser.firstName || '') + ' ' + (selectedUser.lastName || ''), selectedUser.role || '')">
+            <i class="material-icons">delete</i>
+            Supprimer
+          </button>
+
+          <!-- Fermer -->
+          <button class="btn btn-secondary" (click)="visible1 = false">
+            <i class="material-icons">close</i>
+            Fermer
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  }
+
+  @if (visibleEditUserDrawer) {
+  <div class="drawer-overlay" (click)="closeEditUserDrawer()">
+    <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+
+      <div class="drawer-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="user-detail-avatar"
+               [style.background-color]="getRandomColor(selectedUser)"
+               style="width:38px;height:38px;font-size:0.85rem;flex-shrink:0;">
+            {{ getInitials((selectedUser.firstName || '') + ' ' + (selectedUser.lastName || '')) }}
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:1rem;">Modifier — {{ selectedUser.firstName }} {{ selectedUser.lastName }}</h3>
+            <span style="font-size:0.78rem;color:#6b7280;">{{ getUserRole(selectedUser.role!) }}</span>
+          </div>
+        </div>
+        <button class="drawer-close-btn" (click)="closeEditUserDrawer()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="drawer-card">
+
+          <!-- Infos personnelles -->
+          <div class="section">
+            <div class="section-header">
+              <i class="material-icons section-icon-mat">person</i>
+              <h4>Informations personnelles</h4>
+            </div>
+            <div class="info-row">
+              <div class="form-group">
+                <label class="form-label">Prénom *</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.firstName" name="editFirstName" placeholder="Prénom" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nom *</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.lastName" name="editLastName" placeholder="Nom" />
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="form-group">
+                <label class="form-label">Téléphone</label>
+                <input class="form-input" type="tel" [(ngModel)]="selectedUser.phone" name="editPhone" placeholder="+226 XX XX XX XX" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-input" type="email" [value]="selectedUser.email" disabled style="background:#f3f4f6;cursor:not-allowed;" title="Non modifiable" />
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Adresse -->
+          <div class="section">
+            <div class="section-header">
+              <i class="material-icons section-icon-mat">location_on</i>
+              <h4>Adresse</h4>
+            </div>
+            <div class="info-row">
+              <div class="form-group">
+                <label class="form-label">Rue</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.address.street" name="editStreet" placeholder="Rue, n° porte" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ville</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.address.city" name="editCity" placeholder="Ville" />
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="form-group">
+                <label class="form-label">Quartier</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.address.neighborhood" name="editNeighborhood" placeholder="Quartier" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Secteur</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.address.sector" name="editSector" placeholder="Secteur" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <div class="drawer-actions">
+          <button class="btn btn-success" (click)="saveUserChanges()" [disabled]="isSavingUser">
+            <i class="material-icons">{{ isSavingUser ? 'hourglass_empty' : 'save' }}</i>
+            {{ isSavingUser ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+          <button class="btn btn-secondary" (click)="closeEditUserDrawer()" [disabled]="isSavingUser">
+            <i class="material-icons">close</i>
+            Annuler
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- ═══════ Dialog de confirmation Suppression ═══════ -->
+  @if (showDeleteDialog && userToDelete) {
+  <div class="confirm-dialog-overlay" (click)="showDeleteDialog = false">
+    <div class="confirm-dialog-box" (click)="$event.stopPropagation()">
+
+      <!-- En-tête -->
+      <div class="confirm-dialog-header">
+        <div class="confirm-icon">
+          <i class="material-icons">delete_forever</i>
+        </div>
+        <div>
+          <h3>Supprimer ce compte ?</h3>
+          <p>Cette action est définitive et irréversible</p>
+        </div>
+      </div>
+
+      <!-- Corps -->
+      <div class="confirm-dialog-body">
+        <div class="confirm-user-card">
+          <div class="confirm-avatar" [style.background-color]="userToDelete.color">
+            {{ userToDelete.initials }}
+          </div>
+          <div class="confirm-user-info">
+            <strong>{{ userToDelete.name }}</strong>
+            <span>{{ userToDelete.role }}</span>
+          </div>
+        </div>
+        <div class="confirm-warning">
+          <i class="material-icons">warning</i>
+          Toutes les données associées à ce compte seront perdues. Les collectes existantes ne seront pas affectées.
+        </div>
+      </div>
+
+      <!-- Pied -->
+      <div class="confirm-dialog-footer">
+        <button class="btn-cancel" (click)="showDeleteDialog = false" [disabled]="isDeletingUser">
+          Annuler
+        </button>
+        <button class="btn-delete-confirm" (click)="confirmDeleteUser()" [disabled]="isDeletingUser">
+          <i class="material-icons">{{ isDeletingUser ? 'hourglass_empty' : 'delete' }}</i>
+          {{ isDeletingUser ? 'Suppression...' : 'Supprimer définitivement' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+  }
+
+  <!-- ═══════ Dialog Réinitialisation Mot de Passe ═══════ -->
+  @if (showPasswordResetDialog) {
+  <div class="confirm-dialog-overlay" (click)="closePasswordResetDialog()">
+    <div class="pwd-reset-dialog" (click)="$event.stopPropagation()">
+
+      <!-- En-tête -->
+      <div class="pwd-reset-header">
+        <div class="pwd-reset-icon">
+          <i class="material-icons">lock_reset</i>
+        </div>
+        <div>
+          <h3>Réinitialisation du mot de passe</h3>
+          <p>{{ selectedUser.firstName }} {{ selectedUser.lastName }} &nbsp;·&nbsp; {{ selectedUser.email }}</p>
+        </div>
+        <button class="pwd-reset-close" (click)="closePasswordResetDialog()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <!-- Sélecteur de mode -->
+      <div class="pwd-mode-tabs">
+        <button class="pwd-mode-tab" [class.active]="passwordResetMode === 'email'" (click)="passwordResetMode = 'email'; passwordResetError = ''">
+          <i class="material-icons">email</i>
+          Lien par email
+        </button>
+        <button class="pwd-mode-tab" [class.active]="passwordResetMode === 'manual'" (click)="passwordResetMode = 'manual'; passwordResetError = ''">
+          <i class="material-icons">vpn_key</i>
+          Définir manuellement
+        </button>
+      </div>
+
+      <!-- Corps : mode Email -->
+      @if (passwordResetMode === 'email') {
+      <div class="pwd-reset-body">
+        <div class="pwd-info-card">
+          <i class="material-icons">info</i>
+          <div>
+            <strong>Un email sera envoyé à :</strong>
+            <span class="pwd-email-target">{{ selectedUser.email }}</span>
+            <p>L'utilisateur recevra un lien sécurisé valable 24h pour créer un nouveau mot de passe.</p>
+          </div>
+        </div>
+        @if (passwordResetError) {
+        <div class="pwd-error-msg"><i class="material-icons">error</i> {{ passwordResetError }}</div>
+        }
+      </div>
+      <div class="pwd-reset-footer">
+        <button class="btn-cancel" (click)="closePasswordResetDialog()" [disabled]="isSendingReset">Annuler</button>
+        <button class="btn-reset-send" (click)="sendPasswordResetEmail()" [disabled]="isSendingReset">
+          <i class="material-icons">{{ isSendingReset ? 'hourglass_empty' : 'send' }}</i>
+          {{ isSendingReset ? 'Envoi en cours...' : 'Envoyer le lien' }}
+        </button>
+      </div>
+      }
+
+      <!-- Corps : mode Manuel -->
+      @if (passwordResetMode === 'manual') {
+      <div class="pwd-reset-body">
+        <div class="pwd-warning-card">
+          <i class="material-icons">warning</i>
+          <p>Définir un mot de passe directement déconnectera l'utilisateur de toutes ses sessions actives.</p>
+        </div>
+
+        <!-- Nouveau mot de passe -->
+        <div class="form-group pwd-form-group">
+          <label class="form-label">Nouveau mot de passe *</label>
+          <div class="pwd-input-wrapper">
+            <i class="material-icons pwd-field-icon">lock</i>
+            <input class="form-input pwd-input"
+                   [type]="showNewPwd ? 'text' : 'password'"
+                   [(ngModel)]="newPassword"
+                   name="newPwd"
+                   placeholder="Minimum 6 caractères"
+                   autocomplete="new-password" />
+            <button type="button" class="pwd-toggle" (click)="showNewPwd = !showNewPwd">
+              <i class="material-icons">{{ showNewPwd ? 'visibility_off' : 'visibility' }}</i>
+            </button>
+          </div>
+          <!-- Jauge de force -->
+          @if (newPassword) {
+          <div class="pwd-strength-bar">
+            <div class="pwd-strength-track">
+              <div class="pwd-strength-fill {{ getPasswordStrengthClass() }}"
+                   [style.width]="(getPasswordStrength(newPassword) / 4 * 100) + '%'">
+              </div>
+            </div>
+            <span class="pwd-strength-label {{ getPasswordStrengthClass() }}">
+              {{ getPasswordStrengthLabel() }}
+            </span>
+          </div>
+          <ul class="pwd-rules">
+            <li [class.ok]="newPassword.length >= 6"><i class="material-icons">{{ newPassword.length >= 6 ? 'check_circle' : 'radio_button_unchecked' }}</i> Au moins 6 caractères</li>
+            <li [class.ok]="pwdHasUppercase(newPassword)"><i class="material-icons">{{ pwdHasUppercase(newPassword) ? 'check_circle' : 'radio_button_unchecked' }}</i> Une majuscule</li>
+            <li [class.ok]="pwdHasNumber(newPassword)"><i class="material-icons">{{ pwdHasNumber(newPassword) ? 'check_circle' : 'radio_button_unchecked' }}</i> Un chiffre</li>
+            <li [class.ok]="pwdHasSpecial(newPassword)"><i class="material-icons">{{ pwdHasSpecial(newPassword) ? 'check_circle' : 'radio_button_unchecked' }}</i> Un caractère spécial</li>
+          </ul>
+          }
+        </div>
+
+        <!-- Confirmation -->
+        <div class="form-group pwd-form-group">
+          <label class="form-label">Confirmer le mot de passe *</label>
+          <div class="pwd-input-wrapper">
+            <i class="material-icons pwd-field-icon">lock_outline</i>
+            <input class="form-input pwd-input"
+                   [type]="showConfirmPwd ? 'text' : 'password'"
+                   [(ngModel)]="confirmPassword"
+                   name="confirmPwd"
+                   placeholder="Ressaisir le mot de passe"
+                   autocomplete="new-password" />
+            <button type="button" class="pwd-toggle" (click)="showConfirmPwd = !showConfirmPwd">
+              <i class="material-icons">{{ showConfirmPwd ? 'visibility_off' : 'visibility' }}</i>
+            </button>
+          </div>
+          @if (confirmPassword && confirmPassword !== newPassword) {
+          <p class="pwd-mismatch"><i class="material-icons">cancel</i> Les mots de passe ne correspondent pas</p>
+          }
+          @if (confirmPassword && confirmPassword === newPassword && newPassword.length >= 6) {
+          <p class="pwd-match"><i class="material-icons">check_circle</i> Les mots de passe correspondent</p>
+          }
+        </div>
+
+        @if (passwordResetError) {
+        <div class="pwd-error-msg"><i class="material-icons">error</i> {{ passwordResetError }}</div>
+        }
+      </div>
+      <div class="pwd-reset-footer">
+        <button class="btn-cancel" (click)="closePasswordResetDialog()" [disabled]="isSendingReset">Annuler</button>
+        <button class="btn-reset-send" (click)="setNewPasswordAdmin()" [disabled]="isSendingReset || !newPassword || newPassword !== confirmPassword">
+          <i class="material-icons">{{ isSendingReset ? 'hourglass_empty' : 'save' }}</i>
+          {{ isSendingReset ? 'Modification...' : 'Enregistrer le mot de passe' }}
+        </button>
+      </div>
+      }
+
+    </div>
+  </div>
+  }

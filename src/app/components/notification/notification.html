@@ -1,0 +1,29 @@
+<div class="notification-container">
+  @for (notification of notifications; track notification) {
+    <div
+      class="notification fade-in"
+      [class]="'notification-' + notification.type">
+      <div class="notification-icon">
+        <i class="material-icons">{{ getIcon(notification.type) }}</i>
+      </div>
+      <div class="notification-content">
+        <h4 class="notification-title">{{ notification.title }}</h4>
+        <p class="notification-message">{{ notification.message }}</p>
+        @if (notification.actions) {
+          <div class="notification-actions">
+            @for (action of notification.actions; track action) {
+              <button
+                class="notification-action"
+                (click)="action.action()">
+                {{ action.label }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+      <button class="notification-close" (click)="removeNotification(notification.id)">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+  }
+</div>

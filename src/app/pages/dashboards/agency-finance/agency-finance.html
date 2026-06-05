@@ -1,0 +1,491 @@
+<p-toast position="top-right" />
+
+<div class="finance-dashboard">
+
+  <!-- ══════════════════════════════════════════════════════════
+       PAGE HEADER
+  ══════════════════════════════════════════════════════════ -->
+  <div class="fin-header">
+    <div class="fin-header__inner">
+      <button class="btn-back" (click)="goBack()">
+        <i class="material-icons">arrow_back</i>
+      </button>
+      <div class="fin-header__text">
+        <h1 class="fin-title">
+          <i class="material-icons fin-title__icon">account_balance_wallet</i>
+          Dashboard Financier
+        </h1>
+        <p class="fin-subtitle">Gestion complète de vos finances — vue en temps réel</p>
+      </div>
+
+      <div class="fin-header__actions">
+        <button
+          class="btn-primary"
+          (click)="openWithdrawalDialog()"
+          [disabled]="isLoadingSummary"
+          pTooltip="Faire une demande de retrait"
+          tooltipPosition="left">
+          <i class="material-icons">payments</i>
+          Demande de retrait
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       KPI CARDS
+  ══════════════════════════════════════════════════════════ -->
+  <div class="fin-kpi-grid">
+
+    <!-- Solde disponible -->
+    <div class="kpi-card kpi-card--green">
+      <div class="kpi-card__header">
+        <span class="kpi-card__label">Solde disponible</span>
+        <span class="kpi-card__icon kpi-card__icon--green">
+          <i class="material-icons">account_balance</i>
+        </span>
+      </div>
+      @if (isLoadingSummary) {
+        <p-skeleton height="2.5rem" styleClass="mt-2" />
+      } @else {
+        <p class="kpi-card__value">{{ formatCurrency(summary?.availableBalance ?? null) }}</p>
+        <span class="kpi-card__badge kpi-card__badge--green">Disponible au retrait</span>
+      }
+    </div>
+
+    <!-- Total collecté -->
+    <div class="kpi-card kpi-card--blue">
+      <div class="kpi-card__header">
+        <span class="kpi-card__label">Total collecté</span>
+        <span class="kpi-card__icon kpi-card__icon--blue">
+          <i class="material-icons">trending_up</i>
+        </span>
+      </div>
+      @if (isLoadingSummary) {
+        <p-skeleton height="2.5rem" styleClass="mt-2" />
+      } @else {
+        <p class="kpi-card__value">{{ formatCurrency(summary?.totalCollected ?? null) }}</p>
+        <span class="kpi-card__sub">Paiements usagers — tout le temps</span>
+      }
+    </div>
+
+
+  
+
+    <!-- Revenus nets -->
+    <div class="kpi-card kpi-card--purple">
+      <div class="kpi-card__header">
+        <span class="kpi-card__label">Revenus nets</span>
+        <span class="kpi-card__icon kpi-card__icon--purple">
+          <i class="material-icons">savings</i>
+        </span>
+      </div>
+      @if (isLoadingSummary) {
+        <p-skeleton height="2.5rem" styleClass="mt-2" />
+      } @else {
+        <p class="kpi-card__value">{{ formatCurrency(summary?.netEarnings ?? null) }}</p>
+        <!-- <span class="kpi-card__sub">Après déduction des commissions</span> -->
+      }
+    </div>
+
+    <!-- Montants en attente -->
+    <div class="kpi-card kpi-card--gray">
+      <div class="kpi-card__header">
+        <span class="kpi-card__label">En attente</span>
+        <span class="kpi-card__icon kpi-card__icon--gray">
+          <i class="material-icons">hourglass_top</i>
+        </span>
+      </div>
+      @if (isLoadingSummary) {
+        <p-skeleton height="2.5rem" styleClass="mt-2" />
+      } @else {
+        <p class="kpi-card__value">{{ formatCurrency(summary?.pendingAmount ?? null) }}</p>
+        <span class="kpi-card__sub">Transactions en cours de traitement</span>
+      }
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       GRAPHIQUE DES PAIEMENTS
+  ══════════════════════════════════════════════════════════ -->
+  <div class="fin-section">
+    <div class="fin-section__header">
+      <div class="fin-section__title-group">
+        <i class="material-icons fin-section__icon">bar_chart</i>
+        <h2 class="fin-section__title">Évolution des paiements</h2>
+      </div>
+
+      <div class="fin-section__header-right">
+      <div class="fin-period-tabs">
+        @for (opt of periodOptions; track opt.value) {
+          <button
+            class="period-tab"
+            [class.period-tab--active]="chartPeriod === opt.value"
+            (click)="chartPeriod = opt.value; onPeriodChange()">
+            {{ opt.label }}
+          </button>
+        }
+      </div>
+        <button class="btn-collapse" (click)="chartExpanded = !chartExpanded"
+                [attr.aria-expanded]="chartExpanded" pTooltip="Réduire / Agrandir" tooltipPosition="left">
+          <i class="material-icons collapse-icon" [class.collapsed]="!chartExpanded">expand_less</i>
+        </button>
+      </div>
+    </div>
+
+    @if (chartExpanded) {
+    <div class="fin-chart-container">
+      @if (isLoadingChart) {
+        <div class="chart-skeleton">
+          <p-skeleton height="260px" />
+        </div>
+      } @else {
+        <p-chart
+          type="line"
+          [data]="chartData"
+          [options]="chartOptions"
+          height="260px" />
+      }
+    </div>
+    }
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       HISTORIQUE DES PAIEMENTS
+  ══════════════════════════════════════════════════════════ -->
+  <div class="fin-section">
+    <div class="fin-section__header">
+      <div class="fin-section__title-group">
+        <i class="material-icons fin-section__icon">receipt_long</i>
+        <h2 class="fin-section__title">Historique des paiements</h2>
+        <span class="fin-section__badge">{{ totalTx | number }} transaction(s)</span>
+      </div>
+
+      <div class="fin-section__header-right">
+      <div class="export-group">
+        <span class="export-label">Exporter :</span>
+        <button class="btn-export btn-export--csv"   (click)="exportCSV('transactions')"
+                pTooltip="Exporter en CSV" tooltipPosition="top">
+          <i class="material-icons">table_view</i> CSV
+        </button>
+        <button class="btn-export btn-export--excel" (click)="exportExcel('transactions')"
+                pTooltip="Exporter en Excel" tooltipPosition="top">
+          <i class="material-icons">grid_on</i> Excel
+        </button>
+        <button class="btn-export btn-export--pdf"   (click)="exportPDF('transactions')"
+                pTooltip="Exporter en PDF" tooltipPosition="top">
+          <i class="material-icons">picture_as_pdf</i> PDF
+        </button>
+      </div>
+        <button class="btn-collapse" (click)="txExpanded = !txExpanded"
+                [attr.aria-expanded]="txExpanded" pTooltip="Réduire / Agrandir" tooltipPosition="left">
+          <i class="material-icons collapse-icon" [class.collapsed]="!txExpanded">expand_less</i>
+        </button>
+      </div>
+    </div>
+
+    @if (txExpanded) {
+    <!-- Filtres paiements -->
+    <div class="fin-filter-bar">
+      <p-select
+        [(ngModel)]="txFilters.operator"
+        [options]="methodOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Opérateur"
+        [showClear]="true"
+        styleClass="filter-select" />
+      <input
+        pInputText
+        [(ngModel)]="txFilters.userId"
+        placeholder="ID client"
+        class="filter-input" />
+      <button class="btn-filter" (click)="applyTxFilters()" pTooltip="Appliquer les filtres">
+        <i class="material-icons">search</i> Filtrer
+      </button>
+      <button class="btn-filter-reset" (click)="resetTxFilters()" pTooltip="Réinitialiser">
+        <i class="material-icons">refresh</i>
+      </button>
+    </div>
+
+    <div class="fin-table-wrapper">
+      <p-table
+        [value]="transactions"
+        [loading]="isLoadingTx"
+        [rows]="pageSize"
+        [totalRecords]="totalTx"
+        [lazy]="true"
+        [paginator]="true"
+        (onPage)="onTxPageChange($event)"
+        styleClass="fin-table"
+        [rowHover]="true"
+        responsiveLayout="scroll"
+        emptyMessage="Aucune transaction.">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Référence</th>
+            <th>Client</th>
+            <th>Téléphone</th>
+            <th class="text-right">Montant</th>
+            <!-- <th class="text-right">Commission</th> -->
+            <!-- <th class="text-right">Net</th> -->
+            <th>Mode</th>
+            <th>Statut</th>
+            <th>Date</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-tx>
+          <tr>
+            <td><span class="ref-badge">{{ tx.reference }}</span></td>
+            <td>
+              <div class="client-cell">
+                <span class="client-avatar">{{ tx.clientName?.charAt(0) | uppercase }}</span>
+                <span>{{ tx.clientName }}</span>
+              </div>
+            </td>
+            <td>{{ tx.clientPhone ?? '—' }}</td>
+            <td class="text-right amount-col">{{ formatCurrency(tx.amount) }}</td>
+            <!-- <td class="text-right commission-col">- {{ formatCurrency(tx.commission) }}</td> -->
+            <!-- <td class="text-right net-col">{{ formatCurrency(tx.netAmount) }}</td> -->
+            <td>
+              <span class="method-badge method-badge--{{ tx.method | lowercase }}">
+                {{ getMethodLabel(tx.method) }}
+              </span>
+            </td>
+            <td>
+              <p-tag
+                [value]="getStatusLabel(tx.status)"
+                [severity]="getStatusSeverity(tx.status)"
+                styleClass="status-tag" />
+            </td>
+            <td class="date-col">{{ tx.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          </tr>
+        </ng-template>
+
+      </p-table>
+    </div>
+    }
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       HISTORIQUE DES RETRAITS
+  ══════════════════════════════════════════════════════════ -->
+  <div class="fin-section">
+    <div class="fin-section__header">
+      <div class="fin-section__title-group">
+        <i class="material-icons fin-section__icon">account_balance_wallet</i>
+        <h2 class="fin-section__title">Historique des retraits</h2>
+        <span class="fin-section__badge">{{ totalWd | number }} retrait(s)</span>
+      </div>
+
+      <div class="fin-section__header-right">
+      <div class="export-group">
+        <span class="export-label">Exporter :</span>
+        <button class="btn-export btn-export--csv"   (click)="exportCSV('withdrawals')"
+                pTooltip="Exporter en CSV" tooltipPosition="top">
+          <i class="material-icons">table_view</i> CSV
+        </button>
+        <button class="btn-export btn-export--excel" (click)="exportExcel('withdrawals')"
+                pTooltip="Exporter en Excel" tooltipPosition="top">
+          <i class="material-icons">grid_on</i> Excel
+        </button>
+        <button class="btn-export btn-export--pdf"   (click)="exportPDF('withdrawals')"
+                pTooltip="Exporter en PDF" tooltipPosition="top">
+          <i class="material-icons">picture_as_pdf</i> PDF
+        </button>
+      </div>
+        <button class="btn-collapse" (click)="wdExpanded = !wdExpanded"
+                [attr.aria-expanded]="wdExpanded" pTooltip="Réduire / Agrandir" tooltipPosition="left">
+          <i class="material-icons collapse-icon" [class.collapsed]="!wdExpanded">expand_less</i>
+        </button>
+      </div>
+    </div>
+
+    @if (wdExpanded) {
+    <!-- Filtres retraits -->
+    <div class="fin-filter-bar">
+      <p-select
+        [(ngModel)]="wdFilters.operator"
+        [options]="methodOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Opérateur"
+        [showClear]="true"
+        styleClass="filter-select" />
+      <input
+        pInputText
+        [(ngModel)]="wdFilters.userId"
+        placeholder="ID utilisateur"
+        class="filter-input" />
+      <button class="btn-filter" (click)="applyWdFilters()" pTooltip="Appliquer les filtres">
+        <i class="material-icons">search</i> Filtrer
+      </button>
+      <button class="btn-filter-reset" (click)="resetWdFilters()" pTooltip="Réinitialiser">
+        <i class="material-icons">refresh</i>
+      </button>
+    </div>
+
+    <div class="fin-table-wrapper">
+      <p-table
+        [value]="withdrawals"
+        [loading]="isLoadingWd"
+        [rows]="pageSize"
+        [totalRecords]="totalWd"
+        [lazy]="true"
+        [paginator]="true"
+        (onPage)="onWdPageChange($event)"
+        styleClass="fin-table"
+        [rowHover]="true"
+        responsiveLayout="scroll"
+        emptyMessage="Aucun retrait.">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Référence</th>
+            <th class="text-right">Montant</th>
+            <th>Opérateur</th>
+            <th>Téléphone</th>
+            <th>Statut</th>
+            <th>Date</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-wd>
+          <tr>
+            <td>
+              <span class="ref-badge">{{ wd.reference ?? '—' }}</span>
+            </td>
+            <td class="text-right amount-col">{{ formatCurrency(wd.amount) }}</td>
+            <td>
+              <span class="method-badge method-badge--{{ wd.operator | lowercase }}">
+                {{ getMethodLabel(wd.operator) }}
+              </span>
+            </td>
+            <td>{{ wd.customerMsisdn }}</td>
+            <td>
+              <p-tag
+                [value]="getStatusLabel(wd.status)"
+                [severity]="getStatusSeverity(wd.status)"
+                styleClass="status-tag" />
+            </td>
+            <td class="date-col">{{ wd.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          </tr>
+        </ng-template>
+
+      </p-table>
+    </div>
+    }
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL — DEMANDE DE RETRAIT
+══════════════════════════════════════════════════════════ -->
+<p-dialog
+  [(visible)]="showWithdrawalDialog"
+  header="Nouvelle demande de retrait"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  styleClass="withdrawal-dialog"
+  [style]="{ width: '520px' }">
+
+  <form [formGroup]="withdrawalForm" class="wd-form">
+
+    <!-- Solde dispo info -->
+    @if (summary) {
+      <div class="wd-balance-info">
+        <i class="material-icons">info_outline</i>
+        Solde disponible :
+        <strong>{{ formatCurrency(summary.availableBalance) }}</strong>
+      </div>
+    }
+
+    <!-- Montant -->
+    <div class="wd-field">
+      <label class="wd-label">Montant à retirer <span class="req">*</span></label>
+      <p-inputnumber
+        formControlName="amount"
+        [min]="1000"
+        [max]="summary?.availableBalance ?? undefined"
+        mode="decimal"
+        locale="fr-FR"
+        placeholder="Ex: 50 000"
+        styleClass="w-full"
+        inputStyleClass="wd-input" />
+      @if (withdrawalForm.get('amount')?.invalid && withdrawalForm.get('amount')?.touched) {
+        <span class="wd-error">Montant minimum : 1 000 XOF</span>
+      }
+    </div>
+
+    <!-- Mode de paiement -->
+    <div class="wd-field">
+      <label class="wd-label">Mode de paiement <span class="req">*</span></label>
+      <p-select
+        formControlName="method"
+        [options]="methodOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Choisir un mode"
+        styleClass="w-full" />
+    </div>
+
+    <!-- Numéro de compte -->
+    <div class="wd-field">
+      <label class="wd-label">Numéro de compte / Téléphone <span class="req">*</span></label>
+      <input
+        pInputText
+        formControlName="accountNumber"
+        placeholder="+226 70 00 00 00"
+        class="wd-input w-full" />
+      @if (withdrawalForm.get('accountNumber')?.invalid && withdrawalForm.get('accountNumber')?.touched) {
+        <span class="wd-error">Numéro requis (min. 8 caractères)</span>
+      }
+    </div>
+
+    <!-- Nom du compte -->
+    <!-- <div class="wd-field">
+      <label class="wd-label">Nom du bénéficiaire <span class="req">*</span></label>
+      <input
+        pInputText
+        formControlName="accountName"
+        placeholder="Nom complet"
+        class="wd-input w-full" />
+      @if (withdrawalForm.get('accountName')?.invalid && withdrawalForm.get('accountName')?.touched) {
+        <span class="wd-error">Nom requis (min. 3 caractères)</span>
+      }
+    </div> -->
+
+    <!-- Note optionnelle -->
+    <!-- <div class="wd-field">
+      <label class="wd-label">Note (optionnel)</label>
+      <textarea
+        pTextarea
+        formControlName="note"
+        rows="3"
+        placeholder="Précisions sur la demande..."
+        class="wd-textarea w-full">
+      </textarea>
+    </div> -->
+
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="wd-footer">
+      <button class="btn-cancel" (click)="showWithdrawalDialog = false">
+        Annuler
+      </button>
+      <button
+        class="btn-submit"
+        (click)="submitWithdrawal()"
+        [disabled]="isSubmittingWd">
+        {{ isSubmittingWd ? 'Envoi...' : 'Soumettre la demande' }}
+      </button>
+    </div>
+  </ng-template>
+
+</p-dialog>

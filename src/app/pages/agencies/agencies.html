@@ -1,0 +1,367 @@
+<div class="agencies-page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">Agences de Collecte</h1>
+      <p class="page-subtitle">
+        Découvrez toutes les agences de collecte de déchets disponibles dans votre région.
+        Comparez leurs services, zones de couverture et tarifs pour choisir celle qui vous convient le mieux.
+      </p>
+    </div>
+    <!-- <div class="quick-actions"> -->
+    @if (currentUser?.subscribedAgencyId) {
+    <button class="btn btn-secondary m-5" routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}">
+      <i class="material-icons">business</i>
+      Mon agence
+    </button>
+    }
+
+    <!-- </div> -->
+  </div>
+
+  <div class="container">
+    <!-- Filtres et recherche -->
+    <div class="filters-section card">
+      <div class="search-bar">
+        <div class="search-input-group">
+          <i class="material-icons search-icon">search</i>
+          <input type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Rechercher par nom..."
+            class="search-input">
+          <!-- Ajout de la liste des suggestions -->
+          @if (suggestions.length > 0) {
+          <ul class="suggestions-list">
+            @for (suggestion of suggestions; track suggestion) {
+            <li (click)="applySuggestion(suggestion)">
+              {{ suggestion.name }}
+            </li>
+            }
+          </ul>
+          }
+        </div>
+      </div>
+
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label class="filter-label">Ville</label>
+          <select [(ngModel)]="selectedCity" (change)="onCityChange(selectedCity)" class="filter-select">
+            <option value="">Aucune ...</option>
+            @for (city of cities; track city) {
+            <option [value]="city">{{ city }}</option>
+            }
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Secteur</label>
+          <select [(ngModel)]="selectedSector" (change)="onSecteurChange(selectedSector)" class="filter-select"
+            [disabled]="!selectedCity || !secteurss.length">
+            <option value="">Tous les secteurs</option>
+            @for (secteur of secteurss; track secteur) {
+            <option [value]="secteur.name">{{ secteur.name }}</option>
+            }
+          </select>
+          <!-- <div *ngIf="!selectedCity"> -->
+          @if (!selectedCity) {
+          <sub class="text-small font-small text-[--error-color]">Sélectionnez d'abord une ville.</sub>
+          }
+          <!-- </div> -->
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Quartier</label>
+          <select [(ngModel)]="selectedNeighborhood" (change)="applyFilters()" class="filter-select"
+            [disabled]="!selectedCity || !quartierss.length">
+            <option value="">Tous les quartiers</option>
+            @for (quartier of quartierss; track quartier) {
+            <option [value]="quartier.name">{{ quartier.name }}</option>
+            }
+          </select>
+          @if (!selectedCity) {
+          <sub class="text-small font-small text-[--error-color]">Sélectionnez d'abord une ville.</sub>
+          }
+
+        </div>
+        <!-- <div class="filter-group">
+      <label class="filter-label">Note minimum</label>
+      <select [(ngModel)]="minRating" (change)="applyFilters()" class="filter-select">
+        <option value="">Toutes</option>
+        <option value="3">3 étoiles et plus</option>
+        <option value="4">4 étoiles et plus</option>
+        <option value="4.5">4.5 étoiles et plus</option>
+      </select>
+    </div> -->
+      </div>
+      <div class="filters-actions" style="text-align:right; margin-top:8px;">
+        <button
+          class="btn  btn-small text-[--error-color] transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-xl  gap-2 font-medium text-sm"
+          (click)="clearFilters()" title="Réinitialiser les filtres">
+          <i class="material-icons">restart_alt</i>
+          <i class="fas fa-undo-alt group-hover:rotate-180 transition-transform duration-300"></i>
+          Réinitialiser
+        </button>
+      </div>
+      <!-- <div class="flex justify-center lg:justify-end">
+  <button
+    class="group px-4 py-2.5 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-2 font-medium text-sm"
+    (click)="clearFilters()" title="Réinitialiser tous les filtres">
+    <i class="fas fa-undo-alt group-hover:rotate-180 transition-transform duration-300"></i>
+    Réinitialiser
+  </button>
+</div> -->
+
+      <div class="view-toggle">
+        <button class="view-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">
+          <i class="material-icons">grid_view</i>
+          Grille
+        </button>
+        <button class="view-btn" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">
+          <i class="material-icons">view_list</i>
+          Liste
+        </button>
+        <!-- <button
+  class="view-btn"
+  [class.active]="viewMode === 'map'"
+  (click)="viewMode = 'map'">
+  <i class="material-icons">map</i>
+  Carte
+</button> -->
+      </div>
+    </div>
+
+    <!-- Résultats -->
+    <div class="results-header">
+      <h2>{{ filteredAgencies.length }} agence(s) trouvée(s)</h2>
+      <!-- <div class="sort-options">
+  <label>Trier par:</label>
+  <select [(ngModel)]="sortBy" (change)="sortAgencies()" class="sort-select">
+    <option value="name">Nom</option>
+    <option value="rating">Note</option>
+    <option value="price">Prix</option>
+    <option value="clients">Nombre de clients</option>
+  </select>
+</div> -->
+    </div>
+
+    <div class="container">
+      <!-- Vue grille -->
+      @if (viewMode === 'grid') {
+      <div class="agencies-grid">
+        @for (agency of filteredAgencies; track agency) {
+        <div class="agency-card card">
+          <div class="agency-header">
+            <div class="agency-logo">
+              <img
+                [src]="'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'"
+                [alt]="agency.name">
+            </div>
+            <!-- <div class="agency-badge" *ngIf="agency && agency.randomStars >= 1">
+            <i class="material-icons">star</i>
+            Top Rated
+          </div> -->
+          </div>
+          <div class="agency-content">
+            <h3 class="agency-name">{{ agency.name }}</h3>
+            <p class="agency-description truncate">{{ agency?.agencyDescription }}</p>
+            <div
+              class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full">
+              @for (star of getStars(agency.rating, agency.randomStars); track $index) {
+              <i class="material-icons star">star</i>
+              }
+            </div>
+            @if (currentUser?.agencyId === agency._id) {
+            <div
+              class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
+              <!-- <span class="rating-text">{{ agency.randomStars }}/5 ({{ agency.totalClients }} avis)</span> -->
+              <div class="stars">
+                <i class="material-icons star">star</i>
+              </div>
+              <span class="text-white rating-text">Déjà abonné(e)</span>
+            </div>
+            }
+            <div class="agency-info">
+              <div class="info-item">
+                <i class="material-icons">location_on</i>
+                <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{
+                  agency.address.neighborhood || '-' }}</span>
+              </div>
+              <div class="info-item"></div>
+              <!-- <div class="info-item">
+              <i class="material-icons">people</i>
+              <span>{{ agency.totalClients || 0 }} clients</span>
+            </div> -->
+              <!-- <div class="info-item">
+            <i class="material-icons">build</i>
+            <span>{{ agency.services.length || 0 }} services</span>
+          </div> -->
+            </div>
+            <!-- <div class="services-preview">
+        <h4>Services principaux</h4>
+        <div class="services-tags">
+          <span *ngFor="let service of (agency.services || []).slice(0, 3)" class="service-tag">
+            {{ service.name }} - {{ service.price }}€
+          </span>
+          <span *ngIf="(agency.services || []).length > 3" class="service-tag more">
+            +{{ (agency.services || []).length - 3 }} autres
+          </span>
+        </div>
+      </div> -->
+          </div>
+          <div class="agency-actions">
+            <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
+              <i class="material-icons">info</i>
+              Voir détails
+            </button>
+            <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
+      <i class="material-icons">add</i>
+      S'abonner
+    </button> -->
+          </div>
+        </div>
+        }
+      </div>
+      }
+
+      <!-- Vue liste -->
+      @if (viewMode === 'list') {
+      <div class="agencies-list">
+        @for (agency of filteredAgencies; track agency) {
+        <div class="agency-list-item card">
+          <div class="agency-list-content">
+            <div class="agency-list-header">
+              <div class="agency-logo-small">
+                <img
+                  src="https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
+                  [alt]="agency.name">
+              </div>
+              <div class="agency-list-info">
+                <h3 class="agency-name text-[--primary-color]">{{ agency.name }}</h3>
+                <!-- <div class="agency-rating">
+              <div class="stars">
+                <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
+              </div>
+              <span class="rating-text">{{ agency.rating }}/5</span>
+            </div> -->
+                <div
+                  class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full">
+                  @for (star of getStars(agency.rating, agency.randomStars); track $index) {
+                  <i class="material-icons star">star</i>
+                  }
+                </div>
+                @if (currentUser?.agencyId === agency._id) {
+                <div
+                  class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
+                  <div class="stars">
+                    <i class="material-icons star">star</i>
+                  </div>
+                  <span class="text-white rating-text">Déjà abonné(e)</span>
+                </div>
+                }
+              </div>
+              <!-- <div class="agency-list-price">
+          <span class="price-from">À partir de</span>
+          <span class="price-value">{{ getMinPrice(agency) }}€</span>
+        </div> -->
+            </div>
+            <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
+            <div class="agency-list-details">
+              <div class="detail-item">
+                <i class="material-icons">location_on</i>
+                <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{
+                  agency.address.neighborhood || '-' }}</span>
+              </div>
+              <div class="detail-item">
+                <i class="material-icons">people</i>
+                <span>{{ agency.totalClients || 0 }} clients</span>
+              </div>
+              <!-- <div class="detail-item">
+        <i class="material-icons">schedule</i>
+        <span>Collecte {{ getFrequencyText(agency) }}</span>
+      </div> -->
+            </div>
+          </div>
+          <div class="agency-list-actions">
+            <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
+              <i class="material-icons">info</i>
+              Voir détails
+            </button>
+            <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
+    S'abonner
+  </button> -->
+          </div>
+        </div>
+        }
+      </div>
+      }
+    </div>
+
+    <!-- Vue carte -->
+    @if (viewMode === 'map') {
+    <div class="map-view">
+      <div class="map-container">
+        <div class="map-placeholder">
+          <i class="material-icons">map</i>
+          <p>Carte interactive des agences</p>
+          <small>Intégration Google Maps à venir</small>
+        </div>
+      </div>
+      <div class="map-sidebar">
+        <h3>Agences sur la carte</h3>
+        <div class="map-agency-list">
+          @for (agency of filteredAgencies; track agency) {
+          <div class="map-agency-item">
+            <h4>{{ agency.name }}</h4>
+            <p>{{ agency.address.city || '-' }}</p>
+            <div class="agency-rating">
+              <div class="stars">
+                @for (star of getStars(agency.rating || 0); track star) {
+                <i class="material-icons star">star</i>
+                }
+              </div>
+              <span>{{ agency.rating || 0 }}/5</span>
+            </div>
+            <button class="btn btn-primary btn-small" [routerLink]="['/agencies', agency._id]">
+              Voir
+            </button>
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Message si aucun résultat -->
+    @if (filteredAgencies.length === 0) {
+    <div class="no-results">
+      <div class="no-results-content">
+        <i class="material-icons">search_off</i>
+        <h3>Aucune agence trouvée</h3>
+        <p>Essayez de modifier vos critères de recherche ou de supprimer certains filtres.</p>
+        <button class="btn btn-primary" (click)="clearFilters()">
+          Effacer les filtres
+        </button>
+      </div>
+    </div>
+    }
+  </div>
+
+  <div class="pagination-wrapper">
+
+    <div class="pagination">
+
+      <button class="page-btn disabled">
+        <mat-icon>arrow_back</mat-icon> Précédent
+      </button>
+
+      <button class="page-number active">1</button>
+      <button class="page-number">2</button>
+      <button class="page-number">3</button>
+
+      <button class="page-btn next">
+        Suivant <mat-icon>arrow_forward</mat-icon>
+      </button>
+
+    </div>
+
+    <div class="pagination-info">
+      Page <b>1</b> sur <b>3</b> — Affichage de <b>1</b> à <b>{{ filteredAgencies.length }}</b> sur <b>{{ agencies!.pagination.total}}</b> agences
+    </div>
+
+  </div>
+</div>

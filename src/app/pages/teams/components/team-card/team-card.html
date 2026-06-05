@@ -1,0 +1,102 @@
+<div class="tc-root" (click)="detail.emit(team)">
+
+  <!-- Color accent bar -->
+  <div class="tc-accent" [style.background]="team.color"></div>
+
+  <!-- Header -->
+  <div class="tc-header">
+    <div class="tc-avatar" [style.background]="team.color + '18'" [style.color]="team.color">
+      {{ team.name.charAt(0) }}
+    </div>
+    <div class="tc-head-info">
+      <h3>{{ team.name }}</h3>
+      <span class="tc-code">{{ team.code }}</span>
+    </div>
+    <span class="tc-status" [style.background]="statusColor(team.status) + '18'" [style.color]="statusColor(team.status)">
+      <span class="tc-status-dot" [style.background]="statusColor(team.status)"></span>
+      {{ statusLabel(team.status) }}
+    </span>
+  </div>
+
+  <!-- Zone actuelle -->
+  @if (team.currentZone) {
+    <div class="tc-current-zone">
+      <mat-icon>location_on</mat-icon>
+      <span>{{ team.currentZone }}</span>
+    </div>
+  }
+
+  <!-- Workload -->
+  <div class="tc-workload">
+    <div class="tcw-header">
+      <span>Charge de travail</span>
+      <span [style.color]="workloadColor(team.workload)">{{ team.workload }}%</span>
+    </div>
+    <div class="tcw-bar">
+      <div class="tcw-fill"
+           [style.width]="team.workload + '%'"
+           [style.background]="workloadColor(team.workload)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Metrics row -->
+  <div class="tc-metrics">
+    <div class="tcm-item">
+      <mat-icon>group</mat-icon>
+      <span>{{ team.members.length }} membres</span>
+      @if (availableMembers() > 0) {
+        <span class="tcm-avail">({{ availableMembers() }} disponibles)</span>
+      }
+    </div>
+    @if (team.vehicle) {
+      <div class="tcm-item">
+        <mat-icon>{{ vehicleIcon(team.vehicle.type) }}</mat-icon>
+        <span>{{ team.vehicle.plate }}</span>
+      </div>
+    } @else {
+      <div class="tcm-item tcm-item--muted">
+        <mat-icon>no_crash</mat-icon>
+        <span>Aucun véhicule</span>
+      </div>
+    }
+    <div class="tcm-item">
+      <mat-icon>flag</mat-icon>
+      <span>{{ team.completedMissions }}/{{ team.totalMissions }} missions</span>
+    </div>
+    <div class="tcm-item">
+      <mat-icon>verified</mat-icon>
+      <span>{{ team.successRate }}% taux réussite</span>
+    </div>
+  </div>
+
+  <!-- Zones chips -->
+  @if (team.zones.length > 0) {
+    <div class="tc-zones">
+      @for (z of team.zones.slice(0, 3); track z.id) {
+        <span class="tz-chip">{{ z.name.split('–')[0].trim() }}</span>
+      }
+      @if (team.zones.length > 3) {
+        <span class="tz-chip tz-chip--more">+{{ team.zones.length - 3 }}</span>
+      }
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="tc-actions" (click)="$event.stopPropagation()">
+    <button class="tca-btn" (click)="detail.emit(team)" pTooltip="Voir détail" tooltipPosition="top">
+      <mat-icon>visibility</mat-icon>
+    </button>
+    <button class="tca-btn" (click)="edit.emit(team)" pTooltip="Modifier" tooltipPosition="top">
+      <mat-icon>edit</mat-icon>
+    </button>
+    <button class="tca-btn" (click)="toggle.emit(team)"
+            [pTooltip]="team.status === 'active' ? 'Désactiver' : 'Activer'" tooltipPosition="top">
+      <mat-icon>{{ team.status === 'active' ? 'pause_circle' : 'play_circle' }}</mat-icon>
+    </button>
+    <button class="tca-btn tca-btn--danger" (click)="delete.emit(team)" pTooltip="Supprimer" tooltipPosition="top">
+      <mat-icon>delete_outline</mat-icon>
+    </button>
+  </div>
+
+</div>

@@ -1,0 +1,610 @@
+/* ============================================================
+   Zone Selector — Leaflet + PrimeNG Tree  (Stripe / Linear)
+   ============================================================ */
+
+$ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+// ── Root ──────────────────────────────────────────────────────
+.zs-root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+// ── Stats bar ─────────────────────────────────────────────────
+.zs-statsbar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+
+  @media (max-width: 768px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 480px) { grid-template-columns: 1fr 1fr; }
+}
+
+.zs-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+
+.stat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.stat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.stat-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -.5px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-lbl {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+// ── Split layout ─────────────────────────────────────────────
+.zs-split {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+  min-height: 520px;
+  max-height: 600px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+}
+
+// ── Sidebar ───────────────────────────────────────────────────
+.zs-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+// ── Controls ──────────────────────────────────────────────────
+.zs-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zs-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-ico {
+  position: absolute;
+  left: 10px;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.zs-search {
+  width: 100%;
+  height: 38px;
+  padding: 0 36px 0 36px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: border-color .2s ease, background .2s ease;
+  outline: none;
+
+  &:focus {
+    border-color: #3b82f6;
+    background: #ffffff;
+  }
+
+  &::placeholder { color: #94a3b8; }
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: #e2e8f0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #64748b;
+
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  &:hover { background: #cbd5e1; }
+}
+
+.zs-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all .2s ease;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
+
+  &.active {
+    border-color: #16a34a;
+    color: #16a34a;
+    background: #f0fdf4;
+  }
+}
+
+.filter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  margin-left: auto;
+  transition: background .2s ease;
+
+  &.on { background: #16a34a; }
+}
+
+// ── Legend ────────────────────────────────────────────────────
+.zs-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.leg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// ── Tree wrapper ──────────────────────────────────────────────
+.zs-tree-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+  min-height: 0;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+}
+
+.zs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: #94a3b8;
+  font-size: 13px;
+  mat-icon { font-size: 28px; width: 28px; height: 28px; }
+}
+
+// ── PrimeNG Tree overrides ────────────────────────────────────
+::ng-deep .zs-ptree {
+  .p-tree {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .p-treenode-content {
+    border-radius: 8px !important;
+    padding: 2px 4px !important;
+    transition: background .15s ease !important;
+
+    &:hover { background: #f8fafc !important; }
+    &.p-highlight { background: transparent !important; }
+  }
+
+  .p-treenode-icon { display: none !important; }
+
+  .p-tree-toggler {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 6px !important;
+    color: #94a3b8 !important;
+
+    &:hover { background: #f1f5f9 !important; color: #475569 !important; }
+  }
+}
+
+// ── Tree node ─────────────────────────────────────────────────
+.zs-tnode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s ease;
+  flex: 1;
+  min-width: 0;
+
+  &--selected {
+    background: color-mix(in srgb, var(--lc) 10%, transparent);
+    border-radius: 6px;
+  }
+}
+
+.tnode-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.tnode-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.tnode-stats {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.tnode-hh {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.tnode-hh-ico {
+  font-size: 12px;
+  width: 12px;
+  height: 12px;
+  color: #94a3b8;
+}
+
+.tnode-active {
+  font-size: 10px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #f0fdf4;
+  padding: 1px 5px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+// ── Selected info card ────────────────────────────────────────
+.zs-sel-card {
+  padding: 14px;
+  background: color-mix(in srgb, var(--sc) 6%, white);
+  border: 1.5px solid color-mix(in srgb, var(--sc) 25%, #f1f5f9);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideUp .2s ease;
+}
+
+.sel-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+}
+
+.sel-card-title {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.sel-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sel-level {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sc);
+}
+
+.sel-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  flex-shrink: 0;
+  transition: background .15s ease;
+
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  &:hover { background: #e2e8f0; color: #ef4444; }
+}
+
+.sel-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.bc-item {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.bc-sep {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #cbd5e1;
+}
+
+.sel-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.sel-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+
+.met-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.met-lbl {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.sel-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sel-bar {
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sel-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .5s $ease;
+}
+
+.sel-bar-lbl {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+// ── Map panel ─────────────────────────────────────────────────
+.zs-map-panel {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #f1f5f9;
+  min-height: 400px;
+
+  @media (max-width: 900px) { min-height: 350px; }
+}
+
+.zs-map {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  background: #f8fafc;
+
+  @media (max-width: 900px) { min-height: 350px; }
+}
+
+// ── Map legend overlay ────────────────────────────────────────
+.map-legend-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+.mlo-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; color: #94a3b8; }
+}
+
+.mlo-items {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mlo-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.mlo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: .8;
+}
+
+// ── Map selected badge ────────────────────────────────────────
+.map-sel-badge {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,.95);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid var(--sc);
+  border-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  white-space: nowrap;
+  animation: fadeIn .2s ease;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: var(--sc);
+  }
+
+  span {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+}
+
+.map-sel-hh {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+  padding-left: 6px;
+  border-left: 1px solid #e2e8f0;
+}
+
+// ── Leaflet tooltip override ──────────────────────────────────
+::ng-deep .zs-tooltip {
+  .leaflet-tooltip {
+    background: #1e293b;
+    border: none;
+    border-radius: 8px;
+    color: #f8fafc;
+    font-size: 12px;
+    padding: 6px 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  }
+
+  .leaflet-tooltip-top::before {
+    border-top-color: #1e293b;
+  }
+}
+
+// ── Animations ────────────────────────────────────────────────
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) scale(.95); }
+  to   { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
+// ── Mobile ────────────────────────────────────────────────────
+@media (max-width: 480px) {
+  .zs-statsbar { grid-template-columns: 1fr 1fr; }
+  .zs-legend   { display: none; }
+}

@@ -1,0 +1,8 @@
+<div class="loading-container" [class.fullscreen]="fullscreen">
+  <div class="loading-content">
+    <div class="loading-spinner" [class.large]="size === 'large'" [class.small]="size === 'small'"></div>
+    @if (message) {
+      <p class="loading-message">{{ message }}</p>
+    }
+  </div>
+</div>

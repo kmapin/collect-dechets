@@ -1,0 +1,397 @@
+<p-toast />
+
+@if (isLoading()) {
+  <div class="td-skeleton">
+    <div class="sk-hero"></div>
+    <div class="sk-body"><div class="sk-col"></div><div class="sk-col sk-col--wide"></div></div>
+  </div>
+}
+
+@else if (notFound()) {
+  <div class="td-notfound">
+    <mat-icon>group_off</mat-icon>
+    <h2>Équipe introuvable</h2>
+    <a routerLink="/teams/list"><mat-icon>arrow_back</mat-icon>Retour à la liste</a>
+  </div>
+}
+
+@else if (team()) {
+<div class="td-root">
+
+  <!-- ══════════════════════════════════════════════════════
+       HERO HEADER
+       ══════════════════════════════════════════════════════ -->
+  <div class="td-hero" [style.--team-color]="team()!.color">
+
+    <div class="tdh-back">
+      <a routerLink="/teams/list" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+      </a>
+      <div class="tdh-breadcrumb">
+        <a routerLink="/teams/list">Équipes</a>
+        <mat-icon>chevron_right</mat-icon>
+        <span>{{ team()!.code }}</span>
+      </div>
+    </div>
+
+    <div class="tdh-main">
+      <!-- Avatar -->
+      <div class="tdh-avatar" [style.background]="team()!.color + '30'" [style.color]="team()!.color"
+           [style.border-color]="team()!.color + '50'">
+        {{ team()!.name.charAt(0) }}
+      </div>
+
+      <!-- Info -->
+      <div class="tdh-info">
+        <div class="tdhi-top">
+          <h1>{{ team()!.name }}</h1>
+          <span class="tdhi-code">{{ team()!.code }}</span>
+          <span class="tdhi-status" [style.background]="statusColor() + '20'" [style.color]="statusColor()" [style.border-color]="statusColor() + '40'">
+            <span class="status-dot" [style.background]="statusColor()"></span>
+            {{ statusLabel() }}
+          </span>
+        </div>
+        @if (team()!.description) {
+          <p class="tdhi-desc">{{ team()!.description }}</p>
+        }
+        <div class="tdhi-meta">
+          @if (team()!.supervisor) {
+            <span><mat-icon>manage_accounts</mat-icon>{{ team()!.supervisor }}</span>
+          }
+          @if (team()!.phone) {
+            <span><mat-icon>phone</mat-icon>{{ team()!.phone }}</span>
+          }
+          @if (team()!.currentZone) {
+            <span class="meta-live"><mat-icon>location_on</mat-icon>{{ team()!.currentZone }}</span>
+          }
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="tdh-actions">
+        <!-- Sélecteur de statut -->
+        <div class="tdha-status-wrapper" style="position:relative">
+          <button class="tdha-btn tdha-btn--ghost"
+                  (click)="statusMenuOpen = !statusMenuOpen"
+                  pTooltip="Changer le statut" tooltipPosition="bottom">
+            <mat-icon>manage_accounts</mat-icon>
+            Statut
+            <mat-icon style="font-size:16px;width:16px;height:16px">arrow_drop_down</mat-icon>
+          </button>
+          @if (statusMenuOpen) {
+            <div class="tdha-status-menu" style="position:absolute;top:100%;left:0;z-index:100;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:170px;overflow:hidden;margin-top:4px">
+              @for (s of allStatuses; track s.value) {
+                <button class="tdha-status-item"
+                        style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;text-align:left"
+                        [style.opacity]="team()!.status === s.value ? '0.4' : '1'"
+                        [disabled]="team()!.status === s.value"
+                        (click)="changeStatus(s.value)">
+                  <mat-icon [style.color]="s.color" style="font-size:18px;width:18px;height:18px">{{ s.icon }}</mat-icon>
+                  <span>{{ s.label }}</span>
+                  @if (team()!.status === s.value) {
+                    <mat-icon style="margin-left:auto;font-size:14px;color:#16a34a">check</mat-icon>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+        <button class="tdha-btn tdha-btn--ghost tdha-btn--danger" (click)="showDelDlg.set(true)">
+          <mat-icon>delete_outline</mat-icon>Supprimer
+        </button>
+        <button class="tdha-btn tdha-btn--primary" (click)="formOpen.set(true)">
+          <mat-icon>edit</mat-icon>Modifier
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="tdh-stats">
+      <div class="tdhs-item">
+        <span class="tdhs-val">{{ team()!.members.length }}</span>
+        <span class="tdhs-lbl">Membres</span>
+      </div>
+      <div class="tdhs-div"></div>
+      <div class="tdhs-item">
+        <span class="tdhs-val" [style.color]="workloadColor(team()!.workload)">{{ team()!.workload }}%</span>
+        <span class="tdhs-lbl">Charge</span>
+      </div>
+      <div class="tdhs-div"></div>
+      <div class="tdhs-item">
+        <span class="tdhs-val">{{ team()!.completedMissions }}/{{ team()!.totalMissions }}</span>
+        <span class="tdhs-lbl">Missions</span>
+      </div>
+      <div class="tdhs-div"></div>
+      <div class="tdhs-item">
+        <span class="tdhs-val" [style.color]="team()!.successRate >= 90 ? '#16a34a' : '#f59e0b'">{{ team()!.successRate }}%</span>
+        <span class="tdhs-lbl">Taux réussite</span>
+      </div>
+      <div class="tdhs-div"></div>
+      <div class="tdhs-item">
+        <span class="tdhs-val">{{ availableMembers() }}</span>
+        <span class="tdhs-lbl">Disponibles</span>
+      </div>
+      <div class="tdhs-div"></div>
+      <div class="tdhs-item">
+        <span class="tdhs-val">{{ team()!.zones.length }}</span>
+        <span class="tdhs-lbl">Zones</span>
+      </div>
+    </div>
+
+    <!-- Workload bar -->
+    <div class="tdh-workload-bar">
+      <div class="tdh-wl-fill"
+           [style.width]="team()!.workload + '%'"
+           [style.background]="workloadColor(team()!.workload)">
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       TABS
+       ══════════════════════════════════════════════════════ -->
+  <div class="td-tabs">
+    <button [class.active]="activeTab() === 'members'" (click)="setTab('members')">
+      <mat-icon>group</mat-icon>Membres
+      <span class="tab-badge">{{ team()!.members.length }}</span>
+    </button>
+    <button [class.active]="activeTab() === 'vehicle'" (click)="setTab('vehicle')">
+      <mat-icon>local_shipping</mat-icon>Véhicule
+    </button>
+    <button [class.active]="activeTab() === 'zones'" (click)="setTab('zones')">
+      <mat-icon>map</mat-icon>Zones
+      <span class="tab-badge">{{ team()!.zones.length }}</span>
+    </button>
+    <button [class.active]="activeTab() === 'missions'" (click)="setTab('missions')">
+      <mat-icon>flag</mat-icon>Missions récentes
+      <span class="tab-badge">{{ team()!.recentMissions.length }}</span>
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB CONTENTS
+       ══════════════════════════════════════════════════════ -->
+  <div class="td-tab-body">
+
+    <!-- ── MEMBERS ────────────────────────────────────────── -->
+    @if (activeTab() === 'members') {
+      <div class="members-tab-header">
+        <span class="mth-count">{{ team()!.members.length }} membre{{ team()!.members.length !== 1 ? 's' : '' }}</span>
+        <a class="mth-manage-btn" [routerLink]="['/teams/members', team()!.id]">
+          <mat-icon>manage_accounts</mat-icon>
+          Gérer les membres
+        </a>
+      </div>
+      <div class="members-grid">
+        @for (m of team()!.members; track m.id) {
+          <div class="member-card">
+            <div class="mc-avatar" [style.background]="roleColor(m.role) + '18'" [style.color]="roleColor(m.role)">
+              {{ m.name.charAt(0) }}
+            </div>
+            <div class="mc-info">
+              <div class="mc-name">{{ m.name }}</div>
+              <div class="mc-role" [style.color]="roleColor(m.role)">{{ roleLabel(m.role) }}</div>
+              <div class="mc-phone"><mat-icon>phone</mat-icon>{{ m.phone }}</div>
+              @if (m.email) {
+                <div class="mc-email"><mat-icon>email</mat-icon>{{ m.email }}</div>
+              }
+              <div class="mc-joined"><mat-icon>calendar_today</mat-icon>Depuis {{ m.joinedAt | date:'MMMM yyyy':'':'fr' }}</div>
+            </div>
+            <div class="mc-avail" [style.background]="availabilityColor(m.availability) + '18'" [style.color]="availabilityColor(m.availability)">
+              <span class="avail-dot" [style.background]="availabilityColor(m.availability)"></span>
+              {{ availabilityLabel(m.availability) }}
+            </div>
+            <a class="mc-action-btn" [routerLink]="['/teams/members', team()!.id]"
+               pTooltip="Gérer ce membre" tooltipPosition="top">
+              <mat-icon>open_in_new</mat-icon>
+            </a>
+          </div>
+        }
+        @if (team()!.members.length === 0) {
+          <div class="tab-empty">
+            <mat-icon>person_off</mat-icon>
+            <p>Aucun membre dans cette équipe</p>
+            <a class="tab-empty-btn" [routerLink]="['/teams/members', team()!.id]">
+              <mat-icon>person_add</mat-icon>Ajouter des membres
+            </a>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── VEHICLE ─────────────────────────────────────────── -->
+    @if (activeTab() === 'vehicle') {
+      @if (team()!.vehicle) {
+        <div class="vehicle-card">
+          <div class="vc-header">
+            <div class="vc-icon"><mat-icon>local_shipping</mat-icon></div>
+            <div class="vc-title">
+              <h3>{{ team()!.vehicle!.plate }}</h3>
+              <span>{{ team()!.vehicle!.model }}</span>
+            </div>
+            <span class="vc-status"
+                  [style.background]="vehicleStatusColor(team()!.vehicle!.status) + '18'"
+                  [style.color]="vehicleStatusColor(team()!.vehicle!.status)">
+              {{ vehicleStatusLabel(team()!.vehicle!.status) }}
+            </span>
+          </div>
+          <div class="vc-metrics">
+            <div class="vcm-item">
+              <mat-icon>category</mat-icon>
+              <div>
+                <span class="vcm-label">Type</span>
+                <span class="vcm-val">{{ vehicleTypeLabel(team()!.vehicle!.type) }}</span>
+              </div>
+            </div>
+            <div class="vcm-item">
+              <mat-icon>scale</mat-icon>
+              <div>
+                <span class="vcm-label">Capacité</span>
+                <span class="vcm-val">{{ team()!.vehicle!.capacityTons }}T</span>
+              </div>
+            </div>
+            <div class="vcm-item">
+              <mat-icon>build</mat-icon>
+              <div>
+                <span class="vcm-label">Dernière révision</span>
+                <span class="vcm-val">{{ team()!.vehicle!.lastMaintenance }}</span>
+              </div>
+            </div>
+            <div class="vcm-item">
+              <mat-icon>speed</mat-icon>
+              <div>
+                <span class="vcm-label">Kilométrage</span>
+                <span class="vcm-val">{{ team()!.vehicle!.mileage | number:'1.0-0' }} km</span>
+              </div>
+            </div>
+          </div>
+          <!-- Fuel gauge -->
+          <div class="vc-fuel">
+            <div class="vcf-header">
+              <span><mat-icon>local_gas_station</mat-icon>Niveau carburant</span>
+              <span [style.color]="fuelColor(team()!.vehicle!.fuelLevel)" style="font-weight:700">{{ team()!.vehicle!.fuelLevel }}%</span>
+            </div>
+            <div class="vcf-bar">
+              <div class="vcf-fill"
+                   [style.width]="team()!.vehicle!.fuelLevel + '%'"
+                   [style.background]="fuelColor(team()!.vehicle!.fuelLevel)">
+              </div>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="tab-empty">
+          <mat-icon>no_crash</mat-icon>
+          <p>Aucun véhicule assigné à cette équipe</p>
+          <button (click)="formOpen.set(true)">Assigner un véhicule</button>
+        </div>
+      }
+    }
+
+    <!-- ── ZONES ──────────────────────────────────────────── -->
+    @if (activeTab() === 'zones') {
+      <div class="zones-layout">
+        <div class="zones-list">
+          @for (z of team()!.zones; track z.id) {
+            <div class="zone-card">
+              <div class="zc-icon" [style.background]="team()!.color + '18'" [style.color]="team()!.color">
+                <mat-icon>location_on</mat-icon>
+              </div>
+              <div class="zc-info">
+                <div class="zc-name">{{ z.name }}</div>
+                <div class="zc-meta">{{ z.ville }}@if(z.arrondissement){ · {{ z.arrondissement }} }</div>
+                @if (z.householdsCount > 0) {
+                  <div class="zc-households"><mat-icon>home</mat-icon>{{ z.householdsCount | number }} ménages</div>
+                }
+              </div>
+            </div>
+          }
+          @if (team()!.zones.length === 0) {
+            <div class="tab-empty">
+              <mat-icon>map_off</mat-icon>
+              <p>Aucune zone assignée</p>
+            </div>
+          }
+        </div>
+        @if (team()!.zones.length > 0) {
+          <div class="zones-map-wrap">
+            <div #mapEl class="td-map"></div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── MISSIONS ───────────────────────────────────────── -->
+    @if (activeTab() === 'missions') {
+      <div class="missions-list">
+        @for (m of team()!.recentMissions; track m.id) {
+          <div class="mission-row">
+            <div class="mr-status-bar" [style.background]="missionStatusColor(m.status)"></div>
+            <div class="mr-body">
+              <div class="mr-header">
+                <span class="mr-ref">{{ m.reference }}</span>
+                <span class="mr-status-badge"
+                      [style.background]="missionStatusColor(m.status) + '18'"
+                      [style.color]="missionStatusColor(m.status)">
+                  {{ missionStatusLabel(m.status) }}
+                </span>
+              </div>
+              <div class="mr-meta">
+                <span><mat-icon>calendar_today</mat-icon>{{ m.date }}</span>
+                <span><mat-icon>place</mat-icon>{{ m.zone }}</span>
+                @if (m.duration) { <span><mat-icon>schedule</mat-icon>{{ m.duration }}</span> }
+              </div>
+              @if (m.totalHouseholds > 0) {
+                <div class="mr-progress">
+                  <div class="mrp-bar">
+                    <div class="mrp-fill"
+                         [style.width]="(m.householdsCollected / m.totalHouseholds * 100) + '%'"
+                         [style.background]="m.status === 'termine' ? '#16a34a' : '#f59e0b'">
+                    </div>
+                  </div>
+                  <span>{{ m.householdsCollected }}/{{ m.totalHouseholds }} ménages</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+        @if (team()!.recentMissions.length === 0) {
+          <div class="tab-empty">
+            <mat-icon>flag_circle</mat-icon>
+            <p>Aucune mission récente</p>
+          </div>
+        }
+      </div>
+    }
+
+  </div><!-- /td-tab-body -->
+</div><!-- /td-root -->
+
+<!-- Edit form -->
+@if (formOpen()) {
+  <app-team-form
+    [team]="team()"
+    [availableVehicles]="vehiclesForForm()"
+    [availableZones]="svc.availableZones()"
+    [availableCollectors]="svc.collectors()"
+    (save)="onFormSave($event)"
+    (cancel)="formOpen.set(false)">
+  </app-team-form>
+}
+
+<!-- Delete confirm -->
+@if (showDelDlg()) {
+  <div class="dlg-backdrop" (click)="showDelDlg.set(false)"></div>
+  <div class="dlg-box">
+    <div class="dlg-icon"><mat-icon>delete_forever</mat-icon></div>
+    <h3>Supprimer {{ team()!.name }} ?</h3>
+    <p>Cette équipe et toutes ses données seront supprimées définitivement.</p>
+    <div class="dlg-actions">
+      <button class="dlg-btn dlg-btn--ghost" (click)="showDelDlg.set(false)">Annuler</button>
+      <button class="dlg-btn dlg-btn--danger" (click)="doDelete()">
+        <mat-icon>delete_forever</mat-icon>Supprimer
+      </button>
+    </div>
+  </div>
+}
+}

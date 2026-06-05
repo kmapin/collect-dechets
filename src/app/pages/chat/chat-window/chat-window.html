@@ -1,0 +1,101 @@
+@if (!conversation) {
+  <div class="empty-chat">
+    <i class="pi pi-comments empty-icon"></i>
+    <h3>Welcome to Waste Collection Chat</h3>
+    <p>Select a conversation to start messaging</p>
+  </div>
+}
+
+@if (conversation) {
+  <div class="chat-window">
+    <div class="chat-header">
+      <div class="header-left">
+        <img
+          [src]="otherParticipant?.avatar_url || 'https://via.placeholder.com/50'"
+          [alt]="otherParticipant?.username"
+          class="header-avatar"
+          />
+          <div class="header-info">
+            <h3 class="header-username">{{ otherParticipant?.username }}</h3>
+            <div class="header-status">
+              <span
+                class="status-dot"
+                [class.online]="otherParticipant?.status === 'online'"
+                [class.offline]="otherParticipant?.status === 'offline'"
+              ></span>
+              <span class="status-text">
+                {{ otherParticipant?.status === 'online' ? 'Online' : 'Offline' }}
+              </span>
+              <span class="role-pill" [class]="'role-' + otherParticipant?.role">
+                {{ otherParticipant?.role }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="icon-button" title="Search">
+            <i class="pi pi-search"></i>
+          </button>
+          <button class="icon-button" title="More options">
+            <i class="pi pi-ellipsis-v"></i>
+          </button>
+        </div>
+      </div>
+      <div class="messages-container" #messagesContainer>
+        @for (group of groupedMessages; track group) {
+          <div class="message-group">
+            <div class="date-divider">
+              <span>{{ group.date }}</span>
+            </div>
+            @for (message of group.messages; track message) {
+              <app-message-bubble
+                [message]="message"
+                [currentUser]="currentUser"
+              ></app-message-bubble>
+            }
+          </div>
+        }
+        @if (typingIndicator) {
+          <div class="typing-indicator">
+            <div class="typing-avatar">
+              <img
+                [src]="otherParticipant?.avatar_url || 'https://via.placeholder.com/40'"
+                [alt]="otherParticipant?.username"
+                class="avatar-img"
+                />
+              </div>
+              <div class="typing-bubble">
+                <span class="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="input-container">
+          <button class="icon-button attachment-button" title="Attach photo">
+            <i class="pi pi-image"></i>
+          </button>
+          <button class="icon-button attachment-button" title="Share location">
+            <i class="pi pi-map-marker"></i>
+          </button>
+          <input
+            type="text"
+            class="message-input"
+            placeholder="Type your message..."
+            [(ngModel)]="messageText"
+            (keyup.enter)="onSendMessage()"
+            (input)="onTyping()"
+            />
+            <button
+              class="send-button"
+              [disabled]="!messageText.trim()"
+              (click)="onSendMessage()"
+              >
+              <i class="pi pi-send"></i>
+            </button>
+          </div>
+        </div>
+      }
