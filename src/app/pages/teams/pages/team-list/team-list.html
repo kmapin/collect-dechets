@@ -373,8 +373,9 @@
 @if (formOpen()) {
   <app-team-form
     [team]="editingTeam()"
-    [availableVehicles]="svc.availableVehicles()"
+    [availableVehicles]="svc.unassignedVehicles()"
     [availableZones]="svc.availableZones()"
+    [availableCollectors]="svc.collectors()"
     (save)="onFormSave($event)"
     (cancel)="formOpen.set(false)">
   </app-team-form>

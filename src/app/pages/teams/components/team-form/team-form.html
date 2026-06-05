@@ -118,25 +118,71 @@
         </div>
 
         <div formArrayName="members" class="tf-members-list">
-          @for (ctrl of membersArray.controls; track $index) {
-            <div class="tf-member-row" [formGroupName]="$index">
-              <div class="tmr-index">{{ $index + 1 }}</div>
+          @for (ctrl of membersArray.controls; track memberIdx; let memberIdx = $index) {
+            <div class="tf-member-row" [formGroupName]="memberIdx">
+              <div class="tmr-index">{{ memberIdx + 1 }}</div>
               <div class="tmr-fields">
-                <div class="tf-input-wrap">
-                  <mat-icon>person</mat-icon>
-                  <input type="text" formControlName="name" placeholder="Nom complet" />
+
+                <!-- Collector picker -->
+                <div class="tf-collector-pick-wrap" (click)="$event.stopPropagation()">
+                  <button type="button"
+                          class="tf-collector-pick"
+                          [class.has-value]="ctrl.get('name')?.value"
+                          (click)="toggleDropdown(memberIdx, $event)">
+                    <mat-icon>person_search</mat-icon>
+                    @if (ctrl.get('name')?.value) {
+                      <span class="tcp-name">{{ ctrl.get('name')?.value }}</span>
+                      @if (ctrl.get('phone')?.value) {
+                        <span class="tcp-phone">{{ ctrl.get('phone')?.value }}</span>
+                      }
+                    } @else {
+                      <span class="tcp-placeholder">Choisir un collecteur…</span>
+                    }
+                    <mat-icon class="tcp-chevron" [class.open]="openDropdownIdx === memberIdx">expand_more</mat-icon>
+                  </button>
+
+                  @if (openDropdownIdx === memberIdx) {
+                    <div class="tf-collector-dropdown">
+                      <div class="tcd-search tf-input-wrap">
+                        <mat-icon>search</mat-icon>
+                        <input type="text"
+                               [value]="memberSearches[memberIdx]"
+                               (input)="memberSearches[memberIdx] = $any($event.target).value"
+                               placeholder="Rechercher un collecteur…"
+                               autofocus />
+                      </div>
+                      <div class="tcd-list">
+                        @for (c of filteredCollectors(memberIdx); track c._id) {
+                          <button type="button"
+                                  class="tcd-item"
+                                  [class.selected]="ctrl.get('_id')?.value === c._id"
+                                  (click)="selectCollector(memberIdx, c)">
+                            <div class="tcd-avatar">{{ c.firstName[0] }}{{ c.lastName[0] }}</div>
+                            <div class="tcd-info">
+                              <span class="tcd-name">{{ c.firstName }} {{ c.lastName }}</span>
+                              @if (c.phone) { <span class="tcd-sub">{{ c.phone }}</span> }
+                            </div>
+                            @if (ctrl.get('_id')?.value === c._id) {
+                              <mat-icon class="tcd-check">check_circle</mat-icon>
+                            }
+                          </button>
+                        }
+                        @if (filteredCollectors(memberIdx).length === 0) {
+                          <p class="tcd-empty">Aucun collecteur trouvé</p>
+                        }
+                      </div>
+                    </div>
+                  }
                 </div>
-                <div class="tf-input-wrap">
-                  <mat-icon>phone</mat-icon>
-                  <input type="tel" formControlName="phone" placeholder="+226 70 …" />
-                </div>
+
+                <!-- Role select -->
                 <select formControlName="role" class="tf-select">
                   @for (r of roles; track r.value) {
                     <option [value]="r.value">{{ r.label }}</option>
                   }
                 </select>
               </div>
-              <button type="button" class="tmr-remove" (click)="removeMember($index)">
+              <button type="button" class="tmr-remove" (click)="removeMember(memberIdx)">
                 <mat-icon>delete_outline</mat-icon>
               </button>
             </div>

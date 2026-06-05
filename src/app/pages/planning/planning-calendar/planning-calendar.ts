@@ -21,7 +21,7 @@ import { Planning } from '../models/planning.model';
 // ── Constants ─────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
   brouillon: '#94a3b8',
-  publie:    '#3b82f6',
+  planifie:  '#3b82f6',
   en_cours:  '#f59e0b',
   termine:   '#16a34a',
   annule:    '#ef4444',
@@ -33,7 +33,7 @@ const TYPE_COLORS: Record<string, string> = {
   secteur:    '#f59e0b',
 };
 const STATUS_LABELS: Record<string, string> = {
-  brouillon: 'Brouillon', publie: 'Publié', en_cours: 'En cours',
+  brouillon: 'Brouillon', planifie: 'Planifié', en_cours: 'En cours',
   termine: 'Terminé', annule: 'Annulé',
 };
 const TYPE_LABELS: Record<string, string> = {
@@ -73,7 +73,7 @@ export class PlanningCalendarComponent implements OnInit {
   currentView   = signal<string>('dayGridMonth');
 
   // ── Static filter options ─────────────────────────────────────
-  readonly statuses = ['brouillon', 'publie', 'en_cours', 'termine', 'annule'];
+  readonly statuses = ['brouillon', 'planifie', 'en_cours', 'termine', 'annule'];
   readonly types    = ['individuel', 'groupe', 'zone', 'secteur'];
   readonly teams    = ['Équipe Alpha', 'Équipe Bravo', 'Équipe Charlie', 'Équipe Delta', 'Équipe Echo'];
 
@@ -114,7 +114,7 @@ export class PlanningCalendarComponent implements OnInit {
       total:     month.length,
       termine:   month.filter(e => (e.extendedProps as any).status === 'termine').length,
       en_cours:  month.filter(e => (e.extendedProps as any).status === 'en_cours').length,
-      publie:    month.filter(e => (e.extendedProps as any).status === 'publie').length,
+      planifie:  month.filter(e => (e.extendedProps as any).status === 'planifie').length,
       annule:    month.filter(e => (e.extendedProps as any).status === 'annule').length,
     };
   });
@@ -295,28 +295,29 @@ export class PlanningCalendarComponent implements OnInit {
     };
     const now = new Date().toISOString();
     const base = {
-      id: 'x', libelle: '', status: 'publie' as any, type: 'zone' as any,
+      id: 'x', libelle: '', status: 'planifie' as const, type: 'zone' as const,
       date: '', startTime: '08:00', endTime: '12:00',
-      frequency: 'unique' as any, teams: [], wasteTypes: [],
+      frequency: 'unique' as const, teams: [], wasteTypes: [],
+      equipeIds: [] as string[], typeDechets: [] as any[],
       clientsCount: 50, zone: 'Ouagadougou',
       reference: 'EX-REF', createdAt: now, updatedAt: now,
     };
     return [
-      { ...base, id: 'EX1', libelle: 'Baskuy – Secteur 1',    status: 'publie',   type: 'zone',       date: d(0),  startTime: '07:00', endTime: '11:00', teams: ['Équipe Alpha'],  wasteTypes: ['Ménagers'], clientsCount: 45 },
-      { ...base, id: 'EX2', libelle: 'Bogodogo – Secteur 4',  status: 'en_cours', type: 'zone',       date: d(0),  startTime: '08:30', endTime: '13:00', teams: ['Équipe Bravo'],  wasteTypes: ['Recyclables'], clientsCount: 80 },
-      { ...base, id: 'EX3', libelle: 'Diabré Alain',          status: 'termine',  type: 'individuel', date: d(-1), startTime: '09:00', endTime: '09:30', teams: ['Équipe Alpha'],  wasteTypes: ['Ménagers'], clientsCount: 1 },
-      { ...base, id: 'EX4', libelle: 'Groupe Résidentiel A',  status: 'publie',   type: 'groupe',     date: d(1),  startTime: '07:30', endTime: '11:00', teams: ['Équipe Charlie'],wasteTypes: ['Ménagers', 'Verts'], clientsCount: 12 },
-      { ...base, id: 'EX5', libelle: 'Zone Boulmiougou',      status: 'brouillon',type: 'zone',       date: d(2),  startTime: '06:00', endTime: '10:30', teams: ['Équipe Echo'],   wasteTypes: ['Encombrants'], clientsCount: 60 },
-      { ...base, id: 'EX6', libelle: 'Secteur 7',             status: 'annule',   type: 'secteur',    date: d(2),  startTime: '13:00', endTime: '17:00', teams: ['Équipe Delta'],  wasteTypes: ['Spéciaux'], clientsCount: 120 },
-      { ...base, id: 'EX7', libelle: 'Zone Sig-Noghin',       status: 'publie',   type: 'zone',       date: d(3),  startTime: '07:00', endTime: '12:00', teams: ['Équipe Alpha', 'Équipe Bravo'], wasteTypes: ['Ménagers'], clientsCount: 95 },
-      { ...base, id: 'EX8', libelle: 'Ouédraogo Marie',       status: 'publie',   type: 'individuel', date: d(3),  startTime: '10:00', endTime: '10:30', teams: ['Équipe Bravo'],  wasteTypes: ['Recyclables'], clientsCount: 1 },
-      { ...base, id: 'EX9', libelle: 'Nongremassom Centre',   status: 'en_cours', type: 'zone',       date: d(4),  startTime: '06:30', endTime: '11:00', teams: ['Équipe Charlie'],wasteTypes: ['Ménagers'], clientsCount: 70 },
-      { ...base, id: 'EX10',libelle: 'Groupe Tampouy',        status: 'publie',   type: 'groupe',     date: d(5),  startTime: '08:00', endTime: '11:30', teams: ['Équipe Echo'],   wasteTypes: ['Verts', 'Ménagers'], clientsCount: 18 },
-      { ...base, id: 'EX11',libelle: 'Baskuy – Secteur 2',   status: 'publie',   type: 'zone',       date: d(7),  startTime: '07:00', endTime: '12:00', teams: ['Équipe Alpha'],  wasteTypes: ['Ménagers'], clientsCount: 55 },
-      { ...base, id: 'EX12',libelle: 'Zone Konsa (Bobo)',     status: 'publie',   type: 'zone',       date: d(8),  startTime: '06:00', endTime: '13:00', teams: ['Équipe Bravo', 'Équipe Charlie'], wasteTypes: ['Ménagers', 'Encombrants'], clientsCount: 110 },
-      { ...base, id: 'EX13',libelle: 'Secteur 14',            status: 'termine',  type: 'secteur',    date: d(-3), startTime: '08:00', endTime: '14:00', teams: ['Équipe Delta'],  wasteTypes: ['Recyclables'], clientsCount: 130 },
-      { ...base, id: 'EX14',libelle: 'Compaoré Aïcha',        status: 'termine',  type: 'individuel', date: d(-4), startTime: '09:30', endTime: '10:00', teams: ['Équipe Alpha'],  wasteTypes: ['Ménagers'], clientsCount: 1 },
-      { ...base, id: 'EX15',libelle: 'Boulmiougou – S12',     status: 'en_cours', type: 'zone',       date: d(-2), startTime: '07:00', endTime: '12:00', teams: ['Équipe Echo'],   wasteTypes: ['Ménagers', 'Verts'], clientsCount: 75 },
+      { ...base, id: 'EX1',  libelle: 'Baskuy – Secteur 1',    status: 'planifie'  as const, type: 'zone'       as const, date: d(0),  startTime: '07:00', endTime: '11:00', teams: ['Équipe Alpha'],  wasteTypes: ['Ménagers'],               clientsCount: 45 },
+      { ...base, id: 'EX2',  libelle: 'Bogodogo – Secteur 4',  status: 'en_cours'  as const, type: 'zone'       as const, date: d(0),  startTime: '08:30', endTime: '13:00', teams: ['Équipe Bravo'],  wasteTypes: ['Recyclables'],             clientsCount: 80 },
+      { ...base, id: 'EX3',  libelle: 'Diabré Alain',          status: 'termine'   as const, type: 'individuel' as const, date: d(-1), startTime: '09:00', endTime: '09:30', teams: ['Équipe Alpha'],  wasteTypes: ['Ménagers'],               clientsCount: 1 },
+      { ...base, id: 'EX4',  libelle: 'Groupe Résidentiel A',  status: 'planifie'  as const, type: 'groupe'     as const, date: d(1),  startTime: '07:30', endTime: '11:00', teams: ['Équipe Charlie'],wasteTypes: ['Ménagers', 'Verts'],       clientsCount: 12 },
+      { ...base, id: 'EX5',  libelle: 'Zone Boulmiougou',      status: 'brouillon' as const, type: 'zone'       as const, date: d(2),  startTime: '06:00', endTime: '10:30', teams: ['Équipe Echo'],   wasteTypes: ['Encombrants'],             clientsCount: 60 },
+      { ...base, id: 'EX6',  libelle: 'Secteur 7',             status: 'annule'    as const, type: 'secteur'    as const, date: d(2),  startTime: '13:00', endTime: '17:00', teams: ['Équipe Delta'],  wasteTypes: ['Spéciaux'],               clientsCount: 120 },
+      { ...base, id: 'EX7',  libelle: 'Zone Sig-Noghin',       status: 'planifie'  as const, type: 'zone'       as const, date: d(3),  startTime: '07:00', endTime: '12:00', teams: ['Équipe Alpha', 'Équipe Bravo'], wasteTypes: ['Ménagers'], clientsCount: 95 },
+      { ...base, id: 'EX8',  libelle: 'Ouédraogo Marie',       status: 'planifie'  as const, type: 'individuel' as const, date: d(3),  startTime: '10:00', endTime: '10:30', teams: ['Équipe Bravo'],  wasteTypes: ['Recyclables'],             clientsCount: 1 },
+      { ...base, id: 'EX9',  libelle: 'Nongremassom Centre',   status: 'en_cours'  as const, type: 'zone'       as const, date: d(4),  startTime: '06:30', endTime: '11:00', teams: ['Équipe Charlie'],wasteTypes: ['Ménagers'],               clientsCount: 70 },
+      { ...base, id: 'EX10', libelle: 'Groupe Tampouy',        status: 'planifie'  as const, type: 'groupe'     as const, date: d(5),  startTime: '08:00', endTime: '11:30', teams: ['Équipe Echo'],   wasteTypes: ['Verts', 'Ménagers'],       clientsCount: 18 },
+      { ...base, id: 'EX11', libelle: 'Baskuy – Secteur 2',   status: 'planifie'  as const, type: 'zone'       as const, date: d(7),  startTime: '07:00', endTime: '12:00', teams: ['Équipe Alpha'],  wasteTypes: ['Ménagers'],               clientsCount: 55 },
+      { ...base, id: 'EX12', libelle: 'Zone Konsa (Bobo)',     status: 'planifie'  as const, type: 'zone'       as const, date: d(8),  startTime: '06:00', endTime: '13:00', teams: ['Équipe Bravo', 'Équipe Charlie'], wasteTypes: ['Ménagers', 'Encombrants'], clientsCount: 110 },
+      { ...base, id: 'EX13', libelle: 'Secteur 14',            status: 'termine'   as const, type: 'secteur'    as const, date: d(-3), startTime: '08:00', endTime: '14:00', teams: ['Équipe Delta'],  wasteTypes: ['Recyclables'],             clientsCount: 130 },
+      { ...base, id: 'EX14', libelle: 'Compaoré Aïcha',        status: 'termine'   as const, type: 'individuel' as const, date: d(-4), startTime: '09:30', endTime: '10:00', teams: ['Équipe Alpha'],  wasteTypes: ['Ménagers'],               clientsCount: 1 },
+      { ...base, id: 'EX15', libelle: 'Boulmiougou – S12',     status: 'en_cours'  as const, type: 'zone'       as const, date: d(-2), startTime: '07:00', endTime: '12:00', teams: ['Équipe Echo'],   wasteTypes: ['Ménagers', 'Verts'],       clientsCount: 75 },
     ];
   }
 }

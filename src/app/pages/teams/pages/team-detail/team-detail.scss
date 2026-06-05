@@ -156,6 +156,21 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
 // ── Tab body ─────────────────────────────────────────────────
 .td-tab-body { padding:24px; background:#f8fafc; flex:1; }
 
+// ── Members tab header ────────────────────────────────────────
+.members-tab-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px;
+}
+.mth-count { font-size:13px; color:#64748b; font-weight:500; }
+.mth-manage-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:10px;
+  background:#0f172a; color:#fff; font-size:13px; font-weight:600;
+  text-decoration:none; transition:background .18s;
+  mat-icon { font-size:17px; width:17px; height:17px; }
+  &:hover { background:#1e293b; }
+}
+
 // ── Members grid ──────────────────────────────────────────────
 .members-grid {
   display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;
@@ -165,6 +180,17 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   border:1px solid #e2e8f0; box-shadow:$shadow;
   padding:16px; display:flex; align-items:flex-start; gap:12px;
   position:relative;
+  transition:box-shadow .18s;
+  &:hover { box-shadow:0 4px 24px rgba(0,0,0,.1); }
+}
+.mc-action-btn {
+  position:absolute; bottom:12px; right:12px;
+  width:30px; height:30px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  background:#f8fafc; border:1px solid #e2e8f0; color:#94a3b8;
+  text-decoration:none; transition:all .15s;
+  mat-icon { font-size:16px; width:16px; height:16px; }
+  &:hover { background:#eff6ff; border-color:#3b82f6; color:#3b82f6; }
 }
 .mc-avatar {
   width:44px; height:44px; border-radius:50%;
@@ -299,8 +325,13 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   padding:60px 20px; color:#94a3b8; text-align:center;
   mat-icon { font-size:48px; width:48px; height:48px; }
   p { font-size:14px; margin:0; }
-  button { padding:8px 16px; border-radius:8px; background:#f1f5f9; color:#374151;
-    border:1px solid #e2e8f0; font-size:13px; cursor:pointer; &:hover { background:#e2e8f0; } }
+  button, a.tab-empty-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 16px; border-radius:8px; background:#f1f5f9; color:#374151;
+    border:1px solid #e2e8f0; font-size:13px; cursor:pointer; text-decoration:none;
+    mat-icon { font-size:16px; }
+    &:hover { background:#e2e8f0; }
+  }
 }
 
 // ── Delete dialog ────────────────────────────────────────────

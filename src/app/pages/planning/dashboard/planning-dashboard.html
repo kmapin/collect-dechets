@@ -1,3 +1,6 @@
+<p-toast position="top-right" />
+<p-confirmDialog />
+
 <div class="pd-container">
 
   <!-- ========================================================
@@ -262,17 +265,73 @@
               </td>
               <td>
                 <div class="actions-cell">
-                  <button class="action-btn view" pTooltip="Voir" tooltipPosition="top"
+                  <!-- Voir -->
+                  <button class="action-btn view" pTooltip="Voir le détail" tooltipPosition="top"
                           [routerLink]="['/planning/detail', p.id]">
                     <mat-icon>visibility</mat-icon>
                   </button>
-                  <button class="action-btn edit" pTooltip="Modifier" tooltipPosition="top">
-                    <mat-icon>edit</mat-icon>
-                  </button>
+
+                  <!-- Modifier (brouillon uniquement) -->
                   @if (p.status === 'brouillon') {
-                    <button class="action-btn publish" pTooltip="Publier" tooltipPosition="top">
-                      <mat-icon>publish</mat-icon>
+                    <button class="action-btn edit" pTooltip="Modifier" tooltipPosition="top"
+                            (click)="navigateToEdit(p)">
+                      <mat-icon>edit</mat-icon>
                     </button>
+                  }
+
+                  <!-- Publier : brouillon → planifie -->
+                  @if (p.status === 'brouillon') {
+                    <button class="action-btn publish"
+                            pTooltip="Publier" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="publishPlanning(p)">
+                      <mat-icon>send</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Démarrer : planifie → en_cours -->
+                  @if (p.status === 'planifie') {
+                    <button class="action-btn start"
+                            pTooltip="Démarrer" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="startPlanning(p)">
+                      <mat-icon>play_arrow</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Terminer : en_cours → termine -->
+                  @if (p.status === 'en_cours') {
+                    <button class="action-btn complete"
+                            pTooltip="Terminer" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="completePlanning(p)">
+                      <mat-icon>check_circle</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Annuler : brouillon | planifie | en_cours -->
+                  @if (p.status !== 'termine' && p.status !== 'annule') {
+                    <button class="action-btn cancel"
+                            pTooltip="Annuler" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="cancelPlanning(p)">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Supprimer : brouillon ou annulé -->
+                  @if (p.status === 'brouillon' || p.status === 'annule') {
+                    <button class="action-btn delete"
+                            pTooltip="Supprimer" tooltipPosition="top"
+                            [disabled]="actionLoading() === p.id"
+                            (click)="deletePlanning(p)">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  }
+
+                  <!-- Spinner pendant l'action -->
+                  @if (actionLoading() === p.id) {
+                    <mat-icon class="action-spin">sync</mat-icon>
                   }
                 </div>
               </td>
