@@ -38,15 +38,16 @@ export class Admin {
   }
   getAllUsers(fileterParams: FilterParams): Observable<any> {
     let requestParams = new HttpParams()
-    .append('limit', 25)
-    .append('role', fileterParams.role ?? '')
-    .append('term', fileterParams.term ?? '')
-    .append('neighborhood', fileterParams.neighborhood ?? '');
+      .append('page',  fileterParams.page  ?? 1)
+      .append('limit', fileterParams.limit ?? 10)
+      .append('role',  fileterParams.role  ?? '')
+      .append('term',  fileterParams.term  ?? '')
+      .append('neighborhood', fileterParams.neighborhood ?? '');
 
     console.log('API > getAllUsers params:', requestParams);
     return this.http.get(`${environment.apiUrl}/users`, { params: requestParams }).pipe(
       map((response: any) => {
-        console.log('API > getAllClients:', response);
+        console.log('API > getAllUsers response:', response);
         return response;
       })
     );
@@ -143,6 +144,15 @@ export class Admin {
   getUserById(id: string): Observable<any> {
     const url = `${environment.apiUrl}/user/${id}`;
     return this.http.get<any>(url);
+  }
+
+  toggleUserStatus(userId: string, status: 'active' | 'inactive'): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/user/${userId}`, { status }).pipe(
+      map((response: any) => {
+        console.log('API > toggleUserStatus:', response);
+        return response;
+      })
+    );
   }
 
 

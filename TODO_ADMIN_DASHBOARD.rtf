@@ -1,0 +1,192 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1036
+{\fonttbl{\f0\froman\fcharset0 Calibri;}{\f1\froman\fcharset0 Calibri Light;}{\f2\fmodern\fcharset0 Courier New;}}
+{\colortbl ;
+\red26\green60\blue94;
+\red255\green255\blue255;
+\red220\green235\blue245;
+\red22\green101\blue52;
+\red153\green27\blue27;
+\red120\green53\blue15;
+\red30\green64\blue175;
+\red107\green114\blue128;
+\red17\green24\blue39;
+\red239\green68\blue68;
+\red245\green158\blue11;
+\red5\green150\blue105;
+\red243\green244\blue246;
+\red91\green33\blue182;
+\red254\green243\blue199;
+\red220\green252\blue231;
+\red254\green226\blue226;
+\red219\green234\blue254;}
+\paperw11906\paperh16838\margl1440\margr1440\margt1440\margb1440
+
+{\pard\sb0\sa0\f1\fs46\b\cf1\qc TODO LIST\par}
+{\pard\sb0\sa120\f1\fs28\cf1\qc Dashboard Administrateur \endash{} Collect D\'e9chets\par}
+{\pard\sb0\sa400\f0\fs20\cf8\qc Sahelys \endash{} G\'e9n\'e9r\'e9 le 05 Juin 2026 \endash{} Source : Audit Admin Dashboard v1.0\par}
+
+{\pard\sb200\sa100\f0\fs18\cf8
+{\b L\'e9gende :} \tab
+{\b\cf5 靄? A FAIRE} \tab
+{\b\cf6 靄? PARTIEL} \tab
+{\b\cf14 靄? COMMENT\'c9} \tab
+{\b\cf4 靅? FAIT} \tab
+{\b\cf7 覇? PERSPECTIVE}
+\par}
+
+{\pard\sb0\sa0\f0\fs18\cf8 ________________________________________________________________________________\par}
+
+{\pard\sb360\sa100\b\f1\fs30\cf1 SECTION 1 \endash{} T\'c2CHES IMM\'c9DIATES (Sprint 1 \endash{} 2 semaines)\par}
+
+\trowd\trgaph80\trleft-80\trkeep
+\clcbpat1\cellx500\clcbpat1\cellx1100\clcbpat1\cellx4000\clcbpat1\cellx6500\clcbpat1\cellx8500\clcbpat1\cellx9260
+\pard\intbl\f0\fs18\b\cf2 #\cell \'c9tat\cell T\'e2che\cell Description\cell Fichier concern\'e9\cell Priorit\'e9\b0\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 1\cell {\cf14\b COMMENT\'c9}\cell Activer onglet Municipalit\'e9s\cell L\'92onglet existe en HTML. Retirer le commentaire dans {\f2\fs16 tabs[]} du TS. La vue est cod\'e9e et fonctionnelle.\cell {\f2\fs16 admin-dashboard.ts} L.297\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 2\cell {\cf14\b COMMENT\'c9}\cell Activer onglet Clients\cell HTML complet avec cartes Material. Retirer le commentaire dans {\f2\fs16 tabs[]}. Filtre abonnement \'e0 finaliser.\cell {\f2\fs16 admin-dashboard.ts} L.303\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 3\cell {\cf6\b PARTIEL}\cell Lier alertes r\'e9centes (Vue d\'92ensemble)\cell La section "Alertes R\'e9centes" de l\'92onglet Overview est vide. Alimenter {\f2\fs16 incidents[]} lors du chargement de la page.\cell {\f2\fs16 admin-dashboard.ts ngOnInit}\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 4\cell {\cf6\b PARTIEL}\cell Calculer le score de conformit\'e9 agences\cell {\f2\fs16 complianceScore} est toujours = 0. D\'e9finir les crit\'e8res (taux collecte, incidents, avis) et le calculer via API ou formule frontend.\cell {\f2\fs16 admin-dashboard.ts loadAgencyAudits()}\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 5\cell {\cf6\b PARTIEL}\cell Alimenter completionRate & rating agences\cell Ces champs sont affich\'e9s mais \'e9gaux \'e0 0. Connecter aux donn\'e9es r\'e9elles de l\'92API (nb collectes effectu\'e9es / pr\'e9vues).\cell {\f2\fs16 admin-dashboard.ts} AgencyAudit\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 6\cell {\cf6\b PARTIEL}\cell Activer le drawer Modifier utilisateur\cell Le drawer Fiche Utilisateur affiche les infos. Ajouter un mode \'e9dition avec formulaire (nom, t\'e9l, adresse) et appel {\f2\fs16 PATCH /user/:id}.\cell {\f2\fs16 admin-dashboard.html} L.1539+\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 7\cell {\cf14\b COMMENT\'c9}\cell R\'e9activer bouton "Rapport Global"\cell M\'e9thode {\f2\fs16 generateGlobalReport()} exist. G\'e9n\'e9rer un r\'e9sum\'e9 PDF ou Excel des agences, stats et incidents.\cell {\f2\fs16 admin-dashboard.html} L.20\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 8\cell {\cf6\b PARTIEL}\cell R\'e9partition d\'e9chets : connecter API\cell Section affich\'e9e avec des donn\'e9es hardcod\'e9es. Cr\'e9er un endpoint API et remplacer les mock data dans {\f2\fs16 loadWasteStatistics()}.\cell {\f2\fs16 admin-dashboard.ts} L.513\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+{\pard\sb360\sa100\b\f1\fs30\cf1 SECTION 2 \endash{} T\'c2CHES IMPORTANTES (Sprint 2-3 \endash{} 1 mois)\par}
+
+\trowd\trgaph80\trleft-80\trkeep
+\clcbpat1\cellx500\clcbpat1\cellx1100\clcbpat1\cellx4000\clcbpat1\cellx6500\clcbpat1\cellx8500\clcbpat1\cellx9260
+\pard\intbl\f0\fs18\b\cf2 #\cell \'c9tat\cell T\'e2che\cell Description\cell Fichier concern\'e9\cell Priorit\'e9\b0\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 9\cell {\cf5\b A FAIRE}\cell Graphique secteurs \endash{} Types de d\'e9chets\cell Remplacer le placeholder "Donut chart" dans l\'92onglet Statistiques par un vrai graphique Chart.js ou ngx-charts avec les donn\'e9es de l\'92API.\cell {\f2\fs16 admin-dashboard.html} L.1155\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 10\cell {\cf5\b A FAIRE}\cell Graphique lin\'e9aire \endash{} \'c9volution collectes\cell Courbe de l\'92\'e9volution des collectes sur 7j / 30j / 12 mois. Placeholder actuellement \`show\_chart\`.\cell {\f2\fs16 admin-dashboard.html} L.1200\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 11\cell {\cf5\b A FAIRE}\cell Graphique barres \endash{} Performance agences\cell Remplacer les barres CSS statiques par un graphique dynamique et comparatif des agences.\cell {\f2\fs16 admin-dashboard.html} L.1178\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 12\cell {\cf14\b COMMENT\'c9}\cell Activer onglet Communications\cell HTML de l\'92onglet cod\'e9. Retirer le commentaire dans {\f2\fs16 tabs[]}. Connecter l\'92envoi de communications via API.\cell {\f2\fs16 admin-dashboard.ts} L.314\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 13\cell {\cf5\b A FAIRE}\cell Envoi de directives/alertes aux agences\cell Formulaire : type (directive/alerte/notif), priorit\'e9, titre, message, destinataires. Appel API {\f2\fs16 POST /communications}.\cell {\f2\fs16 admin.ts service}\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 14\cell {\cf14\b COMMENT\'c9}\cell Bouton "Auditer" une agence\cell Activer le bouton comment\'e9. Cr\'e9er une grille d\'92audit avec crit\'e8res (ponctualit\'e9, \'e9quipements, conformit\'e9) et enregistrer le score.\cell {\f2\fs16 admin-dashboard.html} L.636\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 15\cell {\cf5\b A FAIRE}\cell Pagination c\'f4t\'e9 serveur \endash{} Utilisateurs\cell Toute la liste est charg\'e9e en une fois. Ajouter {\f2\fs16 page} et {\f2\fs16 limit} aux params de {\f2\fs16 getAllUsers()} et afficher une pagination.\cell {\f2\fs16 admin.ts} + HTML\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 16\cell {\cf5\b A FAIRE}\cell Pagination c\'f4t\'e9 serveur \endash{} Agences\cell Idem pour la liste des agences, surtout utile quand le parc grandit.\cell {\f2\fs16 admin-dashboard.ts} loadAgencyAudits\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 17\cell {\cf14\b COMMENT\'c9}\cell Activer filtre de p\'e9riode (Statistiques)\cell S\'e9lecteur "Aujourd\'92hui / Semaine / Mois" est d\'e9sactiv\'e9 ({\f2\fs16 isDisabled=true}). Connecter API stats avec param `period`.\cell {\f2\fs16 admin-dashboard.html} L.1126\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 18\cell {\cf5\b A FAIRE}\cell R\'e9initialiser mot de passe utilisateur\cell Bouton dans le drawer Fiche Utilisateur 薔{} appel API {\f2\fs16 POST /user/:id/reset-password}. Envoie un email de r\'e9initialisation.\cell {\f2\fs16 admin.ts service} + drawer HTML\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 19\cell {\cf5\b A FAIRE}\cell Activer filtres conformit\'e9 agences\cell Filtres "Excellent / Bon / Faible" comment\'e9s. Les activer une fois que {\f2\fs16 complianceScore} est calcul\'e9 (d\'e9pend de la t\'e2che #4).\cell {\f2\fs16 admin-dashboard.html} L.528\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 20\cell {\cf14\b COMMENT\'c9}\cell R\'e9activer KPI Revenus totaux\cell Card "Revenus totaux" comment\'e9e. N\'e9cessite un endpoint API financier et la gestion des transactions.\cell {\f2\fs16 admin-dashboard.html} L.148\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 21\cell {\cf14\b COMMENT\'c9}\cell R\'e9activer KPI Taux de conformit\'e9\cell Card "Conformit\'e9" comment\'e9e. D\'e9pend du calcul du score de conformit\'e9 (t\'e2che #4).\cell {\f2\fs16 admin-dashboard.html} L.161\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 22\cell {\cf5\b A FAIRE}\cell Historique des audits par agence\cell Stocker et afficher l\'92\'e9volution du score de conformit\'e9 d\'92une agence dans le temps avec une courbe.\cell Nouveau composant\cell {\b\cf8 BASSE}\cf9\cell\row
+
+{\pard\sb360\sa100\b\f1\fs30\cf1 SECTION 3 \endash{} T\'c2CHES NORMALES (Sprint 4-6 \endash{} 3 mois)\par}
+
+\trowd\trgaph80\trleft-80\trkeep
+\clcbpat1\cellx500\clcbpat1\cellx1100\clcbpat1\cellx4000\clcbpat1\cellx6500\clcbpat1\cellx8500\clcbpat1\cellx9260
+\pard\intbl\f0\fs18\b\cf2 #\cell \'c9tat\cell T\'e2che\cell Description\cell Fichier concern\'e9\cell Priorit\'e9\b0\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 23\cell {\cf5\b A FAIRE}\cell Module Finances Admin\cell Dashboard financier consolid\'e9 : revenus totaux, revenus par agence/ville, abonnements actifs, paiements en retard. Aucun \'e9quivalent Admin n\'92existe.\cell Nouveau module\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 24\cell {\cf5\b A FAIRE}\cell Export PDF \endash{} Rapport global\cell G\'e9n\'e9rer un rapport PDF consolid\'e9 (agences, stats, incidents) depuis le bouton "Rapport Global". Utiliser {\f2\fs16 jsPDF} ou un service backend.\cell {\f2\fs16 admin-dashboard.ts} generateGlobalReport\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 25\cell {\cf5\b A FAIRE}\cell Export Excel/CSV \endash{} Listes\cell Bouton "Exporter" dans chaque onglet (agences, utilisateurs, incidents) pour t\'e9l\'e9charger les donn\'e9es. Utiliser {\f2\fs16 xlsx} ou {\f2\fs16 FileSaver}.\cell {\f2\fs16 admin-dashboard.html} onglet Stats\cell {\b\cf5 HAUTE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 26\cell {\cf5\b A FAIRE}\cell Carte g\'e9ographique interactive\cell Carte de Ouagadougou avec zones de couverture des agences, densit\'e9 clients, flux de collecte. Int\'e9grer Leaflet.js ou Google Maps.\cell Nouveau composant carte\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 27\cell {\cf5\b A FAIRE}\cell Messagerie directe Admin 薔{} Agence\cell Interface de chat ou messagerie interne entre l\'92admin et les responsables d\'92agences (comme l\'92onglet Messages du dashboard Agence).\cell Nouveau module\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 28\cell {\cf5\b A FAIRE}\cell Alertes SMS/Email automatiques\cell Envoi automatique d\'92alertes aux agences en cas d\'92incident critique (gravit\'e9 High/Critical). Int\'e9grer un service SMS (Twilio, Orange API BF).\cell {\f2\fs16 admin.ts service}\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 29\cell {\cf5\b A FAIRE}\cell Sanctions formelles agences\cell Syst\'e8me d\'92avertissements (niveaux 1/2/3) et de suspension automatique des agences d\'e9passant un seuil d\'92incidents.\cell Nouveau module\cell {\b\cf11 MOYENNE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 30\cell {\cf5\b A FAIRE}\cell Historique d\'92activit\'e9 utilisateur\cell Log des actions d\'92un utilisateur (connexions, collectes effectu\'e9es, modifications de profil). Afficher dans le drawer Fiche Utilisateur.\cell {\f2\fs16 admin.ts} + drawer HTML\cell {\b\cf8 BASSE}\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 31\cell {\cf5\b A FAIRE}\cell Chargement diff\'e9r\'e9 des onglets\cell Actuellement tous les onglets chargent leurs donn\'e9es au {\f2\fs16 ngOnInit()}. Ne charger que lors du premier clic sur l\'92onglet.\cell {\f2\fs16 admin-dashboard.ts} ngOnInit\cell {\b\cf8 BASSE}\cf9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 32\cell {\cf5\b A FAIRE}\cell Suivi des paiements en retard\cell Section d\'e9di\'e9e : clients avec abonnements impay\'e9s ou expir\'e9s, tri par anciennet\'e9 de retard, action de relance.\cell Nouveau composant Finance\cell {\b\cf8 BASSE}\cf9\cell\row
+
+{\pard\sb360\sa100\b\f1\fs30\cf1 SECTION 4 \endash{} PERSPECTIVES LONG TERME (6 mois+)\par}
+
+\trowd\trgaph80\trleft-80\trkeep
+\clcbpat1\cellx500\clcbpat1\cellx1100\clcbpat1\cellx4000\clcbpat1\cellx6500\clcbpat1\cellx8500\clcbpat1\cellx9260
+\pard\intbl\f0\fs18\b\cf2 #\cell \'c9tat\cell Fonctionnalit\'e9\cell Description\cell D\'e9pendances\cell Effort estim\'e9\b0\cf9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 33\cell {\cf7\b PERSP.}\cell Pr\'e9diction de la demande (ML)\cell Algorithme de Machine Learning pour anticiper les volumes de d\'e9chets par zone selon la saison, les jours et les \'e9v\'e9nements locaux.\cell Historique de donn\'e9es 6 mois+\cell \'c9lev\'e9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 34\cell {\cf7\b PERSP.}\cell Optimisation automatique des tourn\'e9es\cell Suggestion d\'92itin\'e9raires optimaux pour les collecteurs bas\'e9e sur GPS, densit\'e9 clients et trafic.\cell API cartographique, donn\'e9es GPS\cell \'c9lev\'e9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 35\cell {\cf7\b PERSP.}\cell D\'e9tection d\'92anomalies\cell Alerte automatique si une agence d\'e9vie de ses performances habituelles (chute du taux de collecte, pic d\'92incidents).\cell ML + historique stats\cell \'c9lev\'e9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 36\cell {\cf7\b PERSP.}\cell Scoring pr\'e9dictif r\'e9siliations\cell Identifier les clients \'e0 risque de r\'e9siliation avant qu\'92ils ne r\'e9silient pour d\'e9clencher une action pr\'e9ventive (offre, relance).\cell Historique abonnements\cell \'c9lev\'e9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 37\cell {\cf7\b PERSP.}\cell Application Mobile Admin (PWA)\cell App mobile PWA ou native pour consulter les KPIs, recevoir des notifications push et valider des actions en d\'e9placement.\cell API stable + auth mobile\cell Moyen\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 38\cell {\cf7\b PERSP.}\cell Extension multi-ville\cell Support de Bobo-Dioulasso, Koudougou, Banfora. Vue par r\'e9gion avec agr\'e9gation des statistiques et gestion de r\'e9glementations locales.\cell Infrastructure multi-tenant\cell \'c9lev\'e9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 39\cell {\cf7\b PERSP.}\cell Int\'e9gration API Mairies\cell Connexion avec les syst\'e8mes informatiques des mairies pour automatiser les rapports r\'e9glementaires et la d\'e9livrance de licences.\cell API mairie disponible\cell \'c9lev\'e9\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 40\cell {\cf7\b PERSP.}\cell Int\'e9gration Traceur GPS IoT\cell Suivi en temps r\'e9el des v\'e9hicules de collecte sur la carte admin via des traceurs GPS IoT install\'e9s sur les engins.\cell Mat\'e9riel IoT + API GPS\cell \'c9lev\'e9\cell\row
+
+\clcbpat13\cellx500\clcbpat13\cellx1100\clcbpat13\cellx4000\clcbpat13\cellx6500\clcbpat13\cellx8500\clcbpat13\cellx9260
+\pard\intbl\f0\fs18 41\cell {\cf7\b PERSP.}\cell Module Qualit\'e9 ISO 14001\cell Indicateurs de performance environnementale : taux recyclage vs enfouissement, documentation de conformit\'e9 exportable pour audits tiers.\cell Partenaires recyclage\cell Moyen\cell\row
+
+\cellx500\cellx1100\cellx4000\cellx6500\cellx8500\cellx9260
+\pard\intbl 42\cell {\cf7\b PERSP.}\cell ERP Financier int\'e9gr\'e9\cell Tableaux de bord des transactions Mobile Money (Orange Money, Moov) int\'e9gr\'e9s \'e0 un ERP financier.\cell Partenaire paiement\cell \'c9lev\'e9\cell\row
+
+\pard\sb400\sa0\f0\fs18\cf8 ________________________________________________________________________________\par
+{\pard\sb80\sa80\f0\fs18\cf8\qc {\b R\'e9sum\'e9 :} 8 t\'e2ches imm\'e9diates \endash{} 14 t\'e2ches importantes \endash{} 10 t\'e2ches normales \endash{} 10 perspectives long terme \endash{} Total : {\b 42 items}\line
+Document g\'e9n\'e9r\'e9 le 05 Juin 2026 \endash{} Sahelys / Collect D\'e9chets \endash{} \'e0 mettre \'e0 jour \'e0 chaque sprint.\par}
+}

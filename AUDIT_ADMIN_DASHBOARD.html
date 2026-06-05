@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cahier de Charges – Dashboard Administrateur | Collect Déchets</title>
+<style>
+  body { font-family: 'Calibri', Arial, sans-serif; font-size: 11pt; color: #1a1a1a; margin: 60px auto; max-width: 900px; line-height: 1.6; }
+  h1 { font-size: 22pt; color: #1a3c5e; text-align: center; border-bottom: 3px solid #1a3c5e; padding-bottom: 10px; margin-bottom: 6px; }
+  h2 { font-size: 15pt; color: #1a3c5e; border-bottom: 2px solid #c8daea; padding-bottom: 4px; margin-top: 36px; }
+  h3 { font-size: 12pt; color: #2563a8; margin-top: 20px; }
+  h4 { font-size: 11pt; color: #374151; margin-top: 14px; font-weight: bold; }
+  .subtitle { text-align: center; color: #6b7280; font-size: 10pt; margin-bottom: 30px; }
+  .meta-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 10pt; }
+  .meta-table td { border: 1px solid #d1d5db; padding: 6px 10px; }
+  .meta-table td:first-child { background: #f3f4f6; font-weight: bold; width: 200px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 10pt; }
+  th { background: #1a3c5e; color: white; padding: 7px 10px; text-align: left; }
+  td { border: 1px solid #d1d5db; padding: 6px 10px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 9pt; font-weight: bold; }
+  .ok     { background: #d1fae5; color: #065f46; }
+  .nok    { background: #fee2e2; color: #991b1b; }
+  .partial{ background: #fef9c3; color: #78350f; }
+  .soon   { background: #dbeafe; color: #1e40af; }
+  .commented { background: #f3e8ff; color: #5b21b6; }
+  .section-box { background: #f8fafc; border-left: 4px solid #1a3c5e; padding: 12px 16px; margin: 16px 0; border-radius: 4px; }
+  .warning-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 12px 0; border-radius: 4px; font-size: 10pt; }
+  .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 10px 14px; margin: 12px 0; border-radius: 4px; font-size: 10pt; }
+  ul { margin: 6px 0 10px 20px; }
+  li { margin-bottom: 3px; }
+  p { margin: 6px 0; }
+  .page-break { page-break-before: always; }
+  .toc { background: #f3f4f6; border: 1px solid #d1d5db; padding: 16px 24px; border-radius: 6px; margin: 20px 0; }
+  .toc h3 { margin-top: 0; color: #1a3c5e; }
+  .toc ol { margin: 0; padding-left: 20px; }
+  .toc li { margin-bottom: 4px; font-size: 10pt; }
+  .priority-high { color: #dc2626; font-weight: bold; }
+  .priority-med  { color: #d97706; font-weight: bold; }
+  .priority-low  { color: #16a34a; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     COUVERTURE
+═══════════════════════════════════════════════════════ -->
+<h1>CAHIER DE CHARGES FONCTIONNEL</h1>
+<h1 style="font-size:16pt; border:none; padding:0; margin:4px 0;">Tableau de Bord Administrateur (Super Admin)</h1>
+<p class="subtitle">Projet : <strong>Collect Déchets</strong> – Plateforme de gestion de collecte de déchets | Ouagadougou, Burkina Faso<br>
+Société : <strong>Sahelys</strong> &nbsp;|&nbsp; Date de l'audit : <strong>02 Juin 2026</strong> &nbsp;|&nbsp; Version : <strong>1.0</strong></p>
+
+<table class="meta-table">
+  <tr><td>Projet</td><td>Collect Déchets – Application Angular (Frontend)</td></tr>
+  <tr><td>Module audité</td><td>Dashboard Super Administrateur (<code>admin-dashboard</code>)</td></tr>
+  <tr><td>Chemin source</td><td><code>src/app/pages/dashboards/admin-dashboard/</code></td></tr>
+  <tr><td>Framework</td><td>Angular 17+ (standalone components), PrimeNG, Angular Material</td></tr>
+  <tr><td>Backend</td><td>API REST via services : <code>Admin</code>, <code>AgencyService</code>, <code>ClientService</code></td></tr>
+  <tr><td>Auditeur</td><td>Claude Code (IA) – à valider par W. Paulin GUIGMA</td></tr>
+</table>
+
+<!-- TABLE DES MATIÈRES -->
+<div class="toc">
+  <h3>Table des Matières</h3>
+  <ol>
+    <li>Présentation générale du rôle Super Admin</li>
+    <li>Architecture du Dashboard</li>
+    <li>Fonctionnalités RÉALISÉES (connectées à l'API)</li>
+    <li>Fonctionnalités PARTIELLEMENT RÉALISÉES</li>
+    <li>Fonctionnalités DÉSACTIVÉES / COMMENTÉES</li>
+    <li>Fonctionnalités NON RÉALISÉES (à développer)</li>
+    <li>Perspectives &amp; Évolutions futures</li>
+    <li>Synthèse et indicateurs de progression</li>
+    <li>Recommandations prioritaires</li>
+  </ol>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     1. PRÉSENTATION GÉNÉRALE
+═══════════════════════════════════════════════════════ -->
+<h2>1. Présentation Générale du Rôle Super Admin</h2>
+
+<p>Le <strong>Super Administrateur</strong> est le rôle de plus haut niveau de la plateforme Collect Déchets. Il assure la supervision globale de l'ensemble de l'écosystème de gestion des déchets à Ouagadougou et dans d'autres villes du Burkina Faso.</p>
+
+<div class="section-box">
+  <strong>Responsabilités principales :</strong>
+  <ul>
+    <li>Supervision et audit de toutes les agences de collecte</li>
+    <li>Gestion des agents de mairie (municipalités)</li>
+    <li>Consultation et gestion de tous les utilisateurs (clients, collecteurs, managers)</li>
+    <li>Suivi des incidents et signalements à l'échelle nationale</li>
+    <li>Analyse des statistiques consolidées de la plateforme</li>
+    <li>Communication vers les agences et parties prenantes</li>
+    <li>Activation / désactivation des agences et comptes</li>
+  </ul>
+</div>
+
+<p><strong>Compte de test :</strong> <code>admin.waste@gmail.com</code> | Mot de passe : <code>Wise2024</code></p>
+
+<!-- ═══════════════════════════════════════════════════════
+     2. ARCHITECTURE
+═══════════════════════════════════════════════════════ -->
+<h2>2. Architecture du Dashboard Admin</h2>
+
+<h3>2.1 Onglets de navigation (état actuel)</h3>
+
+<table>
+  <tr>
+    <th>ID Onglet</th>
+    <th>Label affiché</th>
+    <th>Icône</th>
+    <th>État</th>
+  </tr>
+  <tr><td>overview</td><td>Vue d'ensemble</td><td>dashboard</td><td><span class="badge ok">ACTIF</span></td></tr>
+  <tr><td>agencies</td><td>Agences</td><td>business</td><td><span class="badge ok">ACTIF</span></td></tr>
+  <tr><td>all_users</td><td>Utilisateurs</td><td>person</td><td><span class="badge ok">ACTIF</span></td></tr>
+  <tr><td>statistics</td><td>Statistiques</td><td>analytics</td><td><span class="badge ok">ACTIF</span></td></tr>
+  <tr><td>incidents</td><td>Incidents</td><td>report_problem</td><td><span class="badge ok">ACTIF</span></td></tr>
+  <tr><td>municipalities</td><td>Municipalités</td><td>business</td><td><span class="badge commented">COMMENTÉ</span></td></tr>
+  <tr><td>clients</td><td>Clients</td><td>people</td><td><span class="badge commented">COMMENTÉ (HTML présent)</span></td></tr>
+  <tr><td>collectors</td><td>Collecteurs</td><td>local_shipping</td><td><span class="badge commented">COMMENTÉ (HTML présent)</span></td></tr>
+  <tr><td>communications</td><td>Communications</td><td>campaign</td><td><span class="badge commented">COMMENTÉ</span></td></tr>
+</table>
+
+<h3>2.2 KPIs de l'en-tête (Cards statistiques)</h3>
+
+<table>
+  <tr><th>Indicateur</th><th>Source de données</th><th>État</th></tr>
+  <tr><td>Agents de mairie</td><td>API : <code>adminService.getAllStatistics()</code></td><td><span class="badge ok">RÉEL</span></td></tr>
+  <tr><td>Agences actives / total</td><td>API : <code>adminService.getAllStatistics()</code></td><td><span class="badge ok">RÉEL</span></td></tr>
+  <tr><td>Collecteurs totaux</td><td>API : <code>adminService.getAllStatistics()</code></td><td><span class="badge ok">RÉEL</span></td></tr>
+  <tr><td>Clients totaux + % mensuel</td><td>API : <code>adminService.getAllStatistics()</code></td><td><span class="badge ok">RÉEL</span></td></tr>
+  <tr><td>Collectes du jour (réalisées/prévues)</td><td>API : <code>adminService.getAllStatistics()</code></td><td><span class="badge ok">RÉEL</span></td></tr>
+  <tr><td>Incidents non résolus</td><td>API : <code>adminService.getAllStatistics()</code></td><td><span class="badge ok">RÉEL</span></td></tr>
+  <tr><td>Revenus totaux</td><td>—</td><td><span class="badge commented">COMMENTÉ</span></td></tr>
+  <tr><td>Taux de conformité global</td><td>—</td><td><span class="badge commented">COMMENTÉ</span></td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════
+     3. FONCTIONNALITÉS RÉALISÉES
+═══════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>3. Fonctionnalités RÉALISÉES (connectées à l'API) ✅</h2>
+
+<h3>3.1 Chargement &amp; affichage des statistiques globales</h3>
+<div class="section-box">
+  <strong>Méthode :</strong> <code>showAdminStatistics()</code> → <code>adminService.getAllStatistics()</code><br>
+  <strong>Description :</strong> Au chargement de la page, l'admin voit en temps réel le nombre d'agences, clients, collecteurs, collectes du jour et incidents non résolus.<br>
+  <strong>Loader :</strong> Spinner de chargement pendant la récupération des données.
+</div>
+
+<h3>3.2 Audit des Agences (onglet Agences)</h3>
+<div class="section-box">
+  <strong>Méthode :</strong> <code>loadAgencyAudits(filterParams)</code> → <code>agencyService.getAllAgenciesFromApi()</code><br>
+  <strong>Données affichées par agence :</strong>
+  <ul>
+    <li>Nom de l'agence</li>
+    <li>Statut (active / inactive / deleted) avec badge coloré</li>
+    <li>Score de conformité (calculé côté frontend, actuellement = 0)</li>
+    <li>Nombre de clients</li>
+    <li>Nombre de collecteurs (employés)</li>
+    <li>Nombre de zones de couverture</li>
+    <li>Collectes du jour (actuellement = 0, non encore calculé)</li>
+    <li>Taux de réalisation (actuellement = 0)</li>
+    <li>Note / Rating (actuellement = 0)</li>
+    <li>Problèmes identifiés (si existants)</li>
+  </ul>
+  <strong>Actions disponibles par agence :</strong>
+  <ul>
+    <li>✅ <strong>Voir Détails</strong> : navigation vers la page publique de l'agence (<code>/agencies/:id</code>)</li>
+    <li>✅ <strong>Contacter</strong> : redirection vers la page de l'agence (messagerie non encore intégrée directement)</li>
+    <li>✅ <strong>Activer</strong> : activation d'une agence inactive via <code>activateAgency()</code></li>
+    <li>❌ <strong>Auditer</strong> : bouton commenté, fonctionnalité non implémentée</li>
+  </ul>
+  <strong>Filtres :</strong> Recherche par nom, filtre par statut (toutes / actives / inactives / supprimées).
+</div>
+
+<h3>3.3 Gestion des Utilisateurs (onglet Utilisateurs)</h3>
+<div class="section-box">
+  <strong>Méthode :</strong> <code>showAdminUsers(filterParams)</code> → <code>adminService.getAllUsers()</code><br>
+  <strong>Description :</strong> Vue consolidée de tous les utilisateurs de la plateforme (clients, managers, collecteurs, agents de mairie).<br>
+  <strong>Données affichées :</strong>
+  <ul>
+    <li>Prénom / Nom</li>
+    <li>Rôle (badge coloré)</li>
+    <li>Statut (Actif / Inactif)</li>
+    <li>Avatar ou initiales colorées</li>
+    <li>Ville / Quartier</li>
+    <li>Téléphone</li>
+  </ul>
+  <strong>Filtres :</strong>
+  <ul>
+    <li>Recherche par nom</li>
+    <li>Filtre par rôle (Client / Manager / Collecteur / Agent Mairie)</li>
+    <li>Filtre par quartier (liste générée depuis les données géographiques Ouagadougou)</li>
+  </ul>
+  <strong>Actions :</strong>
+  <ul>
+    <li>✅ <strong>Voir Détails</strong> : ouvre un drawer latéral (PrimeNG Drawer) avec les informations complètes de l'utilisateur via <code>adminService.getUserById()</code></li>
+  </ul>
+</div>
+
+<h3>3.4 Gestion des Incidents (onglet Incidents)</h3>
+<div class="section-box">
+  <strong>Méthode :</strong> <code>loadAllSignalements()</code><br>
+  <strong>Description :</strong> L'admin voit tous les signalements de toutes les agences. Utilise le composant partagé <code>app-signalement</code>.<br>
+  <strong>Filtres :</strong> Statut (tous / en cours / résolus), Gravité (critique / élevée / moyenne / faible).<br>
+  <strong>Types d'incidents :</strong> Collecte manquée, Non-conformité, Réclamation, Problème technique.<br>
+  <strong>Actions fonctionnelles (via composant Signalement) :</strong>
+  <ul>
+    <li>✅ Visualiser les incidents</li>
+    <li>✅ Résoudre un incident</li>
+    <li>✅ Contacter l'agence concernée</li>
+  </ul>
+</div>
+
+<h3>3.5 Couverture Territoriale (onglet Vue d'ensemble)</h3>
+<div class="section-box">
+  <strong>Méthode :</strong> <code>loadZoneStat()</code> → <code>adminService.getAllStatisticCity()</code><br>
+  <strong>Description :</strong> Affichage de la couverture par ville, regroupée par pays. Données combinées API + liste de villes mockée (MOCK_CITIES).<br>
+  <strong>Données par ville :</strong> nombre d'agences, clients, collectes du jour, taux de couverture, incidents.
+</div>
+
+<h3>3.6 Gestion des Municipalités (onglet désactivé, code HTML présent)</h3>
+<div class="section-box">
+  <strong>Méthode :</strong> <code>loadAllMunipalities()</code><br>
+  <strong>Description :</strong> Affiche les agents de mairie enregistrés avec nom, téléphone, actions (Détails, Contacter).<br>
+  <strong>Note :</strong> L'onglet est commenté dans le tableau <code>tabs[]</code> mais le HTML et la logique sont présents.
+</div>
+
+<h3>3.7 Ajout d'un agent de mairie</h3>
+<div class="section-box">
+  <strong>Méthode :</strong> <code>navigateToAddMunicipality()</code><br>
+  <strong>Description :</strong> Bouton CTA dans la barre de navigation qui redirige vers le formulaire d'inscription d'un agent de mairie. Accessible depuis tous les onglets.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     4. FONCTIONNALITÉS PARTIELLES
+═══════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>4. Fonctionnalités PARTIELLEMENT RÉALISÉES ⚠️</h2>
+
+<table>
+  <tr><th>Fonctionnalité</th><th>Ce qui est fait</th><th>Ce qui manque</th><th>Priorité</th></tr>
+  <tr>
+    <td><strong>Statistiques onglet Statistiques</strong></td>
+    <td>Structure des 4 cartes affichée, légende des types de déchets (données mock)</td>
+    <td>Graphiques réels (remplacés par des placeholders texte), données dynamiques de l'API, filtres de période désactivés</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td><strong>Audit conformité agences</strong></td>
+    <td>Champ <code>complianceScore</code> affiché avec badge coloré</td>
+    <td>Score toujours = 0 (non calculé), critères de conformité non définis, logique de calcul absente</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td><strong>Performance agences</strong></td>
+    <td>Champs <code>completionRate</code>, <code>rating</code>, <code>revenue</code> affichés</td>
+    <td>Toutes valeurs = 0, non alimentées par l'API</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td><strong>Couverture territoriale</strong></td>
+    <td>Affichage par ville/pays, données partielles depuis l'API</td>
+    <td>Données des villes secondaires non réelles, MOCK_CITIES comme fallback</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td><strong>Alertes récentes (Vue d'ensemble)</strong></td>
+    <td>Section HTML présente avec composant d'affichage</td>
+    <td>Données <code>incidents[]</code> non alimentées dans cet onglet, section reste vide</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td><strong>Détails utilisateur (Drawer)</strong></td>
+    <td>Appel API <code>getUserById()</code>, affichage dans un drawer PrimeNG</td>
+    <td>Contenu du drawer non implémenté (champs non définis dans le template), modification impossible</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td><strong>Répartition des déchets (Vue d'ensemble)</strong></td>
+    <td>Section affichée avec types, quantités, tendances, couleurs</td>
+    <td>Données entièrement mockées (hardcodées), pas de connexion API</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td><strong>Audit Clients (onglet commenté)</strong></td>
+    <td>HTML complet avec cartes Material, filtre abonnement, initiales colorées</td>
+    <td>Onglet commenté dans la navigation, filtre abonnement partiellement fonctionnel</td>
+    <td><span class="priority-low">BASSE</span></td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════
+     5. FONCTIONNALITÉS DÉSACTIVÉES / COMMENTÉES
+═══════════════════════════════════════════════════════ -->
+<h2>5. Fonctionnalités DÉSACTIVÉES / COMMENTÉES 🔇</h2>
+
+<div class="warning-box">
+  ℹ️ Ces fonctionnalités sont codées dans le HTML ou le TypeScript mais ont été temporairement désactivées par des commentaires (<code>&lt;!-- ... --&gt;</code> ou <code>// ...</code>).
+</div>
+
+<table>
+  <tr><th>Fonctionnalité</th><th>Emplacement</th><th>Raison probable</th></tr>
+  <tr>
+    <td>Bouton "Nouvelle Communication" (header)</td>
+    <td>HTML ligne 13-19</td>
+    <td>Module Communications non finalisé</td>
+  </tr>
+  <tr>
+    <td>Bouton "Rapport Global"</td>
+    <td>HTML ligne 20-27</td>
+    <td>Génération de rapport PDF non implémentée</td>
+  </tr>
+  <tr>
+    <td>Onglet Municipalités dans la navigation</td>
+    <td>TS ligne 297-301</td>
+    <td>En attente de validation du parcours Mairie</td>
+  </tr>
+  <tr>
+    <td>Onglet Collecteurs dans la navigation</td>
+    <td>TS ligne 302-303</td>
+    <td>Vue déjà couverte par l'onglet Utilisateurs</td>
+  </tr>
+  <tr>
+    <td>Onglet Clients dans la navigation</td>
+    <td>TS ligne 303-304</td>
+    <td>Vue déjà couverte par l'onglet Utilisateurs</td>
+  </tr>
+  <tr>
+    <td>Onglet Communications dans la navigation</td>
+    <td>TS ligne 314-318</td>
+    <td>Fonctionnalité en cours de développement</td>
+  </tr>
+  <tr>
+    <td>Bouton "Auditer" une agence</td>
+    <td>HTML ligne 636-643</td>
+    <td>Processus d'audit non défini</td>
+  </tr>
+  <tr>
+    <td>Bouton "Auditer" une municipalité</td>
+    <td>HTML ligne 472-478</td>
+    <td>Processus d'audit non défini</td>
+  </tr>
+  <tr>
+    <td>Filtres de conformité (agences)</td>
+    <td>HTML ligne 528-537</td>
+    <td>Score conformité = 0, filtre sans effet</td>
+  </tr>
+  <tr>
+    <td>Filtre de période (statistiques)</td>
+    <td>HTML ligne 1126-1148, <code>isDisabled=true</code></td>
+    <td>API stats non filtrables par période</td>
+  </tr>
+  <tr>
+    <td>Bouton Export statistiques</td>
+    <td>HTML ligne 1141-1148</td>
+    <td>Méthode <code>exportStatistics()</code> = notification info seulement</td>
+  </tr>
+  <tr>
+    <td>Revenus &amp; Conformité dans les KPIs</td>
+    <td>HTML ligne 148-176</td>
+    <td>Données financières non disponibles</td>
+  </tr>
+  <tr>
+    <td>Satisfaction client (étoiles) dans Vue d'ensemble</td>
+    <td>HTML ligne 241-255</td>
+    <td>Dans un bloc commenté "Performance Globale"</td>
+  </tr>
+  <tr>
+    <td>Footer agences (dernier audit, revenu)</td>
+    <td>HTML lignes 662-670, 488-496</td>
+    <td>Données non disponibles dans le modèle AgencyAudit</td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════
+     6. FONCTIONNALITÉS NON RÉALISÉES
+═══════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>6. Fonctionnalités NON RÉALISÉES (à développer) ❌</h2>
+
+<h3>6.1 Module Rapports &amp; Export</h3>
+<table>
+  <tr><th>Fonctionnalité</th><th>Description</th><th>Priorité</th></tr>
+  <tr>
+    <td>Rapport global PDF</td>
+    <td>Génération d'un rapport PDF consolidé : agences, statistiques, incidents, évolution clients</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Export Excel des données</td>
+    <td>Export des listes agences, utilisateurs, incidents en CSV/Excel</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Rapport par agence</td>
+    <td>Rapport détaillé pour une agence spécifique (conformité, collectes, incidents)</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+</table>
+
+<h3>6.2 Module Graphiques &amp; Visualisation</h3>
+<table>
+  <tr><th>Fonctionnalité</th><th>Description</th><th>Priorité</th></tr>
+  <tr>
+    <td>Graphique en secteurs – types de déchets</td>
+    <td>Remplacer le placeholder "Graphique en secteurs" par un vrai chart (Chart.js / ngx-charts)</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Graphique linéaire – évolution collectes</td>
+    <td>Courbe de l'évolution des collectes sur 7j / 30j / 12 mois</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Graphique barres – performance agences</td>
+    <td>Remplacer les barres CSS statiques par un graphique dynamique comparatif</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td>Carte géographique interactive</td>
+    <td>Carte de Ouagadougou avec les zones de couverture, densité clients, flux de collecte</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+</table>
+
+<h3>6.3 Module Communications</h3>
+<table>
+  <tr><th>Fonctionnalité</th><th>Description</th><th>Priorité</th></tr>
+  <tr>
+    <td>Envoi de notifications aux agences</td>
+    <td>Formulaire d'envoi de directives/alertes/notifications vers une ou plusieurs agences</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Messagerie directe admin → agence</td>
+    <td>Chat ou messagerie interne entre l'admin et les responsables d'agences</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td>Envoi d'alertes SMS/Email</td>
+    <td>Envoi automatique d'alertes aux agences en cas d'incident critique</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td>Historique des communications envoyées</td>
+    <td>Liste des communications passées avec statut de lecture</td>
+    <td><span class="priority-low">BASSE</span></td>
+  </tr>
+</table>
+
+<h3>6.4 Module Audit Formel</h3>
+<table>
+  <tr><th>Fonctionnalité</th><th>Description</th><th>Priorité</th></tr>
+  <tr>
+    <td>Grille d'audit d'une agence</td>
+    <td>Formulaire structuré avec critères d'audit (ponctualité, équipements, conformité légale, satisfaction clients)</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Score de conformité automatique</td>
+    <td>Calcul dynamique du score de conformité basé sur : taux de collecte, incidents, retours clients</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Historique des audits par agence</td>
+    <td>Suivi de l'évolution du score dans le temps, avec dates de dernier audit</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td>Sanctions et avertissements</td>
+    <td>Envoi d'avertissements formels, suspension d'agences non conformes</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+</table>
+
+<h3>6.5 Gestion des Utilisateurs (Actions manquantes)</h3>
+<table>
+  <tr><th>Fonctionnalité</th><th>Description</th><th>Priorité</th></tr>
+  <tr>
+    <td>Modifier un utilisateur</td>
+    <td>Formulaire de modification des informations d'un utilisateur (nom, email, adresse, rôle)</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Désactiver / Réactiver un compte</td>
+    <td>Toggle statut actif/inactif pour tout type d'utilisateur</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Réinitialiser le mot de passe</td>
+    <td>Action admin pour forcer la réinitialisation du mot de passe d'un utilisateur</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td>Supprimer un compte</td>
+    <td>Suppression définitive ou archivage d'un compte avec confirmation</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td>Historique d'activité utilisateur</td>
+    <td>Log des actions d'un utilisateur (collectes, connexions, modifications)</td>
+    <td><span class="priority-low">BASSE</span></td>
+  </tr>
+</table>
+
+<h3>6.6 Module Finances (entièrement manquant)</h3>
+<div class="warning-box">
+  ⚠️ Le module Finance existe pour les agences (lien vers <code>/dashboard/agency/finance</code>) mais <strong>aucun équivalent Admin</strong> n'est implémenté.
+</div>
+<table>
+  <tr><th>Fonctionnalité</th><th>Description</th><th>Priorité</th></tr>
+  <tr>
+    <td>Vue consolidée des revenus</td>
+    <td>Total des abonnements actifs, revenus par agence, revenus par ville</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Suivi des paiements en retard</td>
+    <td>Clients avec abonnements impayés ou expirés</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Rapport financier mensuel</td>
+    <td>Évolution des revenus, comparatif mois/mois</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+</table>
+
+<h3>6.7 Pagination et performance</h3>
+<table>
+  <tr><th>Fonctionnalité</th><th>Description</th><th>Priorité</th></tr>
+  <tr>
+    <td>Pagination onglet Utilisateurs</td>
+    <td>Actuellement toute la liste est chargée en une fois. Ajouter pagination côté serveur.</td>
+    <td><span class="priority-high">HAUTE</span></td>
+  </tr>
+  <tr>
+    <td>Pagination onglet Agences</td>
+    <td>Idem – pagination côté serveur recommandée pour les grandes listes</td>
+    <td><span class="priority-med">MOYENNE</span></td>
+  </tr>
+  <tr>
+    <td>Chargement différé des onglets</td>
+    <td>Ne charger les données d'un onglet que lors du premier clic sur celui-ci</td>
+    <td><span class="priority-low">BASSE</span></td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════
+     7. PERSPECTIVES
+═══════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>7. Perspectives &amp; Évolutions Futures 🚀</h2>
+
+<h3>7.1 Intelligence Artificielle &amp; Analytique avancée</h3>
+<div class="info-box">
+  Ces fonctionnalités représentent la prochaine génération de la plateforme. Elles nécessitent une maturité des données (historique d'au moins 6 mois).
+</div>
+<ul>
+  <li><strong>Prédiction de la demande</strong> : Algorithme ML pour anticiper le volume de déchets par zone selon la saison, les événements locaux (marchés, fêtes)</li>
+  <li><strong>Optimisation automatique des tournées</strong> : Suggestion d'itinéraires optimaux pour les collecteurs basée sur la localisation GPS et la densité clients</li>
+  <li><strong>Détection d'anomalies</strong> : Alertes automatiques si une agence dévie de ses performances habituelles (chute de taux de collecte, pic d'incidents)</li>
+  <li><strong>Scoring prédictif des abonnements</strong> : Identifier les clients à risque de résiliation avant qu'ils ne résilient</li>
+</ul>
+
+<h3>7.2 Application Mobile Administrateur</h3>
+<ul>
+  <li>Application mobile légère (PWA ou native) pour l'admin avec accès aux KPIs en déplacement</li>
+  <li>Notifications push en cas d'incident critique</li>
+  <li>Validation d'actions (activation agence, résolution incident) depuis le mobile</li>
+</ul>
+
+<h3>7.3 Tableau de Bord Municipalité / Mairie</h3>
+<ul>
+  <li>Dashboard dédié aux agents de mairie avec vue sur les agences opérant dans leur commune</li>
+  <li>Rapport de conformité des agences transmis automatiquement à la mairie</li>
+  <li>Interface de délivrance de licences d'exploitation</li>
+</ul>
+
+<h3>7.4 Extension géographique</h3>
+<ul>
+  <li>Support multi-ville (Bobo-Dioulasso, Koudougou, Banfora)</li>
+  <li>Vue par région avec agrégation des statistiques</li>
+  <li>Gestion de réglementations locales par ville</li>
+</ul>
+
+<h3>7.5 Intégrations externes</h3>
+<ul>
+  <li><strong>API Mairies</strong> : Intégration avec les systèmes informatiques des mairies pour automatiser les rapports réglementaires</li>
+  <li><strong>Partenaires recyclage</strong> : Suivi des tonnages envoyés vers les centres de recyclage partenaires</li>
+  <li><strong>Système de paiement</strong> : Tableau de bord des transactions (Mobile Money, virement) intégré à un ERP financier</li>
+  <li><strong>Traceur GPS IoT</strong> : Intégration de traceurs sur les véhicules de collecte pour suivi en temps réel sur la carte</li>
+</ul>
+
+<h3>7.6 Module Gestion de la Qualité (ISO 14001)</h3>
+<ul>
+  <li>Indicateurs de performance environnementale (IPE)</li>
+  <li>Suivi du taux de recyclage vs déchets enfouis</li>
+  <li>Documentation de conformité réglementaire exportable pour les audits tiers</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════
+     8. SYNTHÈSE
+═══════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>8. Synthèse et Indicateurs de Progression</h2>
+
+<table>
+  <tr><th>Catégorie</th><th>Nombre de fonctionnalités</th><th>État global</th></tr>
+  <tr><td>Fonctionnalités réalisées (API réelle)</td><td><strong>7</strong></td><td><span class="badge ok">TERMINÉ</span></td></tr>
+  <tr><td>Fonctionnalités partiellement réalisées</td><td><strong>8</strong></td><td><span class="badge partial">EN COURS</span></td></tr>
+  <tr><td>Fonctionnalités commentées (code présent)</td><td><strong>13</strong></td><td><span class="badge commented">DÉSACTIVÉ</span></td></tr>
+  <tr><td>Fonctionnalités non réalisées (à faire)</td><td><strong>25+</strong></td><td><span class="badge nok">À FAIRE</span></td></tr>
+  <tr><td>Perspectives futures</td><td><strong>15+</strong></td><td><span class="badge soon">LONG TERME</span></td></tr>
+</table>
+
+<h3>Estimation de l'avancement global du module Admin</h3>
+<div class="section-box">
+  <table style="border:none;">
+    <tr>
+      <td style="border:none; width:150px;"><strong>Fonctionnel complet</strong></td>
+      <td style="border:none;">
+        <div style="background:#e5e7eb; border-radius:4px; height:20px; width:400px;">
+          <div style="background:#16a34a; height:20px; border-radius:4px; width:28%; text-align:center; color:white; font-size:10pt; line-height:20px;">~28%</div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="border:none;"><strong>En développement</strong></td>
+      <td style="border:none;">
+        <div style="background:#e5e7eb; border-radius:4px; height:20px; width:400px;">
+          <div style="background:#f59e0b; height:20px; border-radius:4px; width:22%; text-align:center; color:white; font-size:10pt; line-height:20px;">~22%</div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="border:none;"><strong>Reste à faire</strong></td>
+      <td style="border:none;">
+        <div style="background:#e5e7eb; border-radius:4px; height:20px; width:400px;">
+          <div style="background:#dc2626; height:20px; border-radius:4px; width:50%; text-align:center; color:white; font-size:10pt; line-height:20px;">~50%</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     9. RECOMMANDATIONS
+═══════════════════════════════════════════════════════ -->
+<h2>9. Recommandations Prioritaires</h2>
+
+<h3>🔴 Priorité IMMÉDIATE (Sprint 1 – 2 semaines)</h3>
+<ol>
+  <li><strong>Compléter le drawer Détails Utilisateur</strong> : Afficher toutes les infos + activer/désactiver le compte</li> ==> OK
+  <li><strong>Activer l'onglet Municipalités</strong> : Retirer le commentaire dans <code>tabs[]</code>, la vue est déjà codée</li>
+  <li><strong>Alimenter les indicateurs agences</strong> : <code>completionRate</code>, <code>rating</code>, <code>complianceScore</code> doivent être calculés via l'API</li>
+  <li><strong>Lier les alertes récentes de la Vue d'ensemble</strong> aux incidents chargés depuis l'API</li>
+</ol>
+
+<h3>🟡 Priorité HAUTE (Sprint 2-3 – 1 mois)</h3>
+<ol>
+  <li>Intégrer une bibliothèque de graphiques (Chart.js ou ngx-charts) pour l'onglet Statistiques</li>
+  <li>Implémenter l'onglet Communications avec envoi de directives aux agences</li>
+  <li>Ajouter la modification et désactivation des utilisateurs</li>
+  <li>Créer une grille d'audit formelle pour les agences avec score automatique</li>
+  <li>Ajouter la pagination côté serveur pour la liste des utilisateurs</li>
+</ol>
+
+<h3>🟢 Priorité NORMALE (Sprint 4-6 – 3 mois)</h3>
+<ol>
+  <li>Module Finances Admin (revenus consolidés, paiements en retard)</li>
+  <li>Export PDF/Excel des rapports</li>
+  <li>Filtre de période fonctionnel pour les statistiques</li>
+  <li>Carte interactive des zones de couverture</li>
+  <li>Historique d'activité par utilisateur</li>
+</ol>
+
+<hr>
+<p style="text-align:center; color:#9ca3af; font-size:9pt;">
+  Document généré le <strong>02 Juin 2026</strong> par audit automatique du code source.<br>
+  Projet Collect Déchets – Sahelys &nbsp;|&nbsp; Ce document est un cahier de charges vivant, à mettre à jour à chaque sprint.
+</p>
+
+</body>
+</html>

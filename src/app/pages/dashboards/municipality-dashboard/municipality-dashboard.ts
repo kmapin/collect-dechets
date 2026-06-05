@@ -231,7 +231,7 @@ export class MunicipalityDashboard  implements OnInit {
   loadAgencyAudits(agenciesFilterParams?: FilterParams ): void {
     this.agencyService.getAllAgenciesFromApi(agenciesFilterParams).subscribe({
       next: (agencies) => {
-        this.agencyAudits = agencies.data.map((agency) => ({
+        this.agencyAudits = agencies.data.map((agency: any) => ({
           id: agency?._id,
           name: agency?.name,
           status: agency?.status || "inactive",

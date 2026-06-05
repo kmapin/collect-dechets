@@ -240,13 +240,32 @@ export class AdminDashboard implements OnInit {
     role: this.roleFilter,
     neighborhood: this.neighborhoodFilter,
     term: this.searchTerm,
+    page: 1,
+    limit: 10,
   };
+
+  // ── Pagination Utilisateurs ──────────────────────────────
+  usersCurrentPage = 1;
+  usersTotalPages  = 1;
+  usersTotalItems  = 0;
+  usersItemsPerPage = 10;
 
   agenciesFilterParams: FilterParams = {
     status: this.agenciesFilter,
     search: this.searchTerm,
-    getAll: true
+    page: 1,
+    limit: 10,
   };
+
+  // ── Vue Agences / Utilisateurs ──────────────────────────
+  agenciesViewMode: 'card' | 'table' = 'card';
+  usersViewMode:    'card' | 'table' = 'card';
+
+  // ── Pagination Agences ───────────────────────────────────
+  agenciesCurrentPage  = 1;
+  agenciesTotalPages   = 1;
+  agenciesTotalItems   = 0;
+  agenciesItemsPerPage = 10;
   // Loading states
   isLoadingStatistics = false;
   isLoadingAgencies = false;
@@ -435,7 +454,7 @@ export class AdminDashboard implements OnInit {
     this.isLoadingAgencies = true;
     this.agencyService.getAllAgenciesFromApi(agenciesFilter).subscribe({
       next: (agencies) => {
-        this.agencyAudits = agencies.data.map((agency) => ({
+        this.agencyAudits = (agencies.data ?? []).map((agency: any) => ({
           id: agency?._id,
           name: agency?.name,
           status: agency?.status || "inactive",
@@ -452,9 +471,14 @@ export class AdminDashboard implements OnInit {
           issues: [],
         }));
         this.filteredAgencies = [...this.agencyAudits];
+
+        // Pagination metadata
+        this.agenciesTotalItems   = agencies?.total ?? agencies?.pagination?.total ?? agencies?.count ?? this.agencyAudits.length;
+        this.agenciesItemsPerPage = agenciesFilter?.limit ?? 10;
+        this.agenciesCurrentPage  = agenciesFilter?.page  ?? 1;
+        this.agenciesTotalPages   = Math.max(1, Math.ceil(this.agenciesTotalItems / this.agenciesItemsPerPage));
+
         this.isLoadingAgencies = false;
-        console.log(" this.agencyAudits", this.agencyAudits);
-        console.log(" this.agencies", agencies);
       },
       error: (error) => {
         console.error("Erreur lors du chargement des agences:", error);
@@ -900,28 +924,36 @@ export class AdminDashboard implements OnInit {
 
   // Filter methods
   filterAgencies(): void {
-    // this.filteredAgencies = this.agencyAudits.filter((agency) => {
-    //   const statusMatch =
-    //     this.agenciesFilter === "all" || agency.status === this.agenciesFilter;
-    //   let complianceMatch = true;
-
-    //   if (this.complianceFilter === "excellent") {
-    //     complianceMatch = agency.complianceScore >= 95;
-    //   } else if (this.complianceFilter === "good") {
-    //     complianceMatch =
-    //       agency.complianceScore >= 85 && agency.complianceScore < 95;
-    //   } else if (this.complianceFilter === "poor") {
-    //     complianceMatch = agency.complianceScore < 85;
-    //   }
-
-    //   return statusMatch && complianceMatch;
-    // });
     this.agenciesFilterParams = {
       status: this.agenciesFilter,
       search: this.searchTerm,
+      page: 1,
+      limit: this.agenciesItemsPerPage,
     };
-    console.log(this.agenciesFilterParams);
     this.loadAgencyAudits(this.agenciesFilterParams);
+  }
+
+  goToAgenciesPage(page: number): void {
+    if (page < 1 || page > this.agenciesTotalPages) return;
+    this.agenciesFilterParams = { ...this.agenciesFilterParams, page };
+    this.loadAgencyAudits(this.agenciesFilterParams);
+  }
+
+  changeAgenciesItemsPerPage(limit: number): void {
+    this.agenciesFilterParams = { ...this.agenciesFilterParams, limit, page: 1 };
+    this.loadAgencyAudits(this.agenciesFilterParams);
+  }
+
+  getAgenciesPageNumbers(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(1, this.agenciesCurrentPage - 2);
+    const end   = Math.min(this.agenciesTotalPages, start + 4);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  getAgenciesEndItem(): number {
+    return Math.min(this.agenciesCurrentPage * this.agenciesItemsPerPage, this.agenciesTotalItems);
   }
   filterClients(): void {
     this.filteredClients = this.clientsAudits.filter((client) => {
@@ -949,8 +981,9 @@ export class AdminDashboard implements OnInit {
       role: this.roleFilter,
       neighborhood: this.neighborhoodFilter,
       term: this.searchTerm,
+      page: 1,
+      limit: this.usersItemsPerPage,
     };
-    console.log(this.usersFilterParams);
     this.showAdminUsers(this.usersFilterParams);
   }
   filterCollectors(): void {
@@ -1229,26 +1262,70 @@ export class AdminDashboard implements OnInit {
 
   showAdminUsers(usersFilterParams: FilterParams): void {
     this.isLoadingClients = true;
-    console.log("usersFilterParams", usersFilterParams);
     this.adminService.getAllUsers(usersFilterParams).subscribe({
       next: (response: any) => {
-        this.usersAudits = response?.data.map((user: any) => {
-          return {
-            _id: user._id,
-            data: user,
-            // active_subscription: client?.subscriptionHistory.filter(
-            //   (s: any) => s.status === "active"
-            // ),
-          };
-        });
+        this.usersAudits = (response?.data ?? []).map((user: any) => ({
+          _id: user._id,
+          data: user,
+        }));
         this.filteredUsers = [...this.usersAudits];
+
+        // Pagination metadata — s'adapte à total / pagination.total
+        this.usersTotalItems   = response?.total ?? response?.pagination?.total ?? this.usersAudits.length;
+        this.usersItemsPerPage = usersFilterParams.limit ?? 10;
+        this.usersCurrentPage  = usersFilterParams.page  ?? 1;
+        this.usersTotalPages   = Math.max(1, Math.ceil(this.usersTotalItems / this.usersItemsPerPage));
+
         this.isLoadingClients = false;
-        console.log("clients in dashboard", this.filteredUsers);
       },
       error: (error) => {
         console.error("Erreur lors du chargement des utilisateurs:", error);
         this.isLoadingClients = false;
       },
+    });
+  }
+
+  goToUsersPage(page: number): void {
+    if (page < 1 || page > this.usersTotalPages) return;
+    this.usersFilterParams = { ...this.usersFilterParams, page };
+    this.showAdminUsers(this.usersFilterParams);
+  }
+
+  changeUsersItemsPerPage(limit: number): void {
+    this.usersFilterParams = { ...this.usersFilterParams, limit, page: 1 };
+    this.showAdminUsers(this.usersFilterParams);
+  }
+
+  getUsersPageNumbers(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(1, this.usersCurrentPage - 2);
+    const end   = Math.min(this.usersTotalPages, start + 4);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  getUsersEndItem(): number {
+    return Math.min(this.usersCurrentPage * this.usersItemsPerPage, this.usersTotalItems);
+  }
+
+  isTogglingUserStatus = false;
+
+  toggleUserStatus(): void {
+    if (!this.selectedUser?._id) return;
+    const newStatus: 'active' | 'inactive' = this.selectedUser.status === 'active' ? 'inactive' : 'active';
+    this.isTogglingUserStatus = true;
+    this.adminService.toggleUserStatus(this.selectedUser._id!, newStatus).subscribe({
+      next: () => {
+        this.selectedUser = { ...this.selectedUser, status: newStatus } as any;
+        const label = newStatus === 'active' ? 'Activé' : 'Désactivé';
+        this.notificationService.showSuccess(label, `Compte ${newStatus === 'active' ? 'activé' : 'désactivé'} avec succès.`);
+        this.showAdminUsers(this.usersFilterParams);
+        this.isTogglingUserStatus = false;
+      },
+      error: (err) => {
+        this.notificationService.showError('Erreur', err.error?.message || 'Impossible de modifier le statut.');
+        this.isTogglingUserStatus = false;
+      }
     });
   }
 
