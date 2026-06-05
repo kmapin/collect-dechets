@@ -77,37 +77,11 @@ Email : gangosmeo@gmail.com          Mot de passe : Wise2024
 
 
 
+============================================ Besoins de webservice dans SUPER ADIMN =====================================
 
+============================== Dashboard
+============== Vue d'ensemble
+=> webservice getAllCoveredZones()
+=> raison: Pour la couverture territoriale , récuperer toutes les zones couvertes dans la plateforme et les afficher sur une carte, avec les infos dessus (L'agence)
 
-              <div *ngFor="let zone of agency?.serviceZones" class="zone-card">
-                <div class="zone-header">
-                  <h4>Quartier : {{ zone }}</h4>
-                  <span class="zone-status" [class.active]="true">
-                    {{ zone.isActive ? 'Active' : 'Active' }}
-                  </span>
-                </div>
-                <!-- <p class="zone-description">{{ zone }}</p> -->
-                <div class="zone-details">
-                  <span class="">
-                    <strong>Ville : </strong>
-
-                    <span class="text-success">OUAGADOUGOU</span>
-                    <!-- <div class="cities-list">
-                          <span *ngFor="let city of zone.cities" class="city-tag">{{ city }}</span>
-                        </div> -->
-                  </span>
-                  <div
-                    class="zone-neighborhoods"
-                    *ngIf="zone && zone.neighborhoods && zone.neighborhoods.length > 0"
-                  >
-                    <strong>Quartiers :</strong>
-                    <div class="neighborhoods-list">
-                      <span
-                        *ngFor="let neighborhood of zone.neighborhoods"
-                        class="neighborhood-tag"
-                        >{{ neighborhood }}</span
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
+=> Webservice 

@@ -229,12 +229,13 @@ export class AgencyService {
     return of(false).pipe(delay(500));
   }
 
-  getAllAgenciesFromApi(agenciesFilter?: FilterParams ): Observable<{ success: boolean; count: number; data: Agency[] }> {
+  getAllAgenciesFromApi(agenciesFilter?: FilterParams): Observable<any> {
     let httpParams = new HttpParams();
     httpParams = httpParams.append('status', agenciesFilter?.status || '');
     httpParams = httpParams.append('search', agenciesFilter?.search || '');
-    return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agencies?limit=25`, { params: httpParams });
-    // return this.http.get<{ success: boolean; count: number; data: Agency[] }>(`${environment.apiUrl}/agences/recuperation?limit=25`);
+    httpParams = httpParams.append('page',   agenciesFilter?.page  ?? 1);
+    httpParams = httpParams.append('limit',  agenciesFilter?.limit ?? 10);
+    return this.http.get<any>(`${environment.apiUrl}/agencies`, { params: httpParams });
   }
 
 

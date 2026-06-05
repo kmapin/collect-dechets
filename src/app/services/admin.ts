@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular
 import { BehaviorSubject, catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Municipality } from '../models/agency.model';
-import { RegisterResponse, User } from '../models/user.model';
+import { RegisterResponse, RegisterUserData, User } from '../models/user.model';
 import { FilterParams } from '../models/filterParams.model';
 
 interface MunicipalityStatistics {
@@ -38,15 +38,16 @@ export class Admin {
   }
   getAllUsers(fileterParams: FilterParams): Observable<any> {
     let requestParams = new HttpParams()
-    .append('limit', 25)
-    .append('role', fileterParams.role ?? '')
-    .append('term', fileterParams.term ?? '')
-    .append('neighborhood', fileterParams.neighborhood ?? '');
+      .append('page',  fileterParams.page  ?? 1)
+      .append('limit', fileterParams.limit ?? 10)
+      .append('role',  fileterParams.role  ?? '')
+      .append('term',  fileterParams.term  ?? '')
+      .append('neighborhood', fileterParams.neighborhood ?? '');
 
     console.log('API > getAllUsers params:', requestParams);
     return this.http.get(`${environment.apiUrl}/users`, { params: requestParams }).pipe(
       map((response: any) => {
-        console.log('API > getAllClients:', response);
+        console.log('API > getAllUsers response:', response);
         return response;
       })
     );
@@ -143,6 +144,40 @@ export class Admin {
   getUserById(id: string): Observable<any> {
     const url = `${environment.apiUrl}/user/${id}`;
     return this.http.get<any>(url);
+  }
+
+  toggleUserStatus(userId: string, status: 'active' | 'inactive'): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/user/${userId}`, { status }).pipe(
+      map((response: any) => {
+        console.log('API > toggleUserStatus:', response);
+        return response;
+      })
+    );
+  }
+
+  sendPasswordResetEmail(userId: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/user/${userId}/reset-password`, {}).pipe(
+      map((response: any) => { console.log('API > sendPasswordResetEmail:', response); return response; })
+    );
+  }
+
+  setNewPasswordAdmin(userId: string, newPassword: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/user/${userId}`, { password: newPassword }).pipe(
+      map((response: any) => { console.log('API > setNewPasswordAdmin:', response); return response; })
+    );
+  }
+
+  updateUserProfile(userId: string, updates: Partial<RegisterUserData>): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/user/${userId}`, updates).pipe(
+      map((response: any) => {
+        console.log('API > updateUserProfile:', response);
+        return response;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Update user profile error:', error);
+        return of(this.handleRegistrationError(error));
+      })
+    );
   }
 
 

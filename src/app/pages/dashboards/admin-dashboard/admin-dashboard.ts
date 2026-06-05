@@ -240,13 +240,32 @@ export class AdminDashboard implements OnInit {
     role: this.roleFilter,
     neighborhood: this.neighborhoodFilter,
     term: this.searchTerm,
+    page: 1,
+    limit: 10,
   };
+
+  // ── Pagination Utilisateurs ──────────────────────────────
+  usersCurrentPage = 1;
+  usersTotalPages  = 1;
+  usersTotalItems  = 0;
+  usersItemsPerPage = 10;
 
   agenciesFilterParams: FilterParams = {
     status: this.agenciesFilter,
     search: this.searchTerm,
-    getAll: true
+    page: 1,
+    limit: 10,
   };
+
+  // ── Vue Agences / Utilisateurs ──────────────────────────
+  agenciesViewMode: 'card' | 'table' = 'card';
+  usersViewMode:    'card' | 'table' = 'card';
+
+  // ── Pagination Agences ───────────────────────────────────
+  agenciesCurrentPage  = 1;
+  agenciesTotalPages   = 1;
+  agenciesTotalItems   = 0;
+  agenciesItemsPerPage = 10;
   // Loading states
   isLoadingStatistics = false;
   isLoadingAgencies = false;
@@ -324,6 +343,9 @@ export class AdminDashboard implements OnInit {
   filteredSignalements: any[] = [];
   isDisabled = true;
   visible1: boolean = false;
+  visibleEditUserDrawer = false;
+  isEditingUser = false;
+  isSavingUser = false;
   isLargeScreen = false;
   constructor(
     private authService: AuthService,
@@ -435,7 +457,7 @@ export class AdminDashboard implements OnInit {
     this.isLoadingAgencies = true;
     this.agencyService.getAllAgenciesFromApi(agenciesFilter).subscribe({
       next: (agencies) => {
-        this.agencyAudits = agencies.data.map((agency) => ({
+        this.agencyAudits = (agencies.data ?? []).map((agency: any) => ({
           id: agency?._id,
           name: agency?.name,
           status: agency?.status || "inactive",
@@ -452,9 +474,14 @@ export class AdminDashboard implements OnInit {
           issues: [],
         }));
         this.filteredAgencies = [...this.agencyAudits];
+
+        // Pagination metadata
+        this.agenciesTotalItems   = agencies?.total ?? agencies?.pagination?.total ?? agencies?.count ?? this.agencyAudits.length;
+        this.agenciesItemsPerPage = agenciesFilter?.limit ?? 10;
+        this.agenciesCurrentPage  = agenciesFilter?.page  ?? 1;
+        this.agenciesTotalPages   = Math.max(1, Math.ceil(this.agenciesTotalItems / this.agenciesItemsPerPage));
+
         this.isLoadingAgencies = false;
-        console.log(" this.agencyAudits", this.agencyAudits);
-        console.log(" this.agencies", agencies);
       },
       error: (error) => {
         console.error("Erreur lors du chargement des agences:", error);
@@ -900,28 +927,36 @@ export class AdminDashboard implements OnInit {
 
   // Filter methods
   filterAgencies(): void {
-    // this.filteredAgencies = this.agencyAudits.filter((agency) => {
-    //   const statusMatch =
-    //     this.agenciesFilter === "all" || agency.status === this.agenciesFilter;
-    //   let complianceMatch = true;
-
-    //   if (this.complianceFilter === "excellent") {
-    //     complianceMatch = agency.complianceScore >= 95;
-    //   } else if (this.complianceFilter === "good") {
-    //     complianceMatch =
-    //       agency.complianceScore >= 85 && agency.complianceScore < 95;
-    //   } else if (this.complianceFilter === "poor") {
-    //     complianceMatch = agency.complianceScore < 85;
-    //   }
-
-    //   return statusMatch && complianceMatch;
-    // });
     this.agenciesFilterParams = {
       status: this.agenciesFilter,
       search: this.searchTerm,
+      page: 1,
+      limit: this.agenciesItemsPerPage,
     };
-    console.log(this.agenciesFilterParams);
     this.loadAgencyAudits(this.agenciesFilterParams);
+  }
+
+  goToAgenciesPage(page: number): void {
+    if (page < 1 || page > this.agenciesTotalPages) return;
+    this.agenciesFilterParams = { ...this.agenciesFilterParams, page };
+    this.loadAgencyAudits(this.agenciesFilterParams);
+  }
+
+  changeAgenciesItemsPerPage(limit: number): void {
+    this.agenciesFilterParams = { ...this.agenciesFilterParams, limit, page: 1 };
+    this.loadAgencyAudits(this.agenciesFilterParams);
+  }
+
+  getAgenciesPageNumbers(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(1, this.agenciesCurrentPage - 2);
+    const end   = Math.min(this.agenciesTotalPages, start + 4);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  getAgenciesEndItem(): number {
+    return Math.min(this.agenciesCurrentPage * this.agenciesItemsPerPage, this.agenciesTotalItems);
   }
   filterClients(): void {
     this.filteredClients = this.clientsAudits.filter((client) => {
@@ -949,8 +984,9 @@ export class AdminDashboard implements OnInit {
       role: this.roleFilter,
       neighborhood: this.neighborhoodFilter,
       term: this.searchTerm,
+      page: 1,
+      limit: this.usersItemsPerPage,
     };
-    console.log(this.usersFilterParams);
     this.showAdminUsers(this.usersFilterParams);
   }
   filterCollectors(): void {
@@ -1014,6 +1050,212 @@ export class AdminDashboard implements OnInit {
     this.router.navigate(["/agencies", agencyId]);
   }
   selectedClient: any = null;
+
+  // ── Dialog Réinitialisation mot de passe ────────────────
+  showPasswordResetDialog  = false;
+  passwordResetMode: 'email' | 'manual' = 'email';
+  newPassword        = '';
+  confirmPassword    = '';
+  showNewPwd         = false;
+  showConfirmPwd     = false;
+  isSendingReset     = false;
+  passwordResetError = '';
+
+  openPasswordResetDialog(): void {
+    this.passwordResetMode  = 'email';
+    this.newPassword        = '';
+    this.confirmPassword    = '';
+    this.passwordResetError = '';
+    this.showNewPwd         = false;
+    this.showConfirmPwd     = false;
+    this.showPasswordResetDialog = true;
+  }
+
+  closePasswordResetDialog(): void {
+    this.showPasswordResetDialog = false;
+    this.passwordResetError      = '';
+  }
+
+  sendPasswordResetEmail(): void {
+    const id = this.selectedUser?._id || this.selectedUser?.id;
+    if (!id) return;
+    this.isSendingReset = true;
+    this.adminService.sendPasswordResetEmail(id).subscribe({
+      next: () => {
+        this.isSendingReset = false;
+        this.notificationService.showSuccess('Email envoyé', `Un lien de réinitialisation a été envoyé à ${this.selectedUser.email}.`);
+        this.closePasswordResetDialog();
+      },
+      error: (err) => {
+        this.isSendingReset = false;
+        this.passwordResetError = err?.error?.message || 'Impossible d\'envoyer l\'email. Vérifiez la connexion.';
+      }
+    });
+  }
+
+  setNewPasswordAdmin(): void {
+    this.passwordResetError = '';
+    if (!this.newPassword || this.newPassword.length < 6) {
+      this.passwordResetError = 'Le mot de passe doit contenir au moins 6 caractères.';
+      return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      this.passwordResetError = 'Les mots de passe ne correspondent pas.';
+      return;
+    }
+    const id = this.selectedUser?._id || this.selectedUser?.id;
+    if (!id) return;
+    this.isSendingReset = true;
+    this.adminService.setNewPasswordAdmin(id, this.newPassword).subscribe({
+      next: () => {
+        this.isSendingReset = false;
+        this.notificationService.showSuccess('Mot de passe modifié', `Le mot de passe de ${this.selectedUser.firstName} a été mis à jour.`);
+        this.closePasswordResetDialog();
+      },
+      error: (err) => {
+        this.isSendingReset = false;
+        this.passwordResetError = err?.error?.message || 'Erreur lors de la modification du mot de passe.';
+      }
+    });
+  }
+
+  getPasswordStrength(pwd: string): number {
+    if (!pwd) return 0;
+    let score = 0;
+    if (pwd.length >= 6)  score++;
+    if (pwd.length >= 10) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    return Math.min(score, 4);
+  }
+
+  getPasswordStrengthLabel(): string {
+    const s = this.getPasswordStrength(this.newPassword);
+    return ['', 'Faible', 'Moyen', 'Bon', 'Fort'][s] || '';
+  }
+
+  getPasswordStrengthClass(): string {
+    const s = this.getPasswordStrength(this.newPassword);
+    return ['', 'pwd-weak', 'pwd-medium', 'pwd-good', 'pwd-strong'][s] || '';
+  }
+
+  pwdHasUppercase(pwd: string): boolean { return /[A-Z]/.test(pwd); }
+  pwdHasNumber(pwd: string): boolean    { return /[0-9]/.test(pwd); }
+  pwdHasSpecial(pwd: string): boolean   { return /[^A-Za-z0-9]/.test(pwd); }
+
+  // ── Dialog de confirmation suppression ──────────────────
+  showDeleteDialog    = false;
+  userToDelete: { id: string; name: string; role: string; color: string; initials: string } | null = null;
+  isDeletingUser      = false;
+
+  openDeleteDialog(userId: string, displayName: string, role: string): void {
+    this.userToDelete = {
+      id: userId,
+      name: displayName,
+      role: this.getUserRole(role),
+      color: this.getRandomColor({ firstName: displayName }),
+      initials: this.getInitials(displayName),
+    };
+    this.showDeleteDialog = true;
+  }
+
+  confirmDeleteUser(): void {
+    if (!this.userToDelete) return;
+    this.isDeletingUser = true;
+    this.adminService.deleteUser(this.userToDelete.id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Supprimé', `Le compte de "${this.userToDelete!.name}" a été supprimé.`);
+        this.showDeleteDialog = false;
+        this.userToDelete = null;
+        this.isDeletingUser = false;
+        this.visible1 = false;
+        this.showAdminUsers(this.usersFilterParams);
+      },
+      error: (err) => {
+        this.notificationService.showError('Erreur', err.error?.message || 'Impossible de supprimer cet utilisateur.');
+        this.isDeletingUser = false;
+      }
+    });
+  }
+
+  openEditUserDrawer(): void {
+    const id = this.selectedUser?._id || this.selectedUser?.id;
+    if (!id) return;
+    this.isEditingUser = true;
+    this.visible1 = false;
+    this.visibleEditUserDrawer = true;
+  }
+
+  closeEditUserDrawer(): void {
+    this.visibleEditUserDrawer = false;
+    this.isEditingUser = false;
+  }
+
+  saveUserChanges(): void {
+    if (!this.selectedUser?._id) return;
+
+    this.isSavingUser = true;
+
+    const updates = {
+      firstName: this.selectedUser.firstName?.trim(),
+      lastName: this.selectedUser.lastName?.trim(),
+      phone: this.selectedUser.phone?.trim(),
+      address: {
+        ...(this.selectedUser.address ?? {}),
+        street: this.selectedUser.address?.street?.trim() || "",
+        city: this.selectedUser.address?.city?.trim() || "",
+        neighborhood: this.selectedUser.address?.neighborhood?.trim() || "",
+      },
+    };
+
+    this.adminService.updateUserProfile(this.selectedUser._id, updates).subscribe({
+      next: (response: any) => {
+        this.isSavingUser = false;
+        const isSuccess = response?.success !== false;
+
+        if (isSuccess) {
+          this.visibleEditUserDrawer = false;
+          this.isEditingUser = false;
+          this.notificationService.showSuccess("Mise à jour", "Profil utilisateur mis à jour avec succès.");
+          this.showAdminUsers(this.usersFilterParams);
+        } else {
+          this.notificationService.showError("Erreur", response?.message || response?.error || "Impossible de mettre à jour l'utilisateur.");
+        }
+      },
+      error: (error: any) => {
+        this.isSavingUser = false;
+        this.notificationService.showError("Erreur", error?.error?.message || error?.message || "Impossible de mettre à jour l'utilisateur.");
+      },
+    });
+  }
+
+  // Ouvre le drawer en mode VIEW depuis la liste (sans appel API si on a déjà les données)
+  quickViewUser(userData: any): void {
+    this.selectedUser = userData as any;
+    this.isEditingUser = false;
+    this.visible1 = true;
+  }
+
+  // Ouvre le drawer en mode EDIT directement depuis la liste
+  quickEditUser(userData: any): void {
+    this.selectedUser = userData as any;
+    this.isEditingUser = true;
+    this.visible1 = false;
+    this.visibleEditUserDrawer = true;
+  }
+
+  // Suppression directe depuis la liste → ouvre le dialog
+  quickDeleteUser(userId: string, displayName: string, role = ''): void {
+    this.openDeleteDialog(userId, displayName.trim() || 'cet utilisateur', role);
+  }
+
+  // Toggle statut directement depuis la liste
+  quickToggleUserStatus(userData: any): void {
+    this.selectedUser = userData as any;
+    this.toggleUserStatus();
+  }
+
   viewUserDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",
@@ -1024,6 +1266,8 @@ export class AdminDashboard implements OnInit {
       next: (client: any) => {
         if (client.success) {
           this.selectedUser = client?.user;
+          this.visibleEditUserDrawer = false;
+          this.isEditingUser = false;
           console.log("voici les details du client:", this.selectedUser);
           this.visible1 = true;
         } else {
@@ -1229,26 +1473,70 @@ export class AdminDashboard implements OnInit {
 
   showAdminUsers(usersFilterParams: FilterParams): void {
     this.isLoadingClients = true;
-    console.log("usersFilterParams", usersFilterParams);
     this.adminService.getAllUsers(usersFilterParams).subscribe({
       next: (response: any) => {
-        this.usersAudits = response?.data.map((user: any) => {
-          return {
-            _id: user._id,
-            data: user,
-            // active_subscription: client?.subscriptionHistory.filter(
-            //   (s: any) => s.status === "active"
-            // ),
-          };
-        });
+        this.usersAudits = (response?.data ?? []).map((user: any) => ({
+          _id: user._id,
+          data: user,
+        }));
         this.filteredUsers = [...this.usersAudits];
+
+        // Pagination metadata — s'adapte à total / pagination.total
+        this.usersTotalItems   = response?.total ?? response?.pagination?.total ?? this.usersAudits.length;
+        this.usersItemsPerPage = usersFilterParams.limit ?? 10;
+        this.usersCurrentPage  = usersFilterParams.page  ?? 1;
+        this.usersTotalPages   = Math.max(1, Math.ceil(this.usersTotalItems / this.usersItemsPerPage));
+
         this.isLoadingClients = false;
-        console.log("clients in dashboard", this.filteredUsers);
       },
       error: (error) => {
         console.error("Erreur lors du chargement des utilisateurs:", error);
         this.isLoadingClients = false;
       },
+    });
+  }
+
+  goToUsersPage(page: number): void {
+    if (page < 1 || page > this.usersTotalPages) return;
+    this.usersFilterParams = { ...this.usersFilterParams, page };
+    this.showAdminUsers(this.usersFilterParams);
+  }
+
+  changeUsersItemsPerPage(limit: number): void {
+    this.usersFilterParams = { ...this.usersFilterParams, limit, page: 1 };
+    this.showAdminUsers(this.usersFilterParams);
+  }
+
+  getUsersPageNumbers(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(1, this.usersCurrentPage - 2);
+    const end   = Math.min(this.usersTotalPages, start + 4);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  getUsersEndItem(): number {
+    return Math.min(this.usersCurrentPage * this.usersItemsPerPage, this.usersTotalItems);
+  }
+
+  isTogglingUserStatus = false;
+
+  toggleUserStatus(): void {
+    if (!this.selectedUser?._id) return;
+    const newStatus: 'active' | 'inactive' = this.selectedUser.status === 'active' ? 'inactive' : 'active';
+    this.isTogglingUserStatus = true;
+    this.adminService.toggleUserStatus(this.selectedUser._id!, newStatus).subscribe({
+      next: () => {
+        this.selectedUser = { ...this.selectedUser, status: newStatus } as any;
+        const label = newStatus === 'active' ? 'Activé' : 'Désactivé';
+        this.notificationService.showSuccess(label, `Compte ${newStatus === 'active' ? 'activé' : 'désactivé'} avec succès.`);
+        this.showAdminUsers(this.usersFilterParams);
+        this.isTogglingUserStatus = false;
+      },
+      error: (err) => {
+        this.notificationService.showError('Erreur', err.error?.message || 'Impossible de modifier le statut.');
+        this.isTogglingUserStatus = false;
+      }
     });
   }
 

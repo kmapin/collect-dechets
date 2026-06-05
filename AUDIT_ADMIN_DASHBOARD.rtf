@@ -1,0 +1,268 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1036
+{\fonttbl{\f0\froman\fcharset0 Calibri;}{\f1\froman\fcharset0 Calibri Light;}{\f2\fmodern\fcharset0 Courier New;}}
+{\colortbl ;\red26\green60\blue94;\red255\green255\blue255;\red220\green235\blue245;\red22\green101\blue52;\red153\green27\blue27;\red120\green53\blue15;\red30\green64\blue175;\red91\green33\blue182;\red107\green114\blue128;\red17\green24\blue39;\red5\green150\blue105;\red239\green68\blue68;\red245\green158\blue11;}
+{\stylesheet{\s0\f0\fs22\cf10 Normal;}{\s1\f1\fs44\b\cf1 Titre1;}{\s2\f1\fs32\b\cf1 Titre2;}{\s3\f0\fs26\b\cf7 Titre3;}}
+
+\paperw11906\paperh16838\margl1440\margr1440\margt1440\margb1440
+
+{\pard\s1\sb480\sa240\b\f1\fs44\cf1\qc CAHIER DE CHARGES FONCTIONNEL\par}
+{\pard\sb0\sa120\b\f1\fs32\cf1\qc Tableau de Bord Administrateur (Super Admin)\par}
+{\pard\sb0\sa360\f0\fs20\cf9\qc Projet : {\b Collect D\'e9chets} \endash{} Plateforme de gestion de collecte de d\'e9chets | Ouagadougou, Burkina Faso\line
+Soci\'e9t\'e9 : {\b Sahelys} \endash{} Date de l\'92audit : {\b 02 Juin 2026} \endash{} Version : {\b 1.0}\par}
+
+\trowd\trgaph108\trleft-108
+\clcbpat3\cellx2500\clcbpat3\cellx9400
+\pard\intbl\f0\fs20\b Projet\b0\cell Collect D\'e9chets \endash{} Application Angular (Frontend)\cell\row
+\clcbpat3\cellx2500\clcbpat3\cellx9400
+\pard\intbl\b Module audit\'e9\b0\cell Dashboard Super Administrateur (admin-dashboard)\cell\row
+\clcbpat3\cellx2500\clcbpat3\cellx9400
+\pard\intbl\b Chemin source\b0\cell {\f2\fs18 src/app/pages/dashboards/admin-dashboard/}\cell\row
+\clcbpat3\cellx2500\clcbpat3\cellx9400
+\pard\intbl\b Framework\b0\cell Angular 17+ (standalone components), PrimeNG, Angular Material\cell\row
+\clcbpat3\cellx2500\clcbpat3\cellx9400
+\pard\intbl\b Auditeur\b0\cell W. Paulin GUIGMA \endash{} Sahelys\cell\row
+\pard\sb360\sa120
+
+{\pard\s2\sb360\sa180\b\f1\fs32\cf1 1. PRESENTATION GENERALE DU ROLE SUPER ADMIN\par}
+
+{\pard\f0\fs22 Le {\b Super Administrateur} est le r\'f4le de plus haut niveau de la plateforme Collect D\'e9chets. Il assure la supervision globale de l\'92ensemble de l\'92\'e9cosyst\'e8me de gestion des d\'e9chets.\par}
+
+{\pard\sb120\sa60\b\f0\fs22 Responsabilit\'e9s principales :\b0\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Supervision et audit de toutes les agences de collecte\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Gestion des agents de mairie (municipalit\'e9s)\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Consultation et gestion de tous les utilisateurs\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Suivi des incidents et signalements \'e0 l\'92\'e9chelle nationale\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Analyse des statistiques consolid\'e9es de la plateforme\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Communication vers les agences et parties prenantes\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Activation / d\'e9sactivation des agences et comptes\par}
+
+{\pard\sb120\f0\fs22 {\b Compte de test :} {\f2\fs20 admin.waste@gmail.com} | Mot de passe : {\f2\fs20 Wise2024}\par}
+
+{\pard\s2\sb480\sa180\b\f1\fs32\cf1 2. ARCHITECTURE DU DASHBOARD \endash{} ETAT DES ONGLETS\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf1 Onglets actifs (visibles dans la navigation)\b0\cf10\par}
+
+\trowd\trgaph108\trleft-108\trkeep
+\clcbpat1\cellx2600\clcbpat1\cellx4200\clcbpat1\cellx7800\clcbpat1\cellx9400
+\pard\intbl\f0\fs20\b\cf2 Onglet\cell Label\cell Description\cell \'c9tat\b0\cf10\cell\row
+\cellx2600\cellx4200\cellx7800\cellx9400
+\pard\intbl\f0\fs20 {\f2\fs18 overview}\cell Vue d\'92ensemble\cell KPIs, alertes, couverture territoriale, r\'e9partition d\'e9chets\cell {\b\cf4 ACTIF}\cf10\cell\row
+\cellx2600\cellx4200\cellx7800\cellx9400
+\pard\intbl {\f2\fs18 agencies}\cell Agences\cell Audit de toutes les agences, filtres, activation\cell {\b\cf4 ACTIF}\cf10\cell\row
+\cellx2600\cellx4200\cellx7800\cellx9400
+\pard\intbl {\f2\fs18 all\_users}\cell Utilisateurs\cell Tous les utilisateurs, filtres r\'f4le/quartier\cell {\b\cf4 ACTIF}\cf10\cell\row
+\cellx2600\cellx4200\cellx7800\cellx9400
+\pard\intbl {\f2\fs18 statistics}\cell Statistiques\cell Statistiques consolid\'e9es (partielles)\cell {\b\cf4 ACTIF}\cf10\cell\row
+\cellx2600\cellx4200\cellx7800\cellx9400
+\pard\intbl {\f2\fs18 incidents}\cell Incidents\cell Tous les signalements, filtres statut/gravit\'e9\cell {\b\cf4 ACTIF}\cf10\cell\row
+\cellx2600\cellx4200\cellx7800\cellx9400
+\pard\intbl {\f2\fs18 municipalities}\cell Municipalit\'e9s\cell Agents de mairie (HTML cod\'e9, tab comment\'e9)\cell {\b\cf8 COMMENT\'c9}\cf10\cell\row
+\cellx2600\cellx4200\cellx7800\cellx9400
+\pard\intbl {\f2\fs18 clients}\cell Clients\cell Audit clients (HTML cod\'e9, tab comment\'e9)\cell {\b\cf8 COMMENT\'c9}\cf10\cell\row
+\cellx2600\cellx4200\cellx7800\cellx9400
+\pard\intbl {\f2\fs18 communications}\cell Communications\cell Envoi de directives/alertes\cell {\b\cf8 COMMENT\'c9}\cf10\cell\row
+\pard\sb360\sa120
+
+{\pard\s2\sb480\sa180\b\f1\fs32\cf1 3. FONCTIONNALITES REALISEES (API r\'e9elle) \endash{} \cf4\'u10003?\cf10\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 3.1 Statistiques globales en temps r\'e9el\b0\cf10\par}
+{\pard\f0\fs22 {\b M\'e9thode :} {\f2\fs18 showAdminStatistics()} 薔{} {\f2\fs18 adminService.getAllStatistics()}\line
+Au chargement, l\'92admin voit les KPIs r\'e9els : agences actives/total, agents mairie, collecteurs, clients, collectes du jour, incidents non r\'e9solus. Spinner de chargement inclus.\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 3.2 Audit des Agences (onglet Agences)\b0\cf10\par}
+{\pard\f0\fs22 {\b M\'e9thode :} {\f2\fs18 loadAgencyAudits()} 薔{} {\f2\fs18 agencyService.getAllAgenciesFromApi()}\line
+Affiche toutes les agences avec : nom, statut, nb clients, nb collecteurs, nb zones, score conformit\'e9.\par}
+{\pard\f0\fs22 {\b Actions disponibles :}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b\cf4 Voir D\'e9tails} : navigation vers {\f2\fs18 /agencies/:id}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b\cf4 Contacter} : redirection vers la page agence\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b\cf4 Activer} : activation d\'92une agence inactive\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b\cf5 Auditer} : bouton pr\'e9sent mais comment\'e9\par}
+{\pard\f0\fs22 {\b Filtres :} Recherche par nom, filtre par statut (toutes/actives/inactives/supprim\'e9es).\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 3.3 Gestion des Utilisateurs (onglet Utilisateurs)\b0\cf10\par}
+{\pard\f0\fs22 {\b M\'e9thode :} {\f2\fs18 showAdminUsers(filterParams)} 薔{} {\f2\fs18 adminService.getAllUsers()}\line
+Vue consolid\'e9e de tous les utilisateurs : pr\'e9nom/nom, r\'f4le, statut, avatar/initiales, ville, t\'e9l\'e9phone.\line
+{\b Filtres :} Nom, r\'f4le (Client/Manager/Collecteur/Agent Mairie), quartier.\line
+{\b Action Voir D\'e9tails :} ouvre un drawer PrimeNG avec appel {\f2\fs18 adminService.getUserById()}.\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 3.4 Gestion des Incidents (onglet Incidents)\b0\cf10\par}
+{\pard\f0\fs22 Tous les signalements de toutes les agences via {\f2\fs18 loadAllSignalements()}. Composant partag\'e9 {\f2\fs18 app-signalement} r\'e9utilis\'e9.\line
+Filtres : statut (en cours/r\'e9solus), gravit\'e9 (critique/\'e9lev\'e9e/moyenne/faible).\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 3.5 Couverture Territoriale (onglet Vue d\'92ensemble)\b0\cf10\par}
+{\pard\f0\fs22 {\f2\fs18 adminService.getAllStatisticCity()} 薔{} statistiques par ville regroup\'e9es par pays.\line
+Donn\'e9es par ville : nb agences, clients, collectes, taux de couverture, incidents.\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 3.6 Ajout d\'92un Agent de Mairie\b0\cf10\par}
+{\pard\f0\fs22 Bouton CTA visible dans toute la navigation 薔{} redirection vers le formulaire d\'92inscription d\'92un agent de mairie.\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 3.7 Activation d\'92une Agence\b0\cf10\par}
+{\pard\f0\fs22 Pour les agences inactives, un bouton "Activer" appelle {\f2\fs18 activateAgency()} et met \'e0 jour l\'92API.\par}
+
+{\pard\s2\sb480\sa180\b\f1\fs32\cf1 4. FONCTIONNALITES PARTIELLEMENT REALISEES \endash{} \cf13\'u9888?\cf10\par}
+
+\trowd\trgaph108\trleft-108\trkeep
+\clcbpat1\cellx3600\clcbpat1\cellx6200\clcbpat1\cellx8200\clcbpat1\cellx9400
+\pard\intbl\f0\fs20\b\cf2 Fonctionnalit\'e9\cell Ce qui est fait\cell Ce qui manque\cell Priorit\'e9\b0\cf10\cell\row
+\cellx3600\cellx6200\cellx8200\cellx9400
+\pard\intbl\f0\fs20 Graphiques Statistiques\cell Structure des 4 cartes affich\'e9e\cell Graphiques r\'e9els remplac\'e9s par placeholders texte\cell {\b\cf12 HAUTE}\cf10\cell\row
+\cellx3600\cellx6200\cellx8200\cellx9400
+\pard\intbl Conformit\'e9 agences\cell Champ complianceScore affich\'e9 avec badge\cell Score = 0 toujours (non calcul\'e9 par l\'92API)\cell {\b\cf12 HAUTE}\cf10\cell\row
+\cellx3600\cellx6200\cellx8200\cellx9400
+\pard\intbl Performance agences\cell Champs completionRate, rating affich\'e9s\cell Valeurs = 0, non aliment\'e9es\cell {\b\cf12 HAUTE}\cf10\cell\row
+\cellx3600\cellx6200\cellx8200\cellx9400
+\pard\intbl D\'e9tails utilisateur (Drawer)\cell Appel API getUserById() fonctionnel\cell Contenu du drawer non impl\'e9ment\'e9, modification impossible\cell {\b\cf12 HAUTE}\cf10\cell\row
+\cellx3600\cellx6200\cellx8200\cellx9400
+\pard\intbl Alertes r\'e9centes (Overview)\cell Section HTML pr\'e9sente\cell incidents[] non aliment\'e9 dans cet onglet, section vide\cell {\b\cf13 MOYENNE}\cf10\cell\row
+\cellx3600\cellx6200\cellx8200\cellx9400
+\pard\intbl R\'e9partition d\'e9chets\cell Section affich\'e9e avec types et couleurs\cell Donn\'e9es enti\'e8rement mock\'e9es (hardcod\'e9es)\cell {\b\cf13 MOYENNE}\cf10\cell\row
+\cellx3600\cellx6200\cellx8200\cellx9400
+\pard\intbl Audit Clients (tab comment\'e9)\cell HTML complet avec cartes Material\cell Onglet comment\'e9 dans la navigation\cell {\b\cf11 BASSE}\cf10\cell\row
+\pard\sb360\sa120
+
+{\pard\s2\sb480\sa180\b\f1\fs32\cf1 5. FONCTIONNALITES DESACTIVEES / COMMENTEES \endash{} \cf8\'u128263?\cf10\par}
+
+{\pard\f0\fs22\cf13 Attention : ces fonctionnalit\'e9s sont cod\'e9es dans le HTML ou le TypeScript mais d\'e9sactiv\'e9es par des commentaires.\cf10\par}
+
+\trowd\trgaph108\trleft-108\trkeep
+\clcbpat1\cellx4500\clcbpat1\cellx7500\clcbpat1\cellx9400
+\pard\intbl\f0\fs20\b\cf2 Fonctionnalit\'e9\cell Emplacement\cell Raison probable\b0\cf10\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl\f0\fs20 Bouton "Nouvelle Communication" (header)\cell HTML ligne 13-19\cell Module Communications non finalis\'e9\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Bouton "Rapport Global"\cell HTML ligne 20-27\cell G\'e9n\'e9ration PDF non impl\'e9ment\'e9e\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Onglet Municipalit\'e9s\cell TS ligne 297-301\cell En attente validation parcours Mairie\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Onglet Collecteurs\cell TS ligne 302-303\cell Couvert par onglet Utilisateurs\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Onglet Clients\cell TS ligne 303-304\cell Couvert par onglet Utilisateurs\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Onglet Communications\cell TS ligne 314-318\cell Fonctionnalit\'e9 en cours de d\'e9veloppement\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Bouton "Auditer" une agence\cell HTML ligne 636-643\cell Processus d\'92audit non d\'e9fini\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Filtres de conformit\'e9 (agences)\cell HTML ligne 528-537\cell Score conformit\'e9 = 0, filtre sans effet\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Filtre de p\'e9riode (statistiques)\cell HTML 1126-1148 (isDisabled=true)\cell API stats non filtrable par p\'e9riode\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Bouton Export statistiques\cell HTML ligne 1141-1148\cell exportStatistics() = notif info seulement\cell\row
+\cellx4500\cellx7500\cellx9400
+\pard\intbl Revenus et Conformit\'e9 dans KPIs\cell HTML ligne 148-176\cell Donn\'e9es financi\'e8res non disponibles\cell\row
+\pard\sb360\sa120
+
+{\pard\s2\sb480\sa180\b\f1\fs32\cf1 6. FONCTIONNALITES NON REALISEES (\'e0 d\'e9velopper) \endash{} \'u10060?\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 6.1 Module Rapports et Export\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Rapport global PDF} : g\'e9n\'e9ration d\'92un rapport consolid\'e9 (agences, stats, incidents) \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Export Excel/CSV} : listes agences, utilisateurs, incidents \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Rapport par agence} : rapport d\'e9taill\'e9 individuel (conformit\'e9, collectes, incidents)\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 6.2 Module Graphiques et Visualisation\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Graphique secteurs} : types de d\'e9chets (Chart.js / ngx-charts) \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Courbe lin\'e9aire} : \'e9volution collectes sur 7j/30j/12 mois \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Barres comparatives} : performance agences en temps r\'e9el\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Carte g\'e9ographique interactive} : Ouagadougou, zones couvertes, densit\'e9 clients\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 6.3 Module Communications\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Envoi de notifications aux agences} (directives, alertes) \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Messagerie directe} admin 薔{} agence\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Alertes SMS/Email} automatiques en cas d\'92incident critique\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Historique} des communications envoy\'e9es avec statut de lecture\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 6.4 Module Audit Formel\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Grille d\'92audit} : formulaire structur\'e9 avec crit\'e8res (ponctualit\'e9, \'e9quipements, conformit\'e9 l\'e9gale) \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Score conformit\'e9 automatique} : calcul bas\'e9 sur taux collecte + incidents + avis clients\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Historique des audits} : \'e9volution du score dans le temps\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Sanctions et avertissements} : suspension agences non conformes\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 6.5 Actions manquantes sur les Utilisateurs\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Modifier un utilisateur} (nom, email, adresse, r\'f4le) \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b D\'e9sactiver / R\'e9activer un compte} \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b R\'e9initialiser le mot de passe} depuis l\'92interface admin\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Supprimer un compte} avec confirmation\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Historique d\'92activit\'e9} utilisateur (collectes, connexions)\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 6.6 Module Finances Admin (enti\'e8rement manquant)\b0\cf10\par}
+{\pard\f0\fs22\cf5 Note : Le module Finance existe pour les agences mais aucun \'e9quivalent Admin n\'92est impl\'e9ment\'e9.\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Vue consolid\'e9e des revenus} : total abonnements actifs, revenus par agence/ville \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Suivi des paiements en retard} : clients avec abonnements impay\'e9s\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Rapport financier mensuel} : \'e9volution revenus comparatif mois/mois\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 6.7 Pagination et performance\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Pagination onglet Utilisateurs} : actuellement toute la liste charg\'e9e en une fois \endash{} {\b\cf12 PRIORITE HAUTE}\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Chargement diff\'e9r\'e9 des onglets} : ne charger que lors du premier clic\par}
+
+{\pard\s2\sb480\sa180\b\f1\fs32\cf1 7. PERSPECTIVES ET EVOLUTIONS FUTURES \endash{} \'u128640?\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 7.1 Intelligence Artificielle et Analytique avanc\'e9e\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Pr\'e9diction de la demande} : ML pour anticiper le volume de d\'e9chets par zone/saison\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Optimisation des tourn\'e9es} : it\'e9raires optimaux via GPS et densit\'e9 clients\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b D\'e9tection d\'92anomalies} : alertes auto si chute de performance d\'92une agence\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Scoring pr\'e9dictif} : identifier les clients \'e0 risque de r\'e9siliation\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 7.2 Application Mobile Administrateur\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Application PWA ou native avec acc\'e8s aux KPIs en d\'e9placement\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Notifications push en cas d\'92incident critique\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Validation d\'92actions (activation agence, r\'e9solution incident) depuis le mobile\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 7.3 Extension G\'e9ographique\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Support multi-ville : Bobo-Dioulasso, Koudougou, Banfora\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Vue par r\'e9gion avec agr\'e9gation des statistiques\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Gestion de r\'e9glementations locales par ville\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 7.4 Int\'e9grations Externes\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b API Mairies} : automatiser les rapports r\'e9glementaires\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Partenaires recyclage} : suivi tonnages vers centres de recyclage\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b ERP Financier} : tableaux de bord transactions Mobile Money\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab {\b Traceur GPS IoT} : suivi v\'e9hicules en temps r\'e9el sur carte\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf7 7.5 Module Qualit\'e9 (ISO 14001)\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Indicateurs de performance environnementale (IPE)\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Suivi taux de recyclage vs d\'e9chets enfouis\par}
+{\pard\fi-240\li480\f0\fs22 \bullet{}\tab Documentation de conformit\'e9 exportable pour audits tiers\par}
+
+{\pard\s2\sb480\sa180\b\f1\fs32\cf1 8. SYNTHESE ET INDICATEURS DE PROGRESSION\par}
+
+\trowd\trgaph108\trleft-108\trkeep
+\clcbpat1\cellx4500\clcbpat1\cellx7000\clcbpat1\cellx9400
+\pard\intbl\f0\fs20\b\cf2 Cat\'e9gorie\cell Nb de fonctionnalit\'e9s\cell \'c9tat global\b0\cf10\cell\row
+\cellx4500\cellx7000\cellx9400
+\pard\intbl\f0\fs20 Fonctionnalit\'e9s r\'e9alis\'e9es (API r\'e9elle)\cell 7\cell {\b\cf4 TERMIN\'c9 \endash{} ~28%}\cf10\cell\row
+\cellx4500\cellx7000\cellx9400
+\pard\intbl Partiellement r\'e9alis\'e9es\cell 8\cell {\b\cf13 EN COURS \endash{} ~22%}\cf10\cell\row
+\cellx4500\cellx7000\cellx9400
+\pard\intbl Comment\'e9es / D\'e9sactiv\'e9es\cell 13\cell {\b\cf8 D\'c9SACTIV\'c9}\cf10\cell\row
+\cellx4500\cellx7000\cellx9400
+\pard\intbl Non r\'e9alis\'e9es (\'e0 faire)\cell 25+\cell {\b\cf12 A FAIRE \endash{} ~50%}\cf10\cell\row
+\cellx4500\cellx7000\cellx9400
+\pard\intbl Perspectives long terme\cell 15+\cell {\b\cf7 LONG TERME}\cf10\cell\row
+\pard\sb360\sa120
+
+{\pard\s2\sb480\sa180\b\f1\fs32\cf1 9. RECOMMANDATIONS PRIORITAIRES\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf12 Priorit\'e9 IMMEDIATE \endash{} Sprint 1 (2 semaines)\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 1.\tab {\b Compl\'e9ter le drawer D\'e9tails Utilisateur} : afficher toutes les infos + activer/d\'e9sactiver le compte\par}
+{\pard\fi-240\li480\f0\fs22 2.\tab {\b Activer l\'92onglet Municipalit\'e9s} : retirer le commentaire dans {\f2\fs18 tabs[]} (code HTML d\'e9j\'e0 pr\'eant)\par}
+{\pard\fi-240\li480\f0\fs22 3.\tab {\b Alimenter les indicateurs agences} : completionRate, rating, complianceScore via API\par}
+{\pard\fi-240\li480\f0\fs22 4.\tab {\b Lier les alertes r\'e9centes} de la Vue d\'92ensemble aux incidents charg\'e9s depuis l\'92API\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf13 Priorit\'e9 HAUTE \endash{} Sprint 2-3 (1 mois)\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 1.\tab Int\'e9grer une biblioth\'e8que graphiques (Chart.js ou ngx-charts) pour l\'92onglet Statistiques\par}
+{\pard\fi-240\li480\f0\fs22 2.\tab Impl\'e9menter l\'92onglet Communications avec envoi de directives aux agences\par}
+{\pard\fi-240\li480\f0\fs22 3.\tab Ajouter la modification et d\'e9sactivation des utilisateurs\par}
+{\pard\fi-240\li480\f0\fs22 4.\tab Cr\'e9er une grille d\'92audit formelle pour les agences avec score automatique\par}
+{\pard\fi-240\li480\f0\fs22 5.\tab Ajouter la pagination c\'f4t\'e9 serveur pour la liste des utilisateurs\par}
+
+{\pard\sb120\sa60\b\f0\fs22\cf4 Priorit\'e9 NORMALE \endash{} Sprint 4-6 (3 mois)\b0\cf10\par}
+{\pard\fi-240\li480\f0\fs22 1.\tab Module Finances Admin (revenus consolid\'e9s, paiements en retard)\par}
+{\pard\fi-240\li480\f0\fs22 2.\tab Export PDF/Excel des rapports\par}
+{\pard\fi-240\li480\f0\fs22 3.\tab Filtre de p\'e9riode fonctionnel pour les statistiques\par}
+{\pard\fi-240\li480\f0\fs22 4.\tab Carte interactive des zones de couverture\par}
+{\pard\fi-240\li480\f0\fs22 5.\tab Historique d\'92activit\'e9 par utilisateur\par}
+
+{\pard\sb480\sa120\f0\fs18\cf9\qc ___________________________________________\line
+Document g\'e9n\'e9r\'e9 le 02 Juin 2026 \endash{} Audit du code source du projet Collect D\'e9chets\line
+Sahelys \endash{} Ce document est un cahier de charges vivant, \'e0 mettre \'e0 jour \'e0 chaque sprint.\par}
+
+}
