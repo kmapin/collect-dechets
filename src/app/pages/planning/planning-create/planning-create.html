@@ -2,6 +2,14 @@
 
 <div class="pc-wrapper">
 
+  <!-- Overlay de chargement en mode édition -->
+  @if (isLoadingEdit()) {
+    <div style="position:fixed;inset:0;background:rgba(255,255,255,.7);z-index:999;display:flex;align-items:center;justify-content:center;gap:12px;font-size:16px;color:#1e293b">
+      <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
+      Chargement du planning…
+    </div>
+  }
+
   <!-- =================== HEADER =================== -->
   <div class="pc-header">
     <div class="pc-breadcrumb">
@@ -9,7 +17,7 @@
         <mat-icon>dashboard</mat-icon><span>Planning</span>
       </a>
       <mat-icon class="bc-sep">chevron_right</mat-icon>
-      <span class="bc-current">Nouveau planning</span>
+      <span class="bc-current">{{ isEditMode() ? 'Modifier le planning' : 'Nouveau planning' }}</span>
     </div>
     <div class="pc-header-actions">
       @if (draftSaved()) {
@@ -220,9 +228,14 @@
           <div class="time-grid">
             <div class="form-group">
               <label class="form-lbl">Date de collecte <span class="req">*</span></label>
-              <p-datepicker formControlName="date" [showIcon]="true"
-                            dateFormat="dd/mm/yy" [minDate]="today"
-                            placeholder="Sélectionner une date" styleClass="w-full" />
+              <p-datepicker formControlName="date"
+                            [showIcon]="true"
+                            [inline]="false"
+                            dateFormat="dd/mm/yy"
+                            [minDate]="today"
+                            placeholder="Sélectionner une date"
+                            styleClass="w-full"
+                            [appendTo]="'body'" />
             </div>
             <div class="form-group">
               <label class="form-lbl">Fréquence <span class="req">*</span></label>
@@ -261,8 +274,13 @@
               </div>
               <div class="form-group" style="margin-top:16px; max-width:280px">
                 <label class="form-lbl">Date de fin (optionnel)</label>
-                <p-datepicker formControlName="endDate" [showIcon]="true"
-                              dateFormat="dd/mm/yy" placeholder="Date de fin" styleClass="w-full" />
+                <p-datepicker formControlName="endDate"
+                              [showIcon]="true"
+                              [inline]="false"
+                              dateFormat="dd/mm/yy"
+                              placeholder="Date de fin"
+                              styleClass="w-full"
+                              [appendTo]="'body'" />
               </div>
             </div>
           }
@@ -453,7 +471,7 @@
                 @if (getTeamById(id); as team) {
                   <div class="sum-row" [class.conflict-row]="isTeamConflicting(id)">
                     <span class="sum-lbl">{{ team.name }}</span>
-                    <span class="sum-val">{{ team.collectors.length }} membres</span>
+                    <span class="sum-val">{{ (team.members?.length ?? team.collectors?.length ?? 0) }} membres</span>
                   </div>
                 }
               }
@@ -581,7 +599,9 @@
     } @else {
       <button class="btn-submit" type="button" (click)="submitForm()" [disabled]="!canGoNext() || isSubmitting()">
         @if (isSubmitting()) {
-          <span class="spin-sm"></span> Création en cours…
+          <span class="spin-sm"></span> {{ isEditMode() ? 'Mise à jour…' : 'Création en cours…' }}
+        } @else if (isEditMode()) {
+          <mat-icon>save</mat-icon> Enregistrer les modifications
         } @else {
           <mat-icon>check_circle</mat-icon>
           {{ form.get('publishImmediately')?.value ? 'Créer et publier' : 'Créer en brouillon' }}

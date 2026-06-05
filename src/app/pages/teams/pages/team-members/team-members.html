@@ -30,7 +30,7 @@
       }
     </div>
     <div class="tmh-right">
-      <button class="tm-add-btn" (click)="addOpen.set(true)">
+      <button class="tm-add-btn" (click)="openAdd()">
         <mat-icon>person_add</mat-icon>
         <span class="btn-lbl">Ajouter un membre</span>
       </button>
@@ -292,7 +292,7 @@
             <mat-icon>filter_list_off</mat-icon>Effacer les filtres
           </button>
         } @else {
-          <button class="empty-btn empty-btn--primary" (click)="addOpen.set(true)">
+          <button class="empty-btn empty-btn--primary" (click)="openAdd()">
             <mat-icon>person_add</mat-icon>Ajouter le premier membre
           </button>
         }
@@ -318,103 +318,85 @@
     <button class="tmd-close" (click)="addOpen.set(false)"><mat-icon>close</mat-icon></button>
   </div>
 
-  <form [formGroup]="addForm" (ngSubmit)="submitAdd()" class="tmd-form">
+  <!-- ── Depuis la liste ── -->
+  <div class="tmd-list-tab">
 
-    <!-- Name -->
-    <div class="tmd-field">
-      <label>Nom complet <span class="req">*</span></label>
-      <div class="tmd-inp" [class.tmd-inp--err]="addForm.get('name')!.invalid && addForm.get('name')!.touched">
-        <mat-icon>person</mat-icon>
-        <input type="text" formControlName="name" placeholder="Prénom Nom"/>
-      </div>
-    </div>
-
-    <!-- Phone -->
-    <div class="tmd-field">
-      <label>Téléphone <span class="req">*</span></label>
-      <div class="tmd-inp" [class.tmd-inp--err]="addForm.get('phone')!.invalid && addForm.get('phone')!.touched">
-        <mat-icon>phone</mat-icon>
-        <input type="tel" formControlName="phone" placeholder="+226 70 00 00 00"/>
-      </div>
-    </div>
-
-    <!-- Role cards -->
-    <div class="tmd-field">
-      <label>Rôle <span class="req">*</span></label>
-      <div class="tmd-role-grid">
-        @for (r of allRoles; track r.value) {
-          <label class="tmd-role-card"
-                 [class.tmd-role-card--on]="addForm.get('role')!.value === r.value"
-                 [style.--rc]="r.color">
-            <input type="radio" formControlName="role" [value]="r.value" style="display:none"/>
-            <mat-icon>{{ r.icon }}</mat-icon>
-            <span>{{ r.label }}</span>
-          </label>
+      <!-- Search bar -->
+      <div class="emp-search">
+        <mat-icon>search</mat-icon>
+        <input type="text" placeholder="Rechercher par nom ou téléphone…"
+               [value]="employeeSearch()"
+               (input)="employeeSearch.set($any($event.target).value)" />
+        @if (employeeSearch()) {
+          <button class="emp-search-clear" (click)="employeeSearch.set('')"><mat-icon>close</mat-icon></button>
         }
       </div>
-    </div>
 
-    <!-- Availability -->
-    <div class="tmd-field">
-      <label>Disponibilité initiale</label>
-      <div class="tmd-avail-row">
-        @for (a of allAvails; track a.value) {
-          <label class="tmd-avail-opt"
-                 [class.tmd-avail-opt--on]="addForm.get('availability')!.value === a.value"
-                 [style.--ac]="a.color">
-            <input type="radio" formControlName="availability" [value]="a.value" style="display:none"/>
-            <span class="tao-dot" [style.background]="a.color"></span>
-            {{ a.label }}
-          </label>
-        }
-      </div>
-    </div>
-
-    <!-- Zone -->
-    <div class="tmd-field">
-      <label>Zone affectée</label>
-      <div class="tmd-inp">
-        <mat-icon>location_on</mat-icon>
-        <select formControlName="zoneId">
-          <option value="">— Même zone que l'équipe —</option>
-          @for (z of svc.availableZones(); track z.id) {
-            <option [value]="z.id">{{ z.name }}</option>
-          }
-        </select>
-      </div>
-    </div>
-
-    <!-- Vehicle (chauffeur only) -->
-    @if (addForm.get('role')!.value === 'chauffeur') {
-      <div class="tmd-field">
-        <label>Véhicule affecté</label>
-        <div class="tmd-inp">
-          <mat-icon>local_shipping</mat-icon>
-          <select formControlName="vehicleId">
-            <option value="">— Aucun véhicule —</option>
-            @if (team()?.vehicle) {
-              <option [value]="team()!.vehicle!.id">{{ team()!.vehicle!.plate }} (véhicule équipe)</option>
-            }
-            @for (v of svc.availableVehicles(); track v.id) {
-              <option [value]="v.id">{{ v.plate }} – {{ v.model }}</option>
-            }
-          </select>
+      <!-- Selected count badge -->
+      @if (selectedEmpIds().length > 0) {
+        <div class="emp-selection-bar">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ selectedEmpIds().length }} sélectionné(s)</span>
+          <button class="esb-clear" (click)="selectedEmpIds.set([])">
+            <mat-icon>close</mat-icon>Désélectionner tout
+          </button>
         </div>
-      </div>
-    }
+      }
 
-    <div class="tmd-footer">
-      <button type="button" class="tmd-btn tmd-btn--ghost" (click)="addOpen.set(false)">Annuler</button>
-      <button type="submit" class="tmd-btn tmd-btn--primary" [disabled]="addForm.invalid || saving()">
-        @if (saving()) {
-          <mat-icon class="spin">autorenew</mat-icon>Ajout…
+      <!-- Employee list -->
+      <div class="emp-list">
+        @if (svc.collectors().length === 0) {
+          <div class="emp-empty">
+            <mat-icon>info</mat-icon>
+            <span>Aucun collecteur disponible</span>
+          </div>
+        } @else if (filteredEmployees().length === 0) {
+          <div class="emp-empty">
+            <mat-icon>search_off</mat-icon>
+            <span>Aucun résultat pour "{{ employeeSearch() }}"</span>
+          </div>
         } @else {
-          <mat-icon>person_add</mat-icon>Ajouter
+          @for (emp of filteredEmployees(); track emp._id) {
+            <button type="button"
+                    class="emp-row"
+                    [class.emp-row--selected]="isEmployeeSelected(emp._id)"
+                    (click)="toggleEmployee(emp._id)">
+              <div class="emp-chk">
+                @if (isEmployeeSelected(emp._id)) {
+                  <mat-icon>check_box</mat-icon>
+                } @else {
+                  <mat-icon>check_box_outline_blank</mat-icon>
+                }
+              </div>
+              <div class="emp-avatar">{{ emp.firstName.charAt(0) + emp.lastName.charAt(0) }}</div>
+              <div class="emp-info">
+                <div class="emp-name">{{ emp.firstName }} {{ emp.lastName }}</div>
+                @if (emp.phone) {
+                  <div class="emp-phone"><mat-icon>phone</mat-icon>{{ emp.phone }}</div>
+                }
+              </div>
+            </button>
+          }
         }
-      </button>
+      </div>
+
+      <div class="tmd-footer">
+        <button type="button" class="tmd-btn tmd-btn--ghost" (click)="addOpen.set(false)">Annuler</button>
+        <button type="button" class="tmd-btn tmd-btn--primary"
+                [disabled]="selectedEmpIds().length === 0 || saving()"
+                (click)="submitAdd()">
+          @if (saving()) {
+            <mat-icon class="spin">autorenew</mat-icon>Ajout…
+          } @else {
+            <mat-icon>person_add</mat-icon>
+            Ajouter {{ selectedEmpIds().length > 0 ? '(' + selectedEmpIds().length + ')' : '' }}
+          }
+        </button>
+      </div>
     </div>
 
-  </form>
+
+
 </aside>
 
 <!-- ══════════════════════ VEHICLE ASSIGN MODAL ════════════════════ -->

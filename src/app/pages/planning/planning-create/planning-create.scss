@@ -216,7 +216,7 @@ $tr: .2s ease;
   border-radius: $radius;
   border: 1px solid $border;
   box-shadow: $shadow;
-  overflow: hidden;
+  overflow: visible; // ne pas clipper les overlays (calendrier, select)
 }
 
 .step-panel {

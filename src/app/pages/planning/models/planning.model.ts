@@ -109,19 +109,43 @@ export interface ConflictCheckResponse {
   suggestions: SuggestionResult[];
 }
 
-// ── Team API ────────────────────────────────────────────────────
+// ── Team API V2 ─────────────────────────────────────────────────
+export interface TeamApiMember {
+  _id?: string;
+  name: string;
+  phone: string;
+  role: 'manager' | 'collector';
+  availability?: 'disponible' | 'occupe' | 'absent';
+  active?: boolean;
+  vehicleId?: string | null;
+}
+
 export interface TeamApi {
+  // Champs communs V1 & V2
   _id: string;
   name: string;
-  agencyId: string;
-  leaderId: string;
-  collectors: string[];
-  zones: string[];
-  maxClientsPerDay: number;
-  status: 'active' | 'inactive';
-  description?: string;
+  agencyId?: string;
+  status: 'active' | 'inactive' | 'on_mission' | 'maintenance';
+  description?: string | null;
   createdAt: string;
   updatedAt: string;
+  // Champs V2
+  code?: string;
+  color?: string;
+  supervisor?: string;
+  phone?: string;
+  vehicleId?: string | { _id: string; plate: string; model: string; status: string } | null;
+  zones?: string[];
+  members?: TeamApiMember[];
+  workload?: number;
+  completedMissions?: number;
+  totalMissions?: number;
+  successRate?: number;
+  currentZone?: string | null;
+  // Champs V1 (legacy, optionnels en V2)
+  leaderId?: string;
+  collectors?: string[];
+  maxClientsPerDay?: number;
 }
 
 // ── Territory ───────────────────────────────────────────────────

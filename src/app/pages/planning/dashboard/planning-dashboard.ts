@@ -1,6 +1,6 @@
-import { Component, OnInit, signal, computed, inject, OnDestroy } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { ChartModule } from 'primeng/chart';
 import { TableModule } from 'primeng/table';
@@ -10,8 +10,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { BadgeModule } from 'primeng/badge';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { PlanningService } from '../services/planning.service';
-import { Planning, PlanningAlert } from '../models/planning.model';
+import { Planning, PlanningAlert, PlanningStatus } from '../models/planning.model';
 
 interface StatCard {
   label: string;
@@ -31,14 +34,29 @@ interface StatCard {
     ChartModule, TableModule, ButtonModule, TagModule,
     TooltipModule, SkeletonModule,
     BadgeModule, ProgressBarModule,
+    ToastModule, ConfirmDialogModule,
   ],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './planning-dashboard.html',
   styleUrl: './planning-dashboard.scss',
 })
 export class PlanningDashboard implements OnInit, OnDestroy {
-  private svc = inject(PlanningService);
+  private svc     = inject(PlanningService);
+  private msg     = inject(MessageService);
+  private confirm = inject(ConfirmationService);
+  private router  = inject(Router);
 
   isLoading = signal(true);
+
+  constructor() {
+    effect(() => {
+      const err = this.svc.error();
+      if (err) {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err, life: 5000 });
+        this.svc.clearError();
+      }
+    });
+  }
 
   // ── Data from service (signals) ────────────────────────────
   stats   = this.svc.stats;
@@ -319,6 +337,104 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
   getTeamStatusLabel(status: string): string {
     return ({ disponible: 'Disponible', en_service: 'En service', indisponible: 'Indisponible' } as Record<string,string>)[status] ?? status;
+  }
+
+  // ── Planning status actions ──────────────────────────────────
+
+  actionLoading = signal<string | null>(null); // ID du planning en cours d'action
+
+  /** brouillon → planifie */
+  publishPlanning(p: Planning): void {
+    this.confirm.confirm({
+      message: `Publier le planning <strong>${p.reference}</strong> ?<br>Il sera visible et exécutable par les équipes.`,
+      header: 'Confirmer la publication',
+      icon: 'pi pi-send',
+      acceptLabel: 'Publier',
+      rejectLabel: 'Annuler',
+      acceptButtonStyleClass: 'p-button-success',
+      accept: () => {
+        this.actionLoading.set(p.id);
+        this.svc.publishPlanning(p.id).subscribe({
+          next: (res) => {
+            this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'planifie');
+            this.msg.add({ severity: 'success', summary: 'Publié', detail: `${p.reference} est maintenant planifié.` });
+          },
+          error: (err) => {
+            const detail = err?.error?.error?.message ?? 'Impossible de publier ce planning';
+            this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+          },
+          complete: () => this.actionLoading.set(null),
+        });
+      },
+    });
+  }
+
+  /** planifie → en_cours */
+  startPlanning(p: Planning): void {
+    this.actionLoading.set(p.id);
+    this.svc.startPlanning(p.id).subscribe({
+      next: (res) => {
+        this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'en_cours');
+        this.msg.add({ severity: 'info', summary: 'Démarré', detail: `${p.reference} est maintenant en cours.` });
+      },
+      error: (err) => {
+        const detail = err?.error?.error?.message ?? 'Impossible de démarrer ce planning';
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+      },
+      complete: () => this.actionLoading.set(null),
+    });
+  }
+
+  /** en_cours → termine */
+  completePlanning(p: Planning): void {
+    this.actionLoading.set(p.id);
+    this.svc.completePlanning(p.id).subscribe({
+      next: (res) => {
+        this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'termine');
+        this.msg.add({ severity: 'success', summary: 'Terminé', detail: `${p.reference} marqué comme terminé.` });
+      },
+      error: (err) => {
+        const detail = err?.error?.error?.message ?? 'Impossible de terminer ce planning';
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+      },
+      complete: () => this.actionLoading.set(null),
+    });
+  }
+
+  /** planifie | en_cours → annule */
+  cancelPlanning(p: Planning): void {
+    this.confirm.confirm({
+      message: `Annuler le planning <strong>${p.reference}</strong> ?<br>Cette action est irréversible.`,
+      header: 'Confirmer l\'annulation',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Annuler le planning',
+      rejectLabel: 'Retour',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.actionLoading.set(p.id);
+        this.svc.cancelPlanning(p.id).subscribe({
+          next: (res) => {
+            this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'annule');
+            this.msg.add({ severity: 'warn', summary: 'Annulé', detail: `${p.reference} a été annulé.` });
+          },
+          error: (err) => {
+            const detail = err?.error?.error?.message ?? 'Impossible d\'annuler ce planning';
+            this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+          },
+          complete: () => this.actionLoading.set(null),
+        });
+      },
+    });
+  }
+
+  navigateToEdit(p: Planning): void {
+    this.router.navigate(['/planning/create'], { queryParams: { edit: p.id } });
+  }
+
+  private _refreshPlannings(id: string, newStatus: PlanningStatus): void {
+    this.recentPlannings.update(list =>
+      list.map(x => x.id === id ? { ...x, status: newStatus } : x)
+    );
   }
 
   dismissAlert(id: string): void { this.svc.dismissAlert(id); }

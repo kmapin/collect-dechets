@@ -97,9 +97,11 @@
             <mat-icon>cancel</mat-icon>Annuler
           </button>
         }
-        <button type="button" class="tb-btn tb-btn--primary" (click)="editPlanning()">
-          <mat-icon>edit</mat-icon>Modifier
-        </button>
+        @if (planning()!.status === 'brouillon') {
+          <button type="button" class="tb-btn tb-btn--primary" (click)="editPlanning()">
+            <mat-icon>edit</mat-icon>Modifier
+          </button>
+        }
       </div>
     </div>
 

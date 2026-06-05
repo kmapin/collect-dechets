@@ -1,6 +1,6 @@
 // ── Local UI enums (2 extra statuses are UI-only, API only knows active/inactive) ──
 export type TeamStatus       = 'active' | 'inactive' | 'on_mission' | 'maintenance';
-export type MemberRole       = 'chef' | 'chauffeur' | 'agent' | 'assistant';
+export type MemberRole       = 'manager' | 'collector';
 export type VehicleStatus    = 'disponible' | 'en_service' | 'maintenance' | 'hors_service';
 export type VehicleType      = 'camion' | 'pickup' | 'moto' | 'tricycle';
 export type MemberAvailability = 'disponible' | 'occupe' | 'absent';
@@ -103,7 +103,7 @@ export interface Mission {
   duration?: string;
 }
 
-// ── UI Team (mapped from TeamApi + local enrichment) ───────────
+// ── UI Team ────────────────────────────────────────────────────
 export interface Team {
   id: string;
   code: string;
@@ -111,12 +111,6 @@ export interface Team {
   status: TeamStatus;
   color: string;
   description?: string;
-  // API-sourced fields
-  agencyId?: string;
-  leaderId?: string;
-  collectorIds?: string[];    // raw IDs from API
-  maxClientsPerDay?: number;
-  // UI-only / locally enriched
   members: TeamMember[];
   vehicle?: Vehicle;
   zones: AssignedZone[];
@@ -186,11 +180,95 @@ export interface TeamFormData {
   status: TeamStatus;
   description: string;
   supervisor: string;
-  leaderId?: string;
   phone: string;
   vehicleId: string;
   zoneIds: string[];
-  collectorIds?: string[];
-  maxClientsPerDay?: number;
-  members: Array<{ name: string; phone: string; role: MemberRole }>;
+  members: Array<{ _id?: string; name: string; phone: string; role: MemberRole }>;
+}
+
+// ── API V2 types ───────────────────────────────────────────────
+
+export interface TeamV2Member {
+  _id?: string;
+  id?: string;
+  userId?: string | null;
+  name: string;
+  phone: string;
+  role: 'manager' | 'collector';
+  email?: string | null;
+  availability?: MemberAvailability;
+  joinedAt?: string;
+  active?: boolean;
+  vehicleId?: string | null;
+  zoneId?: string | null;
+  performance?: { missionsCompleted: number; successRate: number; hoursWorked: number };
+}
+
+export interface TeamV2Api {
+  _id: string;
+  code?: string;
+  name: string;
+  agencyId?: string;
+  color?: string;
+  status: TeamStatus;
+  description?: string | null;
+  supervisor?: string;
+  phone?: string;
+  vehicleId?: string | VehicleApi | null;  // peut être un objet peuplé par le backend
+  zones?: any[];
+  members: TeamV2Member[];
+  workload?: number;
+  completedMissions?: number;
+  totalMissions?: number;
+  successRate?: number;
+  currentZone?: string | null;
+  recentMissions?: Mission[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamV2CreateBody {
+  agencyId: string;
+  name: string;
+  color?: string;
+  status?: TeamStatus;
+  description?: string;
+  supervisor?: string;
+  phone?: string;
+  vehicleId?: string;
+  zoneIds?: string[];
+  members?: Array<{ userId?: string; name: string; phone: string; role: 'manager' | 'collector' }>;
+}
+
+export interface TeamV2MemberBody {
+  userId?: string;
+  name: string;
+  phone: string;
+  role: 'manager' | 'collector';
+  email?: string;
+}
+
+export interface VehicleApi {
+  _id: string;
+  agencyId: string;
+  plate: string;
+  model: string;
+  type: VehicleType;
+  capacityTons?: number;
+  status: VehicleStatus;
+  fuelLevel?: number;
+  mileage?: number;
+  lastMaintenance?: string;
+}
+
+export interface AvailableZoneApi {
+  _id?: string;
+  id?: string;
+  name: string;
+  cityId?: string;
+  ville?: string;
+  arrondissementId?: string;
+  arrondissement?: string;
+  sectorId?: string;
+  householdsCount?: number;
 }

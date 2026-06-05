@@ -11,7 +11,7 @@ import { MessageService } from 'primeng/api';
 import * as L from 'leaflet';
 import { TeamService } from '../../services/team.service';
 import { TeamForm } from '../../components/team-form/team-form';
-import { Team, TeamFormData, TeamStatus } from '../../models/team.model';
+import { Team, TeamFormData, TeamStatus, TeamMember } from '../../models/team.model';
 
 @Component({
   selector: 'app-team-detail',
@@ -48,6 +48,19 @@ export class TeamDetail implements OnInit, OnDestroy {
   });
   availableMembers = computed(() => this.team()?.members.filter(m => m.availability === 'disponible').length ?? 0);
 
+  /** Véhicules non assignés + véhicule actuel de l'équipe (pour le formulaire d'édition). */
+  vehiclesForForm = computed(() => {
+    const unassigned = this.svc.unassignedVehicles();
+    const current    = this.team()?.vehicle;
+    if (!current) return unassigned;
+    const alreadyIn  = unassigned.some(v => v.id === current.id);
+    if (alreadyIn) return unassigned;
+    return [
+      { id: current.id, plate: current.plate, model: current.model, type: current.type, capacityTons: current.capacityTons, status: current.status },
+      ...unassigned,
+    ];
+  });
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
 
@@ -62,8 +75,8 @@ export class TeamDetail implements OnInit, OnDestroy {
       return;
     }
 
-    // Fallback: fetch from API
-    this.svc.getTeam(id).subscribe({
+    // Fallback: fetch from API V2 (includes recentMissions)
+    this.svc.getTeamV2(id).subscribe({
       next: team => {
         this.team.set(team);
         setTimeout(() => {
@@ -91,13 +104,38 @@ export class TeamDetail implements OnInit, OnDestroy {
   }
 
   // ── Actions ───────────────────────────────────────────────
+  statusMenuOpen = false;
+  readonly allStatuses: { value: TeamStatus; label: string; icon: string; color: string }[] = [
+    { value: 'active',      label: 'Active',       icon: 'check_circle',  color: '#16a34a' },
+    { value: 'inactive',    label: 'Inactive',     icon: 'cancel',        color: '#94a3b8' },
+    { value: 'on_mission',  label: 'En mission',   icon: 'send',          color: '#f59e0b' },
+    { value: 'maintenance', label: 'Maintenance',  icon: 'build',         color: '#ef4444' },
+  ];
+
   toggleStatus(): void {
     const t = this.team();
     if (!t) return;
-    this.svc.toggleStatus(t.id).subscribe(updated => {
-      this.team.set(updated);
-      const lbl = updated.status === 'active' ? 'activée' : 'désactivée';
-      this.msg.add({ severity: 'info', summary: 'Statut', detail: `${updated.name} ${lbl}` });
+    const next: TeamStatus = t.status === 'active' ? 'inactive' : 'active';
+    this.changeStatus(next);
+  }
+
+  changeStatus(status: TeamStatus): void {
+    const t = this.team();
+    if (!t) return;
+    this.statusMenuOpen = false;
+    this.svc.changeStatus(t.id, status).subscribe({
+      next: updated => {
+        this.team.set(updated);
+        const labels: Record<TeamStatus, string> = {
+          active: 'activée', inactive: 'désactivée',
+          on_mission: 'mise en mission', maintenance: 'mise en maintenance',
+        };
+        this.msg.add({ severity: 'info', summary: 'Statut', detail: `${updated.name} ${labels[updated.status]}` });
+      },
+      error: err => {
+        const detail = err?.error?.error?.message ?? 'Impossible de modifier le statut';
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+      },
     });
   }
 
@@ -110,27 +148,23 @@ export class TeamDetail implements OnInit, OnDestroy {
     const zones = (data.zoneIds ?? [])
       .map(id => this.svc.availableZones().find(z => z.id === id))
       .filter(Boolean) as any[];
-    const collectorIds: string[] = data.collectorIds ?? t.collectorIds ?? [];
-    const members = (data.members ?? []).map((m, i) => ({
-      id:           collectorIds[i] ?? t.members[i]?.id ?? `LOCAL-${Date.now()}-${i}`,
+    const members: TeamMember[] = (data.members ?? []).map((m, i) => ({
+      id:           m._id && !m._id.startsWith('LOCAL-') ? m._id : t.members[i]?.id ?? `LOCAL-${Date.now()}-${i}`,
       name:         m.name,
       phone:        m.phone,
       role:         m.role,
       availability: 'disponible' as const,
       joinedAt:     t.members[i]?.joinedAt ?? new Date().toISOString().split('T')[0],
     }));
-    this.svc.update(t.id, {
-      name:         data.name,
-      color:        data.color,
-      status:       data.status as TeamStatus,
-      description:  data.description,
-      supervisor:   data.supervisor,
-      leaderId:     data.leaderId,
-      phone:        data.phone,
-      collectorIds,
+    this.svc.updateV2(t.id, {
+      name:        data.name,
+      color:       data.color,
+      status:      data.status as TeamStatus,
+      description: data.description,
+      supervisor:  data.supervisor,
+      phone:       data.phone,
       members,
       zones,
-      maxClientsPerDay: data.maxClientsPerDay,
       vehicle: vehicle
         ? { ...vehicle, lastMaintenance: t.vehicle?.lastMaintenance ?? '—', fuelLevel: t.vehicle?.fuelLevel ?? 80, mileage: t.vehicle?.mileage ?? 0 }
         : undefined,
@@ -164,10 +198,10 @@ export class TeamDetail implements OnInit, OnDestroy {
 
   // ── UI helpers ────────────────────────────────────────────
   roleLabel(r: string): string {
-    return ({ chef:'Chef d\'équipe', chauffeur:'Chauffeur', agent:'Agent', assistant:'Assistant' } as Record<string,string>)[r] ?? r;
+    return ({ manager:'Manager', collector:'Collecteur' } as Record<string,string>)[r] ?? r;
   }
   roleColor(r: string): string {
-    return ({ chef:'#3b82f6', chauffeur:'#f59e0b', agent:'#16a34a', assistant:'#8b5cf6' } as Record<string,string>)[r] ?? '#64748b';
+    return ({ manager:'#3b82f6', collector:'#16a34a' } as Record<string,string>)[r] ?? '#64748b';
   }
   availabilityColor(a: string): string {
     return ({ disponible:'#16a34a', occupe:'#f59e0b', absent:'#ef4444' } as Record<string,string>)[a] ?? '#94a3b8';

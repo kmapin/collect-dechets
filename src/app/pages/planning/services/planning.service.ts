@@ -5,7 +5,7 @@ import { map, catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
   Planning, PlanningStats, PlanningAlert,
-  ZoneCoverage, PlanningFilter, PlanningType, PlanningStatus,
+  ZoneCoverage, PlanningFilter,
   PlanningV2Api, PlanningV2CreateBody, PlanningStatsApi,
   ZoneCoverageApi, ConflictCheckResponse, TeamApi,
   ApiListResponse, WASTE_TYPE_LABELS,
@@ -42,6 +42,7 @@ export class PlanningService {
   private _zones      = signal<ZoneCoverage[]>([]);
   private _statsApi   = signal<PlanningStatsApi | null>(null);
   private _loading    = signal(false);
+  private _error      = signal<string | null>(null);
 
   // ── Public read-only signals ──────────────────────────────────
   readonly plannings = this._plannings.asReadonly();
@@ -49,6 +50,9 @@ export class PlanningService {
   readonly alerts    = this._alerts.asReadonly();
   readonly zones     = this._zones.asReadonly();
   readonly loading   = this._loading.asReadonly();
+  readonly error     = this._error.asReadonly();
+
+  clearError(): void { this._error.set(null); }
 
   // ── Computed dashboard stats ──────────────────────────────────
   readonly stats = computed<PlanningStats>(() => {
@@ -97,7 +101,7 @@ export class PlanningService {
   });
 
   readonly teamWorkload = computed(() =>
-    this._teams().map(t => ({ name: t.name, value: t.collectors?.length ?? 0 }))
+    this._teams().map(t => ({ name: t.name, value: t.members?.length ?? t.collectors?.length ?? 0 }))
   );
 
   // ── Load methods ──────────────────────────────────────────────
@@ -139,12 +143,14 @@ export class PlanningService {
   loadTeams(): void {
     const agencyId = this.agencyId;
     if (!agencyId) return;
-    this.http.get<{ success: boolean; count: number; data: TeamApi[] }>(
-      `${this.api}/teams/agency/${agencyId}`
+    this._error.set(null);
+    this.http.get<TeamApi[] | { data: TeamApi[] }>(
+      `${this.api}/v2/teams/agency/${agencyId}`
     ).pipe(
-      catchError(() => of(null))
-    ).subscribe(res => {
-      if (res?.data) this._teams.set(res.data);
+      map(r => Array.isArray(r) ? r : ((r as any).data ?? []))
+    ).subscribe({
+      next:  teams => this._teams.set(teams),
+      error: err   => this._error.set(err?.error?.message ?? 'Impossible de charger les équipes'),
     });
   }
 
@@ -165,37 +171,41 @@ export class PlanningService {
     params = params.set('page',     String(filter?.page     ?? 1));
     params = params.set('pageSize', String(filter?.pageSize ?? 50));
 
+    this._error.set(null);
+
     forkJoin([
       this.http.get<ApiListResponse<PlanningV2Api>>(`${this.api}/planning/v2`, { params }),
       this._teams().length
         ? of(this._teams())
-        : this.http.get<{ data: TeamApi[] }>(`${this.api}/teams/agency/${agencyId}`).pipe(
-            map(r => r.data ?? []),
-            catchError(() => of([]))
+        : this.http.get<TeamApi[] | { data: TeamApi[] }>(`${this.api}/v2/teams/agency/${agencyId}`).pipe(
+            map(r => Array.isArray(r) ? r : ((r as any).data ?? []))
           ),
-    ]).pipe(
-      catchError(() => of(null))
-    ).subscribe(result => {
-      this._loading.set(false);
-      if (!result) return;
-      const [res, teamsArr] = result;
-      if (teamsArr.length && !this._teams().length) this._teams.set(teamsArr);
-      if (res?.data) {
-        this._plannings.set(res.data.map(p => this._mapPlanningV2(p, this._teams())));
-      }
+    ]).subscribe({
+      next: result => {
+        this._loading.set(false);
+        const [res, teamsArr] = result;
+        if (teamsArr.length && !this._teams().length) this._teams.set(teamsArr);
+        if (res?.data) {
+          this._plannings.set(res.data.map(p => this._mapPlanningV2(p, this._teams())));
+        }
+      },
+      error: err => {
+        this._loading.set(false);
+        this._error.set(err?.error?.message ?? 'Impossible de charger les plannings');
+      },
     });
   }
 
   // ── Queries ───────────────────────────────────────────────────
 
   getPlanning(id: string): Observable<Planning> {
+    const agencyId = this.agencyId;
     return forkJoin([
       this.http.get<{ success: boolean; data: PlanningV2Api }>(`${this.api}/planning/v2/${id}`),
       this._teams().length
         ? of(this._teams())
-        : this.http.get<{ data: TeamApi[] }>(`${this.api}/teams/agency/${this.agencyId}`).pipe(
-            map(r => r.data ?? []),
-            catchError(() => of([]))
+        : this.http.get<TeamApi[] | { data: TeamApi[] }>(`${this.api}/v2/teams/agency/${agencyId}`).pipe(
+            map(r => Array.isArray(r) ? r : ((r as any).data ?? []))
           ),
     ]).pipe(
       map(([res, teams]) => {
@@ -226,12 +236,11 @@ export class PlanningService {
   getTeamsForAgency(): Observable<TeamApi[]> {
     const agencyId = this.agencyId;
     if (!agencyId) return of([]);
-    return this.http.get<{ success: boolean; count: number; data: TeamApi[] }>(
-      `${this.api}/teams/agency/${agencyId}`
+    return this.http.get<TeamApi[] | { data: TeamApi[] }>(
+      `${this.api}/v2/teams/agency/${agencyId}`
     ).pipe(
-      map(r => r.data ?? []),
-      tap(teams => this._teams.set(teams)),
-      catchError(() => of([]))
+      map(r => Array.isArray(r) ? r : ((r as any).data ?? [])),
+      tap(teams => this._teams.set(teams))
     );
   }
 

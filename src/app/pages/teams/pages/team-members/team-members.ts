@@ -19,10 +19,8 @@ interface RichMember extends TeamMember {
 }
 
 const ROLES: { value: MemberRole; label: string; icon: string; color: string }[] = [
-  { value: 'chef',      label: 'Superviseur terrain', icon: 'manage_accounts', color: '#3b82f6' },
-  { value: 'chauffeur', label: 'Chauffeur',            icon: 'drive_eta',       color: '#f59e0b' },
-  { value: 'agent',     label: 'Collecteur',           icon: 'recycling',       color: '#16a34a' },
-  { value: 'assistant', label: 'Assistant',            icon: 'support_agent',   color: '#8b5cf6' },
+  { value: 'manager',   label: 'Manager',    icon: 'manage_accounts', color: '#3b82f6' },
+  { value: 'collector', label: 'Collecteur', icon: 'recycling',       color: '#16a34a' },
 ];
 
 const AVAILS: { value: MemberAvailability; label: string; icon: string; color: string }[] = [
@@ -58,11 +56,14 @@ export class TeamMembers implements OnInit {
   availFilter = signal<MemberAvailability | ''>('');
   activeOnly  = signal(false);
 
-  addOpen       = signal(false);
-  roleMenuId    = signal<string | null>(null);
+  addOpen    = signal(false);
+  roleMenuId = signal<string | null>(null);
   vehicleTarget = signal<RichMember | null>(null);
   deleteTarget  = signal<RichMember | null>(null);
   saving        = signal(false);
+
+  employeeSearch = signal('');
+  selectedEmpIds = signal<string[]>([]);
 
   readonly allRoles  = ROLES;
   readonly allAvails = AVAILS;
@@ -70,7 +71,7 @@ export class TeamMembers implements OnInit {
   addForm = this.fb.group({
     name:         ['', [Validators.required, Validators.minLength(2)]],
     phone:        ['', Validators.required],
-    role:         ['agent' as MemberRole, Validators.required],
+    role:         ['collector' as MemberRole, Validators.required],
     availability: ['disponible' as MemberAvailability],
     zoneId:       [''],
     vehicleId:    [''],
@@ -93,6 +94,17 @@ export class TeamMembers implements OnInit {
     return list;
   });
 
+  // Employees from agency not yet in the team
+  filteredEmployees = computed(() => {
+    const existing = new Set(this.members().map(m => m.id));
+    const q = this.employeeSearch().toLowerCase().trim();
+    return this.svc.collectors().filter(c => {
+      if (existing.has(c._id)) return false;
+      const name = `${c.firstName} ${c.lastName}`.toLowerCase();
+      return !q || name.includes(q) || (c.phone ?? '').includes(q);
+    });
+  });
+
   stats = computed(() => {
     const all = this.members();
     const n = all.length || 1;
@@ -109,6 +121,8 @@ export class TeamMembers implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) { this.router.navigate(['/teams/list']); return; }
+
+    if (!this.svc.collectors().length) this.svc.loadCollectors();
 
     // Check cache first
     const cached = this.svc.getById(id);
@@ -155,7 +169,8 @@ export class TeamMembers implements OnInit {
 
   // ── Availability ──────────────────────────────────────────────
   setAvail(m: RichMember, availability: MemberAvailability): void {
-    this._patch(m.id, { availability });
+    this.members.update(list => list.map(x => x.id === m.id ? { ...x, availability } : x));
+    this.svc.updateMemberAvailability(this.team()!.id, m.id, availability).subscribe();
   }
 
   // ── Active toggle ─────────────────────────────────────────────
@@ -177,48 +192,75 @@ export class TeamMembers implements OnInit {
   }
 
   // ── Add member ────────────────────────────────────────────────
+  openAdd(): void {
+    this.employeeSearch.set('');
+    this.selectedEmpIds.set([]);
+    this.addForm.reset({ role: 'collector', availability: 'disponible' });
+    this.addOpen.set(true);
+  }
+
+  toggleEmployee(id: string): void {
+    this.selectedEmpIds.update(ids =>
+      ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]
+    );
+  }
+
+  isEmployeeSelected(id: string): boolean {
+    return this.selectedEmpIds().includes(id);
+  }
+
   submitAdd(): void {
-    if (this.addForm.invalid || this.saving()) return;
+    this._submitFromList();
+  }
+
+  private _submitFromList(): void {
+    const ids = this.selectedEmpIds();
+    if (!ids.length || this.saving()) return;
     this.saving.set(true);
-    const v   = this.addForm.getRawValue();
-    const teamId = this.team()!.id;
+    const teamId   = this.team()!.id;
+    const employees = this.svc.collectors().filter(c => ids.includes(c._id));
 
-    // If user entered a known collector ID, use addCollectors API
-    // Otherwise treat as local-only member
-    const nm: TeamMember = {
-      id:           `LOCAL-${Date.now()}`,
-      name:         v.name!.trim(),
-      phone:        v.phone!.trim(),
-      role:         v.role as MemberRole,
-      availability: v.availability as MemberAvailability,
-      active:       true,
-      zoneId:       v.zoneId    || undefined,
-      vehicleId:    v.vehicleId || undefined,
-      joinedAt:     new Date().toISOString().split('T')[0],
-      performance:  { missionsCompleted: 0, successRate: 0, hoursWorked: 0 },
-    };
+    let done = 0, errors = 0;
+    for (const emp of employees) {
+      const apiRole: 'manager' | 'collector' = emp.role === 'manager' ? 'manager' : 'collector';
+      this.svc.addMemberV2(teamId, {
+        userId: emp._id,
+        name:   `${emp.firstName} ${emp.lastName}`.trim(),
+        phone:  emp.phone || '—',
+        role:   apiRole,
+      }).subscribe({
+        next: added => {
+          this.members.update(list => [...list, this._enrich(added)]);
+          done++;
+          if (done + errors === employees.length) this._finishAdd(done, errors);
+        },
+        error: (err: Error) => {
+          errors++;
+          this.msg.add({
+            severity: 'error',
+            summary: `${emp.firstName} ${emp.lastName}`,
+            detail: err?.message ?? 'Impossible d\'ajouter le membre',
+            life: 6000,
+          });
+          if (done + errors === employees.length) this._finishAdd(done, errors);
+        },
+      });
+    }
+  }
 
-    this.svc.addMember(teamId, nm).subscribe({
-      next: added => {
-        this.members.update(list => [...list, this._enrich(added)]);
-        this.msg.add({ severity: 'success', summary: 'Membre ajouté', detail: added.name });
-        this.addOpen.set(false);
-        this.addForm.reset({ role: 'agent', availability: 'disponible' });
-        this.saving.set(false);
-      },
-      error: err => {
-        const detail = err?.error?.message ?? 'Impossible d\'ajouter le membre';
-        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
-        this.saving.set(false);
-      },
-    });
+  private _finishAdd(done: number, errors: number): void {
+    this.saving.set(false);
+    if (done > 0) this.msg.add({ severity: 'success', summary: 'Membres ajoutés', detail: `${done} membre(s) ajouté(s)` });
+    this.selectedEmpIds.set([]);
+    this.employeeSearch.set('');
+    if (errors === 0) this.addOpen.set(false);
   }
 
   // ── Delete ────────────────────────────────────────────────────
   doDelete(): void {
     const m = this.deleteTarget();
     if (!m) return;
-    this.svc.removeMember(this.team()!.id, m.id).subscribe({
+    this.svc.removeMemberV2(this.team()!.id, m.id).subscribe({
       next: () => {
         this.members.update(list => list.filter(x => x.id !== m.id));
         this.msg.add({ severity: 'warn', summary: 'Retiré', detail: `${m.name} retiré de l'équipe` });
@@ -270,7 +312,7 @@ export class TeamMembers implements OnInit {
   }
   memberVehicle(m: RichMember): string {
     if (m.vehicleId) return this.svc.availableVehicles().find(v => v.id === m.vehicleId)?.plate ?? '—';
-    if (m.role === 'chauffeur' && this.team()?.vehicle) return this.team()!.vehicle!.plate;
+    if (m.role === 'manager' && this.team()?.vehicle) return this.team()!.vehicle!.plate;
     return '';
   }
 

@@ -52,11 +52,14 @@ interface UITeam {
   id:              string;
   name:            string;
   initials:        string;
+  color:           string;          // couleur V2 de l'équipe
   membersCount:    number;
+  supervisor:      string;
   status:          TeamStatus;
   vehicleStatus:   VehicleStatus;
   vehicle:         string;
   workloadPercent: number;
+  successRate:     number;
   zones:           string[];
   assignments:     Assignment[];
   conflicts:       TeamConflict[];
@@ -112,7 +115,7 @@ export class TeamConflictDetectorComponent implements OnChanges {
     // Reactive to externalTeams (from parent signal) AND self-loaded apiTeams
     const external = this._externalTeamsSignal();
     const source   = external.length ? external : this.apiTeams();
-    return source.map((t, i) => this._mapTeam(t, i));
+    return source.map(t => this._mapTeam(t));
   });
 
   teamsEnriched = computed<UITeam[]>(() => {
@@ -328,7 +331,7 @@ export class TeamConflictDetectorComponent implements OnChanges {
   }
 
   // ── Private helpers ───────────────────────────────────────────
-  private _mapTeam(t: TeamApi, index: number): UITeam {
+  private _mapTeam(t: TeamApi): UITeam {
     const initials = t.name
       .split(' ')
       .map(w => w[0] ?? '')
@@ -336,22 +339,50 @@ export class TeamConflictDetectorComponent implements OnChanges {
       .toUpperCase()
       .slice(0, 2);
 
-    const greekLetters = ['α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ'];
-    const workload = Math.min(95, (t.collectors?.length ?? 0) * 10);
+    // Nombre de membres : V2 utilise members[], V1 utilisait collectors[]
+    const membersCount = t.members?.length ?? t.collectors?.length ?? 0;
+
+    // Workload : V2 fournit la vraie valeur, V1 est estimée
+    const workload = t.workload ?? Math.min(95, membersCount * 10);
+
+    // Statut : V2 a 4 valeurs, on mappe vers l'enum UI du détecteur
+    const statusMap: Record<string, TeamStatus> = {
+      active:      'disponible',
+      on_mission:  'en_service',
+      inactive:    'indisponible',
+      maintenance: 'indisponible',
+    };
+    const status: TeamStatus = statusMap[t.status] ?? 'disponible';
+
+    // Véhicule : V2 peut populer vehicleId
+    const vehicleRaw = t.vehicleId;
+    let vehicleLabel = '—';
+    let vehicleStatus: VehicleStatus = 'ok';
+    if (vehicleRaw && typeof vehicleRaw === 'object') {
+      vehicleLabel = (vehicleRaw as any).plate ?? '—';
+      vehicleStatus = (vehicleRaw as any).status === 'maintenance' ? 'maintenance'
+                    : (vehicleRaw as any).status === 'hors_service' ? 'unavailable'
+                    : 'ok';
+    } else if (typeof vehicleRaw === 'string' && vehicleRaw) {
+      vehicleLabel = vehicleRaw;
+    }
 
     return {
       id:              t._id,
       name:            t.name,
-      initials:        greekLetters[index] ?? initials,
-      membersCount:    t.collectors?.length ?? 0,
-      status:          t.status === 'active' ? 'disponible' : 'indisponible',
-      vehicleStatus:   'ok' as VehicleStatus,
-      vehicle:         `Camion ${String(index + 1).padStart(2, '0')}`,
+      initials,
+      color:           t.color ?? '#3b82f6',
+      supervisor:      t.supervisor ?? '',
+      membersCount,
+      status,
+      vehicleStatus,
+      vehicle:         vehicleLabel,
       workloadPercent: workload,
+      successRate:     t.successRate ?? 0,
       zones:           t.zones ?? [],
-      assignments:     [] as Assignment[],
+      assignments:     [],
       conflicts:       [],
-      isSuggested:     t.status === 'active' && workload < 60,
+      isSuggested:     status === 'disponible' && workload < 60,
     };
   }
 

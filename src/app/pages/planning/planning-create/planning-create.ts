@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs/operators';
@@ -57,11 +57,12 @@ interface ClientOpt {
   providers: [MessageService],
 })
 export class PlanningCreate implements OnInit {
-  private fb         = inject(FormBuilder);
-  private router     = inject(Router);
-  private svc        = inject(PlanningService);
-  private msgSvc     = inject(MessageService);
-  private destroyRef = inject(DestroyRef);
+  private fb          = inject(FormBuilder);
+  private router      = inject(Router);
+  private route       = inject(ActivatedRoute);
+  private svc         = inject(PlanningService);
+  private msgSvc      = inject(MessageService);
+  private destroyRef  = inject(DestroyRef);
 
   // ── State ────────────────────────────────────────────────────
   currentStep  = signal(0);
@@ -69,6 +70,11 @@ export class PlanningCreate implements OnInit {
   isSubmitting = signal(false);
   isLoadingTeams   = signal(false);
   isLoadingClients = signal(false);
+
+  // ── Edit mode ────────────────────────────────────────────────
+  editId      = signal<string | null>(null);
+  isEditMode  = computed(() => !!this.editId());
+  isLoadingEdit = signal(false);
 
   readonly today = new Date();
 
@@ -183,12 +189,61 @@ export class PlanningCreate implements OnInit {
   // ── Lifecycle ────────────────────────────────────────────────
   ngOnInit(): void {
     this._initForm();
-    this._loadDraft();
     this._syncFormValueSignal();
     this._setupAutoSave();
     this._watchTypeChange();
     this._loadTeams();
     this._loadClients();
+
+    // Détection du mode édition via ?edit=<planningId>
+    const editId = this.route.snapshot.queryParamMap.get('edit');
+    if (editId) {
+      this.editId.set(editId);
+      this._loadPlanningForEdit(editId);
+    } else {
+      this._loadDraft();
+    }
+  }
+
+  private _loadPlanningForEdit(id: string): void {
+    this.isLoadingEdit.set(true);
+    this.svc.getPlanning(id).subscribe({
+      next: planning => {
+        // Remplir le formulaire avec les données existantes
+        const date = planning.date ? new Date(planning.date) : null;
+        this.form.patchValue({
+          type:           planning.type,
+          libelle:        planning.libelle,
+          date,
+          startTime:      planning.startTime ?? '08:00',
+          endTime:        planning.endTime ?? '',
+          frequency:      planning.frequency ?? 'unique',
+          notes:          planning.notes ?? '',
+          villeId:          planning.villeId ?? '',
+          ville:            planning.ville ?? '',
+          arrondissementId: planning.arrondissementId ?? '',
+          arrondissement:   planning.arrondissement ?? '',
+          secteurId:        planning.secteurId ?? '',
+          secteur:          planning.secteur ?? '',
+          quartierId:       planning.quartierId ?? '',
+          quartier:         planning.quartier ?? '',
+          clientId:         planning.clientId ?? '',
+          groupName:        planning.groupeId ?? '',
+          publishImmediately: false, // pas de publication auto en mode edit
+        });
+        // Remplir les signaux multi-select
+        if (planning.typeDechets?.length) this.selectedWasteTypes.set(planning.typeDechets);
+        if (planning.equipeIds?.length)   this.selectedTeams.set(planning.equipeIds);
+        // Aller à l'étape récap pour permettre la modification directe
+        this.currentStep.set(5);
+        this.isLoadingEdit.set(false);
+      },
+      error: () => {
+        this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger le planning' });
+        this.isLoadingEdit.set(false);
+        this.router.navigate(['/planning/dashboard']);
+      },
+    });
   }
 
   // ── API loaders ──────────────────────────────────────────────
@@ -466,54 +521,71 @@ export class PlanningCreate implements OnInit {
   submitForm(): void {
     if (!this._isStepValid(6) || this.isSubmitting()) return;
     this.isSubmitting.set(true);
-    const v        = this.form.value;
-    const agencyId = this.svc.agencyId;
-    const managerId = this.svc.managerId;
 
-    const dateStr = this._dateToApiStr(v.date);
+    const v         = this.form.value;
+    const agencyId  = this.svc.agencyId;
+    const managerId = this.svc.managerId;
+    const dateStr   = this._dateToApiStr(v.date);
+
     const body: any = {
-      type:      v.type as PlanningType,
-      libelle:   v.libelle,
-      frequency: v.frequency,
-      date:      dateStr,
-      startTime: v.startTime,
-      endTime:   v.endTime || undefined,
+      type:        v.type as PlanningType,
+      libelle:     v.libelle,
+      frequency:   v.frequency,
+      date:        dateStr,
+      startTime:   v.startTime,
+      endTime:     v.endTime || undefined,
       typeDechets: this.selectedWasteTypes(),
       equipeIds:   this.selectedTeams(),
       agencyId,
-      managerId: managerId || undefined,
-      notes:     v.notes || undefined,
+      managerId:   managerId || undefined,
+      notes:       v.notes || undefined,
     };
 
-    // Type-specific fields
-    if (v.type === 'individuel') body.clientId  = v.clientId;
-    if (v.type === 'groupe')    body.groupeId   = v.groupName; // group name used as temporary ref
-    if (v.villeId)          body.villeId          = v.villeId;
-    if (v.arrondissementId) body.arrondissementId = v.arrondissementId;
-    if (v.secteurId)        body.secteurId         = v.secteurId;
-    if (v.quartierId)       body.quartierId        = v.quartierId;
+    // Champs selon le type
+    if (v.type === 'individuel') body.clientId = v.clientId;
+    if (v.type === 'groupe')     body.groupeId = v.groupName;
+    if (v.villeId)           body.villeId           = v.villeId;
+    if (v.arrondissementId)  body.arrondissementId  = v.arrondissementId;
+    if (v.secteurId)         body.secteurId          = v.secteurId;
+    if (v.quartierId)        body.quartierId         = v.quartierId;
 
-    this.svc.createPlanning(body).subscribe({
-      next: (planning) => {
-        localStorage.removeItem('planning_draft');
-        this.msgSvc.add({ severity: 'success', summary: 'Succès', detail: `Planning ${planning.reference} créé !` });
-        // If publish immediately, trigger publish after creation
-        if (v.publishImmediately && planning.status === 'brouillon') {
-          this.svc.publishPlanning(planning.id).subscribe({
-            next: () => setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500),
-            error: () => setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500),
-          });
-        } else {
+    if (this.isEditMode()) {
+      // ── MODE ÉDITION ─────────────────────────────────────────
+      this.svc.updatePlanning(this.editId()!, body).subscribe({
+        next: (planning) => {
+          this.msgSvc.add({ severity: 'success', summary: 'Modifié', detail: `Planning ${planning.reference} mis à jour !` });
+          this.isSubmitting.set(false);
           setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500);
-        }
-        this.isSubmitting.set(false);
-      },
-      error: (err) => {
-        const msg = err?.error?.error?.message ?? 'Impossible de créer le planning';
-        this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: msg });
-        this.isSubmitting.set(false);
-      },
-    });
+        },
+        error: (err) => {
+          const msg = err?.error?.error?.message ?? 'Impossible de mettre à jour le planning';
+          this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: msg });
+          this.isSubmitting.set(false);
+        },
+      });
+    } else {
+      // ── MODE CRÉATION ────────────────────────────────────────
+      this.svc.createPlanning(body).subscribe({
+        next: (planning) => {
+          localStorage.removeItem('planning_draft');
+          this.msgSvc.add({ severity: 'success', summary: 'Succès', detail: `Planning ${planning.reference} créé !` });
+          if (v.publishImmediately && planning.status === 'brouillon') {
+            this.svc.publishPlanning(planning.id).subscribe({
+              next:  () => setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500),
+              error: () => setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500),
+            });
+          } else {
+            setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500);
+          }
+          this.isSubmitting.set(false);
+        },
+        error: (err) => {
+          const msg = err?.error?.error?.message ?? 'Impossible de créer le planning';
+          this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: msg });
+          this.isSubmitting.set(false);
+        },
+      });
+    }
   }
 
   clearDraft(): void {

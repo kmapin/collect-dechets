@@ -1084,11 +1084,33 @@ body {
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+// ── PrimeNG DatePicker 20 — Correctifs globaux ────────────────
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+// Panel flottant : z-index élevé pour passer au-dessus de tout
+.p-datepicker-panel {
+  z-index: 9999 !important;
+}
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+// Quand appendé au body → positionnement absolu standard (PrimeNG gère left/top)
+body > .p-datepicker-panel {
+  position: absolute !important;
+}
+
+// Le panel inline (dans le flux) ne doit pas être affiché en dehors du contexte prévu
+.p-datepicker-panel-inline {
+  position: relative !important;
+}
+
+// Garantir la hauteur minimale du calendrier pour qu'il soit entièrement visible
+.p-datepicker-calendar-container {
+  min-height: 260px;
+}
+
+// Conteneurs du formulaire : ne pas clipper les overlays flottants
+.pc-step-content,
+.steps-body,
+.form-group,
+.time-grid,
+.repeat-section {
+  overflow: visible !important;
+}

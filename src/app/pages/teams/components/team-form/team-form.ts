@@ -32,14 +32,13 @@ export class TeamForm implements OnInit, OnChanges {
 
   readonly colors  = TEAM_COLORS;
   readonly roles: Array<{ value: MemberRole; label: string }> = [
-    { value: 'chef',      label: 'Chef d\'équipe' },
-    { value: 'chauffeur', label: 'Chauffeur'      },
-    { value: 'agent',     label: 'Agent'          },
-    { value: 'assistant', label: 'Assistant'      },
+    { value: 'manager',   label: 'Manager'    },
+    { value: 'collector', label: 'Collecteur' },
   ];
   readonly statuses = [
     { value: 'active',      label: 'Active'      },
     { value: 'inactive',    label: 'Inactive'    },
+    { value: 'on_mission',  label: 'En mission'  },
     { value: 'maintenance', label: 'Maintenance' },
   ];
 
@@ -114,7 +113,7 @@ export class TeamForm implements OnInit, OnChanges {
     });
   }
 
-  private _memberGroup(id = '', name = '', phone = '', role: MemberRole = 'agent') {
+  private _memberGroup(id = '', name = '', phone = '', role: MemberRole = 'collector') {
     return this.fb.group({
       _id:   [id],
       name:  [name,  Validators.required],
@@ -147,23 +146,8 @@ export class TeamForm implements OnInit, OnChanges {
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
-    const raw = this.form.getRawValue() as any;
-
-    // Build collectorIds from member _id fields (real API IDs)
-    const collectorIds: string[] = (raw.members ?? [])
-      .map((m: any) => m._id as string)
-      .filter((id: string) => !!id && !id.startsWith('LOCAL-'));
-
-    // Find leader: first member with role 'chef', else existing leaderId
-    const chefMember = (raw.members ?? []).find((m: any) => m.role === 'chef');
-    const leaderId   = chefMember?._id || this.team?.leaderId || undefined;
-
-    const data: TeamFormData = {
-      ...raw,
-      collectorIds,
-      leaderId,
-      maxClientsPerDay: this.team?.maxClientsPerDay,
-    };
+    const data: TeamFormData = this.form.getRawValue() as TeamFormData;
+    console.log("Team data to save=====>", data)
     this.save.emit(data);
   }
 

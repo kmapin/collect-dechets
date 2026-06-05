@@ -1,5 +1,5 @@
 import {
-  Component, OnInit, ViewChild, signal, computed, inject,
+  Component, OnInit, ViewChild, signal, computed, inject, effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -39,6 +39,16 @@ export class TeamList implements OnInit {
   private  msg    = inject(MessageService);
   private  route  = inject(ActivatedRoute);
   readonly router = inject(Router);
+
+  constructor() {
+    effect(() => {
+      const err = this.svc.error();
+      if (err) {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err, life: 5000 });
+        this.svc.clearError();
+      }
+    });
+  }
 
   // ── UI State ──────────────────────────────────────────────
   loading           = signal(true);
@@ -89,7 +99,7 @@ export class TeamList implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.svc.loadTeams();
+    this.svc.loadTeamsV2();
     // Bind loading to service signal and fall back after timeout
     const unsub = setInterval(() => {
       if (!this.svc.loading()) { this.loading.set(false); clearInterval(unsub); }
@@ -124,13 +134,18 @@ export class TeamList implements OnInit {
   buildContextMenu(team: Team): void {
     this.ctxTeam.set(team);
     this.contextMenuItems.set([
-      { label: 'Voir le détail',  icon: 'pi pi-eye',      command: () => this.goToDetail(team.id) },
-      { label: 'Modifier',        icon: 'pi pi-pencil',   command: () => this.openEdit(team) },
+      { label: 'Voir le détail', icon: 'pi pi-eye',    command: () => this.goToDetail(team.id) },
+      { label: 'Modifier',       icon: 'pi pi-pencil', command: () => this.openEdit(team) },
       { separator: true },
       {
-        label: team.status === 'active' ? 'Désactiver' : 'Activer',
-        icon:  team.status === 'active' ? 'pi pi-pause'  : 'pi pi-play',
-        command: () => this.toggleStatus(team),
+        label: 'Changer le statut',
+        icon:  'pi pi-sync',
+        items: [
+          { label: 'Active',      icon: 'pi pi-check-circle', disabled: team.status === 'active',      command: () => this.changeStatus(team, 'active') },
+          { label: 'Inactive',    icon: 'pi pi-ban',          disabled: team.status === 'inactive',    command: () => this.changeStatus(team, 'inactive') },
+          { label: 'En mission',  icon: 'pi pi-send',         disabled: team.status === 'on_mission',  command: () => this.changeStatus(team, 'on_mission') },
+          { label: 'Maintenance', icon: 'pi pi-wrench',       disabled: team.status === 'maintenance', command: () => this.changeStatus(team, 'maintenance') },
+        ],
       },
       { separator: true },
       { label: 'Supprimer', icon: 'pi pi-trash', styleClass: 'ctx-danger', command: () => this.confirmDelete(team) },
@@ -154,12 +169,8 @@ export class TeamList implements OnInit {
       .map(id => this.svc.availableZones().find(z => z.id === id))
       .filter(Boolean) as any[];
 
-    // Collect real user IDs for the API (collectorIds)
-    const collectorIds: string[] = data.collectorIds ?? [];
-
-    // Build local member objects for immediate UI display
-    const members = (data.members ?? []).map((m, i) => ({
-      id:           collectorIds[i] ?? `LOCAL-${Date.now()}-${i}`,
+    const members: TeamMember[] = (data.members ?? []).map((m, i) => ({
+      id:           m._id && !m._id.startsWith('LOCAL-') ? m._id : `LOCAL-${Date.now()}-${i}`,
       name:         m.name,
       phone:        m.phone,
       role:         m.role,
@@ -168,24 +179,21 @@ export class TeamList implements OnInit {
     }));
 
     const payload: Partial<Team> & { name: string } = {
-      name:         data.name,
-      color:        data.color,
-      status:       data.status as TeamStatus,
-      description:  data.description,
-      supervisor:   data.supervisor,
-      leaderId:     data.leaderId,
-      phone:        data.phone,
-      collectorIds,
+      name:        data.name,
+      color:       data.color,
+      status:      data.status as TeamStatus,
+      description: data.description,
+      supervisor:  data.supervisor,
+      phone:       data.phone,
       members,
       zones,
-      maxClientsPerDay: data.maxClientsPerDay,
       vehicle: vehicle
         ? { ...vehicle, lastMaintenance: '—', fuelLevel: 80, mileage: 0 }
         : undefined,
     };
 
     if (editing) {
-      this.svc.update(editing.id, payload).subscribe({
+      this.svc.updateV2(editing.id, payload).subscribe({
         next: () => {
           this.msg.add({ severity: 'success', summary: 'Modifié', detail: `${data.name} mis à jour` });
           this.formOpen.set(false);
@@ -196,7 +204,7 @@ export class TeamList implements OnInit {
         },
       });
     } else {
-      this.svc.create(payload).subscribe({
+      this.svc.createV2(payload).subscribe({
         next: t => {
           this.msg.add({ severity: 'success', summary: 'Créé !', detail: `Équipe ${t.name} créée` });
           this.formOpen.set(false);
@@ -210,9 +218,23 @@ export class TeamList implements OnInit {
   }
 
   toggleStatus(team: Team): void {
-    this.svc.toggleStatus(team.id).subscribe(t => {
-      const lbl = t.status === 'active' ? 'activée' : 'désactivée';
-      this.msg.add({ severity: 'info', summary: 'Statut modifié', detail: `${t.name} ${lbl}` });
+    const next: TeamStatus = team.status === 'active' ? 'inactive' : 'active';
+    this.changeStatus(team, next);
+  }
+
+  changeStatus(team: Team, status: TeamStatus): void {
+    this.svc.changeStatus(team.id, status).subscribe({
+      next: t => {
+        const labels: Record<TeamStatus, string> = {
+          active: 'activée', inactive: 'désactivée',
+          on_mission: 'mise en mission', maintenance: 'mise en maintenance',
+        };
+        this.msg.add({ severity: 'info', summary: 'Statut modifié', detail: `${t.name} ${labels[t.status]}` });
+      },
+      error: err => {
+        const detail = err?.error?.error?.message ?? 'Impossible de modifier le statut';
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+      },
     });
   }
 
@@ -301,7 +323,7 @@ export class TeamList implements OnInit {
 
   // ── Row helpers ───────────────────────────────────────────
   getChef(t: Team): TeamMember | undefined {
-    return t.members.find(m => m.role === 'chef');
+    return t.members.find(m => m.role === 'manager');
   }
   getAvailability(t: Team): { available: number; total: number; pct: number } {
     const available = t.members.filter(m => m.availability === 'disponible').length;
