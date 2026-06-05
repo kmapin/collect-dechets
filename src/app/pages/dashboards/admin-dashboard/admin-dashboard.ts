@@ -1051,6 +1051,99 @@ export class AdminDashboard implements OnInit {
   }
   selectedClient: any = null;
 
+  // ── Dialog Réinitialisation mot de passe ────────────────
+  showPasswordResetDialog  = false;
+  passwordResetMode: 'email' | 'manual' = 'email';
+  newPassword        = '';
+  confirmPassword    = '';
+  showNewPwd         = false;
+  showConfirmPwd     = false;
+  isSendingReset     = false;
+  passwordResetError = '';
+
+  openPasswordResetDialog(): void {
+    this.passwordResetMode  = 'email';
+    this.newPassword        = '';
+    this.confirmPassword    = '';
+    this.passwordResetError = '';
+    this.showNewPwd         = false;
+    this.showConfirmPwd     = false;
+    this.showPasswordResetDialog = true;
+  }
+
+  closePasswordResetDialog(): void {
+    this.showPasswordResetDialog = false;
+    this.passwordResetError      = '';
+  }
+
+  sendPasswordResetEmail(): void {
+    const id = this.selectedUser?._id || this.selectedUser?.id;
+    if (!id) return;
+    this.isSendingReset = true;
+    this.adminService.sendPasswordResetEmail(id).subscribe({
+      next: () => {
+        this.isSendingReset = false;
+        this.notificationService.showSuccess('Email envoyé', `Un lien de réinitialisation a été envoyé à ${this.selectedUser.email}.`);
+        this.closePasswordResetDialog();
+      },
+      error: (err) => {
+        this.isSendingReset = false;
+        this.passwordResetError = err?.error?.message || 'Impossible d\'envoyer l\'email. Vérifiez la connexion.';
+      }
+    });
+  }
+
+  setNewPasswordAdmin(): void {
+    this.passwordResetError = '';
+    if (!this.newPassword || this.newPassword.length < 6) {
+      this.passwordResetError = 'Le mot de passe doit contenir au moins 6 caractères.';
+      return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      this.passwordResetError = 'Les mots de passe ne correspondent pas.';
+      return;
+    }
+    const id = this.selectedUser?._id || this.selectedUser?.id;
+    if (!id) return;
+    this.isSendingReset = true;
+    this.adminService.setNewPasswordAdmin(id, this.newPassword).subscribe({
+      next: () => {
+        this.isSendingReset = false;
+        this.notificationService.showSuccess('Mot de passe modifié', `Le mot de passe de ${this.selectedUser.firstName} a été mis à jour.`);
+        this.closePasswordResetDialog();
+      },
+      error: (err) => {
+        this.isSendingReset = false;
+        this.passwordResetError = err?.error?.message || 'Erreur lors de la modification du mot de passe.';
+      }
+    });
+  }
+
+  getPasswordStrength(pwd: string): number {
+    if (!pwd) return 0;
+    let score = 0;
+    if (pwd.length >= 6)  score++;
+    if (pwd.length >= 10) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    return Math.min(score, 4);
+  }
+
+  getPasswordStrengthLabel(): string {
+    const s = this.getPasswordStrength(this.newPassword);
+    return ['', 'Faible', 'Moyen', 'Bon', 'Fort'][s] || '';
+  }
+
+  getPasswordStrengthClass(): string {
+    const s = this.getPasswordStrength(this.newPassword);
+    return ['', 'pwd-weak', 'pwd-medium', 'pwd-good', 'pwd-strong'][s] || '';
+  }
+
+  pwdHasUppercase(pwd: string): boolean { return /[A-Z]/.test(pwd); }
+  pwdHasNumber(pwd: string): boolean    { return /[0-9]/.test(pwd); }
+  pwdHasSpecial(pwd: string): boolean   { return /[^A-Za-z0-9]/.test(pwd); }
+
   // ── Dialog de confirmation suppression ──────────────────
   showDeleteDialog    = false;
   userToDelete: { id: string; name: string; role: string; color: string; initials: string } | null = null;

@@ -155,6 +155,18 @@ export class Admin {
     );
   }
 
+  sendPasswordResetEmail(userId: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/user/${userId}/reset-password`, {}).pipe(
+      map((response: any) => { console.log('API > sendPasswordResetEmail:', response); return response; })
+    );
+  }
+
+  setNewPasswordAdmin(userId: string, newPassword: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/user/${userId}`, { password: newPassword }).pipe(
+      map((response: any) => { console.log('API > setNewPasswordAdmin:', response); return response; })
+    );
+  }
+
   updateUserProfile(userId: string, updates: Partial<RegisterUserData>): Observable<any> {
     return this.http.put<any>(`${environment.apiUrl}/user/${userId}`, updates).pipe(
       map((response: any) => {

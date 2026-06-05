@@ -1972,6 +1972,12 @@
             Modifier
           </button>
 
+          <!-- Réinitialiser MDP -->
+          <button class="btn btn-reset-pwd" (click)="openPasswordResetDialog()">
+            <i class="material-icons">lock_reset</i>
+            Mot de passe
+          </button>
+
           <!-- Activer / Désactiver -->
           <button class="btn"
             [class.btn-success]="selectedUser.status !== 'active'"
@@ -2145,6 +2151,145 @@
           {{ isDeletingUser ? 'Suppression...' : 'Supprimer définitivement' }}
         </button>
       </div>
+
+    </div>
+  </div>
+  }
+
+  <!-- ═══════ Dialog Réinitialisation Mot de Passe ═══════ -->
+  @if (showPasswordResetDialog) {
+  <div class="confirm-dialog-overlay" (click)="closePasswordResetDialog()">
+    <div class="pwd-reset-dialog" (click)="$event.stopPropagation()">
+
+      <!-- En-tête -->
+      <div class="pwd-reset-header">
+        <div class="pwd-reset-icon">
+          <i class="material-icons">lock_reset</i>
+        </div>
+        <div>
+          <h3>Réinitialisation du mot de passe</h3>
+          <p>{{ selectedUser.firstName }} {{ selectedUser.lastName }} &nbsp;·&nbsp; {{ selectedUser.email }}</p>
+        </div>
+        <button class="pwd-reset-close" (click)="closePasswordResetDialog()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <!-- Sélecteur de mode -->
+      <div class="pwd-mode-tabs">
+        <button class="pwd-mode-tab" [class.active]="passwordResetMode === 'email'" (click)="passwordResetMode = 'email'; passwordResetError = ''">
+          <i class="material-icons">email</i>
+          Lien par email
+        </button>
+        <button class="pwd-mode-tab" [class.active]="passwordResetMode === 'manual'" (click)="passwordResetMode = 'manual'; passwordResetError = ''">
+          <i class="material-icons">vpn_key</i>
+          Définir manuellement
+        </button>
+      </div>
+
+      <!-- Corps : mode Email -->
+      @if (passwordResetMode === 'email') {
+      <div class="pwd-reset-body">
+        <div class="pwd-info-card">
+          <i class="material-icons">info</i>
+          <div>
+            <strong>Un email sera envoyé à :</strong>
+            <span class="pwd-email-target">{{ selectedUser.email }}</span>
+            <p>L'utilisateur recevra un lien sécurisé valable 24h pour créer un nouveau mot de passe.</p>
+          </div>
+        </div>
+        @if (passwordResetError) {
+        <div class="pwd-error-msg"><i class="material-icons">error</i> {{ passwordResetError }}</div>
+        }
+      </div>
+      <div class="pwd-reset-footer">
+        <button class="btn-cancel" (click)="closePasswordResetDialog()" [disabled]="isSendingReset">Annuler</button>
+        <button class="btn-reset-send" (click)="sendPasswordResetEmail()" [disabled]="isSendingReset">
+          <i class="material-icons">{{ isSendingReset ? 'hourglass_empty' : 'send' }}</i>
+          {{ isSendingReset ? 'Envoi en cours...' : 'Envoyer le lien' }}
+        </button>
+      </div>
+      }
+
+      <!-- Corps : mode Manuel -->
+      @if (passwordResetMode === 'manual') {
+      <div class="pwd-reset-body">
+        <div class="pwd-warning-card">
+          <i class="material-icons">warning</i>
+          <p>Définir un mot de passe directement déconnectera l'utilisateur de toutes ses sessions actives.</p>
+        </div>
+
+        <!-- Nouveau mot de passe -->
+        <div class="form-group pwd-form-group">
+          <label class="form-label">Nouveau mot de passe *</label>
+          <div class="pwd-input-wrapper">
+            <i class="material-icons pwd-field-icon">lock</i>
+            <input class="form-input pwd-input"
+                   [type]="showNewPwd ? 'text' : 'password'"
+                   [(ngModel)]="newPassword"
+                   name="newPwd"
+                   placeholder="Minimum 6 caractères"
+                   autocomplete="new-password" />
+            <button type="button" class="pwd-toggle" (click)="showNewPwd = !showNewPwd">
+              <i class="material-icons">{{ showNewPwd ? 'visibility_off' : 'visibility' }}</i>
+            </button>
+          </div>
+          <!-- Jauge de force -->
+          @if (newPassword) {
+          <div class="pwd-strength-bar">
+            <div class="pwd-strength-track">
+              <div class="pwd-strength-fill {{ getPasswordStrengthClass() }}"
+                   [style.width]="(getPasswordStrength(newPassword) / 4 * 100) + '%'">
+              </div>
+            </div>
+            <span class="pwd-strength-label {{ getPasswordStrengthClass() }}">
+              {{ getPasswordStrengthLabel() }}
+            </span>
+          </div>
+          <ul class="pwd-rules">
+            <li [class.ok]="newPassword.length >= 6"><i class="material-icons">{{ newPassword.length >= 6 ? 'check_circle' : 'radio_button_unchecked' }}</i> Au moins 6 caractères</li>
+            <li [class.ok]="pwdHasUppercase(newPassword)"><i class="material-icons">{{ pwdHasUppercase(newPassword) ? 'check_circle' : 'radio_button_unchecked' }}</i> Une majuscule</li>
+            <li [class.ok]="pwdHasNumber(newPassword)"><i class="material-icons">{{ pwdHasNumber(newPassword) ? 'check_circle' : 'radio_button_unchecked' }}</i> Un chiffre</li>
+            <li [class.ok]="pwdHasSpecial(newPassword)"><i class="material-icons">{{ pwdHasSpecial(newPassword) ? 'check_circle' : 'radio_button_unchecked' }}</i> Un caractère spécial</li>
+          </ul>
+          }
+        </div>
+
+        <!-- Confirmation -->
+        <div class="form-group pwd-form-group">
+          <label class="form-label">Confirmer le mot de passe *</label>
+          <div class="pwd-input-wrapper">
+            <i class="material-icons pwd-field-icon">lock_outline</i>
+            <input class="form-input pwd-input"
+                   [type]="showConfirmPwd ? 'text' : 'password'"
+                   [(ngModel)]="confirmPassword"
+                   name="confirmPwd"
+                   placeholder="Ressaisir le mot de passe"
+                   autocomplete="new-password" />
+            <button type="button" class="pwd-toggle" (click)="showConfirmPwd = !showConfirmPwd">
+              <i class="material-icons">{{ showConfirmPwd ? 'visibility_off' : 'visibility' }}</i>
+            </button>
+          </div>
+          @if (confirmPassword && confirmPassword !== newPassword) {
+          <p class="pwd-mismatch"><i class="material-icons">cancel</i> Les mots de passe ne correspondent pas</p>
+          }
+          @if (confirmPassword && confirmPassword === newPassword && newPassword.length >= 6) {
+          <p class="pwd-match"><i class="material-icons">check_circle</i> Les mots de passe correspondent</p>
+          }
+        </div>
+
+        @if (passwordResetError) {
+        <div class="pwd-error-msg"><i class="material-icons">error</i> {{ passwordResetError }}</div>
+        }
+      </div>
+      <div class="pwd-reset-footer">
+        <button class="btn-cancel" (click)="closePasswordResetDialog()" [disabled]="isSendingReset">Annuler</button>
+        <button class="btn-reset-send" (click)="setNewPasswordAdmin()" [disabled]="isSendingReset || !newPassword || newPassword !== confirmPassword">
+          <i class="material-icons">{{ isSendingReset ? 'hourglass_empty' : 'save' }}</i>
+          {{ isSendingReset ? 'Modification...' : 'Enregistrer le mot de passe' }}
+        </button>
+      </div>
+      }
 
     </div>
   </div>
