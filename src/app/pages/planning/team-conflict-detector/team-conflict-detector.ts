@@ -262,17 +262,17 @@ export class TeamConflictDetectorComponent implements OnChanges {
   toggleTeam(id: string): void {
     const t = this.allTeams().find(x => x.id === id);
     if (!t || t.status === 'indisponible') return;
-    const cur  = this.teamIds();
-    const next = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
+    // Une seule équipe possible : bascule entre sélectionné et aucun
+    const next = this.teamIds().includes(id) ? [] : [id];
     this.teamIds.set(next);
     this.teamsChange.emit(next);
     this._checkConflicts();
   }
 
   applySuggested(): void {
-    const ids = this.apiSuggestions().map(s => s.equipeId);
-    const fallback = this.teamsEnriched().filter(t => t.isSuggested && t.status !== 'indisponible').map(t => t.id);
-    const next = ids.length ? ids : fallback;
+    const firstId = this.apiSuggestions()[0]?.equipeId
+      ?? this.teamsEnriched().find(t => t.isSuggested && t.status !== 'indisponible')?.id;
+    const next = firstId ? [firstId] : [];
     this.teamIds.set(next);
     this.teamsChange.emit(next);
   }
