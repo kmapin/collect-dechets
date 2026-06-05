@@ -1043,8 +1043,23 @@
                       <td>{{ user.data?.phone || '—' }}</td>
                       <td class="col-actions">
                         <div class="table-actions">
-                          <button class="action-btn" (click)="viewUserDetails(user._id)" title="Voir détails">
+                          <button class="action-btn" (click)="quickViewUser(user.data)" title="Voir détails">
                             <i class="material-icons">visibility</i>
+                          </button>
+                          <button class="action-btn edit" (click)="quickEditUser(user.data)" title="Modifier">
+                            <i class="material-icons">edit</i>
+                          </button>
+                          <button class="action-btn toggle-btn"
+                                  [class.toggle-active]="user.data?.status === 'active'"
+                                  [class.toggle-inactive]="user.data?.status !== 'active'"
+                                  (click)="quickToggleUserStatus(user.data)"
+                                  title="{{ user.data?.status === 'active' ? 'Désactiver' : 'Activer' }}">
+                            <i class="material-icons">{{ user.data?.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i>
+                          </button>
+                          <button class="action-btn danger"
+                                  (click)="quickDeleteUser(user._id, (user.data?.firstName || '') + ' ' + (user.data?.lastName || ''), user.data?.role || '')"
+                                  title="Supprimer">
+                            <i class="material-icons">delete</i>
                           </button>
                         </div>
                       </td>
@@ -1150,15 +1165,24 @@
                             Tel: {{ user?.data?.phone }}
                           </h5>
                         </div>
-                        <div
-                          class="agency-actions d-flex justify-content-end align-items"
-                        >
-                          <button
-                            class="btn btn-secondary"
-                            (click)="viewUserDetails(user?._id)"
-                          >
+                        <div class="agency-actions d-flex justify-content-end align-items gap-2 flex-wrap mt-2">
+                          <button class="action-btn" (click)="quickViewUser(user?.data)" title="Voir détails">
                             <i class="material-icons">visibility</i>
-                            Détails
+                          </button>
+                          <button class="action-btn edit" (click)="quickEditUser(user?.data)" title="Modifier">
+                            <i class="material-icons">edit</i>
+                          </button>
+                          <button class="action-btn toggle-btn"
+                                  [class.toggle-active]="user?.data?.status === 'active'"
+                                  [class.toggle-inactive]="user?.data?.status !== 'active'"
+                                  (click)="quickToggleUserStatus(user?.data)"
+                                  title="{{ user?.data?.status === 'active' ? 'Désactiver' : 'Activer' }}">
+                            <i class="material-icons">{{ user?.data?.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i>
+                          </button>
+                          <button class="action-btn danger"
+                                  (click)="quickDeleteUser(user?._id, (user?.data?.firstName || '') + ' ' + (user?.data?.lastName || ''))"
+                                  title="Supprimer">
+                            <i class="material-icons">delete</i>
                           </button>
                         </div>
                       </mat-card-content>
@@ -1914,7 +1938,7 @@
           </div>
 
           <!-- Section : Agence (si applicable) -->
-          <ng-container *ngIf="selectedUser.agency?.name || selectedUser.agencyName">
+          @if (selectedUser.agency?.name || selectedUser.agencyName) {
           <div class="divider"></div>
           <div class="section contact-info">
             <div class="section-header">
@@ -1934,7 +1958,7 @@
               </div>
             </div>
           </div>
-          </ng-container>
+          }
 
         </div>
       </div>
@@ -1942,23 +1966,25 @@
       <!-- ── Pied du drawer : actions ── -->
       <div class="drawer-footer">
         <div class="drawer-actions">
+          <!-- Modifier -->
+          <button class="btn btn-primary" (click)="visible1 = false; openEditUserDrawer()">
+            <i class="material-icons">edit</i>
+            Modifier
+          </button>
+
           <!-- Activer / Désactiver -->
-          <button
-            class="btn"
+          <button class="btn"
             [class.btn-success]="selectedUser.status !== 'active'"
             [class.btn-warning]="selectedUser.status === 'active'"
             [disabled]="isTogglingUserStatus"
-            (click)="toggleUserStatus()"
-            title="{{ selectedUser.status === 'active' ? 'Désactiver ce compte' : 'Activer ce compte' }}"
-          >
-            <i class="material-icons">
-              {{ isTogglingUserStatus ? 'hourglass_empty' : (selectedUser.status === 'active' ? 'toggle_off' : 'toggle_on') }}
-            </i>
+            (click)="toggleUserStatus()">
+            <i class="material-icons">{{ isTogglingUserStatus ? 'hourglass_empty' : (selectedUser.status === 'active' ? 'toggle_off' : 'toggle_on') }}</i>
             {{ isTogglingUserStatus ? 'En cours...' : (selectedUser.status === 'active' ? 'Désactiver' : 'Activer') }}
           </button>
 
           <!-- Supprimer -->
-          <button class="btn btn-danger" (click)="deleteUser(selectedUser._id || selectedUser.id!)">
+          <button class="btn btn-danger"
+            (click)="openDeleteDialog(selectedUser._id || selectedUser.id!, (selectedUser.firstName || '') + ' ' + (selectedUser.lastName || ''), selectedUser.role || '')">
             <i class="material-icons">delete</i>
             Supprimer
           </button>
@@ -1969,6 +1995,155 @@
             Fermer
           </button>
         </div>
+      </div>
+
+    </div>
+  </div>
+  }
+
+  @if (visibleEditUserDrawer) {
+  <div class="drawer-overlay" (click)="closeEditUserDrawer()">
+    <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+
+      <div class="drawer-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="user-detail-avatar"
+               [style.background-color]="getRandomColor(selectedUser)"
+               style="width:38px;height:38px;font-size:0.85rem;flex-shrink:0;">
+            {{ getInitials((selectedUser.firstName || '') + ' ' + (selectedUser.lastName || '')) }}
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:1rem;">Modifier — {{ selectedUser.firstName }} {{ selectedUser.lastName }}</h3>
+            <span style="font-size:0.78rem;color:#6b7280;">{{ getUserRole(selectedUser.role!) }}</span>
+          </div>
+        </div>
+        <button class="drawer-close-btn" (click)="closeEditUserDrawer()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="drawer-card">
+
+          <!-- Infos personnelles -->
+          <div class="section">
+            <div class="section-header">
+              <i class="material-icons section-icon-mat">person</i>
+              <h4>Informations personnelles</h4>
+            </div>
+            <div class="info-row">
+              <div class="form-group">
+                <label class="form-label">Prénom *</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.firstName" name="editFirstName" placeholder="Prénom" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nom *</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.lastName" name="editLastName" placeholder="Nom" />
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="form-group">
+                <label class="form-label">Téléphone</label>
+                <input class="form-input" type="tel" [(ngModel)]="selectedUser.phone" name="editPhone" placeholder="+226 XX XX XX XX" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-input" type="email" [value]="selectedUser.email" disabled style="background:#f3f4f6;cursor:not-allowed;" title="Non modifiable" />
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Adresse -->
+          <div class="section">
+            <div class="section-header">
+              <i class="material-icons section-icon-mat">location_on</i>
+              <h4>Adresse</h4>
+            </div>
+            <div class="info-row">
+              <div class="form-group">
+                <label class="form-label">Rue</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.address.street" name="editStreet" placeholder="Rue, n° porte" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ville</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.address.city" name="editCity" placeholder="Ville" />
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="form-group">
+                <label class="form-label">Quartier</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.address.neighborhood" name="editNeighborhood" placeholder="Quartier" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Secteur</label>
+                <input class="form-input" type="text" [(ngModel)]="selectedUser.address.sector" name="editSector" placeholder="Secteur" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <div class="drawer-actions">
+          <button class="btn btn-success" (click)="saveUserChanges()" [disabled]="isSavingUser">
+            <i class="material-icons">{{ isSavingUser ? 'hourglass_empty' : 'save' }}</i>
+            {{ isSavingUser ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+          <button class="btn btn-secondary" (click)="closeEditUserDrawer()" [disabled]="isSavingUser">
+            <i class="material-icons">close</i>
+            Annuler
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- ═══════ Dialog de confirmation Suppression ═══════ -->
+  @if (showDeleteDialog && userToDelete) {
+  <div class="confirm-dialog-overlay" (click)="showDeleteDialog = false">
+    <div class="confirm-dialog-box" (click)="$event.stopPropagation()">
+
+      <!-- En-tête -->
+      <div class="confirm-dialog-header">
+        <div class="confirm-icon">
+          <i class="material-icons">delete_forever</i>
+        </div>
+        <div>
+          <h3>Supprimer ce compte ?</h3>
+          <p>Cette action est définitive et irréversible</p>
+        </div>
+      </div>
+
+      <!-- Corps -->
+      <div class="confirm-dialog-body">
+        <div class="confirm-user-card">
+          <div class="confirm-avatar" [style.background-color]="userToDelete.color">
+            {{ userToDelete.initials }}
+          </div>
+          <div class="confirm-user-info">
+            <strong>{{ userToDelete.name }}</strong>
+            <span>{{ userToDelete.role }}</span>
+          </div>
+        </div>
+        <div class="confirm-warning">
+          <i class="material-icons">warning</i>
+          Toutes les données associées à ce compte seront perdues. Les collectes existantes ne seront pas affectées.
+        </div>
+      </div>
+
+      <!-- Pied -->
+      <div class="confirm-dialog-footer">
+        <button class="btn-cancel" (click)="showDeleteDialog = false" [disabled]="isDeletingUser">
+          Annuler
+        </button>
+        <button class="btn-delete-confirm" (click)="confirmDeleteUser()" [disabled]="isDeletingUser">
+          <i class="material-icons">{{ isDeletingUser ? 'hourglass_empty' : 'delete' }}</i>
+          {{ isDeletingUser ? 'Suppression...' : 'Supprimer définitivement' }}
+        </button>
       </div>
 
     </div>

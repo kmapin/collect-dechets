@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular
 import { BehaviorSubject, catchError, map, Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Municipality } from '../models/agency.model';
-import { RegisterResponse, User } from '../models/user.model';
+import { RegisterResponse, RegisterUserData, User } from '../models/user.model';
 import { FilterParams } from '../models/filterParams.model';
 
 interface MunicipalityStatistics {
@@ -151,6 +151,19 @@ export class Admin {
       map((response: any) => {
         console.log('API > toggleUserStatus:', response);
         return response;
+      })
+    );
+  }
+
+  updateUserProfile(userId: string, updates: Partial<RegisterUserData>): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/user/${userId}`, updates).pipe(
+      map((response: any) => {
+        console.log('API > updateUserProfile:', response);
+        return response;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Update user profile error:', error);
+        return of(this.handleRegistrationError(error));
       })
     );
   }

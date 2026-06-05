@@ -343,6 +343,9 @@ export class AdminDashboard implements OnInit {
   filteredSignalements: any[] = [];
   isDisabled = true;
   visible1: boolean = false;
+  visibleEditUserDrawer = false;
+  isEditingUser = false;
+  isSavingUser = false;
   isLargeScreen = false;
   constructor(
     private authService: AuthService,
@@ -1047,6 +1050,119 @@ export class AdminDashboard implements OnInit {
     this.router.navigate(["/agencies", agencyId]);
   }
   selectedClient: any = null;
+
+  // ── Dialog de confirmation suppression ──────────────────
+  showDeleteDialog    = false;
+  userToDelete: { id: string; name: string; role: string; color: string; initials: string } | null = null;
+  isDeletingUser      = false;
+
+  openDeleteDialog(userId: string, displayName: string, role: string): void {
+    this.userToDelete = {
+      id: userId,
+      name: displayName,
+      role: this.getUserRole(role),
+      color: this.getRandomColor({ firstName: displayName }),
+      initials: this.getInitials(displayName),
+    };
+    this.showDeleteDialog = true;
+  }
+
+  confirmDeleteUser(): void {
+    if (!this.userToDelete) return;
+    this.isDeletingUser = true;
+    this.adminService.deleteUser(this.userToDelete.id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Supprimé', `Le compte de "${this.userToDelete!.name}" a été supprimé.`);
+        this.showDeleteDialog = false;
+        this.userToDelete = null;
+        this.isDeletingUser = false;
+        this.visible1 = false;
+        this.showAdminUsers(this.usersFilterParams);
+      },
+      error: (err) => {
+        this.notificationService.showError('Erreur', err.error?.message || 'Impossible de supprimer cet utilisateur.');
+        this.isDeletingUser = false;
+      }
+    });
+  }
+
+  openEditUserDrawer(): void {
+    const id = this.selectedUser?._id || this.selectedUser?.id;
+    if (!id) return;
+    this.isEditingUser = true;
+    this.visible1 = false;
+    this.visibleEditUserDrawer = true;
+  }
+
+  closeEditUserDrawer(): void {
+    this.visibleEditUserDrawer = false;
+    this.isEditingUser = false;
+  }
+
+  saveUserChanges(): void {
+    if (!this.selectedUser?._id) return;
+
+    this.isSavingUser = true;
+
+    const updates = {
+      firstName: this.selectedUser.firstName?.trim(),
+      lastName: this.selectedUser.lastName?.trim(),
+      phone: this.selectedUser.phone?.trim(),
+      address: {
+        ...(this.selectedUser.address ?? {}),
+        street: this.selectedUser.address?.street?.trim() || "",
+        city: this.selectedUser.address?.city?.trim() || "",
+        neighborhood: this.selectedUser.address?.neighborhood?.trim() || "",
+      },
+    };
+
+    this.adminService.updateUserProfile(this.selectedUser._id, updates).subscribe({
+      next: (response: any) => {
+        this.isSavingUser = false;
+        const isSuccess = response?.success !== false;
+
+        if (isSuccess) {
+          this.visibleEditUserDrawer = false;
+          this.isEditingUser = false;
+          this.notificationService.showSuccess("Mise à jour", "Profil utilisateur mis à jour avec succès.");
+          this.showAdminUsers(this.usersFilterParams);
+        } else {
+          this.notificationService.showError("Erreur", response?.message || response?.error || "Impossible de mettre à jour l'utilisateur.");
+        }
+      },
+      error: (error: any) => {
+        this.isSavingUser = false;
+        this.notificationService.showError("Erreur", error?.error?.message || error?.message || "Impossible de mettre à jour l'utilisateur.");
+      },
+    });
+  }
+
+  // Ouvre le drawer en mode VIEW depuis la liste (sans appel API si on a déjà les données)
+  quickViewUser(userData: any): void {
+    this.selectedUser = userData as any;
+    this.isEditingUser = false;
+    this.visible1 = true;
+  }
+
+  // Ouvre le drawer en mode EDIT directement depuis la liste
+  quickEditUser(userData: any): void {
+    this.selectedUser = userData as any;
+    this.isEditingUser = true;
+    this.visible1 = false;
+    this.visibleEditUserDrawer = true;
+  }
+
+  // Suppression directe depuis la liste → ouvre le dialog
+  quickDeleteUser(userId: string, displayName: string, role = ''): void {
+    this.openDeleteDialog(userId, displayName.trim() || 'cet utilisateur', role);
+  }
+
+  // Toggle statut directement depuis la liste
+  quickToggleUserStatus(userData: any): void {
+    this.selectedUser = userData as any;
+    this.toggleUserStatus();
+  }
+
   viewUserDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",
@@ -1057,6 +1173,8 @@ export class AdminDashboard implements OnInit {
       next: (client: any) => {
         if (client.success) {
           this.selectedUser = client?.user;
+          this.visibleEditUserDrawer = false;
+          this.isEditingUser = false;
           console.log("voici les details du client:", this.selectedUser);
           this.visible1 = true;
         } else {
