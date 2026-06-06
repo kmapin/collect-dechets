@@ -1223,26 +1223,57 @@
                     class="schedule-card"
                     [class.new]="isNewSchedule(schedule)"
                     [class.loading]="isScheduleLoading(schedule)"
+                    [class.sched-planifie]="schedule.status === 'planifie'"
+                    [class.sched-en-cours]="schedule.status === 'en_cours'"
+                    [class.sched-termine]="schedule.status === 'termine'"
+                    [class.sched-annule]="schedule.status === 'annule'"
                     (click)="openScheduleDetails(schedule)"
                   >
+                    <!-- Référence + statut -->
+                    <div class="sched-header">
+                      @if (schedule.reference) {
+                        <span class="sched-ref">{{ schedule.reference }}</span>
+                      }
+                      <span class="sched-status-badge sched-status-{{ schedule.status }}">
+                        {{ schedule.status === "brouillon" ? "Brouillon"
+                          : schedule.status === "planifie" ? "Planifié"
+                          : schedule.status === "en_cours" ? "En cours"
+                          : schedule.status === "termine" ? "Terminé"
+                          : schedule.status === "annule" ? "Annulé"
+                          : schedule.status }}
+                      </span>
+                    </div>
+
+                    <!-- Libellé -->
+                    @if (schedule.libelle) {
+                      <div class="sched-libelle">{{ schedule.libelle }}</div>
+                    }
+
+                    <!-- Localisation -->
                     <div class="sched-zone">
                       <i class="material-icons">location_on</i>
-                      <span class="zone-name">{{ getZoneName(schedule.zone) }}</span>
+                      <span class="zone-name">{{ getZoneName(schedule) }}</span>
                     </div>
+
+                    <!-- Horaire -->
                     <div class="sched-time">
                       <i class="material-icons">access_time</i>
-                      <span>{{ schedule.startTime }} – {{ schedule.endTime }}</span>
+                      <span>{{ schedule.startTime }}{{ schedule.endTime ? ' – ' + schedule.endTime : '' }}</span>
                     </div>
-                    @if (schedule.collectors?.length > 0) {
-                    <div class="sched-collectors">
-                      @for(collector of schedule.collectors; track collector){
-                      <span class="collector-chip">
-                        <i class="material-icons">person</i>
-                        {{ getCollectorName(collector._id) || 'Non assigné' }}
-                      </span>
-                      }
-                    </div>
+
+                    <!-- Équipe -->
+                    @if (schedule.teamName) {
+                      <div class="sched-team">
+                        <i class="material-icons">groups</i>
+                        <span>{{ schedule.teamName }}</span>
+                      </div>
+                    } @else if (!schedule.teamName && schedule.teamV2Id) {
+                      <div class="sched-team sched-team--no-name">
+                        <i class="material-icons">groups</i>
+                        <span>Équipe assignée</span>
+                      </div>
                     }
+
                     <div class="schedule-actions" (click)="$event.stopPropagation()">
                       <button
                         class="action-btn edit"
@@ -3079,26 +3110,86 @@
 
           @if (selectedSchedule) {
           <div class="modal-backdrop" (click)="closeModal()">
-            <div class="modal">
-              <h3>Détails du planning</h3>
-              <p>
-                <strong>Date :</strong>
-                {{ selectedSchedule.date | date : "fullDate" }}
-              </p>
-              <p><strong>Zone :</strong> {{ selectedSchedule.zone }}</p>
-              <p>
-                <strong>Heure :</strong> {{ selectedSchedule.startTime }} - {{
-                selectedSchedule.endTime }}
-              </p>
-              <p>
-                <strong>Collecteur(s) :</strong>
-                @for (c of selectedSchedule.collectors; track c) {
-                <span>
-                  {{ c.firstName }} {{ c.lastName }} ({{ c.phone }})
-                </span>
+            <div class="sched-detail-modal" (click)="$event.stopPropagation()">
+
+              <!-- Header -->
+              <div class="sdm-header">
+                <div class="sdm-title-row">
+                  @if (selectedSchedule.reference) {
+                    <span class="sdm-ref">{{ selectedSchedule.reference }}</span>
+                  }
+                  <span class="sched-status-badge sched-status-{{ selectedSchedule.status }}">
+                    {{ selectedSchedule.status === "brouillon" ? "Brouillon"
+                      : selectedSchedule.status === "planifie" ? "Planifié"
+                      : selectedSchedule.status === "en_cours" ? "En cours"
+                      : selectedSchedule.status === "termine" ? "Terminé"
+                      : selectedSchedule.status === "annule" ? "Annulé"
+                      : selectedSchedule.status }}
+                  </span>
+                </div>
+                <h3 class="sdm-libelle">{{ selectedSchedule.libelle || "Planning sans titre" }}</h3>
+                <button class="sdm-close" (click)="closeModal()">
+                  <i class="material-icons">close</i>
+                </button>
+              </div>
+
+              <!-- Body -->
+              <div class="sdm-body">
+                <div class="sdm-row">
+                  <i class="material-icons">event</i>
+                  <div class="sdm-info">
+                    <span class="sdm-label">Date</span>
+                    <span class="sdm-value">{{ getScheduleDateString(selectedSchedule) }}</span>
+                  </div>
+                </div>
+                <div class="sdm-row">
+                  <i class="material-icons">access_time</i>
+                  <div class="sdm-info">
+                    <span class="sdm-label">Horaire</span>
+                    <span class="sdm-value">{{ selectedSchedule.startTime }}{{ selectedSchedule.endTime ? " – " + selectedSchedule.endTime : "" }}</span>
+                  </div>
+                </div>
+                <div class="sdm-row">
+                  <i class="material-icons">location_on</i>
+                  <div class="sdm-info">
+                    <span class="sdm-label">Zone</span>
+                    <span class="sdm-value">{{ getZoneName(selectedSchedule) || "—" }}</span>
+                  </div>
+                </div>
+                @if (selectedSchedule.type) {
+                  <div class="sdm-row">
+                    <i class="material-icons">category</i>
+                    <div class="sdm-info">
+                      <span class="sdm-label">Type</span>
+                      <span class="sdm-value">{{ selectedSchedule.type }}</span>
+                    </div>
+                  </div>
                 }
-              </p>
-              <!-- <button class="close-btn" (click)="selectedSchedule = null">Fermer</button> -->
+                <div class="sdm-row">
+                  <i class="material-icons">groups</i>
+                  <div class="sdm-info">
+                    <span class="sdm-label">Équipe</span>
+                    <span class="sdm-value">{{ selectedSchedule.teamName || (selectedSchedule.teamV2Id ? "Équipe assignée" : "Non assignée") }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer actions -->
+              <div class="sdm-footer">
+                <button class="sdm-btn sdm-btn-detail" (click)="viewScheduleDetail(selectedSchedule)">
+                  <i class="material-icons">open_in_new</i>
+                  Voir détail
+                </button>
+                <button class="sdm-btn sdm-btn-edit" (click)="navigateEditSchedule(selectedSchedule)">
+                  <i class="material-icons">edit</i>
+                  Modifier
+                </button>
+                <button class="sdm-btn sdm-btn-duplicate" (click)="duplicateSchedule(selectedSchedule)">
+                  <i class="material-icons">content_copy</i>
+                  Dupliquer
+                </button>
+              </div>
+
             </div>
           </div>
           } @if (showAssignModal) {

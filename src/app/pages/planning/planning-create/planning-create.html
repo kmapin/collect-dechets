@@ -2,11 +2,11 @@
 
 <div class="pc-wrapper">
 
-  <!-- Overlay de chargement en mode édition -->
+  <!-- Overlay de chargement en mode édition / duplication -->
   @if (isLoadingEdit()) {
     <div style="position:fixed;inset:0;background:rgba(255,255,255,.7);z-index:999;display:flex;align-items:center;justify-content:center;gap:12px;font-size:16px;color:#1e293b">
       <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
-      Chargement du planning…
+      {{ isDuplicateMode() ? 'Chargement du planning à dupliquer…' : 'Chargement du planning…' }}
     </div>
   }
 
@@ -17,7 +17,9 @@
         <mat-icon>dashboard</mat-icon><span>Planning</span>
       </a>
       <mat-icon class="bc-sep">chevron_right</mat-icon>
-      <span class="bc-current">{{ isEditMode() ? 'Modifier le planning' : 'Nouveau planning' }}</span>
+      <span class="bc-current">
+        {{ isEditMode() ? 'Modifier le planning' : isDuplicateMode() ? 'Dupliquer le planning' : 'Nouveau planning' }}
+      </span>
     </div>
     <div class="pc-header-actions">
       @if (draftSaved()) {
@@ -31,6 +33,14 @@
       </button>
     </div>
   </div>
+
+  <!-- Bannière mode duplication -->
+  @if (isDuplicateMode() && duplicateRef()) {
+    <div class="duplicate-banner">
+      <mat-icon>content_copy</mat-icon>
+      <span>Duplication de <strong>{{ duplicateRef() }}</strong> — Date décalée d'une semaine · Donnez un nouveau nom avant de créer</span>
+    </div>
+  }
 
   <!-- =================== STEPPER =================== -->
   <div class="stepper-wrapper">

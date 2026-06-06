@@ -3248,9 +3248,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return roleTexts[role as keyof typeof roleTexts] || role;
   }
 
-  getZoneName(zone: string): string {
-    // Exemple simple
-    return zone || "Zone inconnue";
+  getZoneName(schedule: any): string {
+    if (!schedule) return 'Zone inconnue';
+    return schedule.zone || schedule.quartier || schedule.secteur || schedule.ville
+      || schedule.libelle || 'Zone inconnue';
   }
 
   getZoneClients(zoneId: string): number {
@@ -3362,21 +3363,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // console.log("Nombre total de plannings:", this.schedules.length);
 
     const filteredSchedules = this.schedules.filter((schedule) => {
-      if (!schedule.date) {
-        console.warn("Planning sans date:", schedule);
-        return false;
-      }
-
-      const scheduleDate = new Date(schedule.date);
+      if (!schedule.date) return false;
+      // Extraire YYYY-MM-DD depuis une date ISO ou une date simple
+      const rawDate: string = schedule.date;
+      const datePart = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate;
+      const scheduleDate = new Date(datePart + 'T00:00:00');
       scheduleDate.setHours(0, 0, 0, 0);
-
-      const isMatch = scheduleDate.getTime() === targetDate.getTime();
-
-      // if (isMatch) {
-      //   // console.log("Planning trouvé pour ce jour:", schedule);
-      // }
-
-      return isMatch;
+      return scheduleDate.getTime() === targetDate.getTime();
     });
 
     // console.log(
@@ -4030,55 +4023,56 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
   //recupere les planning d une agence
   schedules: any[] = [];
+  schedulesTeams: any[] = []; // équipes V2 pour résolution des noms
 
   loadPlannings(): void {
     this.isLoadingSchedules = true;
     const agencyId = this.currentUser?.agencyId;
 
     if (!agencyId) {
-      console.error("[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant");
       this.isLoadingSchedules = false;
       return;
     }
 
-    this.agencyService.getAllPlaningAgency$(agencyId).subscribe({
-      next: (response: any) => {
-        console.log("Réponse complète planning de l'agence du backend:", response);
+    // Chargement en parallèle : plannings V2 + équipes V2
+    forkJoin([
+      this.agencyService.getAllPlanningsV2$(agencyId),
+      this.schedulesTeams.length
+        ? of(this.schedulesTeams)
+        : this.agencyService.getTeamsV2$(agencyId),
+    ]).subscribe({
+      next: ([plannings, teams]) => {
+        if (teams.length) this.schedulesTeams = teams;
 
-        // Gérer les deux formats possibles de réponse
-        if (Array.isArray(response)) {
-          // Si la réponse est directement un tableau
-          this.schedules = response;
-        } else if (
-          response &&
-          response.plannings &&
-          Array.isArray(response.plannings)
-        ) {
-          // Si la réponse est un objet avec une propriété plannings
-          this.schedules = response.plannings;
-        } else if (response && response.data && Array.isArray(response.data)) {
-          // Si la réponse est un objet avec une propriété data
-          this.schedules = response.data;
-        } else {
-          console.warn("Format de réponse non reconnu:", response);
-          this.schedules = [];
-        }
+        this.schedules = plannings.map((p: any) => ({
+          _id:       p._id,
+          libelle:   p.libelle || "",
+          reference: p.reference || "",
+          date:      p.date || "",
+          startTime: p.startTime || "08:00",
+          endTime:   p.endTime || "",
+          status:    p.planningStatus || p.status || "brouillon",
+          type:      p.type || "",
+          zone:      p.zone || p.quartier || p.secteur || p.ville || "",
+          teamV2Id:  p.teamV2Id || null,
+          teamName:  this._resolveTeamName(p.teamV2Id, teams),
+          collectors: [],
+          createdAt: p.createdAt,
+        }));
 
-        const schedulesTab = this.tabs.find((tab) => tab.id === "schedules");
-        if (schedulesTab) {
-          schedulesTab.badge = this.schedules.length;
-        }
-
+        const schedulesTab = this.tabs.find(t => t.id === "schedules");
+        if (schedulesTab) schedulesTab.badge = this.schedules.length;
         this.isLoadingSchedules = false;
+        this.cdr.detectChanges();
       },
-      error: (error) => {
-        console.error(
-          "[DEBUG] Erreur lors du chargement des plannings :",
-          error,
-        );
-        this.isLoadingSchedules = false;
-      },
+      error: () => { this.isLoadingSchedules = false; },
     });
+  }
+
+  private _resolveTeamName(teamV2Id: string | null, teams: any[]): string {
+    if (!teamV2Id) return "";
+    const team = teams.find((t: any) => t._id === teamV2Id);
+    return team?.name ?? "";
   }
 
   // recuperation des planning d un colector
@@ -4697,6 +4691,34 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   closeModal(): void {
     this.selectedSchedule = null;
+  }
+
+  getScheduleDateString(schedule: any): string {
+    if (!schedule?.date) return "—";
+    const raw: string = schedule.date;
+    const datePart = raw.includes("T") ? raw.split("T")[0] : raw;
+    const parts = datePart.split("-");
+    if (parts.length !== 3) return raw;
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    return d.toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  }
+
+  duplicateSchedule(schedule: any): void {
+    if (!schedule?._id) return;
+    this.closeModal();
+    this.router.navigate(["/planning/create"], { queryParams: { duplicate: schedule._id } });
+  }
+
+  navigateEditSchedule(schedule: any): void {
+    if (!schedule?._id) return;
+    this.closeModal();
+    this.router.navigate(["/planning/create"], { queryParams: { edit: schedule._id } });
+  }
+
+  viewScheduleDetail(schedule: any): void {
+    if (!schedule?._id) return;
+    this.closeModal();
+    this.router.navigate(["/planning/detail", schedule._id]);
   }
 
   // Ouvrir le formulaire de modification de planning

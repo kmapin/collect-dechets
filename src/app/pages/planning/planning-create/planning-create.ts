@@ -72,9 +72,14 @@ export class PlanningCreate implements OnInit {
   isLoadingClients = signal(false);
 
   // ── Edit mode ────────────────────────────────────────────────
-  editId      = signal<string | null>(null);
-  isEditMode  = computed(() => !!this.editId());
+  editId        = signal<string | null>(null);
+  isEditMode    = computed(() => !!this.editId());
   isLoadingEdit = signal(false);
+
+  // ── Duplicate mode ───────────────────────────────────────────
+  duplicateId     = signal<string | null>(null);
+  isDuplicateMode = computed(() => !!this.duplicateId());
+  duplicateRef    = signal<string>('');
 
   readonly today = new Date();
 
@@ -205,11 +210,15 @@ export class PlanningCreate implements OnInit {
     this._loadTeams();
     this._loadClients();
 
-    // Détection du mode édition via ?edit=<planningId>
-    const editId = this.route.snapshot.queryParamMap.get('edit');
+    // Détection du mode édition / duplication via query params
+    const editId      = this.route.snapshot.queryParamMap.get('edit');
+    const duplicateId = this.route.snapshot.queryParamMap.get('duplicate');
     if (editId) {
       this.editId.set(editId);
       this._loadPlanningForEdit(editId);
+    } else if (duplicateId) {
+      this.duplicateId.set(duplicateId);
+      this._loadPlanningForDuplicate(duplicateId);
     } else {
       this._loadDraft();
     }
@@ -250,6 +259,55 @@ export class PlanningCreate implements OnInit {
       },
       error: () => {
         this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger le planning' });
+        this.isLoadingEdit.set(false);
+        this.router.navigate(['/planning/dashboard']);
+      },
+    });
+  }
+
+  private _loadPlanningForDuplicate(id: string): void {
+    this.isLoadingEdit.set(true);
+    this.svc.getPlanning(id).subscribe({
+      next: planning => {
+        this.duplicateRef.set(planning.reference ?? '');
+
+        // Décaler la date d'une semaine
+        const originalDate = planning.date ? new Date(planning.date) : new Date();
+        const nextDate = new Date(originalDate.getTime());
+        nextDate.setDate(nextDate.getDate() + 7);
+
+        this.form.patchValue({
+          type:               planning.type,
+          libelle:            '',
+          date:               isNaN(nextDate.getTime()) ? null : nextDate,
+          startTime:          planning.startTime ?? '08:00',
+          endTime:            planning.endTime ?? '',
+          frequency:          planning.frequency ?? 'unique',
+          notes:              '',
+          villeId:            planning.villeId ?? '',
+          ville:              planning.ville ?? '',
+          arrondissementId:   planning.arrondissementId ?? '',
+          arrondissement:     planning.arrondissement ?? '',
+          secteurId:          planning.secteurId ?? '',
+          secteur:            planning.secteur ?? '',
+          quartierId:         planning.quartierId ?? '',
+          quartier:           planning.quartier ?? '',
+          clientId:           planning.clientId ?? '',
+          groupName:          planning.groupeId ?? '',
+          publishImmediately: true,
+          notifyClients:      true,
+          notifyTeams:        true,
+        });
+
+        if (planning.typeDechets?.length) this.selectedWasteTypes.set(planning.typeDechets);
+        this.selectedTeamId.set(planning.teamV2Id ?? planning.equipeIds?.[0] ?? null);
+
+        // Afficher le récap pour que l'utilisateur puisse tout vérifier
+        this.currentStep.set(5);
+        this.isLoadingEdit.set(false);
+      },
+      error: () => {
+        this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: 'Impossible de charger le planning à dupliquer' });
         this.isLoadingEdit.set(false);
         this.router.navigate(['/planning/dashboard']);
       },
