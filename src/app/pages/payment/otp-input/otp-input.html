@@ -27,7 +27,7 @@
         <input
           matInput
           formControlName="otp"
-          placeholder="000000"
+          placeholder="00000"
           type="text"
           inputmode="numeric"
           maxlength="6"
@@ -40,7 +40,7 @@
               {{ getOtpErrorMessage() }}
             </mat-error>
           }
-          <mat-hint>Code à 6 chiffres</mat-hint>
+          <mat-hint>Code à 5 ou 6 chiffres</mat-hint>
         </mat-form-field>
 
         @if (errorMessage) {

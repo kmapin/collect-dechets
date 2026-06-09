@@ -64,7 +64,8 @@ export class MobileMoneyFormComponent implements OnInit {
   paymentResponse: PaymentResponse | null = null;
 
   isRequestingOtp = false;
-  currentStep:  'payment' | 'otp' | 'requiredOtp' = 'payment';
+  currentStep: 'payment' | 'otp' | 'requiredOtp' = 'payment';
+  errorMessage = '';
   
   /** Liste des opérateurs Mobile Money disponibles */
   operators: OperatorInfo[] = [
@@ -160,6 +161,7 @@ export class MobileMoneyFormComponent implements OnInit {
     if (this.paymentForm.valid && !this.isProcessing) {
       this.isProcessing = true;
       this.paymentResponse = null;
+      this.errorMessage = '';
       
       const request: PaymentRequest = {
         operator: this.paymentForm.value.operator,
@@ -195,8 +197,9 @@ export class MobileMoneyFormComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Erreur de paiement:', error);
           this.isProcessing = false;
+          this.errorMessage = error?.message || "Une erreur est survenue lors du traitement du paiement.";
+          console.error('Erreur de paiement:', error);
         }
       });
     }
