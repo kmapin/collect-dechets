@@ -66,8 +66,8 @@ export class OtpInputComponent implements OnInit {
     this.otpForm = this.fb.group({
       otp: ['', [
         Validators.required,
-        Validators.pattern(/^\d{6}$/),
-        Validators.minLength(6),
+        Validators.pattern(/^\d{5,6}$/),
+        Validators.minLength(5),
         Validators.maxLength(6)
       ]]
     });
@@ -141,7 +141,7 @@ export class OtpInputComponent implements OnInit {
         },
         error: (error) => {
           this.isProcessing = false;
-          this.errorMessage = "Une erreur est survenue lors de la validation.";
+          this.errorMessage = error?.message || "Une erreur est survenue lors de la validation.";
           console.error(error);
         }
       });
@@ -171,7 +171,7 @@ export class OtpInputComponent implements OnInit {
     }
     
     if (field.errors['pattern'] || field.errors['minlength'] || field.errors['maxlength']) {
-      return 'Le code OTP doit contenir exactement 6 chiffres';
+      return 'Le code OTP doit contenir entre 5 et 6 chiffres';
     }
     
     return 'Code OTP invalide';
