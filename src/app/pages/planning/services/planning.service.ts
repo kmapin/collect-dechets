@@ -344,6 +344,20 @@ export class PlanningService {
     );
   }
 
+  // ── Client groups ─────────────────────────────────────────────
+
+  getClientGroups(agencyId: string): Observable<any[]> {
+    return this.http.get<any>(`${this.api}/client-groups/agency/${agencyId}`).pipe(
+      map(res => res?.data ?? (Array.isArray(res) ? res : []))
+    );
+  }
+
+  createClientGroup(body: { name: string; description?: string; agencyId: string; clientIds: string[] }): Observable<any> {
+    return this.http.post<any>(`${this.api}/client-groups`, body).pipe(
+      map(res => res?.data ?? res)
+    );
+  }
+
   // ── Team ↔ Planning (read-modify-write) ──────────────────────
 
   addTeamToPlanning(planningId: string, teamId: string): Observable<Planning> {

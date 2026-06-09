@@ -166,30 +166,92 @@
           <!-- ---- Groupe ---- -->
           @if (form.get('type')?.value === 'groupe') {
             <div class="target-section">
-              <div class="form-group">
-                <label class="form-lbl">Nom du groupe <span class="req">*</span></label>
-                <input type="text" class="form-inp" placeholder="Ex: Groupe Résidentiel A" formControlName="groupName" />
+
+              <!-- Sélecteur de mode -->
+              <div class="group-mode-selector">
+                <button type="button" class="gm-btn" [class.active]="groupMode() === 'new'" (click)="setGroupMode('new')">
+                  <mat-icon>add_circle_outline</mat-icon>
+                  <div class="gm-texts">
+                    <span class="gm-title">Nouveau groupe</span>
+                    <span class="gm-desc">Créer un nouveau groupe de clients</span>
+                  </div>
+                  @if (groupMode() === 'new') { <mat-icon class="gm-check">check_circle</mat-icon> }
+                </button>
+                <button type="button" class="gm-btn" [class.active]="groupMode() === 'existing'" (click)="setGroupMode('existing')">
+                  <mat-icon>folder_open</mat-icon>
+                  <div class="gm-texts">
+                    <span class="gm-title">Groupe existant</span>
+                    <span class="gm-desc">Utiliser un groupe déjà créé</span>
+                  </div>
+                  @if (groupMode() === 'existing') { <mat-icon class="gm-check">check_circle</mat-icon> }
+                </button>
               </div>
-              <div class="form-group">
-                <label class="form-lbl">Sélectionner les clients <span class="req">*</span></label>
-                <div class="clients-grid">
-                  @for (c of mockClients; track c.id) {
-                    <div class="gc-card" [class.selected]="isClientSelected(c.id)" (click)="toggleGroupClient(c)">
-                      <div class="gc-avatar">{{ c.name.charAt(0) }}</div>
-                      <span class="gc-name">{{ c.name }}</span>
-                      <span class="gc-zone">{{ c.zone }}</span>
-                      @if (isClientSelected(c.id)) {
-                        <div class="gc-check"><mat-icon>check</mat-icon></div>
-                      }
+
+              <!-- Nouveau groupe : nom + sélection clients -->
+              @if (groupMode() === 'new') {
+                <div class="form-group" style="margin-top:20px">
+                  <label class="form-lbl">Nom du groupe <span class="req">*</span></label>
+                  <input type="text" class="form-inp" placeholder="Ex: Groupe Résidentiel A" formControlName="groupName" />
+                </div>
+                <div class="form-group">
+                  <label class="form-lbl">Sélectionner les clients <span class="req">*</span></label>
+                  <div class="clients-grid">
+                    @for (c of mockClients; track c.id) {
+                      <div class="gc-card" [class.selected]="isClientSelected(c.id)" (click)="toggleGroupClient(c)">
+                        <div class="gc-avatar">{{ c.name.charAt(0) }}</div>
+                        <span class="gc-name">{{ c.name }}</span>
+                        <span class="gc-zone">{{ c.zone }}</span>
+                        @if (isClientSelected(c.id)) {
+                          <div class="gc-check"><mat-icon>check</mat-icon></div>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <div class="sel-count" [class.warn]="selectedClients().length < 2">
+                    <mat-icon>groups</mat-icon>
+                    {{ selectedClients().length }} client(s) sélectionné(s)
+                    @if (selectedClients().length < 2) { <span class="min-warn">– min. 2 requis</span> }
+                  </div>
+                </div>
+              }
+
+              <!-- Groupe existant : liste des groupes -->
+              @if (groupMode() === 'existing') {
+                <div style="margin-top:20px">
+                  @if (isLoadingGroups()) {
+                    <div class="groups-loading">
+                      <mat-icon class="spin">autorenew</mat-icon>
+                      <span>Chargement des groupes…</span>
+                    </div>
+                  } @else if (existingGroups().length === 0) {
+                    <div class="groups-empty">
+                      <mat-icon>info_outline</mat-icon>
+                      <span>Aucun groupe trouvé pour cette agence.</span>
+                      <button type="button" class="gm-switch-link" (click)="setGroupMode('new')">Créer un nouveau groupe</button>
+                    </div>
+                  } @else {
+                    <div class="form-group">
+                      <label class="form-lbl">Choisir un groupe <span class="req">*</span></label>
+                      <div class="existing-groups-list">
+                        @for (g of existingGroups(); track g._id) {
+                          <div class="eg-card" [class.selected]="selectedExistingGroupId() === g._id" (click)="selectExistingGroup(g)">
+                            <div class="eg-icon"><mat-icon>groups</mat-icon></div>
+                            <div class="eg-info">
+                              <span class="eg-name">{{ g.name }}</span>
+                              @if (g.description) { <span class="eg-desc">{{ g.description }}</span> }
+                              <span class="eg-count">{{ g.clientIds?.length ?? 0 }} client(s)</span>
+                            </div>
+                            @if (selectedExistingGroupId() === g._id) {
+                              <mat-icon class="eg-selected-icon">check_circle</mat-icon>
+                            }
+                          </div>
+                        }
+                      </div>
                     </div>
                   }
                 </div>
-                <div class="sel-count" [class.warn]="selectedClients().length < 2">
-                  <mat-icon>groups</mat-icon>
-                  {{ selectedClients().length }} client(s) sélectionné(s)
-                  @if (selectedClients().length < 2) { <span class="min-warn">– min. 2 requis</span> }
-                </div>
-              </div>
+              }
+
             </div>
           }
 
@@ -467,8 +529,8 @@
                 <div class="sum-row"><span class="sum-lbl">Client</span><span class="sum-val">{{ selectedClients()[0].name }}</span></div>
               }
               @if (form.get('type')?.value === 'groupe') {
-                <div class="sum-row"><span class="sum-lbl">Groupe</span><span class="sum-val">{{ form.get('groupName')?.value }}</span></div>
-                <div class="sum-row"><span class="sum-lbl">Clients</span><span class="sum-val">{{ selectedClients().length }} client(s)</span></div>
+                <div class="sum-row"><span class="sum-lbl">Groupe</span><span class="sum-val">{{ selectedGroupName() }}</span></div>
+                <div class="sum-row"><span class="sum-lbl">Clients</span><span class="sum-val">{{ estimatedHouseholds() }} client(s)</span></div>
               }
               @if (form.get('ville')?.value) {
                 <div class="sum-row">
@@ -628,6 +690,7 @@
             </div>
 
             <div class="publish-options">
+              @if (!isEditMode()) {
               <div class="pub-option">
                 <div class="pub-option-info">
                   <div class="pub-icon"><mat-icon>rocket_launch</mat-icon></div>
@@ -641,6 +704,7 @@
                   <div class="toggle-thumb"></div>
                 </div>
               </div>
+              }
 
               <div class="pub-option">
                 <div class="pub-option-info">

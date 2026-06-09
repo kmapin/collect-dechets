@@ -92,6 +92,26 @@
         <button type="button" class="tb-btn tb-btn--ghost" (click)="showDupDlg.set(true)" pTooltip="Dupliquer" tooltipPosition="bottom">
           <mat-icon>content_copy</mat-icon>Dupliquer
         </button>
+        @if (canStart()) {
+          <button type="button" class="tb-btn tb-btn--start" [disabled]="isActioning()" (click)="showStartDlg.set(true)"
+                  pTooltip="Démarrer la collecte" tooltipPosition="bottom">
+            @if (isActioning()) {
+              <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Démarrage…
+            } @else {
+              <mat-icon>play_circle</mat-icon>Démarrer
+            }
+          </button>
+        }
+        @if (canComplete()) {
+          <button type="button" class="tb-btn tb-btn--success" [disabled]="isActioning()" (click)="showCompleteDlg.set(true)"
+                  pTooltip="Marquer la collecte comme terminée" tooltipPosition="bottom">
+            @if (isActioning()) {
+              <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> En cours…
+            } @else {
+              <mat-icon>task_alt</mat-icon>Terminer
+            }
+          </button>
+        }
         @if (planning()!.status !== 'annule' && planning()!.status !== 'termine') {
           <button type="button" class="tb-btn tb-btn--ghost tb-btn--danger" (click)="showCancelDlg.set(true)">
             <mat-icon>cancel</mat-icon>Annuler
@@ -623,6 +643,50 @@
       </div><!-- /pd-content -->
     </div><!-- /pd-body -->
   </div><!-- /pd-root -->
+
+  <!-- ════════════════════════════════════════════════════════
+       START DIALOG
+       ════════════════════════════════════════════════════════ -->
+  @if (showStartDlg()) {
+    <div class="dlg-backdrop" (click)="showStartDlg.set(false)"></div>
+    <div class="dlg-box dlg-box--start">
+      <div class="dlg-icon dlg-icon--start"><mat-icon>play_circle</mat-icon></div>
+      <h3>Démarrer ce planning ?</h3>
+      <p>Le planning <strong>{{ planning()!.reference }}</strong> – <em>{{ planning()!.libelle }}</em> sera passé <strong>en cours</strong>. Les équipes seront notifiées.</p>
+      <div class="dlg-actions">
+        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showStartDlg.set(false)">Retour</button>
+        <button type="button" class="dlg-btn dlg-btn--start-confirm" [disabled]="isActioning()" (click)="startPlanning()">
+          @if (isActioning()) {
+            <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Démarrage…
+          } @else {
+            <mat-icon>play_circle</mat-icon>Confirmer le démarrage
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════════
+       COMPLETE DIALOG
+       ════════════════════════════════════════════════════════ -->
+  @if (showCompleteDlg()) {
+    <div class="dlg-backdrop" (click)="showCompleteDlg.set(false)"></div>
+    <div class="dlg-box dlg-box--success">
+      <div class="dlg-icon dlg-icon--success"><mat-icon>task_alt</mat-icon></div>
+      <h3>Terminer ce planning ?</h3>
+      <p>Le planning <strong>{{ planning()!.reference }}</strong> – <em>{{ planning()!.libelle }}</em> sera marqué comme <strong>terminé</strong>. Cette action est irréversible.</p>
+      <div class="dlg-actions">
+        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showCompleteDlg.set(false)">Retour</button>
+        <button type="button" class="dlg-btn dlg-btn--success-confirm" [disabled]="isActioning()" (click)="completePlanning()">
+          @if (isActioning()) {
+            <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Finalisation…
+          } @else {
+            <mat-icon>task_alt</mat-icon>Confirmer la fin
+          }
+        </button>
+      </div>
+    </div>
+  }
 
   <!-- ════════════════════════════════════════════════════════
        CANCEL DIALOG

@@ -58,9 +58,11 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   isLoading     = signal(true);
   notFound      = signal(false);
   activeSection = signal('info');
-  showCancelDlg  = signal(false);
-  showDupDlg     = signal(false);
-  showDeleteDlg  = signal(false);
+  showCancelDlg   = signal(false);
+  showStartDlg    = signal(false);
+  showCompleteDlg = signal(false);
+  showDupDlg      = signal(false);
+  showDeleteDlg   = signal(false);
   isActioning   = signal(false);
   planning      = signal<Planning | null>(null);
 
@@ -302,6 +304,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   startPlanning(): void {
+    this.showStartDlg.set(false);
     const p = this.planning();
     if (!p || this.isActioning()) return;
     this.isActioning.set(true);
@@ -319,6 +322,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   completePlanning(): void {
+    this.showCompleteDlg.set(false);
     const p = this.planning();
     if (!p || this.isActioning()) return;
     this.isActioning.set(true);
@@ -371,15 +375,16 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   editPlanning(): void {
-    this.router.navigate(['/planning/create']);
+    const p = this.planning();
+    if (!p) return;
+    this.router.navigate(['/planning/create'], { queryParams: { edit: p.id } });
   }
 
-  async duplicatePlanning(): Promise<void> {
+  duplicatePlanning(): void {
     this.showDupDlg.set(false);
     const p = this.planning();
     if (!p) return;
-    const nextDate = this._addDays(p.date, 7);
-    this.msg.add({ severity: 'success', summary: 'Dupliqué !', detail: `Planning copié pour le ${nextDate}` });
+    this.router.navigate(['/planning/create'], { queryParams: { duplicate: p.id } });
   }
 
   // ── PDF export ────────────────────────────────────────────────

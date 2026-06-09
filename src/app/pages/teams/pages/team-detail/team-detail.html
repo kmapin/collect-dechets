@@ -191,11 +191,24 @@
             <div class="mc-info">
               <div class="mc-name">{{ m.name }}</div>
               <div class="mc-role" [style.color]="roleColor(m.role)">{{ roleLabel(m.role) }}</div>
-              <div class="mc-phone"><mat-icon>phone</mat-icon>{{ m.phone }}</div>
+              <div class="mc-phone"><mat-icon>phone</mat-icon>{{ m.phone || '—' }}</div>
               @if (m.email) {
                 <div class="mc-email"><mat-icon>email</mat-icon>{{ m.email }}</div>
               }
-              <div class="mc-joined"><mat-icon>calendar_today</mat-icon>Depuis {{ m.joinedAt | date:'MMMM yyyy':'':'fr' }}</div>
+              <div class="mc-joined"><mat-icon>calendar_today</mat-icon>Depuis {{ m.joinedAt | date:'MMMM yyyy' }}</div>
+              @if (m.performance) {
+                <div class="mc-perf">
+                  <span pTooltip="Missions terminées" tooltipPosition="top">
+                    <mat-icon>flag</mat-icon>{{ m.performance.missionsCompleted }}
+                  </span>
+                  <span pTooltip="Taux de réussite" tooltipPosition="top">
+                    <mat-icon>verified</mat-icon>{{ m.performance.successRate }}%
+                  </span>
+                  <span pTooltip="Heures travaillées" tooltipPosition="top">
+                    <mat-icon>schedule</mat-icon>{{ m.performance.hoursWorked }}h
+                  </span>
+                </div>
+              }
             </div>
             <div class="mc-avail" [style.background]="availabilityColor(m.availability) + '18'" [style.color]="availabilityColor(m.availability)">
               <span class="avail-dot" [style.background]="availabilityColor(m.availability)"></span>
@@ -254,7 +267,7 @@
               <mat-icon>build</mat-icon>
               <div>
                 <span class="vcm-label">Dernière révision</span>
-                <span class="vcm-val">{{ team()!.vehicle!.lastMaintenance }}</span>
+                <span class="vcm-val">{{ formatMaintenance(team()!.vehicle!.lastMaintenance) }}</span>
               </div>
             </div>
             <div class="vcm-item">
@@ -335,10 +348,14 @@
                       [style.color]="missionStatusColor(m.status)">
                   {{ missionStatusLabel(m.status) }}
                 </span>
+                <a class="mr-detail-link" [routerLink]="['/planning/detail', m.id]"
+                   pTooltip="Voir le planning" tooltipPosition="top">
+                  <mat-icon>open_in_new</mat-icon>
+                </a>
               </div>
+              <div class="mr-zone">{{ m.zone }}</div>
               <div class="mr-meta">
-                <span><mat-icon>calendar_today</mat-icon>{{ m.date }}</span>
-                <span><mat-icon>place</mat-icon>{{ m.zone }}</span>
+                <span><mat-icon>calendar_today</mat-icon>{{ formatMissionDate(m.date) }}</span>
                 @if (m.duration) { <span><mat-icon>schedule</mat-icon>{{ m.duration }}</span> }
               </div>
               @if (m.totalHouseholds > 0) {
