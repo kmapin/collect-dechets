@@ -1977,6 +1977,11 @@
             </div>
           </div>
 
+          <!-- Chargement -->
+          @if (isLoadingVehicles) {
+          <div class="vehicles-loading"><i class="material-icons spin">sync</i> Chargement de la flotte…</div>
+          }
+
           <!-- Statistiques rapides -->
           <div class="vehicle-stats-bar">
             <div class="vstat-item">
@@ -1996,7 +2001,7 @@
             </div>
             <div class="vstat-item vstatus-maintenance">
               <i class="material-icons">build</i>
-              <span class="vstat-value">{{ countVehiclesByStatus('en_maintenance') }}</span>
+              <span class="vstat-value">{{ countVehiclesByStatus('maintenance') }}</span>
               <span class="vstat-label">Maintenance</span>
             </div>
             <div class="vstat-item vstatus-hors-service">
@@ -2020,15 +2025,13 @@
               <option value="tricycle">Tricycle</option>
               <option value="camion">Camion</option>
               <option value="moto">Moto</option>
-              <option value="charrette">Charrette</option>
-              <option value="benne">Benne</option>
-              <option value="fourgonnette">Fourgonnette</option>
+              <option value="pickup">Pickup</option>
             </select>
             <select class="filter-select" [(ngModel)]="vehiclesStatusFilter" (change)="filterVehicles()">
               <option value="all">Tous les statuts</option>
               <option value="disponible">Disponible</option>
               <option value="en_service">En service</option>
-              <option value="en_maintenance">En maintenance</option>
+              <option value="maintenance">En maintenance</option>
               <option value="hors_service">Hors service</option>
             </select>
           </div>
@@ -2041,11 +2044,12 @@
                 <tr>
                   <th>Type</th>
                   <th>Immatriculation</th>
-                  <th>Marque / Modèle</th>
-                  <th>Capacité</th>
-                  <th>Année</th>
+                  <th>Modèle</th>
+                  <th>Capacité (t)</th>
+                  <th>Carburant</th>
+                  <th>Kilométrage</th>
                   <th>Statut</th>
-                  <th>Dernière révision</th>
+                  <th>Dernier entretien</th>
                   <th class="col-actions">Actions</th>
                 </tr>
               </thead>
@@ -2058,25 +2062,36 @@
                       <span>{{ getVehicleTypeText(vehicle.type) }}</span>
                     </div>
                   </td>
-                  <td class="cell-immat">{{ vehicle.immatriculation }}</td>
-                  <td>{{ vehicle.marque }}{{ vehicle.modele ? ' – ' + vehicle.modele : '' }}</td>
-                  <td>{{ vehicle.capacite > 0 ? vehicle.capacite + ' kg' : '—' }}</td>
-                  <td>{{ vehicle.annee || '—' }}</td>
+                  <td class="cell-immat">{{ vehicle.plate }}</td>
+                  <td>{{ vehicle.model }}</td>
+                  <td>{{ vehicle.capacityTons > 0 ? vehicle.capacityTons + ' t' : '—' }}</td>
                   <td>
-                    <span class="vehicle-status-badge" [class]="getVehicleStatusClass(vehicle.statut)">
-                      {{ getVehicleStatusText(vehicle.statut) }}
+                    @if (vehicle.fuelLevel != null) {
+                    <div class="fuel-bar-wrap">
+                      <div class="fuel-bar" [style.width.%]="vehicle.fuelLevel"
+                        [class.fuel-low]="vehicle.fuelLevel < 25"
+                        [class.fuel-mid]="vehicle.fuelLevel >= 25 && vehicle.fuelLevel < 60"
+                        [class.fuel-ok]="vehicle.fuelLevel >= 60"></div>
+                      <span class="fuel-label">{{ vehicle.fuelLevel }}%</span>
+                    </div>
+                    } @else { — }
+                  </td>
+                  <td>{{ vehicle.mileage != null ? (vehicle.mileage | number) + ' km' : '—' }}</td>
+                  <td>
+                    <span class="vehicle-status-badge" [class]="getVehicleStatusClass(vehicle.status)">
+                      {{ getVehicleStatusText(vehicle.status) }}
                     </span>
                   </td>
-                  <td>{{ vehicle.derniereRevision || '—' }}</td>
+                  <td>{{ vehicle.lastMaintenance || '—' }}</td>
                   <td class="col-actions">
                     <div class="table-actions">
                       <button class="action-btn edit" (click)="openEditVehicleModal(vehicle)" title="Modifier"><i class="material-icons">edit</i></button>
                       <button class="action-btn danger" (click)="deleteVehicle(vehicle)" title="Supprimer"><i class="material-icons">delete</i></button>
                       <button class="action-btn toggle-btn"
-                        [class.toggle-active]="vehicle.statut === 'disponible'"
-                        [class.toggle-inactive]="vehicle.statut !== 'disponible'"
+                        [class.toggle-active]="vehicle.status === 'disponible'"
+                        [class.toggle-inactive]="vehicle.status !== 'disponible'"
                         (click)="toggleVehicleStatus(vehicle)"
-                        title="Changer le statut"><i class="material-icons">{{ vehicle.statut === 'disponible' ? 'toggle_on' : 'toggle_off' }}</i></button>
+                        title="Changer le statut"><i class="material-icons">{{ vehicle.status === 'disponible' ? 'toggle_on' : 'toggle_off' }}</i></button>
                     </div>
                   </td>
                 </tr>
@@ -2095,33 +2110,43 @@
                 <div class="vehicle-icon-wrap">
                   <i class="material-icons">{{ getVehicleTypeIcon(vehicle.type) }}</i>
                 </div>
-                <span class="vehicle-status-badge" [class]="getVehicleStatusClass(vehicle.statut)">
-                  {{ getVehicleStatusText(vehicle.statut) }}
+                <span class="vehicle-status-badge" [class]="getVehicleStatusClass(vehicle.status)">
+                  {{ getVehicleStatusText(vehicle.status) }}
                 </span>
               </div>
               <div class="vehicle-card-body">
-                <h4 class="vehicle-immat">{{ vehicle.immatriculation }}</h4>
-                <p class="vehicle-brand">{{ vehicle.marque }}{{ vehicle.modele ? ' – ' + vehicle.modele : '' }}</p>
+                <h4 class="vehicle-immat">{{ vehicle.plate }}</h4>
+                <p class="vehicle-brand">{{ vehicle.model }}</p>
                 <div class="vehicle-meta">
                   <span><i class="material-icons">category</i> {{ getVehicleTypeText(vehicle.type) }}</span>
-                  <span><i class="material-icons">fitness_center</i> {{ vehicle.capacite > 0 ? vehicle.capacite + ' kg' : '—' }}</span>
-                  <span><i class="material-icons">calendar_today</i> {{ vehicle.annee || '—' }}</span>
-                  @if (vehicle.prochainRevision) {
-                  <span class="revision-alert"><i class="material-icons">build</i> Rev. {{ vehicle.prochainRevision }}</span>
+                  <span><i class="material-icons">fitness_center</i> {{ vehicle.capacityTons > 0 ? vehicle.capacityTons + ' t' : '—' }}</span>
+                  @if (vehicle.mileage != null) {
+                  <span><i class="material-icons">speed</i> {{ vehicle.mileage | number }} km</span>
+                  }
+                  @if (vehicle.lastMaintenance) {
+                  <span><i class="material-icons">build</i> {{ vehicle.lastMaintenance }}</span>
                   }
                 </div>
-                @if (vehicle.notes) {
-                <p class="vehicle-notes">{{ vehicle.notes }}</p>
+                @if (vehicle.fuelLevel != null) {
+                <div class="card-fuel">
+                  <span class="fuel-label-sm"><i class="material-icons">local_gas_station</i> {{ vehicle.fuelLevel }}%</span>
+                  <div class="fuel-bar-wrap">
+                    <div class="fuel-bar" [style.width.%]="vehicle.fuelLevel"
+                      [class.fuel-low]="vehicle.fuelLevel < 25"
+                      [class.fuel-mid]="vehicle.fuelLevel >= 25 && vehicle.fuelLevel < 60"
+                      [class.fuel-ok]="vehicle.fuelLevel >= 60"></div>
+                  </div>
+                </div>
                 }
               </div>
               <div class="vehicle-card-actions">
                 <button class="action-btn edit" (click)="openEditVehicleModal(vehicle)" title="Modifier"><i class="material-icons">edit</i></button>
                 <button class="action-btn danger" (click)="deleteVehicle(vehicle)" title="Supprimer"><i class="material-icons">delete</i></button>
                 <button class="action-btn toggle-btn"
-                  [class.toggle-active]="vehicle.statut === 'disponible'"
-                  [class.toggle-inactive]="vehicle.statut !== 'disponible'"
+                  [class.toggle-active]="vehicle.status === 'disponible'"
+                  [class.toggle-inactive]="vehicle.status !== 'disponible'"
                   (click)="toggleVehicleStatus(vehicle)"
-                  title="Changer le statut"><i class="material-icons">{{ vehicle.statut === 'disponible' ? 'toggle_on' : 'toggle_off' }}</i></button>
+                  title="Changer le statut"><i class="material-icons">{{ vehicle.status === 'disponible' ? 'toggle_on' : 'toggle_off' }}</i></button>
               </div>
             </div>
             }
@@ -2153,21 +2178,11 @@
                   <div class="form-row">
                     <div class="form-group">
                       <label class="form-label required">Immatriculation *</label>
-                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.immatriculation" placeholder="Ex: BF-1234-A" />
+                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.plate" placeholder="Ex: 11-BF-2024" />
                     </div>
                     <div class="form-group">
-                      <label class="form-label required">Marque *</label>
-                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.marque" placeholder="Ex: Jinpeng, Dong Feng..." />
-                    </div>
-                  </div>
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label class="form-label">Modèle</label>
-                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.modele" placeholder="Ex: JP-C150" />
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Année</label>
-                      <input type="number" class="form-input" [(ngModel)]="vehicleForm.annee" placeholder="Ex: 2022" min="2000" [max]="2030" />
+                      <label class="form-label required">Marque / Modèle *</label>
+                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.model" placeholder="Ex: Jinpeng JP-C150" />
                     </div>
                   </div>
                   <div class="form-row">
@@ -2178,45 +2193,44 @@
                         <option value="tricycle">Tricycle</option>
                         <option value="camion">Camion</option>
                         <option value="moto">Moto</option>
-                        <option value="charrette">Charrette</option>
-                        <option value="benne">Benne</option>
-                        <option value="fourgonnette">Fourgonnette</option>
+                        <option value="pickup">Pickup</option>
                       </select>
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Capacité (kg)</label>
-                      <input type="number" class="form-input" [(ngModel)]="vehicleForm.capacite" placeholder="Ex: 500" min="0" />
+                      <label class="form-label">Capacité (tonnes)</label>
+                      <input type="number" class="form-input" [(ngModel)]="vehicleForm.capacityTons" placeholder="Ex: 3.5" min="0" step="0.1" />
                     </div>
                   </div>
                   <div class="form-row">
                     <div class="form-group">
                       <label class="form-label required">Statut *</label>
-                      <select class="form-select" [(ngModel)]="vehicleForm.statut">
+                      <select class="form-select" [(ngModel)]="vehicleForm.status">
                         <option value="disponible">Disponible</option>
                         <option value="en_service">En service</option>
-                        <option value="en_maintenance">En maintenance</option>
+                        <option value="maintenance">En maintenance</option>
                         <option value="hors_service">Hors service</option>
                       </select>
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Dernière révision</label>
-                      <input type="date" class="form-input" [(ngModel)]="vehicleForm.derniereRevision" />
+                      <label class="form-label">Niveau de carburant (%)</label>
+                      <input type="number" class="form-input" [(ngModel)]="vehicleForm.fuelLevel" placeholder="0 – 100" min="0" max="100" />
                     </div>
                   </div>
                   <div class="form-row">
                     <div class="form-group">
-                      <label class="form-label">Prochaine révision</label>
-                      <input type="date" class="form-input" [(ngModel)]="vehicleForm.prochainRevision" />
+                      <label class="form-label">Kilométrage (km)</label>
+                      <input type="number" class="form-input" [(ngModel)]="vehicleForm.mileage" placeholder="Ex: 12500" min="0" />
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Notes</label>
-                      <input type="text" class="form-input" [(ngModel)]="vehicleForm.notes" placeholder="Remarques..." />
+                      <label class="form-label">Dernier entretien</label>
+                      <input type="date" class="form-input" [(ngModel)]="vehicleForm.lastMaintenance" />
                     </div>
                   </div>
                   <div class="drawer-footer">
                     <button type="button" class="btn btn-secondary" (click)="closeVehicleModal()">Annuler</button>
-                    <button type="button" class="btn btn-primary" (click)="saveVehicle()">
-                      <i class="material-icons">save</i>
+                    <button type="button" class="btn btn-primary" (click)="saveVehicle()" [disabled]="isSavingVehicle">
+                      @if (isSavingVehicle) { <i class="material-icons spin">sync</i> }
+                      @else { <i class="material-icons">save</i> }
                       {{ isEditingVehicle ? 'Enregistrer' : 'Ajouter' }}
                     </button>
                   </div>
