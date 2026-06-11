@@ -137,12 +137,18 @@ export class PlanningCreate implements OnInit {
   isPublishing = signal(false);
 
   // ── Selection signals ────────────────────────────────────────
-  selectedWasteTypes = signal<WasteType[]>([]);
-  selectedTeamId     = signal<string | null>(null);
-  selectedClients    = signal<ClientOpt[]>([]);
-  frequencyDaysSel   = signal<string[]>([]);
-  filteredClients    = signal<ClientOpt[]>([]);
-  clientSearchQuery  = signal('');
+  selectedWasteTypes      = signal<WasteType[]>([]);
+  selectedTeamId          = signal<string | null>(null);
+  selectedClients         = signal<ClientOpt[]>([]);
+  frequencyDaysSel        = signal<string[]>([]);
+  filteredClients         = signal<ClientOpt[]>([]);
+  clientSearchQuery       = signal('');
+
+  // ── Group mode signals ───────────────────────────────────────
+  groupMode               = signal<'new' | 'existing' | null>(null);
+  existingGroups          = signal<any[]>([]);
+  isLoadingGroups         = signal(false);
+  selectedExistingGroupId = signal<string | null>(null);
 
   // ── Form signal (for computed) ───────────────────────────────
   formValue = signal<Record<string, any>>({});
@@ -157,7 +163,13 @@ export class PlanningCreate implements OnInit {
     const fv   = this.formValue();
     const type = fv['type'] ?? '';
     if (type === 'individuel') return this.selectedClients().length > 0 ? 1 : 0;
-    if (type === 'groupe')     return this.selectedClients().length;
+    if (type === 'groupe') {
+      if (this.groupMode() === 'existing') {
+        const g = this.existingGroups().find(x => x._id === this.selectedExistingGroupId());
+        return g?.clientIds?.length ?? g?.clients?.length ?? 0;
+      }
+      return this.selectedClients().length;
+    }
     if (type === 'zone' || type === 'secteur') return 50;
     return 0;
   });
@@ -177,7 +189,14 @@ export class PlanningCreate implements OnInit {
     if (!type) return '';
     let target = '';
     if (type === 'individuel' && this.selectedClients()[0]) target = this.selectedClients()[0].name;
-    else if (type === 'groupe')  target = fv['groupName'] || 'Groupe';
+    else if (type === 'groupe') {
+      if (this.groupMode() === 'existing') {
+        const found = this.existingGroups().find(g => g._id === this.selectedExistingGroupId());
+        target = found?.name ?? 'Groupe';
+      } else {
+        target = fv['groupName'] || 'Groupe';
+      }
+    }
     else if (type === 'zone')    target = fv['quartier'] || fv['secteur'] || 'Zone';
     else if (type === 'secteur') target = fv['secteur'] || 'Secteur';
     const date = this._formatDateToStr(fv['date']);
@@ -190,6 +209,15 @@ export class PlanningCreate implements OnInit {
 
   // Alias for template compatibility
   get mockClients() { return this.apiClients(); }
+
+  /** Nom du groupe à afficher dans le récap (fonctionne en mode new et existing). */
+  selectedGroupName = computed<string>(() => {
+    if (this.groupMode() === 'existing') {
+      const g = this.existingGroups().find(x => x._id === this.selectedExistingGroupId());
+      return g?.name ?? this.selectedExistingGroupId() ?? '—';
+    }
+    return this.formValue()['groupName'] || '—';
+  });
 
   conflictingTeamIds = computed<string[]>(() =>
     this.conflicts().map(c => c.equipeId)
@@ -228,32 +256,79 @@ export class PlanningCreate implements OnInit {
     this.isLoadingEdit.set(true);
     this.svc.getPlanning(id).subscribe({
       next: planning => {
-        // Remplir le formulaire avec les données existantes
-        const date = planning.date ? new Date(planning.date) : null;
+        // Date : construire localement pour éviter le décalage UTC du DatePicker
+        const date = this._parsePlanningDate(planning.date);
+
+        // clientId et groupeId peuvent être des objets peuplés selon l'API
+        const clientRaw: any = (planning as any).clientId;
+        const clientIdStr: string = typeof clientRaw === 'object' && clientRaw?._id
+          ? clientRaw._id
+          : (typeof clientRaw === 'string' ? clientRaw : '');
+
+        const groupRaw: any = (planning as any).groupeId;
+        const groupIdStr: string = typeof groupRaw === 'object' && groupRaw?._id
+          ? groupRaw._id
+          : (typeof groupRaw === 'string' ? groupRaw : '');
+
         this.form.patchValue({
-          type:           planning.type,
-          libelle:        planning.libelle,
+          type:               planning.type,
+          libelle:            planning.libelle,
           date,
-          startTime:      planning.startTime ?? '08:00',
-          endTime:        planning.endTime ?? '',
-          frequency:      planning.frequency ?? 'unique',
-          notes:          planning.notes ?? '',
-          villeId:          planning.villeId ?? '',
-          ville:            planning.ville ?? '',
-          arrondissementId: planning.arrondissementId ?? '',
-          arrondissement:   planning.arrondissement ?? '',
-          secteurId:        planning.secteurId ?? '',
-          secteur:          planning.secteur ?? '',
-          quartierId:       planning.quartierId ?? '',
-          quartier:         planning.quartier ?? '',
-          clientId:         planning.clientId ?? '',
-          groupName:        planning.groupeId ?? '',
-          publishImmediately: false, // pas de publication auto en mode edit
+          startTime:          planning.startTime ?? '08:00',
+          endTime:            planning.endTime ?? '',
+          frequency:          planning.frequency ?? 'unique',
+          notes:              planning.notes ?? '',
+          villeId:            planning.villeId ?? '',
+          ville:              planning.ville ?? '',
+          arrondissementId:   planning.arrondissementId ?? '',
+          arrondissement:     planning.arrondissement ?? '',
+          secteurId:          planning.secteurId ?? '',
+          secteur:            planning.secteur ?? '',
+          quartierId:         planning.quartierId ?? '',
+          quartier:           planning.quartier ?? '',
+          clientId:           clientIdStr,
+          groupName:          groupIdStr,
+          publishImmediately: false,
         });
-        // Remplir les signaux de sélection
+
+        // Signaux de sélection
         if (planning.typeDechets?.length) this.selectedWasteTypes.set(planning.typeDechets);
         this.selectedTeamId.set(planning.teamV2Id ?? planning.equipeIds?.[0] ?? null);
-        // Aller à l'étape récap pour permettre la modification directe
+
+        // Pour le type individuel : reconstituer le client sélectionné
+        if (planning.type === 'individuel') {
+          if (typeof clientRaw === 'object' && clientRaw?._id) {
+            const fullName = `${clientRaw.firstName ?? ''} ${clientRaw.lastName ?? ''}`.trim();
+            const address  = [clientRaw.address?.neighborhood, clientRaw.address?.city].filter(Boolean).join(', ');
+            const client: ClientOpt = { id: clientRaw._id, name: fullName, address, zone: clientRaw.address?.arrondissement ?? '', phone: clientRaw.phone };
+            this.selectedClients.set([client]);
+            this.clientSearchQuery.set(fullName);
+          } else if (clientIdStr) {
+            const cached = this.apiClients().find(c => c.id === clientIdStr);
+            if (cached) { this.selectedClients.set([cached]); this.clientSearchQuery.set(cached.name); }
+          }
+        }
+
+        // Pour le type groupe : reconstituer le groupe sélectionné
+        if (planning.type === 'groupe') {
+          const groupRaw: any = (planning as any).groupeId;
+          if (typeof groupRaw === 'object' && groupRaw?._id) {
+            // Objet peuplé : on l'injecte directement dans existingGroups
+            const clientIds: string[] = groupRaw.clients ?? groupRaw.clientIds ?? [];
+            this.existingGroups.set([{ _id: groupRaw._id, name: groupRaw.name ?? groupRaw._id, clientIds }]);
+            this.groupMode.set('existing');
+            this.selectedExistingGroupId.set(groupRaw._id);
+          } else {
+            // Juste un ID : charger la liste pour permettre la sélection
+            const gId = typeof groupRaw === 'string' ? groupRaw : (planning.groupeId ?? '');
+            if (gId) {
+              this.groupMode.set('existing');
+              this.selectedExistingGroupId.set(gId);
+              this._loadExistingGroups();
+            }
+          }
+        }
+
         this.currentStep.set(5);
         this.isLoadingEdit.set(false);
       },
@@ -271,10 +346,19 @@ export class PlanningCreate implements OnInit {
       next: planning => {
         this.duplicateRef.set(planning.reference ?? '');
 
-        // Décaler la date d'une semaine
-        const originalDate = planning.date ? new Date(planning.date) : new Date();
+        // Décaler la date d'une semaine (en local pour éviter décalage UTC)
+        const originalDate = this._parsePlanningDate(planning.date) ?? new Date();
         const nextDate = new Date(originalDate.getTime());
         nextDate.setDate(nextDate.getDate() + 7);
+
+        // clientId et groupeId peuvent être des objets peuplés
+        const clientRaw: any = (planning as any).clientId;
+        const clientIdStr: string = typeof clientRaw === 'object' && clientRaw?._id
+          ? clientRaw._id : (typeof clientRaw === 'string' ? clientRaw : '');
+
+        const groupRaw: any = (planning as any).groupeId;
+        const groupIdStr: string = typeof groupRaw === 'object' && groupRaw?._id
+          ? groupRaw._id : (typeof groupRaw === 'string' ? groupRaw : '');
 
         this.form.patchValue({
           type:               planning.type,
@@ -292,8 +376,8 @@ export class PlanningCreate implements OnInit {
           secteur:            planning.secteur ?? '',
           quartierId:         planning.quartierId ?? '',
           quartier:           planning.quartier ?? '',
-          clientId:           planning.clientId ?? '',
-          groupName:          planning.groupeId ?? '',
+          clientId:           clientIdStr,
+          groupName:          groupIdStr,
           publishImmediately: true,
           notifyClients:      true,
           notifyTeams:        true,
@@ -301,6 +385,33 @@ export class PlanningCreate implements OnInit {
 
         if (planning.typeDechets?.length) this.selectedWasteTypes.set(planning.typeDechets);
         this.selectedTeamId.set(planning.teamV2Id ?? planning.equipeIds?.[0] ?? null);
+
+        // Reconstituer le client pour type individuel
+        if (planning.type === 'individuel') {
+          if (typeof clientRaw === 'object' && clientRaw?._id) {
+            const fullName = `${clientRaw.firstName ?? ''} ${clientRaw.lastName ?? ''}`.trim();
+            const address  = [clientRaw.address?.neighborhood, clientRaw.address?.city].filter(Boolean).join(', ');
+            this.selectedClients.set([{ id: clientRaw._id, name: fullName, address, zone: clientRaw.address?.arrondissement ?? '', phone: clientRaw.phone }]);
+            this.clientSearchQuery.set(fullName);
+          } else if (clientIdStr) {
+            const cached = this.apiClients().find(c => c.id === clientIdStr);
+            if (cached) { this.selectedClients.set([cached]); this.clientSearchQuery.set(cached.name); }
+          }
+        }
+
+        // Reconstituer le groupe pour type groupe
+        if (planning.type === 'groupe') {
+          if (typeof groupRaw === 'object' && groupRaw?._id) {
+            const clientIds: string[] = groupRaw.clients ?? groupRaw.clientIds ?? [];
+            this.existingGroups.set([{ _id: groupRaw._id, name: groupRaw.name ?? groupRaw._id, clientIds }]);
+            this.groupMode.set('existing');
+            this.selectedExistingGroupId.set(groupRaw._id);
+          } else if (groupIdStr) {
+            this.groupMode.set('existing');
+            this.selectedExistingGroupId.set(groupIdStr);
+            this._loadExistingGroups();
+          }
+        }
 
         // Afficher le récap pour que l'utilisateur puisse tout vérifier
         this.currentStep.set(5);
@@ -398,6 +509,9 @@ export class PlanningCreate implements OnInit {
       this.selectedClients.set([]);
       this.clientSearchQuery.set('');
       this.filteredClients.set([]);
+      this.groupMode.set(null);
+      this.selectedExistingGroupId.set(null);
+      this.existingGroups.set([]);
     });
   }
 
@@ -452,7 +566,12 @@ export class PlanningCreate implements OnInit {
   private _validateTarget(fv: Record<string, any>): boolean {
     const t = fv['type'];
     if (t === 'individuel') return !!fv['clientId'];
-    if (t === 'groupe')     return !!fv['groupName'] && this.selectedClients().length >= 2;
+    if (t === 'groupe') {
+      const mode = this.groupMode();
+      if (mode === 'new')      return !!fv['groupName'] && this.selectedClients().length >= 2;
+      if (mode === 'existing') return !!this.selectedExistingGroupId();
+      return false;
+    }
     if (t === 'zone')       return !!(fv['quartierId'] || fv['secteurId']);
     if (t === 'secteur')    return !!fv['secteurId'];
     return false;
@@ -465,11 +584,16 @@ export class PlanningCreate implements OnInit {
     switch (step) {
       case 0: if (!t) errs.push('Sélectionnez un type de planning'); break;
       case 1:
-        if (t === 'individuel' && !fv['clientId'])               errs.push('Sélectionnez un client');
-        if (t === 'groupe' && !fv['groupName'])                  errs.push('Entrez un nom de groupe');
-        if (t === 'groupe' && this.selectedClients().length < 2) errs.push('Sélectionnez au moins 2 clients');
-        if (t === 'zone' && !fv['quartierId'])                   errs.push('Sélectionnez un quartier');
-        if (t === 'secteur' && !fv['secteurId'])                 errs.push('Sélectionnez un secteur');
+        if (t === 'individuel' && !fv['clientId']) errs.push('Sélectionnez un client');
+        if (t === 'groupe') {
+          const mode = this.groupMode();
+          if (!mode)                                               errs.push('Choisissez "Nouveau groupe" ou "Groupe existant"');
+          else if (mode === 'new' && !fv['groupName'])            errs.push('Entrez un nom de groupe');
+          else if (mode === 'new' && this.selectedClients().length < 2) errs.push('Sélectionnez au moins 2 clients');
+          else if (mode === 'existing' && !this.selectedExistingGroupId()) errs.push('Sélectionnez un groupe existant');
+        }
+        if (t === 'zone' && !fv['quartierId'])    errs.push('Sélectionnez un quartier');
+        if (t === 'secteur' && !fv['secteurId'])  errs.push('Sélectionnez un secteur');
         break;
       case 2:
         if (!fv['date'])      errs.push('Sélectionnez une date');
@@ -507,6 +631,26 @@ export class PlanningCreate implements OnInit {
     this.form.patchValue({ clientId: '', clientName: '' });
     this.selectedClients.set([]);
     this.clientSearchQuery.set('');
+  }
+
+  // ── Group mode ───────────────────────────────────────────────
+  setGroupMode(mode: 'new' | 'existing'): void {
+    this.groupMode.set(mode);
+    if (mode === 'existing') this._loadExistingGroups();
+  }
+
+  private _loadExistingGroups(): void {
+    const agencyId = this.svc.agencyId;
+    if (!agencyId) return;
+    this.isLoadingGroups.set(true);
+    this.svc.getClientGroups(agencyId).subscribe({
+      next: groups => { this.existingGroups.set(groups); this.isLoadingGroups.set(false); },
+      error: () => { this.existingGroups.set([]); this.isLoadingGroups.set(false); },
+    });
+  }
+
+  selectExistingGroup(group: any): void {
+    this.selectedExistingGroupId.set(group._id);
   }
 
   // ── Group client selection ───────────────────────────────────
@@ -620,6 +764,8 @@ export class PlanningCreate implements OnInit {
     if (v.arrondissementId)  body.arrondissementId  = v.arrondissementId;
     if (v.secteurId)         body.secteurId         = v.secteurId;
     if (v.quartierId)        body.quartierId        = v.quartierId;
+    const cc = this.estimatedHouseholds();
+    if (cc > 0) { body.clientsCount = cc; body.estimatedDuration = Math.ceil(cc * 5); }
     return body;
   }
 
@@ -684,13 +830,12 @@ export class PlanningCreate implements OnInit {
     const v         = this.form.value;
     const agencyId  = this.svc.agencyId;
     const managerId = this.svc.managerId;
-    const dateStr   = this._dateToApiStr(v.date);
 
     const body: any = {
       type:        v.type as PlanningType,
       libelle:     v.libelle,
       frequency:   v.frequency,
-      date:        dateStr,
+      date:        this._dateToApiStr(v.date),
       startTime:   v.startTime,
       endTime:     v.endTime || undefined,
       typeDechets: this.selectedWasteTypes(),
@@ -700,51 +845,80 @@ export class PlanningCreate implements OnInit {
       notes:       v.notes || undefined,
     };
 
-    // Champs selon le type
     if (v.type === 'individuel') body.clientId = v.clientId;
-    if (v.type === 'groupe')     body.groupeId = v.groupName;
-    if (v.villeId)           body.villeId           = v.villeId;
-    if (v.arrondissementId)  body.arrondissementId  = v.arrondissementId;
-    if (v.secteurId)         body.secteurId          = v.secteurId;
-    if (v.quartierId)        body.quartierId         = v.quartierId;
+    if (v.villeId)          body.villeId          = v.villeId;
+    if (v.arrondissementId) body.arrondissementId = v.arrondissementId;
+    if (v.secteurId)        body.secteurId        = v.secteurId;
+    if (v.quartierId)       body.quartierId       = v.quartierId;
 
-    if (this.isEditMode()) {
-      // ── MODE ÉDITION ─────────────────────────────────────────
-      this.svc.updatePlanning(this.editId()!, body).subscribe({
-        next: (planning) => {
-          this.msgSvc.add({ severity: 'success', summary: 'Modifié', detail: `Planning ${planning.reference} mis à jour !` });
-          this.isSubmitting.set(false);
-          setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500);
-        },
-        error: (err) => {
-          const msg = err?.error?.error?.message ?? 'Impossible de mettre à jour le planning';
-          this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: msg });
-          this.isSubmitting.set(false);
-        },
-      });
-    } else {
-      // ── MODE CRÉATION ────────────────────────────────────────
-      this.svc.createPlanning(body).subscribe({
-        next: (planning) => {
-          localStorage.removeItem('planning_draft');
-          this.msgSvc.add({ severity: 'success', summary: 'Succès', detail: `Planning ${planning.reference} créé !` });
-          if (v.publishImmediately && planning.status === 'brouillon') {
-            this.svc.publishPlanning(planning.id).subscribe({
-              next:  () => setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500),
-              error: () => setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500),
-            });
-          } else {
-            setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500);
-          }
-          this.isSubmitting.set(false);
-        },
-        error: (err) => {
-          const msg = err?.error?.error?.message ?? 'Impossible de créer le planning';
-          this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: msg });
-          this.isSubmitting.set(false);
-        },
-      });
+    // Métriques calculées côté client
+    const clientsCount = this.estimatedHouseholds();
+    if (clientsCount > 0) {
+      body.clientsCount      = clientsCount;
+      body.estimatedDuration = Math.ceil(clientsCount * 5);
     }
+
+    const doFinalize = (finalBody: any) => {
+      if (this.isEditMode()) {
+        this.svc.updatePlanning(this.editId()!, finalBody).subscribe({
+          next: planning => {
+            this.msgSvc.add({ severity: 'success', summary: 'Modifié', detail: `Planning ${planning.reference} mis à jour !` });
+            this.isSubmitting.set(false);
+            setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500);
+          },
+          error: err => {
+            const msg = err?.error?.error?.message ?? 'Impossible de mettre à jour le planning';
+            this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: msg });
+            this.isSubmitting.set(false);
+          },
+        });
+      } else {
+        this.svc.createPlanning(finalBody).subscribe({
+          next: planning => {
+            localStorage.removeItem('planning_draft');
+            this.msgSvc.add({ severity: 'success', summary: 'Succès', detail: `Planning ${planning.reference} créé !` });
+            if (v.publishImmediately && planning.status === 'brouillon') {
+              this.svc.publishPlanning(planning.id).subscribe({
+                next:  () => setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500),
+                error: () => setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500),
+              });
+            } else {
+              setTimeout(() => this.router.navigate(['/planning/dashboard']), 1500);
+            }
+            this.isSubmitting.set(false);
+          },
+          error: err => {
+            const msg = err?.error?.error?.message ?? 'Impossible de créer le planning';
+            this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: msg });
+            this.isSubmitting.set(false);
+          },
+        });
+      }
+    };
+
+    // Résolution du groupeId selon le mode
+    if (v.type === 'groupe') {
+      if (this.groupMode() === 'new') {
+        this.svc.createClientGroup({
+          name:      v.groupName,
+          agencyId,
+          clientIds: this.selectedClients().map(c => c.id),
+        }).subscribe({
+          next: group => { body.groupeId = group._id; doFinalize(body); },
+          error: err => {
+            const msg = err?.error?.message ?? err?.error?.error?.message ?? 'Impossible de créer le groupe de clients';
+            this.msgSvc.add({ severity: 'error', summary: 'Erreur groupe', detail: msg });
+            this.isSubmitting.set(false);
+          },
+        });
+        return;
+      }
+      if (this.groupMode() === 'existing') {
+        body.groupeId = this.selectedExistingGroupId() ?? undefined;
+      }
+    }
+
+    doFinalize(body);
   }
 
   clearDraft(): void {
@@ -768,6 +942,15 @@ export class PlanningCreate implements OnInit {
     if (!d) return '';
     const dt = d instanceof Date ? d : new Date(d);
     return isNaN(dt.getTime()) ? '' : `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;
+  }
+
+  /** Construit une Date locale depuis une ISO string pour éviter le décalage UTC du DatePicker. */
+  private _parsePlanningDate(raw: string | null | undefined): Date | null {
+    if (!raw) return null;
+    const part = raw.includes('T') ? raw.split('T')[0] : raw;
+    const [y, m, d] = part.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
   }
 
   // API expects YYYY-MM-DD

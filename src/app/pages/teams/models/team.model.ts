@@ -96,7 +96,7 @@ export interface Mission {
   id: string;
   reference: string;
   date: string;
-  status: 'planifie' | 'en_cours' | 'termine' | 'annule';
+  status: 'brouillon' | 'planifie' | 'en_cours' | 'termine' | 'annule';
   zone: string;
   householdsCollected: number;
   totalHouseholds: number;

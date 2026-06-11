@@ -216,10 +216,22 @@ export class TeamDetail implements OnInit, OnDestroy {
     return ({ disponible:'Disponible', en_service:'En service', maintenance:'Maintenance', hors_service:'Hors service' } as Record<string,string>)[s] ?? s;
   }
   missionStatusColor(s: string): string {
-    return ({ planifie:'#3b82f6', en_cours:'#f59e0b', termine:'#16a34a', annule:'#ef4444' } as Record<string,string>)[s] ?? '#94a3b8';
+    return ({ brouillon:'#64748b', planifie:'#3b82f6', en_cours:'#f59e0b', termine:'#16a34a', annule:'#ef4444' } as Record<string,string>)[s] ?? '#94a3b8';
   }
   missionStatusLabel(s: string): string {
-    return ({ planifie:'Planifié', en_cours:'En cours', termine:'Terminé', annule:'Annulé' } as Record<string,string>)[s] ?? s;
+    return ({ brouillon:'Brouillon', planifie:'Planifié', en_cours:'En cours', termine:'Terminé', annule:'Annulé' } as Record<string,string>)[s] ?? s;
+  }
+  formatMissionDate(date: string): string {
+    if (!date) return '—';
+    const datePart = date.includes('T') ? date.split('T')[0] : date;
+    const parts = datePart.split('-');
+    if (parts.length !== 3) return date;
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  formatMaintenance(val: string | null | undefined): string {
+    if (!val) return 'Aucune révision';
+    return val;
   }
   workloadColor(w: number): string {
     if (w >= 80) return '#ef4444';

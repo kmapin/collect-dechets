@@ -1,0 +1,114 @@
+<!-- Mobile overlay -->
+@if (mobileOpen()) {
+  <div class="sb-overlay" (click)="closeMobile()"></div>
+}
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+<aside class="sb" [class.sb--mini]="mini" [class.sb--open]="mobileOpen()">
+
+  <!-- Brand ──────────────────────────────────────────── -->
+  <div class="sb-brand">
+    <div class="sb-logo"><mat-icon>recycling</mat-icon></div>
+    @if (!mini) {
+      <div class="sb-brand-text">
+        <span class="sb-brand-title">SAHELYS</span>
+        <span class="sb-brand-sub">ZéroDéchet+</span>
+      </div>
+    }
+    <button class="sb-toggle desktop-only"
+            (click)="toggleCollapse()"
+            [pTooltip]="mini ? 'Agrandir' : 'Réduire'"
+            tooltipPosition="right">
+      <mat-icon>{{ mini ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+    </button>
+  </div>
+
+  <!-- ── Section PLANNINGS ─────────────────────────────── -->
+  <nav class="sb-nav">
+    @if (!mini) { <div class="sb-section-label">PLANNINGS</div> }
+
+    @for (item of planningNav; track item.route) {
+      <a class="sb-item"
+         [routerLink]="item.route"
+         routerLinkActive="sb-item--active"
+         [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+         (click)="closeMobile()"
+         [pTooltip]="mini ? item.label : ''"
+         tooltipPosition="right">
+        <mat-icon class="sb-icon">{{ item.icon }}</mat-icon>
+        @if (!mini) { <span class="sb-label">{{ item.label }}</span> }
+      </a>
+    }
+
+    <!-- ── Section ÉQUIPES ─────────────────────────────── -->
+    <div class="sb-divider"></div>
+    @if (!mini) { <div class="sb-section-label">ÉQUIPES</div> }
+
+    @for (item of teamsNav; track item.route) {
+      <a class="sb-item"
+         [routerLink]="item.route"
+         routerLinkActive="sb-item--active"
+         [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+         (click)="closeMobile()"
+         [pTooltip]="mini ? item.label : ''"
+         tooltipPosition="right">
+        <mat-icon class="sb-icon">{{ item.icon }}</mat-icon>
+        @if (!mini) {
+          <span class="sb-label">{{ item.label }}</span>
+          @if (item.route === '/teams/list' && onMissionCount() > 0) {
+            <span class="sb-badge">{{ onMissionCount() }} en mission</span>
+          }
+        }
+      </a>
+    }
+  </nav>
+
+  <!-- ── Status summary ────────────────────────────────── -->
+  @if (!mini) {
+    <div class="sb-status">
+      <div class="sb-status-row sb-status-row--green">
+        <span class="sb-dot"></span>
+        <span>{{ teamStats().active }} actives</span>
+      </div>
+      @if (onMissionCount() > 0) {
+        <div class="sb-status-row sb-status-row--amber">
+          <span class="sb-dot"></span>
+          <span>{{ onMissionCount() }} en mission</span>
+        </div>
+      }
+      @if (maintenanceCount() > 0) {
+        <div class="sb-status-row sb-status-row--red">
+          <span class="sb-dot"></span>
+          <span>{{ maintenanceCount() }} maintenance</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── Bottom ────────────────────────────────────────── -->
+  <div class="sb-bottom">
+    <div class="sb-divider"></div>
+
+    <a class="sb-item sb-item--new"
+       routerLink="/teams/create"
+       (click)="closeMobile()"
+       [pTooltip]="mini ? 'Nouvelle équipe' : ''"
+       tooltipPosition="right">
+      <mat-icon class="sb-icon">add_circle</mat-icon>
+      @if (!mini) { <span class="sb-label">Nouvelle équipe</span> }
+    </a>
+
+    @for (item of bottomNav; track item.route) {
+      <a class="sb-item sb-item--secondary"
+         [routerLink]="item.route"
+         routerLinkActive="sb-item--active"
+         (click)="closeMobile()"
+         [pTooltip]="mini ? item.label : ''"
+         tooltipPosition="right">
+        <mat-icon class="sb-icon">{{ item.icon }}</mat-icon>
+        @if (!mini) { <span class="sb-label">{{ item.label }}</span> }
+      </a>
+    }
+  </div>
+
+</aside>

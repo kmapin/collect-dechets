@@ -71,6 +71,7 @@ import { MatIcon } from "@angular/material/icon";
 import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
 import { Admin } from "../../../services/admin";
 import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
+import { VehicleService } from "../../../services/vehicle.service";
 //test
 import { ButtonModule } from "primeng/button";
 import { RatingModule } from "primeng/rating";
@@ -210,16 +211,15 @@ type TabId =
 
 interface Vehicle {
   _id?: string;
-  immatriculation: string;
-  marque: string;
-  modele?: string;
-  type: 'tricycle' | 'camion' | 'moto' | 'charrette' | 'benne' | 'fourgonnette';
-  capacite: number;
-  statut: 'disponible' | 'en_service' | 'en_maintenance' | 'hors_service';
-  annee?: number;
-  derniereRevision?: string;
-  prochainRevision?: string;
-  notes?: string;
+  plate: string;
+  model: string;
+  type: 'camion' | 'pickup' | 'moto' | 'tricycle';
+  capacityTons: number;
+  status: 'disponible' | 'en_service' | 'maintenance' | 'hors_service';
+  fuelLevel?: number;
+  mileage?: number;
+  lastMaintenance?: string;
+  agencyId?: string;
 }
 export enum CollectionStatus1 {
   SCHEDULED = 'Scheduled',
@@ -591,23 +591,45 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   displayAgencyName: string = "";
 
   // ─── Mobilité / Véhicules ────────────────────────────────────
-  vehicles: Vehicle[] = [
-    { _id: 'v1', immatriculation: 'BF-2341-A', marque: 'Jinpeng', modele: 'JP-C150', type: 'tricycle', capacite: 300, statut: 'disponible', annee: 2022 },
-    { _id: 'v2', immatriculation: 'BF-5870-B', marque: 'Dong Feng', modele: 'DF-500', type: 'camion', capacite: 5000, statut: 'en_service', annee: 2020 },
-    { _id: 'v3', immatriculation: 'BF-1102-C', marque: 'Honda', modele: 'CB150', type: 'moto', capacite: 0, statut: 'en_maintenance', annee: 2021 },
-  ];
-  filteredVehicles: Vehicle[] = [...this.vehicles];
+  vehicles: Vehicle[] = [];
+  filteredVehicles: Vehicle[] = [];
   vehicleViewMode: 'card' | 'table' = 'table';
   showVehicleModal = false;
   isEditingVehicle = false;
+  isSavingVehicle = false;
+  isLoadingVehicles = false;
   selectedVehicle: Vehicle | null = null;
   vehiclesSearch = '';
   vehiclesTypeFilter = 'all';
   vehiclesStatusFilter = 'all';
-  vehicleForm: { immatriculation: string; marque: string; modele: string; type: string; capacite: number; statut: string; annee: number; derniereRevision: string; prochainRevision: string; notes: string } = this.emptyVehicleForm();
+  vehicleForm: {
+    plate: string; model: string; type: string;
+    capacityTons: number; status: string;
+    fuelLevel: number; mileage: number; lastMaintenance: string;
+  } = this.emptyVehicleForm();
 
   private emptyVehicleForm() {
-    return { immatriculation: '', marque: '', modele: '', type: '', capacite: 0, statut: 'disponible', annee: new Date().getFullYear(), derniereRevision: '', prochainRevision: '', notes: '' };
+    return { plate: '', model: '', type: '', capacityTons: 0, status: 'disponible', fuelLevel: 100, mileage: 0, lastMaintenance: '' };
+  }
+
+  loadVehicles(): void {
+    const agencyId = this.currentUser?.agencyId;
+    if (!agencyId) return;
+    this.isLoadingVehicles = true;
+    this.vehicleService.getByAgency(agencyId).subscribe({
+      next: (data) => {
+        this.vehicles = data ?? [];
+        this.filterVehicles();
+        const vehiclesTab = this.tabs.find(t => t.id === 'vehicles');
+        if (vehiclesTab) vehiclesTab.badge = this.vehicles.length;
+        this.isLoadingVehicles = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingVehicles = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   openAddVehicleModal(): void {
@@ -621,16 +643,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.isEditingVehicle = true;
     this.selectedVehicle = vehicle;
     this.vehicleForm = {
-      immatriculation: vehicle.immatriculation,
-      marque: vehicle.marque,
-      modele: vehicle.modele || '',
-      type: vehicle.type,
-      capacite: vehicle.capacite,
-      statut: vehicle.statut,
-      annee: vehicle.annee || new Date().getFullYear(),
-      derniereRevision: vehicle.derniereRevision || '',
-      prochainRevision: vehicle.prochainRevision || '',
-      notes: vehicle.notes || '',
+      plate:           vehicle.plate,
+      model:           vehicle.model,
+      type:            vehicle.type,
+      capacityTons:    vehicle.capacityTons ?? 0,
+      status:          vehicle.status,
+      fuelLevel:       vehicle.fuelLevel ?? 100,
+      mileage:         vehicle.mileage ?? 0,
+      lastMaintenance: vehicle.lastMaintenance ?? '',
     };
     this.showVehicleModal = true;
   }
@@ -641,49 +661,89 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
 
   saveVehicle(): void {
-    if (!this.vehicleForm.immatriculation || !this.vehicleForm.marque || !this.vehicleForm.type) {
+    if (!this.vehicleForm.plate || !this.vehicleForm.model || !this.vehicleForm.type) {
       this.notificationService.showError('Erreur', 'Veuillez remplir les champs obligatoires.');
       return;
     }
-    if (this.isEditingVehicle && this.selectedVehicle) {
-      const idx = this.vehicles.findIndex(v => v._id === this.selectedVehicle!._id);
-      if (idx !== -1) {
-        this.vehicles[idx] = { ...this.selectedVehicle, ...this.vehicleForm, type: this.vehicleForm.type as Vehicle['type'], statut: this.vehicleForm.statut as Vehicle['statut'] };
-      }
-      this.notificationService.showSuccess('Succès', 'Engin modifié avec succès.');
+    const agencyId = this.currentUser?.agencyId;
+    if (!agencyId) { this.notificationService.showError('Erreur', 'Agence introuvable.'); return; }
+
+    const body = {
+      agencyId,
+      plate:           this.vehicleForm.plate,
+      model:           this.vehicleForm.model,
+      type:            this.vehicleForm.type as Vehicle['type'],
+      capacityTons:    this.vehicleForm.capacityTons,
+      status:          this.vehicleForm.status as Vehicle['status'],
+      fuelLevel:       this.vehicleForm.fuelLevel,
+      mileage:         this.vehicleForm.mileage,
+      ...(this.vehicleForm.lastMaintenance ? { lastMaintenance: this.vehicleForm.lastMaintenance } : {}),
+    };
+
+    this.isSavingVehicle = true;
+    if (this.isEditingVehicle && this.selectedVehicle?._id) {
+      this.vehicleService.update(this.selectedVehicle._id, body).subscribe({
+        next: (updated) => {
+          const idx = this.vehicles.findIndex(v => v._id === this.selectedVehicle!._id);
+          if (idx !== -1) this.vehicles[idx] = { ...this.vehicles[idx], ...updated };
+          this.filterVehicles();
+          this.closeVehicleModal();
+          this.isSavingVehicle = false;
+          this.notificationService.showSuccess('Succès', 'Engin modifié avec succès.');
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.isSavingVehicle = false;
+          this.notificationService.showError('Erreur', 'Impossible de modifier l\'engin.');
+        }
+      });
     } else {
-      const newVehicle: Vehicle = {
-        _id: 'v' + Date.now(),
-        ...this.vehicleForm,
-        type: this.vehicleForm.type as Vehicle['type'],
-        statut: this.vehicleForm.statut as Vehicle['statut'],
-      };
-      this.vehicles.push(newVehicle);
-      const vehiclesTab = this.tabs.find(t => t.id === 'vehicles');
-      if (vehiclesTab) vehiclesTab.badge = this.vehicles.length;
-      this.notificationService.showSuccess('Succès', 'Engin ajouté avec succès.');
+      this.vehicleService.create(body).subscribe({
+        next: (created) => {
+          this.vehicles.push(created);
+          const vehiclesTab = this.tabs.find(t => t.id === 'vehicles');
+          if (vehiclesTab) vehiclesTab.badge = this.vehicles.length;
+          this.filterVehicles();
+          this.closeVehicleModal();
+          this.isSavingVehicle = false;
+          this.notificationService.showSuccess('Succès', 'Engin ajouté avec succès.');
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.isSavingVehicle = false;
+          this.notificationService.showError('Erreur', 'Impossible d\'ajouter l\'engin.');
+        }
+      });
     }
-    this.filterVehicles();
-    this.closeVehicleModal();
-    this.cdr.detectChanges();
   }
 
   deleteVehicle(vehicle: Vehicle): void {
-    if (!confirm(`Supprimer l'engin ${vehicle.immatriculation} ?`)) return;
-    this.vehicles = this.vehicles.filter(v => v._id !== vehicle._id);
-    this.filterVehicles();
-    const vehiclesTab = this.tabs.find(t => t.id === 'vehicles');
-    if (vehiclesTab) vehiclesTab.badge = this.vehicles.length;
-    this.notificationService.showSuccess('Succès', 'Engin supprimé.');
-    this.cdr.detectChanges();
+    if (!vehicle._id || !confirm(`Supprimer l'engin ${vehicle.plate} ?`)) return;
+    this.vehicleService.remove(vehicle._id).subscribe({
+      next: () => {
+        this.vehicles = this.vehicles.filter(v => v._id !== vehicle._id);
+        this.filterVehicles();
+        const vehiclesTab = this.tabs.find(t => t.id === 'vehicles');
+        if (vehiclesTab) vehiclesTab.badge = this.vehicles.length;
+        this.notificationService.showSuccess('Succès', 'Engin supprimé.');
+        this.cdr.detectChanges();
+      },
+      error: () => this.notificationService.showError('Erreur', 'Impossible de supprimer l\'engin.')
+    });
   }
 
   toggleVehicleStatus(vehicle: Vehicle): void {
-    const cycleOrder: Vehicle['statut'][] = ['disponible', 'en_service', 'en_maintenance', 'hors_service'];
-    const currentIndex = cycleOrder.indexOf(vehicle.statut);
-    vehicle.statut = cycleOrder[(currentIndex + 1) % cycleOrder.length];
-    this.filterVehicles();
-    this.cdr.detectChanges();
+    if (!vehicle._id) return;
+    const cycleOrder: Vehicle['status'][] = ['disponible', 'en_service', 'maintenance', 'hors_service'];
+    const nextStatus = cycleOrder[(cycleOrder.indexOf(vehicle.status) + 1) % cycleOrder.length];
+    this.vehicleService.update(vehicle._id, { status: nextStatus }).subscribe({
+      next: (updated) => {
+        vehicle.status = updated?.status ?? nextStatus;
+        this.filterVehicles();
+        this.cdr.detectChanges();
+      },
+      error: () => this.notificationService.showError('Erreur', 'Impossible de changer le statut.')
+    });
   }
 
   filterVehicles(): void {
@@ -691,42 +751,37 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     if (this.vehiclesSearch) {
       const q = this.vehiclesSearch.toLowerCase();
       result = result.filter(v =>
-        v.immatriculation.toLowerCase().includes(q) ||
-        v.marque.toLowerCase().includes(q) ||
-        (v.modele || '').toLowerCase().includes(q)
+        v.plate.toLowerCase().includes(q) ||
+        v.model.toLowerCase().includes(q)
       );
     }
-    if (this.vehiclesTypeFilter !== 'all') {
-      result = result.filter(v => v.type === this.vehiclesTypeFilter);
-    }
-    if (this.vehiclesStatusFilter !== 'all') {
-      result = result.filter(v => v.statut === this.vehiclesStatusFilter);
-    }
+    if (this.vehiclesTypeFilter !== 'all') result = result.filter(v => v.type === this.vehiclesTypeFilter);
+    if (this.vehiclesStatusFilter !== 'all') result = result.filter(v => v.status === this.vehiclesStatusFilter);
     this.filteredVehicles = result;
   }
 
   getVehicleTypeText(type: string): string {
-    const map: Record<string, string> = { tricycle: 'Tricycle', camion: 'Camion', moto: 'Moto', charrette: 'Charrette', benne: 'Benne', fourgonnette: 'Fourgonnette' };
+    const map: Record<string, string> = { tricycle: 'Tricycle', camion: 'Camion', moto: 'Moto', pickup: 'Pickup' };
     return map[type] || type;
   }
 
-  getVehicleStatusText(statut: string): string {
-    const map: Record<string, string> = { disponible: 'Disponible', en_service: 'En service', en_maintenance: 'En maintenance', hors_service: 'Hors service' };
-    return map[statut] || statut;
+  getVehicleStatusText(status: string): string {
+    const map: Record<string, string> = { disponible: 'Disponible', en_service: 'En service', maintenance: 'Maintenance', hors_service: 'Hors service' };
+    return map[status] || status;
   }
 
-  getVehicleStatusClass(statut: string): string {
-    const map: Record<string, string> = { disponible: 'vstatus-disponible', en_service: 'vstatus-en-service', en_maintenance: 'vstatus-maintenance', hors_service: 'vstatus-hors-service' };
-    return map[statut] || '';
+  getVehicleStatusClass(status: string): string {
+    const map: Record<string, string> = { disponible: 'vstatus-disponible', en_service: 'vstatus-en-service', maintenance: 'vstatus-maintenance', hors_service: 'vstatus-hors-service' };
+    return map[status] || '';
   }
 
   getVehicleTypeIcon(type: string): string {
-    const map: Record<string, string> = { tricycle: 'electric_rickshaw', camion: 'local_shipping', moto: 'two_wheeler', charrette: 'agriculture', benne: 'local_shipping', fourgonnette: 'airport_shuttle' };
+    const map: Record<string, string> = { tricycle: 'electric_rickshaw', camion: 'local_shipping', moto: 'two_wheeler', pickup: 'airport_shuttle' };
     return map[type] || 'directions_car';
   }
 
-  countVehiclesByStatus(statut: string): number {
-    return this.vehicles.filter(v => v.statut === statut).length;
+  countVehiclesByStatus(status: string): number {
+    return this.vehicles.filter(v => v.status === status).length;
   }
 
   // Error handling
@@ -746,6 +801,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     private route: ActivatedRoute,
     private router: Router,
     private countriesOrgMockService: CountriesOrgMockService,
+    private vehicleService: VehicleService,
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -1434,6 +1490,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     }
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
+    this.loadVehicles();
     this.loadTariffs();
     this.loadPlannings();
     // this.loadCollectorPlannings();

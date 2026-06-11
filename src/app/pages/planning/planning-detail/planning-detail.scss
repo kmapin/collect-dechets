@@ -292,6 +292,16 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
     background: #1e293b; color: #fff;
     &:hover { background: #334155; }
   }
+  &--start {
+    background: #f59e0b; color: #fff; border-color: #f59e0b;
+    &:hover:not(:disabled) { background: #d97706; }
+    &:disabled { opacity: .65; cursor: not-allowed; }
+  }
+  &--success {
+    background: #16a34a; color: #fff; border-color: #16a34a;
+    &:hover:not(:disabled) { background: #15803d; }
+    &:disabled { opacity: .65; cursor: not-allowed; }
+  }
 }
 
 // ── Body Layout ─────────────────────────────────────────────
@@ -916,6 +926,14 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
     background: #eff6ff;
     mat-icon { color: #3b82f6; }
   }
+  &--start {
+    background: #fffbeb;
+    mat-icon { color: #f59e0b; }
+  }
+  &--success {
+    background: #f0fdf4;
+    mat-icon { color: #16a34a; }
+  }
 }
 .dlg-actions {
   display: flex;
@@ -944,6 +962,18 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
   &--primary {
     background: #3b82f6; color: #fff;
     &:hover { background: #2563eb; }
+  }
+  &--start-confirm {
+    background: #f59e0b; color: #fff;
+    &:hover:not(:disabled) { background: #d97706; }
+    &:disabled { opacity: .65; cursor: not-allowed; }
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  }
+  &--success-confirm {
+    background: #16a34a; color: #fff;
+    &:hover:not(:disabled) { background: #15803d; }
+    &:disabled { opacity: .65; cursor: not-allowed; }
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
   }
 }
 
