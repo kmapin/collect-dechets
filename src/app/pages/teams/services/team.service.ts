@@ -641,6 +641,11 @@ export class TeamService {
           }
         : undefined);
 
+    const rawMissions: any[] = api.recentMissions ?? [];
+    // L'API ne renvoie pas toujours ces compteurs — on les déduit de recentMissions en fallback
+    const derivedTotal     = rawMissions.length;
+    const derivedCompleted = rawMissions.filter((m: any) => m.status === 'termine').length;
+
     return {
       id:               api._id,
       code:             api.code ?? api._id.slice(-6).toUpperCase(),
@@ -654,11 +659,11 @@ export class TeamService {
       vehicle,
       zones,
       workload:         api.workload          ?? localOverrides.workload          ?? 0,
-      completedMissions:api.completedMissions ?? localOverrides.completedMissions ?? 0,
-      totalMissions:    api.totalMissions     ?? localOverrides.totalMissions     ?? 0,
+      completedMissions:api.completedMissions ?? localOverrides.completedMissions ?? derivedCompleted,
+      totalMissions:    api.totalMissions     ?? localOverrides.totalMissions     ?? derivedTotal,
       successRate:      api.successRate       ?? localOverrides.successRate       ?? 0,
       currentZone:      api.currentZone       ?? localOverrides.currentZone,
-      recentMissions:   api.recentMissions    ?? [],
+      recentMissions:   rawMissions,
       createdAt:        api.createdAt,
       updatedAt:        api.updatedAt,
     };

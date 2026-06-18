@@ -360,6 +360,7 @@
 <app-team-detail-modal
   [team]="modalTeam()"
   [visible]="modalOpen()"
+  [loading]="modalLoading()"
   (visibleChange)="modalOpen.set($event)"
   (edit)="openEdit($event); modalOpen.set(false)"
   (toggleStatus)="toggleStatus($event)"

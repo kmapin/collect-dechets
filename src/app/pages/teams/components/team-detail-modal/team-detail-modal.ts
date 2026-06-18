@@ -43,6 +43,7 @@ function sparkCoords(successRate: number): [number, number][] {
 export class TeamDetailModal implements OnChanges {
   @Input() team: Team | null = null;
   @Input() visible = false;
+  @Input() loading = false;
   @Output() visibleChange   = new EventEmitter<boolean>();
   @Output() edit            = new EventEmitter<Team>();
   @Output() toggleStatus    = new EventEmitter<Team>();

@@ -28,7 +28,31 @@ $bg-page  : #f8fafc;
   overflow: hidden;
   background: $bg-page;
   border-radius: 20px;
+  position: relative;
 }
+
+// ── Loading overlay ───────────────────────────────────────────
+.tdm-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(2px);
+  border-radius: 20px;
+  pointer-events: none;
+}
+.tdm-loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(59,130,246,.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: tdm-spin .7s linear infinite;
+}
+@keyframes tdm-spin { to { transform: rotate(360deg); } }
 
 // ── Hero ──────────────────────────────────────────────────────
 .tdm-hero {
@@ -90,8 +114,8 @@ $bg-page  : #f8fafc;
 // KPI glass cards
 .tdm-kpis {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
 }
 .tdm-kpi-card {
   display: flex; flex-direction: column; align-items: center;
@@ -561,7 +585,7 @@ $bg-page  : #f8fafc;
 // ── Responsive ────────────────────────────────────────────────
 @media (max-width: 640px) {
   .tdm-two-cols   { grid-template-columns: 1fr; }
-  .tdm-kpis       { grid-template-columns: repeat(2, 1fr); }
+  .tdm-kpis       { grid-template-columns: repeat(3, 1fr); }
   .tdm-vh-meta-grid { grid-template-columns: repeat(2, 1fr); }
   .tdm-members-grid { grid-template-columns: 1fr; }
   .tdm-hero       { padding: 14px 16px 14px; }

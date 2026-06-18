@@ -55,6 +55,7 @@ export class TeamList implements OnInit {
   formOpen          = signal(false);
   modalTeam         = signal<Team | null>(null);
   modalOpen         = signal(false);
+  modalLoading      = signal(false);
   editingTeam       = signal<Team | null>(null);
   deletingTeam      = signal<Team | null>(null);
   confirmDeleteOpen = signal(false);
@@ -153,7 +154,18 @@ export class TeamList implements OnInit {
   }
 
   // ── Navigation ────────────────────────────────────────────
-  openModal(team: Team): void { this.modalTeam.set(team); this.modalOpen.set(true); }
+  openModal(team: Team): void {
+    this.modalTeam.set(team);
+    this.modalOpen.set(true);
+    this.modalLoading.set(true);
+    this.svc.getTeamV2(team.id).subscribe({
+      next: full => {
+        if (this.modalOpen()) this.modalTeam.set(full);
+        this.modalLoading.set(false);
+      },
+      error: () => this.modalLoading.set(false),
+    });
+  }
   goToDetail(id: string): void { this.router.navigate(['/teams/detail', id]); }
 
   // ── CRUD ──────────────────────────────────────────────────
