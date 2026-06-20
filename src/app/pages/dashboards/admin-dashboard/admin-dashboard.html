@@ -200,7 +200,7 @@
               *ngFor="let tab of tabs"
               class="tab-btn"
               [class.active]="activeTab === tab.id"
-              (click)="activeTab = tab.id">
+              (click)="switchTab(tab.id)">
               <i class="material-icons">{{ tab.icon }}</i>
               {{ tab.label }}
             <span *ngIf="getTabBadge(tab.id) > 0" class="tab-badge">
@@ -1386,111 +1386,389 @@
             <div *ngIf="activeTab === 'statistics'" class="statistics-tab">
               <div class="statistics-header">
                 <h2>Statistiques Consolidées</h2>
-                <!-- <div class="statistics-filters" 
->
-                  <select
-                    [(ngModel)]="statisticsPeriod"
-                    (change)="updateStatistics()"
-                    class="filter-select"
-                        [disabled]="isDisabled"
-
-                  >
-                    <option value="today">Aujourd'hui</option>
-                    <option value="week">Cette semaine</option>
-                    <option value="month">Ce mois</option>
-                    <option value="quarter">Ce trimestre</option>
-                    <option value="year">Cette année</option>
-                  </select>
-                  <button
-                    class="btn btn-secondary"
-                    (click)="exportStatistics()"
-                 
-                  >
-                    <i class="material-icons">download</i>
-                    Exporter
-                  </button>
-                </div> -->
               </div>
 
-              <div class="statistics-content">
-                <div class="statistics-cards">
-                  <div class="statistics-card card">
-                    <h3>Collectes par Type de Déchets</h3>
-                    <div class="chart-container">
-                      <div class="chart-placeholder">
-                        <i class="material-icons">donut_large</i>
-                        <p>Graphique en secteurs des types de déchets</p>
-                      </div>
-                    </div>
-                    <div class="chart-legend">
-                      <div
-                        *ngFor="let waste of wasteStatistics"
-                        class="legend-item"
-                      >
-                        <div
-                          class="legend-color"
-                          [style.background-color]="waste.color"
-                        ></div>
-                        <span>{{ waste.type }}: {{ waste.quantity }}t</span>
-                      </div>
+              <!-- ── KPIs ── -->
+              <div class="stat-kpi-grid">
+                <div class="kpi-card card">
+                  <div class="kpi-icon-wrap kpi-green">
+                    <i class="material-icons">local_shipping</i>
+                  </div>
+                  <div class="kpi-body">
+                    <span class="kpi-label">Taux de collecte</span>
+                    <span class="kpi-value">{{ getCollectionRate() }}%</span>
+                    <div class="kpi-bar-track">
+                      <div class="kpi-bar-fill kpi-fill-green" [style.width]="getCollectionRate() + '%'"></div>
                     </div>
                   </div>
+                </div>
 
-                  <div class="statistics-card card">
-                    <h3>Performance par Agence</h3>
-                    <div class="performance-chart">
-                      <div
-                        *ngFor="let agency of getTopPerformingAgencies()"
-                        class="performance-bar"
-                      >
-                        <div class="agency-name">{{ agency.name }}</div>
-                        <div class="performance-bar-container">
-                          <div
-                            class="performance-bar-fill"
-                            [style.width]="agency.completionRate + '%'"
-                          ></div>
-                        </div>
-                        <div class="performance-value">
-                          {{ agency.completionRate }}%
-                        </div>
-                      </div>
+                <div class="kpi-card card">
+                  <div class="kpi-icon-wrap kpi-blue">
+                    <i class="material-icons">people</i>
+                  </div>
+                  <div class="kpi-body">
+                    <span class="kpi-label">Croissance clients (mois)</span>
+                    <span class="kpi-value">+{{ statisticsAdmin?.monthlyClientPercentage ?? 0 }}%</span>
+                    <div class="kpi-bar-track">
+                      <div class="kpi-bar-fill kpi-fill-blue"
+                           [style.width]="(statisticsAdmin?.monthlyClientPercentage ?? 0) + '%'"></div>
                     </div>
                   </div>
+                </div>
 
-                  <div class="statistics-card card">
-                    <h3>Évolution des Collectes</h3>
-                    <div class="chart-container">
-                      <div class="chart-placeholder">
-                        <i class="material-icons">show_chart</i>
-                        <p>Graphique linéaire de l'évolution des collectes</p>
-                      </div>
+                <div class="kpi-card card">
+                  <div class="kpi-icon-wrap kpi-orange">
+                    <i class="material-icons">report_problem</i>
+                  </div>
+                  <div class="kpi-body">
+                    <span class="kpi-label">Incidents résolus</span>
+                    <span class="kpi-value">
+                      {{ statisticsAdmin?.reportsFromClients?.resolved ?? 0 }}
+                      / {{ statisticsAdmin?.reportsFromClients?.total ?? 0 }}
+                    </span>
+                    <div class="kpi-bar-track">
+                      <div class="kpi-bar-fill kpi-fill-orange"
+                           [style.width]="(statisticsAdmin?.reportsFromClients?.total
+                             ? (statisticsAdmin?.reportsFromClients?.resolved ?? 0) * 100 / statisticsAdmin!.reportsFromClients!.total
+                             : 0) + '%'"></div>
                     </div>
                   </div>
+                </div>
 
-                  <div class="statistics-card card">
-                    <h3>Incidents par Catégorie</h3>
-                    <div class="incidents-breakdown">
-                      <div
-                        *ngFor="let incident of getIncidentBreakdown()"
-                        class="incident-category"
-                      >
-                        <div class="incident-header">
-                          <span class="incident-type">{{ incident.type }}</span>
-                          <span class="incident-count">{{
-                            incident.count
-                          }}</span>
-                        </div>
-                        <div class="incident-bar">
-                          <div
-                            class="incident-fill"
-                            [style.width]="incident.percentage + '%'"
-                          ></div>
-                        </div>
-                      </div>
+                <div class="kpi-card card">
+                  <div class="kpi-icon-wrap kpi-purple">
+                    <i class="material-icons">business</i>
+                  </div>
+                  <div class="kpi-body">
+                    <span class="kpi-label">Agences actives</span>
+                    <span class="kpi-value">
+                      {{ statisticsAdmin?.totalActiveAgencies ?? 0 }}
+                      / {{ statisticsAdmin?.totalAgencies ?? 0 }}
+                    </span>
+                    <div class="kpi-bar-track">
+                      <div class="kpi-bar-fill kpi-fill-purple"
+                           [style.width]="(statisticsAdmin?.totalAgencies
+                             ? (statisticsAdmin?.totalActiveAgencies ?? 0) * 100 / statisticsAdmin!.totalAgencies
+                             : 0) + '%'"></div>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <!-- ── Graphiques ── -->
+              <div class="charts-grid">
+
+                <!-- Doughnut : Incidents -->
+                <div class="chart-card card">
+                  <h3 class="chart-title">
+                    <i class="material-icons">pie_chart</i>
+                    Incidents par statut
+                  </h3>
+                  <div class="chart-wrapper">
+                    <canvas #incidentsChart></canvas>
+                  </div>
+                  <div class="chart-legend-row">
+                    <span class="legend-dot" style="background:#22c55e"></span>
+                    <span>Résolus: {{ statisticsAdmin?.reportsFromClients?.resolved ?? 0 }}</span>
+                    <span class="legend-dot" style="background:#f97316;margin-left:12px;"></span>
+                    <span>En cours: {{ statisticsAdmin?.reportsFromClients?.pending ?? 0 }}</span>
+                  </div>
+                </div>
+
+                <!-- Bar : Top agences -->
+                <div class="chart-card card">
+                  <h3 class="chart-title">
+                    <i class="material-icons">leaderboard</i>
+                    Top 5 Agences
+                  </h3>
+                  <div class="chart-wrapper">
+                    <canvas #agenciesChart></canvas>
+                  </div>
+                  <div *ngIf="!getTopPerformingAgencies().length" class="chart-empty">
+                    <i class="material-icons">bar_chart</i>
+                    <p>Aucune donnée agence disponible</p>
+                  </div>
+                </div>
+
+                <!-- Doughnut : Répartition déchets -->
+                <div class="chart-card card">
+                  <h3 class="chart-title">
+                    <i class="material-icons">recycling</i>
+                    Répartition des Déchets
+                  </h3>
+                  <div class="chart-wrapper">
+                    <canvas #wasteChart></canvas>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- ── Carte interactive + sidebar agences ── -->
+              <div class="card territorial-map-card">
+
+                <!-- En-tête -->
+                <div class="territorial-map-header">
+                  <h3 class="chart-title">
+                    <i class="material-icons">map</i>
+                    Couverture Territoriale — Zones d'intervention
+                  </h3>
+                  <span class="map-hint" *ngIf="!isLoadingMap && agenciesGeoData.length">
+                    <i class="material-icons">touch_app</i>
+                    Cliquez sur une agence pour zoomer ses zones
+                  </span>
+                </div>
+
+                <!-- Spinner global -->
+                <app-loading-spinner
+                  *ngIf="isLoadingMap"
+                  message="Chargement de la carte..."
+                  size="medium">
+                </app-loading-spinner>
+
+                <!-- Explorer : carte + sidebar -->
+                <div *ngIf="!isLoadingMap" class="territorial-explorer">
+
+                  <!-- ── Panneau carte ── -->
+                  <div class="te-map-panel">
+                    <div #territorialMap class="territorial-map-container"></div>
+                  </div>
+
+                  <!-- ── Sidebar droite ── -->
+                  <aside class="te-sidebar">
+
+                    <!-- Header sidebar -->
+                    <div class="tes-header">
+                      <span class="tes-title">Agences ({{ agenciesGeoData.length }})</span>
+                      <button *ngIf="selectedAgencyIndex !== null"
+                              class="tes-reset-btn"
+                              (click)="deselectAgency()"
+                              title="Tout afficher">
+                        <i class="material-icons">layers_clear</i>
+                      </button>
+                    </div>
+
+                    <!-- Toutes les agences -->
+                    <div class="tes-all-row"
+                         [class.tes-all-active]="selectedAgencyIndex === null"
+                         (click)="deselectAgency()">
+                      <div class="tes-all-icon">
+                        <i class="material-icons">layers</i>
+                      </div>
+                      <div class="tes-all-body">
+                        <span class="tes-all-label">Toutes les agences</span>
+                        <span class="tes-all-sub">{{ agenciesGeoData.length }} agences · vue globale</span>
+                      </div>
+                      <i class="material-icons tes-all-check" *ngIf="selectedAgencyIndex === null">check_circle</i>
+                    </div>
+
+                    <!-- Liste des agences -->
+                    <div class="tes-list">
+                      <div
+                        *ngFor="let ag of agenciesGeoData; let i = index"
+                        class="tes-item"
+                        [class.tes-active]="selectedAgencyIndex === i"
+                        (click)="selectAgencyOnMap(ag, i)">
+
+                        <div class="tes-swatch" [style.background]="AGENCY_PALETTE[i % AGENCY_PALETTE.length]"></div>
+
+                        <div class="tes-body">
+                          <div class="tes-name">{{ ag.name }}</div>
+                          <div class="tes-sub">
+                            <i class="material-icons">layers</i>
+                            {{ ag.zoneActivite?.length || 0 }} zones &middot;
+                            {{ ag.address?.city || 'Ouagadougou' }}
+                          </div>
+                        </div>
+
+                        <div class="tes-right">
+                          <div class="tes-count"
+                               [style.color]="AGENCY_PALETTE[i % AGENCY_PALETTE.length]">
+                            {{ getAgencyAudit(ag.name)?.clients ?? '—' }}
+                          </div>
+                          <div class="tes-label">clients</div>
+                        </div>
+
+                        <i class="material-icons tes-arrow">chevron_right</i>
+                      </div>
+                    </div>
+
+                    <!-- Panneau de détails agence sélectionnée -->
+                    <div class="tes-detail" *ngIf="selectedAgency && selectedAgencyIndex !== null">
+
+                      <!-- Header coloré -->
+                      <div class="tsd-top"
+                           [style.background]="AGENCY_PALETTE[selectedAgencyIndex % AGENCY_PALETTE.length]">
+                        <div class="tsd-deco"></div>
+                        <div class="tsd-main">
+                          <div class="tsd-initials">
+                            {{ getAgencyInitials(selectedAgency.name) }}
+                          </div>
+                          <div>
+                            <div class="tsd-name">{{ selectedAgency.name }}</div>
+                            <div class="tsd-slogan" *ngIf="selectedAgency.slogan">
+                              "{{ selectedAgency.slogan }}"
+                            </div>
+                          </div>
+                        </div>
+                        <button class="tsd-close" (click)="deselectAgency()">
+                          <i class="material-icons">close</i>
+                        </button>
+                      </div>
+
+                      <!-- Statut -->
+                      <div class="tsd-status-row">
+                        <span class="status-badge"
+                              [class.status-success]="selectedAgency.status === 'active'"
+                              [class.status-inconnu]="selectedAgency.status !== 'active'">
+                          {{ selectedAgency.status === 'active' ? 'Active' : 'Inactive' }}
+                        </span>
+                        <span class="tsd-created" *ngIf="selectedAgency.createdAt">
+                          Depuis {{ selectedAgency.createdAt | date:'MMM yyyy' }}
+                        </span>
+                      </div>
+
+                      <!-- KPIs -->
+                      <div class="tsd-kpis">
+                        <div class="tsd-kpi">
+                          <div class="tsd-kpi-val"
+                               [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            <span *ngIf="!isLoadingAgencyDetail">{{ selectedAgencyStats?.totalClientsActifs ?? selectedAgency.clients?.length ?? 0 }}</span>
+                            <span *ngIf="isLoadingAgencyDetail" class="tsd-kpi-loader">…</span>
+                          </div>
+                          <div class="tsd-kpi-lbl">Clients actifs</div>
+                        </div>
+                        <div class="tsd-kpi">
+                          <div class="tsd-kpi-val"
+                               [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            <span *ngIf="!isLoadingAgencyDetail">{{ selectedAgencyStats?.totalCollectors ?? 0 }}</span>
+                            <span *ngIf="isLoadingAgencyDetail" class="tsd-kpi-loader">…</span>
+                          </div>
+                          <div class="tsd-kpi-lbl">Collecteurs</div>
+                        </div>
+                        <div class="tsd-kpi">
+                          <div class="tsd-kpi-val"
+                               [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            {{ selectedAgency.zoneActivite?.length || 0 }}
+                          </div>
+                          <div class="tsd-kpi-lbl">Zones</div>
+                        </div>
+                        <div class="tsd-kpi">
+                          <div class="tsd-kpi-val"
+                               [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            <span *ngIf="!isLoadingAgencyDetail">{{ (selectedAgencyStats?.averageRating ?? 0) | number:'1.1-1' }}</span>
+                            <span *ngIf="isLoadingAgencyDetail" class="tsd-kpi-loader">…</span>
+                          </div>
+                          <div class="tsd-kpi-lbl">Note / 5</div>
+                        </div>
+                      </div>
+
+                      <!-- Taux de réalisation -->
+                      <div class="tsd-completion">
+                        <div class="tsd-completion-row">
+                          <span>Taux de réalisation</span>
+                          <strong [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            {{ getSelectedCompletionRate() }}%
+                          </strong>
+                        </div>
+                        <div class="kpi-bar-track">
+                          <div class="kpi-bar-fill"
+                               [style.width]="getSelectedCompletionRate() + '%'"
+                               [style.background]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                          </div>
+                        </div>
+                        <div class="tsd-completion-sub" *ngIf="selectedAgencyStats?.todayCollections">
+                          {{ selectedAgencyStats.completedCollections }} / {{ selectedAgencyStats.todayCollections }} collectes aujourd'hui
+                        </div>
+                      </div>
+
+                      <!-- Adresse -->
+                      <div class="tsd-section" *ngIf="selectedAgency.address">
+                        <div class="tsd-section-label">
+                          <i class="material-icons">location_on</i> Siège
+                        </div>
+                        <div class="tsd-section-val">
+                          {{ selectedAgency.address.neighborhood || '—' }},
+                          {{ selectedAgency.address.arrondissement || '—' }},
+                          {{ selectedAgency.address.city || '—' }}
+                        </div>
+                      </div>
+
+                      <!-- Propriétaire -->
+                      <div class="tsd-section" *ngIf="selectedAgency.owner">
+                        <div class="tsd-section-label">
+                          <i class="material-icons">manage_accounts</i> Responsable
+                        </div>
+                        <div class="tsd-section-val">
+                          {{ selectedAgency.owner.firstName }} {{ selectedAgency.owner.lastName }}
+                        </div>
+                        <div class="tsd-section-sub">{{ selectedAgency.owner.email }}</div>
+                      </div>
+
+                      <!-- Zones d'activité -->
+                      <div class="tsd-section">
+                        <div class="tsd-section-label">
+                          <i class="material-icons">map</i>
+                          Zones d'intervention ({{ selectedAgency.zoneActivite?.length || 0 }})
+                        </div>
+                        <div class="tsd-zones-chips">
+                          <span
+                            *ngFor="let z of selectedAgency.zoneActivite"
+                            class="zone-chip"
+                            [style.borderColor]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]"
+                            [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            {{ z }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Métriques d'activité -->
+                      <div class="tsd-section" *ngIf="selectedAgencyStats && !isLoadingAgencyDetail">
+                        <div class="tsd-section-label">
+                          <i class="material-icons">bar_chart</i> Activité
+                        </div>
+                        <div class="tsd-stats-row">
+                          <div class="tsd-mini-stat">
+                            <span class="tsd-mini-val">{{ selectedAgencyStats.totalSignalements ?? 0 }}</span>
+                            <span class="tsd-mini-lbl">Signalements</span>
+                          </div>
+                          <div class="tsd-mini-stat" *ngIf="selectedAgencyStats.pendingReports">
+                            <span class="tsd-mini-val">{{ selectedAgencyStats.pendingReports }}</span>
+                            <span class="tsd-mini-lbl">En attente</span>
+                          </div>
+                          <div class="tsd-mini-stat" *ngIf="selectedAgencyStats.monthlyRevenue">
+                            <span class="tsd-mini-val">{{ selectedAgencyStats.monthlyRevenue | number:'1.0-0' }}</span>
+                            <span class="tsd-mini-lbl">Rev. mensuel</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Bouton profil complet -->
+                      <div class="tsd-action-row">
+                        <button class="tsd-profile-btn"
+                                [style.background]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]"
+                                (click)="viewAgencyDetails(selectedAgency._id)">
+                          <i class="material-icons">open_in_new</i>
+                          Voir le profil complet
+                        </button>
+                      </div>
+
+                    </div>
+                    <!-- /detail -->
+
+                    <!-- Etat vide sidebar -->
+                    <div *ngIf="!agenciesGeoData.length" class="tes-empty">
+                      <i class="material-icons">business_off</i>
+                      <p>Aucune agence disponible</p>
+                    </div>
+
+                  </aside>
+
+                </div>
+                <!-- /explorer -->
+
+              </div>
+
             </div>
 
             <!-- Onglet Incidents -->
@@ -1963,6 +2241,58 @@
           }
 
         </div>
+
+        <div class="divider"></div>
+
+        <!-- Section Historique d'activité -->
+        <div class="section activity-section">
+          <div class="section-header activity-toggle-header" (click)="showActivitySection ? showActivitySection = false : loadUserActivity()">
+            <i class="material-icons section-icon-mat">history</i>
+            <h4>Historique d'activité</h4>
+            <span class="activity-role-badge role-{{ selectedUser.role }}">
+              {{ getUserRole(selectedUser.role!) }}
+            </span>
+            <i class="material-icons activity-chevron">{{ showActivitySection ? 'expand_less' : 'expand_more' }}</i>
+          </div>
+
+          @if (showActivitySection) {
+          <div class="activity-body">
+            <!-- Loader -->
+            @if (isLoadingActivity) {
+            <div class="activity-loading">
+              <i class="material-icons spin">refresh</i>
+              Chargement de l'historique...
+            </div>
+            }
+
+            <!-- Timeline -->
+            @if (!isLoadingActivity && userActivity.length > 0) {
+            <div class="activity-timeline">
+              @for (event of userActivity; track event.type + event.date) {
+              <div class="activity-item">
+                <div class="activity-dot" [style.background-color]="event.color">
+                  <i class="material-icons">{{ event.icon }}</i>
+                </div>
+                <div class="activity-content">
+                  <div class="activity-label">{{ event.label }}</div>
+                  <div class="activity-detail">{{ event.detail }}</div>
+                </div>
+                <div class="activity-time">{{ getActivityTimeAgo(event.date) }}</div>
+              </div>
+              }
+            </div>
+            }
+
+            @if (!isLoadingActivity && userActivity.length === 0) {
+            <div class="activity-empty">
+              <i class="material-icons">timeline</i>
+              Aucune activité enregistrée
+            </div>
+            }
+          </div>
+          }
+        </div>
+
       </div>
 
       <!-- ── Pied du drawer : actions ── -->

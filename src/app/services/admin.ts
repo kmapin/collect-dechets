@@ -147,11 +147,18 @@ export class Admin {
   }
 
   toggleUserStatus(userId: string, status: 'active' | 'inactive'): Observable<any> {
-    return this.http.patch<any>(`${environment.apiUrl}/user/${userId}`, { status }).pipe(
+    return this.http.put<any>(`${environment.apiUrl}/users/agency/${userId}`, { status }).pipe(
       map((response: any) => {
         console.log('API > toggleUserStatus:', response);
         return response;
       })
+    );
+  }
+
+  getUserActivity(userId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/user/${userId}/activity`).pipe(
+      map((r: any) => r),
+      catchError(() => of({ data: [] }))
     );
   }
 
