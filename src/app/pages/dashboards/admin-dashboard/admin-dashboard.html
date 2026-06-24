@@ -1480,7 +1480,7 @@
                 <div class="chart-card card">
                   <h3 class="chart-title">
                     <i class="material-icons">leaderboard</i>
-                    Top 5 Agences
+                    Top 5 — Agences par clientèle
                   </h3>
                   <div class="chart-wrapper">
                     <canvas #agenciesChart></canvas>
@@ -1641,7 +1641,7 @@
                         <div class="tsd-kpi">
                           <div class="tsd-kpi-val"
                                [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
-                            <span *ngIf="!isLoadingAgencyDetail">{{ selectedAgencyStats?.totalCollectors ?? 0 }}</span>
+                            <span *ngIf="!isLoadingAgencyDetail">{{ selectedAgencyStats?.totalCollecteurs ?? 0 }}</span>
                             <span *ngIf="isLoadingAgencyDetail" class="tsd-kpi-loader">…</span>
                           </div>
                           <div class="tsd-kpi-lbl">Collecteurs</div>

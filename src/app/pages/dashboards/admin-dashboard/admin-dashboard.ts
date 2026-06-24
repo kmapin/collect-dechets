@@ -431,6 +431,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
     recipients: [],
   };
 
+  // ── Badges onglets ───────────────────────────────────────
+  tabBadges: Record<string, number> = {};
+
   //Statistics for admin
   statisticsAdmin: AdminStatistics | null = null;
   //List all clients for admin dashboard
@@ -510,7 +513,8 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.getClientGrowth();
     this.initializeCitiesAndNeighborhoods();
     this.initializeFiltersData();
-    this.loadTabData(this.activeTab); // charge l'onglet initial (overview)
+    this.loadTabBadges();
+    this.loadTabData(this.activeTab);
   }
 
   loadTabData(tabId: string): void {
@@ -637,6 +641,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
         this.agenciesTotalPages   = Math.max(1, Math.ceil(this.agenciesTotalItems / this.agenciesItemsPerPage));
 
         this.isLoadingAgencies = false;
+        // Rebuild le graphe top-agences si l'onglet statistiques est actif
+        if (this.chartsInitialized && this.activeTab === 'statistics') {
+          this.buildAgenciesChart();
+        }
       },
       error: (error) => {
         console.error("Erreur lors du chargement des agences:", error);
@@ -741,6 +749,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
         const raw = Array.isArray(res) ? res : (res?.data ?? res?.agencies ?? []);
         this.agenciesGeoData = raw;
         this.isLoadingMap = false;
+        if (this.chartsInitialized && this.activeTab === 'statistics') {
+          this.buildAgenciesChart();
+        }
         setTimeout(() => this.initTerritorialMap(), 100);
       },
       error: () => {
@@ -1144,17 +1155,17 @@ export class AdminDashboard implements OnInit, OnDestroy {
     if (this.agenciesChart) { this.agenciesChart.destroy(); this.agenciesChart = null; }
 
     const top = this.getTopPerformingAgencies();
-    const labels = top.map(a => a.name.length > 14 ? a.name.slice(0, 14) + '…' : a.name);
-    const values = top.map(a => a.completionRate);
+    const labels = top.map(a => a.name.length > 16 ? a.name.slice(0, 16) + '…' : a.name);
+    const values = top.map(a => a.clients);
 
     const config: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
         labels,
         datasets: [{
-          label: 'Taux de réalisation (%)',
+          label: 'Clients',
           data: values,
-          backgroundColor: '#6366f1',
+          backgroundColor: this.AGENCY_PALETTE.slice(0, top.length),
           borderRadius: 6,
           barThickness: 18,
         }],
@@ -1163,7 +1174,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
         indexAxis: 'y',
         plugins: { legend: { display: false } },
         scales: {
-          x: { min: 0, max: 100, ticks: { callback: (v) => v + '%' }, grid: { display: false } },
+          x: { min: 0, ticks: { callback: (v) => Number(v).toLocaleString('fr-FR') }, grid: { display: false } },
           y: { grid: { display: false } },
         },
       },
@@ -1505,13 +1516,16 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   getTopPerformingAgencies(): any[] {
-    return this.agencyAudits
-      .sort((a, b) => b.completionRate - a.completionRate)
-      .slice(0, 5)
-      .map((agency) => ({
-        name: agency.name,
-        completionRate: agency.completionRate,
-      }));
+    const source = this.agenciesGeoData.length
+      ? this.agenciesGeoData.map((ag: any) => ({
+          name: ag.name ?? '',
+          clients: Array.isArray(ag.clients) ? ag.clients.length : (ag.clients ?? 0),
+        }))
+      : this.agencyAudits.map(a => ({ name: a.name, clients: a.clients }));
+
+    return [...source]
+      .sort((a, b) => b.clients - a.clients)
+      .slice(0, 5);
   }
 
   getIncidentBreakdown(): any[] {
@@ -2409,32 +2423,53 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.adminService.setData("municipality");
   }
 
-  getTabBadge(tabId: string): number {
-    switch (tabId) {
-      case "overview":
-        return (
-          this.filteredAgencies.length +
-          this.filteredMunicipalities.length +
-          this.filteredClients.length +
-          this.filteredCollectors.length +
-          this.filteredIncidents.length
-        );
-      case "municipalities":
-        return this.filteredMunicipalities.length;
-      case "agencies":
-        return this.filteredAgencies.length;
-      case "clients":
-        return this.filteredClients.length;
-      case "collectors":
-        return this.filteredCollectors.length;
-      case "incidents":
-        return this.filteredIncidents.length;
-      case "all_users":
-        return this.filteredUsers.length;
-      default:
-        return 0;
-    }
+  loadTabBadges(): void {
+    this.adminService.getGlobalUserStats().subscribe({
+      next: (res: any) => {
+        if (!res) return;
+        const d = res?.data ?? res;
+        this.tabBadges = {
+          agencies:   d.totalAgencies      ?? d.agencies      ?? 0,
+          all_users:  d.totalUsers         ?? d.all_users         ?? 0,
+          incidents:  d.totalIncidents     ?? d.incidents     ?? d.totalSignalements ?? 0,
+          collectors: d.totalCollectors    ?? d.collectors    ?? 0,
+          clients:    d.totalClients       ?? d.clients       ?? 0,
+          overview:   d.totalAgencies      ?? 0,
+        };
+      },
+    });
   }
+
+  getTabBadge(tabId: string): number {
+    return this.tabBadges[tabId] ?? 0;
+  }
+
+  // getTabBadge(tabId: string): number {
+  //   switch (tabId) {
+  //     case "overview":
+  //       return (
+  //         this.filteredAgencies.length +
+  //         this.filteredMunicipalities.length +
+  //         this.filteredClients.length +
+  //         this.filteredCollectors.length +
+  //         this.filteredIncidents.length
+  //       );
+  //     case "municipalities":
+  //       return this.filteredMunicipalities.length;
+  //     case "agencies":
+  //       return this.filteredAgencies.length;
+  //     case "clients":
+  //       return this.filteredClients.length;
+  //     case "collectors":
+  //       return this.filteredCollectors.length;
+  //     case "incidents":
+  //       return this.filteredIncidents.length;
+  //     case "all_users":
+  //       return this.filteredUsers.length;
+  //     default:
+  //       return 0;
+  //   }
+  // }
 
   getRoleLabel(): string {
     const count = this.filteredUsers.length;

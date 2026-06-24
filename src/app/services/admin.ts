@@ -34,7 +34,16 @@ export class Admin {
         return response;
       })
     );
+  }
 
+  getGlobalUserStats(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/state_agencies/stats/users`).pipe(
+      map((res: any) => {
+        console.log('API > getGlobalUserStats:', res);
+        return res;
+      }),
+      catchError(() => of(null))
+    );
   }
   getAllUsers(fileterParams: FilterParams): Observable<any> {
     let requestParams = new HttpParams()
