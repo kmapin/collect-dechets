@@ -1,0 +1,378 @@
+
+================================================================================
+ENDPOINT: /api/planning/v2/zone-coverage
+================================================================================
+{
+  "get": {
+    "summary": "Carte de couverture des zones",
+    "tags": [
+      "Planning V2"
+    ],
+    "parameters": [
+      {
+        "in": "query",
+        "name": "agencyId",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Filtrer par agence (optionnel)"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Liste des zones avec leur taux de couverture",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "quartierId": {
+                        "type": "string"
+                      },
+                      "quartierNom": {
+                        "type": "string",
+                        "example": "Dassasgho"
+                      },
+                      "lat": {
+                        "type": "number",
+                        "example": 12.37
+                      },
+                      "lng": {
+                        "type": "number",
+                        "example": -1.52
+                      },
+                      "planningsCount": {
+                        "type": "integer",
+                        "example": 4
+                      },
+                      "equipesAssigned": {
+                        "type": "integer",
+                        "example": 2
+                      },
+                      "completionRate": {
+                        "type": "integer",
+                        "example": 75
+                      },
+                      "status": {
+                        "type": "string",
+                        "example": "active"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Erreur serveur",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+================================================================================
+ENDPOINT: /api/planning/v2/stats
+================================================================================
+{
+  "get": {
+    "summary": "KPIs globaux des plannings V2",
+    "tags": [
+      "Planning V2"
+    ],
+    "parameters": [
+      {
+        "in": "query",
+        "name": "agencyId",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Filtrer par agence (optionnel)"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Statistiques globales",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "totalPlannings": {
+                      "type": "integer",
+                      "example": 127
+                    },
+                    "todayPlannings": {
+                      "type": "integer",
+                      "example": 8
+                    },
+                    "inProgress": {
+                      "type": "integer",
+                      "example": 3
+                    },
+                    "completedToday": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "executionRate": {
+                      "type": "number",
+                      "example": 62.5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Erreur serveur",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+================================================================================
+ENDPOINT: /api/territories/arrondissements
+================================================================================
+{
+  "post": {
+    "summary": "Créer un arrondissement",
+    "tags": [
+      "Territories"
+    ],
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/components/schemas/Arrondissement"
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Arrondissement"
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Erreur de validation"
+      },
+      "500": {
+        "description": "Erreur interne du serveur"
+      }
+    }
+  },
+  "get": {
+    "summary": "Récupérer tous les arrondissements",
+    "tags": [
+      "Territories"
+    ],
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ],
+    "responses": {
+      "200": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Arrondissement"
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Erreur interne du serveur"
+      }
+    }
+  }
+}
+
+================================================================================
+ENDPOINT: /api/statistics
+================================================================================
+{
+  "get": {
+    "summary": "Récupère les statistiques globales (agents, clients, agences, adhésions mensuelles, collectes)",
+    "tags": [
+      "Statistiques"
+    ],
+    "responses": {
+      "200": {
+        "description": "Statistiques récupérées avec succès",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Statistiques du tableau de bord récupérées avec succès"
+                },
+                "stats": {
+                  "type": "object",
+                  "properties": {
+                    "totalMunicipalityAgents": {
+                      "type": "integer",
+                      "example": 3
+                    },
+                    "totalManagers": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "totalCollectors": {
+                      "type": "integer",
+                      "example": 12
+                    },
+                    "totalClients": {
+                      "type": "integer",
+                      "example": 247
+                    },
+                    "totalAgencies": {
+                      "type": "integer",
+                      "example": 8
+                    },
+                    "totalActiveAgencies": {
+                      "type": "integer",
+                      "example": 6
+                    },
+                    "totalInactiveAgencies": {
+                      "type": "integer",
+                      "example": 2
+                    },
+                    "totalDeletedAgencies": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "agenciesByCity": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "city": {
+                            "type": "string",
+                            "example": "Ouagadougou"
+                          },
+                          "numberOfAgencies": {
+                            "type": "integer",
+                            "example": 3
+                          }
+                        }
+                      }
+                    },
+                    "clientsByCity": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "city": {
+                            "type": "string",
+                            "example": "Ouagadougou"
+                          },
+                          "numberOfClients": {
+                            "type": "integer",
+                            "example": 120
+                          }
+                        }
+                      }
+                    },
+                    "collectionsByCity": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "city": {
+                            "type": "string",
+                            "example": "Ouagadougou"
+                          },
+                          "numberOfCollections": {
+                            "type": "integer",
+                            "example": 250
+                          }
+                        }
+                      }
+                    },
+                    "monthlyClientSubscriptions": {
+                      "type": "integer",
+                      "example": 21
+                    },
+                    "monthlyClientPercentage": {
+                      "type": "number",
+                      "example": 8.5
+                    },
+                    "totalCollections": {
+                      "type": "integer",
+                      "example": 450
+                    },
+                    "dailyCollections": {
+                      "type": "integer",
+                      "example": 15
+                    },
+                    "monthlyCollections": {
+                      "type": "integer",
+                      "example": 120
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Erreur serveur"
+      }
+    }
+  }
+}

@@ -387,7 +387,7 @@
                         {{ getIncidentTypeText(incident.type.toLowerCase()) }}
                       </div>
                       <div class="alert-agency">
-                        {{ incident?.agency?.name }}
+                        {{ incident?.agency?.name ?? incident?.agencyId?.name ?? '—' }}
                       </div>
                       <div class="alert-time">
                         {{ incident.date | date : "dd/MM HH:mm" }}
@@ -559,10 +559,10 @@
                     <tr>
                       <th>Agence</th>
                       <th>Statut</th>
-                      <th>Clients</th>
+                      <th>Clients actifs</th>
                       <th>Collecteurs</th>
+                      <th>Gestionnaires</th>
                       <th>Zones</th>
-                      <th>Conformité</th>
                       <th class="col-actions">Actions</th>
                     </tr>
                   </thead>
@@ -571,15 +571,25 @@
                     <tr>
                       <td><strong>{{ agency.name }}</strong></td>
                       <td><span class="status-badge" [class]="'status-' + agency.status">{{ getAgencyStatusText(agency.status) }}</span></td>
-                      <td>{{ agency.clients }}</td>
-                      <td>{{ agency.collectors }}</td>
+                      <td>
+                        <span *ngIf="agency.statsLoaded; else loadingCell">{{ agency.clients }}</span>
+                        <ng-template #loadingCell><span class="stats-loading">…</span></ng-template>
+                      </td>
+                      <td>
+                        <span *ngIf="agency.statsLoaded; else loadingCell2">{{ agency.collectors }}</span>
+                        <ng-template #loadingCell2><span class="stats-loading">…</span></ng-template>
+                      </td>
+                      <td>
+                        <span *ngIf="agency.statsLoaded; else loadingCell3">{{ agency.gestionnaires }}</span>
+                        <ng-template #loadingCell3><span class="stats-loading">…</span></ng-template>
+                      </td>
                       <td>{{ agency.zones }}</td>
-                      <td><span [class]="getComplianceClass(agency.complianceScore)" style="font-weight:600;">{{ agency.complianceScore }}%</span></td>
                       <td class="col-actions">
                         <div class="table-actions">
                           <button class="action-btn" (click)="viewAgencyDetails(agency.id)" title="Détails"><i class="material-icons">visibility</i></button>
                           <ng-container *ngIf="agency?.status === 'active'; else actTpl">
                             <button class="action-btn" (click)="contactAgency(agency.id)" title="Contacter"><i class="material-icons">message</i></button>
+                            <button class="action-btn toggle-btn toggle-active" (click)="deactivateAgency(agency.id)" title="Désactiver"><i class="material-icons">block</i></button>
                           </ng-container>
                           <ng-template #actTpl>
                             <button class="action-btn toggle-btn toggle-inactive" (click)="activateAgency(agency.id)" title="Activer"><i class="material-icons">check_circle</i></button>
@@ -632,21 +642,30 @@
                     <div class="metric-row">
                       <div class="metric">
                         <i class="material-icons">people</i>
-                        <span>{{ agency.clients }}{{agency.clients > 1 ? ' clients' : ' client'}}</span>
+                        <span *ngIf="agency.statsLoaded; else ldClients">
+                          {{ agency.clients }}{{ agency.clients > 1 ? ' clients' : ' client' }}
+                        </span>
+                        <ng-template #ldClients><span class="stats-loading">…</span></ng-template>
                       </div>
                       <div class="metric">
-                        <i class="material-icons">person</i>
-                        <span>{{ agency.collectors }} {{ agency.collectors > 1 ? 'collecteurs' : 'collecteur'}}</span>
+                        <i class="material-icons">engineering</i>
+                        <span *ngIf="agency.statsLoaded; else ldCollectors">
+                          {{ agency.collectors }} {{ agency.collectors > 1 ? 'collecteurs' : 'collecteur' }}
+                        </span>
+                        <ng-template #ldCollectors><span class="stats-loading">…</span></ng-template>
                       </div>
                       <div class="metric">
-                        <i class="material-icons">map</i>
-                        <span>{{ agency.zones }} {{ agency.zones > 1 ? 'zones' : 'zone' }}</span>
+                        <i class="material-icons">manage_accounts</i>
+                        <span *ngIf="agency.statsLoaded; else ldGest">
+                          {{ agency.gestionnaires }} {{ agency.gestionnaires > 1 ? 'gestionnaires' : 'gestionnaire' }}
+                        </span>
+                        <ng-template #ldGest><span class="stats-loading">…</span></ng-template>
                       </div>
                     </div>
                     <div class="metric-row">
                       <div class="metric">
-                        <i class="material-icons">local_shipping</i>
-                        <span>{{ agency.collectionsToday }} {{  agency.collectionsToday > 1 ? 'collectes' : 'collecte'}}</span>
+                        <i class="material-icons">map</i>
+                        <span>{{ agency.zones }} {{ agency.zones > 1 ? 'zones' : 'zone' }}</span>
                       </div>
                       <div class="metric">
                         <i class="material-icons">check_circle</i>
@@ -654,7 +673,7 @@
                       </div>
                       <div class="metric">
                         <i class="material-icons">star</i>
-                        <span>{{ agency.rating }}/5</span>
+                        <span>{{ agency.rating | number:'1.1-1' }}/5</span>
                       </div>
                     </div>
                   </div>
@@ -672,41 +691,30 @@
                     </div>
                   </div>
 
-                  <div class="agency-actions">
-                    <button
-                      class="btn btn-secondary"
-                      (click)="viewAgencyDetails(agency.id)"
-                    >
+                  <div class="card-icon-actions">
+                    <!-- Voir détails -->
+                    <button class="cia-btn cia-view" (click)="viewAgencyDetails(agency.id)" title="Voir les détails">
                       <i class="material-icons">visibility</i>
-                      Détails
                     </button>
-                    <ng-container
-                      *ngIf="agency?.status === 'active'; else activation"
-                    >
-                      <!-- <button
-                        class="btn btn-primary"
-                        (click)="auditAgency(agency.id)"
-                      >
-                        <i class="material-icons">fact_check</i>
-                        Auditer
-                      </button> -->
-                      <button
-                        class="btn btn-accent"
-                        (click)="contactAgency(agency.id)"
-                      >
-                        <i class="material-icons">message</i>
-                        Contacter
+                    <!-- Éditer -->
+                    <button class="cia-btn cia-edit" (click)="viewAgencyDetails(agency.id)" title="Modifier">
+                      <i class="material-icons">edit</i>
+                    </button>
+                    <!-- Toggle actif / inactif -->
+                    <ng-container *ngIf="agency?.status === 'active'; else cardActivate">
+                      <button class="cia-btn cia-toggle cia-toggle--on" (click)="deactivateAgency(agency.id)" title="Désactiver">
+                        <i class="material-icons">toggle_on</i>
                       </button>
                     </ng-container>
-                    <ng-template #activation>
-                      <button
-                        class="btn btn-accent"
-                        (click)="activateAgency(agency.id)"
-                      >
-                        <i class="material-icons">check</i>
-                        Activer
+                    <ng-template #cardActivate>
+                      <button class="cia-btn cia-toggle cia-toggle--off" (click)="activateAgency(agency.id)" title="Activer">
+                        <i class="material-icons">toggle_off</i>
                       </button>
                     </ng-template>
+                    <!-- Supprimer -->
+                    <button class="cia-btn cia-delete" (click)="deleteAgency(agency.id)" title="Supprimer">
+                      <i class="material-icons">delete</i>
+                    </button>
                   </div>
 
                   <!-- <div class="agency-footer">
@@ -1050,6 +1058,7 @@
                             <i class="material-icons">edit</i>
                           </button>
                           <button class="action-btn toggle-btn"
+                                  *ngIf="user._id !== currentUser?._id"
                                   [class.toggle-active]="user.data?.status === 'active'"
                                   [class.toggle-inactive]="user.data?.status !== 'active'"
                                   (click)="quickToggleUserStatus(user.data)"
@@ -1057,6 +1066,7 @@
                             <i class="material-icons">{{ user.data?.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i>
                           </button>
                           <button class="action-btn danger"
+                                  *ngIf="user._id !== currentUser?._id"
                                   (click)="quickDeleteUser(user._id, (user.data?.firstName || '') + ' ' + (user.data?.lastName || ''), user.data?.role || '')"
                                   title="Supprimer">
                             <i class="material-icons">delete</i>
@@ -1173,6 +1183,7 @@
                             <i class="material-icons">edit</i>
                           </button>
                           <button class="action-btn toggle-btn"
+                                  *ngIf="user?._id !== currentUser?._id"
                                   [class.toggle-active]="user?.data?.status === 'active'"
                                   [class.toggle-inactive]="user?.data?.status !== 'active'"
                                   (click)="quickToggleUserStatus(user?.data)"
@@ -1180,6 +1191,7 @@
                             <i class="material-icons">{{ user?.data?.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i>
                           </button>
                           <button class="action-btn danger"
+                                  *ngIf="user?._id !== currentUser?._id"
                                   (click)="quickDeleteUser(user?._id, (user?.data?.firstName || '') + ' ' + (user?.data?.lastName || ''))"
                                   title="Supprimer">
                             <i class="material-icons">delete</i>
@@ -1470,9 +1482,11 @@
                   </div>
                   <div class="chart-legend-row">
                     <span class="legend-dot" style="background:#22c55e"></span>
-                    <span>Résolus: {{ statisticsAdmin?.reportsFromClients?.resolved ?? 0 }}</span>
+                    <span>Résolus: {{ getIncidentCountByStatus('resolved') }}</span>
                     <span class="legend-dot" style="background:#f97316;margin-left:12px;"></span>
-                    <span>En cours: {{ statisticsAdmin?.reportsFromClients?.pending ?? 0 }}</span>
+                    <span>En cours: {{ getIncidentCountByStatus('pending') }}</span>
+                    <span class="legend-dot" style="background:#ef4444;margin-left:12px;"></span>
+                    <span>Ouverts: {{ getIncidentCountByStatus('open') }}</span>
                   </div>
                 </div>
 
@@ -1480,7 +1494,7 @@
                 <div class="chart-card card">
                   <h3 class="chart-title">
                     <i class="material-icons">leaderboard</i>
-                    Top 5 — Agences par clientèle
+                    Top 5 — Agences par collectes effectuées
                   </h3>
                   <div class="chart-wrapper">
                     <canvas #agenciesChart></canvas>
@@ -1776,21 +1790,86 @@
               <div class="incidents-header">
                 <h2>Gestion des Incidents</h2>
                 <div class="incidents-filters">
-                  <select
-                    [(ngModel)]="incidentsFilter"
-                    (change)="filterIncidents()"
-                    class="filter-select"
-                  >
-                    <option value="all">Tous les incidents</option>
-                    <!-- <option value="open">Ouverts</option> -->
+                  <!-- Toggle carte / tableau -->
+                  <div class="view-mode-toggle">
+                    <button class="view-mode-btn" [class.active]="incidentsViewMode === 'card'" (click)="incidentsViewMode = 'card'">
+                      <i class="material-icons">grid_view</i><span>Cartes</span>
+                    </button>
+                    <button class="view-mode-btn" [class.active]="incidentsViewMode === 'table'" (click)="incidentsViewMode = 'table'">
+                      <i class="material-icons">table_rows</i><span>Tableau</span>
+                    </button>
+                  </div>
+                  <!-- Recherche texte -->
+                  <div class="search-box">
+                    <i class="material-icons">search</i>
+                    <input type="text" placeholder="Rechercher..."
+                      [(ngModel)]="incidentsSearchTerm"
+                      (input)="filterIncidents()"
+                      class="search-input" />
+                    <button *ngIf="incidentsSearchTerm" class="search-clear" (click)="incidentsSearchTerm=''; filterIncidents()">
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+
+                  <!-- Select agence avec recherche + scroll infini -->
+                  <div class="agency-select-wrap" [class.open]="agencyDropdownOpen">
+                    <button class="agency-select-trigger" (click)="agencyDropdownOpen ? (agencyDropdownOpen=false) : openAgencyDropdown()">
+                      <i class="material-icons">business</i>
+                      <span class="agency-select-label">{{ selectedAgencyForFilter?.name ?? 'Toutes les agences' }}</span>
+                      <i class="material-icons agency-select-chevron">expand_more</i>
+                      <button *ngIf="selectedAgencyForFilter" class="agency-select-clear" (click)="$event.stopPropagation(); selectAgencyFilter(null)">
+                        <i class="material-icons">close</i>
+                      </button>
+                    </button>
+
+                    @if (agencyDropdownOpen) {
+                    <div class="agency-dropdown-panel" (click)="$event.stopPropagation()">
+                      <!-- Recherche dans le dropdown -->
+                      <div class="agency-dropdown-search">
+                        <i class="material-icons">search</i>
+                        <input type="text" placeholder="Rechercher une agence..."
+                          [(ngModel)]="agencyDropdownSearch"
+                          (input)="onAgencyDropdownSearch()"
+                          class="agency-dropdown-input"
+                          autofocus />
+                      </div>
+                      <!-- Liste avec scroll infini -->
+                      <div class="agency-dropdown-list" (scroll)="onAgencyDropdownScroll($event)">
+                        <div class="agency-dropdown-item agency-dropdown-all"
+                          [class.selected]="!selectedAgencyForFilter"
+                          (click)="selectAgencyFilter(null)">
+                          <i class="material-icons">layers</i> Toutes les agences
+                        </div>
+                        @for (agency of agencyDropdownList; track agency.id) {
+                        <div class="agency-dropdown-item"
+                          [class.selected]="selectedAgencyForFilter?.id === agency.id"
+                          (click)="selectAgencyFilter(agency)">
+                          <i class="material-icons">business</i>
+                          {{ agency.name }}
+                        </div>
+                        }
+                        <div *ngIf="agencyDropdownLoading" class="agency-dropdown-loading">
+                          <i class="material-icons rotating">autorenew</i> Chargement…
+                        </div>
+                        <div *ngIf="!agencyDropdownLoading && agencyDropdownList.length === 0" class="agency-dropdown-empty">
+                          Aucune agence trouvée
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Overlay pour fermer -->
+                    <div class="agency-dropdown-overlay" (click)="agencyDropdownOpen=false"></div>
+                    }
+                  </div>
+
+                  <!-- Filtre statut -->
+                  <select [(ngModel)]="incidentsFilter" (change)="filterIncidents()" class="filter-select">
+                    <option value="all">Tous les statuts</option>
+                    <option value="open">Ouvert</option>
                     <option value="pending">En cours</option>
                     <option value="resolved">Résolus</option>
                   </select>
-                  <select
-                    [(ngModel)]="severityFilter"
-                    (change)="filterIncidents()"
-                    class="filter-select"
-                  >
+                  <!-- Filtre gravité -->
+                  <select [(ngModel)]="severityFilter" (change)="filterIncidents()" class="filter-select">
                     <option value="all">Toutes gravités</option>
                     <option value="critical">Critique</option>
                     <option value="high">Élevée</option>
@@ -1800,22 +1879,199 @@
                 </div>
               </div>
 
-              <!-- Indicateur de chargement pour les incidents -->
-              <app-loading-spinner 
-                *ngIf="isLoadingIncidents" 
-                message="Chargement des incidents..." 
+              <app-loading-spinner
+                *ngIf="isLoadingIncidents"
+                message="Chargement des incidents..."
                 size="medium">
               </app-loading-spinner>
 
-              <app-signalement [incidents]="filteredIncidents" [currentUser]="currentUser" (isLoadingIncidents)="isLoadingIncidents = $event"></app-signalement>
-              @if (!filteredIncidents || filteredIncidents!.length==0) {
-              <div class="empty-state">
-                <i class="material-icons">report_off</i>
-                <h3>Aucun signalement</h3>
-                <p>
-                  Excellent ! Vous n'avez aucun signalement en cours. Les nouveaux
-                  signalements apparaîtront ici.
-                </p>
+              <!-- ── Vue Cartes ── -->
+              @if (!isLoadingIncidents && incidentsViewMode === 'card') {
+                @if (!filteredIncidents || filteredIncidents.length === 0) {
+                <div class="empty-state">
+                  <i class="material-icons">report_off</i>
+                  <h3>Aucun signalement</h3>
+                  <p>Aucun incident ne correspond aux critères sélectionnés.</p>
+                </div>
+                }
+                <div class="incidents-grid">
+                  @for (incident of getPaginatedIncidents(); track incident._id) {
+                  <div class="incident-card card">
+                    <!-- En-tête : sévérité + statut -->
+                    <div class="inc-card-header">
+                      <span class="severity-badge severity-{{ incident.severity | lowercase }}">
+                        <i class="material-icons">{{ getSeverityIcon(incident.severity | lowercase) }}</i>
+                        {{ getSeverityText(incident.severity | lowercase) || 'Faible' }}
+                      </span>
+                      <span class="status-badge status-{{ incident.status | lowercase }}">
+                        {{ getIncidentStatusText(incident.status | lowercase) }}
+                      </span>
+                    </div>
+
+                    <!-- Type + commentaire -->
+                    <div class="inc-card-body">
+                      <h4 class="inc-type">{{ getIncidentTypeText(incident.type) }}</h4>
+                      <p class="inc-comment" *ngIf="incident.comment">{{ incident.comment }}</p>
+                    </div>
+
+                    <!-- Méta : agence, client, date -->
+                    <div class="inc-card-meta">
+                      <!-- Colonne gauche -->
+                      <div class="inc-meta-col">
+                        <div class="inc-meta-row">
+                          <i class="material-icons">business</i>
+                          <span>{{ incident.agencyId?.name ?? incident.agencyName ?? '—' }}</span>
+                        </div>
+                        <div class="inc-meta-row">
+                          <i class="material-icons">person</i>
+                          <span *ngIf="incident.clientId?._id">{{ incident.clientId!.firstName }} {{ incident.clientId!.lastName }}</span>
+                          <span *ngIf="!incident.clientId?._id" class="inc-meta-empty">—</span>
+                        </div>
+                      </div>
+                      <!-- Colonne droite -->
+                      <div class="inc-meta-col">
+                        <div class="inc-meta-row">
+                          <i class="material-icons">engineering</i>
+                          <span *ngIf="incident.collectorId?._id">{{ incident.collectorId!.firstName }} {{ incident.collectorId!.lastName }}</span>
+                          <span *ngIf="!incident.collectorId?._id" class="inc-meta-empty">Non assigné</span>
+                        </div>
+                        <div class="inc-meta-row">
+                          <i class="material-icons">schedule</i>
+                          <span>{{ incident.date | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="card-icon-actions">
+                      <button class="cia-btn cia-view" (click)="openIncidentDrawer(incident)" title="Voir détails">
+                        <i class="material-icons">visibility</i>
+                      </button>
+                      <button class="cia-btn cia-edit" *ngIf="incident.status === 'pending'" (click)="investigateIncident(incident._id)" title="Enquêter">
+                        <i class="material-icons">search</i>
+                      </button>
+                      <button class="cia-btn cia-toggle cia-toggle--on" *ngIf="incident.status !== 'resolved'" (click)="openResolveDialog(incident._id)" title="Résoudre">
+                        <i class="material-icons">check_circle</i>
+                      </button>
+                    </div>
+                  </div>
+                  }
+                </div>
+                <!-- Pagination cartes -->
+                <div class="pagination-bar" *ngIf="filteredIncidents.length > 0">
+                  <div class="pagination-info">
+                    {{ (incidentsCurrentPage - 1) * incidentsItemsPerPage + 1 }}–{{ getIncidentsEndItem() }}
+                    sur {{ incidentsTotalItems }} incidents
+                  </div>
+                  <div class="per-page-selector">
+                    <select [ngModel]="incidentsItemsPerPage" (ngModelChange)="changeIncidentsItemsPerPage($event)" class="filter-select">
+                      <option [value]="12">12</option>
+                      <option [value]="24">24</option>
+                      <option [value]="48">48</option>
+                    </select>
+                    <span class="per-page-label">par page</span>
+                  </div>
+                  @if (incidentsTotalPages > 1) {
+                  <div class="pagination-controls">
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === 1" (click)="goToIncidentsPage(1)" title="Première page"><i class="material-icons">first_page</i></button>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === 1" (click)="goToIncidentsPage(incidentsCurrentPage - 1)" title="Précédente"><i class="material-icons">chevron_left</i></button>
+                    <div class="pagination-numbers">
+                      @for (page of getIncidentsPageNumbers(); track page) {
+                      <button class="pagination-btn page-number" [class.active]="page === incidentsCurrentPage" (click)="goToIncidentsPage(page)">{{ page }}</button>
+                      }
+                    </div>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === incidentsTotalPages" (click)="goToIncidentsPage(incidentsCurrentPage + 1)" title="Suivante"><i class="material-icons">chevron_right</i></button>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === incidentsTotalPages" (click)="goToIncidentsPage(incidentsTotalPages)" title="Dernière page"><i class="material-icons">last_page</i></button>
+                  </div>
+                  }
+                </div>
+              }
+
+              <!-- ── Vue Tableau ── -->
+              @if (!isLoadingIncidents && incidentsViewMode === 'table') {
+              <div class="admin-table-wrapper">
+                @if (!filteredIncidents || filteredIncidents.length === 0) {
+                <div class="empty-state">
+                  <i class="material-icons">report_off</i>
+                  <h3>Aucun incident trouvé</h3>
+                  <p>Aucun incident ne correspond aux critères sélectionnés.</p>
+                </div>
+                }
+                @if (filteredIncidents && filteredIncidents.length > 0) {
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Agence</th>
+                      <th>Client</th>
+                      <th>Gravité</th>
+                      <th>Statut</th>
+                      <th>Date</th>
+                      <th class="col-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (incident of getPaginatedIncidents(); track incident._id) {
+                    <tr>
+                      <td><strong>{{ getIncidentTypeText(incident.type) }}</strong></td>
+                      <td>{{ incident.agencyId?.name ?? incident.agencyName ?? '—' }}</td>
+                      <td>
+                        <span *ngIf="incident.clientId">
+                          {{ incident.clientId!.firstName }} {{ incident.clientId!.lastName }}
+                        </span>
+                        <span *ngIf="!incident.clientId" class="text-muted">—</span>
+                      </td>
+                      <td>
+                        <span class="severity-badge severity-{{ incident.severity | lowercase }}">
+                          {{ getSeverityText(incident.severity | lowercase) }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="status-badge status-{{ incident.status | lowercase }}">
+                          {{ getIncidentStatusText(incident.status | lowercase) }}
+                        </span>
+                      </td>
+                      <td>{{ incident.date | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td class="col-actions">
+                        <div class="table-actions">
+                          <button class="action-btn action-view" (click)="openIncidentDrawer(incident)" title="Voir détails"><i class="material-icons">visibility</i></button>
+                          <button class="action-btn" *ngIf="incident.status === 'pending'" (click)="investigateIncident(incident._id)" title="Enquêter"><i class="material-icons">search</i></button>
+                          <button class="action-btn" *ngIf="incident.status !== 'resolved'" (click)="openResolveDialog(incident._id)" title="Résoudre"><i class="material-icons">check_circle</i></button>
+                        </div>
+                      </td>
+                    </tr>
+                    }
+                  </tbody>
+                </table>
+                <!-- Pagination tableau -->
+                <div class="pagination-bar" *ngIf="filteredIncidents.length > 0">
+                  <div class="pagination-info">
+                    {{ (incidentsCurrentPage - 1) * incidentsItemsPerPage + 1 }}–{{ getIncidentsEndItem() }}
+                    sur {{ incidentsTotalItems }} incidents
+                  </div>
+                  <div class="per-page-selector">
+                    <select [ngModel]="incidentsItemsPerPage" (ngModelChange)="changeIncidentsItemsPerPage($event)" class="filter-select">
+                      <option [value]="10">10</option>
+                      <option [value]="20">20</option>
+                      <option [value]="50">50</option>
+                    </select>
+                    <span class="per-page-label">par page</span>
+                  </div>
+                  @if (incidentsTotalPages > 1) {
+                  <div class="pagination-controls">
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === 1" (click)="goToIncidentsPage(1)" title="Première page"><i class="material-icons">first_page</i></button>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === 1" (click)="goToIncidentsPage(incidentsCurrentPage - 1)" title="Précédente"><i class="material-icons">chevron_left</i></button>
+                    <div class="pagination-numbers">
+                      @for (page of getIncidentsPageNumbers(); track page) {
+                      <button class="pagination-btn page-number" [class.active]="page === incidentsCurrentPage" (click)="goToIncidentsPage(page)">{{ page }}</button>
+                      }
+                    </div>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === incidentsTotalPages" (click)="goToIncidentsPage(incidentsCurrentPage + 1)" title="Suivante"><i class="material-icons">chevron_right</i></button>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === incidentsTotalPages" (click)="goToIncidentsPage(incidentsTotalPages)" title="Dernière page"><i class="material-icons">last_page</i></button>
+                  </div>
+                  }
+                </div>
+                }
               </div>
               }
               <!-- <div *ngIf="!isLoadingIncidents" class="incidents-list grid-2"> -->
@@ -2297,41 +2553,40 @@
 
       <!-- ── Pied du drawer : actions ── -->
       <div class="drawer-footer">
-        <div class="drawer-actions">
-          <!-- Modifier -->
-          <button class="btn btn-primary" (click)="visible1 = false; openEditUserDrawer()">
-            <i class="material-icons">edit</i>
-            Modifier
-          </button>
-
-          <!-- Réinitialiser MDP -->
-          <button class="btn btn-reset-pwd" (click)="openPasswordResetDialog()">
-            <i class="material-icons">lock_reset</i>
-            Mot de passe
-          </button>
-
-          <!-- Activer / Désactiver -->
-          <button class="btn"
-            [class.btn-success]="selectedUser.status !== 'active'"
-            [class.btn-warning]="selectedUser.status === 'active'"
-            [disabled]="isTogglingUserStatus"
-            (click)="toggleUserStatus()">
-            <i class="material-icons">{{ isTogglingUserStatus ? 'hourglass_empty' : (selectedUser.status === 'active' ? 'toggle_off' : 'toggle_on') }}</i>
-            {{ isTogglingUserStatus ? 'En cours...' : (selectedUser.status === 'active' ? 'Désactiver' : 'Activer') }}
-          </button>
-
-          <!-- Supprimer -->
+        <div class="drawer-actions" style="justify-content:space-between;">
+          <!-- Zone danger (gauche) — masquée pour l'utilisateur connecté -->
           <button class="btn btn-danger"
+            *ngIf="selectedUser._id !== currentUser?._id && selectedUser.id !== currentUser?._id"
             (click)="openDeleteDialog(selectedUser._id || selectedUser.id!, (selectedUser.firstName || '') + ' ' + (selectedUser.lastName || ''), selectedUser.role || '')">
             <i class="material-icons">delete</i>
             Supprimer
           </button>
 
-          <!-- Fermer -->
-          <button class="btn btn-secondary" (click)="visible1 = false">
-            <i class="material-icons">close</i>
-            Fermer
-          </button>
+          <!-- Zone actions (droite) -->
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <!-- Activer / Désactiver — masqué pour l'utilisateur connecté -->
+            <button class="btn"
+              *ngIf="selectedUser._id !== currentUser?._id && selectedUser.id !== currentUser?._id"
+              [class.btn-success]="selectedUser.status !== 'active'"
+              [class.btn-warning]="selectedUser.status === 'active'"
+              [disabled]="isTogglingUserStatus"
+              (click)="toggleUserStatus()">
+              <i class="material-icons">{{ isTogglingUserStatus ? 'hourglass_empty' : (selectedUser.status === 'active' ? 'toggle_off' : 'toggle_on') }}</i>
+              {{ isTogglingUserStatus ? 'En cours...' : (selectedUser.status === 'active' ? 'Désactiver' : 'Activer') }}
+            </button>
+
+            <!-- Réinitialiser MDP -->
+            <button class="btn btn-reset-pwd" (click)="openPasswordResetDialog()">
+              <i class="material-icons">lock_reset</i>
+              Mot de passe
+            </button>
+
+            <!-- Modifier -->
+            <button class="btn btn-primary" (click)="visible1 = false; openEditUserDrawer()">
+              <i class="material-icons">edit</i>
+              Modifier
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2622,6 +2877,177 @@
         </button>
       </div>
       }
+
+    </div>
+  </div>
+  }
+
+  <!-- ══════════════════════════════════════════════
+       DIALOG RÉSOLUTION INCIDENT (depuis la liste)
+  ══════════════════════════════════════════════ -->
+  @if (resolveDialogVisible) {
+  <div class="confirm-dialog-overlay" (click)="resolveDialogVisible = false">
+    <div class="resolve-dialog" (click)="$event.stopPropagation()">
+      <div class="resolve-dialog-header">
+        <div class="resolve-dialog-icon">
+          <i class="material-icons">check_circle</i>
+        </div>
+        <div>
+          <h3>Résoudre l'incident</h3>
+          <p>Ajoutez un commentaire décrivant la résolution.</p>
+        </div>
+        <button class="pwd-reset-close" (click)="resolveDialogVisible = false">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="resolve-dialog-body">
+        <div class="form-group">
+          <label class="form-label">Commentaire de résolution *</label>
+          <textarea
+            class="form-input"
+            rows="4"
+            placeholder="Ex: Problème résolu après intervention de l'équipe…"
+            [(ngModel)]="resolutionComment"
+            style="resize:vertical;width:100%;font-size:0.875rem;">
+          </textarea>
+        </div>
+      </div>
+      <div class="resolve-dialog-footer">
+        <button class="btn-cancel" (click)="resolveDialogVisible = false">Annuler</button>
+        <button class="btn-reset-send" (click)="confirmResolveFromDialog()">
+          <i class="material-icons">check_circle</i>
+          Confirmer la résolution
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- ══════════════════════════════════════════════
+       DRAWER DÉTAILS INCIDENT
+  ══════════════════════════════════════════════ -->
+  @if (visibleIncidentDrawer && selectedIncident) {
+  <div class="drawer-overlay" (click)="visibleIncidentDrawer = false">
+    <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+
+      <!-- En-tête -->
+      <div class="drawer-header">
+        <h3>Détails de l'Incident</h3>
+        <button class="drawer-close-btn" (click)="visibleIncidentDrawer = false">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <!-- Corps -->
+      <div class="drawer-body">
+
+        <!-- Bloc titre + badges -->
+        <div class="incident-drawer-hero">
+          <div class="incident-drawer-badges">
+            <span class="severity-badge severity-{{ selectedIncident.severity | lowercase }}">
+              <i class="material-icons">{{ getSeverityIcon(selectedIncident.severity | lowercase) }}</i>
+              {{ getSeverityText(selectedIncident.severity | lowercase) }}
+            </span>
+            <span class="status-badge status-{{ selectedIncident.status | lowercase }}">
+              {{ getIncidentStatusText(selectedIncident.status | lowercase) }}
+            </span>
+          </div>
+          <h2 class="incident-drawer-type">
+            {{ getIncidentTypeText(selectedIncident.type | lowercase) }}
+          </h2>
+          <p class="incident-drawer-date">
+            <i class="material-icons">schedule</i>
+            {{ selectedIncident.date | date:'dd MMMM yyyy à HH:mm' }}
+          </p>
+        </div>
+
+        <!-- Description -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title">
+            <i class="material-icons">description</i> Description
+          </h4>
+          <p class="incident-drawer-comment">
+            {{ selectedIncident.comment || selectedIncident.description || 'Aucune description fournie.' }}
+          </p>
+        </div>
+
+        <!-- Parties impliquées -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title">
+            <i class="material-icons">people</i> Parties impliquées
+          </h4>
+          <div class="drawer-info-grid">
+            <div class="info-item">
+              <span class="info-label">Agence</span>
+              <span class="info-value">
+                {{ selectedIncident.agency?.name ?? selectedIncident.agencyId?.name ?? selectedIncident.agencyName ?? '—' }}
+              </span>
+            </div>
+            <div class="info-item" *ngIf="selectedIncident.clientId">
+              <span class="info-label">Client</span>
+              <span class="info-value">
+                {{ selectedIncident.clientId!.firstName }} {{ selectedIncident.clientId!.lastName }}
+              </span>
+            </div>
+            <div class="info-item" *ngIf="selectedIncident.collectorId">
+              <span class="info-label">Collecteur</span>
+              <span class="info-value">
+                {{ selectedIncident.collectorId!.firstName }} {{ selectedIncident.collectorId!.lastName }}
+              </span>
+            </div>
+            <div class="info-item" *ngIf="selectedIncident.assignedTo">
+              <span class="info-label">Assigné à</span>
+              <span class="info-value">{{ selectedIncident.assignedTo }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="drawer-section" *ngIf="selectedIncident.photo?.length">
+          <h4 class="drawer-section-title">
+            <i class="material-icons">photo_library</i> Photos ({{ selectedIncident.photo!.length }})
+          </h4>
+          <div class="incident-drawer-photos">
+            <div *ngFor="let photo of selectedIncident.photo" class="incident-photo-thumb">
+              <i class="material-icons">image</i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Commentaire de résolution -->
+      <div class="drawer-section" *ngIf="selectedIncident.status !== 'resolved'">
+        <h4 class="drawer-section-title">
+          <i class="material-icons">edit_note</i> Commentaire de résolution
+        </h4>
+        <textarea
+          class="form-input"
+          rows="3"
+          placeholder="Décrire la résolution (ex: Problème résolu après intervention de l'équipe)…"
+          [(ngModel)]="resolutionComment"
+          style="resize:vertical;width:100%;font-size:0.875rem;">
+        </textarea>
+      </div>
+
+      <!-- Pied — actions -->
+      <div class="drawer-footer">
+        <button class="btn btn-secondary"
+          *ngIf="selectedIncident.status !== 'resolved'"
+          (click)="investigateIncident(selectedIncident._id)">
+          <i class="material-icons">search</i> Enquêter
+        </button>
+        <button class="btn btn-success"
+          *ngIf="selectedIncident.status !== 'resolved'"
+          (click)="resolveIncident(selectedIncident._id)">
+          <i class="material-icons">check_circle</i> Résoudre
+        </button>
+        <button class="btn btn-outline"
+          *ngIf="selectedIncident.agency?._id || selectedIncident.agencyId?._id"
+          (click)="contactAgencyForIncident(selectedIncident.agency?._id ?? selectedIncident.agencyId?._id); visibleIncidentDrawer = false">
+          <i class="material-icons">chat</i> Contacter l'agence
+        </button>
+      </div>
 
     </div>
   </div>

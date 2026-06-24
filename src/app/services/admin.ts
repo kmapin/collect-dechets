@@ -133,9 +133,16 @@ export class Admin {
 
 
   /**Tous les signalement sur la plateforme */
+  getAllReports(params?: { page?: number; limit?: number; status?: string; severity?: string; search?: string; agencyId?: string }) {
+    let requestParams = new HttpParams()
+      .append('page',  params?.page  ?? 1)
+      .append('limit', params?.limit ?? 10);
+    if (params?.status   && params.status   !== 'all') requestParams = requestParams.append('status',   params.status);
+    if (params?.severity && params.severity !== 'all') requestParams = requestParams.append('severity', params.severity);
+    if (params?.search   && params.search.trim())      requestParams = requestParams.append('search',   params.search.trim());
+    if (params?.agencyId && params.agencyId.trim())    requestParams = requestParams.append('agencyId', params.agencyId.trim());
 
-  getAllReports() {
-    return this.http.get(`${environment.apiUrl}/collecte/all`).pipe(
+    return this.http.get(`${environment.apiUrl}/collecte/all`, { params: requestParams }).pipe(
       map((response: any) => {
         console.log('API > getAllReports:', response);
         return response;
@@ -263,6 +270,13 @@ export class Admin {
       error: errorDetails,
       message: errorMessage
     };
+  }
+
+  resolveCollecte$(collecteId: string, resolvedBy: string, resolutionComment: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/collectes/${collecteId}/resolve`, { resolvedBy, resolutionComment }).pipe(
+      map((res: any) => { console.log('API > resolveCollecte:', res); return res; }),
+      catchError((err) => { console.error('resolveCollecte error:', err); throw err; })
+    );
   }
 
   updateAgency(agencyId: string | null ,userData:any): Observable<any> {

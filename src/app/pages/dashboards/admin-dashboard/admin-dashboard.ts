@@ -62,6 +62,7 @@ interface AgencyAudit {
   status: string;
   clients: number;
   collectors: number;
+  gestionnaires: number;
   zones: number;
   collectionsToday: number;
   completionRate: number;
@@ -71,6 +72,7 @@ interface AgencyAudit {
   complianceScore: number;
   issues: string[];
   userId: string;
+  statsLoaded: boolean;
 }
 
 interface WasteStatistic {
@@ -185,7 +187,6 @@ interface User {
     MatCardModule,
     LoadingSpinnerComponent,
     DrawerModule,
-    Signalement,
   ],
   templateUrl: "./admin-dashboard.html",
   styleUrl: "./admin-dashboard.scss",
@@ -216,6 +217,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
   private agencyZoneDetails   = new Map<number, any[]>();
   selectedAgencyStats: any = null;
   isLoadingAgencyDetail    = false;
+  topAgenciesByCollections: { id: string; name: string; collections: number }[] = [];
 
   readonly AGENCY_PALETTE = [
     '#6366f1', '#f97316', '#22c55e', '#ef4444',
@@ -376,8 +378,23 @@ export class AdminDashboard implements OnInit, OnDestroy {
   collectorsFilter = "all";
   complianceFilter = "all";
   statisticsPeriod = "month";
-  incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
-  severityFilter: "all" | "Low" | "Medium" | "High" | "Critical" = "all";
+  incidentsFilter: 'all' | 'open' | 'pending' | 'resolved' = 'all';
+  severityFilter:  'all' | 'critical' | 'high' | 'medium' | 'low' = 'all';
+  incidentsSearchTerm   = '';
+  incidentsCurrentPage  = 1;
+  incidentsTotalPages   = 1;
+  incidentsItemsPerPage = 10;
+  incidentsTotalItems   = 0;
+
+  // Select agence custom avec scroll infini
+  agencyIdFilter       = '';
+  agencyDropdownOpen   = false;
+  agencyDropdownSearch = '';
+  agencyDropdownList:  { id: string; name: string }[] = [];
+  agencyDropdownPage   = 1;
+  agencyDropdownTotal  = 0;
+  agencyDropdownLoading = false;
+  selectedAgencyForFilter: { id: string; name: string } | null = null;
 
   usersFilterParams: FilterParams = {
     role: this.roleFilter,
@@ -400,9 +417,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
     limit: 10,
   };
 
-  // ── Vue Agences / Utilisateurs ──────────────────────────
-  agenciesViewMode: 'card' | 'table' = 'card';
-  usersViewMode:    'card' | 'table' = 'card';
+  // ── Vue Agences / Utilisateurs / Incidents ──────────────
+  agenciesViewMode:  'card' | 'table' = 'card';
+  usersViewMode:     'card' | 'table' = 'card';
+  incidentsViewMode: 'card' | 'table' = 'card';
 
   // ── Pagination Agences ───────────────────────────────────
   agenciesCurrentPage  = 1;
@@ -490,6 +508,11 @@ export class AdminDashboard implements OnInit, OnDestroy {
   isDisabled = true;
   visible1: boolean = false;
   visibleEditUserDrawer = false;
+  visibleIncidentDrawer = false;
+  selectedIncident: Incident | null = null;
+  resolutionComment = '';
+  resolveDialogVisible = false;
+  resolveDialogIncidentId = '';
   isEditingUser = false;
   isSavingUser = false;
   isLargeScreen = false;
@@ -521,6 +544,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
     switch (tabId) {
       case 'overview':
         this.showAdminStatistics();
+        this.loadAllSignalements();
+        this.loadWasteStatistics();
+        this.loadZoneStat();
         break;
       case 'agencies':
         this.loadAgencyAudits(this.agenciesFilterParams);
@@ -535,7 +561,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
         this.loadWasteStatistics();
         this.loadZoneStatistics();
         this.loadZoneStat();
-        if (!this.agencyAudits.length) this.loadAgencyAuditsForStats();
+        this.loadAllSignalements();
+        if (!this.agencyAudits.length) {
+          this.loadAgencyAuditsForStats();
+        } else {
+          this.loadTopAgenciesByCollections();
+        }
         this.loadAgenciesForMap();
         setTimeout(() => this.initCharts(), 120);
         break;
@@ -622,6 +653,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
           status: agency?.status || "inactive",
           clients: agency?.clients?.length || 0,
           collectors: agency?.employees?.length || 0,
+          gestionnaires: 0,
           zones: agency?.zoneActivite?.length || 0,
           userId: agency?.userId,
           collectionsToday: 0,
@@ -631,6 +663,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
           lastAudit: new Date(),
           complianceScore: 0,
           issues: [],
+          statsLoaded: false,
         }));
         this.filteredAgencies = [...this.agencyAudits];
 
@@ -641,9 +674,13 @@ export class AdminDashboard implements OnInit, OnDestroy {
         this.agenciesTotalPages   = Math.max(1, Math.ceil(this.agenciesTotalItems / this.agenciesItemsPerPage));
 
         this.isLoadingAgencies = false;
-        // Rebuild le graphe top-agences si l'onglet statistiques est actif
-        if (this.chartsInitialized && this.activeTab === 'statistics') {
-          this.buildAgenciesChart();
+
+        // Charger les stats détaillées pour chaque agence de la page courante
+        this.loadAgenciesStats(this.agencyAudits.map(a => a.id));
+
+        // Charger les collectes effectuées pour le top 5 si onglet statistiques actif
+        if (this.activeTab === 'statistics') {
+          this.loadTopAgenciesByCollections();
         }
       },
       error: (error) => {
@@ -737,8 +774,60 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   loadAgencyAuditsForStats(): void {
-    // Charge les agences pour alimenter le graphique top-agences
     this.loadAgencyAudits({ page: 1, limit: 10 });
+  }
+
+  loadAgenciesStats(agencyIds: string[]): void {
+    if (!agencyIds.length) return;
+    const requests = agencyIds.map(id =>
+      this.agencyService.getAgencyStats$(id).pipe(catchError(() => of(null)))
+    );
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        results.forEach((res, i) => {
+          console.log(`[AgencyStats] id=${agencyIds[i]} raw=`, res);
+          const data = res?.data ?? res;
+          const audit = this.agencyAudits.find(a => a.id === agencyIds[i]);
+          if (!audit || !data) return;
+          // Priorité aux stats API ; si 0, on garde la valeur de la liste (fallback)
+          const apiClients    = data.totalClientsActifs ?? data.totalClients;
+          const apiCollectors = data.totalCollecteurs   ?? data.totalCollectors;
+          audit.clients       = apiClients    > 0 ? apiClients    : audit.clients;
+          audit.collectors    = apiCollectors > 0 ? apiCollectors : audit.collectors;
+          audit.gestionnaires = data.totalGestionnaires ?? 0;
+          audit.statsLoaded   = true;
+        });
+        this.filteredAgencies = [...this.agencyAudits];
+      }
+    });
+  }
+
+  loadTopAgenciesByCollections(): void {
+    const agencies = this.agencyAudits;
+    if (!agencies.length) return;
+
+    const requests = agencies.map(a =>
+      this.agencyService.getCompletedCollectes$(a.id).pipe(
+        map((res: any) => {
+          const count = res?.total ?? res?.count
+            ?? (Array.isArray(res?.data) ? res.data.length : 0)
+            ?? (Array.isArray(res) ? res.length : 0);
+          return { id: a.id, name: a.name, collections: count };
+        }),
+        catchError(() => of({ id: a.id, name: a.name, collections: 0 }))
+      )
+    );
+
+    forkJoin(requests).subscribe({
+      next: (results: any[]) => {
+        this.topAgenciesByCollections = [...results]
+          .sort((a, b) => b.collections - a.collections)
+          .slice(0, 5);
+        if (this.chartsInitialized && this.activeTab === 'statistics') {
+          this.buildAgenciesChart();
+        }
+      }
+    });
   }
 
   // ── Carte territoriale ────────────────────────────────────
@@ -1124,16 +1213,30 @@ export class AdminDashboard implements OnInit, OnDestroy {
     if (!el) return;
     if (this.incidentsChart) { this.incidentsChart.destroy(); this.incidentsChart = null; }
 
-    const resolved = this.statisticsAdmin?.reportsFromClients?.resolved ?? 0;
-    const pending  = this.statisticsAdmin?.reportsFromClients?.pending  ?? 0;
+    let resolved = 0, pending = 0, open = 0;
+    if (this.incidents?.length) {
+      this.incidents.forEach(i => {
+        const s = (i.status ?? '').toLowerCase();
+        if (s === 'resolved' || s === 'collected') resolved++;
+        else if (s === 'pending' || s === 'reported' || s === 'scheduled') pending++;
+        else open++;
+      });
+    } else {
+      resolved = this.statisticsAdmin?.reportsFromClients?.resolved ?? 0;
+      pending  = this.statisticsAdmin?.reportsFromClients?.pending  ?? 0;
+    }
+
+    const labels = ['Résolus', 'En cours', 'Ouverts'];
+    const data   = [resolved, pending, open];
+    const colors = ['#22c55e', '#f97316', '#ef4444'];
 
     const config: ChartConfiguration<'doughnut'> = {
       type: 'doughnut',
       data: {
-        labels: ['Résolus', 'En cours'],
+        labels,
         datasets: [{
-          data: [resolved, pending],
-          backgroundColor: ['#22c55e', '#f97316'],
+          data,
+          backgroundColor: colors,
           borderWidth: 0,
           hoverOffset: 6,
         }],
@@ -1154,16 +1257,18 @@ export class AdminDashboard implements OnInit, OnDestroy {
     if (!el) return;
     if (this.agenciesChart) { this.agenciesChart.destroy(); this.agenciesChart = null; }
 
-    const top = this.getTopPerformingAgencies();
+    const top = this.topAgenciesByCollections.length
+      ? this.topAgenciesByCollections
+      : this.getTopPerformingAgencies().map(a => ({ ...a, collections: a.clients }));
     const labels = top.map(a => a.name.length > 16 ? a.name.slice(0, 16) + '…' : a.name);
-    const values = top.map(a => a.clients);
+    const values = top.map((a: any) => a.collections ?? a.clients ?? 0);
 
     const config: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
         labels,
         datasets: [{
-          label: 'Clients',
+          label: 'Collectes effectuées',
           data: values,
           backgroundColor: this.AGENCY_PALETTE.slice(0, top.length),
           borderRadius: 6,
@@ -1461,8 +1566,25 @@ export class AdminDashboard implements OnInit, OnDestroy {
     return "coverage-poor";
   }
 
+  getIncidentCountByStatus(group: 'resolved' | 'pending' | 'open'): number {
+    if (!this.incidents?.length) {
+      if (group === 'resolved') return this.statisticsAdmin?.reportsFromClients?.resolved ?? 0;
+      if (group === 'pending')  return this.statisticsAdmin?.reportsFromClients?.pending  ?? 0;
+      return 0;
+    }
+    return this.incidents.filter(i => {
+      const s = (i.status ?? '').toLowerCase();
+      if (group === 'resolved') return s === 'resolved' || s === 'collected';
+      if (group === 'pending')  return s === 'pending' || s === 'reported' || s === 'scheduled';
+      return s === 'open';
+    }).length;
+  }
+
   getRecentIncidents(): Incident[] {
-    return this.incidents?.slice(0, 5) || [];
+    if (!this.incidents?.length) return [];
+    return [...this.incidents]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
   }
 
   getSeverityIcon(severity: string): string {
@@ -1653,15 +1775,37 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
   filterIncidents(): void {
-    this.filteredIncidents = this.incidents.filter((incident) => {
-      const statusMatch =
-        this.incidentsFilter === "all" ||
-        incident.status === this.incidentsFilter;
-      const severityMatch =
-        this.severityFilter === "all" ||
-        incident.severity === this.severityFilter;
-      return statusMatch && severityMatch;
-    });
+    // Repart toujours de la page 1 quand on filtre
+    this.incidentsCurrentPage = 1;
+    this.loadAllSignalements(1);
+  }
+
+  getPaginatedIncidents(): Incident[] {
+    // Les incidents reçus de l'API sont déjà la bonne page
+    return this.filteredIncidents;
+  }
+
+  goToIncidentsPage(page: number): void {
+    if (page < 1 || page > this.incidentsTotalPages) return;
+    this.loadAllSignalements(page);
+  }
+
+  getIncidentsPageNumbers(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(1, this.incidentsCurrentPage - 2);
+    const end   = Math.min(this.incidentsTotalPages, start + 4);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  getIncidentsEndItem(): number {
+    return Math.min(this.incidentsCurrentPage * this.incidentsItemsPerPage, this.incidentsTotalItems);
+  }
+
+  changeIncidentsItemsPerPage(limit: number): void {
+    this.incidentsItemsPerPage = limit;
+    this.incidentsCurrentPage  = 1;
+    this.loadAllSignalements(1);
   }
 
   // Action methods
@@ -2067,29 +2211,53 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   investigateIncident(incidentId: string): void {
-    const incident = this.incidents.find((i) => i._id === incidentId);
+    const incident = this.filteredIncidents.find((i) => i._id === incidentId);
     if (incident) {
       incident.status = "pending";
       incident.assignedTo = "Inspecteur Municipal";
-      this.filterIncidents();
-      this.notificationService.showSuccess(
-        "Enquête",
-        "Incident pris en charge pour enquête",
-      );
+      this.filteredIncidents = [...this.filteredIncidents];
+      if (this.selectedIncident?._id === incidentId) this.selectedIncident = { ...incident };
+      this.notificationService.showSuccess("Enquête", "Incident pris en charge pour enquête");
     }
   }
 
   resolveIncident(incidentId: string): void {
-    const incident = this.incidents.find((i) => i._id === incidentId);
-    if (incident) {
-      incident.status = "resolved";
-      this.filterIncidents();
-      this.statistics.pendingReports--;
-      this.notificationService.showSuccess(
-        "Résolu",
-        "Incident marqué comme résolu",
-      );
-    }
+    const resolvedBy = this.currentUser?._id ?? '';
+    this.adminService.resolveCollecte$(incidentId, resolvedBy, this.resolutionComment).subscribe({
+      next: () => {
+        const incident = this.filteredIncidents.find((i) => i._id === incidentId);
+        if (incident) {
+          incident.status = "resolved";
+          this.filteredIncidents = [...this.filteredIncidents];
+          if (this.selectedIncident?._id === incidentId) this.selectedIncident = { ...incident };
+          this.statistics.pendingReports--;
+        }
+        this.resolutionComment = '';
+        this.visibleIncidentDrawer = false;
+        this.notificationService.showSuccess("Résolu", "Incident marqué comme résolu");
+      },
+      error: () => {
+        this.notificationService.showError("Erreur", "Impossible de résoudre l'incident");
+      },
+    });
+  }
+
+  openIncidentDrawer(incident: Incident): void {
+    this.selectedIncident = incident;
+    this.resolutionComment = '';
+    this.visibleIncidentDrawer = true;
+  }
+
+  openResolveDialog(incidentId: string): void {
+    this.resolveDialogIncidentId = incidentId;
+    this.resolutionComment = '';
+    this.resolveDialogVisible = true;
+  }
+
+  confirmResolveFromDialog(): void {
+    this.resolveIncident(this.resolveDialogIncidentId);
+    this.resolveDialogVisible = false;
+    this.resolveDialogIncidentId = '';
   }
 
   contactAgencyForIncident(agencyId?: string): void {
@@ -2377,6 +2545,37 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
 
+  deactivateAgency(id: string) {
+    this.agencyService.deActivateAgency(id).subscribe({
+      next: (response: any) => {
+        console.log("agency deactivated in dashboard", response);
+        this.notificationService.showSuccess("Désactivation", "Agence désactivée avec succès");
+        this.loadAgencyAudits(this.agenciesFilterParams);
+      },
+      error: (error: any) => {
+        console.error("Error deactivating agency:", error);
+        const msg = error?.error?.message || "Erreur lors de la désactivation";
+        this.notificationService.showError("Désactivation", msg);
+      },
+    });
+  }
+
+  deleteAgency(id: string) {
+    if (!confirm("Confirmer la suppression de cette agence ?")) return;
+    this.agencyService.deleteAgency(id).subscribe({
+      next: (response: any) => {
+        console.log("agency deleted in dashboard", response);
+        this.notificationService.showSuccess("Suppression", "Agence supprimée avec succès");
+        this.loadAgencyAudits(this.agenciesFilterParams);
+      },
+      error: (error: any) => {
+        console.error("Error deleting agency:", error);
+        const msg = error?.error?.message || "Erreur lors de la suppression";
+        this.notificationService.showError("Suppression", msg);
+      },
+    });
+  }
+
   loadAllMunipalities() {
     this.adminService.getAllMunicipalities().subscribe({
       next: (response: any) => {
@@ -2394,22 +2593,81 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
   /**Listes des signalements des users */
   totalIncidents = signal(0);
-  loadAllSignalements() {
+
+  loadAgenciesForDropdown(reset = false): void {
+    if (this.agencyDropdownLoading) return;
+    if (!reset && this.agencyDropdownList.length >= this.agencyDropdownTotal && this.agencyDropdownTotal > 0) return;
+    if (reset) {
+      this.agencyDropdownPage = 1;
+      this.agencyDropdownList = [];
+      this.agencyDropdownTotal = 0;
+    }
+    this.agencyDropdownLoading = true;
+    this.agencyService.getAllAgenciesFromApi({
+      page: this.agencyDropdownPage,
+      limit: 15,
+      search: this.agencyDropdownSearch,
+    }).subscribe({
+      next: (res: any) => {
+        const items: { id: string; name: string }[] = (res.data ?? []).map((a: any) => ({ id: a._id, name: a.name }));
+        this.agencyDropdownList  = reset ? items : [...this.agencyDropdownList, ...items];
+        this.agencyDropdownTotal = res.total ?? res.pagination?.total ?? this.agencyDropdownList.length;
+        this.agencyDropdownPage++;
+        this.agencyDropdownLoading = false;
+      },
+      error: () => { this.agencyDropdownLoading = false; }
+    });
+  }
+
+  openAgencyDropdown(): void {
+    this.agencyDropdownOpen = true;
+    if (!this.agencyDropdownList.length) this.loadAgenciesForDropdown(true);
+  }
+
+  onAgencyDropdownSearch(): void {
+    this.loadAgenciesForDropdown(true);
+  }
+
+  onAgencyDropdownScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 60) {
+      this.loadAgenciesForDropdown();
+    }
+  }
+
+  selectAgencyFilter(agency: { id: string; name: string } | null): void {
+    this.selectedAgencyForFilter = agency;
+    this.agencyIdFilter          = agency?.id ?? '';
+    this.agencyDropdownOpen      = false;
+    this.agencyDropdownSearch    = '';
+    this.incidentsCurrentPage    = 1;
+    this.loadAllSignalements(1);
+  }
+
+  loadAllSignalements(page = this.incidentsCurrentPage) {
     this.isLoadingIncidents = true;
-    this.adminService.getAllReports().subscribe({
+    const params = {
+      page,
+      limit:    this.incidentsItemsPerPage,
+      status:   this.incidentsFilter,
+      severity: this.severityFilter,
+      search:   this.incidentsSearchTerm,
+      agencyId: this.agencyIdFilter,
+    };
+    this.adminService.getAllReports(params).subscribe({
       next: (response: any) => {
-        this.totalIncidents.set(response?.total);
-        this.incidents = response.collectes;
-        // .map((signalement: any) => {
-        //   return {
-        //     agencyId: signalement.agency?._id,
-        //     ...signalement,
-        //   };
-        // });
+        this.incidents         = response.collectes ?? response.data ?? [];
         this.filteredIncidents = [...this.incidents];
-        this.isLoadingIncidents = false;
+        const total            = response.total ?? response.count ?? this.incidents.length;
+        this.totalIncidents.set(total);
+        this.incidentsTotalItems  = total;
+        this.incidentsCurrentPage = page;
+        this.incidentsTotalPages  = Math.max(1, Math.ceil(total / this.incidentsItemsPerPage));
+        this.isLoadingIncidents   = false;
         console.log("signalements in response", response);
-        console.log("signalements in dashboard", this.filteredIncidents);
+        if (this.chartsInitialized && this.activeTab === 'statistics') {
+          this.buildIncidentsChart();
+        }
       },
       error: (error) => {
         console.error("Erreur lors du chargement des incidents:", error);
