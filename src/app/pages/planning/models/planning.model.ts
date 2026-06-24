@@ -1,8 +1,8 @@
 // ── Enums ───────────────────────────────────────────────────────
-export type PlanningType     = 'individuel' | 'groupe' | 'zone' | 'secteur';
-export type PlanningStatus   = 'brouillon' | 'planifie' | 'en_cours' | 'termine' | 'annule';
+export type PlanningType = 'individuel' | 'groupe' | 'zone' | 'secteur';
+export type PlanningStatus = 'brouillon' | 'planifie' | 'en_cours' | 'termine' | 'annule';
 export type PlanningFrequency = 'unique' | 'hebdomadaire' | 'bimensuel' | 'mensuel';
-export type WasteType        = 'menagers' | 'recyclables' | 'verts' | 'encombrants' | 'speciaux';
+export type WasteType = 'menagers' | 'recyclables' | 'verts' | 'encombrants' | 'speciaux';
 
 // ── API V2 — équipe peuplée (l'API renvoie parfois des objets, pas juste des IDs) ──
 export interface EquipeRef {
@@ -31,7 +31,7 @@ export interface PlanningV2Api {
   clientsCount?: number;
   estimatedDuration?: number;
   // Champ principal : une seule équipe
-  teamV2Id?: string | null;
+  teamId?: string | null;
   // Héritage : certains anciens enregistrements ont encore equipeIds
   equipeIds?: (string | EquipeRef)[];
   typeDechets: WasteType[];
@@ -57,7 +57,7 @@ export interface PlanningV2CreateBody {
   startTime: string;
   endTime?: string;
   typeDechets: WasteType[];
-  teamV2Id?: string | null;
+  teamId?: string | null;
   agencyId: string;
   managerId?: string;
   clientId?: string;
@@ -202,9 +202,9 @@ export interface Planning {
   endTime?: string;
   frequency: PlanningFrequency;
   // Teams (une seule équipe par planning)
-  teamV2Id?: string | null; // ID pour l'API
+  teamId?: string | null; // ID pour l'API
   teams: string[];           // noms pour l'affichage (1 élément max)
-  equipeIds: string[];       // alias dérivé de teamV2Id (rétrocompat)
+  equipeIds: string[];       // alias dérivé de teamId (rétrocompat)
   // Waste
   wasteTypes: string[];  // labels for display
   typeDechets: WasteType[]; // codes for API
@@ -284,9 +284,9 @@ export interface NavItem {
 
 // ── Waste type label map ────────────────────────────────────────
 export const WASTE_TYPE_LABELS: Record<WasteType, string> = {
-  menagers:    'Déchets ménagers',
+  menagers: 'Déchets ménagers',
   recyclables: 'Recyclables',
-  verts:       'Déchets verts',
+  verts: 'Déchets verts',
   encombrants: 'Encombrants',
-  speciaux:    'Déchets spéciaux',
+  speciaux: 'Déchets spéciaux',
 };

@@ -1267,7 +1267,7 @@
                         <i class="material-icons">groups</i>
                         <span>{{ schedule.teamName }}</span>
                       </div>
-                    } @else if (!schedule.teamName && schedule.teamV2Id) {
+                    } @else if (!schedule.teamName && schedule.teamIds) {
                       <div class="sched-team sched-team--no-name">
                         <i class="material-icons">groups</i>
                         <span>Équipe assignée</span>
@@ -2077,21 +2077,26 @@
                     } @else { — }
                   </td>
                   <td>{{ vehicle.mileage != null ? (vehicle.mileage | number) + ' km' : '—' }}</td>
-                  <td>
-                    <span class="vehicle-status-badge" [class]="getVehicleStatusClass(vehicle.status)">
-                      {{ getVehicleStatusText(vehicle.status) }}
-                    </span>
+                  <td class="col-status-pills">
+                    <div class="vstatus-pills">
+                      @for (s of vehicleStatuses; track s.value) {
+                        <button
+                          class="vstatus-pill"
+                          [class.vstatus-pill--active]="vehicle.status === s.value"
+                          [style.--sc]="s.color"
+                          (click)="setVehicleStatus(vehicle, s.value)"
+                          [title]="s.label">
+                          <i class="material-icons">{{ s.icon }}</i>
+                          <span>{{ s.short }}</span>
+                        </button>
+                      }
+                    </div>
                   </td>
                   <td>{{ vehicle.lastMaintenance || '—' }}</td>
                   <td class="col-actions">
                     <div class="table-actions">
                       <button class="action-btn edit" (click)="openEditVehicleModal(vehicle)" title="Modifier"><i class="material-icons">edit</i></button>
                       <button class="action-btn danger" (click)="deleteVehicle(vehicle)" title="Supprimer"><i class="material-icons">delete</i></button>
-                      <button class="action-btn toggle-btn"
-                        [class.toggle-active]="vehicle.status === 'disponible'"
-                        [class.toggle-inactive]="vehicle.status !== 'disponible'"
-                        (click)="toggleVehicleStatus(vehicle)"
-                        title="Changer le statut"><i class="material-icons">{{ vehicle.status === 'disponible' ? 'toggle_on' : 'toggle_off' }}</i></button>
                     </div>
                   </td>
                 </tr>
@@ -3183,7 +3188,7 @@
                   <i class="material-icons">groups</i>
                   <div class="sdm-info">
                     <span class="sdm-label">Équipe</span>
-                    <span class="sdm-value">{{ selectedSchedule.teamName || (selectedSchedule.teamV2Id ? "Équipe assignée" : "Non assignée") }}</span>
+                    <span class="sdm-value">{{ selectedSchedule.teamName || (selectedSchedule.teamIds ? "Équipe assignée" : "Non assignée") }}</span>
                   </div>
                 </div>
               </div>

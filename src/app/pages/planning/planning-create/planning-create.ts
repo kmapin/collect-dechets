@@ -293,7 +293,7 @@ export class PlanningCreate implements OnInit {
 
         // Signaux de sélection
         if (planning.typeDechets?.length) this.selectedWasteTypes.set(planning.typeDechets);
-        this.selectedTeamId.set(planning.teamV2Id ?? planning.equipeIds?.[0] ?? null);
+        this.selectedTeamId.set(planning.teamId ?? planning.equipeIds?.[0] ?? null);
 
         // Pour le type individuel : reconstituer le client sélectionné
         if (planning.type === 'individuel') {
@@ -384,7 +384,7 @@ export class PlanningCreate implements OnInit {
         });
 
         if (planning.typeDechets?.length) this.selectedWasteTypes.set(planning.typeDechets);
-        this.selectedTeamId.set(planning.teamV2Id ?? planning.equipeIds?.[0] ?? null);
+        this.selectedTeamId.set(planning.teamId ?? planning.equipeIds?.[0] ?? null);
 
         // Reconstituer le client pour type individuel
         if (planning.type === 'individuel') {
@@ -716,7 +716,7 @@ export class PlanningCreate implements OnInit {
       this.teamSaving.set(true);
       const body = this._buildEditBody(teamId);
       this.svc.updatePlanning(this.editId()!, body).subscribe({
-        next:  p   => { this.selectedTeamId.set(p.teamV2Id ?? null); this.teamSaving.set(false); },
+        next:  p   => { this.selectedTeamId.set(p.teamId ?? null); this.teamSaving.set(false); },
         error: err => {
           this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.message ?? err?.error?.error?.message ?? 'Impossible d\'ajouter l\'équipe' });
           this.teamSaving.set(false);
@@ -733,7 +733,7 @@ export class PlanningCreate implements OnInit {
       this.teamSaving.set(true);
       const body = this._buildEditBody(null);
       this.svc.updatePlanning(this.editId()!, body).subscribe({
-        next:  p   => { this.selectedTeamId.set(p.teamV2Id ?? null); this.teamSaving.set(false); },
+        next:  p   => { this.selectedTeamId.set(p.teamId ?? null); this.teamSaving.set(false); },
         error: err => {
           this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.message ?? err?.error?.error?.message ?? 'Impossible de retirer l\'équipe' });
           this.teamSaving.set(false);
@@ -745,7 +745,7 @@ export class PlanningCreate implements OnInit {
     }
   }
 
-  private _buildEditBody(teamV2Id: string | null): any {
+  private _buildEditBody(teamId: string | null): any {
     const v = this.form.getRawValue();
     const body: any = {
       type:        v.type,
@@ -755,7 +755,7 @@ export class PlanningCreate implements OnInit {
       startTime:   v.startTime,
       endTime:     v.endTime || undefined,
       typeDechets: this.selectedWasteTypes(),
-      teamV2Id:    teamV2Id ?? undefined,
+      teamId:    teamId ?? undefined,
       notes:       v.notes || undefined,
     };
     if (v.clientId)          body.clientId          = v.clientId;
@@ -839,7 +839,7 @@ export class PlanningCreate implements OnInit {
       startTime:   v.startTime,
       endTime:     v.endTime || undefined,
       typeDechets: this.selectedWasteTypes(),
-      teamV2Id:    this.selectedTeamId() ?? undefined,
+      teamId:    this.selectedTeamId() ?? undefined,
       agencyId,
       managerId:   managerId || undefined,
       notes:       v.notes || undefined,

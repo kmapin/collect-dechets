@@ -593,6 +593,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // ─── Mobilité / Véhicules ────────────────────────────────────
   vehicles: Vehicle[] = [];
   filteredVehicles: Vehicle[] = [];
+  readonly vehicleStatuses = [
+    { value: 'disponible'  as const, label: 'Disponible',  short: 'Dispo',   icon: 'check_circle',   color: '#16a34a' },
+    { value: 'en_service'  as const, label: 'En service',  short: 'En svc',  icon: 'local_shipping', color: '#3b82f6' },
+    { value: 'maintenance' as const, label: 'Maintenance', short: 'Maint.',  icon: 'build',          color: '#f59e0b' },
+    { value: 'hors_service'as const, label: 'Hors service',short: 'H. svc',  icon: 'cancel',         color: '#ef4444' },
+  ];
+
   vehicleViewMode: 'card' | 'table' = 'table';
   showVehicleModal = false;
   isEditingVehicle = false;
@@ -732,18 +739,21 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
 
-  toggleVehicleStatus(vehicle: Vehicle): void {
-    if (!vehicle._id) return;
-    const cycleOrder: Vehicle['status'][] = ['disponible', 'en_service', 'maintenance', 'hors_service'];
-    const nextStatus = cycleOrder[(cycleOrder.indexOf(vehicle.status) + 1) % cycleOrder.length];
-    this.vehicleService.update(vehicle._id, { status: nextStatus }).subscribe({
+  setVehicleStatus(vehicle: Vehicle, status: Vehicle['status']): void {
+    if (!vehicle._id || vehicle.status === status) return;
+    this.vehicleService.update(vehicle._id, { status }).subscribe({
       next: (updated) => {
-        vehicle.status = updated?.status ?? nextStatus;
+        vehicle.status = updated?.status ?? status;
         this.filterVehicles();
         this.cdr.detectChanges();
       },
       error: () => this.notificationService.showError('Erreur', 'Impossible de changer le statut.')
     });
+  }
+
+  toggleVehicleStatus(vehicle: Vehicle): void {
+    const cycleOrder: Vehicle['status'][] = ['disponible', 'en_service', 'maintenance', 'hors_service'];
+    this.setVehicleStatus(vehicle, cycleOrder[(cycleOrder.indexOf(vehicle.status) + 1) % cycleOrder.length]);
   }
 
   filterVehicles(): void {
@@ -4111,8 +4121,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           status:    p.planningStatus || p.status || "brouillon",
           type:      p.type || "",
           zone:      p.zone || p.quartier || p.secteur || p.ville || "",
-          teamV2Id:  p.teamV2Id || null,
-          teamName:  this._resolveTeamName(p.teamV2Id, teams),
+          teamId:  p.teamId || null,
+          teamName:  this._resolveTeamName(p.teamId, teams),
           collectors: [],
           createdAt: p.createdAt,
         }));
@@ -4126,9 +4136,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
 
-  private _resolveTeamName(teamV2Id: string | null, teams: any[]): string {
-    if (!teamV2Id) return "";
-    const team = teams.find((t: any) => t._id === teamV2Id);
+  private _resolveTeamName(teamIds: string | null, teams: any[]): string {
+    if (!teamIds) return "";
+    const team = teams.find((t: any) => t._id === teamIds);
     return team?.name ?? "";
   }
 

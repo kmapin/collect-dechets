@@ -368,14 +368,14 @@ export class PlanningService {
     return this._setTeamOnPlanning(planningId, null);
   }
 
-  private _setTeamOnPlanning(planningId: string, teamV2Id: string | null): Observable<Planning> {
+  private _setTeamOnPlanning(planningId: string, teamId: string | null): Observable<Planning> {
     return this.http.get<any>(`${this.api}/planning/v2/${planningId}`).pipe(
       switchMap(res => {
         const api: PlanningV2Api = res?.data ?? res;
-        if (teamV2Id && (api.teamV2Id === teamV2Id)) {
+        if (teamId && (api.teamId === teamId)) {
           return of(this._mapPlanningV2(api, this._teams()));
         }
-        const body = this._buildUpdateBody(api, { teamV2Id });
+        const body = this._buildUpdateBody(api, { teamId });
         return this.http.put<any>(`${this.api}/planning/v2/${planningId}`, body).pipe(
           map(r => {
             const updated: PlanningV2Api = r?.data ?? r;
@@ -416,11 +416,11 @@ export class PlanningService {
   private _mapPlanningV2(api: PlanningV2Api, teams: TeamApi[] = []): Planning {
     // Champ principal pour l'équipe; fallback sur equipeIds[0] pour les anciens enregistrements
     const legacyIds  = this._extractEquipeIds(api);
-    const teamV2Id   = api.teamV2Id ?? (legacyIds.length ? legacyIds[0] : null) ?? null;
-    const equipeIds  = teamV2Id ? [teamV2Id] : [];
+    const teamId   = api.teamId ?? (legacyIds.length ? legacyIds[0] : null) ?? null;
+    const equipeIds  = teamId ? [teamId] : [];
 
-    const teamName = teamV2Id
-      ? (teams.find(x => x._id === teamV2Id)?.name ?? teamV2Id)
+    const teamName = teamId
+      ? (teams.find(x => x._id === teamId)?.name ?? teamId)
       : undefined;
 
     const wasteLabels = (api.typeDechets ?? []).map(t => WASTE_TYPE_LABELS[t] ?? t);
@@ -435,7 +435,7 @@ export class PlanningService {
       startTime:        api.startTime,
       endTime:          api.endTime,
       frequency:        api.frequency,
-      teamV2Id,
+      teamId,
       teams:            teamName ? [teamName] : [],
       equipeIds,
       wasteTypes:       wasteLabels,
@@ -469,7 +469,7 @@ export class PlanningService {
   }
 
   private _buildUpdateBody(api: PlanningV2Api, overrides: Partial<PlanningV2CreateBody> = {}): Partial<PlanningV2CreateBody> {
-    const currentTeamId = api.teamV2Id ?? this._extractEquipeIds(api)[0] ?? null;
+    const currentTeamId = api.teamId ?? this._extractEquipeIds(api)[0] ?? null;
     return {
       type:             api.type,
       libelle:          api.libelle,
@@ -478,7 +478,7 @@ export class PlanningService {
       startTime:        api.startTime,
       endTime:          api.endTime ?? undefined,
       typeDechets:      api.typeDechets ?? [],
-      teamV2Id:         currentTeamId ?? undefined,
+      teamId:         currentTeamId ?? undefined,
       clientId:         api.clientId ?? undefined,
       groupeId:         api.groupeId ?? undefined,
       villeId:          this._refId(api.villeId),

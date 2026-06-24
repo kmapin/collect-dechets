@@ -64,6 +64,10 @@ export class TeamDetail implements OnInit, OnDestroy {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
 
+    // Charge véhicules et zones pour le formulaire d'édition
+    this.svc.loadUnassignedVehiclesFromApi();
+    this.svc.loadAvailableZonesFromApi();
+
     // Check local cache first for instant display
     const cached = this.svc.getById(id);
     if (cached) {

@@ -74,13 +74,13 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   teamSearch       = signal('');
 
   assignedTeams = computed(() => {
-    const tid = this.planning()?.teamV2Id;
+    const tid = this.planning()?.teamId;
     if (!tid) return [];
     const t = this.allTeams().find(x => x._id === tid);
     return t ? [t] : [];
   });
   availableTeams = computed(() => {
-    const tid = this.planning()?.teamV2Id;
+    const tid = this.planning()?.teamId;
     const q   = this.teamSearch().toLowerCase();
     return this.allTeams()
       .filter(t => t._id !== tid)
@@ -242,7 +242,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.teamSaving.set(true);
     this.svc.addTeamToPlanning(pid, teamId).subscribe({
       next: p => {
-        this.planning.update(prev => prev ? { ...prev, teamV2Id: p.teamV2Id, equipeIds: p.equipeIds, teams: p.teams } : prev);
+        this.planning.update(prev => prev ? { ...prev, teamId: p.teamId, equipeIds: p.equipeIds, teams: p.teams } : prev);
         this.msg.add({ severity: 'success', summary: 'Équipe affectée', detail: `${this.allTeams().find(t => t._id === teamId)?.name ?? teamId} assignée` });
         this.teamSaving.set(false);
         this.addTeamOpen.set(false);
@@ -260,7 +260,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.teamSaving.set(true);
     this.svc.removeTeamFromPlanning(pid).subscribe({
       next: p => {
-        this.planning.update(prev => prev ? { ...prev, teamV2Id: p.teamV2Id, equipeIds: p.equipeIds, teams: p.teams } : prev);
+        this.planning.update(prev => prev ? { ...prev, teamId: p.teamId, equipeIds: p.equipeIds, teams: p.teams } : prev);
         this.teamSaving.set(false);
       },
       error: err => {

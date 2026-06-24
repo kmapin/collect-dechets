@@ -197,7 +197,7 @@ export class TeamService {
   }
 
   delete(id: string): Observable<void> {
-    return this.http.delete<any>(`${this.api}/v2/teams/${id}`).pipe(
+    return this.http.delete<any>(`${this.api}/teams/${id}`).pipe(
       map(() => { this._teams.update(list => list.filter(t => t.id !== id)); })
     );
   }
@@ -232,7 +232,7 @@ export class TeamService {
 
   getTeamStats(teamId: string): Observable<TeamStatsApi> {
     return this.http.get<{ success: boolean; data: TeamStatsApi }>(
-      `${this.api}/v2/teams/${teamId}/stats`
+      `${this.api}/teams/${teamId}/stats`
     ).pipe(map(r => r.data ?? {}));
   }
 
@@ -358,7 +358,7 @@ export class TeamService {
 
     forkJoin({
       teams: this.http.get<TeamV2Api[] | { data: TeamV2Api[] }>(
-        `${this.api}/v2/teams/agency/${agencyId}`
+        `${this.api}/teams/agency/${agencyId}`
       ).pipe(map(r => Array.isArray(r) ? r : ((r as any).data ?? []))),
       collectors: collectors$,
     }).subscribe({
@@ -382,7 +382,7 @@ export class TeamService {
   loadGlobalStats(): Observable<TeamStats> {
     const agencyId = this.agencyId;
     if (!agencyId) return of(this.stats());
-    return this.http.get<{ data: TeamStats }>(`${this.api}/v2/teams/stats/${agencyId}`).pipe(
+    return this.http.get<{ data: TeamStats }>(`${this.api}/teams/stats/${agencyId}`).pipe(
       map(r => r.data ?? this.stats()),
       catchError(() => of(this.stats()))
     );
@@ -392,7 +392,7 @@ export class TeamService {
   loadAvailableVehiclesFromApi(): void {
     const agencyId = this.agencyId;
     if (!agencyId) return;
-    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/v2/vehicles/agency/${agencyId}`)
+    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/vehicles/agency/${agencyId}`)
       .pipe(map(r => Array.isArray(r) ? r : ((r as any).data ?? [])), catchError(() => of(null)))
       .subscribe(list => {
         if (list !== null) {
@@ -413,7 +413,7 @@ export class TeamService {
   loadUnassignedVehiclesFromApi(): void {
     const agencyId = this.agencyId;
     if (!agencyId) return;
-    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/v2/teams/vehicles/available/${agencyId}`)
+    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/teams/vehicles/available/${agencyId}`)
       .pipe(map(r => Array.isArray(r) ? r : ((r as any).data ?? [])), catchError(() => of([])))
       .subscribe(list =>
         this._unassignedVehicles.set((list as VehicleApi[]).map((v: VehicleApi) => ({
@@ -429,7 +429,7 @@ export class TeamService {
 
   /** Charge les zones disponibles depuis l'API (remplace le mock). */
   loadAvailableZonesFromApi(): void {
-    this.http.get<{ data: AvailableZoneApi[] }>(`${this.api}/v2/teams/zones/available`)
+    this.http.get<{ data: AvailableZoneApi[] }>(`${this.api}/teams/zones/available`)
       .pipe(map(r => r.data ?? []), catchError(() => of([])))
       .subscribe(list => {
         if (list.length) {
@@ -463,7 +463,7 @@ export class TeamService {
         role:   m.role,
       })),
     };
-    return this.http.post<any>(`${this.api}/v2/teams`, body).pipe(
+    return this.http.post<any>(`${this.api}/teams`, body).pipe(
       map(res => {
         const team = this._mapTeamV2Api(this._extractV2Team(res), this._teams().length, data);
         this._teams.update(list => [team, ...list]);
@@ -474,7 +474,7 @@ export class TeamService {
 
   /** Récupère une équipe via l'API V2 (avec recentMissions). */
   getTeamV2(id: string): Observable<Team> {
-    return this.http.get<any>(`${this.api}/v2/teams/${id}`).pipe(
+    return this.http.get<any>(`${this.api}/teams/${id}`).pipe(
       map(res => {
         const idx  = this._teams().findIndex(t => t.id === id);
         const team = this._mapTeamV2Api(this._extractV2Team(res), idx >= 0 ? idx : 0);
@@ -504,7 +504,7 @@ export class TeamService {
         role:   m.role,
       })),
     };
-    return this.http.put<any>(`${this.api}/v2/teams/${id}`, body).pipe(
+    return this.http.put<any>(`${this.api}/teams/${id}`, body).pipe(
       map(res => {
         const idx  = this._teams().findIndex(t => t.id === id);
         const team = this._mapTeamV2Api(this._extractV2Team(res), idx >= 0 ? idx : 0, data);
@@ -516,7 +516,7 @@ export class TeamService {
 
   /** Change le statut d'une équipe (supporte on_mission et maintenance). */
   changeStatus(id: string, status: Team['status']): Observable<Team> {
-    return this.http.patch<any>(`${this.api}/v2/teams/${id}/status`, { status }).pipe(
+    return this.http.patch<any>(`${this.api}/teams/${id}/status`, { status }).pipe(
       map(res => {
         const idx  = this._teams().findIndex(t => t.id === id);
         const team = this._mapTeamV2Api(this._extractV2Team(res), idx >= 0 ? idx : 0);
@@ -528,7 +528,7 @@ export class TeamService {
 
   /** Ajoute un membre à une équipe via l'API V2. */
   addMemberV2(teamId: string, data: TeamV2MemberBody): Observable<TeamMember> {
-    return this.http.post<{ message: string; team: TeamV2Api }>(`${this.api}/v2/teams/${teamId}/members`, data).pipe(
+    return this.http.post<{ message: string; team: TeamV2Api }>(`${this.api}/teams/${teamId}/members`, data).pipe(
       map(res => {
         const raw = res.team.members.find(m => m.phone === data.phone)
                  ?? res.team.members[res.team.members.length - 1];
@@ -559,7 +559,7 @@ export class TeamService {
   /** Retire un membre d'une équipe via l'API V2. */
   removeMemberV2(teamId: string, memberId: string): Observable<void> {
     return this.http.delete<{ success: boolean }>(
-      `${this.api}/v2/teams/${teamId}/members/${memberId}`
+      `${this.api}/teams/${teamId}/members/${memberId}`
     ).pipe(
       map(() => {
         this._teams.update(list => list.map(t =>
@@ -578,7 +578,7 @@ export class TeamService {
   /** Met à jour la disponibilité d'un membre via l'API V2. */
   updateMemberAvailability(teamId: string, memberId: string, availability: MemberAvailability): Observable<void> {
     return this.http.patch<{ success: boolean }>(
-      `${this.api}/v2/teams/${teamId}/members/${memberId}/availability`,
+      `${this.api}/teams/${teamId}/members/${memberId}/availability`,
       { availability }
     ).pipe(
       map(() => {

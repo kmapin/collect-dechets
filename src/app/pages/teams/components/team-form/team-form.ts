@@ -44,6 +44,16 @@ export class TeamForm implements OnInit, OnChanges {
 
   saving = false;
   activeTab = 0;
+
+  vehicleTypeIcon(type: string): string {
+    return ({ camion: 'local_shipping', pickup: 'airport_shuttle', moto: 'two_wheeler', tricycle: 'electric_rickshaw' } as Record<string, string>)[type] ?? 'directions_car';
+  }
+  vehicleStatusColor(s: string): string {
+    return ({ disponible: '#16a34a', en_service: '#3b82f6', maintenance: '#f59e0b', hors_service: '#ef4444' } as Record<string, string>)[s] ?? '#94a3b8';
+  }
+  vehicleStatusLabel(s: string): string {
+    return ({ disponible: 'Disponible', en_service: 'En service', maintenance: 'Maintenance', hors_service: 'Hors service' } as Record<string, string>)[s] ?? s;
+  }
   memberSearches: string[] = [];
   openDropdownIdx: number | null = null;
 
