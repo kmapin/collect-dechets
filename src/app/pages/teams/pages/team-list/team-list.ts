@@ -100,7 +100,7 @@ export class TeamList implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.svc.loadTeamsV2();
+    this.svc.loadTeams();
     // Bind loading to service signal and fall back after timeout
     const unsub = setInterval(() => {
       if (!this.svc.loading()) { this.loading.set(false); clearInterval(unsub); }

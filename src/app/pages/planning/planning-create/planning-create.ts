@@ -166,7 +166,7 @@ export class PlanningCreate implements OnInit {
     if (type === 'groupe') {
       if (this.groupMode() === 'existing') {
         const g = this.existingGroups().find(x => x._id === this.selectedExistingGroupId());
-        return g?.clientIds?.length ?? g?.clients?.length ?? 0;
+        return g?.clients?.length ?? g?.clientIds?.length ?? 0;
       }
       return this.selectedClients().length;
     }
@@ -756,6 +756,7 @@ export class PlanningCreate implements OnInit {
       endTime:     v.endTime || undefined,
       typeDechets: this.selectedWasteTypes(),
       teamId:    teamId ?? undefined,
+      equipeIds:   teamId ? [teamId] : undefined,
       notes:       v.notes || undefined,
     };
     if (v.clientId)          body.clientId          = v.clientId;
@@ -831,6 +832,7 @@ export class PlanningCreate implements OnInit {
     const agencyId  = this.svc.agencyId;
     const managerId = this.svc.managerId;
 
+    const teamId = this.selectedTeamId() ?? undefined;
     const body: any = {
       type:        v.type as PlanningType,
       libelle:     v.libelle,
@@ -839,7 +841,8 @@ export class PlanningCreate implements OnInit {
       startTime:   v.startTime,
       endTime:     v.endTime || undefined,
       typeDechets: this.selectedWasteTypes(),
-      teamId:    this.selectedTeamId() ?? undefined,
+      teamId,
+      equipeIds:   teamId ? [teamId] : undefined,
       agencyId,
       managerId:   managerId || undefined,
       notes:       v.notes || undefined,

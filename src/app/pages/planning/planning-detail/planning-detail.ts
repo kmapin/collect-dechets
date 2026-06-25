@@ -15,6 +15,7 @@ import { MessageService } from 'primeng/api';
 import * as L from 'leaflet';
 import { PlanningService } from '../services/planning.service';
 import { Planning, TeamApi } from '../models/planning.model';
+import { AgencyService } from '../../../services/agency.service';
 interface Incident {
   id: string; severity: 'critical' | 'warning' | 'info';
   title: string; description: string; reporter: string;
@@ -47,14 +48,16 @@ interface Notification {
 export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapEl') mapElRef!: ElementRef<HTMLDivElement>;
 
-  private route  = inject(ActivatedRoute);
-  private router = inject(Router);
-  private svc    = inject(PlanningService);
-  private msg    = inject(MessageService);
+  private route        = inject(ActivatedRoute);
+  private router       = inject(Router);
+  private svc          = inject(PlanningService);
+  private msg          = inject(MessageService);
+  private agencySvc    = inject(AgencyService);
 
   private leafletMap!: L.Map;
 
   // ── State ─────────────────────────────────────────────────────
+  agencyName    = signal('');
   isLoading     = signal(true);
   notFound      = signal(false);
   activeSection = signal('info');
@@ -185,6 +188,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this._fetchPlanning(id);
     this._loadTeams();
+    this._loadAgencyName();
   }
 
   ngAfterViewInit(): void {
@@ -227,6 +231,16 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.svc.getTeamsForAgency().subscribe({
       next:  teams => { this.allTeams.set(teams); this.isLoadingTeams.set(false); },
       error: ()    => this.isLoadingTeams.set(false),
+    });
+  }
+
+  // ── Agency name loader ────────────────────────────────────────
+  private _loadAgencyName(): void {
+    const agencyId = this.svc.agencyId;
+    if (!agencyId) return;
+    this.agencySvc.getAgencyByIdFromApi(agencyId).subscribe({
+      next:  res => { if (res?.data?.name) this.agencyName.set(res.data.name); },
+      error: ()  => {},
     });
   }
 
@@ -401,7 +415,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       doc.rect(0, 0, 210, 30, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-      doc.text('SAHELYS – Planning de collecte', 14, 14);
+      doc.text(`${this.agencyName() || 'WASTE MANAGEMENT'} – Planning de collecte`, 14, 14);
       doc.setFontSize(10); doc.setFont('helvetica', 'normal');
       doc.text(`Référence : ${p.reference}  •  Statut : ${this.statusLabel()}`, 14, 22);
 
@@ -433,7 +447,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       for (let i = 1; i <= pages; i++) {
         doc.setPage(i);
         doc.setFontSize(8); doc.setTextColor(148, 163, 184);
-        doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} par SAHELYS – page ${i}/${pages}`, 14, 290);
+        doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} par ${this.agencyName() || 'SAHELYS'} – page ${i}/${pages}`, 14, 290);
       }
 
       doc.save(`planning-${p.reference}.pdf`);

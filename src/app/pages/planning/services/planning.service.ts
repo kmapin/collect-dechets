@@ -140,20 +140,6 @@ export class PlanningService {
     });
   }
 
-  loadTeams(): void {
-    const agencyId = this.agencyId;
-    if (!agencyId) return;
-    this._error.set(null);
-    this.http.get<TeamApi[] | { data: TeamApi[] }>(
-      `${this.api}/v2/teams/agency/${agencyId}`
-    ).pipe(
-      map(r => Array.isArray(r) ? r : ((r as any).data ?? []))
-    ).subscribe({
-      next:  teams => this._teams.set(teams),
-      error: err   => this._error.set(err?.error?.message ?? 'Impossible de charger les équipes'),
-    });
-  }
-
   loadPlannings(filter?: PlanningFilter): void {
     this._loading.set(true);
     const agencyId = this.agencyId;
@@ -175,16 +161,11 @@ export class PlanningService {
 
     forkJoin([
       this.http.get<ApiListResponse<PlanningV2Api>>(`${this.api}/planning/v2`, { params }),
-      this._teams().length
-        ? of(this._teams())
-        : this.http.get<TeamApi[] | { data: TeamApi[] }>(`${this.api}/v2/teams/agency/${agencyId}`).pipe(
-            map(r => Array.isArray(r) ? r : ((r as any).data ?? []))
-          ),
+      this.getTeamsForAgency(),
     ]).subscribe({
       next: result => {
         this._loading.set(false);
-        const [res, teamsArr] = result;
-        if (teamsArr.length && !this._teams().length) this._teams.set(teamsArr);
+        const [res] = result;
         if (res?.data) {
           this._plannings.set(res.data.map(p => this._mapPlanningV2(p, this._teams())));
         }
@@ -199,19 +180,11 @@ export class PlanningService {
   // ── Queries ───────────────────────────────────────────────────
 
   getPlanning(id: string): Observable<Planning> {
-    const agencyId = this.agencyId;
     return forkJoin([
       this.http.get<{ success: boolean; data: PlanningV2Api }>(`${this.api}/planning/v2/${id}`),
-      this._teams().length
-        ? of(this._teams())
-        : this.http.get<TeamApi[] | { data: TeamApi[] }>(`${this.api}/v2/teams/agency/${agencyId}`).pipe(
-            map(r => Array.isArray(r) ? r : ((r as any).data ?? []))
-          ),
+      this.getTeamsForAgency(),
     ]).pipe(
-      map(([res, teams]) => {
-        if (teams.length && !this._teams().length) this._teams.set(teams);
-        return this._mapPlanningV2(res.data, this._teams());
-      })
+      map(([res]) => this._mapPlanningV2(res.data, this._teams()))
     );
   }
 
@@ -236,11 +209,12 @@ export class PlanningService {
   getTeamsForAgency(): Observable<TeamApi[]> {
     const agencyId = this.agencyId;
     if (!agencyId) return of([]);
+    if (this._teams().length) return of(this._teams());
     return this.http.get<TeamApi[] | { data: TeamApi[] }>(
       `${this.api}/v2/teams/agency/${agencyId}`
     ).pipe(
       map(r => Array.isArray(r) ? r : ((r as any).data ?? [])),
-      tap(teams => this._teams.set(teams))
+      tap(teams => { if (teams.length) this._teams.set(teams); })
     );
   }
 
@@ -479,6 +453,7 @@ export class PlanningService {
       endTime:          api.endTime ?? undefined,
       typeDechets:      api.typeDechets ?? [],
       teamId:         currentTeamId ?? undefined,
+      equipeIds:      currentTeamId ? [currentTeamId] : undefined,
       clientId:         api.clientId ?? undefined,
       groupeId:         api.groupeId ?? undefined,
       villeId:          this._refId(api.villeId),

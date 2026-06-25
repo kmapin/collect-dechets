@@ -38,7 +38,6 @@ export class AppSidebarComponent {
 
   readonly planningNav: SideNav[] = [
     { label: 'Tableau de bord', icon: 'dashboard',      route: '/planning/dashboard', exact: true },
-    { label: 'Plannings',       icon: 'list_alt',        route: '/planning/list' },
     { label: 'Calendrier',      icon: 'calendar_month',  route: '/planning/calendar' },
     { label: 'Zones d\'intervention',           icon: 'map',             route: '/planning/zones' },
   ];

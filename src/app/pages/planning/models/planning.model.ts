@@ -58,6 +58,7 @@ export interface PlanningV2CreateBody {
   endTime?: string;
   typeDechets: WasteType[];
   teamId?: string | null;
+  equipeIds?: string[];
   agencyId: string;
   managerId?: string;
   clientId?: string;

@@ -44,7 +44,7 @@ export class TeamService {
   // ── Internal signals ─────────────────────────────────────────
   private _teams               = signal<Team[]>([]);
   private _collectors          = signal<CollectorUser[]>([]);
-  private _availableVehicles   = signal<AvailableVehicle[]>(this._mockVehicles());
+  private _availableVehicles   = signal<AvailableVehicle[]>([]);
   private _unassignedVehicles  = signal<AvailableVehicle[]>([]);
   private _availableZones      = signal<AvailableZone[]>(this._mockZones());
   private _loading             = signal(false);
@@ -80,25 +80,6 @@ export class TeamService {
   });
 
   // ── Load from API ─────────────────────────────────────────────
-
-  loadTeams(): void {
-    const agencyId = this.agencyId;
-    if (!agencyId) return;
-    this._loading.set(true);
-
-    forkJoin({
-      teams: this.http.get<{ success: boolean; count: number; data: TeamApi[] }>(
-        `${this.api}/teams/agency/${agencyId}`
-      ).pipe(map(r => r.data ?? []), catchError(() => of([]))),
-      collectors: this.http.get<{ success: boolean; message: string; data: CollectorUser[] }>(
-        `${this.api}/agency_employees/${agencyId}/collectors`
-      ).pipe(map(r => r.data ?? []), catchError(() => of([]))),
-    }).subscribe(({ teams, collectors }) => {
-      this._collectors.set(collectors);
-      this._teams.set(teams.map((t, i) => this._mapTeamApi(t, collectors, i)));
-      this._loading.set(false);
-    });
-  }
 
   loadCollectors(): void {
     const agencyId = this.agencyId;
@@ -339,11 +320,7 @@ export class TeamService {
 
   // ── V2 API ────────────────────────────────────────────────────
 
-  /**
-   * Charge les équipes via l'API V2 (supporte on_mission/maintenance + filtres serveur).
-   * Remplace loadTeams() — charge aussi véhicules et zones disponibles.
-   */
-  loadTeamsV2(): void {
+  loadTeams(): void {
     const agencyId = this.agencyId;
     if (!agencyId) return;
     this._loading.set(true);
@@ -392,7 +369,7 @@ export class TeamService {
   loadAvailableVehiclesFromApi(): void {
     const agencyId = this.agencyId;
     if (!agencyId) return;
-    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/vehicles/agency/${agencyId}`)
+    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/V2/vehicles/agency/${agencyId}`)
       .pipe(map(r => Array.isArray(r) ? r : ((r as any).data ?? [])), catchError(() => of(null)))
       .subscribe(list => {
         if (list !== null) {
@@ -670,15 +647,6 @@ export class TeamService {
   }
 
   // ── Mock-only: vehicles and zones (no API endpoint) ───────────
-  private _mockVehicles(): AvailableVehicle[] {
-    return [
-      { id: 'VA1', plate: 'BF-1234-X', model: 'Mercedes Sprinter 2T', type: 'camion',   capacityTons: 2,   status: 'disponible' },
-      { id: 'VA2', plate: 'BF-5678-Y', model: 'Toyota Dyna 3T',       type: 'camion',   capacityTons: 3,   status: 'disponible' },
-      { id: 'VA3', plate: 'BF-9012-Z', model: 'Honda CB500',           type: 'moto',     capacityTons: 0.1, status: 'disponible' },
-      { id: 'VA4', plate: 'BF-3344-W', model: 'Piaggio Porter 1.5T',  type: 'tricycle', capacityTons: 1.5, status: 'disponible' },
-    ];
-  }
-
   private _mockZones(): AvailableZone[] {
     return [
       { id: 'ZA1', name: 'Secteur 1 – Gounghin',    ville: 'Ouagadougou', arrondissement: 'Baskuy',   householdsCount: 340 },
