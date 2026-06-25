@@ -76,6 +76,13 @@
                 {{ paymentForm.get('description')?.value?.length || 0 }}/200
               </mat-hint>
             </mat-form-field>
+            <!-- Erreur backend -->
+            @if (errorMessage) {
+              <div class="backend-error">
+                <mat-icon>error_outline</mat-icon>
+                <span>{{ errorMessage }}</span>
+              </div>
+            }
             <!-- Bouton de soumission -->
             <div class="form-actions">
               <button mat-raised-button color="primary" type="submit" class="submit-button"

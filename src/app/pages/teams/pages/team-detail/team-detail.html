@@ -69,10 +69,33 @@
 
       <!-- Actions -->
       <div class="tdh-actions">
-        <button class="tdha-btn tdha-btn--ghost" (click)="toggleStatus()">
-          <mat-icon>{{ team()!.status === 'active' ? 'pause_circle' : 'play_circle' }}</mat-icon>
-          {{ team()!.status === 'active' ? 'Désactiver' : 'Activer' }}
-        </button>
+        <!-- Sélecteur de statut -->
+        <div class="tdha-status-wrapper" style="position:relative">
+          <button class="tdha-btn tdha-btn--ghost"
+                  (click)="statusMenuOpen = !statusMenuOpen"
+                  pTooltip="Changer le statut" tooltipPosition="bottom">
+            <mat-icon>manage_accounts</mat-icon>
+            Statut
+            <mat-icon style="font-size:16px;width:16px;height:16px">arrow_drop_down</mat-icon>
+          </button>
+          @if (statusMenuOpen) {
+            <div class="tdha-status-menu" style="position:absolute;top:100%;left:0;z-index:100;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:170px;overflow:hidden;margin-top:4px">
+              @for (s of allStatuses; track s.value) {
+                <button class="tdha-status-item"
+                        style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;text-align:left"
+                        [style.opacity]="team()!.status === s.value ? '0.4' : '1'"
+                        [disabled]="team()!.status === s.value"
+                        (click)="changeStatus(s.value)">
+                  <mat-icon [style.color]="s.color" style="font-size:18px;width:18px;height:18px">{{ s.icon }}</mat-icon>
+                  <span>{{ s.label }}</span>
+                  @if (team()!.status === s.value) {
+                    <mat-icon style="margin-left:auto;font-size:14px;color:#16a34a">check</mat-icon>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
         <button class="tdha-btn tdha-btn--ghost tdha-btn--danger" (click)="showDelDlg.set(true)">
           <mat-icon>delete_outline</mat-icon>Supprimer
         </button>
@@ -152,6 +175,13 @@
 
     <!-- ── MEMBERS ────────────────────────────────────────── -->
     @if (activeTab() === 'members') {
+      <div class="members-tab-header">
+        <span class="mth-count">{{ team()!.members.length }} membre{{ team()!.members.length !== 1 ? 's' : '' }}</span>
+        <a class="mth-manage-btn" [routerLink]="['/teams/members', team()!.id]">
+          <mat-icon>manage_accounts</mat-icon>
+          Gérer les membres
+        </a>
+      </div>
       <div class="members-grid">
         @for (m of team()!.members; track m.id) {
           <div class="member-card">
@@ -161,22 +191,42 @@
             <div class="mc-info">
               <div class="mc-name">{{ m.name }}</div>
               <div class="mc-role" [style.color]="roleColor(m.role)">{{ roleLabel(m.role) }}</div>
-              <div class="mc-phone"><mat-icon>phone</mat-icon>{{ m.phone }}</div>
+              <div class="mc-phone"><mat-icon>phone</mat-icon>{{ m.phone || '—' }}</div>
               @if (m.email) {
                 <div class="mc-email"><mat-icon>email</mat-icon>{{ m.email }}</div>
               }
-              <div class="mc-joined"><mat-icon>calendar_today</mat-icon>Depuis {{ m.joinedAt | date:'MMMM yyyy':'':'fr' }}</div>
+              <div class="mc-joined"><mat-icon>calendar_today</mat-icon>Depuis {{ m.joinedAt | date:'MMMM yyyy' }}</div>
+              @if (m.performance) {
+                <div class="mc-perf">
+                  <span pTooltip="Missions terminées" tooltipPosition="top">
+                    <mat-icon>flag</mat-icon>{{ m.performance.missionsCompleted }}
+                  </span>
+                  <span pTooltip="Taux de réussite" tooltipPosition="top">
+                    <mat-icon>verified</mat-icon>{{ m.performance.successRate }}%
+                  </span>
+                  <span pTooltip="Heures travaillées" tooltipPosition="top">
+                    <mat-icon>schedule</mat-icon>{{ m.performance.hoursWorked }}h
+                  </span>
+                </div>
+              }
             </div>
             <div class="mc-avail" [style.background]="availabilityColor(m.availability) + '18'" [style.color]="availabilityColor(m.availability)">
               <span class="avail-dot" [style.background]="availabilityColor(m.availability)"></span>
               {{ availabilityLabel(m.availability) }}
             </div>
+            <a class="mc-action-btn" [routerLink]="['/teams/members', team()!.id]"
+               pTooltip="Gérer ce membre" tooltipPosition="top">
+              <mat-icon>open_in_new</mat-icon>
+            </a>
           </div>
         }
         @if (team()!.members.length === 0) {
           <div class="tab-empty">
             <mat-icon>person_off</mat-icon>
             <p>Aucun membre dans cette équipe</p>
+            <a class="tab-empty-btn" [routerLink]="['/teams/members', team()!.id]">
+              <mat-icon>person_add</mat-icon>Ajouter des membres
+            </a>
           </div>
         }
       </div>
@@ -217,7 +267,7 @@
               <mat-icon>build</mat-icon>
               <div>
                 <span class="vcm-label">Dernière révision</span>
-                <span class="vcm-val">{{ team()!.vehicle!.lastMaintenance }}</span>
+                <span class="vcm-val">{{ formatMaintenance(team()!.vehicle!.lastMaintenance) }}</span>
               </div>
             </div>
             <div class="vcm-item">
@@ -298,10 +348,14 @@
                       [style.color]="missionStatusColor(m.status)">
                   {{ missionStatusLabel(m.status) }}
                 </span>
+                <a class="mr-detail-link" [routerLink]="['/planning/detail', m.id]"
+                   pTooltip="Voir le planning" tooltipPosition="top">
+                  <mat-icon>open_in_new</mat-icon>
+                </a>
               </div>
+              <div class="mr-zone">{{ m.zone }}</div>
               <div class="mr-meta">
-                <span><mat-icon>calendar_today</mat-icon>{{ m.date }}</span>
-                <span><mat-icon>place</mat-icon>{{ m.zone }}</span>
+                <span><mat-icon>calendar_today</mat-icon>{{ formatMissionDate(m.date) }}</span>
                 @if (m.duration) { <span><mat-icon>schedule</mat-icon>{{ m.duration }}</span> }
               </div>
               @if (m.totalHouseholds > 0) {
@@ -336,6 +390,7 @@
     [team]="team()"
     [availableVehicles]="svc.availableVehicles()"
     [availableZones]="svc.availableZones()"
+    [availableCollectors]="svc.collectors()"
     (save)="onFormSave($event)"
     (cancel)="formOpen.set(false)">
   </app-team-form>

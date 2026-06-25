@@ -1,5 +1,5 @@
 import {
-  Component, OnInit, ViewChild, signal, computed, inject,
+  Component, OnInit, ViewChild, signal, computed, inject, effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -40,11 +40,22 @@ export class TeamList implements OnInit {
   private  route  = inject(ActivatedRoute);
   readonly router = inject(Router);
 
+  constructor() {
+    effect(() => {
+      const err = this.svc.error();
+      if (err) {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err, life: 5000 });
+        this.svc.clearError();
+      }
+    });
+  }
+
   // ── UI State ──────────────────────────────────────────────
   loading           = signal(true);
   formOpen          = signal(false);
   modalTeam         = signal<Team | null>(null);
   modalOpen         = signal(false);
+  modalLoading      = signal(false);
   editingTeam       = signal<Team | null>(null);
   deletingTeam      = signal<Team | null>(null);
   confirmDeleteOpen = signal(false);
@@ -89,7 +100,13 @@ export class TeamList implements OnInit {
   ];
 
   ngOnInit(): void {
-    setTimeout(() => this.loading.set(false), 800);
+    this.svc.loadTeams();
+    // Bind loading to service signal and fall back after timeout
+    const unsub = setInterval(() => {
+      if (!this.svc.loading()) { this.loading.set(false); clearInterval(unsub); }
+    }, 100);
+    setTimeout(() => { this.loading.set(false); clearInterval(unsub); }, 5000);
+
     const qs = this.route.snapshot.queryParamMap;
     if (qs.get('create') === '1') {
       this.openCreate();
@@ -118,13 +135,18 @@ export class TeamList implements OnInit {
   buildContextMenu(team: Team): void {
     this.ctxTeam.set(team);
     this.contextMenuItems.set([
-      { label: 'Voir le détail',  icon: 'pi pi-eye',      command: () => this.goToDetail(team.id) },
-      { label: 'Modifier',        icon: 'pi pi-pencil',   command: () => this.openEdit(team) },
+      { label: 'Voir le détail', icon: 'pi pi-eye',    command: () => this.goToDetail(team.id) },
+      { label: 'Modifier',       icon: 'pi pi-pencil', command: () => this.openEdit(team) },
       { separator: true },
       {
-        label: team.status === 'active' ? 'Désactiver' : 'Activer',
-        icon:  team.status === 'active' ? 'pi pi-pause'  : 'pi pi-play',
-        command: () => this.toggleStatus(team),
+        label: 'Changer le statut',
+        icon:  'pi pi-sync',
+        items: [
+          { label: 'Active',      icon: 'pi pi-check-circle', disabled: team.status === 'active',      command: () => this.changeStatus(team, 'active') },
+          { label: 'Inactive',    icon: 'pi pi-ban',          disabled: team.status === 'inactive',    command: () => this.changeStatus(team, 'inactive') },
+          { label: 'En mission',  icon: 'pi pi-send',         disabled: team.status === 'on_mission',  command: () => this.changeStatus(team, 'on_mission') },
+          { label: 'Maintenance', icon: 'pi pi-wrench',       disabled: team.status === 'maintenance', command: () => this.changeStatus(team, 'maintenance') },
+        ],
       },
       { separator: true },
       { label: 'Supprimer', icon: 'pi pi-trash', styleClass: 'ctx-danger', command: () => this.confirmDelete(team) },
@@ -132,7 +154,18 @@ export class TeamList implements OnInit {
   }
 
   // ── Navigation ────────────────────────────────────────────
-  openModal(team: Team): void { this.modalTeam.set(team); this.modalOpen.set(true); }
+  openModal(team: Team): void {
+    this.modalTeam.set(team);
+    this.modalOpen.set(true);
+    this.modalLoading.set(true);
+    this.svc.getTeamV2(team.id).subscribe({
+      next: full => {
+        if (this.modalOpen()) this.modalTeam.set(full);
+        this.modalLoading.set(false);
+      },
+      error: () => this.modalLoading.set(false),
+    });
+  }
   goToDetail(id: string): void { this.router.navigate(['/teams/detail', id]); }
 
   // ── CRUD ──────────────────────────────────────────────────
@@ -144,34 +177,76 @@ export class TeamList implements OnInit {
     const vehicle = data.vehicleId
       ? this.svc.availableVehicles().find(v => v.id === data.vehicleId)
       : undefined;
-    const zones   = (data.zoneIds ?? []).map(id => this.svc.availableZones().find(z => z.id === id)).filter(Boolean) as any[];
-    const members = (data.members ?? []).map((m, i) => ({
-      id: `NEW-${Date.now()}-${i}`, name: m.name, phone: m.phone,
-      role: m.role, availability: 'disponible' as const, joinedAt: new Date().toISOString().split('T')[0],
+    const zones = (data.zoneIds ?? [])
+      .map(id => this.svc.availableZones().find(z => z.id === id))
+      .filter(Boolean) as any[];
+
+    const members: TeamMember[] = (data.members ?? []).map((m, i) => ({
+      id:           m._id && !m._id.startsWith('LOCAL-') ? m._id : `LOCAL-${Date.now()}-${i}`,
+      name:         m.name,
+      phone:        m.phone,
+      role:         m.role,
+      availability: 'disponible' as const,
+      joinedAt:     new Date().toISOString().split('T')[0],
     }));
-    const payload: Partial<Team> = {
-      name: data.name, color: data.color, status: data.status as TeamStatus,
-      description: data.description, supervisor: data.supervisor, phone: data.phone,
-      members, zones,
-      vehicle: vehicle ? { ...vehicle, lastMaintenance: '—', fuelLevel: 80, mileage: 0 } : undefined,
+
+    const payload: Partial<Team> & { name: string } = {
+      name:        data.name,
+      color:       data.color,
+      status:      data.status as TeamStatus,
+      description: data.description,
+      supervisor:  data.supervisor,
+      phone:       data.phone,
+      members,
+      zones,
+      vehicle: vehicle
+        ? { ...vehicle, lastMaintenance: '—', fuelLevel: 80, mileage: 0 }
+        : undefined,
     };
+
     if (editing) {
-      this.svc.update(editing.id, payload).subscribe(() => {
-        this.msg.add({ severity: 'success', summary: 'Modifié', detail: `${data.name} mis à jour` });
-        this.formOpen.set(false);
+      this.svc.updateV2(editing.id, payload).subscribe({
+        next: () => {
+          this.msg.add({ severity: 'success', summary: 'Modifié', detail: `${data.name} mis à jour` });
+          this.formOpen.set(false);
+        },
+        error: err => {
+          const detail = err?.error?.error?.message ?? 'Impossible de mettre à jour';
+          this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+        },
       });
     } else {
-      this.svc.create(payload).subscribe(t => {
-        this.msg.add({ severity: 'success', summary: 'Créé !', detail: `Équipe ${t.name} créée` });
-        this.formOpen.set(false);
+      this.svc.createV2(payload).subscribe({
+        next: t => {
+          this.msg.add({ severity: 'success', summary: 'Créé !', detail: `Équipe ${t.name} créée` });
+          this.formOpen.set(false);
+        },
+        error: err => {
+          const detail = err?.error?.message ?? 'Impossible de créer l\'équipe';
+          this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+        },
       });
     }
   }
 
   toggleStatus(team: Team): void {
-    this.svc.toggleStatus(team.id).subscribe(t => {
-      const lbl = t.status === 'active' ? 'activée' : 'désactivée';
-      this.msg.add({ severity: 'info', summary: 'Statut modifié', detail: `${t.name} ${lbl}` });
+    const next: TeamStatus = team.status === 'active' ? 'inactive' : 'active';
+    this.changeStatus(team, next);
+  }
+
+  changeStatus(team: Team, status: TeamStatus): void {
+    this.svc.changeStatus(team.id, status).subscribe({
+      next: t => {
+        const labels: Record<TeamStatus, string> = {
+          active: 'activée', inactive: 'désactivée',
+          on_mission: 'mise en mission', maintenance: 'mise en maintenance',
+        };
+        this.msg.add({ severity: 'info', summary: 'Statut modifié', detail: `${t.name} ${labels[t.status]}` });
+      },
+      error: err => {
+        const detail = err?.error?.error?.message ?? 'Impossible de modifier le statut';
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+      },
     });
   }
 
@@ -260,7 +335,7 @@ export class TeamList implements OnInit {
 
   // ── Row helpers ───────────────────────────────────────────
   getChef(t: Team): TeamMember | undefined {
-    return t.members.find(m => m.role === 'chef');
+    return t.members.find(m => m.role === 'manager');
   }
   getAvailability(t: Team): { available: number; total: number; pct: number } {
     const available = t.members.filter(m => m.availability === 'disponible').length;

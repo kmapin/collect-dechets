@@ -19,6 +19,24 @@ $shadow:   0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
 $shadow-md:0 4px 24px rgba(0,0,0,.1);
 $tr: .2s ease;
 
+/* ---- Duplicate banner ---- */
+.duplicate-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid $blue;
+  border-radius: $radius;
+  font-size: 13px;
+  color: #1e40af;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+  strong { font-weight: 700; }
+}
+
 /* ---- Wrapper ---- */
 .pc-wrapper {
   max-width: 860px;
@@ -216,7 +234,7 @@ $tr: .2s ease;
   border-radius: $radius;
   border: 1px solid $border;
   box-shadow: $shadow;
-  overflow: hidden;
+  overflow: visible; // ne pas clipper les overlays (calendrier, select)
 }
 
 .step-panel {
@@ -439,6 +457,99 @@ $tr: .2s ease;
   .min-warn { color: $amber; font-weight: 500; }
   &.warn mat-icon { color: $amber; }
 }
+
+/* ---- Group mode selector ---- */
+.group-mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.gm-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid $border;
+  border-radius: 12px;
+  background: $card;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+
+  > mat-icon:first-child { font-size: 24px; color: $text-3; flex-shrink: 0; }
+
+  .gm-texts { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .gm-title { font-size: 13px; font-weight: 600; color: $text-1; }
+  .gm-desc  { font-size: 11px; color: $text-3; }
+  .gm-check { font-size: 20px; color: $green; flex-shrink: 0; }
+
+  &.active {
+    border-color: $green;
+    background: #f0fdf4;
+    > mat-icon:first-child { color: $green; }
+  }
+  &:hover:not(.active) { border-color: $text-3; background: $surface; }
+}
+
+/* ---- Existing groups list ---- */
+.existing-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eg-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2px solid $border;
+  border-radius: 10px;
+  background: $card;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+
+  .eg-icon { width: 38px; height: 38px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; mat-icon { color: #3b82f6; font-size: 20px; } }
+  .eg-info  { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .eg-name  { font-size: 13px; font-weight: 600; color: $text-1; }
+  .eg-desc  { font-size: 11px; color: $text-2; }
+  .eg-count { font-size: 11px; color: $text-3; }
+  .eg-selected-icon { font-size: 20px; color: $green; flex-shrink: 0; }
+
+  &.selected { border-color: $green; background: #f0fdf4; .eg-icon { background: #dcfce7; mat-icon { color: $green; } } }
+  &:hover:not(.selected) { border-color: $text-3; background: $surface; }
+}
+
+/* ---- Groups loading / empty states ---- */
+.groups-loading, .groups-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 10px;
+  background: $surface;
+  color: $text-2;
+  font-size: 13px;
+  mat-icon { font-size: 20px; color: $text-3; }
+}
+
+.groups-empty { flex-wrap: wrap; }
+
+.gm-switch-link {
+  background: none;
+  border: none;
+  color: $green;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; display: inline-block; }
 
 /* ---- Zone hierarchy ---- */
 .zone-hierarchy { display: flex; flex-direction: column; gap: 12px; }
@@ -1124,6 +1235,123 @@ $tr: .2s ease;
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ---- Teams loading / empty states ---- */
+.teams-loading {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 4px 0;
+
+  .team-skeleton { border-radius: 12px; overflow: hidden; }
+}
+
+.teams-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  color: $text-3;
+
+  mat-icon { font-size: 48px; width: 48px; height: 48px; }
+  p  { margin: 0; font-size: 15px; color: $text-2; }
+  small { font-size: 12px; }
+}
+
+/* ---- Count badge variant ---- */
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--cb-bg, #eff6ff);
+  color: var(--cb-c, #3b82f6);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+/* ── Team edit mode ─────────────────────────────────────────── */
+.team-edit-wrap { display: flex; flex-direction: column; gap: 16px; }
+
+.team-chips {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.team-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 10px 7px 12px; border-radius: 20px;
+  border: 1.5px solid $border; background: $card;
+  font-size: 13px; font-weight: 500; color: $text-1;
+  transition: border-color $tr, background $tr;
+  &--conflict { border-color: #fca5a5; background: #fef2f2; }
+}
+.tc-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tc-name  { font-weight: 600; }
+.tc-count { font-size: 11px; color: $text-2; }
+.tc-warn  { font-size: 16px !important; color: $amber; }
+.tc-remove {
+  display: flex; align-items: center; padding: 2px;
+  border: none; background: transparent; cursor: pointer; color: $text-3;
+  border-radius: 50%; transition: background $tr, color $tr;
+  mat-icon { font-size: 15px; }
+  &:hover { background: #f1f5f9; color: $red; }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+}
+
+.team-add-row {
+  display: flex; align-items: center; gap: 10px;
+  mat-icon { color: $purple; font-size: 20px; flex-shrink: 0; }
+}
+.team-add-select {
+  flex: 1; max-width: 360px;
+  &:disabled { opacity: .55; cursor: not-allowed; }
+}
+
+/* ── Conflict banner (step 6) ───────────────────────────────── */
+.conflict-checking {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; border-radius: 10px;
+  background: #eff6ff; color: $blue; font-size: 13px; font-weight: 600;
+  margin-bottom: 16px;
+  mat-icon { font-size: 18px; }
+}
+.conflict-banner {
+  border: 1.5px solid #fca5a5; border-radius: 12px;
+  background: #fef2f2; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;
+}
+.cb-head {
+  display: flex; align-items: center; gap: 8px;
+  color: $red; font-size: 14px;
+  mat-icon { font-size: 20px; }
+}
+.cb-row {
+  display: flex; gap: 10px; align-items: baseline;
+  padding: 4px 0; border-top: 1px solid #fecaca; font-size: 13px;
+}
+.cb-team { font-weight: 600; color: $text-1; white-space: nowrap; }
+.cb-msg  { color: $text-2; }
+
+/* ── Publish now row ────────────────────────────────────────── */
+.publish-now-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 0 20px; border-bottom: 1px solid $border; margin-bottom: 20px;
+}
+.btn-publish-now {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 22px; border-radius: 10px; border: none; cursor: pointer;
+  background: #16a34a; color: #fff; font-size: 14px; font-weight: 700;
+  transition: background $tr;
+  mat-icon { font-size: 19px; }
+  &:hover:not(:disabled) { background: #15803d; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+.publish-hint { font-size: 12px; color: $text-2; }
 
 /* ---- Responsive ---- */
 @media (max-width: 768px) {

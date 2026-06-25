@@ -69,7 +69,7 @@ const HEAT_HOURS = Array.from({ length: H_SPAN }, (_, i) => i + H_START);
 })
 export class TeamAvailability implements OnInit, OnDestroy {
   readonly router = inject(Router);
-  readonly svc    = inject(TeamService);
+  readonly teamService    = inject(TeamService);
   private  msg    = inject(MessageService);
 
   // ── View & time ───────────────────────────────────────────────────
@@ -130,7 +130,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
 
   // ── Computed ──────────────────────────────────────────────────────
   filteredTeams = computed(() => {
-    let list = this.svc.teams();
+    let list = this.teamService.teams();
     const q = this.teamSearch().toLowerCase().trim();
     if (q) list = list.filter(t => t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q));
     const s = this.statusFilter();
@@ -144,7 +144,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
   });
 
   statusCounts = computed(() => {
-    const all     = this.svc.teams();
+    const all     = this.teamService.teams();
     const active  = all.filter(t => t.status === 'active').length;
     const mission = all.filter(t => t.status === 'on_mission').length;
     return {
@@ -159,7 +159,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
 
   allZones = computed(() => {
     const villes = new Set<string>();
-    this.svc.teams().forEach(t => t.zones.forEach(z => villes.add(z.ville)));
+    this.teamService.teams().forEach(t => t.zones.forEach(z => villes.add(z.ville)));
     return [...villes].sort();
   });
 
@@ -204,7 +204,10 @@ export class TeamAvailability implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit():    void { this._timer = setInterval(() => this.currentTime.set(new Date()), 30_000); }
+  ngOnInit(): void {
+    this._timer = setInterval(() => this.currentTime.set(new Date()), 30_000);
+    if (!this.teamService.teams().length) this.teamService.loadTeams();
+  }
   ngOnDestroy(): void { clearInterval(this._timer); }
 
   // ── Actions ───────────────────────────────────────────────────────
@@ -353,7 +356,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
   }
 
   private _buildConflicts(): ConflictAlert[] {
-    const teams     = this.svc.teams();
+    const teams     = this.teamService.teams();
     const conflicts: ConflictAlert[] = [];
 
     // Zone overlaps (two on_mission teams in same zone)

@@ -43,6 +43,7 @@ function sparkCoords(successRate: number): [number, number][] {
 export class TeamDetailModal implements OnChanges {
   @Input() team: Team | null = null;
   @Input() visible = false;
+  @Input() loading = false;
   @Output() visibleChange   = new EventEmitter<boolean>();
   @Output() edit            = new EventEmitter<Team>();
   @Output() toggleStatus    = new EventEmitter<Team>();
@@ -144,9 +145,9 @@ export class TeamDetailModal implements OnChanges {
   setTab(t: Tab): void { this.activeTab.set(t); }
 
   // ── Helpers ──────────────────────────────────────────────────
-  roleLabel(r: string): string   { return ({ chef:'Chef d\'équipe', chauffeur:'Chauffeur', agent:'Agent', assistant:'Assistant'         } as Record<string,string>)[r] ?? r; }
-  roleColor(r: string): string   { return ({ chef:'#3b82f6', chauffeur:'#f59e0b', agent:'#16a34a', assistant:'#8b5cf6'                  } as Record<string,string>)[r] ?? '#64748b'; }
-  roleIcon(r: string): string    { return ({ chef:'star', chauffeur:'drive_eta', agent:'person', assistant:'support_agent'              } as Record<string,string>)[r] ?? 'person'; }
+  roleLabel(r: string): string   { return ({ manager:'Manager', collector:'Collecteur' } as Record<string,string>)[r] ?? r; }
+  roleColor(r: string): string   { return ({ manager:'#3b82f6', collector:'#16a34a'   } as Record<string,string>)[r] ?? '#64748b'; }
+  roleIcon(r: string): string    { return ({ manager:'manage_accounts', collector:'recycling' } as Record<string,string>)[r] ?? 'person'; }
   availColor(a: string): string  { return ({ disponible:'#16a34a', occupe:'#f59e0b', absent:'#ef4444'                                   } as Record<string,string>)[a] ?? '#94a3b8'; }
   availLabel(a: string): string  { return ({ disponible:'Disponible', occupe:'Occupé', absent:'Absent'                                  } as Record<string,string>)[a] ?? a; }
   availIcon(a: string): string   { return ({ disponible:'check_circle', occupe:'pending', absent:'cancel'                               } as Record<string,string>)[a] ?? 'help'; }

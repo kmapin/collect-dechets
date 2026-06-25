@@ -1,11 +1,11 @@
 import {
-  Component, Input, Output, EventEmitter, OnInit, OnChanges, inject,
+  Component, Input, Output, EventEmitter, OnInit, OnChanges, inject, HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { TooltipModule } from 'primeng/tooltip';
-import { Team, TeamFormData, AvailableVehicle, AvailableZone, MemberRole } from '../../models/team.model';
+import { Team, TeamFormData, AvailableVehicle, AvailableZone, MemberRole, CollectorUser } from '../../models/team.model';
 
 const TEAM_COLORS = [
   '#3b82f6','#16a34a','#f59e0b','#ef4444',
@@ -24,6 +24,7 @@ export class TeamForm implements OnInit, OnChanges {
   @Input() team: Team | null = null;
   @Input({ required: true }) availableVehicles!: AvailableVehicle[];
   @Input({ required: true }) availableZones!: AvailableZone[];
+  @Input() availableCollectors: CollectorUser[] = [];
   @Output() save   = new EventEmitter<TeamFormData>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -31,19 +32,57 @@ export class TeamForm implements OnInit, OnChanges {
 
   readonly colors  = TEAM_COLORS;
   readonly roles: Array<{ value: MemberRole; label: string }> = [
-    { value: 'chef',      label: 'Chef d\'équipe' },
-    { value: 'chauffeur', label: 'Chauffeur'      },
-    { value: 'agent',     label: 'Agent'          },
-    { value: 'assistant', label: 'Assistant'      },
+    { value: 'manager',   label: 'Manager'    },
+    { value: 'collector', label: 'Collecteur' },
   ];
   readonly statuses = [
     { value: 'active',      label: 'Active'      },
     { value: 'inactive',    label: 'Inactive'    },
+    { value: 'on_mission',  label: 'En mission'  },
     { value: 'maintenance', label: 'Maintenance' },
   ];
 
   saving = false;
   activeTab = 0;
+
+  vehicleTypeIcon(type: string): string {
+    return ({ camion: 'local_shipping', pickup: 'airport_shuttle', moto: 'two_wheeler', tricycle: 'electric_rickshaw' } as Record<string, string>)[type] ?? 'directions_car';
+  }
+  vehicleStatusColor(s: string): string {
+    return ({ disponible: '#16a34a', en_service: '#3b82f6', maintenance: '#f59e0b', hors_service: '#ef4444' } as Record<string, string>)[s] ?? '#94a3b8';
+  }
+  vehicleStatusLabel(s: string): string {
+    return ({ disponible: 'Disponible', en_service: 'En service', maintenance: 'Maintenance', hors_service: 'Hors service' } as Record<string, string>)[s] ?? s;
+  }
+  memberSearches: string[] = [];
+  openDropdownIdx: number | null = null;
+
+  @HostListener('document:click')
+  closeDropdown(): void { this.openDropdownIdx = null; }
+
+  toggleDropdown(idx: number, event: Event): void {
+    event.stopPropagation();
+    this.openDropdownIdx = this.openDropdownIdx === idx ? null : idx;
+  }
+
+  filteredCollectors(idx: number): CollectorUser[] {
+    const q = (this.memberSearches[idx] ?? '').toLowerCase().trim();
+    if (!q) return this.availableCollectors;
+    return this.availableCollectors.filter(c =>
+      `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
+      (c.phone ?? '').toLowerCase().includes(q)
+    );
+  }
+
+  selectCollector(idx: number, c: CollectorUser): void {
+    this.membersArray.at(idx).patchValue({
+      _id:   c._id,
+      name:  `${c.firstName} ${c.lastName}`.trim(),
+      phone: c.phone ?? '',
+    });
+    this.memberSearches[idx] = '';
+    this.openDropdownIdx = null;
+  }
 
   form = this.fb.group({
     name:        ['', [Validators.required, Validators.minLength(3)]],
@@ -67,30 +106,41 @@ export class TeamForm implements OnInit, OnChanges {
   private _fill(): void {
     if (!this.team) return;
     this.form.patchValue({
-      name: this.team.name, color: this.team.color, status: this.team.status,
-      description: this.team.description ?? '', supervisor: this.team.supervisor ?? '',
-      phone: this.team.phone ?? '', vehicleId: this.team.vehicle?.id ?? '',
-      zoneIds: this.team.zones.map(z => z.id),
+      name:        this.team.name,
+      color:       this.team.color,
+      status:      this.team.status,
+      description: this.team.description ?? '',
+      supervisor:  this.team.supervisor ?? '',
+      phone:       this.team.phone ?? '',
+      vehicleId:   this.team.vehicle?.id ?? '',
+      zoneIds:     this.team.zones.map(z => z.id),
     });
     this.membersArray.clear();
-    this.team.members.forEach(m =>
-      this.membersArray.push(this._memberGroup(m.name, m.phone, m.role))
-    );
+    this.memberSearches = [];
+    this.team.members.forEach(m => {
+      this.membersArray.push(this._memberGroup(m.id, m.name, m.phone, m.role));
+      this.memberSearches.push('');
+    });
   }
 
-  private _memberGroup(name = '', phone = '', role: MemberRole = 'agent') {
+  private _memberGroup(id = '', name = '', phone = '', role: MemberRole = 'collector') {
     return this.fb.group({
+      _id:   [id],
       name:  [name,  Validators.required],
-      phone: [phone, Validators.required],
+      phone: [phone],
       role:  [role,  Validators.required],
     });
   }
 
   addMember(): void {
     this.membersArray.push(this._memberGroup());
+    this.memberSearches.push('');
   }
   removeMember(i: number): void {
     this.membersArray.removeAt(i);
+    this.memberSearches.splice(i, 1);
+    if (this.openDropdownIdx === i) this.openDropdownIdx = null;
+    else if (this.openDropdownIdx !== null && this.openDropdownIdx > i) this.openDropdownIdx--;
   }
 
   toggleZone(id: string): void {
@@ -106,7 +156,9 @@ export class TeamForm implements OnInit, OnChanges {
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
-    this.save.emit(this.form.getRawValue() as unknown as TeamFormData);
+    const data: TeamFormData = this.form.getRawValue() as TeamFormData;
+    console.log("Team data to save=====>", data)
+    this.save.emit(data);
   }
 
   hasError(ctrl: string): boolean {

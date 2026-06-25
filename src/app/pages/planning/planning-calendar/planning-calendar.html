@@ -82,7 +82,7 @@
             <span class="sbs-lbl">En cours</span>
           </div>
           <div class="sb-stat" style="--sc:#3b82f6">
-            <span class="sbs-val">{{ monthlyStats().publie }}</span>
+            <span class="sbs-val">{{ monthlyStats().planifie }}</span>
             <span class="sbs-lbl">Planifiés</span>
           </div>
         </div>
@@ -132,7 +132,7 @@
         </div>
       </div>
 
-      <!-- Team filters -->
+      <!-- Team filters (dynamiques depuis l'API) -->
       <div class="sb-section">
         <div class="sb-section-head">
           <h4 class="sb-section-title">Équipes</h4>
@@ -140,8 +140,11 @@
             <button type="button" class="sb-clear" (click)="activeTeams.set([])">Tout</button>
           }
         </div>
+        @if (teamNames().length === 0) {
+          <p class="sb-empty-hint">Aucune équipe chargée</p>
+        }
         <div class="sb-team-list">
-          @for (team of teams; track team) {
+          @for (team of teamNames(); track team) {
             <label class="sb-team-item" [class.active]="activeTeams().includes(team)">
               <input type="checkbox" class="sr-only"
                      [checked]="activeTeams().includes(team)"
@@ -179,6 +182,18 @@
 
     <!-- ── CALENDAR ─────────────────────────────────────────── -->
     <main class="pcal-main">
+      @if (isLoading()) {
+        <div class="pcal-loading">
+          <mat-icon style="animation:spin 1s linear infinite;font-size:32px;color:#3b82f6">sync</mat-icon>
+          <span>Chargement des plannings…</span>
+        </div>
+      }
+      @if (loadError()) {
+        <div class="pcal-error">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ loadError() }}</span>
+        </div>
+      }
       <full-calendar #calendarEl [options]="calendarOptions()"></full-calendar>
     </main>
 
@@ -262,14 +277,16 @@
 
     <!-- Actions -->
     <div class="ev-popup__actions">
-      <button type="button" class="ev-action ev-action--ghost" (click)="cancelEvent()">
-        <mat-icon>cancel</mat-icon>Annuler
-      </button>
-      <button type="button" class="ev-action ev-action--secondary" (click)="duplicateEvent()">
+      <button type="button" class="ev-action ev-action--ghost" (click)="duplicateEvent()">
         <mat-icon>content_copy</mat-icon>Dupliquer
       </button>
-      <button type="button" class="ev-action ev-action--primary" (click)="editEvent()">
-        <mat-icon>edit</mat-icon>Modifier
+      @if (selectedEvent().status === 'brouillon') {
+        <button type="button" class="ev-action ev-action--secondary" (click)="editEvent()">
+          <mat-icon>edit</mat-icon>Modifier
+        </button>
+      }
+      <button type="button" class="ev-action ev-action--primary" (click)="viewDetail()">
+        <mat-icon>visibility</mat-icon>Voir le détail
       </button>
     </div>
 

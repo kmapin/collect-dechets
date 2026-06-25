@@ -360,6 +360,7 @@
 <app-team-detail-modal
   [team]="modalTeam()"
   [visible]="modalOpen()"
+  [loading]="modalLoading()"
   (visibleChange)="modalOpen.set($event)"
   (edit)="openEdit($event); modalOpen.set(false)"
   (toggleStatus)="toggleStatus($event)"
@@ -375,6 +376,7 @@
     [team]="editingTeam()"
     [availableVehicles]="svc.availableVehicles()"
     [availableZones]="svc.availableZones()"
+    [availableCollectors]="svc.collectors()"
     (save)="onFormSave($event)"
     (cancel)="formOpen.set(false)">
   </app-team-form>

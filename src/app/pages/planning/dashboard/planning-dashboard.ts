@@ -1,6 +1,6 @@
-import { Component, OnInit, signal, computed, inject, OnDestroy } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { ChartModule } from 'primeng/chart';
 import { TableModule } from 'primeng/table';
@@ -10,8 +10,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { BadgeModule } from 'primeng/badge';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { PlanningService } from '../services/planning.service';
-import { Planning, PlanningAlert, PlanningTeam } from '../models/planning.model';
+import { Planning, PlanningAlert, PlanningStatus } from '../models/planning.model';
+import { TeamService } from '../../teams/services/team.service';
 
 interface StatCard {
   label: string;
@@ -31,23 +35,51 @@ interface StatCard {
     ChartModule, TableModule, ButtonModule, TagModule,
     TooltipModule, SkeletonModule,
     BadgeModule, ProgressBarModule,
+    ToastModule, ConfirmDialogModule,
   ],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './planning-dashboard.html',
   styleUrl: './planning-dashboard.scss',
 })
 export class PlanningDashboard implements OnInit, OnDestroy {
-  private svc = inject(PlanningService);
+  private planningService    = inject(PlanningService);
+  private teamService = inject(TeamService)
+  private msg     = inject(MessageService);
+  private confirm = inject(ConfirmationService);
+  private router  = inject(Router);
 
   isLoading = signal(true);
 
-  // ---- Data from service (signals) ----
-  stats       = this.svc.stats;
-  alerts      = this.svc.alerts;
-  teams       = this.svc.teams;
-  recentPlannings = signal<Planning[]>([]);
-  zones = this.svc.zones;
+  constructor() {
+    effect(() => {
+      const err = this.planningService.error();
+      if (err) {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err, life: 5000 });
+        this.planningService.clearError();
+      }
+    });
+  }
 
-  // ---- Stat cards ----
+  // ── Data from service (signals) ────────────────────────────
+  stats   = this.planningService.stats;
+  alerts  = this.planningService.alerts;
+  zones   = this.planningService.zones;
+  recentPlannings = signal<Planning[]>([]);
+
+  // ── Teams mapped for display ─────────────────────────────────
+  teams = computed(() =>
+    this.planningService.teams().map(t => ({
+      id:               t._id,
+      name:             t.name,
+      membersCount:     t.collectors?.length ?? 0,
+      status:           t.status === 'active' ? 'disponible' : 'indisponible',
+      currentZone:      t.zones?.[0] ?? '—',
+      collectionsToday: (t.collectors?.length ?? 0) * 2,
+      completionRate:   t.status === 'active' ? 75 : 0,
+    }))
+  );
+
+  // ── Stat cards ──────────────────────────────────────────────
   statCards = computed<StatCard[]>(() => {
     const s = this.stats();
     return [
@@ -90,7 +122,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     ];
   });
 
-  // ---- Charts ----
+  // ── Charts ──────────────────────────────────────────────────
   typeChartData: any;
   typeChartOptions: any;
   statusChartData: any;
@@ -100,21 +132,30 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   teamWorkloadData: any;
   teamWorkloadOptions: any;
 
-  // ---- Notifications overlay ----
+  // ── Notifications overlay ────────────────────────────────────
   notifOpen = signal(false);
-
   toggleNotif(): void { this.notifOpen.update(v => !v); }
+
   private refreshTimer: any;
 
   ngOnInit(): void {
-    this.recentPlannings.set(this.svc.getRecentPlannings(6));
+    // Load all data from real API
+    this.planningService.loadStats();
+    this.planningService.loadZones();
+    this.teamService.loadTeams();
+    this.planningService.loadPlannings();
+
+    // Wait for data then init charts
     setTimeout(() => {
+      this.recentPlannings.set(this.planningService.getRecentPlannings(6));
       this.isLoading.set(false);
       this._initCharts();
-    }, 600);
+    }, 1200);
 
+    // Refresh recent plannings periodically
     this.refreshTimer = setInterval(() => {
-      this.recentPlannings.set(this.svc.getRecentPlannings(6));
+      this.recentPlannings.set(this.planningService.getRecentPlannings(6));
+      this._initCharts();
     }, 30_000);
   }
 
@@ -123,11 +164,11 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   }
 
   private _initCharts(): void {
-    const byType   = this.svc.planningsByType();
-    const byStatus = this.svc.planningsByStatus();
-    const workload = this.svc.teamWorkload();
+    const byType   = this.planningService.planningsByType();
+    const byStatus = this.planningService.planningsByStatus();
+    const workload = this.planningService.teamWorkload();
 
-    // ---- Donut – par type ----
+    // ── Donut – par type ──────────────────────────────────────
     this.typeChartData = {
       labels: ['Client individuel', 'Groupe de clients', 'Par zone', 'Par secteur'],
       datasets: [{
@@ -138,22 +179,22 @@ export class PlanningDashboard implements OnInit, OnDestroy {
         borderColor: '#ffffff',
       }],
     };
-    this.typeChartOptions = this._donutOptions('Répartition par type');
+    this.typeChartOptions = this._donutOptions();
 
-    // ---- Donut – par statut ----
+    // ── Donut – par statut ────────────────────────────────────
     this.statusChartData = {
-      labels: ['Brouillon', 'Publié', 'En cours', 'Terminé'],
+      labels: ['Brouillon', 'Planifié', 'En cours', 'Terminé'],
       datasets: [{
-        data: [byStatus.brouillon, byStatus.publie, byStatus.en_cours, byStatus.termine],
+        data: [byStatus.brouillon, byStatus.planifie, byStatus.en_cours, byStatus.termine],
         backgroundColor: ['#94a3b8', '#3b82f6', '#f59e0b', '#16a34a'],
         hoverBackgroundColor: ['#64748b', '#2563eb', '#d97706', '#15803d'],
         borderWidth: 2,
         borderColor: '#ffffff',
       }],
     };
-    this.statusChartOptions = this._donutOptions('Répartition par statut');
+    this.statusChartOptions = this._donutOptions();
 
-    // ---- Line – évolution des collectes ----
+    // ── Line – évolution hebdomadaire ─────────────────────────
     this.evolutionChartData = {
       labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
       datasets: [
@@ -192,13 +233,13 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       },
     };
 
-    // ---- Bar – charge des équipes ----
+    // ── Bar – charge des équipes ──────────────────────────────
     this.teamWorkloadData = {
       labels: workload.map(t => t.name),
       datasets: [{
-        label: 'Collectes du jour',
+        label: 'Collecteurs',
         data: workload.map(t => t.value),
-        backgroundColor: ['#3b82f6', '#16a34a', '#f59e0b', '#ef4444'],
+        backgroundColor: ['#3b82f6', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
         borderRadius: 6,
         borderSkipped: false,
       }],
@@ -208,7 +249,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} collectes` } },
+        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} collecteurs` } },
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
@@ -217,7 +258,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
   }
 
-  private _donutOptions(title: string): any {
+  private _donutOptions(): any {
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -229,25 +270,25 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
   }
 
-  // ---- UI helpers ----
+  // ── UI helpers ──────────────────────────────────────────────
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
     const map: Record<string, any> = {
-      publie: 'info',
+      planifie: 'info',
       en_cours: 'warn',
-      termine: 'success',
-      brouillon: 'secondary',
-      annule: 'danger',
+      termine:  'success',
+      brouillon:'secondary',
+      annule:   'danger',
     };
     return map[status] ?? 'secondary';
   }
 
   getStatusLabel(status: string): string {
     const map: Record<string, string> = {
-      publie: 'Publié',
+      planifie: 'Planifié',
       en_cours: 'En cours',
-      termine: 'Terminé',
-      brouillon: 'Brouillon',
-      annule: 'Annulé',
+      termine:  'Terminé',
+      brouillon:'Brouillon',
+      annule:   'Annulé',
     };
     return map[status] ?? status;
   }
@@ -255,9 +296,9 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   getTypeLabel(type: string): string {
     const map: Record<string, string> = {
       individuel: 'Individuel',
-      groupe: 'Groupe',
-      zone: 'Par zone',
-      secteur: 'Par secteur',
+      groupe:     'Groupe',
+      zone:       'Par zone',
+      secteur:    'Par secteur',
     };
     return map[type] ?? type;
   }
@@ -265,9 +306,9 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   getTypeIcon(type: string): string {
     const map: Record<string, string> = {
       individuel: 'person',
-      groupe: 'groups',
-      zone: 'map',
-      secteur: 'grid_view',
+      groupe:     'groups',
+      zone:       'map',
+      secteur:    'grid_view',
     };
     return map[type] ?? 'list_alt';
   }
@@ -275,9 +316,9 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   getTypeColor(type: string): string {
     const map: Record<string, string> = {
       individuel: '#3b82f6',
-      groupe: '#8b5cf6',
-      zone: '#16a34a',
-      secteur: '#f59e0b',
+      groupe:     '#8b5cf6',
+      zone:       '#16a34a',
+      secteur:    '#f59e0b',
     };
     return map[type] ?? '#64748b';
   }
@@ -285,34 +326,146 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   getAlertIcon(type: string): string {
     const map: Record<string, string> = {
       warning: 'warning',
-      danger: 'error',
-      info: 'info',
+      danger:  'error',
+      info:    'info',
       success: 'check_circle',
     };
     return map[type] ?? 'notifications';
   }
 
   getTeamStatusColor(status: string): string {
-    const map: Record<string, string> = {
-      disponible: '#16a34a',
-      en_service: '#f59e0b',
-      indisponible: '#ef4444',
-    };
-    return map[status] ?? '#64748b';
+    return ({ disponible: '#16a34a', en_service: '#f59e0b', indisponible: '#ef4444' } as Record<string,string>)[status] ?? '#64748b';
   }
 
   getTeamStatusLabel(status: string): string {
-    const map: Record<string, string> = {
-      disponible: 'Disponible',
-      en_service: 'En service',
-      indisponible: 'Indisponible',
-    };
-    return map[status] ?? status;
+    return ({ disponible: 'Disponible', en_service: 'En service', indisponible: 'Indisponible' } as Record<string,string>)[status] ?? status;
   }
 
-  dismissAlert(id: string): void {
-    this.svc.dismissAlert(id);
+  // ── Planning status actions ──────────────────────────────────
+
+  actionLoading = signal<string | null>(null); // ID du planning en cours d'action
+
+  /** brouillon → planifie */
+  publishPlanning(p: Planning): void {
+    this.confirm.confirm({
+      message: `Publier le planning <strong>${p.reference}</strong> ?<br>Il sera visible et exécutable par les équipes.`,
+      header: 'Confirmer la publication',
+      icon: 'pi pi-send',
+      acceptLabel: 'Publier',
+      rejectLabel: 'Annuler',
+      acceptButtonStyleClass: 'p-button-success',
+      accept: () => {
+        this.actionLoading.set(p.id);
+        this.planningService.publishPlanning(p.id).subscribe({
+          next: (res) => {
+            this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'planifie');
+            this.msg.add({ severity: 'success', summary: 'Publié', detail: `${p.reference} est maintenant planifié.` });
+          },
+          error: (err) => {
+            const detail = err?.error?.error?.message ?? 'Impossible de publier ce planning';
+            this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+          },
+          complete: () => this.actionLoading.set(null),
+        });
+      },
+    });
   }
 
+  /** planifie → en_cours */
+  startPlanning(p: Planning): void {
+    this.actionLoading.set(p.id);
+    this.planningService.startPlanning(p.id).subscribe({
+      next: (res) => {
+        this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'en_cours');
+        this.msg.add({ severity: 'info', summary: 'Démarré', detail: `${p.reference} est maintenant en cours.` });
+      },
+      error: (err) => {
+        const detail = err?.error?.error?.message ?? 'Impossible de démarrer ce planning';
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+      },
+      complete: () => this.actionLoading.set(null),
+    });
+  }
+
+  /** en_cours → termine */
+  completePlanning(p: Planning): void {
+    this.actionLoading.set(p.id);
+    this.planningService.completePlanning(p.id).subscribe({
+      next: (res) => {
+        this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'termine');
+        this.msg.add({ severity: 'success', summary: 'Terminé', detail: `${p.reference} marqué comme terminé.` });
+      },
+      error: (err) => {
+        const detail = err?.error?.error?.message ?? 'Impossible de terminer ce planning';
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+      },
+      complete: () => this.actionLoading.set(null),
+    });
+  }
+
+  /** planifie | en_cours → annule */
+  cancelPlanning(p: Planning): void {
+    this.confirm.confirm({
+      message: `Annuler le planning <strong>${p.reference}</strong> ?<br>Cette action est irréversible.`,
+      header: 'Confirmer l\'annulation',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Annuler le planning',
+      rejectLabel: 'Retour',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.actionLoading.set(p.id);
+        this.planningService.cancelPlanning(p.id).subscribe({
+          next: (res) => {
+            this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'annule');
+            this.msg.add({ severity: 'warn', summary: 'Annulé', detail: `${p.reference} a été annulé.` });
+          },
+          error: (err) => {
+            const detail = err?.error?.error?.message ?? 'Impossible d\'annuler ce planning';
+            this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+          },
+          complete: () => this.actionLoading.set(null),
+        });
+      },
+    });
+  }
+
+  navigateToEdit(p: Planning): void {
+    this.router.navigate(['/planning/create'], { queryParams: { edit: p.id } });
+  }
+
+  /** brouillon → supprimé */
+  deletePlanning(p: Planning): void {
+    this.confirm.confirm({
+      message: `Supprimer définitivement le planning <strong>${p.reference}</strong> ?<br>Cette action est irréversible.`,
+      header: 'Confirmer la suppression',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Supprimer',
+      rejectLabel: 'Annuler',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.actionLoading.set(p.id);
+        this.planningService.deletePlanning(p.id).subscribe({
+          next: () => {
+            this.recentPlannings.update(list => list.filter(x => x.id !== p.id));
+            this.msg.add({ severity: 'success', summary: 'Supprimé', detail: `Planning ${p.reference} supprimé.` });
+          },
+          error: (err) => {
+            const detail = err?.error?.error?.message ?? 'Impossible de supprimer ce planning';
+            this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+          },
+          complete: () => this.actionLoading.set(null),
+        });
+      },
+    });
+  }
+
+  private _refreshPlannings(id: string, newStatus: PlanningStatus): void {
+    this.recentPlannings.update(list =>
+      list.map(x => x.id === id ? { ...x, status: newStatus } : x)
+    );
+  }
+
+  dismissAlert(id: string): void { this.planningService.dismissAlert(id); }
   trackByRef(_i: number, p: Planning): string { return p.id; }
+  trackByAlert(_i: number, a: PlanningAlert): string { return a.id; }
 }

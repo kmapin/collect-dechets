@@ -14,6 +14,13 @@
   @if (team) {
     <div class="tdm-shell">
 
+      <!-- Overlay chargement détail API -->
+      @if (loading) {
+        <div class="tdm-loading-overlay">
+          <div class="tdm-loading-spinner"></div>
+        </div>
+      }
+
       <!-- ══════════════════════════════════════════════════════
            HERO BANNER
            ══════════════════════════════════════════════════════ -->
@@ -62,7 +69,7 @@
           </div>
           <div class="tdm-kpi-card">
             <mat-icon>check_circle</mat-icon>
-            <span class="tdm-kpi-val">{{ team.completedMissions }}</span>
+            <span class="tdm-kpi-val">{{ team.completedMissions }}/{{ team.totalMissions }}</span>
             <span class="tdm-kpi-lbl">Missions</span>
           </div>
           <div class="tdm-kpi-card" [class.tdm-kpi-card--warn]="team.workload >= 80">
@@ -74,6 +81,16 @@
             <mat-icon>insights</mat-icon>
             <span class="tdm-kpi-val">{{ team.successRate }}%</span>
             <span class="tdm-kpi-lbl">Réussite</span>
+          </div>
+          <div class="tdm-kpi-card">
+            <mat-icon>person_check</mat-icon>
+            <span class="tdm-kpi-val">{{ availStats().disponible }}</span>
+            <span class="tdm-kpi-lbl">Disponibles</span>
+          </div>
+          <div class="tdm-kpi-card">
+            <mat-icon>map</mat-icon>
+            <span class="tdm-kpi-val">{{ team.zones.length }}</span>
+            <span class="tdm-kpi-lbl">Zones</span>
           </div>
         </div>
       </div>
@@ -537,7 +554,7 @@
                 <div class="tdm-card">
                   <div class="tdm-card-title"><mat-icon>military_tech</mat-icon>Composition équipe</div>
                   <div class="tdm-role-distribution">
-                    @for (role of ['chef','chauffeur','agent','assistant']; track role) {
+                    @for (role of ['manager','collector']; track role) {
                       @if (memberCountByRole(role) > 0) {
                         <div class="tdm-role-row">
                           <mat-icon [style.color]="roleColor(role)">{{ roleIcon(role) }}</mat-icon>
@@ -550,6 +567,9 @@
                           <strong>{{ memberCountByRole(role) }}</strong>
                         </div>
                       }
+                    }
+                    @if (team.members.length === 0) {
+                      <p class="tdm-no-data">Aucun membre dans cette équipe</p>
                     }
                   </div>
                 </div>

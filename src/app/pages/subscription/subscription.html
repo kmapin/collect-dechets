@@ -87,8 +87,9 @@
                           <span>{{ activeSubscription.agencyId?.phone }}</span>
                         </div>
                         <div class="actions">
-                          <button class="btn btn-primary" (click)="renewSubscription()">
-                            Configuration
+                          <button class="btn btn-primary" (click)="initiatePayment()">
+                            <i class="material-icons">payment</i>
+                            Payer avec Telecel Money
                           </button>
                           <button class="btn btn-secondary" (click)="contactSupport()">
                             Contactez l'agence
@@ -112,4 +113,24 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Payment Form Modal -->
+              @if (showPaymentForm && tarifResponse) {
+                <div class="payment-modal-overlay" (click)="closePaymentForm()">
+                  <div class="payment-modal" (click)="$event.stopPropagation()">
+                    <div class="payment-modal-header">
+                      <h2>Paiement de l'abonnement</h2>
+                      <button class="close-btn" (click)="closePaymentForm()">
+                        <i class="material-icons">close</i>
+                      </button>
+                    </div>
+                    <div class="payment-modal-body">
+                      <app-mobile-money-form 
+                        [tarifResponse]="tarifResponse"
+                        (showPaymentDrawer)="showPaymentForm = $event">
+                      </app-mobile-money-form>
+                    </div>
+                  </div>
+                </div>
+              }
             </div>

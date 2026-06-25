@@ -633,10 +633,29 @@ export class AgencyService {
       })
     );
   }
-  //recupere les planing d une agence
+  //recupere les planing d une agence (ancien endpoint)
   getAllPlaningAgency$(agencyId: string): Observable<any> {
     const url = `${environment.apiUrl}/planning/agency/${agencyId}`;
     return this.http.get<any>(url);
+  }
+
+  // Récupère les plannings V2 d'une agence
+  getAllPlanningsV2$(agencyId: string, pageSize = 200): Observable<any[]> {
+    const params = new HttpParams()
+      .set('agencyId', agencyId)
+      .set('pageSize', String(pageSize));
+    return this.http.get<any>(`${environment.apiUrl}/planning/v2`, { params }).pipe(
+      map(res => res?.data ?? []),
+      catchError(() => of([]))
+    );
+  }
+
+  // Récupère les équipes V2 d'une agence
+  getTeamsV2$(agencyId: string): Observable<any[]> {
+    return this.http.get<any>(`${environment.apiUrl}/v2/teams/agency/${agencyId}`).pipe(
+      map(res => Array.isArray(res) ? res : (res?.data ?? [])),
+      catchError(() => of([]))
+    );
   }
 
   //supprimer un  planing d une agence

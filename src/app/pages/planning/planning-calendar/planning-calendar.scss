@@ -403,6 +403,35 @@ $sb-w: 258px;
   overflow: auto;
   padding: 16px;
   min-width: 0;
+  position: relative;
+}
+
+.pcal-loading,
+.pcal-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.pcal-loading {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+.pcal-error {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.sb-empty-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 4px 0 8px;
+  margin: 0;
 }
 
 // ── FullCalendar overrides ────────────────────────────────────

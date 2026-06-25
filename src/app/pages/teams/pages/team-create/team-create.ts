@@ -13,7 +13,7 @@ import { MessageService } from 'primeng/api';
 import { debounceTime } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TeamService } from '../../services/team.service';
-import { MemberRole, TeamStatus } from '../../models/team.model';
+import { MemberRole, TeamStatus, TeamMember } from '../../models/team.model';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 interface CandidateMember { id: string; name: string; phone: string; role: MemberRole; label: string; }
@@ -25,16 +25,16 @@ const TEAM_COLORS = [
 ];
 
 const CANDIDATE_STAFF: CandidateMember[] = [
-  { id: 'CS01', name: 'Boureima Ouédraogo',   phone: '+226 70 10 20 30', role: 'agent',     label: 'Agent de terrain' },
-  { id: 'CS02', name: 'Salimata Nana',         phone: '+226 70 10 20 31', role: 'chauffeur', label: 'Chauffeur'        },
-  { id: 'CS03', name: 'Arouna Diallo',          phone: '+226 70 10 20 32', role: 'agent',     label: 'Agent de terrain' },
-  { id: 'CS04', name: 'Clarisse Ouattara',      phone: '+226 70 10 20 33', role: 'chef',      label: 'Chef d\'équipe'   },
-  { id: 'CS05', name: 'Emmanuel Kaboré',        phone: '+226 70 10 20 34', role: 'agent',     label: 'Agent de terrain' },
-  { id: 'CS06', name: 'Fatoumata Traoré',       phone: '+226 70 10 20 35', role: 'assistant', label: 'Assistant'        },
-  { id: 'CS07', name: 'Georges Sawadogo',       phone: '+226 70 10 20 36', role: 'chauffeur', label: 'Chauffeur'        },
-  { id: 'CS08', name: 'Hawa Konaté',           phone: '+226 70 10 20 37', role: 'agent',     label: 'Agent de terrain' },
-  { id: 'CS09', name: 'Ibrahim Compaoré',       phone: '+226 70 10 20 38', role: 'agent',     label: 'Agent de terrain' },
-  { id: 'CS10', name: 'Judith Yameogo',         phone: '+226 70 10 20 39', role: 'assistant', label: 'Assistant'        },
+  { id: 'CS01', name: 'Boureima Ouédraogo', phone: '+226 70 10 20 30', role: 'collector', label: 'Collecteur' },
+  { id: 'CS02', name: 'Salimata Nana',      phone: '+226 70 10 20 31', role: 'manager',   label: 'Manager'    },
+  { id: 'CS03', name: 'Arouna Diallo',      phone: '+226 70 10 20 32', role: 'collector', label: 'Collecteur' },
+  { id: 'CS04', name: 'Clarisse Ouattara',  phone: '+226 70 10 20 33', role: 'manager',   label: 'Manager'    },
+  { id: 'CS05', name: 'Emmanuel Kaboré',    phone: '+226 70 10 20 34', role: 'collector', label: 'Collecteur' },
+  { id: 'CS06', name: 'Fatoumata Traoré',   phone: '+226 70 10 20 35', role: 'collector', label: 'Collecteur' },
+  { id: 'CS07', name: 'Georges Sawadogo',   phone: '+226 70 10 20 36', role: 'collector', label: 'Collecteur' },
+  { id: 'CS08', name: 'Hawa Konaté',        phone: '+226 70 10 20 37', role: 'collector', label: 'Collecteur' },
+  { id: 'CS09', name: 'Ibrahim Compaoré',   phone: '+226 70 10 20 38', role: 'collector', label: 'Collecteur' },
+  { id: 'CS10', name: 'Judith Yameogo',     phone: '+226 70 10 20 39', role: 'collector', label: 'Collecteur' },
 ];
 
 const WORK_DAYS = [
@@ -70,13 +70,15 @@ export class TeamCreate {
   // ── Constants exposed to template ────────────────────────────
   readonly steps       = STEPS;
   readonly teamColors  = TEAM_COLORS;
-  readonly candidates  = CANDIDATE_STAFF;
   readonly workDayList = WORK_DAYS;
+
+  // Candidates loaded from API (falls back to static list if empty)
+  apiCandidates = signal<CandidateMember[]>(CANDIDATE_STAFF);
+
+  get candidates() { return this.apiCandidates(); }
   readonly roles: { value: MemberRole; label: string; icon: string }[] = [
-    { value: 'chef',      label: 'Chef d\'équipe', icon: 'star'           },
-    { value: 'chauffeur', label: 'Chauffeur',       icon: 'drive_eta'      },
-    { value: 'agent',     label: 'Agent',           icon: 'person'         },
-    { value: 'assistant', label: 'Assistant',       icon: 'support_agent'  },
+    { value: 'manager',   label: 'Manager',    icon: 'manage_accounts' },
+    { value: 'collector', label: 'Collecteur', icon: 'recycling'       },
   ];
 
   // ── UI Signals ───────────────────────────────────────────────
@@ -161,6 +163,15 @@ export class TeamCreate {
   ]);
 
   constructor() {
+    // Load real collectors from API for step 3 member selection
+    this.svc.loadCollectors();
+    // Load vehicles and zones from API for step 2
+    this.svc.loadAvailableVehiclesFromApi();
+    this.svc.loadAvailableZonesFromApi();
+    // Watch for collectors from the service and map to CandidateMember
+    // We read the signal in an effect-like manner via the template's computed
+    this._syncCandidatesFromApi();
+
     // Autosave on form changes
     this.form.valueChanges.pipe(
       debounceTime(1500),
@@ -277,7 +288,7 @@ export class TeamCreate {
     this.membersArray.removeAt(i);
   }
 
-  private _memberGroup(id = '', name = '', phone = '', role: MemberRole = 'agent') {
+  private _memberGroup(id = '', name = '', phone = '', role: MemberRole = 'collector') {
     return this.fb.group({
       _id:   [id],
       name:  [name,  Validators.required],
@@ -345,29 +356,62 @@ export class TeamCreate {
     const zones = (raw.zoneIds as string[])
       .map(id => this.svc.availableZones().find(z => z.id === id))
       .filter(Boolean) as any[];
-    const members = (raw.members as any[]).map((m, i) => ({
-      id: `NEW-${Date.now()}-${i}`, name: m.name, phone: m.phone || '—',
-      role: m.role, availability: 'disponible' as const,
-      joinedAt: new Date().toISOString().split('T')[0],
+
+    const members: TeamMember[] = (raw.members as any[]).map((m, i) => ({
+      id:           m._id && !m._id.startsWith('LOCAL-') && !m._id.startsWith('NEW-')
+                      ? m._id : `LOCAL-${Date.now()}-${i}`,
+      name:         m.name,
+      phone:        m.phone || '—',
+      role:         m.role,
+      availability: 'disponible' as const,
+      joinedAt:     new Date().toISOString().split('T')[0],
     }));
 
-    this.svc.create({
-      name: raw.name ?? '',
-      code: raw.code ?? '',
-      status: (raw.status ?? 'active') as TeamStatus,
-      color: raw.color ?? '#3b82f6',
+    this.svc.createV2({
+      name:        raw.name ?? '',
+      status:      (raw.status ?? 'active') as TeamStatus,
+      color:       raw.color ?? '#3b82f6',
       description: raw.description ?? '',
-      supervisor: raw.supervisor ?? '',
-      phone: raw.phone ?? '',
-      members, zones,
-      vehicle: vehicle ? { ...vehicle, lastMaintenance: '—', fuelLevel: 80, mileage: 0 } : undefined,
-    }).subscribe(team => {
-      this.saving.set(false);
-      localStorage.removeItem(DRAFT_KEY);
-      this.msg.add({ severity: 'success', summary: 'Équipe créée !', detail: `${team.name} a été créée avec succès.` });
-      setTimeout(() => this.router.navigate(['/teams/detail', team.id]), 1400);
+      supervisor:  raw.supervisor ?? '',
+      phone:       raw.phone ?? '',
+      members,
+      zones,
+      vehicle: vehicle
+        ? { ...vehicle, lastMaintenance: '—', fuelLevel: 80, mileage: 0 }
+        : undefined,
+    }).subscribe({
+      next: team => {
+        this.saving.set(false);
+        localStorage.removeItem(DRAFT_KEY);
+        this.msg.add({ severity: 'success', summary: 'Équipe créée !', detail: `${team.name} a été créée avec succès.` });
+        setTimeout(() => this.router.navigate(['/teams/detail', team.id]), 1400);
+      },
+      error: err => {
+        this.saving.set(false);
+        const detail = err?.error?.message ?? 'Impossible de créer l\'équipe';
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+      },
     });
   }
 
   cancel(): void { this.router.navigate(['/teams/list']); }
+
+  // ── Private ─────────────────────────────────────────────────
+  private _syncCandidatesFromApi(): void {
+    // Poll once after a short delay to let the API response arrive
+    setTimeout(() => {
+      const apiCollectors = this.svc.collectors();
+      if (apiCollectors.length > 0) {
+        this.apiCandidates.set(
+          apiCollectors.map(c => ({
+            id:    c._id,
+            name:  `${c.firstName} ${c.lastName}`.trim(),
+            phone: c.phone ?? '',
+            role:  'collector' as MemberRole,
+            label: 'Collecteur',
+          }))
+        );
+      }
+    }, 1500);
+  }
 }

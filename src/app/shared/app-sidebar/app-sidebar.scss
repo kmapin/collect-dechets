@@ -1,0 +1,174 @@
+/* ============================================================
+   SHARED APP SIDEBAR
+   ============================================================ */
+
+$w:        260px;
+$w-mini:   68px;
+$bg:       #0f172a;
+$bg2:      #1e293b;
+$border:   #1e293b;
+$text:     #cbd5e1;
+$text-dim: #64748b;
+$active:   #16a34a;
+$radius:   8px;
+$tr:       .2s ease;
+
+/* ── Shell helper (used by both layouts) ────────────────── */
+:host { display: contents; }
+
+/* ── Overlay ────────────────────────────────────────────── */
+.sb-overlay {
+  position: fixed; inset: 0; z-index: 199;
+  background: rgba(0,0,0,.5);
+}
+
+/* ── Sidebar ────────────────────────────────────────────── */
+.sb {
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 200;
+  width: $w;
+  background: $bg;
+  border-right: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width $tr;
+
+  &--mini { width: $w-mini; }
+
+  /* Mobile: hidden by default, slides in when open */
+  @media (max-width: 1023px) {
+    transform: translateX(-100%);
+    transition: transform $tr, width $tr;
+    &--open { transform: translateX(0); }
+  }
+}
+
+/* ── Brand ──────────────────────────────────────────────── */
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px;
+  border-bottom: 1px solid $border;
+  flex-shrink: 0;
+}
+.sb-logo {
+  width: 38px; height: 38px; border-radius: $radius;
+  background: $active;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  mat-icon { color: #fff; font-size: 22px; width: 22px; height: 22px; }
+}
+.sb-brand-text { flex: 1; overflow: hidden; }
+.sb-brand-title { display: block; font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; }
+.sb-brand-sub   { display: block; font-size: 11px; color: $text-dim; white-space: nowrap; }
+.sb-toggle {
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid $border; background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  mat-icon { font-size: 17px; color: $text-dim; }
+  &:hover mat-icon { color: #fff; }
+}
+
+/* ── Navigation ─────────────────────────────────────────── */
+.sb-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 0;
+  scrollbar-width: thin;
+  scrollbar-color: $bg2 transparent;
+}
+
+.sb-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: $text-dim;
+  padding: 8px 16px 4px;
+  white-space: nowrap;
+}
+
+.sb-divider {
+  height: 1px;
+  background: $border;
+  margin: 8px 14px;
+}
+
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  margin: 1px 8px;
+  border-radius: $radius;
+  color: $text;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background $tr, color $tr;
+  white-space: nowrap;
+  overflow: hidden;
+
+  &:hover { background: $bg2; color: #fff; }
+
+  &--active {
+    background: rgba(22,163,74,.15);
+    color: #4ade80;
+    .sb-icon { color: #4ade80; }
+  }
+
+  &--secondary { color: $text-dim; }
+  &--new { color: $active; font-weight: 600; }
+
+  .sb-icon { font-size: 20px; width: 20px; height: 20px; flex-shrink: 0; color: $text-dim; }
+  &:hover .sb-icon, &--active .sb-icon { color: inherit; }
+}
+
+/* Mini: center icons */
+.sb--mini .sb-item { justify-content: center; padding: 10px 0; margin: 1px 8px; }
+
+.sb-label { flex: 1; }
+
+.sb-badge {
+  font-size: 10px;
+  font-weight: 600;
+  background: #f59e0b22;
+  color: #f59e0b;
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* ── Status summary ─────────────────────────────────────── */
+.sb-status {
+  padding: 10px 16px;
+  border-top: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sb-status-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: $text-dim;
+}
+.sb-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  .sb-status-row--green & { background: #16a34a; }
+  .sb-status-row--amber & { background: #f59e0b; }
+  .sb-status-row--red   & { background: #ef4444; }
+}
+
+/* ── Bottom ─────────────────────────────────────────────── */
+.sb-bottom {
+  flex-shrink: 0;
+  padding-bottom: 8px;
+}
+
+/* ── desktop-only toggle ─────────────────────────────────── */
+.desktop-only {
+  @media (max-width: 1023px) { display: none; }
+}

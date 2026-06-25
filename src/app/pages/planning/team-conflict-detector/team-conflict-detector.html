@@ -36,19 +36,18 @@
       </div>
     </div>
 
-    <!-- Selection summary -->
+    <!-- Selection summary (une seule équipe possible) -->
     @if (selectedTeams().length > 0) {
+      @let team = selectedTeams()[0];
       <div class="tcd-sel-bar">
         <mat-icon>groups</mat-icon>
-        <span><strong>{{ selectedTeams().length }}</strong> équipe(s) sélectionnée(s)</span>
-        @for (t of selectedTeams(); track t.id) {
-          <span class="sel-chip" [style.border-color]="statusColor(t.status)">
-            <span class="sel-chip-dot" [style.background]="statusColor(t.status)"></span>
-            {{ t.name }}
-            @if (isCritical(t.id)) { <mat-icon class="sel-chip-warn">error</mat-icon> }
-            @if (isWarning(t.id) && !isCritical(t.id)) { <mat-icon class="sel-chip-alert">warning</mat-icon> }
-          </span>
-        }
+        <span><strong>1</strong> équipe sélectionnée</span>
+        <span class="sel-chip" [style.border-color]="statusColor(team.status)">
+          <span class="sel-chip-dot" [style.background]="statusColor(team.status)"></span>
+          {{ team.name }}
+          @if (isCritical(team.id)) { <mat-icon class="sel-chip-warn">error</mat-icon> }
+          @if (isWarning(team.id) && !isCritical(team.id)) { <mat-icon class="sel-chip-alert">warning</mat-icon> }
+        </span>
         @if (estimatedDuration() !== '--') {
           <span class="sel-duration">
             <mat-icon>timer</mat-icon> {{ estimatedDuration() }} estimé
@@ -72,7 +71,7 @@
           <mat-icon>auto_awesome</mat-icon>
           <div class="sb-body">
             <span class="sb-title">Sélection automatique recommandée</span>
-            <span class="sb-sub">{{ countSuggested() }} équipe(s) optimales détectées</span>
+            <span class="sb-sub">{{ countSuggested() }} équipe(s) disponible(s) sans conflit</span>
           </div>
           <button type="button" class="sb-btn">Appliquer</button>
         </div>

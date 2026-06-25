@@ -1,11 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 
-import { RouterOutlet } from '@angular/router';
+const SIDEBAR_ROUTES = ['/planning', '/teams'];
+
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { Footer } from './components/footer/footer';
 import { Header } from './components/header/header';
 import { Notification } from './components/notification/notification';
 import { LoadingService } from './services/loading.service';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -41,7 +44,7 @@ import { Subscription } from 'rxjs';
         <main class="main-content">
           <router-outlet></router-outlet>
         </main>
-        <app-footer></app-footer>
+        @if (showFooter) { <app-footer></app-footer> }
         <app-notification></app-notification>
       </div>
     }
@@ -160,11 +163,20 @@ import { Subscription } from 'rxjs';
 export class AppComponent implements OnInit, OnDestroy {
   title = 'WasteManager';
   isAppLoading = true;
+  showFooter = true;
   private loadingSubscription: Subscription = new Subscription();
 
-  constructor(private loadingService: LoadingService) {}
+  constructor(private loadingService: LoadingService, private router: Router) {}
 
   ngOnInit() {
+    // Masquer le footer sur les routes avec sidebar (planning / teams)
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd)
+    ).subscribe((e) => {
+      const url = (e as NavigationEnd).urlAfterRedirects;
+      this.showFooter = !SIDEBAR_ROUTES.some(r => url.startsWith(r));
+    });
+
     // S'abonner aux changements d'état de chargement
     this.loadingSubscription = this.loadingService.loading$.subscribe(
       (loading) => {

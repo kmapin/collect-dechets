@@ -1,6 +1,6 @@
 import { inject, Injectable } from "@angular/core";
 import { Observable, of, throwError } from "rxjs";
-import { delay, map, tap } from "rxjs/operators";
+import { catchError, delay, tap } from "rxjs/operators";
 import {
   PaymentRequest,
   MobileMoneyOperator,
@@ -9,7 +9,7 @@ import {
   PaymentResponse,
   PaymentStatus,
 } from "../../models/payment/payment-response.model";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 
 /**
  * Service de gestion des paiements Mobile Money
@@ -35,65 +35,39 @@ export class PaymentService {
     // Simulation d'un délai réseau (2-4 secondes)
     const networkDelay = Math.random() * 2000 + 2000;
 
-    // Pour Orange Money, on demande un OTP
-    if (
-      request.operator === MobileMoneyOperator.ORANGE_MONEY ||
-      request.operator === MobileMoneyOperator.MOOV_MONEY
-    ) {
-      const response: PaymentResponse = {
-        transactionId,
-        status: PaymentStatus.PENDING_OTP,
-        message:
-          request.operator === MobileMoneyOperator.ORANGE_MONEY
-            ? "Un code OTP a été envoyé à votre numéro Orange Money. Veuillez le saisir pour confirmer le paiement."
-            : "Un code OTP a été envoyé à votre numéro Moov Money. Veuillez le saisir pour confirmer le paiement.",
-        requiresOtp: true,
-        amount: request.amount,
-        timestamp: new Date(),
-        operator: request.operator,
-      };
+    const otpOperators = [
+      MobileMoneyOperator.ORANGE_MONEY,
+      MobileMoneyOperator.MOOV_MONEY,
+      MobileMoneyOperator.TELECEL_MONEY,
+    ];
 
+    if (otpOperators.includes(request.operator)) {
       return this.http
         .post<PaymentResponse>(
           `http://213.32.120.11:3000/api/transactions/initiate`,
           request,
         )
         .pipe(
-          tap((response) => {
-            console.log("response from api", response);
-          }),
+          tap((res) => console.log("response from api", res)),
           delay(networkDelay),
+          catchError((err: HttpErrorResponse) => {
+            const message =
+              err?.error?.message ||
+              err?.error?.error ||
+              err?.message ||
+              "Une erreur inattendue est survenue lors de l'initiation du paiement.";
+            return throwError(() => new Error(message));
+          }),
         );
-
-      return of(response).pipe(delay(networkDelay));
     }
 
-    // Pour les autres opérateurs, simulation aléatoire de succès/échec (80% de succès)
-    const isSuccess = Math.random() > 0.2;
-
-    if (isSuccess) {
-      const response: PaymentResponse = {
-        transactionId,
-        status: PaymentStatus.SUCCESS,
-        message:
-          "Paiement effectué avec succès. Vous allez recevoir une confirmation par SMS.",
-        amount: request.amount,
-        timestamp: new Date(),
-      };
-
-      return of(response).pipe(delay(networkDelay));
-    } else {
-      const response: PaymentResponse = {
-        transactionId,
-        status: PaymentStatus.FAILED,
-        message:
-          "Le paiement a échoué. Veuillez vérifier votre solde et réessayer.",
-        amount: request.amount,
-        timestamp: new Date(),
-      };
-
-      return of(response).pipe(delay(networkDelay));
-    }
+    return of({
+      transactionId,
+      status: PaymentStatus.FAILED,
+      message: "Le paiement a échoué. Veuillez vérifier votre solde et réessayer.",
+      amount: request.amount,
+      timestamp: new Date(),
+    }).pipe(delay(networkDelay));
   }
 
   /**
@@ -106,48 +80,22 @@ export class PaymentService {
     otp: string;
     reference: string;
   }): Observable<PaymentResponse> {
-    // Simulation d'un délai de validation (1-2 secondes)
-    const validationDelay = Math.random() * 1000 + 1000;
-
-    // // Pour la simulation, on accepte n'importe quel code à 6 chiffres
-    // // En production, ceci serait validé par l'API Orange Money
-    // const isValidOtp = /^\d{6}$/.test(otpPayload.otp);
-
-    // // Simulation : 90% de succès si le format est correct
-    // const isSuccess = isValidOtp && Math.random() > 0.1;
-
-    // if (isSuccess) {
-    const response: PaymentResponse = {
-      transactionId: otpPayload.reference,
-      status: PaymentStatus.SUCCESS,
-      message:
-        "Paiement Orange Money validé avec succès ! Vous allez recevoir une confirmation par SMS.",
-      timestamp: new Date(),
-    };
     return this.http
       .post<any>(
         `http://213.32.120.11:3000/api/transactions/confirm`,
         otpPayload,
       )
       .pipe(
-        tap((response) => {
-          console.log("response otp validation from api", response);
+        tap((res) => console.log("response otp validation from api", res)),
+        catchError((err: HttpErrorResponse) => {
+          const message =
+            err?.error?.message ||
+            err?.error?.error ||
+            err?.message ||
+            "Une erreur inattendue est survenue lors de la validation de l'OTP.";
+          return throwError(() => new Error(message));
         }),
       );
-
-    return of(response).pipe(delay(validationDelay));
-    // } else {
-    //   const response: PaymentResponse = {
-    //     transactionId: otpPayload.reference,
-    //     status: PaymentStatus.FAILED,
-    //     message: isValidOtp
-    //       ? "Code OTP incorrect. Le paiement a été annulé."
-    //       : "Format de code OTP invalide. Le paiement a été annulé.",
-    //     timestamp: new Date(),
-    //   };
-
-    //   return of(response).pipe(delay(validationDelay));
-    // }
   }
 
   /**
