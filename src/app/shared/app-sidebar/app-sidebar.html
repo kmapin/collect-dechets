@@ -30,6 +30,7 @@
     @for (item of planningNav; track item.route) {
       <a class="sb-item"
          [routerLink]="item.route"
+         [queryParams]="item.queryParams ?? null"
          routerLinkActive="sb-item--active"
          [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
          (click)="closeMobile()"

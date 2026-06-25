@@ -12,6 +12,7 @@ interface SideNav {
   icon: string;
   route: string;
   exact?: boolean;
+  queryParams?: Record<string, string>;
 }
 
 @Component({
@@ -37,9 +38,10 @@ export class AppSidebarComponent {
   // ── Navigation sections ──────────────────────────────────────
 
   readonly planningNav: SideNav[] = [
-    { label: 'Tableau de bord', icon: 'dashboard',      route: '/planning/dashboard', exact: true },
+    { label: 'Tableau de bord', icon: 'dashboard',       route: '/planning/dashboard', exact: true },
     { label: 'Calendrier',      icon: 'calendar_month',  route: '/planning/calendar' },
-    { label: 'Zones d\'intervention',           icon: 'map',             route: '/planning/zones' },
+    { label: 'Zones d\'intervention', icon: 'map',       route: '/planning/zones' },
+    { label: 'Plannings',       icon: 'schedule',        route: '/dashboard/agency', queryParams: { tab: 'schedules' } },
   ];
 
   readonly teamsNav: SideNav[] = [
