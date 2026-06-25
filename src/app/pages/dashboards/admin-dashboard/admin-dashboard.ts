@@ -1,4 +1,7 @@
-import { ChangeDetectorRef, Component, OnInit, signal } from "@angular/core";
+import { AfterViewChecked, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, signal, ViewChild } from "@angular/core";
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import * as L from 'leaflet';
+Chart.register(...registerables);
 import { CommonModule } from "@angular/common";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -59,6 +62,7 @@ interface AgencyAudit {
   status: string;
   clients: number;
   collectors: number;
+  gestionnaires: number;
   zones: number;
   collectionsToday: number;
   completionRate: number;
@@ -68,6 +72,7 @@ interface AgencyAudit {
   complianceScore: number;
   issues: string[];
   userId: string;
+  statsLoaded: boolean;
 }
 
 interface WasteStatistic {
@@ -147,6 +152,15 @@ interface Communication {
   sentAt: Date;
   readBy: string[];
 }
+interface ActivityEvent {
+  type:   string;
+  label:  string;
+  detail: string;
+  date:   string;
+  icon:   string;
+  color:  string;
+}
+
 interface User {
   id: string;
   firstName: string;
@@ -173,15 +187,146 @@ interface User {
     MatCardModule,
     LoadingSpinnerComponent,
     DrawerModule,
-    Signalement,
   ],
   templateUrl: "./admin-dashboard.html",
   styleUrl: "./admin-dashboard.scss",
 })
-export class AdminDashboard implements OnInit {
+export class AdminDashboard implements OnInit, OnDestroy {
+
+  // ── Chart.js references ───────────────────────────────────
+  @ViewChild('incidentsChart') incidentsChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('agenciesChart')  agenciesChartRef!:  ElementRef<HTMLCanvasElement>;
+  @ViewChild('wasteChart')     wasteChartRef!:     ElementRef<HTMLCanvasElement>;
+
+  private incidentsChart: Chart | null = null;
+  private agenciesChart:  Chart | null = null;
+  private wasteChart:     Chart | null = null;
+  chartsInitialized = false;
+
+  // ── Leaflet map ───────────────────────────────────────────
+  @ViewChild('territorialMap') mapElRef!: ElementRef<HTMLDivElement>;
+  private map: L.Map | null = null;
+  agenciesGeoData: any[] = [];
+  isLoadingMap = false;
+  selectedAgency: any = null;
+  selectedAgencyIndex: number | null = null;
+  private agencyZoneLayers    = new Map<number, L.Circle[]>();
+  private agencyPinLayers     = new Map<number, L.Marker>();
+  private agencyDotLayers     = new Map<number, L.CircleMarker>();
+  private agencyZoneCircleMap = new Map<number, Map<string, L.Circle>>();
+  private agencyZoneDetails   = new Map<number, any[]>();
+  selectedAgencyStats: any = null;
+  isLoadingAgencyDetail    = false;
+  topAgenciesByCollections: { id: string; name: string; collections: number }[] = [];
+
+  readonly AGENCY_PALETTE = [
+    '#6366f1', '#f97316', '#22c55e', '#ef4444',
+    '#3b82f6', '#a855f7', '#eab308', '#ec4899',
+    '#14b8a6', '#f43f5e', '#84cc16', '#06b6d4',
+  ];
+
+  private readonly OUAGA_COORDS: Record<string, [number, number]> = {
+    // Arrondissement 1 — centre historique
+    'Bilbalogo':             [12.3742, -1.5218],
+    'Saint Léon':            [12.3700, -1.5260],
+    'Oscar Yaar':            [12.3730, -1.5240],
+    'Dapoya':                [12.3630, -1.5190],
+    'Dapoya II':             [12.3620, -1.5220],
+    'Koulouba':              [12.3670, -1.5230],
+    'Kamsonghin':            [12.3620, -1.5150],
+    'Samadin':               [12.3580, -1.5120],
+    'Kouritenga':            [12.3650, -1.5180],
+    'Zone ZACA':             [12.3660, -1.5200],
+    'Zone Commerciale':      [12.3680, -1.5240],
+    // Arrondissement 2 — nord-ouest
+    'Goughin':               [12.3700, -1.5440],
+    'Hamdalaye':             [12.3730, -1.5410],
+    'Baskuy Yaar':           [12.3680, -1.5470],
+    'Cité An III':           [12.3750, -1.5480],
+    'Cité An II':            [12.3720, -1.5460],
+    'Zone du Bois':          [12.3620, -1.5450],
+    // Arrondissement 3 — est
+    'Camp militaire':        [12.3580, -1.5280],
+    'Yaoghin':               [12.3550, -1.5150],
+    'Noncin':                [12.3500, -1.5200],
+    'Toécin':                [12.3450, -1.5150],
+    // Arrondissement 4 — nord
+    'Tampouy':               [12.3950, -1.5480],
+    'Koulweoghin':           [12.3920, -1.5410],
+    'Somgandé':              [12.4000, -1.5320],
+    'Zone industrielle Kossodo': [12.4080, -1.5050],
+    // Arrondissement 5 — nord-est
+    'Sogdin':                [12.3850, -1.5200],
+    'ENAREF':                [12.3820, -1.5150],
+    'Cogeb':                 [12.3810, -1.5130],
+    '1200 Logement':         [12.3780, -1.5100],
+    'Wemtenga':              [12.3780, -1.5040],
+    'Naab Pougo':            [12.3800, -1.5080],
+    // Arrondissement 6 — sud-ouest
+    'Pissy':                 [12.3500, -1.5550],
+    'Cissin':                [12.3480, -1.5480],
+    'Pagalayiri':            [12.3520, -1.5580],
+    'Bongnaam':              [12.3560, -1.5620],
+    'Ronsin':                [12.3530, -1.5500],
+    'Song-Naaba':            [12.3580, -1.5580],
+    // Arrondissement 7 — sud
+    'Nagrin':                [12.3450, -1.5350],
+    'Sandogo':               [12.3400, -1.5300],
+    'Zagtouli sud':          [12.3350, -1.5250],
+    // Arrondissement 8 — sud-est
+    'Zagtouli nord':         [12.3400, -1.5150],
+    'Nonghin':               [12.3400, -1.5080],
+    'Bissighin':             [12.3380, -1.5000],
+    // Arrondissement 9 — est lointain
+    'Marcoussis':            [12.3600, -1.4950],
+    'Ouapassi':              [12.3550, -1.4900],
+    'Bangpooré':             [12.3650, -1.4900],
+    'Kamboissin':            [12.3600, -1.4830],
+    // Arrondissement 10 — nord-est lointain
+    'Kossodo':               [12.4130, -1.4990],
+    'Bendogo':               [12.4050, -1.4950],
+    'Dassasgho':             [12.3900, -1.4980],
+    'Djikof':                [12.3960, -1.4920],
+    // Arrondissement 11 — sud-ouest lointain
+    'Karpala':               [12.3400, -1.5450],
+    'Lanoayiri':             [12.3380, -1.5520],
+    'Balkuy':                [12.3420, -1.5580],
+    'Rayongo':               [12.3300, -1.5400],
+    'Kaparla non loti':      [12.3350, -1.5480],
+    // Arrondissement 12 — sud
+    'Patte d\'Oie':          [12.3430, -1.5330],
+    'Trame d\'Accueil':      [12.3380, -1.5380],
+    'Ouaga 2000':            [12.3320, -1.5280],
+    'Kossyam':               [12.3280, -1.5220],
+    'Zone une':              [12.3450, -1.5400],
+    // Extras courants
+    'Tanghin':               [12.3850, -1.5600],
+    'Pissy Extension':       [12.3450, -1.5600],
+    'Dagnoen':               [12.3700, -1.4980],
+    'Zangouettin':           [12.3660, -1.5260],
+  };
+
   currentUser: RegisterUserData | null = null;
   Math: any = Math;
-  activeTab = "overview";
+  activeTab = 'overview';
+
+  switchTab(tabId: string): void {
+    if (this.activeTab === tabId) return;
+    // Cleanup statistics resources before leaving
+    if (this.activeTab === 'statistics') {
+      this.incidentsChart?.destroy(); this.incidentsChart = null;
+      this.agenciesChart?.destroy();  this.agenciesChart  = null;
+      this.wasteChart?.destroy();     this.wasteChart     = null;
+      this.chartsInitialized = false;
+      if (this.map) { this.map.remove(); this.map = null; }
+      this.selectedAgency = null; this.selectedAgencyIndex = null;
+      this.selectedAgencyStats = null; this.isLoadingAgencyDetail = false;
+      this.agencyZoneLayers.clear(); this.agencyPinLayers.clear();
+      this.agencyDotLayers.clear(); this.agencyZoneCircleMap.clear(); this.agencyZoneDetails.clear();
+    }
+    this.activeTab = tabId;
+    this.loadTabData(tabId);
+  }
   longText = `The Shiba Inu is the smallest of the six original and distinct spitz breeds of dog
     from Japan. A small, agile dog that copes very well with mountainous terrain, the Shiba Inu was
     originally bred for hunting.`;
@@ -219,6 +364,18 @@ export class AdminDashboard implements OnInit {
   filteredCollectors: any[] = [];
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: GroupedZoneStatistics[] = [];
+  zoneCoverageData: { quartierId: string; quartierNom: string; planningsCount: number; equipesAssigned: number; completionRate: number; status: string }[] = [];
+  planningStats: { totalPlannings: number; todayPlannings: number; inProgress: number; completedToday: number; executionRate: number } | null = null;
+  isLoadingCoverage = false;
+  coverageAgencyId = '';
+  allAgenciesForSelect: { id: string; name: string }[] = [];
+  coverageAgencyDropdownOpen    = false;
+  coverageAgencyDropdownSearch  = '';
+  coverageAgencyDropdownList:   { id: string; name: string }[] = [];
+  coverageAgencyDropdownPage    = 1;
+  coverageAgencyDropdownTotal   = 0;
+  coverageAgencyDropdownLoading = false;
+  selectedCoverageAgency:       { id: string; name: string } | null = null;
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
   communications: Communication[] = [];
@@ -233,8 +390,23 @@ export class AdminDashboard implements OnInit {
   collectorsFilter = "all";
   complianceFilter = "all";
   statisticsPeriod = "month";
-  incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
-  severityFilter: "all" | "Low" | "Medium" | "High" | "Critical" = "all";
+  incidentsFilter: 'all' | 'open' | 'pending' | 'resolved' = 'all';
+  severityFilter:  'all' | 'critical' | 'high' | 'medium' | 'low' = 'all';
+  incidentsSearchTerm   = '';
+  incidentsCurrentPage  = 1;
+  incidentsTotalPages   = 1;
+  incidentsItemsPerPage = 10;
+  incidentsTotalItems   = 0;
+
+  // Select agence custom avec scroll infini
+  agencyIdFilter       = '';
+  agencyDropdownOpen   = false;
+  agencyDropdownSearch = '';
+  agencyDropdownList:  { id: string; name: string }[] = [];
+  agencyDropdownPage   = 1;
+  agencyDropdownTotal  = 0;
+  agencyDropdownLoading = false;
+  selectedAgencyForFilter: { id: string; name: string } | null = null;
 
   usersFilterParams: FilterParams = {
     role: this.roleFilter,
@@ -257,9 +429,10 @@ export class AdminDashboard implements OnInit {
     limit: 10,
   };
 
-  // ── Vue Agences / Utilisateurs ──────────────────────────
-  agenciesViewMode: 'card' | 'table' = 'card';
-  usersViewMode:    'card' | 'table' = 'card';
+  // ── Vue Agences / Utilisateurs / Incidents ──────────────
+  agenciesViewMode:  'card' | 'table' = 'card';
+  usersViewMode:     'card' | 'table' = 'card';
+  incidentsViewMode: 'card' | 'table' = 'card';
 
   // ── Pagination Agences ───────────────────────────────────
   agenciesCurrentPage  = 1;
@@ -287,6 +460,9 @@ export class AdminDashboard implements OnInit {
     message: "",
     recipients: [],
   };
+
+  // ── Badges onglets ───────────────────────────────────────
+  tabBadges: Record<string, number> = {};
 
   //Statistics for admin
   statisticsAdmin: AdminStatistics | null = null;
@@ -344,6 +520,25 @@ export class AdminDashboard implements OnInit {
   isDisabled = true;
   visible1: boolean = false;
   visibleEditUserDrawer = false;
+  visibleIncidentDrawer = false;
+  selectedIncident: Incident | null = null;
+
+  // ── Drawer Ajout Agent de Mairie ──
+  visibleAddAgentDrawer = false;
+  isSubmittingAgent     = false;
+  newAgentData = {
+    firstName: '', lastName: '', email: '', phone: '',
+    password: '', confirmPassword: '',
+    acceptTerms: true,
+    address: { city: '', arrondissement: '', sector: '', neighborhood: '', street: '', doorNumber: '' },
+  };
+  agentCities:          any[] = [];
+  agentArrondissements: any[] = [];
+  agentSectors:         any[] = [];
+  agentNeighborhoods:   any[] = [];
+  resolutionComment = '';
+  resolveDialogVisible = false;
+  resolveDialogIncidentId = '';
   isEditingUser = false;
   isSavingUser = false;
   isLargeScreen = false;
@@ -364,32 +559,53 @@ export class AdminDashboard implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    this.getAllAgenciesIDs();
-    // if(this.agencies.length > 0){
-    //   this.loadAllCollectors();
-    // }
-    this.loadAdminData();
-    this.showAdminStatistics();
-    this.loadAllMunipalities();
     this.getClientGrowth();
-    this.loadZoneStat();
-
-    
-    // Initialiser les listes de villes et quartiers
     this.initializeCitiesAndNeighborhoods();
     this.initializeFiltersData();
+    this.loadTabBadges();
+    this.loadTabData(this.activeTab);
   }
 
-  loadAdminData(): void {
-    this.loadAgencyAudits(this.agenciesFilterParams);
-    this.loadWasteStatistics();
-    this.loadZoneStatistics();
-    this.loadZoneStat();
-    this.loadCommunications();
-    this.showAdminClients();
-    this.loadAllSignalements();
-    this.showAdminUsers(this.usersFilterParams);
-    // this.loadIncidents();
+  loadTabData(tabId: string): void {
+    switch (tabId) {
+      case 'overview':
+        this.showAdminStatistics();
+        this.loadAllSignalements();
+        this.loadWasteStatistics();
+        this.loadZoneStat();
+        break;
+      case 'agencies':
+        this.loadAgencyAudits(this.agenciesFilterParams);
+        this.getAllAgenciesIDs();
+        break;
+      case 'all_users':
+        this.showAdminUsers(this.usersFilterParams);
+        break;
+      case 'statistics':
+        this.chartsInitialized = false;
+        this.isLoadingMap = true;
+        this.loadWasteStatistics();
+        this.loadZoneStatistics();
+        this.loadZoneStat();
+        this.loadAllSignalements();
+        if (!this.agencyAudits.length) {
+          this.loadAgencyAuditsForStats();
+        } else {
+          this.loadTopAgenciesByCollections();
+        }
+        this.loadAgenciesForMap();
+        setTimeout(() => this.initCharts(), 120);
+        break;
+      case 'incidents':
+        this.loadAllSignalements();
+        break;
+      case 'municipalities':
+        this.loadAllMunipalities();
+        break;
+      case 'clients':
+        this.showAdminClients();
+        break;
+    }
   }
 
   //User
@@ -463,6 +679,7 @@ export class AdminDashboard implements OnInit {
           status: agency?.status || "inactive",
           clients: agency?.clients?.length || 0,
           collectors: agency?.employees?.length || 0,
+          gestionnaires: 0,
           zones: agency?.zoneActivite?.length || 0,
           userId: agency?.userId,
           collectionsToday: 0,
@@ -472,6 +689,7 @@ export class AdminDashboard implements OnInit {
           lastAudit: new Date(),
           complianceScore: 0,
           issues: [],
+          statsLoaded: false,
         }));
         this.filteredAgencies = [...this.agencyAudits];
 
@@ -482,6 +700,14 @@ export class AdminDashboard implements OnInit {
         this.agenciesTotalPages   = Math.max(1, Math.ceil(this.agenciesTotalItems / this.agenciesItemsPerPage));
 
         this.isLoadingAgencies = false;
+
+        // Charger les stats détaillées pour chaque agence de la page courante
+        this.loadAgenciesStats(this.agencyAudits.map(a => a.id));
+
+        // Charger les collectes effectuées pour le top 5 si onglet statistiques actif
+        if (this.activeTab === 'statistics') {
+          this.loadTopAgenciesByCollections();
+        }
       },
       error: (error) => {
         console.error("Erreur lors du chargement des agences:", error);
@@ -573,6 +799,553 @@ export class AdminDashboard implements OnInit {
     return window.innerWidth <= 768 ? "100%" : "33%";
   }
 
+  loadAgencyAuditsForStats(): void {
+    this.loadAgencyAudits({ page: 1, limit: 10 });
+  }
+
+  loadAgenciesStats(agencyIds: string[]): void {
+    if (!agencyIds.length) return;
+    const requests = agencyIds.map(id =>
+      this.agencyService.getAgencyStats$(id).pipe(catchError(() => of(null)))
+    );
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        results.forEach((res, i) => {
+          console.log(`[AgencyStats] id=${agencyIds[i]} raw=`, res);
+          const data = res?.data ?? res;
+          const audit = this.agencyAudits.find(a => a.id === agencyIds[i]);
+          if (!audit || !data) return;
+          // Priorité aux stats API ; si 0, on garde la valeur de la liste (fallback)
+          const apiClients    = data.totalClientsActifs ?? data.totalClients;
+          const apiCollectors = data.totalCollecteurs   ?? data.totalCollectors;
+          audit.clients       = apiClients    > 0 ? apiClients    : audit.clients;
+          audit.collectors    = apiCollectors > 0 ? apiCollectors : audit.collectors;
+          audit.gestionnaires = data.totalGestionnaires ?? 0;
+          audit.statsLoaded   = true;
+        });
+        this.filteredAgencies = [...this.agencyAudits];
+      }
+    });
+  }
+
+  loadTopAgenciesByCollections(): void {
+    const agencies = this.agencyAudits;
+    if (!agencies.length) return;
+
+    const requests = agencies.map(a =>
+      this.agencyService.getCompletedCollectes$(a.id).pipe(
+        map((res: any) => {
+          const count = res?.total ?? res?.count
+            ?? (Array.isArray(res?.data) ? res.data.length : 0)
+            ?? (Array.isArray(res) ? res.length : 0);
+          return { id: a.id, name: a.name, collections: count };
+        }),
+        catchError(() => of({ id: a.id, name: a.name, collections: 0 }))
+      )
+    );
+
+    forkJoin(requests).subscribe({
+      next: (results: any[]) => {
+        this.topAgenciesByCollections = [...results]
+          .sort((a, b) => b.collections - a.collections)
+          .slice(0, 5);
+        if (this.chartsInitialized && this.activeTab === 'statistics') {
+          this.buildAgenciesChart();
+        }
+      }
+    });
+  }
+
+  // ── Carte territoriale ────────────────────────────────────
+
+  loadAgenciesForMap(): void {
+    this.agencyService.getAllAgenciesFromApi({ page: 1, limit: 100 }).subscribe({
+      next: (res: any) => {
+        const raw = Array.isArray(res) ? res : (res?.data ?? res?.agencies ?? []);
+        this.agenciesGeoData = raw;
+        this.isLoadingMap = false;
+        if (this.chartsInitialized && this.activeTab === 'statistics') {
+          this.buildAgenciesChart();
+        }
+        setTimeout(() => this.initTerritorialMap(), 100);
+      },
+      error: () => {
+        this.isLoadingMap = false;
+        setTimeout(() => this.initTerritorialMap(), 100);
+      },
+    });
+  }
+
+  initTerritorialMap(): void {
+    const el = this.mapElRef?.nativeElement;
+    if (!el) return;
+    if (this.map) { this.map.remove(); this.map = null; }
+
+    this.agencyZoneLayers.clear();
+    this.agencyPinLayers.clear();
+    this.agencyDotLayers.clear();
+    this.agencyZoneCircleMap.clear();
+    this.agencyZoneDetails.clear();
+    this.selectedAgency      = null;
+    this.selectedAgencyIndex = null;
+
+    this.map = L.map(el, {
+      center: [12.3647, -1.5337],
+      zoom: 12,
+      zoomControl: false,
+      scrollWheelZoom: true,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19,
+    }).addTo(this.map);
+
+    L.control.zoom({ position: 'topright' }).addTo(this.map);
+
+    // ── Invalidate size after render (sidebar peut décaler la carte) ──
+    requestAnimationFrame(() => this.map?.invalidateSize({ animate: false }));
+
+    this.agenciesGeoData.forEach((agency: any, index: number) => {
+      const color    = this.AGENCY_PALETTE[index % this.AGENCY_PALETTE.length];
+      const zones: string[] = agency?.zoneActivite ?? [];
+      const name: string    = agency?.name ?? `Agence ${index + 1}`;
+      const hood: string    = agency?.address?.neighborhood ?? zones[0] ?? '';
+      const initials: string = name.split(' ')
+        .filter((w: string) => w.length > 2)
+        .map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+        || name.slice(0, 2).toUpperCase();
+
+      const circles: L.Circle[] = [];
+      const zoneCircleMap = new Map<string, L.Circle>();
+
+      // ── Zone circles (stocker par index) ──
+      zones.forEach((zone: string) => {
+        const coords = this.OUAGA_COORDS[zone] ?? this.fallbackCoord(zone, index);
+        if (!coords) return;
+
+        const circle = L.circle(coords, {
+          radius: 450,
+          color,
+          fillColor: color,
+          fillOpacity: 0.15,
+          weight: 1.5,
+          opacity: 0.55,
+        });
+
+        circle.bindTooltip(this.buildBasicZoneTooltip(zone, name, color), {
+          sticky: true, direction: 'top', className: 'map-tt',
+        });
+
+        circle.on('mouseover', () => {
+          if (this.selectedAgencyIndex !== null && this.selectedAgencyIndex !== index) return;
+          circle.setStyle({ fillOpacity: 0.6, weight: 3 });
+        });
+        circle.on('mouseout', () => {
+          const isSelected = this.selectedAgencyIndex === index;
+          circle.setStyle({
+            fillOpacity: isSelected ? 0.42 : 0.15,
+            weight:      isSelected ? 2.5  : 1.5,
+            opacity:     isSelected ? 0.88 : 0.55,
+          });
+        });
+        circle.on('click', () => this.selectAgencyOnMap(agency, index));
+        circle.addTo(this.map!);
+        circles.push(circle);
+        zoneCircleMap.set(zone, circle);
+      });
+
+      this.agencyZoneLayers.set(index, circles);
+      this.agencyZoneCircleMap.set(index, zoneCircleMap);
+
+      // ── Dot centre de zone ──
+      const centroid = this.getZoneCentroid(zones, index);
+      const dot = L.circleMarker(centroid, {
+        radius: 5,
+        fillColor: '#fff',
+        color,
+        weight: 3,
+        fillOpacity: 1,
+        interactive: false,
+      }).addTo(this.map!);
+      this.agencyDotLayers.set(index, dot);
+
+      // ── Pin agence ──
+      const pinCoords = this.OUAGA_COORDS[hood] ?? this.fallbackCoord(name, index);
+      const audit     = this.agencyAudits.find(a => a.name === name);
+      const clients   = audit?.clients ?? '—';
+
+      const icon = L.divIcon({
+        html: `<div class="agency-pin" style="background:${color}">
+                 <span class="pin-label">${initials}</span>
+               </div>
+               <div class="pin-tail" style="border-top-color:${color}"></div>`,
+        iconSize:    [36, 44],
+        iconAnchor:  [18, 44],
+        popupAnchor: [0, -46],
+        className:   'agency-marker',
+      });
+
+      const marker = L.marker(pinCoords, { icon });
+
+      marker.bindPopup(`
+        <div class="map-popup">
+          <div class="popup-header" style="border-left:4px solid ${color}">
+            <span class="popup-initials" style="background:${color}">${initials}</span>
+            <div>
+              <div class="popup-name">${name}</div>
+              <div class="popup-status ${agency?.status === 'active' ? 'ps-active' : 'ps-off'}">
+                ${agency?.status === 'active' ? '● Actif' : '○ Inactif'}
+              </div>
+            </div>
+          </div>
+          <div class="popup-body">
+            <div class="popup-row"><i class="material-icons">people</i>&nbsp;${clients} clients</div>
+            <div class="popup-row"><i class="material-icons">location_on</i>&nbsp;${hood || agency?.address?.city || '—'}</div>
+            ${agency?.slogan ? `<div class="popup-slogan">"${agency.slogan}"</div>` : ''}
+            <div class="popup-zones">
+              <div class="popup-zones-label">Zones d'intervention (${zones.length})</div>
+              <div class="popup-zones-list">
+                ${zones.map((z: string) => `<span class="zone-chip" style="border-color:${color};color:${color}">${z}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `, { maxWidth: 290 });
+
+      marker.on('click', () => this.selectAgencyOnMap(agency, index));
+      marker.addTo(this.map!);
+      this.agencyPinLayers.set(index, marker);
+    });
+
+    if (!this.agenciesGeoData.length) {
+      this.map.setView([12.3647, -1.5337], 11);
+    }
+  }
+
+  // ── Sélection d'agence ───────────────────────────────────
+
+  selectAgencyOnMap(agency: any, index: number): void {
+    // Deselect si même agence
+    if (this.selectedAgencyIndex === index) {
+      this.deselectAgency();
+      return;
+    }
+
+    const prev = this.selectedAgencyIndex;
+
+    // Masquer complètement toutes les autres agences
+    this.agencyZoneLayers.forEach((circles, agIdx) => {
+      if (agIdx === index) return;
+      circles.forEach(c => c.setStyle({ fillOpacity: 0, opacity: 0, weight: 0 }));
+    });
+    this.agencyPinLayers.forEach((marker, agIdx) => {
+      if (agIdx === index) return;
+      const el = marker.getElement();
+      if (el) { el.style.opacity = '0'; el.style.pointerEvents = 'none'; }
+    });
+    this.agencyDotLayers.forEach((dot, agIdx) => {
+      if (agIdx === index) return;
+      const el = dot.getElement();
+      if (el) (el as HTMLElement).style.opacity = '0';
+    });
+
+    // Mettre en valeur l'agence sélectionnée
+    const color = this.AGENCY_PALETTE[index % this.AGENCY_PALETTE.length];
+    this.agencyZoneLayers.get(index)?.forEach(c =>
+      c.setStyle({ fillOpacity: 0.42, opacity: 0.88, weight: 2.5, color, fillColor: color })
+    );
+    const pin = this.agencyPinLayers.get(index)?.getElement();
+    if (pin) pin.style.opacity = '1';
+
+    this.selectedAgencyIndex     = index;
+    this.selectedAgency          = agency;
+    this.selectedAgencyStats     = null;
+    this.isLoadingAgencyDetail   = true;
+    if (agency?._id) {
+      this.loadSelectedAgencyStats(agency._id);
+      this.loadSelectedAgencyZones(agency._id, index, color);
+    }
+
+    // FlyTo centroïde des zones
+    const centroid = this.getZoneCentroid(agency?.zoneActivite ?? [], index);
+    this.map?.flyTo(centroid, 14, { duration: 1.1 });
+  }
+
+  deselectAgency(): void {
+    this.selectedAgency        = null;
+    this.selectedAgencyIndex   = null;
+    this.selectedAgencyStats   = null;
+    this.isLoadingAgencyDetail = false;
+
+    // Restaurer toutes les zones
+    this.agencyZoneLayers.forEach((circles, agIdx) => {
+      const color = this.AGENCY_PALETTE[agIdx % this.AGENCY_PALETTE.length];
+      circles.forEach(c => c.setStyle({ fillOpacity: 0.15, opacity: 0.55, weight: 1.5, color, fillColor: color }));
+    });
+    // Restaurer tous les pins
+    this.agencyPinLayers.forEach(marker => {
+      const el = marker.getElement();
+      if (el) { el.style.opacity = '1'; el.style.pointerEvents = ''; }
+    });
+    // Restaurer les dots
+    this.agencyDotLayers.forEach(dot => {
+      const el = dot.getElement();
+      if (el) (el as HTMLElement).style.opacity = '1';
+    });
+
+    this.map?.flyTo([12.3647, -1.5337], 12, { duration: 0.9 });
+  }
+
+  loadSelectedAgencyStats(agencyId: string): void {
+    this.agencyService.getAgencyStats$(agencyId).subscribe({
+      next: (res: any) => {
+        this.selectedAgencyStats = res?.success !== false ? (res?.data ?? res) : null;
+        this.isLoadingAgencyDetail = false;
+      },
+      error: () => { this.isLoadingAgencyDetail = false; }
+    });
+  }
+
+  loadSelectedAgencyZones(agencyId: string, agencyIndex: number, color: string): void {
+    // Utilise le cache si déjà chargé
+    if (this.agencyZoneDetails.has(agencyIndex)) {
+      this.rebindZoneTooltips(agencyIndex, color);
+      return;
+    }
+    this.agencyService.getAgencyZones$(agencyId).subscribe({
+      next: (res: any) => {
+        const zones: any[] = Array.isArray(res) ? res : (res?.data ?? res?.zones ?? []);
+        this.agencyZoneDetails.set(agencyIndex, zones);
+        this.rebindZoneTooltips(agencyIndex, color);
+      },
+      error: () => {}
+    });
+  }
+
+  private rebindZoneTooltips(agencyIndex: number, color: string): void {
+    const zoneCircleMap = this.agencyZoneCircleMap.get(agencyIndex);
+    const zones         = this.agencyZoneDetails.get(agencyIndex) ?? [];
+    if (!zoneCircleMap) return;
+
+    // Construire un lookup name → zoneObj
+    const zoneByName = new Map<string, any>();
+    zones.forEach((z: any) => {
+      const key = (z.name || z.zoneName || '').trim();
+      if (key) zoneByName.set(key, z);
+    });
+
+    zoneCircleMap.forEach((circle, zoneName) => {
+      const zoneObj = zoneByName.get(zoneName);
+      circle.unbindTooltip();
+      circle.bindTooltip(
+        zoneObj
+          ? this.buildRichZoneTooltip(zoneName, zoneObj, color)
+          : this.buildBasicZoneTooltip(zoneName, '', color),
+        { sticky: true, direction: 'top', className: 'map-tt' }
+      );
+    });
+  }
+
+  private buildBasicZoneTooltip(zoneName: string, agencyName: string, color: string): string {
+    return `
+      <div class="map-tt-inner">
+        <span class="tt-dot" style="background:${color}"></span>
+        <span class="tt-zone">${zoneName}</span>
+        ${agencyName ? `<div class="tt-agency">${agencyName}</div>` : ''}
+      </div>`;
+  }
+
+  private buildRichZoneTooltip(zoneName: string, z: any, color: string): string {
+    const collectors   = z.collectors?.length ?? z.assignedCollectors?.length ?? z.nbCollectors ?? '—';
+    const completion   = z.completionRate !== undefined ? `${z.completionRate}%` : (z.stats?.completionRate !== undefined ? `${z.stats.completionRate}%` : '—');
+    const days: string = z.schedule?.days?.join(', ')
+                      ?? z.plannings?.[0]?.days?.join(', ')
+                      ?? z.schedule?.frequency
+                      ?? z.planning
+                      ?? '—';
+    return `
+      <div class="map-tt-rich">
+        <div class="tt-rich-header" style="border-left:3px solid ${color}">
+          <span class="tt-dot" style="background:${color}"></span>
+          <strong>${zoneName}</strong>
+        </div>
+        <div class="tt-rich-row">
+          <i class="material-icons tt-icon">speed</i>
+          <span>Taux d'exécution&nbsp;: <b>${completion}</b></span>
+        </div>
+        <div class="tt-rich-row">
+          <i class="material-icons tt-icon">people</i>
+          <span>Collecteurs&nbsp;: <b>${collectors}</b></span>
+        </div>
+        <div class="tt-rich-row">
+          <i class="material-icons tt-icon">event</i>
+          <span>Planning&nbsp;: <b>${days}</b></span>
+        </div>
+      </div>`;
+  }
+
+  getSelectedCompletionRate(): number {
+    if (this.selectedAgencyStats) {
+      const today = this.selectedAgencyStats.todayCollections ?? 0;
+      const done  = this.selectedAgencyStats.completedCollections ?? 0;
+      if (today > 0) return Math.round((done / today) * 100);
+    }
+    return this.getAgencyAudit(this.selectedAgency?.name)?.completionRate ?? 0;
+  }
+
+  // ── Helpers carte ────────────────────────────────────────
+
+  getZoneCentroid(zones: string[], fallbackIndex: number): [number, number] {
+    const coords = (zones ?? [])
+      .map((z: string) => this.OUAGA_COORDS[z])
+      .filter(Boolean) as [number, number][];
+    if (!coords.length) return this.fallbackCoord('', fallbackIndex);
+    const lat = coords.reduce((s, c) => s + c[0], 0) / coords.length;
+    const lng = coords.reduce((s, c) => s + c[1], 0) / coords.length;
+    return [lat, lng];
+  }
+
+  getAgencyAudit(name: string) {
+    return this.agencyAudits.find(a => a.name === name) ?? null;
+  }
+
+  getAgencyInitials(name: string): string {
+    return name.split(' ').filter((w: string) => w.length > 2)
+      .map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+      || name.slice(0, 2).toUpperCase();
+  }
+
+  private fallbackCoord(seed: string, index: number): [number, number] {
+    const spread = 0.04;
+    const angle  = (index * 137.5 * Math.PI) / 180;
+    return [
+      12.3647 + Math.cos(angle) * spread * (0.3 + (index % 3) * 0.3),
+      -1.5337 + Math.sin(angle) * spread * (0.3 + (index % 3) * 0.3),
+    ];
+  }
+
+  initCharts(): void {
+    if (this.chartsInitialized) return;
+    this.chartsInitialized = true;
+    this.buildIncidentsChart();
+    this.buildAgenciesChart();
+    this.buildWasteChart();
+  }
+
+  private buildIncidentsChart(): void {
+    const el = this.incidentsChartRef?.nativeElement;
+    if (!el) return;
+    if (this.incidentsChart) { this.incidentsChart.destroy(); this.incidentsChart = null; }
+
+    let resolved = 0, pending = 0, open = 0;
+    if (this.incidents?.length) {
+      this.incidents.forEach(i => {
+        const s = (i.status ?? '').toLowerCase();
+        if (s === 'resolved' || s === 'collected') resolved++;
+        else if (s === 'pending' || s === 'reported' || s === 'scheduled') pending++;
+        else open++;
+      });
+    } else {
+      resolved = this.statisticsAdmin?.reportsFromClients?.resolved ?? 0;
+      pending  = this.statisticsAdmin?.reportsFromClients?.pending  ?? 0;
+    }
+
+    const labels = ['Résolus', 'En cours', 'Ouverts'];
+    const data   = [resolved, pending, open];
+    const colors = ['#22c55e', '#f97316', '#ef4444'];
+
+    const config: ChartConfiguration<'doughnut'> = {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: colors,
+          borderWidth: 0,
+          hoverOffset: 6,
+        }],
+      },
+      options: {
+        cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 12 } } },
+          tooltip: { enabled: true },
+        },
+      },
+    };
+    this.incidentsChart = new Chart(el, config);
+  }
+
+  private buildAgenciesChart(): void {
+    const el = this.agenciesChartRef?.nativeElement;
+    if (!el) return;
+    if (this.agenciesChart) { this.agenciesChart.destroy(); this.agenciesChart = null; }
+
+    const top = this.topAgenciesByCollections.length
+      ? this.topAgenciesByCollections
+      : this.getTopPerformingAgencies().map(a => ({ ...a, collections: a.clients }));
+    const labels = top.map(a => a.name.length > 16 ? a.name.slice(0, 16) + '…' : a.name);
+    const values = top.map((a: any) => a.collections ?? a.clients ?? 0);
+
+    const config: ChartConfiguration<'bar'> = {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Collectes effectuées',
+          data: values,
+          backgroundColor: this.AGENCY_PALETTE.slice(0, top.length),
+          borderRadius: 6,
+          barThickness: 18,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { min: 0, ticks: { callback: (v) => Number(v).toLocaleString('fr-FR') }, grid: { display: false } },
+          y: { grid: { display: false } },
+        },
+      },
+    };
+    this.agenciesChart = new Chart(el, config);
+  }
+
+  private buildWasteChart(): void {
+    const el = this.wasteChartRef?.nativeElement;
+    if (!el) return;
+    if (this.wasteChart) { this.wasteChart.destroy(); this.wasteChart = null; }
+
+    const config: ChartConfiguration<'doughnut'> = {
+      type: 'doughnut',
+      data: {
+        labels: this.wasteStatistics.map(w => w.type),
+        datasets: [{
+          data: this.wasteStatistics.map(w => w.percentage),
+          backgroundColor: this.wasteStatistics.map(w => w.color),
+          borderWidth: 0,
+          hoverOffset: 6,
+        }],
+      },
+      options: {
+        cutout: '60%',
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
+        },
+      },
+    };
+    this.wasteChart = new Chart(el, config);
+  }
+
+  ngOnDestroy(): void {
+    this.incidentsChart?.destroy();
+    this.agenciesChart?.destroy();
+    this.wasteChart?.destroy();
+    if (this.map) { this.map.remove(); this.map = null; }
+  }
+
   loadZoneStatistics(): void {
     const stats = this.agencyService.getAgenceStats();
     const grouped: { [key: string]: any[] } = {};
@@ -599,42 +1372,91 @@ export class AdminDashboard implements OnInit {
   }
 
   loadZoneStat(): void {
-    this.adminService.getAllStatisticCity().subscribe({
-      next: (response: any) => {
-        const stats = Array.isArray(response.statistics)
-          ? response.statistics
-          : [];
-        const grouped: { [key: string]: ZoneStatistic[] } = {};
+    this.isLoadingCoverage = true;
+    const agencyId = this.coverageAgencyId || undefined;
 
-        MOCK_CITIES.forEach((city) => {
-          const country = city.country.name || "Burkina Faso";
-          if (!grouped[country]) {
-            grouped[country] = [];
-          }
-          const cityStats = stats.find((s: any) => s.city === city.name);
-
-          grouped[country].push({
-            country,
-            name: city.name,
-            agencies: cityStats?.agencies || 0,
-            clients: cityStats?.clients || 0,
-            collections: cityStats?.todayCollections || 0,
-            coverage: cityStats?.complianceRate || 0,
-            incidents: cityStats?.pendingReports || 0,
-            cities: [],
-          });
-        });
-
-        this.zoneStatistics = Object.keys(grouped).map((country) => ({
-          country,
-          cities: grouped[country],
-        }));
+    forkJoin({
+      coverage: this.adminService.getZoneCoverage$(agencyId),
+      stats:    this.adminService.getPlanningStats$(agencyId),
+    }).subscribe({
+      next: ({ coverage, stats }) => {
+        this.zoneCoverageData = coverage?.data ?? [];
+        this.planningStats    = stats?.data ?? null;
+        this.isLoadingCoverage = false;
       },
-      error: (err) => {
-        console.error("Erreur lors de la récupération des villes:", err);
-        this.zoneStatistics = [];
-      },
+      error: () => { this.isLoadingCoverage = false; },
     });
+  }
+
+  loadAgenciesForCoverageDropdown(reset = false): void {
+    if (reset) {
+      this.coverageAgencyDropdownPage  = 1;
+      this.coverageAgencyDropdownList  = [];
+    }
+    if (!reset && this.coverageAgencyDropdownList.length >= this.coverageAgencyDropdownTotal && this.coverageAgencyDropdownTotal > 0) return;
+    this.coverageAgencyDropdownLoading = true;
+    this.agencyService.getAllAgenciesFromApi({
+      page:  this.coverageAgencyDropdownPage,
+      limit: 15,
+      search: this.coverageAgencyDropdownSearch,
+    }).subscribe({
+      next: (res: any) => {
+        const items = (res.data ?? res.agencies ?? []).map((a: any) => ({
+          id:   a._id ?? a.id,
+          name: a.name ?? a.ageny?.name ?? '—',
+        }));
+        this.coverageAgencyDropdownList  = [...this.coverageAgencyDropdownList, ...items];
+        this.coverageAgencyDropdownTotal = res.total ?? res.pagination?.total ?? items.length;
+        this.coverageAgencyDropdownPage++;
+        this.coverageAgencyDropdownLoading = false;
+      },
+      error: () => { this.coverageAgencyDropdownLoading = false; },
+    });
+  }
+
+  openCoverageAgencyDropdown(): void {
+    this.coverageAgencyDropdownOpen   = true;
+    this.coverageAgencyDropdownSearch = '';
+    this.loadAgenciesForCoverageDropdown(true);
+  }
+
+  onCoverageAgencyDropdownSearch(): void {
+    this.loadAgenciesForCoverageDropdown(true);
+  }
+
+  onCoverageAgencyDropdownScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 40) {
+      this.loadAgenciesForCoverageDropdown();
+    }
+  }
+
+  selectCoverageAgency(agency: { id: string; name: string } | null): void {
+    this.selectedCoverageAgency   = agency;
+    this.coverageAgencyId         = agency?.id ?? '';
+    this.coverageAgencyDropdownOpen = false;
+    this.loadZoneStat();
+  }
+
+  get coveragePercent(): number {
+    if (!this.zoneCoverageData.length) return 0;
+    const covered = this.zoneCoverageData.filter(z => z.planningsCount > 0).length;
+    return Math.round((covered / this.zoneCoverageData.length) * 100);
+  }
+
+  get criticalZones(): typeof this.zoneCoverageData {
+    return this.zoneCoverageData
+      .filter(z => z.completionRate < 30 || z.equipesAssigned === 0)
+      .sort((a, b) => a.completionRate - b.completionRate)
+      .slice(0, 4);
+  }
+
+  get activeZonesCount(): number {
+    return this.zoneCoverageData.filter(z => z.completionRate >= 50 || z.status === 'active').length;
+  }
+
+  get coveredZonesCount(): number {
+    return this.zoneCoverageData.filter(z => z.planningsCount > 0).length;
   }
 
   // loadIncidents1(): void {
@@ -819,8 +1641,25 @@ export class AdminDashboard implements OnInit {
     return "coverage-poor";
   }
 
+  getIncidentCountByStatus(group: 'resolved' | 'pending' | 'open'): number {
+    if (!this.incidents?.length) {
+      if (group === 'resolved') return this.statisticsAdmin?.reportsFromClients?.resolved ?? 0;
+      if (group === 'pending')  return this.statisticsAdmin?.reportsFromClients?.pending  ?? 0;
+      return 0;
+    }
+    return this.incidents.filter(i => {
+      const s = (i.status ?? '').toLowerCase();
+      if (group === 'resolved') return s === 'resolved' || s === 'collected';
+      if (group === 'pending')  return s === 'pending' || s === 'reported' || s === 'scheduled';
+      return s === 'open';
+    }).length;
+  }
+
   getRecentIncidents(): Incident[] {
-    return this.incidents?.slice(0, 5) || [];
+    if (!this.incidents?.length) return [];
+    return [...this.incidents]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
   }
 
   getSeverityIcon(severity: string): string {
@@ -874,13 +1713,16 @@ export class AdminDashboard implements OnInit {
   }
 
   getTopPerformingAgencies(): any[] {
-    return this.agencyAudits
-      .sort((a, b) => b.completionRate - a.completionRate)
-      .slice(0, 5)
-      .map((agency) => ({
-        name: agency.name,
-        completionRate: agency.completionRate,
-      }));
+    const source = this.agenciesGeoData.length
+      ? this.agenciesGeoData.map((ag: any) => ({
+          name: ag.name ?? '',
+          clients: Array.isArray(ag.clients) ? ag.clients.length : (ag.clients ?? 0),
+        }))
+      : this.agencyAudits.map(a => ({ name: a.name, clients: a.clients }));
+
+    return [...source]
+      .sort((a, b) => b.clients - a.clients)
+      .slice(0, 5);
   }
 
   getIncidentBreakdown(): any[] {
@@ -1008,15 +1850,37 @@ export class AdminDashboard implements OnInit {
     });
   }
   filterIncidents(): void {
-    this.filteredIncidents = this.incidents.filter((incident) => {
-      const statusMatch =
-        this.incidentsFilter === "all" ||
-        incident.status === this.incidentsFilter;
-      const severityMatch =
-        this.severityFilter === "all" ||
-        incident.severity === this.severityFilter;
-      return statusMatch && severityMatch;
-    });
+    // Repart toujours de la page 1 quand on filtre
+    this.incidentsCurrentPage = 1;
+    this.loadAllSignalements(1);
+  }
+
+  getPaginatedIncidents(): Incident[] {
+    // Les incidents reçus de l'API sont déjà la bonne page
+    return this.filteredIncidents;
+  }
+
+  goToIncidentsPage(page: number): void {
+    if (page < 1 || page > this.incidentsTotalPages) return;
+    this.loadAllSignalements(page);
+  }
+
+  getIncidentsPageNumbers(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(1, this.incidentsCurrentPage - 2);
+    const end   = Math.min(this.incidentsTotalPages, start + 4);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  }
+
+  getIncidentsEndItem(): number {
+    return Math.min(this.incidentsCurrentPage * this.incidentsItemsPerPage, this.incidentsTotalItems);
+  }
+
+  changeIncidentsItemsPerPage(limit: number): void {
+    this.incidentsItemsPerPage = limit;
+    this.incidentsCurrentPage  = 1;
+    this.loadAllSignalements(1);
   }
 
   // Action methods
@@ -1144,6 +2008,82 @@ export class AdminDashboard implements OnInit {
   pwdHasNumber(pwd: string): boolean    { return /[0-9]/.test(pwd); }
   pwdHasSpecial(pwd: string): boolean   { return /[^A-Za-z0-9]/.test(pwd); }
 
+  // ── Historique activité utilisateur ─────────────────────
+  userActivity: ActivityEvent[] = [];
+  isLoadingActivity  = false;
+  showActivitySection = false;
+
+  loadUserActivity(): void {
+    const id = this.selectedUser?._id || this.selectedUser?.id;
+    if (!id) return;
+    this.isLoadingActivity  = true;
+    this.showActivitySection = true;
+    this.adminService.getUserActivity(id).subscribe({
+      next: (response: any) => {
+        const apiData = response?.data ?? [];
+        this.userActivity = apiData.length > 0
+          ? apiData
+          : this.getMockActivity(this.selectedUser.role || '');
+        this.isLoadingActivity = false;
+      },
+      error: () => {
+        this.userActivity  = this.getMockActivity(this.selectedUser.role || '');
+        this.isLoadingActivity = false;
+      }
+    });
+  }
+
+  private getMockActivity(role: string): ActivityEvent[] {
+    const now  = new Date();
+    const d = (offset: number) => new Date(now.getTime() - offset * 3600000).toISOString();
+    const maps: Record<string, ActivityEvent[]> = {
+      client: [
+        { type: 'subscription_created', label: 'Abonnement créé', detail: 'Plan mensuel souscrit', date: d(24),   icon: 'card_membership', color: '#3b82f6' },
+        { type: 'collection_done',      label: 'Collecte effectuée', detail: 'QR code scanné par le collecteur', date: d(72),  icon: 'local_shipping',  color: '#16a34a' },
+        { type: 'report_filed',         label: 'Signalement déposé', detail: 'Collecte manquée signalée',         date: d(120), icon: 'report_problem',  color: '#f59e0b' },
+        { type: 'payment_done',         label: 'Paiement effectué',  detail: 'Mobile Money — 5 000 FCFA',         date: d(200), icon: 'payments',        color: '#8b5cf6' },
+        { type: 'subscription_renewed', label: 'Abonnement renouvelé', detail: 'Renouvellement automatique',      date: d(720), icon: 'autorenew',       color: '#3b82f6' },
+      ],
+      collector: [
+        { type: 'collection_scanned',  label: 'Collecte scannée',     detail: '12 foyers collectés aujourd\'hui', date: d(2),   icon: 'qr_code_scanner', color: '#16a34a' },
+        { type: 'zone_assigned',       label: 'Zone assignée',        detail: 'Quartier Pissy — Secteur 17',      date: d(26),  icon: 'map',             color: '#3b82f6' },
+        { type: 'schedule_assigned',   label: 'Planning assigné',     detail: 'Tournée Lundi 07h–12h',            date: d(48),  icon: 'schedule',        color: '#8b5cf6' },
+        { type: 'collection_scanned',  label: 'Collecte scannée',     detail: '9 foyers collectés',               date: d(74),  icon: 'qr_code_scanner', color: '#16a34a' },
+        { type: 'report_resolved',     label: 'Signalement traité',   detail: 'Incident #0042 résolu',            date: d(120), icon: 'check_circle',    color: '#22c55e' },
+      ],
+      manager: [
+        { type: 'employee_added',    label: 'Employé ajouté',       detail: 'Nouveau collecteur enregistré',    date: d(5),   icon: 'person_add',     color: '#3b82f6' },
+        { type: 'zone_added',        label: 'Zone ajoutée',         detail: 'Quartier Gounghin ajouté',         date: d(30),  icon: 'add_location',   color: '#16a34a' },
+        { type: 'planning_created',  label: 'Planning créé',        detail: 'Semaine du 02/06 configurée',      date: d(55),  icon: 'event',          color: '#8b5cf6' },
+        { type: 'employee_removed',  label: 'Employé désactivé',    detail: 'Compte suspendu (fin contrat)',     date: d(120), icon: 'person_remove',  color: '#f59e0b' },
+        { type: 'tarif_updated',     label: 'Tarif mis à jour',     detail: 'Plan mensuel : 4500 → 5000 FCFA',  date: d(240), icon: 'price_change',   color: '#ec4899' },
+      ],
+      gestionnaire: [
+        { type: 'employee_added',    label: 'Employé ajouté',       detail: 'Nouveau collecteur enregistré',    date: d(5),   icon: 'person_add',     color: '#3b82f6' },
+        { type: 'zone_added',        label: 'Zone ajoutée',         detail: 'Quartier Gounghin ajouté',         date: d(30),  icon: 'add_location',   color: '#16a34a' },
+        { type: 'planning_created',  label: 'Planning créé',        detail: 'Semaine du 02/06 configurée',      date: d(55),  icon: 'event',          color: '#8b5cf6' },
+      ],
+      municipality: [
+        { type: 'agency_audited',    label: 'Agence auditée',       detail: 'GlobalFaso — conformité 78%',      date: d(12),  icon: 'fact_check',     color: '#3b82f6' },
+        { type: 'report_reviewed',   label: 'Signalement examiné',  detail: 'Incident #0051 — Pissy',           date: d(36),  icon: 'manage_search',  color: '#f59e0b' },
+        { type: 'agency_activated',  label: 'Agence activée',       detail: 'Eco-Propre activée',               date: d(96),  icon: 'verified',       color: '#22c55e' },
+        { type: 'report_reviewed',   label: 'Signalement examiné',  detail: 'Incident #0039 — Tampouy',         date: d(180), icon: 'manage_search',  color: '#f59e0b' },
+        { type: 'agency_suspended',  label: 'Agence suspendue',     detail: 'CleanBF — non-conformité',         date: d(300), icon: 'block',          color: '#dc2626' },
+      ],
+    };
+    return maps[role] ?? [
+      { type: 'login', label: 'Connexion', detail: 'Connexion à la plateforme', date: d(1), icon: 'login', color: '#6b7280' },
+    ];
+  }
+
+  getActivityTimeAgo(dateStr: string): string {
+    const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+    if (diff < 3600)   return `il y a ${Math.round(diff / 60)} min`;
+    if (diff < 86400)  return `il y a ${Math.round(diff / 3600)} h`;
+    if (diff < 604800) return `il y a ${Math.round(diff / 86400)} j`;
+    return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+  }
+
   // ── Dialog de confirmation suppression ──────────────────
   showDeleteDialog    = false;
   userToDelete: { id: string; name: string; role: string; color: string; initials: string } | null = null;
@@ -1232,8 +2172,10 @@ export class AdminDashboard implements OnInit {
 
   // Ouvre le drawer en mode VIEW depuis la liste (sans appel API si on a déjà les données)
   quickViewUser(userData: any): void {
-    this.selectedUser = userData as any;
-    this.isEditingUser = false;
+    this.selectedUser       = userData as any;
+    this.isEditingUser      = false;
+    this.showActivitySection = false;
+    this.userActivity       = [];
     this.visible1 = true;
   }
 
@@ -1344,29 +2286,53 @@ export class AdminDashboard implements OnInit {
   }
 
   investigateIncident(incidentId: string): void {
-    const incident = this.incidents.find((i) => i._id === incidentId);
+    const incident = this.filteredIncidents.find((i) => i._id === incidentId);
     if (incident) {
       incident.status = "pending";
       incident.assignedTo = "Inspecteur Municipal";
-      this.filterIncidents();
-      this.notificationService.showSuccess(
-        "Enquête",
-        "Incident pris en charge pour enquête",
-      );
+      this.filteredIncidents = [...this.filteredIncidents];
+      if (this.selectedIncident?._id === incidentId) this.selectedIncident = { ...incident };
+      this.notificationService.showSuccess("Enquête", "Incident pris en charge pour enquête");
     }
   }
 
   resolveIncident(incidentId: string): void {
-    const incident = this.incidents.find((i) => i._id === incidentId);
-    if (incident) {
-      incident.status = "resolved";
-      this.filterIncidents();
-      this.statistics.pendingReports--;
-      this.notificationService.showSuccess(
-        "Résolu",
-        "Incident marqué comme résolu",
-      );
-    }
+    const resolvedBy = this.currentUser?._id ?? '';
+    this.adminService.resolveCollecte$(incidentId, resolvedBy, this.resolutionComment).subscribe({
+      next: () => {
+        const incident = this.filteredIncidents.find((i) => i._id === incidentId);
+        if (incident) {
+          incident.status = "resolved";
+          this.filteredIncidents = [...this.filteredIncidents];
+          if (this.selectedIncident?._id === incidentId) this.selectedIncident = { ...incident };
+          this.statistics.pendingReports--;
+        }
+        this.resolutionComment = '';
+        this.visibleIncidentDrawer = false;
+        this.notificationService.showSuccess("Résolu", "Incident marqué comme résolu");
+      },
+      error: () => {
+        this.notificationService.showError("Erreur", "Impossible de résoudre l'incident");
+      },
+    });
+  }
+
+  openIncidentDrawer(incident: Incident): void {
+    this.selectedIncident = incident;
+    this.resolutionComment = '';
+    this.visibleIncidentDrawer = true;
+  }
+
+  openResolveDialog(incidentId: string): void {
+    this.resolveDialogIncidentId = incidentId;
+    this.resolutionComment = '';
+    this.resolveDialogVisible = true;
+  }
+
+  confirmResolveFromDialog(): void {
+    this.resolveIncident(this.resolveDialogIncidentId);
+    this.resolveDialogVisible = false;
+    this.resolveDialogIncidentId = '';
   }
 
   contactAgencyForIncident(agencyId?: string): void {
@@ -1654,6 +2620,37 @@ export class AdminDashboard implements OnInit {
     });
   }
 
+  deactivateAgency(id: string) {
+    this.agencyService.deActivateAgency(id).subscribe({
+      next: (response: any) => {
+        console.log("agency deactivated in dashboard", response);
+        this.notificationService.showSuccess("Désactivation", "Agence désactivée avec succès");
+        this.loadAgencyAudits(this.agenciesFilterParams);
+      },
+      error: (error: any) => {
+        console.error("Error deactivating agency:", error);
+        const msg = error?.error?.message || "Erreur lors de la désactivation";
+        this.notificationService.showError("Désactivation", msg);
+      },
+    });
+  }
+
+  deleteAgency(id: string) {
+    if (!confirm("Confirmer la suppression de cette agence ?")) return;
+    this.agencyService.deleteAgency(id).subscribe({
+      next: (response: any) => {
+        console.log("agency deleted in dashboard", response);
+        this.notificationService.showSuccess("Suppression", "Agence supprimée avec succès");
+        this.loadAgencyAudits(this.agenciesFilterParams);
+      },
+      error: (error: any) => {
+        console.error("Error deleting agency:", error);
+        const msg = error?.error?.message || "Erreur lors de la suppression";
+        this.notificationService.showError("Suppression", msg);
+      },
+    });
+  }
+
   loadAllMunipalities() {
     this.adminService.getAllMunicipalities().subscribe({
       next: (response: any) => {
@@ -1671,22 +2668,81 @@ export class AdminDashboard implements OnInit {
   }
   /**Listes des signalements des users */
   totalIncidents = signal(0);
-  loadAllSignalements() {
+
+  loadAgenciesForDropdown(reset = false): void {
+    if (this.agencyDropdownLoading) return;
+    if (!reset && this.agencyDropdownList.length >= this.agencyDropdownTotal && this.agencyDropdownTotal > 0) return;
+    if (reset) {
+      this.agencyDropdownPage = 1;
+      this.agencyDropdownList = [];
+      this.agencyDropdownTotal = 0;
+    }
+    this.agencyDropdownLoading = true;
+    this.agencyService.getAllAgenciesFromApi({
+      page: this.agencyDropdownPage,
+      limit: 15,
+      search: this.agencyDropdownSearch,
+    }).subscribe({
+      next: (res: any) => {
+        const items: { id: string; name: string }[] = (res.data ?? []).map((a: any) => ({ id: a._id, name: a.name }));
+        this.agencyDropdownList  = reset ? items : [...this.agencyDropdownList, ...items];
+        this.agencyDropdownTotal = res.total ?? res.pagination?.total ?? this.agencyDropdownList.length;
+        this.agencyDropdownPage++;
+        this.agencyDropdownLoading = false;
+      },
+      error: () => { this.agencyDropdownLoading = false; }
+    });
+  }
+
+  openAgencyDropdown(): void {
+    this.agencyDropdownOpen = true;
+    if (!this.agencyDropdownList.length) this.loadAgenciesForDropdown(true);
+  }
+
+  onAgencyDropdownSearch(): void {
+    this.loadAgenciesForDropdown(true);
+  }
+
+  onAgencyDropdownScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 60) {
+      this.loadAgenciesForDropdown();
+    }
+  }
+
+  selectAgencyFilter(agency: { id: string; name: string } | null): void {
+    this.selectedAgencyForFilter = agency;
+    this.agencyIdFilter          = agency?.id ?? '';
+    this.agencyDropdownOpen      = false;
+    this.agencyDropdownSearch    = '';
+    this.incidentsCurrentPage    = 1;
+    this.loadAllSignalements(1);
+  }
+
+  loadAllSignalements(page = this.incidentsCurrentPage) {
     this.isLoadingIncidents = true;
-    this.adminService.getAllReports().subscribe({
+    const params = {
+      page,
+      limit:    this.incidentsItemsPerPage,
+      status:   this.incidentsFilter,
+      severity: this.severityFilter,
+      search:   this.incidentsSearchTerm,
+      agencyId: this.agencyIdFilter,
+    };
+    this.adminService.getAllReports(params).subscribe({
       next: (response: any) => {
-        this.totalIncidents.set(response?.total);
-        this.incidents = response.collectes;
-        // .map((signalement: any) => {
-        //   return {
-        //     agencyId: signalement.agency?._id,
-        //     ...signalement,
-        //   };
-        // });
+        this.incidents         = response.collectes ?? response.data ?? [];
         this.filteredIncidents = [...this.incidents];
-        this.isLoadingIncidents = false;
+        const total            = response.total ?? response.count ?? this.incidents.length;
+        this.totalIncidents.set(total);
+        this.incidentsTotalItems  = total;
+        this.incidentsCurrentPage = page;
+        this.incidentsTotalPages  = Math.max(1, Math.ceil(total / this.incidentsItemsPerPage));
+        this.isLoadingIncidents   = false;
         console.log("signalements in response", response);
-        console.log("signalements in dashboard", this.filteredIncidents);
+        if (this.chartsInitialized && this.activeTab === 'statistics') {
+          this.buildIncidentsChart();
+        }
       },
       error: (error) => {
         console.error("Erreur lors du chargement des incidents:", error);
@@ -1700,32 +2756,144 @@ export class AdminDashboard implements OnInit {
     this.adminService.setData("municipality");
   }
 
-  getTabBadge(tabId: string): number {
-    switch (tabId) {
-      case "overview":
-        return (
-          this.filteredAgencies.length +
-          this.filteredMunicipalities.length +
-          this.filteredClients.length +
-          this.filteredCollectors.length +
-          this.filteredIncidents.length
-        );
-      case "municipalities":
-        return this.filteredMunicipalities.length;
-      case "agencies":
-        return this.filteredAgencies.length;
-      case "clients":
-        return this.filteredClients.length;
-      case "collectors":
-        return this.filteredCollectors.length;
-      case "incidents":
-        return this.filteredIncidents.length;
-      case "all_users":
-        return this.filteredUsers.length;
-      default:
-        return 0;
-    }
+  openAddAgentDrawer(): void {
+    this.newAgentData = {
+      firstName: '', lastName: '', email: '', phone: '',
+      password: '', confirmPassword: '',
+      acceptTerms: true,
+      address: { city: '', arrondissement: '', sector: '', neighborhood: '', street: '', doorNumber: '' },
+    };
+    this.agentCities          = this.countriesOrgMockService.getCitiesByCountry('1');
+    this.agentArrondissements = [];
+    this.agentSectors         = [];
+    this.agentNeighborhoods   = [];
+    this.visibleAddAgentDrawer = true;
   }
+
+  onAgentCityChange(): void {
+    const city = this.agentCities.find(c => c.name === this.newAgentData.address.city);
+    this.agentArrondissements = city ? this.countriesOrgMockService.getArrondissementsByCity(city.id) : [];
+    this.agentSectors         = [];
+    this.agentNeighborhoods   = [];
+    this.newAgentData.address.arrondissement = '';
+    this.newAgentData.address.sector         = '';
+    this.newAgentData.address.neighborhood   = '';
+  }
+
+  onAgentArrondissementChange(): void {
+    const arr = this.agentArrondissements.find(a => a.name === this.newAgentData.address.arrondissement);
+    this.agentSectors       = arr ? this.countriesOrgMockService.getSectorsByArrondissement(arr.id) : [];
+    this.agentNeighborhoods = [];
+    this.newAgentData.address.sector       = '';
+    this.newAgentData.address.neighborhood = '';
+  }
+
+  onAgentSectorChange(): void {
+    const sec = this.agentSectors.find(s => s.name === this.newAgentData.address.sector);
+    this.agentNeighborhoods = sec ? this.countriesOrgMockService.getNeighborhoodsBySector(sec.id) : [];
+    this.newAgentData.address.neighborhood = '';
+  }
+
+  submitNewMunicipalityAgent(): void {
+    const d = this.newAgentData;
+    if (!d.firstName || !d.lastName || !d.email || !d.phone || !d.password) {
+      this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    if (d.password !== d.confirmPassword) {
+      this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
+      return;
+    }
+    if (d.password.length < 8) {
+      this.notificationService.showError('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+    this.isSubmittingAgent = true;
+    const body = {
+      firstName:    d.firstName,
+      lastName:     d.lastName,
+      email:        d.email,
+      phone:        d.phone,
+      password:     d.password,
+      role:         'municipality',
+      acceptTerms:  d.acceptTerms,
+      receiveOffers: false,
+      address: {
+        city:           d.address.city,
+        arrondissement: d.address.arrondissement,
+        sector:         d.address.sector,
+        neighborhood:   d.address.neighborhood,
+        street:         d.address.street,
+        doorNumber:     d.address.doorNumber || 'N/A',
+        longitude:      -1.5339,
+        latitude:       12.3647,
+      },
+    };
+    this.authService.register(body as any).subscribe({
+      next: (res: any) => {
+        this.isSubmittingAgent = false;
+        if (res?.success || res?.status === 'success' || res?.message?.toLowerCase().includes('succès')) {
+          this.notificationService.showSuccess('Agent créé', 'L\'agent de mairie a été créé avec succès');
+          this.visibleAddAgentDrawer = false;
+          this.loadTabData('all_users');
+        } else {
+          this.notificationService.showError('Erreur', res?.message || 'Erreur lors de la création');
+        }
+      },
+      error: (err: any) => {
+        this.isSubmittingAgent = false;
+        this.notificationService.showError('Erreur', err?.error?.message || 'Erreur lors de la création');
+      },
+    });
+  }
+
+  loadTabBadges(): void {
+    this.adminService.getGlobalUserStats().subscribe({
+      next: (res: any) => {
+        if (!res) return;
+        const d = res?.data ?? res;
+        this.tabBadges = {
+          agencies:   d.totalAgencies      ?? d.agencies      ?? 0,
+          all_users:  d.totalUsers         ?? d.all_users         ?? 0,
+          incidents:  d.totalIncidents     ?? d.incidents     ?? d.totalSignalements ?? 0,
+          collectors: d.totalCollectors    ?? d.collectors    ?? 0,
+          clients:    d.totalClients       ?? d.clients       ?? 0,
+          overview:   d.totalAgencies      ?? 0,
+        };
+      },
+    });
+  }
+
+  getTabBadge(tabId: string): number {
+    return this.tabBadges[tabId] ?? 0;
+  }
+
+  // getTabBadge(tabId: string): number {
+  //   switch (tabId) {
+  //     case "overview":
+  //       return (
+  //         this.filteredAgencies.length +
+  //         this.filteredMunicipalities.length +
+  //         this.filteredClients.length +
+  //         this.filteredCollectors.length +
+  //         this.filteredIncidents.length
+  //       );
+  //     case "municipalities":
+  //       return this.filteredMunicipalities.length;
+  //     case "agencies":
+  //       return this.filteredAgencies.length;
+  //     case "clients":
+  //       return this.filteredClients.length;
+  //     case "collectors":
+  //       return this.filteredCollectors.length;
+  //     case "incidents":
+  //       return this.filteredIncidents.length;
+  //     case "all_users":
+  //       return this.filteredUsers.length;
+  //     default:
+  //       return 0;
+  //   }
+  // }
 
   getRoleLabel(): string {
     const count = this.filteredUsers.length;
@@ -1926,4 +3094,5 @@ export class AdminDashboard implements OnInit {
       }
     }
   }
+
 }

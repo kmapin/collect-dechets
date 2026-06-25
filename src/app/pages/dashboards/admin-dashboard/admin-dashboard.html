@@ -200,7 +200,7 @@
               *ngFor="let tab of tabs"
               class="tab-btn"
               [class.active]="activeTab === tab.id"
-              (click)="activeTab = tab.id">
+              (click)="switchTab(tab.id)">
               <i class="material-icons">{{ tab.icon }}</i>
               {{ tab.label }}
             <span *ngIf="getTabBadge(tab.id) > 0" class="tab-badge">
@@ -209,7 +209,7 @@
             </button>
             <div class="nav-actions right">
               <a
-                (click)="navigateToAddMunicipality()"
+                (click)="openAddAgentDrawer()"
                 class="btn btn-primary nav-cta"
               >
                 <i class="material-icons">person_add</i>
@@ -302,58 +302,148 @@
                 </div>
 
                 <div class="overview-section card">
-                  <h3>
-                    <i class="material-icons">map</i>
-                    Couverture Territoriale
-                  </h3>
-                  <div class="territory-stats scrollable-container">
-                    <!-- État vide pour la couverture territoriale -->
-                    <div *ngIf="!zoneStatistics.length" class="empty-state">
+                  <div class="overview-section-header">
+                    <h3>
                       <i class="material-icons">map</i>
-                      <h3>Aucune donnée territoriale</h3>
-                      <p>Les données de couverture territoriale ne sont pas encore disponibles.</p>
-                    </div>
+                      Couverture Territoriale
+                    </h3>
+                    <div class="agency-select-wrap" [class.open]="coverageAgencyDropdownOpen">
+                      <button class="agency-select-trigger"
+                        (click)="coverageAgencyDropdownOpen ? (coverageAgencyDropdownOpen=false) : openCoverageAgencyDropdown()">
+                        <i class="material-icons">business</i>
+                        <span class="agency-select-label">{{ selectedCoverageAgency?.name ?? 'Toutes les agences' }}</span>
+                        <i class="material-icons agency-select-chevron">expand_more</i>
+                        <button *ngIf="selectedCoverageAgency" class="agency-select-clear"
+                          (click)="$event.stopPropagation(); selectCoverageAgency(null)">
+                          <i class="material-icons">close</i>
+                        </button>
+                      </button>
 
-                    <!-- Boucle sur les pays -->
-                    <div
-                      *ngFor="let zone of zoneStatistics"
-                      class="country-block"
-                    >
-                      <h2 class="country-title">{{ zone.country }}</h2>
-
-                      <!-- Boucle sur les villes du pays -->
-                      <div *ngFor="let city of zone.cities" class="zone-item">
-                        <div class="zone-header">
-                          <h4>{{ city.name }}</h4>
-                          <span
-                            class="coverage-badge"
-                            [class]="getCoverageBadgeClass(city.coverage)"
-                          >
-                            {{ city.coverage }}% couvert
-                          </span>
+                      @if (coverageAgencyDropdownOpen) {
+                      <div class="agency-dropdown-panel" (click)="$event.stopPropagation()">
+                        <div class="agency-dropdown-search">
+                          <i class="material-icons">search</i>
+                          <input type="text" placeholder="Rechercher une agence..."
+                            [(ngModel)]="coverageAgencyDropdownSearch"
+                            (input)="onCoverageAgencyDropdownSearch()"
+                            class="agency-dropdown-input"
+                            autofocus />
                         </div>
-
-                        <div class="zone-metrics">
-                          <div class="zone-metric">
+                        <div class="agency-dropdown-list" (scroll)="onCoverageAgencyDropdownScroll($event)">
+                          <div class="agency-dropdown-item agency-dropdown-all"
+                            [class.selected]="!selectedCoverageAgency"
+                            (click)="selectCoverageAgency(null)">
+                            <i class="material-icons">layers</i> Toutes les agences
+                          </div>
+                          @for (agency of coverageAgencyDropdownList; track agency.id) {
+                          <div class="agency-dropdown-item"
+                            [class.selected]="selectedCoverageAgency?.id === agency.id"
+                            (click)="selectCoverageAgency(agency)">
                             <i class="material-icons">business</i>
-                            <span>{{ city.agencies }} agences</span>
+                            {{ agency.name }}
                           </div>
-                          <div class="zone-metric">
-                            <i class="material-icons">people</i>
-                            <span>{{ city.clients }} clients</span>
+                          }
+                          <div *ngIf="coverageAgencyDropdownLoading" class="agency-dropdown-loading">
+                            <i class="material-icons rotating">autorenew</i> Chargement…
                           </div>
-                          <div class="zone-metric">
-                            <i class="material-icons">local_shipping</i>
-                            <span>{{ city.collections }} collectes</span>
-                          </div>
-                          <div class="zone-metric" *ngIf="city.incidents > 0">
-                            <i class="material-icons">warning</i>
-                            <span>{{ city.incidents }} incidents</span>
+                          <div *ngIf="!coverageAgencyDropdownLoading && coverageAgencyDropdownList.length === 0" class="agency-dropdown-empty">
+                            Aucune agence trouvée
                           </div>
                         </div>
                       </div>
+                      <div class="agency-dropdown-overlay" (click)="coverageAgencyDropdownOpen=false"></div>
+                      }
                     </div>
                   </div>
+
+                  <!-- Loader -->
+                  <div *ngIf="isLoadingCoverage" class="coverage-loading">
+                    <i class="material-icons spin">refresh</i> Chargement…
+                  </div>
+
+                  <ng-container *ngIf="!isLoadingCoverage">
+
+                    <!-- KPIs -->
+                    <div class="coverage-kpis">
+                      <div class="coverage-kpi">
+                        <div class="ckpi-value" [class.ckpi-good]="coveragePercent>=70" [class.ckpi-warn]="coveragePercent>=40 && coveragePercent<70" [class.ckpi-danger]="coveragePercent<40">
+                          {{ coveragePercent }}%
+                        </div>
+                        <div class="ckpi-label">Zones couvertes</div>
+                      </div>
+                      <div class="coverage-kpi">
+                        <div class="ckpi-value ckpi-good">{{ activeZonesCount }}</div>
+                        <div class="ckpi-label">Zones actives</div>
+                      </div>
+                      <div class="coverage-kpi">
+                        <div class="ckpi-value" [class.ckpi-danger]="criticalZones.length>0" [class.ckpi-good]="criticalZones.length===0">
+                          {{ criticalZones.length }}
+                        </div>
+                        <div class="ckpi-label">Zones critiques</div>
+                      </div>
+                    </div>
+
+                    <!-- Barre de progression globale -->
+                    <div class="coverage-bar-wrap">
+                      <div class="coverage-bar-track">
+                        <div class="coverage-bar-fill"
+                          [style.width]="coveragePercent + '%'"
+                          [class.fill-good]="coveragePercent>=70"
+                          [class.fill-warn]="coveragePercent>=40 && coveragePercent<70"
+                          [class.fill-danger]="coveragePercent<40">
+                        </div>
+                      </div>
+                      <span class="coverage-bar-label">{{ coveredZonesCount }} / {{ zoneCoverageData.length }} quartiers</span>
+                    </div>
+
+                    <!-- Stats plannings du jour -->
+                    <div class="coverage-planning-strip" *ngIf="planningStats">
+                      <div class="cps-item">
+                        <i class="material-icons">play_circle</i>
+                        <span class="cps-val">{{ planningStats.inProgress }}</span>
+                        <span class="cps-lbl">En cours</span>
+                      </div>
+                      <div class="cps-item">
+                        <i class="material-icons">check_circle</i>
+                        <span class="cps-val">{{ planningStats.completedToday }}</span>
+                        <span class="cps-lbl">Complétés auj.</span>
+                      </div>
+                      <div class="cps-item">
+                        <i class="material-icons">speed</i>
+                        <span class="cps-val">{{ planningStats.executionRate }}%</span>
+                        <span class="cps-lbl">Taux d'exécution</span>
+                      </div>
+                    </div>
+
+                    <!-- Zones critiques -->
+                    <div class="coverage-critical" *ngIf="criticalZones.length">
+                      <div class="coverage-critical-title">
+                        <i class="material-icons">warning</i> Zones nécessitant une intervention
+                      </div>
+                      <div class="critical-zone-list">
+                        <div *ngFor="let z of criticalZones" class="critical-zone-item">
+                          <span class="czname">{{ z.quartierNom }}</span>
+                          <div class="czbar-wrap">
+                            <div class="czbar-track">
+                              <div class="czbar-fill" [style.width]="z.completionRate + '%'"></div>
+                            </div>
+                            <span class="czrate">{{ z.completionRate }}%</span>
+                          </div>
+                          <span class="czteam" [class.czteam-none]="z.equipesAssigned === 0">
+                            <i class="material-icons">groups</i>{{ z.equipesAssigned }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- État vide -->
+                    <div *ngIf="!zoneCoverageData.length" class="empty-state">
+                      <i class="material-icons">map</i>
+                      <h3>Aucune donnée de couverture</h3>
+                      <p>Les plannings n'ont pas encore de zones assignées.</p>
+                    </div>
+
+                  </ng-container>
                 </div>
               </div>
 
@@ -387,7 +477,7 @@
                         {{ getIncidentTypeText(incident.type.toLowerCase()) }}
                       </div>
                       <div class="alert-agency">
-                        {{ incident?.agency?.name }}
+                        {{ incident?.agency?.name ?? incident?.agencyId?.name ?? '—' }}
                       </div>
                       <div class="alert-time">
                         {{ incident.date | date : "dd/MM HH:mm" }}
@@ -412,7 +502,7 @@
                 <div class="agencies-filters">
                   <div class="nav-actions">
                     <a
-                      (click)="navigateToAddMunicipality()"
+                      (click)="openAddAgentDrawer()"
                       class="btn btn-primary nav-cta"
                     >
                       <i class="material-icons">person_add</i>
@@ -559,10 +649,10 @@
                     <tr>
                       <th>Agence</th>
                       <th>Statut</th>
-                      <th>Clients</th>
+                      <th>Clients actifs</th>
                       <th>Collecteurs</th>
+                      <th>Gestionnaires</th>
                       <th>Zones</th>
-                      <th>Conformité</th>
                       <th class="col-actions">Actions</th>
                     </tr>
                   </thead>
@@ -571,15 +661,25 @@
                     <tr>
                       <td><strong>{{ agency.name }}</strong></td>
                       <td><span class="status-badge" [class]="'status-' + agency.status">{{ getAgencyStatusText(agency.status) }}</span></td>
-                      <td>{{ agency.clients }}</td>
-                      <td>{{ agency.collectors }}</td>
+                      <td>
+                        <span *ngIf="agency.statsLoaded; else loadingCell">{{ agency.clients }}</span>
+                        <ng-template #loadingCell><span class="stats-loading">…</span></ng-template>
+                      </td>
+                      <td>
+                        <span *ngIf="agency.statsLoaded; else loadingCell2">{{ agency.collectors }}</span>
+                        <ng-template #loadingCell2><span class="stats-loading">…</span></ng-template>
+                      </td>
+                      <td>
+                        <span *ngIf="agency.statsLoaded; else loadingCell3">{{ agency.gestionnaires }}</span>
+                        <ng-template #loadingCell3><span class="stats-loading">…</span></ng-template>
+                      </td>
                       <td>{{ agency.zones }}</td>
-                      <td><span [class]="getComplianceClass(agency.complianceScore)" style="font-weight:600;">{{ agency.complianceScore }}%</span></td>
                       <td class="col-actions">
                         <div class="table-actions">
                           <button class="action-btn" (click)="viewAgencyDetails(agency.id)" title="Détails"><i class="material-icons">visibility</i></button>
                           <ng-container *ngIf="agency?.status === 'active'; else actTpl">
                             <button class="action-btn" (click)="contactAgency(agency.id)" title="Contacter"><i class="material-icons">message</i></button>
+                            <button class="action-btn toggle-btn toggle-active" (click)="deactivateAgency(agency.id)" title="Désactiver"><i class="material-icons">block</i></button>
                           </ng-container>
                           <ng-template #actTpl>
                             <button class="action-btn toggle-btn toggle-inactive" (click)="activateAgency(agency.id)" title="Activer"><i class="material-icons">check_circle</i></button>
@@ -632,21 +732,30 @@
                     <div class="metric-row">
                       <div class="metric">
                         <i class="material-icons">people</i>
-                        <span>{{ agency.clients }}{{agency.clients > 1 ? ' clients' : ' client'}}</span>
+                        <span *ngIf="agency.statsLoaded; else ldClients">
+                          {{ agency.clients }}{{ agency.clients > 1 ? ' clients' : ' client' }}
+                        </span>
+                        <ng-template #ldClients><span class="stats-loading">…</span></ng-template>
                       </div>
                       <div class="metric">
-                        <i class="material-icons">person</i>
-                        <span>{{ agency.collectors }} {{ agency.collectors > 1 ? 'collecteurs' : 'collecteur'}}</span>
+                        <i class="material-icons">engineering</i>
+                        <span *ngIf="agency.statsLoaded; else ldCollectors">
+                          {{ agency.collectors }} {{ agency.collectors > 1 ? 'collecteurs' : 'collecteur' }}
+                        </span>
+                        <ng-template #ldCollectors><span class="stats-loading">…</span></ng-template>
                       </div>
                       <div class="metric">
-                        <i class="material-icons">map</i>
-                        <span>{{ agency.zones }} {{ agency.zones > 1 ? 'zones' : 'zone' }}</span>
+                        <i class="material-icons">manage_accounts</i>
+                        <span *ngIf="agency.statsLoaded; else ldGest">
+                          {{ agency.gestionnaires }} {{ agency.gestionnaires > 1 ? 'gestionnaires' : 'gestionnaire' }}
+                        </span>
+                        <ng-template #ldGest><span class="stats-loading">…</span></ng-template>
                       </div>
                     </div>
                     <div class="metric-row">
                       <div class="metric">
-                        <i class="material-icons">local_shipping</i>
-                        <span>{{ agency.collectionsToday }} {{  agency.collectionsToday > 1 ? 'collectes' : 'collecte'}}</span>
+                        <i class="material-icons">map</i>
+                        <span>{{ agency.zones }} {{ agency.zones > 1 ? 'zones' : 'zone' }}</span>
                       </div>
                       <div class="metric">
                         <i class="material-icons">check_circle</i>
@@ -654,7 +763,7 @@
                       </div>
                       <div class="metric">
                         <i class="material-icons">star</i>
-                        <span>{{ agency.rating }}/5</span>
+                        <span>{{ agency.rating | number:'1.1-1' }}/5</span>
                       </div>
                     </div>
                   </div>
@@ -672,41 +781,30 @@
                     </div>
                   </div>
 
-                  <div class="agency-actions">
-                    <button
-                      class="btn btn-secondary"
-                      (click)="viewAgencyDetails(agency.id)"
-                    >
+                  <div class="card-icon-actions">
+                    <!-- Voir détails -->
+                    <button class="cia-btn cia-view" (click)="viewAgencyDetails(agency.id)" title="Voir les détails">
                       <i class="material-icons">visibility</i>
-                      Détails
                     </button>
-                    <ng-container
-                      *ngIf="agency?.status === 'active'; else activation"
-                    >
-                      <!-- <button
-                        class="btn btn-primary"
-                        (click)="auditAgency(agency.id)"
-                      >
-                        <i class="material-icons">fact_check</i>
-                        Auditer
-                      </button> -->
-                      <button
-                        class="btn btn-accent"
-                        (click)="contactAgency(agency.id)"
-                      >
-                        <i class="material-icons">message</i>
-                        Contacter
+                    <!-- Éditer -->
+                    <button class="cia-btn cia-edit" (click)="viewAgencyDetails(agency.id)" title="Modifier">
+                      <i class="material-icons">edit</i>
+                    </button>
+                    <!-- Toggle actif / inactif -->
+                    <ng-container *ngIf="agency?.status === 'active'; else cardActivate">
+                      <button class="cia-btn cia-toggle cia-toggle--on" (click)="deactivateAgency(agency.id)" title="Désactiver">
+                        <i class="material-icons">toggle_on</i>
                       </button>
                     </ng-container>
-                    <ng-template #activation>
-                      <button
-                        class="btn btn-accent"
-                        (click)="activateAgency(agency.id)"
-                      >
-                        <i class="material-icons">check</i>
-                        Activer
+                    <ng-template #cardActivate>
+                      <button class="cia-btn cia-toggle cia-toggle--off" (click)="activateAgency(agency.id)" title="Activer">
+                        <i class="material-icons">toggle_off</i>
                       </button>
                     </ng-template>
+                    <!-- Supprimer -->
+                    <button class="cia-btn cia-delete" (click)="deleteAgency(agency.id)" title="Supprimer">
+                      <i class="material-icons">delete</i>
+                    </button>
                   </div>
 
                   <!-- <div class="agency-footer">
@@ -1050,6 +1148,7 @@
                             <i class="material-icons">edit</i>
                           </button>
                           <button class="action-btn toggle-btn"
+                                  *ngIf="user._id !== currentUser?._id"
                                   [class.toggle-active]="user.data?.status === 'active'"
                                   [class.toggle-inactive]="user.data?.status !== 'active'"
                                   (click)="quickToggleUserStatus(user.data)"
@@ -1057,6 +1156,7 @@
                             <i class="material-icons">{{ user.data?.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i>
                           </button>
                           <button class="action-btn danger"
+                                  *ngIf="user._id !== currentUser?._id"
                                   (click)="quickDeleteUser(user._id, (user.data?.firstName || '') + ' ' + (user.data?.lastName || ''), user.data?.role || '')"
                                   title="Supprimer">
                             <i class="material-icons">delete</i>
@@ -1173,6 +1273,7 @@
                             <i class="material-icons">edit</i>
                           </button>
                           <button class="action-btn toggle-btn"
+                                  *ngIf="user?._id !== currentUser?._id"
                                   [class.toggle-active]="user?.data?.status === 'active'"
                                   [class.toggle-inactive]="user?.data?.status !== 'active'"
                                   (click)="quickToggleUserStatus(user?.data)"
@@ -1180,6 +1281,7 @@
                             <i class="material-icons">{{ user?.data?.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i>
                           </button>
                           <button class="action-btn danger"
+                                  *ngIf="user?._id !== currentUser?._id"
                                   (click)="quickDeleteUser(user?._id, (user?.data?.firstName || '') + ' ' + (user?.data?.lastName || ''))"
                                   title="Supprimer">
                             <i class="material-icons">delete</i>
@@ -1386,111 +1488,391 @@
             <div *ngIf="activeTab === 'statistics'" class="statistics-tab">
               <div class="statistics-header">
                 <h2>Statistiques Consolidées</h2>
-                <!-- <div class="statistics-filters" 
->
-                  <select
-                    [(ngModel)]="statisticsPeriod"
-                    (change)="updateStatistics()"
-                    class="filter-select"
-                        [disabled]="isDisabled"
-
-                  >
-                    <option value="today">Aujourd'hui</option>
-                    <option value="week">Cette semaine</option>
-                    <option value="month">Ce mois</option>
-                    <option value="quarter">Ce trimestre</option>
-                    <option value="year">Cette année</option>
-                  </select>
-                  <button
-                    class="btn btn-secondary"
-                    (click)="exportStatistics()"
-                 
-                  >
-                    <i class="material-icons">download</i>
-                    Exporter
-                  </button>
-                </div> -->
               </div>
 
-              <div class="statistics-content">
-                <div class="statistics-cards">
-                  <div class="statistics-card card">
-                    <h3>Collectes par Type de Déchets</h3>
-                    <div class="chart-container">
-                      <div class="chart-placeholder">
-                        <i class="material-icons">donut_large</i>
-                        <p>Graphique en secteurs des types de déchets</p>
-                      </div>
-                    </div>
-                    <div class="chart-legend">
-                      <div
-                        *ngFor="let waste of wasteStatistics"
-                        class="legend-item"
-                      >
-                        <div
-                          class="legend-color"
-                          [style.background-color]="waste.color"
-                        ></div>
-                        <span>{{ waste.type }}: {{ waste.quantity }}t</span>
-                      </div>
+              <!-- ── KPIs ── -->
+              <div class="stat-kpi-grid">
+                <div class="kpi-card card">
+                  <div class="kpi-icon-wrap kpi-green">
+                    <i class="material-icons">local_shipping</i>
+                  </div>
+                  <div class="kpi-body">
+                    <span class="kpi-label">Taux de collecte</span>
+                    <span class="kpi-value">{{ getCollectionRate() }}%</span>
+                    <div class="kpi-bar-track">
+                      <div class="kpi-bar-fill kpi-fill-green" [style.width]="getCollectionRate() + '%'"></div>
                     </div>
                   </div>
+                </div>
 
-                  <div class="statistics-card card">
-                    <h3>Performance par Agence</h3>
-                    <div class="performance-chart">
-                      <div
-                        *ngFor="let agency of getTopPerformingAgencies()"
-                        class="performance-bar"
-                      >
-                        <div class="agency-name">{{ agency.name }}</div>
-                        <div class="performance-bar-container">
-                          <div
-                            class="performance-bar-fill"
-                            [style.width]="agency.completionRate + '%'"
-                          ></div>
-                        </div>
-                        <div class="performance-value">
-                          {{ agency.completionRate }}%
-                        </div>
-                      </div>
+                <div class="kpi-card card">
+                  <div class="kpi-icon-wrap kpi-blue">
+                    <i class="material-icons">people</i>
+                  </div>
+                  <div class="kpi-body">
+                    <span class="kpi-label">Croissance clients (mois)</span>
+                    <span class="kpi-value">+{{ statisticsAdmin?.monthlyClientPercentage ?? 0 }}%</span>
+                    <div class="kpi-bar-track">
+                      <div class="kpi-bar-fill kpi-fill-blue"
+                           [style.width]="(statisticsAdmin?.monthlyClientPercentage ?? 0) + '%'"></div>
                     </div>
                   </div>
+                </div>
 
-                  <div class="statistics-card card">
-                    <h3>Évolution des Collectes</h3>
-                    <div class="chart-container">
-                      <div class="chart-placeholder">
-                        <i class="material-icons">show_chart</i>
-                        <p>Graphique linéaire de l'évolution des collectes</p>
-                      </div>
+                <div class="kpi-card card">
+                  <div class="kpi-icon-wrap kpi-orange">
+                    <i class="material-icons">report_problem</i>
+                  </div>
+                  <div class="kpi-body">
+                    <span class="kpi-label">Incidents résolus</span>
+                    <span class="kpi-value">
+                      {{ statisticsAdmin?.reportsFromClients?.resolved ?? 0 }}
+                      / {{ statisticsAdmin?.reportsFromClients?.total ?? 0 }}
+                    </span>
+                    <div class="kpi-bar-track">
+                      <div class="kpi-bar-fill kpi-fill-orange"
+                           [style.width]="(statisticsAdmin?.reportsFromClients?.total
+                             ? (statisticsAdmin?.reportsFromClients?.resolved ?? 0) * 100 / statisticsAdmin!.reportsFromClients!.total
+                             : 0) + '%'"></div>
                     </div>
                   </div>
+                </div>
 
-                  <div class="statistics-card card">
-                    <h3>Incidents par Catégorie</h3>
-                    <div class="incidents-breakdown">
-                      <div
-                        *ngFor="let incident of getIncidentBreakdown()"
-                        class="incident-category"
-                      >
-                        <div class="incident-header">
-                          <span class="incident-type">{{ incident.type }}</span>
-                          <span class="incident-count">{{
-                            incident.count
-                          }}</span>
-                        </div>
-                        <div class="incident-bar">
-                          <div
-                            class="incident-fill"
-                            [style.width]="incident.percentage + '%'"
-                          ></div>
-                        </div>
-                      </div>
+                <div class="kpi-card card">
+                  <div class="kpi-icon-wrap kpi-purple">
+                    <i class="material-icons">business</i>
+                  </div>
+                  <div class="kpi-body">
+                    <span class="kpi-label">Agences actives</span>
+                    <span class="kpi-value">
+                      {{ statisticsAdmin?.totalActiveAgencies ?? 0 }}
+                      / {{ statisticsAdmin?.totalAgencies ?? 0 }}
+                    </span>
+                    <div class="kpi-bar-track">
+                      <div class="kpi-bar-fill kpi-fill-purple"
+                           [style.width]="(statisticsAdmin?.totalAgencies
+                             ? (statisticsAdmin?.totalActiveAgencies ?? 0) * 100 / statisticsAdmin!.totalAgencies
+                             : 0) + '%'"></div>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <!-- ── Graphiques ── -->
+              <div class="charts-grid">
+
+                <!-- Doughnut : Incidents -->
+                <div class="chart-card card">
+                  <h3 class="chart-title">
+                    <i class="material-icons">pie_chart</i>
+                    Incidents par statut
+                  </h3>
+                  <div class="chart-wrapper">
+                    <canvas #incidentsChart></canvas>
+                  </div>
+                  <div class="chart-legend-row">
+                    <span class="legend-dot" style="background:#22c55e"></span>
+                    <span>Résolus: {{ getIncidentCountByStatus('resolved') }}</span>
+                    <span class="legend-dot" style="background:#f97316;margin-left:12px;"></span>
+                    <span>En cours: {{ getIncidentCountByStatus('pending') }}</span>
+                    <span class="legend-dot" style="background:#ef4444;margin-left:12px;"></span>
+                    <span>Ouverts: {{ getIncidentCountByStatus('open') }}</span>
+                  </div>
+                </div>
+
+                <!-- Bar : Top agences -->
+                <div class="chart-card card">
+                  <h3 class="chart-title">
+                    <i class="material-icons">leaderboard</i>
+                    Top 5 — Agences par collectes effectuées
+                  </h3>
+                  <div class="chart-wrapper">
+                    <canvas #agenciesChart></canvas>
+                  </div>
+                  <div *ngIf="!getTopPerformingAgencies().length" class="chart-empty">
+                    <i class="material-icons">bar_chart</i>
+                    <p>Aucune donnée agence disponible</p>
+                  </div>
+                </div>
+
+                <!-- Doughnut : Répartition déchets -->
+                <div class="chart-card card">
+                  <h3 class="chart-title">
+                    <i class="material-icons">recycling</i>
+                    Répartition des Déchets
+                  </h3>
+                  <div class="chart-wrapper">
+                    <canvas #wasteChart></canvas>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- ── Carte interactive + sidebar agences ── -->
+              <div class="card territorial-map-card">
+
+                <!-- En-tête -->
+                <div class="territorial-map-header">
+                  <h3 class="chart-title">
+                    <i class="material-icons">map</i>
+                    Couverture Territoriale — Zones d'intervention
+                  </h3>
+                  <span class="map-hint" *ngIf="!isLoadingMap && agenciesGeoData.length">
+                    <i class="material-icons">touch_app</i>
+                    Cliquez sur une agence pour zoomer ses zones
+                  </span>
+                </div>
+
+                <!-- Spinner global -->
+                <app-loading-spinner
+                  *ngIf="isLoadingMap"
+                  message="Chargement de la carte..."
+                  size="medium">
+                </app-loading-spinner>
+
+                <!-- Explorer : carte + sidebar -->
+                <div *ngIf="!isLoadingMap" class="territorial-explorer">
+
+                  <!-- ── Panneau carte ── -->
+                  <div class="te-map-panel">
+                    <div #territorialMap class="territorial-map-container"></div>
+                  </div>
+
+                  <!-- ── Sidebar droite ── -->
+                  <aside class="te-sidebar">
+
+                    <!-- Header sidebar -->
+                    <div class="tes-header">
+                      <span class="tes-title">Agences ({{ agenciesGeoData.length }})</span>
+                      <button *ngIf="selectedAgencyIndex !== null"
+                              class="tes-reset-btn"
+                              (click)="deselectAgency()"
+                              title="Tout afficher">
+                        <i class="material-icons">layers_clear</i>
+                      </button>
+                    </div>
+
+                    <!-- Toutes les agences -->
+                    <div class="tes-all-row"
+                         [class.tes-all-active]="selectedAgencyIndex === null"
+                         (click)="deselectAgency()">
+                      <div class="tes-all-icon">
+                        <i class="material-icons">layers</i>
+                      </div>
+                      <div class="tes-all-body">
+                        <span class="tes-all-label">Toutes les agences</span>
+                        <span class="tes-all-sub">{{ agenciesGeoData.length }} agences · vue globale</span>
+                      </div>
+                      <i class="material-icons tes-all-check" *ngIf="selectedAgencyIndex === null">check_circle</i>
+                    </div>
+
+                    <!-- Liste des agences -->
+                    <div class="tes-list">
+                      <div
+                        *ngFor="let ag of agenciesGeoData; let i = index"
+                        class="tes-item"
+                        [class.tes-active]="selectedAgencyIndex === i"
+                        (click)="selectAgencyOnMap(ag, i)">
+
+                        <div class="tes-swatch" [style.background]="AGENCY_PALETTE[i % AGENCY_PALETTE.length]"></div>
+
+                        <div class="tes-body">
+                          <div class="tes-name">{{ ag.name }}</div>
+                          <div class="tes-sub">
+                            <i class="material-icons">layers</i>
+                            {{ ag.zoneActivite?.length || 0 }} zones &middot;
+                            {{ ag.address?.city || 'Ouagadougou' }}
+                          </div>
+                        </div>
+
+                        <div class="tes-right">
+                          <div class="tes-count"
+                               [style.color]="AGENCY_PALETTE[i % AGENCY_PALETTE.length]">
+                            {{ getAgencyAudit(ag.name)?.clients ?? '—' }}
+                          </div>
+                          <div class="tes-label">clients</div>
+                        </div>
+
+                        <i class="material-icons tes-arrow">chevron_right</i>
+                      </div>
+                    </div>
+
+                    <!-- Panneau de détails agence sélectionnée -->
+                    <div class="tes-detail" *ngIf="selectedAgency && selectedAgencyIndex !== null">
+
+                      <!-- Header coloré -->
+                      <div class="tsd-top"
+                           [style.background]="AGENCY_PALETTE[selectedAgencyIndex % AGENCY_PALETTE.length]">
+                        <div class="tsd-deco"></div>
+                        <div class="tsd-main">
+                          <div class="tsd-initials">
+                            {{ getAgencyInitials(selectedAgency.name) }}
+                          </div>
+                          <div>
+                            <div class="tsd-name">{{ selectedAgency.name }}</div>
+                            <div class="tsd-slogan" *ngIf="selectedAgency.slogan">
+                              "{{ selectedAgency.slogan }}"
+                            </div>
+                          </div>
+                        </div>
+                        <button class="tsd-close" (click)="deselectAgency()">
+                          <i class="material-icons">close</i>
+                        </button>
+                      </div>
+
+                      <!-- Statut -->
+                      <div class="tsd-status-row">
+                        <span class="status-badge"
+                              [class.status-success]="selectedAgency.status === 'active'"
+                              [class.status-inconnu]="selectedAgency.status !== 'active'">
+                          {{ selectedAgency.status === 'active' ? 'Active' : 'Inactive' }}
+                        </span>
+                        <span class="tsd-created" *ngIf="selectedAgency.createdAt">
+                          Depuis {{ selectedAgency.createdAt | date:'MMM yyyy' }}
+                        </span>
+                      </div>
+
+                      <!-- KPIs -->
+                      <div class="tsd-kpis">
+                        <div class="tsd-kpi">
+                          <div class="tsd-kpi-val"
+                               [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            <span *ngIf="!isLoadingAgencyDetail">{{ selectedAgencyStats?.totalClientsActifs ?? selectedAgency.clients?.length ?? 0 }}</span>
+                            <span *ngIf="isLoadingAgencyDetail" class="tsd-kpi-loader">…</span>
+                          </div>
+                          <div class="tsd-kpi-lbl">Clients actifs</div>
+                        </div>
+                        <div class="tsd-kpi">
+                          <div class="tsd-kpi-val"
+                               [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            <span *ngIf="!isLoadingAgencyDetail">{{ selectedAgencyStats?.totalCollecteurs ?? 0 }}</span>
+                            <span *ngIf="isLoadingAgencyDetail" class="tsd-kpi-loader">…</span>
+                          </div>
+                          <div class="tsd-kpi-lbl">Collecteurs</div>
+                        </div>
+                        <div class="tsd-kpi">
+                          <div class="tsd-kpi-val"
+                               [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            {{ selectedAgency.zoneActivite?.length || 0 }}
+                          </div>
+                          <div class="tsd-kpi-lbl">Zones</div>
+                        </div>
+                        <div class="tsd-kpi">
+                          <div class="tsd-kpi-val"
+                               [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            <span *ngIf="!isLoadingAgencyDetail">{{ (selectedAgencyStats?.averageRating ?? 0) | number:'1.1-1' }}</span>
+                            <span *ngIf="isLoadingAgencyDetail" class="tsd-kpi-loader">…</span>
+                          </div>
+                          <div class="tsd-kpi-lbl">Note / 5</div>
+                        </div>
+                      </div>
+
+                      <!-- Taux de réalisation -->
+                      <div class="tsd-completion">
+                        <div class="tsd-completion-row">
+                          <span>Taux de réalisation</span>
+                          <strong [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            {{ getSelectedCompletionRate() }}%
+                          </strong>
+                        </div>
+                        <div class="kpi-bar-track">
+                          <div class="kpi-bar-fill"
+                               [style.width]="getSelectedCompletionRate() + '%'"
+                               [style.background]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                          </div>
+                        </div>
+                        <div class="tsd-completion-sub" *ngIf="selectedAgencyStats?.todayCollections">
+                          {{ selectedAgencyStats.completedCollections }} / {{ selectedAgencyStats.todayCollections }} collectes aujourd'hui
+                        </div>
+                      </div>
+
+                      <!-- Adresse -->
+                      <div class="tsd-section" *ngIf="selectedAgency.address">
+                        <div class="tsd-section-label">
+                          <i class="material-icons">location_on</i> Siège
+                        </div>
+                        <div class="tsd-section-val">
+                          {{ selectedAgency.address.neighborhood || '—' }},
+                          {{ selectedAgency.address.arrondissement || '—' }},
+                          {{ selectedAgency.address.city || '—' }}
+                        </div>
+                      </div>
+
+                      <!-- Propriétaire -->
+                      <div class="tsd-section" *ngIf="selectedAgency.owner">
+                        <div class="tsd-section-label">
+                          <i class="material-icons">manage_accounts</i> Responsable
+                        </div>
+                        <div class="tsd-section-val">
+                          {{ selectedAgency.owner.firstName }} {{ selectedAgency.owner.lastName }}
+                        </div>
+                        <div class="tsd-section-sub">{{ selectedAgency.owner.email }}</div>
+                      </div>
+
+                      <!-- Zones d'activité -->
+                      <div class="tsd-section">
+                        <div class="tsd-section-label">
+                          <i class="material-icons">map</i>
+                          Zones d'intervention ({{ selectedAgency.zoneActivite?.length || 0 }})
+                        </div>
+                        <div class="tsd-zones-chips">
+                          <span
+                            *ngFor="let z of selectedAgency.zoneActivite"
+                            class="zone-chip"
+                            [style.borderColor]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]"
+                            [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
+                            {{ z }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Métriques d'activité -->
+                      <div class="tsd-section" *ngIf="selectedAgencyStats && !isLoadingAgencyDetail">
+                        <div class="tsd-section-label">
+                          <i class="material-icons">bar_chart</i> Activité
+                        </div>
+                        <div class="tsd-stats-row">
+                          <div class="tsd-mini-stat">
+                            <span class="tsd-mini-val">{{ selectedAgencyStats.totalSignalements ?? 0 }}</span>
+                            <span class="tsd-mini-lbl">Signalements</span>
+                          </div>
+                          <div class="tsd-mini-stat" *ngIf="selectedAgencyStats.pendingReports">
+                            <span class="tsd-mini-val">{{ selectedAgencyStats.pendingReports }}</span>
+                            <span class="tsd-mini-lbl">En attente</span>
+                          </div>
+                          <div class="tsd-mini-stat" *ngIf="selectedAgencyStats.monthlyRevenue">
+                            <span class="tsd-mini-val">{{ selectedAgencyStats.monthlyRevenue | number:'1.0-0' }}</span>
+                            <span class="tsd-mini-lbl">Rev. mensuel</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Bouton profil complet -->
+                      <div class="tsd-action-row">
+                        <button class="tsd-profile-btn"
+                                [style.background]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]"
+                                (click)="viewAgencyDetails(selectedAgency._id)">
+                          <i class="material-icons">open_in_new</i>
+                          Voir le profil complet
+                        </button>
+                      </div>
+
+                    </div>
+                    <!-- /detail -->
+
+                    <!-- Etat vide sidebar -->
+                    <div *ngIf="!agenciesGeoData.length" class="tes-empty">
+                      <i class="material-icons">business_off</i>
+                      <p>Aucune agence disponible</p>
+                    </div>
+
+                  </aside>
+
+                </div>
+                <!-- /explorer -->
+
+              </div>
+
             </div>
 
             <!-- Onglet Incidents -->
@@ -1498,21 +1880,86 @@
               <div class="incidents-header">
                 <h2>Gestion des Incidents</h2>
                 <div class="incidents-filters">
-                  <select
-                    [(ngModel)]="incidentsFilter"
-                    (change)="filterIncidents()"
-                    class="filter-select"
-                  >
-                    <option value="all">Tous les incidents</option>
-                    <!-- <option value="open">Ouverts</option> -->
+                  <!-- Toggle carte / tableau -->
+                  <div class="view-mode-toggle">
+                    <button class="view-mode-btn" [class.active]="incidentsViewMode === 'card'" (click)="incidentsViewMode = 'card'">
+                      <i class="material-icons">grid_view</i><span>Cartes</span>
+                    </button>
+                    <button class="view-mode-btn" [class.active]="incidentsViewMode === 'table'" (click)="incidentsViewMode = 'table'">
+                      <i class="material-icons">table_rows</i><span>Tableau</span>
+                    </button>
+                  </div>
+                  <!-- Recherche texte -->
+                  <div class="search-box">
+                    <i class="material-icons">search</i>
+                    <input type="text" placeholder="Rechercher..."
+                      [(ngModel)]="incidentsSearchTerm"
+                      (input)="filterIncidents()"
+                      class="search-input" />
+                    <button *ngIf="incidentsSearchTerm" class="search-clear" (click)="incidentsSearchTerm=''; filterIncidents()">
+                      <i class="material-icons">close</i>
+                    </button>
+                  </div>
+
+                  <!-- Select agence avec recherche + scroll infini -->
+                  <div class="agency-select-wrap" [class.open]="agencyDropdownOpen">
+                    <button class="agency-select-trigger" (click)="agencyDropdownOpen ? (agencyDropdownOpen=false) : openAgencyDropdown()">
+                      <i class="material-icons">business</i>
+                      <span class="agency-select-label">{{ selectedAgencyForFilter?.name ?? 'Toutes les agences' }}</span>
+                      <i class="material-icons agency-select-chevron">expand_more</i>
+                      <button *ngIf="selectedAgencyForFilter" class="agency-select-clear" (click)="$event.stopPropagation(); selectAgencyFilter(null)">
+                        <i class="material-icons">close</i>
+                      </button>
+                    </button>
+
+                    @if (agencyDropdownOpen) {
+                    <div class="agency-dropdown-panel" (click)="$event.stopPropagation()">
+                      <!-- Recherche dans le dropdown -->
+                      <div class="agency-dropdown-search">
+                        <i class="material-icons">search</i>
+                        <input type="text" placeholder="Rechercher une agence..."
+                          [(ngModel)]="agencyDropdownSearch"
+                          (input)="onAgencyDropdownSearch()"
+                          class="agency-dropdown-input"
+                          autofocus />
+                      </div>
+                      <!-- Liste avec scroll infini -->
+                      <div class="agency-dropdown-list" (scroll)="onAgencyDropdownScroll($event)">
+                        <div class="agency-dropdown-item agency-dropdown-all"
+                          [class.selected]="!selectedAgencyForFilter"
+                          (click)="selectAgencyFilter(null)">
+                          <i class="material-icons">layers</i> Toutes les agences
+                        </div>
+                        @for (agency of agencyDropdownList; track agency.id) {
+                        <div class="agency-dropdown-item"
+                          [class.selected]="selectedAgencyForFilter?.id === agency.id"
+                          (click)="selectAgencyFilter(agency)">
+                          <i class="material-icons">business</i>
+                          {{ agency.name }}
+                        </div>
+                        }
+                        <div *ngIf="agencyDropdownLoading" class="agency-dropdown-loading">
+                          <i class="material-icons rotating">autorenew</i> Chargement…
+                        </div>
+                        <div *ngIf="!agencyDropdownLoading && agencyDropdownList.length === 0" class="agency-dropdown-empty">
+                          Aucune agence trouvée
+                        </div>
+                      </div>
+                    </div>
+                    <!-- Overlay pour fermer -->
+                    <div class="agency-dropdown-overlay" (click)="agencyDropdownOpen=false"></div>
+                    }
+                  </div>
+
+                  <!-- Filtre statut -->
+                  <select [(ngModel)]="incidentsFilter" (change)="filterIncidents()" class="filter-select">
+                    <option value="all">Tous les statuts</option>
+                    <option value="open">Ouvert</option>
                     <option value="pending">En cours</option>
                     <option value="resolved">Résolus</option>
                   </select>
-                  <select
-                    [(ngModel)]="severityFilter"
-                    (change)="filterIncidents()"
-                    class="filter-select"
-                  >
+                  <!-- Filtre gravité -->
+                  <select [(ngModel)]="severityFilter" (change)="filterIncidents()" class="filter-select">
                     <option value="all">Toutes gravités</option>
                     <option value="critical">Critique</option>
                     <option value="high">Élevée</option>
@@ -1522,22 +1969,199 @@
                 </div>
               </div>
 
-              <!-- Indicateur de chargement pour les incidents -->
-              <app-loading-spinner 
-                *ngIf="isLoadingIncidents" 
-                message="Chargement des incidents..." 
+              <app-loading-spinner
+                *ngIf="isLoadingIncidents"
+                message="Chargement des incidents..."
                 size="medium">
               </app-loading-spinner>
 
-              <app-signalement [incidents]="filteredIncidents" [currentUser]="currentUser" (isLoadingIncidents)="isLoadingIncidents = $event"></app-signalement>
-              @if (!filteredIncidents || filteredIncidents!.length==0) {
-              <div class="empty-state">
-                <i class="material-icons">report_off</i>
-                <h3>Aucun signalement</h3>
-                <p>
-                  Excellent ! Vous n'avez aucun signalement en cours. Les nouveaux
-                  signalements apparaîtront ici.
-                </p>
+              <!-- ── Vue Cartes ── -->
+              @if (!isLoadingIncidents && incidentsViewMode === 'card') {
+                @if (!filteredIncidents || filteredIncidents.length === 0) {
+                <div class="empty-state">
+                  <i class="material-icons">report_off</i>
+                  <h3>Aucun signalement</h3>
+                  <p>Aucun incident ne correspond aux critères sélectionnés.</p>
+                </div>
+                }
+                <div class="incidents-grid">
+                  @for (incident of getPaginatedIncidents(); track incident._id) {
+                  <div class="incident-card card">
+                    <!-- En-tête : sévérité + statut -->
+                    <div class="inc-card-header">
+                      <span class="severity-badge severity-{{ incident.severity | lowercase }}">
+                        <i class="material-icons">{{ getSeverityIcon(incident.severity | lowercase) }}</i>
+                        {{ getSeverityText(incident.severity | lowercase) || 'Faible' }}
+                      </span>
+                      <span class="status-badge status-{{ incident.status | lowercase }}">
+                        {{ getIncidentStatusText(incident.status | lowercase) }}
+                      </span>
+                    </div>
+
+                    <!-- Type + commentaire -->
+                    <div class="inc-card-body">
+                      <h4 class="inc-type">{{ getIncidentTypeText(incident.type) }}</h4>
+                      <p class="inc-comment" *ngIf="incident.comment">{{ incident.comment }}</p>
+                    </div>
+
+                    <!-- Méta : agence, client, date -->
+                    <div class="inc-card-meta">
+                      <!-- Colonne gauche -->
+                      <div class="inc-meta-col">
+                        <div class="inc-meta-row">
+                          <i class="material-icons">business</i>
+                          <span>{{ incident.agencyId?.name ?? incident.agencyName ?? '—' }}</span>
+                        </div>
+                        <div class="inc-meta-row">
+                          <i class="material-icons">person</i>
+                          <span *ngIf="incident.clientId?._id">{{ incident.clientId!.firstName }} {{ incident.clientId!.lastName }}</span>
+                          <span *ngIf="!incident.clientId?._id" class="inc-meta-empty">—</span>
+                        </div>
+                      </div>
+                      <!-- Colonne droite -->
+                      <div class="inc-meta-col">
+                        <div class="inc-meta-row">
+                          <i class="material-icons">engineering</i>
+                          <span *ngIf="incident.collectorId?._id">{{ incident.collectorId!.firstName }} {{ incident.collectorId!.lastName }}</span>
+                          <span *ngIf="!incident.collectorId?._id" class="inc-meta-empty">Non assigné</span>
+                        </div>
+                        <div class="inc-meta-row">
+                          <i class="material-icons">schedule</i>
+                          <span>{{ incident.date | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="card-icon-actions">
+                      <button class="cia-btn cia-view" (click)="openIncidentDrawer(incident)" title="Voir détails">
+                        <i class="material-icons">visibility</i>
+                      </button>
+                      <button class="cia-btn cia-edit" *ngIf="incident.status === 'pending'" (click)="investigateIncident(incident._id)" title="Enquêter">
+                        <i class="material-icons">search</i>
+                      </button>
+                      <button class="cia-btn cia-toggle cia-toggle--on" *ngIf="incident.status !== 'resolved'" (click)="openResolveDialog(incident._id)" title="Résoudre">
+                        <i class="material-icons">check_circle</i>
+                      </button>
+                    </div>
+                  </div>
+                  }
+                </div>
+                <!-- Pagination cartes -->
+                <div class="pagination-bar" *ngIf="filteredIncidents.length > 0">
+                  <div class="pagination-info">
+                    {{ (incidentsCurrentPage - 1) * incidentsItemsPerPage + 1 }}–{{ getIncidentsEndItem() }}
+                    sur {{ incidentsTotalItems }} incidents
+                  </div>
+                  <div class="per-page-selector">
+                    <select [ngModel]="incidentsItemsPerPage" (ngModelChange)="changeIncidentsItemsPerPage($event)" class="filter-select">
+                      <option [value]="12">12</option>
+                      <option [value]="24">24</option>
+                      <option [value]="48">48</option>
+                    </select>
+                    <span class="per-page-label">par page</span>
+                  </div>
+                  @if (incidentsTotalPages > 1) {
+                  <div class="pagination-controls">
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === 1" (click)="goToIncidentsPage(1)" title="Première page"><i class="material-icons">first_page</i></button>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === 1" (click)="goToIncidentsPage(incidentsCurrentPage - 1)" title="Précédente"><i class="material-icons">chevron_left</i></button>
+                    <div class="pagination-numbers">
+                      @for (page of getIncidentsPageNumbers(); track page) {
+                      <button class="pagination-btn page-number" [class.active]="page === incidentsCurrentPage" (click)="goToIncidentsPage(page)">{{ page }}</button>
+                      }
+                    </div>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === incidentsTotalPages" (click)="goToIncidentsPage(incidentsCurrentPage + 1)" title="Suivante"><i class="material-icons">chevron_right</i></button>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === incidentsTotalPages" (click)="goToIncidentsPage(incidentsTotalPages)" title="Dernière page"><i class="material-icons">last_page</i></button>
+                  </div>
+                  }
+                </div>
+              }
+
+              <!-- ── Vue Tableau ── -->
+              @if (!isLoadingIncidents && incidentsViewMode === 'table') {
+              <div class="admin-table-wrapper">
+                @if (!filteredIncidents || filteredIncidents.length === 0) {
+                <div class="empty-state">
+                  <i class="material-icons">report_off</i>
+                  <h3>Aucun incident trouvé</h3>
+                  <p>Aucun incident ne correspond aux critères sélectionnés.</p>
+                </div>
+                }
+                @if (filteredIncidents && filteredIncidents.length > 0) {
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Agence</th>
+                      <th>Client</th>
+                      <th>Gravité</th>
+                      <th>Statut</th>
+                      <th>Date</th>
+                      <th class="col-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (incident of getPaginatedIncidents(); track incident._id) {
+                    <tr>
+                      <td><strong>{{ getIncidentTypeText(incident.type) }}</strong></td>
+                      <td>{{ incident.agencyId?.name ?? incident.agencyName ?? '—' }}</td>
+                      <td>
+                        <span *ngIf="incident.clientId">
+                          {{ incident.clientId!.firstName }} {{ incident.clientId!.lastName }}
+                        </span>
+                        <span *ngIf="!incident.clientId" class="text-muted">—</span>
+                      </td>
+                      <td>
+                        <span class="severity-badge severity-{{ incident.severity | lowercase }}">
+                          {{ getSeverityText(incident.severity | lowercase) }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="status-badge status-{{ incident.status | lowercase }}">
+                          {{ getIncidentStatusText(incident.status | lowercase) }}
+                        </span>
+                      </td>
+                      <td>{{ incident.date | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td class="col-actions">
+                        <div class="table-actions">
+                          <button class="action-btn action-view" (click)="openIncidentDrawer(incident)" title="Voir détails"><i class="material-icons">visibility</i></button>
+                          <button class="action-btn" *ngIf="incident.status === 'pending'" (click)="investigateIncident(incident._id)" title="Enquêter"><i class="material-icons">search</i></button>
+                          <button class="action-btn" *ngIf="incident.status !== 'resolved'" (click)="openResolveDialog(incident._id)" title="Résoudre"><i class="material-icons">check_circle</i></button>
+                        </div>
+                      </td>
+                    </tr>
+                    }
+                  </tbody>
+                </table>
+                <!-- Pagination tableau -->
+                <div class="pagination-bar" *ngIf="filteredIncidents.length > 0">
+                  <div class="pagination-info">
+                    {{ (incidentsCurrentPage - 1) * incidentsItemsPerPage + 1 }}–{{ getIncidentsEndItem() }}
+                    sur {{ incidentsTotalItems }} incidents
+                  </div>
+                  <div class="per-page-selector">
+                    <select [ngModel]="incidentsItemsPerPage" (ngModelChange)="changeIncidentsItemsPerPage($event)" class="filter-select">
+                      <option [value]="10">10</option>
+                      <option [value]="20">20</option>
+                      <option [value]="50">50</option>
+                    </select>
+                    <span class="per-page-label">par page</span>
+                  </div>
+                  @if (incidentsTotalPages > 1) {
+                  <div class="pagination-controls">
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === 1" (click)="goToIncidentsPage(1)" title="Première page"><i class="material-icons">first_page</i></button>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === 1" (click)="goToIncidentsPage(incidentsCurrentPage - 1)" title="Précédente"><i class="material-icons">chevron_left</i></button>
+                    <div class="pagination-numbers">
+                      @for (page of getIncidentsPageNumbers(); track page) {
+                      <button class="pagination-btn page-number" [class.active]="page === incidentsCurrentPage" (click)="goToIncidentsPage(page)">{{ page }}</button>
+                      }
+                    </div>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === incidentsTotalPages" (click)="goToIncidentsPage(incidentsCurrentPage + 1)" title="Suivante"><i class="material-icons">chevron_right</i></button>
+                    <button class="pagination-btn" [disabled]="incidentsCurrentPage === incidentsTotalPages" (click)="goToIncidentsPage(incidentsTotalPages)" title="Dernière page"><i class="material-icons">last_page</i></button>
+                  </div>
+                  }
+                </div>
+                }
               </div>
               }
               <!-- <div *ngIf="!isLoadingIncidents" class="incidents-list grid-2"> -->
@@ -1963,45 +2587,96 @@
           }
 
         </div>
+
+        <div class="divider"></div>
+
+        <!-- Section Historique d'activité -->
+        <div class="section activity-section">
+          <div class="section-header activity-toggle-header" (click)="showActivitySection ? showActivitySection = false : loadUserActivity()">
+            <i class="material-icons section-icon-mat">history</i>
+            <h4>Historique d'activité</h4>
+            <span class="activity-role-badge role-{{ selectedUser.role }}">
+              {{ getUserRole(selectedUser.role!) }}
+            </span>
+            <i class="material-icons activity-chevron">{{ showActivitySection ? 'expand_less' : 'expand_more' }}</i>
+          </div>
+
+          @if (showActivitySection) {
+          <div class="activity-body">
+            <!-- Loader -->
+            @if (isLoadingActivity) {
+            <div class="activity-loading">
+              <i class="material-icons spin">refresh</i>
+              Chargement de l'historique...
+            </div>
+            }
+
+            <!-- Timeline -->
+            @if (!isLoadingActivity && userActivity.length > 0) {
+            <div class="activity-timeline">
+              @for (event of userActivity; track event.type + event.date) {
+              <div class="activity-item">
+                <div class="activity-dot" [style.background-color]="event.color">
+                  <i class="material-icons">{{ event.icon }}</i>
+                </div>
+                <div class="activity-content">
+                  <div class="activity-label">{{ event.label }}</div>
+                  <div class="activity-detail">{{ event.detail }}</div>
+                </div>
+                <div class="activity-time">{{ getActivityTimeAgo(event.date) }}</div>
+              </div>
+              }
+            </div>
+            }
+
+            @if (!isLoadingActivity && userActivity.length === 0) {
+            <div class="activity-empty">
+              <i class="material-icons">timeline</i>
+              Aucune activité enregistrée
+            </div>
+            }
+          </div>
+          }
+        </div>
+
       </div>
 
       <!-- ── Pied du drawer : actions ── -->
       <div class="drawer-footer">
-        <div class="drawer-actions">
-          <!-- Modifier -->
-          <button class="btn btn-primary" (click)="visible1 = false; openEditUserDrawer()">
-            <i class="material-icons">edit</i>
-            Modifier
-          </button>
-
-          <!-- Réinitialiser MDP -->
-          <button class="btn btn-reset-pwd" (click)="openPasswordResetDialog()">
-            <i class="material-icons">lock_reset</i>
-            Mot de passe
-          </button>
-
-          <!-- Activer / Désactiver -->
-          <button class="btn"
-            [class.btn-success]="selectedUser.status !== 'active'"
-            [class.btn-warning]="selectedUser.status === 'active'"
-            [disabled]="isTogglingUserStatus"
-            (click)="toggleUserStatus()">
-            <i class="material-icons">{{ isTogglingUserStatus ? 'hourglass_empty' : (selectedUser.status === 'active' ? 'toggle_off' : 'toggle_on') }}</i>
-            {{ isTogglingUserStatus ? 'En cours...' : (selectedUser.status === 'active' ? 'Désactiver' : 'Activer') }}
-          </button>
-
-          <!-- Supprimer -->
+        <div class="drawer-actions" style="justify-content:space-between;">
+          <!-- Zone danger (gauche) — masquée pour l'utilisateur connecté -->
           <button class="btn btn-danger"
+            *ngIf="selectedUser._id !== currentUser?._id && selectedUser.id !== currentUser?._id"
             (click)="openDeleteDialog(selectedUser._id || selectedUser.id!, (selectedUser.firstName || '') + ' ' + (selectedUser.lastName || ''), selectedUser.role || '')">
             <i class="material-icons">delete</i>
             Supprimer
           </button>
 
-          <!-- Fermer -->
-          <button class="btn btn-secondary" (click)="visible1 = false">
-            <i class="material-icons">close</i>
-            Fermer
-          </button>
+          <!-- Zone actions (droite) -->
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <!-- Activer / Désactiver — masqué pour l'utilisateur connecté -->
+            <button class="btn"
+              *ngIf="selectedUser._id !== currentUser?._id && selectedUser.id !== currentUser?._id"
+              [class.btn-success]="selectedUser.status !== 'active'"
+              [class.btn-warning]="selectedUser.status === 'active'"
+              [disabled]="isTogglingUserStatus"
+              (click)="toggleUserStatus()">
+              <i class="material-icons">{{ isTogglingUserStatus ? 'hourglass_empty' : (selectedUser.status === 'active' ? 'toggle_off' : 'toggle_on') }}</i>
+              {{ isTogglingUserStatus ? 'En cours...' : (selectedUser.status === 'active' ? 'Désactiver' : 'Activer') }}
+            </button>
+
+            <!-- Réinitialiser MDP -->
+            <button class="btn btn-reset-pwd" (click)="openPasswordResetDialog()">
+              <i class="material-icons">lock_reset</i>
+              Mot de passe
+            </button>
+
+            <!-- Modifier -->
+            <button class="btn btn-primary" (click)="visible1 = false; openEditUserDrawer()">
+              <i class="material-icons">edit</i>
+              Modifier
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2292,6 +2967,308 @@
         </button>
       </div>
       }
+
+    </div>
+  </div>
+  }
+
+  <!-- ══════════════════════════════════════════════
+       DIALOG RÉSOLUTION INCIDENT (depuis la liste)
+  ══════════════════════════════════════════════ -->
+  @if (resolveDialogVisible) {
+  <div class="confirm-dialog-overlay" (click)="resolveDialogVisible = false">
+    <div class="resolve-dialog" (click)="$event.stopPropagation()">
+      <div class="resolve-dialog-header">
+        <div class="resolve-dialog-icon">
+          <i class="material-icons">check_circle</i>
+        </div>
+        <div>
+          <h3>Résoudre l'incident</h3>
+          <p>Ajoutez un commentaire décrivant la résolution.</p>
+        </div>
+        <button class="pwd-reset-close" (click)="resolveDialogVisible = false">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="resolve-dialog-body">
+        <div class="form-group">
+          <label class="form-label">Commentaire de résolution *</label>
+          <textarea
+            class="form-input"
+            rows="4"
+            placeholder="Ex: Problème résolu après intervention de l'équipe…"
+            [(ngModel)]="resolutionComment"
+            style="resize:vertical;width:100%;font-size:0.875rem;">
+          </textarea>
+        </div>
+      </div>
+      <div class="resolve-dialog-footer">
+        <button class="btn-cancel" (click)="resolveDialogVisible = false">Annuler</button>
+        <button class="btn-reset-send" (click)="confirmResolveFromDialog()">
+          <i class="material-icons">check_circle</i>
+          Confirmer la résolution
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- ══════════════════════════════════════════════
+       DRAWER AJOUT AGENT DE MAIRIE
+  ══════════════════════════════════════════════ -->
+  @if (visibleAddAgentDrawer) {
+  <div class="drawer-overlay" (click)="visibleAddAgentDrawer = false">
+    <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+
+      <!-- En-tête -->
+      <div class="drawer-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="user-detail-avatar" style="background:#1a3c5e;width:38px;height:38px;font-size:0.95rem;flex-shrink:0;">
+            <i class="material-icons" style="color:#fff;font-size:1.2rem;">person_add</i>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:1rem;">Nouvel agent de mairie</h3>
+            <span style="font-size:0.78rem;color:#6b7280;">Rôle : Agent de Mairie</span>
+          </div>
+        </div>
+        <button class="drawer-close-btn" (click)="visibleAddAgentDrawer = false">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <!-- Corps -->
+      <div class="drawer-body">
+
+        <!-- Informations personnelles -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title"><i class="material-icons">person</i> Informations personnelles</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Prénom *</label>
+              <input class="form-input" type="text" [(ngModel)]="newAgentData.firstName" placeholder="Prénom" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nom *</label>
+              <input class="form-input" type="text" [(ngModel)]="newAgentData.lastName" placeholder="Nom de famille" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email *</label>
+              <input class="form-input" type="email" [(ngModel)]="newAgentData.email" placeholder="email@exemple.com" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Téléphone *</label>
+              <input class="form-input" type="tel" [(ngModel)]="newAgentData.phone" placeholder="+226 XX XX XX XX" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Mot de passe *</label>
+              <input class="form-input" type="password" [(ngModel)]="newAgentData.password" placeholder="Min. 8 caractères" autocomplete="new-password" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirmer le mot de passe *</label>
+              <input class="form-input" type="password" [(ngModel)]="newAgentData.confirmPassword" placeholder="Ressaisir le mot de passe" autocomplete="new-password" />
+              <span *ngIf="newAgentData.confirmPassword && newAgentData.confirmPassword !== newAgentData.password"
+                style="font-size:0.75rem;color:#dc2626;margin-top:4px;display:block;">
+                Les mots de passe ne correspondent pas
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Adresse -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title"><i class="material-icons">location_on</i> Adresse</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Ville</label>
+              <select class="form-input" [(ngModel)]="newAgentData.address.city" (change)="onAgentCityChange()">
+                <option value="">-- Sélectionner --</option>
+                <option *ngFor="let c of agentCities" [value]="c.name">{{ c.name }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Arrondissement</label>
+              <select class="form-input" [(ngModel)]="newAgentData.address.arrondissement" (change)="onAgentArrondissementChange()" [disabled]="!agentArrondissements.length">
+                <option value="">-- Sélectionner --</option>
+                <option *ngFor="let a of agentArrondissements" [value]="a.name">{{ a.name }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Secteur</label>
+              <select class="form-input" [(ngModel)]="newAgentData.address.sector" (change)="onAgentSectorChange()" [disabled]="!agentSectors.length">
+                <option value="">-- Sélectionner --</option>
+                <option *ngFor="let s of agentSectors" [value]="s.name">{{ s.name }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quartier</label>
+              <select class="form-input" [(ngModel)]="newAgentData.address.neighborhood" [disabled]="!agentNeighborhoods.length">
+                <option value="">-- Sélectionner --</option>
+                <option *ngFor="let q of agentNeighborhoods" [value]="q.name">{{ q.name }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Rue</label>
+              <input class="form-input" type="text" [(ngModel)]="newAgentData.address.street" placeholder="Nom de la rue" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">N° Porte</label>
+              <input class="form-input" type="text" [(ngModel)]="newAgentData.address.doorNumber" placeholder="Ex: 12" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pied -->
+      <div class="drawer-footer">
+        <div class="drawer-actions">
+          <button class="btn btn-secondary" (click)="visibleAddAgentDrawer = false" [disabled]="isSubmittingAgent">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="submitNewMunicipalityAgent()" [disabled]="isSubmittingAgent">
+            <i class="material-icons">{{ isSubmittingAgent ? 'hourglass_empty' : 'person_add' }}</i>
+            {{ isSubmittingAgent ? 'Création en cours...' : 'Créer l\'agent' }}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  }
+
+  <!-- ══════════════════════════════════════════════
+       DRAWER DÉTAILS INCIDENT
+  ══════════════════════════════════════════════ -->
+  @if (visibleIncidentDrawer && selectedIncident) {
+  <div class="drawer-overlay" (click)="visibleIncidentDrawer = false">
+    <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+
+      <!-- En-tête -->
+      <div class="drawer-header">
+        <h3>Détails de l'Incident</h3>
+        <button class="drawer-close-btn" (click)="visibleIncidentDrawer = false">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <!-- Corps -->
+      <div class="drawer-body">
+
+        <!-- Bloc titre + badges -->
+        <div class="incident-drawer-hero">
+          <div class="incident-drawer-badges">
+            <span class="severity-badge severity-{{ selectedIncident.severity | lowercase }}">
+              <i class="material-icons">{{ getSeverityIcon(selectedIncident.severity | lowercase) }}</i>
+              {{ getSeverityText(selectedIncident.severity | lowercase) }}
+            </span>
+            <span class="status-badge status-{{ selectedIncident.status | lowercase }}">
+              {{ getIncidentStatusText(selectedIncident.status | lowercase) }}
+            </span>
+          </div>
+          <h2 class="incident-drawer-type">
+            {{ getIncidentTypeText(selectedIncident.type | lowercase) }}
+          </h2>
+          <p class="incident-drawer-date">
+            <i class="material-icons">schedule</i>
+            {{ selectedIncident.date | date:'dd MMMM yyyy à HH:mm' }}
+          </p>
+        </div>
+
+        <!-- Description -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title">
+            <i class="material-icons">description</i> Description
+          </h4>
+          <p class="incident-drawer-comment">
+            {{ selectedIncident.comment || selectedIncident.description || 'Aucune description fournie.' }}
+          </p>
+        </div>
+
+        <!-- Parties impliquées -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title">
+            <i class="material-icons">people</i> Parties impliquées
+          </h4>
+          <div class="drawer-info-grid">
+            <div class="info-item">
+              <span class="info-label">Agence</span>
+              <span class="info-value">
+                {{ selectedIncident.agency?.name ?? selectedIncident.agencyId?.name ?? selectedIncident.agencyName ?? '—' }}
+              </span>
+            </div>
+            <div class="info-item" *ngIf="selectedIncident.clientId">
+              <span class="info-label">Client</span>
+              <span class="info-value">
+                {{ selectedIncident.clientId!.firstName }} {{ selectedIncident.clientId!.lastName }}
+              </span>
+            </div>
+            <div class="info-item" *ngIf="selectedIncident.collectorId">
+              <span class="info-label">Collecteur</span>
+              <span class="info-value">
+                {{ selectedIncident.collectorId!.firstName }} {{ selectedIncident.collectorId!.lastName }}
+              </span>
+            </div>
+            <div class="info-item" *ngIf="selectedIncident.assignedTo">
+              <span class="info-label">Assigné à</span>
+              <span class="info-value">{{ selectedIncident.assignedTo }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="drawer-section" *ngIf="selectedIncident.photo?.length">
+          <h4 class="drawer-section-title">
+            <i class="material-icons">photo_library</i> Photos ({{ selectedIncident.photo!.length }})
+          </h4>
+          <div class="incident-drawer-photos">
+            <div *ngFor="let photo of selectedIncident.photo" class="incident-photo-thumb">
+              <i class="material-icons">image</i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Commentaire de résolution -->
+      <div class="drawer-section" *ngIf="selectedIncident.status !== 'resolved'">
+        <h4 class="drawer-section-title">
+          <i class="material-icons">edit_note</i> Commentaire de résolution
+        </h4>
+        <textarea
+          class="form-input"
+          rows="3"
+          placeholder="Décrire la résolution (ex: Problème résolu après intervention de l'équipe)…"
+          [(ngModel)]="resolutionComment"
+          style="resize:vertical;width:100%;font-size:0.875rem;">
+        </textarea>
+      </div>
+
+      <!-- Pied — actions -->
+      <div class="drawer-footer">
+        <button class="btn btn-secondary"
+          *ngIf="selectedIncident.status !== 'resolved'"
+          (click)="investigateIncident(selectedIncident._id)">
+          <i class="material-icons">search</i> Enquêter
+        </button>
+        <button class="btn btn-success"
+          *ngIf="selectedIncident.status !== 'resolved'"
+          (click)="resolveIncident(selectedIncident._id)">
+          <i class="material-icons">check_circle</i> Résoudre
+        </button>
+        <button class="btn btn-outline"
+          *ngIf="selectedIncident.agency?._id || selectedIncident.agencyId?._id"
+          (click)="contactAgencyForIncident(selectedIncident.agency?._id ?? selectedIncident.agencyId?._id); visibleIncidentDrawer = false">
+          <i class="material-icons">chat</i> Contacter l'agence
+        </button>
+      </div>
 
     </div>
   </div>

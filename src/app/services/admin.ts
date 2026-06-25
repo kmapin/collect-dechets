@@ -34,7 +34,16 @@ export class Admin {
         return response;
       })
     );
+  }
 
+  getGlobalUserStats(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/state_agencies/stats/users`).pipe(
+      map((res: any) => {
+        console.log('API > getGlobalUserStats:', res);
+        return res;
+      }),
+      catchError(() => of(null))
+    );
   }
   getAllUsers(fileterParams: FilterParams): Observable<any> {
     let requestParams = new HttpParams()
@@ -124,9 +133,16 @@ export class Admin {
 
 
   /**Tous les signalement sur la plateforme */
+  getAllReports(params?: { page?: number; limit?: number; status?: string; severity?: string; search?: string; agencyId?: string }) {
+    let requestParams = new HttpParams()
+      .append('page',  params?.page  ?? 1)
+      .append('limit', params?.limit ?? 10);
+    if (params?.status   && params.status   !== 'all') requestParams = requestParams.append('status',   params.status);
+    if (params?.severity && params.severity !== 'all') requestParams = requestParams.append('severity', params.severity);
+    if (params?.search   && params.search.trim())      requestParams = requestParams.append('search',   params.search.trim());
+    if (params?.agencyId && params.agencyId.trim())    requestParams = requestParams.append('agencyId', params.agencyId.trim());
 
-  getAllReports() {
-    return this.http.get(`${environment.apiUrl}/collecte/all`).pipe(
+    return this.http.get(`${environment.apiUrl}/collecte/all`, { params: requestParams }).pipe(
       map((response: any) => {
         console.log('API > getAllReports:', response);
         return response;
@@ -147,11 +163,18 @@ export class Admin {
   }
 
   toggleUserStatus(userId: string, status: 'active' | 'inactive'): Observable<any> {
-    return this.http.patch<any>(`${environment.apiUrl}/user/${userId}`, { status }).pipe(
+    return this.http.put<any>(`${environment.apiUrl}/users/agency/${userId}`, { status }).pipe(
       map((response: any) => {
         console.log('API > toggleUserStatus:', response);
         return response;
       })
+    );
+  }
+
+  getUserActivity(userId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/user/${userId}/activity`).pipe(
+      map((r: any) => r),
+      catchError(() => of({ data: [] }))
     );
   }
 
@@ -247,6 +270,31 @@ export class Admin {
       error: errorDetails,
       message: errorMessage
     };
+  }
+
+  getZoneCoverage$(agencyId?: string): Observable<any> {
+    let params = new HttpParams();
+    if (agencyId) params = params.append('agencyId', agencyId);
+    return this.http.get<any>(`${environment.apiUrl}/planning/v2/zone-coverage`, { params }).pipe(
+      map((res: any) => { console.log('API > getZoneCoverage:', res); return res; }),
+      catchError(() => of({ success: false, data: [] }))
+    );
+  }
+
+  getPlanningStats$(agencyId?: string): Observable<any> {
+    let params = new HttpParams();
+    if (agencyId) params = params.append('agencyId', agencyId);
+    return this.http.get<any>(`${environment.apiUrl}/planning/v2/stats`, { params }).pipe(
+      map((res: any) => { console.log('API > getPlanningStats:', res); return res; }),
+      catchError(() => of({ success: false, data: null }))
+    );
+  }
+
+  resolveCollecte$(collecteId: string, resolvedBy: string, resolutionComment: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/collectes/${collecteId}/resolve`, { resolvedBy, resolutionComment }).pipe(
+      map((res: any) => { console.log('API > resolveCollecte:', res); return res; }),
+      catchError((err) => { console.error('resolveCollecte error:', err); throw err; })
+    );
   }
 
   updateAgency(agencyId: string | null ,userData:any): Observable<any> {

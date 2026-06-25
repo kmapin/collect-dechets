@@ -306,7 +306,14 @@ export class AgencyService {
       })
     );
   }
-  //recuperation des statistique liee a une agence 
+  getCompletedCollectes$(agencyId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/collectes/agency/${agencyId}/completed-collectes`).pipe(
+      map((response) => { console.log(`[CompletedCollectes] ${agencyId}:`, response); return response; }),
+      catchError(() => of(null))
+    );
+  }
+
+  //recuperation des statistique liee a une agence
   getAgencyStats$(agencyId: string): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/state_agencies/${agencyId}/stats`).pipe(
       map((response) => {
@@ -447,7 +454,10 @@ export class AgencyService {
   }
 
   deActivateAgency(id: string): Observable<any> {
-    return this.http.patch(`${environment.apiUrl}/agencies/${id}/deactivate`, {}).pipe();
+    return this.http.put(`${environment.apiUrl}/agencies/${id}`, { status: 'inactive' }).pipe(
+      map((response: any) => { console.log('API > deActivateAgency:', response); return response; }),
+      catchError((err) => { console.error('deActivateAgency error:', err); return of(null); })
+    );
   }
 ;
 
