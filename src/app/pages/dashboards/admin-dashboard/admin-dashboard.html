@@ -209,7 +209,7 @@
             </button>
             <div class="nav-actions right">
               <a
-                (click)="navigateToAddMunicipality()"
+                (click)="openAddAgentDrawer()"
                 class="btn btn-primary nav-cta"
               >
                 <i class="material-icons">person_add</i>
@@ -302,58 +302,148 @@
                 </div>
 
                 <div class="overview-section card">
-                  <h3>
-                    <i class="material-icons">map</i>
-                    Couverture Territoriale
-                  </h3>
-                  <div class="territory-stats scrollable-container">
-                    <!-- État vide pour la couverture territoriale -->
-                    <div *ngIf="!zoneStatistics.length" class="empty-state">
+                  <div class="overview-section-header">
+                    <h3>
                       <i class="material-icons">map</i>
-                      <h3>Aucune donnée territoriale</h3>
-                      <p>Les données de couverture territoriale ne sont pas encore disponibles.</p>
-                    </div>
+                      Couverture Territoriale
+                    </h3>
+                    <div class="agency-select-wrap" [class.open]="coverageAgencyDropdownOpen">
+                      <button class="agency-select-trigger"
+                        (click)="coverageAgencyDropdownOpen ? (coverageAgencyDropdownOpen=false) : openCoverageAgencyDropdown()">
+                        <i class="material-icons">business</i>
+                        <span class="agency-select-label">{{ selectedCoverageAgency?.name ?? 'Toutes les agences' }}</span>
+                        <i class="material-icons agency-select-chevron">expand_more</i>
+                        <button *ngIf="selectedCoverageAgency" class="agency-select-clear"
+                          (click)="$event.stopPropagation(); selectCoverageAgency(null)">
+                          <i class="material-icons">close</i>
+                        </button>
+                      </button>
 
-                    <!-- Boucle sur les pays -->
-                    <div
-                      *ngFor="let zone of zoneStatistics"
-                      class="country-block"
-                    >
-                      <h2 class="country-title">{{ zone.country }}</h2>
-
-                      <!-- Boucle sur les villes du pays -->
-                      <div *ngFor="let city of zone.cities" class="zone-item">
-                        <div class="zone-header">
-                          <h4>{{ city.name }}</h4>
-                          <span
-                            class="coverage-badge"
-                            [class]="getCoverageBadgeClass(city.coverage)"
-                          >
-                            {{ city.coverage }}% couvert
-                          </span>
+                      @if (coverageAgencyDropdownOpen) {
+                      <div class="agency-dropdown-panel" (click)="$event.stopPropagation()">
+                        <div class="agency-dropdown-search">
+                          <i class="material-icons">search</i>
+                          <input type="text" placeholder="Rechercher une agence..."
+                            [(ngModel)]="coverageAgencyDropdownSearch"
+                            (input)="onCoverageAgencyDropdownSearch()"
+                            class="agency-dropdown-input"
+                            autofocus />
                         </div>
-
-                        <div class="zone-metrics">
-                          <div class="zone-metric">
+                        <div class="agency-dropdown-list" (scroll)="onCoverageAgencyDropdownScroll($event)">
+                          <div class="agency-dropdown-item agency-dropdown-all"
+                            [class.selected]="!selectedCoverageAgency"
+                            (click)="selectCoverageAgency(null)">
+                            <i class="material-icons">layers</i> Toutes les agences
+                          </div>
+                          @for (agency of coverageAgencyDropdownList; track agency.id) {
+                          <div class="agency-dropdown-item"
+                            [class.selected]="selectedCoverageAgency?.id === agency.id"
+                            (click)="selectCoverageAgency(agency)">
                             <i class="material-icons">business</i>
-                            <span>{{ city.agencies }} agences</span>
+                            {{ agency.name }}
                           </div>
-                          <div class="zone-metric">
-                            <i class="material-icons">people</i>
-                            <span>{{ city.clients }} clients</span>
+                          }
+                          <div *ngIf="coverageAgencyDropdownLoading" class="agency-dropdown-loading">
+                            <i class="material-icons rotating">autorenew</i> Chargement…
                           </div>
-                          <div class="zone-metric">
-                            <i class="material-icons">local_shipping</i>
-                            <span>{{ city.collections }} collectes</span>
-                          </div>
-                          <div class="zone-metric" *ngIf="city.incidents > 0">
-                            <i class="material-icons">warning</i>
-                            <span>{{ city.incidents }} incidents</span>
+                          <div *ngIf="!coverageAgencyDropdownLoading && coverageAgencyDropdownList.length === 0" class="agency-dropdown-empty">
+                            Aucune agence trouvée
                           </div>
                         </div>
                       </div>
+                      <div class="agency-dropdown-overlay" (click)="coverageAgencyDropdownOpen=false"></div>
+                      }
                     </div>
                   </div>
+
+                  <!-- Loader -->
+                  <div *ngIf="isLoadingCoverage" class="coverage-loading">
+                    <i class="material-icons spin">refresh</i> Chargement…
+                  </div>
+
+                  <ng-container *ngIf="!isLoadingCoverage">
+
+                    <!-- KPIs -->
+                    <div class="coverage-kpis">
+                      <div class="coverage-kpi">
+                        <div class="ckpi-value" [class.ckpi-good]="coveragePercent>=70" [class.ckpi-warn]="coveragePercent>=40 && coveragePercent<70" [class.ckpi-danger]="coveragePercent<40">
+                          {{ coveragePercent }}%
+                        </div>
+                        <div class="ckpi-label">Zones couvertes</div>
+                      </div>
+                      <div class="coverage-kpi">
+                        <div class="ckpi-value ckpi-good">{{ activeZonesCount }}</div>
+                        <div class="ckpi-label">Zones actives</div>
+                      </div>
+                      <div class="coverage-kpi">
+                        <div class="ckpi-value" [class.ckpi-danger]="criticalZones.length>0" [class.ckpi-good]="criticalZones.length===0">
+                          {{ criticalZones.length }}
+                        </div>
+                        <div class="ckpi-label">Zones critiques</div>
+                      </div>
+                    </div>
+
+                    <!-- Barre de progression globale -->
+                    <div class="coverage-bar-wrap">
+                      <div class="coverage-bar-track">
+                        <div class="coverage-bar-fill"
+                          [style.width]="coveragePercent + '%'"
+                          [class.fill-good]="coveragePercent>=70"
+                          [class.fill-warn]="coveragePercent>=40 && coveragePercent<70"
+                          [class.fill-danger]="coveragePercent<40">
+                        </div>
+                      </div>
+                      <span class="coverage-bar-label">{{ coveredZonesCount }} / {{ zoneCoverageData.length }} quartiers</span>
+                    </div>
+
+                    <!-- Stats plannings du jour -->
+                    <div class="coverage-planning-strip" *ngIf="planningStats">
+                      <div class="cps-item">
+                        <i class="material-icons">play_circle</i>
+                        <span class="cps-val">{{ planningStats.inProgress }}</span>
+                        <span class="cps-lbl">En cours</span>
+                      </div>
+                      <div class="cps-item">
+                        <i class="material-icons">check_circle</i>
+                        <span class="cps-val">{{ planningStats.completedToday }}</span>
+                        <span class="cps-lbl">Complétés auj.</span>
+                      </div>
+                      <div class="cps-item">
+                        <i class="material-icons">speed</i>
+                        <span class="cps-val">{{ planningStats.executionRate }}%</span>
+                        <span class="cps-lbl">Taux d'exécution</span>
+                      </div>
+                    </div>
+
+                    <!-- Zones critiques -->
+                    <div class="coverage-critical" *ngIf="criticalZones.length">
+                      <div class="coverage-critical-title">
+                        <i class="material-icons">warning</i> Zones nécessitant une intervention
+                      </div>
+                      <div class="critical-zone-list">
+                        <div *ngFor="let z of criticalZones" class="critical-zone-item">
+                          <span class="czname">{{ z.quartierNom }}</span>
+                          <div class="czbar-wrap">
+                            <div class="czbar-track">
+                              <div class="czbar-fill" [style.width]="z.completionRate + '%'"></div>
+                            </div>
+                            <span class="czrate">{{ z.completionRate }}%</span>
+                          </div>
+                          <span class="czteam" [class.czteam-none]="z.equipesAssigned === 0">
+                            <i class="material-icons">groups</i>{{ z.equipesAssigned }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- État vide -->
+                    <div *ngIf="!zoneCoverageData.length" class="empty-state">
+                      <i class="material-icons">map</i>
+                      <h3>Aucune donnée de couverture</h3>
+                      <p>Les plannings n'ont pas encore de zones assignées.</p>
+                    </div>
+
+                  </ng-container>
                 </div>
               </div>
 
@@ -412,7 +502,7 @@
                 <div class="agencies-filters">
                   <div class="nav-actions">
                     <a
-                      (click)="navigateToAddMunicipality()"
+                      (click)="openAddAgentDrawer()"
                       class="btn btn-primary nav-cta"
                     >
                       <i class="material-icons">person_add</i>
@@ -2919,6 +3009,137 @@
           Confirmer la résolution
         </button>
       </div>
+    </div>
+  </div>
+  }
+
+  <!-- ══════════════════════════════════════════════
+       DRAWER AJOUT AGENT DE MAIRIE
+  ══════════════════════════════════════════════ -->
+  @if (visibleAddAgentDrawer) {
+  <div class="drawer-overlay" (click)="visibleAddAgentDrawer = false">
+    <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+
+      <!-- En-tête -->
+      <div class="drawer-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="user-detail-avatar" style="background:#1a3c5e;width:38px;height:38px;font-size:0.95rem;flex-shrink:0;">
+            <i class="material-icons" style="color:#fff;font-size:1.2rem;">person_add</i>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:1rem;">Nouvel agent de mairie</h3>
+            <span style="font-size:0.78rem;color:#6b7280;">Rôle : Agent de Mairie</span>
+          </div>
+        </div>
+        <button class="drawer-close-btn" (click)="visibleAddAgentDrawer = false">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <!-- Corps -->
+      <div class="drawer-body">
+
+        <!-- Informations personnelles -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title"><i class="material-icons">person</i> Informations personnelles</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Prénom *</label>
+              <input class="form-input" type="text" [(ngModel)]="newAgentData.firstName" placeholder="Prénom" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nom *</label>
+              <input class="form-input" type="text" [(ngModel)]="newAgentData.lastName" placeholder="Nom de famille" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email *</label>
+              <input class="form-input" type="email" [(ngModel)]="newAgentData.email" placeholder="email@exemple.com" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Téléphone *</label>
+              <input class="form-input" type="tel" [(ngModel)]="newAgentData.phone" placeholder="+226 XX XX XX XX" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Mot de passe *</label>
+              <input class="form-input" type="password" [(ngModel)]="newAgentData.password" placeholder="Min. 8 caractères" autocomplete="new-password" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirmer le mot de passe *</label>
+              <input class="form-input" type="password" [(ngModel)]="newAgentData.confirmPassword" placeholder="Ressaisir le mot de passe" autocomplete="new-password" />
+              <span *ngIf="newAgentData.confirmPassword && newAgentData.confirmPassword !== newAgentData.password"
+                style="font-size:0.75rem;color:#dc2626;margin-top:4px;display:block;">
+                Les mots de passe ne correspondent pas
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Adresse -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title"><i class="material-icons">location_on</i> Adresse</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Ville</label>
+              <select class="form-input" [(ngModel)]="newAgentData.address.city" (change)="onAgentCityChange()">
+                <option value="">-- Sélectionner --</option>
+                <option *ngFor="let c of agentCities" [value]="c.name">{{ c.name }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Arrondissement</label>
+              <select class="form-input" [(ngModel)]="newAgentData.address.arrondissement" (change)="onAgentArrondissementChange()" [disabled]="!agentArrondissements.length">
+                <option value="">-- Sélectionner --</option>
+                <option *ngFor="let a of agentArrondissements" [value]="a.name">{{ a.name }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Secteur</label>
+              <select class="form-input" [(ngModel)]="newAgentData.address.sector" (change)="onAgentSectorChange()" [disabled]="!agentSectors.length">
+                <option value="">-- Sélectionner --</option>
+                <option *ngFor="let s of agentSectors" [value]="s.name">{{ s.name }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quartier</label>
+              <select class="form-input" [(ngModel)]="newAgentData.address.neighborhood" [disabled]="!agentNeighborhoods.length">
+                <option value="">-- Sélectionner --</option>
+                <option *ngFor="let q of agentNeighborhoods" [value]="q.name">{{ q.name }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Rue</label>
+              <input class="form-input" type="text" [(ngModel)]="newAgentData.address.street" placeholder="Nom de la rue" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">N° Porte</label>
+              <input class="form-input" type="text" [(ngModel)]="newAgentData.address.doorNumber" placeholder="Ex: 12" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pied -->
+      <div class="drawer-footer">
+        <div class="drawer-actions">
+          <button class="btn btn-secondary" (click)="visibleAddAgentDrawer = false" [disabled]="isSubmittingAgent">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="submitNewMunicipalityAgent()" [disabled]="isSubmittingAgent">
+            <i class="material-icons">{{ isSubmittingAgent ? 'hourglass_empty' : 'person_add' }}</i>
+            {{ isSubmittingAgent ? 'Création en cours...' : 'Créer l\'agent' }}
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
   }

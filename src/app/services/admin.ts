@@ -272,6 +272,24 @@ export class Admin {
     };
   }
 
+  getZoneCoverage$(agencyId?: string): Observable<any> {
+    let params = new HttpParams();
+    if (agencyId) params = params.append('agencyId', agencyId);
+    return this.http.get<any>(`${environment.apiUrl}/planning/v2/zone-coverage`, { params }).pipe(
+      map((res: any) => { console.log('API > getZoneCoverage:', res); return res; }),
+      catchError(() => of({ success: false, data: [] }))
+    );
+  }
+
+  getPlanningStats$(agencyId?: string): Observable<any> {
+    let params = new HttpParams();
+    if (agencyId) params = params.append('agencyId', agencyId);
+    return this.http.get<any>(`${environment.apiUrl}/planning/v2/stats`, { params }).pipe(
+      map((res: any) => { console.log('API > getPlanningStats:', res); return res; }),
+      catchError(() => of({ success: false, data: null }))
+    );
+  }
+
   resolveCollecte$(collecteId: string, resolvedBy: string, resolutionComment: string): Observable<any> {
     return this.http.patch<any>(`${environment.apiUrl}/collectes/${collecteId}/resolve`, { resolvedBy, resolutionComment }).pipe(
       map((res: any) => { console.log('API > resolveCollecte:', res); return res; }),

@@ -364,6 +364,18 @@ export class AdminDashboard implements OnInit, OnDestroy {
   filteredCollectors: any[] = [];
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: GroupedZoneStatistics[] = [];
+  zoneCoverageData: { quartierId: string; quartierNom: string; planningsCount: number; equipesAssigned: number; completionRate: number; status: string }[] = [];
+  planningStats: { totalPlannings: number; todayPlannings: number; inProgress: number; completedToday: number; executionRate: number } | null = null;
+  isLoadingCoverage = false;
+  coverageAgencyId = '';
+  allAgenciesForSelect: { id: string; name: string }[] = [];
+  coverageAgencyDropdownOpen    = false;
+  coverageAgencyDropdownSearch  = '';
+  coverageAgencyDropdownList:   { id: string; name: string }[] = [];
+  coverageAgencyDropdownPage    = 1;
+  coverageAgencyDropdownTotal   = 0;
+  coverageAgencyDropdownLoading = false;
+  selectedCoverageAgency:       { id: string; name: string } | null = null;
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
   communications: Communication[] = [];
@@ -510,6 +522,20 @@ export class AdminDashboard implements OnInit, OnDestroy {
   visibleEditUserDrawer = false;
   visibleIncidentDrawer = false;
   selectedIncident: Incident | null = null;
+
+  // ── Drawer Ajout Agent de Mairie ──
+  visibleAddAgentDrawer = false;
+  isSubmittingAgent     = false;
+  newAgentData = {
+    firstName: '', lastName: '', email: '', phone: '',
+    password: '', confirmPassword: '',
+    acceptTerms: true,
+    address: { city: '', arrondissement: '', sector: '', neighborhood: '', street: '', doorNumber: '' },
+  };
+  agentCities:          any[] = [];
+  agentArrondissements: any[] = [];
+  agentSectors:         any[] = [];
+  agentNeighborhoods:   any[] = [];
   resolutionComment = '';
   resolveDialogVisible = false;
   resolveDialogIncidentId = '';
@@ -1346,42 +1372,91 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   loadZoneStat(): void {
-    this.adminService.getAllStatisticCity().subscribe({
-      next: (response: any) => {
-        const stats = Array.isArray(response.statistics)
-          ? response.statistics
-          : [];
-        const grouped: { [key: string]: ZoneStatistic[] } = {};
+    this.isLoadingCoverage = true;
+    const agencyId = this.coverageAgencyId || undefined;
 
-        MOCK_CITIES.forEach((city) => {
-          const country = city.country.name || "Burkina Faso";
-          if (!grouped[country]) {
-            grouped[country] = [];
-          }
-          const cityStats = stats.find((s: any) => s.city === city.name);
-
-          grouped[country].push({
-            country,
-            name: city.name,
-            agencies: cityStats?.agencies || 0,
-            clients: cityStats?.clients || 0,
-            collections: cityStats?.todayCollections || 0,
-            coverage: cityStats?.complianceRate || 0,
-            incidents: cityStats?.pendingReports || 0,
-            cities: [],
-          });
-        });
-
-        this.zoneStatistics = Object.keys(grouped).map((country) => ({
-          country,
-          cities: grouped[country],
-        }));
+    forkJoin({
+      coverage: this.adminService.getZoneCoverage$(agencyId),
+      stats:    this.adminService.getPlanningStats$(agencyId),
+    }).subscribe({
+      next: ({ coverage, stats }) => {
+        this.zoneCoverageData = coverage?.data ?? [];
+        this.planningStats    = stats?.data ?? null;
+        this.isLoadingCoverage = false;
       },
-      error: (err) => {
-        console.error("Erreur lors de la récupération des villes:", err);
-        this.zoneStatistics = [];
-      },
+      error: () => { this.isLoadingCoverage = false; },
     });
+  }
+
+  loadAgenciesForCoverageDropdown(reset = false): void {
+    if (reset) {
+      this.coverageAgencyDropdownPage  = 1;
+      this.coverageAgencyDropdownList  = [];
+    }
+    if (!reset && this.coverageAgencyDropdownList.length >= this.coverageAgencyDropdownTotal && this.coverageAgencyDropdownTotal > 0) return;
+    this.coverageAgencyDropdownLoading = true;
+    this.agencyService.getAllAgenciesFromApi({
+      page:  this.coverageAgencyDropdownPage,
+      limit: 15,
+      search: this.coverageAgencyDropdownSearch,
+    }).subscribe({
+      next: (res: any) => {
+        const items = (res.data ?? res.agencies ?? []).map((a: any) => ({
+          id:   a._id ?? a.id,
+          name: a.name ?? a.ageny?.name ?? '—',
+        }));
+        this.coverageAgencyDropdownList  = [...this.coverageAgencyDropdownList, ...items];
+        this.coverageAgencyDropdownTotal = res.total ?? res.pagination?.total ?? items.length;
+        this.coverageAgencyDropdownPage++;
+        this.coverageAgencyDropdownLoading = false;
+      },
+      error: () => { this.coverageAgencyDropdownLoading = false; },
+    });
+  }
+
+  openCoverageAgencyDropdown(): void {
+    this.coverageAgencyDropdownOpen   = true;
+    this.coverageAgencyDropdownSearch = '';
+    this.loadAgenciesForCoverageDropdown(true);
+  }
+
+  onCoverageAgencyDropdownSearch(): void {
+    this.loadAgenciesForCoverageDropdown(true);
+  }
+
+  onCoverageAgencyDropdownScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 40) {
+      this.loadAgenciesForCoverageDropdown();
+    }
+  }
+
+  selectCoverageAgency(agency: { id: string; name: string } | null): void {
+    this.selectedCoverageAgency   = agency;
+    this.coverageAgencyId         = agency?.id ?? '';
+    this.coverageAgencyDropdownOpen = false;
+    this.loadZoneStat();
+  }
+
+  get coveragePercent(): number {
+    if (!this.zoneCoverageData.length) return 0;
+    const covered = this.zoneCoverageData.filter(z => z.planningsCount > 0).length;
+    return Math.round((covered / this.zoneCoverageData.length) * 100);
+  }
+
+  get criticalZones(): typeof this.zoneCoverageData {
+    return this.zoneCoverageData
+      .filter(z => z.completionRate < 30 || z.equipesAssigned === 0)
+      .sort((a, b) => a.completionRate - b.completionRate)
+      .slice(0, 4);
+  }
+
+  get activeZonesCount(): number {
+    return this.zoneCoverageData.filter(z => z.completionRate >= 50 || z.status === 'active').length;
+  }
+
+  get coveredZonesCount(): number {
+    return this.zoneCoverageData.filter(z => z.planningsCount > 0).length;
   }
 
   // loadIncidents1(): void {
@@ -2679,6 +2754,97 @@ export class AdminDashboard implements OnInit, OnDestroy {
   navigateToAddMunicipality() {
     this.router.navigate(["/register"]);
     this.adminService.setData("municipality");
+  }
+
+  openAddAgentDrawer(): void {
+    this.newAgentData = {
+      firstName: '', lastName: '', email: '', phone: '',
+      password: '', confirmPassword: '',
+      acceptTerms: true,
+      address: { city: '', arrondissement: '', sector: '', neighborhood: '', street: '', doorNumber: '' },
+    };
+    this.agentCities          = this.countriesOrgMockService.getCitiesByCountry('1');
+    this.agentArrondissements = [];
+    this.agentSectors         = [];
+    this.agentNeighborhoods   = [];
+    this.visibleAddAgentDrawer = true;
+  }
+
+  onAgentCityChange(): void {
+    const city = this.agentCities.find(c => c.name === this.newAgentData.address.city);
+    this.agentArrondissements = city ? this.countriesOrgMockService.getArrondissementsByCity(city.id) : [];
+    this.agentSectors         = [];
+    this.agentNeighborhoods   = [];
+    this.newAgentData.address.arrondissement = '';
+    this.newAgentData.address.sector         = '';
+    this.newAgentData.address.neighborhood   = '';
+  }
+
+  onAgentArrondissementChange(): void {
+    const arr = this.agentArrondissements.find(a => a.name === this.newAgentData.address.arrondissement);
+    this.agentSectors       = arr ? this.countriesOrgMockService.getSectorsByArrondissement(arr.id) : [];
+    this.agentNeighborhoods = [];
+    this.newAgentData.address.sector       = '';
+    this.newAgentData.address.neighborhood = '';
+  }
+
+  onAgentSectorChange(): void {
+    const sec = this.agentSectors.find(s => s.name === this.newAgentData.address.sector);
+    this.agentNeighborhoods = sec ? this.countriesOrgMockService.getNeighborhoodsBySector(sec.id) : [];
+    this.newAgentData.address.neighborhood = '';
+  }
+
+  submitNewMunicipalityAgent(): void {
+    const d = this.newAgentData;
+    if (!d.firstName || !d.lastName || !d.email || !d.phone || !d.password) {
+      this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    if (d.password !== d.confirmPassword) {
+      this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
+      return;
+    }
+    if (d.password.length < 8) {
+      this.notificationService.showError('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+    this.isSubmittingAgent = true;
+    const body = {
+      firstName:    d.firstName,
+      lastName:     d.lastName,
+      email:        d.email,
+      phone:        d.phone,
+      password:     d.password,
+      role:         'municipality',
+      acceptTerms:  d.acceptTerms,
+      receiveOffers: false,
+      address: {
+        city:           d.address.city,
+        arrondissement: d.address.arrondissement,
+        sector:         d.address.sector,
+        neighborhood:   d.address.neighborhood,
+        street:         d.address.street,
+        doorNumber:     d.address.doorNumber || 'N/A',
+        longitude:      -1.5339,
+        latitude:       12.3647,
+      },
+    };
+    this.authService.register(body as any).subscribe({
+      next: (res: any) => {
+        this.isSubmittingAgent = false;
+        if (res?.success || res?.status === 'success' || res?.message?.toLowerCase().includes('succès')) {
+          this.notificationService.showSuccess('Agent créé', 'L\'agent de mairie a été créé avec succès');
+          this.visibleAddAgentDrawer = false;
+          this.loadTabData('all_users');
+        } else {
+          this.notificationService.showError('Erreur', res?.message || 'Erreur lors de la création');
+        }
+      },
+      error: (err: any) => {
+        this.isSubmittingAgent = false;
+        this.notificationService.showError('Erreur', err?.error?.message || 'Erreur lors de la création');
+      },
+    });
   }
 
   loadTabBadges(): void {
