@@ -133,14 +133,15 @@ export class Admin {
 
 
   /**Tous les signalement sur la plateforme */
-  getAllReports(params?: { page?: number; limit?: number; status?: string; severity?: string; search?: string; agencyId?: string }) {
+  getAllReports(params?: { page?: number; limit?: number; status?: string; resolutionStatus?: string; severity?: string; search?: string; agencyId?: string }) {
     let requestParams = new HttpParams()
       .append('page',  params?.page  ?? 1)
       .append('limit', params?.limit ?? 10);
-    if (params?.status   && params.status   !== 'all') requestParams = requestParams.append('status',   params.status);
-    if (params?.severity && params.severity !== 'all') requestParams = requestParams.append('severity', params.severity);
-    if (params?.search   && params.search.trim())      requestParams = requestParams.append('search',   params.search.trim());
-    if (params?.agencyId && params.agencyId.trim())    requestParams = requestParams.append('agencyId', params.agencyId.trim());
+    if (params?.status        && params.status        !== 'all') requestParams = requestParams.append('status',        params.status);
+    if (params?.resolutionStatus && params.resolutionStatus !== 'all') requestParams = requestParams.append('resolutionStatus', params.resolutionStatus);
+    if (params?.severity      && params.severity      !== 'all') requestParams = requestParams.append('severity',      params.severity);
+    if (params?.search        && params.search.trim())           requestParams = requestParams.append('search',        params.search.trim());
+    if (params?.agencyId      && params.agencyId.trim())         requestParams = requestParams.append('agencyId',      params.agencyId.trim());
 
     return this.http.get(`${environment.apiUrl}/collecte/all`, { params: requestParams }).pipe(
       map((response: any) => {

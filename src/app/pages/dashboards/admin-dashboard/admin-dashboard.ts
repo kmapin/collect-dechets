@@ -139,6 +139,10 @@ interface Incident {
     | "Collected"
     | "Reported"
     | "Scheduled";
+  resolutionStatus:
+    | "pending"
+    | "in_progress"
+    | "resolved";
   assignedTo?: string;
 }
 
@@ -364,8 +368,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
   filteredCollectors: any[] = [];
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: GroupedZoneStatistics[] = [];
-  zoneCoverageData: { quartierId: string; quartierNom: string; planningsCount: number; equipesAssigned: number; completionRate: number; status: string }[] = [];
-  planningStats: { totalPlannings: number; todayPlannings: number; inProgress: number; completedToday: number; executionRate: number } | null = null;
+  coverageData: { zoneActivite: number; couverture: number; planning: number; plannings: any[]; planningsComplete: number } | null = null;
   isLoadingCoverage = false;
   coverageAgencyId = '';
   allAgenciesForSelect: { id: string; name: string }[] = [];
@@ -390,7 +393,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
   collectorsFilter = "all";
   complianceFilter = "all";
   statisticsPeriod = "month";
-  incidentsFilter: 'all' | 'open' | 'pending' | 'resolved' = 'all';
+  incidentsFilter: 'all' | 'pending' | 'in_progress' | 'resolved' = 'all';
   severityFilter:  'all' | 'critical' | 'high' | 'medium' | 'low' = 'all';
   incidentsSearchTerm   = '';
   incidentsCurrentPage  = 1;
@@ -1375,13 +1378,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.isLoadingCoverage = true;
     const agencyId = this.coverageAgencyId || undefined;
 
-    forkJoin({
-      coverage: this.adminService.getZoneCoverage$(agencyId),
-      stats:    this.adminService.getPlanningStats$(agencyId),
-    }).subscribe({
-      next: ({ coverage, stats }) => {
-        this.zoneCoverageData = coverage?.data ?? [];
-        this.planningStats    = stats?.data ?? null;
+    this.adminService.getZoneCoverage$(agencyId).subscribe({
+      next: (res) => {
+        this.coverageData = res?.data ?? null;
         this.isLoadingCoverage = false;
       },
       error: () => { this.isLoadingCoverage = false; },
@@ -1439,24 +1438,21 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   get coveragePercent(): number {
-    if (!this.zoneCoverageData.length) return 0;
-    const covered = this.zoneCoverageData.filter(z => z.planningsCount > 0).length;
-    return Math.round((covered / this.zoneCoverageData.length) * 100);
-  }
-
-  get criticalZones(): typeof this.zoneCoverageData {
-    return this.zoneCoverageData
-      .filter(z => z.completionRate < 30 || z.equipesAssigned === 0)
-      .sort((a, b) => a.completionRate - b.completionRate)
-      .slice(0, 4);
+    if (!this.coverageData) return 0;
+    return Math.round(this.coverageData.couverture * 100);
   }
 
   get activeZonesCount(): number {
-    return this.zoneCoverageData.filter(z => z.completionRate >= 50 || z.status === 'active').length;
+    return this.coverageData?.zoneActivite ?? 0;
   }
 
-  get coveredZonesCount(): number {
-    return this.zoneCoverageData.filter(z => z.planningsCount > 0).length;
+  get executionRate(): number {
+    if (!this.coverageData?.planning) return 0;
+    return Math.round((this.coverageData.planningsComplete / this.coverageData.planning) * 100);
+  }
+
+  get upcomingPlannings(): any[] {
+    return (this.coverageData?.plannings ?? []).slice(0, 4);
   }
 
   // loadIncidents1(): void {
@@ -2724,7 +2720,8 @@ export class AdminDashboard implements OnInit, OnDestroy {
     const params = {
       page,
       limit:    this.incidentsItemsPerPage,
-      status:   this.incidentsFilter,
+      status: 'Reported',
+      resolutionStatus:   this.incidentsFilter,
       severity: this.severityFilter,
       search:   this.incidentsSearchTerm,
       agencyId: this.agencyIdFilter,
