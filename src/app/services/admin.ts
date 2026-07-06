@@ -287,6 +287,37 @@ export class Admin {
         })
       );
     }
-  
+
+  // ── Statistiques municipalité (dashboard agent de mairie) ──────────────────
+
+  /** Répartition des déchets par type — GET /statistics/waste-distribution */
+  getWasteDistribution(period: string = 'month'): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/statistics/waste-distribution`, {
+      params: new HttpParams().set('period', period)
+    }).pipe(
+      map((r: any) => { console.log('API > getWasteDistribution:', r); return r; }),
+      catchError(() => of(null))
+    );
+  }
+
+  /** Évolution mensuelle des collectes — GET /statistics/collections-evolution */
+  getCollectionsEvolution(months: number = 6): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/statistics/collections-evolution`, {
+      params: new HttpParams().set('months', months.toString())
+    }).pipe(
+      map((r: any) => { console.log('API > getCollectionsEvolution:', r); return r; }),
+      catchError(() => of(null))
+    );
+  }
+
+  /** Répartition des incidents par catégorie — GET /statistics/incident-breakdown */
+  getIncidentBreakdown(period: string = 'month'): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/statistics/incident-breakdown`, {
+      params: new HttpParams().set('period', period)
+    }).pipe(
+      map((r: any) => { console.log('API > getIncidentBreakdown:', r); return r; }),
+      catchError(() => of(null))
+    );
+  }
 
 }

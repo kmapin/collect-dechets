@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Conversation, Message, User, TypingIndicator } from '../models/chat.models';
 import { Webstockets, SocketMessage } from '../core/services/webstockets';
+import { MessagesService } from './messages.service';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -17,396 +20,388 @@ export class ChatService {
   messages$ = this.messagesSubject.asObservable();
   typingIndicators$ = this.typingIndicatorsSubject.asObservable();
 
-  private currentUser: User = {
-    id: 'user-1',
-    username: 'John Citizen',
+  private currentUserAsChat: User = {
+    id: '',
+    username: 'Moi',
     role: 'citizen',
-    avatar_url: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100',
     status: 'online',
     created_at: new Date(),
     updated_at: new Date()
   };
 
-  private mockUsers: User[] = [
-    this.currentUser,
-    {
-      id: 'user-2',
-      username: 'Sarah Agent',
-      role: 'agent',
-      avatar_url: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100',
-      status: 'online',
-      created_at: new Date(),
-      updated_at: new Date()
-    },
-    {
-      id: 'user-3',
-      username: 'Mike Admin',
-      role: 'admin',
-      avatar_url: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100',
-      status: 'offline',
-      created_at: new Date(),
-      updated_at: new Date()
-    },
-    {
-      id: 'user-4',
-      username: 'Emma Agent',
-      role: 'agent',
-      avatar_url: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100',
-      status: 'online',
-      created_at: new Date(),
-      updated_at: new Date()
-    }
-  ];
-
-  constructor(private websocketService: Webstockets) {
-    this.initializeMockData();
+  constructor(
+    private websocketService: Webstockets,
+    private messagesService: MessagesService,
+    private authService: AuthService
+  ) {
+    this.initCurrentUser();
     this.setupWebSocketListeners();
   }
 
-  /**
-   * Configure les listeners pour les événements WebSocket en temps réel
-   */
-  private setupWebSocketListeners(): void {
-    // Écouter les nouveaux messages
-    this.websocketService.onMessageSent().subscribe((socketMessage: SocketMessage) => {
-      console.log('💬 Nouveau message reçu via WebSocket:', socketMessage);
-      
-      // Convertir le message socket en Message de l'application
-      const newMessage = this.convertSocketMessageToMessage(socketMessage);
-      
-      // Ajouter le message si nous sommes dans la conversation
-      const currentConv = this.selectedConversationSubject.value;
-      if (currentConv && currentConv.id === socketMessage.conversation_id) {
-        const currentMessages = this.messagesSubject.value;
-        this.messagesSubject.next([...currentMessages, newMessage]);
+  // ── Initialisation ───────────────────────────────────────────
+
+  private initCurrentUser(): void {
+    const rawUser = this.authService.getCurrentUser();
+    if (rawUser) {
+      this.currentUserAsChat = {
+        id: (rawUser as any)._id || (rawUser as any).id || '',
+        username: `${rawUser.firstName || ''} ${rawUser.lastName || ''}`.trim() || 'Moi',
+        role: this.mapRole(rawUser.role as string),
+        status: 'online',
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+      console.log('[CHAT] Utilisateur courant :', this.currentUserAsChat.id, this.currentUserAsChat.username);
+      if (this.currentUserAsChat.id) {
+        this.loadConversations(this.currentUserAsChat.id);
       }
-      
-      // Mettre à jour la liste des conversations
-      this.updateConversationWithNewMessage(newMessage);
-    });
-
-    // Écouter les messages lus
-    this.websocketService.onMessageRead().subscribe((socketMessage: SocketMessage) => {
-      console.log('👁️ Message lu via WebSocket:', socketMessage);
-      
-      // Mettre à jour le statut du message dans la liste actuelle
-      const currentMessages = this.messagesSubject.value;
-      const updatedMessages = currentMessages.map(msg =>
-        msg.id === socketMessage._id ? { ...msg, read: true } : msg
-      );
-      this.messagesSubject.next(updatedMessages);
-    });
-
-    // Écouter les messages supprimés
-    this.websocketService.onMessageDeleted().subscribe(({ messageId }) => {
-      console.log(' Message supprimé via WebSocket:', messageId);
-      
-      // Retirer le message de la liste
-      const currentMessages = this.messagesSubject.value;
-      const filteredMessages = currentMessages.filter(msg => msg.id !== messageId);
-      this.messagesSubject.next(filteredMessages);
-    });
+    } else {
+      console.warn('[CHAT] Aucun utilisateur connecté — conversations non chargées');
+    }
   }
 
-  /**
-   * Convertit un SocketMessage en Message de l'application
-   */
-  private convertSocketMessageToMessage(socketMessage: SocketMessage): Message {
-    // Trouver le sender depuis mockUsers ou créer un utilisateur temporaire
-    const sender = this.mockUsers.find(u => u.id === socketMessage.sender_id) || {
-      id: socketMessage.sender_id,
-      username: 'Unknown User',
-      role: 'citizen' as const,
-      status: 'online' as const,
-      created_at: new Date(),
-      updated_at: new Date()
-    };
-
-    return {
-      id: socketMessage._id,
-      conversation_id: socketMessage.conversation_id,
-      sender_id: socketMessage.sender_id,
-      sender: sender,
-      content: socketMessage.content,
-      read: socketMessage.read,
-      created_at: new Date(socketMessage.created_at),
-      updated_at: new Date(socketMessage.updated_at)
-    };
+  private mapRole(role: string): 'citizen' | 'agent' | 'admin' {
+    if (role === 'manager' || role === 'collector') return 'agent';
+    if (role === 'super_admin' || role === 'municipality') return 'admin';
+    return 'citizen';
   }
 
-  /**
-   * Met à jour la conversation avec un nouveau message
-   */
-  private updateConversationWithNewMessage(message: Message): void {
-    const updatedConversations = this.conversationsSubject.value.map(conv =>
-      conv.id === message.conversation_id
-        ? { 
-            ...conv, 
-            lastMessage: message, 
-            updated_at: new Date(),
-            unreadCount: conv.id !== this.selectedConversationSubject.value?.id 
-              ? (conv.unreadCount || 0) + 1 
-              : 0
-          }
-        : conv
-    );
-    this.conversationsSubject.next(updatedConversations);
+  // ── Chargement des conversations ─────────────────────────────
+
+  private loadConversations(userId: string): void {
+    if (!userId) return;
+
+    console.log('[CHAT] Chargement conversations pour userId :', userId);
+    this.messagesService.getMessagesForAgencyOrUser(userId)
+      .pipe(catchError((err) => {
+        console.error('[CHAT] Erreur chargement conversations :', err);
+        return of([]);
+      }))
+      .subscribe((messages: any[]) => {
+        console.log('[CHAT] Messages bruts reçus du backend :', messages?.length ?? 0, 'messages');
+        if (!messages?.length) {
+          console.warn('[CHAT] Aucun message → aucune conversation affichée');
+          return;
+        }
+
+        // Regrouper par interlocuteur
+        const convMap = new Map<string, any[]>();
+        messages.forEach((msg: any) => {
+          const otherId = msg.sender === userId ? msg.receiver : msg.sender;
+          if (!otherId) return;
+          if (!convMap.has(otherId)) convMap.set(otherId, []);
+          convMap.get(otherId)!.push(msg);
+        });
+
+        const conversations: Conversation[] = Array.from(convMap.entries()).map(([otherId, msgs]) => {
+          const sorted = [...msgs].sort((a, b) =>
+            new Date(a.createdAt || a.created_at || 0).getTime() -
+            new Date(b.createdAt || b.created_at || 0).getTime()
+          );
+          const lastRaw = sorted[sorted.length - 1];
+          const otherUser: User = {
+            id: otherId,
+            username: lastRaw.senderName && lastRaw.sender !== userId
+              ? lastRaw.senderName
+              : (lastRaw.receiverName || 'Utilisateur'),
+            role: 'citizen',
+            status: 'online',
+            created_at: new Date(),
+            updated_at: new Date()
+          };
+          const lastMessage = this.rawToMessage(lastRaw, userId, otherId);
+          const unread = msgs.filter((m: any) => m.receiver === userId && !m.read).length;
+
+          return {
+            id: this.convId(userId, otherId),
+            participants: [this.currentUserAsChat, otherUser],
+            lastMessage,
+            unreadCount: unread,
+            created_at: new Date(sorted[0].createdAt || sorted[0].created_at || Date.now()),
+            updated_at: new Date(lastRaw.createdAt || lastRaw.created_at || Date.now())
+          };
+        });
+
+        // Trier par date décroissante
+        conversations.sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime());
+        console.log('[CHAT]', conversations.length, 'conversation(s) construite(s) :', conversations.map(c => c.participants.find(p => p.id !== userId)?.username));
+        this.conversationsSubject.next(conversations);
+      });
   }
 
-  private initializeMockData(): void {
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-
-    const mockConversations: Conversation[] = [
-      {
-        id: 'conv-1',
-        participants: [this.currentUser, this.mockUsers[1]],
-        lastMessage: {
-          id: 'msg-1',
-          conversation_id: 'conv-1',
-          sender_id: 'user-2',
-          sender: this.mockUsers[1],
-          content: 'I will be there in 15 minutes to collect the waste.',
-          created_at: new Date(now.getTime() - 5 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 5 * 60 * 1000)
-        },
-        unreadCount: 2,
-        created_at: yesterday,
-        updated_at: new Date(now.getTime() - 5 * 60 * 1000)
-      },
-      {
-        id: 'conv-2',
-        participants: [this.currentUser, this.mockUsers[2]],
-        lastMessage: {
-          id: 'msg-2',
-          conversation_id: 'conv-2',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Thank you for the quick response!',
-          created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 2 * 60 * 60 * 1000)
-        },
-        unreadCount: 0,
-        created_at: twoDaysAgo,
-        updated_at: new Date(now.getTime() - 2 * 60 * 60 * 1000)
-      },
-      {
-        id: 'conv-3',
-        participants: [this.currentUser, this.mockUsers[3]],
-        lastMessage: {
-          id: 'msg-3',
-          conversation_id: 'conv-3',
-          sender_id: 'user-4',
-          sender: this.mockUsers[3],
-          content: 'We have scheduled your pickup for tomorrow morning.',
-          created_at: yesterday,
-          updated_at: yesterday
-        },
-        unreadCount: 0,
-        created_at: twoDaysAgo,
-        updated_at: yesterday
-      }
-    ];
-
-    this.conversationsSubject.next(mockConversations);
-  }
+  // ── Sélection et chargement des messages ─────────────────────
 
   selectConversation(conversation: Conversation): void {
     this.selectedConversationSubject.next(conversation);
-    this.loadMessagesForConversation(conversation.id);
+    this.loadMessagesForConversation(conversation);
 
+    // Marquer les non-lus comme lus
     const updatedConversations = this.conversationsSubject.value.map(conv =>
       conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
     );
     this.conversationsSubject.next(updatedConversations);
   }
 
-  private loadMessagesForConversation(conversationId: string): void {
-    const now = new Date();
-    const mockMessages: { [key: string]: Message[] } = {
-      'conv-1': [
-        {
-          id: 'msg-1-1',
-          conversation_id: 'conv-1',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Hello, I need to report a waste collection issue at my address.',
-          created_at: new Date(now.getTime() - 30 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 30 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-2',
-          conversation_id: 'conv-1',
-          sender_id: 'user-2',
-          sender: this.mockUsers[1],
-          content: 'Hello! I\'ll be happy to help. Can you provide more details about the issue?',
-          created_at: new Date(now.getTime() - 28 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 28 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-3',
-          conversation_id: 'conv-1',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'The bins were not collected this morning, and there is overflow.',
-          created_at: new Date(now.getTime() - 25 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 25 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-4',
-          conversation_id: 'conv-1',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Here is a photo of the situation.',
-          attachment_url: 'https://images.pexels.com/photos/3181031/pexels-photo-3181031.jpeg?auto=compress&cs=tinysrgb&w=400',
-          attachment_type: 'photo',
-          created_at: new Date(now.getTime() - 24 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 24 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-5',
-          conversation_id: 'conv-1',
-          sender_id: 'user-2',
-          sender: this.mockUsers[1],
-          content: 'Thank you for the photo. I can see the issue. Let me schedule an immediate pickup for you.',
-          created_at: new Date(now.getTime() - 20 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 20 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-6',
-          conversation_id: 'conv-1',
-          sender_id: 'user-2',
-          sender: this.mockUsers[1],
-          content: 'I will be there in 15 minutes to collect the waste.',
-          created_at: new Date(now.getTime() - 5 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 5 * 60 * 1000)
-        }
-      ],
-      'conv-2': [
-        {
-          id: 'msg-2-1',
-          conversation_id: 'conv-2',
-          sender_id: 'user-2',
-          sender: this.mockUsers[2],
-          content: 'Hello, we noticed your recent report. Is everything resolved?',
-          created_at: new Date(now.getTime() - 3 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 3 * 60 * 60 * 1000)
-        },
-        {
-          id: 'msg-2-2',
-          conversation_id: 'conv-2',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Yes, the collection agent came by and resolved everything. Thank you for the quick response!',
-          created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 2 * 60 * 60 * 1000)
-        }
-      ],
-      'conv-3': [
-        {
-          id: 'msg-3-1',
-          conversation_id: 'conv-3',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'I would like to schedule a bulk waste pickup for next week.',
-          created_at: new Date(now.getTime() - 25 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 25 * 60 * 60 * 1000)
-        },
-        {
-          id: 'msg-3-2',
-          conversation_id: 'conv-3',
-          sender_id: 'user-4',
-          sender: this.mockUsers[3],
-          content: 'Of course! What type of bulk items do you need collected?',
-          created_at: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 24 * 60 * 60 * 1000)
-        },
-        {
-          id: 'msg-3-3',
-          conversation_id: 'conv-3',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Old furniture and some electronics.',
-          created_at: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 24 * 60 * 60 * 1000)
-        },
-        {
-          id: 'msg-3-4',
-          conversation_id: 'conv-3',
-          sender_id: 'user-4',
-          sender: this.mockUsers[3],
-          content: 'We have scheduled your pickup for tomorrow morning.',
-          created_at: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 24 * 60 * 60 * 1000)
-        }
-      ]
-    };
+  private loadMessagesForConversation(conversation: Conversation): void {
+    const userId = this.currentUserAsChat.id;
+    const other = conversation.participants.find(p => p.id !== userId);
+    if (!other) return;
 
-    const messages = mockMessages[conversationId] || [];
-    this.messagesSubject.next(messages);
+    console.log('[CHAT] Chargement messages pour conversation avec :', other.username, `(${other.id})`);
+    this.messagesService.getMessagesForAgencyOrUser(userId)
+      .pipe(catchError((err) => {
+        console.error('[CHAT] Erreur chargement messages :', err);
+        return of([]);
+      }))
+      .subscribe((messages: any[]) => {
+        if (!messages) { this.messagesSubject.next([]); return; }
+
+        const filtered = messages.filter((m: any) =>
+          (m.sender === userId && m.receiver === other.id) ||
+          (m.receiver === userId && m.sender === other.id)
+        );
+
+        console.log('[CHAT]', filtered.length, 'message(s) pour cette conversation');
+        const mapped = filtered
+          .sort((a, b) =>
+            new Date(a.createdAt || a.created_at || 0).getTime() -
+            new Date(b.createdAt || b.created_at || 0).getTime()
+          )
+          .map((m: any) => this.rawToMessage(m, userId, other.id));
+
+        this.messagesSubject.next(mapped);
+      });
   }
+
+  // ── Envoi de message ─────────────────────────────────────────
 
   sendMessage(content: string, attachmentUrl?: string, attachmentType?: 'photo' | 'location'): void {
     const selectedConv = this.selectedConversationSubject.value;
-    if (!selectedConv) return;
+    if (!selectedConv || !content.trim()) return;
 
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
+    const userId = this.currentUserAsChat.id;
+    const other = selectedConv.participants.find(p => p.id !== userId);
+    if (!other) return;
+
+    // Ajout optimiste pour une UX réactive
+    const tempId = `temp-${Date.now()}`;
+    const tempMessage: Message = {
+      id: tempId,
       conversation_id: selectedConv.id,
-      sender_id: this.currentUser.id,
-      sender: this.currentUser,
+      sender_id: userId,
+      sender: this.currentUserAsChat,
       content,
       attachment_url: attachmentUrl,
       attachment_type: attachmentType,
+      read: false,
       created_at: new Date(),
       updated_at: new Date()
     };
+    this.messagesSubject.next([...this.messagesSubject.value, tempMessage]);
+    this.updateConversationLastMessage(tempMessage);
 
-    const currentMessages = this.messagesSubject.value;
-    this.messagesSubject.next([...currentMessages, newMessage]);
-
-    const updatedConversations = this.conversationsSubject.value.map(conv =>
-      conv.id === selectedConv.id
-        ? { ...conv, lastMessage: newMessage, updated_at: new Date() }
-        : conv
-    );
-    this.conversationsSubject.next(updatedConversations);
+    // Envoi HTTP réel
+    console.log('[CHAT] Envoi message → receiver :', other.id, '| contenu :', content.substring(0, 50));
+    this.messagesService.sendMessage({
+      sender: userId,
+      receiver: other.id,
+      content,
+      senderName: this.currentUserAsChat.username
+    }).pipe(catchError((err) => {
+        console.error('[CHAT] Erreur envoi message :', err);
+        return of(null);
+      }))
+      .subscribe((saved: any) => {
+        if (saved) {
+          console.log('[CHAT] Message enregistré :', saved._id || saved.id);
+          const realMsg = this.rawToMessage(saved, userId, other.id);
+          this.messagesSubject.next(
+            this.messagesSubject.value.map(m => m.id === tempId ? realMsg : m)
+          );
+          this.updateConversationLastMessage(realMsg);
+        } else {
+          console.warn('[CHAT] Message envoyé mais aucune réponse serveur (message temporaire conservé)');
+        }
+      });
   }
+
+  // ── WebSocket listeners ──────────────────────────────────────
+
+  private setupWebSocketListeners(): void {
+    // Après POST /api/messages/send, le serveur émet messageSent
+    // vers l'expéditeur ET le destinataire (WEBSOCKET (2).md §3)
+    this.websocketService.onMessageSent().subscribe((socketMessage: SocketMessage) => {
+      const myUserId = this.currentUserAsChat.id;
+
+      if (!myUserId) {
+        console.warn('[CHAT] messageSent ignoré — userId vide');
+        return;
+      }
+
+      const senderId   = socketMessage.sender;
+      const receiverId = socketMessage.receiver;
+
+      if (senderId !== myUserId && receiverId !== myUserId) return;
+
+      // Déduplication : l'expéditeur a déjà son message en optimiste
+      const alreadyPresent = this.messagesSubject.value.some(m => m.id === socketMessage._id);
+      if (alreadyPresent) {
+        console.log('[CHAT] messageSent ignoré — déjà présent :', socketMessage._id);
+        return;
+      }
+
+      const otherId    = senderId === myUserId ? receiverId : senderId;
+      const newMessage = this.rawToMessage(socketMessage as any, myUserId, otherId);
+      const currentConv = this.selectedConversationSubject.value;
+
+      // 1. Mettre à jour badge + aperçu dans la liste
+      this.upsertConversationWithMessage(newMessage, otherId, socketMessage);
+
+      // 2. Si la conversation est ouverte : recharger depuis l'API
+      //    (même stratégie que le re-clic — fiable car HTTP est zone-aware)
+      if (currentConv && currentConv.participants.some(p => p.id === otherId)) {
+        console.log('[CHAT] Conversation active → rechargement messages API');
+        this.loadMessagesForConversation(currentConv);
+      }
+    });
+
+    this.websocketService.onMessageRead().subscribe((socketMessage: SocketMessage) => {
+      this.messagesSubject.next(
+        this.messagesSubject.value.map(msg =>
+          msg.id === socketMessage._id ? { ...msg, read: true } : msg
+        )
+      );
+    });
+
+    this.websocketService.onMessageDeleted().subscribe(({ messageId }) => {
+      this.messagesSubject.next(
+        this.messagesSubject.value.filter(msg => msg.id !== messageId)
+      );
+    });
+  }
+
+  // ── Recherche ────────────────────────────────────────────────
 
   searchConversations(query: string): void {
     if (!query.trim()) {
-      this.initializeMockData();
+      this.loadConversations(this.currentUserAsChat.id);
       return;
     }
-
     const filtered = this.conversationsSubject.value.filter(conv => {
-      const otherParticipant = conv.participants.find(p => p.id !== this.currentUser.id);
-      return otherParticipant?.username.toLowerCase().includes(query.toLowerCase());
+      const other = conv.participants.find(p => p.id !== this.currentUserAsChat.id);
+      return other?.username.toLowerCase().includes(query.toLowerCase());
     });
-
     this.conversationsSubject.next(filtered);
   }
 
+  // ── Getters ──────────────────────────────────────────────────
+
   getCurrentUser(): User {
-    return this.currentUser;
+    return this.currentUserAsChat;
   }
 
-  simulateTyping(conversationId: string, userId: string): void {
-    setTimeout(() => {
-      const user = this.mockUsers.find(u => u.id === userId);
-      if (user) {
-        this.typingIndicatorsSubject.next([{
-          conversation_id: conversationId,
-          user_id: userId,
-          username: user.username,
-          is_typing: true
-        }]);
+  /** Compatibilité — l'indicateur de frappe vient maintenant du WebSocket */
+  simulateTyping(_conversationId: string, _userId: string): void { /* no-op */ }
 
-        setTimeout(() => {
-          this.typingIndicatorsSubject.next([]);
-        }, 3000);
-      }
-    }, 1000);
+  // ── Helpers ──────────────────────────────────────────────────
+
+  private convId(userId: string, otherId: string): string {
+    // ID déterministe indépendant de l'ordre
+    return [userId, otherId].sort().join('_');
+  }
+
+  private rawToMessage(raw: any, currentUserId: string, otherId: string): Message {
+    const isOwn = raw.sender === currentUserId;
+    const sender: User = isOwn
+      ? this.currentUserAsChat
+      : {
+          id: raw.sender || otherId,
+          username: raw.senderName || 'Utilisateur',
+          role: 'citizen' as const,
+          status: 'online' as const,
+          created_at: new Date(),
+          updated_at: new Date()
+        };
+    return {
+      id: raw._id || raw.id || `${Date.now()}`,
+      conversation_id: this.convId(currentUserId, otherId),
+      sender_id: raw.sender || otherId,
+      sender,
+      content: raw.content || '',
+      read: raw.read ?? false,
+      created_at: new Date(raw.createdAt || raw.created_at || Date.now()),
+      updated_at: new Date(raw.updatedAt || raw.updated_at || Date.now())
+    };
+  }
+
+  private convertSocketMessage(socketMessage: SocketMessage, myUserId: string): Message {
+    const otherId = socketMessage.sender === myUserId ? socketMessage.receiver : socketMessage.sender;
+    return this.rawToMessage(socketMessage as any, myUserId, otherId);
+  }
+
+  private updateConversationLastMessage(message: Message): void {
+    const currentConvId = this.selectedConversationSubject.value?.id;
+    const existing = this.conversationsSubject.value;
+    const updated = existing.map(conv =>
+      conv.id === message.conversation_id
+        ? {
+            ...conv,
+            lastMessage: message,
+            updated_at: new Date(),
+            unreadCount: conv.id !== currentConvId ? (conv.unreadCount || 0) + 1 : 0
+          }
+        : conv
+    );
+    this.conversationsSubject.next(updated);
+  }
+
+  private upsertConversationWithMessage(
+    message: Message,
+    otherId: string,
+    raw: SocketMessage
+  ): void {
+    const myUserId = this.currentUserAsChat.id;
+    const currentConvId = this.selectedConversationSubject.value?.id;
+    const convId = this.convId(myUserId, otherId);
+    const existing = this.conversationsSubject.value;
+    const idx = existing.findIndex(c => c.id === convId);
+
+    if (idx >= 0) {
+      // Conversation déjà dans la liste — mise à jour
+      const updated = existing.map((conv, i) =>
+        i === idx
+          ? {
+              ...conv,
+              lastMessage: message,
+              updated_at: new Date(),
+              unreadCount: conv.id !== currentConvId ? (conv.unreadCount || 0) + 1 : 0
+            }
+          : conv
+      );
+      // Remonter en tête de liste (plus récente)
+      const moved = [updated[idx], ...updated.filter((_, i) => i !== idx)];
+      this.conversationsSubject.next(moved);
+      console.log('[CHAT] Conversation mise à jour :', convId);
+    } else {
+      // Nouvelle conversation — créer une entrée minimale
+      const otherUser: User = {
+        id: otherId,
+        username: raw.senderName || 'Utilisateur',
+        role: 'citizen',
+        status: 'online',
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+      const newConv: Conversation = {
+        id: convId,
+        participants: [this.currentUserAsChat, otherUser],
+        lastMessage: message,
+        unreadCount: convId !== currentConvId ? 1 : 0,
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+      this.conversationsSubject.next([newConv, ...existing]);
+      console.log('[CHAT] Nouvelle conversation créée :', convId);
+    }
   }
 }

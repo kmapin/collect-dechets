@@ -225,6 +225,9 @@
                 <i class="material-icons">pie_chart</i>
                 Répartition des Déchets
               </h3>
+              <div class="chart-container chart-container-sm">
+                <p-chart type="doughnut" [data]="wasteTypeChartData" [options]="wasteTypeChartOptions" />
+              </div>
               <div class="waste-chart">
                 @for (waste of wasteStatistics; track waste) {
                   <div class="waste-item">
@@ -518,74 +521,33 @@
               <div class="statistics-card card">
                 <h3>Collectes par Type de Déchets</h3>
                 <div class="chart-container">
-                  <div class="chart-placeholder">
-                    <i class="material-icons">donut_large</i>
-                    <p>Graphique en secteurs des types de déchets</p>
-                  </div>
+                  <p-chart type="doughnut" [data]="wasteTypeChartData" [options]="wasteTypeChartOptions" />
                 </div>
                 <div class="chart-legend">
                   @for (waste of wasteStatistics; track waste) {
-                    <div
-                      class="legend-item"
-                      >
-                      <div
-                        class="legend-color"
-                        [style.background-color]="waste.color"
-                      ></div>
+                    <div class="legend-item">
+                      <div class="legend-color" [style.background-color]="waste.color"></div>
                       <span>{{ waste.type }}: {{ waste.quantity }}t</span>
                     </div>
                   }
                 </div>
               </div>
               <div class="statistics-card card">
-                <h3>Performance par Agence</h3>
-                <div class="performance-chart">
-                  @for (agency of getTopPerformingAgencies(); track agency) {
-                    <div
-                      class="performance-bar"
-                      >
-                      <div class="agency-name">{{ agency.name }}</div>
-                      <div class="performance-bar-container">
-                        <div
-                          class="performance-bar-fill"
-                          [style.width]="agency.completionRate + '%'"
-                        ></div>
-                      </div>
-                      <div class="performance-value">
-                        {{ agency.completionRate }}%
-                      </div>
-                    </div>
-                  }
+                <h3>Clients par Agence (Top 5)</h3>
+                <div class="chart-container">
+                  <p-chart type="bar" [data]="agencyClientsChartData" [options]="agencyClientsChartOptions" />
                 </div>
               </div>
-              <div class="statistics-card card">
-                <h3>Évolution des Collectes</h3>
-                <div class="chart-container">
-                  <div class="chart-placeholder">
-                    <i class="material-icons">show_chart</i>
-                    <p>Graphique linéaire de l'évolution des collectes</p>
-                  </div>
+              <div class="statistics-card card chart-card-wide">
+                <h3>Évolution des Collectes (6 mois)</h3>
+                <div class="chart-container chart-container-line">
+                  <p-chart type="line" [data]="collectionsEvolutionChartData" [options]="collectionsEvolutionChartOptions" />
                 </div>
               </div>
               <div class="statistics-card card">
                 <h3>Incidents par Catégorie</h3>
-                <div class="incidents-breakdown">
-                  @for (incident of getIncidentBreakdown(); track incident) {
-                    <div
-                      class="incident-category"
-                      >
-                      <div class="incident-header">
-                        <span class="incident-type">{{ incident.type }}</span>
-                        <span class="incident-count">{{ incident.count }}</span>
-                      </div>
-                      <div class="incident-bar">
-                        <div
-                          class="incident-fill"
-                          [style.width]="incident.percentage + '%'"
-                        ></div>
-                      </div>
-                    </div>
-                  }
+                <div class="chart-container">
+                  <p-chart type="doughnut" [data]="incidentChartData" [options]="incidentChartOptions" />
                 </div>
               </div>
             </div>

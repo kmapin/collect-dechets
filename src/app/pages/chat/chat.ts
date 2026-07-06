@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy } from "@angular/core";
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from "@angular/core";
 
-import { from, Subject, takeUntil } from "rxjs";
+import { Subject, takeUntil } from "rxjs";
 import { ChatWindow } from "./chat-window/chat-window";
 import { ConversationList } from "./conversation-list/conversation-list";
 import { ChatService } from "../../services/chat.service";
@@ -28,29 +28,38 @@ export class Chat implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private typingTimeout: any;
 
-  constructor(private chatService: ChatService) {}
+  constructor(
+    private chatService: ChatService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.currentUser = this.chatService.getCurrentUser();
     this.checkMobileView();
     window.addEventListener("resize", () => this.checkMobileView());
 
+    // detectChanges() force le re-rendu immédiat des enfants (ChatWindow, ConversationList)
+    // sans dépendre de Zone.js — critique pour les mises à jour WebSocket
+
     this.chatService.conversations$
       .pipe(takeUntil(this.destroy$))
       .subscribe((conversations) => {
         this.conversations = conversations;
+        this.cdr.detectChanges();
       });
 
     this.chatService.selectedConversation$
       .pipe(takeUntil(this.destroy$))
       .subscribe((conversation) => {
         this.selectedConversation = conversation;
+        this.cdr.detectChanges();
       });
 
     this.chatService.messages$
       .pipe(takeUntil(this.destroy$))
       .subscribe((messages) => {
         this.messages = messages;
+        this.cdr.detectChanges();
       });
 
     this.chatService.typingIndicators$
@@ -78,18 +87,6 @@ export class Chat implements OnInit, OnDestroy {
 
   onSendMessage(content: string): void {
     this.chatService.sendMessage(content);
-
-    if (this.selectedConversation) {
-      const otherParticipant = this.selectedConversation.participants.find(
-        (p) => p.id !== this.currentUser.id
-      );
-      if (otherParticipant) {
-        this.chatService.simulateTyping(
-          this.selectedConversation.id,
-          otherParticipant.id
-        );
-      }
-    }
   }
 
   onTyping(): void {

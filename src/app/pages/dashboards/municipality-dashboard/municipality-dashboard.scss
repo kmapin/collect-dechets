@@ -710,13 +710,42 @@
 
 .chart-container {
   height: 250px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--light-gray);
-  border-radius: 8px;
-  margin-bottom: 16px;
+  position: relative;
   margin: 16px 0;
+
+  p-chart {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+}
+
+.chart-container-sm {
+  height: 180px;
+  position: relative;
+  margin: 12px 0;
+
+  p-chart {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+}
+
+.chart-container-line {
+  height: 280px;
+  position: relative;
+  margin: 16px 0;
+
+  p-chart {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+}
+
+.chart-card-wide {
+  grid-column: span 2;
 }
 
 .chart-placeholder {

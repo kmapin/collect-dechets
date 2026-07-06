@@ -13,7 +13,7 @@
     </div>
 
     <div class="conversations-container">
-      @for (conversation of conversations; track conversation) {
+      @for (conversation of conversations; track conversation.id) {
         <div
           class="conversation-item"
           [class.active]="selectedConversation?.id === conversation.id"

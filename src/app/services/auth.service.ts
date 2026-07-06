@@ -6,6 +6,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Agency, Municipality } from '../models/agency.model';
 import { Webstockets } from '../core/services/webstockets';
+import { NotificationService } from './notification.service';
 
 @Injectable({
   providedIn: 'root'
@@ -21,22 +22,25 @@ export class AuthService {
   
   constructor(
     private http: HttpClient,
-    private websocketService: Webstockets
+    private websocketService: Webstockets,
+    private notificationService: NotificationService
   ) {
-    // Check for stored user on service initialization
-    console.log('Checking for stored user on service initialization', this.isAuthenticated$ );
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       this.currentUserSubject.next(userData?.user);
       this.isAuthenticatedSubject.next(true);
-      
-      // Reconnecter le WebSocket si l'utilisateur est déjà connecté
+
       const userId = userData?.user?._id || userData?.user?.id;
       if (userId) {
-        console.log('🔄 Reconnexion WebSocket pour l\'utilisateur:', userId);
         this.websocketService.connect();
         this.websocketService.joinRoom(userId);
+        const role = userData?.user?.role;
+        const agencyId = userData?.user?.agencyId;
+        if (agencyId && (role === 'manager' || role === 'collector' || role === 'super_admin')) {
+          this.websocketService.joinRoom(agencyId);
+        }
+        this.notificationService.loadInitialNotifications(userId);
       }
     }
   }
@@ -109,12 +113,15 @@ export class AuthService {
           this.currentUserSubject.next(user);
           this.isAuthenticatedSubject.next(true);
           
-          // Connecter le WebSocket et rejoindre la room utilisateur
+          // Connecter le WebSocket et rejoindre la room utilisateur (+ agence si manager/collector)
           const userId = user._id || user.id;
           if (userId) {
-            console.log('🔌 Connexion WebSocket après login:', userId);
             this.websocketService.connect();
             this.websocketService.joinRoom(userId);
+            if (user.agencyId && (user.role === 'manager' || user.role === 'collector' || user.role === 'super_admin')) {
+              this.websocketService.joinRoom(user.agencyId);
+            }
+            this.notificationService.loadInitialNotifications(userId);
           }
           
           return {

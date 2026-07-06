@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
+import { ChartModule } from 'primeng/chart';
 import { AuthService } from "../../../services/auth.service";
 import { AgencyService } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
@@ -124,7 +125,7 @@ interface Communication {
 
 @Component({
   selector: 'app-municipality-dashboard',
-  imports: [CommonModule, RouterModule, FormsModule, Signalement],
+  imports: [CommonModule, RouterModule, FormsModule, Signalement, ChartModule],
   templateUrl: './municipality-dashboard.html',
   styleUrl: './municipality-dashboard.scss'
 })
@@ -197,6 +198,16 @@ export class MunicipalityDashboard  implements OnInit {
   statisticsAdmin: any;
   clientGrowth: number = 0;
 
+  // ── Chart data ────────────────────────────────────────────────
+  wasteTypeChartData: any = {};
+  wasteTypeChartOptions: any = {};
+  collectionsEvolutionChartData: any = {};
+  collectionsEvolutionChartOptions: any = {};
+  agencyClientsChartData: any = {};
+  agencyClientsChartOptions: any = {};
+  incidentChartData: any = {};
+  incidentChartOptions: any = {};
+
   constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
@@ -215,6 +226,8 @@ export class MunicipalityDashboard  implements OnInit {
     this.showAdminStatistics();
     this.filterIncidents();
     this.loadZoneStat();
+    this.initEvolutionChart();
+    this.initIncidentChart();
   }
 
   loadMunicipalityData(): void {
@@ -255,6 +268,7 @@ export class MunicipalityDashboard  implements OnInit {
           auditTab.badge = this.agencyAudits.length;
           this.cd.detectChanges();
         }
+        this.initAgencyChart();
       },
     });
 
@@ -308,36 +322,161 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   loadWasteStatistics(): void {
+    this.adminService.getWasteDistribution(this.statisticsPeriod).subscribe({
+      next: (response: any) => {
+        if (response?.data?.length) {
+          this.wasteStatistics = response.data.map((item: any) => ({
+            type: item.label || item.type,
+            quantity: item.quantity,
+            percentage: item.percentage,
+            trend: item.trend || 'stable',
+            color: item.color,
+          }));
+        } else {
+          this.setStaticWasteData();
+        }
+        this.initWasteChart();
+      },
+      error: () => { this.setStaticWasteData(); this.initWasteChart(); }
+    });
+  }
+
+  private setStaticWasteData(): void {
     this.wasteStatistics = [
-      {
-        type: "Déchets ménagers",
-        quantity: 1250,
-        percentage: 45,
-        trend: "stable",
-        color: "#4caf50",
-      },
-      {
-        type: "Recyclables",
-        quantity: 850,
-        percentage: 30,
-        trend: "up",
-        color: "#2196f3",
-      },
-      {
-        type: "Organiques",
-        quantity: 425,
-        percentage: 15,
-        trend: "up",
-        color: "#8bc34a",
-      },
-      {
-        type: "Verre",
-        quantity: 280,
-        percentage: 10,
-        trend: "stable",
-        color: "#00bcd4",
-      },
+      { type: "Déchets ménagers", quantity: 1250, percentage: 45, trend: "stable", color: "#4caf50" },
+      { type: "Recyclables",      quantity: 850,  percentage: 30, trend: "up",     color: "#2196f3" },
+      { type: "Organiques",       quantity: 425,  percentage: 15, trend: "up",     color: "#8bc34a" },
+      { type: "Verre",            quantity: 280,  percentage: 10, trend: "stable", color: "#00bcd4" },
     ];
+  }
+
+  // ── Chart initialization ──────────────────────────────────────
+
+  private initWasteChart(): void {
+    this.wasteTypeChartData = {
+      labels: this.wasteStatistics.map(w => w.type),
+      datasets: [{
+        data: this.wasteStatistics.map(w => w.percentage),
+        backgroundColor: this.wasteStatistics.map(w => w.color),
+        hoverBackgroundColor: ['#43a047', '#1e88e5', '#7cb342', '#00acc1'],
+        borderWidth: 2,
+        borderColor: '#ffffff',
+      }],
+    };
+    this.wasteTypeChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (ctx: any) => ` ${ctx.label}: ${ctx.raw}%` },
+        },
+      },
+    };
+  }
+
+  private initEvolutionChart(): void {
+    this.adminService.getCollectionsEvolution(6).subscribe({
+      next: (response: any) => {
+        const labels   = response?.labels       ?? ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'];
+        const realized = response?.data?.realized ?? [320, 385, 350, 420, 445, this.statisticsAdmin?.completeCollections || 425];
+        const target   = response?.data?.target   ?? [400, 400, 400, 430, 430, 430];
+        this.buildEvolutionChart(labels, realized, target);
+      },
+      error: () => this.buildEvolutionChart(
+        ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'],
+        [320, 385, 350, 420, 445, this.statisticsAdmin?.completeCollections || 425],
+        [400, 400, 400, 430, 430, 430]
+      )
+    });
+  }
+
+  private buildEvolutionChart(labels: string[], realized: number[], target: number[]): void {
+    this.collectionsEvolutionChartData = {
+      labels,
+      datasets: [
+        { label: 'Collectes réalisées', data: realized, fill: true, backgroundColor: 'rgba(26, 71, 49, 0.12)', borderColor: '#1a4731', tension: 0.4, pointBackgroundColor: '#1a4731', pointRadius: 4, pointHoverRadius: 6 },
+        { label: 'Objectif', data: target, fill: false, borderColor: '#ea7c3a', borderDash: [5, 5], tension: 0, pointRadius: 0, borderWidth: 2 },
+      ],
+    };
+    this.collectionsEvolutionChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 16, font: { size: 11 }, usePointStyle: true } },
+        tooltip: { mode: 'index', intersect: false },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 } }, beginAtZero: false },
+      },
+      interaction: { mode: 'index', intersect: false },
+    };
+  }
+
+  private initAgencyChart(): void {
+    const top5 = [...this.agencyAudits]
+      .sort((a, b) => b.clients - a.clients)
+      .slice(0, 5);
+    const colors = ['#1a4731', '#2d6a4f', '#3d8b6e', '#d97706', '#dc2626'];
+    this.agencyClientsChartData = {
+      labels: top5.map(a => a.name),
+      datasets: [{
+        label: 'Nombre de clients',
+        data: top5.map(a => a.clients),
+        backgroundColor: top5.map((_, i) => colors[i] ?? '#1a4731'),
+        borderRadius: 4,
+        borderSkipped: false,
+      }],
+    };
+    this.agencyClientsChartOptions = {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (ctx: any) => ` ${ctx.parsed.x} clients` },
+        },
+      },
+      scales: {
+        x: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 } }, beginAtZero: true },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } },
+      },
+    };
+  }
+
+  private initIncidentChart(): void {
+    this.adminService.getIncidentBreakdown(this.statisticsPeriod).subscribe({
+      next: (response: any) => {
+        const breakdown = response?.data?.length ? response.data : this.getIncidentBreakdown();
+        this.buildIncidentChart(breakdown);
+      },
+      error: () => this.buildIncidentChart(this.getIncidentBreakdown())
+    });
+  }
+
+  private buildIncidentChart(breakdown: any[]): void {
+    this.incidentChartData = {
+      labels: breakdown.map(b => b.label || b.type),
+      datasets: [{
+        data: breakdown.map(b => b.percentage),
+        backgroundColor: ['#dc2626', '#d97706', '#2196f3'],
+        hoverBackgroundColor: ['#b91c1c', '#b45309', '#1976d2'],
+        borderWidth: 2,
+        borderColor: '#ffffff',
+      }],
+    };
+    this.incidentChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '55%',
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { font: { size: 10 }, padding: 12, boxWidth: 10, usePointStyle: true } },
+        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.label}: ${ctx.raw}%` } },
+      },
+    };
   }
 
   // Récupérer les différents pays et les villes
