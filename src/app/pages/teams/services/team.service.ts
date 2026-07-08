@@ -374,15 +374,18 @@ export class TeamService {
       .subscribe(list => {
         if (list !== null) {
           this._availableVehicles.set((list as VehicleApi[]).map((v: VehicleApi) => ({
-            id:           v._id,
-            plate:        v.plate,
-            model:        v.model,
-            type:         v.type,
-            capacityTons: v.capacityTons ?? 0,
-            status:       v.status,
+            id:              v._id,
+            plate:           v.plate,
+            model:           v.model,
+            type:            v.type,
+            capacityTons:    v.capacityTons ?? 0,
+            status:          v.status,
+            fuelLevel:       v.fuelLevel,
+            mileage:         v.mileage,
+            lastMaintenance: v.lastMaintenance,
           })));
         }
-        // null = erreur réseau → on conserve le mock comme fallback
+        // null = erreur réseau → la liste reste inchangée (pas de fallback fictif)
       });
   }
 

@@ -166,6 +166,9 @@ export interface AvailableVehicle {
   type: VehicleType;
   capacityTons: number;
   status: VehicleStatus;
+  fuelLevel?: number;
+  mileage?: number;
+  lastMaintenance?: string;
 }
 
 export interface AvailableZone {

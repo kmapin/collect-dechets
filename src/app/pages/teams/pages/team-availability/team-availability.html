@@ -123,6 +123,18 @@
   <!-- ══════════════════════ CONTENT ═══════════════════════════════ -->
   <div class="av-content">
 
+    @if (isLoading() && teamService.teams().length === 0) {
+      <div class="tl-empty">
+        <mat-icon>hourglass_top</mat-icon>
+        <p>Chargement des disponibilités…</p>
+      </div>
+    } @else if (!isLoading() && teamService.teams().length === 0) {
+      <div class="tl-empty">
+        <mat-icon>groups_off</mat-icon>
+        <p>Aucune équipe pour cette agence</p>
+      </div>
+    } @else {
+
     <!-- ─────────────── TIMELINE ─────────────── -->
     @if (view() === 'timeline') {
       <div class="tl-wrap">
@@ -272,22 +284,22 @@
           <div class="hs-card">
             <mat-icon style="color:#f59e0b">bolt</mat-icon>
             <div>
-              <div class="hsc-val">{{ heatGrid()[1][0].load + heatGrid()[1][2].load }}%</div>
-              <div class="hsc-lbl">Pic lun-mer matin</div>
+              <div class="hsc-val">{{ peakSlot().load }}%</div>
+              <div class="hsc-lbl">Pic de charge ({{ heatDays[peakSlot().day] }} {{ peakSlot().hour }}h)</div>
             </div>
           </div>
           <div class="hs-card">
             <mat-icon style="color:#3b82f6">weekend</mat-icon>
             <div>
-              <div class="hsc-val">{{ heatGrid()[6][5].load }}%</div>
-              <div class="hsc-lbl">Charge week-end</div>
+              <div class="hsc-val">{{ weekendLoad() }}%</div>
+              <div class="hsc-lbl">Charge week-end (moy.)</div>
             </div>
           </div>
           <div class="hs-card">
             <mat-icon style="color:#16a34a">schedule</mat-icon>
             <div>
-              <div class="hsc-val">08h–10h</div>
-              <div class="hsc-lbl">Créneau le plus chargé</div>
+              <div class="hsc-val">{{ weekMissionsCount() }}</div>
+              <div class="hsc-lbl">Missions planifiées (semaine)</div>
             </div>
           </div>
           <div class="hs-card">
@@ -370,6 +382,8 @@
           </div>
         }
       </div>
+    }
+
     }
 
   </div><!-- /av-content -->

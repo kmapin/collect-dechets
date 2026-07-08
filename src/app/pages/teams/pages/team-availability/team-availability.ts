@@ -17,6 +17,8 @@ import listPlugin from '@fullcalendar/list';
 import frLocale from '@fullcalendar/core/locales/fr';
 import { TeamService } from '../../services/team.service';
 import { Team, TeamStatus } from '../../models/team.model';
+import { PlanningService } from '../../../planning/services/planning.service';
+import { Planning } from '../../../planning/models/planning.model';
 
 // ── Local types ──────────────────────────────────────────────────────
 type AvailView = 'timeline' | 'calendar' | 'heatmap' | 'alertes';
@@ -68,14 +70,18 @@ const HEAT_HOURS = Array.from({ length: H_SPAN }, (_, i) => i + H_START);
   styleUrl:    './team-availability.scss',
 })
 export class TeamAvailability implements OnInit, OnDestroy {
-  readonly router = inject(Router);
-  readonly teamService    = inject(TeamService);
-  private  msg    = inject(MessageService);
+  readonly router       = inject(Router);
+  readonly teamService  = inject(TeamService);
+  readonly planningSvc  = inject(PlanningService);
+  private  msg          = inject(MessageService);
 
   // ── View & time ───────────────────────────────────────────────────
   view        = signal<AvailView>('timeline');
   currentTime = signal(new Date());
-  refreshing  = signal(false);
+
+  /** Reflète les deux chargements réels (équipes + plannings). */
+  isLoading  = computed(() => this.teamService.loading() || this.planningSvc.loading());
+  refreshing = this.isLoading;
 
   // ── Filters ───────────────────────────────────────────────────────
   teamSearch    = signal('');
@@ -163,6 +169,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
     return [...villes].sort();
   });
 
+  /** Une ligne par équipe filtrée, avec les créneaux réels du jour sélectionné (Planning). */
   timeline = computed((): TeamLine[] =>
     this.filteredTeams().map(team => ({ team, blocks: this._buildBlocks(team) }))
   );
@@ -174,15 +181,42 @@ export class TeamAvailability implements OnInit, OnDestroy {
     return (h - H_START) / H_SPAN * 100;
   });
 
+  /** Occupation réelle par jour/heure de la semaine en cours, dérivée des vrais plannings. */
   heatGrid = computed((): HeatCell[][] => {
     const teams = this.filteredTeams();
     const n = Math.max(1, teams.length);
+    const byTeam = this._weekPlanningsByTeam();
     return HEAT_HOURS.map(hour =>
       Array.from({ length: 7 }, (_, day) => {
-        const active = this._teamsActiveAt(teams, day, hour);
+        const active = teams.filter(t =>
+          (byTeam.get(t.id) ?? []).some(s => s.day === day && hour >= s.startH && hour < s.endH)
+        ).length;
         return { day, hour, load: Math.round(active / n * 100), teams: active };
       })
     );
+  });
+
+  /** Créneau (jour/heure) le plus chargé de la semaine, calculé sur la grille réelle. */
+  peakSlot = computed(() => {
+    let best = { day: 0, hour: HEAT_HOURS[0], load: 0 };
+    this.heatGrid().forEach(row => row.forEach(cell => { if (cell.load > best.load) best = cell; }));
+    return best;
+  });
+
+  /** Charge moyenne réelle sur les colonnes Samedi/Dimanche de la grille. */
+  weekendLoad = computed(() => {
+    const grid = this.heatGrid();
+    const cells = grid.flatMap(row => [row[5], row[6]]);
+    return cells.length ? Math.round(cells.reduce((s, c) => s + c.load, 0) / cells.length) : 0;
+  });
+
+  /** Nombre réel de missions planifiées cette semaine (toutes équipes filtrées confondues). */
+  weekMissionsCount = computed(() => {
+    const byTeam = this._weekPlanningsByTeam();
+    const ids = new Set(this.filteredTeams().map(t => t.id));
+    let total = 0;
+    byTeam.forEach((slots, teamId) => { if (ids.has(teamId)) total += slots.length; });
+    return total;
   });
 
   conflicts = computed((): ConflictAlert[] => this._buildConflicts());
@@ -197,7 +231,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
   private _timer?: ReturnType<typeof setInterval>;
 
   constructor() {
-    // Sync calendar events whenever filters change
+    // Sync calendar events whenever filters or real plannings change
     effect(() => {
       const events = this._buildCalendarEvents();
       this.calendarOpts.update(o => ({ ...o, events }));
@@ -207,6 +241,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
   ngOnInit(): void {
     this._timer = setInterval(() => this.currentTime.set(new Date()), 30_000);
     if (!this.teamService.teams().length) this.teamService.loadTeams();
+    if (!this.planningSvc.plannings().length) this.planningSvc.loadPlannings({ pageSize: 500 });
   }
   ngOnDestroy(): void { clearInterval(this._timer); }
 
@@ -214,9 +249,9 @@ export class TeamAvailability implements OnInit, OnDestroy {
   setView(v: AvailView): void { this.view.set(v); }
 
   refresh(): void {
-    this.refreshing.set(true);
     this.currentTime.set(new Date());
-    setTimeout(() => this.refreshing.set(false), 800);
+    this.teamService.loadTeams();
+    this.planningSvc.loadPlannings({ pageSize: 500 });
   }
 
   showTooltip(block: TimeBlock, team: Team, e: MouseEvent): void {
@@ -234,7 +269,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
   blockColor(s: string):    string { return BLOCK_COLOR[s] ?? '#94a3b8'; }
   blockBg(s: string):       string { return (BLOCK_COLOR[s] ?? '#94a3b8') + '1e'; }
   isNowHour(h: number):    boolean { return this.currentTime().getHours() === h; }
-  fmtH(h: number):          string { return `${String(h).padStart(2, '0')}h`; }
+  fmtH(h: number):          string { return `${String(Math.floor(h)).padStart(2, '0')}h`; }
 
   // ── Heatmap helpers ───────────────────────────────────────────────
   heatColor(load: number): string {
@@ -281,80 +316,104 @@ export class TeamAvailability implements OnInit, OnDestroy {
     return name.trim().split(/\s+/).slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase();
   }
 
-  // ── Private: data generation ──────────────────────────────────────
-  private _buildBlocks(team: Team): TimeBlock[] {
-    const seed = team.id.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
-    const zone = team.zones[0]?.name?.split('–')[0]?.trim() ?? '';
-
-    if (team.status === 'maintenance') return [{ startH: H_START, endH: H_END, status: 'maintenance', label: 'Maintenance' }];
-    if (team.status === 'inactive')    return [{ startH: H_START, endH: H_END, status: 'inactive',    label: 'Hors service' }];
-
-    const blocks: TimeBlock[] = [];
-
-    if (team.status === 'on_mission') {
-      const mS = H_START + (seed % 3);
-      const mE = Math.min(mS + 3 + (seed % 5), 19);
-      if (mS > H_START) blocks.push({ startH: H_START, endH: mS, status: 'active', label: 'Disponible' });
-      blocks.push({ startH: mS, endH: mE, status: 'on_mission', label: zone || 'Mission en cours', zone });
-      if (mE < H_END)   blocks.push({ startH: mE,    endH: H_END, status: 'active', label: 'Disponible' });
-    } else {
-      const hasPlanned = (seed % 3) !== 0;
-      if (!hasPlanned) {
-        blocks.push({ startH: H_START, endH: H_END, status: 'active', label: 'Disponible' });
-      } else {
-        const pS = H_START + 1 + (seed % 3);
-        const pE = Math.min(pS + 4 + (seed % 4), 20);
-        blocks.push({ startH: H_START, endH: pS, status: 'active', label: 'Disponible' });
-        blocks.push({ startH: pS, endH: pE, status: 'on_mission', label: `Planifié – ${zone}`, zone });
-        if (pE < H_END) blocks.push({ startH: pE, endH: H_END, status: 'active', label: 'Disponible' });
-      }
+  // ── Private: dates / plannings ─────────────────────────────────────
+  /** Normalise une date backend (ISO avec T, ou dd/mm/yyyy) en YYYY-MM-DD. */
+  private _dateKey(dateStr: string): string {
+    if (!dateStr) return '';
+    if (dateStr.includes('T')) return dateStr.split('T')[0];
+    if (dateStr.includes('/')) {
+      const [d, m, y] = dateStr.split('/');
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
     }
-    return blocks;
+    return dateStr;
   }
 
-  private _teamsActiveAt(teams: Team[], day: number, hour: number): number {
-    const base    = teams.filter(t => t.status === 'active' || t.status === 'on_mission').length;
-    const rush    = (hour >= 7 && hour <= 10) || (hour >= 14 && hour <= 17) ? 1 : 0;
-    const weekend = day >= 5 ? -Math.ceil(base * 0.55) : 0;
-    const noon    = (hour >= 12 && hour <= 13) ? -1 : 0;
-    return Math.max(0, Math.min(teams.length, base + rush + weekend + noon));
+  private _hourOf(time: string): number {
+    const [h, m] = (time ?? '0:0').split(':').map(Number);
+    return (h || 0) + (m || 0) / 60;
   }
 
-  private _buildCalendarEvents(): EventInput[] {
-    const events: EventInput[] = [];
-    const today  = new Date();
+  private _mondayOfCurrentWeek(): Date {
+    const today = new Date();
     const monday = new Date(today);
     monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
     monday.setHours(0, 0, 0, 0);
-
-    this.filteredTeams().forEach(team => {
-      const seed   = team.id.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
-      const blocks = this._buildBlocks(team);
-
-      blocks.forEach(block => {
-        if (block.status !== 'on_mission' && block.status !== 'maintenance') return;
-        const days = block.status === 'maintenance'
-          ? [0, 1, 2, 3, 4]
-          : [0, 1, 2, 3, 4].filter((_, i) => (seed + i) % 3 !== 0);
-
-        days.forEach(d => {
-          const start = new Date(monday); start.setDate(monday.getDate() + d); start.setHours(block.startH, 0, 0, 0);
-          const end   = new Date(start);  end.setHours(block.endH, 0, 0, 0);
-          events.push({
-            id: `${team.id}-${d}-${block.startH}`,
-            title: team.name,
-            start, end,
-            backgroundColor: team.color + 'cc',
-            borderColor:     team.color,
-            textColor: '#fff',
-            extendedProps: { team, block },
-          });
-        });
-      });
-    });
-    return events;
+    return monday;
   }
 
+  /** Regroupe les vrais plannings de la semaine en cours par équipe (jour 0-6, créneau horaire). */
+  private _weekPlanningsByTeam(): Map<string, { day: number; startH: number; endH: number }[]> {
+    const monday = this._mondayOfCurrentWeek();
+    const map = new Map<string, { day: number; startH: number; endH: number }[]>();
+    this.planningSvc.plannings().forEach(p => {
+      if (!p.teamId || p.status === 'annule') return;
+      const d = new Date(this._dateKey(p.date) + 'T00:00:00');
+      const dayIdx = Math.round((d.getTime() - monday.getTime()) / 86_400_000);
+      if (dayIdx < 0 || dayIdx > 6) return;
+      const startH = this._hourOf(p.startTime);
+      const endH   = p.endTime ? this._hourOf(p.endTime) : startH + 2;
+      if (!map.has(p.teamId)) map.set(p.teamId, []);
+      map.get(p.teamId)!.push({ day: dayIdx, startH, endH });
+    });
+    return map;
+  }
+
+  // ── Private: data (réel — dérivé de Planning) ──────────────────────
+  /** Créneaux du jour sélectionné pour une équipe, à partir des vrais plannings assignés. */
+  private _buildBlocks(team: Team): TimeBlock[] {
+    if (team.status === 'maintenance') return [{ startH: H_START, endH: H_END, status: 'maintenance', label: 'Maintenance' }];
+    if (team.status === 'inactive')    return [{ startH: H_START, endH: H_END, status: 'inactive',    label: 'Hors service' }];
+
+    const dateKey = this.selectedDate();
+    const dayPlannings = this.planningSvc.plannings()
+      .filter(p => p.teamId === team.id && p.status !== 'annule' && this._dateKey(p.date) === dateKey)
+      .map(p => ({
+        startH: Math.max(H_START, this._hourOf(p.startTime)),
+        endH:   Math.min(H_END, p.endTime ? this._hourOf(p.endTime) : this._hourOf(p.startTime) + 2),
+        label:  p.libelle,
+        zone:   p.zone || p.ville || '',
+      }))
+      .sort((a, b) => a.startH - b.startH);
+
+    if (!dayPlannings.length) {
+      return [{ startH: H_START, endH: H_END, status: 'active', label: 'Disponible' }];
+    }
+
+    const blocks: TimeBlock[] = [];
+    let cursor = H_START;
+    for (const p of dayPlannings) {
+      if (p.startH > cursor) blocks.push({ startH: cursor, endH: p.startH, status: 'active', label: 'Disponible' });
+      blocks.push({ startH: p.startH, endH: Math.max(p.endH, p.startH + 0.5), status: 'on_mission', label: p.label, zone: p.zone });
+      cursor = Math.max(cursor, p.endH);
+    }
+    if (cursor < H_END) blocks.push({ startH: cursor, endH: H_END, status: 'active', label: 'Disponible' });
+    return blocks;
+  }
+
+  /** Un événement de calendrier réel par planning assigné à une équipe affichée. */
+  private _buildCalendarEvents(): EventInput[] {
+    const teamById = new Map(this.filteredTeams().map(t => [t.id, t]));
+
+    return this.planningSvc.plannings()
+      .filter(p => p.teamId && teamById.has(p.teamId) && p.status !== 'annule')
+      .map(p => {
+        const team = teamById.get(p.teamId!);
+        const dateKey = this._dateKey(p.date);
+        const color = team?.color ?? this.statusColor('on_mission');
+        return {
+          id: p.id,
+          title: `${team?.name ?? ''} · ${p.libelle}`,
+          start: `${dateKey}T${p.startTime}`,
+          end:   p.endTime ? `${dateKey}T${p.endTime}` : undefined,
+          backgroundColor: color + 'cc',
+          borderColor:     color,
+          textColor: '#fff',
+          extendedProps: { team, planning: p },
+        } as EventInput;
+      });
+  }
+
+  // ── Alertes & conflits (100% réel — dérivé de l'état actuel des équipes) ──
   private _buildConflicts(): ConflictAlert[] {
     const teams     = this.teamService.teams();
     const conflicts: ConflictAlert[] = [];
@@ -369,7 +428,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
     });
     zoneMap.forEach(ts => {
       if (ts.length < 2) return;
-      const zone = ts[0].zones[0]?.name?.split('–')[0]?.trim() ?? 'Zone';
+      const zone = ts[0].zones[0]?.name ?? 'Zone';
       conflicts.push({ id: `zo-${ts.map(t => t.id).join('-')}`, type: 'zone_overlap', severity: 'warning',
         title: 'Chevauchement de zone',
         desc:  `${ts.length} équipes affectées simultanément sur ${zone}`,
@@ -423,9 +482,12 @@ export class TeamAvailability implements OnInit, OnDestroy {
   }
 
   private _onCalClick(info: EventClickArg): void {
-    const team  = info.event.extendedProps['team']  as Team;
-    const block = info.event.extendedProps['block'] as TimeBlock;
-    this.msg.add({ severity: 'info', summary: team.name,
-      detail: `${block.label} · ${this.fmtH(block.startH)} – ${this.fmtH(block.endH)}` });
+    const team     = info.event.extendedProps['team'] as Team | undefined;
+    const planning = info.event.extendedProps['planning'] as Planning;
+    this.msg.add({
+      severity: 'info',
+      summary:  team?.name ?? planning.libelle,
+      detail:   `${planning.libelle} · ${planning.startTime}${planning.endTime ? ' – ' + planning.endTime : ''}`,
+    });
   }
 }
