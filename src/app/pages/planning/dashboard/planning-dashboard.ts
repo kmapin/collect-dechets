@@ -142,6 +142,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     // Load all data from real API
     this.planningService.loadStats();
     this.planningService.loadZones();
+    this.planningService.loadAlerts();
     this.teamService.loadTeams();
     this.planningService.loadPlannings();
 

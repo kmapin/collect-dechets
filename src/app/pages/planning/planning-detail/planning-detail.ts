@@ -208,6 +208,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     if (cached) {
       this.planning.set(cached);
       this._enrichWithMockData(cached);
+      this._loadRoundsIncidentsNotifications(id);
       this.isLoading.set(false);
       return;
     }
@@ -216,12 +217,51 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       next: (p) => {
         this.planning.set(p);
         this._enrichWithMockData(p);
+        this._loadRoundsIncidentsNotifications(id);
         this.isLoading.set(false);
       },
       error: () => {
         this.notFound.set(true);
         this.isLoading.set(false);
       },
+    });
+  }
+
+  // ── Tournées / Incidents / Notifications (données réelles) ────
+  private _loadRoundsIncidentsNotifications(planningId: string): void {
+    this.svc.getRounds(planningId).subscribe(rounds => {
+      this.history.set(rounds.map((r: any) => ({
+        date:                 new Date(r.date).toLocaleDateString('fr-FR'),
+        teams:                (r.equipeIds ?? []).map((e: any) => e?.name ?? e),
+        status:               r.status,
+        householdsCollected:  r.householdsCollected,
+        duration:             r.duration ?? '—',
+        completionRate:       r.completionRate,
+      })));
+    });
+
+    this.svc.getIncidents(planningId).subscribe(incidents => {
+      this.incidents.set(incidents.map((i: any) => ({
+        id:          i._id,
+        severity:    i.severity,
+        title:       i.title,
+        description: i.description,
+        reporter:    i.reporter,
+        reportedAt:  i.reportedAt,
+        resolved:    i.resolved,
+        resolvedAt:  i.resolvedAt,
+      })));
+    });
+
+    this.svc.getPlanningNotifications(planningId).subscribe(notifs => {
+      this.notifications.set(notifs.map((n: any) => ({
+        id:        n._id,
+        channel:   'app',
+        recipient: n.user?.firstName ? `${n.user.firstName} ${n.user.lastName}` : 'Utilisateur',
+        message:   n.message,
+        sentAt:    n.createdAt,
+        status:    n.read ? 'read' : 'sent',
+      })));
     });
   }
 
@@ -524,36 +564,20 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  // ── Mock enrichment (static detail data not covered by API) ───
+  // ── Enrichissement (fil d'activité dérivé du planning — pas d'endpoint dédié) ───
   private _enrichWithMockData(p: Planning): void {
-
+    // history / incidents / notifications sont chargés depuis l'API réelle
+    // via _loadRoundsIncidentsNotifications() — voir _fetchPlanning().
     this.activities.set([
       { date: p.createdAt,   icon: 'add_circle',  color: '#3b82f6', title: 'Planning créé',              detail: `Créé par le gestionnaire` },
       { date: p.updatedAt,   icon: 'verified',    color: '#8b5cf6', title: 'Mis à jour',                 detail: 'Dernière modification' },
       ...(p.status !== 'brouillon' ? [
-        { date: p.date + ' 06:00', icon: 'send',       color: '#16a34a', title: 'Notifications envoyées', detail: 'Équipes et clients notifiés via SMS' },
+        { date: p.date + ' 06:00', icon: 'send',       color: '#16a34a', title: 'Notifications envoyées', detail: 'Équipes et clients notifiés' },
         { date: p.date + ' 07:00', icon: 'play_circle', color: '#f59e0b', title: 'Collecte démarrée',    detail: `Équipes en route` },
       ] : []),
       ...(p.status === 'termine' ? [
         { date: p.date + ' 11:30', icon: 'check_circle', color: '#16a34a', title: 'Collecte terminée',  detail: `${p.clientsCount ?? 0} ménages collectés` },
       ] : []),
-    ]);
-
-    this.history.set([
-      { date: '26/04/2025', teams: [p.teams[0] ?? 'Équipe Alpha'], status: 'termine',  householdsCollected: 44, duration: '3h20', completionRate: 98 },
-      { date: '19/04/2025', teams: [p.teams[0] ?? 'Équipe Alpha'], status: 'termine',  householdsCollected: 41, duration: '3h45', completionRate: 91 },
-      { date: '12/04/2025', teams: p.teams,                         status: 'termine',  householdsCollected: 45, duration: '2h30', completionRate: 100 },
-      { date: '05/04/2025', teams: [p.teams[0] ?? 'Équipe Alpha'], status: 'annule',   householdsCollected: 0,  duration: '—',    completionRate: 0 },
-    ]);
-
-    this.notifications.set([
-      { id: 'N1', channel: 'sms',   recipient: p.teams[0] ?? 'Équipe Alpha',  message: `Rappel : Collecte prévue ${p.date} ${p.startTime}`, sentAt: p.date + ' 06:00', status: 'read' },
-      { id: 'N2', channel: 'email', recipient: 'superviseur@sahelys.com',     message: `Planning ${p.reference} en cours`,                  sentAt: p.date + ' 07:05', status: 'read' },
-      { id: 'N3', channel: 'app',   recipient: 'Clients zone',                message: 'Collecte prévue — merci de sortir vos bacs',        sentAt: p.date + ' 05:30', status: 'delivered' },
-    ]);
-
-    this.incidents.set([
-      { id: 'I1', severity: 'warning', title: 'Bac débordant', description: 'Bac ménager signalé débordant dans la zone.', reporter: 'Équipe', reportedAt: p.date + ' 08:42', resolved: false },
     ]);
   }
 

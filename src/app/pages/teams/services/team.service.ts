@@ -369,7 +369,7 @@ export class TeamService {
   loadAvailableVehiclesFromApi(): void {
     const agencyId = this.agencyId;
     if (!agencyId) return;
-    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/V2/vehicles/agency/${agencyId}`)
+    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/v2/vehicles/agency/${agencyId}`)
       .pipe(map(r => Array.isArray(r) ? r : ((r as any).data ?? [])), catchError(() => of(null)))
       .subscribe(list => {
         if (list !== null) {

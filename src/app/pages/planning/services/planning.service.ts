@@ -379,10 +379,76 @@ export class PlanningService {
     );
   }
 
-  // ── Alerts (local, no API endpoint) ──────────────────────────
+  // ── Alerts (API réelle — module Teams & Planning) ─────────────
+
+  loadAlerts(): void {
+    const agencyId = this.agencyId;
+    const params = agencyId ? new HttpParams().set('agencyId', agencyId) : new HttpParams();
+    this.http.get<{ success: boolean; data: any[] }>(`${this.api}/planning/v2/alerts`, { params })
+      .pipe(catchError(() => of(null)))
+      .subscribe(res => {
+        if (res?.data) {
+          this._alerts.set(res.data.map(a => ({
+            id:          a._id,
+            type:        a.type,
+            title:       a.title,
+            message:     a.message,
+            time:        new Date(a.createdAt).toLocaleString('fr-FR'),
+            planningRef: a.planningRef,
+          })));
+        }
+      });
+  }
 
   dismissAlert(id: string): void {
     this._alerts.update(list => list.filter(a => a.id !== id));
+    this.http.patch(`${this.api}/planning/v2/alerts/${id}/dismiss`, {})
+      .pipe(catchError(() => of(null)))
+      .subscribe();
+  }
+
+  // ── Tournées (rounds) ─────────────────────────────────────────
+
+  getRounds(planningId: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${this.api}/planning/v2/${planningId}/rounds`
+    ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
+  }
+
+  startRound(planningId: string, body: { date?: string; equipeIds?: string[]; totalHouseholds?: number } = {}): Observable<any> {
+    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/rounds`, body);
+  }
+
+  updateRound(planningId: string, roundId: string, body: any): Observable<any> {
+    return this.http.put<any>(`${this.api}/planning/v2/${planningId}/rounds/${roundId}`, body);
+  }
+
+  // ── Incidents ─────────────────────────────────────────────────
+
+  getIncidents(planningId: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${this.api}/planning/v2/${planningId}/incidents`
+    ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
+  }
+
+  createIncident(planningId: string, body: FormData): Observable<any> {
+    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/incidents`, body);
+  }
+
+  resolveIncident(planningId: string, incidentId: string): Observable<any> {
+    return this.http.patch<any>(`${this.api}/planning/v2/${planningId}/incidents/${incidentId}/resolve`, {});
+  }
+
+  // ── Notifications de planning ─────────────────────────────────
+
+  getPlanningNotifications(planningId: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${this.api}/planning/v2/${planningId}/notifications`
+    ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
+  }
+
+  sendPlanningNotification(planningId: string, target: 'all' | 'teams' | 'clients' = 'all'): Observable<any> {
+    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/notifications/send`, { target });
   }
 
   // ── Private helpers ───────────────────────────────────────────
