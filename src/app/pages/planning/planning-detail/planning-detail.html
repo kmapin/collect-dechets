@@ -629,29 +629,36 @@
             <span class="sec-count">{{ notifications().length }}</span>
           </div>
 
-          <div class="notifs-list">
-            @for (n of notifications(); track n.id) {
-              <div class="notif-row">
-                <div class="nr-channel"
-                     [style.background]="n.channel === 'sms' ? '#16a34a18' : n.channel === 'email' ? '#3b82f618' : '#8b5cf618'"
-                     [style.color]="n.channel === 'sms' ? '#16a34a' : n.channel === 'email' ? '#3b82f6' : '#8b5cf6'">
-                  <mat-icon>{{ notifIcon(n.channel) }}</mat-icon>
-                </div>
-                <div class="nr-body">
-                  <div class="nr-recipient">{{ n.recipient }}</div>
-                  <div class="nr-message">{{ n.message }}</div>
-                  <div class="nr-meta">
-                    <mat-icon>access_time</mat-icon>{{ n.sentAt }}
+          @if (notifications().length > 0) {
+            <div class="notifs-list">
+              @for (n of notifications(); track n.id) {
+                <div class="notif-row">
+                  <div class="nr-channel"
+                       [style.background]="n.channel === 'sms' ? '#16a34a18' : n.channel === 'email' ? '#3b82f618' : '#8b5cf618'"
+                       [style.color]="n.channel === 'sms' ? '#16a34a' : n.channel === 'email' ? '#3b82f6' : '#8b5cf6'">
+                    <mat-icon>{{ notifIcon(n.channel) }}</mat-icon>
+                  </div>
+                  <div class="nr-body">
+                    <div class="nr-recipient">{{ n.recipient }}</div>
+                    <div class="nr-message">{{ n.message }}</div>
+                    <div class="nr-meta">
+                      <mat-icon>access_time</mat-icon>{{ n.sentAt }}
+                    </div>
+                  </div>
+                  <div class="nr-status"
+                       [style.background]="notifStatusColor(n.status) + '18'"
+                       [style.color]="notifStatusColor(n.status)">
+                    {{ notifStatusLabel(n.status) }}
                   </div>
                 </div>
-                <div class="nr-status"
-                     [style.background]="notifStatusColor(n.status) + '18'"
-                     [style.color]="notifStatusColor(n.status)">
-                  {{ notifStatusLabel(n.status) }}
-                </div>
-              </div>
-            }
-          </div>
+              }
+            </div>
+          } @else {
+            <div class="teams-empty">
+              <mat-icon>notifications_off</mat-icon>
+              <p>Aucune notification envoyée pour ce planning.</p>
+            </div>
+          }
         </section>
 
       </div><!-- /pd-content -->
