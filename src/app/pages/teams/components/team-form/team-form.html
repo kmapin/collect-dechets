@@ -221,7 +221,15 @@
                 <mat-icon class="tvo-icon"
                   [style.color]="vehicleStatusColor(v.status)">{{ vehicleTypeIcon(v.type) }}</mat-icon>
                 <div>
-                  <span class="tvo-name">{{ v.plate }}</span>
+                  <span class="tvo-name">
+                    {{ v.plate }}
+                    @if (assignedTeamName(v.id); as assignedTeam) {
+                      <span class="tvo-assigned-dot"
+                            [pTooltip]="assignedVehicleTooltip(v.id)"
+                            tooltipPosition="top">
+                      </span>
+                    }
+                  </span>
                   <span class="tvo-detail">{{ v.model }} · {{ v.capacityTons }}T · {{ v.type }}</span>
                 </div>
                 <span class="tvo-status"

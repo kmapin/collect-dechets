@@ -374,6 +374,7 @@
 @if (formOpen()) {
   <app-team-form
     [team]="editingTeam()"
+    [teams]="svc.teams()"
     [availableVehicles]="svc.availableVehicles()"
     [availableZones]="svc.availableZones()"
     [availableCollectors]="svc.collectors()"

@@ -497,6 +497,10 @@ export class PlanningService {
       groupeId:         api.groupeId ?? undefined,
       agencyId:         api.agencyId,
       managerId:        api.managerId,
+      publishedAt:      api.publishedAt ?? undefined,
+      startedAt:        api.startedAt ?? undefined,
+      completedAt:      api.completedAt ?? undefined,
+      cancelledAt:      api.cancelledAt ?? undefined,
       createdAt:        api.createdAt,
       updatedAt:        api.updatedAt,
     };

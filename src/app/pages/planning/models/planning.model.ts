@@ -44,6 +44,12 @@ export interface PlanningV2Api {
   arrondissementId?: string | TerritoryRef;
   secteurId?: string | TerritoryRef;
   quartierId?: string | TerritoryRef;
+  // Horodatage réel des transitions de statut (posé par le backend dans
+  // publishPlanning/startPlanning/completePlanning/cancelPlanning)
+  publishedAt?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -216,6 +222,10 @@ export interface Planning {
   // Meta
   agencyId?: string;
   managerId?: string;
+  publishedAt?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -423,52 +423,59 @@
             <span class="sec-count">{{ history().length }} passages</span>
           </div>
 
-          <div class="history-table-wrap">
-            <table class="history-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Équipes</th>
-                  <th>Statut</th>
-                  <th>Ménages</th>
-                  <th>Durée</th>
-                  <th>Taux</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (h of history(); track h.date) {
-                  <tr [class.row--cancelled]="h.status === 'annule'">
-                    <td class="ht-date">{{ h.date }}</td>
-                    <td class="ht-teams">
-                      @for (t of h.teams; track t) {
-                        <span class="team-pill">{{ t }}</span>
-                      }
-                    </td>
-                    <td>
-                      <span class="ht-status"
-                            [style.background]="h.status === 'termine' ? '#16a34a18' : '#ef444418'"
-                            [style.color]="h.status === 'termine' ? '#16a34a' : '#ef4444'">
-                        {{ h.status === 'termine' ? 'Terminé' : 'Annulé' }}
-                      </span>
-                    </td>
-                    <td class="ht-num">{{ h.householdsCollected }}</td>
-                    <td class="ht-dur">{{ h.duration }}</td>
-                    <td>
-                      <div class="rate-cell">
-                        <div class="rate-bar">
-                          <div class="rate-fill"
-                               [style.width]="h.completionRate + '%'"
-                               [style.background]="h.completionRate >= 90 ? '#16a34a' : h.completionRate >= 50 ? '#f59e0b' : '#ef4444'">
-                          </div>
-                        </div>
-                        <span class="rate-pct">{{ h.completionRate }}%</span>
-                      </div>
-                    </td>
+          @if (history().length > 0) {
+            <div class="history-table-wrap">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Équipes</th>
+                    <th>Statut</th>
+                    <th>Ménages</th>
+                    <th>Durée</th>
+                    <th>Taux</th>
                   </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  @for (h of history(); track h.date) {
+                    <tr [class.row--cancelled]="h.status === 'annule'">
+                      <td class="ht-date">{{ h.date }}</td>
+                      <td class="ht-teams">
+                        @for (t of h.teams; track t) {
+                          <span class="team-pill">{{ t }}</span>
+                        }
+                      </td>
+                      <td>
+                        <span class="ht-status"
+                              [style.background]="h.status === 'termine' ? '#16a34a18' : '#ef444418'"
+                              [style.color]="h.status === 'termine' ? '#16a34a' : '#ef4444'">
+                          {{ h.status === 'termine' ? 'Terminé' : 'Annulé' }}
+                        </span>
+                      </td>
+                      <td class="ht-num">{{ h.householdsCollected }}</td>
+                      <td class="ht-dur">{{ h.duration }}</td>
+                      <td>
+                        <div class="rate-cell">
+                          <div class="rate-bar">
+                            <div class="rate-fill"
+                                 [style.width]="h.completionRate + '%'"
+                                 [style.background]="h.completionRate >= 90 ? '#16a34a' : h.completionRate >= 50 ? '#f59e0b' : '#ef4444'">
+                            </div>
+                          </div>
+                          <span class="rate-pct">{{ h.completionRate }}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="teams-empty">
+              <mat-icon>history_toggle_off</mat-icon>
+              <p>Aucune tournée enregistrée pour ce planning.</p>
+            </div>
+          }
         </section>
 
         <!-- ════════════════ SECTION INCIDENTS ══════════════ -->
@@ -483,38 +490,45 @@
             }
           </div>
 
-          <div class="incidents-list">
-            @for (inc of incidents(); track inc.id) {
-              <div class="incident-card" [class.incident-card--resolved]="inc.resolved"
-                   [style.--ic]="incidentColor(inc.severity)">
-                <div class="inc-severity">
-                  <mat-icon [style.color]="incidentColor(inc.severity)">
-                    {{ inc.severity === 'critical' ? 'error' : inc.severity === 'warning' ? 'warning' : 'info' }}
-                  </mat-icon>
-                </div>
-                <div class="inc-body">
-                  <div class="inc-header">
-                    <span class="inc-badge"
-                          [style.background]="incidentColor(inc.severity) + '18'"
-                          [style.color]="incidentColor(inc.severity)">
-                      {{ incidentLabel(inc.severity) }}
-                    </span>
-                    @if (inc.resolved) {
-                      <span class="inc-resolved">
-                        <mat-icon>check_circle</mat-icon>Résolu {{ inc.resolvedAt }}
+          @if (incidents().length > 0) {
+            <div class="incidents-list">
+              @for (inc of incidents(); track inc.id) {
+                <div class="incident-card" [class.incident-card--resolved]="inc.resolved"
+                     [style.--ic]="incidentColor(inc.severity)">
+                  <div class="inc-severity">
+                    <mat-icon [style.color]="incidentColor(inc.severity)">
+                      {{ inc.severity === 'critical' ? 'error' : inc.severity === 'warning' ? 'warning' : 'info' }}
+                    </mat-icon>
+                  </div>
+                  <div class="inc-body">
+                    <div class="inc-header">
+                      <span class="inc-badge"
+                            [style.background]="incidentColor(inc.severity) + '18'"
+                            [style.color]="incidentColor(inc.severity)">
+                        {{ incidentLabel(inc.severity) }}
                       </span>
-                    }
-                  </div>
-                  <h4 class="inc-title">{{ inc.title }}</h4>
-                  <p class="inc-desc">{{ inc.description }}</p>
-                  <div class="inc-footer">
-                    <span><mat-icon>person</mat-icon>{{ inc.reporter }}</span>
-                    <span><mat-icon>access_time</mat-icon>{{ inc.reportedAt }}</span>
+                      @if (inc.resolved) {
+                        <span class="inc-resolved">
+                          <mat-icon>check_circle</mat-icon>Résolu {{ inc.resolvedAt }}
+                        </span>
+                      }
+                    </div>
+                    <h4 class="inc-title">{{ inc.title }}</h4>
+                    <p class="inc-desc">{{ inc.description }}</p>
+                    <div class="inc-footer">
+                      <span><mat-icon>person</mat-icon>{{ inc.reporter }}</span>
+                      <span><mat-icon>access_time</mat-icon>{{ inc.reportedAt }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            }
-          </div>
+              }
+            </div>
+          } @else {
+            <div class="teams-empty">
+              <mat-icon>task_alt</mat-icon>
+              <p>Aucun incident signalé pour ce planning.</p>
+            </div>
+          }
         </section>
 
         <!-- ════════════════ SECTION TIMELINE ═══════════════ -->

@@ -25,6 +25,10 @@ export class TeamForm implements OnInit, OnChanges {
   @Input({ required: true }) availableVehicles!: AvailableVehicle[];
   @Input({ required: true }) availableZones!: AvailableZone[];
   @Input() availableCollectors: CollectorUser[] = [];
+  /** Toutes les équipes de l'agence (déjà chargées par le parent) — sert
+   *  uniquement à détecter si un véhicule listé est déjà pris par une autre
+   *  équipe ; aucun appel API supplémentaire. */
+  @Input() teams: Team[] = [];
   @Output() save   = new EventEmitter<TeamFormData>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -53,6 +57,17 @@ export class TeamForm implements OnInit, OnChanges {
   }
   vehicleStatusLabel(s: string): string {
     return ({ disponible: 'Disponible', en_service: 'En service', maintenance: 'Maintenance', hors_service: 'Hors service' } as Record<string, string>)[s] ?? s;
+  }
+
+  /** Nom de l'équipe qui détient déjà ce véhicule (hors équipe en cours d'édition), sinon null. */
+  assignedTeamName(vehicleId: string): string | null {
+    const other = this.teams.find(t => t.vehicle?.id === vehicleId && t.id !== this.team?.id);
+    return other ? other.name : null;
+  }
+
+  assignedVehicleTooltip(vehicleId: string): string {
+    const name = this.assignedTeamName(vehicleId);
+    return name ? `Déjà assigné à l'équipe « ${name} »` : '';
   }
   memberSearches: string[] = [];
   openDropdownIdx: number | null = null;

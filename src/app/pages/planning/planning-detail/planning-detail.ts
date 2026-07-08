@@ -207,7 +207,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     const cached = this.svc.plannings().find(p => p.id === id);
     if (cached) {
       this.planning.set(cached);
-      this._enrichWithMockData(cached);
+      this._buildActivities(cached);
       this._loadRoundsIncidentsNotifications(id);
       this.isLoading.set(false);
       return;
@@ -216,7 +216,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.svc.getPlanning(id).subscribe({
       next: (p) => {
         this.planning.set(p);
-        this._enrichWithMockData(p);
+        this._buildActivities(p);
         this._loadRoundsIncidentsNotifications(id);
         this.isLoading.set(false);
       },
@@ -346,7 +346,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.isActioning.set(true);
     this.svc.publishPlanning(p.id).subscribe({
       next: (res) => {
-        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'planifie' } : prev);
+        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'planifie', publishedAt: res.data?.publishedAt ?? prev.publishedAt } : prev);
+        if (this.planning()) this._buildActivities(this.planning()!);
         this.msg.add({ severity: 'success', summary: 'Publié', detail: `Planning "${p.reference}" planifié avec succès` });
         this.isActioning.set(false);
       },
@@ -364,7 +365,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.isActioning.set(true);
     this.svc.startPlanning(p.id).subscribe({
       next: (res) => {
-        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'en_cours' } : prev);
+        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'en_cours', startedAt: res.data?.startedAt ?? prev.startedAt } : prev);
+        if (this.planning()) this._buildActivities(this.planning()!);
         this.msg.add({ severity: 'info', summary: 'Démarré', detail: `Planning "${p.reference}" en cours` });
         this.isActioning.set(false);
       },
@@ -382,7 +384,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.isActioning.set(true);
     this.svc.completePlanning(p.id).subscribe({
       next: (res) => {
-        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'termine' } : prev);
+        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'termine', completedAt: res.data?.completedAt ?? prev.completedAt } : prev);
+        if (this.planning()) this._buildActivities(this.planning()!);
         this.msg.add({ severity: 'success', summary: 'Terminé', detail: `Planning "${p.reference}" complété` });
         this.isActioning.set(false);
       },
@@ -400,7 +403,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.isActioning.set(true);
     this.svc.cancelPlanning(p.id).subscribe({
       next: (res) => {
-        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'annule' } : prev);
+        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'annule', cancelledAt: res.data?.cancelledAt ?? prev.cancelledAt } : prev);
+        if (this.planning()) this._buildActivities(this.planning()!);
         this.msg.add({ severity: 'warn', summary: 'Annulé', detail: `Planning "${p.reference}" annulé` });
         this.isActioning.set(false);
       },
@@ -564,21 +568,34 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  // ── Enrichissement (fil d'activité dérivé du planning — pas d'endpoint dédié) ───
-  private _enrichWithMockData(p: Planning): void {
-    // history / incidents / notifications sont chargés depuis l'API réelle
-    // via _loadRoundsIncidentsNotifications() — voir _fetchPlanning().
-    this.activities.set([
-      { date: p.createdAt,   icon: 'add_circle',  color: '#3b82f6', title: 'Planning créé',              detail: `Créé par le gestionnaire` },
-      { date: p.updatedAt,   icon: 'verified',    color: '#8b5cf6', title: 'Mis à jour',                 detail: 'Dernière modification' },
-      ...(p.status !== 'brouillon' ? [
-        { date: p.date + ' 06:00', icon: 'send',       color: '#16a34a', title: 'Notifications envoyées', detail: 'Équipes et clients notifiés' },
-        { date: p.date + ' 07:00', icon: 'play_circle', color: '#f59e0b', title: 'Collecte démarrée',    detail: `Équipes en route` },
-      ] : []),
-      ...(p.status === 'termine' ? [
-        { date: p.date + ' 11:30', icon: 'check_circle', color: '#16a34a', title: 'Collecte terminée',  detail: `${p.clientsCount ?? 0} ménages collectés` },
-      ] : []),
-    ]);
+  // ── Journal d'activités — construit à partir des vraies dates de transition
+  // (publishedAt/startedAt/completedAt/cancelledAt, posées par le backend dans
+  // publishPlanning/startPlanning/completePlanning/cancelPlanning). Aucune heure
+  // inventée : un événement n'apparaît que si son horodatage existe réellement.
+  private _buildActivities(p: Planning): void {
+    const events: ActivityEvent[] = [
+      { date: p.createdAt, icon: 'add_circle', color: '#3b82f6', title: 'Planning créé', detail: 'Créé par le gestionnaire' },
+    ];
+    if (p.publishedAt) {
+      events.push({ date: p.publishedAt, icon: 'send', color: '#16a34a', title: 'Planning publié', detail: 'Notifications envoyées aux équipes et clients' });
+    }
+    if (p.startedAt) {
+      events.push({ date: p.startedAt, icon: 'play_circle', color: '#f59e0b', title: 'Collecte démarrée', detail: 'Équipes en route' });
+    }
+    if (p.completedAt) {
+      events.push({ date: p.completedAt, icon: 'check_circle', color: '#16a34a', title: 'Collecte terminée', detail: `${p.clientsCount ?? 0} ménages collectés` });
+    }
+    if (p.cancelledAt) {
+      events.push({ date: p.cancelledAt, icon: 'cancel', color: '#ef4444', title: 'Planning annulé', detail: 'Annulé par le gestionnaire' });
+    }
+    // "Mis à jour" seulement si updatedAt ne correspond à aucun événement déjà listé
+    // (sinon on afficherait deux fois le même instant : la transition ET "mis à jour").
+    const knownTimestamps = new Set([p.createdAt, p.publishedAt, p.startedAt, p.completedAt, p.cancelledAt].filter(Boolean));
+    if (p.updatedAt && !knownTimestamps.has(p.updatedAt)) {
+      events.push({ date: p.updatedAt, icon: 'verified', color: '#8b5cf6', title: 'Mis à jour', detail: 'Dernière modification' });
+    }
+    events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    this.activities.set(events);
   }
 
   private _addDays(dateStr: string, days: number): string {

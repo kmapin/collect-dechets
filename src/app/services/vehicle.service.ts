@@ -29,13 +29,17 @@ export class VehicleService {
 
   create(body: VehicleApiBody): Observable<any> {
     return this.http.post<any>(`${this.api}/v2/vehicles`, body).pipe(
-      map(res => res?.data ?? res)
+      // Le backend répond { message, vehicule } (pas { data }) — cf.
+      // controllers/teamV2.js:creerVehicule.
+      map(res => res?.vehicule ?? res?.data ?? res)
     );
   }
 
   update(vehicleId: string, body: Partial<VehicleApiBody>): Observable<any> {
     return this.http.put<any>(`${this.api}/v2/vehicles/${vehicleId}`, body).pipe(
-      map(res => res?.data ?? res)
+      // Le backend répond { message, vehicule } (pas { data }) — cf.
+      // controllers/teamV2.js:mettreAJourVehicule.
+      map(res => res?.vehicule ?? res?.data ?? res)
     );
   }
 
