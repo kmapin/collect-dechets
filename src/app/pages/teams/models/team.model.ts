@@ -90,6 +90,8 @@ export interface AssignedZone {
   ville: string;
   arrondissement?: string;
   householdsCount: number;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface Mission {

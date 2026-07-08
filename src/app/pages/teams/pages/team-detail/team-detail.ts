@@ -252,28 +252,40 @@ export class TeamDetail implements OnInit, OnDestroy {
   }
 
   // ── Map ───────────────────────────────────────────────────
+  // Utilise les coordonnées réelles des quartiers (Neighbourhood.latitude/longitude,
+  // renvoyées par le backend sur team.zones[].lat/lng). Aucune position n'est
+  // affichée pour une zone qui n'a pas de coordonnées réelles en base — pas de
+  // repli sur une position inventée. Il n'existe pas de suivi GPS en temps réel
+  // de l'équipe dans le backend, donc aucun marqueur "position actuelle" n'est affiché.
   private _initMap(): void {
     if (this.leafletMap || !this.mapElRef?.nativeElement) return;
     const t = this.team();
-    const center: [number,number] = t?.zones[0]?.ville === 'Bobo-Dioulasso'
-      ? [11.1777, -4.2985] : [12.3647, -1.5337];
+    const zonesWithCoords = (t?.zones ?? []).filter(
+      (z): z is typeof z & { lat: number; lng: number } => z.lat != null && z.lng != null
+    );
+
+    const defaultCenter: [number, number] = [12.3714, -1.5197]; // Ouagadougou, utilisé uniquement si aucune zone n'a de coordonnées
+    const center: [number, number] = zonesWithCoords.length
+      ? [zonesWithCoords[0].lat, zonesWithCoords[0].lng]
+      : defaultCenter;
+
     this.leafletMap = L.map(this.mapElRef.nativeElement, { center, zoom: 13 });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap', maxZoom: 19,
     }).addTo(this.leafletMap);
 
-    (t?.zones ?? []).forEach((z, i) => {
-      const offset: [number,number] = [center[0] + (i - 1) * 0.015, center[1] + (i % 2 === 0 ? 0.01 : -0.01)];
-      L.circle(offset, { radius: 500, color: t?.color ?? '#3b82f6', fillColor: t?.color ?? '#3b82f6', fillOpacity: 0.1, weight: 2 })
+    const points: [number, number][] = [];
+    zonesWithCoords.forEach(z => {
+      const pos: [number, number] = [z.lat, z.lng];
+      points.push(pos);
+      L.circle(pos, { radius: 500, color: t?.color ?? '#3b82f6', fillColor: t?.color ?? '#3b82f6', fillOpacity: 0.1, weight: 2 })
         .bindTooltip(z.name).addTo(this.leafletMap);
-      L.circleMarker(offset, { radius: 8, fillColor: t?.color ?? '#3b82f6', color: '#fff', weight: 2, fillOpacity: 1 })
+      L.circleMarker(pos, { radius: 8, fillColor: t?.color ?? '#3b82f6', color: '#fff', weight: 2, fillOpacity: 1 })
         .bindTooltip(`${z.name} – ${z.householdsCount} ménages`).addTo(this.leafletMap);
     });
 
-    if (t?.status === 'on_mission') {
-      L.circleMarker([center[0] + 0.003, center[1] + 0.005], {
-        radius: 10, fillColor: '#f59e0b', color: '#fff', weight: 2, fillOpacity: 1,
-      }).bindTooltip(`${t.name} – position actuelle`).addTo(this.leafletMap);
+    if (points.length > 1) {
+      this.leafletMap.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
     }
   }
 }

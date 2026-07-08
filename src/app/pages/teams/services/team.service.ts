@@ -596,7 +596,15 @@ export class TeamService {
     const zones: AssignedZone[] = (api.zones ?? []).map((z: any) =>
       typeof z === 'string'
         ? { id: z, name: z, ville: '', householdsCount: 0 }
-        : { id: z._id ?? z.id ?? z, name: z.name ?? z, ville: z.ville ?? '', householdsCount: z.householdsCount ?? 0 }
+        : {
+            id:              z._id ?? z.id ?? z,
+            name:            z.name ?? z,
+            ville:           z.ville ?? '',
+            arrondissement:  z.arrondissement ?? undefined,
+            householdsCount: z.householdsCount ?? 0,
+            lat:             z.lat ?? null,
+            lng:             z.lng ?? null,
+          }
     );
 
     // Extraire le véhicule si vehicleId est un objet peuplé par le backend
