@@ -10,7 +10,7 @@ import {
   TeamApi, TeamCreateBody, CollectorUser, TeamStatsApi,
 } from '../models/team.model';
 import type {
-  TeamV2Api, TeamV2CreateBody, TeamV2Member, TeamV2MemberBody,
+  TeamV2Api, TeamV2CreateBody, TeamV2MemberBody,
   VehicleApi, AvailableZoneApi, MemberAvailability, MemberRole,
 } from '../models/team.model';
 

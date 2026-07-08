@@ -598,17 +598,6 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.activities.set(events);
   }
 
-  private _addDays(dateStr: string, days: number): string {
-    const parts = dateStr.includes('/')
-      ? dateStr.split('/').map(Number)
-      : dateStr.split('-').map(Number);
-    const [y, m, d] = parts.length === 3 && parts[0] > 1000
-      ? parts
-      : [parts[2], parts[1], parts[0]];
-    const dt = new Date(y, m - 1, d + days);
-    return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;
-  }
-
   readonly navSections = [
     { id: 'info',    label: 'Informations', icon: 'info' },
     { id: 'teams',   label: 'Équipes',      icon: 'groups' },
