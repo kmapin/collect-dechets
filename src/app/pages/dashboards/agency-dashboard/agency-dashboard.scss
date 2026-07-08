@@ -3675,6 +3675,8 @@ button:disabled {
 
 /* Footer du drawer */
 .drawer-footer {
+  display: flex;
+  justify-content: space-between;
   padding: 20px 24px;
   border-top: 1px solid #e5e7eb;
   background: #f9fafb;
