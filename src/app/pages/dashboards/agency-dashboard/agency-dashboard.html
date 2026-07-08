@@ -2880,7 +2880,7 @@
                   <i class="material-icons">groups</i>
                   <div class="sdm-info">
                     <span class="sdm-label">Équipe</span>
-                    <span class="sdm-value">{{ selectedSchedule.teamName || (selectedSchedule.teamIds ? "Équipe assignée" : "Non assignée") }}</span>
+                    <span class="sdm-value">{{ selectedSchedule.teamName || (selectedSchedule.teamIds?.length ? "Équipe assignée" : "Non assignée") }}</span>
                   </div>
                 </div>
               </div>

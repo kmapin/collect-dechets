@@ -102,30 +102,30 @@ interface Incident {
     _id: string;
     name?: string;
   };
-  clientId?:{
+  clientId?: {
     _id: string;
     firstName?: string;
-    lastName ?:string;
-    email?:string
+    lastName?: string;
+    email?: string
   };
   collectorId?: {
     _id: string;
     firstName?: string;
-    lastName ?:string;
-    email?:string
+    lastName?: string;
+    email?: string
   }
   photos?: string[];
   agencyName: string;
   type:
-    | "missed_collection"
-    | "compliance_issue"
-    | "complaint"
-    | "technical_issue";
+  | "missed_collection"
+  | "compliance_issue"
+  | "complaint"
+  | "technical_issue";
   comment: string;
   description: string;
   severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
-  status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
+  status: "open" | "pending" | "resolved" | 'Collected' | 'Reported' | 'Scheduled';
   assignedTo?: string;
 }
 interface Report {
@@ -239,7 +239,7 @@ export enum CollectionStatus1 {
     MatExpansionModule,
     MatIcon,
     LoadingSpinnerComponent,
-    
+
     MultiSelectModule,
     TableModule,
     ButtonModule,
@@ -328,7 +328,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     totalEmployees: 0,
     totalZone: 0,
     totalCollectors: 0,
-    totalClientsActifs:0,
+    totalClientsActifs: 0,
     totalReporting: 0,
     activeCollectors: 0,
     todayCollections: 0,
@@ -456,7 +456,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // assigner un planning à un collecteur
   showAssignModal: boolean = false;
   selectedReportId: string = "";
-  selectedReport: Incident|null = null;
+  selectedReport: Incident | null = null;
   selectedEmployee: string[] = [];
   // Propriétés pour l'édition d'employé
   employeeToEdit: any = null;
@@ -592,10 +592,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   vehicles: Vehicle[] = [];
   filteredVehicles: Vehicle[] = [];
   readonly vehicleStatuses = [
-    { value: 'disponible'  as const, label: 'Disponible',  short: 'Dispo',   icon: 'check_circle',   color: '#16a34a' },
-    { value: 'en_service'  as const, label: 'En service',  short: 'En svc',  icon: 'local_shipping', color: '#3b82f6' },
-    { value: 'maintenance' as const, label: 'Maintenance', short: 'Maint.',  icon: 'build',          color: '#f59e0b' },
-    { value: 'hors_service'as const, label: 'Hors service',short: 'H. svc',  icon: 'cancel',         color: '#ef4444' },
+    { value: 'disponible' as const, label: 'Disponible', short: 'Dispo', icon: 'check_circle', color: '#16a34a' },
+    { value: 'en_service' as const, label: 'En service', short: 'En svc', icon: 'local_shipping', color: '#3b82f6' },
+    { value: 'maintenance' as const, label: 'Maintenance', short: 'Maint.', icon: 'build', color: '#f59e0b' },
+    { value: 'hors_service' as const, label: 'Hors service', short: 'H. svc', icon: 'cancel', color: '#ef4444' },
   ];
 
   vehicleViewMode: 'card' | 'table' = 'table';
@@ -648,13 +648,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.isEditingVehicle = true;
     this.selectedVehicle = vehicle;
     this.vehicleForm = {
-      plate:           vehicle.plate,
-      model:           vehicle.model,
-      type:            vehicle.type,
-      capacityTons:    vehicle.capacityTons ?? 0,
-      status:          vehicle.status,
-      fuelLevel:       vehicle.fuelLevel ?? 100,
-      mileage:         vehicle.mileage ?? 0,
+      plate: vehicle.plate,
+      model: vehicle.model,
+      type: vehicle.type,
+      capacityTons: vehicle.capacityTons ?? 0,
+      status: vehicle.status,
+      fuelLevel: vehicle.fuelLevel ?? 100,
+      mileage: vehicle.mileage ?? 0,
       lastMaintenance: vehicle.lastMaintenance ?? '',
     };
     this.showVehicleModal = true;
@@ -675,13 +675,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     const body = {
       agencyId,
-      plate:           this.vehicleForm.plate,
-      model:           this.vehicleForm.model,
-      type:            this.vehicleForm.type as Vehicle['type'],
-      capacityTons:    this.vehicleForm.capacityTons,
-      status:          this.vehicleForm.status as Vehicle['status'],
-      fuelLevel:       this.vehicleForm.fuelLevel,
-      mileage:         this.vehicleForm.mileage,
+      plate: this.vehicleForm.plate,
+      model: this.vehicleForm.model,
+      type: this.vehicleForm.type as Vehicle['type'],
+      capacityTons: this.vehicleForm.capacityTons,
+      status: this.vehicleForm.status as Vehicle['status'],
+      fuelLevel: this.vehicleForm.fuelLevel,
+      mileage: this.vehicleForm.mileage,
       ...(this.vehicleForm.lastMaintenance ? { lastMaintenance: this.vehicleForm.lastMaintenance } : {}),
     };
 
@@ -1511,7 +1511,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           );
           this.countUnreadMessages();
           this.scrollToBottom();
-          
+
           if (!clientId) {
             this.receivedId = this.currentUser?.agencyId || "";
           } else {
@@ -1604,7 +1604,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.selectedEmployee = [];
   }
 
-  assignEmployeesToReport(): void {}
+  assignEmployeesToReport(): void { }
   toggleEmployeeSelection(employeeId: string, event: any): void {
     if (event.target.checked) {
       this.selectedEmployee.push(employeeId);
@@ -1660,16 +1660,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           if ((collectors as any)?.data) {
             const data = (collectors as any).data;
             // Prendre seulement les collectors de la réponse
-            this.collectors = (data || []).map((c: any) =>({
+            this.collectors = (data || []).map((c: any) => ({
               ...c,
-              name:c.firstName + ' ' + c.lastName
+              name: c.firstName + ' ' + c.lastName
             }));
             console.log(" Collecteurs extraits:", this.collectors);
             console.log("   - Nombre de collecteurs:", this.collectors.length);
           } else if (Array.isArray(collectors)) {
-            this.collectors = collectors.map((c: any) =>({
+            this.collectors = collectors.map((c: any) => ({
               ...c,
-              name:c.firstName + ' ' + c.lastName
+              name: c.firstName + ' ' + c.lastName
             }));
             console.log(" Collecteurs reçus directement:", this.collectors);
           } else {
@@ -3054,8 +3054,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   getClientSubscriptionStatus(c: any): string | undefined {
     return c.subscriptionHistory && c.subscriptionHistory.length
       ? c.subscriptionHistory[
-          c.subscriptionHistory.length - 1
-        ].status?.toLowerCase()
+        c.subscriptionHistory.length - 1
+      ].status?.toLowerCase()
       : undefined;
   }
 
@@ -3158,7 +3158,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return Math.round(
       (this.statistics.completedCollections /
         this.statistics.todayCollections) *
-        100,
+      100,
     );
   }
 
@@ -3169,7 +3169,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return new Array(Math.floor(rating)).fill(0);
   }
 
-  getEmployeeStatusText(status:string): string{
+  getEmployeeStatusText(status: string): string {
     const statusTexts: Record<string, string> = {
       active: "Actif",
       inactive: "Inactif",
@@ -4002,17 +4002,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         if (teams.length) this.schedulesTeams = teams;
 
         this.schedules = plannings.map((p: any) => ({
-          _id:       p._id,
-          libelle:   p.libelle || "",
+          _id: p._id,
+          libelle: p.libelle || "",
           reference: p.reference || "",
-          date:      p.date || "",
+          date: p.date || "",
           startTime: p.startTime || "08:00",
-          endTime:   p.endTime || "",
-          status:    p.planningStatus || p.status || "brouillon",
-          type:      p.type || "",
-          zone:      p.zone || p.quartier || p.secteur || p.ville || "",
-          teamId:  p.teamId || null,
-          teamName:  this._resolveTeamName(p.teamId, teams),
+          endTime: p.endTime || "",
+          status: p.planningStatus || p.status || "brouillon",
+          type: p.type || "",
+          zone: p.zone || p.quartier || p.secteur || p.ville || "",
+          teamId: p.teamId || null,
+          teamIds: Array.isArray(p.equipeIds) ? p.equipeIds : [],
+          teamName: this._resolveTeamName(p, teams),
           collectors: [],
           createdAt: p.createdAt,
         }));
@@ -4026,10 +4027,21 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
 
-  private _resolveTeamName(teamIds: string | null, teams: any[]): string {
-    if (!teamIds) return "";
-    const team = teams.find((t: any) => t._id === teamIds);
-    return team?.name ?? "";
+  private _resolveTeamName(p: any, teams: any[]): string {
+    // Plannings de type zone/secteur/groupe : équipes dans equipeIds (peuplé par le backend)
+    if (Array.isArray(p.equipeIds) && p.equipeIds.length) {
+      return p.equipeIds
+        .map((e: any) => (typeof e === "string" ? teams.find((t: any) => t._id === e)?.name : e?.name))
+        .filter(Boolean)
+        .join(", ");
+    }
+    // Champ legacy : teamId (ObjectId string ou objet peuplé)
+    if (p.teamId) {
+      if (typeof p.teamId === "object") return p.teamId?.name ?? "";
+      const team = teams.find((t: any) => t._id === p.teamId);
+      return team?.name ?? "";
+    }
+    return "";
   }
 
   // recuperation des planning d un colector
@@ -4492,6 +4504,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   selectedSchedule: any = null;
 
   openScheduleDetails(schedule: any): void {
+    console.log("L'equipe assigné >>>>>>>", schedule);
     this.selectedSchedule = schedule;
   }
 
@@ -4799,11 +4812,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         return control.value.length >= 6
           ? null
           : {
-              minlength: {
-                requiredLength: 6,
-                actualLength: control.value.length,
-              },
-            };
+            minlength: {
+              requiredLength: 6,
+              actualLength: control.value.length,
+            },
+          };
       });
     } else {
       // En mode ajout : les mots de passe sont obligatoires
@@ -4998,14 +5011,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.agencyService
       .updateEmployeeStatus$(employee._id)
       .subscribe({
-        next: (response:any) => {
+        next: (response: any) => {
           // employee.isActive = updatedStatus;
 
           // Recharger les collecteurs si c'est un collecteur dont le statut a changé
           if (employee.role === "collector" && this.currentUser?.agencyId) {
             this.loadCollectors(this.currentUser.agencyId);
           }
-          console.log("employee status change: ",response)
+          console.log("employee status change: ", response)
           this.notificationService.showSuccess(
             "Succès",
             response.message
@@ -5473,7 +5486,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     try {
       this.myScrollContainer.nativeElement.scrollTop =
         this.myScrollContainer.nativeElement.scrollHeight;
-    } catch (err) {}
+    } catch (err) { }
   }
 
   // ================================
@@ -6308,7 +6321,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         return "info";
     }
   }
-  
+
   // Utiliser une API tierce pour générer le QR code
   generateQRCode(data: string): string {
     return data ? data : "Pas de code QR généré";
