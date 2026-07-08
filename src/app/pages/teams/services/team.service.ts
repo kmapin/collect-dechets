@@ -46,7 +46,7 @@ export class TeamService {
   private _collectors          = signal<CollectorUser[]>([]);
   private _availableVehicles   = signal<AvailableVehicle[]>([]);
   private _unassignedVehicles  = signal<AvailableVehicle[]>([]);
-  private _availableZones      = signal<AvailableZone[]>(this._mockZones());
+  private _availableZones      = signal<AvailableZone[]>([]);
   private _loading             = signal(false);
   private _error               = signal<string | null>(null);
 
@@ -404,20 +404,18 @@ export class TeamService {
       );
   }
 
-  /** Charge les zones disponibles depuis l'API (remplace le mock). */
+  /** Charge les zones disponibles depuis l'API réelle (aucun fallback mock). */
   loadAvailableZonesFromApi(): void {
     this.http.get<{ data: AvailableZoneApi[] }>(`${this.api}/teams/zones/available`)
       .pipe(map(r => r.data ?? []), catchError(() => of([])))
       .subscribe(list => {
-        if (list.length) {
-          this._availableZones.set(list.map(z => ({
-            id:             z._id ?? z.id ?? '',
-            name:           z.name,
-            ville:          z.cityId ?? z.ville ?? '',
-            arrondissement: z.arrondissementId ?? z.arrondissement,
-            householdsCount:z.householdsCount ?? 0,
-          })));
-        }
+        this._availableZones.set(list.map(z => ({
+          id:             z._id ?? z.id ?? '',
+          name:           z.name,
+          ville:          z.cityId ?? z.ville ?? '',
+          arrondissement: z.arrondissementId ?? z.arrondissement,
+          householdsCount:z.householdsCount ?? 0,
+        })));
       });
   }
 
@@ -646,17 +644,4 @@ export class TeamService {
     };
   }
 
-  // ── Mock-only: vehicles and zones (no API endpoint) ───────────
-  private _mockZones(): AvailableZone[] {
-    return [
-      { id: 'ZA1', name: 'Secteur 1 – Gounghin',    ville: 'Ouagadougou', arrondissement: 'Baskuy',   householdsCount: 340 },
-      { id: 'ZA2', name: 'Secteur 2 – Pabré',        ville: 'Ouagadougou', arrondissement: 'Baskuy',   householdsCount: 260 },
-      { id: 'ZA3', name: 'Secteur 8 – Hamdalaye',    ville: 'Ouagadougou', arrondissement: 'Bogodogo', householdsCount: 420 },
-      { id: 'ZA4', name: 'Secteur 9 – Zone du bois', ville: 'Ouagadougou', arrondissement: 'Bogodogo', householdsCount: 310 },
-      { id: 'ZA5', name: 'Secteur 5 – Zangouettin',  ville: 'Ouagadougou', arrondissement: 'Kouluba',  householdsCount: 280 },
-      { id: 'ZA6', name: 'Secteur 12 – Paspanga',    ville: 'Ouagadougou', arrondissement: 'Kouluba',  householdsCount: 195 },
-      { id: 'ZA7', name: 'Secteur 4 – Tounouma',     ville: 'Bobo-Dioulasso', householdsCount: 310 },
-      { id: 'ZA8', name: 'Secteur 5 – Sarfalao',     ville: 'Bobo-Dioulasso', householdsCount: 275 },
-    ];
-  }
 }
