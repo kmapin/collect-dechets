@@ -15,6 +15,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { PlanningService } from '../services/planning.service';
 import { Planning, PlanningAlert, PlanningStatus } from '../models/planning.model';
+import { TeamService } from '../../teams/services/team.service';
 
 interface StatCard {
   label: string;
@@ -41,7 +42,8 @@ interface StatCard {
   styleUrl: './planning-dashboard.scss',
 })
 export class PlanningDashboard implements OnInit, OnDestroy {
-  private svc     = inject(PlanningService);
+  private planningService    = inject(PlanningService);
+  private teamService = inject(TeamService)
   private msg     = inject(MessageService);
   private confirm = inject(ConfirmationService);
   private router  = inject(Router);
@@ -50,23 +52,23 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
   constructor() {
     effect(() => {
-      const err = this.svc.error();
+      const err = this.planningService.error();
       if (err) {
         this.msg.add({ severity: 'error', summary: 'Erreur', detail: err, life: 5000 });
-        this.svc.clearError();
+        this.planningService.clearError();
       }
     });
   }
 
   // ── Data from service (signals) ────────────────────────────
-  stats   = this.svc.stats;
-  alerts  = this.svc.alerts;
-  zones   = this.svc.zones;
+  stats   = this.planningService.stats;
+  alerts  = this.planningService.alerts;
+  zones   = this.planningService.zones;
   recentPlannings = signal<Planning[]>([]);
 
   // ── Teams mapped for display ─────────────────────────────────
   teams = computed(() =>
-    this.svc.teams().map(t => ({
+    this.planningService.teams().map(t => ({
       id:               t._id,
       name:             t.name,
       membersCount:     t.collectors?.length ?? 0,
@@ -138,21 +140,22 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Load all data from real API
-    this.svc.loadStats();
-    this.svc.loadZones();
-    this.svc.loadTeams();
-    this.svc.loadPlannings();
+    this.planningService.loadStats();
+    this.planningService.loadZones();
+    this.planningService.loadAlerts();
+    this.teamService.loadTeams();
+    this.planningService.loadPlannings();
 
     // Wait for data then init charts
     setTimeout(() => {
-      this.recentPlannings.set(this.svc.getRecentPlannings(6));
+      this.recentPlannings.set(this.planningService.getRecentPlannings(6));
       this.isLoading.set(false);
       this._initCharts();
     }, 1200);
 
     // Refresh recent plannings periodically
     this.refreshTimer = setInterval(() => {
-      this.recentPlannings.set(this.svc.getRecentPlannings(6));
+      this.recentPlannings.set(this.planningService.getRecentPlannings(6));
       this._initCharts();
     }, 30_000);
   }
@@ -162,9 +165,9 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   }
 
   private _initCharts(): void {
-    const byType   = this.svc.planningsByType();
-    const byStatus = this.svc.planningsByStatus();
-    const workload = this.svc.teamWorkload();
+    const byType   = this.planningService.planningsByType();
+    const byStatus = this.planningService.planningsByStatus();
+    const workload = this.planningService.teamWorkload();
 
     // ── Donut – par type ──────────────────────────────────────
     this.typeChartData = {
@@ -354,7 +357,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       acceptButtonStyleClass: 'p-button-success',
       accept: () => {
         this.actionLoading.set(p.id);
-        this.svc.publishPlanning(p.id).subscribe({
+        this.planningService.publishPlanning(p.id).subscribe({
           next: (res) => {
             this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'planifie');
             this.msg.add({ severity: 'success', summary: 'Publié', detail: `${p.reference} est maintenant planifié.` });
@@ -372,7 +375,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   /** planifie → en_cours */
   startPlanning(p: Planning): void {
     this.actionLoading.set(p.id);
-    this.svc.startPlanning(p.id).subscribe({
+    this.planningService.startPlanning(p.id).subscribe({
       next: (res) => {
         this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'en_cours');
         this.msg.add({ severity: 'info', summary: 'Démarré', detail: `${p.reference} est maintenant en cours.` });
@@ -388,7 +391,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   /** en_cours → termine */
   completePlanning(p: Planning): void {
     this.actionLoading.set(p.id);
-    this.svc.completePlanning(p.id).subscribe({
+    this.planningService.completePlanning(p.id).subscribe({
       next: (res) => {
         this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'termine');
         this.msg.add({ severity: 'success', summary: 'Terminé', detail: `${p.reference} marqué comme terminé.` });
@@ -412,7 +415,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.actionLoading.set(p.id);
-        this.svc.cancelPlanning(p.id).subscribe({
+        this.planningService.cancelPlanning(p.id).subscribe({
           next: (res) => {
             this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'annule');
             this.msg.add({ severity: 'warn', summary: 'Annulé', detail: `${p.reference} a été annulé.` });
@@ -442,7 +445,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.actionLoading.set(p.id);
-        this.svc.deletePlanning(p.id).subscribe({
+        this.planningService.deletePlanning(p.id).subscribe({
           next: () => {
             this.recentPlannings.update(list => list.filter(x => x.id !== p.id));
             this.msg.add({ severity: 'success', summary: 'Supprimé', detail: `Planning ${p.reference} supprimé.` });
@@ -463,7 +466,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     );
   }
 
-  dismissAlert(id: string): void { this.svc.dismissAlert(id); }
+  dismissAlert(id: string): void { this.planningService.dismissAlert(id); }
   trackByRef(_i: number, p: Planning): string { return p.id; }
   trackByAlert(_i: number, a: PlanningAlert): string { return a.id; }
 }

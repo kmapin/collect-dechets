@@ -51,6 +51,19 @@
     </div>
   </header>
 
+  <!-- ══════════════════ ÉTATS DE CHARGEMENT ═══════════════ -->
+  @if (isLoading() && svc.teams().length === 0) {
+    <div class="tdr-empty" style="padding:64px 0">
+      <mat-icon>hourglass_top</mat-icon>
+      <p>Chargement des équipes…</p>
+    </div>
+  } @else if (!isLoading() && svc.teams().length === 0) {
+    <div class="tdr-empty" style="padding:64px 0">
+      <mat-icon>groups_off</mat-icon>
+      <p>Aucune équipe pour cette agence</p>
+    </div>
+  } @else {
+
   <!-- ══════════════════ KPI STRIP ═════════════════════════ -->
   <div class="td-kpi">
 
@@ -154,7 +167,7 @@
         <div class="chart-card">
           <div class="cc-head">
             <mat-icon>bar_chart</mat-icon>
-            <span>Charge hebdomadaire</span>
+            <span>Charge par équipe</span>
           </div>
           <div class="cc-body">
             <canvas #chartWeekly></canvas>
@@ -222,8 +235,8 @@
                 (click)="activeTab.set('notifs')">
           <mat-icon>notifications_active</mat-icon>
           <span>Alertes</span>
-          @if (unreadCount() > 0) {
-            <span class="tdr-badge">{{ unreadCount() }}</span>
+          @if (notifs().length > 0) {
+            <span class="tdr-badge">{{ notifs().length }}</span>
           }
         </button>
         <button class="tdr-tab" [class.tdr-tab--on]="activeTab() === 'alerts'"
@@ -254,17 +267,11 @@
         </div>
       }
 
-      <!-- NOTIFICATIONS -->
+      <!-- ALERTES OPÉRATIONNELLES (dérivées en temps réel de l'état des équipes) -->
       @if (activeTab() === 'notifs') {
         <div class="tdr-scroll">
-          @if (unreadCount() > 0) {
-            <button class="tdr-mark-btn" (click)="markAllRead()">
-              <mat-icon>done_all</mat-icon> Tout marquer lu ({{ unreadCount() }})
-            </button>
-          }
           @for (n of notifs(); track n.id) {
-            <div class="notif-row" [class.notif-row--unread]="!n.read"
-                 [style.--nc]="sevColor(n.sev)">
+            <div class="notif-row" [style.--nc]="sevColor(n.sev)">
               <div class="nr-ico" [style.color]="sevColor(n.sev)">
                 <mat-icon>{{ sevIcon(n.sev) }}</mat-icon>
               </div>
@@ -280,6 +287,16 @@
                 <div class="nr-text">{{ n.body }}</div>
                 <div class="nr-time">{{ timeAgo(n.time) }}</div>
               </div>
+              <button class="mr-dismiss" (click)="dismissNotif(n.id)"
+                      pTooltip="Ignorer" tooltipPosition="left">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+          @if (notifs().length === 0) {
+            <div class="tdr-empty">
+              <mat-icon>verified</mat-icon>
+              <p>Aucune alerte opérationnelle</p>
             </div>
           }
         </div>
@@ -336,7 +353,7 @@
               </div>
               <div class="tdm-info">
                 <div class="tdm-name">{{ t.name }}</div>
-                <div class="tdm-sub">{{ t.members.length }} mbr · {{ primaryZone(t) }}</div>
+                <div class="tdm-sub" [pTooltip]="primaryZone(t)" tooltipPosition="top">{{ t.members.length }} mbr · {{ primaryZone(t) }}</div>
               </div>
               <div class="tdm-right">
                 <!-- workload bar -->
@@ -344,7 +361,7 @@
                   <div class="tdm-bar" [style.width]="t.workload + '%'"
                        [style.background]="workloadColor(t.workload)"></div>
                 </div>
-                <span class="tdm-perf" [style.color]="workloadColor(t.successRate)">
+                <span class="tdm-perf" [style.color]="successRateColor(t.successRate)">
                   {{ t.successRate }}%
                 </span>
               </div>
@@ -356,5 +373,7 @@
     </div><!-- /td-right -->
 
   </div><!-- /td-body -->
+
+  }
 
 </div><!-- /td-root -->

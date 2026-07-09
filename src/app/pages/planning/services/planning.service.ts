@@ -140,20 +140,6 @@ export class PlanningService {
     });
   }
 
-  loadTeams(): void {
-    const agencyId = this.agencyId;
-    if (!agencyId) return;
-    this._error.set(null);
-    this.http.get<TeamApi[] | { data: TeamApi[] }>(
-      `${this.api}/v2/teams/agency/${agencyId}`
-    ).pipe(
-      map(r => Array.isArray(r) ? r : ((r as any).data ?? []))
-    ).subscribe({
-      next:  teams => this._teams.set(teams),
-      error: err   => this._error.set(err?.error?.message ?? 'Impossible de charger les équipes'),
-    });
-  }
-
   loadPlannings(filter?: PlanningFilter): void {
     this._loading.set(true);
     const agencyId = this.agencyId;
@@ -175,16 +161,11 @@ export class PlanningService {
 
     forkJoin([
       this.http.get<ApiListResponse<PlanningV2Api>>(`${this.api}/planning/v2`, { params }),
-      this._teams().length
-        ? of(this._teams())
-        : this.http.get<TeamApi[] | { data: TeamApi[] }>(`${this.api}/v2/teams/agency/${agencyId}`).pipe(
-            map(r => Array.isArray(r) ? r : ((r as any).data ?? []))
-          ),
+      this.getTeamsForAgency(),
     ]).subscribe({
       next: result => {
         this._loading.set(false);
-        const [res, teamsArr] = result;
-        if (teamsArr.length && !this._teams().length) this._teams.set(teamsArr);
+        const [res] = result;
         if (res?.data) {
           this._plannings.set(res.data.map(p => this._mapPlanningV2(p, this._teams())));
         }
@@ -199,19 +180,11 @@ export class PlanningService {
   // ── Queries ───────────────────────────────────────────────────
 
   getPlanning(id: string): Observable<Planning> {
-    const agencyId = this.agencyId;
     return forkJoin([
       this.http.get<{ success: boolean; data: PlanningV2Api }>(`${this.api}/planning/v2/${id}`),
-      this._teams().length
-        ? of(this._teams())
-        : this.http.get<TeamApi[] | { data: TeamApi[] }>(`${this.api}/v2/teams/agency/${agencyId}`).pipe(
-            map(r => Array.isArray(r) ? r : ((r as any).data ?? []))
-          ),
+      this.getTeamsForAgency(),
     ]).pipe(
-      map(([res, teams]) => {
-        if (teams.length && !this._teams().length) this._teams.set(teams);
-        return this._mapPlanningV2(res.data, this._teams());
-      })
+      map(([res]) => this._mapPlanningV2(res.data, this._teams()))
     );
   }
 
@@ -236,11 +209,12 @@ export class PlanningService {
   getTeamsForAgency(): Observable<TeamApi[]> {
     const agencyId = this.agencyId;
     if (!agencyId) return of([]);
+    if (this._teams().length) return of(this._teams());
     return this.http.get<TeamApi[] | { data: TeamApi[] }>(
       `${this.api}/v2/teams/agency/${agencyId}`
     ).pipe(
       map(r => Array.isArray(r) ? r : ((r as any).data ?? [])),
-      tap(teams => this._teams.set(teams))
+      tap(teams => { if (teams.length) this._teams.set(teams); })
     );
   }
 
@@ -368,14 +342,14 @@ export class PlanningService {
     return this._setTeamOnPlanning(planningId, null);
   }
 
-  private _setTeamOnPlanning(planningId: string, teamV2Id: string | null): Observable<Planning> {
+  private _setTeamOnPlanning(planningId: string, teamId: string | null): Observable<Planning> {
     return this.http.get<any>(`${this.api}/planning/v2/${planningId}`).pipe(
       switchMap(res => {
         const api: PlanningV2Api = res?.data ?? res;
-        if (teamV2Id && (api.teamV2Id === teamV2Id)) {
+        if (teamId && (api.teamId === teamId)) {
           return of(this._mapPlanningV2(api, this._teams()));
         }
-        const body = this._buildUpdateBody(api, { teamV2Id });
+        const body = this._buildUpdateBody(api, { teamId });
         return this.http.put<any>(`${this.api}/planning/v2/${planningId}`, body).pipe(
           map(r => {
             const updated: PlanningV2Api = r?.data ?? r;
@@ -405,10 +379,76 @@ export class PlanningService {
     );
   }
 
-  // ── Alerts (local, no API endpoint) ──────────────────────────
+  // ── Alerts (API réelle — module Teams & Planning) ─────────────
+
+  loadAlerts(): void {
+    const agencyId = this.agencyId;
+    const params = agencyId ? new HttpParams().set('agencyId', agencyId) : new HttpParams();
+    this.http.get<{ success: boolean; data: any[] }>(`${this.api}/planning/v2/alerts`, { params })
+      .pipe(catchError(() => of(null)))
+      .subscribe(res => {
+        if (res?.data) {
+          this._alerts.set(res.data.map(a => ({
+            id:          a._id,
+            type:        a.type,
+            title:       a.title,
+            message:     a.message,
+            time:        new Date(a.createdAt).toLocaleString('fr-FR'),
+            planningRef: a.planningRef,
+          })));
+        }
+      });
+  }
 
   dismissAlert(id: string): void {
     this._alerts.update(list => list.filter(a => a.id !== id));
+    this.http.patch(`${this.api}/planning/v2/alerts/${id}/dismiss`, {})
+      .pipe(catchError(() => of(null)))
+      .subscribe();
+  }
+
+  // ── Tournées (rounds) ─────────────────────────────────────────
+
+  getRounds(planningId: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${this.api}/planning/v2/${planningId}/rounds`
+    ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
+  }
+
+  startRound(planningId: string, body: { date?: string; equipeIds?: string[]; totalHouseholds?: number } = {}): Observable<any> {
+    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/rounds`, body);
+  }
+
+  updateRound(planningId: string, roundId: string, body: any): Observable<any> {
+    return this.http.put<any>(`${this.api}/planning/v2/${planningId}/rounds/${roundId}`, body);
+  }
+
+  // ── Incidents ─────────────────────────────────────────────────
+
+  getIncidents(planningId: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${this.api}/planning/v2/${planningId}/incidents`
+    ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
+  }
+
+  createIncident(planningId: string, body: FormData): Observable<any> {
+    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/incidents`, body);
+  }
+
+  resolveIncident(planningId: string, incidentId: string): Observable<any> {
+    return this.http.patch<any>(`${this.api}/planning/v2/${planningId}/incidents/${incidentId}/resolve`, {});
+  }
+
+  // ── Notifications de planning ─────────────────────────────────
+
+  getPlanningNotifications(planningId: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${this.api}/planning/v2/${planningId}/notifications`
+    ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
+  }
+
+  sendPlanningNotification(planningId: string, target: 'all' | 'teams' | 'clients' = 'all'): Observable<any> {
+    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/notifications/send`, { target });
   }
 
   // ── Private helpers ───────────────────────────────────────────
@@ -416,11 +456,13 @@ export class PlanningService {
   private _mapPlanningV2(api: PlanningV2Api, teams: TeamApi[] = []): Planning {
     // Champ principal pour l'équipe; fallback sur equipeIds[0] pour les anciens enregistrements
     const legacyIds  = this._extractEquipeIds(api);
-    const teamV2Id   = api.teamV2Id ?? (legacyIds.length ? legacyIds[0] : null) ?? null;
-    const equipeIds  = teamV2Id ? [teamV2Id] : [];
+    const teamId   = api.teamId ?? (legacyIds.length ? legacyIds[0] : null) ?? null;
+    const equipeIds  = teamId ? [teamId] : [];
 
-    const teamName = teamV2Id
-      ? (teams.find(x => x._id === teamV2Id)?.name ?? teamV2Id)
+    // Pas de repli sur l'ID Mongo brut : si l'équipe n'est pas (encore) résolue
+    // localement, on laisse `teamName` vide plutôt que d'afficher un ID technique.
+    const teamName = teamId
+      ? teams.find(x => x._id === teamId)?.name
       : undefined;
 
     const wasteLabels = (api.typeDechets ?? []).map(t => WASTE_TYPE_LABELS[t] ?? t);
@@ -435,7 +477,7 @@ export class PlanningService {
       startTime:        api.startTime,
       endTime:          api.endTime,
       frequency:        api.frequency,
-      teamV2Id,
+      teamId,
       teams:            teamName ? [teamName] : [],
       equipeIds,
       wasteTypes:       wasteLabels,
@@ -453,10 +495,16 @@ export class PlanningService {
       secteur:          this._refName(api.secteurId),
       arrondissement:   this._refName(api.arrondissementId),
       ville:            this._refName(api.villeId),
-      clientId:         api.clientId ?? undefined,
-      groupeId:         api.groupeId ?? undefined,
+      clientId:         this._refId(api.clientId as any),
+      groupeId:         this._refId(api.groupeId as any),
+      clientName:       this._clientName(api.clientId),
+      groupName:        this._refName(api.groupeId as any),
       agencyId:         api.agencyId,
       managerId:        api.managerId,
+      publishedAt:      api.publishedAt ?? undefined,
+      startedAt:        api.startedAt ?? undefined,
+      completedAt:      api.completedAt ?? undefined,
+      cancelledAt:      api.cancelledAt ?? undefined,
       createdAt:        api.createdAt,
       updatedAt:        api.updatedAt,
     };
@@ -469,7 +517,7 @@ export class PlanningService {
   }
 
   private _buildUpdateBody(api: PlanningV2Api, overrides: Partial<PlanningV2CreateBody> = {}): Partial<PlanningV2CreateBody> {
-    const currentTeamId = api.teamV2Id ?? this._extractEquipeIds(api)[0] ?? null;
+    const currentTeamId = api.teamId ?? this._extractEquipeIds(api)[0] ?? null;
     return {
       type:             api.type,
       libelle:          api.libelle,
@@ -478,9 +526,10 @@ export class PlanningService {
       startTime:        api.startTime,
       endTime:          api.endTime ?? undefined,
       typeDechets:      api.typeDechets ?? [],
-      teamV2Id:         currentTeamId ?? undefined,
-      clientId:         api.clientId ?? undefined,
-      groupeId:         api.groupeId ?? undefined,
+      teamId:         currentTeamId ?? undefined,
+      equipeIds:      currentTeamId ? [currentTeamId] : undefined,
+      clientId:         this._refId(api.clientId as any),
+      groupeId:         this._refId(api.groupeId as any),
       villeId:          this._refId(api.villeId),
       arrondissementId: this._refId(api.arrondissementId),
       secteurId:        this._refId(api.secteurId),
@@ -501,5 +550,12 @@ export class PlanningService {
   private _refName(val: string | { _id: string; name?: string } | null | undefined): string | undefined {
     if (!val || typeof val === 'string') return undefined;
     return (val as any).name;
+  }
+
+  /** Nom complet du client depuis un objet peuplé (undefined si c'était un simple ID). */
+  private _clientName(val: string | { firstName?: string; lastName?: string } | null | undefined): string | undefined {
+    if (!val || typeof val === 'string') return undefined;
+    const full = `${val.firstName ?? ''} ${val.lastName ?? ''}`.trim();
+    return full || undefined;
   }
 }

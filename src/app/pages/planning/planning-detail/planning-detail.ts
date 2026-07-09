@@ -15,6 +15,8 @@ import { MessageService } from 'primeng/api';
 import * as L from 'leaflet';
 import { PlanningService } from '../services/planning.service';
 import { Planning, TeamApi } from '../models/planning.model';
+import { AgencyService } from '../../../services/agency.service';
+import { formatFrDate, formatFrDateTime } from '../../../shared/format.util';
 interface Incident {
   id: string; severity: 'critical' | 'warning' | 'info';
   title: string; description: string; reporter: string;
@@ -47,14 +49,20 @@ interface Notification {
 export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapEl') mapElRef!: ElementRef<HTMLDivElement>;
 
-  private route  = inject(ActivatedRoute);
-  private router = inject(Router);
-  private svc    = inject(PlanningService);
-  private msg    = inject(MessageService);
+  private route        = inject(ActivatedRoute);
+  private router       = inject(Router);
+  private svc          = inject(PlanningService);
+  private msg          = inject(MessageService);
+  private agencySvc    = inject(AgencyService);
 
   private leafletMap!: L.Map;
 
+  // ── Formatage de dates (partagé) — exposé pour le template ─────
+  formatFrDate     = formatFrDate;
+  formatFrDateTime = formatFrDateTime;
+
   // ── State ─────────────────────────────────────────────────────
+  agencyName    = signal('');
   isLoading     = signal(true);
   notFound      = signal(false);
   activeSection = signal('info');
@@ -74,13 +82,13 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   teamSearch       = signal('');
 
   assignedTeams = computed(() => {
-    const tid = this.planning()?.teamV2Id;
+    const tid = this.planning()?.teamId;
     if (!tid) return [];
     const t = this.allTeams().find(x => x._id === tid);
     return t ? [t] : [];
   });
   availableTeams = computed(() => {
-    const tid = this.planning()?.teamV2Id;
+    const tid = this.planning()?.teamId;
     const q   = this.teamSearch().toLowerCase();
     return this.allTeams()
       .filter(t => t._id !== tid)
@@ -185,6 +193,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this._fetchPlanning(id);
     this._loadTeams();
+    this._loadAgencyName();
   }
 
   ngAfterViewInit(): void {
@@ -203,7 +212,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     const cached = this.svc.plannings().find(p => p.id === id);
     if (cached) {
       this.planning.set(cached);
-      this._enrichWithMockData(cached);
+      this._buildActivities(cached);
+      this._loadRoundsIncidentsNotifications(id);
       this.isLoading.set(false);
       return;
     }
@@ -211,7 +221,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.svc.getPlanning(id).subscribe({
       next: (p) => {
         this.planning.set(p);
-        this._enrichWithMockData(p);
+        this._buildActivities(p);
+        this._loadRoundsIncidentsNotifications(id);
         this.isLoading.set(false);
       },
       error: () => {
@@ -221,12 +232,60 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
+  // ── Tournées / Incidents / Notifications (données réelles) ────
+  private _loadRoundsIncidentsNotifications(planningId: string): void {
+    this.svc.getRounds(planningId).subscribe(rounds => {
+      this.history.set(rounds.map((r: any) => ({
+        date:                 new Date(r.date).toLocaleDateString('fr-FR'),
+        teams:                (r.equipeIds ?? []).map((e: any) => e?.name ?? (typeof e === 'string' ? e : '—')),
+        status:               r.status,
+        householdsCollected:  r.householdsCollected,
+        duration:             r.duration ?? '—',
+        completionRate:       r.completionRate,
+      })));
+    });
+
+    this.svc.getIncidents(planningId).subscribe(incidents => {
+      this.incidents.set(incidents.map((i: any) => ({
+        id:          i._id,
+        severity:    i.severity,
+        title:       i.title,
+        description: i.description,
+        reporter:    i.reporter,
+        reportedAt:  i.reportedAt,
+        resolved:    i.resolved,
+        resolvedAt:  i.resolvedAt,
+      })));
+    });
+
+    this.svc.getPlanningNotifications(planningId).subscribe(notifs => {
+      this.notifications.set(notifs.map((n: any) => ({
+        id:        n._id,
+        channel:   'app',
+        recipient: n.user?.firstName ? `${n.user.firstName} ${n.user.lastName}` : 'Utilisateur',
+        message:   n.message,
+        sentAt:    n.createdAt,
+        status:    n.read ? 'read' : 'sent',
+      })));
+    });
+  }
+
   // ── Teams loader ─────────────────────────────────────────────
   private _loadTeams(): void {
     this.isLoadingTeams.set(true);
     this.svc.getTeamsForAgency().subscribe({
       next:  teams => { this.allTeams.set(teams); this.isLoadingTeams.set(false); },
       error: ()    => this.isLoadingTeams.set(false),
+    });
+  }
+
+  // ── Agency name loader ────────────────────────────────────────
+  private _loadAgencyName(): void {
+    const agencyId = this.svc.agencyId;
+    if (!agencyId) return;
+    this.agencySvc.getAgencyByIdFromApi(agencyId).subscribe({
+      next:  res => { if (res?.data?.name) this.agencyName.set(res.data.name); },
+      error: ()  => {},
     });
   }
 
@@ -242,7 +301,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.teamSaving.set(true);
     this.svc.addTeamToPlanning(pid, teamId).subscribe({
       next: p => {
-        this.planning.update(prev => prev ? { ...prev, teamV2Id: p.teamV2Id, equipeIds: p.equipeIds, teams: p.teams } : prev);
+        this.planning.update(prev => prev ? { ...prev, teamId: p.teamId, equipeIds: p.equipeIds, teams: p.teams } : prev);
         this.msg.add({ severity: 'success', summary: 'Équipe affectée', detail: `${this.allTeams().find(t => t._id === teamId)?.name ?? teamId} assignée` });
         this.teamSaving.set(false);
         this.addTeamOpen.set(false);
@@ -260,7 +319,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.teamSaving.set(true);
     this.svc.removeTeamFromPlanning(pid).subscribe({
       next: p => {
-        this.planning.update(prev => prev ? { ...prev, teamV2Id: p.teamV2Id, equipeIds: p.equipeIds, teams: p.teams } : prev);
+        this.planning.update(prev => prev ? { ...prev, teamId: p.teamId, equipeIds: p.equipeIds, teams: p.teams } : prev);
         this.teamSaving.set(false);
       },
       error: err => {
@@ -292,7 +351,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.isActioning.set(true);
     this.svc.publishPlanning(p.id).subscribe({
       next: (res) => {
-        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'planifie' } : prev);
+        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'planifie', publishedAt: res.data?.publishedAt ?? prev.publishedAt } : prev);
+        if (this.planning()) this._buildActivities(this.planning()!);
         this.msg.add({ severity: 'success', summary: 'Publié', detail: `Planning "${p.reference}" planifié avec succès` });
         this.isActioning.set(false);
       },
@@ -310,7 +370,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.isActioning.set(true);
     this.svc.startPlanning(p.id).subscribe({
       next: (res) => {
-        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'en_cours' } : prev);
+        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'en_cours', startedAt: res.data?.startedAt ?? prev.startedAt } : prev);
+        if (this.planning()) this._buildActivities(this.planning()!);
         this.msg.add({ severity: 'info', summary: 'Démarré', detail: `Planning "${p.reference}" en cours` });
         this.isActioning.set(false);
       },
@@ -328,7 +389,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.isActioning.set(true);
     this.svc.completePlanning(p.id).subscribe({
       next: (res) => {
-        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'termine' } : prev);
+        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'termine', completedAt: res.data?.completedAt ?? prev.completedAt } : prev);
+        if (this.planning()) this._buildActivities(this.planning()!);
         this.msg.add({ severity: 'success', summary: 'Terminé', detail: `Planning "${p.reference}" complété` });
         this.isActioning.set(false);
       },
@@ -346,7 +408,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.isActioning.set(true);
     this.svc.cancelPlanning(p.id).subscribe({
       next: (res) => {
-        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'annule' } : prev);
+        this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'annule', cancelledAt: res.data?.cancelledAt ?? prev.cancelledAt } : prev);
+        if (this.planning()) this._buildActivities(this.planning()!);
         this.msg.add({ severity: 'warn', summary: 'Annulé', detail: `Planning "${p.reference}" annulé` });
         this.isActioning.set(false);
       },
@@ -401,7 +464,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       doc.rect(0, 0, 210, 30, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-      doc.text('SAHELYS – Planning de collecte', 14, 14);
+      doc.text(`${this.agencyName() || 'WASTE MANAGEMENT'} – Planning de collecte`, 14, 14);
       doc.setFontSize(10); doc.setFont('helvetica', 'normal');
       doc.text(`Référence : ${p.reference}  •  Statut : ${this.statusLabel()}`, 14, 22);
 
@@ -433,7 +496,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       for (let i = 1; i <= pages; i++) {
         doc.setPage(i);
         doc.setFontSize(8); doc.setTextColor(148, 163, 184);
-        doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} par SAHELYS – page ${i}/${pages}`, 14, 290);
+        doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} par ${this.agencyName() || 'SAHELYS'} – page ${i}/${pages}`, 14, 290);
       }
 
       doc.save(`planning-${p.reference}.pdf`);
@@ -510,48 +573,34 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  // ── Mock enrichment (static detail data not covered by API) ───
-  private _enrichWithMockData(p: Planning): void {
-
-    this.activities.set([
-      { date: p.createdAt,   icon: 'add_circle',  color: '#3b82f6', title: 'Planning créé',              detail: `Créé par le gestionnaire` },
-      { date: p.updatedAt,   icon: 'verified',    color: '#8b5cf6', title: 'Mis à jour',                 detail: 'Dernière modification' },
-      ...(p.status !== 'brouillon' ? [
-        { date: p.date + ' 06:00', icon: 'send',       color: '#16a34a', title: 'Notifications envoyées', detail: 'Équipes et clients notifiés via SMS' },
-        { date: p.date + ' 07:00', icon: 'play_circle', color: '#f59e0b', title: 'Collecte démarrée',    detail: `Équipes en route` },
-      ] : []),
-      ...(p.status === 'termine' ? [
-        { date: p.date + ' 11:30', icon: 'check_circle', color: '#16a34a', title: 'Collecte terminée',  detail: `${p.clientsCount ?? 0} ménages collectés` },
-      ] : []),
-    ]);
-
-    this.history.set([
-      { date: '26/04/2025', teams: [p.teams[0] ?? 'Équipe Alpha'], status: 'termine',  householdsCollected: 44, duration: '3h20', completionRate: 98 },
-      { date: '19/04/2025', teams: [p.teams[0] ?? 'Équipe Alpha'], status: 'termine',  householdsCollected: 41, duration: '3h45', completionRate: 91 },
-      { date: '12/04/2025', teams: p.teams,                         status: 'termine',  householdsCollected: 45, duration: '2h30', completionRate: 100 },
-      { date: '05/04/2025', teams: [p.teams[0] ?? 'Équipe Alpha'], status: 'annule',   householdsCollected: 0,  duration: '—',    completionRate: 0 },
-    ]);
-
-    this.notifications.set([
-      { id: 'N1', channel: 'sms',   recipient: p.teams[0] ?? 'Équipe Alpha',  message: `Rappel : Collecte prévue ${p.date} ${p.startTime}`, sentAt: p.date + ' 06:00', status: 'read' },
-      { id: 'N2', channel: 'email', recipient: 'superviseur@sahelys.com',     message: `Planning ${p.reference} en cours`,                  sentAt: p.date + ' 07:05', status: 'read' },
-      { id: 'N3', channel: 'app',   recipient: 'Clients zone',                message: 'Collecte prévue — merci de sortir vos bacs',        sentAt: p.date + ' 05:30', status: 'delivered' },
-    ]);
-
-    this.incidents.set([
-      { id: 'I1', severity: 'warning', title: 'Bac débordant', description: 'Bac ménager signalé débordant dans la zone.', reporter: 'Équipe', reportedAt: p.date + ' 08:42', resolved: false },
-    ]);
-  }
-
-  private _addDays(dateStr: string, days: number): string {
-    const parts = dateStr.includes('/')
-      ? dateStr.split('/').map(Number)
-      : dateStr.split('-').map(Number);
-    const [y, m, d] = parts.length === 3 && parts[0] > 1000
-      ? parts
-      : [parts[2], parts[1], parts[0]];
-    const dt = new Date(y, m - 1, d + days);
-    return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;
+  // ── Journal d'activités — construit à partir des vraies dates de transition
+  // (publishedAt/startedAt/completedAt/cancelledAt, posées par le backend dans
+  // publishPlanning/startPlanning/completePlanning/cancelPlanning). Aucune heure
+  // inventée : un événement n'apparaît que si son horodatage existe réellement.
+  private _buildActivities(p: Planning): void {
+    const events: ActivityEvent[] = [
+      { date: p.createdAt, icon: 'add_circle', color: '#3b82f6', title: 'Planning créé', detail: 'Créé par le gestionnaire' },
+    ];
+    if (p.publishedAt) {
+      events.push({ date: p.publishedAt, icon: 'send', color: '#16a34a', title: 'Planning publié', detail: 'Notifications envoyées aux équipes et clients' });
+    }
+    if (p.startedAt) {
+      events.push({ date: p.startedAt, icon: 'play_circle', color: '#f59e0b', title: 'Collecte démarrée', detail: 'Équipes en route' });
+    }
+    if (p.completedAt) {
+      events.push({ date: p.completedAt, icon: 'check_circle', color: '#16a34a', title: 'Collecte terminée', detail: `${p.clientsCount ?? 0} ménages collectés` });
+    }
+    if (p.cancelledAt) {
+      events.push({ date: p.cancelledAt, icon: 'cancel', color: '#ef4444', title: 'Planning annulé', detail: 'Annulé par le gestionnaire' });
+    }
+    // "Mis à jour" seulement si updatedAt ne correspond à aucun événement déjà listé
+    // (sinon on afficherait deux fois le même instant : la transition ET "mis à jour").
+    const knownTimestamps = new Set([p.createdAt, p.publishedAt, p.startedAt, p.completedAt, p.cancelledAt].filter(Boolean));
+    if (p.updatedAt && !knownTimestamps.has(p.updatedAt)) {
+      events.push({ date: p.updatedAt, icon: 'verified', color: '#8b5cf6', title: 'Mis à jour', detail: 'Dernière modification' });
+    }
+    events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    this.activities.set(events);
   }
 
   readonly navSections = [

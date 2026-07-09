@@ -14,6 +14,13 @@
   @if (team) {
     <div class="tdm-shell">
 
+      <!-- Overlay chargement détail API -->
+      @if (loading) {
+        <div class="tdm-loading-overlay">
+          <div class="tdm-loading-spinner"></div>
+        </div>
+      }
+
       <!-- ══════════════════════════════════════════════════════
            HERO BANNER
            ══════════════════════════════════════════════════════ -->
@@ -34,7 +41,7 @@
         <div class="tdm-hero-id">
           <div class="tdm-hero-avatar">{{ team.name.charAt(0) }}</div>
           <div class="tdm-hero-info">
-            <h2 class="tdm-hero-name">{{ team.name }}</h2>
+            <h2 class="tdm-hero-name" [title]="team.name" pTooltip="{{ team.name }}" tooltipPosition="bottom">{{ team.name }}</h2>
             <div class="tdm-hero-meta">
               <span class="tdm-code-badge">{{ team.code }}</span>
               <span class="tdm-status-badge"
@@ -62,7 +69,7 @@
           </div>
           <div class="tdm-kpi-card">
             <mat-icon>check_circle</mat-icon>
-            <span class="tdm-kpi-val">{{ team.completedMissions }}</span>
+            <span class="tdm-kpi-val">{{ team.completedMissions }}/{{ team.totalMissions }}</span>
             <span class="tdm-kpi-lbl">Missions</span>
           </div>
           <div class="tdm-kpi-card" [class.tdm-kpi-card--warn]="team.workload >= 80">
@@ -74,6 +81,16 @@
             <mat-icon>insights</mat-icon>
             <span class="tdm-kpi-val">{{ team.successRate }}%</span>
             <span class="tdm-kpi-lbl">Réussite</span>
+          </div>
+          <div class="tdm-kpi-card">
+            <mat-icon>person_check</mat-icon>
+            <span class="tdm-kpi-val">{{ availStats().disponible }}</span>
+            <span class="tdm-kpi-lbl">Disponibles</span>
+          </div>
+          <div class="tdm-kpi-card">
+            <mat-icon>map</mat-icon>
+            <span class="tdm-kpi-val">{{ team.zones.length }}</span>
+            <span class="tdm-kpi-lbl">Zones</span>
           </div>
         </div>
       </div>
@@ -232,7 +249,7 @@
                       {{ m.name.charAt(0) }}
                     </div>
                     <div class="tdm-mc-info">
-                      <span class="tdm-mc-name">{{ m.name }}</span>
+                      <span class="tdm-mc-name" [title]="m.name" pTooltip="{{ m.name }}" tooltipPosition="top">{{ m.name }}</span>
                       <span class="tdm-mc-role" [style.color]="roleColor(m.role)">
                         <mat-icon>{{ roleIcon(m.role) }}</mat-icon>{{ roleLabel(m.role) }}
                       </span>
@@ -244,7 +261,7 @@
                   </div>
                   <div class="tdm-mc-foot">
                     <span><mat-icon>phone</mat-icon>{{ m.phone }}</span>
-                    <span><mat-icon>calendar_today</mat-icon>depuis {{ m.joinedAt }}</span>
+                    <span><mat-icon>calendar_today</mat-icon>depuis {{ formatFrDate(m.joinedAt) }}</span>
                   </div>
                 </div>
               }
@@ -271,8 +288,8 @@
                 </div>
                 <div class="tdm-vh-stats">
                   <div class="tdm-vh-stat"><mat-icon>scale</mat-icon><span>{{ team.vehicle.capacityTons }}T</span><small>Capacité</small></div>
-                  <div class="tdm-vh-stat"><mat-icon>speed</mat-icon><span>{{ team.vehicle.mileage.toLocaleString() }}</span><small>km</small></div>
-                  <div class="tdm-vh-stat"><mat-icon>build</mat-icon><span>{{ team.vehicle.lastMaintenance }}</span><small>Révision</small></div>
+                  <div class="tdm-vh-stat"><mat-icon>speed</mat-icon><span>{{ team.vehicle.mileage | number }}</span><small>km</small></div>
+                  <div class="tdm-vh-stat"><mat-icon>build</mat-icon><span>{{ formatFrDate(team.vehicle.lastMaintenance) }}</span><small>Révision</small></div>
                 </div>
               </div>
 
@@ -321,7 +338,7 @@
                 </div>
                 <div class="tdm-vh-meta-card">
                   <mat-icon>build</mat-icon>
-                  <span>{{ team.vehicle.lastMaintenance }}</span>
+                  <span>{{ formatFrDate(team.vehicle.lastMaintenance) }}</span>
                   <small>Dernière révision</small>
                 </div>
               </div>
@@ -360,7 +377,7 @@
                             </div>
                             <div class="tdm-msn-meta">
                               <mat-icon>place</mat-icon>{{ m.zone }}
-                              <mat-icon>calendar_today</mat-icon>{{ m.date }}
+                              <mat-icon>calendar_today</mat-icon>{{ formatFrDate(m.date) }}
                               @if (m.duration) { <mat-icon>schedule</mat-icon>{{ m.duration }} }
                             </div>
                             <div class="tdm-msn-progress">
@@ -537,7 +554,7 @@
                 <div class="tdm-card">
                   <div class="tdm-card-title"><mat-icon>military_tech</mat-icon>Composition équipe</div>
                   <div class="tdm-role-distribution">
-                    @for (role of ['chef','chauffeur','agent','assistant']; track role) {
+                    @for (role of ['manager','collector']; track role) {
                       @if (memberCountByRole(role) > 0) {
                         <div class="tdm-role-row">
                           <mat-icon [style.color]="roleColor(role)">{{ roleIcon(role) }}</mat-icon>
@@ -550,6 +567,9 @@
                           <strong>{{ memberCountByRole(role) }}</strong>
                         </div>
                       }
+                    }
+                    @if (team.members.length === 0) {
+                      <p class="tdm-no-data">Aucun membre dans cette équipe</p>
                     }
                   </div>
                 </div>
@@ -576,7 +596,7 @@
                   </div>
                   <div class="tdm-inc-body">
                     <div class="tdm-inc-top">
-                      <span class="tdm-inc-type">{{ inc.type | titlecase }}</span>
+                      <span class="tdm-inc-type">{{ incTypeLabel(inc.type) }}</span>
                       <span class="tdm-inc-badge" [style.background]="sevColor(inc.severity) + '18'" [style.color]="sevColor(inc.severity)">
                         <mat-icon>circle</mat-icon>{{ sevLabel(inc.severity) }}
                       </span>

@@ -10,7 +10,7 @@ import {
   TeamApi, TeamCreateBody, CollectorUser, TeamStatsApi,
 } from '../models/team.model';
 import type {
-  TeamV2Api, TeamV2CreateBody, TeamV2Member, TeamV2MemberBody,
+  TeamV2Api, TeamV2CreateBody, TeamV2MemberBody,
   VehicleApi, AvailableZoneApi, MemberAvailability, MemberRole,
 } from '../models/team.model';
 
@@ -44,9 +44,9 @@ export class TeamService {
   // ── Internal signals ─────────────────────────────────────────
   private _teams               = signal<Team[]>([]);
   private _collectors          = signal<CollectorUser[]>([]);
-  private _availableVehicles   = signal<AvailableVehicle[]>(this._mockVehicles());
+  private _availableVehicles   = signal<AvailableVehicle[]>([]);
   private _unassignedVehicles  = signal<AvailableVehicle[]>([]);
-  private _availableZones      = signal<AvailableZone[]>(this._mockZones());
+  private _availableZones      = signal<AvailableZone[]>([]);
   private _loading             = signal(false);
   private _error               = signal<string | null>(null);
 
@@ -80,25 +80,6 @@ export class TeamService {
   });
 
   // ── Load from API ─────────────────────────────────────────────
-
-  loadTeams(): void {
-    const agencyId = this.agencyId;
-    if (!agencyId) return;
-    this._loading.set(true);
-
-    forkJoin({
-      teams: this.http.get<{ success: boolean; count: number; data: TeamApi[] }>(
-        `${this.api}/teams/agency/${agencyId}`
-      ).pipe(map(r => r.data ?? []), catchError(() => of([]))),
-      collectors: this.http.get<{ success: boolean; message: string; data: CollectorUser[] }>(
-        `${this.api}/agency_employees/${agencyId}/collectors`
-      ).pipe(map(r => r.data ?? []), catchError(() => of([]))),
-    }).subscribe(({ teams, collectors }) => {
-      this._collectors.set(collectors);
-      this._teams.set(teams.map((t, i) => this._mapTeamApi(t, collectors, i)));
-      this._loading.set(false);
-    });
-  }
 
   loadCollectors(): void {
     const agencyId = this.agencyId;
@@ -197,7 +178,7 @@ export class TeamService {
   }
 
   delete(id: string): Observable<void> {
-    return this.http.delete<any>(`${this.api}/v2/teams/${id}`).pipe(
+    return this.http.delete<any>(`${this.api}/teams/${id}`).pipe(
       map(() => { this._teams.update(list => list.filter(t => t.id !== id)); })
     );
   }
@@ -232,7 +213,7 @@ export class TeamService {
 
   getTeamStats(teamId: string): Observable<TeamStatsApi> {
     return this.http.get<{ success: boolean; data: TeamStatsApi }>(
-      `${this.api}/v2/teams/${teamId}/stats`
+      `${this.api}/teams/${teamId}/stats`
     ).pipe(map(r => r.data ?? {}));
   }
 
@@ -339,11 +320,7 @@ export class TeamService {
 
   // ── V2 API ────────────────────────────────────────────────────
 
-  /**
-   * Charge les équipes via l'API V2 (supporte on_mission/maintenance + filtres serveur).
-   * Remplace loadTeams() — charge aussi véhicules et zones disponibles.
-   */
-  loadTeamsV2(): void {
+  loadTeams(): void {
     const agencyId = this.agencyId;
     if (!agencyId) return;
     this._loading.set(true);
@@ -358,7 +335,7 @@ export class TeamService {
 
     forkJoin({
       teams: this.http.get<TeamV2Api[] | { data: TeamV2Api[] }>(
-        `${this.api}/v2/teams/agency/${agencyId}`
+        `${this.api}/teams/agency/${agencyId}`
       ).pipe(map(r => Array.isArray(r) ? r : ((r as any).data ?? []))),
       collectors: collectors$,
     }).subscribe({
@@ -382,7 +359,7 @@ export class TeamService {
   loadGlobalStats(): Observable<TeamStats> {
     const agencyId = this.agencyId;
     if (!agencyId) return of(this.stats());
-    return this.http.get<{ data: TeamStats }>(`${this.api}/v2/teams/stats/${agencyId}`).pipe(
+    return this.http.get<{ data: TeamStats }>(`${this.api}/teams/stats/${agencyId}`).pipe(
       map(r => r.data ?? this.stats()),
       catchError(() => of(this.stats()))
     );
@@ -397,15 +374,18 @@ export class TeamService {
       .subscribe(list => {
         if (list !== null) {
           this._availableVehicles.set((list as VehicleApi[]).map((v: VehicleApi) => ({
-            id:           v._id,
-            plate:        v.plate,
-            model:        v.model,
-            type:         v.type,
-            capacityTons: v.capacityTons ?? 0,
-            status:       v.status,
+            id:              v._id,
+            plate:           v.plate,
+            model:           v.model,
+            type:            v.type,
+            capacityTons:    v.capacityTons ?? 0,
+            status:          v.status,
+            fuelLevel:       v.fuelLevel,
+            mileage:         v.mileage,
+            lastMaintenance: v.lastMaintenance,
           })));
         }
-        // null = erreur réseau → on conserve le mock comme fallback
+        // null = erreur réseau → la liste reste inchangée (pas de fallback fictif)
       });
   }
 
@@ -413,7 +393,7 @@ export class TeamService {
   loadUnassignedVehiclesFromApi(): void {
     const agencyId = this.agencyId;
     if (!agencyId) return;
-    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/v2/teams/vehicles/available/${agencyId}`)
+    this.http.get<VehicleApi[] | { data: VehicleApi[] }>(`${this.api}/teams/vehicles/available/${agencyId}`)
       .pipe(map(r => Array.isArray(r) ? r : ((r as any).data ?? [])), catchError(() => of([])))
       .subscribe(list =>
         this._unassignedVehicles.set((list as VehicleApi[]).map((v: VehicleApi) => ({
@@ -427,20 +407,18 @@ export class TeamService {
       );
   }
 
-  /** Charge les zones disponibles depuis l'API (remplace le mock). */
+  /** Charge les zones disponibles depuis l'API réelle (aucun fallback mock). */
   loadAvailableZonesFromApi(): void {
-    this.http.get<{ data: AvailableZoneApi[] }>(`${this.api}/v2/teams/zones/available`)
+    this.http.get<{ data: AvailableZoneApi[] }>(`${this.api}/teams/zones/available`)
       .pipe(map(r => r.data ?? []), catchError(() => of([])))
       .subscribe(list => {
-        if (list.length) {
-          this._availableZones.set(list.map(z => ({
-            id:             z._id ?? z.id ?? '',
-            name:           z.name,
-            ville:          z.cityId ?? z.ville ?? '',
-            arrondissement: z.arrondissementId ?? z.arrondissement,
-            householdsCount:z.householdsCount ?? 0,
-          })));
-        }
+        this._availableZones.set(list.map(z => ({
+          id:             z._id ?? z.id ?? '',
+          name:           z.name,
+          ville:          z.cityId ?? z.ville ?? '',
+          arrondissement: z.arrondissementId ?? z.arrondissement,
+          householdsCount:z.householdsCount ?? 0,
+        })));
       });
   }
 
@@ -463,7 +441,7 @@ export class TeamService {
         role:   m.role,
       })),
     };
-    return this.http.post<any>(`${this.api}/v2/teams`, body).pipe(
+    return this.http.post<any>(`${this.api}/teams`, body).pipe(
       map(res => {
         const team = this._mapTeamV2Api(this._extractV2Team(res), this._teams().length, data);
         this._teams.update(list => [team, ...list]);
@@ -474,7 +452,7 @@ export class TeamService {
 
   /** Récupère une équipe via l'API V2 (avec recentMissions). */
   getTeamV2(id: string): Observable<Team> {
-    return this.http.get<any>(`${this.api}/v2/teams/${id}`).pipe(
+    return this.http.get<any>(`${this.api}/teams/${id}`).pipe(
       map(res => {
         const idx  = this._teams().findIndex(t => t.id === id);
         const team = this._mapTeamV2Api(this._extractV2Team(res), idx >= 0 ? idx : 0);
@@ -504,7 +482,7 @@ export class TeamService {
         role:   m.role,
       })),
     };
-    return this.http.put<any>(`${this.api}/v2/teams/${id}`, body).pipe(
+    return this.http.put<any>(`${this.api}/teams/${id}`, body).pipe(
       map(res => {
         const idx  = this._teams().findIndex(t => t.id === id);
         const team = this._mapTeamV2Api(this._extractV2Team(res), idx >= 0 ? idx : 0, data);
@@ -516,7 +494,7 @@ export class TeamService {
 
   /** Change le statut d'une équipe (supporte on_mission et maintenance). */
   changeStatus(id: string, status: Team['status']): Observable<Team> {
-    return this.http.patch<any>(`${this.api}/v2/teams/${id}/status`, { status }).pipe(
+    return this.http.patch<any>(`${this.api}/teams/${id}/status`, { status }).pipe(
       map(res => {
         const idx  = this._teams().findIndex(t => t.id === id);
         const team = this._mapTeamV2Api(this._extractV2Team(res), idx >= 0 ? idx : 0);
@@ -528,7 +506,7 @@ export class TeamService {
 
   /** Ajoute un membre à une équipe via l'API V2. */
   addMemberV2(teamId: string, data: TeamV2MemberBody): Observable<TeamMember> {
-    return this.http.post<{ message: string; team: TeamV2Api }>(`${this.api}/v2/teams/${teamId}/members`, data).pipe(
+    return this.http.post<{ message: string; team: TeamV2Api }>(`${this.api}/teams/${teamId}/members`, data).pipe(
       map(res => {
         const raw = res.team.members.find(m => m.phone === data.phone)
                  ?? res.team.members[res.team.members.length - 1];
@@ -559,7 +537,7 @@ export class TeamService {
   /** Retire un membre d'une équipe via l'API V2. */
   removeMemberV2(teamId: string, memberId: string): Observable<void> {
     return this.http.delete<{ success: boolean }>(
-      `${this.api}/v2/teams/${teamId}/members/${memberId}`
+      `${this.api}/teams/${teamId}/members/${memberId}`
     ).pipe(
       map(() => {
         this._teams.update(list => list.map(t =>
@@ -578,7 +556,7 @@ export class TeamService {
   /** Met à jour la disponibilité d'un membre via l'API V2. */
   updateMemberAvailability(teamId: string, memberId: string, availability: MemberAvailability): Observable<void> {
     return this.http.patch<{ success: boolean }>(
-      `${this.api}/v2/teams/${teamId}/members/${memberId}/availability`,
+      `${this.api}/teams/${teamId}/members/${memberId}/availability`,
       { availability }
     ).pipe(
       map(() => {
@@ -621,7 +599,15 @@ export class TeamService {
     const zones: AssignedZone[] = (api.zones ?? []).map((z: any) =>
       typeof z === 'string'
         ? { id: z, name: z, ville: '', householdsCount: 0 }
-        : { id: z._id ?? z.id ?? z, name: z.name ?? z, ville: z.ville ?? '', householdsCount: z.householdsCount ?? 0 }
+        : {
+            id:              z._id ?? z.id ?? z,
+            name:            z.name ?? z,
+            ville:           z.ville ?? '',
+            arrondissement:  z.arrondissement ?? undefined,
+            householdsCount: z.householdsCount ?? 0,
+            lat:             z.lat ?? null,
+            lng:             z.lng ?? null,
+          }
     );
 
     // Extraire le véhicule si vehicleId est un objet peuplé par le backend
@@ -641,6 +627,11 @@ export class TeamService {
           }
         : undefined);
 
+    const rawMissions: any[] = api.recentMissions ?? [];
+    // L'API ne renvoie pas toujours ces compteurs — on les déduit de recentMissions en fallback
+    const derivedTotal     = rawMissions.length;
+    const derivedCompleted = rawMissions.filter((m: any) => m.status === 'termine').length;
+
     return {
       id:               api._id,
       code:             api.code ?? api._id.slice(-6).toUpperCase(),
@@ -654,36 +645,14 @@ export class TeamService {
       vehicle,
       zones,
       workload:         api.workload          ?? localOverrides.workload          ?? 0,
-      completedMissions:api.completedMissions ?? localOverrides.completedMissions ?? 0,
-      totalMissions:    api.totalMissions     ?? localOverrides.totalMissions     ?? 0,
+      completedMissions:api.completedMissions ?? localOverrides.completedMissions ?? derivedCompleted,
+      totalMissions:    api.totalMissions     ?? localOverrides.totalMissions     ?? derivedTotal,
       successRate:      api.successRate       ?? localOverrides.successRate       ?? 0,
       currentZone:      api.currentZone       ?? localOverrides.currentZone,
-      recentMissions:   api.recentMissions    ?? [],
+      recentMissions:   rawMissions,
       createdAt:        api.createdAt,
       updatedAt:        api.updatedAt,
     };
   }
 
-  // ── Mock-only: vehicles and zones (no API endpoint) ───────────
-  private _mockVehicles(): AvailableVehicle[] {
-    return [
-      { id: 'VA1', plate: 'BF-1234-X', model: 'Mercedes Sprinter 2T', type: 'camion',   capacityTons: 2,   status: 'disponible' },
-      { id: 'VA2', plate: 'BF-5678-Y', model: 'Toyota Dyna 3T',       type: 'camion',   capacityTons: 3,   status: 'disponible' },
-      { id: 'VA3', plate: 'BF-9012-Z', model: 'Honda CB500',           type: 'moto',     capacityTons: 0.1, status: 'disponible' },
-      { id: 'VA4', plate: 'BF-3344-W', model: 'Piaggio Porter 1.5T',  type: 'tricycle', capacityTons: 1.5, status: 'disponible' },
-    ];
-  }
-
-  private _mockZones(): AvailableZone[] {
-    return [
-      { id: 'ZA1', name: 'Secteur 1 – Gounghin',    ville: 'Ouagadougou', arrondissement: 'Baskuy',   householdsCount: 340 },
-      { id: 'ZA2', name: 'Secteur 2 – Pabré',        ville: 'Ouagadougou', arrondissement: 'Baskuy',   householdsCount: 260 },
-      { id: 'ZA3', name: 'Secteur 8 – Hamdalaye',    ville: 'Ouagadougou', arrondissement: 'Bogodogo', householdsCount: 420 },
-      { id: 'ZA4', name: 'Secteur 9 – Zone du bois', ville: 'Ouagadougou', arrondissement: 'Bogodogo', householdsCount: 310 },
-      { id: 'ZA5', name: 'Secteur 5 – Zangouettin',  ville: 'Ouagadougou', arrondissement: 'Kouluba',  householdsCount: 280 },
-      { id: 'ZA6', name: 'Secteur 12 – Paspanga',    ville: 'Ouagadougou', arrondissement: 'Kouluba',  householdsCount: 195 },
-      { id: 'ZA7', name: 'Secteur 4 – Tounouma',     ville: 'Bobo-Dioulasso', householdsCount: 310 },
-      { id: 'ZA8', name: 'Secteur 5 – Sarfalao',     ville: 'Bobo-Dioulasso', householdsCount: 275 },
-    ];
-  }
 }

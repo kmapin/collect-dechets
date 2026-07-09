@@ -11,6 +11,8 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TeamService } from '../../services/team.service';
 import { Team, TeamMember, MemberRole, MemberAvailability } from '../../models/team.model';
+import { memberAvailabilityLabel, vehicleStatusColor, vehicleStatusLabel } from '../../models/team-labels';
+import { formatFrDate } from '../../../../shared/format.util';
 
 // ── Local types ──────────────────────────────────────────────────
 interface RichMember extends TeamMember {
@@ -289,13 +291,13 @@ export class TeamMembers implements OnInit {
     return ({ disponible: '#16a34a', occupe: '#f59e0b', absent: '#ef4444' } as Record<string, string>)[a] ?? '#94a3b8';
   }
   availLabel(a: string): string {
-    return ({ disponible: 'Disponible', occupe: 'En mission', absent: 'Absent' } as Record<string, string>)[a] ?? a;
+    return memberAvailabilityLabel(a);
   }
   vhStatusColor(s: string): string {
-    return ({ disponible: '#16a34a', en_service: '#f59e0b', maintenance: '#ef4444', hors_service: '#94a3b8' } as Record<string, string>)[s] ?? '#64748b';
+    return vehicleStatusColor(s);
   }
   vhStatusLabel(s: string): string {
-    return ({ disponible: 'Disponible', en_service: 'En service', maintenance: 'Maintenance', hors_service: 'Hors service' } as Record<string, string>)[s] ?? s;
+    return vehicleStatusLabel(s);
   }
   teamStatusColor(s: string): string {
     return ({ active: '#16a34a', inactive: '#94a3b8', on_mission: '#f59e0b', maintenance: '#ef4444' } as Record<string, string>)[s] ?? '#64748b';
@@ -310,11 +312,30 @@ export class TeamMembers implements OnInit {
     if (m.zoneId) return this.svc.availableZones().find(z => z.id === m.zoneId)?.name?.split('–')[0]?.trim() ?? '—';
     return this.team()?.zones[0]?.name?.split('–')[0]?.trim() ?? '—';
   }
+  /** Ville associée à la zone du membre (pour tooltip), en complément de memberZone(). */
+  memberZoneTooltip(m: RichMember): string {
+    const zone = m.zoneId
+      ? this.svc.availableZones().find(z => z.id === m.zoneId)
+      : null;
+    if (zone) return zone.ville ? `${zone.name} – ${zone.ville}` : zone.name;
+    const teamZone = this.team()?.zones[0];
+    if (teamZone) return teamZone.ville ? `${teamZone.name} – ${teamZone.ville}` : teamZone.name;
+    return '—';
+  }
   memberVehicle(m: RichMember): string {
-    if (m.vehicleId) return this.svc.availableVehicles().find(v => v.id === m.vehicleId)?.plate ?? '—';
-    if (m.role === 'manager' && this.team()?.vehicle) return this.team()!.vehicle!.plate;
+    if (m.vehicleId) {
+      const v = this.svc.availableVehicles().find(v => v.id === m.vehicleId);
+      return v ? `${v.plate} · ${v.model}` : '—';
+    }
+    if (m.role === 'manager' && this.team()?.vehicle) {
+      const v = this.team()!.vehicle!;
+      return `${v.plate} · ${v.model}`;
+    }
     return '';
   }
+
+  // ── Formatage ─────────────────────────────────────────────────
+  formatFrDate = formatFrDate;
 
   private _enrich(m: TeamMember): RichMember {
     const seed = m.id.split('').reduce((s, c) => s + c.charCodeAt(0), 0);

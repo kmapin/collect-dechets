@@ -108,7 +108,7 @@
               <mat-icon class="tnode-icon" [style.color]="getLevelColor(node.data.level)">
                 {{ getLevelIcon(node.data.level) }}
               </mat-icon>
-              <span class="tnode-label">{{ node.label }}</span>
+              <span class="tnode-label" [pTooltip]="node.label" tooltipPosition="top">{{ node.label }}</span>
               <div class="tnode-stats">
                 <span class="tnode-hh">{{ node.data.households }}</span>
                 <mat-icon class="tnode-hh-ico">home</mat-icon>
@@ -129,7 +129,7 @@
               {{ getLevelIcon(selectedNode()!.data.level) }}
             </mat-icon>
             <div class="sel-card-title">
-              <span class="sel-name">{{ selectedNode()!.label }}</span>
+              <span class="sel-name" [pTooltip]="selectedNode()!.label" tooltipPosition="top">{{ selectedNode()!.label }}</span>
               <span class="sel-level">{{ getLevelLabel(selectedNode()!.data.level) }}</span>
             </div>
             <button type="button" class="sel-close" (click)="clearSelection()">
@@ -198,7 +198,7 @@
       @if (selectedNode()) {
         <div class="map-sel-badge" [style.--sc]="getLevelColor(selectedNode()!.data.level)">
           <mat-icon>place</mat-icon>
-          <span>{{ selectedNode()!.label }}</span>
+          <span class="map-sel-name" [pTooltip]="selectedNode()!.label" tooltipPosition="top">{{ selectedNode()!.label }}</span>
           <span class="map-sel-hh">{{ selHouseholds() }} ménages</span>
         </div>
       }

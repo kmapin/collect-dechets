@@ -10,10 +10,10 @@ import { ToastModule } from 'primeng/toast';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
 import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
-import { CalendarOptions, EventInput, EventClickArg, EventDropArg } from '@fullcalendar/core';
+import { CalendarOptions, EventInput, EventClickArg } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin, { EventResizeDoneArg } from '@fullcalendar/interaction';
+import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import frLocale from '@fullcalendar/core/locales/fr';
 import { PlanningService } from '../services/planning.service';
@@ -61,7 +61,6 @@ export class PlanningCalendarComponent implements OnInit {
 
   private svc    = inject(PlanningService);
   private router = inject(Router);
-  private msg    = inject(MessageService);
 
   // ── Loading ───────────────────────────────────────────────────
   isLoading  = this.svc.loading;
@@ -284,9 +283,5 @@ export class PlanningCalendarComponent implements OnInit {
       return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
     }
     return date;
-  }
-
-  private _fmtDate(d: Date): string {
-    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
   }
 }

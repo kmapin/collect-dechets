@@ -218,12 +218,23 @@
             @for (v of availableVehicles; track v.id) {
               <label class="tf-vehicle-opt" [class.tf-vehicle-opt--active]="form.get('vehicleId')!.value === v.id">
                 <input type="radio" formControlName="vehicleId" [value]="v.id" />
-                <mat-icon class="tvo-icon" style="color:#3b82f6">local_shipping</mat-icon>
+                <mat-icon class="tvo-icon"
+                  [style.color]="vehicleStatusColor(v.status)">{{ vehicleTypeIcon(v.type) }}</mat-icon>
                 <div>
-                  <span class="tvo-name">{{ v.plate }}</span>
-                  <span class="tvo-detail">{{ v.model }} · {{ v.capacityTons }}T</span>
+                  <span class="tvo-name" [pTooltip]="v.plate" tooltipPosition="top">
+                    <span class="tvo-plate-text">{{ v.plate }}</span>
+                    @if (assignedTeamName(v.id); as assignedTeam) {
+                      <span class="tvo-assigned-dot"
+                            [pTooltip]="assignedVehicleTooltip(v.id)"
+                            tooltipPosition="top">
+                      </span>
+                    }
+                  </span>
+                  <span class="tvo-detail">{{ v.model }} · {{ v.capacityTons }}T · {{ vehicleTypeLabel(v.type) }}</span>
                 </div>
-                <span class="tvo-status" style="background:#16a34a18;color:#16a34a">Disponible</span>
+                <span class="tvo-status"
+                  [style.background]="vehicleStatusColor(v.status) + '18'"
+                  [style.color]="vehicleStatusColor(v.status)">{{ vehicleStatusLabel(v.status) }}</span>
               </label>
             }
           </div>

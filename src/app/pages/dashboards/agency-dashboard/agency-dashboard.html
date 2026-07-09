@@ -1183,10 +1183,10 @@
             <div class="section-actions">
               <button
                 class="btn btn-primary"
-                (click)="showScheduleModal = true"
+                [routerLink]="['/planning']"
               >
-                <i class="material-icons">schedule</i>
-                Nouveau Planning
+                <i class="material-icons">dashboard</i>
+                Gérer plannings &amp; équipes
               </button>
             </div>
           </div>
@@ -1267,7 +1267,7 @@
                         <i class="material-icons">groups</i>
                         <span>{{ schedule.teamName }}</span>
                       </div>
-                    } @else if (!schedule.teamName && schedule.teamV2Id) {
+                    } @else if (!schedule.teamName && schedule.teamIds) {
                       <div class="sched-team sched-team--no-name">
                         <i class="material-icons">groups</i>
                         <span>Équipe assignée</span>
@@ -2077,21 +2077,26 @@
                     } @else { — }
                   </td>
                   <td>{{ vehicle.mileage != null ? (vehicle.mileage | number) + ' km' : '—' }}</td>
-                  <td>
-                    <span class="vehicle-status-badge" [class]="getVehicleStatusClass(vehicle.status)">
-                      {{ getVehicleStatusText(vehicle.status) }}
-                    </span>
+                  <td class="col-status-pills">
+                    <div class="vstatus-pills">
+                      @for (s of vehicleStatuses; track s.value) {
+                        <button
+                          class="vstatus-pill"
+                          [class.vstatus-pill--active]="vehicle.status === s.value"
+                          [style.--sc]="s.color"
+                          (click)="setVehicleStatus(vehicle, s.value)"
+                          [title]="s.label">
+                          <i class="material-icons">{{ s.icon }}</i>
+                          <span>{{ s.short }}</span>
+                        </button>
+                      }
+                    </div>
                   </td>
                   <td>{{ vehicle.lastMaintenance || '—' }}</td>
                   <td class="col-actions">
                     <div class="table-actions">
                       <button class="action-btn edit" (click)="openEditVehicleModal(vehicle)" title="Modifier"><i class="material-icons">edit</i></button>
                       <button class="action-btn danger" (click)="deleteVehicle(vehicle)" title="Supprimer"><i class="material-icons">delete</i></button>
-                      <button class="action-btn toggle-btn"
-                        [class.toggle-active]="vehicle.status === 'disponible'"
-                        [class.toggle-inactive]="vehicle.status !== 'disponible'"
-                        (click)="toggleVehicleStatus(vehicle)"
-                        title="Changer le statut"><i class="material-icons">{{ vehicle.status === 'disponible' ? 'toggle_on' : 'toggle_off' }}</i></button>
                     </div>
                   </td>
                 </tr>
@@ -2812,314 +2817,6 @@
             </div>
             }
 
-            <!-- Drawer Planning -->
-            @if (showScheduleModal) {
-            <div class="drawer-overlay" (click)="showScheduleModal = false">
-              <div class="drawer-content" (click)="$event.stopPropagation()">
-                <div class="drawer-header">
-                  <h3>
-                    {{ isEditingSchedule ? 'Modifier le Planning' : 'Nouveau Planning de Collecte' }}
-                  </h3>
-                  <button
-                    class="drawer-close-btn"
-                    (click)="showScheduleModal = false"
-                  >
-                    <i class="material-icons">close</i>
-                  </button>
-                </div>
-                <div class="drawer-body">
-                  <form
-                    id="schedule-form"
-                    [formGroup]="scheduleForm"
-                    class="drawer-form"
-                    (ngSubmit)="addSchedule()"
-                  >
-                    <!-- Zone -->
-                    <div class="form-group">
-                      <div class="label-with-action">
-                        <label>Zone *</label>
-                        <button
-                          type="button"
-                          class="reload-btn"
-                          (click)="reloadZones()"
-                          [disabled]="isLoadingZones"
-                          title="Recharger les zones"
-                        >
-                          <i class="material-icons">refresh</i>
-                        </button>
-                      </div>
-                      <select formControlName="zone">
-                        @if (!isLoadingZones && zones.length === 0) {
-                        <option value="">Aucune zone disponible</option>
-                        } @if (!isLoadingZones && zones.length > 0) {
-                        <option value="">Sélectionner une zone</option>
-                        } @if (isLoadingZones) {
-                        <option value="">Chargement des zones...</option>
-                        } @for (zone of zones; track zone) {
-                        <option
-                          [value]="zone.name || zone.neighborhood || zone"
-                        >
-                          {{ zone.name || zone.neighborhood || zone }}
-                        </option>
-                        }
-                      </select>
-                      @if (isLoadingZones) {
-                      <div class="loading-indicator">
-                        <i class="material-icons loading-spinner">refresh</i>
-                        <span>Chargement des zones...</span>
-                      </div>
-                      } @if ( scheduleForm.get('zone')?.invalid &&
-                      scheduleForm.get('zone')?.touched) {
-                      <small class="error-message">
-                        Veuillez sélectionner une zone
-                      </small>
-                      }
-                    </div>
-                    <!-- Date -->
-                    <div class="form-group">
-                      <label>Date *</label>
-                      <input
-                        type="date"
-                        formControlName="date"
-                        class="full-width"
-                        [min]="minDate"
-                      />
-                      @if ( scheduleForm.get('date')?.invalid &&
-                      scheduleForm.get('date')?.touched ) {
-                      <small class="error-message">
-                        Veuillez sélectionner une date
-                      </small>
-                      }
-                    </div>
-                    <!-- Heures -->
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label>Heure de début *</label>
-                        <input type="time" formControlName="startTime" />
-                        @if ( scheduleForm.get('startTime')?.invalid &&
-                        scheduleForm.get('startTime')?.touched ) {
-                        <small class="error-message">
-                          Veuillez définir une heure de début
-                        </small>
-                        }
-                      </div>
-                      <div class="form-group">
-                        <label>Heure de fin *</label>
-                        <input type="time" formControlName="endTime" />
-                        @if ( scheduleForm.get('endTime')?.invalid &&
-                        scheduleForm.get('endTime')?.touched) {
-                        <small class="error-message">
-                          Veuillez définir une heure de fin
-                        </small>
-                        } @if (scheduleForm.hasError('invalidTimeOrder')) {
-                        <small class="error-message">
-                          L'heure de fin doit être postérieure à l'heure de
-                          début
-                        </small>
-                        }
-                      </div>
-                    </div>
-                    <!-- Tarif -->
-                  
-                    <div class="form-group">
-                      <label>Tarif concerné *</label>
-                      <select formControlName="pricingId">
-                        @if (tariffs && tariffs.length > 0) {
-                        <option value="">Sélectionner un tarif</option>
-                        } @if (!tariffs || tariffs.length === 0) {
-                        <option value="" disabled>
-                          Aucun tarif pour le moment
-                        </option>
-                        } @for (tariff of tariffs; track tariff) {
-                        <option [value]="tariff._id">
-                          <h4 class="price">
-                            {{ tariff.price | number : "1.0-0" }} FCFA
-                          </h4>
-                        </option>
-                        }
-                      </select>
-                      @if (scheduleForm.get('pricingId')?.invalid &&
-                      scheduleForm.get('pricingId')?.touched) {
-                      <small class="error-message">
-                        Veuillez sélectionner un tarif
-                      </small>
-                      }
-                    </div>
-                    <!-- Collecteur -->
-                    <!-- <div class="form-group">
-                      <label>Collecteur *</label>
-                      <select formControlName="collectorId" multiple>
-                        @if (collectors && collectors.length > 0) {
-                        <option value="">Sélectionner un collecteur</option>
-                        } @if (!collectors || collectors.length === 0) {
-                        <option value="" disabled>
-                          Aucun collecteur pour le moment
-                        </option>
-                        } @for (collector of collectors; track collector) {
-                        <option [value]="collector._id">
-                          {{ collector.firstName }} {{ collector.lastName }}
-                        </option>
-                        }
-                      </select>
-                      @if (scheduleForm.get('collectorId')?.invalid &&
-                      scheduleForm.get('collectorId')?.touched) {
-                      <small class="error-message">
-                        Veuillez sélectionner un collecteur
-                      </small>
-                      }
-                    </div> -->
-                    <!--  -->
-                    <div class="form-group">
-                      <label>Collecteur *</label>
-
-                      <p-multiSelect
-                        [options]="collectors"
-                        formControlName="collectorId"
-                        optionLabel="name"
-                        [maxSelectedLabels]="4"
-                        [filter]="true"
-                        filterBy="firstName,lastName"
-                        optionValue="_id"
-                        defaultLabel="Sélectionner un collecteur"
-                        display="chip"
-                      >
-
-                        <!-- Affichage dans la liste -->
-                        <ng-template let-collector pTemplate="item">
-                          {{ collector.firstName }} {{ collector.lastName }}
-                        </ng-template>
-
-                      </p-multiSelect>
-
-                      @if (scheduleForm.get('collectorId')?.invalid &&
-                      scheduleForm.get('collectorId')?.touched) {
-                      <small class="error-message">
-                        Veuillez sélectionner un collecteur
-                      </small>
-                      }
-
-                    </div>
-                    
-                    <!--Planning isRecurring-->
-                    <div class="form-group">
-                      <label>Planning répetitif ?</label>
-                      <input type="checkbox" formControlName="isRecurring" />
-                      @if (scheduleForm.get('isRecurring')?.invalid &&
-                      scheduleForm.get('isRecurring')?.touched) {
-                      <small class="error-message">
-                        Veuillez choisir si le planning est recurrent
-                      </small>
-                      }
-                    </div>
-                    @if(isRecurring) {
-                    
-                      <!-- Recurrence -->
-                      <div class="form-group">
-                        <label>Recurrence *</label>
-                        <select formControlName="recurrenceType">
-                          <option value="">Sélectionner une recurrence</option>
-                          <option value="weekly">Hebdomadaire</option>
-                          <option value="monthly">Mensuel</option>
-                        </select>
-                        @if (scheduleForm.get('recurrenceType')?.invalid &&
-                        scheduleForm.get('recurrenceType')?.touched) {
-                        <small class="error-message">
-                          Veuillez sélectionner une recurrence
-                        </small>
-                        }
-                      </div>
-                      <!-- Nombre de semaines -->
-                      <div class="form-group">
-                        <label>
-                          Nombre de @if (recurrenceType === 'weekly') {<span>semaines</span>}
-                          @if (recurrenceType === 'monthly') {<span>mois</span>} *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          formControlName="numberOfWeeks"
-                        />
-                        @if (scheduleForm.get('numberOfWeeks')?.invalid &&
-                        scheduleForm.get('numberOfWeeks')?.touched) {
-                        <small class="error-message">
-                          Veuillez définir le nombre de jours
-                        </small>
-                        }
-                      </div>
-                    }
-                  </form>
-                </div>
-                <div class="drawer-footer">
-                  <div class="drawer-actions">
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      (click)="showScheduleModal = false"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="submit"
-                      form="schedule-form"
-                      class="btn btn-primary"
-                      [disabled]="scheduleForm.invalid || isLoading"
-                    >
-                      @if (isLoading) {
-                      <span class="loading-spinner"></span>
-                      } @if (!isLoading) {
-                      <i class="material-icons"
-                        >{{ isEditingSchedule ? 'edit' : 'schedule' }}
-                      </i>
-                      } {{ isLoading ? (isEditingSchedule ? 
-                        'Modification en cours...' : 'Création en cours...') : (isEditingSchedule ?
-                      'Modifier Planning' : 'Créer Planning') }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              @if (showAssignModal) {
-              <div class="modal-overlay" (click)="showAssignModal = false">
-                <div class="modal-content" (click)="$event.stopPropagation()">
-                  <div class="modal-header">
-                    <h3>Assigner des Employes</h3>
-                    <button class="close-btn" (click)="showAssignModal = false">
-                      <i class="material-icons">close</i>
-                    </button>
-                  </div>
-                  <div class="modal-body">
-                    <label>Employes disponibles :</label>
-                    @for (employee of allEmployees; track employee) {
-                    <div class="checkbox-group">
-                      <input
-                        type="checkbox"
-                        [value]="employee._id"
-                        (change)="
-                              toggleEmployeeSelection(employee._id, $event)
-                            "
-                      />
-                      {{ employee.firstName }} {{ employee.lastName }}
-                    </div>
-                    }
-                  </div>
-                  <div class="modal-footer">
-                    <button
-                      class="btn btn-secondary"
-                      (click)="showAssignModal = false"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      class="btn btn-primary"
-                      (click)="assignEmployeesToReport()"
-                    >
-                      soumettre
-                    </button>
-                  </div>
-                </div>
-              </div>
-              }
-            </div>
-            }
           </div>
 
           @if (selectedSchedule) {
@@ -3183,7 +2880,7 @@
                   <i class="material-icons">groups</i>
                   <div class="sdm-info">
                     <span class="sdm-label">Équipe</span>
-                    <span class="sdm-value">{{ selectedSchedule.teamName || (selectedSchedule.teamV2Id ? "Équipe assignée" : "Non assignée") }}</span>
+                    <span class="sdm-value">{{ selectedSchedule.teamName || (selectedSchedule.teamIds?.length ? "Équipe assignée" : "Non assignée") }}</span>
                   </div>
                 </div>
               </div>

@@ -102,30 +102,30 @@ interface Incident {
     _id: string;
     name?: string;
   };
-  clientId?:{
+  clientId?: {
     _id: string;
     firstName?: string;
-    lastName ?:string;
-    email?:string
+    lastName?: string;
+    email?: string
   };
   collectorId?: {
     _id: string;
     firstName?: string;
-    lastName ?:string;
-    email?:string
+    lastName?: string;
+    email?: string
   }
   photos?: string[];
   agencyName: string;
   type:
-    | "missed_collection"
-    | "compliance_issue"
-    | "complaint"
-    | "technical_issue";
+  | "missed_collection"
+  | "compliance_issue"
+  | "complaint"
+  | "technical_issue";
   comment: string;
   description: string;
   severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
-  status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
+  status: "open" | "pending" | "resolved" | 'Collected' | 'Reported' | 'Scheduled';
   assignedTo?: string;
 }
 interface Report {
@@ -239,7 +239,7 @@ export enum CollectionStatus1 {
     MatExpansionModule,
     MatIcon,
     LoadingSpinnerComponent,
-    
+
     MultiSelectModule,
     TableModule,
     ButtonModule,
@@ -291,7 +291,6 @@ export enum CollectionStatus1 {
 export class AgencyDashboard implements OnInit, AfterViewChecked {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
 
-  scheduleForm!: FormGroup;
   employeeForm!: FormGroup;
   tariffForm!: FormGroup;
   zoneForm!: FormGroup;
@@ -329,7 +328,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     totalEmployees: 0,
     totalZone: 0,
     totalCollectors: 0,
-    totalClientsActifs:0,
+    totalClientsActifs: 0,
     totalReporting: 0,
     activeCollectors: 0,
     todayCollections: 0,
@@ -457,7 +456,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // assigner un planning à un collecteur
   showAssignModal: boolean = false;
   selectedReportId: string = "";
-  selectedReport: Incident|null = null;
+  selectedReport: Incident | null = null;
   selectedEmployee: string[] = [];
   // Propriétés pour l'édition d'employé
   employeeToEdit: any = null;
@@ -482,7 +481,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   zoneFormError: string | null = null;
   zoneFormDetailedErrors: any = {};
 
-  showScheduleModal = false;
   editingZone = false;
 
   // Forms - Supprimés les objets pour utiliser les reactive forms
@@ -593,6 +591,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // ─── Mobilité / Véhicules ────────────────────────────────────
   vehicles: Vehicle[] = [];
   filteredVehicles: Vehicle[] = [];
+  readonly vehicleStatuses = [
+    { value: 'disponible' as const, label: 'Disponible', short: 'Dispo', icon: 'check_circle', color: '#16a34a' },
+    { value: 'en_service' as const, label: 'En service', short: 'En svc', icon: 'local_shipping', color: '#3b82f6' },
+    { value: 'maintenance' as const, label: 'Maintenance', short: 'Maint.', icon: 'build', color: '#f59e0b' },
+    { value: 'hors_service' as const, label: 'Hors service', short: 'H. svc', icon: 'cancel', color: '#ef4444' },
+  ];
+
   vehicleViewMode: 'card' | 'table' = 'table';
   showVehicleModal = false;
   isEditingVehicle = false;
@@ -643,13 +648,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.isEditingVehicle = true;
     this.selectedVehicle = vehicle;
     this.vehicleForm = {
-      plate:           vehicle.plate,
-      model:           vehicle.model,
-      type:            vehicle.type,
-      capacityTons:    vehicle.capacityTons ?? 0,
-      status:          vehicle.status,
-      fuelLevel:       vehicle.fuelLevel ?? 100,
-      mileage:         vehicle.mileage ?? 0,
+      plate: vehicle.plate,
+      model: vehicle.model,
+      type: vehicle.type,
+      capacityTons: vehicle.capacityTons ?? 0,
+      status: vehicle.status,
+      fuelLevel: vehicle.fuelLevel ?? 100,
+      mileage: vehicle.mileage ?? 0,
       lastMaintenance: vehicle.lastMaintenance ?? '',
     };
     this.showVehicleModal = true;
@@ -670,13 +675,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     const body = {
       agencyId,
-      plate:           this.vehicleForm.plate,
-      model:           this.vehicleForm.model,
-      type:            this.vehicleForm.type as Vehicle['type'],
-      capacityTons:    this.vehicleForm.capacityTons,
-      status:          this.vehicleForm.status as Vehicle['status'],
-      fuelLevel:       this.vehicleForm.fuelLevel,
-      mileage:         this.vehicleForm.mileage,
+      plate: this.vehicleForm.plate,
+      model: this.vehicleForm.model,
+      type: this.vehicleForm.type as Vehicle['type'],
+      capacityTons: this.vehicleForm.capacityTons,
+      status: this.vehicleForm.status as Vehicle['status'],
+      fuelLevel: this.vehicleForm.fuelLevel,
+      mileage: this.vehicleForm.mileage,
       ...(this.vehicleForm.lastMaintenance ? { lastMaintenance: this.vehicleForm.lastMaintenance } : {}),
     };
 
@@ -732,18 +737,21 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
 
-  toggleVehicleStatus(vehicle: Vehicle): void {
-    if (!vehicle._id) return;
-    const cycleOrder: Vehicle['status'][] = ['disponible', 'en_service', 'maintenance', 'hors_service'];
-    const nextStatus = cycleOrder[(cycleOrder.indexOf(vehicle.status) + 1) % cycleOrder.length];
-    this.vehicleService.update(vehicle._id, { status: nextStatus }).subscribe({
+  setVehicleStatus(vehicle: Vehicle, status: Vehicle['status']): void {
+    if (!vehicle._id || vehicle.status === status) return;
+    this.vehicleService.update(vehicle._id, { status }).subscribe({
       next: (updated) => {
-        vehicle.status = updated?.status ?? nextStatus;
+        vehicle.status = updated?.status ?? status;
         this.filterVehicles();
         this.cdr.detectChanges();
       },
       error: () => this.notificationService.showError('Erreur', 'Impossible de changer le statut.')
     });
+  }
+
+  toggleVehicleStatus(vehicle: Vehicle): void {
+    const cycleOrder: Vehicle['status'][] = ['disponible', 'en_service', 'maintenance', 'hors_service'];
+    this.setVehicleStatus(vehicle, cycleOrder[(cycleOrder.indexOf(vehicle.status) + 1) % cycleOrder.length]);
   }
 
   filterVehicles(): void {
@@ -813,24 +821,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   }
   // Initialisation de tous les formulaires réactifs
   private initializeForms(): void {
-    // Formulaire de planification
-    this.scheduleForm = this.fb.group(
-      {
-        zone: ["", Validators.required],
-        date: ["", Validators.required],
-        startTime: ["", Validators.required],
-        endTime: ["", Validators.required],
-        collectorId: [[], Validators.required],
-        pricingId: ["", Validators.required],
-        isRecurring: [false],
-        recurrenceType: [""],
-        numberOfWeeks:[0]
-      },
-      {
-        validators: [this.validateTimeOrder],
-      },
-    );
-
     // Formulaire d'employé - selon le schéma Swagger requis
     this.employeeForm = this.fb.group(
       {
@@ -888,17 +878,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.setupFormErrorHandling();
   }
 
-  get recurrenceType(){
-    return this.scheduleForm.get('recurrenceType')!.value;
-  }
-
-  get isRecurring(){
-    return this.scheduleForm.get('isRecurring')!.value; 
-  }
   // Configuration de la gestion des erreurs pour tous les formulaires
   private setupFormErrorHandling(): void {
     const forms = [
-      { form: this.scheduleForm, name: "schedule" },
       { form: this.employeeForm, name: "employee" },
       { form: this.tariffForm, name: "tariff" },
       { form: this.zoneForm, name: "zone" },
@@ -1111,8 +1093,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         return this.employeeForm;
       case "tariff":
         return this.tariffForm;
-      case "schedule":
-        return this.scheduleForm;
       case "zone":
         return this.zoneForm;
       case "message":
@@ -1366,62 +1346,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
 
-  openScheduleModal(): void {
-    this.scheduleForm.reset();
-
-    // Réinitialiser le mode édition (pour le mode création)
-    this.isEditingSchedule = false;
-    this.editingSchedule = null;
-
-    // Charger automatiquement les données nécessaires
-    this.loadScheduleModalData();
-
-    // Nettoyer les erreurs du formulaire
-    Object.keys(this.formErrors).forEach((key) => {
-      if (key.startsWith("schedule_")) {
-        delete this.formErrors[key];
-      }
-    });
-
-    this.showScheduleModal = true;
-  }
-
-  // Nouvelle méthode pour charger toutes les données nécessaires au modal de planning
-  private loadScheduleModalData(): void {
-    // Charger les zones si nécessaire
-    if (this.zones.length === 0 && !this.isLoadingZones) {
-      console.log("Chargement des zones...");
-      this.loadZones(this.currentUser);
-    }
-
-    // Charger les collecteurs si nécessaire
-    if (this.collectors.length === 0 && this.currentUser?.agencyId) {
-      console.log("Chargement des collecteurs...");
-      this.loadCollectors(this.currentUser.agencyId);
-    }
-
-    // Recharger les plannings pour avoir les données les plus récentes
-    console.log("Rechargement des plannings...");
-    this.loadPlannings();
-  }
-
-  closeScheduleModal(): void {
-    this.showScheduleModal = false;
-    this.scheduleForm.reset();
-    this.isEditingSchedule = false;
-    this.editingSchedule = null;
-
-    // Nettoyer les erreurs du formulaire de planning
-    Object.keys(this.formErrors).forEach((key) => {
-      if (key.startsWith("schedule_")) {
-        delete this.formErrors[key];
-      }
-    });
-
-    // Marquer le formulaire comme non touché et propre
-    this.markFormGroupAsUntouchedAndPristine(this.scheduleForm);
-  }
-
   // Méthode pour recharger les zones manuellement
   reloadZones(): void {
     this.zones = []; // Vider les zones pour forcer le rechargement
@@ -1518,6 +1442,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
     // Écouter les queryParams
     this.route.queryParams.subscribe((params) => {
+      if (params["tab"]) {
+        const tabExists = this.tabs.some(t => t.id === params["tab"]);
+        if (tabExists) this.setActiveTab(params["tab"] as TabId);
+      }
       if (params["source"] === "notification") {
         this.handleNotificationParams(params);
       }
@@ -1583,7 +1511,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           );
           this.countUnreadMessages();
           this.scrollToBottom();
-          
+
           if (!clientId) {
             this.receivedId = this.currentUser?.agencyId || "";
           } else {
@@ -1676,17 +1604,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.selectedEmployee = [];
   }
 
-  validateTimeOrder(group: FormGroup) {
-    const start = group.get("startTime")?.value;
-    const end = group.get("endTime")?.value;
-
-    if (start && end && end <= start) {
-      return { invalidTimeOrder: true };
-    }
-    return null;
-  }
-
-  assignEmployeesToReport(): void {}
+  assignEmployeesToReport(): void { }
   toggleEmployeeSelection(employeeId: string, event: any): void {
     if (event.target.checked) {
       this.selectedEmployee.push(employeeId);
@@ -1742,16 +1660,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
           if ((collectors as any)?.data) {
             const data = (collectors as any).data;
             // Prendre seulement les collectors de la réponse
-            this.collectors = (data || []).map((c: any) =>({
+            this.collectors = (data || []).map((c: any) => ({
               ...c,
-              name:c.firstName + ' ' + c.lastName
+              name: c.firstName + ' ' + c.lastName
             }));
             console.log(" Collecteurs extraits:", this.collectors);
             console.log("   - Nombre de collecteurs:", this.collectors.length);
           } else if (Array.isArray(collectors)) {
-            this.collectors = collectors.map((c: any) =>({
+            this.collectors = collectors.map((c: any) => ({
               ...c,
-              name:c.firstName + ' ' + c.lastName
+              name: c.firstName + ' ' + c.lastName
             }));
             console.log(" Collecteurs reçus directement:", this.collectors);
           } else {
@@ -3136,8 +3054,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   getClientSubscriptionStatus(c: any): string | undefined {
     return c.subscriptionHistory && c.subscriptionHistory.length
       ? c.subscriptionHistory[
-          c.subscriptionHistory.length - 1
-        ].status?.toLowerCase()
+        c.subscriptionHistory.length - 1
+      ].status?.toLowerCase()
       : undefined;
   }
 
@@ -3240,7 +3158,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return Math.round(
       (this.statistics.completedCollections /
         this.statistics.todayCollections) *
-        100,
+      100,
     );
   }
 
@@ -3251,7 +3169,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return new Array(Math.floor(rating)).fill(0);
   }
 
-  getEmployeeStatusText(status:string): string{
+  getEmployeeStatusText(status: string): string {
     const statusTexts: Record<string, string> = {
       active: "Actif",
       inactive: "Inactif",
@@ -3464,27 +3382,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * Crée un nouveau planning pour un jour spécifique
    */
   createNewScheduleForDay(dayIndex: number): void {
-    // Calculer la date correspondant au jour sélectionné
     const targetDate = this.getDateForDay(dayIndex);
-
-    // Ouvrir le drawer de création de planning
-    this.showScheduleModal = true;
-    this.isEditingSchedule = false;
-
-    // Pré-remplir le formulaire avec la date sélectionnée
-    this.scheduleForm.patchValue({
-      date: this.formatDateForInput(targetDate),
-    });
-
-    // Notification pour informer l'utilisateur
-    this.notificationService.showInfo(
-      "Nouveau planning",
-      `Création d'un planning pour ${this.getDayName(dayIndex)} ${this.getFormattedDate(dayIndex)}`,
-    );
-
-    console.log(
-      `[DEBUG] Création planning pour le jour ${dayIndex} - Date: ${targetDate.toLocaleDateString()}`,
-    );
+    const dateStr = this.formatDateForInput(targetDate);
+    this.router.navigate(['/planning/create'], { queryParams: { date: dateStr } });
   }
 
   /**
@@ -4102,17 +4002,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         if (teams.length) this.schedulesTeams = teams;
 
         this.schedules = plannings.map((p: any) => ({
-          _id:       p._id,
-          libelle:   p.libelle || "",
+          _id: p._id,
+          libelle: p.libelle || "",
           reference: p.reference || "",
-          date:      p.date || "",
+          date: p.date || "",
           startTime: p.startTime || "08:00",
-          endTime:   p.endTime || "",
-          status:    p.planningStatus || p.status || "brouillon",
-          type:      p.type || "",
-          zone:      p.zone || p.quartier || p.secteur || p.ville || "",
-          teamV2Id:  p.teamV2Id || null,
-          teamName:  this._resolveTeamName(p.teamV2Id, teams),
+          endTime: p.endTime || "",
+          status: p.planningStatus || p.status || "brouillon",
+          type: p.type || "",
+          zone: p.zone || p.quartier || p.secteur || p.ville || "",
+          teamId: p.teamId || null,
+          teamIds: Array.isArray(p.equipeIds) ? p.equipeIds : [],
+          teamName: this._resolveTeamName(p, teams),
           collectors: [],
           createdAt: p.createdAt,
         }));
@@ -4126,10 +4027,21 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
 
-  private _resolveTeamName(teamV2Id: string | null, teams: any[]): string {
-    if (!teamV2Id) return "";
-    const team = teams.find((t: any) => t._id === teamV2Id);
-    return team?.name ?? "";
+  private _resolveTeamName(p: any, teams: any[]): string {
+    // Plannings de type zone/secteur/groupe : équipes dans equipeIds (peuplé par le backend)
+    if (Array.isArray(p.equipeIds) && p.equipeIds.length) {
+      return p.equipeIds
+        .map((e: any) => (typeof e === "string" ? teams.find((t: any) => t._id === e)?.name : e?.name))
+        .filter(Boolean)
+        .join(", ");
+    }
+    // Champ legacy : teamId (ObjectId string ou objet peuplé)
+    if (p.teamId) {
+      if (typeof p.teamId === "object") return p.teamId?.name ?? "";
+      const team = teams.find((t: any) => t._id === p.teamId);
+      return team?.name ?? "";
+    }
+    return "";
   }
 
   // recuperation des planning d un colector
@@ -4480,155 +4392,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
 
-  addSchedule(): void {
-    // Vérifier le mode : création ou modification
-    if (this.isEditingSchedule) {
-      this.updateSchedule();
-      return;
-    }
-
-    // Mode création
-    if (!this.scheduleForm.valid) {
-      this.scheduleForm.markAllAsTouched();
-      this.updateFormErrors(this.scheduleForm, "schedule");
-      this.notificationService.showError(
-        "Formulaire invalide",
-        "Veuillez corriger les erreurs dans le formulaire",
-      );
-      return;
-    }
-
-    const { collectorId, date, startTime, endTime } = this.scheduleForm.value;
-    if (
-      this.checkCollectorAvailability(collectorId, date, startTime, endTime)
-    ) {
-      this.notificationService.showWarning(
-        "Attention",
-        "Le collecteur est déjà programmé sur ce créneau.",
-      );
-      return;
-    }
-
-    const formValues = this.scheduleForm.value;
-
-    const schedule: CollectionSchedule = {
-      zone: formValues.zone,
-      date: formValues.date,
-      startTime: formValues.startTime,
-      endTime: formValues.endTime,
-      collectors: formValues.collectorId, // Maintenant une simple chaîne de caractères
-      agencyId: this.currentUser?.agencyId || "",
-      managerId: this.currentUser?._id || "", // ID du manager (utilisateur courant)
-      pricingId: formValues.pricingId,
-      isRecurring : formValues.isRecurring,
-      recurrenceType: formValues.recurrenceType,
-      numberOfWeeks: formValues.numberOfWeeks
-    };
-
-    // Debug : log des données envoyées
-    console.log("Données du planning à envoyer:", schedule);
-    console.log("Utilisateur courant:", this.currentUser);
-
-    // Activer l'indicateur de chargement
-    this.isLoading = true;
-
-    this.agencyService.addSchedule$(schedule).subscribe({
-      next: (response) => {
-        console.log("Réponse complète du backend:", response);
-
-        if (response) {
-          this.schedules.push(response);
-
-          // Message de succès détaillé avec informations du planning créé
-          const successMessage = `Planning créé avec succès pour la zone "${response.zone || schedule.zone}" le ${response.date || schedule.date} de ${response.startTime || schedule.startTime} à ${response.endTime || schedule.endTime}.`;
-
-          this.notificationService.showSuccess(
-            " Planning créé !",
-            successMessage,
-          );
-        } else {
-          this.notificationService.showSuccess(
-            " Succès",
-            "Le planning a été créé avec succès.",
-          );
-        }
-
-        // Recharger la liste des plannings pour afficher le nouveau
-        this.loadPlannings();
-
-        // Désactiver l'indicateur de chargement
-        this.isLoading = false;
-
-        // Fermer le drawer et réinitialiser le formulaire
-        this.showScheduleModal = false;
-        this.scheduleForm.reset();
-      },
-      error: (error) => {
-        console.error(
-          "Erreur complète lors de la création du planning:",
-          error,
-        );
-        let errorMessage =
-          "Une erreur est survenue lors de la création du planning";
-        let errorDetails = "";
-
-        // Gestion détaillée des erreurs du backend
-        if (error.error) {
-          // Erreur avec message spécifique
-          if (error.error.message) {
-            switch (error.error.message) {
-              case "COLLECTOR_NOT_AVAILABLE":
-                errorMessage =
-                  "Le collecteur n'est pas disponible sur ce créneau";
-                break;
-              case "ZONE_NOT_FOUND":
-                errorMessage = "La zone sélectionnée n'existe pas";
-                break;
-              case "TIME_CONFLICT":
-                errorMessage =
-                  "Il existe déjà un planning sur ce créneau horaire";
-                break;
-              case "Missing required fields":
-                errorMessage = "Des champs obligatoires sont manquants";
-                errorDetails =
-                  "Vérifiez que tous les champs sont correctement remplis";
-                console.error("Champs manquants. Données envoyées:", schedule);
-                break;
-              default:
-                errorMessage = error.error.message;
-            }
-          }
-          // Erreur avec propriété error
-          else if (error.error.error) {
-            errorMessage = error.error.error;
-            if (error.error.details) {
-              errorDetails = error.error.details;
-            }
-          }
-          // Erreurs de validation
-          else if (error.error.errors) {
-            errorMessage = "Erreurs de validation";
-            errorDetails = Object.keys(error.error.errors)
-              .map((key) => `${key}: ${error.error.errors[key]}`)
-              .join(", ");
-          }
-        }
-
-        // Afficher l'erreur avec détails si disponibles
-        const fullErrorMessage = errorDetails
-          ? `${errorMessage}\n${errorDetails}`
-          : errorMessage;
-
-        // Désactiver l'indicateur de chargement même en cas d'erreur
-        this.isLoading = false;
-
-        this.notificationService.showError(
-          "Erreur de création",
-          fullErrorMessage,
-        );
-      },
-    });
-  }
   investigateIncident(): void {
     // const incident = this.incidents.find(i => i.id === incidentId);
     // if (incident) {
@@ -4739,10 +4502,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     });
   }
   selectedSchedule: any = null;
-  editingSchedule: any = null;
-  isEditingSchedule: boolean = false;
 
   openScheduleDetails(schedule: any): void {
+    console.log("L'equipe assigné >>>>>>>", schedule);
     this.selectedSchedule = schedule;
   }
 
@@ -4778,192 +4540,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.router.navigate(["/planning/detail", schedule._id]);
   }
 
-  // Ouvrir le formulaire de modification de planning
   editSchedule(schedule: any): void {
-    console.log("Édition du planning:", schedule);
-
-    if (!schedule || !schedule._id) {
-      this.notificationService.showError(
-        "Erreur",
-        "Planning invalide pour la modification",
-      );
-      return;
-    }
-
-    this.editingSchedule = schedule;
-    this.isEditingSchedule = true;
-
-    // Charger les données nécessaires
-    this.loadScheduleModalData();
-
-    // Formater la date si nécessaire (en cas de format ISO)
-    let formattedDate = schedule.date;
-    if (schedule.date && schedule.date.includes("T")) {
-      // Si la date est au format ISO (avec T), extraire seulement la partie date
-      formattedDate = schedule.date.split("T")[0];
-    }
-
-    // Pré-remplir le formulaire avec les données existantes
-    console.log("Données à pré-remplir:", {
-      zone: schedule.zone,
-      date: formattedDate,
-      startTime: schedule.startTime,
-      endTime: schedule.endTime,
-      collectorId: schedule.collectorId,
-    });
-
-    this.scheduleForm.patchValue({
-      zone: schedule.zone || "",
-      date: formattedDate || "",
-      startTime: schedule.startTime || "",
-      endTime: schedule.endTime || "",
-      collectorId: schedule.collectorId || "",
-    });
-
-    // Marquer les contrôles comme touchés pour déclencher la validation si nécessaire
-    this.scheduleForm.markAsUntouched();
-    this.scheduleForm.markAsPristine();
-
-    // Effacer les erreurs précédentes
-    Object.keys(this.formErrors).forEach((key) => {
-      if (key.startsWith("schedule_")) {
-        delete this.formErrors[key];
-      }
-    });
-
-    this.showScheduleModal = true;
-
-    // Debug: vérifier que le formulaire est bien pré-rempli
-    setTimeout(() => {
-      console.log(
-        "Valeurs du formulaire après pré-remplissage:",
-        this.scheduleForm.value,
-      );
-    }, 100);
+    if (!schedule?._id) return;
+    this.router.navigate(['/planning/create'], { queryParams: { edit: schedule._id } });
   }
 
-  // Méthode pour mettre à jour un planning
-  updateSchedule(): void {
-    if (!this.scheduleForm.valid) {
-      this.scheduleForm.markAllAsTouched();
-      this.updateFormErrors(this.scheduleForm, "schedule");
-      this.notificationService.showError(
-        "Formulaire invalide",
-        "Veuillez corriger les erreurs dans le formulaire",
-      );
-      return;
-    }
-
-    if (!this.editingSchedule?._id) {
-      this.notificationService.showError(
-        "Erreur",
-        "Aucun planning sélectionné pour la modification",
-      );
-      return;
-    }
-
-    const formValues = this.scheduleForm.value;
-    const scheduleId = this.editingSchedule._id;
-
-    // Vérifier la disponibilité du collecteur (sauf pour le planning actuel)
-    const { collectorId, date, startTime, endTime } = formValues;
-    if (
-      this.checkCollectorAvailabilityForUpdate(
-        collectorId,
-        date,
-        startTime,
-        endTime,
-        scheduleId,
-      )
-    ) {
-      this.notificationService.showWarning(
-        "Attention",
-        "Le collecteur est déjà programmé sur ce créneau.",
-      );
-      return;
-    }
-
-    const updatedSchedule: Partial<CollectionSchedule> = {
-      zone: formValues.zone,
-      date: formValues.date,
-      startTime: formValues.startTime,
-      endTime: formValues.endTime,
-      collectorId: formValues.collectorId,
-    };
-
-    console.log("Mise à jour du planning:", updatedSchedule);
-    console.log("ID du planning à modifier:", scheduleId);
-
-    // Activer l'indicateur de chargement
-    this.isLoading = true;
-
-    this.agencyService.updateSchedule$(scheduleId, updatedSchedule).subscribe({
-      next: (response) => {
-        console.log("Réponse complète du backend (modification):", response);
-
-        if (response) {
-          this.notificationService.showSuccess(
-            "Succès",
-            "Le planning a été mis à jour avec succès.",
-          );
-        } else {
-          this.notificationService.showWarning(
-            "Attention",
-            "Le planning a été traité mais la réponse est incomplète.",
-          );
-        }
-
-        // Recharger la liste des plannings pour afficher les modifications
-        this.loadPlannings();
-
-        // Désactiver l'indicateur de chargement
-        this.isLoading = false;
-
-        // Fermer le drawer et réinitialiser le formulaire
-        this.closeScheduleModal();
-      },
-      error: (error) => {
-        console.error(
-          "Erreur complète lors de la modification du planning:",
-          error,
-        );
-        let errorMessage =
-          "Une erreur est survenue lors de la modification du planning";
-        let errorDetails = "";
-
-        // Gestion détaillée des erreurs du backend
-        if (error.error) {
-          if (error.error.message) {
-            errorMessage = error.error.message;
-          } else if (error.error.error) {
-            errorMessage = error.error.error;
-            if (error.error.details) {
-              errorDetails = error.error.details;
-            }
-          } else if (error.error.errors) {
-            errorMessage = "Erreurs de validation";
-            errorDetails = Object.keys(error.error.errors)
-              .map((key) => `${key}: ${error.error.errors[key]}`)
-              .join(", ");
-          }
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
-
-        const fullErrorMessage = errorDetails
-          ? `${errorMessage}\nDétails: ${errorDetails}`
-          : errorMessage;
-
-        this.notificationService.showError(
-          "Erreur de modification",
-          fullErrorMessage,
-        );
-
-        // Désactiver l'indicateur de chargement en cas d'erreur
-        this.isLoading = false;
-      },
-    });
-  }
   onEmployeeToggle(event: any): void {
     const employeeId = event.target.value;
     if (event.target.checked) {
@@ -5045,7 +4626,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     // }
 
     this.isLoadingZones = true;
-    this.scheduleForm.get("zone")?.disable();
     if (currentUser && currentUser._id) {
       const agencyId = currentUser.agencyId;
       this.agencyService.getAllzones$(agencyId).subscribe({
@@ -5075,7 +4655,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             this.cdr.detectChanges();
           }
           this.isLoadingZones = false;
-          this.scheduleForm.get("zone")?.enable();
         },
         error: (error) => {
           console.error(
@@ -5087,13 +4666,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
             "Erreur lors du chargement des Zones de l agence.",
           );
           this.isLoadingZones = false;
-          this.scheduleForm.get("zone")?.enable();
         },
       });
     } else {
       console.warn("Aucun ID d'utilisateur courant disponible.");
       this.isLoadingZones = false;
-      this.scheduleForm.get("zone")?.enable();
     }
   }
 
@@ -5235,11 +4812,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         return control.value.length >= 6
           ? null
           : {
-              minlength: {
-                requiredLength: 6,
-                actualLength: control.value.length,
-              },
-            };
+            minlength: {
+              requiredLength: 6,
+              actualLength: control.value.length,
+            },
+          };
       });
     } else {
       // En mode ajout : les mots de passe sont obligatoires
@@ -5434,14 +5011,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.agencyService
       .updateEmployeeStatus$(employee._id)
       .subscribe({
-        next: (response:any) => {
+        next: (response: any) => {
           // employee.isActive = updatedStatus;
 
           // Recharger les collecteurs si c'est un collecteur dont le statut a changé
           if (employee.role === "collector" && this.currentUser?.agencyId) {
             this.loadCollectors(this.currentUser.agencyId);
           }
-          console.log("employee status change: ",response)
+          console.log("employee status change: ", response)
           this.notificationService.showSuccess(
             "Succès",
             response.message
@@ -5909,7 +5486,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     try {
       this.myScrollContainer.nativeElement.scrollTop =
         this.myScrollContainer.nativeElement.scrollHeight;
-    } catch (err) {}
+    } catch (err) { }
   }
 
   // ================================
@@ -6744,7 +6321,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
         return "info";
     }
   }
-  
+
   // Utiliser une API tierce pour générer le QR code
   generateQRCode(data: string): string {
     return data ? data : "Pas de code QR généré";

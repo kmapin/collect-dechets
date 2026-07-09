@@ -213,11 +213,11 @@
           <!-- details row -->
           <div class="mc-details">
             <span class="mc-det"><mat-icon>phone</mat-icon>{{ member.phone }}</span>
-            <span class="mc-det"><mat-icon>location_on</mat-icon>{{ memberZone(member) }}</span>
+            <span class="mc-det" [pTooltip]="memberZoneTooltip(member)" tooltipPosition="top"><mat-icon>location_on</mat-icon>{{ memberZone(member) }}</span>
             @if (memberVehicle(member)) {
               <span class="mc-det mc-det--veh"><mat-icon>local_shipping</mat-icon>{{ memberVehicle(member) }}</span>
             }
-            <span class="mc-det mc-det--muted"><mat-icon>calendar_today</mat-icon>{{ member.joinedAt }}</span>
+            <span class="mc-det mc-det--muted"><mat-icon>calendar_today</mat-icon>{{ formatFrDate(member.joinedAt) }}</span>
           </div>
         </div>
 

@@ -550,7 +550,7 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
   border: 1.5px solid var(--sc);
   border-radius: 24px;
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
-  white-space: nowrap;
+  max-width: min(90%, 420px);
   animation: fadeIn .2s ease;
 
   mat-icon {
@@ -558,6 +558,7 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
     width: 16px;
     height: 16px;
     color: var(--sc);
+    flex-shrink: 0;
   }
 
   span {
@@ -565,6 +566,13 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
     font-weight: 700;
     color: #0f172a;
   }
+}
+
+.map-sel-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .map-sel-hh {

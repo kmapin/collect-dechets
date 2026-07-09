@@ -448,7 +448,7 @@ $shadow-md: 0 4px 24px rgba(0,0,0,0.1);
     flex-shrink: 0;
   }
 
-  .team-name { flex: 1; font-size: 13px; color: $text-1; font-weight: 500; }
+  .team-name { flex: 1; font-size: 13px; color: $text-1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .team-status-label { font-size: 11px; font-weight: 600; }
   .team-count { font-size: 11px; color: $text-3; background: #f1f5f9; padding: 2px 7px; border-radius: 4px; }
 }
@@ -572,7 +572,15 @@ $shadow-md: 0 4px 24px rgba(0,0,0,0.1);
   border-radius: 4px;
 }
 
-.planning-libelle { font-weight: 500; color: $text-1; }
+.planning-libelle {
+  font-weight: 500;
+  color: $text-1;
+  max-width: 180px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .type-cell {
   display: flex;
@@ -609,6 +617,9 @@ $shadow-md: 0 4px 24px rgba(0,0,0,0.1);
     color: $text-2;
     font-weight: 500;
     white-space: nowrap;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -796,7 +807,7 @@ $shadow-md: 0 4px 24px rgba(0,0,0,0.1);
     &.zone-inactive{ background: $text-3; }
   }
 
-  .zone-name { font-size: 12px; font-weight: 500; color: $text-1; min-width: 70px; }
+  .zone-name { font-size: 12px; font-weight: 500; color: $text-1; min-width: 70px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .zone-bar-wrap {
     flex: 1;

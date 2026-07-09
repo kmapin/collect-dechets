@@ -62,9 +62,9 @@
           <div>
             <h1 class="tb-title">{{ planning()!.libelle }}</h1>
             <div class="tb-meta">
-              <span class="tb-ref">{{ planning()!.reference }}</span>
+              <span class="tb-ref" pTooltip="Référence complète" tooltipPosition="top">{{ planning()!.reference }}</span>
               <span class="tb-dot">·</span>
-              <span class="tb-date">{{ planning()!.date }}</span>
+              <span class="tb-date">{{ formatFrDate(planning()!.date) }}</span>
               <span class="tb-dot">·</span>
               <span class="tb-freq">{{ frequencyLabel() }}</span>
             </div>
@@ -193,7 +193,7 @@
                   <mat-icon>calendar_today</mat-icon>
                   <div>
                     <span class="ifc-label">Date</span>
-                    <span class="ifc-val">{{ planning()!.date }}</span>
+                    <span class="ifc-val">{{ formatFrDate(planning()!.date) }}</span>
                   </div>
                 </div>
                 <div class="ifc-item">
@@ -279,7 +279,7 @@
                       {{ team.name.substring(0,2).toUpperCase() }}
                     </div>
                     <div class="tc-info">
-                      <h4>{{ team.name }}</h4>
+                      <h4 [pTooltip]="team.name" tooltipPosition="top">{{ team.name }}</h4>
                       <span class="tc-status" [style.color]="teamStatusBadgeColor(team.status)">
                         <span class="tc-dot" [style.background]="teamStatusBadgeColor(team.status)"></span>
                         {{ teamStatusBadgeLabel(team.status) }}
@@ -423,52 +423,59 @@
             <span class="sec-count">{{ history().length }} passages</span>
           </div>
 
-          <div class="history-table-wrap">
-            <table class="history-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Équipes</th>
-                  <th>Statut</th>
-                  <th>Ménages</th>
-                  <th>Durée</th>
-                  <th>Taux</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (h of history(); track h.date) {
-                  <tr [class.row--cancelled]="h.status === 'annule'">
-                    <td class="ht-date">{{ h.date }}</td>
-                    <td class="ht-teams">
-                      @for (t of h.teams; track t) {
-                        <span class="team-pill">{{ t }}</span>
-                      }
-                    </td>
-                    <td>
-                      <span class="ht-status"
-                            [style.background]="h.status === 'termine' ? '#16a34a18' : '#ef444418'"
-                            [style.color]="h.status === 'termine' ? '#16a34a' : '#ef4444'">
-                        {{ h.status === 'termine' ? 'Terminé' : 'Annulé' }}
-                      </span>
-                    </td>
-                    <td class="ht-num">{{ h.householdsCollected }}</td>
-                    <td class="ht-dur">{{ h.duration }}</td>
-                    <td>
-                      <div class="rate-cell">
-                        <div class="rate-bar">
-                          <div class="rate-fill"
-                               [style.width]="h.completionRate + '%'"
-                               [style.background]="h.completionRate >= 90 ? '#16a34a' : h.completionRate >= 50 ? '#f59e0b' : '#ef4444'">
-                          </div>
-                        </div>
-                        <span class="rate-pct">{{ h.completionRate }}%</span>
-                      </div>
-                    </td>
+          @if (history().length > 0) {
+            <div class="history-table-wrap">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Équipes</th>
+                    <th>Statut</th>
+                    <th>Ménages</th>
+                    <th>Durée</th>
+                    <th>Taux</th>
                   </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  @for (h of history(); track h.date) {
+                    <tr [class.row--cancelled]="h.status === 'annule'">
+                      <td class="ht-date">{{ h.date }}</td>
+                      <td class="ht-teams">
+                        @for (t of h.teams; track t) {
+                          <span class="team-pill">{{ t }}</span>
+                        }
+                      </td>
+                      <td>
+                        <span class="ht-status"
+                              [style.background]="h.status === 'termine' ? '#16a34a18' : '#ef444418'"
+                              [style.color]="h.status === 'termine' ? '#16a34a' : '#ef4444'">
+                          {{ h.status === 'termine' ? 'Terminé' : 'Annulé' }}
+                        </span>
+                      </td>
+                      <td class="ht-num">{{ h.householdsCollected }}</td>
+                      <td class="ht-dur">{{ h.duration }}</td>
+                      <td>
+                        <div class="rate-cell">
+                          <div class="rate-bar">
+                            <div class="rate-fill"
+                                 [style.width]="h.completionRate + '%'"
+                                 [style.background]="h.completionRate >= 90 ? '#16a34a' : h.completionRate >= 50 ? '#f59e0b' : '#ef4444'">
+                            </div>
+                          </div>
+                          <span class="rate-pct">{{ h.completionRate }}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="teams-empty">
+              <mat-icon>history_toggle_off</mat-icon>
+              <p>Aucune tournée enregistrée pour ce planning.</p>
+            </div>
+          }
         </section>
 
         <!-- ════════════════ SECTION INCIDENTS ══════════════ -->
@@ -483,38 +490,45 @@
             }
           </div>
 
-          <div class="incidents-list">
-            @for (inc of incidents(); track inc.id) {
-              <div class="incident-card" [class.incident-card--resolved]="inc.resolved"
-                   [style.--ic]="incidentColor(inc.severity)">
-                <div class="inc-severity">
-                  <mat-icon [style.color]="incidentColor(inc.severity)">
-                    {{ inc.severity === 'critical' ? 'error' : inc.severity === 'warning' ? 'warning' : 'info' }}
-                  </mat-icon>
-                </div>
-                <div class="inc-body">
-                  <div class="inc-header">
-                    <span class="inc-badge"
-                          [style.background]="incidentColor(inc.severity) + '18'"
-                          [style.color]="incidentColor(inc.severity)">
-                      {{ incidentLabel(inc.severity) }}
-                    </span>
-                    @if (inc.resolved) {
-                      <span class="inc-resolved">
-                        <mat-icon>check_circle</mat-icon>Résolu {{ inc.resolvedAt }}
+          @if (incidents().length > 0) {
+            <div class="incidents-list">
+              @for (inc of incidents(); track inc.id) {
+                <div class="incident-card" [class.incident-card--resolved]="inc.resolved"
+                     [style.--ic]="incidentColor(inc.severity)">
+                  <div class="inc-severity">
+                    <mat-icon [style.color]="incidentColor(inc.severity)">
+                      {{ inc.severity === 'critical' ? 'error' : inc.severity === 'warning' ? 'warning' : 'info' }}
+                    </mat-icon>
+                  </div>
+                  <div class="inc-body">
+                    <div class="inc-header">
+                      <span class="inc-badge"
+                            [style.background]="incidentColor(inc.severity) + '18'"
+                            [style.color]="incidentColor(inc.severity)">
+                        {{ incidentLabel(inc.severity) }}
                       </span>
-                    }
-                  </div>
-                  <h4 class="inc-title">{{ inc.title }}</h4>
-                  <p class="inc-desc">{{ inc.description }}</p>
-                  <div class="inc-footer">
-                    <span><mat-icon>person</mat-icon>{{ inc.reporter }}</span>
-                    <span><mat-icon>access_time</mat-icon>{{ inc.reportedAt }}</span>
+                      @if (inc.resolved) {
+                        <span class="inc-resolved">
+                          <mat-icon>check_circle</mat-icon>Résolu {{ formatFrDateTime(inc.resolvedAt) }}
+                        </span>
+                      }
+                    </div>
+                    <h4 class="inc-title">{{ inc.title }}</h4>
+                    <p class="inc-desc">{{ inc.description }}</p>
+                    <div class="inc-footer">
+                      <span><mat-icon>person</mat-icon>{{ inc.reporter }}</span>
+                      <span><mat-icon>access_time</mat-icon>{{ formatFrDateTime(inc.reportedAt) }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            }
-          </div>
+              }
+            </div>
+          } @else {
+            <div class="teams-empty">
+              <mat-icon>task_alt</mat-icon>
+              <p>Aucun incident signalé pour ce planning.</p>
+            </div>
+          }
         </section>
 
         <!-- ════════════════ SECTION TIMELINE ═══════════════ -->
@@ -536,7 +550,7 @@
                 <div class="at-content">
                   <div class="at-title">{{ act.title }}</div>
                   <div class="at-detail">{{ act.detail }}</div>
-                  <div class="at-date">{{ act.date }}</div>
+                  <div class="at-date">{{ formatFrDateTime(act.date) }}</div>
                 </div>
               </div>
             }
@@ -615,29 +629,36 @@
             <span class="sec-count">{{ notifications().length }}</span>
           </div>
 
-          <div class="notifs-list">
-            @for (n of notifications(); track n.id) {
-              <div class="notif-row">
-                <div class="nr-channel"
-                     [style.background]="n.channel === 'sms' ? '#16a34a18' : n.channel === 'email' ? '#3b82f618' : '#8b5cf618'"
-                     [style.color]="n.channel === 'sms' ? '#16a34a' : n.channel === 'email' ? '#3b82f6' : '#8b5cf6'">
-                  <mat-icon>{{ notifIcon(n.channel) }}</mat-icon>
-                </div>
-                <div class="nr-body">
-                  <div class="nr-recipient">{{ n.recipient }}</div>
-                  <div class="nr-message">{{ n.message }}</div>
-                  <div class="nr-meta">
-                    <mat-icon>access_time</mat-icon>{{ n.sentAt }}
+          @if (notifications().length > 0) {
+            <div class="notifs-list">
+              @for (n of notifications(); track n.id) {
+                <div class="notif-row">
+                  <div class="nr-channel"
+                       [style.background]="n.channel === 'sms' ? '#16a34a18' : n.channel === 'email' ? '#3b82f618' : '#8b5cf618'"
+                       [style.color]="n.channel === 'sms' ? '#16a34a' : n.channel === 'email' ? '#3b82f6' : '#8b5cf6'">
+                    <mat-icon>{{ notifIcon(n.channel) }}</mat-icon>
+                  </div>
+                  <div class="nr-body">
+                    <div class="nr-recipient">{{ n.recipient }}</div>
+                    <div class="nr-message" [pTooltip]="n.message" tooltipPosition="top">{{ n.message }}</div>
+                    <div class="nr-meta">
+                      <mat-icon>access_time</mat-icon>{{ formatFrDateTime(n.sentAt) }}
+                    </div>
+                  </div>
+                  <div class="nr-status"
+                       [style.background]="notifStatusColor(n.status) + '18'"
+                       [style.color]="notifStatusColor(n.status)">
+                    {{ notifStatusLabel(n.status) }}
                   </div>
                 </div>
-                <div class="nr-status"
-                     [style.background]="notifStatusColor(n.status) + '18'"
-                     [style.color]="notifStatusColor(n.status)">
-                  {{ notifStatusLabel(n.status) }}
-                </div>
-              </div>
-            }
-          </div>
+              }
+            </div>
+          } @else {
+            <div class="teams-empty">
+              <mat-icon>notifications_off</mat-icon>
+              <p>Aucune notification envoyée pour ce planning.</p>
+            </div>
+          }
         </section>
 
       </div><!-- /pd-content -->

@@ -262,7 +262,18 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 13px; flex-shrink: 0;
 }
-.tl-team-name { font-size: 13px; font-weight: 700; color: $text; white-space: nowrap; }
+.tl-team-info {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.tl-team-name {
+  display: block;
+  font-size: 13px; font-weight: 700; color: $text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
 .tl-team-sub  {
   display: flex; align-items: center; gap: 4px;
   font-size: 10px; color: $muted; margin-top: 1px;

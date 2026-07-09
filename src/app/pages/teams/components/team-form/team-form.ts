@@ -6,6 +6,9 @@ import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angula
 import { MatIconModule } from '@angular/material/icon';
 import { TooltipModule } from 'primeng/tooltip';
 import { Team, TeamFormData, AvailableVehicle, AvailableZone, MemberRole, CollectorUser } from '../../models/team.model';
+import {
+  vehicleTypeIcon, vehicleStatusColor, vehicleStatusLabel, vehicleTypeLabel,
+} from '../../models/team-labels';
 
 const TEAM_COLORS = [
   '#3b82f6','#16a34a','#f59e0b','#ef4444',
@@ -25,6 +28,10 @@ export class TeamForm implements OnInit, OnChanges {
   @Input({ required: true }) availableVehicles!: AvailableVehicle[];
   @Input({ required: true }) availableZones!: AvailableZone[];
   @Input() availableCollectors: CollectorUser[] = [];
+  /** Toutes les équipes de l'agence (déjà chargées par le parent) — sert
+   *  uniquement à détecter si un véhicule listé est déjà pris par une autre
+   *  équipe ; aucun appel API supplémentaire. */
+  @Input() teams: Team[] = [];
   @Output() save   = new EventEmitter<TeamFormData>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -44,6 +51,30 @@ export class TeamForm implements OnInit, OnChanges {
 
   saving = false;
   activeTab = 0;
+
+  vehicleTypeIcon(type: string): string {
+    return vehicleTypeIcon(type);
+  }
+  vehicleStatusColor(s: string): string {
+    return vehicleStatusColor(s);
+  }
+  vehicleStatusLabel(s: string): string {
+    return vehicleStatusLabel(s);
+  }
+  vehicleTypeLabel(t: string): string {
+    return vehicleTypeLabel(t);
+  }
+
+  /** Nom de l'équipe qui détient déjà ce véhicule (hors équipe en cours d'édition), sinon null. */
+  assignedTeamName(vehicleId: string): string | null {
+    const other = this.teams.find(t => t.vehicle?.id === vehicleId && t.id !== this.team?.id);
+    return other ? other.name : null;
+  }
+
+  assignedVehicleTooltip(vehicleId: string): string {
+    const name = this.assignedTeamName(vehicleId);
+    return name ? `Déjà assigné à l'équipe « ${name} »` : '';
+  }
   memberSearches: string[] = [];
   openDropdownIdx: number | null = null;
 

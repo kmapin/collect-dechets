@@ -239,7 +239,7 @@
                             <div class="eg-info">
                               <span class="eg-name">{{ g.name }}</span>
                               @if (g.description) { <span class="eg-desc">{{ g.description }}</span> }
-                              <span class="eg-count">{{ g.clientIds?.length ?? 0 }} client(s)</span>
+                              <span class="eg-count">{{ g.clients?.length ?? g.clientIds?.length ?? 0 }} client(s)</span>
                             </div>
                             @if (selectedExistingGroupId() === g._id) {
                               <mat-icon class="eg-selected-icon">check_circle</mat-icon>
@@ -447,7 +447,7 @@
                 <div class="team-chips">
                   <div class="team-chip" [class.team-chip--conflict]="isTeamConflicting(id)">
                     <span class="tc-dot" [style.background]="teamStatusColor(getTeamById(id)?.status ?? 'active')"></span>
-                    <span class="tc-name">{{ getTeamById(id)?.name ?? id }}</span>
+                    <span class="tc-name" [pTooltip]="getTeamById(id)?.name ?? 'Équipe'" tooltipPosition="top">{{ getTeamById(id)?.name ?? 'Équipe' }}</span>
                     <span class="tc-count">{{ getTeamById(id)?.members?.length ?? 0 }} membres</span>
                     @if (isTeamConflicting(id)) {
                       <mat-icon class="tc-warn" pTooltip="Conflit détecté" tooltipPosition="top">warning</mat-icon>
@@ -535,7 +535,9 @@
               @if (form.get('ville')?.value) {
                 <div class="sum-row">
                   <span class="sum-lbl">Localisation</span>
-                  <span class="sum-val sum-loc">
+                  <span class="sum-val sum-loc"
+                        [pTooltip]="joinLocation([form.get('ville')?.value, form.get('arrondissement')?.value, form.get('secteur')?.value, form.get('quartier')?.value])"
+                        tooltipPosition="top">
                     {{ joinLocation([form.get('ville')?.value, form.get('arrondissement')?.value, form.get('secteur')?.value, form.get('quartier')?.value]) }}
                   </span>
                 </div>
@@ -588,7 +590,7 @@
               </div>
               @if (selectedTeamId(); as id) {
                 <div class="sum-row" [class.conflict-row]="isTeamConflicting(id)">
-                  <span class="sum-lbl">{{ getTeamById(id)?.name ?? id }}</span>
+                  <span class="sum-lbl">{{ getTeamById(id)?.name ?? 'Équipe' }}</span>
                   <span class="sum-val">{{ getTeamById(id)?.members?.length ?? 0 }} membres</span>
                 </div>
               } @else {

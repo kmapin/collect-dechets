@@ -90,6 +90,8 @@ export interface AssignedZone {
   ville: string;
   arrondissement?: string;
   householdsCount: number;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface Mission {
@@ -164,6 +166,9 @@ export interface AvailableVehicle {
   type: VehicleType;
   capacityTons: number;
   status: VehicleStatus;
+  fuelLevel?: number;
+  mileage?: number;
+  lastMaintenance?: string;
 }
 
 export interface AvailableZone {
