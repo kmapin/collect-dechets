@@ -231,10 +231,10 @@
           <ng-template pTemplate="body" let-p>
             <tr>
               <td>
-                <span class="planning-ref">{{ p.reference }}</span>
+                <span class="planning-ref" pTooltip="Référence complète" tooltipPosition="top">{{ p.reference }}</span>
               </td>
               <td>
-                <span class="planning-libelle">{{ p.libelle }}</span>
+                <span class="planning-libelle" [pTooltip]="p.libelle" tooltipPosition="top">{{ p.libelle }}</span>
               </td>
               <td>
                 <div class="type-cell">
@@ -243,10 +243,10 @@
                 </div>
               </td>
               <td>
-                <span class="zone-text">{{ p.zone || p.secteur || p.clientName || p.groupName || '—' }}</span>
+                <span class="zone-text" [pTooltip]="p.zone || p.secteur || p.clientName || p.groupName || '—'" tooltipPosition="top">{{ p.zone || p.secteur || p.clientName || p.groupName || '—' }}</span>
               </td>
               <td>
-                <span class="date-text">{{ p.date }}</span>
+                <span class="date-text">{{ p.date | date:'dd/MM/yyyy' }}</span>
                 @if (p.startTime) {
                   <span class="time-text">{{ p.startTime }}</span>
                 }
@@ -254,7 +254,7 @@
               <td>
                 <div class="teams-cell">
                   @for (team of p.teams; track team) {
-                    <span class="team-chip">{{ team }}</span>
+                    <span class="team-chip" [pTooltip]="team" tooltipPosition="top">{{ team }}</span>
                   }
                 </div>
               </td>

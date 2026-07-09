@@ -12,6 +12,13 @@ import * as L from 'leaflet';
 import { TeamService } from '../../services/team.service';
 import { TeamForm } from '../../components/team-form/team-form';
 import { Team, TeamFormData, TeamStatus, TeamMember } from '../../models/team.model';
+import {
+  teamStatusColor, teamStatusLabel,
+  vehicleStatusColor, vehicleStatusLabel,
+  vehicleTypeLabel,
+  missionStatusColor, missionStatusLabel,
+} from '../../models/team-labels';
+import { formatFrDate } from '../../../../shared/format.util';
 
 @Component({
   selector: 'app-team-detail',
@@ -38,14 +45,8 @@ export class TeamDetail implements OnInit, OnDestroy {
   formOpen    = signal(false);
   showDelDlg  = signal(false);
 
-  statusColor = computed(() => {
-    const m: Record<string,string> = { active:'#16a34a', inactive:'#94a3b8', on_mission:'#f59e0b', maintenance:'#ef4444' };
-    return m[this.team()?.status ?? ''] ?? '#64748b';
-  });
-  statusLabel = computed(() => {
-    const m: Record<string,string> = { active:'Active', inactive:'Inactive', on_mission:'En mission', maintenance:'Maintenance' };
-    return m[this.team()?.status ?? ''] ?? '—';
-  });
+  statusColor = computed(() => teamStatusColor(this.team()?.status ?? ''));
+  statusLabel = computed(() => this.team() ? teamStatusLabel(this.team()!.status) : '—');
   availableMembers = computed(() => this.team()?.members.filter(m => m.availability === 'disponible').length ?? 0);
 
   /** Véhicules non assignés + véhicule actuel de l'équipe (pour le formulaire d'édition). */
@@ -214,16 +215,16 @@ export class TeamDetail implements OnInit, OnDestroy {
     return ({ disponible:'Disponible', occupe:'Occupé', absent:'Absent' } as Record<string,string>)[a] ?? a;
   }
   vehicleStatusColor(s: string): string {
-    return ({ disponible:'#16a34a', en_service:'#f59e0b', maintenance:'#ef4444', hors_service:'#94a3b8' } as Record<string,string>)[s] ?? '#64748b';
+    return vehicleStatusColor(s);
   }
   vehicleStatusLabel(s: string): string {
-    return ({ disponible:'Disponible', en_service:'En service', maintenance:'Maintenance', hors_service:'Hors service' } as Record<string,string>)[s] ?? s;
+    return vehicleStatusLabel(s);
   }
   missionStatusColor(s: string): string {
-    return ({ brouillon:'#64748b', planifie:'#3b82f6', en_cours:'#f59e0b', termine:'#16a34a', annule:'#ef4444' } as Record<string,string>)[s] ?? '#94a3b8';
+    return missionStatusColor(s);
   }
   missionStatusLabel(s: string): string {
-    return ({ brouillon:'Brouillon', planifie:'Planifié', en_cours:'En cours', termine:'Terminé', annule:'Annulé' } as Record<string,string>)[s] ?? s;
+    return missionStatusLabel(s);
   }
   formatMissionDate(date: string): string {
     if (!date) return '—';
@@ -235,7 +236,7 @@ export class TeamDetail implements OnInit, OnDestroy {
   }
   formatMaintenance(val: string | null | undefined): string {
     if (!val) return 'Aucune révision';
-    return val;
+    return formatFrDate(val);
   }
   workloadColor(w: number): string {
     if (w >= 80) return '#ef4444';
@@ -248,7 +249,18 @@ export class TeamDetail implements OnInit, OnDestroy {
     return '#16a34a';
   }
   vehicleTypeLabel(t: string): string {
-    return ({ camion:'Camion', pickup:'Pickup', moto:'Moto', tricycle:'Tricycle' } as Record<string,string>)[t] ?? t;
+    return vehicleTypeLabel(t);
+  }
+  /** Nom de la zone assignée à un membre (résolu depuis team().zones), ou '' si non affecté. */
+  memberZoneName(m: TeamMember): string {
+    if (!m.zoneId) return '';
+    return this.team()?.zones.find(z => z.id === m.zoneId)?.name ?? '';
+  }
+  /** Immatriculation du véhicule assigné à un membre, si celui-ci correspond au véhicule de l'équipe. */
+  memberVehiclePlate(m: TeamMember): string {
+    const vehicle = this.team()?.vehicle;
+    if (!m.vehicleId || !vehicle || vehicle.id !== m.vehicleId) return '';
+    return vehicle.plate;
   }
 
   // ── Map ───────────────────────────────────────────────────

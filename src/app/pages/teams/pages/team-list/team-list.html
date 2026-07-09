@@ -205,10 +205,10 @@
               </td>
               <td>
                 <div class="row-name">
-                  <span class="rn-name">{{ team.name }}</span>
-                  <span class="rn-code">{{ team.code }}</span>
+                  <span class="rn-name" [pTooltip]="team.name" tooltipPosition="top">{{ team.name }}</span>
+                  <span class="rn-code" [pTooltip]="team.code" tooltipPosition="top">{{ team.code }}</span>
                   @if (team.supervisor) {
-                    <span class="rn-sup">{{ team.supervisor }}</span>
+                    <span class="rn-sup" [pTooltip]="team.supervisor" tooltipPosition="top">{{ team.supervisor }}</span>
                   }
                 </div>
               </td>
@@ -228,7 +228,10 @@
                 @if (team.vehicle) {
                   <div class="row-vehicle">
                     <mat-icon>local_shipping</mat-icon>
-                    <span>{{ team.vehicle.plate }}</span>
+                    <div class="rv-info">
+                      <span class="rv-plate">{{ team.vehicle.plate }}</span>
+                      <span class="rv-model">{{ team.vehicle.model }}</span>
+                    </div>
                     <span class="rv-capacity">{{ team.vehicle.capacityTons }}T</span>
                   </div>
                 } @else {
@@ -238,10 +241,12 @@
               <td>
                 <div class="row-zones">
                   @for (z of team.zones.slice(0, 2); track z.id) {
-                    <span class="zone-chip">{{ z.name.split('–')[0].trim() }}</span>
+                    <span class="zone-chip" [pTooltip]="z.name + ' — ' + z.ville" tooltipPosition="top">{{ z.name.split('–')[0].trim() }}</span>
                   }
                   @if (team.zones.length > 2) {
-                    <span class="zone-chip zone-chip--more">+{{ team.zones.length - 2 }}</span>
+                    <span class="zone-chip zone-chip--more"
+                          [pTooltip]="hiddenZonesTooltip(team, 2)"
+                          tooltipPosition="top">+{{ team.zones.length - 2 }}</span>
                   }
                   @if (team.zones.length === 0) { <span class="row-na">—</span> }
                 </div>

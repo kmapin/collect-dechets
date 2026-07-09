@@ -459,8 +459,10 @@ export class PlanningService {
     const teamId   = api.teamId ?? (legacyIds.length ? legacyIds[0] : null) ?? null;
     const equipeIds  = teamId ? [teamId] : [];
 
+    // Pas de repli sur l'ID Mongo brut : si l'équipe n'est pas (encore) résolue
+    // localement, on laisse `teamName` vide plutôt que d'afficher un ID technique.
     const teamName = teamId
-      ? (teams.find(x => x._id === teamId)?.name ?? teamId)
+      ? teams.find(x => x._id === teamId)?.name
       : undefined;
 
     const wasteLabels = (api.typeDechets ?? []).map(t => WASTE_TYPE_LABELS[t] ?? t);
@@ -493,8 +495,10 @@ export class PlanningService {
       secteur:          this._refName(api.secteurId),
       arrondissement:   this._refName(api.arrondissementId),
       ville:            this._refName(api.villeId),
-      clientId:         api.clientId ?? undefined,
-      groupeId:         api.groupeId ?? undefined,
+      clientId:         this._refId(api.clientId as any),
+      groupeId:         this._refId(api.groupeId as any),
+      clientName:       this._clientName(api.clientId),
+      groupName:        this._refName(api.groupeId as any),
       agencyId:         api.agencyId,
       managerId:        api.managerId,
       publishedAt:      api.publishedAt ?? undefined,
@@ -524,8 +528,8 @@ export class PlanningService {
       typeDechets:      api.typeDechets ?? [],
       teamId:         currentTeamId ?? undefined,
       equipeIds:      currentTeamId ? [currentTeamId] : undefined,
-      clientId:         api.clientId ?? undefined,
-      groupeId:         api.groupeId ?? undefined,
+      clientId:         this._refId(api.clientId as any),
+      groupeId:         this._refId(api.groupeId as any),
       villeId:          this._refId(api.villeId),
       arrondissementId: this._refId(api.arrondissementId),
       secteurId:        this._refId(api.secteurId),
@@ -546,5 +550,12 @@ export class PlanningService {
   private _refName(val: string | { _id: string; name?: string } | null | undefined): string | undefined {
     if (!val || typeof val === 'string') return undefined;
     return (val as any).name;
+  }
+
+  /** Nom complet du client depuis un objet peuplé (undefined si c'était un simple ID). */
+  private _clientName(val: string | { firstName?: string; lastName?: string } | null | undefined): string | undefined {
+    if (!val || typeof val === 'string') return undefined;
+    const full = `${val.firstName ?? ''} ${val.lastName ?? ''}`.trim();
+    return full || undefined;
   }
 }

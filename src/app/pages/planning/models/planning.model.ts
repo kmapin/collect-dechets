@@ -38,8 +38,9 @@ export interface PlanningV2Api {
   notes?: string;
   agencyId?: string;
   managerId?: string;
-  clientId?: string;
-  groupeId?: string;
+  // L'API peuple parfois ces champs (objet complet) au lieu de renvoyer un simple ID
+  clientId?: string | { _id: string; firstName?: string; lastName?: string; phone?: string; address?: string } | null;
+  groupeId?: string | { _id: string; name?: string; clients?: string[] } | null;
   villeId?: string | TerritoryRef;
   arrondissementId?: string | TerritoryRef;
   secteurId?: string | TerritoryRef;

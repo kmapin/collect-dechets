@@ -16,6 +16,7 @@ import * as L from 'leaflet';
 import { PlanningService } from '../services/planning.service';
 import { Planning, TeamApi } from '../models/planning.model';
 import { AgencyService } from '../../../services/agency.service';
+import { formatFrDate, formatFrDateTime } from '../../../shared/format.util';
 interface Incident {
   id: string; severity: 'critical' | 'warning' | 'info';
   title: string; description: string; reporter: string;
@@ -55,6 +56,10 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   private agencySvc    = inject(AgencyService);
 
   private leafletMap!: L.Map;
+
+  // ── Formatage de dates (partagé) — exposé pour le template ─────
+  formatFrDate     = formatFrDate;
+  formatFrDateTime = formatFrDateTime;
 
   // ── State ─────────────────────────────────────────────────────
   agencyName    = signal('');
@@ -232,7 +237,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.svc.getRounds(planningId).subscribe(rounds => {
       this.history.set(rounds.map((r: any) => ({
         date:                 new Date(r.date).toLocaleDateString('fr-FR'),
-        teams:                (r.equipeIds ?? []).map((e: any) => e?.name ?? e),
+        teams:                (r.equipeIds ?? []).map((e: any) => e?.name ?? (typeof e === 'string' ? e : '—')),
         status:               r.status,
         householdsCollected:  r.householdsCollected,
         duration:             r.duration ?? '—',

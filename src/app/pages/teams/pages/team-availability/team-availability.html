@@ -177,7 +177,7 @@
                   {{ teamInitials(line.team.name) }}
                 </div>
                 <div class="tl-team-info">
-                  <span class="tl-team-name">{{ line.team.name }}</span>
+                  <span class="tl-team-name" [pTooltip]="line.team.name" tooltipPosition="top">{{ line.team.name }}</span>
                   <span class="tl-team-sub">
                     <span class="tl-sub-dot" [style.background]="statusColor(line.team.status)"></span>
                     {{ statusLabel(line.team.status) }}

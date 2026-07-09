@@ -19,6 +19,7 @@ import { TeamService } from '../../services/team.service';
 import { Team, TeamStatus } from '../../models/team.model';
 import { PlanningService } from '../../../planning/services/planning.service';
 import { Planning } from '../../../planning/models/planning.model';
+import { teamStatusColor, teamStatusLabel } from '../../models/team-labels';
 
 // ── Local types ──────────────────────────────────────────────────────
 type AvailView = 'timeline' | 'calendar' | 'heatmap' | 'alertes';
@@ -128,10 +129,10 @@ export class TeamAvailability implements OnInit, OnDestroy {
 
   readonly statusOpts: { val: TeamStatus | ''; lbl: string; clr: string; ico: string }[] = [
     { val: '',            lbl: 'Tous',        clr: '#64748b', ico: 'circle'                },
-    { val: 'active',      lbl: 'Disponible',  clr: '#16a34a', ico: 'check_circle'          },
+    { val: 'active',      lbl: 'Active',      clr: '#16a34a', ico: 'check_circle'          },
     { val: 'on_mission',  lbl: 'En mission',  clr: '#f59e0b', ico: 'directions_run'        },
     { val: 'maintenance', lbl: 'Maintenance', clr: '#ef4444', ico: 'build'                 },
-    { val: 'inactive',    lbl: 'Hors ligne',  clr: '#94a3b8', ico: 'radio_button_unchecked'},
+    { val: 'inactive',    lbl: 'Inactive',    clr: '#94a3b8', ico: 'radio_button_unchecked'},
   ];
 
   // ── Computed ──────────────────────────────────────────────────────
@@ -306,12 +307,8 @@ export class TeamAvailability implements OnInit, OnDestroy {
   }
 
   // ── Status helpers ────────────────────────────────────────────────
-  statusColor(s: string): string {
-    return ({ active:'#16a34a', inactive:'#94a3b8', on_mission:'#f59e0b', maintenance:'#ef4444' } as Record<string,string>)[s] ?? '#64748b';
-  }
-  statusLabel(s: string): string {
-    return ({ active:'Disponible', inactive:'Hors ligne', on_mission:'En mission', maintenance:'Maintenance' } as Record<string,string>)[s] ?? s;
-  }
+  statusColor(s: string): string { return teamStatusColor(s); }
+  statusLabel(s: string): string { return teamStatusLabel(s); }
   teamInitials(name: string): string {
     return name.trim().split(/\s+/).slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase();
   }

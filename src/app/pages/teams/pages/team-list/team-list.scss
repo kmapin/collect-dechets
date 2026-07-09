@@ -272,6 +272,10 @@ p  { font-size: 13px; color: #64748b; margin: 0; }
 }
 .row-name {
   display: flex; flex-direction: column; gap: 1px;
+  max-width: 200px;
+}
+.rn-name, .rn-code, .rn-sup {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
 .rn-name { font-weight: 600; color: #0f172a; }
 .rn-code { font-size: 11px; color: #94a3b8; font-family: monospace; }
@@ -295,6 +299,12 @@ p  { font-size: 13px; color: #64748b; margin: 0; }
   display: flex; align-items: center; gap: 5px; color: #374151;
   mat-icon { font-size: 15px; width: 15px; height: 15px; color: #94a3b8; }
 }
+.rv-info {
+  display: flex; flex-direction: column; gap: 0; line-height: 1.25;
+  max-width: 140px;
+}
+.rv-plate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-model { font-size: 10px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rv-capacity { font-size: 11px; color: #94a3b8; }
 .row-na { color: #94a3b8; }
 

@@ -9,8 +9,8 @@
       {{ team.name.charAt(0) }}
     </div>
     <div class="tc-head-info">
-      <h3>{{ team.name }}</h3>
-      <span class="tc-code">{{ team.code }}</span>
+      <h3 [pTooltip]="team.name" tooltipPosition="top">{{ team.name }}</h3>
+      <span class="tc-code" [pTooltip]="team.code" tooltipPosition="top">{{ team.code }}</span>
     </div>
     <span class="tc-status" [style.background]="statusColor(team.status) + '18'" [style.color]="statusColor(team.status)">
       <span class="tc-status-dot" [style.background]="statusColor(team.status)"></span>
@@ -50,9 +50,9 @@
       }
     </div>
     @if (team.vehicle) {
-      <div class="tcm-item">
+      <div class="tcm-item" [pTooltip]="team.vehicle.model" tooltipPosition="top">
         <mat-icon>{{ vehicleIcon(team.vehicle.type) }}</mat-icon>
-        <span>{{ team.vehicle.plate }}</span>
+        <span>{{ team.vehicle.plate }} · {{ team.vehicle.model }}</span>
       </div>
     } @else {
       <div class="tcm-item tcm-item--muted">
@@ -74,10 +74,12 @@
   @if (team.zones.length > 0) {
     <div class="tc-zones">
       @for (z of team.zones.slice(0, 3); track z.id) {
-        <span class="tz-chip">{{ z.name.split('–')[0].trim() }}</span>
+        <span class="tz-chip" [pTooltip]="z.name + ' — ' + z.ville" tooltipPosition="top">{{ z.name.split('–')[0].trim() }}</span>
       }
       @if (team.zones.length > 3) {
-        <span class="tz-chip tz-chip--more">+{{ team.zones.length - 3 }}</span>
+        <span class="tz-chip tz-chip--more"
+              [pTooltip]="hiddenZonesTooltip(team, 3)"
+              tooltipPosition="top">+{{ team.zones.length - 3 }}</span>
       }
     </div>
   }

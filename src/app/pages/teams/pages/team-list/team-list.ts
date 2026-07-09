@@ -18,6 +18,7 @@ import { TeamCard } from '../../components/team-card/team-card';
 import { TeamForm } from '../../components/team-form/team-form';
 import { TeamDetailModal } from '../../components/team-detail-modal/team-detail-modal';
 import { Team, TeamFormData, TeamStatus, TeamMember } from '../../models/team.model';
+import { teamStatusLabel, teamStatusColor, vehicleStatusColor } from '../../models/team-labels';
 
 @Component({
   selector: 'app-team-list',
@@ -345,10 +346,10 @@ export class TeamList implements OnInit {
   getPrimaryZone(t: Team): string { return t.zones[0]?.name?.split('–')[0]?.trim() ?? '—'; }
 
   statusLabel(s: string): string {
-    return ({ active:'Active', inactive:'Inactive', on_mission:'En mission', maintenance:'Maintenance' } as Record<string,string>)[s] ?? s;
+    return teamStatusLabel(s);
   }
   statusColor(s: string): string {
-    return ({ active:'#16a34a', inactive:'#94a3b8', on_mission:'#f59e0b', maintenance:'#ef4444' } as Record<string,string>)[s] ?? '#64748b';
+    return teamStatusColor(s);
   }
   workloadColor(w: number): string {
     if (w >= 80) return '#ef4444';
@@ -361,6 +362,9 @@ export class TeamList implements OnInit {
     return '#ef4444';
   }
   vehicleStatusColor(s: string): string {
-    return ({ disponible:'#16a34a', en_service:'#f59e0b', maintenance:'#ef4444', hors_service:'#94a3b8' } as Record<string,string>)[s] ?? '#64748b';
+    return vehicleStatusColor(s);
+  }
+  hiddenZonesTooltip(team: Team, from: number): string {
+    return team.zones.slice(from).map(z => `${z.name} — ${z.ville}`).join(', ');
   }
 }

@@ -14,6 +14,9 @@ import { debounceTime } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TeamService } from '../../services/team.service';
 import { MemberRole, TeamStatus, TeamMember } from '../../models/team.model';
+import {
+  vehicleTypeIcon, vehicleStatusColor, vehicleStatusLabel,
+} from '../../models/team-labels';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 interface CandidateMember { id: string; name: string; phone: string; role: MemberRole; label: string; }
@@ -320,13 +323,13 @@ export class TeamCreate {
 
   // ── Helpers ──────────────────────────────────────────────────
   vehicleTypeIcon(type: string): string {
-    return ({ camion: 'local_shipping', pickup: 'directions_car', moto: 'two_wheeler', tricycle: 'electric_rickshaw' } as Record<string,string>)[type] ?? 'local_shipping';
+    return vehicleTypeIcon(type);
   }
   vehicleStatusColor(s: string): string {
-    return ({ disponible: '#16a34a', en_service: '#f59e0b', maintenance: '#ef4444', hors_service: '#94a3b8' } as Record<string,string>)[s] ?? '#64748b';
+    return vehicleStatusColor(s);
   }
   vehicleStatusLabel(s: string): string {
-    return ({ disponible: 'Disponible', en_service: 'En service', maintenance: 'Maintenance', hors_service: 'Hors service' } as Record<string,string>)[s] ?? s;
+    return vehicleStatusLabel(s);
   }
   roleLabel(r: string): string { return this.roles.find(x => x.value === r)?.label ?? r; }
 

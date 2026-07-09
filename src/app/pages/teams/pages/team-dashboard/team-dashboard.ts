@@ -12,6 +12,7 @@ import { Chart, registerables } from 'chart.js';
 import * as L from 'leaflet';
 import { TeamService } from '../../services/team.service';
 import { Team } from '../../models/team.model';
+import { teamStatusColor, teamStatusLabel, successRateColor } from '../../models/team-labels';
 
 Chart.register(...registerables);
 
@@ -195,10 +196,9 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
       attributionControl: false,
     });
 
-    L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-      { maxZoom: 19, subdomains: 'abcd' }
-    ).addTo(this._map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap', maxZoom: 19,
+    }).addTo(this._map);
 
     this._refreshMapMarkers();
   }
@@ -460,19 +460,11 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ── Template helpers ──────────────────────────────────────
-  statusColor(s: string): string {
-    return ({
-      active: '#16a34a', on_mission: '#f59e0b',
-      maintenance: '#ef4444', inactive: '#94a3b8',
-    } as Record<string, string>)[s] ?? '#64748b';
-  }
+  statusColor(s: string): string { return teamStatusColor(s); }
 
-  statusLabel(s: string): string {
-    return ({
-      active: 'Active', on_mission: 'En mission',
-      maintenance: 'Maintenance', inactive: 'Inactive',
-    } as Record<string, string>)[s] ?? s;
-  }
+  statusLabel(s: string): string { return teamStatusLabel(s); }
+
+  successRateColor(pct: number): string { return successRateColor(pct); }
 
   sevColor(s: string): string {
     return ({ critical:'#ef4444', warning:'#f59e0b', info:'#3b82f6', success:'#16a34a' } as Record<string,string>)[s] ?? '#64748b';
@@ -503,6 +495,8 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
   perfOffset(r: number): number { return 100.53 * (1 - r / 100); }
 
   primaryZone(t: Team): string {
-    return t.zones[0]?.name ?? '—';
+    const z = t.zones[0];
+    if (!z) return '—';
+    return z.ville ? `${z.name} (${z.ville})` : z.name;
   }
 }

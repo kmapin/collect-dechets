@@ -315,7 +315,7 @@ export class PlanningCreate implements OnInit {
           if (typeof groupRaw === 'object' && groupRaw?._id) {
             // Objet peuplé : on l'injecte directement dans existingGroups
             const clientIds: string[] = groupRaw.clients ?? groupRaw.clientIds ?? [];
-            this.existingGroups.set([{ _id: groupRaw._id, name: groupRaw.name ?? groupRaw._id, clientIds }]);
+            this.existingGroups.set([{ _id: groupRaw._id, name: groupRaw.name ?? 'Groupe sans nom', clientIds }]);
             this.groupMode.set('existing');
             this.selectedExistingGroupId.set(groupRaw._id);
           } else {
@@ -403,7 +403,7 @@ export class PlanningCreate implements OnInit {
         if (planning.type === 'groupe') {
           if (typeof groupRaw === 'object' && groupRaw?._id) {
             const clientIds: string[] = groupRaw.clients ?? groupRaw.clientIds ?? [];
-            this.existingGroups.set([{ _id: groupRaw._id, name: groupRaw.name ?? groupRaw._id, clientIds }]);
+            this.existingGroups.set([{ _id: groupRaw._id, name: groupRaw.name ?? 'Groupe sans nom', clientIds }]);
             this.groupMode.set('existing');
             this.selectedExistingGroupId.set(groupRaw._id);
           } else if (groupIdStr) {

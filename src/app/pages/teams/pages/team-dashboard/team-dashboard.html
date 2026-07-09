@@ -353,7 +353,7 @@
               </div>
               <div class="tdm-info">
                 <div class="tdm-name">{{ t.name }}</div>
-                <div class="tdm-sub">{{ t.members.length }} mbr · {{ primaryZone(t) }}</div>
+                <div class="tdm-sub" [pTooltip]="primaryZone(t)" tooltipPosition="top">{{ t.members.length }} mbr · {{ primaryZone(t) }}</div>
               </div>
               <div class="tdm-right">
                 <!-- workload bar -->
@@ -361,7 +361,7 @@
                   <div class="tdm-bar" [style.width]="t.workload + '%'"
                        [style.background]="workloadColor(t.workload)"></div>
                 </div>
-                <span class="tdm-perf" [style.color]="workloadColor(t.successRate)">
+                <span class="tdm-perf" [style.color]="successRateColor(t.successRate)">
                   {{ t.successRate }}%
                 </span>
               </div>

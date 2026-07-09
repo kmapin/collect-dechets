@@ -7,6 +7,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { Team } from '../../models/team.model';
+import {
+  teamStatusColor, teamStatusLabel,
+  memberAvailabilityLabel, memberAvailabilityIcon,
+  vehicleStatusColor, vehicleStatusLabel, vehicleTypeIcon,
+  missionStatusColor, missionStatusLabel,
+} from '../../models/team-labels';
+import { formatFrDate } from '../../../../shared/format.util';
 
 // ── Local types ───────────────────────────────────────────────
 type Tab = 'apercu' | 'membres' | 'vehicule' | 'tournees' | 'performances' | 'incidents';
@@ -62,12 +69,8 @@ export class TeamDetailModal implements OnChanges {
   ];
 
   // ── Computed ─────────────────────────────────────────────────
-  statusColor = computed(() => {
-    return ({ active:'#16a34a', inactive:'#94a3b8', on_mission:'#f59e0b', maintenance:'#ef4444' } as Record<string,string>)[this.team?.status ?? ''] ?? '#64748b';
-  });
-  statusLabel = computed(() => {
-    return ({ active:'Active', inactive:'Inactive', on_mission:'En mission', maintenance:'Maintenance' } as Record<string,string>)[this.team?.status ?? ''] ?? '—';
-  });
+  statusColor = computed(() => teamStatusColor(this.team?.status ?? ''));
+  statusLabel = computed(() => this.team ? teamStatusLabel(this.team.status) : '—');
 
   availStats = computed(() => {
     const t = this.team;
@@ -149,18 +152,22 @@ export class TeamDetailModal implements OnChanges {
   roleColor(r: string): string   { return ({ manager:'#3b82f6', collector:'#16a34a'   } as Record<string,string>)[r] ?? '#64748b'; }
   roleIcon(r: string): string    { return ({ manager:'manage_accounts', collector:'recycling' } as Record<string,string>)[r] ?? 'person'; }
   availColor(a: string): string  { return ({ disponible:'#16a34a', occupe:'#f59e0b', absent:'#ef4444'                                   } as Record<string,string>)[a] ?? '#94a3b8'; }
-  availLabel(a: string): string  { return ({ disponible:'Disponible', occupe:'Occupé', absent:'Absent'                                  } as Record<string,string>)[a] ?? a; }
-  availIcon(a: string): string   { return ({ disponible:'check_circle', occupe:'pending', absent:'cancel'                               } as Record<string,string>)[a] ?? 'help'; }
-  vhStatusColor(s: string): string { return ({ disponible:'#16a34a', en_service:'#f59e0b', maintenance:'#ef4444', hors_service:'#94a3b8' } as Record<string,string>)[s] ?? '#64748b'; }
-  vhStatusLabel(s: string): string { return ({ disponible:'Disponible', en_service:'En service', maintenance:'Maintenance', hors_service:'Hors service' } as Record<string,string>)[s] ?? s; }
-  vhTypeIcon(t: string): string    { return ({ camion:'local_shipping', pickup:'directions_car', moto:'two_wheeler', tricycle:'electric_rickshaw' } as Record<string,string>)[t] ?? 'local_shipping'; }
-  msnColor(s: string): string      { return ({ planifie:'#3b82f6', en_cours:'#f59e0b', termine:'#16a34a', annule:'#ef4444'             } as Record<string,string>)[s] ?? '#94a3b8'; }
-  msnLabel(s: string): string      { return ({ planifie:'Planifié', en_cours:'En cours', termine:'Terminé', annule:'Annulé'             } as Record<string,string>)[s] ?? s; }
+  availLabel(a: string): string  { return memberAvailabilityLabel(a); }
+  availIcon(a: string): string   { return memberAvailabilityIcon(a); }
+  vhStatusColor(s: string): string { return vehicleStatusColor(s); }
+  vhStatusLabel(s: string): string { return vehicleStatusLabel(s); }
+  vhTypeIcon(t: string): string    { return vehicleTypeIcon(t); }
+  msnColor(s: string): string      { return missionStatusColor(s); }
+  msnLabel(s: string): string      { return missionStatusLabel(s); }
   sevColor(s: string): string      { return ({ low:'#16a34a', medium:'#f59e0b', high:'#ef4444'                                         } as Record<string,string>)[s] ?? '#94a3b8'; }
   sevLabel(s: string): string      { return ({ low:'Faible', medium:'Modéré', high:'Critique'                                          } as Record<string,string>)[s] ?? s; }
   incIcon(t: string): string       { return ({ retard:'schedule', absence:'person_off', vehicule:'local_shipping', autre:'report'       } as Record<string,string>)[t] ?? 'warning'; }
+  incTypeLabel(t: string): string  { return ({ retard:'Retard', absence:'Absence', vehicule:'Véhicule', autre:'Autre'                    } as Record<string,string>)[t] ?? t; }
   workloadColor(w: number): string { return w >= 80 ? '#ef4444' : w >= 50 ? '#f59e0b' : '#16a34a'; }
   fuelColor(f: number): string     { return f <= 20 ? '#ef4444' : f <= 40 ? '#f59e0b' : '#16a34a'; }
+
+  /** Exposé pour usage direct dans le template (dates ISO brutes venant du backend). */
+  formatFrDate = formatFrDate;
 
   memberCountByRole(role: string): number {
     return this.team?.members.filter(m => m.role === role).length ?? 0;

@@ -44,7 +44,7 @@
         <span><strong>1</strong> équipe sélectionnée</span>
         <span class="sel-chip" [style.border-color]="statusColor(team.status)">
           <span class="sel-chip-dot" [style.background]="statusColor(team.status)"></span>
-          {{ team.name }}
+          <span class="sel-chip-name" [pTooltip]="team.name" tooltipPosition="top">{{ team.name }}</span>
           @if (isCritical(team.id)) { <mat-icon class="sel-chip-warn">error</mat-icon> }
           @if (isWarning(team.id) && !isCritical(team.id)) { <mat-icon class="sel-chip-alert">warning</mat-icon> }
         </span>

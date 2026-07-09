@@ -6,6 +6,9 @@ import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angula
 import { MatIconModule } from '@angular/material/icon';
 import { TooltipModule } from 'primeng/tooltip';
 import { Team, TeamFormData, AvailableVehicle, AvailableZone, MemberRole, CollectorUser } from '../../models/team.model';
+import {
+  vehicleTypeIcon, vehicleStatusColor, vehicleStatusLabel, vehicleTypeLabel,
+} from '../../models/team-labels';
 
 const TEAM_COLORS = [
   '#3b82f6','#16a34a','#f59e0b','#ef4444',
@@ -50,13 +53,16 @@ export class TeamForm implements OnInit, OnChanges {
   activeTab = 0;
 
   vehicleTypeIcon(type: string): string {
-    return ({ camion: 'local_shipping', pickup: 'airport_shuttle', moto: 'two_wheeler', tricycle: 'electric_rickshaw' } as Record<string, string>)[type] ?? 'directions_car';
+    return vehicleTypeIcon(type);
   }
   vehicleStatusColor(s: string): string {
-    return ({ disponible: '#16a34a', en_service: '#3b82f6', maintenance: '#f59e0b', hors_service: '#ef4444' } as Record<string, string>)[s] ?? '#94a3b8';
+    return vehicleStatusColor(s);
   }
   vehicleStatusLabel(s: string): string {
-    return ({ disponible: 'Disponible', en_service: 'En service', maintenance: 'Maintenance', hors_service: 'Hors service' } as Record<string, string>)[s] ?? s;
+    return vehicleStatusLabel(s);
+  }
+  vehicleTypeLabel(t: string): string {
+    return vehicleTypeLabel(t);
   }
 
   /** Nom de l'équipe qui détient déjà ce véhicule (hors équipe en cours d'édition), sinon null. */

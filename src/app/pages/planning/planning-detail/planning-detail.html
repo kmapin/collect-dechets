@@ -62,9 +62,9 @@
           <div>
             <h1 class="tb-title">{{ planning()!.libelle }}</h1>
             <div class="tb-meta">
-              <span class="tb-ref">{{ planning()!.reference }}</span>
+              <span class="tb-ref" pTooltip="Référence complète" tooltipPosition="top">{{ planning()!.reference }}</span>
               <span class="tb-dot">·</span>
-              <span class="tb-date">{{ planning()!.date }}</span>
+              <span class="tb-date">{{ formatFrDate(planning()!.date) }}</span>
               <span class="tb-dot">·</span>
               <span class="tb-freq">{{ frequencyLabel() }}</span>
             </div>
@@ -193,7 +193,7 @@
                   <mat-icon>calendar_today</mat-icon>
                   <div>
                     <span class="ifc-label">Date</span>
-                    <span class="ifc-val">{{ planning()!.date }}</span>
+                    <span class="ifc-val">{{ formatFrDate(planning()!.date) }}</span>
                   </div>
                 </div>
                 <div class="ifc-item">
@@ -279,7 +279,7 @@
                       {{ team.name.substring(0,2).toUpperCase() }}
                     </div>
                     <div class="tc-info">
-                      <h4>{{ team.name }}</h4>
+                      <h4 [pTooltip]="team.name" tooltipPosition="top">{{ team.name }}</h4>
                       <span class="tc-status" [style.color]="teamStatusBadgeColor(team.status)">
                         <span class="tc-dot" [style.background]="teamStatusBadgeColor(team.status)"></span>
                         {{ teamStatusBadgeLabel(team.status) }}
@@ -509,7 +509,7 @@
                       </span>
                       @if (inc.resolved) {
                         <span class="inc-resolved">
-                          <mat-icon>check_circle</mat-icon>Résolu {{ inc.resolvedAt }}
+                          <mat-icon>check_circle</mat-icon>Résolu {{ formatFrDateTime(inc.resolvedAt) }}
                         </span>
                       }
                     </div>
@@ -517,7 +517,7 @@
                     <p class="inc-desc">{{ inc.description }}</p>
                     <div class="inc-footer">
                       <span><mat-icon>person</mat-icon>{{ inc.reporter }}</span>
-                      <span><mat-icon>access_time</mat-icon>{{ inc.reportedAt }}</span>
+                      <span><mat-icon>access_time</mat-icon>{{ formatFrDateTime(inc.reportedAt) }}</span>
                     </div>
                   </div>
                 </div>
@@ -550,7 +550,7 @@
                 <div class="at-content">
                   <div class="at-title">{{ act.title }}</div>
                   <div class="at-detail">{{ act.detail }}</div>
-                  <div class="at-date">{{ act.date }}</div>
+                  <div class="at-date">{{ formatFrDateTime(act.date) }}</div>
                 </div>
               </div>
             }
@@ -640,9 +640,9 @@
                   </div>
                   <div class="nr-body">
                     <div class="nr-recipient">{{ n.recipient }}</div>
-                    <div class="nr-message">{{ n.message }}</div>
+                    <div class="nr-message" [pTooltip]="n.message" tooltipPosition="top">{{ n.message }}</div>
                     <div class="nr-meta">
-                      <mat-icon>access_time</mat-icon>{{ n.sentAt }}
+                      <mat-icon>access_time</mat-icon>{{ formatFrDateTime(n.sentAt) }}
                     </div>
                   </div>
                   <div class="nr-status"

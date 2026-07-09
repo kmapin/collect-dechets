@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { TooltipModule } from 'primeng/tooltip';
 import { Team } from '../../models/team.model';
+import { teamStatusLabel, teamStatusColor } from '../../models/team-labels';
 
 @Component({
   selector: 'app-team-card',
@@ -20,10 +21,10 @@ export class TeamCard {
   @Output() detail = new EventEmitter<Team>();
 
   statusLabel(s: string): string {
-    return ({ active: 'Active', inactive: 'Inactive', on_mission: 'En mission', maintenance: 'Maintenance' } as Record<string,string>)[s] ?? s;
+    return teamStatusLabel(s);
   }
   statusColor(s: string): string {
-    return ({ active: '#16a34a', inactive: '#94a3b8', on_mission: '#f59e0b', maintenance: '#ef4444' } as Record<string,string>)[s] ?? '#64748b';
+    return teamStatusColor(s);
   }
   workloadColor(w: number): string {
     if (w >= 80) return '#ef4444';
@@ -35,5 +36,8 @@ export class TeamCard {
   }
   availableMembers(): number {
     return this.team.members.filter(m => m.availability === 'disponible').length;
+  }
+  hiddenZonesTooltip(team: Team, from: number): string {
+    return team.zones.slice(from).map(z => `${z.name} — ${z.ville}`).join(', ');
   }
 }

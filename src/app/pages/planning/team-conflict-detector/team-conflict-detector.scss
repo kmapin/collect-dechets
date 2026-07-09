@@ -76,6 +76,7 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
   font-weight: 600;
   color: #1e293b;
   background: #fff;
+  max-width: 260px;
 }
 
 .sel-chip-dot {
@@ -83,6 +84,13 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.sel-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .sel-chip-warn {

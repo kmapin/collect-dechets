@@ -189,13 +189,23 @@
               {{ m.name.charAt(0) }}
             </div>
             <div class="mc-info">
-              <div class="mc-name">{{ m.name }}</div>
+              <div class="mc-name" [title]="m.name" pTooltip="{{ m.name }}" tooltipPosition="top">{{ m.name }}</div>
               <div class="mc-role" [style.color]="roleColor(m.role)">{{ roleLabel(m.role) }}</div>
               <div class="mc-phone"><mat-icon>phone</mat-icon>{{ m.phone || '—' }}</div>
               @if (m.email) {
                 <div class="mc-email"><mat-icon>email</mat-icon>{{ m.email }}</div>
               }
               <div class="mc-joined"><mat-icon>calendar_today</mat-icon>Depuis {{ m.joinedAt | date:'MMMM yyyy' }}</div>
+              @if (memberZoneName(m) || memberVehiclePlate(m)) {
+                <div class="mc-assign">
+                  @if (memberZoneName(m)) {
+                    <span pTooltip="Zone assignée" tooltipPosition="top"><mat-icon>location_on</mat-icon>{{ memberZoneName(m) }}</span>
+                  }
+                  @if (memberVehiclePlate(m)) {
+                    <span pTooltip="Véhicule assigné" tooltipPosition="top"><mat-icon>local_shipping</mat-icon>{{ memberVehiclePlate(m) }}</span>
+                  }
+                </div>
+              }
               @if (m.performance) {
                 <div class="mc-perf">
                   <span pTooltip="Missions terminées" tooltipPosition="top">
@@ -311,7 +321,7 @@
                 <mat-icon>location_on</mat-icon>
               </div>
               <div class="zc-info">
-                <div class="zc-name">{{ z.name }}</div>
+                <div class="zc-name" [title]="z.name" pTooltip="{{ z.name }}" tooltipPosition="top">{{ z.name }}</div>
                 <div class="zc-meta">{{ z.ville }}@if(z.arrondissement){ · {{ z.arrondissement }} }</div>
                 @if (z.householdsCount > 0) {
                   <div class="zc-households"><mat-icon>home</mat-icon>{{ z.householdsCount | number }} ménages</div>

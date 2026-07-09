@@ -533,7 +533,11 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
 }
 .tc-info {
   flex: 1;
-  h4 { font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 2px; }
+  min-width: 0;
+  h4 {
+    font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 }
 .tc-status {
   display: flex; align-items: center; gap: 5px;
