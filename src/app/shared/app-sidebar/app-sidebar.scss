@@ -4,10 +4,10 @@
 
 $w:        260px;
 $w-mini:   68px;
-$bg:       #0f172a;
-$bg2:      #1e293b;
-$border:   #1e293b;
-$text:     #cbd5e1;
+$bg:       #f8fafc;
+$bg2:      #eef2f6;
+$border:   #e2e8f0;
+$text:     #334155;
 $text-dim: #64748b;
 $active:   #16a34a;
 $radius:   8px;
@@ -59,14 +59,15 @@ $tr:       .2s ease;
   mat-icon { color: #fff; font-size: 22px; width: 22px; height: 22px; }
 }
 .sb-brand-text { flex: 1; overflow: hidden; }
-.sb-brand-title { display: block; font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; }
+.sb-brand-title { display: block; font-size: 14px; font-weight: 700; color: #0f172a; white-space: nowrap; }
 .sb-brand-sub   { display: block; font-size: 11px; color: $text-dim; white-space: nowrap; }
 .sb-toggle {
   width: 28px; height: 28px; border-radius: 6px;
   border: 1px solid $border; background: transparent; cursor: pointer;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   mat-icon { font-size: 17px; color: $text-dim; }
-  &:hover mat-icon { color: #fff; }
+  &:hover { background: $bg2; }
+  &:hover mat-icon { color: #0f172a; }
 }
 
 /* ── Navigation ─────────────────────────────────────────── */
@@ -110,12 +111,12 @@ $tr:       .2s ease;
   white-space: nowrap;
   overflow: hidden;
 
-  &:hover { background: $bg2; color: #fff; }
+  &:hover { background: $bg2; color: #0f172a; }
 
   &--active {
     background: rgba(22,163,74,.15);
-    color: #4ade80;
-    .sb-icon { color: #4ade80; }
+    color: #16a34a;
+    .sb-icon { color: #16a34a; }
   }
 
   &--secondary { color: $text-dim; }

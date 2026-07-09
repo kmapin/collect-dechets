@@ -30,7 +30,7 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
 
 // ── Hero ─────────────────────────────────────────────────────
 .td-hero {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: #f8fafc;
   padding: 20px 28px 0;
   position: relative;
   overflow: hidden;
@@ -48,17 +48,17 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
 }
 .back-btn {
   width:32px; height:32px; border-radius:8px;
-  background:rgba(255,255,255,.08); color:#94a3b8;
+  background:#eef2f6; color:#64748b;
   display:flex; align-items:center; justify-content:center;
   transition:all .15s;
   mat-icon { font-size:18px; width:18px; height:18px; }
-  &:hover { background:rgba(255,255,255,.15); color:#e2e8f0; }
+  &:hover { background:#e2e8f0; color:#0f172a; }
 }
 .tdh-breadcrumb {
   display:flex; align-items:center; gap:4px; font-size:13px; color:#64748b;
-  a { color:#64748b; text-decoration:none; &:hover { color:#e2e8f0; } }
-  mat-icon { font-size:16px; width:16px; height:16px; color:#475569; }
-  span { color:#94a3b8; }
+  a { color:#64748b; text-decoration:none; &:hover { color:#0f172a; } }
+  mat-icon { font-size:16px; width:16px; height:16px; color:#94a3b8; }
+  span { color:#334155; font-weight:600; }
 }
 
 .tdh-main {
@@ -74,7 +74,7 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
 .tdh-info { flex:1; min-width:0; }
 .tdhi-top {
   display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px;
-  h1 { font-size:22px; font-weight:800; color:#f8fafc; margin:0; }
+  h1 { font-size:22px; font-weight:800; color:#0f172a; margin:0; }
 }
 .tdhi-code { font-size:12px; color:#64748b; font-family:monospace; }
 .tdhi-status {
@@ -99,29 +99,29 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   font-size:13px; font-weight:500; cursor:pointer; border:1px solid transparent;
   transition:all .15s;
   mat-icon { font-size:16px; width:16px; height:16px; }
-  &--ghost { background:rgba(255,255,255,.08); color:#e2e8f0; border-color:rgba(255,255,255,.12);
-    &:hover { background:rgba(255,255,255,.15); }
+  &--ghost { background:#fff; color:#374151; border-color:#e2e8f0;
+    &:hover { background:#f1f5f9; }
   }
-  &--ghost.tdha-btn--danger { color:#fca5a5; &:hover { background:rgba(239,68,68,.2); } }
+  &--ghost.tdha-btn--danger { color:#ef4444; &:hover { background:#fef2f2; border-color:#fecaca; } }
   &--primary { background:var(--team-color,#3b82f6); color:#fff; &:hover { filter:brightness(1.1); } }
 }
 
 .tdh-stats {
   display:flex; align-items:center; gap:0;
   padding:16px 0 0;
-  border-top:1px solid rgba(255,255,255,.08);
+  border-top:1px solid #e2e8f0;
   flex-wrap:wrap;
 }
 .tdhs-item {
   display:flex; flex-direction:column; align-items:center; gap:2px;
   padding:8px 20px;
 }
-.tdhs-val { font-size:20px; font-weight:800; color:#f8fafc; }
+.tdhs-val { font-size:20px; font-weight:800; color:#0f172a; }
 .tdhs-lbl { font-size:11px; color:#64748b; }
-.tdhs-div { width:1px; height:40px; background:rgba(255,255,255,.08); flex-shrink:0; }
+.tdhs-div { width:1px; height:40px; background:#e2e8f0; flex-shrink:0; }
 
 .tdh-workload-bar {
-  height:3px; background:rgba(255,255,255,.08);
+  height:3px; background:#e2e8f0;
 }
 .tdh-wl-fill {
   height:100%;
