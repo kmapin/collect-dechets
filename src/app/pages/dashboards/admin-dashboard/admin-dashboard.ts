@@ -122,7 +122,7 @@ interface Incident {
     email?: string;
   };
   photo?: [];
-  agencyName: string;
+  agencyName?: string;
   type:
     | "missed_collection"
     | "compliance_issue"
