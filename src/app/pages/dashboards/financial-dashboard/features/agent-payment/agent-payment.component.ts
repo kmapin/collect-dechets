@@ -1,0 +1,138 @@
+import { Component, computed, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Agent, PaiementAgent } from '../../models';
+import { AGENT_DATA_SERVICE } from '../../data-access/tokens/agent-data.token';
+import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
+import { formatMontantXof } from '../../utils/money.util';
+import { formatFrDateTime } from '../../../../../shared/format.util';
+import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
+
+type Etape = 'formulaire' | 'confirmation';
+
+// F5 — Prototype de paiement des agents (collecteurs). UI + mock uniquement : aucune
+// écriture réelle, modèle de rémunération et impact solde restent TBC (RG10,
+// DISCOVERY.md §7). L'alerte de solde insuffisant est informative, pas bloquante.
+@Component({
+  selector: 'app-agent-payment',
+  standalone: true,
+  imports: [CommonModule, FormsModule, SearchFilterComponent],
+  templateUrl: './agent-payment.component.html',
+  styleUrl: './agent-payment.component.scss',
+})
+export class AgentPaymentComponent {
+  private readonly agentData = inject(AGENT_DATA_SERVICE);
+  private readonly financeData = inject(FINANCE_DATA_SERVICE);
+
+  readonly agents = signal<Agent[]>([]);
+  readonly chargementAgents = signal(true);
+
+  readonly historique = signal<PaiementAgent[]>([]);
+  readonly chargementHistorique = signal(true);
+
+  // Filtres de l'historique — purement client-side (liste déjà chargée en mémoire).
+  readonly rechercheAgent = signal('');
+  readonly montantMin = signal<number | null>(null);
+
+  readonly soldeDisponible = signal<number | null>(null);
+
+  readonly idAgentSelectionne = signal<string | null>(null);
+  readonly montant = signal<number | null>(null);
+  readonly etape = signal<Etape>('formulaire');
+
+  readonly enregistrement = signal(false);
+  readonly messageSucces = signal<string | null>(null);
+  readonly erreurEnregistrement = signal<string | null>(null);
+
+  readonly formatMontant = formatMontantXof;
+  readonly formatDate = formatFrDateTime;
+
+  readonly formulaireValide = computed(() => !!this.idAgentSelectionne() && (this.montant() ?? 0) > 0);
+  readonly soldeInsuffisant = computed(() => {
+    const solde = this.soldeDisponible();
+    const m = this.montant();
+    return solde !== null && m !== null && m > solde;
+  });
+  readonly agentSelectionne = computed(() => this.agents().find(a => a.idAgent === this.idAgentSelectionne()) ?? null);
+
+  readonly historiqueFiltre = computed(() => {
+    const recherche = this.rechercheAgent().trim().toLowerCase();
+    const seuil = this.montantMin();
+    return this.historique().filter(paiement => {
+      if (recherche && !this.nomAgent(paiement.idAgent).toLowerCase().includes(recherche)) return false;
+      if (seuil !== null && paiement.montant < seuil) return false;
+      return true;
+    });
+  });
+
+  constructor() {
+    this.chargerAgents();
+    this.chargerSolde();
+    this.chargerHistorique();
+  }
+
+  passerAConfirmation(): void {
+    if (!this.formulaireValide()) return;
+    this.messageSucces.set(null);
+    this.etape.set('confirmation');
+  }
+
+  retourFormulaire(): void {
+    this.etape.set('formulaire');
+  }
+
+  confirmer(): void {
+    const idAgent = this.idAgentSelectionne();
+    const montant = this.montant();
+    if (!idAgent || !montant) return;
+
+    this.enregistrement.set(true);
+    this.erreurEnregistrement.set(null);
+
+    this.agentData.payerAgent({ idAgent, montant }).subscribe({
+      next: () => {
+        this.enregistrement.set(false);
+        this.messageSucces.set('Paiement enregistré (mock) — aucune écriture réelle effectuée.');
+        this.etape.set('formulaire');
+        this.idAgentSelectionne.set(null);
+        this.montant.set(null);
+        this.chargerHistorique();
+      },
+      error: () => {
+        this.enregistrement.set(false);
+        this.erreurEnregistrement.set("Impossible d'enregistrer le paiement pour le moment.");
+      },
+    });
+  }
+
+  nomAgent(idAgent: string): string {
+    const agent = this.agents().find(a => a.idAgent === idAgent);
+    return agent ? `${agent.nom} ${agent.prenom ?? ''}`.trim() : idAgent;
+  }
+
+  private chargerAgents(): void {
+    this.chargementAgents.set(true);
+    this.agentData.getAgents({ pageSize: 100 }).subscribe({
+      next: page => {
+        this.agents.set(page.items);
+        this.chargementAgents.set(false);
+      },
+      error: () => this.chargementAgents.set(false),
+    });
+  }
+
+  private chargerSolde(): void {
+    this.financeData.getDashboardKpi().subscribe(kpi => this.soldeDisponible.set(kpi.soldeDisponible));
+  }
+
+  private chargerHistorique(): void {
+    this.chargementHistorique.set(true);
+    this.agentData.getPaiementsAgent({ pageSize: 50 }).subscribe({
+      next: page => {
+        this.historique.set([...page.items].sort((a, b) => (a.datePaiement < b.datePaiement ? 1 : -1)));
+        this.chargementHistorique.set(false);
+      },
+      error: () => this.chargementHistorique.set(false),
+    });
+  }
+}

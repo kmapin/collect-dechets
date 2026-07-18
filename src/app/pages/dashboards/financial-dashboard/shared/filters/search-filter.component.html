@@ -1,0 +1,11 @@
+<label class="search-filter">
+  <i class="material-icons" aria-hidden="true">search</i>
+  <span class="sr-only">{{ placeholder }}</span>
+  <input
+    type="search"
+    class="search-filter__input"
+    [placeholder]="placeholder"
+    [ngModel]="value"
+    (ngModelChange)="onInput($event)"
+  />
+</label>

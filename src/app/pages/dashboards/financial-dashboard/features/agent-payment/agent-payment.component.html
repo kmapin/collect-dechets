@@ -1,0 +1,120 @@
+<section class="fin-agent-payment" aria-label="Paiement des agents">
+  <h2>Paiement des agents</h2>
+  <p class="fin-agent-payment__note">
+    Prototype — aucune écriture réelle n'est effectuée ; le modèle de rémunération et son
+    impact sur le solde restent à confirmer (RG10).
+  </p>
+
+  <div class="fin-agent-payment__layout">
+    <div class="fin-agent-payment__form-card">
+      <div class="fin-agent-payment__success" role="status" *ngIf="messageSucces() as message">
+        <i class="material-icons" aria-hidden="true">check_circle</i>
+        {{ message }}
+      </div>
+
+      <div class="fin-agent-payment__error" role="alert" *ngIf="erreurEnregistrement() as message">
+        <i class="material-icons" aria-hidden="true">error_outline</i>
+        {{ message }}
+      </div>
+
+      <form class="fin-agent-payment__form" *ngIf="etape() === 'formulaire'" (ngSubmit)="passerAConfirmation()">
+        <div class="fin-agent-payment__field">
+          <label for="agent-select">Agent</label>
+          <select id="agent-select" name="agent" required [ngModel]="idAgentSelectionne()" (ngModelChange)="idAgentSelectionne.set($event)" [disabled]="chargementAgents()">
+            <option [ngValue]="null" disabled>{{ chargementAgents() ? 'Chargement…' : 'Sélectionner un agent' }}</option>
+            <option *ngFor="let agent of agents()" [ngValue]="agent.idAgent">{{ agent.nom }} {{ agent.prenom }}</option>
+          </select>
+        </div>
+
+        <div class="fin-agent-payment__field">
+          <label for="montant-input">Montant (FCFA)</label>
+          <input
+            id="montant-input"
+            name="montant"
+            type="number"
+            min="1"
+            step="1"
+            required
+            [ngModel]="montant()"
+            (ngModelChange)="montant.set($event)"
+          />
+        </div>
+
+        <p class="fin-agent-payment__warning" role="alert" *ngIf="soldeInsuffisant()">
+          <i class="material-icons" aria-hidden="true">warning</i>
+          Ce montant dépasse le solde disponible ({{ formatMontant(soldeDisponible() ?? 0) }}). Vous pouvez tout de même
+          continuer (TBC — RG10).
+        </p>
+
+        <button type="submit" class="fin-agent-payment__submit-btn" [disabled]="!formulaireValide()">
+          Continuer
+        </button>
+      </form>
+
+      <div class="fin-agent-payment__confirmation" *ngIf="etape() === 'confirmation'">
+        <p>
+          Confirmez-vous le paiement de <strong>{{ formatMontant(montant() ?? 0) }}</strong> à
+          <strong>{{ agentSelectionne()?.nom }} {{ agentSelectionne()?.prenom }}</strong> ?
+        </p>
+        <div class="fin-agent-payment__confirmation-actions">
+          <button type="button" class="fin-agent-payment__cancel-btn" (click)="retourFormulaire()" [disabled]="enregistrement()">
+            Annuler
+          </button>
+          <button type="button" class="fin-agent-payment__submit-btn" (click)="confirmer()" [disabled]="enregistrement()">
+            {{ enregistrement() ? 'Enregistrement…' : 'Confirmer' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="fin-agent-payment__history">
+      <div class="fin-agent-payment__history-header">
+        <h3 class="fin-agent-payment__history-title">Historique des paiements</h3>
+        <div class="fin-agent-payment__filters">
+          <app-search-filter
+            placeholder="Rechercher un agent…"
+            [value]="rechercheAgent()"
+            (valueChange)="rechercheAgent.set($event)"
+          />
+          <input
+            type="number"
+            class="fin-agent-payment__montant-filter"
+            min="0"
+            placeholder="Montant minimum"
+            [ngModel]="montantMin()"
+            (ngModelChange)="montantMin.set($event)"
+            aria-label="Filtrer par montant minimum"
+          />
+        </div>
+      </div>
+      <table class="fin-agent-payment__table">
+        <thead>
+          <tr>
+            <th scope="col">Agent</th>
+            <th scope="col">Montant</th>
+            <th scope="col">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngIf="!chargementHistorique(); else squelette">
+            <tr *ngFor="let paiement of historiqueFiltre()">
+              <td data-label="Agent">{{ nomAgent(paiement.idAgent) }}</td>
+              <td data-label="Montant">{{ formatMontant(paiement.montant) }}</td>
+              <td data-label="Date">{{ formatDate(paiement.datePaiement) }}</td>
+            </tr>
+            <tr *ngIf="!historiqueFiltre().length">
+              <td colspan="3" class="fin-agent-payment__empty">
+                {{ historique().length ? 'Aucun paiement ne correspond à ces filtres.' : 'Aucun paiement agent enregistré.' }}
+              </td>
+            </tr>
+          </ng-container>
+          <ng-template #squelette>
+            <tr *ngFor="let i of [0, 1, 2]" aria-hidden="true">
+              <td *ngFor="let c of [0, 1, 2]"><span class="fin-agent-payment__skeleton-cell"></span></td>
+            </tr>
+          </ng-template>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,39 @@
+<div class="fin-chart">
+  <h3 class="fin-chart__title">{{ titre }}</h3>
+
+  <!--
+    Le <canvas> reste toujours dans le DOM (jamais retiré par *ngIf) : le squelette et le
+    message vide sont superposés par-dessus plutôt que de le démonter. Sinon, quand
+    `loading` passe à false au même cycle que l'arrivée de `config`, ngOnChanges se
+    déclenche avant que *ngIf ne réinsère le canvas — @ViewChild ne le trouve pas encore
+    et le graphique n'est jamais construit (c'était le bug : graphiques vides malgré des
+    données mock correctes).
+  -->
+  <div class="fin-chart__body">
+    <div class="fin-chart__canvas-wrap" role="img" [attr.aria-label]="titre">
+      <canvas #canvasRef></canvas>
+    </div>
+
+    <div class="fin-chart__skeleton" *ngIf="loading" aria-hidden="true"></div>
+    <p class="fin-chart__empty" *ngIf="!loading && estVide">Aucune donnée à afficher pour cette période.</p>
+  </div>
+
+  <details class="fin-chart__fallback" *ngIf="!loading && !estVide">
+    <summary>Voir les données sous forme de tableau</summary>
+    <table>
+      <caption class="sr-only">{{ titre }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Période</th>
+          <th scope="col">Valeur</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of tableRows">
+          <td>{{ row.label }}</td>
+          <td>{{ row.value }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </details>
+</div>

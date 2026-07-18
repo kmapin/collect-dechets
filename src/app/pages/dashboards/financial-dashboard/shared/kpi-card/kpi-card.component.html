@@ -1,0 +1,23 @@
+<div class="stat-card card" [class.stat-card--loading]="loading">
+  <ng-container *ngIf="!loading; else squelette">
+    <div class="stat-icon" [class]="tone">
+      <i class="material-icons" aria-hidden="true">{{ icon }}</i>
+    </div>
+    <div class="stat-info">
+      <h3>{{ label }}</h3>
+      <p class="stat-value">{{ value }}</p>
+      <span class="stat-trend" [class]="tone" *ngIf="sousTexte">{{ sousTexte }}</span>
+    </div>
+  </ng-container>
+
+  <ng-template #squelette>
+    <div class="stat-card__skeleton" aria-hidden="true">
+      <div class="stat-card__skeleton-icon"></div>
+      <div class="stat-card__skeleton-lines">
+        <div class="stat-card__skeleton-line stat-card__skeleton-line--label"></div>
+        <div class="stat-card__skeleton-line stat-card__skeleton-line--value"></div>
+      </div>
+    </div>
+    <span class="sr-only">Chargement de l'indicateur…</span>
+  </ng-template>
+</div>

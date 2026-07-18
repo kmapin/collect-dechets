@@ -1,0 +1,42 @@
+<div class="billing-tab">
+  <div class="billing-tab__header">
+    <h3>Factures mensuelles</h3>
+    <button type="button" class="billing-tab__statement-btn" (click)="editerReleve()">
+      <i class="material-icons" aria-hidden="true">receipt_long</i>
+      Éditer le relevé
+    </button>
+  </div>
+
+  <app-error-state *ngIf="erreur() as message" [message]="message" (retry)="reessayer()" />
+
+  <table class="billing-tab__table" *ngIf="!erreur()">
+    <thead>
+      <tr>
+        <th scope="col">Période</th>
+        <th scope="col">Montant</th>
+        <th scope="col">Statut</th>
+        <th scope="col">Date de paiement</th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngIf="!chargement(); else squelette">
+        <tr *ngFor="let f of factures()">
+          <td data-label="Période">{{ f.periode.mois }}/{{ f.periode.annee }}</td>
+          <td data-label="Montant">{{ formatMontant(f.montant) }}</td>
+          <td data-label="Statut">
+            <app-status-badge [label]="badgeFacture(f.statut).label" [icon]="badgeFacture(f.statut).icon" [variant]="badgeFacture(f.statut).variant" />
+          </td>
+          <td data-label="Date de paiement">{{ f.datePaiement ? formatDate(f.datePaiement) : '—' }}</td>
+        </tr>
+        <tr *ngIf="!factures().length">
+          <td colspan="4" class="billing-tab__empty">Aucune facture générée pour ce client.</td>
+        </tr>
+      </ng-container>
+      <ng-template #squelette>
+        <tr *ngFor="let i of [0, 1, 2]" aria-hidden="true">
+          <td *ngFor="let c of [0, 1, 2, 3]"><span class="billing-tab__skeleton-cell"></span></td>
+        </tr>
+      </ng-template>
+    </tbody>
+  </table>
+</div>

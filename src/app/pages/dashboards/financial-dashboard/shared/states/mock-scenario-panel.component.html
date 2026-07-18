@@ -1,0 +1,31 @@
+<div class="mock-panel" [class.mock-panel--ouvert]="ouvert()">
+  <button type="button" class="mock-panel__toggle" (click)="toggleOuvert()" [attr.aria-expanded]="ouvert()">
+    <i class="material-icons" aria-hidden="true">bug_report</i>
+    Démo
+  </button>
+
+  <div class="mock-panel__body" *ngIf="ouvert()">
+    <p class="mock-panel__hint">
+      Change le scénario mock d'un écran, puis cliquez sur « Réessayer » (ou changez
+      d'onglet) sur cet écran pour le voir appliqué.
+    </p>
+
+    <label class="mock-panel__field">
+      Écran
+      <select [ngModel]="featureChoisie()" (ngModelChange)="featureChoisie.set($event)">
+        <option *ngFor="let f of features" [value]="f.key">{{ f.label }}</option>
+      </select>
+    </label>
+
+    <div class="mock-panel__scenarios">
+      <button
+        type="button"
+        *ngFor="let s of scenarios"
+        [class.active]="scenarioActif(featureChoisie()) === s.value"
+        (click)="definirScenario(featureChoisie(), s.value)"
+      >
+        {{ s.label }}
+      </button>
+    </div>
+  </div>
+</div>

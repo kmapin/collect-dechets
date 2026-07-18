@@ -1,0 +1,106 @@
+@use '../../styles/responsive' as resp;
+
+.data-table-wrap {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+
+  thead {
+    background: #f8fafc;
+    position: sticky;
+    top: 0;
+  }
+
+  th {
+    text-align: left;
+    padding: 0.7rem 1rem;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  tbody tr:hover {
+    background: #eff6ff;
+  }
+
+  &__right {
+    text-align: right;
+  }
+
+  &__sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    // Les navigateurs appliquent text-align:start directement sur <button> (valeur
+    // explicite, pas héritée) — ça écrase le text-align:right du <th>.data-table__right
+    // parent pour les colonnes triables alignées à droite (ex. Montant). On force
+    // l'héritage pour que l'en-tête s'aligne comme les cellules de la colonne.
+    text-align: inherit;
+
+    i {
+      font-size: 0.95rem;
+    }
+
+    &:hover {
+      color: #1e293b;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+    }
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 1.5rem;
+    color: #94a3b8;
+  }
+
+  &__skeleton-cell {
+    display: block;
+    height: 0.85rem;
+    width: 80%;
+    border-radius: 4px;
+    background: #e2e8f0;
+    animation: data-table-skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  @include resp.table-to-cards;
+}
+
+@keyframes data-table-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-table__skeleton-cell {
+    animation: none;
+  }
+}

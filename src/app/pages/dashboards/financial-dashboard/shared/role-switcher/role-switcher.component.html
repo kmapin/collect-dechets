@@ -1,0 +1,13 @@
+<div class="role-switcher" role="group" aria-label="Changer de rôle (démo RBAC)">
+  <span class="role-switcher__label">Rôle (démo) :</span>
+  <button
+    *ngFor="let role of roles"
+    type="button"
+    class="role-switcher__btn"
+    [class.active]="roleActif() === role"
+    [attr.aria-pressed]="roleActif() === role"
+    (click)="choisirRole(role)"
+  >
+    {{ labelParRole[role] }}
+  </button>
+</div>

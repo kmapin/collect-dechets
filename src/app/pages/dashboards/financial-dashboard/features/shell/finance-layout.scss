@@ -1,0 +1,129 @@
+// Reprend le langage visuel des autres dashboards (agency-dashboard.scss) : le
+// dégradé/page-header/container/btn viennent des styles globaux (src/styles.scss) ;
+// header-content/quick-actions/tabs-navigation/tab-btn/tab-badge/tab-content sont
+// scopés au composant côté agency-dashboard, donc reproduits ici à l'identique
+// (mêmes valeurs, mêmes variables CSS) pour un rendu strictement équivalent.
+
+.finance-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tabs-navigation {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--white);
+  padding: 4px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-light);
+  overflow-x: auto;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  font-weight: 500;
+  position: relative;
+
+  i {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: var(--light-gray);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--primary-color);
+    color: var(--white);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.tab-badge {
+  background: var(--error-color);
+  color: var(--white);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.tab-content {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-light);
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .tabs-navigation {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .tab-content {
+    padding: 3%;
+  }
+
+  .quick-actions {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+@media print {
+  .page-header,
+  .tabs-navigation,
+  .no-print {
+    display: none;
+  }
+
+  .tab-content {
+    padding: 0;
+    box-shadow: none;
+  }
+}

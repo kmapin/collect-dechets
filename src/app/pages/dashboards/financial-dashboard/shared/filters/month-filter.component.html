@@ -1,0 +1,21 @@
+<div class="month-filter">
+  <label class="month-filter__label">
+    <span class="sr-only">{{ label }}</span>
+    <input
+      type="month"
+      class="month-filter__input"
+      [attr.aria-label]="label"
+      [ngModel]="valeur"
+      (ngModelChange)="onChange($event)"
+    />
+  </label>
+  <button
+    *ngIf="valeur"
+    type="button"
+    class="month-filter__clear"
+    (click)="effacer()"
+    aria-label="Effacer le filtre de mois"
+  >
+    <i class="material-icons" aria-hidden="true">close</i>
+  </button>
+</div>

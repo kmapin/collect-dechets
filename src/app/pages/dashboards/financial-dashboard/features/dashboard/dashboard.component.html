@@ -1,0 +1,81 @@
+<section class="fin-dashboard" aria-label="Indicateurs financiers">
+  <div class="fin-dashboard__header">
+    <h2>Indicateurs</h2>
+    <app-period-selector [mode]="mode()" (modeChange)="onModeChange($event)" />
+  </div>
+
+  <app-error-state *ngIf="erreurKpi() as message" [message]="message" (retry)="reessayerKpi()" />
+
+  <ng-container *ngIf="!erreurKpi()">
+    <div class="stats-grid" [attr.aria-busy]="chargementKpi()">
+      <ng-container *ngIf="kpi() as k; else squelette">
+        <app-kpi-card
+          label="Solde disponible"
+          icon="account_balance_wallet"
+          tone="neutre"
+          [value]="formatMontant(k.soldeDisponible)"
+          sousTexte="Paiements moins retraits (RG7, formule à confirmer)"
+        />
+        <app-kpi-card
+          label="Total collecté"
+          icon="payments"
+          tone="positif"
+          [value]="formatMontant(k.totalCollecte)"
+        />
+        <app-kpi-card
+          label="Revenus nets"
+          icon="trending_up"
+          tone="positif"
+          [value]="formatMontant(k.revenusNets)"
+        />
+        <app-kpi-card
+          label="En attente"
+          icon="schedule"
+          tone="attention"
+          [value]="formatMontant(k.enAttente)"
+          sousTexte="Dû par les clients en retard (RG5)"
+        />
+      </ng-container>
+      <ng-template #squelette>
+        <app-kpi-card *ngFor="let i of [0, 1, 2, 3]" [loading]="true" />
+      </ng-template>
+    </div>
+
+    <app-empty-state
+      *ngIf="!chargementKpi() && estVide()"
+      icon="account_balance_wallet"
+      message="Aucune activité financière enregistrée pour cette période."
+    />
+  </ng-container>
+
+  <div class="fin-dashboard__stats-header">
+    <h2>Statistiques (6 derniers mois)</h2>
+    <button type="button" class="fin-dashboard__export-btn" (click)="exporterCsv()">
+      <i class="material-icons" aria-hidden="true">download</i>
+      Exporter (CSV)
+    </button>
+  </div>
+
+  <app-error-state *ngIf="erreurGraphiques() as message" [message]="message" (retry)="reessayerGraphiques()" />
+
+  <div class="fin-dashboard__charts" *ngIf="!erreurGraphiques()">
+    <app-finance-chart
+      titre="Total collecté par mois"
+      [config]="configCollecte()"
+      [tableRows]="lignesCollecte()"
+      [loading]="chargementGraphiques()"
+    />
+    <app-finance-chart
+      titre="Factures payées / impayées"
+      [config]="configPayeesImpayees()"
+      [tableRows]="lignesPayeesImpayees()"
+      [loading]="chargementGraphiques()"
+    />
+    <app-finance-chart
+      titre="Répartition par mode de paiement"
+      [config]="configRepartition()"
+      [tableRows]="lignesRepartition()"
+      [loading]="chargementGraphiques()"
+    />
+  </div>
+</section>

@@ -1,0 +1,9 @@
+<div class="month-selector" role="group" aria-label="Sélection du mois">
+  <button type="button" class="month-selector__btn" (click)="precedent()" aria-label="Mois précédent">
+    <i class="material-icons" aria-hidden="true">chevron_left</i>
+  </button>
+  <span class="month-selector__label" aria-live="polite">{{ label }}</span>
+  <button type="button" class="month-selector__btn" (click)="suivant()" aria-label="Mois suivant">
+    <i class="material-icons" aria-hidden="true">chevron_right</i>
+  </button>
+</div>

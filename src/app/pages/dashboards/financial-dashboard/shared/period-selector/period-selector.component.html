@@ -1,0 +1,22 @@
+<div class="period-selector" role="radiogroup" aria-label="Période affichée">
+  <button
+    type="button"
+    role="radio"
+    class="period-selector__btn"
+    [class.active]="mode === 'court'"
+    [attr.aria-checked]="mode === 'court'"
+    (click)="choisir('court')"
+  >
+    Ce mois-ci
+  </button>
+  <button
+    type="button"
+    role="radio"
+    class="period-selector__btn"
+    [class.active]="mode === 'long'"
+    [attr.aria-checked]="mode === 'long'"
+    (click)="choisir('long')"
+  >
+    Historique complet
+  </button>
+</div>

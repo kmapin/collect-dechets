@@ -1,0 +1,41 @@
+// Placé dans .quick-actions du page-header (dégradé bleu→vert) : pilules translucides
+// blanches plutôt que le gris clair habituel, pour rester lisible sur le dégradé.
+.role-switcher {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+
+  &__label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin-right: 0.25rem;
+  }
+
+  &__btn {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    &.active {
+      background: var(--white);
+      border-color: var(--white);
+      color: var(--primary-color);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--white);
+      outline-offset: 2px;
+    }
+  }
+}

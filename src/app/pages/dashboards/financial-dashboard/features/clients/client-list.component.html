@@ -1,0 +1,86 @@
+<section class="fin-clients" aria-label="Liste des clients">
+  <div class="fin-clients__header">
+    <h2>Clients</h2>
+    <app-search-filter placeholder="Nom, prénom, quartier…" [value]="filtres().search" (valueChange)="onRechercheChange($event)" />
+  </div>
+
+  <div class="fin-clients__tabs" role="tablist" aria-label="Filtrer par statut">
+    <button
+      type="button"
+      role="tab"
+      [class.active]="filtres().statut === ClientStatut.ACTIF"
+      [attr.aria-selected]="filtres().statut === ClientStatut.ACTIF"
+      (click)="changerFiltreStatut(ClientStatut.ACTIF)"
+    >
+      Actifs
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [class.active]="filtres().statut === ClientStatut.INACTIF"
+      [attr.aria-selected]="filtres().statut === ClientStatut.INACTIF"
+      (click)="changerFiltreStatut(ClientStatut.INACTIF)"
+    >
+      Inactifs
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [class.active]="filtres().statut === 'Tous'"
+      [attr.aria-selected]="filtres().statut === 'Tous'"
+      (click)="changerFiltreStatut('Tous')"
+    >
+      Tous
+    </button>
+  </div>
+
+  <app-error-state *ngIf="erreur() as message" [message]="message" (retry)="reessayer()" />
+
+  <div class="fin-clients__table-wrap" *ngIf="!erreur()">
+    <table class="fin-clients__table">
+      <thead>
+        <tr>
+          <th scope="col">Client</th>
+          <th scope="col">Quartier</th>
+          <th scope="col">Téléphone</th>
+          <th scope="col">Statut</th>
+          <th scope="col" *ngIf="afficherColonneFinance()">Situation paiement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngIf="!chargement(); else squelette">
+          <tr *ngFor="let client of items()" class="fin-clients__row" (click)="ouvrirFiche(client.idClient)" tabindex="0"
+              (keydown.enter)="ouvrirFiche(client.idClient)">
+            <td data-label="Client">{{ client.nom }} {{ client.prenom }}</td>
+            <td data-label="Quartier">{{ client.quartier ?? '—' }}</td>
+            <td data-label="Téléphone">{{ client.telephone ?? '—' }}</td>
+            <td data-label="Statut">
+              <app-status-badge [label]="badgeStatut(client.statut).label" [icon]="badgeStatut(client.statut).icon" [variant]="badgeStatut(client.statut).variant" />
+            </td>
+            <td data-label="Situation paiement" *ngIf="afficherColonneFinance()">
+              <app-status-badge
+                [label]="badgeSituation(moisRetardDe(client.idClient)).label"
+                [icon]="badgeSituation(moisRetardDe(client.idClient)).icon"
+                [variant]="badgeSituation(moisRetardDe(client.idClient)).variant"
+              />
+            </td>
+          </tr>
+          <tr *ngIf="!items().length">
+            <td [attr.colspan]="afficherColonneFinance() ? 5 : 4" class="fin-clients__empty">Aucun client ne correspond à ces critères.</td>
+          </tr>
+        </ng-container>
+        <ng-template #squelette>
+          <tr *ngFor="let i of [0, 1, 2, 3, 4]" aria-hidden="true">
+            <td *ngFor="let c of (afficherColonneFinance() ? [0,1,2,3,4] : [0,1,2,3])"><span class="fin-clients__skeleton-cell"></span></td>
+          </tr>
+        </ng-template>
+      </tbody>
+    </table>
+
+    <nav class="fin-pagination" *ngIf="totalPages > 1" aria-label="Pagination des clients">
+      <button type="button" [disabled]="page() <= 1" (click)="changerPage(page() - 1)">Précédent</button>
+      <span>Page {{ page() }} / {{ totalPages }}</span>
+      <button type="button" [disabled]="page() >= totalPages" (click)="changerPage(page() + 1)">Suivant</button>
+    </nav>
+  </div>
+</section>

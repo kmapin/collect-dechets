@@ -1,0 +1,57 @@
+<section class="fin-monthly" aria-label="Suivi mensuel des abonnés">
+  <div class="fin-monthly__header">
+    <h2>Suivi mensuel des abonnés</h2>
+    <app-month-selector [periode]="periode()" (periodeChange)="onPeriodeChange($event)" />
+  </div>
+
+  <div class="fin-monthly__toolbar">
+    <label class="fin-monthly__toggle">
+      <input type="checkbox" [checked]="impayeesSeulement()" (change)="onToggleImpayeesSeulement()" />
+      Impayés uniquement
+    </label>
+
+    <span class="fin-monthly__summary" *ngIf="!chargement() && !erreur()">
+      {{ nombreImpayes() }} impayés / {{ nombreAbonnes() }} abonnés
+    </span>
+
+    <button type="button" class="fin-monthly__export-btn" (click)="exporterCsv()" [disabled]="!items().length">
+      <i class="material-icons" aria-hidden="true">download</i>
+      Exporter (CSV)
+    </button>
+  </div>
+
+  <app-error-state *ngIf="erreur() as message" [message]="message" (retry)="reessayer()" />
+
+  <div class="fin-monthly__table-wrap" *ngIf="!erreur()">
+    <table class="fin-monthly__table">
+      <thead>
+        <tr>
+          <th scope="col">Client</th>
+          <th scope="col">Quartier</th>
+          <th scope="col">Montant</th>
+          <th scope="col">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngIf="!chargement(); else squelette">
+          <tr *ngFor="let ligne of items()">
+            <td data-label="Client">{{ ligne.client.nom }} {{ ligne.client.prenom }}</td>
+            <td data-label="Quartier">{{ ligne.client.quartier ?? '—' }}</td>
+            <td data-label="Montant">{{ ligne.facture ? formatMontant(ligne.facture.montant) : '—' }}</td>
+            <td data-label="Statut">
+              <app-status-badge [label]="badgeSuivi(ligne.statut).label" [icon]="badgeSuivi(ligne.statut).icon" [variant]="badgeSuivi(ligne.statut).variant" />
+            </td>
+          </tr>
+          <tr *ngIf="!items().length">
+            <td colspan="4" class="fin-monthly__empty">Aucune facture générée pour cette période.</td>
+          </tr>
+        </ng-container>
+        <ng-template #squelette>
+          <tr *ngFor="let i of [0, 1, 2, 3, 4]" aria-hidden="true">
+            <td *ngFor="let c of [0, 1, 2, 3]"><span class="fin-monthly__skeleton-cell"></span></td>
+          </tr>
+        </ng-template>
+      </tbody>
+    </table>
+  </div>
+</section>

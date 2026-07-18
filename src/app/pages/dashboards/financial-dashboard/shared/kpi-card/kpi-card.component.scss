@@ -1,0 +1,148 @@
+// Reproduit à l'identique .stat-card/.stat-icon/.stat-info/.stat-value d'agency-dashboard
+// (le host applique aussi la classe globale "card" pour le fond/ombre/radius — voir le
+// template — ces règles-ci ne couvrent que ce que .card ne fournit pas).
+//
+// :host en display:flex (pas le défaut "inline" des éléments custom) : sans ça, la grille
+// .stats-grid étire bien le <app-kpi-card> à la hauteur de la ligne (align-items:stretch),
+// mais le <div class="stat-card"> à l'intérieur ne suit pas cet étirement tout seul — d'où
+// des cartes de hauteurs différentes selon qu'elles ont ou non un sous-texte.
+:host {
+  display: flex;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  width: 100%;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+  }
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 24px;
+  flex-shrink: 0;
+
+  &.neutre {
+    background: var(--primary-color);
+  }
+
+  &.positif {
+    background: var(--secondary-color);
+  }
+
+  &.attention {
+    background: var(--error-color);
+  }
+}
+
+.stat-info {
+  min-width: 0;
+
+  h3 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0 0 4px;
+    color: var(--text-secondary);
+  }
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.stat-trend {
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  &.neutre {
+    color: var(--text-secondary);
+  }
+
+  &.positif {
+    color: var(--success-color);
+  }
+
+  &.attention {
+    color: var(--error-color);
+  }
+}
+
+.stat-card__skeleton {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+
+  &-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--light-gray);
+    flex-shrink: 0;
+    animation: kpi-skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  &-lines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &-line {
+    height: 0.7rem;
+    border-radius: 4px;
+    background: var(--light-gray);
+    animation: kpi-skeleton-pulse 1.4s ease-in-out infinite;
+
+    &--label {
+      width: 50%;
+    }
+
+    &--value {
+      width: 70%;
+      height: 1.1rem;
+    }
+  }
+}
+
+@keyframes kpi-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-card__skeleton-icon,
+  .stat-card__skeleton-line {
+    animation: none;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

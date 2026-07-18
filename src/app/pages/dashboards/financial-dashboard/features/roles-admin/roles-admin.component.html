@@ -1,0 +1,42 @@
+<section class="fin-roles-admin" aria-label="Rôles et droits">
+  <h2>Rôles &amp; droits</h2>
+  <p class="fin-roles-admin__note">
+    Bascule immédiatement l'accès aux données financières pour la démo (F11, RG8) — se
+    répercute sur le sélecteur de rôle et les écrans gardés.
+  </p>
+
+  <table class="fin-roles-admin__table">
+    <thead>
+      <tr>
+        <th scope="col">Rôle</th>
+        <th scope="col">Identifiants</th>
+        <th scope="col">Droits finance</th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngIf="!chargement(); else squelette">
+        <tr *ngFor="let utilisateur of utilisateurs()">
+          <td data-label="Rôle">{{ labelRole[utilisateur.role] }}</td>
+          <td data-label="Identifiants">{{ utilisateur.identifiants }}</td>
+          <td data-label="Droits finance">
+            <button
+              type="button"
+              class="fin-roles-admin__toggle"
+              [class.active]="utilisateur.droitsFinance"
+              [attr.aria-pressed]="utilisateur.droitsFinance"
+              (click)="basculerDroitsFinance(utilisateur)"
+            >
+              <i class="material-icons" aria-hidden="true">{{ utilisateur.droitsFinance ? 'toggle_on' : 'toggle_off' }}</i>
+              {{ utilisateur.droitsFinance ? 'Activés' : 'Désactivés' }}
+            </button>
+          </td>
+        </tr>
+      </ng-container>
+      <ng-template #squelette>
+        <tr *ngFor="let i of [0, 1, 2]" aria-hidden="true">
+          <td *ngFor="let c of [0, 1, 2]"><span class="fin-roles-admin__skeleton-cell"></span></td>
+        </tr>
+      </ng-template>
+    </tbody>
+  </table>
+</section>

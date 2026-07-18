@@ -1,0 +1,26 @@
+<section class="fin-withdrawals" aria-label="Historique des retraits">
+  <div class="fin-withdrawals__header">
+    <h2>Retraits</h2>
+    <div class="fin-withdrawals__filters">
+      <app-month-filter label="Filtrer par mois" (periodeChange)="onPeriodeChange($event)" />
+      <app-search-filter placeholder="Rechercher un motif…" [value]="recherche()" (valueChange)="onRechercheChange($event)" />
+    </div>
+  </div>
+
+  <app-error-state *ngIf="erreur() as message" [message]="message" (retry)="reessayer()" />
+
+  <ng-container *ngIf="!erreur()">
+    <app-data-table
+      [columns]="colonnes"
+      [rows]="items()"
+      [loading]="chargement()"
+      emptyMessage="Aucun retrait enregistré pour cette période."
+    />
+
+    <nav class="fin-pagination" *ngIf="totalPages > 1" aria-label="Pagination des retraits">
+      <button type="button" [disabled]="page() <= 1" (click)="changerPage(page() - 1)">Précédent</button>
+      <span>Page {{ page() }} / {{ totalPages }}</span>
+      <button type="button" [disabled]="page() >= totalPages" (click)="changerPage(page() + 1)">Suivant</button>
+    </nav>
+  </ng-container>
+</section>

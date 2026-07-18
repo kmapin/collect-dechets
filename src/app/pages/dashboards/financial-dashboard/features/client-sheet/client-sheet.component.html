@@ -1,0 +1,37 @@
+<section class="fin-client-sheet" aria-label="Fiche client">
+  <app-error-state *ngIf="erreur() as message" [message]="message" (retry)="reessayer()" />
+
+  <ng-container *ngIf="!erreur()">
+    <header class="fin-client-sheet__header">
+      <h2 *ngIf="client() as c">{{ c.nom }} {{ c.prenom }}</h2>
+      <div class="fin-client-sheet__skeleton-title" *ngIf="chargement()" aria-hidden="true"></div>
+    </header>
+
+    <nav class="fin-client-sheet__tabs" role="tablist" aria-label="Sections de la fiche client">
+      <button
+        type="button"
+        role="tab"
+        [class.active]="ongletActif() === 'info'"
+        [attr.aria-selected]="ongletActif() === 'info'"
+        (click)="changerOnglet('info')"
+      >
+        Informations
+      </button>
+      <button
+        type="button"
+        role="tab"
+        *ngIf="afficherFacturation()"
+        [class.active]="ongletActif() === 'facturation'"
+        [attr.aria-selected]="ongletActif() === 'facturation'"
+        (click)="changerOnglet('facturation')"
+      >
+        Facturation
+      </button>
+    </nav>
+
+    <div class="fin-client-sheet__content">
+      <app-client-info-tab *ngIf="ongletActif() === 'info'" [client]="client()" [loading]="chargement()" />
+      <app-client-billing-tab *ngIf="ongletActif() === 'facturation' && afficherFacturation()" [idClient]="idClient()" />
+    </div>
+  </ng-container>
+</section>

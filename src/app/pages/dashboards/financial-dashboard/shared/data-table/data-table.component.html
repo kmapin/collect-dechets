@@ -1,0 +1,44 @@
+<div class="data-table-wrap">
+  <table class="data-table" role="table">
+    <thead>
+      <tr>
+        <th
+          *ngFor="let col of columns"
+          scope="col"
+          [class.data-table__right]="col.align === 'right'"
+          [attr.aria-sort]="ariaSort(col)"
+        >
+          <button
+            *ngIf="col.sortable; else texteSimple"
+            type="button"
+            class="data-table__sort-btn"
+            (click)="trierPar(col)"
+          >
+            {{ col.label }}
+            <i class="material-icons" aria-hidden="true" *ngIf="sortKey() === col.key">
+              {{ sortDirection() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+            </i>
+          </button>
+          <ng-template #texteSimple>{{ col.label }}</ng-template>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngIf="!loading; else squelette">
+        <tr *ngFor="let row of rowsTriees">
+          <td *ngFor="let col of columns" [class.data-table__right]="col.align === 'right'" [attr.data-label]="col.label">
+            {{ valeur(row, col) }}
+          </td>
+        </tr>
+        <tr *ngIf="!rowsTriees.length">
+          <td [attr.colspan]="columns.length" class="data-table__empty">{{ emptyMessage }}</td>
+        </tr>
+      </ng-container>
+      <ng-template #squelette>
+        <tr *ngFor="let i of squelettePlaceholders" aria-hidden="true">
+          <td *ngFor="let col of columns"><span class="data-table__skeleton-cell"></span></td>
+        </tr>
+      </ng-template>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,69 @@
+<section class="fin-statement" aria-label="Relevé de paiement">
+  <div class="fin-statement__toolbar no-print">
+    <div class="fin-statement__search">
+      <app-search-filter placeholder="Rechercher un client…" [value]="recherche()" (valueChange)="onRechercheChange($event)" />
+      <ul class="fin-statement__suggestions" *ngIf="resultatsRecherche().length">
+        <li *ngFor="let client of resultatsRecherche()">
+          <button type="button" (click)="selectionnerClient(client)">
+            {{ client.nom }} {{ client.prenom }} <span *ngIf="client.quartier">— {{ client.quartier }}</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="fin-statement__plage" *ngIf="clientSelectionne()">
+      <app-month-filter label="Depuis" (periodeChange)="onDebutChange($event)" />
+      <app-month-filter label="Jusqu'à" (periodeChange)="onFinChange($event)" />
+    </div>
+
+    <button type="button" class="fin-statement__print-btn" (click)="imprimer()" *ngIf="lignes().length">
+      <i class="material-icons" aria-hidden="true">print</i>
+      Imprimer / PDF
+    </button>
+  </div>
+
+  <app-error-state class="no-print" *ngIf="erreur() as message" [message]="message" (retry)="reessayer()" />
+
+  <p class="fin-statement__hint no-print" *ngIf="!clientSelectionne() && !erreur()">
+    Recherchez un client ci-dessus pour générer son relevé.
+  </p>
+
+  <div class="fin-statement__print-area" *ngIf="clientSelectionne() as c">
+    <header class="fin-statement__header">
+      <h2>Relevé de paiement</h2>
+      <p class="fin-statement__client">{{ c.nom }} {{ c.prenom }}<span *ngIf="c.quartier"> — {{ c.quartier }}</span></p>
+    </header>
+
+    <app-empty-state
+      *ngIf="rechercheEffectuee() && !chargement() && !erreur() && !lignes().length"
+      icon="receipt_long"
+      message="Aucun historique de facturation pour ce client."
+    />
+
+    <table class="fin-statement__table" *ngIf="!chargement() && lignes().length">
+      <caption class="sr-only">Relevé de paiement de {{ c.nom }} {{ c.prenom }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Facturé le</th>
+          <th scope="col">Payé le</th>
+          <th scope="col">Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let ligne of lignes()">
+          <td data-label="Facturé le">{{ formatDate(ligne.factureLe) }}</td>
+          <td data-label="Payé le">{{ ligne.payeLe ? formatDate(ligne.payeLe) : '—' }}</td>
+          <td data-label="Montant">{{ formatMontant(ligne.montant) }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2" data-label="Total">Total</td>
+          <td data-label="Montant total">{{ formatMontant(totalMontant()) }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="fin-statement__skeleton" *ngIf="chargement()" aria-hidden="true"></div>
+  </div>
+</section>

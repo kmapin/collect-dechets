@@ -1,0 +1,43 @@
+<div class="info-tab" *ngIf="!loading && client as c; else squelette">
+  <dl class="info-tab__grid">
+    <div class="info-tab__field">
+      <dt>Nom</dt>
+      <dd>{{ c.nom }}</dd>
+    </div>
+    <div class="info-tab__field">
+      <dt>Prénom</dt>
+      <dd>{{ c.prenom }}</dd>
+    </div>
+    <div class="info-tab__field">
+      <dt>Quartier</dt>
+      <dd>{{ c.quartier ?? '—' }}</dd>
+    </div>
+    <div class="info-tab__field">
+      <dt>Téléphone</dt>
+      <dd>{{ c.telephone ?? '—' }}</dd>
+    </div>
+    <div class="info-tab__field">
+      <dt>Statut</dt>
+      <dd>
+        <app-status-badge [label]="badgeStatut(c.statut).label" [icon]="badgeStatut(c.statut).icon" [variant]="badgeStatut(c.statut).variant" />
+      </dd>
+    </div>
+    <div class="info-tab__field" *ngIf="c.dateCreation">
+      <dt>Client depuis</dt>
+      <dd>{{ c.dateCreation }}</dd>
+    </div>
+  </dl>
+
+  <button type="button" class="info-tab__edit-btn" disabled title="Édition non disponible dans ce MVP (spec §1.12 — TBC)">
+    <i class="material-icons" aria-hidden="true">edit</i>
+    Modifier (bientôt disponible)
+  </button>
+</div>
+
+<ng-template #squelette>
+  <div class="info-tab__grid" aria-hidden="true">
+    <div class="info-tab__field" *ngFor="let i of [0, 1, 2, 3, 4, 5]">
+      <span class="info-tab__skeleton-line"></span>
+    </div>
+  </div>
+</ng-template>

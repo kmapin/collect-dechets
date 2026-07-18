@@ -150,6 +150,19 @@ export const routes: Routes = [
       ),
   },
 
+  // ================= MODULE FINANCIAL DASHBOARD (mock-data MVP) =================
+  // RBAC is enforced per-child inside financial-dashboard.routes.ts (financeAccessGuard,
+  // mock session — never the real auth guards), not here: the guard needs SESSION_SERVICE,
+  // which is only provided inside that module's own route tree. See ARCHITECTURE.md §7.
+
+  {
+    path: "dashboard/financial",
+    loadChildren: () =>
+      import("./pages/dashboards/financial-dashboard/financial-dashboard.routes").then(
+        (m) => m.FINANCIAL_DASHBOARD_ROUTES,
+      ),
+  },
+
   {
     path: "dashboard/collector",
     loadComponent: () =>

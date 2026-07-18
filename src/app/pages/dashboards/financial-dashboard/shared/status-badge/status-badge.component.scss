@@ -1,0 +1,34 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+
+  i {
+    font-size: 0.95rem;
+  }
+
+  &--success {
+    background: #ecfdf5;
+    color: #16a34a;
+  }
+
+  &--neutral {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  &--warning {
+    background: #fff7ed;
+    color: #ea580c;
+  }
+
+  &--danger {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+}
