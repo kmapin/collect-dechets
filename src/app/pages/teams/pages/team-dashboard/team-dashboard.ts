@@ -62,7 +62,6 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Reactive state ────────────────────────────────────────
   currentTime = signal(new Date());
-  darkMode    = signal(false);
   activeTab   = signal<'activity' | 'notifs' | 'alerts'>('activity');
 
   /** Vrai tant que le premier chargement n'a pas ramené d'équipes. */
@@ -112,14 +111,6 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
   private _initialized = false;
 
   constructor() {
-    // Sync chart theme whenever darkMode flips
-    effect(() => {
-      const dark = this.darkMode();
-      Chart.defaults.color       = dark ? '#94a3b8' : '#475569';
-      Chart.defaults.borderColor = dark ? '#334155' : '#e2e8f0';
-      this._charts.forEach(c => c.update());
-    });
-
     // Se déclenche à l'arrivée réelle des données (chargement initial ou après
     // un refresh), et à chaque changement ultérieur du signal `teams` — construit
     // les données dérivées réelles, puis initialise (une fois) ou met à jour
@@ -169,8 +160,6 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
   refresh(): void {
     this.svc.loadTeams();
   }
-
-  toggleDark(): void { this.darkMode.update(d => !d); }
 
   dismissNotif(id: string): void {
     this.notifs.update(list => list.filter(n => n.id !== id));
@@ -260,9 +249,8 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Charts (les 4 sont désormais calculés à partir de données réelles) ────
   private _initCharts(): void {
-    const dark = this.darkMode();
-    Chart.defaults.color       = dark ? '#94a3b8' : '#475569';
-    Chart.defaults.borderColor = dark ? '#334155' : '#e2e8f0';
+    Chart.defaults.color       = '#475569';
+    Chart.defaults.borderColor = '#e2e8f0';
     this._charts = [
       this._workloadChart(),
       this._perfChart(),

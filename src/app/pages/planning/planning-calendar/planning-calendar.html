@@ -3,6 +3,28 @@
 <div class="pcal-root" [class.pcal-root--collapsed]="!sidebarOpen()">
 
   <!-- ════════════════════════════════════════════════════════
+       EN-TÊTE (dégradé, cohérent avec les autres écrans)
+       ════════════════════════════════════════════════════════ -->
+  <header class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <div>
+            <h1 class="page-title">Calendrier des Plannings</h1>
+            <p class="page-subtitle">Vue d'ensemble de tous les plannings programmés</p>
+          </div>
+        </div>
+        <div class="quick-actions">
+          <a routerLink="/planning/dashboard" class="pcal-hdr-back">
+            <mat-icon>arrow_back_ios_new</mat-icon>
+            <span>Tableau de bord</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════════════
        TOP BAR
        ════════════════════════════════════════════════════════ -->
   <div class="pcal-topbar">

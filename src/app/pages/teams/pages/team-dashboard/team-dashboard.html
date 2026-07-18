@@ -1,53 +1,28 @@
 <p-toast />
 
-<div class="td-root" [class.td-dark]="darkMode()">
+<div class="td-root">
 
   <!-- ══════════════════ HEADER ════════════════════════════ -->
-  <header class="td-header">
-    <div class="tdh-left">
-      <button class="tdh-back" (click)="router.navigate(['/teams/list'])"
-              pTooltip="Retour aux équipes" tooltipPosition="right">
-        <mat-icon>arrow_back_ios_new</mat-icon>
-      </button>
-      <div class="tdh-brand">
-        <div class="tdh-brand-ico"><mat-icon>dashboard</mat-icon></div>
-        <div>
-          <h1>Supervision des équipes</h1>
-          <p>{{ currentTime() | date:'EEEE d MMMM yyyy':'':'fr-FR' }}</p>
+  <header class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Supervision des équipes</h1>
+          <p class="page-subtitle">{{ currentTime() | date:'EEEE d MMMM, HH:mm':'':'fr' }}</p>
+        </div>
+        <div class="quick-actions">
+          <button (click)="router.navigate(['/teams/list'])"
+                  pTooltip="Retour aux équipes" tooltipPosition="bottom">
+            <mat-icon>arrow_back_ios_new</mat-icon>
+            Retour
+          </button>
+          <button (click)="refresh()" [class.spinning]="refreshing()"
+                  pTooltip="Actualiser" tooltipPosition="bottom">
+            <mat-icon>refresh</mat-icon>
+            Actualiser
+          </button>
         </div>
       </div>
-    </div>
-
-    <div class="tdh-right">
-      <!-- Live indicator -->
-      <div class="tdh-live">
-        <span class="tdh-live-dot"></span>LIVE
-      </div>
-
-      <!-- Clock -->
-      <div class="tdh-clock">{{ currentTime() | date:'HH:mm:ss' }}</div>
-
-      <!-- Coverage -->
-      <div class="tdh-kpi-pill"
-           [style.color]="coverage() >= 60 ? '#4ade80' : '#fbbf24'"
-           [style.border-color]="coverage() >= 60 ? '#4ade8044' : '#fbbf2444'">
-        <mat-icon>signal_cellular_alt</mat-icon>
-        Couverture&nbsp;<strong>{{ coverage() }}%</strong>
-      </div>
-
-      <!-- Dark mode toggle -->
-      <button class="tdh-btn" (click)="toggleDark()"
-              [pTooltip]="darkMode() ? 'Mode clair' : 'Mode sombre'"
-              tooltipPosition="bottom">
-        <mat-icon>{{ darkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
-      </button>
-
-      <!-- Refresh -->
-      <button class="tdh-btn" (click)="refresh()"
-              [class.tdh-btn--spin]="refreshing()"
-              pTooltip="Actualiser" tooltipPosition="bottom">
-        <mat-icon>refresh</mat-icon>
-      </button>
     </div>
   </header>
 
@@ -65,80 +40,80 @@
   } @else {
 
   <!-- ══════════════════ KPI STRIP ═════════════════════════ -->
-  <div class="td-kpi">
+  <div class="container">
+  <div class="stats-grid">
 
-    <div class="kpi-card kpi-card--green">
-      <div class="kc-icon"><mat-icon>groups</mat-icon></div>
-      <div class="kc-body">
-        <div class="kc-val">{{ kpis().active }}</div>
-        <div class="kc-lbl">Équipes actives</div>
+    <div class="stat-card card">
+      <div class="stat-icon blue">
+        <mat-icon>groups</mat-icon>
       </div>
-      <div class="kc-foot kc-foot--up">
-        <mat-icon>trending_up</mat-icon>
-        {{ kpis().active }}/{{ kpis().total }} équipes
+      <div class="stat-info">
+        <h3>Équipes actives</h3>
+        <p class="stat-value">{{ kpis().active }}</p>
+        <span class="stat-trend">{{ kpis().active }}/{{ kpis().total }} équipes</span>
       </div>
     </div>
 
-    <div class="kpi-card kpi-card--sky">
-      <div class="kc-icon"><mat-icon>check_circle</mat-icon></div>
-      <div class="kc-body">
-        <div class="kc-val">{{ kpis().available }}</div>
-        <div class="kc-lbl">Disponibles</div>
+    <div class="stat-card card">
+      <div class="stat-icon green">
+        <mat-icon>check_circle</mat-icon>
       </div>
-      <div class="kc-foot">
-        <mat-icon>person_check</mat-icon>Prêtes à déployer
-      </div>
-    </div>
-
-    <div class="kpi-card kpi-card--amber">
-      <div class="kc-icon"><mat-icon>local_shipping</mat-icon></div>
-      <div class="kc-body">
-        <div class="kc-val">{{ kpis().onMission }}</div>
-        <div class="kc-lbl">Tournées en cours</div>
-      </div>
-      <div class="kc-foot kc-foot--up">
-        <mat-icon>route</mat-icon>En route
+      <div class="stat-info">
+        <h3>Disponibles</h3>
+        <p class="stat-value">{{ kpis().available }}</p>
+        <span class="stat-trend">Prêtes à déployer</span>
       </div>
     </div>
 
-    <div class="kpi-card" [class.kpi-card--red]="kpis().incidents > 0"
-                          [class.kpi-card--green]="kpis().incidents === 0">
-      <div class="kc-icon"><mat-icon>warning_amber</mat-icon></div>
-      <div class="kc-body">
-        <div class="kc-val">{{ kpis().incidents }}</div>
-        <div class="kc-lbl">Incidents actifs</div>
+    <div class="stat-card card">
+      <div class="stat-icon orange">
+        <mat-icon>local_shipping</mat-icon>
       </div>
-      <div class="kc-foot" [class.kc-foot--down]="kpis().incidents > 2">
-        <mat-icon>{{ kpis().incidents === 0 ? 'verified' : 'priority_high' }}</mat-icon>
-        {{ kpis().incidents === 0 ? 'RAS' : 'À traiter' }}
+      <div class="stat-info">
+        <h3>Tournées en cours</h3>
+        <p class="stat-value">{{ kpis().onMission }}</p>
+        <span class="stat-trend">En route</span>
       </div>
     </div>
 
-    <div class="kpi-card kpi-card--purple">
-      <div class="kc-icon"><mat-icon>analytics</mat-icon></div>
-      <div class="kc-body">
-        <div class="kc-val">{{ kpis().avgPerf }}%</div>
-        <div class="kc-lbl">Perf. moyenne</div>
+    <div class="stat-card card">
+      <div class="stat-icon" [class.red]="kpis().incidents > 0" [class.green]="kpis().incidents === 0">
+        <mat-icon>warning_amber</mat-icon>
       </div>
-      <div class="kc-foot kc-foot--up">
-        <mat-icon>trending_up</mat-icon>+3% sem.
+      <div class="stat-info">
+        <h3>Incidents actifs</h3>
+        <p class="stat-value">{{ kpis().incidents }}</p>
+        <span class="stat-trend">{{ kpis().incidents === 0 ? 'RAS' : 'À traiter' }}</span>
       </div>
     </div>
 
-    <div class="kpi-card kpi-card--teal">
-      <div class="kc-icon"><mat-icon>garage</mat-icon></div>
-      <div class="kc-body">
-        <div class="kc-val">{{ kpis().vehicles }}</div>
-        <div class="kc-lbl">Véhicules dispos</div>
+    <div class="stat-card card">
+      <div class="stat-icon blue">
+        <mat-icon>analytics</mat-icon>
       </div>
-      <div class="kc-foot">
-        <mat-icon>directions_car</mat-icon>Parc {{ svc.availableVehicles().length }} au total
+      <div class="stat-info">
+        <h3>Perf. moyenne</h3>
+        <p class="stat-value">{{ kpis().avgPerf }}%</p>
+        <span class="stat-trend">+3% sem.</span>
+      </div>
+    </div>
+
+    <div class="stat-card card">
+      <div class="stat-icon green">
+        <mat-icon>garage</mat-icon>
+      </div>
+      <div class="stat-info">
+        <h3>Véhicules dispos</h3>
+        <p class="stat-value">{{ kpis().vehicles }}</p>
+        <span class="stat-trend">Parc {{ svc.availableVehicles().length }} au total</span>
       </div>
     </div>
 
   </div>
+  </div>
 
   <!-- ══════════════════ MAIN BODY ═════════════════════════ -->
+  <div class="container td-body-wrap">
   <div class="td-body">
 
     <!-- ── LEFT COLUMN ─────────────────────────────────── -->
@@ -373,6 +348,7 @@
     </div><!-- /td-right -->
 
   </div><!-- /td-body -->
+  </div><!-- /td-body-wrap -->
 
   }
 

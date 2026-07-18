@@ -3,111 +3,113 @@
 <div class="tl-root">
 
   <!-- ══════════════════════════════════════════════════════════
-       TOP BAR
+       EN-TÊTE (dégradé, cohérent avec finance/planning/team-dashboard)
        ══════════════════════════════════════════════════════════ -->
-  <div class="tl-topbar">
-    <div class="tl-topbar__left">
-      <div class="tl-title-ico"><mat-icon>groups</mat-icon></div>
-      <div>
-        <h1>Gestion des équipes</h1>
-        <p>{{ stats().total }} équipes · {{ stats().totalMembers }} membres au total</p>
+  <header class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Gestion des équipes</h1>
+          <p class="page-subtitle">{{ stats().total }} équipes · {{ stats().totalMembers }} membres au total</p>
+        </div>
+        <div class="quick-actions">
+          <button class="tl-new-btn" (click)="openCreate()">
+            <mat-icon>add</mat-icon>Nouvelle équipe
+          </button>
+        </div>
       </div>
     </div>
+  </header>
 
-    <div class="tl-topbar__right">
-      <!-- Search -->
-      <div class="tl-search">
-        <mat-icon>search</mat-icon>
-        <input type="text" placeholder="Rechercher une équipe…"
-               [value]="store.filter().search"
-               (input)="setSearch($any($event.target).value)" />
-        @if (store.filter().search) {
-          <button (click)="setSearch('')"><mat-icon>close</mat-icon></button>
-        }
-      </div>
+  <div class="container tl-body">
 
-      <!-- View toggle -->
-      <div class="tl-view-toggle">
-        <button [class.active]="store.viewMode() === 'table'" (click)="store.viewMode.set('table')" pTooltip="Tableau" tooltipPosition="bottom">
-          <mat-icon>table_rows</mat-icon>
-        </button>
-        <button [class.active]="store.viewMode() === 'grid'" (click)="store.viewMode.set('grid')" pTooltip="Cartes" tooltipPosition="bottom">
-          <mat-icon>grid_view</mat-icon>
-        </button>
-      </div>
+  <!-- ══════════════════════════════════════════════════════════
+       BARRE D'OUTILS (recherche, vue, filtres, exports)
+       ══════════════════════════════════════════════════════════ -->
+  <div class="tl-toolbar">
+    <!-- Search -->
+    <div class="tl-search">
+      <mat-icon>search</mat-icon>
+      <input type="text" placeholder="Rechercher une équipe…"
+             [value]="store.filter().search"
+             (input)="setSearch($any($event.target).value)" />
+      @if (store.filter().search) {
+        <button (click)="setSearch('')"><mat-icon>close</mat-icon></button>
+      }
+    </div>
 
-      <!-- Filters toggle -->
-      <button class="tl-filter-btn" [class.active]="store.showFilters()" (click)="toggleFilters()">
-        <mat-icon>filter_list</mat-icon>Filtres
-        @if (store.activeFilterCount() > 0) {
-          <span class="filter-count">{{ store.activeFilterCount() }}</span>
-        }
+    <!-- View toggle -->
+    <div class="tl-view-toggle">
+      <button [class.active]="store.viewMode() === 'table'" (click)="store.viewMode.set('table')" pTooltip="Tableau" tooltipPosition="bottom">
+        <mat-icon>table_rows</mat-icon>
       </button>
-
-      <!-- Exports -->
-      <button class="tl-export-btn" (click)="exportCSV()" pTooltip="Exporter CSV" tooltipPosition="bottom">
-        <mat-icon>table_view</mat-icon>CSV
-      </button>
-      <button class="tl-export-btn" (click)="exportPDF()" pTooltip="Exporter PDF" tooltipPosition="bottom">
-        <mat-icon>picture_as_pdf</mat-icon>PDF
-      </button>
-
-      <!-- New team -->
-      <button class="tl-new-btn" (click)="openCreate()">
-        <mat-icon>add</mat-icon>Nouvelle équipe
+      <button [class.active]="store.viewMode() === 'grid'" (click)="store.viewMode.set('grid')" pTooltip="Cartes" tooltipPosition="bottom">
+        <mat-icon>grid_view</mat-icon>
       </button>
     </div>
+
+    <!-- Filters toggle -->
+    <button class="tl-filter-btn" [class.active]="store.showFilters()" (click)="toggleFilters()">
+      <mat-icon>filter_list</mat-icon>Filtres
+      @if (store.activeFilterCount() > 0) {
+        <span class="filter-count">{{ store.activeFilterCount() }}</span>
+      }
+    </button>
+
+    <!-- Exports -->
+    <button class="tl-export-btn" (click)="exportCSV()" pTooltip="Exporter CSV" tooltipPosition="bottom">
+      <mat-icon>table_view</mat-icon>CSV
+    </button>
+    <button class="tl-export-btn" (click)="exportPDF()" pTooltip="Exporter PDF" tooltipPosition="bottom">
+      <mat-icon>picture_as_pdf</mat-icon>PDF
+    </button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
        KPI CARDS
        ══════════════════════════════════════════════════════════ -->
-  <div class="kpi-row">
-    <div class="kpi-card">
-      <div class="kpi-icon" style="background:#3b82f618;color:#3b82f6"><mat-icon>groups</mat-icon></div>
-      <div class="kpi-body">
-        <div class="kpi-val">{{ stats().total }}</div>
-        <div class="kpi-lbl">Total équipes</div>
-      </div>
-      <div class="kpi-trend kpi-trend--neutral">—</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon" style="background:#16a34a18;color:#16a34a"><mat-icon>check_circle</mat-icon></div>
-      <div class="kpi-body">
-        <div class="kpi-val">{{ stats().active }}</div>
-        <div class="kpi-lbl">Actives</div>
-      </div>
-      <div class="kpi-mini-bar" style="--c:#16a34a;--p:{{ (stats().active / stats().total * 100) | number:'1.0-0' }}%"></div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon" style="background:#f59e0b18;color:#f59e0b"><mat-icon>directions_run</mat-icon></div>
-      <div class="kpi-body">
-        <div class="kpi-val">{{ stats().onMission }}</div>
-        <div class="kpi-lbl">En mission</div>
-      </div>
-      @if (stats().onMission > 0) {
-        <span class="kpi-pulse"></span>
-      }
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon" style="background:#8b5cf618;color:#8b5cf6"><mat-icon>person</mat-icon></div>
-      <div class="kpi-body">
-        <div class="kpi-val">{{ stats().totalMembers }}</div>
-        <div class="kpi-lbl">Membres</div>
+  <div class="stats-grid">
+    <div class="stat-card card">
+      <div class="stat-icon blue"><mat-icon>groups</mat-icon></div>
+      <div class="stat-info">
+        <h3>Total équipes</h3>
+        <p class="stat-value">{{ stats().total }}</p>
       </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-icon" style="background:#06b6d418;color:#06b6d4"><mat-icon>local_shipping</mat-icon></div>
-      <div class="kpi-body">
-        <div class="kpi-val">{{ stats().availableVehicles }}</div>
-        <div class="kpi-lbl">Véhicules actifs</div>
+    <div class="stat-card card">
+      <div class="stat-icon green"><mat-icon>check_circle</mat-icon></div>
+      <div class="stat-info">
+        <h3>Actives</h3>
+        <p class="stat-value">{{ stats().active }}</p>
+        <span class="stat-trend">{{ (stats().active / stats().total * 100) | number:'1.0-0' }}%</span>
       </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-icon" style="background:#ef444418;color:#ef4444"><mat-icon>build</mat-icon></div>
-      <div class="kpi-body">
-        <div class="kpi-val">{{ stats().maintenance }}</div>
-        <div class="kpi-lbl">En maintenance</div>
+    <div class="stat-card card">
+      <div class="stat-icon orange"><mat-icon>directions_run</mat-icon></div>
+      <div class="stat-info">
+        <h3>En mission</h3>
+        <p class="stat-value">{{ stats().onMission }}</p>
+      </div>
+    </div>
+    <div class="stat-card card">
+      <div class="stat-icon purple"><mat-icon>person</mat-icon></div>
+      <div class="stat-info">
+        <h3>Membres</h3>
+        <p class="stat-value">{{ stats().totalMembers }}</p>
+      </div>
+    </div>
+    <div class="stat-card card">
+      <div class="stat-icon cyan"><mat-icon>local_shipping</mat-icon></div>
+      <div class="stat-info">
+        <h3>Véhicules actifs</h3>
+        <p class="stat-value">{{ stats().availableVehicles }}</p>
+      </div>
+    </div>
+    <div class="stat-card card">
+      <div class="stat-icon red"><mat-icon>build</mat-icon></div>
+      <div class="stat-info">
+        <h3>En maintenance</h3>
+        <p class="stat-value">{{ stats().maintenance }}</p>
       </div>
     </div>
   </div>
@@ -356,6 +358,8 @@
       </div>
     </div>
   }
+
+  </div><!-- /tl-body -->
 
 </div><!-- /tl-root -->
 

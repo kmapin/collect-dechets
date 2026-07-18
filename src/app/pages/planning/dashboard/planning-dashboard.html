@@ -1,39 +1,29 @@
 <p-toast position="top-right" />
 <p-confirmDialog />
 
-<div class="pd-container">
-
-  <!-- ========================================================
-       HEADER
-  ======================================================== -->
-  <div class="pd-header">
-    <div class="pd-header-left">
-      <h1 class="pd-title">Tableau de bord <span class="pd-title-accent">– Planning</span></h1>
-      <p class="pd-subtitle">Vue d'ensemble des plannings de collecte · Burkina Faso</p>
-    </div>
-
-    <div class="pd-header-right">
-      <!-- Supervisor badge -->
-      <div class="supervisor-badge">
-        <mat-icon>verified_user</mat-icon>
-        <span>Superviseur</span>
+<!-- ========================================================
+     HEADER
+======================================================== -->
+<header class="page-header">
+  <div class="container">
+    <div class="header-content">
+      <div class="welcome-section">
+        <h1 class="page-title">Tableau de bord – Planning</h1>
+        <p class="page-subtitle">Vue d'ensemble des plannings de collecte · Burkina Faso</p>
       </div>
 
-      <!-- Notifications -->
-      <button class="icon-btn notif-btn" (click)="toggleNotif()">
-        <mat-icon>notifications</mat-icon>
-        @if (alerts().length) {
-          <span class="notif-count">{{ alerts().length }}</span>
-        }
-      </button>
-
-      <!-- Create button -->
-      <button class="btn-primary" [routerLink]="'/planning/create'">
-        <mat-icon>add</mat-icon>
-        Nouveau planning
-      </button>
+      <div class="quick-actions">
+        <!-- Create button -->
+        <button class="btn-primary" [routerLink]="'/planning/create'">
+          <mat-icon>add</mat-icon>
+          Nouveau planning
+        </button>
+      </div>
     </div>
   </div>
+</header>
+
+<div class="pd-container">
 
   <!-- Notification dropdown -->
   @if (notifOpen()) {
@@ -73,18 +63,19 @@
     </div>
   } @else {
     <div class="stats-grid">
-      @for (card of statCards(); track card.label) {
-        <div class="stat-card" [style.--card-color]="card.color" [style.--card-bg]="card.bgColor">
-          <div class="stat-icon-wrap">
-            <mat-icon [style.color]="card.color">{{ card.icon }}</mat-icon>
+      @for (card of statCards(); track card.label; let i = $index) {
+        <div class="stat-card card">
+          <div class="stat-icon" [class]="i === 0 ? 'total' : i === 1 ? 'today' : i === 2 ? 'progress' : 'completed'">
+            <mat-icon aria-hidden="true">{{ card.icon }}</mat-icon>
           </div>
-          <div class="stat-body">
-            <span class="stat-value">{{ card.value }}</span>
-            <span class="stat-label">{{ card.label }}</span>
-            <div class="stat-trend" [class.positive]="card.trend > 0" [class.negative]="card.trend < 0">
-              <mat-icon>{{ card.trend > 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
-              <span>{{ card.trend > 0 ? '+' : '' }}{{ card.trend }}% {{ card.trendLabel }}</span>
-            </div>
+          <div class="stat-info">
+            <h3>{{ card.label }}</h3>
+            <p class="stat-value">{{ card.value }}</p>
+            @if (card.trend) {
+              <span class="stat-trend" [class.positive]="card.trend > 0" [class.negative]="card.trend < 0">
+                {{ card.trend > 0 ? '+' : '' }}{{ card.trend }}% {{ card.trendLabel }}
+              </span>
+            }
           </div>
         </div>
       }

@@ -51,212 +51,115 @@ $muted:#475569;
 }
 
 // ── Header ───────────────────────────────────────────────────
-.td-header {
+// Header et cartes KPI reprennent le langage visuel global (agency-dashboard) :
+// .page-header/.container/.stats-grid/.stat-card viennent des styles globaux ou
+// sont scopés ici à l'identique (header-content/quick-actions/stats-grid/stat-*),
+// et utilisent les variables globales (--primary-color, etc.) plutôt que les
+// tokens --td-* réservés au reste de la page (carte, graphiques, colonne droite).
+.header-content {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  height: 56px;
-  min-height: 56px;
-  background: var(--td-bg1);
-  border-bottom: 1px solid var(--td-brd);
-  flex-shrink: 0;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
 }
 
-.tdh-left {
+.quick-actions {
   display: flex;
-  align-items: center;
   gap: 12px;
-}
+  flex-wrap: wrap;
 
-.tdh-back {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  border: 1px solid var(--td-brd);
-  background: transparent;
-  color: var(--td-sub);
-  cursor: pointer;
-  transition: all 150ms;
-  &:hover { background: var(--td-bg2); color: var(--td-txt); }
-  mat-icon { font-size: 16px; width: 16px; height: 16px; }
-}
+  button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: .45rem .9rem;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 150ms;
 
-.tdh-brand { display: flex; align-items: center; gap: 10px; }
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
-.tdh-brand-ico {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  display: flex; align-items: center; justify-content: center;
-  mat-icon { color: #fff; font-size: 20px; width: 20px; height: 20px; }
-}
+    &:hover { background: rgba(255,255,255,.3); }
 
-.tdh-brand h1 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--td-txt);
-  letter-spacing: -.3px;
-}
-.tdh-brand p {
-  margin: 0;
-  font-size: 11px;
-  color: var(--td-sub);
-  text-transform: capitalize;
-}
-
-.tdh-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.tdh-live {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: #4ade80;
-}
-.tdh-live-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #16a34a;
-  box-shadow: 0 0 0 0 #16a34a66;
-  animation: live-pulse 1.8s ease-in-out infinite;
-}
-@keyframes live-pulse {
-  0%  { box-shadow: 0 0 0 0 #16a34a88; }
-  70% { box-shadow: 0 0 0 8px #16a34a00; }
-  100%{ box-shadow: 0 0 0 0 #16a34a00; }
-}
-
-.tdh-clock {
-  font-size: 14px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--td-txt);
-  letter-spacing: .5px;
-  min-width: 62px;
-}
-
-.tdh-kpi-pill {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  border: 1px solid;
-  font-size: 12px;
-  font-weight: 600;
-  mat-icon { font-size: 14px; width: 14px; height: 14px; }
-}
-
-.tdh-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  border: 1px solid var(--td-brd);
-  background: transparent;
-  color: var(--td-sub);
-  cursor: pointer;
-  transition: all 150ms;
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
-  &:hover { background: var(--td-bg2); color: var(--td-txt); }
-  &.tdh-btn--spin mat-icon { animation: spin 800ms linear infinite; }
+    &.spinning mat-icon { animation: spin 800ms linear infinite; }
+  }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+@media (max-width: 1024px) { .header-content { flex-direction: column; text-align: center; } }
+@media (max-width: 768px)  { .quick-actions { flex-direction: column; gap: 16px; } }
+
 // ── KPI Strip ────────────────────────────────────────────────
-.td-kpi {
+.stats-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
-  padding: 12px 16px;
-  background: var(--td-bg1);
-  border-bottom: 1px solid var(--td-brd);
-  flex-shrink: 0;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
 
-  @media (max-width: 1100px) { grid-template-columns: repeat(3, 1fr); }
-  @media (max-width: 640px)  { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 768px) { grid-template-columns: repeat(1, 1fr); }
 }
 
-.kpi-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--td-bg2);
-  border: 1px solid var(--td-brd);
-  transition: transform 150ms, box-shadow 150ms;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    border-radius: 12px 12px 0 0;
-    background: var(--kc, #64748b);
-  }
-
-  &:hover { transform: translateY(-2px); box-shadow: 0 8px 24px #00000033; }
-}
-
-@mixin kpi-color($c) {
-  --kc: #{$c};
-  .kc-icon { color: $c; background: #{$c}18; }
-  .kc-val  { color: $c; }
-}
-
-.kpi-card--green  { @include kpi-color(#16a34a); }
-.kpi-card--sky    { @include kpi-color(#0ea5e9); }
-.kpi-card--amber  { @include kpi-color(#f59e0b); }
-.kpi-card--red    { @include kpi-color(#ef4444); }
-.kpi-card--purple { @include kpi-color(#8b5cf6); }
-.kpi-card--teal   { @include kpi-color(#14b8a6); }
-
-.kc-icon {
-  width: 34px; height: 34px;
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
-}
-
-.kc-body {}
-.kc-val {
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -1px;
-}
-.kc-lbl {
-  font-size: 11px;
-  color: var(--td-sub);
-  font-weight: 500;
-  margin-top: 2px;
-}
-
-.kc-foot {
+.stat-card {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 10.5px;
-  color: var(--td-muted);
-  margin-top: auto;
-  mat-icon { font-size: 13px; width: 13px; height: 13px; }
-  &.kc-foot--up   { color: #4ade80; }
-  &.kc-foot--down { color: #f87171; }
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 0; // .card ajoute 24px par défaut — géré ici par .stats-grid (32px) uniquement
+  transition: all .3s ease;
+
+  &:hover { transform: translateY(-2px); box-shadow: var(--shadow-medium); }
+}
+
+.stat-icon {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--white);
+  font-size: 24px;
+  flex-shrink: 0;
+
+  &.blue   { background: var(--primary-color); }
+  &.green  { background: var(--secondary-color); }
+  &.orange { background: var(--accent-color); }
+  &.red    { background: var(--error-color); }
+}
+
+.stat-info h3 {
+  font-size: .9rem;
+  font-weight: 500;
+  margin: 0 0 4px;
+  color: var(--text-secondary);
+}
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+.stat-trend {
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 // ── Main body ────────────────────────────────────────────────
+// .td-body-wrap ajoute le même padding horizontal (.container, global) que le header et
+// les cartes KPI au-dessus — sans lui, carte/onglets/graphiques touchaient les bords de
+// l'écran alors que le header/stats-grid avaient une marge, d'où la rupture visuelle.
+.td-body-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .td-body {
   display: flex;
   flex: 1;
@@ -273,7 +176,10 @@ $muted:#475569;
   min-width: 0;
   overflow-y: auto;
   gap: 10px;
-  padding: 10px;
+  // Padding vertical seulement — le padding horizontal du .container englobant suffit déjà ;
+  // un padding horizontal ici décalait la carte/les graphiques de 10px par rapport aux
+  // cartes KPI du dessus, qui n'ont pas ce padding supplémentaire.
+  padding: 10px 0;
 }
 
 .td-panel {
@@ -796,11 +702,7 @@ $muted:#475569;
 
 // ── Responsive ───────────────────────────────────────────────
 @media (max-width: 768px) {
-  .td-header { padding: 0 12px; }
-  .tdh-kpi-pill { display: none; }
-  .tdh-clock { font-size: 12px; }
-  .td-kpi { padding: 8px; gap: 8px; }
-  .td-left { padding: 8px; gap: 8px; }
+  .td-left { padding: 8px 0; gap: 8px; }
   #td-map { height: 260px; }
   .td-charts { grid-template-columns: 1fr; }
 }

@@ -6,43 +6,47 @@ $radius: 12px;
 $shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
 
 .tl-root {
-  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
   min-height: 100%;
 }
 
-// ── Top bar ──────────────────────────────────────────────────
-.tl-topbar {
+// ── En-tête dégradé (cohérent avec finance/planning/team-dashboard) ──────────
+// .header-content/.quick-actions sont scopés au composant (pas globaux) — valeurs
+// copiées d'agency-dashboard.scss pour un rendu identique.
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1024px) {
+  .header-content { flex-direction: column; text-align: center; }
+}
+
+.tl-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 20px;
+  padding-bottom: 24px;
+}
+
+// ── Barre d'outils (recherche, vue, filtres, exports) ─────────
+.tl-toolbar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
-
-  &__left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-    min-width: 0;
-  }
-  &__right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
 }
-.tl-title-ico {
-  width: 44px; height: 44px; border-radius: 12px;
-  background: linear-gradient(135deg, #1e293b, #334155);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  mat-icon { color: #fff; font-size: 22px; width: 22px; height: 22px; }
-}
-h1 { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 2px; }
-p  { font-size: 13px; color: #64748b; margin: 0; }
 
 .tl-search {
   display: flex; align-items: center; gap: 8px;
@@ -113,64 +117,55 @@ p  { font-size: 13px; color: #64748b; margin: 0; }
   &:hover { background: #15803d; }
 }
 
-// ── KPI Cards ────────────────────────────────────────────────
-.kpi-row {
+// ── KPI Cards (style icône ronde, identique à agency/finance/planning) ───────
+.stats-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px; // même espacement que agency/finance/planning-dashboard
 }
-.kpi-card {
-  background: #fff;
-  border-radius: $radius;
-  border: 1px solid #e2e8f0;
-  box-shadow: $shadow-card;
-  padding: 16px;
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(1, 1fr); }
+}
+
+.stat-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  position: relative;
-  overflow: hidden;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 0; // .card ajoute 24px par défaut — géré ici par .stats-grid (32px) uniquement
+  transition: all .3s ease;
+
+  &:hover { transform: translateY(-2px); box-shadow: var(--shadow-medium); }
 }
-.kpi-icon {
-  width: 40px; height: 40px; border-radius: 10px;
+
+.stat-icon {
+  width: 50px; height: 50px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+  color: var(--white); font-size: 24px; flex-shrink: 0;
+  mat-icon { font-size: 24px; width: 24px; height: 24px; }
+
+  &.blue   { background: var(--primary-color); }
+  &.green  { background: var(--secondary-color); }
+  &.orange { background: var(--accent-color); }
+  &.red    { background: var(--error-color); }
+  // Pas de variable globale équivalente pour ces deux teintes — reprend les couleurs
+  // déjà utilisées par cet écran avant la refonte (Membres / Véhicules actifs).
+  &.purple { background: #8b5cf6; }
+  &.cyan   { background: #06b6d4; }
 }
-.kpi-body { flex: 1; min-width: 0; }
-.kpi-val {
-  font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1;
-  small { font-size: 12px; font-weight: 400; color: #64748b; }
+
+.stat-info h3 {
+  font-size: .9rem; font-weight: 500; margin: 0 0 4px; color: var(--text-secondary);
 }
-.kpi-lbl { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-.kpi-trend { font-size: 11px; position: absolute; top: 10px; right: 10px;
-  &--neutral { color: #94a3b8; }
+
+.stat-value {
+  font-size: 1.8rem; font-weight: 700; margin: 0 0 4px; color: var(--text-primary);
 }
-.kpi-pulse {
-  position: absolute; top: 10px; right: 10px;
-  width: 10px; height: 10px; border-radius: 50%; background: #f59e0b;
-  &::before {
-    content: '';
-    position: absolute; inset: -3px;
-    border-radius: 50%; background: #f59e0b;
-    animation: pulse 1.5s infinite;
-  }
-}
-@keyframes pulse {
-  0% { opacity: .6; transform: scale(1); }
-  100% { opacity: 0; transform: scale(2); }
-}
-.kpi-mini-bar {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-  background: #f1f5f9;
-  &::after {
-    content: '';
-    position: absolute; top: 0; left: 0; bottom: 0;
-    width: var(--p, 0%);
-    background: var(--c, #16a34a);
-    border-radius: 0 999px 999px 0;
-    transition: width .5s ease;
-  }
+
+.stat-trend {
+  font-size: .8rem; font-weight: 500; color: var(--text-secondary);
 }
 
 // ── Filter Bar ───────────────────────────────────────────────
@@ -439,12 +434,10 @@ p  { font-size: 13px; color: #64748b; margin: 0; }
 
 // ── Responsive ───────────────────────────────────────────────
 @media (max-width: 1280px) {
-  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 768px) {
-  .tl-root { padding: 12px; gap: 12px; }
-  .kpi-row { grid-template-columns: repeat(2, 1fr); }
-  .tl-topbar { flex-direction: column; align-items: flex-start; }
-  .tl-topbar__right { width: 100%; }
+  .tl-body { gap: 12px; }
+  .tl-toolbar { flex-direction: column; align-items: stretch; }
   .tl-search { flex: 1; }
 }

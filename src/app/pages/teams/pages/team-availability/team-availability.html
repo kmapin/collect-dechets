@@ -2,30 +2,28 @@
 
 <div class="av-root">
 
-  <!-- ══════════════════════ HEADER – UBER FLEET DARK ══════════════ -->
-  <header class="av-header">
-    <div class="avh-left">
-      <button class="avh-back" (click)="router.navigate(['/teams/list'])">
-        <mat-icon>arrow_back_ios_new</mat-icon>
-      </button>
-      <div class="avh-brand">
-        <mat-icon>calendar_view_week</mat-icon>
-        <div>
-          <h1>Disponibilités équipes</h1>
-          <p>{{ currentTime() | date:'EEEE d MMMM yyyy':'':'fr-FR' }}</p>
+  <!-- ══════════════════════ EN-TÊTE (dégradé, cohérent avec les autres écrans) ══ -->
+  <header class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section avh-brand">
+          <button class="avh-back" (click)="router.navigate(['/teams/list'])">
+            <mat-icon>arrow_back_ios_new</mat-icon>
+          </button>
+          <div>
+            <h1 class="page-title">Disponibilités équipes</h1>
+            <p class="page-subtitle">{{ currentTime() | date:'EEEE d MMMM yyyy':'':'fr-FR' }}</p>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <div class="avh-clock">{{ currentTime() | date:'HH:mm' }}</div>
+          <button class="avh-refresh" (click)="refresh()" [class.avh-refresh--spin]="refreshing()"
+                  pTooltip="Actualiser" tooltipPosition="bottom">
+            <mat-icon>refresh</mat-icon>
+          </button>
         </div>
       </div>
-    </div>
-
-    <div class="avh-right">
-      <div class="avh-live">
-        <span class="avh-live-dot"></span>LIVE
-      </div>
-      <div class="avh-clock">{{ currentTime() | date:'HH:mm' }}</div>
-      <button class="avh-refresh" (click)="refresh()" [class.avh-refresh--spin]="refreshing()"
-              pTooltip="Actualiser" tooltipPosition="bottom">
-        <mat-icon>refresh</mat-icon>
-      </button>
     </div>
   </header>
 
@@ -33,7 +31,7 @@
   <div class="av-strip">
 
     <!-- KPI chips – clickable to filter -->
-    <div class="kpi-row">
+    <div class="kpi-row card">
       @for (s of statusOpts; track s.val) {
         <button class="kpi-chip"
                 [class.kpi-chip--active]="statusFilter() === s.val"
@@ -68,7 +66,7 @@
     </div>
 
     <!-- View tabs -->
-    <div class="av-tabs">
+    <div class="av-tabs card">
       @for (v of views; track v.key) {
         <button class="av-tab" [class.av-tab--on]="view() === v.key" (click)="setView(v.key)">
           <mat-icon>{{ v.icon }}</mat-icon>
@@ -85,7 +83,7 @@
   </div>
 
   <!-- ══════════════════════ FILTERS BAR ═══════════════════════════ -->
-  <div class="av-filters">
+  <div class="av-filters card">
     <div class="avf-search">
       <mat-icon>search</mat-icon>
       <input type="text" placeholder="Équipe, code…"

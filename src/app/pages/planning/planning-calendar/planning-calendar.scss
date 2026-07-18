@@ -14,15 +14,63 @@ $sb-w: 258px;
   background: #f8fafc;
 }
 
+// ── En-tête (dégradé) ─────────────────────────────────────────
+// .header-content/.quick-actions/.welcome-section ne sont pas globaux —
+// redéfinis ici comme dans les autres écrans redesignés (team-availability, etc.)
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+}
+
+.welcome-section {
+  h1, p { color: var(--white); }
+}
+
+.quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .header-content { flex-direction: column; text-align: center; }
+}
+
+.pcal-hdr-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.4);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all .18s ease;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; }
+  &:hover { background: rgba(255,255,255,.3); }
+}
+
 // ── Top bar ───────────────────────────────────────────────────
+// Carte flottante (coins arrondis + ombre, comme .av-filters de team-availability)
+// au lieu d'une bande pleine largeur collée aux bords.
 .pcal-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
   height: 52px;
+  margin: 12px 16px;
+  border-radius: 12px;
   background: #ffffff;
-  border-bottom: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
   gap: 12px;
   flex-shrink: 0;
   z-index: 10;
@@ -447,10 +495,19 @@ $sb-w: 258px;
     --fc-list-event-hover-bg-color: #f8fafc;
   }
 
+  // Grid (pas flex+space-between) pour que le titre central soit vraiment centré
+  // sur toute la largeur, même quand les chunks gauche/droite ont des tailles différentes
+  // (3 boutons à gauche vs 4 boutons à droite).
   .fc .fc-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
     gap: 8px;
     margin-bottom: 16px;
   }
+  .fc .fc-toolbar-chunk:first-child  { justify-self: start; }
+  .fc .fc-toolbar-chunk:nth-child(2) { justify-self: center; }
+  .fc .fc-toolbar-chunk:last-child   { justify-self: end; }
 
   .fc .fc-toolbar-title {
     font-size: 18px;

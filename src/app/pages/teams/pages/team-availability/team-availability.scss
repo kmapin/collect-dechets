@@ -21,82 +21,75 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
   font-family: system-ui, sans-serif;
 }
 
-// ══════════════════ HEADER ══════════════════════════════════════
-.av-header {
-  background: #f8fafc;
-  padding: 0 24px;
-  height: 64px;
+// ══════════════════ EN-TÊTE (dégradé, cohérent avec les autres écrans) ══════
+// .header-content/.quick-actions scopés au composant — valeurs copiées
+// d'agency-dashboard.scss pour un rendu identique aux autres dashboards.
+.header-content {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  position: sticky;
-  top: 0;
-  z-index: 200;
-  border-bottom: 1px solid $border;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
 }
 
-.avh-left  { display:flex; align-items:center; gap:12px; }
-.avh-right { display:flex; align-items:center; gap:10px; }
+.quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
-.avh-back {
-  width: 34px; height: 34px; border-radius: 8px;
-  background: #eef2f6; border: 1px solid $border;
-  color: $muted; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .18s $ease; flex-shrink: 0;
-  mat-icon { font-size: 15px; }
-  &:hover { background: #e2e8f0; color: $text; }
+@media (max-width: 1024px) {
+  .header-content { flex-direction: column; text-align: center; }
 }
 
 .avh-brand {
-  display: flex; align-items: center; gap: 10px; color: $text;
-  mat-icon { font-size: 24px; color: #3b82f6; }
-  h1 { margin: 0; font-size: 15px; font-weight: 700; }
-  p  { margin: 0; font-size: 11px; color: $muted; text-transform: capitalize; }
+  display: flex; align-items: center; gap: 12px;
+  h1, p { color: var(--white); }
 }
 
-.avh-live {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 10px; font-weight: 700; letter-spacing: 1px;
-  color: #16a34a; padding: 3px 8px; border-radius: 20px;
-  background: rgba(22,163,74,.12); border: 1px solid rgba(22,163,74,.3);
-}
-.avh-live-dot {
-  width: 6px; height: 6px; border-radius: 50%; background: #16a34a;
-  animation: pulse 1.5s ease infinite;
+.avh-back {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4);
+  color: var(--white); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .18s $ease; flex-shrink: 0;
+  mat-icon { font-size: 15px; }
+  &:hover { background: rgba(255,255,255,.3); }
 }
 
 .avh-clock {
   font-family: 'Courier New', monospace;
-  font-size: 18px; font-weight: 700; color: $text; letter-spacing: 1px;
+  font-size: 18px; font-weight: 700; color: var(--white); letter-spacing: 1px;
 }
 
 .avh-refresh {
-  width: 34px; height: 34px; border-radius: 8px;
-  background: #eef2f6; border: 1px solid $border;
-  color: $muted; cursor: pointer;
+  width: 36px; height: 36px; border-radius: 8px;
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4);
+  color: var(--white); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all .18s $ease;
   mat-icon { font-size: 18px; }
-  &:hover { background: #e2e8f0; color: $text; }
+  &:hover { background: rgba(255,255,255,.3); }
   &--spin mat-icon { animation: spin .6s linear infinite; }
 }
 
 // ══════════════════ KPI STRIP ══════════════════════════════════════
+// .kpi-row et .av-tabs sont maintenant deux cartes séparées (fond blanc/ombre via la
+// classe globale .card, comme les cartes "Plannings par type/statut" du planning-
+// dashboard) au lieu d'une seule bande continue — .av-strip ne fait plus que les
+// aligner côte à côte avec un espace entre elles.
 .av-strip {
-  background: $card;
-  border-bottom: 1px solid $border;
-  display: flex; flex-wrap: wrap; align-items: center;
+  display: flex; flex-wrap: wrap; align-items: stretch;
   justify-content: space-between;
-  padding: 0 24px;
-  gap: 8px;
-  min-height: 52px;
+  gap: 16px;
+  padding: 16px 24px;
 }
 
 .kpi-row {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  padding: 8px 0;
+  padding: 10px 16px;
+  margin-bottom: 0; // .card ajoute 24px de marge basse par défaut, inutile ici (flex row)
 }
 .kpi-chip {
   display: flex; align-items: center; gap: 6px;
@@ -122,7 +115,10 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
 }
 
 // View tabs
-.av-tabs { display:flex; gap:2px; padding: 8px 0; }
+.av-tabs {
+  display: flex; align-items: center; gap: 2px;
+  padding: 6px; margin-bottom: 0; // .card ajoute 24px de marge basse par défaut, inutile ici
+}
 .av-tab {
   display: flex; align-items: center; gap: 5px;
   height: 34px; padding: 0 14px; border-radius: 8px;
@@ -142,9 +138,15 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
 }
 
 // ══════════════════ FILTERS BAR ═══════════════════════════════════
+// Carte compacte (comme .kpi-row/.av-tabs juste au-dessus) qui n'occupe que la
+// largeur de son contenu, plutôt qu'une bande pleine largeur avec une grande
+// zone vide à droite.
 .av-filters {
-  background: $card; border-bottom: 1px solid $border;
-  padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  width: fit-content;
+  max-width: calc(100% - 48px); // 48px = 2 × 24px de marge latérale
+  margin: 0 24px 16px;
+  padding: 8px 14px;
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
 }
 .avf-search {
   display: flex; align-items: center; gap: 7px;
@@ -175,7 +177,9 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
 
 // ══════════════════ TIMELINE ══════════════════════════════════════
 .tl-wrap {
-  padding: 0;
+  // 24px de chaque côté, comme .av-strip/.av-filters au-dessus — sans ça la grille
+  // touchait les bords de l'écran alors que les rangées de filtres avaient une marge.
+  padding: 0 24px;
   overflow-x: auto;
   min-height: 300px;
 }
@@ -521,9 +525,10 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
   .av-tabs  { width: 100%; justify-content: space-between; }
 }
 @media(max-width:640px) {
-  .av-header  { padding: 0 14px; }
+  .header-content { padding: 14px; }
   .av-strip   { padding: 0 14px; }
-  .av-filters { padding: 8px 14px; }
+  .av-filters { margin: 0 14px 14px; max-width: calc(100% - 28px); }
+  .tl-wrap    { padding: 0 14px; }
   .heat-wrap, .alerts-wrap, .cal-wrap { padding: 14px; }
   .tl-team-col { width: 110px; min-width: 110px; }
   .tl-team-name { font-size: 11px; }
