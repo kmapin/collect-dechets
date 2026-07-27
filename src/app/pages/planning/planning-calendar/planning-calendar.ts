@@ -130,6 +130,9 @@ export class PlanningCalendarComponent implements OnInit {
   calendarOptions = signal<CalendarOptions>({
     plugins:  [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
     initialView: 'dayGridMonth',
+    height: '100%',
+    contentHeight: '100%',
+    expandRows: true,
     locale:   frLocale,
     headerToolbar: {
       left:   'prev,next today',

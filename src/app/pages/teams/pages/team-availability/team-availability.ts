@@ -99,6 +99,7 @@ export class TeamAvailability implements OnInit, OnDestroy {
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
     locale:  frLocale,
     initialView: 'timeGridWeek',
+    expandRows: true,
     headerToolbar: {
       left:   'prev,next today',
       center: 'title',
