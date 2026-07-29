@@ -7,10 +7,9 @@ import { Client, Page, PageParams } from '../../models';
 import { ClientDataService, ClientFilter } from '../contracts/client-data.service';
 import { mapClientDto } from './mappers/client.mapper';
 
-// Squelette inerte (Prompt 17) : jamais fourni par un provider tant qu'aucun `useClass`
-// ne le référence dans financial-dashboard.routes.ts — voir INTEGRATION.md pour le diff
-// exact à appliquer le jour du branchement. Endpoints documentés ci-dessous et dans
-// INTEGRATION.md ; à ajuster une fois le contrat backend réel connu.
+// Implémentation réelle, câblée en dur sur CLIENT_DATA_SERVICE dans
+// financial-dashboard.routes.ts (module Client entièrement backé). Endpoints documentés
+// ci-dessous et dans INTEGRATION.md.
 @Injectable()
 export class ClientDataHttpService implements ClientDataService {
   private readonly http = inject(HttpClient);

@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
-import { RoleSwitcherComponent } from '../../shared/role-switcher/role-switcher.component';
-import { MockScenarioPanelComponent } from '../../shared/states/mock-scenario-panel.component';
 import { FINANCE_NAV_ITEMS } from './finance-nav.config';
 
 // Shell du module Financial Dashboard : pas de sidebar (choix explicite) — navigation
@@ -14,7 +12,7 @@ import { FINANCE_NAV_ITEMS } from './finance-nav.config';
 @Component({
   selector: 'app-finance-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, RoleSwitcherComponent, MockScenarioPanelComponent],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './finance-layout.html',
   styleUrl: './finance-layout.scss',
 })

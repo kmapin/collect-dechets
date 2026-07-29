@@ -25,9 +25,10 @@ export interface SuiviAbonneMensuel {
 }
 
 // ── Vue F10 : ligne de relevé de paiement ─────────────────────────────
-// RG9 : facturé le / payé le / montant.
+// RG9 : facturé le / payé le / statut / montant.
 export interface LigneReleve {
   factureLe: string; // = Facture.dateGeneration
   payeLe?: string; // = Facture.datePaiement, absent si impayée
+  statut: FactureStatut;
   montant: number;
 }

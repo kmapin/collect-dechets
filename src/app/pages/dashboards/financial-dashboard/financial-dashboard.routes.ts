@@ -1,29 +1,20 @@
-import { Type } from '@angular/core';
 import { Routes } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { ClientDataService } from './data-access/contracts/client-data.service';
 import { FactureDataService } from './data-access/contracts/facture-data.service';
 import { FinanceDataService } from './data-access/contracts/finance-data.service';
 import { AgentDataService } from './data-access/contracts/agent-data.service';
-import { SessionService } from './data-access/contracts/session.service';
 import { CLIENT_DATA_SERVICE } from './data-access/tokens/client-data.token';
 import { FACTURE_DATA_SERVICE } from './data-access/tokens/facture-data.token';
 import { FINANCE_DATA_SERVICE } from './data-access/tokens/finance-data.token';
 import { AGENT_DATA_SERVICE } from './data-access/tokens/agent-data.token';
 import { SESSION_SERVICE } from './data-access/tokens/session.token';
 import { EXPORT_SERVICE } from './data-access/tokens/export.token';
-import { MockConfigService } from './data-access/mock/mock-config.service';
-import { ClientDataMockService } from './data-access/mock/client-data.mock.service';
-import { FactureDataMockService } from './data-access/mock/facture-data.mock.service';
-import { FinanceDataMockService } from './data-access/mock/finance-data.mock.service';
-import { AgentDataMockService } from './data-access/mock/agent-data.mock.service';
-import { SessionMockService } from './data-access/mock/session.mock.service';
-import { ExportMockService } from './data-access/mock/export.mock.service';
 import { ClientDataHttpService } from './data-access/http/client-data.http.service';
 import { FactureDataHttpService } from './data-access/http/facture-data.http.service';
 import { FinanceDataHttpService } from './data-access/http/finance-data.http.service';
 import { AgentDataHttpService } from './data-access/http/agent-data.http.service';
 import { SessionHttpService } from './data-access/http/session.http.service';
+import { ExportClientService } from './data-access/export/export-client.service';
 import { financeAccessGuard } from './guards/finance-access.guard';
 import { financeAdminGuard } from './guards/finance-admin.guard';
 
@@ -33,36 +24,22 @@ import { financeAdminGuard } from './guards/finance-admin.guard';
 // descendant's — see ARCHITECTURE.md §7 for why the guard placement differs slightly
 // from a literal reading of "mount finance routes with the guard".
 
-// Prompt 17 — provider factory: centralizes the mock↔Http choice per contract behind
-// environment.useMocks. Stays "mock" for the entire MVP (useMocks is never flipped this
-// iteration) — see INTEGRATION.md for the endpoint map behind each Http class.
-//
-// Prompt F5 (intégration backend) — granularité par domaine : `domaine` regarde d'abord
-// environment.useMocksOverrides[domaine] ; s'il est absent (undefined), on retombe sur le
-// booléen global environment.useMocks (comportement identique à avant pour tout domaine
-// sans override explicite — client/facture, dont le backend n'est pas encore complet).
-function mockOuHttp<T>(domaine: 'client' | 'facture' | 'finance' | 'agent' | 'session', mock: Type<T>, http: Type<T>): Type<T> {
-  const useMocks = environment.useMocksOverrides?.[domaine] ?? environment.useMocks;
-  return useMocks ? mock : http;
-}
-
+// Nettoyage 100% mocks : tous les seams étaient déjà résolus en Http (environment
+// useMocksOverrides valait déjà false partout), donc plus aucun besoin du helper
+// mockOuHttp()/environment.useMocks — chaque token est câblé en dur sur son HttpService,
+// comme déjà fait pour Client/Facture. Voir EditRecapFront.md pour le détail complet.
 export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
   {
     path: '',
     providers: [
-      MockConfigService,
-      // FinanceDataMockService fourni nu en plus de son rôle dans le token ci-dessous :
-      // FinanceDataHttpService le compose pour enregistrerRetrait (Prompt F4/F5, voir
-      // finance-data.http.service.ts) et doit pouvoir l'injecter directement.
-      FinanceDataMockService,
-      { provide: CLIENT_DATA_SERVICE, useClass: mockOuHttp<ClientDataService>('client', ClientDataMockService, ClientDataHttpService) },
-      { provide: FACTURE_DATA_SERVICE, useClass: mockOuHttp<FactureDataService>('facture', FactureDataMockService, FactureDataHttpService) },
-      { provide: FINANCE_DATA_SERVICE, useClass: mockOuHttp<FinanceDataService>('finance', FinanceDataMockService, FinanceDataHttpService) },
-      { provide: AGENT_DATA_SERVICE, useClass: mockOuHttp<AgentDataService>('agent', AgentDataMockService, AgentDataHttpService) },
-      { provide: SESSION_SERVICE, useClass: mockOuHttp<SessionService>('session', SessionMockService, SessionHttpService) },
-      // EXPORT_SERVICE has no Http counterpart — exports stay client-side even after
-      // integration (INTEGRATION.md §4).
-      { provide: EXPORT_SERVICE, useClass: ExportMockService },
+      { provide: CLIENT_DATA_SERVICE, useClass: ClientDataHttpService },
+      { provide: FACTURE_DATA_SERVICE, useClass: FactureDataHttpService },
+      { provide: FINANCE_DATA_SERVICE, useClass: FinanceDataHttpService },
+      { provide: AGENT_DATA_SERVICE, useClass: AgentDataHttpService },
+      { provide: SESSION_SERVICE, useClass: SessionHttpService },
+      // EXPORT_SERVICE n'a pas de contrepartie Http : export/impression restent client-side
+      // par design (INTEGRATION.md §4), ce n'est pas un mock — voir export-client.service.ts.
+      { provide: EXPORT_SERVICE, useClass: ExportClientService },
     ],
     loadComponent: () => import('./features/shell/finance-layout').then(m => m.FinanceLayout),
     children: [

@@ -15,12 +15,8 @@ const ROLE_TO_BACKEND: Record<Role, 'comptable' | 'manager_terrain' | 'administr
   [Role.ADMINISTRATEUR]: 'administrateur',
 };
 
-// Squelette inerte (Prompt 17) — voir client-data.http.service.ts pour la note complète
-// sur le branchement DI et INTEGRATION.md pour la liste des endpoints.
-//
-// switchRole() n'a pas d'équivalent réel : une fois branché sur un vrai backend, le rôle
-// vient de l'authentification serveur (JWT/session), pas d'un sélecteur de démo — la
-// méthode est conservée pour satisfaire le contrat mais ne fait rien.
+// Voir client-data.http.service.ts pour la note complète sur le branchement DI et
+// INTEGRATION.md pour la liste des endpoints.
 @Injectable()
 export class SessionHttpService implements SessionService {
   private readonly http = inject(HttpClient);
@@ -43,10 +39,6 @@ export class SessionHttpService implements SessionService {
     const utilisateur = this._currentUser$.value;
     if (!utilisateur) throw new Error('Session non encore chargée (GET /finance/session/moi).');
     return utilisateur;
-  }
-
-  switchRole(_role: Role): void {
-    // Pas d'équivalent réel — voir note de classe ci-dessus.
   }
 
   getUtilisateurs(): Observable<Utilisateur[]> {

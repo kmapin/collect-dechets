@@ -7,26 +7,22 @@ import { DashboardKpi, Page, PageParams, Periode, Retrait } from '../../models';
 import {
   FinanceDataService,
   FinanceStatsSeries,
+  OperateurRetrait,
   PaiementFilter,
   PaiementListe,
   RepartitionModePaiement,
   RetraitFilter,
 } from '../contracts/finance-data.service';
 import { mapDashboardKpiDto, mapPaiementListeDto, mapRepartitionModePaiementDto, mapRetraitDto } from './mappers/finance.mapper';
-import { FinanceDataMockService } from '../mock/finance-data.mock.service';
 
-// Prompt F3/F4 (intégration backend) — voir EditRecap-frontend et INTEGRATION.md.
-// enregistrerRetrait délègue à FinanceDataMockService (composition, pas d'héritage) :
-// le backend réel exige { montant, customerMsisdn, operator }, un body plus large que ce
-// que ce contrat/formulaire envoient aujourd'hui ({ montant, motif }) — décision explicite
-// de ne pas encore câbler cette seule méthode en réel, en attendant l'extension du
-// formulaire de retrait. Les 5 autres méthodes appellent le vrai backend.
-// FinanceDataMockService doit être fourni en plus (bare provider) dans
-// financial-dashboard.routes.ts pour que cette injection résolve (Prompt F5).
+// Suppression du mock (module Finance entièrement backé) — voir EditRecapFront.md.
+// enregistrerRetrait appelait auparavant FinanceDataMockService (composition) car le
+// backend réel exige { montant, customerMsisdn, operator }, un body plus large que le
+// contrat d'origine ({ montant, motif }) ; le contrat a été étendu en conséquence
+// (aucun composant n'appelait encore cette méthode, donc extension sans risque).
 @Injectable()
 export class FinanceDataHttpService implements FinanceDataService {
   private readonly http = inject(HttpClient);
-  private readonly mockFallback = inject(FinanceDataMockService);
   private readonly base = `${environment.apiUrl}/finance`;
 
   getDashboardKpi(periode?: Periode): Observable<DashboardKpi> {
@@ -84,10 +80,10 @@ export class FinanceDataHttpService implements FinanceDataService {
       .pipe(map(res => ({ items: res.items.map(mapRetraitDto), total: res.total, page: res.page, pageSize: res.pageSize })));
   }
 
-  enregistrerRetrait(payload: { montant: number; motif?: string }): Observable<Retrait> {
-    // Délégué au mock : le backend réel exige customerMsisdn/operator, absents de ce payload
-    // — voir note de classe ci-dessus. Pas d'appel HTTP réel tant que le formulaire n'a pas
-    // été étendu pour les collecter.
-    return this.mockFallback.enregistrerRetrait(payload);
+  enregistrerRetrait(payload: { montant: number; customerMsisdn: string; operator: OperateurRetrait; motif?: string }): Observable<Retrait> {
+    // POST /finance/retraits { montant, customerMsisdn, operator, motif } — controllers/
+    // financeStats.js::enregistrerRetrait (débit réel du wallet, appel Moov Money, rollback
+    // compensatoire en cas d'échec).
+    return this.http.post<unknown>(`${this.base}/retraits`, payload).pipe(map(mapRetraitDto));
   }
 }

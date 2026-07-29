@@ -9,9 +9,10 @@ const LABEL_ROLE: Record<Role, string> = {
   [Role.ADMINISTRATEUR]: 'Administrateur',
 };
 
-// F11 admin — gestion des droitsFinance par rôle mock. Réservé à l'Administrateur
-// (finance-admin.guard.ts). La bascule est immédiatement répercutée sur le rôle-switcher
-// et les gardes via SessionService (RG8).
+// F11 admin — gestion réelle des droitsFinance par rôle (PATCH /finance/session/
+// utilisateurs/:id/droits-finance). Réservé à l'Administrateur (finance-admin.guard.ts).
+// La bascule est persistée côté serveur et immédiatement répercutée sur les gardes via
+// SessionService (RG8) si l'utilisateur modifié est celui de la session active.
 @Component({
   selector: 'app-roles-admin',
   standalone: true,

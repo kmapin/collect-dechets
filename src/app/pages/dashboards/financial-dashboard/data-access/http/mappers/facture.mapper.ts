@@ -1,14 +1,21 @@
 import { Facture, LigneReleve, SuiviAbonneMensuel } from '../../../models';
 import { FactureStatut } from '../../../models/enums';
 
-// mapFactureDto reste un passe-plat identité : GET /finance/factures et
-// GET /finance/factures/client/:idClient n'ont pas de backend à ce jour (F1, écart signalé
-// "backend manquant") — deviner leur DTO serait justement ce que ce prompt interdit.
-// getFactures/getFacturesClient/getSituationClients/genererFacturesDuMois restent donc en
-// mock (FactureDataService entier non basculé au Prompt F5) jusqu'à ce que ces 4 endpoints
-// existent côté serveur.
+// DTO réel : GET /finance/factures et GET /finance/factures/client/:idClient
+// (services/redevance.js::_mapRedevanceToFacture, backend construit pour matcher ce modèle
+// champ-à-champ). `annule` n'est jamais renvoyé par le backend (filtré en amont), donc
+// `statut` est bien toujours l'une des deux valeurs binaires attendues ici.
 export function mapFactureDto(dto: unknown): Facture {
-  return dto as Facture;
+  const d = dto as Record<string, unknown>;
+  return {
+    idFacture: String(d['idFacture']),
+    idClient: String(d['idClient']),
+    periode: d['periode'] as { mois: number; annee: number },
+    montant: Number(d['montant']),
+    statut: d['statut'] as FactureStatut,
+    dateGeneration: String(d['dateGeneration']),
+    datePaiement: d['datePaiement'] !== undefined && d['datePaiement'] !== null ? String(d['datePaiement']) : undefined,
+  };
 }
 
 // DTO réel : GET /finance/factures/suivi-mensuel (services/redevance.js::
@@ -48,6 +55,7 @@ export function mapLigneReleveDto(dto: unknown): LigneReleve {
   return {
     factureLe: String(d['factureLe']),
     payeLe: d['payeLe'] !== undefined && d['payeLe'] !== null ? String(d['payeLe']) : undefined,
+    statut: d['statut'] as FactureStatut,
     montant: Number(d['montant']),
   };
 }

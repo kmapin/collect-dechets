@@ -5,12 +5,15 @@ import { Client, LigneReleve, Periode } from '../../models';
 import { CLIENT_DATA_SERVICE } from '../../data-access/tokens/client-data.token';
 import { FACTURE_DATA_SERVICE } from '../../data-access/tokens/facture-data.token';
 import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
+import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDate } from '../../../../../shared/format.util';
 import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
 import { MonthFilterComponent } from '../../shared/filters/month-filter.component';
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
 import { EmptyStateComponent } from '../../shared/states/empty-state.component';
+import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+import { badgeFacture } from '../../shared/status-badge/status-badge.util';
 
 // F10 — Relevé de paiement à la demande. RG9 : facturé le / payé le / montant.
 // Lancé depuis l'onglet Facturation (F8, via ?idClient=) ou par recherche directe
@@ -18,7 +21,7 @@ import { EmptyStateComponent } from '../../shared/states/empty-state.component';
 @Component({
   selector: 'app-statement',
   standalone: true,
-  imports: [CommonModule, SearchFilterComponent, MonthFilterComponent, ErrorStateComponent, EmptyStateComponent],
+  imports: [CommonModule, SearchFilterComponent, MonthFilterComponent, ErrorStateComponent, EmptyStateComponent, StatusBadgeComponent],
   templateUrl: './statement.component.html',
   styleUrls: ['./statement.component.scss', './statement-print.scss'],
 })
@@ -27,6 +30,7 @@ export class StatementComponent {
   private readonly clientData = inject(CLIENT_DATA_SERVICE);
   private readonly factureData = inject(FACTURE_DATA_SERVICE);
   private readonly exportService = inject(EXPORT_SERVICE);
+  private readonly session = inject(SESSION_SERVICE);
 
   readonly recherche = signal('');
   readonly resultatsRecherche = signal<Client[]>([]);
@@ -44,6 +48,7 @@ export class StatementComponent {
 
   readonly formatMontant = formatMontantXof;
   readonly formatDate = formatFrDate;
+  readonly badgeStatut = badgeFacture;
 
   readonly totalMontant = computed(() => this.lignes().reduce((somme, ligne) => somme + ligne.montant, 0));
 
@@ -84,8 +89,41 @@ export class StatementComponent {
     this.chargerReleve();
   }
 
-  imprimer(): void {
-    this.exportService.print();
+  // Génère un vrai document PDF téléchargeable (jsPDF/autoTable, via ExportService) —
+  // remplace l'ancien window.print() qui imprimait toute la page (toolbar comprise, malgré
+  // les règles @media print) plutôt que produire un relevé exploitable hors de l'app.
+  telechargerPdf(): void {
+    const client = this.clientSelectionne();
+    if (!client) return;
+
+    const rows = this.lignes().map(ligne => ({
+      factureLe: this.formatDate(ligne.factureLe),
+      payeLe: ligne.payeLe ? this.formatDate(ligne.payeLe) : '—',
+      statut: this.badgeStatut(ligne.statut).label,
+      montant: this.formatMontant(ligne.montant),
+    }));
+
+    const agence = this.session.getCurrentUser().agence;
+    const ligneAgence = agence
+      ? `${agence.nom}${agence.quartier ? ' — ' + agence.quartier : ''}${agence.ville ? ', ' + agence.ville : ''}`
+      : undefined;
+    const ligneClient = `${client.nom} ${client.prenom}${client.quartier ? ' — ' + client.quartier : ''}`;
+
+    this.exportService.exportToPdf(
+      rows,
+      [
+        { key: 'factureLe', label: 'Facturé le' },
+        { key: 'payeLe', label: 'Payé le' },
+        { key: 'statut', label: 'Statut' },
+        { key: 'montant', label: 'Montant' },
+      ],
+      `releve-${client.nom}-${client.prenom}`.toLowerCase().replace(/\s+/g, '-'),
+      {
+        titre: 'Relevé de paiement',
+        sousTitre: ligneAgence ? [ligneAgence, ligneClient] : ligneClient,
+        total: { label: 'Total', valeur: this.formatMontant(this.totalMontant()) },
+      },
+    );
   }
 
   private chargerClientParId(idClient: string): void {

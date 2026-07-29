@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Agent, PaiementAgent } from '../../models';
 import { AGENT_DATA_SERVICE } from '../../data-access/tokens/agent-data.token';
 import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
@@ -10,9 +11,13 @@ import { SearchFilterComponent } from '../../shared/filters/search-filter.compon
 
 type Etape = 'formulaire' | 'confirmation';
 
-// F5 — Prototype de paiement des agents (collecteurs). UI + mock uniquement : aucune
-// écriture réelle, modèle de rémunération et impact solde restent TBC (RG10,
-// DISCOVERY.md §7). L'alerte de solde insuffisant est informative, pas bloquante.
+// F5 — Paiement des agents (collecteurs). Branché sur le backend réel : POST
+// /finance/agents/paiements débite réellement le wallet de l'agence (services/
+// paiementAgent.js::payerAgent, avec rollback compensatoire en cas d'échec d'écriture).
+// Le montant à payer reste saisi manuellement (aucun calcul automatique de rémunération
+// suggérée) — seul point encore ouvert de RG10, pas l'impact sur le solde lui-même, qui
+// est réel et vérifié. Le serveur rejette (400 "Solde insuffisant") toute tentative
+// dépassant le solde disponible ; le formulaire bloque donc aussi la soumission dans ce cas.
 @Component({
   selector: 'app-agent-payment',
   standalone: true,
@@ -47,12 +52,14 @@ export class AgentPaymentComponent {
   readonly formatMontant = formatMontantXof;
   readonly formatDate = formatFrDateTime;
 
-  readonly formulaireValide = computed(() => !!this.idAgentSelectionne() && (this.montant() ?? 0) > 0);
   readonly soldeInsuffisant = computed(() => {
     const solde = this.soldeDisponible();
     const m = this.montant();
     return solde !== null && m !== null && m > solde;
   });
+  // Le serveur rejette (400 "Solde insuffisant") tout montant dépassant le solde
+  // disponible — bloqué ici aussi pour éviter un aller-retour réseau voué à l'échec.
+  readonly formulaireValide = computed(() => !!this.idAgentSelectionne() && (this.montant() ?? 0) > 0 && !this.soldeInsuffisant());
   readonly agentSelectionne = computed(() => this.agents().find(a => a.idAgent === this.idAgentSelectionne()) ?? null);
 
   readonly historiqueFiltre = computed(() => {
@@ -92,15 +99,16 @@ export class AgentPaymentComponent {
     this.agentData.payerAgent({ idAgent, montant }).subscribe({
       next: () => {
         this.enregistrement.set(false);
-        this.messageSucces.set('Paiement enregistré (mock) — aucune écriture réelle effectuée.');
+        this.messageSucces.set('Paiement enregistré — le solde de l\'agence a été débité.');
         this.etape.set('formulaire');
         this.idAgentSelectionne.set(null);
         this.montant.set(null);
         this.chargerHistorique();
+        this.chargerSolde();
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.enregistrement.set(false);
-        this.erreurEnregistrement.set("Impossible d'enregistrer le paiement pour le moment.");
+        this.erreurEnregistrement.set(err.error?.message ?? "Impossible d'enregistrer le paiement pour le moment.");
       },
     });
   }

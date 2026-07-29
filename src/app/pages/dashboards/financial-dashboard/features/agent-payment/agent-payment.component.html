@@ -1,8 +1,8 @@
 <section class="fin-agent-payment" aria-label="Paiement des agents">
   <h2>Paiement des agents</h2>
   <p class="fin-agent-payment__note">
-    Prototype — aucune écriture réelle n'est effectuée ; le modèle de rémunération et son
-    impact sur le solde restent à confirmer (RG10).
+    Le paiement débite réellement le solde de l'agence. Le montant à verser est saisi
+    manuellement — aucune suggestion automatique n'est calculée pour l'instant.
   </p>
 
   <div class="fin-agent-payment__layout">
@@ -42,8 +42,8 @@
 
         <p class="fin-agent-payment__warning" role="alert" *ngIf="soldeInsuffisant()">
           <i class="material-icons" aria-hidden="true">warning</i>
-          Ce montant dépasse le solde disponible ({{ formatMontant(soldeDisponible() ?? 0) }}). Vous pouvez tout de même
-          continuer (TBC — RG10).
+          Ce montant dépasse le solde disponible ({{ formatMontant(soldeDisponible() ?? 0) }}). Réduisez le montant pour
+          continuer : le serveur refuse tout paiement dépassant le solde de l'agence.
         </p>
 
         <button type="submit" class="fin-agent-payment__submit-btn" [disabled]="!formulaireValide()">

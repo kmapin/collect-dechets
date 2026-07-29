@@ -10,11 +10,15 @@ import { SessionUtilisateur } from '../../contracts/session.service';
 // Voir EditRecap.md backend Prompt 10 pour la revue de sécurité complète sur ce point.
 export function mapSessionUtilisateurDto(dto: unknown): SessionUtilisateur {
   const d = dto as Record<string, unknown>;
+  const a = d['agence'] as Record<string, unknown> | null | undefined;
   return {
     idUtilisateur: String(d['idUtilisateur']),
     nomAffiche: String(d['nomAffiche']),
     role: d['role'] as Role,
     droitsFinance: Boolean(d['droitsFinance']),
+    agence: a
+      ? { nom: String(a['nom']), ville: a['ville'] ? String(a['ville']) : undefined, quartier: a['quartier'] ? String(a['quartier']) : undefined }
+      : undefined,
   };
 }
 

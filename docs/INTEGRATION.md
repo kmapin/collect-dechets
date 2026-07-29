@@ -1,4 +1,12 @@
-# INTEGRATION — Financial Dashboard: swapping mocks for a real backend
+# INTEGRATION — Financial Dashboard: backend integration (mocks removed)
+
+> **Statut final (nettoyage 100% mocks) : les 6 seams ci-dessous sont toutes branchées en
+> dur sur leur `*HttpService` réel. Plus aucun `*MockService`, plus de bascule
+> `environment.useMocks`/`useMocksOverrides` (retirée des deux fichiers d'environnement) —
+> voir `EditRecapFront.md` pour le détail complet de cette passe de nettoyage.** Les
+> sections ci-dessous datent de l'intégration progressive (Prompts 4 à F5) et sont
+> conservées pour l'historique du raisonnement, mais la mécanique mock↔Http qu'elles
+> décrivent n'existe plus dans le code.
 
 This module (`src/app/pages/dashboards/financial-dashboard/`) is built entirely against
 abstract contracts + `InjectionToken`s (see `ARCHITECTURE.md` §3). No component,
@@ -10,52 +18,36 @@ grep -rE "HttpClient|MockService|HttpService" src/app/pages/dashboards/financial
 # → no matches
 ```
 
-Every seam below is a **one-line change** in
-`financial-dashboard.routes.ts`'s `providers` array. `environment.useMocks` stays `true`
-for the whole MVP — flipping it is a future, separate decision, not performed by this
-prompt.
+## 1. Seams (token → Http class)
 
-## 1. Seams (token → mock → future Http class)
+| Contract | Token | Implémentation |
+|---|---|---|
+| `ClientDataService` | `CLIENT_DATA_SERVICE` | `ClientDataHttpService` — backend complet (2 endpoints) |
+| `FactureDataService` | `FACTURE_DATA_SERVICE` | `FactureDataHttpService` — backend complet (4 endpoints) |
+| `FinanceDataService` | `FINANCE_DATA_SERVICE` | `FinanceDataHttpService` — backend complet (6 endpoints, `enregistrerRetrait` inclus) |
+| `AgentDataService` | `AGENT_DATA_SERVICE` | `AgentDataHttpService` — backend complet (3 endpoints) |
+| `SessionService` | `SESSION_SERVICE` | `SessionHttpService` — backend complet (4 endpoints) |
+| `ExportService` | `EXPORT_SERVICE` | `ExportClientService` (`data-access/export/`) — **pas un mock**, client-side par design, voir §4 |
 
-| Contract | Token | Mock (wired today) | Future Http (inert skeleton, not wired) |
-|---|---|---|---|
-| `ClientDataService` | `CLIENT_DATA_SERVICE` | `ClientDataMockService` | `ClientDataHttpService` |
-| `FactureDataService` | `FACTURE_DATA_SERVICE` | `FactureDataMockService` | `FactureDataHttpService` |
-| `FinanceDataService` | `FINANCE_DATA_SERVICE` | `FinanceDataMockService` | `FinanceDataHttpService` |
-| `AgentDataService` | `AGENT_DATA_SERVICE` | `AgentDataMockService` | `AgentDataHttpService` |
-| `SessionService` | `SESSION_SERVICE` | `SessionMockService` | `SessionHttpService` |
-| `ExportService` | `EXPORT_SERVICE` | `ExportMockService` | **none** — see §4 |
+Tous les `*MockService` et leur infrastructure (`MockConfigService`, `simulate.util.ts`,
+`data-access/mock/data/*.ts`) ont été supprimés définitivement. Contrats dans
+`data-access/contracts/*.service.ts`, tokens dans `data-access/tokens/*.token.ts`,
+implémentations réelles dans `data-access/http/*.http.service.ts` (+ `data-access/export/`
+pour Export).
 
-All contracts live in `data-access/contracts/*.service.ts`, tokens in
-`data-access/tokens/*.token.ts`, mocks in `data-access/mock/*.mock.service.ts`, and the
-inert Http skeletons in `data-access/http/*.http.service.ts`.
+## 2. (Historique) Ancien mécanisme de bascule mock↔Http
 
-## 2. The exact diff to switch one seam
-
-Today, in `financial-dashboard.routes.ts`:
-
-```ts
-{ provide: CLIENT_DATA_SERVICE, useClass: ClientDataMockService },
-```
-
-Future diff (once a real backend exists and `environment.useMocks` is meant to be
-toggled per environment):
-
-```ts
-import { ClientDataHttpService } from './data-access/http/client-data.http.service';
-// ...
-{ provide: CLIENT_DATA_SERVICE, useClass: environment.useMocks ? ClientDataMockService : ClientDataHttpService },
-```
-
-Repeat for each of the five data seams (not `EXPORT_SERVICE`, see §4). No other file
-changes — no component, guard, or template touches a concrete class either now or after
-the switch, because they all inject the token.
+Cette section décrivait l'ancien helper `mockOuHttp()` piloté par
+`environment.useMocks`/`useMocksOverrides`. Les deux clés ont été retirées de
+`environment.ts`/`environment.prod.ts` et la fonction supprimée de
+`financial-dashboard.routes.ts` : il n'y a plus de bascule, chaque token pointe
+directement sur son implémentation Http réelle (voir §1).
 
 ## 3. Endpoint map
 
-Base URL: `${environment.apiUrl}/finance`. All endpoints below are **assumed**, not
-confirmed against a real backend contract (none exists yet) — adjust paths/verbs once one
-does; only the request/response *shape* consumed by each Http skeleton matters for now.
+Base URL: `${environment.apiUrl}/finance`. Tous les endpoints ci-dessous sont **confirmés
+réels** (route + controller + requête Mongoose vérifiés) — voir `EditRecap.md` (backend)
+pour le détail par domaine.
 
 | Method & path | Used by | Notes |
 |---|---|---|
@@ -72,7 +64,7 @@ does; only the request/response *shape* consumed by each Http skeleton matters f
 | `GET /finance/dashboard/repartition-mode?debutMois=&debutAnnee=&finMois=&finAnnee=` | `FinanceDataHttpService.getRepartitionModePaiement` | F2 |
 | `GET /finance/paiements?page=&pageSize=&idClient=&search=` | `FinanceDataHttpService.getPaiements` | F3 |
 | `GET /finance/retraits?page=&pageSize=&search=&mois=&annee=` | `FinanceDataHttpService.getRetraits` | F4 |
-| `POST /finance/retraits { montant, motif }` | `FinanceDataHttpService.enregistrerRetrait` | F4 |
+| `POST /finance/retraits { montant, customerMsisdn, operator, motif? }` | `FinanceDataHttpService.enregistrerRetrait` | F4 — contrat étendu lors du nettoyage 100% mocks (aucun composant ne l'appelait encore, extension sans risque) |
 | `GET /finance/agents?page=&pageSize=` | `AgentDataHttpService.getAgents` | F5 |
 | `GET /finance/agents/paiements?page=&pageSize=&idAgent=` | `AgentDataHttpService.getPaiementsAgent` | F5 |
 | `POST /finance/agents/paiements { idAgent, montant }` | `AgentDataHttpService.payerAgent` | F5 — RG10 solde impact still TBC |
@@ -80,12 +72,13 @@ does; only the request/response *shape* consumed by each Http skeleton matters f
 | `GET /finance/session/utilisateurs` | `SessionHttpService.getUtilisateurs` | F11 admin |
 | `PATCH /finance/session/utilisateurs/:id/droits-finance` | `SessionHttpService.toggleDroitsFinance` | F11 admin |
 
-## 4. `ExportService` has no future Http counterpart
+## 4. `ExportService` has no Http counterpart
 
 F2/F10/F12 exports (CSV, print/PDF) are **client-side only per the MVP spec** — there is
-no server-rendered export in scope (DISCOVERY.md §7, ARCHITECTURE.md §5). `ExportMockService`
-already does the real work (Blob/`window.print()`), so there is nothing to "swap" — it
-stays as-is even after every other seam above is flipped to Http. If a future iteration
+no server-rendered export in scope (DISCOVERY.md §7, ARCHITECTURE.md §5). `ExportClientService`
+(`data-access/export/export-client.service.ts`, renamed from `ExportMockService` during the
+100%-mocks cleanup — it never simulated anything, the old name was misleading) does the
+real work (Blob/`window.print()`), so there is nothing to "swap". If a future iteration
 adds server-rendered Excel/PDF, that would be a **new** contract method, not a mock→Http
 swap of the existing one.
 
@@ -110,3 +103,19 @@ contract is known. Components never see DTOs; they only ever see the domain mode
   Prompt 4, alongside the mock provider wiring) — unchanged this iteration, per the
   constraint that `useMocks` stays `true` and no HTTP call executes in this MVP.
 - No backend code was read or modified.
+
+## 7. Nettoyage final 100% mocks
+
+- Tous les `*.mock.service.ts` supprimés (`finance-data`, `agent-data`, `session` —
+  `client`/`facture` l'étaient déjà) ainsi que `MockConfigService`, `simulate.util.ts` et
+  les 10 fichiers de `data-access/mock/data/*.ts` (dont `scenarios.ts`, déjà orphelin).
+- `RoleSwitcherComponent` et `MockScenarioPanelComponent` (démo UI, jamais destinés à la
+  prod) supprimés avec leurs références dans `finance-layout.ts`/`.html`.
+- `SessionService.switchRole` retiré du contrat (code mort une fois son seul appelant —
+  le role-switcher — supprimé) ; le rôle vient désormais uniquement de `GET
+  /finance/session/moi`.
+- `FinanceDataService.enregistrerRetrait` étendu à `{ montant, customerMsisdn, operator,
+  motif? }` (le contrat réel du backend) et branché en HTTP réel — plus aucune méthode ne
+  dépend d'un mock.
+- `environment.ts`/`environment.prod.ts` : `useMocks`/`useMocksOverrides` retirés.
+- `npx tsc --noEmit` : `EXIT 0` après l'ensemble de ces suppressions.

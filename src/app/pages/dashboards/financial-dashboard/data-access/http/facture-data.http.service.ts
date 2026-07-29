@@ -12,8 +12,9 @@ import {
 } from '../contracts/facture-data.service';
 import { mapFactureDto, mapLigneReleveDto, mapSuiviAbonneMensuelDto } from './mappers/facture.mapper';
 
-// Squelette inerte (Prompt 17) — voir client-data.http.service.ts pour la note complète
-// sur le branchement DI et INTEGRATION.md pour la liste des endpoints.
+// Implémentation réelle, câblée en dur sur FACTURE_DATA_SERVICE dans
+// financial-dashboard.routes.ts (module Facturation entièrement backé) — voir
+// INTEGRATION.md pour la liste des endpoints.
 @Injectable()
 export class FactureDataHttpService implements FactureDataService {
   private readonly http = inject(HttpClient);

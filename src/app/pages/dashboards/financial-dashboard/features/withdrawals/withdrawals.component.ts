@@ -1,5 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { Periode, Retrait } from '../../models';
 import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
 import { formatMontantXof } from '../../utils/money.util';
@@ -8,19 +11,32 @@ import { DataTableColumn, DataTableComponent } from '../../shared/data-table/dat
 import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
 import { MonthFilterComponent } from '../../shared/filters/month-filter.component';
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
+import { CreateWithdrawalDialogComponent } from './create-withdrawal-dialog.component';
 
 const TAILLE_PAGE = 10;
 
-// F4 — Historique des retraits de l'agence (impacte le solde disponible, RG7).
+// F4 — Historique des retraits de l'agence (impacte le solde disponible, RG7), et création
+// d'un nouveau retrait (POST /finance/retraits, réellement branché — voir
+// CreateWithdrawalDialogComponent). La liste se rafraîchit automatiquement après création.
 @Component({
   selector: 'app-withdrawals',
   standalone: true,
-  imports: [CommonModule, DataTableComponent, SearchFilterComponent, MonthFilterComponent, ErrorStateComponent],
+  imports: [
+    CommonModule,
+    DataTableComponent,
+    SearchFilterComponent,
+    MonthFilterComponent,
+    ErrorStateComponent,
+    MatButtonModule,
+    MatIconModule,
+    CreateWithdrawalDialogComponent,
+  ],
   templateUrl: './withdrawals.component.html',
   styleUrl: './withdrawals.component.scss',
 })
 export class WithdrawalsComponent {
   private readonly financeData = inject(FINANCE_DATA_SERVICE);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly recherche = signal('');
   readonly periode = signal<Periode | null>(null);
@@ -29,6 +45,7 @@ export class WithdrawalsComponent {
   readonly total = signal(0);
   readonly chargement = signal(true);
   readonly erreur = signal<string | null>(null);
+  readonly afficherFormulaireCreation = signal(false);
 
   readonly colonnes: DataTableColumn<Retrait>[] = [
     { key: 'montant', label: 'Montant', sortable: true, format: r => formatMontantXof(r.montant) },
@@ -63,6 +80,18 @@ export class WithdrawalsComponent {
   }
 
   reessayer(): void {
+    this.charger();
+  }
+
+  ouvrirNouveauRetrait(): void {
+    this.afficherFormulaireCreation.set(true);
+  }
+
+  onFormulaireCreationFerme(succes: boolean): void {
+    this.afficherFormulaireCreation.set(false);
+    if (!succes) return;
+    this.snackBar.open('Retrait enregistré avec succès.', 'Fermer', { duration: 5000 });
+    this.page.set(1);
     this.charger();
   }
 

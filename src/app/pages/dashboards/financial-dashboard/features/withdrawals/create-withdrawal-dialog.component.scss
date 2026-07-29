@@ -1,0 +1,125 @@
+// Le CSS global .modal-overlay (styles.scss) aligne le panneau à droite
+// (justify-content: end — effet "tiroir"). Centré ici à la place, override scopé à ce
+// composant uniquement (encapsulation Angular) : n'affecte pas les 6 autres écrans qui
+// utilisent la même classe globale avec l'alignement à droite.
+.modal-overlay {
+  justify-content: center;
+}
+
+// Le CSS global .modal-header/.close-btn (styles.scss) positionne .close-btn en
+// position: fixed — pensé pour des modals plus larges ailleurs dans l'app, ça chevauche le
+// titre ici. Override scopé à ce composant uniquement (encapsulation Angular), sans toucher
+// aux 6 autres écrans qui utilisent ces mêmes classes globales.
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  .modal-title {
+    margin: 0;
+  }
+
+  .close-btn {
+    position: static;
+    background: none;
+    color: #64748b;
+
+    &:hover {
+      color: #1e293b;
+    }
+  }
+}
+
+.fin-create-withdrawal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 320px;
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    font-size: 0.9rem;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  // Champs en HTML natif stylé (même convention que agent-payment.component.scss) —
+  // mat-form-field/mat-select/mat-input ne se rendaient pas correctement dans cette app.
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    width: 100%;
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    select,
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.55rem 0.7rem;
+      font: inherit;
+      font-size: 0.9rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      color: #1e293b;
+      background: #fff;
+
+      &:focus-visible {
+        outline: 2px solid #2563eb;
+        outline-offset: 1px;
+      }
+    }
+  }
+
+  &__field-error {
+    font-size: 0.78rem;
+    color: #b91c1c;
+  }
+
+  &__recap {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 16px;
+    margin-top: 12px;
+
+    dt {
+      font-weight: 500;
+      color: #6b7280;
+    }
+
+    dd {
+      margin: 0;
+    }
+  }
+
+  &__spinner {
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+}

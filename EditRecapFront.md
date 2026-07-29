@@ -332,3 +332,311 @@ Suite immédiate du hors-série précédent. Deux demandes en cascade : (1) offr
 
 ### Portée du sélecteur
 Comme pour `agency-dashboard`, restriction "managers uniquement" appliquée **côté frontend** (`*ngIf="user.data?.role === 'manager'"`), le backend restant générique.
+
+---
+
+# Module Facturation branché sur le backend réel — suppression de `FactureDataMockService`
+
+## Récapitulatif
+
+| Fichier | Nature | État |
+|---|---|---|
+| `data-access/http/mappers/facture.mapper.ts` | **Réécrit** — `mapFactureDto` : passthrough identité → mapping champ-à-champ réel | modifié |
+| `data-access/http/facture-data.http.service.ts` | Vérifié — déjà 100% conforme au backend, **aucun changement** | inchangé |
+| `data-access/mock/facture-data.mock.service.ts` | **Supprimé définitivement** (demande explicite) | supprimé |
+| `financial-dashboard.routes.ts` | `FACTURE_DATA_SERVICE` branché en dur sur `FactureDataHttpService`, sortie de `'facture'` du type union de `mockOuHttp` | modifié |
+| `docs/INTEGRATION.md` | Ligne `FactureDataService` du tableau §1 mise à jour | modifié |
+
+## Détail
+
+### Mapping réel écrit contre le contrat backend
+`mapFactureDto` mappe maintenant `idFacture, idClient, periode{mois,annee}, montant, statut, dateGeneration, datePaiement` un-à-un contre `services/redevance.js::_mapRedevanceToFacture` (voir `EditRecap.md` backend). `mapSuiviAbonneMensuelDto`/`mapLigneReleveDto` n'ont pas été touchés (déjà réels depuis le Prompt F3, contre `getSuiviMensuelAgence`/`getReleveClient`).
+
+### Suppression du mock — vérifiée avant coup
+Grep préalable : seuls `facture-data.mock.service.ts` lui-même et `financial-dashboard.routes.ts` référençaient `FactureDataMockService` — suppression sûre. `data/factures.data.ts` (données brutes) n'a pas été touché : encore utilisé par `finance-data.mock.service.ts` pour d'autres besoins (paiements), sans rapport avec `FactureDataService`.
+
+### Provider câblé en dur, plus de bascule mock/http pour ce domaine
+`FACTURE_DATA_SERVICE` fournit directement `FactureDataHttpService` (plus d'appel à `mockOuHttp('facture', ...)`) — le module Facturation n'a plus de mode démo, contrairement à `client`/`finance`/`agent`/`session` qui restent pilotables via `environment.useMocksOverrides`. Assumé : le backend Facturation est maintenant la seule vérité pour ce domaine.
+
+### Vérification
+`npx tsc --noEmit -p tsconfig.json` → `EXIT:0` après l'ensemble des changements ci-dessus. Pas de `ng build`/`ng serve` relancé dans cette tâche (déjà refusé explicitement par l'utilisateur plus tôt dans la conversation) — vérification limitée à la compilation TypeScript stricte.
+
+## ⚠️ Limitation critique découverte — `ClientDataService` reste mocké
+
+La demande incluait "Relevé Client fonctionne, Fiche Client fonctionne […] sans aucun mock". **Ce n'est pas honnêtement atteint pour ces deux écrans (ni pour l'onglet facturation de la fiche client)** — seul "Suivi Mensuel" fonctionne réellement de bout en bout sans aucun mock.
+
+**Cause** : `ClientDataMockService` (hors périmètre de cette tâche — décision antérieure explicite de l'utilisateur : "Continuer seulement sur les contrats complets") génère des identifiants `idClient` au format `cli-001`, `cli-002`, etc. (`data/clients.data.ts`), qui ne sont **pas** des `ObjectId` MongoDB valides. Le nouveau backend Facturation, lui, attend et retourne toujours de vrais `ObjectId` (`clientId` des documents `Redevance`/`Contrat`).
+
+**Deux symptômes distincts selon l'écran** :
+- **Relevé Client / Fiche Client (onglet factures)** : appellent `getFacturesClient(idClient)` avec un `idClient` du type `cli-001` → le backend valide `ObjectId.isValid()` avant toute requête → **erreur 400 explicite `"idClient invalide"`**, visible et honnête (pas de faux résultat).
+- **Liste clients (badge "Situation paiement")** : `client-list.component.ts` fait une jointure côté client entre la liste `ClientDataMockService` (IDs `cli-XXX`) et `getSituationClientsAgence()` (IDs Mongo réels), par `Map` indexée sur `idClient`. Ces IDs ne matchent **jamais** → la recherche `Map.get()` échoue silencieusement → **chaque client affiche "à jour" par défaut, quel que soit son vrai retard**. C'est le cas le plus dangereux : aucune erreur visible, donnée silencieusement fausse.
+
+**Ce qui fonctionne réellement sans aucun mock** : "Suivi Mensuel" (`getSuiviMensuelAgence`) est fonctionnellement autonome — le backend fait lui-même la jointure `Contrat`→`User` et renvoie nom/quartier du client directement dans sa réponse, sans jamais passer par `ClientDataService`.
+
+**Pour lever complètement cette limitation** : il faudrait construire le backend de `ClientDataService` (`GET /finance/clients`, `GET /finance/clients/:idClient`) avec de vrais `ObjectId`, ce qui était explicitement hors du périmètre du message actuel et d'une décision antérieure de la conversation. Signalé ici plutôt que masqué.
+
+---
+
+# Module Client branché sur le backend réel — suppression de `ClientDataMockService`
+
+## Récapitulatif
+
+| Fichier | Nature | État |
+|---|---|---|
+| `data-access/http/mappers/client.mapper.ts` | **Réécrit** — `mapClientDto` : passthrough identité → mapping champ-à-champ réel | modifié |
+| `data-access/http/client-data.http.service.ts` | Vérifié — déjà 100% conforme au backend, **aucun changement** | inchangé |
+| `data-access/mock/client-data.mock.service.ts` | **Supprimé définitivement** (demande explicite) | supprimé |
+| `financial-dashboard.routes.ts` | `CLIENT_DATA_SERVICE` branché en dur sur `ClientDataHttpService`, sortie de `'client'` du type union de `mockOuHttp` | modifié |
+| `docs/INTEGRATION.md` | Ligne `ClientDataService` du tableau §1 mise à jour | modifié |
+
+## Détail
+
+### Mapping réel écrit contre le contrat backend
+`mapClientDto` mappe maintenant `idClient, nom, prenom, quartier, telephone, statut, dateCreation` un-à-un contre `services/user.js::_mapUserToClient` (voir `EditRecap.md` backend, module Client). `client-data.http.service.ts` n'a nécessité aucun changement : ses paramètres de requête (`page`, `pageSize`, `statut`, `search`) et ses chemins (`GET /finance/clients`, `GET /finance/clients/:idClient`) correspondaient déjà exactement au nouveau backend.
+
+### Suppression du mock — vérifiée avant coup
+Grep préalable : seuls `client-data.mock.service.ts` lui-même et `financial-dashboard.routes.ts` référençaient `ClientDataMockService` (le commentaire dans `client-data.service.ts` cite juste son nom, pas un import) — suppression sûre. `data/clients.data.ts` (données brutes) n'a **pas** été touché : encore utilisé par 5 autres fichiers (`finance-data.mock.service.ts`, `scenarios.ts`, `factures.data.ts`, `abonnements.data.ts`, `agency-dashboard.ts`), sans rapport avec `ClientDataService`.
+
+### Provider câblé en dur, plus de bascule mock/http pour ce domaine
+`CLIENT_DATA_SERVICE` fournit directement `ClientDataHttpService` (plus d'appel à `mockOuHttp('client', ...)`) — le module Client n'a plus de mode démo, comme `facture` désormais. Seuls `finance`/`agent`/`session` restent pilotables via `environment.useMocksOverrides`.
+
+### ⚠️ Résolution de la limitation critique signalée dans la section précédente
+Le module Client étant désormais **entièrement réel** (vrais `ObjectId` MongoDB, plus de `cli-001`), la limitation documentée juste au-dessus (mismatch d'IDs entre `ClientDataMockService` et le backend Facturation réel) **n'existe plus** : Relevé Client, Fiche Client et le badge "Situation paiement" de la liste clients reçoivent maintenant tous leurs IDs de la même source réelle (MongoDB), donc la jointure côté `client-list.component.ts` (`Map` indexée sur `idClient` entre `getClients()` et `getSituationClients()`) fonctionne correctement. Les 4 écrans demandés (Suivi Mensuel, Relevé Client, Fiche Client, Facturation) fonctionnent maintenant réellement sans aucun mock.
+
+### Vérification
+`npx tsc --noEmit -p tsconfig.json` → `EXIT:0` après l'ensemble des changements ci-dessus. Pas de `ng build`/`ng serve` relancé (même contrainte que pour le module Facturation) — vérification limitée à la compilation TypeScript stricte.
+
+---
+
+# Nettoyage 100% mocks du dashboard financier
+
+Suite à un audit exhaustif (2 agents Explore en parallèle : inventaire mocks frontend + vérification endpoint-par-endpoint du backend), suppression de **tous** les mocks restants du module (`FinanceDataMockService`, `AgentDataMockService`, `SessionMockService`, toute leur infrastructure), pour que le dashboard financier tourne à 100% sur le backend réel.
+
+## Récapitulatif — fichiers supprimés
+
+| Fichier | Raison |
+|---|---|
+| `data-access/mock/finance-data.mock.service.ts` | Backend réel 100% complet (dashboard/kpi, stats, repartition-mode, paiements, retraits) |
+| `data-access/mock/agent-data.mock.service.ts` | Backend réel 100% complet (agents, paiements-agent) |
+| `data-access/mock/session.mock.service.ts` | Backend réel 100% complet (session/moi, utilisateurs, droits-finance, financial-role) |
+| `data-access/mock/mock-config.service.ts` | Plus aucun mock à configurer (simulation succès/vide/erreur/lent) |
+| `data-access/mock/simulate.util.ts` | Consommé uniquement par les 2 mocks ci-dessus, devenu mort |
+| `data-access/mock/data/*.ts` (10 fichiers : `abonnements`, `agents`, `clients`, `factures`, `paiements-agent`, `paiements`, `retraits`, `scenarios` — déjà orphelin avant même ce nettoyage —, `seed.util`, `utilisateurs`) | Jeux de données figées, plus aucun consommateur une fois les mocks supprimés |
+| `shared/role-switcher/role-switcher.component.{ts,html,scss}` | Démo RBAC sans auth réelle — son seul rôle (`session.switchRole()`) n'a pas d'équivalent en production, le rôle vient de la session réelle |
+| `shared/states/mock-scenario-panel.component.{ts,html,scss}` | Panneau démo pilotant `MockConfigService`, supprimé avec lui |
+| `data-access/mock/export.mock.service.ts` | **Renommé**, pas supprimé — voir plus bas |
+
+Dossier `data-access/mock/` entièrement vidé et supprimé (plus aucun fichier dedans).
+
+## Fichiers modifiés
+
+| Fichier | Nature |
+|---|---|
+| `data-access/contracts/finance-data.service.ts` | `enregistrerRetrait` étendu à `{ montant, customerMsisdn, operator: OperateurRetrait, motif? }` (nouveau type `OperateurRetrait`) — voir décision ci-dessous |
+| `data-access/http/finance-data.http.service.ts` | `enregistrerRetrait` : vrai `POST /finance/retraits`, plus de composition avec `FinanceDataMockService` |
+| `data-access/contracts/session.service.ts` | `switchRole` retiré de l'abstract class (code mort) |
+| `data-access/http/session.http.service.ts` | Implémentation `switchRole` (no-op) retirée |
+| `data-access/contracts/export.service.ts` | Commentaire mis à jour (référence `ExportClientService`) |
+| `features/shell/finance-layout.ts` | Imports/`imports:[]` : retrait de `RoleSwitcherComponent`/`MockScenarioPanelComponent` |
+| `features/shell/finance-layout.html` | Retrait de `<app-role-switcher />` et `<app-mock-scenario-panel />`, du wrapper `.quick-actions` devenu vide |
+| `financial-dashboard.routes.ts` | Réécriture des `providers` : les 6 tokens pointent en dur sur leur classe Http/réelle ; fonction `mockOuHttp()` supprimée ; imports nettoyés |
+| `src/environments/environment.ts` | `useMocks`/`useMocksOverrides` retirés |
+| `src/environments/environment.prod.ts` | `useMocks`/`useMocksOverrides` retirés |
+| `docs/INTEGRATION.md` | Réécriture §1/§2/§3/§4, ajout §7 — statut "100% Http, mocks supprimés" |
+
+## Fichier créé (déplacement, pas une nouvelle fonctionnalité)
+
+`data-access/export/export-client.service.ts` — `ExportMockService` renommé en `ExportClientService` et déplacé hors de `data-access/mock/`. **Décision et justification** : ce service ne simule rien — il exporte réellement en CSV (Blob) et imprime réellement (`window.print()`), 100% fonctionnel, jamais de données inventées. Le nom "Mock" était trompeur, pas un signe de données factices. `ExportService` n'a et n'aura pas de contrepartie Http par design documentée (export/impression 100% client-side, spec §1.12 — voir `INTEGRATION.md` §4) : le supprimer aurait cassé les exports CSV/impression réels sur les écrans F2/F10/F12 sans aucun gain. Renommer + déplacer satisfait l'objectif "plus aucun MockService" sans supprimer une fonctionnalité qui marche.
+
+## Décision — extension d'`enregistrerRetrait` plutôt que blocage
+
+Avant ce nettoyage, `FinanceDataHttpService.enregistrerRetrait` déléguait à `FinanceDataMockService` car le backend réel exige `{ montant, customerMsisdn, operator }` (`controllers/financeStats.js`), un contrat plus large que l'ancien `{ montant, motif? }`. Vérifié par grep : **aucun composant n'appelle `enregistrerRetrait`** dans tout le module (pas de formulaire de retrait existant) — étendre le contrat était donc sans risque (aucune UI à modifier, aucun appelant à casser). `OperateurRetrait` est un type local (`'MOOV_MONEY' | 'ORANGE_MONEY'`), volontairement **pas** réutilisé depuis `MobileMoneyOperator` (`src/app/models/payment/payment-request.model.ts`, qui inclut aussi `TELECEL_MONEY`) : le backend (`services/transaction.js::sendUserMoney`) rejette explicitement tout opérateur hors `MOOV_MONEY`/`ORANGE_MONEY` pour un retrait, donc un type plus restreint et localement défini est plus correct qu'un import cross-module qui autoriserait une valeur refusée côté serveur — décision cohérente avec l'isolation déjà actée de ce module vis-à-vis du reste de l'app (`Role` propre, pas `UserRole`).
+
+## Vérifications effectuées
+- 2 agents Explore (parallèles, lecture seule) : inventaire exhaustif des mocks frontend + vérification ligne-à-ligne des 13 endpoints backend attendus (11/13 confirmés réels et complets, 2 points d'attention déjà résolus ci-dessus).
+- Grep de contrôle après suppression : aucune référence vivante à `*MockService`/`MockConfigService`/`useMocks`/`mockOuHttp`/`RoleSwitcherComponent`/`MockScenarioPanelComponent`/`switchRole` nulle part dans `src/` (seuls des commentaires historiques subsistent, explicitement écrits pour expliquer le "avant/après").
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Pas de `ng build`/`ng serve` (contrainte déjà actée dans cette conversation) — les erreurs de template Angular (sélecteurs inconnus, etc.) ont été vérifiées manuellement via les diagnostics IDE en temps réel pendant l'édition de `finance-layout.html`, pas par une recompilation complète.
+
+## Risques et points d'attention restants
+1. **`GET /finance/paiements` (F3)** : joint `Transaction` à `pricings` (legacy/abonnements), pas à `Redevance` via `redevanceId` comme le fait `repartition-mode`. Signalé par l'audit backend : à valider avec des données réelles que les paiements de redevances du nouveau module Facturation apparaissent bien dans cet écran — sinon la liste pourrait être vide ou incohérente avec les KPI/factures du même dashboard, même si le seam est techniquement "branché".
+2. **`enregistrerRetrait` reste sans UI** : le contrat/service sont maintenant 100% réels, mais aucun écran ne permet encore de déclencher un retrait depuis le dashboard financier (`withdrawals.component` n'affiche qu'un historique). Le jour où ce formulaire sera construit, se rappeler que le backend n'autorise aujourd'hui que `MOOV_MONEY` en pratique (`ORANGE_MONEY` est validé en entrée mais rejette avec "pas encore disponible").
+3. **RG10 (impact solde paiement agent)** : contrairement à ce qu'affichaient encore l'UI (`agent-payment.component`) et `docs/INTEGRATION.md` ("TBC"/"mock") avant cet audit, le backend impacte réellement le solde de l'agence depuis un moment déjà (`services/paiementAgent.js`). Le composant `agent-payment` n'a pas été modifié dans cette passe (hors périmètre strict du nettoyage mocks côté data-access) — un message UI encore marqué "mock" y serait trompeur et mérite une vérification séparée.
+4. **Perte des outils de démo** : `RoleSwitcherComponent`/`MockScenarioPanelComponent` permettaient de tester rapidement les 3 rôles financiers et les états vide/erreur/lent sans backend. Une fois supprimés, tester ces scénarios nécessite maintenant de vraies données/comptes côté backend (ex. via les écrans d'assignation de `financialRole` déjà construits sur `agency-dashboard`/`admin-dashboard`).
+5. **`.quick-actions`/`.header-content` (SCSS)** : la règle `.quick-actions` dans `finance-layout.scss` n'a plus de consommateur HTML mais a été **laissée en place** (délibéré) — le commentaire de tête du fichier indique qu'elle reproduit un langage visuel partagé avec `agency-dashboard.scss`, pas une classe mock-spécifique ; elle reste disponible pour un futur bouton d'action rapide.
+
+---
+
+# Relevé (F10) : le bouton "Imprimer / PDF" imprimait toute la page au lieu de générer un vrai PDF
+
+## Symptôme signalé
+Le bouton de l'écran "Relevé" appelait `ExportService.print()` → `window.print()`, qui imprime toute la page du navigateur (toolbar comprise, malgré les règles `@media print` de `statement-print.scss`), pas un document PDF autonome du relevé.
+
+## Fix
+- `ExportService` (contrat) : `print()` retiré (devenu mort, seul appelant), ajout de `exportToPdf<T>(rows, columns, filename, options: {titre, sousTitre?, total?})`.
+- `ExportClientService` : implémente `exportToPdf` avec `jsPDF`/`jspdf-autotable` — dépendances déjà présentes dans `package.json`, déjà utilisées avec exactement le même pattern (titre, sous-titre, `autoTable`, `doc.save()`) dans `agency-finance.ts` (export paiements/retraits) — réutilisation d'une convention existante, pas une nouvelle dépendance.
+- `statement.component.ts` : `imprimer()` renommé `telechargerPdf()`, construit des lignes déjà formatées (dates via `formatFrDate`, montant via `formatMontantXof`, statut via le badge existant) puis appelle `exportToPdf` avec titre "Relevé de paiement", sous-titre "Nom Prénom — Quartier", et le total en pied de tableau — même convention de pré-formatage des lignes que `monthly-tracking.component.ts::exporterCsv`.
+- `statement.component.html` : bouton renommé "Télécharger en PDF", icône `picture_as_pdf`.
+
+## Décision — pas de nouvelle dépendance, pas de nouveau composant
+`jsPDF`/`jspdf-autotable` étaient déjà des dépendances installées et déjà utilisées ailleurs dans l'app (`agency-finance.ts`, `team-list.ts`, `planning-detail.ts`, `profile.ts`, `client-dashboard.ts`) — aucune installation nécessaire. `statement-print.scss` (`@media print`) n'a pas été supprimé : reste utile en dégradation gracieuse si l'utilisateur imprime manuellement la page (Ctrl+P), même si le bouton ne déclenche plus `window.print()`.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Grep : `ExportService.print()` n'avait qu'un seul appelant dans tout le module avant suppression.
+
+---
+
+# Ajout des infos d'agence sur le relevé PDF
+
+## Fichiers modifiés
+- `data-access/contracts/session.service.ts` : nouvelle interface `AgenceSession { nom, ville?, quartier? }`, `SessionUtilisateur.agence?: AgenceSession` (additif, optionnel).
+- `data-access/http/mappers/session.mapper.ts::mapSessionUtilisateurDto` : mappe le nouveau champ `agence` du DTO backend.
+- `data-access/contracts/export.service.ts` : `ExportPdfOptions.sousTitre` étendu à `string | string[]` (plusieurs lignes sous le titre, pas seulement une).
+- `data-access/export/export-client.service.ts::exportToPdf` : rend chaque ligne de `sousTitre` séparément (espacées de 6pt), calcule `startY` du tableau en conséquence.
+- `features/statement/statement.component.ts` : injecte `SESSION_SERVICE`, lit `session.getCurrentUser().agence`, construit une ligne "Nom agence — Quartier, Ville" affichée au-dessus de la ligne client dans le PDF (absente si l'utilisateur n'a pas d'agence).
+
+## Décision — via la session plutôt qu'un nouvel appel réseau dédié
+`GET /finance/session/moi` est déjà chargé une fois au démarrage du module par `SessionHttpService` (son constructeur) et mis en cache dans `currentUser$`/`getCurrentUser()` — ajouter `agence` à cette réponse évite un appel HTTP dédié rien que pour l'en-tête du PDF, et rend l'info réutilisable par n'importe quel autre écran du dashboard qui voudrait un jour afficher/imprimer le nom de l'agence (dashboard, suivi mensuel, etc.), sans dupliquer la logique de récupération.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+
+---
+
+# Audit complet du dashboard financier — composant par composant
+
+## Méthode
+3 agents d'exploration en parallèle (lecture seule) ont audité les 9 zones fonctionnelles (`dashboard`, `payments`, `withdrawals`, `clients`, `client-sheet` + ses 2 onglets, `statement`, `monthly-tracking`, `agent-payment`, `roles-admin`, `shell`), en vérifiant pour chacune : service injecté (token), méthodes appelées et confirmation que chaque appel est un vrai `HttpClient` vers un endpoint backend réel (pas un stub), tous les `signal()`/`computed()` (valeur initiale et dérivation), présence de `resource()`/`effect()`, données hardcodées dans le template, et TODO/FIXME/"mock"/"TBC" résiduels.
+
+## Conclusion générale
+**Aucune donnée métier statique ou mockée ne subsiste dans le dashboard.** Aucun `resource()` ni `effect()` nulle part dans le module (architecture 100% `signal()`/`computed()`/`toSignal()` + `subscribe()`). Tous les appels de service passent par de vraies requêtes HTTP vers des endpoints backend vérifiés. Aucun endpoint manquant identifié — tous les gaps connus (Facturation, Client) avaient déjà été comblés dans des tours précédents.
+
+## Anomalies trouvées et corrigées (textes trompeurs, pas des données mockées actives)
+
+| Fichier | Problème | Correction |
+|---|---|---|
+| `agent-payment.component.ts:95` (avant fix) | Message de succès affichait *"(mock) — aucune écriture réelle effectuée"* après un vrai débit du wallet agence | Message honnête ("le solde de l'agence a été débité") + rechargement du solde après paiement (`chargerSolde()`, absent avant : le solde affiché restait périmé après un paiement réel) |
+| `agent-payment.component.ts` (erreur) | Erreur générique masquait le vrai message backend (ex. "Solde insuffisant", "Agent introuvable") | `err.error?.message` remonté au lieu d'un texte générique fixe |
+| `agent-payment.component.ts` (`formulaireValide`) | Le formulaire autorisait la soumission même en cas de solde insuffisant, alors que le backend rejette (400) systématiquement | `formulaireValide` inclut désormais `!soldeInsuffisant()` — bloque côté client un appel voué à l'échec |
+| `agent-payment.component.html` (bandeau + avertissement) | *"Prototype — aucune écriture réelle"* et *"Vous pouvez tout de même continuer (TBC — RG10)"* | Textes réécrits pour refléter le comportement réel (débit réel, refus serveur si solde insuffisant) |
+| `agent-payment.component.ts:13-15` (commentaire classe) | Prétendait "UI + mock uniquement : aucune écriture réelle" | Réécrit pour documenter le vrai comportement |
+| `roles-admin.component.ts:12` (commentaire) | "gestion des droitsFinance par rôle **mock**", référence à un "rôle-switcher" déjà supprimé | Réécrit, référence morte retirée |
+| `roles-admin.component.html:3-6` | "pour la **démo**" | Reformulé ("réellement") |
+| `data-access/contracts/session.service.ts:10` | "Session **mock** uniquement" (commentaire déjà obsolète depuis le nettoyage 100% mocks) | Réécrit pour refléter `SessionHttpService` réel |
+| `data-access/http/client-data.http.service.ts:10-13` et `facture-data.http.service.ts:15-16` | "**Squelette inerte** (Prompt 17) : jamais fourni par un provider..." — obsolète, ces classes sont câblées en dur depuis plusieurs tours | Réécrits pour refléter l'état réel |
+
+Aucun de ces éléments n'était une donnée métier fictive activement utilisée (les 4 appels HTTP d'`agent-payment` étaient déjà tous réels) — il s'agissait de textes/commentaires n'ayant pas été mis à jour au fil des passes de nettoyage successives, laissant croire à tort à un comportement mock.
+
+## Points signalés mais volontairement non modifiés (TBC légitimes, pas des mocks)
+- `dashboard.component.html:17` — "Paiements moins retraits (RG7, formule à confirmer)" : ambiguïté de règle métier réelle, la valeur affichée vient bien du KPI réel.
+- `info-tab.component.ts` (fiche client) — édition désactivée, "TBC spec §1.12" : feature gap assumé, bouton correctement désactivé.
+- `statement.component.ts` — "scope du relevé (complet vs plage) reste TBC" : comportement par défaut (historique complet) bien implémenté et fonctionnel.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0` après tous les changements ci-dessus.
+
+---
+
+# Fonctionnalité "Créer un retrait" (F4) — formulaire Angular Material complet
+
+## Contexte
+`enregistrerRetrait` était déjà branché en HTTP réel depuis le nettoyage 100% mocks (`FinanceDataMockService` supprimé), mais **aucune UI ne l'appelait** (`withdrawals.component` n'affichait qu'un historique). Cette tâche construit l'écran manquant.
+
+## Fichiers créés
+- `features/withdrawals/create-withdrawal-dialog.component.ts` — formulaire réactif (`ReactiveFormsModule`) en boîte de dialogue Angular Material (`MatDialog`), 2 étapes (formulaire → confirmation, même pattern que `agent-payment.component.ts`).
+- `features/withdrawals/create-withdrawal-dialog.component.html` / `.scss`.
+
+## Fichiers modifiés
+- `withdrawals.component.ts` : bouton "Nouveau retrait" → `MatDialog.open(CreateWithdrawalDialogComponent)`, `afterClosed()` déclenche un `MatSnackBar` de succès + `page.set(1)` + rechargement automatique de la liste.
+- `withdrawals.component.html` : ajout du bouton dans `.fin-withdrawals__filters` (flex existant, aucun ajustement CSS nécessaire).
+
+## Détail des champs et validations
+| Champ | Validation | Remarque |
+|---|---|---|
+| `operator` | `Validators.required` | `mat-select` avec 2 options : `MOOV_MONEY` (actif) et `ORANGE_MONEY` (`[disabled]`, libellé "bientôt disponible") — le type `OperateurRetrait` inclut les deux, mais le backend (`services/transaction.js::sendUserMoney`) ne traite réellement que MOOV_MONEY ; proposer l'option désactivée plutôt que la masquer reste honnête sur ce qui existe dans le modèle. |
+| `customerMsisdn` | `required` + `pattern(/^\d{8}$/)` | Même format (8 chiffres) que `mobile-money-form.ts`, déjà utilisé ailleurs dans l'app pour les numéros Mobile Money — pas un nouveau format inventé. |
+| `montant` | `required` + `min(1)` | Aligné sur la validation serveur (`montant doit être positif`). |
+| `motif` | `maxLength(200)` (facultatif) | Correspond à `motif?: string` du contrat. |
+
+## Confirmation, chargement, erreurs
+- Étape "confirmation" : récapitulatif (opérateur, numéro, montant, motif) avant tout appel réseau.
+- `enregistrement` (signal) pilote un `mat-spinner` sur le bouton "Confirmer" et désactive les boutons pendant la requête.
+- Erreur : `err.error?.message` remonté tel quel (le backend renvoie déjà des messages précis — "Solde insuffisant", "Les retraits via ORANGE_MONEY ne sont pas encore disponibles", "Utilisateur non trouvé", etc.) — pas de message générique qui masquerait la vraie cause, même approche que le fix récent sur `agent-payment`.
+- Snackbar de succès uniquement après un vrai `200` (fermeture du dialog avec `true`) ; un dialog fermé par annulation/erreur ne déclenche ni snackbar ni rafraîchissement.
+
+## Aucune dépendance mock
+`FINANCE_DATA_SERVICE` était déjà câblé en dur sur `FinanceDataHttpService` (aucun `mockOuHttp`, aucun `*MockService` dans tout le module — nettoyage effectué dans un tour précédent). Ce composant n'introduit donc par construction aucune nouvelle dépendance mock.
+
+## Décision — Angular Material plutôt que PrimeNG
+L'app utilise déjà PrimeNG ailleurs (`p-dialog`/`p-toast`, `main.ts`), mais la demande nommait explicitement "Angular Material" et "snackbar" (terminologie Material) — suivi tel quel. `@angular/material` était déjà une dépendance installée et utilisée dans d'autres modules de l'app (`mobile-money-form.ts`, `team-*`, etc.), donc aucune nouvelle dépendance ajoutée ; `provideAnimations()` est déjà fourni globalement (`main.ts:22`, pour PrimeNG), ce qui suffit aussi à `MatDialog`/`MatSnackBar` — aucune config supplémentaire nécessaire.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Pas de `ng build`/`ng serve` (contrainte déjà actée dans cette conversation).
+
+---
+
+# Fix — le dialog Angular Material ne s'affichait pas
+
+## Symptôme signalé
+Après avoir cliqué sur "Nouveau retrait", le dialog n'apparaissait pas à l'écran (aucune erreur visible signalée).
+
+## Cause
+`angular.json` chargeait bien `@angular/material/prebuilt-themes/azure-blue.css` (couleurs/typo des composants Material) mais **jamais** `@angular/cdk/overlay-prebuilt.css` — la feuille de style qui donne au CDK Overlay (utilisé par `MatDialog`, `MatSnackBar`, et le panneau déroulant de `mat-select`) son positionnement (`.cdk-overlay-container { position: fixed }`, `.cdk-global-overlay-wrapper { display: flex; ... }` pour le centrage des dialogs, etc.). Sans ce fichier, le conteneur d'overlay s'insère dans le flux normal du DOM (dernier enfant de `<body>`, sans `position: fixed`), donc le dialog est bien créé mais rendu hors du viewport visible ou sans dimension/centrage — ce qui se traduit, à l'écran, par "rien ne s'affiche". C'était donc **le tout premier usage de `MatDialog` dans toute l'app** (`mat-select` existant ailleurs, ex. `mobile-money-form.ts`, est moins visiblement affecté car son panneau utilise un positionnement connecté calculé en partie via JS, contrairement au centrage global d'un dialog qui dépend entièrement du CSS flex ci-dessus) — ce trou dans la config n'avait donc jamais été remarqué avant cette fonctionnalité.
+
+## Fix
+`angular.json` : ajout de `"@angular/cdk/overlay-prebuilt.css"` juste après le thème Material, dans les deux tableaux `styles` (`architect.build.options.styles` et `architect.test.options.styles`).
+
+## Vérification
+JSON validé (`python -c "import json; json.load(open('angular.json'))"`). **Redémarrage de `ng serve` nécessaire** pour que ce changement de configuration de build soit pris en compte (contrairement à un changement de composant, une modification d'`angular.json` n'est pas rechargée à chaud).
+
+---
+
+# Fix 2 — le dialog restait invisible même après le fix CSS (seul le fond assombri apparaissait)
+
+## Symptôme signalé
+Après redémarrage de `ng serve` et ajout de `overlay-prebuilt.css`, le fond assombri (backdrop) s'affichait bien à l'ouverture, mais jamais le panneau du formulaire lui-même.
+
+## Diagnostic
+Le fait que le backdrop s'affiche prouve que `.cdk-overlay-container` a maintenant bien `position: fixed` (le fix précédent était nécessaire et correct). Le problème restant est donc spécifique au **panneau** du dialog (`.cdk-overlay-pane`/`mat-dialog-container`), pas au mécanisme d'overlay en général. Cause la plus probable : cette app combine **3 systèmes CSS globaux qui se marchent dessus** — Angular Material (`mat.theme()` M3 + prebuilt-theme M2 azure-blue en même temps), PrimeNG (`providePrimeNG`, thème Aura), et Flowbite/Tailwind (CDN dans `index.html`, `@use "tailwindcss"` dans `styles.scss`). C'était le tout premier usage de `MatDialog` dans toute l'app (confirmé par grep avant le premier fix) — jamais testé, jamais fiabilisé dans ce contexte CSS chargé.
+
+## Décision — pivoter vers l'overlay custom déjà éprouvé de l'app, garder les champs Material
+Plutôt que de continuer à déboguer un conflit CSS incertain entre 3 frameworks (risque de plusieurs allers-retours supplémentaires), réutilisation du pattern **`.modal-overlay` / `.modal-content` / `.modal-header` / `.close-btn`** déjà utilisé avec succès dans 6 écrans de l'app (`admin-dashboard.html`, `agency-dashboard.html`, `client-dashboard.html`, `collector-dashboard.html`, `municipality-dashboard.html`, `subscription.html`) — un mécanisme de fenêtre modale simple (`*ngIf` + CSS `position: fixed`), sans dépendance au CDK Overlay. Les **champs de formulaire restent Angular Material** (`mat-form-field`/`mat-select`/`mat-input`/`mat-button`/`mat-icon`/`mat-progress-spinner`), conformément à la demande — seul le conteneur modal change de mécanisme.
+
+## Fichiers modifiés
+- `create-withdrawal-dialog.component.ts` : retrait de `MatDialogModule`/`MatDialogRef` ; ajout de `@Output() ferme = new EventEmitter<boolean>()` (`true` si retrait créé, `false` sur annulation).
+- `create-withdrawal-dialog.component.html` : structure `mat-dialog-title`/`mat-dialog-content`/`mat-dialog-actions` remplacée par `.modal-overlay > .modal-content > .modal-header (+ .close-btn) / formulaire / actions`, identique au pattern `admin-dashboard.html`.
+- `create-withdrawal-dialog.component.scss` : ajout de `&__actions` (les actions n'ont plus le layout fourni par `mat-dialog-actions`).
+- `withdrawals.component.ts` : retrait de `MatDialog`, ajout du signal `afficherFormulaireCreation`, `ouvrirNouveauRetrait()` le passe à `true`, nouveau handler `onFormulaireCreationFerme(succes)` (remplace l'ancien `afterClosed().subscribe(...)`).
+- `withdrawals.component.html` : `<app-create-withdrawal-dialog *ngIf="afficherFormulaireCreation()" (ferme)="onFormulaireCreationFerme($event)" />` à la place de l'appel à `MatDialog.open()`.
+
+## Point de vigilance non résolu
+`MatSnackBar` (toast de succès) reste utilisé tel quel — il s'appuie aussi sur le CDK Overlay, mais avec une stratégie de positionnement différente (ancré en bas, pas centré en flex comme un dialog) : il pourrait ne pas être affecté par le même conflit. **Non vérifié visuellement** — si le snackbar de succès n'apparaît pas non plus après ce fix, le même remplacement par un mécanisme custom (ou réutilisation de PrimeNG `MessageService`/`p-toast`, déjà fourni globalement dans `main.ts`) sera nécessaire.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Grep : plus aucune référence à `MatDialog`/`MatDialogRef`/`MatDialogModule` dans le module.
+
+---
+
+# Fix 3 — le dialog s'affiche mais "pas de design" (champs sans style, titre chevauché par le bouton fermer)
+
+## Symptôme signalé (capture d'écran)
+Le panneau s'affiche désormais (fix précédent réussi), mais : (1) les champs `Opérateur`/`Numéro Mobile Money`/`Montant`/`Motif` apparaissent en HTML brut sans aucune mise en forme (pas de contour, label superposé au texte), alors que les boutons "Annuler"/"Continuer" sont bien stylés Material (bleu, etc.) ; (2) le bouton de fermeture (X) chevauche et masque le début du titre ("uveau retrait" au lieu de "Nouveau retrait").
+
+## Diagnostic
+- **Champs sans style** : `mat-form-field` (variante `outline`) repose sur un mécanisme CSS complexe ("notched outline", pseudo-éléments `::before`/`::after` + nombreuses variables CSS `--mdc-*`) pour dessiner son contour et faire flotter le label. Ce mécanisme s'est révélé cassé dans cette app — cohérent avec le diagnostic précédent (coexistence Angular Material M3+M2 / PrimeNG / Flowbite-Tailwind) : les composants Material *simples* (`mat-button`, `mat-icon`, `mat-progress-spinner`, qui n'ont besoin que d'un `background-color`/`color`) restent corrects, mais `mat-form-field` (bien plus dépendant du thème) s'effondre visuellement.
+- **Titre chevauché** : la classe globale `.close-btn` (`styles.scss`, partagée par 6 écrans) est définie avec `position: fixed`, pensée pour des modals plus larges ailleurs dans l'app — dans notre panneau plus étroit, ça place le bouton par-dessus le titre.
+
+## Fix
+- **Champs** : remplacement de `mat-form-field`/`mat-select`/`mat-input` par du HTML natif (`<select>`/`<input>` + `<label>`) stylé en CSS custom, **exactement la même convention déjà éprouvée dans ce module** (`agent-payment.component.html`/`.scss`, jamais signalé comme cassé). `mat-button`/`mat-icon`/`mat-progress-spinner` conservés tels quels (ils s'affichaient correctement).
+- **Titre chevauché** : override scopé au composant (`create-withdrawal-dialog.component.scss`) de `.modal-header`/`.close-btn` — `position: static` au lieu de `fixed`. Grâce à l'encapsulation Angular (styles scopés par composant), cet override **ne touche pas** les 6 autres écrans qui utilisent ces mêmes classes globales avec leur mise en page plus large.
+
+## Fichiers modifiés
+- `create-withdrawal-dialog.component.ts` : retrait de `MatFormFieldModule`/`MatInputModule`/`MatSelectModule`.
+- `create-withdrawal-dialog.component.html` : champs réécrits en HTML natif + `formControlName` (Reactive Forms fonctionne nativement avec `<select>`/`<input>`, pas besoin de directives Material).
+- `create-withdrawal-dialog.component.scss` : styles des champs (bordure, focus, erreurs) + override scopé `.modal-header .close-btn`.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.

@@ -1,0 +1,79 @@
+<div class="modal-overlay" (click)="annuler()">
+  <div class="modal-content fin-create-withdrawal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Nouveau retrait</h3>
+      <button type="button" class="close-btn" (click)="annuler()" aria-label="Fermer">
+        <i class="material-icons" aria-hidden="true">close</i>
+      </button>
+    </div>
+
+    <div class="fin-create-withdrawal__error" role="alert" *ngIf="erreur() as message">
+      <i class="material-icons" aria-hidden="true">error_outline</i>
+      {{ message }}
+    </div>
+
+    <form class="fin-create-withdrawal__form" *ngIf="etape() === 'formulaire'" [formGroup]="form" (ngSubmit)="passerAConfirmation()">
+      <div class="fin-create-withdrawal__field">
+        <label for="retrait-operator">Opérateur *</label>
+        <select id="retrait-operator" formControlName="operator" required>
+          <option [ngValue]="null" disabled>Sélectionner un opérateur</option>
+          <option *ngFor="let op of operateurs" [ngValue]="op.value" [disabled]="!op.disponible">{{ op.label }}</option>
+        </select>
+        <span class="fin-create-withdrawal__field-error" *ngIf="form.get('operator')?.invalid && form.get('operator')?.touched">
+          {{ messageErreur('operator') }}
+        </span>
+      </div>
+
+      <div class="fin-create-withdrawal__field">
+        <label for="retrait-msisdn">Numéro Mobile Money *</label>
+        <input id="retrait-msisdn" type="text" formControlName="customerMsisdn" maxlength="8" placeholder="70000000" required />
+        <span class="fin-create-withdrawal__field-error" *ngIf="form.get('customerMsisdn')?.invalid && form.get('customerMsisdn')?.touched">
+          {{ messageErreur('customerMsisdn') }}
+        </span>
+      </div>
+
+      <div class="fin-create-withdrawal__field">
+        <label for="retrait-montant">Montant (FCFA) *</label>
+        <input id="retrait-montant" type="number" formControlName="montant" min="1" step="1" required />
+        <span class="fin-create-withdrawal__field-error" *ngIf="form.get('montant')?.invalid && form.get('montant')?.touched">
+          {{ messageErreur('montant') }}
+        </span>
+      </div>
+
+      <div class="fin-create-withdrawal__field">
+        <label for="retrait-motif">Motif (facultatif)</label>
+        <input id="retrait-motif" type="text" formControlName="motif" maxlength="200" />
+        <span class="fin-create-withdrawal__field-error" *ngIf="form.get('motif')?.invalid && form.get('motif')?.touched">
+          {{ messageErreur('motif') }}
+        </span>
+      </div>
+
+      <div class="fin-create-withdrawal__actions">
+        <button mat-button type="button" (click)="annuler()">Annuler</button>
+        <button mat-flat-button color="primary" type="submit">Continuer</button>
+      </div>
+    </form>
+
+    <div class="fin-create-withdrawal__confirmation" *ngIf="etape() === 'confirmation'">
+      <p>Confirmez-vous ce retrait ?</p>
+      <dl class="fin-create-withdrawal__recap">
+        <dt>Opérateur</dt>
+        <dd>{{ operatorLabel }}</dd>
+        <dt>Numéro</dt>
+        <dd>{{ form.value.customerMsisdn }}</dd>
+        <dt>Montant</dt>
+        <dd>{{ formatMontant(form.value.montant ?? 0) }}</dd>
+        <dt *ngIf="form.value.motif">Motif</dt>
+        <dd *ngIf="form.value.motif">{{ form.value.motif }}</dd>
+      </dl>
+
+      <div class="fin-create-withdrawal__actions">
+        <button mat-button type="button" (click)="retourFormulaire()" [disabled]="enregistrement()">Modifier</button>
+        <button mat-flat-button color="primary" type="button" (click)="confirmer()" [disabled]="enregistrement()">
+          <mat-spinner *ngIf="enregistrement()" diameter="18" class="fin-create-withdrawal__spinner" />
+          {{ enregistrement() ? 'Enregistrement…' : 'Confirmer le retrait' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

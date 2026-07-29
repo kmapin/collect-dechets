@@ -16,9 +16,9 @@
       <app-month-filter label="Jusqu'à" (periodeChange)="onFinChange($event)" />
     </div>
 
-    <button type="button" class="fin-statement__print-btn" (click)="imprimer()" *ngIf="lignes().length">
-      <i class="material-icons" aria-hidden="true">print</i>
-      Imprimer / PDF
+    <button type="button" class="fin-statement__print-btn" (click)="telechargerPdf()" *ngIf="lignes().length">
+      <i class="material-icons" aria-hidden="true">picture_as_pdf</i>
+      Télécharger en PDF
     </button>
   </div>
 
@@ -46,6 +46,7 @@
         <tr>
           <th scope="col">Facturé le</th>
           <th scope="col">Payé le</th>
+          <th scope="col">Statut</th>
           <th scope="col">Montant</th>
         </tr>
       </thead>
@@ -53,12 +54,15 @@
         <tr *ngFor="let ligne of lignes()">
           <td data-label="Facturé le">{{ formatDate(ligne.factureLe) }}</td>
           <td data-label="Payé le">{{ ligne.payeLe ? formatDate(ligne.payeLe) : '—' }}</td>
+          <td data-label="Statut">
+            <app-status-badge [label]="badgeStatut(ligne.statut).label" [icon]="badgeStatut(ligne.statut).icon" [variant]="badgeStatut(ligne.statut).variant" />
+          </td>
           <td data-label="Montant">{{ formatMontant(ligne.montant) }}</td>
         </tr>
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="2" data-label="Total">Total</td>
+          <td colspan="3" data-label="Total">Total</td>
           <td data-label="Montant total">{{ formatMontant(totalMontant()) }}</td>
         </tr>
       </tfoot>

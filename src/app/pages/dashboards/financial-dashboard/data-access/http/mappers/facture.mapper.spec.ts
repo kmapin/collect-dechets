@@ -51,16 +51,17 @@ describe('facture.mapper', () => {
 
   describe('mapLigneReleveDto', () => {
     it('mappe une ligne réelle GET /finance/factures/releve/:idClient, payée', () => {
-      const dto = { factureLe: '2026-06-01T00:00:00.000Z', payeLe: '2026-06-03T00:00:00.000Z', montant: 5000 };
+      const dto = { factureLe: '2026-06-01T00:00:00.000Z', payeLe: '2026-06-03T00:00:00.000Z', statut: 'Payée', montant: 5000 };
       expect(mapLigneReleveDto(dto)).toEqual({
         factureLe: '2026-06-01T00:00:00.000Z',
         payeLe: '2026-06-03T00:00:00.000Z',
+        statut: 'Payée',
         montant: 5000,
       });
     });
 
     it('mappe une ligne impayée (payeLe absent en base, jamais une valeur inventée)', () => {
-      const dto = { factureLe: '2026-06-01T00:00:00.000Z', payeLe: null, montant: 5000 };
+      const dto = { factureLe: '2026-06-01T00:00:00.000Z', payeLe: null, statut: 'Impayée', montant: 5000 };
       expect(mapLigneReleveDto(dto).payeLe).toBeUndefined();
     });
   });

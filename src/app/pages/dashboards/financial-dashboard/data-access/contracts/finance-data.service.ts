@@ -10,6 +10,11 @@ export interface RetraitFilter {
   search?: string;
 }
 
+// Restreint à ce que le backend accepte réellement pour un retrait (services/transaction.js::
+// sendUserMoney) : 'TELECEL_MONEY' existe comme opérateur ailleurs dans l'app (vérification
+// de numéro), mais est explicitement rejeté ici — pas encore disponible pour les retraits.
+export type OperateurRetrait = 'MOOV_MONEY' | 'ORANGE_MONEY';
+
 // Série agrégée pour les graphiques F2 — pas un modèle de domaine (Table 20-27),
 // donc définie ici plutôt que dans finance/models (voir Prompt 3 vs Prompt 4/8).
 export interface FinanceStatsSeries {
@@ -39,5 +44,5 @@ export abstract class FinanceDataService {
   abstract getRepartitionModePaiement(plage: { debut: Periode; fin: Periode }): Observable<RepartitionModePaiement[]>;
   abstract getPaiements(params?: PageParams<PaiementFilter>): Observable<Page<PaiementListe>>;
   abstract getRetraits(params?: PageParams<RetraitFilter>): Observable<Page<Retrait>>;
-  abstract enregistrerRetrait(payload: { montant: number; motif?: string }): Observable<Retrait>;
+  abstract enregistrerRetrait(payload: { montant: number; customerMsisdn: string; operator: OperateurRetrait; motif?: string }): Observable<Retrait>;
 }
