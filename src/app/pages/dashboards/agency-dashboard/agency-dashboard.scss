@@ -5820,3 +5820,30 @@ select[disabled]:focus {
 .sdm-btn-detail    { background: #f5f3ff; color: #7c3aed; }
 .sdm-btn-edit      { background: #eff6ff; color: #3b82f6; }
 .sdm-btn-duplicate { background: #f0fdf4; color: #16a34a; }
+
+/* Sélecteur de rôle financier (assignation par un administrateur finance) — visible
+   uniquement pour les employés de rôle "manager", cf. agency-dashboard.html. */
+.finance-role-item {
+  .finance-role-select {
+    flex: 1;
+  }
+}
+
+.finance-role-select {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 2px solid #ddd6fe;
+  background: #f5f3ff;
+  color: #6d28d9;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover  { background: #ede9fe; border-color: #c4b5fd; }
+  &:focus  { outline: none; border-color: #a78bfa; }
+}
+
+.finance-role-select-table {
+  height: 40px;
+  max-width: 150px;
+}

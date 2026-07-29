@@ -27,6 +27,9 @@ export interface User {
   isActive?: boolean;
   avatar?: string;
   subscribedAgencyId?: string;
+  // Droits financiers (dashboard financier) — séparés du rôle opérationnel `role` ci-dessus.
+  financialRole?: 'comptable' | 'manager_terrain' | 'administrateur' | null;
+  droitsFinance?: boolean;
 }
 
 export interface UserAddress {
@@ -175,6 +178,9 @@ export interface RegisterUserData {
     longitude?: number;
     latitude?: number;
   };
+  // Droits financiers (dashboard financier) — séparés du rôle opérationnel `role` ci-dessus.
+  financialRole?: 'comptable' | 'manager_terrain' | 'administrateur' | null;
+  droitsFinance?: boolean;
 }
 
 // Interface for adding employee to agency

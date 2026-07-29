@@ -36,8 +36,14 @@ import { financeAdminGuard } from './guards/finance-admin.guard';
 // Prompt 17 — provider factory: centralizes the mock↔Http choice per contract behind
 // environment.useMocks. Stays "mock" for the entire MVP (useMocks is never flipped this
 // iteration) — see INTEGRATION.md for the endpoint map behind each Http class.
-function mockOuHttp<T>(mock: Type<T>, http: Type<T>): Type<T> {
-  return environment.useMocks ? mock : http;
+//
+// Prompt F5 (intégration backend) — granularité par domaine : `domaine` regarde d'abord
+// environment.useMocksOverrides[domaine] ; s'il est absent (undefined), on retombe sur le
+// booléen global environment.useMocks (comportement identique à avant pour tout domaine
+// sans override explicite — client/facture, dont le backend n'est pas encore complet).
+function mockOuHttp<T>(domaine: 'client' | 'facture' | 'finance' | 'agent' | 'session', mock: Type<T>, http: Type<T>): Type<T> {
+  const useMocks = environment.useMocksOverrides?.[domaine] ?? environment.useMocks;
+  return useMocks ? mock : http;
 }
 
 export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
@@ -45,11 +51,15 @@ export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
     path: '',
     providers: [
       MockConfigService,
-      { provide: CLIENT_DATA_SERVICE, useClass: mockOuHttp<ClientDataService>(ClientDataMockService, ClientDataHttpService) },
-      { provide: FACTURE_DATA_SERVICE, useClass: mockOuHttp<FactureDataService>(FactureDataMockService, FactureDataHttpService) },
-      { provide: FINANCE_DATA_SERVICE, useClass: mockOuHttp<FinanceDataService>(FinanceDataMockService, FinanceDataHttpService) },
-      { provide: AGENT_DATA_SERVICE, useClass: mockOuHttp<AgentDataService>(AgentDataMockService, AgentDataHttpService) },
-      { provide: SESSION_SERVICE, useClass: mockOuHttp<SessionService>(SessionMockService, SessionHttpService) },
+      // FinanceDataMockService fourni nu en plus de son rôle dans le token ci-dessous :
+      // FinanceDataHttpService le compose pour enregistrerRetrait (Prompt F4/F5, voir
+      // finance-data.http.service.ts) et doit pouvoir l'injecter directement.
+      FinanceDataMockService,
+      { provide: CLIENT_DATA_SERVICE, useClass: mockOuHttp<ClientDataService>('client', ClientDataMockService, ClientDataHttpService) },
+      { provide: FACTURE_DATA_SERVICE, useClass: mockOuHttp<FactureDataService>('facture', FactureDataMockService, FactureDataHttpService) },
+      { provide: FINANCE_DATA_SERVICE, useClass: mockOuHttp<FinanceDataService>('finance', FinanceDataMockService, FinanceDataHttpService) },
+      { provide: AGENT_DATA_SERVICE, useClass: mockOuHttp<AgentDataService>('agent', AgentDataMockService, AgentDataHttpService) },
+      { provide: SESSION_SERVICE, useClass: mockOuHttp<SessionService>('session', SessionMockService, SessionHttpService) },
       // EXPORT_SERVICE has no Http counterpart — exports stay client-side even after
       // integration (INTEGRATION.md §4).
       { provide: EXPORT_SERVICE, useClass: ExportMockService },

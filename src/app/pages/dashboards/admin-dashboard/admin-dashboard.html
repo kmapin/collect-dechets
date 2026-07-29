@@ -1161,6 +1161,18 @@
                                   title="Supprimer">
                             <i class="material-icons">delete</i>
                           </button>
+                          <select
+                            *ngIf="user.data?.role === 'manager'"
+                            class="finance-role-select"
+                            [ngModel]="user.data?.financialRole || ''"
+                            (ngModelChange)="assignFinancialRole(user.data, $event)"
+                            title="Rôle financier"
+                          >
+                            <option value="">Aucun rôle financier</option>
+                            <option value="comptable">Comptable</option>
+                            <option value="manager_terrain">Manager terrain</option>
+                            <option value="administrateur">Administrateur</option>
+                          </select>
                         </div>
                       </td>
                     </tr>
@@ -1286,6 +1298,18 @@
                                   title="Supprimer">
                             <i class="material-icons">delete</i>
                           </button>
+                          <select
+                            *ngIf="user?.data?.role === 'manager'"
+                            class="finance-role-select"
+                            [ngModel]="user?.data?.financialRole || ''"
+                            (ngModelChange)="assignFinancialRole(user.data, $event)"
+                            title="Rôle financier"
+                          >
+                            <option value="">Aucun rôle financier</option>
+                            <option value="comptable">Comptable</option>
+                            <option value="manager_terrain">Manager terrain</option>
+                            <option value="administrateur">Administrateur</option>
+                          </select>
                         </div>
                       </mat-card-content>
                     </mat-card>

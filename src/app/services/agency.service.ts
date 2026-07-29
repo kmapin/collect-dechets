@@ -780,6 +780,23 @@ export class AgencyService {
       })
     );
   }
+  // Assigne (ou retire, financialRole=null) le rôle financier d'un employé — réservé aux
+  // administrateurs finance côté serveur. Couple droitsFinance (voir services/financeUsers.js
+  // backend : rôle assigné => accès accordé, rôle retiré => accès révoqué).
+  // `agencyId` optionnel : override cross-agence utilisé par le dashboard admin (super_admin,
+  // toutes agences confondues) — sans lui, le backend scope sur l'agence de l'APPELANT, pas
+  // celle de la cible (voir resolveAgency.js backend, override réservé aux rôles habilités).
+  setEmployeeFinancialRole$(employeeId: string, financialRole: 'comptable' | 'manager_terrain' | 'administrateur' | null, agencyId?: string): Observable<any> {
+    const url = `${environment.apiUrl}/finance/session/utilisateurs/${employeeId}/financial-role`;
+    let params = new HttpParams();
+    if (agencyId) params = params.set('agencyId', agencyId);
+    return this.http.patch<any>(url, { financialRole }, { params }).pipe(
+      catchError((error) => {
+        console.error("Erreur lors de l'assignation du rôle financier:", error);
+        return throwError(() => error);
+      })
+    );
+  }
   updateEmployee$(id: string, employeeData: any): Observable<Employee> {
     const url = `${environment.apiUrl}/agences/employees/${id}`;
     return this.http.put<Employee>(url, employeeData).pipe(

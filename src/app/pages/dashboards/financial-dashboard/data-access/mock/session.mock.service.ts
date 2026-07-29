@@ -59,4 +59,25 @@ export class SessionMockService implements SessionService {
       if (misAJour) this._currentUser$.next(versSessionUtilisateur(misAJour));
     }
   }
+
+  setFinancialRole(idUtilisateur: string, role: Role | null): void {
+    // Le modèle mock n'a pas de rôle opérationnel séparé : Utilisateur.role EST le rôle
+    // financier ici (contrairement au backend réel où financialRole est distinct de
+    // User.role). Utilisateur.role étant non-nullable dans ce modèle, `role: null` (retrait)
+    // n'a pas d'équivalent démo propre — no-op dans ce cas ; le retrait fonctionne bien côté
+    // Http réel (voir session.http.service.ts). Implémentation requise pour rester conforme
+    // au contrat SessionService (pas encore branchée sur un contrôle UI dans roles-admin —
+    // disponible si besoin).
+    if (!role) return;
+
+    this.utilisateurs = this.utilisateurs.map(u =>
+      u.idUtilisateur === idUtilisateur ? { ...u, role, droitsFinance: true } : u,
+    );
+
+    const actuel = this.getCurrentUser();
+    if (actuel.idUtilisateur === idUtilisateur) {
+      const misAJour = this.utilisateurs.find(u => u.idUtilisateur === idUtilisateur);
+      if (misAJour) this._currentUser$.next(versSessionUtilisateur(misAJour));
+    }
+  }
 }

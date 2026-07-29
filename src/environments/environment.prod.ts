@@ -6,4 +6,10 @@ export const environment = {
 
   // Financial Dashboard (mock-data MVP) — voir ARCHITECTURE.md §3/§9.
   useMocks: true,
+  // Voir environment.ts pour la note complète sur cette bascule fine par domaine (Prompt F5).
+  useMocksOverrides: {
+    finance: false,
+    agent: false,
+    session: false,
+  } as Partial<Record<'client' | 'facture' | 'finance' | 'agent' | 'session', boolean>>,
 };

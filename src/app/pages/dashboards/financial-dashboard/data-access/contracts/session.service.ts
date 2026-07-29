@@ -20,4 +20,10 @@ export abstract class SessionService {
   abstract getUtilisateurs(): Observable<Utilisateur[]>;
   /** Bascule droitsFinance ; répercuté immédiatement sur currentUser$ si c'est l'utilisateur actif. */
   abstract toggleDroitsFinance(idUtilisateur: string): void;
+  /**
+   * Assigne (ou retire, `null`) le rôle financier d'un utilisateur ciblé — F11 admin.
+   * Backend réel : couple aussi droitsFinance (rôle assigné => accès accordé, rôle retiré
+   * => accès révoqué) ; voir EditRecap.md backend, section "Assignation du financialRole".
+   */
+  abstract setFinancialRole(idUtilisateur: string, role: Role | null): void;
 }

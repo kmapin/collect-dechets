@@ -545,6 +545,22 @@
                   <span>{{ employee.hiredAt | date : "dd/MM/yyyy" }}</span>
                 </div>
                 }
+                @if (estAdministrateurFinance && employee.role === 'manager') {
+                <div class="detail-item finance-role-item">
+                  <i class="material-icons">account_balance_wallet</i>
+                  <select
+                    class="finance-role-select"
+                    [ngModel]="employee.financialRole || ''"
+                    (ngModelChange)="assignFinancialRole(employee, $event)"
+                    title="Rôle financier"
+                  >
+                    <option value="">Aucun rôle financier</option>
+                    <option value="comptable">Comptable</option>
+                    <option value="manager_terrain">Manager terrain</option>
+                    <option value="administrateur">Administrateur</option>
+                  </select>
+                </div>
+                }
               </div>
               <div class="employee-actions">
                 <button
@@ -632,6 +648,19 @@
                         (click)="toggleEmployeeStatus(employee)"
                         title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }}"
                       ><i class="material-icons">{{ employee.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i></button>
+                      @if (estAdministrateurFinance && employee.role === 'manager') {
+                      <select
+                        class="finance-role-select finance-role-select-table"
+                        [ngModel]="employee.financialRole || ''"
+                        (ngModelChange)="assignFinancialRole(employee, $event)"
+                        title="Rôle financier"
+                      >
+                        <option value="">Aucun rôle financier</option>
+                        <option value="comptable">Comptable</option>
+                        <option value="manager_terrain">Manager terrain</option>
+                        <option value="administrateur">Administrateur</option>
+                      </select>
+                      }
                     </div>
                   </td>
                 </tr>

@@ -3223,6 +3223,42 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return roleTexts[role as keyof typeof roleTexts] || role;
   }
 
+  // Droits financiers (dashboard financier) — distinct du rôle opérationnel ci-dessus.
+  get estAdministrateurFinance(): boolean {
+    return this.currentUser?.financialRole === 'administrateur';
+  }
+
+  getFinancialRoleText(financialRole: string | null | undefined): string {
+    const labels = {
+      comptable: 'Comptable',
+      manager_terrain: 'Manager terrain',
+      administrateur: 'Administrateur',
+    };
+    return financialRole ? (labels[financialRole as keyof typeof labels] || financialRole) : 'Aucun';
+  }
+
+  // Assigne/retire le rôle financier d'un employé (select "Aucun" => financialRole=null,
+  // ce qui révoque aussi droitsFinance côté backend). Réservé aux administrateurs finance
+  // (estAdministrateurFinance ci-dessus), contrôle rejoué côté serveur de toute façon.
+  assignFinancialRole(employee: any, value: string): void {
+    const financialRole = value || null;
+    this.agencyService.setEmployeeFinancialRole$(employee._id, financialRole as any).subscribe({
+      next: () => {
+        employee.financialRole = financialRole;
+        this.notificationService.showSuccess(
+          'Succès',
+          financialRole
+            ? `Rôle financier "${this.getFinancialRoleText(financialRole)}" assigné à ${employee.firstName} ${employee.lastName}.`
+            : `Rôle financier retiré à ${employee.firstName} ${employee.lastName}.`,
+        );
+      },
+      error: (error) => {
+        console.error("Erreur lors de l'assignation du rôle financier :", error);
+        this.notificationService.showError('Erreur', "Impossible d'assigner le rôle financier.");
+      },
+    });
+  }
+
   getZoneName(schedule: any): string {
     if (!schedule) return 'Zone inconnue';
     return schedule.zone || schedule.quartier || schedule.secteur || schedule.ville

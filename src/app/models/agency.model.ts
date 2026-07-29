@@ -181,6 +181,9 @@ export interface Employees {
   hiredAt: Date;
   avatar?: string;
   status?: string;
+  // Droits financiers (dashboard financier) — séparés du rôle opérationnel ci-dessus.
+  financialRole?: 'comptable' | 'manager_terrain' | 'administrateur' | null;
+  droitsFinance?: boolean;
 }
 export interface Tarif {
   _id?: string;

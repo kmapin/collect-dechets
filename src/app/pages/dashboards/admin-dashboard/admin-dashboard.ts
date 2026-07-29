@@ -1608,6 +1608,41 @@ export class AdminDashboard implements OnInit, OnDestroy {
     };
     return roleTexts[userRole as keyof typeof roleTexts] || userRole;
   }
+
+  // Droits financiers (dashboard financier) — distinct du rôle opérationnel ci-dessus.
+  // Écran plateforme entière (adminGuard) : contrairement à agency-dashboard, l'agence
+  // ciblée n'est pas celle de l'appelant, donc l'agencyId de CHAQUE utilisateur (peuplé par
+  // le backend, GET /users) est transmis en override à chaque appel — voir
+  // agency.service.ts::setEmployeeFinancialRole$ et le backend (resolveAgency + _isAdministrateur
+  // acceptant role==='super_admin' en plus de financialRole==='administrateur').
+  getFinancialRoleText(financialRole: string | null | undefined): string {
+    const labels = {
+      comptable: 'Comptable',
+      manager_terrain: 'Manager terrain',
+      administrateur: 'Administrateur',
+    };
+    return financialRole ? (labels[financialRole as keyof typeof labels] || financialRole) : 'Aucun';
+  }
+
+  assignFinancialRole(user: any, value: string): void {
+    const financialRole = value || null;
+    const cibleAgencyId = user?.agencyId?._id || user?.agencyId;
+    this.agencyService.setEmployeeFinancialRole$(user._id, financialRole as any, cibleAgencyId).subscribe({
+      next: () => {
+        user.financialRole = financialRole;
+        this.notificationService.showSuccess(
+          'Succès',
+          financialRole
+            ? `Rôle financier "${this.getFinancialRoleText(financialRole)}" assigné à ${user.firstName} ${user.lastName}.`
+            : `Rôle financier retiré à ${user.firstName} ${user.lastName}.`,
+        );
+      },
+      error: (error) => {
+        console.error("Erreur lors de l'assignation du rôle financier :", error);
+        this.notificationService.showError('Erreur', "Impossible d'assigner le rôle financier.");
+      },
+    });
+  }
   getComplianceText(): string {
     if (this.statistics.complianceRate >= 95) return "Excellent";
     if (this.statistics.complianceRate >= 85) return "Bon";
