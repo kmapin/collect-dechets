@@ -31,7 +31,7 @@ export interface RepartitionModePaiement {
 }
 
 // Ligne d'historique F3 : le paiement enrichi du nom client affichable — évite que
-// l'écran payments-history refasse lui-même la jointure client (déjà faite côté mock,
+// l'écran Paiements refasse lui-même la jointure client (déjà faite côté backend,
 // comme pour SuiviAbonneMensuel/LigneReleve — voir facture-data.service.ts).
 export interface PaiementListe extends Paiement {
   clientNom: string;

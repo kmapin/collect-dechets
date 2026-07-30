@@ -110,7 +110,7 @@ export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
         loadComponent: () => import('./features/roles-admin/roles-admin.component').then(m => m.RolesAdminComponent),
         title: 'Rôles & droits',
       },
-      { path: '**', redirectTo: 'dashboard' },
+      { path: '**', redirectTo: 'statistiques' },
     ],
   },
 ];

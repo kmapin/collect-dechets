@@ -7,8 +7,8 @@ import { Agent, Page, PageParams, PaiementAgent } from '../../models';
 import { AgentDataService, PaiementAgentFilter } from '../contracts/agent-data.service';
 import { mapAgentDto, mapPaiementAgentDto } from './mappers/agent.mapper';
 
-// Squelette inerte (Prompt 17) — voir client-data.http.service.ts pour la note complète
-// sur le branchement DI et INTEGRATION.md pour la liste des endpoints.
+// Implémentation réelle, câblée en dur sur AGENT_DATA_SERVICE dans
+// financial-dashboard.routes.ts — voir INTEGRATION.md pour la liste des endpoints.
 @Injectable()
 export class AgentDataHttpService implements AgentDataService {
   private readonly http = inject(HttpClient);

@@ -1,12 +1,11 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 export type PeriodSelectorMode = 'court' | 'long';
 
 @Component({
   selector: 'app-period-selector',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './period-selector.component.html',
   styleUrl: './period-selector.component.scss',
 })

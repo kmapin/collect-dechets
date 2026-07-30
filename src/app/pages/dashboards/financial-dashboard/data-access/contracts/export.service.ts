@@ -1,5 +1,5 @@
 // Export client-side uniquement (F2, F10, F12) — aucun appel serveur.
-// Implémentation concrète (ExportClientService, data-access/export/) : Prompt 8.
+// Implémentation concrète : ExportClientService (data-access/export/).
 export interface ExportColumn<T> {
   key: keyof T;
   label: string;

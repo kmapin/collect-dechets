@@ -20,8 +20,6 @@ export class FinanceLayout {
   private readonly session = inject(SESSION_SERVICE);
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
 
-  readonly utilisateur = this.currentUser;
-
   readonly navItems = computed(() => {
     const role = this.currentUser().role;
     return FINANCE_NAV_ITEMS.filter(item => !item.rolesAutorises || item.rolesAutorises.includes(role));

@@ -1,7 +1,6 @@
 import { Periode } from '../models';
 
-// Basé sur l'horloge réelle (pas sur les constantes du dataset mock — voir
-// ARCHITECTURE.md §3 : les composants ne doivent pas dépendre de data-access/mock).
+// Basé sur l'horloge réelle (ARCHITECTURE.md §3) — jamais une valeur figée en dur.
 export function periodeCourante(): Periode {
   const maintenant = new Date();
   return { mois: maintenant.getMonth() + 1, annee: maintenant.getFullYear() };

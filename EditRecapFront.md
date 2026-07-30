@@ -640,3 +640,51 @@ Le panneau s'affiche désormais (fix précédent réussi), mais : (1) les champs
 
 ## Vérifications effectuées
 - `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+
+---
+
+# Audit et nettoyage complet du dashboard financier (commentaires, code mort, imports/services/routes inutilisés)
+
+## Méthode
+3 agents d'exploration en parallèle (lecture seule) ont couvert : `data-access/` + `models/`, `features/` (10 zones), `shared/` + `guards/` + `utils/` + `financial-dashboard.routes.ts`. Chaque finding a été re-vérifié moi-même par grep direct avant toute suppression (aucune édition sur simple déclaration d'agent).
+
+## Bug réel corrigé
+- **`financial-dashboard.routes.ts:113`** : `{ path: '**', redirectTo: 'dashboard' }` redirigeait vers une route inexistante (le vrai chemin est `statistiques`) — toute URL non reconnue sous `/dashboard/financial/*` échouait au lieu de retomber sur le tableau de bord. Corrigé en `redirectTo: 'statistiques'`.
+
+## Code mort supprimé
+| Élément | Preuve |
+|---|---|
+| `features/shell/finance-route-placeholder.ts` (fichier entier) | Composant orphelin : plus aucune route ne l'utilise (les 9 routes ont toutes leur vrai `loadComponent()` depuis longtemps) ; commentaire prétendait à tort un usage "temporaire" encore actuel |
+| `shared/states/skeleton.component.ts` (+.html/.scss) | `SkeletonComponent`/`app-skeleton` : zéro référence en dehors de sa propre définition dans tout le module |
+| `features/shell/finance-layout.ts:23` — `readonly utilisateur = this.currentUser;` | Alias jamais lu (ni template, ni classe) |
+| `models/enums.ts` — enum `PaiementStatut` | Zéro usage dans tout `src/app`, déjà marqué "réservé aux évolutions futures" dans son propre commentaire |
+| `models/abonnement.model.ts` (fichier entier) — interface `Abonnement` | Zéro import dans tout `src/app` (vérifié par grep global, hors correspondances de chaînes françaises sans rapport) ; retiré aussi de `models/index.ts` |
+
+## Imports inutilisés retirés (`CommonModule` sans directive/pipe consommé)
+`shared/filters/search-filter.component.ts`, `shared/month-selector/month-selector.component.ts`, `shared/period-selector/period-selector.component.ts`, `shared/states/empty-state.component.ts`, `shared/states/error-state.component.ts`, `shared/status-badge/status-badge.component.ts`, `features/shell/finance-access-denied.ts` — chacun vérifié : aucun `*ngIf`/`*ngFor`/`*ngClass`/pipe dans son template, `FormsModule` conservé séparément pour `search-filter` (nécessaire pour `[ngModel]`).
+
+## Commentaires périmés/trompeurs corrigés
+| Fichier | Avant | Après |
+|---|---|---|
+| `data-access/contracts/agent-data.service.ts:8-9` | "prototype UI uniquement ; payerAgent() n'écrit qu'en mémoire mock" | Décrit le vrai débit de wallet réel + rollback |
+| `data-access/http/agent-data.http.service.ts:10` | "Squelette inerte (Prompt 17)" | Décrit l'implémentation réelle câblée en dur |
+| `data-access/contracts/client-data.service.ts:9-11` | Référençait `ClientDataMockService` (supprimée) et `ClientDataHttpService` comme "futur" | Référence nettoyée |
+| `data-access/contracts/export.service.ts:1-2` | "Prompt 8" (framing futur) | Reformulé au présent |
+| `data-access/http/finance-data.http.service.ts:18-22` | Narratif historique sur la suppression du mock | Condensé, décrit juste le contrat réel du payload |
+| `data-access/contracts/finance-data.service.ts:33-35` | "jointure client (déjà faite côté mock)", écran "payments-history" (nom inexact) | "côté backend", écran "Paiements" |
+| `utils/periode.util.ts:3-4` | Référençait `data-access/mock` (dossier supprimé) | Reformulé sans référence à un dossier disparu |
+
+## Code confirmé réel mais non consommé par l'UI — signalé, PAS supprimé (décision volontaire)
+Trois méthodes de contrat sont pleinement câblées sur de vrais endpoints backend déjà construits sur demande explicite dans des tours précédents, mais aucun écran ne les appelle encore :
+- `FactureDataService.getFactures()` — `GET /finance/factures` (liste paginée toutes factures)
+- `FactureDataService.genererFacturesDuMois()` — `POST /finance/factures/generer`
+- `SessionService.setFinancialRole()` — `PATCH /finance/session/utilisateurs/:id/financial-role` (l'écran `roles-admin` n'utilise que `toggleDroitsFinance`, l'assignation de rôle se fait ailleurs dans l'app via `agency.service.ts`, un chemin différent)
+
+**Ce ne sont pas des mocks ni du code mort au sens propre** : ce sont de vrais endpoints déjà implémentés et testés, sans écran dédié pour l'instant. Les supprimer aurait défait du travail backend explicitement demandé. Signalés ici pour décision produit (construire l'écran manquant, ou déprécier consciemment), pas supprimés unilatéralement.
+
+## Mentions "mock" restantes (vérifiées légitimes, laissées telles quelles)
+`session.service.ts`, `export-client.service.ts`, `financial-dashboard.routes.ts:27-41`, `guards/finance-access.guard.ts`, `shared/chart/finance-chart.component.html:10` — toutes au passé, expliquant une décision de design ou un bug déjà résolu, aucune ne prétend qu'un mock est encore actif.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0` après l'ensemble des changements.
+- Chaque suppression (composant, propriété, enum, interface, import) re-vérifiée par grep direct avant édition, pas seulement sur la base du rapport d'agent.

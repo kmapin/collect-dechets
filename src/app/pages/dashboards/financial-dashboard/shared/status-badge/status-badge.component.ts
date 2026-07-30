@@ -1,5 +1,4 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 export type StatusBadgeVariant = 'success' | 'neutral' | 'warning' | 'danger';
 
@@ -9,7 +8,7 @@ export type StatusBadgeVariant = 'success' | 'neutral' | 'warning' | 'danger';
 @Component({
   selector: 'app-status-badge',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './status-badge.component.html',
   styleUrl: './status-badge.component.scss',
 })

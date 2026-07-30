@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 // Panneau d'erreur standard avec retry — remplace les blocs `.fin-error` dupliqués dans
 // chaque écran (dashboard, payments, withdrawals, clients, client-sheet, monthly-tracking,
@@ -7,7 +6,7 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-error-state',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './error-state.component.html',
   styleUrl: './error-state.component.scss',
 })

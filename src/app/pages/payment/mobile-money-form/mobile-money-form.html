@@ -22,8 +22,16 @@
                 [class.selected]="operator?.value === op.value"
                 (click)="operator?.setValue(op.value)"
               >
-                <div class="operator-icon" [style.background-color]="op.color">
-                  {{ op.icon }}
+                <div
+                  class="operator-icon"
+                  [class.operator-icon--logo]="op.image"
+                  [style.background-color]="op.image ? '#fff' : op.color"
+                >
+                  @if (op.image) {
+                    <img [src]="op.image" [alt]="op.label" class="operator-logo">
+                  } @else {
+                    {{ op.icon }}
+                  }
                 </div>
                 <div class="operator-name">{{ op.label }}</div>
               </div>
@@ -45,7 +53,7 @@
                 {{ getErrorMessage('phoneNumber') }}
               </mat-error>
             }
-            <mat-hint>Format: 226XXXXXXXX</mat-hint>
+            <mat-hint>Format: XXXXXXXX</mat-hint>
           </mat-form-field>
           <!-- Montant -->
           <mat-form-field appearance="outline">

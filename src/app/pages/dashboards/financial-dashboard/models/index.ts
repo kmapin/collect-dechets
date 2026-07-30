@@ -2,7 +2,6 @@ export * from './enums';
 export * from './periode.model';
 export * from './page.model';
 export * from './client.model';
-export * from './abonnement.model';
 export * from './facture.model';
 export * from './paiement.model';
 export * from './retrait.model';

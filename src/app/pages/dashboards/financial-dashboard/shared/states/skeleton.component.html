@@ -1,8 +1,0 @@
-<ng-container *ngIf="variant === 'table-rows'; else bloc">
-  <div class="skeleton skeleton--row" *ngFor="let r of rowIndexes" aria-hidden="true">
-    <span class="skeleton__cell" *ngFor="let c of columnIndexes"></span>
-  </div>
-</ng-container>
-<ng-template #bloc>
-  <div class="skeleton skeleton--block" aria-hidden="true"></div>
-</ng-template>

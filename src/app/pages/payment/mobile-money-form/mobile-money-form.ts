@@ -23,7 +23,8 @@ interface OperatorInfo {
   value: MobileMoneyOperator;
   label: string;
   color: string;
-  icon: string;
+  icon?: string;
+  image?: string;
 }
 
 @Component({
@@ -74,21 +75,21 @@ export class MobileMoneyFormComponent implements OnInit {
       value: MobileMoneyOperator.ORANGE_MONEY,
       label: 'Orange Money',
       color: '#FF7900',
-      icon: '🟠'
+      image: 'assets/logoMobileMoney/Orange_Money-Logo.png'
     },
     {
       id:2,
       value: MobileMoneyOperator.MOOV_MONEY,
       label: 'Moov Money',
       color: '#009DDC',
-      icon: '🔵'
+      image: 'assets/logoMobileMoney/logo_moov_money.webp'
     },
     {
       id:3,
       value: MobileMoneyOperator.TELECEL_MONEY,
       label: 'Telecel Money',
       color: '#00D9A5',
-      icon: '🌊'
+      image: 'assets/logoMobileMoney/telecel1024X500.jpg'
     }
   ];
 

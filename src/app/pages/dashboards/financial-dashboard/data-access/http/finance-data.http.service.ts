@@ -15,11 +15,9 @@ import {
 } from '../contracts/finance-data.service';
 import { mapDashboardKpiDto, mapPaiementListeDto, mapRepartitionModePaiementDto, mapRetraitDto } from './mappers/finance.mapper';
 
-// Suppression du mock (module Finance entièrement backé) — voir EditRecapFront.md.
-// enregistrerRetrait appelait auparavant FinanceDataMockService (composition) car le
-// backend réel exige { montant, customerMsisdn, operator }, un body plus large que le
-// contrat d'origine ({ montant, motif }) ; le contrat a été étendu en conséquence
-// (aucun composant n'appelait encore cette méthode, donc extension sans risque).
+// Implémentation réelle, câblée en dur sur FINANCE_DATA_SERVICE dans
+// financial-dashboard.routes.ts. enregistrerRetrait attend { montant, customerMsisdn,
+// operator, motif? } — le body exact exigé par le backend (controllers/financeStats.js).
 @Injectable()
 export class FinanceDataHttpService implements FinanceDataService {
   private readonly http = inject(HttpClient);

@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 // Cible de redirection de finance-access.guard.ts — jamais elle-même gardée, pour éviter
@@ -7,7 +6,7 @@ import { RouterLink } from '@angular/router';
 @Component({
   selector: 'app-finance-access-denied',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [RouterLink],
   template: `
     <div class="fin-access-denied">
       <i class="material-icons" aria-hidden="true">lock</i>

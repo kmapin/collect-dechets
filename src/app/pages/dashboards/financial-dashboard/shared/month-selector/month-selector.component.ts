@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Periode } from '../../models';
 import { decalerPeriode, labelPeriodeFr } from '../../utils/periode.util';
 
@@ -8,7 +7,7 @@ import { decalerPeriode, labelPeriodeFr } from '../../utils/periode.util';
 @Component({
   selector: 'app-month-selector',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './month-selector.component.html',
   styleUrl: './month-selector.component.scss',
 })
