@@ -1,0 +1,14 @@
+<div class="mini-chart-host">
+  @if (loading) {
+    <div class="mini-chart-state">
+      <i class="material-icons spin">autorenew</i>
+      <p>Chargement…</p>
+    </div>
+  } @else if (empty) {
+    <div class="mini-chart-state">
+      <i class="material-icons">{{ emptyIcon }}</i>
+      <p>{{ emptyMessage }}</p>
+    </div>
+  }
+  <canvas #canvasRef [class.hidden]="loading || empty"></canvas>
+</div>

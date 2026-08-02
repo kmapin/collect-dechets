@@ -1,0 +1,14 @@
+<div class="coverage-map-host">
+  @if (isEmpty) {
+    <div class="coverage-map-state">
+      <i class="material-icons">map</i>
+      <p>Aucune donnée de zone disponible.</p>
+    </div>
+  } @else if (loading) {
+    <div class="coverage-map-state">
+      <i class="material-icons spin">autorenew</i>
+      <p>Chargement de la carte…</p>
+    </div>
+  }
+  <div #mapEl class="coverage-map-canvas" [class.hidden]="isEmpty || loading"></div>
+</div>

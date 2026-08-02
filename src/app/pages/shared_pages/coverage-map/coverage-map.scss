@@ -1,0 +1,100 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.coverage-map-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.coverage-map-canvas {
+  width: 100%;
+  height: 100%;
+
+  &.hidden {
+    visibility: hidden;
+  }
+}
+
+.coverage-map-state {
+  position: absolute;
+  inset: 0;
+  z-index: 500; // above Leaflet's own panes
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--text-secondary);
+  background: var(--light-gray);
+  padding: 0 16px;
+
+  i {
+    font-size: 40px;
+  }
+
+  p {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+.spin {
+  animation: coverage-map-spin 1.2s linear infinite;
+}
+
+@keyframes coverage-map-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}
+
+// Leaflet renders marker popups/tooltips as raw HTML appended outside this
+// component's own template — Angular's emulated view encapsulation never
+// scopes them, so ::ng-deep is required here (same convention already used
+// for popups in admin-dashboard.scss).
+::ng-deep .coverage-map-popup {
+  font-family: inherit;
+  min-width: 180px;
+}
+
+::ng-deep .coverage-map-popup__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding-left: 8px;
+  margin-bottom: 6px;
+}
+
+::ng-deep .coverage-map-popup__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #333;
+  margin: 3px 0;
+
+  i {
+    font-size: 16px;
+    color: #757575;
+  }
+}
+
+::ng-deep .coverage-map-popup__coverage {
+  font-weight: 700;
+  margin-top: 6px;
+}

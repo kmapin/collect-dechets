@@ -1,0 +1,61 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mini-chart-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+
+  &.hidden {
+    visibility: hidden;
+  }
+}
+
+.mini-chart-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 0 16px;
+
+  i {
+    font-size: 40px;
+  }
+
+  p {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+.spin {
+  animation: mini-chart-spin 1.2s linear infinite;
+}
+
+@keyframes mini-chart-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}

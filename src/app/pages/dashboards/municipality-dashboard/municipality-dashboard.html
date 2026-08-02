@@ -10,16 +10,19 @@
           </p>
         </div>
         <div class="quick-actions">
-          <!-- <button
-          class="btn btn-primary"
-          (click)="showCommunicationModal = true"
+        <app-notification-bell
+          [notifications]="notifications"
+          (markAsRead)="onNotificationMarkAsRead($event)"
+          (markAllAsRead)="onAllNotificationsMarkAsRead()"
+        ></app-notification-bell>
+        <button
+          class="btn btn-secondary"
+          [disabled]="isGeneratingReport"
+          [attr.aria-busy]="isGeneratingReport"
+          (click)="generateGlobalReport()"
           >
-          <i class="material-icons">campaign</i>
-          Nouvelle Communication
-        </button> -->
-        <button class="btn btn-secondary" (click)="generateGlobalReport()">
-          <i class="material-icons">assessment</i>
-          Rapport Global
+          <i class="material-icons" [class.spin]="isGeneratingReport">{{ isGeneratingReport ? 'autorenew' : 'assessment' }}</i>
+          {{ isGeneratingReport ? 'Génération…' : 'Rapport Global' }}
         </button>
       </div>
     </div>
@@ -190,33 +193,46 @@
                 </div>
               </div>
               <div class="metric-item">
-                <div class="metric-label">Satisfaction client</div>
-                <div class="metric-value">
-                  {{ statistics.averageRating }}/5
+                <div class="metric-label">
+                  Satisfaction client
+                  @if (isPerformanceOverviewMocked) {
+                    <span class="demo-data-badge" title="Données de démonstration en attendant l'API dédiée">Démo</span>
+                  }
                 </div>
-                <div class="rating-stars">
-                  @for (
-                    star of getStars(statistics.averageRating)
-                    ; track
-                    star) {
-                    <i
-                      class="material-icons star"
-                      >star</i
-                      >
-                    }
+                @if (isLoadingPerformanceOverview) {
+                  <div class="metric-value metric-value--loading">…</div>
+                } @else {
+                  <div class="metric-value">
+                    {{ performanceOverview?.averageSatisfaction }}/5
                   </div>
+                  <div class="rating-stars">
+                    @for (
+                      star of getStars(performanceOverview?.averageSatisfaction ?? 0)
+                      ; track
+                      star) {
+                      <i
+                        class="material-icons star"
+                        >star</i
+                        >
+                      }
+                    </div>
+                  }
                 </div>
                 <div class="metric-item">
                   <div class="metric-label">Conformité réglementaire</div>
-                  <div class="metric-value">
-                    {{ statistics.complianceRate }}%
-                  </div>
-                  <div class="metric-bar">
-                    <div
-                      class="metric-fill compliance"
-                      [style.width]="statistics.complianceRate + '%'"
-                    ></div>
-                  </div>
+                  @if (isLoadingPerformanceOverview) {
+                    <div class="metric-value metric-value--loading">…</div>
+                  } @else {
+                    <div class="metric-value">
+                      {{ performanceOverview?.complianceRate }}%
+                    </div>
+                    <div class="metric-bar">
+                      <div
+                        class="metric-fill compliance"
+                        [style.width]="(performanceOverview?.complianceRate ?? 0) + '%'"
+                      ></div>
+                    </div>
+                  }
                 </div>
               </div>
             </div>
@@ -248,51 +264,81 @@
               </div>
             </div>
             <div class="overview-section card">
-              <h3>
-                <i class="material-icons">map</i>
-                Couverture Territoriale
-              </h3>
-              <div class="territory-stats scrollable-container">
-                <!-- Boucle sur les pays -->
-                @for (zone of zoneStatistics; track zone) {
-                  <div class="country-block">
-                    <h2 class="country-title">{{ zone.country }}</h2>
-                    <!-- Boucle sur les villes du pays -->
-                    @for (city of zone.cities; track city) {
-                      <div class="zone-item">
-                        <div class="zone-header">
-                          <h4>{{ city.name }}</h4>
-                          <!-- <span
-                          class="coverage-badge"
-                          [class]="getCoverageBadgeClass(city.coverage)"
-                          >
-                          {{ city.coverage }}% couvert
-                        </span> -->
-                      </div>
-                      <div class="zone-metrics">
-                        <div class="zone-metric">
-                          <i class="material-icons">business</i>
-                          <span>{{ city.agencies }} agences</span>
-                        </div>
-                        <div class="zone-metric">
-                          <i class="material-icons">people</i>
-                          <span>{{ city.clients }} clients</span>
-                        </div>
-                        <!-- <div class="zone-metric">
-                        <i class="material-icons">local_shipping</i>
-                        <span>{{ city.collections }} collectes</span>
-                      </div>
-                      <div class="zone-metric" *ngIf="city.incidents > 0">
-                        <i class="material-icons">warning</i>
-                        <span>{{ city.incidents }} incidents</span>
-                      </div> -->
-                    </div>
-                  </div>
-                }
+              <div class="section-header">
+                <h3>
+                  <i class="material-icons">map</i>
+                  Couverture Territoriale
+                </h3>
+                <div class="performance-groupby" role="group" aria-label="Mode d'affichage de la couverture territoriale">
+                  <button
+                    type="button"
+                    class="segmented-btn"
+                    [class.active]="coverageView === 'table'"
+                    [attr.aria-pressed]="coverageView === 'table'"
+                    (click)="coverageView = 'table'"
+                    title="Vue tableau"
+                    >
+                    <i class="material-icons">table_rows</i>
+                  </button>
+                  <button
+                    type="button"
+                    class="segmented-btn"
+                    [class.active]="coverageView === 'map'"
+                    [attr.aria-pressed]="coverageView === 'map'"
+                    (click)="coverageView = 'map'"
+                    title="Vue carte"
+                    >
+                    <i class="material-icons">map</i>
+                  </button>
+                </div>
               </div>
-            }
-          </div>
-        </div>
+
+              @if (coverageView === 'table') {
+                <div class="territory-stats scrollable-container">
+                  <!-- Boucle sur les pays -->
+                  @for (zone of zoneStatistics; track zone) {
+                    <div class="country-block">
+                      <h2 class="country-title">{{ zone.country }}</h2>
+                      <!-- Boucle sur les villes du pays -->
+                      @for (city of zone.cities; track city) {
+                        <div class="zone-item">
+                          <div class="zone-header">
+                            <h4>{{ city.name }}</h4>
+                            <span class="coverage-badge" [class]="getCoverageBadgeClass(city.coverage)">
+                              {{ city.coverage }}% couvert
+                            </span>
+                          </div>
+                          <div class="zone-metrics">
+                            <div class="zone-metric">
+                              <i class="material-icons">business</i>
+                              <span>{{ city.agencies }} agences</span>
+                            </div>
+                            <div class="zone-metric">
+                              <i class="material-icons">people</i>
+                              <span>{{ city.clients }} clients</span>
+                            </div>
+                            <div class="zone-metric">
+                              <i class="material-icons">local_shipping</i>
+                              <span>{{ city.collections }} collectes</span>
+                            </div>
+                            @if (city.incidents > 0) {
+                              <div class="zone-metric">
+                                <i class="material-icons">warning</i>
+                                <span>{{ city.incidents }} incidents</span>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="territory-map-container">
+                  <app-coverage-map [zones]="coverageMapZones"></app-coverage-map>
+                </div>
+              }
+            </div>
         <div class="overview-section card">
           <h3>
             <i class="material-icons">notifications</i>
@@ -399,16 +445,21 @@
                     {{ getAgencyStatusText(agency.status) }}
                   </span>
                 </div>
-                <!-- <div class="agency-compliance">
-                <div
-                  class="compliance-score"
-                  [class]="getComplianceClass(agency.complianceScore)"
-                  >
-                  {{ agency.complianceScore }}%
+                <div class="agency-compliance">
+                  <div
+                    class="compliance-score"
+                    [class]="getComplianceClass(agency.complianceScore)"
+                    >
+                    {{ agency.complianceScore }}%
+                  </div>
+                  <div class="compliance-label">
+                    Conformité
+                    @if (isAgencyPerformanceMocked) {
+                      <span class="demo-data-badge" title="Données de démonstration en attendant l'API dédiée">Démo</span>
+                    }
+                  </div>
                 </div>
-                <div class="compliance-label">Conformité</div>
-              </div> -->
-            </div>
+              </div>
             <div class="agency-metrics">
               <div class="metric-row">
                 <div class="metric">
@@ -424,6 +475,11 @@
                   <span>{{ agency.zones }} {{agency.zones > 1 ? 'zones' : 'zone'}}</span>
                 </div>
               </div>
+              @if (isAgencyPerformanceMocked) {
+                <div class="metric-row-demo-label">
+                  <span class="demo-data-badge" title="Données de démonstration en attendant l'API dédiée">Démo</span>
+                </div>
+              }
               <div class="metric-row">
                 <div class="metric">
                   <i class="material-icons">local_shipping</i>
@@ -481,7 +537,7 @@
                 }}</span
                 >
                 <span class="revenue"
-                  >{{ agency.revenue | number : "1.0-0" }}€/mois</span
+                  >{{ agency.revenue | number : "1.0-0" }} FCFA/mois</span
                   >
                 </div>
               </div>
@@ -496,9 +552,11 @@
           <div class="statistics-header">
             <h2>Statistiques Consolidées</h2>
             <div class="statistics-filters">
+              <label for="statistics-period" class="sr-only">Période</label>
               <select
-                [(ngModel)]="statisticsPeriod"
-                (change)="updateStatistics()"
+                id="statistics-period"
+                [ngModel]="statisticsPeriod()"
+                (ngModelChange)="onStatisticsPeriodChange($event)"
                 class="filter-select"
                 >
                 <option value="today">Aujourd'hui</option>
@@ -507,40 +565,357 @@
                 <option value="quarter">Ce trimestre</option>
                 <option value="year">Cette année</option>
               </select>
-              <button class="btn btn-secondary" (click)="exportStatistics()">
-                <i class="material-icons">download</i>
-                Exporter
+              <label for="statistics-export-format" class="sr-only">Format d'export</label>
+              <select
+                id="statistics-export-format"
+                [(ngModel)]="statisticsExportFormat"
+                class="filter-select"
+                >
+                <option value="csv">CSV</option>
+                <option value="excel">Excel (.xlsx)</option>
+                <option value="pdf">PDF</option>
+              </select>
+              <button
+                class="btn btn-secondary"
+                [disabled]="isExportingStatistics || !hasStatisticsExportData()"
+                [attr.aria-busy]="isExportingStatistics"
+                [title]="!hasStatisticsExportData() ? 'Aucune donnée à exporter pour le moment.' : ''"
+                (click)="exportStatistics()"
+                >
+                <i class="material-icons" [class.spin]="isExportingStatistics">{{ isExportingStatistics ? 'autorenew' : 'download' }}</i>
+                {{ isExportingStatistics ? 'Export…' : 'Exporter' }}
               </button>
             </div>
           </div>
-          <div class="statistics-content">
+          @if (!hasStatisticsExportData()) {
+            <p class="statistics-export-empty">Aucune donnée à exporter pour le moment.</p>
+          }
+          <div class="statistics-content" [class.statistics-content--refreshing]="isRefreshingStatistics">
+            @if (isRefreshingStatistics) {
+              <div class="statistics-refresh-banner">
+                <i class="material-icons spin">autorenew</i>
+                <span>Actualisation des statistiques pour la période sélectionnée…</span>
+              </div>
+            }
+            <div class="performance-indicators-panel card">
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">insights</i>
+                  Graphiques de performance
+                </h2>
+              </div>
+
+              <div class="performance-toolbar">
+                <div class="performance-groupby" role="group" aria-label="Regrouper les indicateurs par">
+                  <button
+                    type="button"
+                    class="segmented-btn"
+                    [class.active]="performanceGroupBy === 'zone'"
+                    [attr.aria-pressed]="performanceGroupBy === 'zone'"
+                    (click)="setPerformanceGroupBy('zone')"
+                    >
+                    Zone
+                  </button>
+                  <button
+                    type="button"
+                    class="segmented-btn"
+                    [class.active]="performanceGroupBy === 'wasteType'"
+                    [attr.aria-pressed]="performanceGroupBy === 'wasteType'"
+                    (click)="setPerformanceGroupBy('wasteType')"
+                    >
+                    Type de déchet
+                  </button>
+                  <button
+                    type="button"
+                    class="segmented-btn"
+                    [class.active]="performanceGroupBy === 'collector'"
+                    [attr.aria-pressed]="performanceGroupBy === 'collector'"
+                    (click)="setPerformanceGroupBy('collector')"
+                    >
+                    Collecteur
+                  </button>
+                </div>
+
+                <div class="performance-filters">
+                  <label for="perf-zone">Zone</label>
+                  <select
+                    id="perf-zone"
+                    class="filter-select"
+                    [(ngModel)]="performanceZoneFilter"
+                    (change)="applyPerformanceFilters()"
+                    >
+                    <option value="all">Toutes les zones</option>
+                    @for (zone of performanceZoneOptions; track zone) {
+                      <option [value]="zone">{{ zone }}</option>
+                    }
+                  </select>
+
+                  <label for="perf-waste-type">Type de déchet</label>
+                  <select
+                    id="perf-waste-type"
+                    class="filter-select"
+                    [(ngModel)]="performanceWasteTypeFilter"
+                    (change)="applyPerformanceFilters()"
+                    >
+                    <option value="all">Tous les types</option>
+                    @for (type of performanceWasteTypeOptions; track type) {
+                      <option [value]="type">{{ type }}</option>
+                    }
+                  </select>
+
+                  <label for="perf-collector">Collecteur</label>
+                  <select
+                    id="perf-collector"
+                    class="filter-select"
+                    [(ngModel)]="performanceCollectorFilter"
+                    (change)="applyPerformanceFilters()"
+                    >
+                    <option value="all">Tous les collecteurs</option>
+                    @for (collector of performanceCollectorOptions; track collector.id) {
+                      <option [value]="collector.id">{{ collector.name }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <div class="chart-container performance-chart-container">
+                <app-mini-chart
+                  [config]="performanceChartConfig"
+                  [loading]="isLoadingPerformanceIndicators"
+                  [empty]="!hasPerformanceIndicatorsData()"
+                  emptyIcon="bar_chart"
+                  emptyMessage="Aucune donnée ne correspond à ces filtres."
+                ></app-mini-chart>
+              </div>
+
+              @if (!isLoadingPerformanceIndicators && underperformingIndicators.length > 0) {
+                <div class="performance-underperformers">
+                  <strong>En dessous de l'objectif :</strong>
+                  @for (entry of underperformingIndicators; track entry.id) {
+                    <span class="status-badge status-open">{{ entry.label }} — {{ entry.actual }}% (obj. {{ entry.target }}%)</span>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="zone-frequency-panel card">
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">event_repeat</i>
+                  Fréquence de Collecte par Zone
+                </h2>
+              </div>
+
+              <div class="performance-toolbar">
+                <div class="performance-filters">
+                  <label for="freq-zone">Zone</label>
+                  <select
+                    id="freq-zone"
+                    class="filter-select"
+                    [(ngModel)]="zoneFrequencyZoneFilter"
+                    (change)="applyZoneFrequencyFilters()"
+                    >
+                    <option value="all">Toutes les zones</option>
+                    @for (zone of zoneFrequencyZoneOptions; track zone) {
+                      <option [value]="zone">{{ zone }}</option>
+                    }
+                  </select>
+
+                  <label for="freq-waste-type">Type de déchet</label>
+                  <select
+                    id="freq-waste-type"
+                    class="filter-select"
+                    [(ngModel)]="zoneFrequencyWasteTypeFilter"
+                    (change)="applyZoneFrequencyFilters()"
+                    >
+                    <option value="all">Tous les types</option>
+                    @for (type of zoneFrequencyWasteTypeOptions; track type) {
+                      <option [value]="type">{{ type }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              @if (isLoadingZoneFrequency) {
+                <div class="zone-frequency-state">
+                  <i class="material-icons spin">autorenew</i>
+                  <p>Chargement…</p>
+                </div>
+              } @else if (!hasZoneFrequencyData()) {
+                <div class="zone-frequency-state">
+                  <i class="material-icons">table_rows</i>
+                  <p>Aucune zone ne correspond à ces filtres.</p>
+                </div>
+              } @else {
+                <div class="zone-frequency-table-wrap">
+                  <table class="zone-frequency-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Zone</th>
+                        <th scope="col">Type de déchet</th>
+                        <th scope="col">Fréquence prévue</th>
+                        <th scope="col">Fréquence réelle</th>
+                        <th scope="col">
+                          <button
+                            type="button"
+                            class="sort-btn"
+                            (click)="toggleZoneFrequencySort()"
+                            [attr.aria-label]="'Trier par écart, ordre ' + (zoneFrequencySortAscending ? 'croissant' : 'décroissant')"
+                            >
+                            Écart
+                            <i class="material-icons">{{ zoneFrequencySortAscending ? 'arrow_upward' : 'arrow_downward' }}</i>
+                          </button>
+                        </th>
+                        <th scope="col">Statut</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (indicator of zoneFrequencyIndicators; track indicator.zoneName) {
+                        <tr>
+                          <td>{{ indicator.zoneName }}</td>
+                          <td>{{ indicator.wasteType }}</td>
+                          <td>{{ getFrequencyLabel(indicator.plannedFrequency) }}</td>
+                          <td>{{ getFrequencyLabel(indicator.actualFrequency) }}</td>
+                          <td>{{ indicator.gap > 0 ? '+' : '' }}{{ indicator.gap }}</td>
+                          <td>
+                            @if (indicator.status === 'insufficient') {
+                              <span class="status-badge status-open">Zone insuffisamment desservie</span>
+                            } @else if (indicator.status === 'exceeds') {
+                              <span class="status-badge status-active">Au-delà de l'objectif</span>
+                            } @else {
+                              <span class="status-badge status-active">Conforme</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+
+            <div class="volume-global-panel card">
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">scale</i>
+                  Volume Global Collecté
+                </h2>
+              </div>
+
+              <div class="performance-toolbar">
+                <div class="performance-filters">
+                  <label for="vol-zone">Zone</label>
+                  <select
+                    id="vol-zone"
+                    class="filter-select"
+                    [(ngModel)]="volumeZoneFilter"
+                    (change)="applyVolumeFilters()"
+                    >
+                    <option value="all">Toutes les zones</option>
+                    @for (zone of volumeZoneOptions; track zone) {
+                      <option [value]="zone">{{ zone }}</option>
+                    }
+                  </select>
+
+                  <label for="vol-waste-type">Type de déchet</label>
+                  <select
+                    id="vol-waste-type"
+                    class="filter-select"
+                    [(ngModel)]="volumeWasteTypeFilter"
+                    (change)="applyVolumeFilters()"
+                    >
+                    <option value="all">Tous les types</option>
+                    @for (type of volumeWasteTypeOptions; track type) {
+                      <option [value]="type">{{ type }}</option>
+                    }
+                  </select>
+
+                  <label for="vol-collector">Collecteur</label>
+                  <select
+                    id="vol-collector"
+                    class="filter-select"
+                    [(ngModel)]="volumeCollectorFilter"
+                    (change)="applyVolumeFilters()"
+                    >
+                    <option value="all">Tous les collecteurs</option>
+                    @for (collector of volumeCollectorOptions; track collector.id) {
+                      <option [value]="collector.id">{{ collector.name }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              @if (isLoadingVolumeGlobal) {
+                <div class="zone-frequency-state">
+                  <i class="material-icons spin">autorenew</i>
+                  <p>Chargement…</p>
+                </div>
+              } @else if (!hasVolumeData()) {
+                <div class="zone-frequency-state">
+                  <i class="material-icons">scale</i>
+                  <p>Aucune collecte ne correspond à ces filtres.</p>
+                </div>
+              } @else {
+                <div class="volume-summary">
+                  <div class="volume-figure">
+                    <span class="volume-actual">{{ (volumeAggregate!.actualKg / 1000) | number : "1.1-1" }}</span>
+                    <span class="volume-separator">/</span>
+                    <span class="volume-target">{{ (volumeAggregate!.targetKg / 1000) | number : "1.1-1" }} t</span>
+                  </div>
+                  <div class="volume-bar">
+                    <div
+                      class="volume-bar-fill"
+                      [class.under]="volumeAggregate!.status === 'under'"
+                      [class.over]="volumeAggregate!.status === 'over'"
+                      [style.width]="(volumeAggregate!.percentageOfTarget > 100 ? 100 : volumeAggregate!.percentageOfTarget) + '%'"
+                    ></div>
+                  </div>
+                  <div class="volume-percentage">
+                    <span>{{ volumeAggregate!.percentageOfTarget }}% de l'objectif atteint</span>
+                    @if (volumeAggregate!.status === 'under') {
+                      <span class="status-badge status-open">Sous l'objectif</span>
+                    } @else if (volumeAggregate!.status === 'over') {
+                      <span class="status-badge status-active">Objectif dépassé</span>
+                    } @else {
+                      <span class="status-badge status-active">Conforme</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
             <div class="statistics-cards">
               <div class="statistics-card card">
                 <h3>Collectes par Type de Déchets</h3>
                 <div class="chart-container">
-                  <div class="chart-placeholder">
-                    <i class="material-icons">donut_large</i>
-                    <p>Graphique en secteurs des types de déchets</p>
-                  </div>
+                  <app-mini-chart
+                    [config]="wasteChartConfig"
+                    [loading]="isLoadingWasteStatistics"
+                    [empty]="!hasWasteData()"
+                    emptyIcon="donut_large"
+                    emptyMessage="Aucune collecte de déchets enregistrée sur cette période."
+                  ></app-mini-chart>
                 </div>
-                <div class="chart-legend">
-                  @for (waste of wasteStatistics; track waste) {
-                    <div
-                      class="legend-item"
-                      >
+                @if (!isLoadingWasteStatistics && hasWasteData()) {
+                  <div class="chart-legend">
+                    @for (waste of wasteStatistics; track waste) {
                       <div
-                        class="legend-color"
-                        [style.background-color]="waste.color"
-                      ></div>
-                      <span>{{ waste.type }}: {{ waste.quantity }}t</span>
-                    </div>
-                  }
-                </div>
+                        class="legend-item"
+                        >
+                        <div
+                          class="legend-color"
+                          [style.background-color]="waste.color"
+                        ></div>
+                        <span>{{ waste.type }}: {{ waste.quantity }}t</span>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
               <div class="statistics-card card">
                 <h3>Performance par Agence</h3>
                 <div class="performance-chart">
-                  @for (agency of getTopPerformingAgencies(); track agency) {
+                  @for (agency of topPerformingAgencies; track agency) {
                     <div
                       class="performance-bar"
                       >
@@ -561,16 +936,31 @@
               <div class="statistics-card card">
                 <h3>Évolution des Collectes</h3>
                 <div class="chart-container">
-                  <div class="chart-placeholder">
-                    <i class="material-icons">show_chart</i>
-                    <p>Graphique linéaire de l'évolution des collectes</p>
-                  </div>
+                  <app-mini-chart
+                    [config]="collectionEvolutionConfig"
+                    [loading]="isLoadingMonthlyTrend"
+                    [empty]="!hasMonthlyTrendData()"
+                    emptyIcon="show_chart"
+                    emptyMessage="Aucune collecte enregistrée sur les 12 derniers mois."
+                  ></app-mini-chart>
                 </div>
+                @if (!isLoadingMonthlyTrend && hasMonthlyTrendData()) {
+                  <div class="chart-legend chart-legend--row">
+                    <div class="legend-item">
+                      <div class="legend-color" style="background-color: #3b82f6"></div>
+                      <span>Total</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-color" style="background-color: #4caf50"></div>
+                      <span>Réalisées</span>
+                    </div>
+                  </div>
+                }
               </div>
               <div class="statistics-card card">
                 <h3>Incidents par Catégorie</h3>
                 <div class="incidents-breakdown">
-                  @for (incident of getIncidentBreakdown(); track incident) {
+                  @for (incident of incidentBreakdown; track incident) {
                     <div
                       class="incident-category"
                       >
@@ -584,6 +974,13 @@
                           [style.width]="incident.percentage + '%'"
                         ></div>
                       </div>
+                    </div>
+                  }
+                  @if (incidentBreakdown.length === 0) {
+                    <div class="empty-state">
+                      <i class="material-icons">report_problem</i>
+                      <h3>Aucun incident</h3>
+                      <p>Aucun incident n'a été signalé pour le moment.</p>
                     </div>
                   }
                 </div>
@@ -615,263 +1012,30 @@
                 class="filter-select"
                 >
                 <option value="all">Toutes gravités</option>
-                <option value="critical">Critique</option>
-                <option value="high">Élevée</option>
-                <option value="medium">Moyenne</option>
-                <option value="low">Faible</option>
+                <option value="Critical">Critique</option>
+                <option value="High">Élevée</option>
+                <option value="Medium">Moyenne</option>
+                <option value="Low">Faible</option>
               </select>
             </div>
           </div>
-          <app-signalement [incidents]="incidents"] [currentUser]="currentUser" (isLoadingIncidents)="isLoadingIncidents = $event" ></app-signalement>
-          <!-- <div class="incidents-list">
-            @for (incident of filteredIncidents; track incident) {
-              <div
-                class="incident-card card"
-                >
-                <div class="incident-header">
-                  <div
-                    class="incident-severity"
-                    [class]="'severity-' + incident.severity"
-                    >
-                    <i class="material-icons"
-                      >{{ getSeverityIcon(incident.severity) }}</i
-                      >
-                      <span
-                        >{{ getSeverityText(incident.severity) ?
-                        getSeverityText(incident.severity) : "Faible" }}</span
-                        >
-                      </div>
-                      <div class="incident-status">
-                        <span
-                          class="status-badge"
-                          [class]="'status-' + incident.status"
-                          >
-                          {{ getIncidentStatusText(incident.status) }}
-                        </span>
-                      </div>
-                    </div>
-                    <div class="incident-content">
-                      <h4>{{ getIncidentTypeText(incident.type) }}</h4>
-                      <p class="incident-agency">
-                        Agence: {{ incident?.agency?.agencyName }}
-                      </p>
-                      <p class="incident-description">{{ incident.description }}</p>
-                      <p class="incident-date">
-                        {{ incident.date | date : "dd/MM/yyyy HH:mm" }}
-                      </p>
-                    </div>
-                    @if (incident.assignedTo) {
-                      <div class="incident-assignment">
-                        <i class="material-icons">person</i>
-                        <span>Assigné à {{ incident.assignedTo }}</span>
-                      </div>
-                    }
-                    <div class="incident-actions">
-                      <button
-                      class="btn btn-secondary"
-                      (click)="assignIncident(incident.id)"
-                      *ngIf="incident.status === 'open'"
-                      >
-                      <i class="material-icons">assignment_ind</i>
-                      Assigner
-                    </button>
-                    <button
-                      class="btn btn-primary"
-                      (click)="investigateIncident(incident.id)"
-                      *ngIf="incident.status === 'pending'"
-                      >
-                      <i class="material-icons">search</i>
-                      Enquêter
-                    </button>
-                    <button
-                      class="btn btn-success"
-                      (click)="resolveIncident(incident.id)"
-                      *ngIf="incident.status === 'resolved'"
-                      >
-                      <i class="material-icons">check</i>
-                      Résoudre
-                    </button>
-                    <button
-                      class="btn btn-accent"
-                      (click)="contactAgencyForIncident(incident?.agencyId)"
-                      >
-                      <i class="material-icons">phone</i>
-                      Contacter Agence
-                    </button>
-                  </div>
-                </div>
-              }
-            </div> -->
-          </div>
-        }
-
-        <!-- Onglet Communications -->
-        <!-- <div
-        *ngIf="activeTab === 'communications'"
-        class="communications-tab"
-        >
-        <div class="communications-header">
-          <h2>Communications</h2>
-          <div class="communications-actions">
-            <button
-              class="btn btn-primary"
-              (click)="showCommunicationModal = true"
-              >
-              <i class="material-icons">add</i>
-              Nouvelle Communication
-            </button>
-          </div>
-        </div>
-
-        <div class="communications-list">
-          <div
-            *ngFor="let comm of communications"
-            class="communication-card card"
-            >
-            <div class="communication-header">
-              <div class="communication-type">
-                <i class="material-icons">{{
-                  getCommunicationIcon(comm.type)
-                }}</i>
-                <span>{{ getCommunicationTypeText(comm.type) }}</span>
-              </div>
-              <div
-                class="communication-priority"
-                [class]="'priority-' + comm.priority"
-                >
-                {{ getPriorityText(comm.priority) }}
-              </div>
+          @if (filteredIncidents.length > 0 || incidents.length === 0) {
+            <app-signalement
+              [incidents]="filteredIncidents"
+              [currentUser]="currentUser"
+              (isLoadingIncidents)="isLoadingIncidents = $event"
+              (assignReport)="onAssignReport($event)"
+              (resolvedIncident)="onResolvedIncident($event)"
+            ></app-signalement>
+          } @else {
+            <div class="empty-state">
+              <i class="material-icons">search_off</i>
+              <h3>Aucun résultat</h3>
+              <p>Aucun incident ne correspond à ces filtres.</p>
             </div>
-
-            <div class="communication-content">
-              <h4>{{ comm.title }}</h4>
-              <p>{{ comm.message }}</p>
-              <div class="communication-meta">
-                <span
-                  >Envoyé le
-                  {{ comm.sentAt | date : "dd/MM/yyyy HH:mm" }}</span
-                  >
-                  <span>{{ comm.recipients.length }} destinataire(s)</span>
-                  <span>{{ comm.readBy.length }} lu(s)</span>
-                </div>
-              </div>
-
-              <div class="communication-recipients">
-                <h5>Destinataires</h5>
-                <div class="recipients-list">
-                  <span
-                    *ngFor="let recipient of comm.recipients"
-                    class="recipient-tag"
-                    >
-                    {{ getAgencyName(recipient) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          }
         </div>
-      </div>
-    </div>
-  </div> -->
-
-  <!-- Modal Communication -->
-  <!-- <div
-  class="modal-overlay"
-  *ngIf="showCommunicationModal"
-  (click)="showCommunicationModal = false"
-  >
-  <div
-    class="modal-content communication-modal"
-    (click)="$event.stopPropagation()"
-    >
-    <div class="modal-header">
-      <h3>Nouvelle Communication</h3>
-      <button class="close-btn" (click)="showCommunicationModal = false">
-        <i class="material-icons">close</i>
-      </button>
-    </div>
-    <form class="communication-form" (ngSubmit)="sendCommunication()">
-      <div class="form-group">
-        <label>Type de communication *</label>
-        <select [(ngModel)]="newCommunication.type" name="type" required>
-          <option value="">Sélectionner un type</option>
-          <option value="notification">Notification</option>
-          <option value="directive">Directive</option>
-          <option value="alert">Alerte</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Priorité *</label>
-        <select
-          [(ngModel)]="newCommunication.priority"
-          name="priority"
-          required
-          >
-          <option value="low">Faible</option>
-          <option value="medium">Moyenne</option>
-          <option value="high">Élevée</option>
-          <option value="urgent">Urgente</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Titre *</label>
-        <input
-          type="text"
-          [(ngModel)]="newCommunication.title"
-          name="title"
-          placeholder="Titre de la communication"
-          required
-          />
-        </div>
-        <div class="form-group">
-          <label>Message *</label>
-          <textarea
-            [(ngModel)]="newCommunication.message"
-            name="message"
-            rows="4"
-            placeholder="Contenu du message..."
-            required
-          ></textarea>
-        </div>
-        <div class="form-group">
-          <label>Destinataires *</label>
-          <div class="recipients-checkboxes">
-            <label class="checkbox-label">
-              <input type="checkbox" (change)="toggleAllAgencies($event)" />
-              <span class="checkmark"></span>
-              Toutes les agences
-            </label>
-            <label
-              *ngFor="let agency of agencyAudits"
-              class="checkbox-label"
-              >
-              <input
-                type="checkbox"
-                [value]="agency.id"
-                (change)="toggleRecipient(agency.id, $event)"
-                />
-                <span class="checkmark"></span>
-                {{ agency.name }}
-              </label>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              (click)="showCommunicationModal = false"
-              >
-              Annuler
-            </button>
-            <button type="submit" class="btn btn-primary">
-              <i class="material-icons">send</i>
-              Envoyer
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div> -->
+      }
 </div>
 </div>
 </div>
