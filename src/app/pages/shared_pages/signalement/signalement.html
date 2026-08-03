@@ -43,12 +43,16 @@
       }
     </div>
 
-    <!-- Assignee -->
+    <!-- Assignee : équipe affectée à la résolution du signalement (assignedTeamId réel,
+         pas collectorId — le collecteur d'origine de la collecte planifiée, sans rapport
+         avec le traitement du signalement, Prompt 06) -->
     <div class="sig-col sig-col--assignee">
-      @if (incident.collectorId?._id) {
+      @if (incident.assignedTeamId?._id) {
       <div class="sig-person sig-person--assigned">
-        <span class="sig-avatar sig-avatar--green">{{ (incident.collectorId?.firstName || '?')[0] | uppercase }}</span>
-        <span>{{ incident.collectorId?.firstName }} {{ incident.collectorId?.lastName }}</span>
+        <span class="sig-avatar sig-avatar--green">
+          <i class="material-icons" style="font-size: 14px;">groups</i>
+        </span>
+        <span>{{ incident.assignedTeamId?.name || 'Équipe affectée' }}</span>
       </div>
       } @else {
       <span class="sig-unassigned">Non assigné</span>
@@ -72,13 +76,10 @@
     <div class="sig-col sig-col--actions">
       <div class="sig-actions">
         @if (incident.agencyId && currentUser?.role === 'manager') {
-          <button class="sig-action-btn sig-action-btn--blue" (click)="assignIncident(incident)" title="Assigner">
+          <button class="sig-action-btn sig-action-btn--blue" (click)="openTeamPicker(incident)" [title]="incident.assignedTeamId?._id ? 'Réaffecter' : 'Assigner'">
             <i class="material-icons">assignment_ind</i>
           </button>
-          @if (!incident.collectorId?._id) {
-          <button class="sig-action-btn sig-action-btn--orange" (click)="openAssignModal(incident)" title="Traiter">
-            <i class="material-icons">build</i>
-          </button>
+          @if (incident.resolutionStatus !== 'resolved') {
           <button class="sig-action-btn sig-action-btn--green" (click)="resolveIncident(incident._id)" title="Résoudre">
             <i class="material-icons">check_circle</i>
           </button>
@@ -185,6 +186,51 @@
         <button class="btn btn-primary" (click)="closeImageModal()">
           <i class="material-icons">cancel</i>
           Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Team picker (Prompt 06) — affecte le signalement à une équipe réelle
+     (PATCH /collectes/:id/assign-team), remplace les 2 anciens boutons qui n'émettaient
+     que l'incident brut sans aucune sélection. -->
+@if (showTeamPickerModal) {
+<div class="drawer-overlay" (click)="closeTeamPicker()">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>{{ teamPickerIncident?.assignedTeamId?._id ? 'Réaffecter le signalement' : 'Affecter à une équipe' }}</h3>
+      <button class="drawer-close-btn" (click)="closeTeamPicker()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="drawer-body">
+      @if (isLoadingTeams) {
+      <p class="team-picker-empty">Chargement des équipes…</p>
+      } @else if (teams.length === 0) {
+      <p class="team-picker-empty">Aucune équipe disponible pour cette agence.</p>
+      } @else {
+      <div class="team-picker-list">
+        @for (team of teams; track team._id) {
+        <label class="team-picker-item" [class.team-picker-item--selected]="selectedTeamId === team._id">
+          <input type="radio" name="teamPicker" [value]="team._id" [(ngModel)]="selectedTeamId" />
+          <div class="team-picker-info">
+            <span class="team-picker-name">{{ team.name }}</span>
+            @if (team.collectors?.length) {
+            <span class="team-picker-size">{{ team.collectors.length }} collecteur(s)</span>
+            }
+          </div>
+        </label>
+        }
+      </div>
+      }
+    </div>
+    <div class="drawer-footer">
+      <div class="drawer-actions">
+        <button class="btn btn-secondary" (click)="closeTeamPicker()">Annuler</button>
+        <button class="btn btn-primary" [disabled]="!selectedTeamId" (click)="confirmAssignTeam()">
+          Confirmer l'affectation
         </button>
       </div>
     </div>

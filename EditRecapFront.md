@@ -688,3 +688,705 @@ Trois méthodes de contrat sont pleinement câblées sur de vrais endpoints back
 ## Vérifications effectuées
 - `npx tsc --noEmit -p tsconfig.json` → `EXIT:0` après l'ensemble des changements.
 - Chaque suppression (composant, propriété, enum, interface, import) re-vérifiée par grep direct avant édition, pas seulement sur la base du rapport d'agent.
+
+---
+
+# Municipality Dashboard — Prompt 01 : Statistics Contract Alignment & City-Stats Route Resolution
+
+Premier prompt du roadmap de migration mock→réel (`BACKEND_INTEGRATION.md`, analysé par l'utilisateur contre l'OpenAPI réel). Voir `EditRecap.md` (backend) pour le détail des changements serveur. Ceci est la confirmation écrite exigée par les "Deliverables" du prompt.
+
+## (a) Forme réelle de `GET /api/statistics` (vérifiée contre l'implémentation, pas l'OpenAPI)
+```
+totalMunicipalityAgents, totalManagers, totalCollectors, totalClients, totalActiveClients (nouveau),
+totalAgencies, totalActiveAgencies, totalInactiveAgencies, totalDeletedAgencies,
+agenciesByCity[], clientsByCity[], collectionsByCity[],
+totalCollections, dailyCollections, monthlyCollections,
+totalCollectionsCollected, totalCollectionsReported, pendingReportsCount (nouveau),
+monthlyClientSubscriptions, monthlyClientPercentage
+```
+`activeClients`, `completeCollections` (tel quel), `reportsFromClients.pending` — **confirmés absents**, ils n'ont jamais existé sur le vrai backend (lisaient `undefined` silencieusement). Pas une dérive serveur : `totalCollectionsCollected`/`totalCollectionsReported` étaient déjà renvoyés mais non documentés dans le Swagger (corrigé côté backend).
+
+## (b) `/auth/city/municipality` — confirmé inexistant
+Grep exhaustif de tout `routes/*.js` + recherche plein-texte sur tout le repo backend : zéro occurrence en dehors de `role: 'municipality'` (une valeur d'enum User, sans rapport). Résolu en faveur de "route jamais construite" — pas une question de documentation OpenAPI manquante.
+
+## (c) Interface `MunicipalityStatistics` corrigée (`municipality-dashboard.ts`)
+Entièrement réécrite champ-à-champ sur la forme réelle ci-dessus (nouvelle interface `CityBreakdownEntry` pour les tableaux par ville). `totalRevenue`, `averageRating`, `complianceRate` retirés : **aucune source nulle part dans le backend actuel** — pas inventés, signalés comme dépendant du futur Milestone 05 (Agency Performance Metrics). `statisticsAdmin: any` → `statisticsAdmin: MunicipalityStatistics | null`.
+
+## (d) Sites de lecture frontend corrigés
+| Fichier | Avant | Après |
+|---|---|---|
+| `municipality-dashboard.ts` — `statistics` (champ mocké, ligne 179-190) | Objet 100% hardcodé (`totalAgencies: 15, activeAgencies: 14, totalRevenue: 485000, complianceRate: 92, ...`) | **Supprimé entièrement** |
+| `getCollectionRate()` | Lisait `this.statistics.completeCollections / this.statistics.todayCollections` (mock, jamais mis à jour) | Lit `statisticsAdmin.totalCollectionsCollected / statisticsAdmin.dailyCollections` (réel, avec garde /0) |
+| `getComplianceText()` | `this.statistics.complianceRate` (mock, toujours 92%) | Retourne "Non disponible" (honnête — aucune source réelle) ; **déjà mort en pratique** : son seul appelant vivait dans un bloc HTML déjà commenté |
+| `getIncidentSeverity()` | `statisticsAdmin?.reportsFromClients?.pending` (champ inexistant → toujours 0 → toujours "Faible") | `statisticsAdmin?.pendingReportsCount` (réel) |
+| `municipality-dashboard.html:76` — carte "Clients totaux" | `statisticsAdmin?.activeClients` (inexistant) | `statisticsAdmin?.totalActiveClients` (réel, nouveau champ backend) |
+| `municipality-dashboard.html:92-93` — carte "Collectes aujourd'hui" | `completeCollections`/`totalCollections` — **double bug** : champ inexistant ET mauvaise portée (total all-time au lieu d'aujourd'hui) | `totalCollectionsCollected`/`dailyCollections` (réel, portée jour correcte) |
+| `municipality-dashboard.html:142-147` — carte "Incidents non résolus" | `reportsFromClients?.pending` (inexistant → toujours 0) | `pendingReportsCount` (réel) |
+| Export PDF (`generateGlobalReport()`, ~ligne 1259-1261) | Mêmes champs inexistants que les cartes | Mêmes corrections que les cartes |
+| `admin.ts::getAllStatisticCity()` | Appelait `/auth/city/municipality` (route morte, toujours 404 en pratique → `zoneStatistics`/`coverageMapZones` toujours vides en production) | **Méthode supprimée** ; `MunicipalityDashboard.buildZoneStatisticsFromAdminStats()` dérive maintenant les compteurs par ville directement de `statisticsAdmin.agenciesByCity/clientsByCity/collectionsByCity` (déjà chargé, aucun appel HTTP supplémentaire) |
+| `mocks/municipality-mock.generators.ts::generateMunicipalityStatistics()` + son wrapper `MunicipalityMockDataService.getMunicipalityStatistics()` | Générait un faux objet sur l'ancienne forme, **zéro appelant** confirmé (le composant utilise déjà le vrai `adminService.getAllStatistics()`) | **Supprimés** (code mort rendu incompilable par le nouveau contrat, confirmé orphelin avant suppression) |
+
+## Bug de production concret résolu
+`loadZoneStat()` était appelé depuis `ngOnInit` → `loadMunicipalityData()`, et son `error` handler retombait sur `zoneStatistics = []`/`coverageMapZones = []` silencieusement. Comme `/auth/city/municipality` n'a jamais existé, **l'onglet "Couverture Territoriale" était vide dans toutes les conditions réelles**, pas seulement en cas d'erreur réseau ponctuelle. Résolu par construction (plus d'appel réseau séparé, dérivation directe des données déjà chargées).
+
+## Limitation distincte signalée, non résolue ici (hors périmètre du Prompt 01)
+La liste des villes elle-même (`MOCK_CITIES`, `data/countries-org.mock.ts`) reste un catalogue statique de 5 pays, pas la vraie API territoriale (`GET /cities`). `coverage`/`incidents` par ville restent à `0` (aucune notion de conformité/signalements par ville nulle part dans le backend) — commentés clairement dans le code, pas masqués. Point pertinent pour le futur Milestone 14 (coverage map).
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Backend : `node -c` sur les 3 fichiers modifiés + `require()` à blanc, sans erreur.
+- Chaque champ retiré/renommé vérifié par lecture directe du controller/service réel (pas seulement l'OpenAPI ni le guide de migration).
+
+---
+
+# Municipality Dashboard — Prompt 03 : Incidents Query Parameters & Pagination Fix
+
+Voir `EditRecap.md` pour le détail backend (severity, clamp limit/skip, Swagger). Ceci couvre le côté frontend + la confirmation écrite exigée par les "Deliverables" du prompt.
+
+## Bug confirmé et quantifié
+`loadAllSignalements()` (`municipality-dashboard.ts`) appelait `this.adminService.getAllReports()` **sans aucun argument**. Conséquences réelles, vérifiées :
+1. `Admin.getAllReports()` retombait sur ses défauts (`page=1, limit=10`), mais les envoyait sous les noms `page`/`search` — le vrai backend (`services/qrValidation.js::getAllCollectes`) attend `skip`/`term`. `page` était donc **silencieusement ignoré** par le serveur (jamais lu), qui retombait toujours sur `skip=0` par défaut : **toujours les mêmes 10 premières collectes**, quel que soit l'état de pagination côté client.
+2. Aucun filtre `status` envoyé → ces 10 collectes étaient les 10 plus récentes de **n'importe quel statut** (Scheduled/Collected/Completed/... noyant les vrais signalements), pas spécifiquement des signalements. Le badge "Incidents" et `getIncidentBreakdown()` comptaient donc des collectes normales, jamais un vrai total de signalements.
+
+**Ce même bug affecte aussi `admin-dashboard.ts`** (`loadAllSignalements(page)`, autre consommateur de `Admin.getAllReports()`), qui envoie déjà `page`/`search`/`severity` avec une vraie UI de pagination construite dessus — mais ces paramètres étaient tout aussi silencieusement ignorés côté serveur. Corrigé pour les deux dashboards par le même fix (voir ci-dessous), sans toucher au code d'`admin-dashboard.ts`.
+
+## Fix — `Admin.getAllReports()` (`admin.ts`)
+Signature publique **inchangée** (`page`/`limit`/`status`/`severity`/`search`/`agencyId`/`date` nouveau) — `admin-dashboard.ts` a déjà une vraie UI de pagination construite dessus (`incidentsCurrentPage`/`incidentsItemsPerPage`/`incidentsTotalPages`), aucune raison de la casser. Seule la **traduction interne** est corrigée : `skip = (page - 1) * limit` calculé et envoyé (au lieu de `page`), `search` envoyé sous le nom réel `term` (au lieu de `search`). `severity`/`status`/`agencyId` inchangés (déjà les bons noms), `date` ajouté (existait côté backend, jamais exposé ici).
+
+## Fix — `loadAllSignalements()` (`municipality-dashboard.ts`)
+Appelle maintenant `getAllReports({ status: 'Reported', limit: INCIDENTS_FETCH_LIMIT })` :
+- `status: 'Reported'` — seule valeur de l'enum réel `Collecte.status` qui correspond à un signalement (vérifié dans `models/Collecte.js`), pas une valeur inventée.
+- `INCIDENTS_FETCH_LIMIT = 300` (nouvelle constante module) — `<app-signalement>` (composant partagé, 4 dashboards) pagine déjà côté client sur l'intégralité du tableau reçu (`pagedIncidents`, `signalement.ts`) : pas besoin de pagination serveur ici, juste d'un plafond couvrant le volume réel. **Valeur provisoire, signalée comme telle** (le prompt demande explicitement de ne pas se baser sur "le compte arbitraire du mock") — à ajuster si le volume réel de signalements dépasse ce seuil (le backend clampe à 500 max), ou à remplacer par un vrai infinite-scroll si ça devient nécessaire.
+
+## Décision — filtre "Sévérité" (severity)
+Contrairement à ce que supposait le roadmap initial (§0.3 : "pas de champ severity, donc pas de filtre serveur possible"), le Prompt 01 a confirmé que `Collecte.severity` **existe réellement**. Le backend expose maintenant un vrai filtre `severity` (voir EditRecap.md). Côté municipality-dashboard, aucun filtre de sévérité n'existe au niveau du parent (`MunicipalityDashboard`) — le filtre `severityFilter` vit uniquement dans le composant enfant partagé `<app-signalement>`, où il continue de filtrer **côté client** sur le jeu déjà chargé (comportement inchangé, cohérent avec son modèle de pagination interne). Pas de changement nécessaire ici : le filtre existant reste correct puisqu'il opère maintenant sur un jeu complet de signalements, plus sur une page tronquée à 10.
+
+## Limitation distincte signalée, non résolue ici
+`<app-signalement>` (`shared_pages/signalement/signalement.ts`) a son propre vocabulaire de statut (`incidentsFilter: "all"|"open"|"pending"|"resolved"`) qui **ne correspond à aucune valeur réelle** de `Collecte.status` (`Collected|Scheduled|Completed|Cancelled|Reported`) ni de `resolutionStatus` (`pending|in_progress|resolved`) — son filtre de statut ne peut donc jamais matcher quoi que ce soit d'autre que "all" en pratique. Composant partagé par 4 dashboards (admin, agency, client, municipality) — hors périmètre de ce prompt scopé à municipality-dashboard, signalé pour un futur prompt dédié.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Backend : `node -c` + `require()` à blanc, sans erreur.
+- `admin-dashboard.ts` non modifié — vérifié que son appel existant (`page`/`limit`/`status`/`severity`/`search`/`agencyId`) reste compatible avec la nouvelle signature de `getAllReports()` (aucun champ renommé côté public).
+
+---
+
+# Fix — Incohérence "Incidents non résolus" (2) vs badge/tableau Incidents (3)
+
+## Symptôme signalé (capture d'écran)
+Carte KPI "Incidents non résolus" affiche 2, mais le badge de l'onglet "Incidents" et le tableau "Gestion des Incidents" en affichent 3 — tous les 3 avec le statut "EN COURS".
+
+## Cause
+- La carte KPI vient de `statisticsAdmin.pendingReportsCount` (Prompt 01) : `Collecte.countDocuments({status:'Reported', resolutionStatus: {$ne:'resolved'}})` — exclut correctement les signalements déjà traités.
+- `loadAllSignalements()` (Prompt 03) filtre uniquement sur `status: 'Reported'`, **sans** exclure `resolutionStatus === 'resolved'` — un signalement déjà résolu via le vrai backend reste donc dans la liste. Comme `resolveReport()` (`services/collecte.service.js`) ne change **jamais** `Collecte.status` (reste `'Reported'` pour toujours, seul `resolutionStatus` bouge), la colonne STATUT du tableau — qui ne lit que `.status`, jamais `.resolutionStatus` — affiche "EN COURS" pour les 3, y compris celui déjà résolu. D'où l'écart : 2 vraiment non résolus, 3 avec ce statut brut.
+- Bonus découvert en creusant : le bouton "Résoudre" (`onResolvedIncident()`) ne faisait **qu'une mutation locale** (`target.status = "resolved"`, une valeur qui n'existe même pas dans le vrai enum `Collecte.status`) — **aucun appel réseau**, donc rien n'était jamais persisté. `Admin.resolveCollecte$()` existait déjà dans `admin.ts` mais n'était appelé par aucun dashboard.
+
+## Fix
+- `Incident` (interface, `municipality-dashboard.ts`) : ajout de `resolutionStatus?: 'pending'|'in_progress'|'resolved'` (le champ réel, déjà renvoyé par le backend, jamais lu jusqu'ici).
+- `loadAllSignalements()` : filtre maintenant aussi sur `resolutionStatus !== 'resolved'` — `this.incidents` ne contient plus que de vrais signalements non résolus, cohérent avec la carte KPI (même définition, même nombre).
+- `onResolvedIncident()` : appelle maintenant réellement `Admin.resolveCollecte$(incidentId, resolvedBy, resolutionComment)` (`PATCH /collectes/:id/resolve`), et ne retire l'incident de la liste qu'après confirmation serveur — plus de mutation locale fictive. `resolvedBy` lu depuis `currentUser?._id ?? currentUser?.id`.
+
+## Décision — `onAssignReport()` volontairement non touché
+Reste une mutation locale fictive (`target.status = "pending"`), **volontairement pas corrigé ici** : c'est exactement le sujet du Prompt 06 du roadmap ("Assign / Resolve Signalement — Frontend Contract Adaptation"), qui doit aussi adapter la sortie de `assignReport` au vrai contrat backend (assignation à une **équipe**, `PATCH /collectes/:id/assign-team`, pas à un collecteur individuel — voir §0.4). Corriger resolve seul était nécessaire pour ne pas laisser une incohérence de comptage after-click ; corriger assign maintenant aurait empiété sur un prompt dédié avec sa propre décision de contrat à trancher.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+
+---
+
+# Municipality Dashboard — Prompt 05 : Agency Performance Metrics (Extend Existing Endpoint)
+
+Voir `EditRecap.md` pour le détail backend (`GET /api/state_agencies/{agencyId}/stats` étendu). Ceci couvre le côté frontend + la confirmation écrite exigée par les "Deliverables" du prompt.
+
+## (a) Forme étendue de la réponse consommée (vérifiée contre l'implémentation réelle, pas l'OpenAPI)
+```
+agencyId, agencyName, status,
+totalClientsActifs, totalCollecteurs, totalGestionnaires, totalEmployees, totalZone, totalReporting,
+pendingReportsCount, completionRate, collectionsToday,
+todayCollections, completedCollections,       // alias de compat pour admin-dashboard.ts
+complianceScore: null, revenue: null, rating: null,   // toujours null aujourd'hui, voir (b)
+issues: string[]
+```
+
+## (b) Formule de compliance-score — aucune formule, documentée comme telle
+Le prompt demande explicitement de documenter la formule utilisée. Réponse honnête : **il n'existe aucune formule**, parce qu'il n'existe aucune entité de conformité/audit nulle part dans le schéma backend (ni `Agency`, ni ailleurs). Plutôt que d'inventer un calcul arbitraire (ex. à partir de `completionRate`), `complianceScore` reste **explicitement `null`** — décision cohérente avec la discipline déjà appliquée au Prompt 01 (retirer `complianceRate` du mock plutôt que le maintenir avec une fausse valeur fixe à 92%).
+
+## (c) `revenue` et `rating` — confirmation de la résolution (déférés, avec raison précise)
+- **`revenue`** : déféré à `null`. Raison : conflit de scoping JWT confirmé côté backend — le rôle `municipality` n'a aujourd'hui aucune visibilité Finance légitime inter-agences (`resolveAgency`/`OVERRIDE_ROLES`/`OVERRIDE_FINANCIAL_ROLES` limités à `super_admin`/`administrateur`). Résoudre ce point nécessiterait une décision produit explicite (nouveau rôle d'override ou ouverture de la donnée), hors périmètre de ce prompt.
+- **`rating`** : déféré à `null`. Raison : aucune entité review/notation n'existe nulle part dans le schéma — rien à requêter.
+
+Les deux sont donc **explicitement non résolus, pas oubliés** — chacun documenté avec sa raison exacte dans le Swagger backend et repris ici.
+
+## (d) Frontend — nullabilité et affichage
+- **`AgencyAudit`** (interface, `municipality-dashboard.ts`) : `rating`, `revenue`, `complianceScore` retypés `number | null` (étaient `number`, silencieusement toujours une valeur mockée avant ce prompt).
+- **`loadAgencyAudits()`** : entièrement réécrit. Charge la liste des agences puis, pour chacune, appelle le vrai `GET /api/state_agencies/{agencyId}/stats` en parallèle (`forkJoin`, `rxjs`) — remplace l'ancienne génération mock (`MunicipalityMockDataService`). Typage explicite introduit pour lever une erreur TS ("`results` is of type `unknown`") : `const requests: Observable<{ agency: any; stats: any }>[] = list.map(...)` avant le `forkJoin(requests)`.
+- **`isAgencyPerformanceMocked`** : `true` → `false` — dernier flag de mock restant sur cet onglet, maintenant réellement alimenté par le backend.
+- **`getComplianceClass()`** : ajout d'une branche `null` dédiée (retourne une classe `unknown` plutôt que de comparer `null < seuil`, qui aurait produit un classement trompeur — `null < 50` vaut `true` en JS).
+- **Template (`municipality-dashboard.html`)** : affichage null-safe de `agency.complianceScore`/`agency.rating`/`agency.revenue` — "Non disponible" plutôt qu'un score/montant fabriqué ou un `NaN`/`undefined` brut affiché tel quel.
+- **`.scss`** : ajout de `.compliance-score.unknown { color: var(--text-secondary, #94a3b8); }` pour le nouvel état "non disponible" (gris neutre, distinct des couleurs de statut existantes bon/mauvais).
+- **Export PDF (`generateGlobalReport()`)** : construction du texte `complianceScore` rendue null-safe (chaîne "Non disponible" au lieu de concaténer `null` dans le PDF généré).
+- **`buildNotifications()`** — bloc `complianceNotifications` : 2 erreurs TS (`'agency.complianceScore' is possibly 'null'`) corrigées en ajoutant une garde explicite `agency.complianceScore !== null &&` avant chaque comparaison `<`, avec branchement du texte `reason`/`severity` en conséquence (pas de notification générée pour les agences dont le score est `null` — on ne peut pas dire qu'un score inconnu est "faible").
+
+## Bonus backend consommé sans modification de fichier
+`admin-dashboard.ts::getSelectedCompletionRate()` (non modifié) attend déjà `todayCollections`/`completedCollections` sur cette même réponse — jamais alimentés jusqu'ici (toujours 0% affiché). Corrigé gratuitement côté backend (alias explicites, voir EditRecap.md) sans toucher ce fichier frontend.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0` (après correction des 2 classes d'erreurs ci-dessus).
+- Backend : `node -c` sur les 3 fichiers modifiés + `require('./routes/stateForAgencyRoute.js')` à blanc, sans erreur.
+
+---
+
+# Municipality Dashboard — Prompt 06 : Assign / Resolve Signalement — Frontend Contract Adaptation
+
+Voir `EditRecap.md` pour le détail backend (role-gating manager/super_admin sur `assign-team`/`resolve`). Ceci couvre le côté frontend + la confirmation écrite exigée par les "Deliverables" du prompt.
+
+## Découverte avant construction — le vrai consommateur n'est pas municipality-dashboard
+`<app-signalement>` (composant partagé, `shared_pages/signalement`) ne rend ses boutons "Assigner"/"Résoudre" que pour `currentUser?.role === 'manager'` (`signalement.html`). Les utilisateurs de `municipality-dashboard` ont le rôle `'municipality'` — ces boutons ne s'affichent donc jamais sur ce dashboard. Le seul vrai consommateur en production est `agency-dashboard.ts` (rôle `manager`), dont le flux existant était déjà complètement cassé avant ce prompt :
+- `openAssignModal(report)`/`assignReport()` appelaient `AgencyService.assignReportToEmployee$()` vers `PUT /reports/:id/assign`, une route confirmée inexistante dans tout le backend (grep exhaustif de `routes/*.js`).
+- `resolveIncident(id)` appelait `AgencyService.resolveIncident$()` vers `PATCH /reports/:id/status`, également inexistante — le code laissait même un toast en dur ("Système de validation non établie") qui admettait déjà que ce flux n'était pas fiable.
+- Bonus : `selectedReportId` n'était jamais renseigné par `openAssignModal()` (qui ne posait que `selectedReport`), donc même en admettant que l'endpoint ait existé, le clic sur "Assigner" échouait systématiquement dès le contrôle "au moins un employé sélectionné" — cette action n'a jamais fonctionné, pas même partiellement.
+- Le modèle de données lui-même était structurellement faux : assignation par employé individuel, alors que le vrai backend est team-based (`Collecte.assignedTeamId`, `PATCH /collectes/:id/assign-team`) — aucun endpoint d'assignation par employé n'a jamais existé côté serveur.
+
+Question posée explicitement à l'utilisateur avant de construire le picker (changer le contrat émis par le composant partagé impacte forcément `agency-dashboard.ts`, son seul vrai consommateur) : corriger aussi ce flux, ou se limiter strictement à `municipality-dashboard.ts` comme le prompt le nomme littéralement ? Réponse de l'utilisateur : "Seuls les managers peuvent assigner/résoudre. L'agent de mairie ne fait pas ça." — confirme le gating manager-only comme règle métier voulue, et implique de corriger le vrai flux manager, sans quoi le picker d'équipe construit resterait sans utilisateur réel capable de s'en servir.
+
+## Signalement (composant partagé) — construction du vrai team-picker
+- `Incident` (interface) : ajout de `assignedTeamId?: { _id: string; name?: string } | null` (champ réel) et `resolutionStatus?: 'pending'|'in_progress'|'resolved'`.
+- Ancien `@Output() assignReport = new EventEmitter<Incident>()` — n'émettait que l'incident brut, sans aucune équipe sélectionnée (2 boutons différents, "Assigner" et "Traiter", faisaient déjà le même emit redondant). Remplacé par `@Output() assignReportToTeam = new EventEmitter<{ incidentId: string; teamId: string }>()`, qui n'émet qu'une fois une équipe réellement choisie et confirmée.
+- Nouveau modal team-picker (`showTeamPickerModal`/`teamPickerIncident`/`teams`/`selectedTeamId`/`isLoadingTeams`) : `openTeamPicker(incident)` charge les équipes réelles de l'agence via `AgencyService.getTeamsV2$(agencyId)` (déjà existant, déjà utilisé ailleurs dans `agency-dashboard.ts`) ; `confirmAssignTeam()` émet le payload une fois une équipe sélectionnée. `AgencyService` était importé mais commenté dans le constructeur — réactivé.
+- Boutons "Assigner"/"Traiter" consolidés : les 2 boutons redondants qui faisaient le même emit sans sélection sont remplacés par un seul bouton ouvrant le picker, libellé "Assigner" ou "Réaffecter" selon `assignedTeamId` déjà présent ou non.
+- Bug de gating corrigé : le bouton "Résoudre" et la colonne "Assigné à" lisaient `incident.collectorId` — le collecteur de la collecte planifiée d'origine, sans rapport avec le traitement du signalement. Remplacé par le vrai champ `assignedTeamId` (colonne Assignee) et `resolutionStatus !== 'resolved'` (visibilité du bouton Résoudre) — la condition précédente (`!incident.collectorId?._id`) pouvait masquer "Résoudre" pour un signalement jamais assigné à un collecteur d'origine, sans rapport avec son état de résolution réel.
+- `FormsModule` ajouté aux imports du composant standalone (nécessaire pour `[(ngModel)]` sur la sélection radio d'équipe).
+- Petit nettoyage collatéral : `investigateIncident()` (méthode déjà morte, non appelée depuis le template de ce composant) écrivait encore `incident.assignedTo`, un champ mock retiré de l'interface — ligne supprimée pour rester compilable, méthode elle-même non retouchée davantage (hors périmètre de ce prompt).
+
+## admin.ts / agency.service.ts — vrais endpoints
+- `Admin.assignReportToTeam$(collecteId, teamId, assignedBy)` (nouveau, `admin.ts`) — `PATCH /collectes/:id/assign-team`, même convention que `resolveCollecte$` déjà existant.
+- `AgencyService.assignReportToTeam$`/`resolveReport$` (nouveaux, `agency.service.ts`) — mêmes vrais endpoints, remplacent entièrement `resolveIncident$`/`assignReportToEmployee$` (supprimées : elles ne pointaient vers aucune route réelle, voir plus haut).
+
+## municipality-dashboard.ts — handlers réécrits sur le vrai contrat
+- `Incident` : ajout de `assignedTeamId?: { _id: string; name?: string } | null` ; `assignedTo?: string` (mock) retiré.
+- `onAssignReport()` : appelait auparavant seulement `target.status = "pending"` (une valeur qui n'existe même pas dans le vrai enum `Collecte.status`) en mémoire, jamais persisté. Appelle maintenant le vrai `Admin.assignReportToTeam$()`, met à jour l'incident depuis la réponse serveur seulement après confirmation. Signature changée de `(incident: Incident)` à `(payload: { incidentId, teamId })` pour matcher le nouvel emitter.
+- Note assumée : ce handler reste inatteignable en pratique pour un agent de mairie (le bouton ne s'affiche que pour `role === 'manager'`, jamais `'municipality'`, confirmé par l'utilisateur ci-dessus). Corrigé quand même — au lieu de laisser une mutation locale fictive — par cohérence avec le reste du dashboard et au cas où cette règle de visibilité évoluerait un jour.
+- `onResolvedIncident()` : déjà correct depuis le bugfix "Pas cohérent" antérieur à ce prompt — non modifié.
+- Template (`municipality-dashboard.html`) : binding changé de `(assignReport)="onAssignReport($event)"` à `(assignReportToTeam)="onAssignReport($event)"`.
+
+## agency-dashboard.ts/.html — le vrai flux manager, désormais fonctionnel
+- Supprimés (dead code confirmé, jamais fonctionnel) : `showAssignModal`, `selectedReportId`, `selectedReport`, `selectedEmployee` (champs) ; `openAssignModal()`, `closeAssignModal()`, `assignEmployeesToReport()` (stub vide), `toggleEmployeeSelection()`, `onEmployeeToggle()`, `assignReport()` (appelait l'endpoint employé mort), `resolveIncident1()` (méthode dupliquée, confirmée totalement inutilisée — aucun appelant nulle part). Le modal HTML entier de sélection d'employé (grille de checkboxes, ~60 lignes) supprimé du template — remplacé par le team-picker désormais intégré à `<app-signalement>`.
+- `onAssignReportToTeam(payload)` (nouveau) : appelle `AgencyService.assignReportToTeam$()`, recharge `agencyReports` via `loadAgencyReports(this.currentUser)` (pas `loadReports()` — celui-ci s'est avéré être un générateur de données 100% mockées et statiques, sans aucun rapport avec les signalements réels, découvert en vérifiant son implémentation avant de le réutiliser).
+- `resolveIncident(id)` (réécrit) : appelle maintenant `AgencyService.resolveReport$()` (le vrai endpoint), retire le toast fixe "Système de validation non établie" qui admettait déjà que l'ancien flux n'était pas fiable.
+- Template : `(assignReport)="openAssignModal($event)"` devient `(assignReportToTeam)="onAssignReportToTeam($event)"` sur `<app-signalement>`.
+- `allEmployees` (champ) conservé : toujours utilisé ailleurs (onglet Employés), non lié à ce flux mort.
+
+## Mock dead code supprimé (découvert en corrigeant l'interface Incident)
+`MunicipalityMockDataService.getIncidents()` / `generateIncidents()` (`mocks/municipality-mock.generators.ts`, `mocks/municipality-mock-data.service.ts`) écrivaient encore `assignedTo` (champ mock retiré de l'interface `Incident` réelle) et se sont révélées, en vérifiant leurs appelants, totalement orphelines : `this.incidents` est chargé depuis `loadAllSignalements()` (le vrai `GET /api/collecte/all`, Prompt 03) depuis longtemps déjà — supprimées entièrement plutôt que patchées pour rester compilables, même précédent que la suppression de `generateMunicipalityStatistics()` au Prompt 01. Imports désormais inutilisés (les 4 pools INCIDENT_*, type `Incident`) nettoyés dans les 2 fichiers concernés.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Backend : `node -c` sur les 3 fichiers modifiés + `require('./routes/collecte.route.js')` à blanc, sans erreur.
+- Recherche exhaustive de toute référence résiduelle à l'ancien flux (`resolveIncident$`, `assignReportToEmployee$`, `showAssignModal`, `selectedReportId`) : aucune, hors commentaires explicatifs et un unique bloc de markup déjà commenté (code mort préexistant, non touché) dans `agency-dashboard.html`.
+
+---
+
+# Municipality Dashboard — Prompt 07 : Performance Globale (Satisfaction & Conformité)
+
+Voir `EditRecap.md` pour le détail backend (nouvel endpoint, découverte que `zone-coverage` ne calcule en réalité aucun `completionRate`). Ceci couvre le côté frontend + la confirmation écrite exigée par les "Deliverables" du prompt.
+
+## (a) Nouvel endpoint
+`GET /api/municipality/performance-overview` → `{ success, message, data: { averageSatisfaction: number | null, complianceRate: number } }`.
+
+## (b) Confirmation écrite — satisfaction n'a aucune source de données
+Relecture de tous les modèles Mongoose réels (`models/*.js`, pas seulement les schémas Swagger déclarés) : aucune entité rating/review/feedback/satisfaction n'existe nulle part dans le schéma backend. `averageSatisfaction` reste explicitement `null` — ni requêté, ni fabriqué à partir d'un proxy (le prompt suggérait, à titre d'exemple, un dérivé du volume de plaintes rapporté au nombre de clients). Ceci est escaladé comme une vraie question produit à trancher (construire une entité de feedback client est une fonctionnalité produit à part entière, hors périmètre d'une migration mock→réel), pas contourné silencieusement par un calcul de repli.
+
+## (c) `complianceRate` — agrégation confirmée, mais pas celle suggérée par le prompt
+Le prompt suggérait de réutiliser le `completionRate` par quartier de `/api/planning/v2/zone-coverage`. Vérifié contre l'implémentation réelle : cette fonction ne calcule aucun `completionRate` (son vrai retour n'a aucun rapport avec ce que documente son propre Swagger, resté obsolète). `complianceRate` est donc agrégé à la place à partir de la même définition déjà validée au Prompt 05 pour les agences (`Collected` / (total − `Cancelled`) × 100), simplement sans filtre `agencyId` — cohérent avec le principe déjà établi de ne pas calculer une 3ᵉ version parallèle de "conformité".
+
+## (d) Frontend — plus mocké
+- `PerformanceOverview` (type, `municipality-mock.types.ts`) : `averageSatisfaction` retypé `number | null` (était `number`, toujours une valeur aléatoire mockée entre 3.8 et 4.6).
+- `Admin.getPerformanceOverview$()` (nouveau, `admin.ts`) — appelle le vrai endpoint.
+- `loadPerformanceOverview()` (`municipality-dashboard.ts`) : appelait auparavant `mockDataService.getPerformanceOverview()` (données aléatoires). Appelle maintenant le vrai endpoint ; `performanceOverview` mis à `null` en cas d'erreur réseau, pas de valeur de repli fabriquée.
+- `isPerformanceOverviewMocked` : `true` → `false` — dernier flag de mock restant sur cet indicateur, fait disparaître le badge "Démo" du template.
+- Template (`municipality-dashboard.html`) : bloc "Satisfaction client" affiche "Non disponible" quand `averageSatisfaction` est `null`/`undefined`, au lieu d'afficher `null/5` et zéro étoile silencieusement. "Conformité réglementaire" ne change pas de logique (toujours un nombre réel), seulement sa source.
+- `.scss` : nouvelle classe `.metric-value--unknown` pour l'état "non disponible" (gris neutre, cohérent avec les autres badges "non disponible" déjà introduits au Prompt 05).
+- Nettoyage collatéral : `generatePerformanceOverview()`/`MunicipalityMockDataService.getPerformanceOverview()` supprimées (mêmes précédents que les Prompts 01/06) — plus aucun appelant réel, le générateur inventait `averageSatisfaction` alors qu'aucune source n'existe.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Backend : `node -c` sur les 4 fichiers (service/controller/route/`server.js`) + `require()` à blanc, sans erreur.
+
+---
+
+# Municipality Dashboard — Prompt 08 : Waste Breakdown Aggregation
+
+Voir `EditRecap.md` pour le détail backend : une régression critique auto-détectée et corrigée (le Prompt 04 avait cassé les 3 seuls points de création de `Collecte` dans tout le backend), et le câblage réel de `PlanningV2.typeDechets` → `Collecte.wasteType` (jamais fait depuis la décision du Prompt 02), préalable nécessaire à ce prompt et validé avec vous avant d'être entrepris. Ceci couvre le côté frontend.
+
+## (a) Nouvel endpoint consommé
+`GET /api/municipality/waste-statistics?days=N` → `[{ type, quantity, percentage, trend }]`, `type` ∈ `menagers|recyclables|verts|encombrants|speciaux` (vrai enum, plus les 4 catégories inventées du mock).
+
+## (b) `quantity` — compte de collectes, pas un poids
+Le mock affichait `{{ waste.quantity }}t` partout (tonnes) et les 2 exports PDF avaient des en-têtes "Quantité (t)". Aucune source de poids réelle n'existe nulle part dans le schéma — `quantity` est un **compte de collectes** par type. Corrigé partout : template ("collecte(s)" au lieu de "t"), tooltip du graphique (`waste-breakdown.chart.ts`), en-têtes des 2 exports PDF ("Nb. collectes" au lieu de "Quantité (t)").
+
+## (c) `WasteStatistic` (interface) — nouveau champ `label`
+Le backend ne renvoie que la clé d'enum (`menagers`, pas "Ménagers"). Ajout de `label: string` sur l'interface, résolu via une nouvelle constante locale `WASTE_TYPE_DISPLAY` (`municipality-dashboard.ts`) qui fournit libellé français + couleur pour les 5 vraies catégories — distincte de `WASTE_TYPE_POOL` (mocks/municipality-mock.constants.ts, 4 catégories inventées), **volontairement laissée intacte** : encore utilisée par 3 autres sections (Performance des collecteurs, Fréquence par zone, Volume Global Collecté) qui restent mock-backées jusqu'à leurs propres prompts dédiés (09/10/11) — les toucher maintenant aurait débordé du périmètre de ce prompt.
+
+## (d) `loadWasteStatistics()` réécrit
+Appelle `Admin.getWasteStatistics$(days)` (nouveau, `admin.ts`) au lieu de `mockDataService.getWasteStatistics$()`. Mappe la réponse serveur (`type`, `quantity`, `percentage`, `trend`) vers `WasteStatistic[]` en résolvant `label`/`color` via `WASTE_TYPE_DISPLAY`.
+
+## (e) Badge "Démo" — rien à retirer
+Le prompt demande de retirer le badge "Démo" de cette section. Vérifié : contrairement à "Performance Globale" (Prompt 07) et "Performance par Agence" (Prompt 05), qui avaient chacun un `isXMocked`/badge dédié, **la section "Répartition des Déchets" n'en a jamais eu** — aucun flag ni badge trouvé dans le template pour cette section spécifiquement. Rien à retirer ; signalé plutôt que silencieusement ignoré, au cas où ce serait une divergence avec ce que vous attendiez.
+
+## Nettoyage collatéral
+`generateWasteStatistics()`/`MunicipalityMockDataService.getWasteStatistics()`/`getWasteStatistics$()` supprimées (plus aucun appelant réel) — même précédent que les Prompts 01/06/07. `generateWasteRecords()` (utilisée par la même fonction supprimée) **conservée** : encore le générateur réel de "Volume Global Collecté" (Prompt 11), non touchée.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Backend : `node -c` sur tous les fichiers modifiés + `require()` à blanc des routes concernées, sans erreur.
+
+---
+
+# Municipality Dashboard — Prompt 09 : Monthly Collection Trend
+
+Voir `EditRecap.md` pour le détail backend (agrégation réutilisant exactement la même base que le Prompt 08, garantissant l'absence de divergence exigée par le roadmap §3.4). Ceci couvre le côté frontend.
+
+## (a) Nouvel endpoint consommé
+`GET /api/municipality/monthly-trend?months=N` → `[{ monthKey, label, totalCollections, completedCollections }]`.
+
+## (b) `totalWeightKg` retiré de `MonthlyTrendPoint`
+Vérifié avant de toucher au code : ce champ n'était lu nulle part côté frontend, même du temps du mock — ni `collection-evolution.chart.ts` (dont le commentaire dit déjà explicitement "not tonnage: that's already covered by the waste-breakdown chart"), ni l'export PDF (`municipality-dashboard.ts`, section "Évolution des collectes", 2 colonnes de métriques seulement). Retiré de l'interface plutôt que renvoyé à 0 : aucune source de poids réelle n'existe de toute façon nulle part dans le schéma backend (même constat que Prompt 08).
+
+## (c) `loadMonthlyTrend()` réécrit
+Appelle `Admin.getMonthlyTrend$(months)` (nouveau, `admin.ts`) au lieu de `mockDataService.getMonthlyTrend$()`. Aucun changement nécessaire côté `collection-evolution.chart.ts` ni template/export PDF : la forme de `MonthlyTrendPoint` consommée par ces 3 endroits (`label`/`totalCollections`/`completedCollections`) reste la même.
+
+## (d) Badge "Démo" — rien à retirer, comme au Prompt 08
+Vérifié : la section "Évolution des Collectes" n'a jamais eu de badge/flag "Démo" dans le template (contrairement à "Performance Globale" et "Performance par Agence"). Rien à retirer ; signalé plutôt que silencieusement ignoré.
+
+## Nettoyage collatéral
+`generateMonthlyTrend()`/`MunicipalityMockDataService.getMonthlyTrend()`/`getMonthlyTrend$()` supprimées (plus aucun appelant réel) — même précédent que les Prompts 01/06/07/08. `generateWasteRecords()` (dont dépendait ce générateur) conservée : encore utilisée par "Volume Global Collecté" (Prompt 11), toujours mocké.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Backend : `node -c` sur les fichiers modifiés + `require()` à blanc, sans erreur.
+
+---
+
+# Municipality Dashboard — Prompt 11 : Zone Collection Frequency
+
+Voir `EditRecap.md` pour le détail backend (blocage réel découvert — la prémisse « Prompt 10 »
+du roadmap ne tenait pas, décision de liaison de zone prise avec l'utilisateur via
+AskUserQuestion). Ceci couvre le côté frontend.
+
+## (a) Nouvel endpoint consommé
+`GET /api/municipality/zone-frequency?days=N` → `[{ id, zoneId, zoneName, wasteType, plannedFrequency, actualFrequency }]`.
+`plannedFrequency` ∈ `unique|hebdomadaire|bimensuel|mensuel` ; `actualFrequency` ajoute `none`.
+
+## (b) Enum réel propagé partout — remplace le mock `daily|weekly|monthly`
+- `CollectionFrequency`/`PlannedFrequency` (`municipality-mock.types.ts`) : nouveau type
+  `PlannedFrequency = 'unique'|'hebdomadaire'|'bimensuel'|'mensuel'`, `CollectionFrequency =
+  PlannedFrequency | 'none'`. `ZoneFrequencyRecord`/`ZoneFrequencyIndicator` retypés en
+  conséquence ; `zoneId?: string` ajouté sur `ZoneFrequencyRecord` (miroir de la réponse
+  backend, identique à `zoneName` aujourd'hui faute d'id stable partagé entre les deux
+  systèmes de zone que le backend réconcilie par nom).
+- `FREQUENCY_WEIGHT` (`utils/zone-frequency.util.ts`) : nouveaux poids
+  `{hebdomadaire:4, bimensuel:2, mensuel:1, unique:0.5, none:0}` — ordre de fréquence réel,
+  `'none'` le plus bas (aucune activité réelle), `'unique'` sous `'mensuel'` (occurrence
+  unique, moins fréquent qu'une cadence mensuelle récurrente). `evaluateZoneFrequency()`
+  retypé `(planned: PlannedFrequency, actual: CollectionFrequency)`.
+- `getFrequencyLabel()` (`municipality-dashboard.ts`) : nouveaux libellés français
+  (Ponctuelle/Hebdomadaire/Bimensuelle/Mensuelle/Aucune).
+- **Bug auto-détecté et corrigé en cours de route (backend)** : la logique de réconciliation
+  zone×type utilisait initialement une clé de type "chaîne jointe puis splittée" — cassée dès
+  qu'un nom de zone contient un espace (fréquent en pratique). Corrigée avant tout test en une
+  clé composite `JSON.stringify([zoneName, wasteType])`, jamais reconstituée par `.split()`.
+
+## (c) `loadZoneFrequency()` réécrit
+Appelle `Admin.getZoneFrequency$(days)` (nouveau, `admin.ts`) au lieu de
+`mockDataService.getZoneFrequencyRecords$(seed)` — `days` (fenêtre réelle de dates pour le
+côté RÉEL) remplace le `seed` du mock (aucun équivalent réel à un reshuffle par seed).
+`zoneFrequencyWasteTypeOptions` liste maintenant les 5 vraies clés d'enum
+(`Object.keys(WASTE_TYPE_DISPLAY)`, même catalogue que le Prompt 08) plutôt que les libellés
+français du mock — le filtre doit matcher `record.wasteType` (la clé brute), donc affichage
+via un nouveau helper `getWasteTypeLabel()` (réutilise `WASTE_TYPE_DISPLAY`) dans le select ET
+dans la cellule du tableau (`indicator.wasteType` affichait la clé brute non traduite avant ce
+correctif).
+
+## (d) Badge "Démo" — rien à retirer, comme aux Prompts 08/09
+Vérifié : le panneau "Fréquence de Collecte par Zone" n'a jamais eu de badge/flag "Démo" dans
+le template. Rien à retirer.
+
+## (e) Tests unitaires mis à jour
+`zone-frequency.util.spec.ts` : tous les cas de test migrés vers le nouvel enum (même
+relations de fréquence relative conservées : hebdomadaire > bimensuel > mensuel), plus 2
+nouveaux cas couvrant `actualFrequency: 'none'` (absent du mock, nouveau côté réel) —
+`evaluateZoneFrequency` le flague bien `insufficient` même contre le planned le plus léger
+(`unique`), et `aggregateZoneFrequencyRecords` le propage correctement au niveau agrégé.
+
+## Nettoyage collatéral
+`generateZoneFrequencyRecords()`/`MunicipalityMockDataService.getZoneFrequencyRecords()`/
+`getZoneFrequencyRecords$()` supprimées (plus aucun appelant réel) — même précédent que les
+Prompts 01/06/07/08/09. `WASTE_TYPE_BASELINE_FREQUENCY` et le helper local `shiftFrequency()`
+supprimés avec elle (plus aucun autre appelant, confirmé par grep avant suppression).
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- `zone-frequency.util.ts` compilé isolément (`tsc` vers un dossier temporaire) et exécuté en
+  Node avec les 10 assertions du spec mis à jour rejouées manuellement (pas seulement
+  type-checkées) — toutes passent, y compris les 2 nouveaux cas `'none'`.
+- Backend : voir `EditRecap.md` (test d'insertion temporaire contre la vraie base, nettoyé
+  immédiatement après, base confirmée restaurée à son état initial).
+
+---
+
+# Municipality Dashboard — Prompt 12 : Waste Volume Records (Fact Table + Filtering)
+
+Voir `EditRecap.md` pour le détail backend (blocage plus grave que celui du Prompt 11 —
+`weightKg`/`targetWeightKg` n'ont aucune source réelle nulle part, décision prise avec
+l'utilisateur via AskUserQuestion). Ceci couvre le côté frontend.
+
+## (a) Nouvel endpoint backend disponible, non consommé directement par l'UI existante
+`GET /api/municipality/waste-records?from=&to=&zoneId=&wasteType=&collectorId=&page=&limit=`
+existe côté backend (table de faits paginée), mais aucun écran de ce dashboard n'affichait
+déjà une liste de collectes individuelles à rebrancher — la "Frontend Integration" demandée
+par le prompt portait sur *"Volume Global Collecté"*, pas sur l'ajout d'un nouveau tableau.
+Décision (issue du choix utilisateur ci-dessous) : pas de nouveau composant de liste construit
+dans ce prompt ; l'endpoint reste disponible pour un futur écran de détail/export si besoin.
+
+## (b) "Volume Global Collecté" entièrement redéfini
+- `VolumeAggregate` (`utils/volume.util.ts`) : `actualKg`/`targetKg` → `actualCollections`/
+  `targetCollections`. `aggregateVolume()` prend maintenant des `MonthlyTrendPoint[]`
+  (déjà chargés pour "Évolution des Collectes", Prompt 09) au lieu de `MockWasteRecord[]` —
+  `completedCollections` sert d'"actuel", `totalCollections` sert d'"objectif" (les collectes
+  planifiées), sans inventer un objectif externe.
+- **Plus de fetch séparé** : `loadVolumeGlobal()`/`applyVolumeFilters()` supprimées.
+  `volumeAggregate` est désormais recalculé directement dans `loadMonthlyTrend()` (succès ET
+  erreur), à partir de la même réponse déjà reçue pour le graphique d'évolution.
+- **Plus de filtres zone/type/collecteur pour ce panneau** : `monthly-trend` est un agrégat
+  plateforme, non filtrable par ces dimensions — les 3 `<select>` correspondants retirés du
+  template, ainsi que `volumeZoneFilter`/`volumeWasteTypeFilter`/`volumeCollectorFilter`/
+  `volumeZoneOptions`/`volumeWasteTypeOptions`/`volumeCollectorOptions`/`volumeAllRecords`/
+  `isLoadingVolumeGlobal` (le panneau utilise maintenant `isLoadingMonthlyTrend`, puisqu'il
+  n'a plus sa propre requête).
+- **Libellés mis à jour** : "Réel (t)"/"Objectif (t)" → "Collectes réalisées"/"Collectes
+  planifiées" (retrait de la conversion `/1000` kg→tonnes, désormais un compte, pas un
+  poids) — dans le template ET dans les 2 sections d'export PDF/CSV/Excel
+  (`generateGlobalReport()` Prompt 15, `buildStatisticsExportSections()` Prompt 16).
+- `updateStatistics()` : compteur de fan-out `remaining` réduit de 5 à 4 — "Volume Global
+  Collecté" ne consomme plus son propre slot, il se termine avec celui de `loadMonthlyTrend()`.
+
+## (c) Nettoyage collatéral en cascade
+`generateWasteRecords()`/`MunicipalityMockDataService.getWasteRecords()`/`getWasteRecords$()`
+supprimées (plus aucun appelant réel — "Volume Global Collecté" était leur dernier) — même
+précédent que les Prompts 01/06/07/08/09/11. En cascade, également supprimés (devenus
+orphelins, confirmé par grep sur tout le repo avant suppression) :
+`MockWasteRecord` (interface), `WASTE_TYPE_TARGET_WEIGHT_KG`, `FULL_HISTORY_DAYS` — aucun de
+ces trois n'avait plus d'appelant nulle part une fois `generateWasteRecords()` retirée.
+L'import `Collection`/`CollectionStatus` (`models/collection.model.ts`) dans
+`municipality-dashboard.ts` et `municipality-mock.types.ts` retiré pour la même raison
+(n'existait que pour `MockWasteRecord`).
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0` (après tout le nettoyage en cascade).
+- `volume.util.ts` compilé isolément et exécuté en Node avec les 4 assertions du spec
+  mis à jour rejouées manuellement (pas seulement type-checkées) — toutes passent.
+- Backend : voir `EditRecap.md` (non-régression Prompt 09 re-vérifiée après le refactor
+  `_baseWasteFactsMatch`, plus test d'insertion temporaire contre la vraie base pour le
+  nouvel endpoint, nettoyé immédiatement après, base confirmée restaurée à son état initial).
+
+---
+
+# Municipality Dashboard — Prompt 13 : Period Filter Contract Across All Statistics Endpoints
+
+Voir `EditRecap.md` pour le détail backend (extraction `resolvePeriodWindow()`, et la
+matrice complète des 5 sections face à "Période" — le livrable principal de ce prompt).
+Ceci couvre le côté frontend.
+
+## Constat : aucun changement de comportement nécessaire côté frontend
+
+Vérifié avant de conclure trop vite à "rien à faire" : `getPeriodConfig()`
+(`municipality-dashboard.ts`) envoyait déjà `days`/`months` — pas un `seed` — à
+`loadWasteStatistics()`/`loadMonthlyTrend()`/`loadZoneFrequency()`, exactement la table
+de correspondance définie dans `BACKEND_INTEGRATION.md` §4 (Aujourd'hui→1j/3mois,
+Cette semaine→7j/3mois, Ce mois→30j/6mois, Ce trimestre→90j/9mois, Cette année→365j/12mois).
+`days`/`months` sont explicitement acceptés par le prompt lui-même comme équivalents
+réels à `from`/`to` ("Existing Architecture Analysis" : "or equivalent days/months
+convention") — il n'y avait donc pas de véritable écart à corriger, seulement à confirmer
+et documenter clairement, ce qui est le travail effectué ici.
+
+## (a) `getPeriodConfig()` — docstring réécrite comme référence définitive
+
+Le commentaire décrivait déjà `days`/`months`/`seed`, mais pas de façon assez complète pour
+servir de référence aux 5 sections face à "Période" (le livrable explicite du prompt).
+Réécrit pour couvrir, section par section : lequel des 4 endpoints réels chaque valeur
+alimente, et — point le plus important, demandé explicitement par le prompt — que la
+fenêtre `days` envoyée à `GET /zone-frequency` (Prompt 11) n'affecte QUE `actualFrequency`,
+jamais `plannedFrequency` (aucune notion de "planifié à une date passée" dans le schéma
+backend — confirmé côté backend, pas supposé). `seed` reste documenté comme un mécanisme
+strictement mock, pour l'unique section (indicateurs de performance) qui n'a encore aucun
+endpoint réel — pas une 4ᵉ variante du vrai contrat `from`/`to`/`days`/`months`.
+
+## (b) Aucun nouvel appel réseau, aucun nouveau composant
+
+`GET /waste-records` (Prompt 12) reste sans appelant frontend — confirmé de nouveau ici
+(déjà noté au Prompt 12) : aucun écran de ce dashboard n'affiche de liste de collectes
+individuelles à faire pointer vers cet endpoint pour l'instant. Rien à câbler pour ce
+prompt spécifiquement.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Backend : voir `EditRecap.md` — complété a posteriori une fois la panne réseau/DNS locale
+  contournée (`dns.setServers` vers des résolveurs publics) : test comportemental complet
+  rejoué, refactor confirmé comportementalement identique.
+
+---
+
+# Municipality Dashboard — Prompt 14 : Coverage Map Data (Reuse Existing Endpoints)
+
+Voir `EditRecap.md` pour le détail backend (prémisse `zone-coverage` confirmée fausse pour
+la 3ᵉ fois, fix indépendant du crash `plannings[0]`, décision utilisateur). Ceci couvre le
+côté frontend — **majoritairement un retour en arrière**, pas une migration.
+
+## Migration construite, vérifiée, puis mise en attente (décision utilisateur)
+
+Une vraie intégration a été construite : `Admin.getCities$()` (nouveau, `admin.ts`) →
+`GET /territories/cities`, une nouvelle `loadCityCoordinates()` dans
+`municipality-dashboard.ts` remplaçant `MunicipalityMockDataService.getZoneCoordinates()`
+dans `buildCoverageMapZones()`, avec gestion de la course entre ce chargement et
+`buildZoneStatisticsFromAdminStats()` (peu importe lequel des deux finit en premier).
+Type-check clean, code correct.
+
+**Puis vérifiée contre la vraie base avant de la considérer terminée** (même discipline que
+tous les prompts précédents) : la collection `City` réelle n'a que 6 documents, aucun avec
+`latitude`/`longitude` renseignées. Migrer aurait fait passer la carte de "marqueurs
+approximatifs" à "aucun marqueur" — présenté à l'utilisateur via AskUserQuestion plutôt que
+décidé silencieusement, qui a choisi de garder le mock pour le moment.
+
+## Retour en arrière effectué
+
+- `buildCoverageMapZones()` : revert à `this.mockDataService.getZoneCoordinates(city.name)`.
+- `loadCityCoordinates()` et la propriété `cityCoordinates` : supprimées (code mort une fois
+  la décision prise — un futur prompt qui reviendrait sur cette décision peut relire cette
+  entrée plutôt que retrouver un composant à moitié câblé).
+- `ZONE_COORDINATES`/`OTHER_COUNTRY_CITY_COORDS`/`getZoneCoordinates()` (mocks) : restaurées
+  à l'identique.
+- `Admin.getCities$()` : **conservée**, non appelée — prête à être rebranchée le jour où
+  `City.latitude`/`longitude` sera réellement peuplé, avec un commentaire à jour expliquant
+  pourquoi elle est actuellement inutilisée plutôt que « nouvelle et jamais utilisée ».
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0` (après le retour en arrière).
+- Grep sur tout le dossier `municipality-dashboard` : confirmé aucune référence résiduelle à
+  `cityCoordinates`/`loadCityCoordinates` après suppression.
+- Backend : voir `EditRecap.md` (comptage réel des documents `City` et de la correspondance
+  de noms avec `MOCK_CITIES`, qui a motivé la décision de mise en attente).
+
+---
+
+# Municipality Dashboard — Prompt 15 : Known Inconsistencies Cleanup
+
+Voir `EditRecap.md` pour le détail backend (renommage du schéma OpenAPI `Agence`→`Agency`).
+Ceci couvre le côté frontend — 3 items indépendants, chacun vérifié avant modification.
+
+## (a) `loadZoneStatistics()` supprimée — mais PAS `AgencyService.getAgenceStats()`
+
+Grep sur tout `src/` (pas seulement ce dossier), comme demandé explicitement par le prompt :
+`MunicipalityDashboard.loadZoneStatistics()` (municipality-dashboard.ts:748) n'avait
+**zéro appelant** nulle part — supprimée. Mais `AgencyService.getAgenceStats()`, que cette
+méthode appelait, **N'A PAS été supprimée** : `admin-dashboard.ts` a sa PROPRE méthode
+`loadZoneStatistics()` (homonyme, sans rapport), toujours réellement appelée
+(`admin-dashboard.ts:588`), qui appelle elle-même `getAgenceStats()`. La prémisse du prompt
+("`AgencyService.getAgenceStats()` confirmée morte") n'était donc vraie que pour l'appelant
+municipalité, pas pour la méthode de service elle-même — signalé plutôt que supprimé à
+tort, ce qui aurait cassé `admin-dashboard.ts`.
+
+## (b) Bug réel trouvé — mais mal corrigé ici ; vraie correction faite plus tard côté backend (voir EditRecap.md)
+
+Le prompt demandait de "retirer le typage `any` désormais résolu" — déjà fait avant ce
+prompt (`statisticsAdmin` est déjà typé `MunicipalityStatistics | null`). Mais vérifier
+"Prompt 01 confirmé en conditions réelles" (comme demandé) a révélé que la résolution
+n'était pas complète : l'interface déclarait `totalCollectionsCollected` et
+`totalCollectionsReported`, des noms qui ne correspondaient à AUCUNE clé renvoyée par
+`services/globalState.js` (backend réel) — celui-ci calcule les valeurs sous
+`dailyCollectionCollected` et `totalCollectionReported`. Conséquence réelle, pas
+théorique : `getCollectionRate()` lisait un champ toujours `undefined` → **le taux de
+collecte affiché en haut du dashboard était silencieusement bloqué à 0% depuis la
+migration réelle**, malgré des données correctes derrière.
+
+**Correction initialement appliquée ici (erronée)** : les deux champs de l'interface
+renommés pour matcher le retour de `services/globalState.js` directement
+(`dailyCollectionCollected`/`totalCollectionReported`) — vérification faite uniquement
+contre le SERVICE, pas contre la vraie réponse HTTP. Or `controllers/globalSate.js`
+(le contrôleur, entre le service et `res.json()`) renomme ces deux champs en
+`totalCollectionsCollected`/`totalCollectionsReported` (pluriel) avant de les envoyer —
+exactement les noms que l'interface avait AVANT ce prompt, et qu'Prompt 01 avait déjà
+confirmés corrects contre la vraie réponse (voir EditRecap.md ligne ~634). Ce
+"correctif" recréait donc le même bug (0% affiché) par le chemin inverse, jusqu'à ce que
+l'utilisateur colle une vraie réponse HTTP le montrant.
+
+**Résolution finale** (décision utilisateur explicite : "l'ajouter côté backend" plutôt
+que renommer à nouveau ici) : les 2 champs de l'interface remis à
+`dailyCollectionCollected`/`totalCollectionReported` (leur état originel, correct), et
+`controllers/globalSate.js` étendu pour exposer CES noms en plus des alias pluriels
+existants (aucun champ retiré côté backend — voir EditRecap.md pour le détail et la
+vérification en direct contre la vraie base). Leçon retenue : quand une réponse HTTP
+passe par un contrôleur séparé du service, vérifier le contrat contre le contrôleur (ou
+un vrai appel HTTP), jamais contre le retour brut du service seul.
+
+## (c) Badges "Démo" — les 2 flags valaient déjà `false`, supprimés avec leurs 3 usages
+
+`isPerformanceOverviewMocked` et `isAgencyPerformanceMocked` valaient déjà `false` en dur
+(Prompts 05/07 avaient déjà rendu les données réelles) — aucun badge ne s'affichait donc
+plus depuis un moment, mais les indicateurs eux-mêmes restaient dans le code. Retirés avec
+leurs 3 usages dans le template (`Satisfaction client`, `Conformité` par agence,
+`metric-row-demo-label`) et les 2 règles CSS `.demo-data-badge`/`.metric-row-demo-label`
+devenues orphelines.
+
+## Checklist finale — tous les badges "Démo" introduits pendant la phase mock (Prompts 00-14)
+
+| Badge / flag | Section | État |
+|---|---|---|
+| `isPerformanceOverviewMocked` | Performance Globale — Satisfaction client | ✅ Supprimé (déjà `false`, jamais affiché) |
+| `isAgencyPerformanceMocked` (×2 usages) | Audit Agences — Conformité / métriques par agence | ✅ Supprimé (déjà `false`, jamais affiché) |
+| Zone Frequency, Waste Breakdown, Monthly Trend, Volume Global | — | ✅ Confirmé aux Prompts 08/09/11/12 : jamais eu de badge "Démo" à retirer (vérifié explicitement à chaque prompt, pas supposé) |
+| Performance Indicators (§3.5) | Graphiques de performance | ⚠️ **Toujours mock** (aucun endpoint réel construit) — pas de badge "Démo" existant à ce jour sur cette section non plus, mais c'est la seule section qui resterait légitimement à badger si un badge devait un jour être ajouté |
+| Coverage Map (coordonnées) | Couverture Territoriale (carte) | ⚠️ **Toujours mock** (Prompt 14, décision utilisateur de rester sur le mock en attendant de vraies coordonnées) — pas de badge "Démo" existant sur cette section |
+
+Grep final sur `municipality-dashboard.html`/`.ts` : zéro occurrence de
+`isXMocked`/`Démo`/`démo`/`demo-data-badge` restante.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Grep sur tout `src/` (pas seulement municipality-dashboard) pour les deux suppressions de
+  code mort, avant de supprimer quoi que ce soit.
+- Backend : appel réel de `services/globalState.js::getDashboardStats()` — ⚠️ correspondance
+  contre le SERVICE seulement, pas contre la vraie réponse HTTP (`controllers/globalSate.js`
+  renomme 2 champs entre les deux) — voir la correction de ce point plus bas dans ce même
+  fichier ("Correctif : `GET /api/statistics` ne renvoyait pas `dailyCollectionCollected`/
+  `totalCollectionReported`", et EditRecap.md pour le détail backend).
+
+# Bug signalé par l'utilisateur : "Le map ne s'affiche pas !" (Coverage Map, Couverture Territoriale)
+
+Signalé via capture d'écran : la carte de `coverage-map.ts` s'affichait comme une boîte
+grise vide, avec les contrôles de zoom et l'attribution Leaflet/OSM correctement
+positionnés, mais aucune tuile visible. Reproduit en direct (Chrome headless + CDP brut,
+`window.ng.getComponent()` pour introspecter l'instance Leaflet en direct) plutôt que
+supposé depuis le code.
+
+## Cause réelle : `fitBounds()` s'exécutait avant que le conteneur ait une taille de layout réelle
+
+`initMap()` appelait `fitBounds()` de façon synchrone juste après avoir créé la carte et
+les 23 marqueurs — au moment exact où `.territory-map-container` vient d'être inséré/basculé
+dans le DOM (bascule `@if/@else` sur `coverageView`). À cet instant, `el.clientWidth`/
+`clientHeight` valent encore `0` (le navigateur n'a pas encore fait sa passe de layout).
+Un premier correctif (déplacer `invalidateSize()` + `fitBounds()` dans un seul
+`requestAnimationFrame`) s'est révélé **insuffisant** : vérifié en direct que
+`el.clientWidth`/`clientHeight` valent toujours `0, 0` même à l'intérieur de ce callback rAF
+— une seule frame ne suffit pas systématiquement. Conséquence mesurée : `fitBounds()`
+calculait un zoom bloqué à `maxZoom` (19, échelle bâtiment) centré sur le centroïde des 23
+coordonnées de zones (Niger→Ghana), au lieu d'un zoom englobant réellement tous les
+marqueurs — d'où la tuile unique, minuscule, ne couvrant qu'un coin de la boîte, laissant le
+reste gris.
+
+Vérifié séparément (chaîne complète d'ancêtres mesurée après stabilisation) que le
+conteneur **obtient bien** une taille réelle (363×420 dans le cas testé) — ce n'est donc pas
+une chaîne CSS cassée (`:host`/`.coverage-map-host`/`.coverage-map-canvas` en `height:100%`
+jusqu'à `.territory-map-container` en `height:420px` fixe est correcte), seulement une
+véritable course avec le layout du navigateur, plus lente qu'une seule frame d'animation
+dans ce cas précis.
+
+## Correctif appliqué
+
+Remplacé l'hypothèse de timing (`requestAnimationFrame`) par une logique conditionnelle :
+si `el.clientWidth > 0 && el.clientHeight > 0` au moment de `initMap()` (vrai à chaque
+re-rendu après le premier), `fitBounds()` s'exécute immédiatement. Sinon, la fonction de fit
+est stockée (`this.pendingFit`) et exécutée par le `ResizeObserver` déjà existant sur `el`
+(observé directement maintenant, plus seulement `el.parentElement`) — celui-ci est garanti
+par spec de se déclencher au moins une fois après `observe()`, donc il capte forcément la
+transition vers la taille réelle, sans deviner combien de frames cela prend.
+
+## Vérifié en direct après correctif
+
+Rejoué la même reproduction CDP (login mock municipalité → navigation dashboard → clic
+"Vue carte") : `map.getZoom()` = **4** (plus 19), `map.getBounds()` couvre bien
+lat -8.75→27.06 / lng -15.47→16.44 (cohérent avec les 23 zones Burkina Faso/Mali/Niger/
+Ghana), et les 6 tuiles visibles à ce zoom sont toutes chargées (`naturalWidth > 0`).
+
+# Redesign "Alertes Récentes" (Vue d'ensemble) — capture d'écran utilisateur montrant des lignes sans couleur ni icône
+
+Signalé via capture d'écran : chaque ligne de "Alertes Récentes" s'affichait comme un
+simple texte brut ("Regular", "REPORTED") sans puce colorée, sans icône, sans badge
+stylé — demande explicite de redesign de cette section.
+
+## Cause réelle trouvée avant de redessiner : mismatch de casse entre les données réelles et les classes CSS
+
+`incident.severity` (réel, `Incident["severity"]`) vaut `"Critical"|"High"|"Medium"|"Low"`
+(capitalisé) et `incident.status` vaut notamment `"Reported"|"Collected"|"Scheduled"`
+(capitalisé) — mais le template construisait les classes CSS directement avec la valeur
+brute (`'severity-' + incident.severity` → `severity-Critical`) alors que toutes les
+règles CSS existantes sont en minuscules (`.severity-critical`). Résultat : aucune classe
+ne matchait jamais, donc ni couleur ni icône ne s'appliquaient — ce n'était pas un simple
+manque de style, c'était un vrai bug de mapping qui rendait tout style invisible.
+
+Le même problème existe déjà — et est déjà résolu — dans `signalement.html`/`signalement.ts`
+(page Signalements) : `.toLowerCase()` est appliqué systématiquement avant chaque lookup/
+classe (`incident.severity.toLowerCase()`, `incident.type.toLowerCase()`,
+`incident.status.toLowerCase()`), et `getIncidentTypeText()`/`getIncidentStatusText()`
+y ont déjà les entrées `regular`/`reported`/`scheduled`/`collected` que
+`municipality-dashboard.ts` n'avait pas. Repris ce pattern déjà établi plutôt que d'en
+inventer un nouveau :
+- `municipality-dashboard.html` : `.toLowerCase()` ajouté sur severity/type/status avant
+  chaque binding de classe et chaque appel à `getSeverityIcon()`/`getIncidentTypeText()`/
+  `getIncidentStatusText()`.
+- `municipality-dashboard.ts` : `getIncidentTypeText()` complété avec `regular`/`other`,
+  `getIncidentStatusText()` complété avec `reported`/`scheduled`/`collected` (mêmes
+  traductions françaises que `signalement.ts`, pour rester cohérent dans toute l'app).
+- `municipality-dashboard.scss` : ajout de `.status-reported`/`.status-scheduled`/
+  `.status-collected` (nouvelles, sans toucher aux classes `.status-*` existantes déjà
+  utilisées ailleurs — agences, comparaisons d'objectifs).
+
+## Redesign visuel
+
+Repris la palette "plate" déjà établie dans `signalement.scss` (fonds pastel + texte
+saturé pour les puces de sévérité/statut, bordure gauche colorée) plutôt que l'ancien
+style (icône ronde à fond plein, badges sans bordure gauche) — cohérence visuelle entre
+les deux endroits de l'app qui affichent des incidents. Carte blanche à bordure fine,
+bordure gauche de 4px colorée par sévérité, puce d'icône 38×38 à coin arrondi avec fond
+teinté, effet de survol (légère élévation), état vide ("Aucune alerte récente" avec icône
+`check_circle`) ajouté (le composant n'avait aucun rendu pour la liste vide auparavant).
+Nettoyage au passage d'une règle `.alerts-list` dupliquée (5 paires `max-height`/
+`overflow-y` empilées dans le fichier, restées d'un ancien copier-coller) — fusionnée en
+une seule règle propre.
+
+## Vérifié en direct
+
+`npx tsc --noEmit` → `EXIT:0`. Le login mock utilisé pour la reproduction CDP n'a pas de
+vraies données de signalements en base (`isLoadingIncidents` reste bloqué à `true`,
+confirmé), donc vérification faite en injectant directement `comp.incidents` (5 entrées
+couvrant les 4 sévérités et les 5 statuts réels — `Reported`/`Scheduled`/`Collected`/
+`pending`/`resolved`, casse mixte comme les vraies données) via
+`window.ng.getComponent()` + `comp.cd.detectChanges()`, puis capture d'écran : les 5
+puces de sévérité ont chacune leur icône et leur couleur distinctes, les 5 badges de
+statut ont chacun leur couleur et leur texte français corrects.
+
+# Correctif : `dailyCollectionCollected`/`totalCollectionReported` remis (le "correctif" du Prompt 15 (b) était une régression)
+
+Signalé par l'utilisateur via une vraie réponse HTTP collée en direct : `stats` ne
+contenait que `totalCollectionsCollected`/`totalCollectionsReported` (pluriel), jamais
+`dailyCollectionCollected`/`totalCollectionReported`. Voir EditRecap.md pour l'analyse
+complète côté backend (le contrôleur renomme ces champs entre le service et la réponse
+HTTP — le rename fait au Prompt 15 (b) ci-dessus avait vérifié uniquement le service, pas
+la réponse réelle, recréant le même bug 0% par le chemin inverse).
+
+## Décision utilisateur : corriger côté backend, pas re-renommer ici
+
+Plutôt que de renommer une troisième fois l'interface frontend, l'utilisateur a demandé
+d'ajouter les champs manquants côté backend. `MunicipalityStatistics.dailyCollectionCollected`
+et `.totalCollectionReported` remis à leur nom d'origine (annulant le rename du Prompt 15
+(b)) dans les 3 sites de lecture (`getCollectionRate()`, l'export PDF, le template) —
+`municipality-dashboard.html` n'avait d'ailleurs jamais été changé et lisait déjà
+`dailyCollectionCollected`, ce qui aurait dû être un signal d'alerte au Prompt 15.
+`controllers/globalSate.js` (backend) étend sa réponse pour exposer ces 2 noms exacts en
+plus des alias pluriels déjà existants, sans rien retirer.
+
+## Vérifié
+`npx tsc --noEmit -p tsconfig.json` → `EXIT:0`. Vérification bout-en-bout faite côté
+backend (voir EditRecap.md) : script temporaire reproduisant la construction de réponse
+du contrôleur contre la vraie base — `dailyCollectionCollected: 0` et
+`totalCollectionReported: 3` bien présents, valeurs identiques à celles de la réponse
+réelle collée par l'utilisateur.

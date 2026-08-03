@@ -1734,7 +1734,7 @@
             [incidents]="agencyReports"
             [currentUser]="currentUser"
             (isLoadingIncidents)="isLoadingReports = $event"
-            (assignReport)="openAssignModal($event)"
+            (assignReportToTeam)="onAssignReportToTeam($event)"
             (resolvedIncident)="resolveIncident($event)"
           ></app-signalement>
           <!-- <div class="reports-list">
@@ -2932,67 +2932,15 @@
 
             </div>
           </div>
-          } @if (showAssignModal) {
-          <div class="drawer-overlay" (click)="closeAssignModal()">
-            <div class="drawer-content" (click)="$event.stopPropagation()">
-              <div class="drawer-header">
-                <div>
-                  <h3>Assigner un signalement</h3>
-                  @if (selectedReport?.clientId) {
-                  <p>
-                    Signalement du(de la) client(e)
-                    <strong>
-                      <em>
-                        {{ selectedReport?.clientId?.firstName }} {{
-                        selectedReport?.clientId?.lastName }}</em
-                      ></strong
-                    >
-                  </p>
-                  }
-                </div>
-                <button class="drawer-close-btn" (click)="closeAssignModal()">
-                  <i class="material-icons">close</i>
-                </button>
-              </div>
-              <div class="drawer-body">
-                @if (allEmployees && allEmployees.length > 0) {
-                <div class="employee-grid">
-                  @for (employee of allEmployees; track employee) {
-                  <label class="employee-card">
-                    <input
-                      type="checkbox"
-                      [value]="employee._id"
-                      (change)="onEmployeeToggle($event)"
-                    />
-                    <div class="employee-info">
-                      <span class="employee-name"
-                        >{{ employee.firstName }} {{ employee.lastName }}</span
-                      >
-                      <span class="employee-role">{{ employee.role }}</span>
-                    </div>
-                  </label>
-                  }
-                </div>
-                } @else {
-                <p>Aucun Employe disponible.</p>
-                }
-              </div>
-              <div class="drawer-footer">
-                <div class="drawer-actions">
-                  <button
-                    class="btn btn-secondary"
-                    (click)="closeAssignModal()"
-                  >
-                    Annuler
-                  </button>
-                  <button class="btn btn-primary" (click)="assignReport()">
-                    Assigner
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
           }
+          <!--
+            Ancien modal d'assignation par employé supprimé (Prompt 06) : appelait
+            assignReport()/onEmployeeToggle(), qui tapaient PUT /reports/:id/assign
+            (route inexistante dans tout le backend) — jamais fonctionnel. Le vrai
+            picker d'équipe (team-based, contrat réel) vit maintenant directement dans
+            <app-signalement> ci-dessus (signalement.ts::openTeamPicker), qui émet
+            (assignReportToTeam) une fois l'équipe confirmée.
+          -->
           <!-- Drawer Mes Tarifs -->
           @if (showTariffsModal) {
           <div class="drawer-overlay" (click)="closeTariffsModal()">

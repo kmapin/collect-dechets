@@ -14,8 +14,8 @@ export const DEFAULT_SEED = 20260801;
  * Real coordinates for the non-Burkina-Faso capitals/major cities also
  * listed in `MOCK_CITIES` (Mali, Niger, Côte d'Ivoire, Ghana) — `ouaga-coords.ts`
  * is scoped to Burkina Faso only (its own name says so), so without this,
- * 8 of the 23 cities `loadZoneStat()` builds table rows for would silently
- * get no map marker at all, even though they're shown in the tabular view.
+ * 8 of the 23 cities the Couverture Territoriale table builds rows for would
+ * silently get no map marker at all, even though they're shown in the tabular view.
  */
 const OTHER_COUNTRY_CITY_COORDS: Record<string, [number, number]> = {
   Bamako: [12.6392, -8.0029],
@@ -29,16 +29,15 @@ const OTHER_COUNTRY_CITY_COORDS: Record<string, [number, number]> = {
 };
 
 /**
- * Coverage Map (Prompt 13) coordinate lookup, keyed by the exact zone/city
- * name already used elsewhere in the app — reuses the project's existing,
- * real-world-plausible coordinate data (`data/ouaga-coords.ts`, already
- * powering the agency-level maps in admin-dashboard.ts/team-dashboard.ts)
- * instead of inventing new mock lat/lng pairs. Covers every granularity
- * "Couverture Territoriale" might need: city-level (`BF_CITY_COORDS` +
- * `OTHER_COUNTRY_CITY_COORDS`, what `zoneStatistics` actually uses today —
- * see loadZoneStat()) and arrondissement-level (`OUAGA_ARR_COORDS`,
- * matching `MUNICIPALITY_ZONES`), merged into one map so a caller doesn't
- * need to know which granularity a given name belongs to.
+ * Coverage Map coordinate lookup, keyed by exact city name. Reinstated as mock
+ * (Prompt 14 — decided with the user via AskUserQuestion): a real replacement
+ * (`GET /territories/cities`) was built and verified against the live database, but
+ * the real `City` collection currently has only 6 documents and ZERO with
+ * latitude/longitude populated (confirmed empirically, not assumed) — migrating now
+ * would silently turn the map from "shows plausible markers" into "shows nothing at
+ * all", a worse regression than staying mock. Kept exactly as before pending real city
+ * coordinate data. `Admin.getCities$()` (admin.ts) is already written and ready to
+ * swap this back in once that data exists — see EditRecapFront.md, Prompt 14.
  */
 export const ZONE_COORDINATES: Record<string, [number, number]> = {
   ...BF_CITY_COORDS,
@@ -49,20 +48,10 @@ export const ZONE_COORDINATES: Record<string, [number, number]> = {
 /** Simulated network latency for Observable-returning mock methods, so a loading state is actually visible/testable. */
 export const MOCK_NETWORK_DELAY_MS = 450;
 
-/**
- * How many days of `generateWasteRecords()` history exist — the single
- * shared source of truth behind the Waste Breakdown chart (Prompt 07), the
- * Collection Evolution chart (Prompt 08), and Volume Global Collecté
- * (Prompt 11). All three filter/aggregate the SAME full-range record set
- * rather than each calling `generateWasteRecords()` with their own `days`
- * value — the generator's PRNG stream is consumed oldest-day-first, so
- * requesting a different `days` shifts which random draws land on any given
- * calendar day, and the "same" recent days would silently produce different
- * records depending on which feature asked for them. 400 days safely covers
- * 12 full calendar months back from any day of the year (12*31 + up to 31
- * days of margin for where "today" falls in its own month).
- */
-export const FULL_HISTORY_DAYS = 400;
+// FULL_HISTORY_DAYS supprimée (Prompt 12) : n'existait que pour `generateWasteRecords()`
+// (supprimée à la même occasion) — plus aucun appelant, toutes les sections qui en
+// dépendaient (Waste Breakdown, Collection Evolution, Volume Global Collecté) sont
+// maintenant réelles.
 
 /**
  * Zones reused as-is from the project's existing Ouagadougou fixture
@@ -137,35 +126,9 @@ export const WASTE_TYPE_POOL: { label: string; color: string; baseSharePct: numb
   { label: 'Verre', color: '#00bcd4', baseSharePct: 10 },
 ];
 
-/**
- * Baseline planned collection cadence per waste category, a realistic
- * municipal policy default (household waste collected most often, glass
- * least often). `generateZoneFrequencyRecords()` uses this as the common
- * case, with occasional per-zone deviation so it's not identical everywhere.
- */
-export const WASTE_TYPE_BASELINE_FREQUENCY: Record<string, 'daily' | 'weekly' | 'monthly'> = {
-  'Déchets ménagers': 'daily',
-  Recyclables: 'weekly',
-  Organiques: 'weekly',
-  Verre: 'monthly',
-};
-
-/**
- * Planned/target weight (kg) per collection, per waste category — "Volume
- * Global Collecté" (Prompt 11)'s target-modeling, same convention as
- * Prompt 09's per-collector `target` and Prompt 10's per-zone
- * `plannedFrequency`: every record carries both an actual value
- * (`weightKg`, already random per collection) and a target one
- * (`targetWeightKg`, a fixed realistic per-category baseline), so summing
- * either across any filtered scope gives a genuine actual-vs-target
- * comparison without a separate, disconnected target dataset.
- */
-export const WASTE_TYPE_TARGET_WEIGHT_KG: Record<string, number> = {
-  'Déchets ménagers': 95,
-  Recyclables: 70,
-  Organiques: 60,
-  Verre: 40,
-};
+// WASTE_TYPE_TARGET_WEIGHT_KG supprimée (Prompt 12) : "Volume Global Collecté" est
+// désormais dérivé de MonthlyTrendPoint (réel) — plus aucun appelant, aucune source de
+// poids réelle n'existant de toute façon nulle part dans le schéma backend.
 
 export const INCIDENT_TYPE_POOL: Array<'missed_collection' | 'compliance_issue' | 'complaint' | 'technical_issue'> = [
   'missed_collection',

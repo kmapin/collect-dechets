@@ -6,14 +6,6 @@ import { Municipality } from '../models/agency.model';
 import { RegisterResponse, RegisterUserData, User } from '../models/user.model';
 import { FilterParams } from '../models/filterParams.model';
 
-interface MunicipalityStatistics {
-  totalAgencies: number;
-  totalClients: number;
-  // totalCollectors: number;
-  // todayCollections: number;
-  // activeAgencies: number;
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -133,14 +125,23 @@ export class Admin {
 
 
   /**Tous les signalement sur la plateforme */
-  getAllReports(params?: { page?: number; limit?: number; status?: string; severity?: string; search?: string; agencyId?: string }) {
+  // Signature publique inchangée (page/search) — admin-dashboard.ts a déjà une vraie UI de
+  // pagination construite dessus (incidentsCurrentPage/incidentsItemsPerPage/...), pas de
+  // raison de la casser. Le vrai bug (Prompt 03, BACKEND_INTEGRATION.md §0.5) était la
+  // traduction interne : le backend réel (services/qrValidation.js::getAllCollectes)
+  // attend `skip`/`term`, jamais `page`/`search` — silencieusement ignorés jusqu'ici,
+  // donc `page` n'avait jamais d'effet (toujours les mêmes `skip=0` par défaut).
+  getAllReports(params?: { page?: number; limit?: number; status?: string; severity?: string; search?: string; agencyId?: string; date?: string }) {
+    const limit = params?.limit ?? 10;
+    const page = params?.page ?? 1;
     let requestParams = new HttpParams()
-      .append('page',  params?.page  ?? 1)
-      .append('limit', params?.limit ?? 10);
+      .append('skip', (page - 1) * limit)
+      .append('limit', limit);
     if (params?.status   && params.status   !== 'all') requestParams = requestParams.append('status',   params.status);
     if (params?.severity && params.severity !== 'all') requestParams = requestParams.append('severity', params.severity);
-    if (params?.search   && params.search.trim())      requestParams = requestParams.append('search',   params.search.trim());
+    if (params?.search   && params.search.trim())      requestParams = requestParams.append('term',     params.search.trim());
     if (params?.agencyId && params.agencyId.trim())    requestParams = requestParams.append('agencyId', params.agencyId.trim());
+    if (params?.date)                                   requestParams = requestParams.append('date',     params.date);
 
     return this.http.get(`${environment.apiUrl}/collecte/all`, { params: requestParams }).pipe(
       map((response: any) => {
@@ -150,12 +151,12 @@ export class Admin {
     );
   }
 
-// Les statistiques d'une ville
- getAllStatisticCity(): Observable<MunicipalityStatistics[]> {
-  return this.http.get<MunicipalityStatistics[]>(
-    `${environment.apiUrl}/auth/city/municipality`,
-  );
-}
+  // getAllStatisticCity() supprimée (Prompt 01, BACKEND_INTEGRATION.md §0.2) : appelait
+  // `/auth/city/municipality`, une route confirmée inexistante nulle part dans le backend
+  // (grep exhaustif de routes/*.js et de tout le repo backend). Les compteurs par ville
+  // (agences/clients/collectes) sont déjà disponibles réellement dans la réponse de
+  // getAllStatistics() (agenciesByCity/clientsByCity/collectionsByCity) — voir
+  // MunicipalityDashboard.buildZoneStatisticsFromAdminStats().
 
   getUserById(id: string): Observable<any> {
     const url = `${environment.apiUrl}/user/${id}`;
@@ -294,6 +295,88 @@ export class Admin {
     return this.http.patch<any>(`${environment.apiUrl}/collectes/${collecteId}/resolve`, { resolvedBy, resolutionComment }).pipe(
       map((res: any) => { console.log('API > resolveCollecte:', res); return res; }),
       catchError((err) => { console.error('resolveCollecte error:', err); throw err; })
+    );
+  }
+
+  // PATCH /collectes/:id/assign-team (Prompt 06) — réservé manager/super_admin côté serveur.
+  assignReportToTeam$(collecteId: string, teamId: string, assignedBy: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/collectes/${collecteId}/assign-team`, { teamId, assignedBy }).pipe(
+      map((res: any) => { console.log('API > assignReportToTeam:', res); return res; }),
+      catchError((err) => { console.error('assignReportToTeam error:', err); throw err; })
+    );
+  }
+
+  /**
+   * GET /municipality/performance-overview (Prompt 07). `complianceRate` est un vrai
+   * agrégat (Collected / (total - Cancelled) toutes agences confondues) ; `averageSatisfaction`
+   * reste toujours `null` côté serveur — aucune entité rating/review nulle part dans le
+   * schéma, voir EditRecap.md.
+   */
+  getPerformanceOverview$(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/municipality/performance-overview`).pipe(
+      map((res: any) => { console.log('API > getPerformanceOverview:', res); return res; }),
+      catchError((err) => { console.error('getPerformanceOverview error:', err); throw err; })
+    );
+  }
+
+  /**
+   * GET /municipality/waste-statistics (Prompt 08). `quantity` est un COMPTE de
+   * collectes par type de déchet, pas un poids en kg — aucune source de poids réelle
+   * n'existe nulle part dans le schéma (voir EditRecap.md).
+   */
+  getWasteStatistics$(days: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/municipality/waste-statistics`, { params: { days } }).pipe(
+      map((res: any) => { console.log('API > getWasteStatistics:', res); return res; }),
+      catchError((err) => { console.error('getWasteStatistics error:', err); throw err; })
+    );
+  }
+
+  /**
+   * GET /municipality/monthly-trend (Prompt 09). Réutilise côté serveur exactement la
+   * même base que getWasteStatistics$() — garanti de ne jamais diverger sur une fenêtre
+   * qui se recoupe (exigence explicite du roadmap §3.4). Pas de `totalWeightKg` : aucune
+   * source de poids réelle, voir EditRecap.md.
+   */
+  getMonthlyTrend$(months: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/municipality/monthly-trend`, { params: { months } }).pipe(
+      map((res: any) => { console.log('API > getMonthlyTrend:', res); return res; }),
+      catchError((err) => { console.error('getMonthlyTrend error:', err); throw err; })
+    );
+  }
+
+  /**
+   * GET /municipality/zone-frequency (Prompt 11). "Zone" bridges two different identity
+   * systems server-side — Collecte has no zone field, so planned frequency comes from
+   * Planning.quartierId -> Neighborhood.name while actual comes from
+   * Collecte.clientId -> User.address.neighborhood, reconciled by name (see EditRecap.md).
+   * `plannedFrequency`/`actualFrequency` use the real French enum
+   * (unique|hebdomadaire|bimensuel|mensuel[|none]), not the mock's former English placeholders.
+   */
+  getZoneFrequency$(days: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/municipality/zone-frequency`, { params: { days } }).pipe(
+      map((res: any) => { console.log('API > getZoneFrequency:', res); return res; }),
+      catchError((err) => { console.error('getZoneFrequency error:', err); throw err; })
+    );
+  }
+
+  /**
+   * GET /territories/cities (Prompt 14) — real lat/lng per city. NOT wired into the
+   * Coverage Map yet: verified against the live database that the real `City`
+   * collection currently has only 6 documents and none with latitude/longitude
+   * populated — migrating now would turn the map from "plausible mock markers" into
+   * "no markers at all". Decided with the user to keep the map on mock coordinates
+   * (`MunicipalityMockDataService.getZoneCoordinates()`) for now; this method is ready
+   * to swap in once real city coordinate data exists — see EditRecapFront.md, Prompt 14.
+   * NOT `GET /planning/v2/zone-coverage`: confirmed (again — wrong twice already, see
+   * EditRecap.md Prompts 07/11) that endpoint's real return shape is one aggregate
+   * object, not a per-quartier array with lat/lng. Same request/response pattern
+   * already used by `zone-selector.ts` for this same endpoint
+   * (`{success?, data?: TerritoryItem[]}`), unauthenticated on the backend.
+   */
+  getCities$(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/territories/cities`).pipe(
+      map((res: any) => { console.log('API > getCities:', res); return res; }),
+      catchError((err) => { console.error('getCities error:', err); throw err; })
     );
   }
 

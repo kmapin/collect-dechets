@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, EventEmitter, Input, Output, OnInit } fro
 import { Router } from '@angular/router';
 import { NotificationService } from '../../../services/notification.service';
 import { CommonModule, DatePipe, NgIf } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { AgencyService } from '../../../services/agency.service';
 import { RegisterUserData } from '../../../models/user.model';
@@ -39,13 +40,19 @@ interface Incident {
   severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
   status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
-  assignedTo?: string;
+  /** Champ réel Collecte.assignedTeamId (Prompt 06) — l'équipe à qui le signalement a été
+   * affecté pour résolution. Distinct de `collectorId` (le collecteur de la collecte
+   * planifiée d'origine, sans rapport avec le traitement du signalement). */
+  assignedTeamId?: { _id: string; name?: string } | null;
+  /** Champ réel Collecte.resolutionStatus — `status` ci-dessus reste 'Reported' pour
+   * toujours après résolution, donc c'est le seul champ qui indique un signalement traité. */
+  resolutionStatus?: "pending" | "in_progress" | "resolved";
   createdAt?: Date;
   updatedAt?: Date;
 }
 @Component({
   selector: 'app-signalement',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './signalement.html',
   styleUrl: './signalement.scss',
 })
@@ -67,13 +74,24 @@ export class Signalement {
   //Loading states 
 
   @Output() isLoadingIncidents = new EventEmitter<boolean>()
-  // assigner un planning à un collecteur emetter
-  @Output() assignReport = new EventEmitter<Incident>() ;
+  /**
+   * Remplace l'ancien `assignReport: EventEmitter<Incident>` (Prompt 06) : celui-ci
+   * n'émettait que l'incident brut, sans aucune équipe choisie — le vrai backend
+   * (`PATCH /collectes/:id/assign-team`) exige un `teamId`, qu'aucune UI ne permettait
+   * de sélectionner jusqu'ici (le bouton "Assigner" et le bouton "Traiter" faisaient
+   * tous deux le même emit sans sélection réelle). Le picker d'équipe vit maintenant
+   * ici, dans le composant partagé, et n'émet qu'une fois une équipe confirmée.
+   */
+  @Output() assignReportToTeam = new EventEmitter<{ incidentId: string; teamId: string }>();
   // resoudre un incident signaler emetter
   @Output() resolvedIncident = new EventEmitter<string>() ;
- 
 
-  selectedEmployee: string[] = [];
+  // Team picker (Prompt 06)
+  showTeamPickerModal = false;
+  teamPickerIncident: Incident | null = null;
+  teams: any[] = [];
+  selectedTeamId = '';
+  isLoadingTeams = false;
 
   // Pagination
   pageSize = 10;
@@ -104,7 +122,7 @@ export class Signalement {
   }
     constructor(
       private authService: AuthService,
-      // private agencyService: AgencyService,
+      private agencyService: AgencyService,
       // private collectionService: CollectionService,
       // private adminService: Admin,
       // private clientService: ClientService,
@@ -138,7 +156,6 @@ export class Signalement {
     const incident = this.incidents.find((i) => i._id === incidentId);
     if (incident) {
       incident.status = "pending";
-      incident.assignedTo = "Inspecteur Municipal";
       this.filterIncidents();
       this.notificationService.showSuccess(
         "Enquête",
@@ -220,12 +237,38 @@ export class Signalement {
     this.contactAgency(agencyId);
   }
 
-  //Assigner un incident à un collecteur
-  openAssignModal(report: Incident): void {
-    this.assignReport.emit(report);
-  } 
-  assignIncident(incident: Incident): void {
-    this.assignReport.emit(incident);
+  //Assigner un incident à une équipe (Prompt 06) — remplace les 2 anciens boutons
+  //("Assigner"/"Traiter") qui faisaient tous deux le même emit sans choix d'équipe.
+  openTeamPicker(incident: Incident): void {
+    this.teamPickerIncident = incident;
+    this.selectedTeamId = incident.assignedTeamId?._id ?? '';
+    this.showTeamPickerModal = true;
+    this.teams = [];
+    const agencyId = incident.agencyId?._id ?? incident.agency?._id;
+    if (!agencyId) return;
+    this.isLoadingTeams = true;
+    this.agencyService.getTeamsV2$(agencyId).subscribe({
+      next: (teams) => {
+        this.teams = teams || [];
+        this.isLoadingTeams = false;
+      },
+      error: () => {
+        this.teams = [];
+        this.isLoadingTeams = false;
+      },
+    });
+  }
+
+  closeTeamPicker(): void {
+    this.showTeamPickerModal = false;
+    this.teamPickerIncident = null;
+    this.selectedTeamId = '';
+  }
+
+  confirmAssignTeam(): void {
+    if (!this.teamPickerIncident || !this.selectedTeamId) return;
+    this.assignReportToTeam.emit({ incidentId: this.teamPickerIncident._id, teamId: this.selectedTeamId });
+    this.closeTeamPicker();
   }
 
 }

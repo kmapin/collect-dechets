@@ -2,13 +2,14 @@ import { ChangeDetectorRef, Component, OnInit, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
+import { forkJoin, Observable } from "rxjs";
+import { map } from "rxjs/operators";
 import { AuthService } from "../../../services/auth.service";
 import { AgencyService } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
 import { RegisterUserData, User } from "../../../models/user.model";
 import { Agency } from "../../../models/agency.model";
-import { Collection, CollectionStatus } from "../../../models/collection.model";
 import { OUAGA_DATA } from "../../../data/mock-data";
 import { Admin } from "../../../services/admin";
 import {
@@ -30,7 +31,6 @@ import type {
   ZoneFrequencyRecord,
   ZoneFrequencyIndicator,
   CollectionFrequency,
-  MockWasteRecord,
 } from "./mocks/municipality-mock.types";
 import { buildWasteBreakdownConfig } from "./charts/waste-breakdown.chart";
 import { buildCollectionEvolutionConfig } from "./charts/collection-evolution.chart";
@@ -40,6 +40,29 @@ import { aggregateZoneFrequencyRecords } from "./utils/zone-frequency.util";
 import { aggregateVolume, type VolumeAggregate } from "./utils/volume.util";
 import { MOCK_NETWORK_DELAY_MS } from "./mocks/municipality-mock.constants";
 import type { ChartConfiguration } from "chart.js";
+
+/**
+ * Plafond de récupération pour loadAllSignalements() (Prompt 03) — <app-signalement>
+ * pagine déjà côté client sur le tableau complet reçu, donc pas besoin de pagination
+ * serveur ici, juste d'un volume suffisant. Provisoire : à ajuster selon le vrai volume
+ * de signalements municipaux (le backend clampe à 500 max, voir services/qrValidation.js).
+ */
+const INCIDENTS_FETCH_LIMIT = 300;
+
+/**
+ * Vrai vocabulaire `PlanningV2.typeDechets`/`Collecte.wasteType` (Prompt 08) — remplace
+ * les 4 catégories inventées du mock (`WASTE_TYPE_POOL`, mocks/municipality-mock.constants.ts,
+ * encore utilisé par les sections Volume/Performance/Fréquence par zone, toujours mockées,
+ * hors périmètre de ce prompt). Label + couleur d'affichage uniquement — le backend ne
+ * renvoie que la clé d'enum.
+ */
+const WASTE_TYPE_DISPLAY: Record<string, { label: string; color: string }> = {
+  menagers: { label: 'Ménagers', color: '#4caf50' },
+  recyclables: { label: 'Recyclables', color: '#2196f3' },
+  verts: { label: 'Déchets verts', color: '#8bc34a' },
+  encombrants: { label: 'Encombrants', color: '#ff9800' },
+  speciaux: { label: 'Spéciaux', color: '#9c27b0' },
+};
 
 /** The Statistiques tab's single shared "Période" selector — see statisticsPeriod. */
 export type StatisticsPeriod = "today" | "week" | "month" | "quarter" | "year";
@@ -78,24 +101,65 @@ export interface Incident {
   severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
   status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
-  assignedTo?: string;
+  /** Champ réel Collecte.resolutionStatus — `status` ci-dessus reste 'Reported' pour
+   * toujours après résolution (services/collecte.service.js::resolveReport ne le touche
+   * jamais), donc c'est le SEUL champ qui indique si un signalement est vraiment traité. */
+  resolutionStatus?: "pending" | "in_progress" | "resolved";
+  /** Champ réel Collecte.assignedTeamId (Prompt 06) — équipe affectée à la résolution. */
+  assignedTeamId?: { _id: string; name?: string } | null;
 }
+// Aligné champ-à-champ sur la vraie réponse de GET /api/statistics
+// (services/globalState.js::getDashboardStats + controllers/globalSate.js) — vérifié
+// contre l'implémentation réelle, pas contre la doc OpenAPI seule (Prompt 01,
+// BACKEND_INTEGRATION.md §0.1). `totalRevenue`/`averageRating`/`complianceRate`
+// n'existent nulle part dans le backend actuel — retirés plutôt qu'inventés ; à
+// réintroduire quand Milestone 05 (Agency Performance Metrics) leur donnera une vraie
+// source. `activeAgencies`/`todayCollections`/`completeCollections`/`pendingReports`
+// renommés pour matcher les noms réels des champs API.
+export interface CityBreakdownEntry {
+  city: string;
+  numberOfAgencies?: number;
+  numberOfClients?: number;
+  numberOfCollections?: number;
+}
+
 export interface MunicipalityStatistics {
-  totalAgencies: number;
-  activeAgencies: number;
-  totalClients: number;
+  totalMunicipalityAgents: number;
+  totalManagers: number;
   totalCollectors: number;
-  todayCollections: number;
-  reportsFromClients?: {
-    total: number;
-    resolved: number;
-    pending: number;
-  };
-  completeCollections: number;
-  totalRevenue: number;
-  averageRating: number;
-  pendingReports: number;
-  complianceRate: number;
+  totalClients: number;
+  totalActiveClients: number;
+
+  totalAgencies: number;
+  totalActiveAgencies: number;
+  totalInactiveAgencies: number;
+  totalDeletedAgencies: number;
+
+  agenciesByCity: CityBreakdownEntry[];
+  clientsByCity: CityBreakdownEntry[];
+  collectionsByCity: CityBreakdownEntry[];
+
+  totalCollections: number;
+  dailyCollections: number;
+  monthlyCollections: number;
+  /**
+   * Collectes du jour avec statut 'Collected'. `services/globalState.js` calcule cette
+   * valeur sous ce nom, mais `controllers/globalSate.js::getDashboardStats()` ne
+   * l'exposait jusqu'ici que sous l'alias `totalCollectionsCollected` (pluriel) — champ
+   * ajouté côté backend (voir EditRecap.md) pour exposer aussi le nom exact attendu ici.
+   */
+  dailyCollectionCollected: number;
+  /**
+   * Total de collectes signalées un jour ou l'autre, résolues ou non — voir
+   * pendingReportsCount pour le compte réellement en attente. Même remarque que
+   * ci-dessus : ajouté côté backend en plus de l'alias `totalCollectionsReported`.
+   */
+  totalCollectionReported: number;
+  /** Signalements dont resolutionStatus n'est pas 'resolved' — le vrai compte "en attente". */
+  pendingReportsCount: number;
+
+  monthlyClientSubscriptions: number;
+  monthlyClientPercentage: number;
 }
 
 export interface AgencyAudit {
@@ -107,15 +171,24 @@ export interface AgencyAudit {
   zones: number;
   collectionsToday: number;
   completionRate: number;
-  rating: number;
-  revenue: number;
+  /** null tant qu'aucune entité review/notation n'existe dans le schéma (Prompt 05) — jamais fabriqué à 0. */
+  rating: number | null;
+  /** null tant que le conflit de scoping JWT avec le module Finance n'est pas résolu (Prompt 05). */
+  revenue: number | null;
   lastAudit: Date;
-  complianceScore: number;
+  /** null tant qu'aucune règle de conformité définie n'existe (Prompt 05) — jamais fabriqué à 0. */
+  complianceScore: number | null;
   issues: string[];
 }
 
 export interface WasteStatistic {
+  /** Vraie clé d'enum backend (menagers|recyclables|verts|encombrants|speciaux, Prompt 08). */
   type: string;
+  /** Libellé français d'affichage (WASTE_TYPE_DISPLAY) — distinct de `type` depuis que
+   * celui-ci est la clé d'enum réelle, pas déjà un libellé comme au temps du mock. */
+  label: string;
+  /** Nombre de collectes de ce type dans la fenêtre — PAS un poids en kg (aucune source
+   * réelle de poids nulle part dans le schéma, voir EditRecap.md). */
   quantity: number;
   percentage: number;
   trend: "up" | "down" | "stable";
@@ -148,30 +221,18 @@ export class MunicipalityDashboard  implements OnInit {
   currentUser: RegisterUserData | null = null;
   activeTab = "overview";
 
-  // Data
-  statistics: MunicipalityStatistics = {
-    totalAgencies: 15,
-    activeAgencies: 14,
-    totalClients: 12500,
-    totalCollectors: 85,
-    todayCollections: 450,
-    completeCollections: 425,
-    totalRevenue: 485000,
-    averageRating: 4.2,
-    pendingReports: 8,
-    complianceRate: 92,
-  };
-
   isLoadingIncidents = false;
 
-  // "Performance Globale" satisfaction/compliance — mock-backed until a real
-  // endpoint exists (see loadPerformanceOverview()).
+  // "Performance Globale" satisfaction/compliance — GET /municipality/performance-overview
+  // (réel, Prompt 07). Voir loadPerformanceOverview().
   performanceOverview: PerformanceOverview | null = null;
   isLoadingPerformanceOverview = false;
-  /** Flip to false in one line once loadPerformanceOverview() calls a real API. */
-  readonly isPerformanceOverviewMocked = true;
-  /** Flip to false in one line once loadAgencyAudits() sources performance fields from a real endpoint. */
-  readonly isAgencyPerformanceMocked = true;
+  // isPerformanceOverviewMocked / isAgencyPerformanceMocked supprimés (Prompt 15, §7) :
+  // les deux valaient déjà `false` en dur (complianceRate/performance d'agence sont de
+  // vrais agrégats serveur depuis les Prompts 05/07 ; averageSatisfaction reste `null`
+  // honnête plutôt qu'une donnée démo, voir EditRecap.md) — aucun badge "Démo" ne
+  // s'affichait donc plus jamais. Retirés avec leurs 2 usages dans le template plutôt
+  // que laissés comme des indicateurs toujours faux.
   isLoadingWasteStatistics = false;
   /** Rebuilt only when wasteStatistics actually changes (see loadWasteStatistics()) —
    * never bind a template method call to [config], it would create a new object every
@@ -205,21 +266,17 @@ export class MunicipalityDashboard  implements OnInit {
   zoneFrequencyZoneOptions: string[] = [];
   zoneFrequencyWasteTypeOptions: string[] = [];
 
-  // "Volume Global Collecté" (Prompt 11) — actual vs. target weight, same
-  // shared MockWasteRecord fact table as the waste-breakdown (07) and
-  // collection-evolution (08) charts, not a disconnected number.
-  volumeAllRecords: MockWasteRecord[] = [];
-  isLoadingVolumeGlobal = false;
+  /**
+   * "Volume Global Collecté" (Prompt 12, real backend) — no longer its own fetch or its
+   * own zone/type/collector filters: `GET /municipality/monthly-trend` (Prompt 09,
+   * already loaded for "Évolution des Collectes") is a platform-wide aggregate with no
+   * such dimensions, so this is now recomputed directly from `monthlyTrend` whenever it
+   * loads (see loadMonthlyTrend()) rather than fetched/filtered separately.
+   */
+  volumeAggregate: VolumeAggregate | null = null;
 
   /** "Rapport Global" button (Prompt 15) — client-side PDF assembly, no backend. */
   isGeneratingReport = false;
-  volumeZoneFilter = 'all';
-  volumeWasteTypeFilter = 'all';
-  volumeCollectorFilter = 'all';
-  volumeAggregate: VolumeAggregate | null = null;
-  volumeZoneOptions: string[] = [];
-  volumeWasteTypeOptions: string[] = [];
-  volumeCollectorOptions: { id: string; name: string }[] = [];
 
   agencyAudits: AgencyAudit[] = [];
   filteredAgencies: AgencyAudit[] = [];
@@ -233,7 +290,10 @@ export class MunicipalityDashboard  implements OnInit {
   /** "Couverture Territoriale" table vs. map toggle (Prompt 13) — additive, table stays available. */
   coverageView: "table" | "map" = "table";
   /** Same zoneStatistics data, reshaped + coordinate-enriched for <app-coverage-map> —
-   * recomputed in loadZoneStat()'s subscribe, right after zoneStatistics itself updates. */
+   * recomputed in buildZoneStatisticsFromAdminStats(), right after zoneStatistics itself
+   * updates. Coordinates stay mock for now (Prompt 14, decided with the user): a real
+   * replacement (Admin.getCities$()) exists and is ready, but the real City collection
+   * currently has no populated coordinates — see EditRecapFront.md, Prompt 14. */
   coverageMapZones: CoverageMapZone[] = [];
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
@@ -293,7 +353,7 @@ export class MunicipalityDashboard  implements OnInit {
     //   badge: null,
     // },
   ];
-  statisticsAdmin: any;
+  statisticsAdmin: MunicipalityStatistics | null = null;
   clientGrowth: number = 0;
 
   constructor(
@@ -320,41 +380,72 @@ export class MunicipalityDashboard  implements OnInit {
     this.loadMonthlyTrend();
     this.loadPerformanceIndicators();
     this.loadZoneFrequency();
-    this.loadVolumeGlobal();
     this.loadAllSignalements();
+    // showAdminStatistics() alimente aussi zoneStatistics/coverageMapZones une fois la
+    // réponse reçue (buildZoneStatisticsFromAdminStats()) — plus d'appel séparé ici
+    // (l'ancien loadZoneStat() appelait une route confirmée inexistante, voir Prompt 01).
     this.showAdminStatistics();
     this.loadPerformanceOverview();
-    // Source de vérité pour la couverture territoriale (API réelle) — loadZoneStatistics()
-    // (mock local) a été retiré du flux d'init car son résultat était de toute façon
-    // écrasé par cet appel.
-    this.loadZoneStat();
     // this.loadIncidents();
   }
 
   /**
-   * Mock-backed for now (see MunicipalityMockDataService) — no endpoint
-   * exists yet for satisfaction/compliance. Swap the body for a real
-   * `this.adminService.getPerformanceOverview().subscribe({ next, error })`
-   * call later; the loading flag and property are already wired for it.
+   * GET /municipality/performance-overview (Prompt 07). `complianceRate` est un vrai
+   * agrégat serveur (Collected / (total - Cancelled), toutes agences) — plus mocké.
+   * `averageSatisfaction` reste toujours `null` : aucune entité rating/review/feedback
+   * n'existe nulle part dans le schéma backend actuel (confirmé en relisant tous les
+   * modèles réels, pas seulement les schémas Swagger déclarés) — escaladé comme question
+   * produit (voir EditRecap.md), jamais fabriqué en proxy sans décision explicite.
    */
   loadPerformanceOverview(): void {
     this.isLoadingPerformanceOverview = true;
-    this.performanceOverview = this.mockDataService.getPerformanceOverview();
-    this.isLoadingPerformanceOverview = false;
+    this.adminService.getPerformanceOverview$().subscribe({
+      next: (response: any) => {
+        this.performanceOverview = response?.data ?? null;
+        this.isLoadingPerformanceOverview = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement de la performance globale:', err);
+        this.performanceOverview = null;
+        this.isLoadingPerformanceOverview = false;
+      },
+    });
   }
 
+  /**
+   * Prompt 05 — completionRate/collectionsToday/complianceScore/revenue/rating/issues
+   * viennent maintenant de GET /api/state_agencies/:agencyId/stats (réel, étendu), un
+   * appel par agence (`forkJoin`) puisque cet endpoint n'a pas de variante batch — nombre
+   * d'agences resté faible dans toutes les données vues jusqu'ici (dizaines, pas
+   * milliers), donc le coût N+1 reste négligeable ; à revisiter si ça change.
+   * `complianceScore`/`revenue`/`rating` restent `null` (aucune source réelle nulle part
+   * dans le schéma / conflit de scoping JWT pour revenue — voir EditRecap.md) : jamais
+   * remplacés par 0, le template affiche "Non disponible" pour ces 3 cas précis.
+   * `clients`/`collectors`/`zones` restent sourcés de la liste d'agences elle-même
+   * (inchangé) : ce prompt étend les métriques de performance, pas ces 3 compteurs déjà
+   * réels avant ce correctif.
+   */
   loadAgencyAudits(agenciesFilterParams?: FilterParams ): void {
     this.agencyService.getAllAgenciesFromApi(agenciesFilterParams).subscribe({
       next: (agencies) => {
-        this.agencyAudits = agencies.data.map((agency: any) => {
-          const id = agency?._id;
-          // completionRate/rating/revenue/collectionsToday/complianceScore/issues
-          // are mock-enriched (see isAgencyPerformanceMocked) — no real endpoint
-          // computes these per-agency yet. Seeded by the agency's real id so
-          // values stay stable across reloads/re-filters instead of reshuffling.
-          const performance = this.mockDataService.getAgencyPerformanceMetrics(id);
-          return {
-            id,
+        const list = agencies?.data ?? [];
+        if (!list.length) {
+          this.agencyAudits = [];
+          this.filteredAgencies = [];
+          this.topPerformingAgencies = [];
+          this.buildNotifications();
+          return;
+        }
+
+        const requests: Observable<{ agency: any; stats: any }>[] = list.map((agency: any) =>
+          this.agencyService.getAgencyStats$(agency?._id).pipe(
+            map((res: any) => ({ agency, stats: res?.success !== false ? (res?.data ?? null) : null }))
+          )
+        );
+
+        forkJoin(requests).subscribe((results) => {
+          this.agencyAudits = results.map(({ agency, stats }) => ({
+            id: agency?._id,
             name: agency?.name,
             status: agency?.status || "inactive",
             clients: agency?.clients?.length || 0,
@@ -362,19 +453,22 @@ export class MunicipalityDashboard  implements OnInit {
             zones: agency?.zoneActivite?.length || 0,
             userId: agency?.userId,
             lastAudit: new Date(),
-            ...performance,
-          };
+            collectionsToday: stats?.collectionsToday ?? 0,
+            completionRate: stats?.completionRate ?? 0,
+            complianceScore: stats?.complianceScore ?? null,
+            revenue: stats?.revenue ?? null,
+            rating: stats?.rating ?? null,
+            issues: stats?.issues ?? [],
+          }));
+          this.filteredAgencies = [...this.agencyAudits];
+          this.topPerformingAgencies = this.getTopPerformingAgencies();
+          this.buildNotifications();
+          const auditTab = this.tabs.find((tab) => tab.id === "agencies");
+          if (auditTab) {
+            auditTab.badge = this.agencyAudits.length;
+            this.cd.detectChanges();
+          }
         });
-        this.filteredAgencies = [...this.agencyAudits];
-        this.topPerformingAgencies = this.getTopPerformingAgencies();
-        this.buildNotifications();
-        console.log(" this.agencyAudits", this.agencyAudits);
-        console.log(" this.agencies", agencies);
-        const auditTab = this.tabs.find((tab) => tab.id === "agencies");
-        if (auditTab) {
-          auditTab.badge = this.agencyAudits.length;
-          this.cd.detectChanges();
-        }
       },
       error: (err) => {
         console.error("Erreur lors du chargement des agences:", err);
@@ -384,68 +478,27 @@ export class MunicipalityDashboard  implements OnInit {
         );
       },
     });
-
-    //   this.agencyAudits = [
-    //     {
-    //       id: '1',
-    //       name: 'EcoClean Services',
-    //       status: 'active',
-    //       clients: 1250,
-    //       collectors: 8,
-    //       zones: 3,
-    //       collectionsToday: 45,
-    //       completionRate: 96,
-    //       rating: 4.5,
-    //       revenue: 32450,
-    //       lastAudit: new Date('2024-01-10'),
-    //       complianceScore: 95,
-    //       issues: []
-    //     },
-    //     {
-    //       id: '2',
-    //       name: 'GreenWaste Solutions',
-    //       status: 'active',
-    //       clients: 850,
-    //       collectors: 6,
-    //       zones: 2,
-    //       collectionsToday: 32,
-    //       completionRate: 88,
-    //       rating: 4.2,
-    //       revenue: 22100,
-    //       lastAudit: new Date('2024-01-08'),
-    //       complianceScore: 82,
-    //       issues: ['Retards fréquents', 'Signalements clients']
-    //     },
-    //     {
-    //       id: '3',
-    //       name: 'WasteManager Pro',
-    //       status: 'suspended',
-    //       clients: 450,
-    //       collectors: 3,
-    //       zones: 1,
-    //       collectionsToday: 0,
-    //       completionRate: 0,
-    //       rating: 3.8,
-    //       revenue: 0,
-    //       lastAudit: new Date('2024-01-05'),
-    //       complianceScore: 65,
-    //       issues: ['Non-conformité réglementaire', 'Licence expirée']
-    //     }
-    //   ];
   }
 
   /**
-   * Mock-backed for now (see MunicipalityMockDataService) — no endpoint
-   * exists yet for waste-type breakdown. The Observable shape (delay +
-   * subscribe) mirrors a real HTTP call so swapping the body for
-   * `this.someService.getWasteBreakdown().subscribe({ next, error })` later
-   * requires no changes to the template or the chart component.
+   * GET /municipality/waste-statistics (Prompt 08) — plus mocké. Le backend ne renvoie
+   * que la clé d'enum réelle (menagers/recyclables/...) ; `WASTE_TYPE_DISPLAY` fournit le
+   * libellé français et la couleur d'affichage, absents de la réponse serveur.
    */
   loadWasteStatistics(onDone?: () => void): void {
     this.isLoadingWasteStatistics = true;
     const { days } = this.getPeriodConfig(this.statisticsPeriod());
-    this.mockDataService.getWasteStatistics$(days).subscribe({
-      next: (stats) => {
+    this.adminService.getWasteStatistics$(days).subscribe({
+      next: (response: any) => {
+        const rows = response?.data ?? [];
+        const stats: WasteStatistic[] = rows.map((row: any) => ({
+          type: row.type,
+          label: WASTE_TYPE_DISPLAY[row.type]?.label ?? row.type,
+          quantity: row.quantity,
+          percentage: row.percentage,
+          trend: row.trend,
+          color: WASTE_TYPE_DISPLAY[row.type]?.color ?? '#9ca3af',
+        }));
         this.wasteStatistics = stats;
         this.wasteChartConfig = buildWasteBreakdownConfig(stats);
         this.isLoadingWasteStatistics = false;
@@ -466,17 +519,25 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   /**
-   * Mock-backed for now (see MunicipalityMockDataService) — no endpoint
-   * exists yet for the 12-month collection trend. Same Observable shape as
-   * loadWasteStatistics() for the same reason (see its comment).
+   * GET /municipality/monthly-trend (Prompt 09) — plus mocké. Réutilise côté serveur
+   * exactement la même agrégation de base que loadWasteStatistics() (Prompt 08) : garanti
+   * de ne jamais diverger sur une fenêtre qui se recoupe (exigence explicite du roadmap).
+   */
+  /**
+   * Also drives "Volume Global Collecté" (Prompt 12) — `volumeAggregate` is derived
+   * from this same `trend` array (`aggregateVolume()`), not a separate fetch. Both the
+   * success and error paths recompute it so it never keeps a stale value from a
+   * previous period once this section starts (re)loading.
    */
   loadMonthlyTrend(onDone?: () => void): void {
     this.isLoadingMonthlyTrend = true;
     const { months } = this.getPeriodConfig(this.statisticsPeriod());
-    this.mockDataService.getMonthlyTrend$(months).subscribe({
-      next: (trend) => {
+    this.adminService.getMonthlyTrend$(months).subscribe({
+      next: (response: any) => {
+        const trend: MonthlyTrendPoint[] = response?.data ?? [];
         this.monthlyTrend = trend;
         this.collectionEvolutionConfig = buildCollectionEvolutionConfig(trend);
+        this.volumeAggregate = aggregateVolume(trend);
         this.isLoadingMonthlyTrend = false;
         onDone?.();
       },
@@ -484,6 +545,7 @@ export class MunicipalityDashboard  implements OnInit {
         console.error("Erreur lors du chargement de l'évolution des collectes:", err);
         this.monthlyTrend = [];
         this.collectionEvolutionConfig = null;
+        this.volumeAggregate = aggregateVolume([]);
         this.isLoadingMonthlyTrend = false;
         onDone?.();
       },
@@ -523,22 +585,39 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   /**
-   * Translates the shared "Période" selection into whatever shape each of
-   * the five sections actually needs:
-   *  - `days`: a real date-range window (waste breakdown, volume global —
-   *    both filter MockWasteRecord.scheduledDate directly).
-   *  - `months`: how many trailing months the evolution chart shows. Shorter
-   *    periods show fewer months rather than collapsing to a single point,
-   *    so the trend line still reads as a trend at every period (an
-   *    explicit judgment call — "today"/"week" don't map onto "months of
+   * §4 (Prompt 13) — the shared "Période" → parameter translation, and the definitive
+   * record of which Statistiques-tab sections that selection actually affects. Kept up
+   * to date as sections migrate off mock data (most recently Prompt 12); this replaces
+   * five section-local translations with one, per the roadmap's own request.
+   *
+   *  - `days`: a real date-range window (backend computes `from`/`to` from it, or the
+   *    frontend could pass explicit `from`/`to` instead — `days` is the equivalent
+   *    shorthand both server and client already agree on, not a mock stand-in). Sent to:
+   *      - waste breakdown (`GET /waste-statistics`, Prompt 08) — fully period-affected.
+   *      - zone frequency's ACTUAL side only (`GET /zone-frequency`, Prompt 11) —
+   *        `plannedFrequency` in that same response reflects whatever Planning is
+   *        currently most-recently-created per zone/wasteType, REGARDLESS of `days`;
+   *        there's no "planned frequency as of a past date" in the schema. Confirmed
+   *        with the backend (see its own resolvePeriodWindow()/getZoneFrequency
+   *        comments), not silently assumed. Changing Période visibly moves
+   *        `actualFrequency` but never `plannedFrequency` for the same row.
+   *      - waste records (`GET /waste-records`, Prompt 12) — fully period-affected, but
+   *        not currently called by any Statistiques-tab section (no raw-record list UI
+   *        exists yet; the endpoint is available for a future one).
+   *  - `months`: how many trailing months the evolution chart shows (`GET
+   *    /monthly-trend`, Prompt 09) — fully period-affected, and also what "Volume
+   *    Global Collecté" derives from (Prompt 12: no separate fetch/window of its own,
+   *    see aggregateVolume()). Shorter periods show fewer months rather than
+   *    collapsing to a single point, so the trend line still reads as a trend at every
+   *    period (an explicit judgment call — "today"/"week" don't map onto "months of
    *    trend" literally, so this degrades gracefully instead of forcing a
    *    literal-but-useless 1-month chart).
-   *  - `seed`: performance indicators (09) and zone frequency (10) have no
-   *    date field on their records at all (one snapshot per collector /
-   *    per zone×wasteType, not a time series) — real date filtering isn't
-   *    possible for them, so a distinct seed per period reshuffles their
-   *    mock numbers instead. Documented here rather than as a "pending
-   *    Prompt 12" caveat, since this IS Prompt 12.
+   *  - `seed`: performance indicators — the one section with NO real backend endpoint
+   *    at all yet (still `MunicipalityMockDataService`, per-collector snapshot, no date
+   *    field on its records whatsoever). A distinct seed per period reshuffles the mock
+   *    numbers as a stand-in for period-sensitivity; this is NOT part of the real
+   *    from/to contract the other four sections share, and will be removed once/if that
+   *    endpoint is built for real rather than extended to accept a period.
    */
   private getPeriodConfig(period: StatisticsPeriod): { days: number; months: number; seed: number } {
     const configs: Record<StatisticsPeriod, { days: number; months: number; seed: number }> = {
@@ -592,14 +671,23 @@ export class MunicipalityDashboard  implements OnInit {
    * pattern as loadPerformanceIndicators(): fetch the flat records once,
    * derive filter option lists, then apply filters/sort.
    */
+  /**
+   * GET /municipality/zone-frequency (Prompt 11, real backend). `days` (not `seed` — the
+   * mock's seed-reshuffle hack has no real equivalent) drives the ACTUAL side's real
+   * date-range window server-side; the PLANNED side reflects current Planning policy
+   * regardless of window. `zoneFrequencyWasteTypeOptions` now lists the 5 real enum keys
+   * (WASTE_TYPE_DISPLAY) rather than the mock's French-labeled placeholders — the
+   * filter's `[value]` must match `record.wasteType`'s raw key, display via getWasteTypeLabel().
+   */
   loadZoneFrequency(onDone?: () => void): void {
     this.isLoadingZoneFrequency = true;
-    const { seed } = this.getPeriodConfig(this.statisticsPeriod());
-    this.mockDataService.getZoneFrequencyRecords$(seed).subscribe({
-      next: (records) => {
+    const { days } = this.getPeriodConfig(this.statisticsPeriod());
+    this.adminService.getZoneFrequency$(days).subscribe({
+      next: (response: any) => {
+        const records: ZoneFrequencyRecord[] = response?.data ?? [];
         this.zoneFrequencyRecords = records;
         this.zoneFrequencyZoneOptions = Array.from(new Set(records.map((r) => r.zoneName))).sort();
-        this.zoneFrequencyWasteTypeOptions = this.mockDataService.getWasteTypeLabels();
+        this.zoneFrequencyWasteTypeOptions = Object.keys(WASTE_TYPE_DISPLAY);
         this.applyZoneFrequencyFilters(onDone);
       },
       error: (err) => {
@@ -641,153 +729,94 @@ export class MunicipalityDashboard  implements OnInit {
     return this.zoneFrequencyIndicators.length > 0;
   }
 
+  /** Real backend enum (Prompt 11, Planning.frequency) — replaces the mock's former daily/weekly/monthly. */
   getFrequencyLabel(frequency: CollectionFrequency): string {
     const labels: Record<CollectionFrequency, string> = {
-      daily: "Quotidienne",
-      weekly: "Hebdomadaire",
-      monthly: "Mensuelle",
+      unique: "Ponctuelle",
+      hebdomadaire: "Hebdomadaire",
+      bimensuel: "Bimensuelle",
+      mensuel: "Mensuelle",
+      none: "Aucune",
     };
     return labels[frequency];
   }
 
-  /**
-   * Mock-backed for now (see MunicipalityMockDataService) — no endpoint
-   * exists yet for actual-vs-target volume. Loads the FULL shared waste
-   * record set once (same one behind loadWasteStatistics()/loadMonthlyTrend()
-   * — see generateWasteRecords()'s own comment), derives filter option
-   * lists, then applies filters.
-   */
-  loadVolumeGlobal(onDone?: () => void): void {
-    this.isLoadingVolumeGlobal = true;
-    this.mockDataService.getWasteRecords$().subscribe({
-      next: (records) => {
-        this.volumeAllRecords = records;
-        this.volumeZoneOptions = Array.from(new Set(records.map((r) => r.zoneName))).sort();
-        this.volumeWasteTypeOptions = this.mockDataService.getWasteTypeLabels();
-        const collectorNameById = new Map(this.mockDataService.getCollectors().map((c) => [c.id!, `${c.firstName} ${c.lastName}`]));
-        const seenCollectorIds = new Set<string>();
-        this.volumeCollectorOptions = records
-          .filter((r) => {
-            if (seenCollectorIds.has(r.collectorId)) return false;
-            seenCollectorIds.add(r.collectorId);
-            return true;
-          })
-          .map((r) => ({ id: r.collectorId, name: collectorNameById.get(r.collectorId) ?? r.collectorId }));
-        this.applyVolumeFilters(onDone);
-      },
-      error: (err) => {
-        console.error("Erreur lors du chargement du volume global collecté:", err);
-        this.volumeAllRecords = [];
-        this.volumeAggregate = null;
-        this.isLoadingVolumeGlobal = false;
-        onDone?.();
-      },
-    });
+  /** French display label for a real waste-type enum key (WASTE_TYPE_DISPLAY) — the
+   * zone-frequency filter/table work with the raw key (menagers, ...), not a label. */
+  getWasteTypeLabel(type: string): string {
+    return WASTE_TYPE_DISPLAY[type]?.label ?? type;
   }
 
-  /**
-   * Purely client-side (already-loaded volumeAllRecords, no new fetch) —
-   * same simulated-delay UX pattern as the other two new panels. The period
-   * here is a REAL date-range filter (MockWasteRecord carries scheduledDate),
-   * driven by the shared statisticsPeriod signal like every other section.
-   */
-  applyVolumeFilters(onDone?: () => void): void {
-    this.isLoadingVolumeGlobal = true;
-    setTimeout(() => {
-      const { days } = this.getPeriodConfig(this.statisticsPeriod());
-      const cutoff = Date.now() - days * 86_400_000;
-      const filtered = this.volumeAllRecords.filter(
-        (record) =>
-          record.scheduledDate.getTime() >= cutoff &&
-          record.status === CollectionStatus.COLLECTED &&
-          (this.volumeZoneFilter === "all" || record.zoneName === this.volumeZoneFilter) &&
-          (this.volumeWasteTypeFilter === "all" || record.wasteTypeLabel === this.volumeWasteTypeFilter) &&
-          (this.volumeCollectorFilter === "all" || record.collectorId === this.volumeCollectorFilter)
-      );
-
-      this.volumeAggregate = aggregateVolume(filtered);
-      this.isLoadingVolumeGlobal = false;
-      onDone?.();
-    }, MOCK_NETWORK_DELAY_MS);
-  }
-
+  /** `volumeAggregate` is now derived directly in loadMonthlyTrend() (Prompt 12) — see
+   * its own comment for why "Volume Global Collecté" no longer has a separate fetch. */
   hasVolumeData(): boolean {
-    return !!this.volumeAggregate && (this.volumeAggregate.actualKg > 0 || this.volumeAggregate.targetKg > 0);
+    return !!this.volumeAggregate && this.volumeAggregate.targetCollections > 0;
   }
 
-  // Récupérer les différents pays et les villes
-  loadZoneStatistics(): void {
-    const stats = this.agencyService.getAgenceStats();
-    const grouped: { [key: string]: any[] } = {};
+  // loadZoneStatistics() supprimée (Prompt 15, §7) : confirmée sans aucun appelant par
+  // grep sur tout `src/` (pas seulement ce fichier) — remplacée depuis par
+  // buildZoneStatisticsFromAdminStats() ci-dessous. `AgencyService.getAgenceStats()`
+  // (qu'elle appelait) N'EST PAS supprimée : `admin-dashboard.ts` a sa PROPRE
+  // `loadZoneStatistics()`, distincte de celle-ci, toujours réellement appelée — la
+  // prémisse du prompt ("confirmée morte") n'était vraie que pour cet appelant-ci, pas
+  // pour la méthode de service elle-même. Vérifié avant de supprimer quoi que ce soit,
+  // pas juste ce fichier.
 
-    MOCK_CITIES.forEach((city, index) => {
-      const country = city.country.name;
+  /**
+   * Statistiques par ville pour l'onglet "Couverture Territoriale". Dérivées directement
+   * de `statisticsAdmin` (déjà chargé par showAdminStatistics()) plutôt que d'un appel
+   * HTTP séparé : l'ancien `Admin.getAllStatisticCity()` appelait `/auth/city/municipality`,
+   * une route confirmée absente de tout le backend (Prompt 01, BACKEND_INTEGRATION.md
+   * §0.2 — grep exhaustif de routes/*.js et du reste du repo backend, zéro résultat).
+   * Les nombres agences/clients/collectes par ville viennent bien de vraies agrégations
+   * serveur (agenciesByCity/clientsByCity/collectionsByCity, services/globalState.js).
+   *
+   * `coverage` (compliance) et `incidents` (signalements) restent à 0 : aucune de ces deux
+   * notions n'existe par ville nulle part dans le backend actuel (ni sur Agency, ni sur
+   * Collecte) — laissés à 0 plutôt qu'une valeur inventée, à combler par un futur jalon si
+   * cette donnée devient nécessaire.
+   *
+   * Limitation distincte, non résolue ici : la liste des villes elle-même vient de
+   * `MOCK_CITIES` (data/countries-org.mock.ts), un catalogue statique de 5 pays, pas de la
+   * vraie API territoriale (`GET /cities`, territory.route.js). Signalé comme dépendance
+   * mock séparée, hors du périmètre de cet alignement de contrat statistiques.
+   */
+  buildZoneStatisticsFromAdminStats(): void {
+    const stats = this.statisticsAdmin;
+    const grouped: { [key: string]: ZoneStatistic[] } = {};
+
+    MOCK_CITIES.forEach((city) => {
+      const country = city.country.name || "Burkina Faso";
       if (!grouped[country]) {
         grouped[country] = [];
       }
+
       grouped[country].push({
+        country,
         name: city.name,
-        agencies: stats[index]?.agencies || 0,
-        clients: stats[index]?.clients || 0,
-        collections: stats[index]?.collections || 0,
-        coverage: stats[index]?.coverage || 0,
-        incidents: stats[index]?.incidents || 0,
+        agencies: stats?.agenciesByCity?.find((c) => c.city === city.name)?.numberOfAgencies ?? 0,
+        clients: stats?.clientsByCity?.find((c) => c.city === city.name)?.numberOfClients ?? 0,
+        collections: stats?.collectionsByCity?.find((c) => c.city === city.name)?.numberOfCollections ?? 0,
+        coverage: 0,
+        incidents: 0,
+        cities: [],
       });
     });
+
     this.zoneStatistics = Object.keys(grouped).map((country) => ({
       country,
       cities: grouped[country],
     }));
-  }
-
-  // Récupérer les différentes statistiques des villes
-  loadZoneStat(): void {
-    this.adminService.getAllStatisticCity().subscribe({
-      next: (response: any) => {
-        const stats = Array.isArray(response.statistics)
-          ? response.statistics
-          : [];
-        const grouped: { [key: string]: ZoneStatistic[] } = {};
-
-        MOCK_CITIES.forEach((city) => {
-          const country = city.country.name || "Burkina Faso";
-          if (!grouped[country]) {
-            grouped[country] = [];
-          }
-          const cityStats = stats.find((s: any) => s.city === city.name);
-
-          grouped[country].push({
-            country,
-            name: city.name,
-            agencies: cityStats?.agencies || 0,
-            clients: cityStats?.clients || 0,
-            collections: cityStats?.todayCollections || 0,
-            coverage: cityStats?.complianceRate || 0,
-            incidents: cityStats?.pendingReports || 0,
-            cities: [],
-          });
-        });
-
-        this.zoneStatistics = Object.keys(grouped).map((country) => ({
-          country,
-          cities: grouped[country],
-        }));
-        this.coverageMapZones = this.buildCoverageMapZones();
-      },
-      error: (err) => {
-        console.error("Erreur lors de la récupération des villes:", err);
-        this.zoneStatistics = [];
-        this.coverageMapZones = [];
-      },
-    });
+    this.coverageMapZones = this.buildCoverageMapZones();
   }
 
   /**
    * Reshapes the already-loaded zoneStatistics (same data as the tabular
    * Couverture Territoriale view) into what <app-coverage-map> needs, adding
    * only a coordinate lookup (mock — see MunicipalityMockDataService.
-   * getZoneCoordinates()). Not a second dataset: same agencies/clients/
-   * collections/incidents/coverage numbers the table already shows.
+   * getZoneCoordinates(), kept on purpose for now, Prompt 14). Not a second
+   * dataset: same agencies/clients/collections/incidents/coverage numbers
+   * the table already shows.
    */
   private buildCoverageMapZones(): CoverageMapZone[] {
     const zones: CoverageMapZone[] = [];
@@ -813,11 +842,38 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   /**Listes des signalements des users */
+  /**
+   * Charge les signalements (Prompt 03, BACKEND_INTEGRATION.md §0.5) — appelait
+   * auparavant getAllReports() sans aucun paramètre : le backend retombait sur ses
+   * défauts (`limit=25, skip=0`, aucun filtre de statut), donc ce tableau ne montrait
+   * jamais que les 25 collectes les plus récentes de l'agence, de N'IMPORTE QUEL statut
+   * (Scheduled/Collected/... noyant les vrais signalements), jamais le vrai total.
+   *
+   * `status: 'Reported'` : seule valeur de l'enum Collecte.status qui correspond à un
+   * signalement réel (voir models/Collecte.js) — sans ce filtre, le badge "Incidents" et
+   * getIncidentBreakdown() comptaient des collectes normales, pas des signalements.
+   *
+   * `limit: INCIDENTS_FETCH_LIMIT` : <app-signalement> pagine déjà côté client sur
+   * l'intégralité du tableau reçu (pagedIncidents, signalement.ts) — pas de pagination
+   * serveur nécessaire ici, juste un plafond assez généreux pour couvrir le volume réel de
+   * signalements. 300 est un plafond provisoire (backend clampé à 500 max, Prompt 03) : à
+   * ajuster si le volume réel de signalements municipaux dépasse ce seuil, ou à remplacer
+   * par un vrai infinite-scroll si ça devient courant.
+   *
+   * Filtré en plus sur `resolutionStatus !== 'resolved'` : `status: 'Reported'` seul
+   * inclut aussi les signalements déjà résolus (resolveReport() ne change jamais `status`,
+   * voir Prompt 01/EditRecap.md). Sans ce filtre, le badge de l'onglet et le tableau
+   * comptaient un signalement de plus que la carte KPI "Incidents non résolus"
+   * (statisticsAdmin.pendingReportsCount, qui applique déjà ce même filtre côté serveur) —
+   * les deux nombres doivent représenter la même chose.
+   */
   loadAllSignalements() {
     this.isLoadingIncidents = true;
-    this.adminService.getAllReports().subscribe({
+    this.adminService.getAllReports({ status: 'Reported', limit: INCIDENTS_FETCH_LIMIT }).subscribe({
       next: (response: any) => {
-        this.incidents = response.collectes;
+        this.incidents = (response.collectes ?? []).filter(
+          (i: Incident) => i.resolutionStatus !== 'resolved'
+        );
         this.isLoadingIncidents = false;
         this.filteredIncidents = [...this.incidents];
         this.incidentBreakdown = this.getIncidentBreakdown();
@@ -864,21 +920,22 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   getCollectionRate(): number {
-    return Math.round(
-      (this.statistics.completeCollections /
-        this.statistics.todayCollections) *
-        100
-    );
+    const collected = this.statisticsAdmin?.dailyCollectionCollected ?? 0;
+    const total = this.statisticsAdmin?.dailyCollections ?? 0;
+    if (total === 0) return 0;
+    return Math.round((collected / total) * 100);
   }
 
+  // Aucune source réelle pour un taux de conformité aujourd'hui (ni sur /api/statistics,
+  // ni ailleurs dans l'API — voir Prompt 01). Retourne un état honnête plutôt qu'un calcul
+  // sur une donnée mockée ; à rebrancher quand Milestone 05 (Agency Performance Metrics)
+  // exposera un vrai complianceScore/complianceRate.
   getComplianceText(): string {
-    if (this.statistics.complianceRate >= 95) return "Excellent";
-    if (this.statistics.complianceRate >= 85) return "Bon";
-    return "À améliorer";
+    return "Non disponible";
   }
 
   getIncidentSeverity(): string {
-    const pending = this.statisticsAdmin?.reportsFromClients?.pending ?? 0;
+    const pending = this.statisticsAdmin?.pendingReportsCount ?? 0;
     if (pending <= 5) return "Faible";
     if (pending <= 10) return "Modéré";
     return "Élevé";
@@ -935,6 +992,8 @@ export class MunicipalityDashboard  implements OnInit {
       compliance_issue: "Non-conformité",
       complaint: "Réclamation",
       technical_issue: "Problème technique",
+      regular: "Incident non précisé",
+      other: "Autre",
     };
     return types[type as keyof typeof types] || type;
   }
@@ -944,11 +1003,15 @@ export class MunicipalityDashboard  implements OnInit {
       open: "Ouvert",
       pending: "En cours",
       resolved: "Résolu",
+      reported: "En cours",
+      scheduled: "Programmée",
+      collected: "Effectuée",
     };
     return statuses[status as keyof typeof statuses] || status;
   }
 
-  getComplianceClass(score: number): string {
+  getComplianceClass(score: number | null): string {
+    if (score === null) return "unknown";
     if (score >= 95) return "excellent";
     if (score >= 85) return "good";
     return "poor";
@@ -1021,11 +1084,18 @@ export class MunicipalityDashboard  implements OnInit {
         };
       });
 
+    // agency.complianceScore reste toujours `null` aujourd'hui (Prompt 05 : aucune règle de
+    // conformité définie, aucune source réelle) — les comparaisons `< 85`/`< 70` ci-dessous
+    // ne s'appliquent donc que si une vraie valeur existe un jour, jamais sur `null`.
     const complianceNotifications: BellNotification[] = this.agencyAudits
-      .filter((agency) => agency.issues.length > 0 || agency.complianceScore < 85 || agency.status !== "active")
+      .filter((agency) => agency.issues.length > 0 || (agency.complianceScore !== null && agency.complianceScore < 85) || agency.status !== "active")
       .map((agency) => {
         const id = `agency-${agency.id}`;
-        const reason = agency.issues.length > 0 ? agency.issues[0] : `Score de conformité : ${agency.complianceScore}%`;
+        const reason = agency.issues.length > 0
+          ? agency.issues[0]
+          : agency.complianceScore !== null
+            ? `Score de conformité : ${agency.complianceScore}%`
+            : `Agence ${agency.status}`;
         return {
           id,
           icon: "business",
@@ -1033,7 +1103,7 @@ export class MunicipalityDashboard  implements OnInit {
           message: reason,
           date: new Date(agency.lastAudit),
           read: this.readNotificationIds.has(id),
-          severity: (agency.complianceScore < 70 || agency.status === "suspended" ? "high" : "medium") as BellNotification["severity"],
+          severity: ((agency.complianceScore !== null && agency.complianceScore < 70) || agency.status === "suspended" ? "high" : "medium") as BellNotification["severity"],
         };
       });
 
@@ -1068,9 +1138,12 @@ export class MunicipalityDashboard  implements OnInit {
   // Statistics
   showAdminStatistics(): void {
     this.adminService.getAllStatistics().subscribe({
-      next: (statistics: any) => {
+      next: (statistics: { stats: MunicipalityStatistics }) => {
         this.statisticsAdmin = statistics.stats;
-        console.log(this.statisticsAdmin);
+        this.buildZoneStatisticsFromAdminStats();
+      },
+      error: (err) => {
+        console.error("Erreur lors de la récupération des statistiques:", err);
       },
     });
   }
@@ -1130,29 +1203,70 @@ export class MunicipalityDashboard  implements OnInit {
    * local mutation with a real persisted call (and a rollback path if it fails)
    * instead of mutating `incidents` directly.
    */
-  onAssignReport(incident: Incident): void {
-    const target = this.incidents.find((i) => i._id === incident._id);
-    if (!target) {
-      return;
-    }
-    target.status = "pending";
-    target.assignedTo = target.assignedTo || "Agent municipal";
-    this.filterIncidents();
-    this.incidentBreakdown = this.getIncidentBreakdown();
-    this.buildNotifications();
-    this.notificationService.showSuccess("Incident assigné", "L'incident a été pris en charge.");
+  /**
+   * Appelait auparavant seulement `target.status = "pending"`/`assignedTo` en mémoire —
+   * jamais persisté, et une valeur ('pending') qui n'existe même pas dans le vrai enum
+   * `Collecte.status`. Appelle maintenant le vrai `PATCH /collectes/:id/assign-team`
+   * (Admin.assignReportToTeam$, Prompt 06) et met à jour l'incident depuis la réponse
+   * serveur seulement après confirmation.
+   *
+   * Note (Prompt 06, confirmé par l'utilisateur) : "Seuls les managers peuvent
+   * assigner/résoudre" — ce handler reste donc **inatteignable en pratique** pour un
+   * agent de mairie : <app-signalement> ne rend le bouton "Assigner" que pour
+   * `currentUser?.role === 'manager'`, jamais 'municipality'. Corrigé quand même (au
+   * lieu de laisser une mutation locale fictive) par cohérence avec le reste du
+   * dashboard et au cas où cette règle de visibilité évoluerait.
+   */
+  onAssignReport(payload: { incidentId: string; teamId: string }): void {
+    const assignedBy = this.currentUser?._id ?? this.currentUser?.id ?? '';
+    this.adminService.assignReportToTeam$(payload.incidentId, payload.teamId, assignedBy).subscribe({
+      next: (response: any) => {
+        const updated = response?.data;
+        const target = this.incidents.find((i) => i._id === payload.incidentId);
+        if (target) {
+          target.assignedTeamId = updated?.assignedTeamId ?? target.assignedTeamId;
+          target.resolutionStatus = updated?.resolutionStatus ?? 'in_progress';
+        }
+        this.filterIncidents();
+        this.incidentBreakdown = this.getIncidentBreakdown();
+        this.buildNotifications();
+        this.notificationService.showSuccess("Signalement affecté", "Le signalement a été affecté à l'équipe.");
+      },
+      error: (err) => {
+        console.error("Erreur lors de l'affectation du signalement:", err);
+        this.notificationService.showError("Erreur", "Impossible d'affecter ce signalement pour le moment.");
+      },
+    });
   }
 
+  /**
+   * Appelait auparavant seulement `target.status = "resolved"` en mémoire — jamais
+   * persisté (aucun appel réseau), donc annulé au prochain rechargement, et incohérent
+   * avec le filtre de loadAllSignalements() (qui exclut resolutionStatus === 'resolved'
+   * depuis ce même correctif) : l'incident aurait affiché "Résolue" localement tout en
+   * continuant à compter dans "Incidents non résolus" jusqu'au rechargement suivant.
+   * Appelle maintenant le vrai `PATCH /collectes/:id/resolve` (Admin.resolveCollecte$,
+   * déjà écrit mais jamais appelé depuis aucun dashboard) et retire l'incident de la liste
+   * seulement après confirmation serveur — cohérent avec le fait que resolveReport() ne
+   * remet jamais `status` à autre chose que 'Reported' (voir EditRecap.md, Prompt 01).
+   */
   onResolvedIncident(incidentId: string): void {
-    const target = this.incidents.find((i) => i._id === incidentId);
-    if (!target) {
-      return;
-    }
-    target.status = "resolved";
-    this.filterIncidents();
-    this.incidentBreakdown = this.getIncidentBreakdown();
-    this.buildNotifications();
-    this.notificationService.showSuccess("Incident résolu", "L'incident a été marqué comme résolu.");
+    const resolvedBy = this.currentUser?._id ?? this.currentUser?.id ?? '';
+    this.adminService.resolveCollecte$(incidentId, resolvedBy, 'Résolu depuis le tableau de bord municipal').subscribe({
+      next: () => {
+        this.incidents = this.incidents.filter((i) => i._id !== incidentId);
+        this.filterIncidents();
+        this.incidentBreakdown = this.getIncidentBreakdown();
+        this.buildNotifications();
+        const incidentsTab = this.tabs.find((tab) => tab.id === "incidents");
+        if (incidentsTab) incidentsTab.badge = this.incidents.length;
+        this.notificationService.showSuccess("Incident résolu", "L'incident a été marqué comme résolu.");
+      },
+      error: (err) => {
+        console.error("Erreur lors de la résolution de l'incident:", err);
+        this.notificationService.showError("Erreur", "Impossible de résoudre cet incident pour le moment.");
+      },
+    });
   }
 
   // Action methods
@@ -1234,9 +1348,9 @@ export class MunicipalityDashboard  implements OnInit {
           ["Clients totaux", `${this.statisticsAdmin?.totalClients ?? "—"}`],
           [
             "Collectes aujourd'hui",
-            `${this.statisticsAdmin?.completeCollections ?? "—"} / ${this.statisticsAdmin?.totalCollections ?? "—"} (${this.getCollectionRate()}%)`,
+            `${this.statisticsAdmin?.dailyCollectionCollected ?? "—"} / ${this.statisticsAdmin?.dailyCollections ?? "—"} (${this.getCollectionRate()}%)`,
           ],
-          ["Incidents non résolus", `${this.statisticsAdmin?.reportsFromClients?.pending ?? 0}`],
+          ["Incidents non résolus", `${this.statisticsAdmin?.pendingReportsCount ?? 0}`],
         ],
         ...tableStyles,
       });
@@ -1255,7 +1369,7 @@ export class MunicipalityDashboard  implements OnInit {
             `${a.clients}`,
             `${a.collectors}`,
             `${a.completionRate}%`,
-            `${a.complianceScore}%`,
+            a.complianceScore !== null ? `${a.complianceScore}%` : "Non disponible",
           ]),
           ...tableStyles,
         });
@@ -1286,8 +1400,8 @@ export class MunicipalityDashboard  implements OnInit {
         y = sectionTitle("Répartition des déchets", y);
         autoTable(doc, {
           startY: y,
-          head: [["Type de déchet", "Quantité (t)", "Part", "Tendance"]],
-          body: this.wasteStatistics.map((w) => [w.type, `${w.quantity}`, `${w.percentage}%`, w.trend]),
+          head: [["Type de déchet", "Nb. collectes", "Part", "Tendance"]],
+          body: this.wasteStatistics.map((w) => [w.label, `${w.quantity}`, `${w.percentage}%`, w.trend]),
           ...tableStyles,
         });
         y = finalY() + 10;
@@ -1339,17 +1453,18 @@ export class MunicipalityDashboard  implements OnInit {
         y = finalY() + 10;
       }
 
-      // Section 7 — Volume global (Prompt 11 — already reflects its own filters + statisticsPeriod)
+      // Section 7 — Volume global (Prompt 12 — derived from monthlyTrend, reflects statisticsPeriod
+      // via that same load; "Réel"/"Objectif" are collection COUNTS, not a weight — see EditRecap.md)
       if (this.volumeAggregate) {
         y = ensureSpace(y);
         y = sectionTitle("Volume global collecté", y);
         autoTable(doc, {
           startY: y,
-          head: [["Réel (t)", "Objectif (t)", "% de l'objectif", "Statut"]],
+          head: [["Collectes réalisées", "Collectes planifiées", "% de l'objectif", "Statut"]],
           body: [
             [
-              `${(this.volumeAggregate.actualKg / 1000).toFixed(1)}`,
-              `${(this.volumeAggregate.targetKg / 1000).toFixed(1)}`,
+              `${this.volumeAggregate.actualCollections}`,
+              `${this.volumeAggregate.targetCollections}`,
               `${this.volumeAggregate.percentageOfTarget}%`,
               this.getPerformanceStatusLabel(this.volumeAggregate.status),
             ],
@@ -1468,7 +1583,10 @@ export class MunicipalityDashboard  implements OnInit {
   updateStatistics(): void {
     const token = ++this.statisticsRefreshToken;
     this.isRefreshingStatistics = true;
-    let remaining = 5;
+    // 4, not 5 (Prompt 12): "Volume Global Collecté" no longer has its own fetch — it's
+    // derived inside loadMonthlyTrend() from the same response, so it completes as part
+    // of that section rather than needing its own fan-out slot.
+    let remaining = 4;
     const onSectionDone = () => {
       remaining--;
       if (remaining === 0 && token === this.statisticsRefreshToken) {
@@ -1480,7 +1598,6 @@ export class MunicipalityDashboard  implements OnInit {
     this.loadMonthlyTrend(onSectionDone);
     this.loadPerformanceIndicators(onSectionDone);
     this.loadZoneFrequency(onSectionDone);
-    this.loadVolumeGlobal(onSectionDone);
   }
 
   /**
@@ -1542,8 +1659,8 @@ export class MunicipalityDashboard  implements OnInit {
     if (this.hasWasteData()) {
       sections.push({
         title: "Répartition des déchets",
-        headers: ["Type de déchet", "Quantité (t)", "Part (%)", "Tendance"],
-        rows: this.wasteStatistics.map((w) => [w.type, w.quantity, w.percentage, w.trend]),
+        headers: ["Type de déchet", "Nb. collectes", "Part (%)", "Tendance"],
+        rows: this.wasteStatistics.map((w) => [w.label, w.quantity, w.percentage, w.trend]),
       });
     }
 
@@ -1594,11 +1711,11 @@ export class MunicipalityDashboard  implements OnInit {
     if (this.hasVolumeData() && this.volumeAggregate) {
       sections.push({
         title: "Volume global collecté",
-        headers: ["Réel (t)", "Objectif (t)", "% de l'objectif", "Statut"],
+        headers: ["Collectes réalisées", "Collectes planifiées", "% de l'objectif", "Statut"],
         rows: [
           [
-            Number((this.volumeAggregate.actualKg / 1000).toFixed(1)),
-            Number((this.volumeAggregate.targetKg / 1000).toFixed(1)),
+            this.volumeAggregate.actualCollections,
+            this.volumeAggregate.targetCollections,
             this.volumeAggregate.percentageOfTarget,
             this.getPerformanceStatusLabel(this.volumeAggregate.status),
           ],

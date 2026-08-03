@@ -494,6 +494,61 @@
   gap: 10px;
   justify-content: space-between;
 }
+
+/* ---- Team picker (Prompt 06) ---- */
+.team-picker-empty {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.team-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+
+  input[type="radio"] {
+    flex-shrink: 0;
+  }
+}
+
+.team-picker-item:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+
+.team-picker-item--selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.team-picker-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.team-picker-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.team-picker-size {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
 /* Responsive pour le drawer */
 @media (max-width: 768px) {
   .drawer-content,

@@ -11,7 +11,7 @@ export function buildWasteBreakdownConfig(data: WasteStatistic[]): ChartConfigur
   const config: ChartConfiguration<'doughnut'> = {
     type: 'doughnut',
     data: {
-      labels: data.map((item) => item.type),
+      labels: data.map((item) => item.label),
       datasets: [
         {
           data: data.map((item) => item.quantity),
@@ -26,9 +26,11 @@ export function buildWasteBreakdownConfig(data: WasteStatistic[]): ChartConfigur
         legend: { display: false },
         tooltip: {
           callbacks: {
+            // `quantity` est un compte de collectes (Prompt 08), pas un poids en kg/t —
+            // aucune source réelle de poids n'existe nulle part dans le schéma.
             label: (ctx) => {
               const item = data[ctx.dataIndex];
-              return `${item.type}: ${item.quantity}t (${item.percentage}%)`;
+              return `${item.label}: ${item.quantity} collecte(s) (${item.percentage}%)`;
             },
           },
         },

@@ -218,16 +218,9 @@
   gap: 6px;
 }
 
-.demo-data-badge {
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  padding: 1px 6px;
-  border-radius: 8px;
-  background: var(--medium-gray);
-  color: var(--text-secondary);
-}
+// .demo-data-badge supprimée (Prompt 15, §7) : ses 3 seuls usages dans le template ont
+// été retirés (isPerformanceOverviewMocked/isAgencyPerformanceMocked valaient déjà
+// `false` en dur, aucun badge ne s'affichait plus).
 
 .metric-value {
   font-size: 1.5rem;
@@ -238,6 +231,12 @@
 .metric-value--loading {
   color: var(--text-secondary);
   opacity: 0.6;
+}
+
+.metric-value--unknown {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
 }
 
 .metric-bar {
@@ -427,96 +426,130 @@
 .alerts-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   max-height: 300px;
   overflow-y: auto;
-  max-height: 280px;
-  overflow-y: auto;
-  max-height: 280px;
-  overflow-y: auto;
-  max-height: 300px;
-  overflow-y: auto;
-  max-height: 300px;
-  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.alerts-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--text-secondary);
+
+  i {
+    font-size: 32px;
+    color: #16a34a;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
 }
 
 .alert-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: var(--light-gray);
-  border-radius: 8px;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid #f0f0f0;
+  border-left: 4px solid transparent;
+  border-radius: 10px;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.alert-item:hover {
+  box-shadow: var(--shadow-light);
+  transform: translateY(-1px);
+}
+
+.alert-item--critical {
+  border-left-color: #ef4444;
+}
+.alert-item--high {
+  border-left-color: #f97316;
+}
+.alert-item--medium {
+  border-left-color: #f59e0b;
+}
+.alert-item--low {
+  border-left-color: #22c55e;
 }
 
 .alert-severity {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--white);
+
+  i {
+    font-size: 20px;
+  }
 }
 
-.severity-critical {
-  display: flex;
-  align-items: center;
-  padding: 10px 12px;
-  background: #f42c2cff;
-  border-radius: 5px;
-  font-size: 17px;
+.alert-severity--critical {
+  background: #fef2f2;
+  color: #dc2626;
 }
-
-.severity-high {
-  display: flex;
-  align-items: center;
-  padding: 10px 12px;
-  background: #ef692bff;
-  border-radius: 5px;
-  font-size: 17px;
+.alert-severity--high {
+  background: #fff7ed;
+  color: #ea580c;
 }
-
-.severity-medium {
-  display: flex;
-  align-items: center;
-  padding: 10px 12px;
-  background: #f5ab57ff;
-  border-radius: 5px;
-  font-size: 17px;
+.alert-severity--medium {
+  background: #fffbeb;
+  color: #d97706;
 }
-
-.severity-low {
-  display: flex;
-  align-items: center;
-  padding: 10px 12px;
-  background: #f8e962ff;
-  border-radius: 5px;
-  font-size: 17px;
+.alert-severity--low {
+  background: #f0fdf4;
+  color: #16a34a;
 }
 
 .alert-content {
   flex: 1;
+  min-width: 0;
 }
 
 .alert-title {
   font-weight: 600;
+  font-size: 0.95rem;
   color: var(--text-primary);
-  margin-bottom: 2px;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .alert-agency {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .alert-time {
-  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
   color: var(--text-secondary);
+
+  i {
+    font-size: 13px;
+  }
 }
 
 .alert-status {
+  flex-shrink: 0;
   text-align: right;
 }
 
@@ -563,6 +596,18 @@
 .status-cancelled {
   background: #ffb9b9ff;
   color: #eb0b0bff;
+}
+.status-reported {
+  background: #fff7ed;
+  color: #ea580c;
+}
+.status-scheduled {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.status-collected {
+  background: #f0fdf4;
+  color: #16a34a;
 }
 
 .agencies-header,
@@ -650,6 +695,9 @@
 .compliance-score.poor {
   color: var(--error-color);
 }
+.compliance-score.unknown {
+  color: var(--text-secondary, #94a3b8);
+}
 
 .compliance-label {
   font-size: 0.8rem;
@@ -666,11 +714,8 @@
   margin-bottom: 8px;
 }
 
-.metric-row-demo-label {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 4px;
-}
+// .metric-row-demo-label supprimée (Prompt 15, §7) — même raison que .demo-data-badge
+// ci-dessus, son seul usage dans le template a été retiré.
 
 .metric {
   display: flex;

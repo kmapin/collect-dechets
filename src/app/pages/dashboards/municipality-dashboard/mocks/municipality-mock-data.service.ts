@@ -5,38 +5,23 @@ import {
   DEFAULT_SEED,
   MOCK_NETWORK_DELAY_MS,
   WASTE_TYPE_POOL,
-  FULL_HISTORY_DAYS,
   ZONE_COORDINATES,
 } from './municipality-mock.constants';
 import {
   generateZones,
   generateCollectors,
   generateAgencyAudits,
-  generateWasteRecords,
-  generateWasteStatistics,
-  generateMonthlyTrend,
-  generateIncidents,
   generateGroupedZoneStatistics,
-  generateMunicipalityStatistics,
-  generatePerformanceOverview,
   generateAgencyPerformanceMetrics,
   generatePerformanceRecords,
-  generateZoneFrequencyRecords,
 } from './municipality-mock.generators';
 import type {
   MunicipalityZone,
   MockCollector,
-  MockWasteRecord,
-  MonthlyTrendPoint,
   AgencyAudit,
-  WasteStatistic,
-  Incident,
   GroupedZoneStatistics,
-  MunicipalityStatistics,
-  PerformanceOverview,
   AgencyPerformanceMetrics,
   PerformanceRecord,
-  ZoneFrequencyRecord,
 } from './municipality-mock.types';
 
 /**
@@ -63,62 +48,34 @@ export class MunicipalityMockDataService {
     return generateAgencyAudits(count, seed);
   }
 
-  /**
-   * Defaults to FULL_HISTORY_DAYS (not a smaller window) — this is the
-   * shared full record set behind getWasteStatistics(), getMonthlyTrend(),
-   * and Volume Global Collecté (Prompt 11); callers wanting a specific
-   * recent window should filter the returned array by `scheduledDate`
-   * rather than requesting a smaller `days` value here (see
-   * generateWasteRecords()'s own comment for why a different `days` value
-   * would desync "the same calendar day" between features).
-   */
-  getWasteRecords(days = FULL_HISTORY_DAYS, seed: number = DEFAULT_SEED): MockWasteRecord[] {
-    return generateWasteRecords(days, seed);
-  }
+  // getWasteRecords()/getWasteRecords$() supprimées (Prompt 12) : "Volume Global
+  // Collecté" est désormais dérivé de GET /municipality/monthly-trend (réel, Prompt 09)
+  // — voir MunicipalityDashboard.loadMonthlyTrend() / utils/volume.util.ts. GET
+  // /municipality/waste-records (réel, Prompt 12) est la table de faits paginée
+  // équivalente côté backend — plus aucun appelant mock.
 
-  /** Same data as getWasteRecords(), wrapped as an Observable — see getWasteStatistics$() for why. */
-  getWasteRecords$(days = FULL_HISTORY_DAYS, seed: number = DEFAULT_SEED): Observable<MockWasteRecord[]> {
-    return of(this.getWasteRecords(days, seed)).pipe(delay(MOCK_NETWORK_DELAY_MS));
-  }
+  // getWasteStatistics()/getWasteStatistics$() supprimées (Prompt 08) : GET
+  // /municipality/waste-statistics est maintenant réel (voir
+  // MunicipalityDashboard.loadWasteStatistics()) — plus aucun appelant.
 
-  getWasteStatistics(days = 30, seed: number = DEFAULT_SEED): WasteStatistic[] {
-    return generateWasteStatistics(days, seed);
-  }
+  // getMonthlyTrend()/getMonthlyTrend$() supprimées (Prompt 09) : GET
+  // /municipality/monthly-trend est maintenant réel (voir
+  // MunicipalityDashboard.loadMonthlyTrend()) — plus aucun appelant.
 
-  /**
-   * Same data as getWasteStatistics(), wrapped as an Observable with a
-   * simulated network delay so a real loading state is visible/testable —
-   * mirrors the shape of a real HTTP call (`.subscribe({ next, error })`)
-   * so swapping this for `this.http.get(...)` later is a body-only change.
-   */
-  getWasteStatistics$(days = 30, seed: number = DEFAULT_SEED): Observable<WasteStatistic[]> {
-    return of(this.getWasteStatistics(days, seed)).pipe(delay(MOCK_NETWORK_DELAY_MS));
-  }
-
-  getMonthlyTrend(months = 12, seed: number = DEFAULT_SEED): MonthlyTrendPoint[] {
-    return generateMonthlyTrend(months, seed);
-  }
-
-  /** Same data as getMonthlyTrend(), wrapped as an Observable — see getWasteStatistics$() for why. */
-  getMonthlyTrend$(months = 12, seed: number = DEFAULT_SEED): Observable<MonthlyTrendPoint[]> {
-    return of(this.getMonthlyTrend(months, seed)).pipe(delay(MOCK_NETWORK_DELAY_MS));
-  }
-
-  getIncidents(count = 20, seed: number = DEFAULT_SEED): Incident[] {
-    return generateIncidents(count, seed);
-  }
+  // getIncidents() supprimée (Prompt 06) — plus aucun appelant réel, voir
+  // municipality-mock.generators.ts (generateIncidents() supprimée pour la même raison).
 
   getZoneStatistics(seed: number = DEFAULT_SEED): GroupedZoneStatistics[] {
     return generateGroupedZoneStatistics(seed);
   }
 
-  getMunicipalityStatistics(seed: number = DEFAULT_SEED): MunicipalityStatistics {
-    return generateMunicipalityStatistics(seed);
-  }
+  // getMunicipalityStatistics() supprimée (Prompt 01) : MunicipalityStatistics est
+  // maintenant entièrement réel (GET /api/statistics, voir MunicipalityDashboard.
+  // showAdminStatistics()) — cette méthode n'avait plus aucun appelant.
 
-  getPerformanceOverview(seed: number = DEFAULT_SEED): PerformanceOverview {
-    return generatePerformanceOverview(seed);
-  }
+  // getPerformanceOverview() supprimée (Prompt 07) : GET /municipality/performance-overview
+  // est maintenant réel (voir MunicipalityDashboard.loadPerformanceOverview()) — plus
+  // aucun appelant.
 
   getAgencyPerformanceMetrics(agencyId: string, seed: number = DEFAULT_SEED): AgencyPerformanceMetrics {
     return generateAgencyPerformanceMetrics(agencyId, seed);
@@ -133,25 +90,18 @@ export class MunicipalityMockDataService {
     return generatePerformanceRecords(seed);
   }
 
-  /** Same data as getPerformanceRecords(), wrapped as an Observable — see getWasteStatistics$() for why. */
+  /** Same data as getPerformanceRecords(), wrapped as an Observable — see getWasteRecords$() for why. */
   getPerformanceRecords$(seed: number = DEFAULT_SEED): Observable<PerformanceRecord[]> {
     return of(this.getPerformanceRecords(seed)).pipe(delay(MOCK_NETWORK_DELAY_MS));
   }
 
-  getZoneFrequencyRecords(seed: number = DEFAULT_SEED): ZoneFrequencyRecord[] {
-    return generateZoneFrequencyRecords(seed);
-  }
-
-  /** Same data as getZoneFrequencyRecords(), wrapped as an Observable — see getWasteStatistics$() for why. */
-  getZoneFrequencyRecords$(seed: number = DEFAULT_SEED): Observable<ZoneFrequencyRecord[]> {
-    return of(this.getZoneFrequencyRecords(seed)).pipe(delay(MOCK_NETWORK_DELAY_MS));
-  }
-
   /**
-   * Coverage Map (Prompt 13) — mock coordinates only, no real GPS data in
-   * scope yet. Looks up by zone/city name so callers stay in sync with
-   * whatever `zoneStatistics`/`MunicipalityZone` names are already on
-   * screen, rather than a separate id scheme.
+   * Coverage Map — mock coordinates, kept on purpose (Prompt 14, decided with the
+   * user): a real replacement (`Admin.getCities$()` -> GET /territories/cities) exists
+   * and was verified against the live database, but the real `City` collection
+   * currently has only 6 documents and none with latitude/longitude populated —
+   * switching now would turn the map from "plausible markers" into "no markers at
+   * all". Revisit once real city coordinate data exists — see EditRecapFront.md.
    */
   getZoneCoordinates(zoneName: string): [number, number] | null {
     return ZONE_COORDINATES[zoneName] ?? null;

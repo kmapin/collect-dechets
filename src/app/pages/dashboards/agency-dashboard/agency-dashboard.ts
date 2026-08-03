@@ -127,6 +127,9 @@ interface Incident {
   date: Date;
   status: "open" | "pending" | "resolved" | 'Collected' | 'Reported' | 'Scheduled';
   assignedTo?: string;
+  /** Champ réel Collecte.assignedTeamId (Prompt 06) — équipe affectée à la résolution. */
+  assignedTeamId?: { _id: string; name?: string } | null;
+  resolutionStatus?: "pending" | "in_progress" | "resolved";
 }
 interface Report {
   _id: string;
@@ -453,11 +456,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   showDeleteConfirmation: boolean = false;
   employeeToDelete: any = null;
   currentUserForDeletion: any = null;
-  // assigner un planning à un collecteur
-  showAssignModal: boolean = false;
-  selectedReportId: string = "";
-  selectedReport: Incident | null = null;
-  selectedEmployee: string[] = [];
   // Propriétés pour l'édition d'employé
   employeeToEdit: any = null;
   isEditingEmployee: boolean = false;
@@ -1594,25 +1592,35 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
 
   /**Gestion des messages recus par le client connecté fin */
 
-  openAssignModal(report: Incident): void {
-    this.selectedReport = report;
-    this.selectedEmployee = [];
-    this.showAssignModal = true;
-  }
-  closeAssignModal(): void {
-    this.showAssignModal = false;
-    this.selectedEmployee = [];
-  }
-
-  assignEmployeesToReport(): void { }
-  toggleEmployeeSelection(employeeId: string, event: any): void {
-    if (event.target.checked) {
-      this.selectedEmployee.push(employeeId);
-    } else {
-      this.selectedEmployee = this.selectedEmployee.filter(
-        (id) => id !== employeeId,
-      );
-    }
+  /**
+   * Remplace l'ancien flux "Assigner" par employé (Prompt 06) : `openAssignModal` +
+   * `showAssignModal` + `selectedEmployee` ouvraient un modal local dont le bouton de
+   * confirmation appelait `assignReport()` (plus bas) — celui-ci appelait
+   * `assignReportToEmployee$()`, qui tapait `PUT /reports/:id/assign`, une route
+   * confirmée inexistante dans tout le backend (grep exhaustif de routes/*.js). De plus
+   * `selectedReportId` n'était jamais renseigné par `openAssignModal` (qui ne posait que
+   * `selectedReport`), donc l'appel échouait systématiquement dès le contrôle "au moins
+   * un employé sélectionné" — cette action n'a jamais fonctionné, même avant ce
+   * correctif. Le vrai contrat backend est de toute façon team-based
+   * (`Collecte.assignedTeamId`), pas employee-based : le picker d'équipe vit maintenant
+   * dans le composant partagé <app-signalement> (signalement.ts), qui émet directement
+   * `{ incidentId, teamId }` une fois l'équipe choisie.
+   */
+  onAssignReportToTeam(payload: { incidentId: string; teamId: string }): void {
+    const assignedBy = this.currentUser?._id ?? this.currentUser?.id ?? '';
+    this.agencyService.assignReportToTeam$(payload.incidentId, payload.teamId, assignedBy).subscribe({
+      next: () => {
+        this.notificationService.showSuccess("Succès", "Signalement affecté à l'équipe avec succès.");
+        // Pas `loadReports()` (mock statique sans rapport avec les signalements réels,
+        // voir plus bas) — le vrai rechargement de `agencyReports` passe par ceci.
+        this.loadAgencyReports(this.currentUser);
+      },
+      error: (err) => {
+        console.error("Erreur assignation :", err);
+        const message = err?.error?.message || "Échec de l'affectation.";
+        this.notificationService.showError("Erreur", message);
+      },
+    });
   }
 
   loadAgencyData(): void {
@@ -4444,18 +4452,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     //   return statusMatch && severityMatch;
     // });
   }
-  resolveIncident1(): void {
-    // const incident = this.incidents.find(i => i.id === incidentId);
-    // if (incident) {
-    //   incident.status = 'resolved';
-    this.filterIncidents();
-    this.statistics.pendingReports--;
-    this.notificationService.showSuccess(
-      "Résolu",
-      "Incident marqué comme résolu",
-    );
-    // }
-  }
   contactAgencyForIncident(): void {
     this.contactAgency();
   }
@@ -4506,34 +4502,24 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     };
     return statuses[status as keyof typeof statuses] || status;
   }
+  /**
+   * Appelait `PATCH /reports/:id/status` (agencyService.resolveIncident$), une route
+   * confirmée inexistante dans tout le backend — d'où le toast "Système de validation
+   * non établie" laissé en dur, qui admettait déjà que ce flux n'était pas fiable
+   * (Prompt 06). Appelle maintenant le vrai `PATCH /collectes/:id/resolve`
+   * (AgencyService.resolveReport$).
+   */
   resolveIncident(id: string) {
-    const body = {
-      status: "resolved",
-      // status:"pending"
-    };
-    this.notificationService.showSuccess(
-      "Vérification",
-      "Système de validation non établie",
-    );
-    console.log("Status envoyé :", body);
-    this.agencyService.resolveIncident$(id, body).subscribe({
-      next: (response: any) => {
-        console.log("[DEBUG] Réponse de resolution d'incidant:", response);
-        if (response.message) {
-          this.notificationService.showSuccess("Resolu", response.message);
-          this.loadAgencyReports(this.currentUser);
-          // this.notificationService.showSuccess('Résolu', 'Incident marqué comme résolu');
-        } else {
-          this.notificationService.showError(
-            "Activation",
-            "Erreur lors de l'activation de l'agence",
-          );
-        }
+    const resolvedBy = this.currentUser?._id ?? this.currentUser?.id ?? '';
+    this.agencyService.resolveReport$(id, resolvedBy).subscribe({
+      next: () => {
+        this.notificationService.showSuccess("Résolu", "Le signalement a été marqué comme résolu.");
+        this.loadAgencyReports(this.currentUser);
       },
       error: (error: any) => {
-        console.error("Error activating agency:", error);
-        const msg = error?.error?.message || "Error activating agency";
-        this.notificationService.showSuccess("Activation", msg);
+        console.error("Erreur lors de la résolution du signalement:", error);
+        const msg = error?.error?.message || "Impossible de résoudre ce signalement pour le moment.";
+        this.notificationService.showError("Erreur", msg);
       },
     });
   }
@@ -4581,51 +4567,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     this.router.navigate(['/planning/create'], { queryParams: { edit: schedule._id } });
   }
 
-  onEmployeeToggle(event: any): void {
-    const employeeId = event.target.value;
-    if (event.target.checked) {
-      this.selectedEmployee.push(employeeId);
-    } else {
-      this.selectedEmployee = this.selectedEmployee.filter(
-        (id) => id !== employeeId,
-      );
-    }
-  }
-  assignReport(): void {
-    if (!this.selectedReportId || this.selectedEmployee.length === 0) {
-      this.notificationService.showError(
-        "Erreur",
-        "Veuillez sélectionner au moins un employé.",
-      );
-      return;
-    }
-
-    this.selectedEmployee.forEach((employeeId) => {
-      //   const payload = {
-      //   status: 'in_progress'
-      // };
-      this.agencyService
-        .assignReportToEmployee$(this.selectedReportId, employeeId)
-        .subscribe({
-          next: () => {
-            this.notificationService.showSuccess(
-              "Succès",
-              "Signalement assigné avec succès.",
-            );
-            this.loadReports();
-          },
-          error: (err) => {
-            console.error("Erreur assignation :", err);
-
-            const message =
-              err?.error?.error || err?.message || "Échec de l'assignation.";
-            this.notificationService.showError("Erreur", message);
-          },
-        });
-    });
-
-    this.closeAssignModal();
-  }
 
   showTariffsModal = false;
 

@@ -54,6 +54,9 @@ export class CoverageMap implements AfterViewInit, OnChanges, OnDestroy {
   private markers: L.CircleMarker[] = [];
   private resizeObserver?: ResizeObserver;
   private viewReady = false;
+  /** Set when initMap() runs before the container has a real layout size —
+   * picked up and cleared by the ResizeObserver once it does. See initMap(). */
+  private pendingFit: (() => void) | null = null;
 
   get isEmpty(): boolean {
     return this.zones.length === 0;
@@ -101,6 +104,7 @@ export class CoverageMap implements AfterViewInit, OnChanges, OnDestroy {
     this.loading = true;
     this.map?.remove();
     this.markers = [];
+    this.pendingFit = null;
 
     this.map = L.map(el, {
       center: this.zones[0].coordinates,
@@ -134,16 +138,41 @@ export class CoverageMap implements AfterViewInit, OnChanges, OnDestroy {
       bounds.push(zone.coordinates);
     }
 
-    if (bounds.length > 1) {
-      this.map.fitBounds(bounds, { padding: [32, 32] });
+    const fitToMarkers = () => {
+      if (bounds.length > 1) {
+        this.map?.fitBounds(bounds, { padding: [32, 32] });
+      }
+    };
+
+    /**
+     * `el.clientWidth`/`clientHeight` are only trustworthy once the browser has
+     * actually laid out this just-inserted/just-switched `.territory-map-container`
+     * — confirmed by reproducing live that it can still report 0x0 a full
+     * `requestAnimationFrame` after `L.map()` construction, so `fitBounds()` run
+     * at that point computes nonsense (observed: zoom clamped to maxZoom 19,
+     * centered on the centroid of all zone coordinates instead of an actual
+     * "fit every marker" view). Fit immediately when the size is already real
+     * (true on every re-render after the first), otherwise defer to the
+     * ResizeObserver below — per spec it always delivers at least one entry
+     * after `observe()`, so it's guaranteed to fire once the container transitions
+     * to its real size, without guessing how many frames that takes.
+     */
+    if (el.clientWidth > 0 && el.clientHeight > 0) {
+      fitToMarkers();
+    } else {
+      this.pendingFit = fitToMarkers;
     }
 
-    if (!this.resizeObserver && el.parentElement) {
-      this.resizeObserver = new ResizeObserver(() => this.map?.invalidateSize());
-      this.resizeObserver.observe(el.parentElement);
+    if (!this.resizeObserver) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.map?.invalidateSize();
+        if (this.pendingFit && el.clientWidth > 0 && el.clientHeight > 0) {
+          this.pendingFit();
+          this.pendingFit = null;
+        }
+      });
+      this.resizeObserver.observe(el);
     }
-
-    requestAnimationFrame(() => this.map?.invalidateSize());
   }
 
   /** Same thresholds as getCoverageBadgeClass() in municipality-dashboard.ts,

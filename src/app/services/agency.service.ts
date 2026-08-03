@@ -701,28 +701,36 @@ export class AgencyService {
     });
   }
 
-  resolveIncident$(incidentId: string, incidentStatus: any): Observable<any> {
-    return this.http.patch<any>(`${environment.apiUrl}/reports/${incidentId}/status`, incidentStatus).pipe(
+  /**
+   * `resolveIncident$`/`assignReportToEmployee$` supprimées (Prompt 06) : elles
+   * appelaient `PATCH /reports/:id/status` et `PUT /reports/:id/assign`, deux routes
+   * confirmées inexistantes dans tout le backend (grep exhaustif de routes/*.js) — un
+   * signalement individu-based qui n'a jamais eu de contrepartie serveur réelle.
+   * Le vrai contrat backend (`models/Collecte.js` + `routes/collecte.route.js`) est
+   * team-based (`Collecte.assignedTeamId`), pas employee-based. Remplacées ci-dessous
+   * par les vrais endpoints, réservés manager/super_admin côté serveur.
+   */
+  resolveReport$(collecteId: string, resolvedBy: string, resolutionComment?: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/collectes/${collecteId}/resolve`, { resolvedBy, resolutionComment }).pipe(
       map((response: any) => {
-        console.log("API > resoledIncident :", response);
+        console.log("API > resolveReport :", response);
         return response;
       }),
       catchError(error => {
-        console.error("Erreur lors de la résolution de l'incident :", error);
-        return of(null);
+        console.error("Erreur lors de la résolution du signalement :", error);
+        return throwError(() => error);
       })
     );
-
   }
-  assignReportToEmployee$(reportId: string, employeeId: string): Observable<any> {
-    const payload = { employeeId };
-    return this.http.put<any>(`${environment.apiUrl}/reports/${reportId}/assign`, payload).pipe(
+
+  assignReportToTeam$(collecteId: string, teamId: string, assignedBy: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/collectes/${collecteId}/assign-team`, { teamId, assignedBy }).pipe(
       map((response: any) => {
-        console.log("API > assignReportToEmployee :", response);
+        console.log("API > assignReportToTeam :", response);
         return response;
       }),
       catchError(error => {
-        console.error("Erreur lors de l'assignation du rapport :", error);
+        console.error("Erreur lors de l'affectation du signalement à l'équipe :", error);
         return throwError(() => error);
       })
     );

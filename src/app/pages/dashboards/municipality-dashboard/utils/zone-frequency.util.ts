@@ -1,15 +1,20 @@
-import type { CollectionFrequency, ZoneFrequencyRecord, ZoneFrequencyIndicator } from '../mocks/municipality-mock.types';
+import type { CollectionFrequency, PlannedFrequency, ZoneFrequencyRecord, ZoneFrequencyIndicator } from '../mocks/municipality-mock.types';
 
 /**
  * Canonical "collections per month" weight per frequency tier — lets planned
- * vs. actual (both enums) be compared/sorted numerically. Independent of
- * mock data: a real endpoint returning the same two enum fields would use
- * this exact mapping to compute the same gap.
+ * vs. actual (both enums) be compared/sorted numerically. Matches the real
+ * backend's enum (`Planning.frequency`, see GET /municipality/zone-frequency):
+ * 'hebdomadaire' (weekly) > 'bimensuel' (twice a month) > 'mensuel' (monthly)
+ * > 'unique' (a one-time collection — less frequent than a recurring monthly
+ * cadence, so weighted below it) > 'none' (zero real activity in the window,
+ * only ever appears on the actual side).
  */
 export const FREQUENCY_WEIGHT: Record<CollectionFrequency, number> = {
-  daily: 30,
-  weekly: 4,
-  monthly: 1,
+  hebdomadaire: 4,
+  bimensuel: 2,
+  mensuel: 1,
+  unique: 0.5,
+  none: 0,
 };
 
 export type FrequencyStatus = 'insufficient' | 'adequate' | 'exceeds';
@@ -21,7 +26,7 @@ export type FrequencyStatus = 'insufficient' | 'adequate' | 'exceeds';
  * more often than planned.
  */
 export function evaluateZoneFrequency(
-  planned: CollectionFrequency,
+  planned: PlannedFrequency,
   actual: CollectionFrequency
 ): { gap: number; status: FrequencyStatus } {
   const gap = FREQUENCY_WEIGHT[planned] - FREQUENCY_WEIGHT[actual];
