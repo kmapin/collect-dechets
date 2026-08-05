@@ -28,6 +28,13 @@ import { Signalement } from "../../shared_pages/signalement/signalement";
 import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
 import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
 import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
+import { WithdrawalRequestsMockService } from "../../../services/withdrawal-requests-mock.service";
+import {
+  AdminWithdrawalRequest,
+  PaymentMethod,
+  WithdrawalRequestFilter,
+  WithdrawalStatus,
+} from "../../../models/withdrawal-request.model";
 interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
@@ -398,6 +405,37 @@ export class AdminDashboard implements OnInit, OnDestroy {
   incidentsItemsPerPage = 10;
   incidentsTotalItems   = 0;
 
+  // ── Onglet Retraits (validation admin des demandes de retrait d'agence) ──
+  withdrawalRequests:        AdminWithdrawalRequest[] = [];
+  isLoadingWithdrawals       = false;
+  withdrawalsErrorMessage:   string | null = null;
+  withdrawalSearchTerm       = '';
+  withdrawalStatusFilter:    WithdrawalStatus | 'all' = 'all';
+  withdrawalAgencyFilter     = 'all';
+  withdrawalDateFrom         = '';
+  withdrawalDateTo           = '';
+  withdrawalAgencyOptions:   { id: string; name: string }[] = [];
+  readonly WithdrawalStatus  = WithdrawalStatus; // exposé au template pour les comparaisons de statut
+
+  // Pagination Retraits
+  withdrawalsCurrentPage  = 1;
+  withdrawalsTotalPages   = 1;
+  withdrawalsItemsPerPage = 10;
+  withdrawalsTotalItems   = 0;
+
+  // Détail (drawer) + actions
+  visibleWithdrawalDetailDrawer = false;
+  selectedWithdrawal: AdminWithdrawalRequest | null = null;
+
+  showApproveWithdrawalDialog = false;
+  withdrawalToApprove: AdminWithdrawalRequest | null = null;
+  isApprovingWithdrawal = false;
+
+  showRejectWithdrawalDialog = false;
+  withdrawalToReject: AdminWithdrawalRequest | null = null;
+  withdrawalRejectionReason = '';
+  isRejectingWithdrawal = false;
+
   // Select agence custom avec scroll infini
   agencyIdFilter       = '';
   agencyDropdownOpen   = false;
@@ -505,6 +543,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
       icon: "report_problem",
       badge: null,
     },
+    {
+      id: "withdrawals",
+      label: "Retraits",
+      icon: "account_balance_wallet",
+      badge: null,
+    },
     // {
     //   id: "communications",
     //   label: "Communications",
@@ -553,6 +597,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     private router: Router,
     private cd: ChangeDetectorRef,
     private countriesOrgMockService: CountriesOrgMockService,
+    private withdrawalRequestsService: WithdrawalRequestsMockService,
   ) {
     this.drawerWidth;
   }
@@ -599,6 +644,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
       case 'incidents':
         this.loadAllSignalements();
         break;
+      case 'withdrawals':
+        this.loadWithdrawalRequests();
+        break;
       case 'municipalities':
         this.loadAllMunipalities();
         break;
@@ -606,6 +654,243 @@ export class AdminDashboard implements OnInit, OnDestroy {
         this.showAdminClients();
         break;
     }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // ── Onglet Retraits — validation admin des demandes de retrait ──
+  // Alimenté par WithdrawalRequestsMockService (mock explicite, voir le
+  // commentaire d'en-tête de ce service pour le plan de bascule vers un vrai
+  // backend). Filtrage + pagination faits côté service (comme les vraies
+  // méthodes getWithdrawalRequests/searchWithdrawals/filterWithdrawals/
+  // paginateWithdrawals qu'aurait une API réelle), pas recalculés ici.
+  // ════════════════════════════════════════════════════════════
+
+  loadWithdrawalRequests(): void {
+    this.isLoadingWithdrawals = true;
+    this.withdrawalsErrorMessage = null;
+
+    const filter: WithdrawalRequestFilter = {
+      search:   this.withdrawalSearchTerm || undefined,
+      status:   this.withdrawalStatusFilter,
+      agencyId: this.withdrawalAgencyFilter,
+      dateFrom: this.withdrawalDateFrom || undefined,
+      dateTo:   this.withdrawalDateTo || undefined,
+      page:     this.withdrawalsCurrentPage,
+      pageSize: this.withdrawalsItemsPerPage,
+    };
+
+    this.withdrawalRequestsService.getWithdrawalRequests(filter).subscribe({
+      next: (res) => {
+        this.withdrawalRequests = res.data;
+        this.withdrawalsTotalItems = res.total;
+        this.withdrawalsTotalPages = res.totalPages;
+        this.withdrawalsCurrentPage = res.page;
+        this.isLoadingWithdrawals = false;
+
+        if (!this.withdrawalAgencyOptions.length) {
+          this.loadWithdrawalAgencyOptions();
+        }
+        this.updateWithdrawalsTabBadge();
+      },
+      error: (err) => {
+        this.isLoadingWithdrawals = false;
+        this.withdrawalsErrorMessage = err?.message || 'Impossible de charger les demandes de retrait.';
+        this.notificationService.showError('Erreur', this.withdrawalsErrorMessage!);
+      },
+    });
+  }
+
+  /** Compte les demandes en attente sur l'ENSEMBLE du jeu de données (pas juste la page
+   *  courante) pour le badge de l'onglet — même logique que les autres badges d'onglets. */
+  private updateWithdrawalsTabBadge(): void {
+    this.withdrawalRequestsService.filterWithdrawals({ status: WithdrawalStatus.PENDING }).subscribe(pending => {
+      this.tabBadges = { ...this.tabBadges, withdrawals: pending.length };
+    });
+  }
+
+  /** Construit la liste déroulante "Agence" à partir des agences réellement présentes
+   *  dans le jeu de retraits (pas de toutes les agences de la plateforme) — cohérent
+   *  avec ce que renverrait un vrai endpoint de filtre facetté. */
+  private loadWithdrawalAgencyOptions(): void {
+    this.withdrawalRequestsService.filterWithdrawals({}).subscribe(all => {
+      const seen = new Map<string, string>();
+      for (const r of all) seen.set(r.agencyId, r.agencyName);
+      this.withdrawalAgencyOptions = Array.from(seen, ([id, name]) => ({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    });
+  }
+
+  refreshWithdrawalRequests(): void {
+    this.loadWithdrawalRequests();
+  }
+
+  filterWithdrawalRequests(): void {
+    this.withdrawalsCurrentPage = 1;
+    this.loadWithdrawalRequests();
+  }
+
+  clearWithdrawalFilters(): void {
+    this.withdrawalSearchTerm = '';
+    this.withdrawalStatusFilter = 'all';
+    this.withdrawalAgencyFilter = 'all';
+    this.withdrawalDateFrom = '';
+    this.withdrawalDateTo = '';
+    this.filterWithdrawalRequests();
+  }
+
+  // ── Pagination Retraits (même pattern que goToAgenciesPage/goToIncidentsPage) ──
+
+  goToWithdrawalsPage(page: number): void {
+    if (page < 1 || page > this.withdrawalsTotalPages || page === this.withdrawalsCurrentPage) return;
+    this.withdrawalsCurrentPage = page;
+    this.loadWithdrawalRequests();
+  }
+
+  changeWithdrawalsItemsPerPage(size: number): void {
+    this.withdrawalsItemsPerPage = size;
+    this.withdrawalsCurrentPage = 1;
+    this.loadWithdrawalRequests();
+  }
+
+  getWithdrawalsPageNumbers(): number[] {
+    const total = this.withdrawalsTotalPages;
+    const current = this.withdrawalsCurrentPage;
+    const delta = 2;
+    const start = Math.max(1, current - delta);
+    const end = Math.min(total, current + delta);
+    const pages: number[] = [];
+    for (let p = start; p <= end; p++) pages.push(p);
+    return pages;
+  }
+
+  getWithdrawalsEndItem(): number {
+    return Math.min(this.withdrawalsCurrentPage * this.withdrawalsItemsPerPage, this.withdrawalsTotalItems);
+  }
+
+  // ── Détail ────────────────────────────────────────────────────
+
+  viewWithdrawalDetails(id: string): void {
+    this.selectedWithdrawal = null;
+    this.visibleWithdrawalDetailDrawer = true;
+    this.withdrawalRequestsService.getWithdrawalById(id).subscribe({
+      next: (request) => { this.selectedWithdrawal = request; },
+      error: (err) => {
+        this.visibleWithdrawalDetailDrawer = false;
+        this.notificationService.showError('Erreur', err?.message || 'Demande de retrait introuvable.');
+      },
+    });
+  }
+
+  closeWithdrawalDetailDrawer(): void {
+    this.visibleWithdrawalDetailDrawer = false;
+    this.selectedWithdrawal = null;
+  }
+
+  // ── Approbation ───────────────────────────────────────────────
+
+  openApproveWithdrawalDialog(request: AdminWithdrawalRequest): void {
+    this.withdrawalToApprove = request;
+    this.showApproveWithdrawalDialog = true;
+  }
+
+  closeApproveWithdrawalDialog(): void {
+    this.showApproveWithdrawalDialog = false;
+    this.withdrawalToApprove = null;
+  }
+
+  confirmApproveWithdrawal(): void {
+    if (!this.withdrawalToApprove) return;
+    this.isApprovingWithdrawal = true;
+    const adminName = `${this.currentUser?.firstName ?? ''} ${this.currentUser?.lastName ?? ''}`.trim() || 'Administrateur';
+
+    this.withdrawalRequestsService.approveWithdrawal(this.withdrawalToApprove.id, { adminName }).subscribe({
+      next: () => {
+        this.isApprovingWithdrawal = false;
+        this.showApproveWithdrawalDialog = false;
+        this.withdrawalToApprove = null;
+        this.notificationService.showSuccess('Retrait approuvé', 'La demande de retrait a été approuvée avec succès.');
+        this.loadWithdrawalRequests();
+        if (this.visibleWithdrawalDetailDrawer) this.closeWithdrawalDetailDrawer();
+      },
+      error: (err) => {
+        this.isApprovingWithdrawal = false;
+        this.notificationService.showError('Erreur', err?.message || "Impossible d'approuver cette demande.");
+      },
+    });
+  }
+
+  // ── Rejet ─────────────────────────────────────────────────────
+
+  openRejectWithdrawalDialog(request: AdminWithdrawalRequest): void {
+    this.withdrawalToReject = request;
+    this.withdrawalRejectionReason = '';
+    this.showRejectWithdrawalDialog = true;
+  }
+
+  closeRejectWithdrawalDialog(): void {
+    this.showRejectWithdrawalDialog = false;
+    this.withdrawalToReject = null;
+    this.withdrawalRejectionReason = '';
+  }
+
+  confirmRejectWithdrawal(): void {
+    if (!this.withdrawalToReject) return;
+    if (!this.withdrawalRejectionReason.trim()) {
+      this.notificationService.showWarning('Motif requis', 'Veuillez indiquer un motif de rejet.');
+      return;
+    }
+    this.isRejectingWithdrawal = true;
+    const adminName = `${this.currentUser?.firstName ?? ''} ${this.currentUser?.lastName ?? ''}`.trim() || 'Administrateur';
+
+    this.withdrawalRequestsService.rejectWithdrawal(this.withdrawalToReject.id, {
+      adminName,
+      reason: this.withdrawalRejectionReason,
+    }).subscribe({
+      next: () => {
+        this.isRejectingWithdrawal = false;
+        this.showRejectWithdrawalDialog = false;
+        this.withdrawalToReject = null;
+        this.withdrawalRejectionReason = '';
+        this.notificationService.showSuccess('Retrait rejeté', 'La demande de retrait a été rejetée.');
+        this.loadWithdrawalRequests();
+        if (this.visibleWithdrawalDetailDrawer) this.closeWithdrawalDetailDrawer();
+      },
+      error: (err) => {
+        this.isRejectingWithdrawal = false;
+        this.notificationService.showError('Erreur', err?.message || 'Impossible de rejeter cette demande.');
+      },
+    });
+  }
+
+  // ── Présentation ──────────────────────────────────────────────
+
+  getWithdrawalStatusClass(status: WithdrawalStatus): string {
+    return 'status-' + status.toLowerCase();
+  }
+
+  getWithdrawalStatusText(status: WithdrawalStatus): string {
+    const labels: Record<WithdrawalStatus, string> = {
+      [WithdrawalStatus.PENDING]:   'En attente',
+      [WithdrawalStatus.APPROVED]:  'Approuvé',
+      [WithdrawalStatus.REJECTED]:  'Rejeté',
+      [WithdrawalStatus.PROCESSED]: 'Traité',
+      [WithdrawalStatus.PAID]:      'Payé',
+    };
+    return labels[status] ?? status;
+  }
+
+  getPaymentMethodText(method: PaymentMethod): string {
+    const labels: Record<PaymentMethod, string> = {
+      [PaymentMethod.ORANGE_MONEY]:  'Orange Money',
+      [PaymentMethod.MOOV_MONEY]:    'Moov Money',
+      [PaymentMethod.TELECEL_MONEY]: 'Telecel Money',
+    };
+    return labels[method] ?? method;
+  }
+
+  formatXof(amount: number | undefined | null): string {
+    if (amount === undefined || amount === null) return '—';
+    return new Intl.NumberFormat('fr-FR').format(amount) + ' XOF';
   }
 
   //User

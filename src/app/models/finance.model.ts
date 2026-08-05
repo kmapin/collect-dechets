@@ -7,6 +7,7 @@ export enum WithdrawalStatus {
   APPROVED  = 'APPROVED',
   REJECTED  = 'REJECTED',
   PROCESSED = 'PROCESSED',
+  PAID      = 'PAID',
 }
 
 export enum TransactionType {

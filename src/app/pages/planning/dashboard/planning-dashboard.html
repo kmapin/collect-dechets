@@ -116,10 +116,14 @@
       <!-- Line – évolution -->
       <div class="chart-card wide">
         <div class="chart-header">
-          <span class="chart-title">Évolution des collectes (7 jours)</span>
+          <span class="chart-title">
+            Évolution des collectes ({{ evolutionPeriod() === 'week' ? '7 jours' : '30 jours' }})
+          </span>
           <div class="chart-period-pills">
-            <button class="period-pill active">Semaine</button>
-            <button class="period-pill">Mois</button>
+            <button class="period-pill" [class.active]="evolutionPeriod() === 'week'"
+                    (click)="setEvolutionPeriod('week')">Semaine</button>
+            <button class="period-pill" [class.active]="evolutionPeriod() === 'month'"
+                    (click)="setEvolutionPeriod('month')">Mois</button>
           </div>
         </div>
         <div class="chart-body line-chart">

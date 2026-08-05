@@ -58,6 +58,14 @@ export class PlanningDashboard implements OnInit, OnDestroy {
         this.planningService.clearError();
       }
     });
+
+    // Redessine le graphique d'évolution dès que planningService.evolution() change
+    // (premier chargement, refresh périodique, ou clic Semaine/Mois) — voir
+    // _buildEvolutionChart().
+    effect(() => {
+      this.planningService.evolution();
+      this._buildEvolutionChart();
+    });
   }
 
   // ── Data from service (signals) ────────────────────────────
@@ -136,6 +144,14 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   notifOpen = signal(false);
   toggleNotif(): void { this.notifOpen.update(v => !v); }
 
+  // ── Évolution des collectes — période (Semaine = 7j, Mois = 30j) ──────────
+  evolutionPeriod = signal<'week' | 'month'>('week');
+  setEvolutionPeriod(period: 'week' | 'month'): void {
+    if (this.evolutionPeriod() === period) return;
+    this.evolutionPeriod.set(period);
+    this.planningService.loadEvolution(period === 'week' ? 7 : 30);
+  }
+
   private refreshTimer: any;
 
   ngOnInit(): void {
@@ -143,6 +159,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     this.planningService.loadStats();
     this.planningService.loadZones();
     this.planningService.loadAlerts();
+    this.planningService.loadEvolution(this.evolutionPeriod() === 'week' ? 7 : 30);
     this.teamService.loadTeams();
     this.planningService.loadPlannings();
 
@@ -195,44 +212,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
     this.statusChartOptions = this._donutOptions();
 
-    // ── Line – évolution hebdomadaire ─────────────────────────
-    this.evolutionChartData = {
-      labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
-      datasets: [
-        {
-          label: 'Planifiées',
-          data: [18, 22, 15, 28, 24, 10, 8],
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59,130,246,0.08)',
-          tension: 0.4,
-          fill: true,
-          pointBackgroundColor: '#3b82f6',
-          pointRadius: 4,
-        },
-        {
-          label: 'Effectuées',
-          data: [16, 20, 13, 25, 22, 9, 6],
-          borderColor: '#16a34a',
-          backgroundColor: 'rgba(22,163,74,0.08)',
-          tension: 0.4,
-          fill: true,
-          pointBackgroundColor: '#16a34a',
-          pointRadius: 4,
-        },
-      ],
-    };
-    this.evolutionChartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 12 } } },
-        tooltip: { mode: 'index', intersect: false },
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } }, beginAtZero: true },
-      },
-    };
+    this._buildEvolutionChart();
 
     // ── Bar – charge des équipes ──────────────────────────────
     this.teamWorkloadData = {
@@ -251,6 +231,52 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.raw} collecteurs` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } }, beginAtZero: true },
+      },
+    };
+  }
+
+  // ── Line – évolution des collectes (GET /planning/v2/evolution, réel) ─────
+  // Méthode séparée (pas juste un bloc dans _initCharts()) : appelée aussi depuis
+  // l'effect() du constructeur, pour se redessiner dès que planningService.evolution()
+  // change (après un premier chargement OU après un clic sur Semaine/Mois), sans
+  // attendre le prochain tick du minuteur de rafraîchissement (30s).
+  private _buildEvolutionChart(): void {
+    const evolution = this.planningService.evolution();
+    this.evolutionChartData = {
+      labels: evolution.map(d => d.label),
+      datasets: [
+        {
+          label: 'Planifiées',
+          data: evolution.map(d => d.planifiees),
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,0.08)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#3b82f6',
+          pointRadius: 4,
+        },
+        {
+          label: 'Effectuées',
+          data: evolution.map(d => d.effectuees),
+          borderColor: '#16a34a',
+          backgroundColor: 'rgba(22,163,74,0.08)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#16a34a',
+          pointRadius: 4,
+        },
+      ],
+    };
+    this.evolutionChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 12 } } },
+        tooltip: { mode: 'index', intersect: false },
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 11 } } },

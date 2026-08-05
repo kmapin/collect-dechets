@@ -1525,3 +1525,239 @@ Vérifié en direct (même technique d'injection) : `.td-left` a maintenant
 `clientHeight === scrollHeight === 1028px` (plus aucun contenu caché), la carte Leaflet
 s'affiche à sa pleine hauteur (360px, zoom/légende visibles), capture d'écran confirmant
 le rendu complet sans aucun scroll dédié à cette section.
+
+# Graphique "Évolution des collectes (7 jours)" (Planning) câblé sur un vrai endpoint
+
+L'utilisateur a demandé de vérifier si ce graphique était câblé sur un web service —
+réponse : non, `evolutionChartData` était construit depuis des tableaux littéraux codés
+en dur (`[18, 22, 15, 28, 24, 10, 8]`), et les boutons "Semaine"/"Mois" n'avaient aucun
+`(click)`, purement décoratifs. Vérifié aussi qu'aucun endpoint backend existant
+n'exposait cette donnée (voir EditRecap.md pour l'analyse complète et le nouvel endpoint
+`GET /api/planning/v2/evolution` créé pour ce câblage).
+
+## Frontend câblé sur le nouvel endpoint
+
+- `models/planning.model.ts` : nouvelle interface `CollectionEvolutionDay` (`dayKey`,
+  `label`, `planifiees`, `effectuees`), miroir exact de la réponse du nouvel endpoint.
+- `services/planning.service.ts` : nouveau signal `_evolution`/`evolution` (même
+  convention que `_zones`/`zones`) et méthode `loadEvolution(days = 7)` (même pattern que
+  `loadZones()` — `agencyId` en query param si disponible, `catchError(() => of(null))`).
+- `planning-dashboard.ts` :
+  - `_buildEvolutionChart()` extrait du bloc jusqu'ici codé en dur dans `_initCharts()`,
+    reconstruit maintenant `evolutionChartData` depuis `planningService.evolution()`.
+  - Un `effect()` dédié dans le constructeur reconstruit le graphique à chaque fois que
+    `planningService.evolution()` change (premier chargement, refresh périodique de 30s,
+    ou changement de période) — sans ça, cliquer sur "Mois" aurait déclenché le bon appel
+    HTTP mais le graphique ne se serait redessiné qu'au prochain tick du minuteur
+    existant (jusqu'à 30s plus tard), pas immédiatement.
+  - Nouveau signal `evolutionPeriod` (`'week' | 'month'`) + méthode
+    `setEvolutionPeriod()` appelant `loadEvolution(7 ou 30)`.
+- `planning-dashboard.html` : les boutons "Semaine"/"Mois" ont maintenant un `(click)`
+  et une classe `active` réactive ; le titre du graphique reflète la période
+  (`"(7 jours)"`/`"(30 jours)"`) au lieu d'un texte figé.
+
+## Vérifié en direct
+
+`npx tsc --noEmit` → `EXIT:0`. Chrome headless + CDP, requêtes réseau interceptées :
+chargement initial → `GET /planning/v2/evolution?days=7` bien émise ; clic sur "Mois" →
+nouvelle requête `?days=30` émise immédiatement, le titre passe à "(30 jours)" et le
+bon bouton devient actif — confirme que le graphique n'est plus statique et que le
+toggle Semaine/Mois, jusqu'ici décoratif, est maintenant réellement fonctionnel.
+
+Non vérifiable dans cette session : le rendu avec de vraies données non nulles — les 53
+`Collecte` réels en base sont tous datés mars/avril 2026 (voir EditRecap.md), donc toute
+fenêtre "N derniers jours" par rapport à la date système actuelle affichera une ligne à
+zéro pour l'instant, ce qui est correct/attendu et pas un signe de bug.
+
+# Nouvel onglet "Retraits" dans le Dashboard Administrateur (super_admin) — validation des demandes de retrait d'agence, 100% mock
+
+Demande initiale rédigée en termes génériques "Merchant/Shop" — terminologie confirmée
+absente de tout le projet (grep exhaustif, zéro résultat hors une icône Material
+`add_shopping_cart` sans rapport). Avant de coder quoi que ce soit, recherche complète
+de l'existant (agent dédié) pour éviter de dupliquer une fonctionnalité déjà présente :
+
+- **`financial-dashboard/features/withdrawals`** ("Retraits" F4) : déjà câblé en HTTP
+  réel, liste + création seulement, `Retrait` n'a AUCUN champ statut — pas la même chose.
+- **`agency-finance`** (page séparée) : possède déjà `WithdrawalRecord`/`WithdrawalStatus`
+  (`PENDING/APPROVED/REJECTED/PROCESSED`, `models/finance.model.ts`) — déclaré mais
+  **jamais utilisé nulle part**. Quelqu'un avait déjà anticipé cette fonctionnalité.
+- Backend réel (`Withdraw.js`) : statuts `INITIATED/COMPLETED/COMPLETED_WITH_ERROR/
+  FAILED`, retrait exécuté immédiatement (débit + appel Moov Money synchrones) — aucune
+  notion de "en attente d'approbation" aujourd'hui. Un vrai flux d'approbation est un
+  changement de logique métier backend, pas juste un écran manquant.
+
+3 questions posées à l'utilisateur avant de coder (mapping Merchant/Shop → domaine
+réel, emplacement de la fonctionnalité, modèle de statut à réutiliser). Réponses :
+mapper sur les vraies entités (Agence = "Shop", gestionnaire d'agence = "Merchant"),
+un nouvel onglet dans le Dashboard Administrateur existant (confirmé être le dashboard
+`super_admin` — `adminGuard` vérifie `UserRole.SUPER_ADMIN`, monté sur `/dashboard/admin`
+= `admin-dashboard.ts`), réutiliser `WithdrawalStatus` existant + ajouter `PAID`.
+
+## Fichiers créés
+
+- `src/app/models/withdrawal-request.model.ts` — `AdminWithdrawalRequest` (ré-exporte
+  `WithdrawalStatus`/`PaymentMethod` de `finance.model.ts` plutôt que d'en redéfinir),
+  `WithdrawalRequestFilter`, `PaginatedWithdrawalRequests`, payloads approve/reject.
+- `src/app/services/withdrawal-requests-mock.service.ts` — service mock
+  `providedIn:'root'`, méthodes `getWithdrawalRequests/getWithdrawalById/
+  approveWithdrawal/rejectWithdrawal/searchWithdrawals/filterWithdrawals/
+  paginateWithdrawals`, toutes en `Observable` avec `delay()` simulé (même forme
+  qu'un vrai `HttpClient`, pour que la bascule future vers un `WithdrawalRequestsHttpService`
+  avec la même API publique ne change aucun composant). 32 demandes mock, 15 agences
+  réalistes réparties sur 6 pays d'Afrique de l'Ouest (mêmes villes que les autres jeux
+  de données mock déjà utilisés cette session — coverage-map, municipality-mock), les 5
+  statuts représentés, 3 opérateurs mobile money, dates étalées sur ~2 mois.
+
+## Fichiers modifiés
+
+- `src/app/models/finance.model.ts` — ajout de `PAID` à `WithdrawalStatus` (additif,
+  cet enum n'était utilisé nulle part avant cette fonctionnalité — vérifié).
+- `admin-dashboard.ts` — nouvel onglet `{ id:'withdrawals', label:'Retraits' }` dans le
+  tableau `tabs` existant (le bouton d'onglet apparaît automatiquement, boucle déjà en
+  place), injection du mock service au constructeur (même convention que
+  `CountriesOrgMockService`, déjà injecté pareillement), état + méthodes pour
+  chargement/filtres/pagination/détail/approbation/rejet, câblage dans le `switch` de
+  `loadTabData()` existant, badge d'onglet = nombre de demandes en attente.
+- `admin-dashboard.html` — contenu de l'onglet inséré entre "Incidents" et
+  "Communications" (ordre cohérent avec le tableau `tabs`), drawer de détail et 2
+  dialogs (approbation, rejet) ajoutés en fin de fichier, à la suite du drawer incident
+  existant.
+- `admin-dashboard.scss` — 4 nouvelles couleurs de statut (`.status-approved/-rejected/
+  -processed/-paid`, absentes avant), variante verte de `.confirm-dialog-header`/
+  `.confirm-icon` et bouton `.btn-approve-confirm` (approbation), variante rouge de
+  `.resolve-dialog-icon` et bouton `.btn-reject-confirm` (rejet), variante `.action-btn.success`
+  (bouton icône vert dans le tableau). Aucune règle existante modifiée, uniquement des
+  ajouts.
+
+## Réutilisation du design system existant (aucun nouveau pattern introduit)
+
+Chaque élément visuel reprend un pattern déjà présent ailleurs dans `admin-dashboard.html`,
+jamais un composant importé d'un autre module (financial-dashboard a sa propre
+`app-data-table`/`ConfirmationService` PrimeNG — non réutilisés ici pour rester
+cohérent avec le fait qu'admin-dashboard ne les utilise nulle part) :
+
+| Besoin | Pattern réutilisé (déjà présent dans admin-dashboard) |
+|---|---|
+| Tableau + colonnes | `.admin-table`/`.admin-table-wrapper` (onglet Agences) |
+| Recherche + filtres | `.search`/`.filter-select` (onglet Agences/Incidents) |
+| Pagination | `.pagination-section`/`.pagination-btn` (onglet Agences) |
+| Badges de statut | `.status-badge` + classes `status-*` (partagé par tous les onglets) |
+| Vue détail | `.drawer-overlay`/`.drawer-content-wide`/`.drawer-section`/`.drawer-info-grid`/`.info-item` (drawer détail incident) |
+| Confirmation simple | `.confirm-dialog-overlay`/`.confirm-dialog-box` (dialog suppression utilisateur) |
+| Confirmation + motif obligatoire | `.resolve-dialog` (dialog résolution incident, déjà un textarea requis) |
+| Notifications succès/erreur | `NotificationService` (déjà injecté dans ce composant) |
+| Spinner de chargement | `app-loading-spinner` (déjà utilisé pour Agences/Utilisateurs) |
+
+## Bug rencontré et corrigé pendant l'implémentation : bloc `@if` mal fermé
+
+Le drawer de détail incident (préexistant, jamais touché avant) se termine par un
+`@if (visibleIncidentDrawer && selectedIncident) { ... }` dont le `}` de fermeture se
+trouvait être la toute dernière ligne du fichier. En insérant mon nouveau contenu
+juste avant cette accolade (au lieu de juste après), tout mon drawer + mes 2 dialogs se
+sont retrouvés IMBRIQUÉS à l'intérieur de la condition de l'incident — invisibles tant
+que `visibleIncidentDrawer` n'était pas vrai. Détecté via `window.ng.getComponent()` en
+direct (`visibleWithdrawalDetailDrawer` valait bien `true` sur le composant, mais
+`.drawer-content` restait absent du DOM — signe certain d'un problème de structure de
+template, pas de logique). Corrigé en déplaçant l'accolade fermante au bon endroit
+(juste après le drawer incident) et en supprimant le doublon resté en fin de fichier.
+
+## Vérifié en direct (Chrome headless + CDP, connexion mock rôle `super_admin`)
+
+- Liste : 32 demandes, pagination "1–10 sur 32", les 5 statuts représentés dans
+  l'échantillon affiché.
+- Recherche "Bobo" → 3 résultats (agence "ZéroDéchet Bobo-Dioulasso"). Filtre statut
+  "Rejeté" → 6 résultats, tous portant le bon badge.
+- Détail : drawer affiche les 18 valeurs attendues (agence, gestionnaire, montant,
+  frais, solde, historique des retraits récents, audit).
+- Approbation : dialog de confirmation → statut passe à "Approuvé", toast "Retrait
+  approuvé" affiché (vrai `NotificationService`), badge d'onglet décrémenté de 8 à 7,
+  liste rafraîchie automatiquement.
+- Rejet : bouton de confirmation désactivé tant qu'aucun motif n'est saisi
+  (`[disabled]="... || !withdrawalRejectionReason.trim()"`), devient actif après saisie,
+  statut passe à "Rejeté", toast "Retrait rejeté" affiché, badge décrémenté à 6.
+- `npx tsc --noEmit` → `EXIT:0`. Zéro exception console sur l'ensemble du parcours.
+
+## Retouche après retour utilisateur : drawer de détail "trop désordonné"
+
+La grille 2 colonnes `.drawer-info-grid`/`.info-item` (réutilisée telle quelle du
+drawer incident) se désalignait visuellement dès qu'une valeur passait sur 2 lignes
+(téléphone, email) — la ligne de grille adjacente restait collée en haut, créant un
+effet de décalage répété sur toute la liste. Corrigé sans toucher aux classes
+partagées (`.drawer-info-grid`/`.info-item` restent inchangées, toujours utilisées par
+le drawer incident) :
+
+- Nouvelles classes dédiées `.wd-detail-list`/`.wd-detail-row`/`.wd-detail-label`/
+  `.wd-detail-value` — liste à UNE colonne (label à gauche, valeur alignée à droite),
+  chaque ligne indépendante des autres (pas de grille à row-height partagée), donc plus
+  aucun désalignement possible quel que soit le nombre de lignes d'une valeur.
+- `.wd-amount-hero` — nouvelle carte verte mettant en avant le "Montant net à verser"
+  (l'information la plus consultée par un administrateur validant un retrait), avec le
+  détail demandé/frais en petit à droite — évite de le noyer au même niveau visuel que
+  la devise ou le numéro de portefeuille.
+- `.wd-recent-table`/`.wd-recent-table-wrap` — table historique des retraits récents
+  avec sa propre présentation (bordure arrondie, en-têtes discrets), au lieu de
+  réutiliser `.admin-table` (pensée pour une table pleine largeur avec beaucoup de
+  colonnes, trop lourde visuellement pour 4 colonnes dans un panneau latéral).
+
+Vérifié en direct sur le même enregistrement que la capture d'écran signalée
+(WD-2026-08, Zinder Recyclage) : montant net affiché en évidence (305 350 XOF), 15
+lignes label/valeur toutes alignées proprement, table historique avec ses 2 lignes.
+
+## Suivi : même correctif appliqué au drawer "Détails de l'Incident" (préexistant)
+
+L'utilisateur a signalé le même défaut sur un autre drawer, jamais touché avant cette
+session : la section "Parties impliquées" du drawer incident utilisait encore
+`.drawer-info-grid`/`.info-item`, avec le même problème (grille 2 colonnes plaçant
+"Agence"/"Client" côte à côte avec de grands espaces vides entre label et valeur pour
+des champs courts).
+
+Plutôt que de dupliquer le nouveau pattern sous un nom spécifique aux retraits, les
+classes ont été renommées en générique (`wd-detail-list/-row/-label/-value` →
+`detail-list/-row/-label/-value`, un seul remplacement global dans le `.html` et le
+`.scss`, aucune collision trouvée au préalable) puis réutilisées telles quelles pour
+la section "Parties impliquées" du drawer incident. `.drawer-info-grid`/`.info-item`
+restent inchangées (toujours définies, plus utilisées par aucun des deux drawers
+maintenant, mais laissées en place au cas où un autre écran s'en servirait encore).
+
+Note écartée volontairement : le grand espace vide entre "Parties impliquées" et
+"Commentaire de résolution" visible sur la capture vient de `.drawer-body{flex:1}`
+dans un `.drawer-content{height:100%}` — un panneau plein écran qui s'étire toujours à
+la même hauteur quel que soit son contenu, motif partagé par TOUS les drawers de
+l'app (édition utilisateur, ajout agent, incident, retrait). Non corrigé : changer ce
+comportement affecterait tous les drawers existants, bien au-delà de ce qui a été
+demandé ici.
+
+Vérifié en direct : incident de test injecté (`openIncidentDrawer()` appelé
+directement, le compte mock utilisé pour les tests n'ayant aucun vrai incident en
+base) — les 3 lignes Agence/Client/Collecteur s'affichent proprement alignées, plus
+aucune trace de `.drawer-info-grid` dans le DOM de ce drawer.
+
+## Suivi : textarea "Commentaire de résolution" sans aucun style (rendu navigateur par défaut)
+
+Signalé via capture d'écran (même drawer incident, section juste en dessous). Cause
+trouvée : `.form-input` — la classe utilisée sur ce `<textarea>` — n'a JAMAIS de règle
+CSS propre ; elle n'hérite d'un style (bordure, `border-radius`, focus) que via le
+sélecteur `.form-group input/select/textarea` — qui exige que le champ soit
+DANS un `<div class="form-group">`. Ce `<textarea>` précis n'avait pas ce wrapper
+(contrairement aux textareas des dialogs "Résoudre l'incident" et "Rejeter le
+retrait", qui elles l'ont) — d'où un rendu 100% par défaut du navigateur.
+
+Corrigé en créant une classe autonome `.resolution-textarea` (bordure arrondie 10px,
+fond gris clair, anneau de focus coloré façon `--primary-color`) qui ne dépend
+d'AUCUN wrapper parent, et en l'appliquant aux 3 textareas de ce type dans le fichier
+(drawer incident, dialog résolution incident, dialog rejet retrait) pour une
+apparence cohérente partout, pas seulement à l'endroit signalé.
+
+Vérifié en direct : `getComputedStyle()` sur le textarea confirme bordure/rayon/fond
+appliqués (auparavant absents), capture d'écran confirmant le rendu visuel.
+
+## Bascule future vers un vrai backend
+
+Remplacer `WithdrawalRequestsMockService` par un `WithdrawalRequestsHttpService`
+implémentant exactement la même classe (mêmes noms de méthodes, mêmes signatures
+`Observable<...>`) est le seul changement nécessaire — aucun composant, aucun template
+n'aurait à changer, car `admin-dashboard.ts` ne dépend que du type de la classe injectée,
+jamais de son implémentation interne. Le futur backend réel devra en plus introduire un
+statut `PENDING` par défaut (`Withdraw.js` exécute aujourd'hui le retrait immédiatement,
+sans étape d'approbation) et un endpoint de listing multi-agences — changements côté
+backend, hors périmètre de cette tâche (mock uniquement, comme demandé).

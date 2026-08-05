@@ -8,7 +8,7 @@ import {
   ZoneCoverage, PlanningFilter,
   PlanningV2Api, PlanningV2CreateBody, PlanningStatsApi,
   ZoneCoverageApi, ConflictCheckResponse, TeamApi,
-  ApiListResponse, WASTE_TYPE_LABELS,
+  ApiListResponse, WASTE_TYPE_LABELS, CollectionEvolutionDay,
 } from '../models/planning.model';
 
 @Injectable({ providedIn: 'root' })
@@ -41,6 +41,7 @@ export class PlanningService {
   private _alerts     = signal<PlanningAlert[]>([]);
   private _zones      = signal<ZoneCoverage[]>([]);
   private _statsApi   = signal<PlanningStatsApi | null>(null);
+  private _evolution  = signal<CollectionEvolutionDay[]>([]);
   private _loading    = signal(false);
   private _error      = signal<string | null>(null);
 
@@ -49,6 +50,7 @@ export class PlanningService {
   readonly teams     = this._teams.asReadonly();
   readonly alerts    = this._alerts.asReadonly();
   readonly zones     = this._zones.asReadonly();
+  readonly evolution = this._evolution.asReadonly();
   readonly loading   = this._loading.asReadonly();
   readonly error     = this._error.asReadonly();
 
@@ -137,6 +139,19 @@ export class PlanningService {
           status:         (z.status as 'active' | 'pending' | 'inactive') ?? 'active',
         })));
       }
+    });
+  }
+
+  loadEvolution(days = 7): void {
+    const agencyId = this.agencyId;
+    let params = agencyId ? new HttpParams().set('agencyId', agencyId) : new HttpParams();
+    params = params.set('days', days);
+    this.http.get<{ success: boolean; data: CollectionEvolutionDay[] }>(
+      `${this.api}/planning/v2/evolution`, { params }
+    ).pipe(
+      catchError(() => of(null))
+    ).subscribe(res => {
+      if (res?.data) this._evolution.set(res.data);
     });
   }
 
