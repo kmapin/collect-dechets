@@ -1,0 +1,98 @@
+// Reproduit à l'identique .tabs-navigation/.tab-btn/.tab-badge de
+// financial-dashboard/features/shell/finance-layout.scss (même valeurs, mêmes
+// variables CSS globales) — convention déjà suivie par agency-dashboard.scss et
+// finance-layout.scss pour un rendu strictement équivalent d'un module à l'autre.
+
+.tabs-navigation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--white);
+  padding: 4px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-light);
+  overflow-x: auto;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  font-weight: 500;
+  position: relative;
+
+  i {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: var(--light-gray);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--primary-color);
+    color: var(--white);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+// Actions secondaires (Nouvelle équipe / Aide) — mêmes liens qu'en bas de l'ancien
+// sidebar, mais légèrement atténuées pour rester visuellement secondaires par
+// rapport aux 6 onglets de navigation principaux.
+.tab-btn--secondary {
+  font-size: 0.9rem;
+  opacity: 0.85;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.tabs-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 4px;
+  background: var(--light-gray);
+  flex-shrink: 0;
+}
+
+.tab-badge {
+  background: var(--error-color);
+  color: var(--white);
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+}
+
+// Reprend la couleur "en mission" (ambre) de l'ancien sb-status-row--amber, plutôt
+// que le rouge par défaut de .tab-badge — même sémantique de couleur qu'avant.
+.tab-badge--amber {
+  background: #f59e0b;
+}
+
+.tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 1024px) {
+  .tabs-navigation {
+    overflow-x: auto;
+  }
+}

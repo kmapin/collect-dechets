@@ -1,5 +1,7 @@
-<div class="tl-shell" [class.tl-shell--mini]="sidebarCollapsed()">
-  <app-sidebar (collapsedChange)="sidebarCollapsed.set($event)"></app-sidebar>
+<div class="tl-shell">
+  <div class="container">
+    <app-planning-teams-tabs></app-planning-teams-tabs>
+  </div>
   <div class="tl-content">
     <router-outlet />
   </div>

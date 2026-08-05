@@ -1,5 +1,7 @@
-<div class="planning-wrapper" [class.sidebar-mini]="sidebarCollapsed()">
-  <app-sidebar (collapsedChange)="sidebarCollapsed.set($event)"></app-sidebar>
+<div class="planning-shell">
+  <div class="container">
+    <app-planning-teams-tabs></app-planning-teams-tabs>
+  </div>
   <div class="planning-content">
     <router-outlet></router-outlet>
   </div>

@@ -1,0 +1,48 @@
+<nav class="tabs-navigation" role="tablist" aria-label="Navigation Planning et Équipes">
+  @for (item of planningNav; track item.route) {
+    <a
+      [routerLink]="item.route"
+      [queryParams]="item.queryParams ?? null"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+      #rla1="routerLinkActive"
+      class="tab-btn"
+      role="tab"
+      [attr.aria-selected]="rla1.isActive"
+    >
+      <i class="material-icons">{{ item.icon }}</i>
+      {{ item.label }}
+    </a>
+  }
+
+  <span class="tabs-divider" aria-hidden="true"></span>
+
+  @for (item of teamsNav; track item.route) {
+    <a
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+      #rla2="routerLinkActive"
+      class="tab-btn"
+      role="tab"
+      [attr.aria-selected]="rla2.isActive"
+    >
+      <i class="material-icons">{{ item.icon }}</i>
+      {{ item.label }}
+      @if (item.route === '/teams/list' && onMissionCount() > 0) {
+        <span class="tab-badge tab-badge--amber">{{ onMissionCount() }}</span>
+      }
+    </a>
+  }
+
+  <span class="tabs-divider" aria-hidden="true"></span>
+
+  <a routerLink="/teams/create" routerLinkActive="active" class="tab-btn tab-btn--secondary" role="tab">
+    <i class="material-icons">add_circle</i>
+    Nouvelle équipe
+  </a>
+  <a routerLink="/help" routerLinkActive="active" class="tab-btn tab-btn--secondary" role="tab">
+    <i class="material-icons">help_outline</i>
+    Aide
+  </a>
+</nav>

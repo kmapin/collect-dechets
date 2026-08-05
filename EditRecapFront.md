@@ -1390,3 +1390,138 @@ backend (voir EditRecap.md) : script temporaire reproduisant la construction de 
 du contrôleur contre la vraie base — `dailyCollectionCollected: 0` et
 `totalCollectionReported: 3` bien présents, valeurs identiques à celles de la réponse
 réelle collée par l'utilisateur.
+
+# Modules Planning + Équipes : sidebar remplacé par des onglets horizontaux façon /dashboard/financial
+
+Demande explicite de l'utilisateur : garder le fonctionnement identique, mais faire
+ressembler le design à `/dashboard/financial`, qui n'a justement jamais eu de sidebar
+(voir `finance-layout.ts` : "pas de sidebar, choix explicite"). Portée confirmée par
+l'utilisateur (question posée avant modification) : remplacer le sidebar par des
+onglets horizontaux, sur TOUTES les pages qui en dépendent, pas seulement le tableau de
+bord Planning montré en capture.
+
+## Découverte avant de coder : un seul sidebar partagé par 2 modules
+
+`shared/app-sidebar/app-sidebar.ts` (`<app-sidebar>`) n'est pas propre au module
+Planning : c'est le MÊME composant, avec les MÊMES 6 liens (3 "PLANNINGS" + 3
+"ÉQUIPES") rendu par `planning-layout.html` ET `teams-layout.html` — retirer le sidebar
+touchait donc forcément les deux layouts, jamais un seul. Vérifié aussi que les KPI
+cards de `planning-dashboard` (`.stat-card`/`.stat-icon`) étaient déjà, avant toute
+modification, du CSS identique à celui de `app-kpi-card` (financier) et
+`agency-dashboard` — les 3 partagent la même origine documentée dans leurs commentaires
+respectifs. Donc l'essentiel de la "ressemblance visuelle" demandée portait sur la
+navigation (sidebar → onglets), pas sur les cartes KPI qui étaient déjà cohérentes.
+
+## Fichiers créés
+
+- `shared/planning-teams-tabs/planning-teams-tabs-nav.config.ts` — reprend
+  `planningNav`/`teamsNav` de `app-sidebar.ts` à l'identique (mêmes routes, mêmes
+  query params, même `exact`).
+- `shared/planning-teams-tabs/planning-teams-tabs.{ts,html,scss}` — composant partagé
+  remplaçant `<app-sidebar>` dans les deux layouts. Le SCSS reproduit
+  `.tabs-navigation`/`.tab-btn`/`.tab-badge` de `finance-layout.scss` à l'identique
+  (mêmes valeurs, mêmes variables CSS), même convention que "agency-dashboard.scss
+  reproduit dans finance-layout.scss" déjà en place dans le repo.
+
+## Fonctionnalités de l'ancien sidebar préservées (pas seulement les 6 liens)
+
+- Le badge "en mission" sur l'item "Équipes" (`onMissionCount() > 0`) — repris via
+  `.tab-badge` (mécanisme déjà présent dans finance-layout.scss pour ce genre de badge,
+  jamais utilisé jusqu'ici), coloré en ambre pour garder la même sémantique de couleur
+  que l'ancien `sb-status-row--amber`.
+- Les 2 actions secondaires du bas du sidebar ("Nouvelle équipe" → `/teams/create`,
+  "Aide" → `/help`) — ajoutées à la suite des 6 onglets principaux, séparées par un
+  simple séparateur vertical, toujours dans la même rangée défilante.
+- **Non repris** (décision assumée, pas un oubli) : le résumé passif "X actives / X en
+  mission / X maintenance" en bas du sidebar — texte non cliquable, sans place
+  raisonnable dans une barre d'onglets horizontale sur une ligne, et l'info équivalente
+  existe déjà sous forme de cartes KPI sur `team-list`/`team-dashboard` eux-mêmes.
+
+## Fichiers modifiés
+
+| Fichier | Changement |
+|---|---|
+| `planning-layout.{ts,html,scss}` | `<app-sidebar>` → `<app-planning-teams-tabs>` ; layout flex-colonne simple au lieu du flex-ligne à sidebar fixe (`margin-left: 260px`, etc., supprimés) |
+| `teams-layout.{ts,html,scss}` | Même changement, même composant partagé (pas de duplication) |
+
+Aucune page de contenu (`planning-dashboard`, `planning-calendar`, `team-dashboard`,
+`team-list`, `team-availability`) n'a été modifiée : chacune a déjà son propre
+`<header class="page-header">` (dégradé bleu→vert, déjà la classe globale
+`.page-header` de `styles.scss`, déjà utilisée par `/dashboard/financial`) — aucun
+changement nécessaire là, conformément à "le fonctionnement ne doit pas changer".
+
+`AppSidebarComponent` (`shared/app-sidebar/`) n'est plus utilisé nulle part dans le
+code (vérifié par grep) — laissé en place tel quel plutôt que supprimé (pas demandé
+explicitement), à nettoyer si l'utilisateur le souhaite.
+
+## Vérifié en direct
+
+`npx tsc --noEmit` → `EXIT:0`. Reproduction en direct (Chrome headless + CDP, login
+mock rôle manager) sur les 5 pages concernées : les 8 items (6 nav + 2 actions)
+s'affichent partout, l'onglet actif correspond bien à la route courante sur chacune des
+5 pages, zéro exception console, ancien sidebar bien absent du DOM. Viewport mobile
+(390px) : la barre déborde horizontalement (`scrollWidth: 1173 > clientWidth: 354`) et
+défile bien via `overflow-x: auto` au lieu de casser la mise en page — confirmé aussi
+visuellement par capture d'écran (barre de défilement visible sous les 2 premiers
+onglets).
+
+## Bug signalé par l'utilisateur après coup : "Tous les onglets ne sont pas fonctionnels" — Supervision/Équipes/Disponibilités s'affichaient vides
+
+Cliquer sur ces 3 onglets naviguait bien vers la bonne route (confirmé), mais la page
+s'affichait vide/cassée. Cause : `.tl-shell`/`.planning-shell` utilisaient
+`min-height: 100%` au lieu du `height: 100vh; overflow: hidden` de l'ancien shell à
+sidebar. Or plusieurs pages enfants dépendent d'une hauteur DÉFINIE en cascade depuis ce
+shell :
+- `team-dashboard.scss` : `:host{height:100%;overflow:hidden}` et
+  `.td-root{height:100%;overflow:hidden}` — combo qui s'effondre à 0px si l'ancêtre n'a
+  pas de hauteur définie (`min-height:100%` résout en `auto` face à un ancêtre de
+  hauteur indéfinie, ce n'est pas équivalent à `height:100vh`).
+- `team-availability.scss` : `:host{height:100%}` — même dépendance.
+- `planning-calendar.scss` : `::ng-deep .fc{height:100% !important}` (intégration
+  FullCalendar) — même dépendance, pas encore signalée par l'utilisateur au moment du
+  correctif mais reproduite et corrigée par prévention (même cause exacte).
+
+Corrigé en restaurant `height: 100vh; overflow: hidden` sur `.tl-shell`/
+`.planning-shell` et `overflow-y: auto` sur `.tl-content`/`.planning-content` — exactement
+le comportement de hauteur de l'ancien shell à sidebar, seule la disposition interne
+(colonne + onglets horizontaux au lieu de ligne + sidebar fixe) change désormais.
+
+Vérifié en direct : les 3 pages Équipes rendent maintenant avec une hauteur réelle
+(746–846px, plus 0px) ; `planning-calendar` aussi (grille FullCalendar complète avec
+cellules, en-têtes de semaine, sidebar de filtres — tout visible).
+
+## Suivi : carte GPS de `team-dashboard` (Supervision) trop petite, scroll interne non désiré
+
+Signalé via capture d'écran, une fois la page réparée par le correctif ci-dessus : la
+carte GPS s'affichait comme une bande très courte, avec un mini-scroll interne pour voir
+le reste de la section. Contrairement aux 3 pages du correctif précédent, `team-dashboard`
+n'était pas cassé (hauteur 0) mais mal dimensionné — cause différente, diagnostiquée
+séparément en injectant des données d'équipe synthétiques en direct (`svc['_teams'].set(...)`
++ `detectChanges()`, car le compte mock utilisé pour les tests n'a aucune vraie équipe et
+l'état vide masque toute cette section) :
+
+`team-dashboard.scss` avait sa propre architecture "shell figé" interne
+(`:host{height:100%;overflow:hidden}`, `.td-root{height:100%;overflow:hidden}`,
+`.td-body-wrap`/`.td-body`/`.td-left` tous en `flex:1;overflow:hidden`) — un budget de
+hauteur fixe où le header + les 6 cartes KPI consommaient déjà l'essentiel de l'espace
+disponible (mesuré : 746px de hauteur totale, seulement 335px restants pour `.td-left`),
+alors que la carte + les 4 graphiques ont besoin d'environ 1030px pour s'afficher
+entièrement. Le mini-scroll interne ne montrait donc que les ~150 premiers pixels de la
+carte. `team-list.scss` n'a jamais eu ce problème car son `.tl-root` utilise déjà
+`min-height:100%` (page en flux normal), pas ce combo `height:100%`+`overflow:hidden`.
+
+Corrigé en alignant `team-dashboard` sur le même pattern que `team-list` : page en flux
+normal (`:host{display:block}`, `.td-root{min-height:100%}`, plus de `overflow:hidden`/
+`flex:1`/`min-height:0` sur `.td-body-wrap`/`.td-body`/`.td-left`) — la page défile
+désormais normalement au lieu d'enfermer la carte+graphiques dans une mini-fenêtre. Le
+panneau de droite (`.td-right`, flux Activité/Alertes/Maintenance) n'a rien nécessité de
+plus : `align-items:stretch` (par défaut sur `.td-body`) l'étire automatiquement à la
+même hauteur que `.td-left` une fois que celui-ci a une hauteur naturelle réelle, donc son
+propre scroll interne (`.tdr-scroll`) continue de fonctionner correctement. Les
+graphiques (`.cc-body`) avaient déjà une `height:180px` explicite, donc aucun risque pour
+leur rendu Chart.js.
+
+Vérifié en direct (même technique d'injection) : `.td-left` a maintenant
+`clientHeight === scrollHeight === 1028px` (plus aucun contenu caché), la carte Leaflet
+s'affiche à sa pleine hauteur (360px, zoom/légende visibles), capture d'écran confirmant
+le rendu complet sans aucun scroll dédié à cette section.

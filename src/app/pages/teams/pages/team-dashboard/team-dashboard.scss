@@ -1,8 +1,12 @@
 // ── Design tokens ────────────────────────────────────────────
+// Page en flux normal (plus de `height:100%;overflow:hidden`) : la carte GPS + les 4
+// graphiques (.td-left) ont besoin de bien plus de hauteur que ce qu'un viewport
+// classique laisse une fois le header et les 6 cartes KPI soustraits — les enfermer
+// dans une hauteur fixe forçait un mini-scroll interne qui ne montrait que le haut de
+// la carte GPS. La page défile désormais normalement (comme team-list.scss), la carte
+// et les graphiques s'affichent en entier sans scroll dédié.
 :host {
   display: block;
-  height: 100%;
-  overflow: hidden;
 }
 
 // Dark-mode palette (default)
@@ -42,11 +46,10 @@ $muted:#475569;
 .td-root {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
   background: var(--td-bg0);
   color: var(--td-txt);
   font-family: 'Inter', 'Roboto', sans-serif;
-  overflow: hidden;
   transition: background 300ms, color 300ms;
 }
 
@@ -155,17 +158,11 @@ $muted:#475569;
 .td-body-wrap {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .td-body {
   display: flex;
-  flex: 1;
   gap: 0;
-  overflow: hidden;
-  min-height: 0;
 }
 
 // ── Left column ──────────────────────────────────────────────
@@ -174,7 +171,6 @@ $muted:#475569;
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  overflow-y: auto;
   gap: 10px;
   // Padding vertical seulement — le padding horizontal du .container englobant suffit déjà ;
   // un padding horizontal ici décalait la carte/les graphiques de 10px par rapport aux

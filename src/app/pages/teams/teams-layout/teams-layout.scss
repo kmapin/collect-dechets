@@ -1,12 +1,18 @@
 // ═══════════════════════════════════════════════════════════
-//  Teams Layout Shell
+//  Teams Layout Shell — onglets horizontaux (plus de sidebar fixe)
 // ═══════════════════════════════════════════════════════════
 
-$sb-w:      260px;
-$sb-w-mini: 68px;
-
+// `height: 100vh` + `overflow: hidden` ici (pas `min-height: 100%`) : plusieurs pages
+// enfants (team-dashboard.scss: `:host{height:100%;overflow:hidden}`,
+// team-availability.scss: `:host{height:100%}`) dépendent d'une hauteur DÉFINIE en
+// cascade depuis ce shell pour leurs propres `height:100%`/zones à défilement interne
+// — un `min-height:100%` ne fournit pas ça face à un ancestor de hauteur indéfinie
+// (résout en `auto`), ce qui fait s'effondrer ces pages à une hauteur nulle. Repris
+// à l'identique du shell précédent (avant le remplacement du sidebar), seule la
+// disposition interne change (colonne au lieu de ligne, plus de sidebar fixe).
 .tl-shell {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
 }
@@ -15,15 +21,4 @@ $sb-w-mini: 68px;
   flex: 1;
   min-width: 0;
   overflow-y: auto;
-  margin-left: $sb-w;
-  transition: margin-left .2s ease;
-  background: #f8fafc;
-}
-
-.tl-shell.tl-shell--mini .tl-content {
-  margin-left: $sb-w-mini;
-}
-
-@media (max-width: 1023px) {
-  .tl-content { margin-left: 0 !important; }
 }

@@ -1,13 +1,17 @@
 /* ============================================================
-   PLANNING LAYOUT SHELL
+   PLANNING LAYOUT SHELL — onglets horizontaux (plus de sidebar fixe)
    ============================================================ */
 
-$sb-w:      260px;
-$sb-w-mini: 68px;
-
-.planning-wrapper {
+/* `height: 100vh` + `overflow: hidden` ici (pas `min-height: 100%`) : planning-calendar
+   dépend d'une hauteur DÉFINIE en cascade depuis ce shell pour son intégration
+   FullCalendar (`::ng-deep .fc { height: 100% !important; }`, planning-calendar.scss) —
+   un `min-height: 100%` résout en `auto` face à un ancestor de hauteur indéfinie, ce qui
+   casse ce calcul. Repris à l'identique du shell précédent (avant le remplacement du
+   sidebar) — voir teams-layout.scss pour le même correctif côté Équipes. */
+.planning-shell {
   display: flex;
-  height: 100%;
+  flex-direction: column;
+  height: 100vh;
   overflow: hidden;
 }
 
@@ -15,15 +19,4 @@ $sb-w-mini: 68px;
   flex: 1;
   min-width: 0;
   overflow-y: auto;
-  margin-left: $sb-w;
-  transition: margin-left .2s ease;
-  background: #f8fafc;
-}
-
-.planning-wrapper.sidebar-mini .planning-content {
-  margin-left: $sb-w-mini;
-}
-
-@media (max-width: 1023px) {
-  .planning-content { margin-left: 0 !important; }
 }
