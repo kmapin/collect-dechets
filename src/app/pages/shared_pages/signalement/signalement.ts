@@ -40,10 +40,12 @@ interface Incident {
   severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
   status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
-  /** Champ réel Collecte.assignedTeamId (Prompt 06) — l'équipe à qui le signalement a été
+  /** Champ réel Collecte.resolutionTeamId (renommé depuis assignedTeamId, Phase 2 du
+   * nettoyage Planning/Signalement/Assignation) — l'équipe à qui le signalement a été
    * affecté pour résolution. Distinct de `collectorId` (le collecteur de la collecte
-   * planifiée d'origine, sans rapport avec le traitement du signalement). */
-  assignedTeamId?: { _id: string; name?: string } | null;
+   * planifiée d'origine, sans rapport avec le traitement du signalement) et
+   * d'`executedByTeamId` (l'équipe qui devait EXÉCUTER la collecte). */
+  resolutionTeamId?: { _id: string; name?: string } | null;
   /** Champ réel Collecte.resolutionStatus — `status` ci-dessus reste 'Reported' pour
    * toujours après résolution, donc c'est le seul champ qui indique un signalement traité. */
   resolutionStatus?: "pending" | "in_progress" | "resolved";
@@ -241,7 +243,7 @@ export class Signalement {
   //("Assigner"/"Traiter") qui faisaient tous deux le même emit sans choix d'équipe.
   openTeamPicker(incident: Incident): void {
     this.teamPickerIncident = incident;
-    this.selectedTeamId = incident.assignedTeamId?._id ?? '';
+    this.selectedTeamId = incident.resolutionTeamId?._id ?? '';
     this.showTeamPickerModal = true;
     this.teams = [];
     const agencyId = incident.agencyId?._id ?? incident.agency?._id;

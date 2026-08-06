@@ -43,16 +43,16 @@
       }
     </div>
 
-    <!-- Assignee : équipe affectée à la résolution du signalement (assignedTeamId réel,
-         pas collectorId — le collecteur d'origine de la collecte planifiée, sans rapport
-         avec le traitement du signalement, Prompt 06) -->
+    <!-- Assignee : équipe affectée à la résolution du signalement (resolutionTeamId réel,
+         renommé depuis assignedTeamId, Phase 2 du nettoyage — pas collectorId, le
+         collecteur d'origine de la collecte planifiée, sans rapport avec la résolution) -->
     <div class="sig-col sig-col--assignee">
-      @if (incident.assignedTeamId?._id) {
+      @if (incident.resolutionTeamId?._id) {
       <div class="sig-person sig-person--assigned">
         <span class="sig-avatar sig-avatar--green">
           <i class="material-icons" style="font-size: 14px;">groups</i>
         </span>
-        <span>{{ incident.assignedTeamId?.name || 'Équipe affectée' }}</span>
+        <span>{{ incident.resolutionTeamId?.name || 'Équipe affectée' }}</span>
       </div>
       } @else {
       <span class="sig-unassigned">Non assigné</span>
@@ -76,7 +76,7 @@
     <div class="sig-col sig-col--actions">
       <div class="sig-actions">
         @if (incident.agencyId && currentUser?.role === 'manager') {
-          <button class="sig-action-btn sig-action-btn--blue" (click)="openTeamPicker(incident)" [title]="incident.assignedTeamId?._id ? 'Réaffecter' : 'Assigner'">
+          <button class="sig-action-btn sig-action-btn--blue" (click)="openTeamPicker(incident)" [title]="incident.resolutionTeamId?._id ? 'Réaffecter' : 'Assigner'">
             <i class="material-icons">assignment_ind</i>
           </button>
           @if (incident.resolutionStatus !== 'resolved') {
@@ -200,7 +200,7 @@
 <div class="drawer-overlay" (click)="closeTeamPicker()">
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
-      <h3>{{ teamPickerIncident?.assignedTeamId?._id ? 'Réaffecter le signalement' : 'Affecter à une équipe' }}</h3>
+      <h3>{{ teamPickerIncident?.resolutionTeamId?._id ? 'Réaffecter le signalement' : 'Affecter à une équipe' }}</h3>
       <button class="drawer-close-btn" (click)="closeTeamPicker()">
         <i class="material-icons">close</i>
       </button>

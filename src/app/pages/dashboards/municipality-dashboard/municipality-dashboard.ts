@@ -105,8 +105,9 @@ export interface Incident {
    * toujours après résolution (services/collecte.service.js::resolveReport ne le touche
    * jamais), donc c'est le SEUL champ qui indique si un signalement est vraiment traité. */
   resolutionStatus?: "pending" | "in_progress" | "resolved";
-  /** Champ réel Collecte.assignedTeamId (Prompt 06) — équipe affectée à la résolution. */
-  assignedTeamId?: { _id: string; name?: string } | null;
+  /** Champ réel Collecte.resolutionTeamId (renommé depuis assignedTeamId, Phase 2 du
+   * nettoyage Planning/Signalement/Assignation) — équipe affectée à la résolution. */
+  resolutionTeamId?: { _id: string; name?: string } | null;
 }
 // Aligné champ-à-champ sur la vraie réponse de GET /api/statistics
 // (services/globalState.js::getDashboardStats + controllers/globalSate.js) — vérifié
@@ -1224,7 +1225,7 @@ export class MunicipalityDashboard  implements OnInit {
         const updated = response?.data;
         const target = this.incidents.find((i) => i._id === payload.incidentId);
         if (target) {
-          target.assignedTeamId = updated?.assignedTeamId ?? target.assignedTeamId;
+          target.resolutionTeamId = updated?.resolutionTeamId ?? target.resolutionTeamId;
           target.resolutionStatus = updated?.resolutionStatus ?? 'in_progress';
         }
         this.filterIncidents();

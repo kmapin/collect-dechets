@@ -1761,3 +1761,24 @@ jamais de son implémentation interne. Le futur backend réel devra en plus intr
 statut `PENDING` par défaut (`Withdraw.js` exécute aujourd'hui le retrait immédiatement,
 sans étape d'approbation) et un endpoint de listing multi-agences — changements côté
 backend, hors périmètre de cette tâche (mock uniquement, comme demandé).
+
+---
+
+# Nettoyage Plannings / Signalements / Assignation — Phase 2 (renommage `resolutionTeamId`)
+
+Voir `EditRecap.md` (backend) pour le détail complet de la Phase 2 (executedByTeamId,
+helper "signalements ouverts", Planning.schemaVersion). Ceci couvre uniquement le
+renommage frontend rendu nécessaire par §2.2 : `Collecte.assignedTeamId` → `resolutionTeamId`
+(clarifie que ce champ concerne la RÉSOLUTION d'un signalement, pas l'équipe d'EXÉCUTION
+de la collecte — une confusion à l'origine de plusieurs bugs déjà corrigés cette session).
+
+## Fichiers mis à jour
+- `signalement.ts`/`signalement.html` (composant partagé) : interface `Incident.assignedTeamId` → `resolutionTeamId`, `openTeamPicker()`, affichage de la colonne Assignee, libellé du bouton Assigner/Réaffecter, titre du modal team-picker.
+- `municipality-dashboard.ts` : interface `Incident.assignedTeamId` → `resolutionTeamId`, `onAssignReport()`.
+- `agency-dashboard.ts` : interface `Incident.assignedTeamId` → `resolutionTeamId`.
+
+Migration backend déjà exécutée contre la vraie base avant ce changement (voir EditRecap.md) — le seul document réel affecté a été renommé avant que ce renommage frontend ne soit déployé, aucune fenêtre où les deux bouts (API/UI) auraient été désynchronisés.
+
+## Vérifications effectuées
+- `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
+- Grep exhaustif sur tout `src/app` : aucune référence de code résiduelle à `assignedTeamId` (seulement des commentaires explicatifs mentionnant l'ancien nom pour le contexte historique).

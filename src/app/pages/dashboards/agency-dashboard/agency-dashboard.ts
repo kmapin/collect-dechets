@@ -127,8 +127,9 @@ interface Incident {
   date: Date;
   status: "open" | "pending" | "resolved" | 'Collected' | 'Reported' | 'Scheduled';
   assignedTo?: string;
-  /** Champ réel Collecte.assignedTeamId (Prompt 06) — équipe affectée à la résolution. */
-  assignedTeamId?: { _id: string; name?: string } | null;
+  /** Champ réel Collecte.resolutionTeamId (renommé depuis assignedTeamId, Phase 2 du
+   * nettoyage Planning/Signalement/Assignation) — équipe affectée à la résolution. */
+  resolutionTeamId?: { _id: string; name?: string } | null;
   resolutionStatus?: "pending" | "in_progress" | "resolved";
 }
 interface Report {
