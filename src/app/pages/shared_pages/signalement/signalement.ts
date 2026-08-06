@@ -247,6 +247,24 @@ export class Signalement {
     this.contactAgency(agencyId);
   }
 
+  // Une équipe n'est sélectionnable dans le picker que si elle est réellement
+  // disponible (TeamV2.status === 'active') — les autres statuts
+  // ('inactive'|'on_mission'|'maintenance') restent visibles mais grisés,
+  // plutôt que masqués, pour que le manager comprenne pourquoi une équipe
+  // qu'il connaît n'apparaît pas sélectionnable.
+  isTeamAvailable(team: any): boolean {
+    return !team?.status || team.status === 'active';
+  }
+
+  getTeamStatusLabel(team: any): string {
+    const labels: Record<string, string> = {
+      inactive: 'Inactive',
+      on_mission: 'En mission',
+      maintenance: 'En maintenance',
+    };
+    return labels[team?.status] || 'Indisponible';
+  }
+
   //Assigner un incident à une équipe (Prompt 06) — remplace les 2 anciens boutons
   //("Assigner"/"Traiter") qui faisaient tous deux le même emit sans choix d'équipe.
   openTeamPicker(incident: Incident): void {

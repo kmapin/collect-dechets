@@ -624,6 +624,22 @@
   background: #eff6ff;
 }
 
+/* Équipe non disponible (status !== 'active') — grisée, jamais masquée : le
+   manager doit comprendre pourquoi une équipe qu'il connaît n'est pas
+   sélectionnable, pas se demander où elle est passée. */
+.team-picker-item--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: #f9fafb;
+
+  &:hover {
+    border-color: #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .team-picker-name { color: #9ca3af; }
+}
+
 .team-picker-info {
   display: flex;
   flex-direction: column;
@@ -638,6 +654,19 @@
 .team-picker-size {
   font-size: 0.72rem;
   color: #6b7280;
+}
+
+.team-picker-unavailable {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #9ca3af;
+  background: #f3f4f6;
+  padding: 3px 8px;
+  border-radius: 20px;
 }
 /* Responsive pour le drawer */
 @media (max-width: 768px) {

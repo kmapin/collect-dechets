@@ -47,19 +47,47 @@ export class Webstockets {
   }
 
   /**
+   * Récupère le JWT courant — même source que `auth-interceptor-interceptor.ts`
+   * (`JSON.parse(localStorage.getItem('currentUser')).token`), PAS la clé
+   * séparée `authWasteToken` (posée par `auth.service.ts` mais jamais relue
+   * nulle part ailleurs dans l'app — un artefact mort).
+   *
+   * Corrigé (usage réel) : jusqu'ici AUCUN token n'était jamais envoyé au
+   * handshake du socket — le serveur (`server.js::io.use`) exige
+   * `socket.handshake.auth.token` et rejette sinon avec "Token manquant".
+   * Chaque tentative de connexion WebSocket échouait donc silencieusement,
+   * pour tout le monde, depuis toujours : `newNotification` (et donc tout le
+   * travail de rafraîchissement temps réel construit dans cette conversation)
+   * n'a jamais pu réellement transiter par socket en usage réel.
+   */
+  private _getToken(): string | null {
+    try {
+      const raw = localStorage.getItem('currentUser');
+      if (!raw) return null;
+      return JSON.parse(raw)?.token ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Initialise la connexion socket sans se connecter
    */
   private initializeSocket(): void {
-   
+
     // Extraire l'URL de base sans '/api'
     const socketUrl = environment.apiUrl.replace('/api', '');
-    
+
     this.socket = io(socketUrl, {
       autoConnect: false,
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5
+      reconnectionAttempts: 5,
+      // Fonction (pas une valeur figée) : réévaluée à CHAQUE tentative de
+      // connexion/reconnexion, pour toujours envoyer le token le plus récent
+      // (ex. après un login qui arrive après la création de ce service).
+      auth: (cb: (data: { token: string | null }) => void) => cb({ token: this._getToken() }),
     });
 
     this.setupSocketListeners();

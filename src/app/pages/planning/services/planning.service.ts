@@ -128,7 +128,15 @@ export class PlanningService {
     ).pipe(
       catchError(() => of(null))
     ).subscribe(res => {
-      if (res?.data) {
+      // Corrigé (usage réel, TypeError "res.data.map is not a function") :
+      // le backend (`services/planning.js::getZoneCoverage`, voir son propre
+      // commentaire "ATTENTION" détaillé) renvoie UN SEUL objet agrégat, pas
+      // un tableau par quartier — un écart déjà documenté côté backend entre
+      // l'implémentation réelle et ce que le Swagger/ce service attendent,
+      // jamais corrigé. Le vrai correctif (réécrire `getZoneCoverage` pour
+      // qu'elle renvoie vraiment un tableau par quartier avec coordonnées) est
+      // un chantier séparé — celui-ci se contente d'arrêter le crash.
+      if (Array.isArray(res?.data)) {
         this._zones.set(res.data.map(z => ({
           name:           z.quartierNom,
           lat:            z.lat,
@@ -438,7 +446,9 @@ export class PlanningService {
     return this.http.put<any>(`${this.api}/planning/v2/${planningId}/rounds/${roundId}`, body);
   }
 
-  // ── Incidents ─────────────────────────────────────────────────
+  // ── Incidents (PlanningIncident — jamais alimenté par aucun code du
+  //     produit ; conservé pour compat mais plus utilisé par planning-detail,
+  //     voir getPlanningSignalements ci-dessous) ────────────────────
 
   getIncidents(planningId: string): Observable<any[]> {
     return this.http.get<{ success: boolean; data: any[] }>(
@@ -452,6 +462,23 @@ export class PlanningService {
 
   resolveIncident(planningId: string, incidentId: string): Observable<any> {
     return this.http.patch<any>(`${this.api}/planning/v2/${planningId}/incidents/${incidentId}/resolve`, {});
+  }
+
+  /**
+   * Vrais signalements liés à ce planning — remplace `getIncidents()`
+   * ci-dessus (branché sur `PlanningIncident`, un modèle séparé jamais
+   * alimenté par aucun code du produit) par le modèle `Signalement` unifié,
+   * qui dénormalise déjà `planningId` précisément pour ce besoin.
+   */
+  getPlanningSignalements(planningId: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${environment.apiUrl}/signalements`,
+      { params: { planningId } }
+    ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
+  }
+
+  resolvePlanningSignalement(signalementId: string, resolutionComment?: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/signalements/${signalementId}/resolve`, { resolutionComment });
   }
 
   // ── Notifications de planning ─────────────────────────────────

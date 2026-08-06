@@ -299,14 +299,27 @@
       } @else {
       <div class="team-picker-list">
         @for (team of teams; track team._id) {
-        <label class="team-picker-item" [class.team-picker-item--selected]="selectedTeamId === team._id">
-          <input type="radio" name="teamPicker" [value]="team._id" [(ngModel)]="selectedTeamId" />
+        <label
+          class="team-picker-item"
+          [class.team-picker-item--selected]="selectedTeamId === team._id"
+          [class.team-picker-item--disabled]="!isTeamAvailable(team)"
+        >
+          <input
+            type="radio"
+            name="teamPicker"
+            [value]="team._id"
+            [(ngModel)]="selectedTeamId"
+            [disabled]="!isTeamAvailable(team)"
+          />
           <div class="team-picker-info">
             <span class="team-picker-name">{{ team.name }}</span>
             @if (team.collectors?.length) {
             <span class="team-picker-size">{{ team.collectors.length }} collecteur(s)</span>
             }
           </div>
+          @if (!isTeamAvailable(team)) {
+          <span class="team-picker-unavailable">{{ getTeamStatusLabel(team) }}</span>
+          }
         </label>
         }
       </div>

@@ -3,6 +3,7 @@ import {
   ViewChild, ElementRef, AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { TimelineModule } from 'primeng/timeline';
@@ -26,7 +27,7 @@ interface ActivityEvent {
   date: string; icon: string; color: string; title: string; detail: string;
 }
 interface RoundHistory {
-  date: string; teams: string[]; status: string;
+  id: string; date: string; teams: string[]; status: string;
   householdsCollected: number; duration: string; completionRate: number;
 }
 interface Notification {
@@ -39,7 +40,7 @@ interface Notification {
   selector: 'app-planning-detail',
   standalone: true,
   imports: [
-    CommonModule, RouterLink, MatIconModule,
+    CommonModule, FormsModule, RouterLink, MatIconModule,
     TimelineModule, ChartModule, TagModule, ToastModule, TooltipModule, SkeletonModule,
   ],
   providers: [MessageService],
@@ -73,6 +74,17 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   showDeleteDlg   = signal(false);
   isActioning   = signal(false);
   planning      = signal<Planning | null>(null);
+
+  // ── Tournées (rounds) — jamais construit côté produit avant ce correctif
+  // (voir _loadRounds ci-dessous : endpoint déjà prêt, aucun appelant nulle
+  // part dans l'app) ─────────────────────────────────────────────
+  isRoundActioning  = signal(false);
+  showEndRoundDlg   = signal(false);
+  endingRound       = signal<RoundHistory | null>(null);
+  endRoundHouseholds = signal<number | null>(null);
+  endRoundDuration   = signal('');
+  hasActiveRound = computed(() => this.history().some(h => h.status === 'en_cours'));
+  canStartRound  = computed(() => this.planning()?.status === 'en_cours' && !this.hasActiveRound());
 
   // ── Teams (real API data) ─────────────────────────────────────
   allTeams         = signal<TeamApi[]>([]);
@@ -272,10 +284,10 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  // ── Tournées / Incidents / Notifications (données réelles) ────
-  private _loadRoundsIncidentsNotifications(planningId: string): void {
+  private _loadRounds(planningId: string): void {
     this.svc.getRounds(planningId).subscribe(rounds => {
       this.history.set(rounds.map((r: any) => ({
+        id:                   r._id,
         date:                 new Date(r.date).toLocaleDateString('fr-FR'),
         teams:                (r.equipeIds ?? []).map((e: any) => e?.name ?? (typeof e === 'string' ? e : '—')),
         status:               r.status,
@@ -284,18 +296,73 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
         completionRate:       r.completionRate,
       })));
     });
+  }
 
-    this.svc.getIncidents(planningId).subscribe(incidents => {
-      this.incidents.set(incidents.map((i: any) => ({
-        id:          i._id,
-        severity:    i.severity,
-        title:       i.title,
-        description: i.description,
-        reporter:    i.reporter,
-        reportedAt:  i.reportedAt,
-        resolved:    i.resolved,
-        resolvedAt:  i.resolvedAt,
-      })));
+  /**
+   * Démarre une nouvelle tournée pour ce planning (Prompt "griser équipe" /
+   * suivi de tournées) — l'endpoint backend existait déjà
+   * (`POST /planning/v2/:id/rounds`) mais n'était appelé nulle part dans le
+   * produit ; cette section restait donc structurellement toujours vide.
+   */
+  startRound(): void {
+    const p = this.planning();
+    if (!p || this.isRoundActioning() || !this.canStartRound()) return;
+    this.isRoundActioning.set(true);
+    this.svc.startRound(p.id).subscribe({
+      next: () => {
+        this.msg.add({ severity: 'info', summary: 'Tournée démarrée', detail: 'La tournée a été enregistrée.' });
+        this._loadRounds(p.id);
+        this.isRoundActioning.set(false);
+      },
+      error: (err) => {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.error?.message ?? 'Impossible de démarrer la tournée' });
+        this.isRoundActioning.set(false);
+      },
+    });
+  }
+
+  openEndRoundDlg(round: RoundHistory): void {
+    this.endingRound.set(round);
+    this.endRoundHouseholds.set(round.householdsCollected || null);
+    this.endRoundDuration.set(round.duration !== '—' ? round.duration : '');
+    this.showEndRoundDlg.set(true);
+  }
+
+  confirmEndRound(): void {
+    const p = this.planning();
+    const round = this.endingRound();
+    if (!p || !round || this.isRoundActioning()) return;
+    this.isRoundActioning.set(true);
+    this.svc.updateRound(p.id, round.id, {
+      householdsCollected: this.endRoundHouseholds() ?? 0,
+      duration: this.endRoundDuration() || undefined,
+      status: 'termine',
+    }).subscribe({
+      next: () => {
+        this.msg.add({ severity: 'success', summary: 'Tournée terminée', detail: 'La tournée a été clôturée.' });
+        this._loadRounds(p.id);
+        this.showEndRoundDlg.set(false);
+        this.isRoundActioning.set(false);
+      },
+      error: (err) => {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.error?.message ?? 'Impossible de terminer la tournée' });
+        this.isRoundActioning.set(false);
+      },
+    });
+  }
+
+  // ── Tournées / Incidents / Notifications (données réelles) ────
+  private _loadRoundsIncidentsNotifications(planningId: string): void {
+    this._loadRounds(planningId);
+
+    // Corrigé (usage réel) : `getIncidents()` lisait `PlanningIncident`, un
+    // modèle jamais alimenté par aucun code du produit (aucun bouton, aucun
+    // cron n'y écrit jamais) — la section restait donc vide même pour un
+    // planning avec de vrais signalements. Remplacé par les vrais
+    // `Signalement` liés à ce planning (`planningId` dénormalisé exactement
+    // pour ce besoin, voir CONCEPTION_UNIFICATION_PLANNING_SIGNALEMENT.md §1.3).
+    this.svc.getPlanningSignalements(planningId).subscribe(signalements => {
+      this.incidents.set(signalements.map((s: any) => this._mapSignalementToIncident(s)));
     });
 
     this.svc.getPlanningNotifications(planningId).subscribe(notifs => {
@@ -558,6 +625,44 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   }
   incidentLabel(s: string): string {
     return ({ critical: 'Critique', warning: 'Attention', info: 'Info' } as Record<string,string>)[s] ?? s;
+  }
+
+  /**
+   * `Signalement.severity` (low|medium|high|critical|other) → les 3 niveaux
+   * affichés par cette section (critical|warning|info) — 'high' devient
+   * 'warning', tout le reste (medium/low/other) devient 'info'.
+   */
+  private _signalementSeverityToIncidentLevel(severity: string): 'critical' | 'warning' | 'info' {
+    if (severity === 'critical') return 'critical';
+    if (severity === 'high') return 'warning';
+    return 'info';
+  }
+
+  private _signalementTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      missed_collection: 'Collecte manquée',
+      compliance_issue: 'Non-conformité',
+      complaint: 'Réclamation',
+      technical_issue: 'Problème technique',
+      other: 'Autre',
+    };
+    return labels[type] || 'Signalement';
+  }
+
+  private _mapSignalementToIncident(s: any): Incident {
+    const reporterName = s.clientId?.firstName || s.clientId?.lastName
+      ? `${s.clientId?.firstName ?? ''} ${s.clientId?.lastName ?? ''}`.trim()
+      : 'Client';
+    return {
+      id: s._id,
+      severity: this._signalementSeverityToIncidentLevel(s.severity),
+      title: this._signalementTypeLabel(s.type),
+      description: s.comment || s.description || '',
+      reporter: reporterName,
+      reportedAt: s.createdAt,
+      resolved: s.status === 'resolved',
+      resolvedAt: s.resolvedAt,
+    };
   }
   notifIcon(c: string): string {
     return ({ sms: 'sms', email: 'email', app: 'notifications' } as Record<string,string>)[c] ?? 'send';

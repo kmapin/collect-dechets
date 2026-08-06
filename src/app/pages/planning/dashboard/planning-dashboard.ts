@@ -144,7 +144,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   notifOpen = signal(false);
   toggleNotif(): void { this.notifOpen.update(v => !v); }
 
-  // ── Évolution des collectes — période (Semaine = 7j, Mois = 30j) ──────────
+  // ── Évolution des plannings — période (Semaine = 7j, Mois = 30j) ──────────
   evolutionPeriod = signal<'week' | 'month'>('week');
   setEvolutionPeriod(period: 'week' | 'month'): void {
     if (this.evolutionPeriod() === period) return;
@@ -239,7 +239,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
   }
 
-  // ── Line – évolution des collectes (GET /planning/v2/evolution, réel) ─────
+  // ── Line – évolution des plannings (GET /planning/v2/evolution, réel) ─────
   // Méthode séparée (pas juste un bloc dans _initCharts()) : appelée aussi depuis
   // l'effect() du constructeur, pour se redessiner dès que planningService.evolution()
   // change (après un premier chargement OU après un clic sur Semaine/Mois), sans
@@ -250,8 +250,8 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       labels: evolution.map(d => d.label),
       datasets: [
         {
-          label: 'Planifiées',
-          data: evolution.map(d => d.planifiees),
+          label: 'Total plannings',
+          data: evolution.map(d => d.totalPlannings),
           borderColor: '#3b82f6',
           backgroundColor: 'rgba(59,130,246,0.08)',
           tension: 0.4,
@@ -260,8 +260,8 @@ export class PlanningDashboard implements OnInit, OnDestroy {
           pointRadius: 4,
         },
         {
-          label: 'Effectuées',
-          data: evolution.map(d => d.effectuees),
+          label: 'Terminés',
+          data: evolution.map(d => d.completedPlannings),
           borderColor: '#16a34a',
           backgroundColor: 'rgba(22,163,74,0.08)',
           tension: 0.4,
