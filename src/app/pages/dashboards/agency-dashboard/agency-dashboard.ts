@@ -1,14 +1,16 @@
 import { Agency } from "./../../../models/agency.model";
-import { catchError, forkJoin, map, of } from "rxjs";
+import { catchError, forkJoin, map, of, Subscription } from "rxjs";
 import {
   AfterViewChecked,
   ChangeDetectorRef,
   Component,
   ElementRef,
+  OnDestroy,
   OnInit,
   ViewChild,
   ViewEncapsulation,
 } from "@angular/core";
+import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import {
@@ -131,6 +133,12 @@ interface Incident {
    * nettoyage Planning/Signalement/Assignation) — équipe affectée à la résolution. */
   resolutionTeamId?: { _id: string; name?: string } | null;
   resolutionStatus?: "pending" | "in_progress" | "resolved";
+  // Champs du modèle Signalement unifié (Prompt 04 backend / Prompt 06 frontend) —
+  // absents des anciens signalements Collecte-based, présents sur tout ce qui vient
+  // désormais de `GET /api/signalements`.
+  collecteId?: string | null;
+  planningId?: { _id: string; reference?: string; libelle?: string; date?: Date } | null;
+  origine?: "collecte" | "independant";
 }
 interface Report {
   _id: string;
@@ -292,7 +300,7 @@ export enum CollectionStatus1 {
   ],
   encapsulation: ViewEncapsulation.None
 })
-export class AgencyDashboard implements OnInit, AfterViewChecked {
+export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
 
   employeeForm!: FormGroup;
@@ -326,6 +334,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   // };
   incidentsFilter = "all";
   severityFilter = "all";
+  // Filtre par origine (Prompt 06 point 3) — 'all' | 'collecte' | 'independant'.
+  origineFilter = "all";
   filteredIncidents: any[] = [];
   statistics: Statistics = {
     totalClients: 0,
@@ -809,6 +819,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     private router: Router,
     private countriesOrgMockService: CountriesOrgMockService,
     private vehicleService: VehicleService,
+    private websocketService: Webstockets,
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -1384,9 +1395,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return `${zones.length} zones sélectionnées`;
   }
 
+  private newSignalementSub?: Subscription;
+
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     console.log(" [DEBUG] ngOnInit - currentUser:", this.currentUser);
+
+    // Prompt 06 point 4 : l'arrivée d'un signalement (lié à une collecte OU
+    // indépendant) doit rafraîchir la liste en direct, sans recharger la page.
+    // Le backend notifie déjà le manager via le même canal `newNotification`
+    // que pour le planning (voir signalement.service.js::dispatchSignalementEvent
+    // côté backend) — pas besoin d'un événement socket séparé, seulement de
+    // réagir à `type === 'Signalement'` ici et de recharger `agencyReports`.
+    this.newSignalementSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'Signalement') {
+        this.loadAgencyReports(this.currentUser);
+      }
+    });
 
     // Initialiser la liste filtrée des employés
     this.filteredEmployees = [...this.allEmployees];
@@ -1453,6 +1478,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
   private handleNotificationParams(params: any) {
     if (params["id"]) {
     }
+  }
+
+  ngOnDestroy(): void {
+    this.newSignalementSub?.unsubscribe();
   }
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
@@ -1608,12 +1637,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
    * `{ incidentId, teamId }` une fois l'équipe choisie.
    */
   onAssignReportToTeam(payload: { incidentId: string; teamId: string }): void {
-    const assignedBy = this.currentUser?._id ?? this.currentUser?.id ?? '';
-    this.agencyService.assignReportToTeam$(payload.incidentId, payload.teamId, assignedBy).subscribe({
+    // Prompt 06 : `agencyReports` vient désormais de `/api/signalements` — chaque
+    // `incidentId` est un vrai `Signalement._id`, jamais un `Collecte._id`. Un
+    // signalement indépendant n'a pas de collecte à cibler ; l'ancienne route
+    // `/collectes/:collecteId/assign-team` (assignReportToTeam$) ne peut donc
+    // structurellement plus être utilisée ici.
+    this.agencyService.assignSignalementToTeam$(payload.incidentId, payload.teamId).subscribe({
       next: () => {
         this.notificationService.showSuccess("Succès", "Signalement affecté à l'équipe avec succès.");
-        // Pas `loadReports()` (mock statique sans rapport avec les signalements réels,
-        // voir plus bas) — le vrai rechargement de `agencyReports` passe par ceci.
         this.loadAgencyReports(this.currentUser);
       },
       error: (err) => {
@@ -2991,14 +3022,25 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     }
   }
 
-  //chargement des signalements
+  //chargement des signalements — Prompt 06 : lit désormais le modèle Signalement
+  // unifié (les deux origines, filtrable par origine/statut côté serveur) au
+  // lieu de l'ancienne route Collecte-only (`getAgencyReports$`, conservée mais
+  // plus appelée ici).
   loadAgencyReports(currentUser: any): void {
     if (currentUser && currentUser.agencyId) {
       this.isLoadingReports = true;
-      const agencyId = currentUser.agencyId;
-      this.agencyService.getAgencyReports$(agencyId).subscribe({
+      this.agencyService
+        .getAgencySignalements$({
+          origine: this.origineFilter !== "all" ? this.origineFilter : undefined,
+          status: this.incidentsFilter !== "all" ? this.incidentsFilter : undefined,
+        })
+        .subscribe({
         next: (reports: any) => {
-          this.agencyReports = reports;
+          // La sévérité n'est pas un filtre serveur sur cet endpoint — appliqué
+          // ici, côté client, sur le résultat déjà filtré par origine/statut.
+          this.agencyReports = this.severityFilter === "all"
+            ? reports
+            : reports.filter((r: Incident) => (r.severity || "").toLowerCase() === this.severityFilter);
           console.log("Signalements chargés >>>>>> :", this.agencyReports);
           // Mise à jour du badge des Signalements
           const SignalementsTab = this.tabs.find((tab) => tab.id === "reports");
@@ -4446,12 +4488,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     //   this.notificationService.showSuccess('Enquête', 'Incident pris en charge pour enquête');
     // }
   }
+  /**
+   * Corrigé (Prompt 06) : ce filtre ne faisait jusqu'ici RIEN (logique
+   * entièrement commentée, `filteredIncidents` jamais réassigné) — les deux
+   * `<select>` du template semblaient fonctionnels mais ne changeaient jamais
+   * la liste affichée. `origine`/`status` sont désormais filtrés côté serveur
+   * (l'endpoint `/api/signalements` le permet) ; `severity` reste un filtre
+   * client (non supporté par cet endpoint) — voir `loadAgencyReports()`.
+   */
   filterIncidents(): void {
-    // this.filteredIncidents = this.incidents.filter(incident => {
-    //   const statusMatch = this.incidentsFilter === 'all' || incident.status === this.incidentsFilter;
-    //   const severityMatch = this.severityFilter === 'all' || incident.severity === this.severityFilter;
-    //   return statusMatch && severityMatch;
-    // });
+    this.loadAgencyReports(this.currentUser);
   }
   contactAgencyForIncident(): void {
     this.contactAgency();
@@ -4504,15 +4550,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked {
     return statuses[status as keyof typeof statuses] || status;
   }
   /**
-   * Appelait `PATCH /reports/:id/status` (agencyService.resolveIncident$), une route
-   * confirmée inexistante dans tout le backend — d'où le toast "Système de validation
-   * non établie" laissé en dur, qui admettait déjà que ce flux n'était pas fiable
-   * (Prompt 06). Appelle maintenant le vrai `PATCH /collectes/:id/resolve`
-   * (AgencyService.resolveReport$).
+   * Même correctif que `onAssignReportToTeam` ci-dessus : `id` est désormais un
+   * `Signalement._id` (les deux origines confondues), plus jamais un
+   * `Collecte._id` — appelle `resolveSignalement$` (`PATCH /api/signalements/:id/resolve`)
+   * au lieu de l'ancien `resolveReport$` (`PATCH /collectes/:id/resolve`), qui
+   * échouerait pour tout signalement indépendant (aucune Collecte à résoudre).
    */
   resolveIncident(id: string) {
-    const resolvedBy = this.currentUser?._id ?? this.currentUser?.id ?? '';
-    this.agencyService.resolveReport$(id, resolvedBy).subscribe({
+    this.agencyService.resolveSignalement$(id).subscribe({
       next: () => {
         this.notificationService.showSuccess("Résolu", "Le signalement a été marqué comme résolu.");
         this.loadAgencyReports(this.currentUser);

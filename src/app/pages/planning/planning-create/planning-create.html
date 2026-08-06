@@ -708,31 +708,21 @@
               </div>
               }
 
-              <div class="pub-option">
+              <!-- Prompt 06 point 1 : les deux interrupteurs "Notifier les clients"/
+                   "Notifier les équipes" ne pilotaient plus rien côté backend
+                   (jamais lus dans submitForm(), zéro effet réel) depuis que le
+                   pipeline unifié notifie automatiquement à chaque transition
+                   (publish/start/complete) sans exception ni condition — les
+                   garder aurait laissé croire qu'on peut désactiver une
+                   notification qui part de toute façon. Remplacés par une note
+                   informative fidèle au comportement réel. -->
+              <div class="pub-option pub-option--info">
                 <div class="pub-option-info">
-                  <div class="pub-icon"><mat-icon>notifications</mat-icon></div>
+                  <div class="pub-icon"><mat-icon>notifications_active</mat-icon></div>
                   <div>
-                    <span class="pub-title">Notifier les clients</span>
-                    <span class="pub-desc">Envoyer une notification SMS/app aux clients concernés</span>
+                    <span class="pub-title">Notifications automatiques</span>
+                    <span class="pub-desc">Les clients concernés et les équipes assignées sont notifiés automatiquement à chaque étape du planning (publication, démarrage, clôture) — aucune action manuelle requise.</span>
                   </div>
-                </div>
-                <div class="toggle" [class.on]="form.get('notifyClients')?.value"
-                     (click)="toggleField('notifyClients')">
-                  <div class="toggle-thumb"></div>
-                </div>
-              </div>
-
-              <div class="pub-option">
-                <div class="pub-option-info">
-                  <div class="pub-icon"><mat-icon>groups</mat-icon></div>
-                  <div>
-                    <span class="pub-title">Notifier les équipes</span>
-                    <span class="pub-desc">Envoyer les instructions aux équipes assignées</span>
-                  </div>
-                </div>
-                <div class="toggle" [class.on]="form.get('notifyTeams')?.value"
-                     (click)="toggleField('notifyTeams')">
-                  <div class="toggle-thumb"></div>
                 </div>
               </div>
             </div>

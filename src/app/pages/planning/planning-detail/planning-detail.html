@@ -629,6 +629,30 @@
             <span class="sec-count">{{ notifications().length }}</span>
           </div>
 
+          <!-- Indicateur d'état (Prompt 06 point 2) : l'envoi est désormais
+               automatique à chaque transition, plus un bouton à déclencher —
+               ce bandeau reflète simplement ce qui s'est déjà passé. -->
+          @if (notificationSummary(); as summary) {
+            <div class="notifs-summary notifs-summary--ok">
+              <mat-icon>check_circle</mat-icon>
+              <span>Notifié automatiquement le {{ formatFrDateTime(summary.lastSentAt) }} à {{ summary.recipientCount }} destinataire{{ summary.recipientCount > 1 ? 's' : '' }}.</span>
+            </div>
+          } @else if (canResendNotifications()) {
+            <div class="notifs-summary notifs-summary--warn">
+              <mat-icon>warning</mat-icon>
+              <span>Aucune notification enregistrée pour ce planning.</span>
+              <button
+                type="button"
+                class="tb-btn tb-btn--ghost"
+                [disabled]="isResendingNotifications()"
+                (click)="resendNotifications()"
+              >
+                <mat-icon>send</mat-icon>
+                {{ isResendingNotifications() ? 'Envoi…' : 'Renvoyer la notification' }}
+              </button>
+            </div>
+          }
+
           @if (notifications().length > 0) {
             <div class="notifs-list">
               @for (n of notifications(); track n.id) {

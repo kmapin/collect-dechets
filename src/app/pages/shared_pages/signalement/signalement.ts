@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { NotificationService } from '../../../services/notification.service';
 import { CommonModule, DatePipe, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -51,10 +51,15 @@ interface Incident {
   resolutionStatus?: "pending" | "in_progress" | "resolved";
   createdAt?: Date;
   updatedAt?: Date;
+  // Champs du modèle Signalement unifié (Prompt 04 backend / Prompt 06 frontend) —
+  // absents des anciens signalements Collecte-based.
+  collecteId?: string | null;
+  planningId?: { _id: string; reference?: string; libelle?: string; date?: Date } | null;
+  origine?: "collecte" | "independant";
 }
 @Component({
   selector: 'app-signalement',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './signalement.html',
   styleUrl: './signalement.scss',
 })
@@ -200,8 +205,11 @@ export class Signalement {
 
   getIncidentStatusText(status: string): string {
     const statuses = {
-      // open: "Ouvert",
+      open: "Ouvert",
       pending: "En cours",
+      // Valeur réelle du nouveau modèle Signalement unifié (Prompt 04/05) —
+      // absente jusqu'ici, s'affichait en texte brut non traduit.
+      in_progress: "En cours",
       resolved: "Résolue",
       reported : "En cours",
       scheduled: "Programmée",

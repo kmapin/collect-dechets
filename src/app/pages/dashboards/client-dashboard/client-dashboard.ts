@@ -867,6 +867,17 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
     this.showReportModal = true;
   }
 
+  /**
+   * Point d'entrée séparé pour un signalement indépendant (Prompt 05, point 4)
+   * — même modal/formulaire que `reportIssue()`, mais sans `collecteId`
+   * prérempli : `submitReport()` omet alors ce champ du payload, et le
+   * backend crée un signalement `origine:'independant'`.
+   */
+  reportIndependentIssue(): void {
+    this.reportData.collecteId = "";
+    this.showReportModal = true;
+  }
+
   rateCollection(collectionId: string): void {
     this.notificationService.showInfo(
       "Évaluation",
@@ -875,50 +886,42 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
   }
 
   submitReport(): void {
-    const data = {
-      collecteId: this.reportData.collecteId,
+    // `collecteId` omis (chaîne vide) → signalement indépendant, voir
+    // `reportIndependentIssue()` — le serveur dérive alors clientId/agencyId
+    // du profil authentifié, `data.clientId`/`data.agencyId` ci-dessous ne
+    // servent plus qu'au parcours lié à une collecte.
+    const data: any = {
       type: this.reportData.type,
       comment: this.reportData.description,
       severity: this.reportData.severity,
       clientId: this.currentUser?._id,
-      agencyId: this.currentUser?.agencyId
+      agencyId: this.currentUser?.agencyId,
     };
+    if (this.reportData.collecteId) data.collecteId = this.reportData.collecteId;
 
-    console.log("Signalement envoyé:", this.data);
-    if (
-      (this.reportData.type &&
-        this.reportData.description &&
-        this.reportData.clientId &&
-        this.reportData.agencyId) ||
-      this.reportData.severity
-    ) {
-      console.log("Signalement envoyé:", this.data);
-      this.clientService.reportClientIncident(data).subscribe({
-        next: (response: any) => {
-          console.log("API > reportClientIncident:", response);
-          this.notificationService.showSuccess(
-            "Signalement envoyé",
-            "Votre signalement a été transmis à l'agence"
-          );
-          this.showReportModal = false;
-          // this.reportData = {
-          //   type: "",
-          //   description: "",
-          //   severity: "",
-          //   clientId: "",
-          //   agencyId: "",
-          //   collectorId: ""
-          // };
-        },
-        error: (error: any) => {
-          console.error("API > reportClientIncident:", error);
-          this.notificationService.showError(
-            "Signalement non envoyé",
-            "Une erreur s'est produite lors de l'envoi du signalement"
-          );
-        },
-      });
+    if (!this.reportData.type || !this.reportData.description || !this.reportData.severity) {
+      return;
     }
+
+    this.clientService.createSignalement(data).subscribe({
+      next: (response: any) => {
+        console.log("API > createSignalement:", response);
+        this.notificationService.showSuccess(
+          "Signalement envoyé",
+          "Votre signalement a été transmis à l'agence"
+        );
+        this.showReportModal = false;
+        this.reportData = { type: "", description: "", severity: "", clientId: "", agencyId: "", collecteId: "" };
+        this.loadClientReports();
+      },
+      error: (error: any) => {
+        console.error("API > createSignalement:", error);
+        this.notificationService.showError(
+          "Signalement non envoyé",
+          "Une erreur s'est produite lors de l'envoi du signalement"
+        );
+      },
+    });
   }
 
   processPayment(): void {

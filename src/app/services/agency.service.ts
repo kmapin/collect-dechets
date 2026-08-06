@@ -306,6 +306,68 @@ export class AgencyService {
       })
     );
   }
+
+  /**
+   * Signalements unifiés (Prompt 06, backend Prompt 04) — remplace
+   * `getAgencyReports$()` (legacy, `/collectes/agency/:agencyId/reporting-collectes`,
+   * ne couvrait que les signalements historiquement liés à une collecte, jamais
+   * les indépendants). `agencyId` n'est plus un paramètre : le serveur le dérive
+   * toujours du profil du manager authentifié (voir
+   * signalement.controller.js::listSignalements côté backend) — jamais pris du
+   * client, pour qu'un manager ne puisse jamais lire les signalements d'une
+   * autre agence en changeant un paramètre.
+   */
+  getAgencySignalements$(filters: { origine?: string; status?: string; clientId?: string; planningId?: string; from?: string; to?: string } = {}): Observable<any[]> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params = params.set(key, value);
+    });
+    return this.http.get<{ success: boolean; data: any[] }>(`${environment.apiUrl}/signalements`, { params }).pipe(
+      map((response) => {
+        console.log("API > getAgencySignalements$:", response);
+        return response?.data ?? [];
+      }),
+      catchError((error) => {
+        console.error("Erreur lors de la récupération des signalements :", error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Affecte un signalement (lié à une collecte OU indépendant) à une équipe.
+   * Remplace `assignReportToTeam$()` pour tout signalement issu de
+   * `getAgencySignalements$()` : un signalement indépendant n'a pas de
+   * `collecteId`, donc l'ancienne route `/collectes/:collecteId/assign-team`
+   * ne peut structurellement pas l'adresser. `assignedBy` n'est plus envoyé :
+   * le serveur le dérive de l'utilisateur authentifié.
+   */
+  assignSignalementToTeam$(signalementId: string, teamId: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/signalements/${signalementId}/assign-team`, { teamId }).pipe(
+      map((response: any) => {
+        console.log("API > assignSignalementToTeam$:", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de l'affectation du signalement à l'équipe :", error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /** Résout un signalement (lié à une collecte OU indépendant) — voir assignSignalementToTeam$. */
+  resolveSignalement$(signalementId: string, resolutionComment?: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/signalements/${signalementId}/resolve`, { resolutionComment }).pipe(
+      map((response: any) => {
+        console.log("API > resolveSignalement$:", response);
+        return response;
+      }),
+      catchError(error => {
+        console.error("Erreur lors de la résolution du signalement :", error);
+        return throwError(() => error);
+      })
+    );
+  }
   getCompletedCollectes$(agencyId: string): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/collectes/agency/${agencyId}/completed-collectes`).pipe(
       map((response) => { console.log(`[CompletedCollectes] ${agencyId}:`, response); return response; }),

@@ -149,6 +149,46 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
 
   criticalIncidents = computed(() => this.incidents().filter(i => i.severity === 'critical' && !i.resolved).length);
 
+  // ── Notifications : indicateur d'état (Prompt 06 point 2) ──────
+  // Le pipeline unifié notifie désormais automatiquement à chaque transition
+  // (voir dispatchPlanningTransition côté backend) — il n'y a plus de bouton
+  // "envoyer" à déclencher soi-même en usage normal. `notificationSummary`
+  // remplace ce geste par un simple état de fait ; `canResendNotifications`
+  // n'expose le renvoi manuel (`sendPlanningNotification`, conservé côté
+  // backend précisément pour ce cas) que lorsque le planning est sorti du
+  // brouillon mais qu'aucune notification n'a été enregistrée — le signe d'un
+  // échec, pas un chemin d'usage courant.
+  notificationSummary = computed(() => {
+    const notifs = this.notifications();
+    if (!notifs.length) return null;
+    const recipients = new Set(notifs.map(n => n.recipient));
+    const lastSentAt = notifs.reduce((latest, n) => (!latest || n.sentAt > latest ? n.sentAt : latest), '' as string);
+    return { count: notifs.length, recipientCount: recipients.size, lastSentAt };
+  });
+
+  canResendNotifications = computed(() =>
+    this.planning()?.status !== 'brouillon' && this.notifications().length === 0
+  );
+
+  isResendingNotifications = signal(false);
+
+  resendNotifications(): void {
+    const id = this.planning()?.id;
+    if (!id) return;
+    this.isResendingNotifications.set(true);
+    this.svc.sendPlanningNotification(id, 'all').subscribe({
+      next: () => {
+        this.msg.add({ severity: 'success', summary: 'Notifications renvoyées', detail: 'Les destinataires ont été notifiés.' });
+        this._loadRoundsIncidentsNotifications(id);
+        this.isResendingNotifications.set(false);
+      },
+      error: () => {
+        this.msg.add({ severity: 'error', summary: 'Échec', detail: "Le renvoi de la notification a échoué." });
+        this.isResendingNotifications.set(false);
+      },
+    });
+  }
+
   // ── Can perform transitions ───────────────────────────────────
   canPublish  = computed(() => this.planning()?.status === 'brouillon');
   canStart    = computed(() => this.planning()?.status === 'planifie');

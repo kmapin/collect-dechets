@@ -1719,6 +1719,16 @@
                 <option value="medium">Moyenne</option>
                 <option value="low">Faible</option>
               </select>
+              <!-- Filtre par origine (Prompt 06 point 3) -->
+              <select
+                [(ngModel)]="origineFilter"
+                (change)="filterIncidents()"
+                class="filter-select"
+              >
+                <option value="all">Toutes origines</option>
+                <option value="collecte">Liés à une collecte</option>
+                <option value="independant">Indépendants</option>
+              </select>
             </div>
           </div>
           <!-- Indicateur de chargement pour les signalements -->

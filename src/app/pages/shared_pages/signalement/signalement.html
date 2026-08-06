@@ -29,6 +29,21 @@
     <div class="sig-col sig-col--type">
       <span class="sig-type">{{ getIncidentTypeText(incident.type.toLowerCase()) }}</span>
       <span class="sig-comment" *ngIf="incident.comment">{{ incident.comment }}</span>
+      <!-- Origine (Prompt 06 point 3) : lié à une collecte (avec lien vers le
+           planning associé, quand connu) ou indépendant — jamais une valeur
+           vide/ambiguë. -->
+      @if (incident.origine === 'independant') {
+        <span class="sig-origine sig-origine--independant">Signalement indépendant</span>
+      } @else if (incident.origine === 'collecte') {
+        <span class="sig-origine sig-origine--collecte">
+          Lié à une collecte
+          @if (incident.planningId; as planningRef) {
+            @if (planningRef._id) {
+              · <a [routerLink]="['/planning/detail', planningRef._id]">{{ planningRef.reference || planningRef.libelle || 'voir le planning' }}</a>
+            }
+          }
+        </span>
+      }
     </div>
 
     <!-- Client -->

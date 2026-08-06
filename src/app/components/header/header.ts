@@ -1,9 +1,10 @@
-import { Component, OnInit, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { User,RegisterUserData, UserRole } from '../../models/user.model';
 import { NotificationService } from '../../services/notification.service';
+import { Webstockets, SocketNotification } from '../../core/services/webstockets';
 import { MatIconModule } from '@angular/material/icon';
 import { interval, Subscription, switchMap } from 'rxjs';
 @Component({
@@ -12,7 +13,7 @@ import { interval, Subscription, switchMap } from 'rxjs';
   templateUrl: './header.html',
   styleUrl: './header.css'
 })
-export class Header  implements OnInit {
+export class Header  implements OnInit, OnDestroy {
   currentUser: RegisterUserData | null = null;
   isAuthenticated = false;
   showUserMenu = false;
@@ -20,14 +21,16 @@ export class Header  implements OnInit {
   isScrolled = false;
   showNotifications = false;
     private refreshSub!: Subscription;
+    private newNotificationSub?: Subscription;
   notifications: any[] = [];
   constructor(
     private authService: AuthService,
     private router: Router,
     private notificationService: NotificationService,
+    private websocketService: Webstockets,
     private eRef: ElementRef,
         private cdr: ChangeDetectorRef,
-    
+
   ) { }
 
   ngOnInit(): void {
@@ -42,9 +45,26 @@ export class Header  implements OnInit {
       this.isAuthenticated = isAuth;
       this.loadNotifications();
     });
-    
+
+    // Prompt 05 point 2 : la cloche se mettait à jour uniquement au chargement
+    // (REST one-shot) — le pipeline planning/signalement unifié (Prompts 03/04)
+    // émet désormais `newNotification` de façon fiable à chaque événement ; on
+    // la répercute ici en direct, sans attendre un refresh manuel. Le contrat
+    // socket (`joinRoom(userId)` + écoute `newNotification`) est déjà correct
+    // côté `auth.service.ts`/`webstockets.ts` — rien à changer là.
+    this.newNotificationSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (this.notifications.some((n) => n._id === (notification as any)._id)) return;
+      this.notifications = [notification, ...this.notifications];
+      this.cdr.detectChanges();
+    });
+
     // this.startAutoRefresh();
     this.cdr.detectChanges();
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshSub) this.refreshSub.unsubscribe();
+    if (this.newNotificationSub) this.newNotificationSub.unsubscribe();
   }
 
   @HostListener('window:scroll', [])
@@ -225,12 +245,6 @@ markAsRead(notifId: string): void {
   clickOutside(event: Event) {
     if (!this.eRef.nativeElement.contains(event.target)) {
       this.showNotifications = false;
-    }
-  }
-   ngOnDestroy(): void {
-    // Arrêter le rafraîchissement pour éviter les fuites mémoire
-    if (this.refreshSub) {
-      this.refreshSub.unsubscribe();
     }
   }
 

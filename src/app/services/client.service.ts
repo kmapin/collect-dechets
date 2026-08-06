@@ -139,20 +139,42 @@ export class ClientService {
     );
   }
 
-  reportClientIncident(data: any) {
-    return this.http.patch(`${environment.apiUrl}/collectes/${data.collecteId}/report/${data.clientId}`, data).pipe(
+  /**
+   * Crée un signalement — remplace `reportClientIncident()` (ancienne route
+   * `PATCH /collectes/:collecteId/report/:userId`, toujours vivante côté
+   * backend comme alias legacy, mais qui exigeait un `collecteId`). Un seul
+   * point d'entrée pour les deux parcours (Prompt 05, backend Prompt 04) :
+   *  - `data.collecteId` renseigné  → signalement lié à cette collecte.
+   *  - `data.collecteId` absent/vide → signalement indépendant ; le serveur
+   *    dérive alors `clientId`/`agencyId` du profil authentifié, jamais du body.
+   */
+  createSignalement(data: { collecteId?: string; type: string; severity?: string; comment?: string; description?: string; photos?: string[] }): Observable<any> {
+    const payload: any = { ...data };
+    if (!payload.collecteId) delete payload.collecteId;
+    return this.http.post(`${environment.apiUrl}/signalements`, payload).pipe(
       map((response: any) => {
-        console.log('API > reportClientIncident:', response);
+        console.log('API > createSignalement:', response);
         return response;
       })
     );
   }
 
-  getClientReports(clientId: string){
-    return this.http.get(`${environment.apiUrl}/collectes/user/${clientId}/collecte-reporting`).pipe(
+  /**
+   * Historique des signalements du client authentifié — unifié (Prompt 05) :
+   * remplace `GET /collectes/user/:clientId/collecte-reporting` (qui ne
+   * remontait que les signalements historiquement liés à une collecte) par
+   * `GET /api/signalements` (autorisé pour le rôle `client`, verrouillé
+   * côté serveur sur son propre `clientId` — voir signalement.controller.js),
+   * qui remonte les deux origines (liée à une collecte / indépendante) au
+   * même endroit. Réponse serveur `{ success, data }` — on ne renvoie que
+   * `data` pour ne rien changer côté appelants existants (un tableau brut,
+   * comme l'ancienne route).
+   */
+  getClientReports(clientId: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(`${environment.apiUrl}/signalements`, { params: { clientId } }).pipe(
       map((response: any) => {
         console.log('API > clientService > getClientReports:', response);
-        return response;
+        return response?.data ?? [];
       })
     );
   }
