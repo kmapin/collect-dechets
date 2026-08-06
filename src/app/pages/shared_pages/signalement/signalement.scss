@@ -102,6 +102,21 @@
   margin-top: 2px;
 }
 
+/* ---- Origine (Prompt 06) ---- */
+.sig-origine {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-top: 3px;
+
+  a { color: inherit; text-decoration: underline; }
+}
+
+.sig-origine--collecte     { color: #2563eb; }
+.sig-origine--independant  { color: #7c3aed; }
+
 /* ---- Person (client / assignee) ---- */
 .sig-person {
   display: flex;
@@ -220,6 +235,81 @@
 
 .sig-action-btn--gray  { background: #f9fafb; color: #6b7280; border: 1px solid #e5e7eb; }
 .sig-action-btn--gray:hover  { background: #f3f4f6; color: #374151; }
+
+/* =============================================
+   INCIDENT LIST — Card style (vue client)
+   ============================================= */
+.sig-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  padding: 16px;
+}
+
+.sig-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.15s ease;
+}
+
+.sig-card:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.sig-card--critical { border-left-color: #ef4444; }
+.sig-card--high     { border-left-color: #f97316; }
+.sig-card--medium   { border-left-color: #f59e0b; }
+.sig-card--low      { border-left-color: #22c55e; }
+
+.sig-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sig-card-type {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.sig-card-comment {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.sig-card-assignee { margin-top: 2px; }
+
+.sig-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.sig-card-date {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: #9ca3af;
+
+  .material-icons { font-size: 14px; }
+}
 
 /* ---- Empty state ---- */
 .sig-empty-state {

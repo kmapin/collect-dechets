@@ -121,6 +121,24 @@ export class ClientService {
     );
   }
 
+  /**
+   * Second pull, complémentaire (pas un remplacement) au précédent —
+   * CONCEPTION_UNIFICATION_PLANNING_SIGNALEMENT.md §4. `getClientPlanning()`
+   * ci-dessus ne peut structurellement rien montrer avant le DÉMARRAGE d'un
+   * planning (aucune Collecte n'existe avant `start`) — un planning publié
+   * mais pas encore démarré restait donc invisible côté client malgré la
+   * notification déjà reçue. Celui-ci lit directement les `Planning`
+   * (`planifie`/`en_cours`), pas des `Collecte`.
+   */
+  getClientUpcomingPlannings(clientId: string): Observable<any[]> {
+    return this.http.get<{ success: boolean; data: any[] }>(`${environment.apiUrl}/clients/${clientId}/plannings`).pipe(
+      map((response: any) => {
+        console.log('API > getClientUpcomingPlannings:', response);
+        return response?.data ?? [];
+      })
+    );
+  }
+
   getClientPlanningHistory(clientId: string): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/collectes/user/${clientId}/collecte-history`).pipe(
       map((response: any) => {

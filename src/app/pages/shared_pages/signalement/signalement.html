@@ -1,5 +1,7 @@
 <div class="sig-container" [class.sig-container--client]="currentUser?.role === 'client'">
 
+  @if (currentUser?.role !== 'client') {
+
   <!-- List header -->
   <div class="sig-list-header">
     <span class="sig-col sig-col--severity">Gravité</span>
@@ -118,6 +120,75 @@
       </div>
     </div>
   </div>
+
+  } @else {
+
+  <!-- Vue "cards" pour le client (au lieu du tableau ci-dessus, pensé pour
+       l'agence qui doit scanner beaucoup de lignes) — mêmes données, mêmes
+       actions déjà appropriées au rôle client (pas d'assigner/résoudre),
+       simplement présentées comme des cartes plus lisibles pour un usager qui
+       consulte ses quelques propres signalements. -->
+  <div class="sig-cards">
+    @for (incident of pagedIncidents; track incident._id) {
+      <div class="sig-card" [ngClass]="'sig-card--' + incident.severity.toLowerCase()">
+        <div class="sig-card-header">
+          <span class="sig-severity" [ngClass]="'sig-severity--' + incident.severity.toLowerCase()">
+            <i class="material-icons">{{ getSeverityIcon(incident.severity.toLowerCase()) }}</i>
+            <span>{{ getSeverityText(incident.severity.toLowerCase()) || 'Faible' }}</span>
+          </span>
+          <span class="sig-status" [ngClass]="'sig-status--' + incident.status.toLowerCase()">
+            {{ getIncidentStatusText(incident.status.toLowerCase()) }}
+          </span>
+        </div>
+
+        <h4 class="sig-card-type">{{ getIncidentTypeText(incident.type.toLowerCase()) }}</h4>
+        @if (incident.comment) {
+          <p class="sig-card-comment">{{ incident.comment }}</p>
+        }
+
+        @if (incident.origine === 'independant') {
+          <span class="sig-origine sig-origine--independant">Signalement indépendant</span>
+        } @else if (incident.origine === 'collecte') {
+          <span class="sig-origine sig-origine--collecte">
+            Lié à une collecte
+            @if (incident.planningId; as planningRef) {
+              @if (planningRef._id) {
+                · <a [routerLink]="['/planning/detail', planningRef._id]">{{ planningRef.reference || planningRef.libelle || 'voir le planning' }}</a>
+              }
+            }
+          </span>
+        }
+
+        @if (incident.resolutionTeamId?._id) {
+          <div class="sig-person sig-person--assigned sig-card-assignee">
+            <span class="sig-avatar sig-avatar--green">
+              <i class="material-icons" style="font-size: 14px;">groups</i>
+            </span>
+            <span>{{ incident.resolutionTeamId?.name || 'Équipe affectée' }}</span>
+          </div>
+        }
+
+        <div class="sig-card-footer">
+          <div class="sig-card-date">
+            <i class="material-icons">schedule</i>
+            {{ incident.createdAt | date : "dd MMM yyyy, HH:mm" }}
+          </div>
+          <div class="sig-actions">
+            <button class="sig-action-btn sig-action-btn--blue" (click)="contactAgencyForIncident(incident?.agencyId?._id)" title="Contacter l'agence">
+              <i class="material-icons">phone</i>
+            </button>
+            @if (incident.photos && incident.photos.length) {
+              <button class="sig-action-btn sig-action-btn--gray" (click)="showPictures(); openImageModal(incident.photos[0], incident)" title="Voir photos">
+                <i class="material-icons">photo_library</i>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  }
 
   <!-- Empty state -->
   <div class="sig-empty-state" *ngIf="!incidents?.length">

@@ -94,26 +94,34 @@ describe('AgencyDashboard - signalements unifiés (Prompt 06)', () => {
     expect((component.agencyReports[0] as any)._id).toBe('1');
   });
 
-  it("onAssignReportToTeam() cible le nouvel endpoint Signalement (fonctionne aussi pour un signalement indépendant, sans collecteId)", () => {
+  it("onAssignReportToTeam() cible le nouvel endpoint Signalement (fonctionne aussi pour un signalement indépendant, sans collecteId) et rafraîchit aussi les statistiques", () => {
+    spyOn(component, 'loadAgencyStatistics');
     component.onAssignReportToTeam({ incidentId: 'sig-1', teamId: 'team-1' });
     expect(agencyServiceSpy.assignSignalementToTeam$).toHaveBeenCalledWith('sig-1', 'team-1');
+    expect(component.loadAgencyStatistics).toHaveBeenCalledWith(component.currentUser);
   });
 
-  it('resolveIncident() cible le nouvel endpoint Signalement, sans resolvedBy (dérivé côté serveur)', () => {
+  it('resolveIncident() cible le nouvel endpoint Signalement, sans resolvedBy (dérivé côté serveur) et rafraîchit aussi les statistiques', () => {
+    spyOn(component, 'loadAgencyStatistics');
     component.resolveIncident('sig-1');
     expect(agencyServiceSpy.resolveSignalement$).toHaveBeenCalledWith('sig-1');
+    expect(component.loadAgencyStatistics).toHaveBeenCalledWith(component.currentUser);
   });
 
-  it("un newNotification de type 'Signalement' reçu en direct recharge la liste automatiquement", () => {
-    stubLoaders(component, ['loadAgencyReports']);
+  it("un newNotification de type 'Signalement' reçu en direct recharge la liste ET les statistiques automatiquement", () => {
+    stubLoaders(component, ['loadAgencyReports', 'loadAgencyStatistics']);
     spyOn(component, 'loadAgencyReports');
+    spyOn(component, 'loadAgencyStatistics');
 
-    component.ngOnInit(); // appelle déjà loadAgencyReports une fois (chargement initial)
-    const callsAfterInit = (component.loadAgencyReports as jasmine.Spy).calls.count();
+    component.ngOnInit(); // appelle déjà loadAgencyReports/loadAgencyStatistics une fois (chargement initial)
+    const reportCallsAfterInit = (component.loadAgencyReports as jasmine.Spy).calls.count();
+    const statsCallsAfterInit = (component.loadAgencyStatistics as jasmine.Spy).calls.count();
 
     newNotification$.next({ type: 'Signalement', message: 'Nouveau signalement' });
-    expect((component.loadAgencyReports as jasmine.Spy).calls.count()).toBe(callsAfterInit + 1);
+    expect((component.loadAgencyReports as jasmine.Spy).calls.count()).toBe(reportCallsAfterInit + 1);
+    expect((component.loadAgencyStatistics as jasmine.Spy).calls.count()).toBe(statsCallsAfterInit + 1);
     expect(component.loadAgencyReports).toHaveBeenCalledWith(component.currentUser);
+    expect(component.loadAgencyStatistics).toHaveBeenCalledWith(component.currentUser);
   });
 
   it("un newNotification d'un autre type (ex. 'Planning') ne recharge PAS à nouveau les signalements", () => {

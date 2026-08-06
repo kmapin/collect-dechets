@@ -1410,6 +1410,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.newSignalementSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
       if (notification?.type === 'Signalement') {
         this.loadAgencyReports(this.currentUser);
+        // Les statistiques (badge "en attente", compteurs du dashboard) doivent
+        // se rafraîchir en même temps que la liste — sinon elles restent figées
+        // sur leur dernière valeur chargée alors que la liste, elle, est à jour.
+        this.loadAgencyStatistics(this.currentUser);
       }
     });
 
@@ -1646,6 +1650,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       next: () => {
         this.notificationService.showSuccess("Succès", "Signalement affecté à l'équipe avec succès.");
         this.loadAgencyReports(this.currentUser);
+        this.loadAgencyStatistics(this.currentUser);
       },
       error: (err) => {
         console.error("Erreur assignation :", err);
@@ -4561,6 +4566,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       next: () => {
         this.notificationService.showSuccess("Résolu", "Le signalement a été marqué comme résolu.");
         this.loadAgencyReports(this.currentUser);
+        this.loadAgencyStatistics(this.currentUser);
       },
       error: (error: any) => {
         console.error("Erreur lors de la résolution du signalement:", error);

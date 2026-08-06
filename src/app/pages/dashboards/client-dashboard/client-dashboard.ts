@@ -114,6 +114,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
       this.getUserSubscription();
       this.getClientWallet();
       this.getWeeklySchedule();
+      this.loadUpcomingPlannings();
       this.loadPlanningHistory();
     });
     console.log("Current User", this.currentUser);
@@ -204,6 +205,29 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
       },
     });
   }
+
+  /**
+   * Second pull, complémentaire à `getWeeklySchedule()` ci-dessus — montre les
+   * plannings publiés/en cours qui concernent ce client AVANT même qu'une
+   * Collecte n'existe (qui n'apparaît qu'au démarrage du planning). Comble le
+   * trou où un planning fraîchement publié était invisible côté client malgré
+   * la notification déjà reçue.
+   */
+  upcomingPlannings: any[] = [];
+  loadUpcomingPlannings() {
+    const clientId = this.currentUser?._id || "";
+    if (!clientId) return;
+
+    this.clientService.getClientUpcomingPlannings(clientId).subscribe({
+      next: (plannings: any[]) => {
+        this.upcomingPlannings = plannings || [];
+      },
+      error: (error: any) => {
+        console.error("Erreur lors de la récupération des plannings à venir:", error);
+      },
+    });
+  }
+
   // Recuperer le nombre de passage du mois
 
   getMonthlyCollectionsLength() {

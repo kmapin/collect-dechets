@@ -160,6 +160,40 @@
           <!-- Contenu principal -->
           <div class="main-content">
             <div class="left-column">
+              <!-- Plannings à venir : second pull, complémentaire au "Planning de la
+                   semaine" ci-dessous — montre un planning publié AVANT même qu'une
+                   collecte concrète n'existe (qui n'apparaît qu'au démarrage). -->
+              @if (upcomingPlannings.length > 0) {
+                <section class="upcoming-collections card">
+                  <div class="section-header">
+                    <h2>
+                      <i class="material-icons">event_available</i>
+                      Plannings à venir
+                    </h2>
+                  </div>
+                  <div class="collections-list">
+                    @for (planning of upcomingPlannings; track planning._id) {
+                      <div class="collection-item">
+                        <div class="collection-date">
+                          <div class="day">{{ planning.date | date : "dd" }}</div>
+                          <div class="month">{{ planning.date | date : "MMM" }}</div>
+                        </div>
+                        <div class="collection-info">
+                          <h4>{{ planning.libelle || planning.reference || "Planning" }}</h4>
+                          <p class="collection-time">
+                            <i class="material-icons">access_time</i>
+                            {{ planning.startTime ? planning.startTime + " - " : "" }}{{ planning.endTime || "" }}
+                          </p>
+                        </div>
+                        <div class="collection-status">
+                          <span class="status-badge">Prévu, pas encore détaillé</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </section>
+              }
+
               <!-- Prochains passages -->
               <section class="upcoming-collections card">
                 <div class="section-header">
