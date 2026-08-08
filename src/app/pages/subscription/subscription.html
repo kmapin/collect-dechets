@@ -16,121 +16,133 @@
         </h1>
         <!-- ...existing code... -->
         @if (activeSubscription) {
-          <div class="subscription-info">
-            <div class="plan-summary">
-              <span class="plan-badge" [ngClass]="activeSubscription.pricingId.planType">
-                @switch (activeSubscription.pricingId.planType) {
-                  @case ('premium') {
-                    <i class="material-icons" style="font-size: 32px; color: gold"
-                      >star</i
-                      >
-                    }
-                    @case ('standard') {
-                      <i
-                        class="material-icons"
-                        style="font-size: 32px; color: #2196f3"
-                        >star_half</i
-                        >
-                      }
-                      @case ('basic') {
-                        <i
-                          class="material-icons"
-                          style="font-size: 32px; color: #9e9e9e"
-                          >star_outline</i
-                          >
-                        }
-                      }
-                      {{ activeSubscription.pricingId.planType | titlecase }}
-                    </span>
-                    <span
-                      class="status-badge"
-                      [class.active]="activeSubscription.isActive === true"
-                      >
-                      {{ (activeSubscription.isActive ? 'Actif' : 'Inactif') | titlecase }}
-                    </span>
-                  </div>
-                  <div class="info-item-agencyName">
-                    <strong>Agence:</strong>
-                    <span class="font-semibold text-[--primary-color]"
-                      >{{ activeSubscription.agencyId?.name }}</span
-                      >
-                    </div>
-                    <div class="info-item">
-                      <strong>Adresses:</strong>
-                      <span
-                        >{{ activeSubscription.agencyId?.address?.city }} - {{
-                        activeSubscription.agencyId?.address?.neighborhood }} - {{
-                        activeSubscription.agencyId?.address?.sector }}</span
-                        >
-                      </div>
-                      <div class="info-item">
-                        <strong>Code postal:</strong>
-                        <span>{{ activeSubscription.agencyId?.address?.postalCode }}</span>
-                      </div>
-                      <div class="info-item">
-                        <strong>Prix:</strong>
-                        <span class="text-[20px] font-semibold text-[--primary-color]"
-                          >{{ activeSubscription.pricingId.price }}
-                          <sup class="tex-black">FCFA</sup>/ Mois</span
-                          >
-                        </div>
-                        <div class="info-item">
-                          <strong>Début:</strong>
-                          <span>{{ activeSubscription.startDate | date:'dd/MM/yyyy' }}</span>
-                        </div>
-                        <div class="info-item">
-                          <strong>Fin:</strong>
-                          <span>{{ activeSubscription.endDate | date:'dd/MM/yyyy' }}</span>
-                        </div>
-                        <div class="contact-info">
-                          <strong>Contacts:</strong>
-                          <span>{{ activeSubscription.agencyId?.phone }}</span>
-                        </div>
-                        <div class="actions">
-                          <button class="btn btn-primary" (click)="initiatePayment()">
-                            <i class="material-icons">payment</i>
-                            Payer avec Telecel Money
-                          </button>
-                          <button class="btn btn-secondary" (click)="contactSupport()">
-                            Contactez l'agence
-                          </button>
-                        </div>
-                      </div>
-                    } @else {
-                      <div class="info-item">
-                        <span>Aucun abonnement actif.</span>
-                      </div>
-                      <div class="actions">
-                        <button class="btn btn-primary" (click)="renewSubscription()">
-                          Configuration
-                        </button>
-                        <button class="btn btn-secondary" (click)="contactSupport()">
-                          Contactez l'agence
-                        </button>
-                      </div>
-                    }
-                    <!-- ...existing code... -->
-                  </div>
-                </div>
-              </div>
-
-              <!-- Payment Form Modal -->
-              @if (showPaymentForm && tarifResponse) {
-                <div class="payment-modal-overlay" (click)="closePaymentForm()">
-                  <div class="payment-modal" (click)="$event.stopPropagation()">
-                    <div class="payment-modal-header">
-                      <h2>Paiement de l'abonnement</h2>
-                      <button class="close-btn" (click)="closePaymentForm()">
-                        <i class="material-icons">close</i>
-                      </button>
-                    </div>
-                    <div class="payment-modal-body">
-                      <app-mobile-money-form 
-                        [tarifResponse]="tarifResponse"
-                        (showPaymentDrawer)="showPaymentForm = $event">
-                      </app-mobile-money-form>
-                    </div>
-                  </div>
-                </div>
+        <div class="subscription-info">
+          <div class="plan-summary">
+            <span class="plan-badge" [ngClass]="activeSubscription.pricingId.planType">
+              @switch (activeSubscription.pricingId.planType) {
+              @case ('premium') {
+              <i class="material-icons" style="font-size: 32px; color: gold">star</i>
               }
-            </div>
+              @case ('standard') {
+              <i class="material-icons" style="font-size: 32px; color: #2196f3">star_half</i>
+              }
+              @case ('basic') {
+              <i class="material-icons" style="font-size: 32px; color: #9e9e9e">star_outline</i>
+              }
+              }
+              {{ activeSubscription.pricingId.planType | titlecase }}
+            </span>
+            <span class="status-badge" [class.active]="activeSubscription.isActive === true">
+              {{ (activeSubscription.isActive ? 'Actif' : 'Inactif') | titlecase }}
+            </span>
+          </div>
+          <div class="info-item-agencyName">
+            <strong>Agence:</strong>
+            <span class="font-semibold text-[--primary-color]">{{ activeSubscription.agencyId?.name }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Adresses:</strong>
+            <span>{{ activeSubscription.agencyId?.address?.city }} - {{
+              activeSubscription.agencyId?.address?.neighborhood }} - {{
+              activeSubscription.agencyId?.address?.sector }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Code postal:</strong>
+            <span>{{ activeSubscription.agencyId?.address?.postalCode }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Prix:</strong>
+            <span class="text-[20px] font-semibold text-[--primary-color]">{{ activeSubscription.pricingId.price }}
+              <sup class="tex-black">FCFA</sup>/ Mois</span>
+          </div>
+          <div class="info-item">
+            <strong>Début:</strong>
+            <span>{{ activeSubscription.startDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Fin:</strong>
+            <span>{{ activeSubscription.endDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="contact-info">
+            <strong>Contacts:</strong>
+            <span>{{ activeSubscription.agencyId?.phone }}</span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" (click)="initiatePayment()">
+              <i class="material-icons">payment</i>
+              Payer par mobile Money
+            </button>
+            <button class="btn btn-secondary" (click)="contactSupport()">
+              Contactez l'agence
+            </button>
+          </div>
+        </div>
+        } @else {
+        <div class="info-item">
+          <span>Aucun abonnement actif.</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" (click)="renewSubscription()">
+            Configuration
+          </button>
+          <button class="btn btn-secondary" (click)="contactSupport()">
+            Contactez l'agence
+          </button>
+        </div>
+        }
+        <!-- ...existing code... -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Form Drawer -->
+  @if (showPaymentForm && tarifResponse) {
+  <div class="payment-drawer-overlay" (click)="closePaymentForm()">
+    <div class="payment-drawer" (click)="$event.stopPropagation()">
+      <div class="payment-drawer-header">
+        <h2>Paiement de l'abonnement</h2>
+        <button class="close-btn" (click)="closePaymentForm()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="payment-drawer-body">
+        <app-mobile-money-form [tarifResponse]="tarifResponse" (showPaymentDrawer)="showPaymentForm = $event">
+        </app-mobile-money-form>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Drawer "Contactez l'agence" -->
+  @if (showContactDrawer) {
+  <div class="contact-drawer-overlay" (click)="closeContactDrawer()">
+    <div class="contact-drawer" (click)="$event.stopPropagation()">
+      <div class="contact-drawer-header">
+        <h2>Envoyer un message à l'agence {{ contactAgencyName }}</h2>
+        <button class="close-btn" (click)="closeContactDrawer()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="contact-drawer-body">
+        <label class="form-label" for="contact-message">Message</label>
+        <textarea
+          id="contact-message"
+          class="contact-textarea"
+          placeholder="Votre message..."
+          rows="8"
+          [(ngModel)]="contactMessage"
+        ></textarea>
+      </div>
+      <div class="contact-drawer-footer">
+        <button class="btn btn-secondary" (click)="closeContactDrawer()" [disabled]="isSendingMessage">
+          Annuler
+        </button>
+        <button class="btn btn-primary" (click)="sendContactMessage()" [disabled]="isSendingMessage">
+          <i class="material-icons">send</i>
+          {{ isSendingMessage ? 'Envoi...' : 'Envoyer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

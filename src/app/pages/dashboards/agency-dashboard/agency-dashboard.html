@@ -1845,6 +1845,200 @@
         </div>
         }
 
+        <!-- Onglet Contrats (Phase 6, CONCEPTION_ABONNEMENT_CONTRAT.md §6.3) -->
+        @if (activeTab === 'contrats') {
+        <div class="contrats-tab">
+          <div class="section-header">
+            <h2>Contrats</h2>
+            <div class="section-actions">
+              <button class="btn btn-primary" (click)="openCreateContratModal()">
+                <i class="material-icons">add</i>
+                Nouveau contrat
+              </button>
+            </div>
+          </div>
+
+          @if (isLoadingContrats) {
+          <app-loading-spinner message="Chargement des contrats..." size="medium"></app-loading-spinner>
+          }
+          @if (!isLoadingContrats) {
+          <div class="contrats-table-wrapper">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Fréquence</th>
+                  <th>Prix / période</th>
+                  <th>Statut</th>
+                  <th>Document</th>
+                  <th class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (contrat of contrats; track contrat._id) {
+                <tr>
+                  <td>{{ contratClientName(contrat) }}</td>
+                  <td>{{ contratFrequenceLabel(contrat.frequenceCollecte) }}</td>
+                  <td>{{ contrat.prixParPeriode }} FCFA</td>
+                  <td>
+                    <span class="status-badge" [class]="'status-' + contrat.status">
+                      {{ contratStatusLabel(contrat.status) }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (contrat.documentUrl) {
+                    <a [href]="contrat.documentUrl" target="_blank" class="action-btn" title="Voir le document">
+                      <i class="material-icons">picture_as_pdf</i>
+                    </a>
+                    } @else {
+                    <button class="action-btn" (click)="onGenererDocument(contrat._id)" title="Générer le document">
+                      <i class="material-icons">description</i>
+                    </button>
+                    }
+                  </td>
+                  <td class="col-actions">
+                    <button class="action-btn" (click)="openRedevancesDrawer(contrat)" title="Voir les redevances">
+                      <i class="material-icons">receipt_long</i>
+                    </button>
+                    @if (contrat.status === 'actif') {
+                    <button class="action-btn" (click)="onSuspendreContrat(contrat._id)" title="Suspendre">
+                      <i class="material-icons">pause_circle</i>
+                    </button>
+                    }
+                    @if (contrat.status === 'suspendu') {
+                    <button class="action-btn" (click)="onReactiverContrat(contrat._id)" title="Réactiver">
+                      <i class="material-icons">play_circle</i>
+                    </button>
+                    }
+                    @if (contrat.status !== 'resilie') {
+                    <button class="action-btn danger" (click)="onResilierContrat(contrat._id)" title="Résilier">
+                      <i class="material-icons">cancel</i>
+                    </button>
+                    }
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (!contrats.length) {
+          <div class="empty-state">
+            <i class="material-icons">description</i>
+            <h3>Aucun contrat</h3>
+            <p>Aucun contrat n'a encore été créé pour cette agence.</p>
+          </div>
+          }
+          }
+        </div>
+        }
+
+        <!-- Drawer des redevances d'un contrat -->
+        @if (showRedevancesDrawer) {
+        <div class="drawer-overlay" (click)="closeRedevancesDrawer()">
+          <div class="drawer-content" (click)="$event.stopPropagation()">
+            <div class="drawer-header">
+              <h3>Redevances — {{ redevancesDrawerContrat ? contratClientName(redevancesDrawerContrat) : '' }}</h3>
+              <button class="drawer-close-btn" (click)="closeRedevancesDrawer()">
+                <i class="material-icons">close</i>
+              </button>
+            </div>
+            <div class="drawer-body">
+              @if (isLoadingRedevancesDrawer) {
+              <app-loading-spinner message="Chargement des redevances..." size="medium"></app-loading-spinner>
+              }
+              @if (!isLoadingRedevancesDrawer && !redevancesDrawerList.length) {
+              <div class="empty-state">
+                <i class="material-icons">receipt_long</i>
+                <h3>Aucune redevance</h3>
+                <p>Aucune redevance n'a encore été générée pour ce contrat.</p>
+              </div>
+              }
+              @for (redevance of redevancesDrawerList; track redevance._id) {
+              <div class="redevance-item">
+                <div class="redevance-period">
+                  <strong>{{ redevance.periodLabel }}</strong>
+                  <span>Échéance : {{ redevance.dateEcheance | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="redevance-amount">{{ redevance.montant }} FCFA</div>
+                <span class="status-badge" [class]="'status-' + redevance.status">
+                  {{ redevanceStatusLabel(redevance.status) }}
+                </span>
+                @if (redevance.status === 'en_attente' || redevance.status === 'retard') {
+                <button class="action-btn" (click)="onMarquerRedevancePayee(redevance)" title="Marquer comme payée">
+                  <i class="material-icons">check_circle</i>
+                </button>
+                }
+              </div>
+              }
+            </div>
+          </div>
+        </div>
+        }
+
+        <!-- Drawer de création de contrat -->
+        @if (showCreateContratModal) {
+        <div class="drawer-overlay" (click)="closeCreateContratModal()">
+          <div class="drawer-content" (click)="$event.stopPropagation()">
+            <div class="drawer-header">
+              <h3>Nouveau contrat</h3>
+              <button class="drawer-close-btn" (click)="closeCreateContratModal()">
+                <i class="material-icons">close</i>
+              </button>
+            </div>
+            <div class="drawer-body">
+              <div class="form-group">
+                <label>Client</label>
+                <input
+                  type="text"
+                  class="filter-select"
+                  placeholder="Rechercher un client par nom..."
+                  [(ngModel)]="contratClientSearch"
+                />
+                <select class="filter-select" [(ngModel)]="newContrat.clientId" style="margin-top: 8px;">
+                  <option value="">Sélectionner un client</option>
+                  @for (client of filteredContratClients; track client._id) {
+                  <option [value]="client._id">{{ client.firstName }} {{ client.lastName }}</option>
+                  }
+                </select>
+                @if (!filteredContratClients.length) {
+                <small class="form-help">Aucun client ne correspond à cette recherche.</small>
+                }
+              </div>
+              <div class="form-group">
+                <label>Plan tarifaire</label>
+                <select class="filter-select" [(ngModel)]="newContrat.pricingId">
+                  <option value="">Sélectionner un plan</option>
+                  @for (tarif of tariffs; track tarif._id) {
+                  <option [value]="tarif._id">{{ tarif.planType | titlecase }} — {{ tarif.price }} FCFA</option>
+                  }
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Fréquence de collecte</label>
+                <select class="filter-select" [(ngModel)]="newContrat.frequenceCollecte">
+                  <option value="daily">Quotidienne</option>
+                  <option value="weekly">Hebdomadaire</option>
+                  <option value="monthly">Mensuelle</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Date de fin (optionnel)</label>
+                <input type="date" class="filter-select" [(ngModel)]="newContrat.endDate" />
+              </div>
+            </div>
+            <div class="drawer-footer">
+              <div class="drawer-actions">
+                <button class="btn btn-secondary" (click)="closeCreateContratModal()">Annuler</button>
+                <button class="btn btn-primary" (click)="onCreerContrat()">
+                  <i class="material-icons">check</i>
+                  Créer le contrat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        }
+
         <!-- Onglet Messages -->
         @if (activeTab === 'messages') {
         <div class="messages-tab">

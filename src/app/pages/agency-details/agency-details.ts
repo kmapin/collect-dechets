@@ -278,7 +278,7 @@ export class AgencyDetails implements OnInit {
   //   this.subscription.userId = this.currentUser?.id || '';
   //   this.subscription.agencyId = this.agency?._id || '';
   //   // Appel API
-  //   this.agencyService.subscribeToAgencyPlan(this.subscription).subscribe({
+  //   this.agencyService.enrollClientToPlan(this.subscription).subscribe({
   //     next: (res) => {
   //       this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
   //       this.showSubscriptionModal = false;
@@ -320,7 +320,7 @@ export class AgencyDetails implements OnInit {
       this.showPaymentDrawer = true;
     }
 
-    // this.agencyService.subscribeToAgencyPlan(currentUserId, tariff_id, numberm_month).subscribe({
+    // this.agencyService.enrollClientToPlan(currentUserId, tariff_id, numberm_month).subscribe({
     //   next: (res) => {
     //     this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
     //   },

@@ -173,6 +173,7 @@ export class MobileMoneyFormComponent implements OnInit {
         walletId: this.tarifResponse?.agencyId,
         userId: this.tarifResponse?.userId,
         numberMonths: this.tarifResponse?.numberMonths,
+        redevanceId: this.tarifResponse?.redevanceId,
         description: this.paymentForm.value.description
       };
       console.log('request in payment form', request);

@@ -1,31 +1,46 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Subscription as RxSubscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { RegisterUserData, User, UserRole } from '../../models/user.model';
 import { AgencyService } from '../../services/agency.service';
 import { MobileMoneyFormComponent } from '../payment/mobile-money-form/mobile-money-form';
 import { PaymentService } from '../../services/payment/payment.service';
+import { Webstockets, SocketNotification } from '../../core/services/webstockets';
+import { MessagesService } from '../../services/messages.service';
+import { NotificationService } from '../../services/notification.service';
+import { Message } from '../../models/message.model';
 
 
 @Component({
   selector: 'app-subscription',
-  imports: [CommonModule, MobileMoneyFormComponent],
+  imports: [CommonModule, FormsModule, MobileMoneyFormComponent],
   templateUrl: './subscription.html',
   styleUrl: './subscription.css'
 })
-export class Subscription  implements OnInit {
+export class Subscription  implements OnInit, OnDestroy {
     currentUser: RegisterUserData | null = null;
     subscriptions: any[] = [];
     activeSubscription: any = null;
     showPaymentForm = false;
     tarifResponse: any = null;
-  
+    private newSubscriptionSub?: RxSubscription;
+
+    // Drawer "Envoyer un message à l'agence" (contactSupport())
+    showContactDrawer = false;
+    contactMessage = '';
+    isSendingMessage = false;
+
 constructor(
     private authService: AuthService,
     private agencyService: AgencyService,
     private router: Router,
-    private paymentService: PaymentService
+    private paymentService: PaymentService,
+    private websocketService: Webstockets,
+    private messagesService: MessagesService,
+    private notificationService: NotificationService,
   ) {}
 
   ngOnInit() {
@@ -35,6 +50,21 @@ constructor(
     });
     this.currentUser = this.authService.getCurrentUser();
     console.log("this.currentUser", this.currentUser);
+
+    // Phase 5 : les notifications Abonnement passent désormais par `notifyUsers`
+    // (Phase 3, backend), donc par ce même canal socket, en plus du chargement
+    // initial ci-dessus — sans ceci, une expiration automatique (scheduler
+    // minuit) ou une souscription faite ailleurs laisse cette page affichée
+    // périmée jusqu'au prochain rechargement manuel.
+    this.newSubscriptionSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'Subscribed') {
+        this.getUserSubscription();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.newSubscriptionSub?.unsubscribe();
   }
 
   getUserSubscription() {
@@ -94,7 +124,52 @@ constructor(
   }
 
   contactSupport() {
-    // Logique pour contacter le support
-    alert('Fonction de contact support à implémenter.');
+    if (!this.activeSubscription?.agencyId?._id) {
+      alert('Aucune agence associée à contacter pour le moment.');
+      return;
+    }
+    this.showContactDrawer = true;
+  }
+
+  closeContactDrawer() {
+    this.showContactDrawer = false;
+    this.contactMessage = '';
+  }
+
+  get contactAgencyName(): string {
+    return this.activeSubscription?.agencyId?.name || '';
+  }
+
+  sendContactMessage() {
+    const content = this.contactMessage.trim();
+    if (!content) {
+      this.notificationService.showError('Message vide', 'Le contenu du message ne peut pas être vide.');
+      return;
+    }
+    const agencyId = this.activeSubscription?.agencyId?._id;
+    if (!this.currentUser?._id || !agencyId) {
+      this.notificationService.showError('Erreur', 'Impossible d\'envoyer le message pour le moment.');
+      return;
+    }
+
+    const message: Message = {
+      sender: this.currentUser._id,
+      receiver: agencyId,
+      content,
+    };
+
+    this.isSendingMessage = true;
+    this.messagesService.sendMessage(message).subscribe({
+      next: () => {
+        this.isSendingMessage = false;
+        this.notificationService.showSuccess('Message envoyé', 'Votre message a bien été envoyé à l\'agence.');
+        this.closeContactDrawer();
+      },
+      error: (error) => {
+        this.isSendingMessage = false;
+        console.error('Erreur lors de l\'envoi du message à l\'agence :', error);
+        this.notificationService.showError('Message non envoyé', 'Une erreur s\'est produite lors de l\'envoi du message.');
+      },
+    });
   }
 }

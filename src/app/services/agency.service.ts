@@ -528,8 +528,9 @@ export class AgencyService {
     return this.currentUserSubject.value;
   }
 
-  // Subscribe to an agency 
-  subscribeToAgencyPlan(currentUser: string | undefined, tariffId: string | undefined, numberMonths: number) {
+  // Enroll a client to an agency plan (côté gestion agence — pas à confondre avec
+  // ClientService.subscribeToAgencyPlan(), méthode distincte du domaine client).
+  enrollClientToPlan(currentUser: string | undefined, tariffId: string | undefined, numberMonths: number) {
     console.log("API, SubcriptionPayload ==>", currentUser, tariffId, numberMonths);
     return this.http.post(`${environment.apiUrl}/subscription/subscribe/${currentUser}/pricing/${tariffId}/${numberMonths}`, {});
   }

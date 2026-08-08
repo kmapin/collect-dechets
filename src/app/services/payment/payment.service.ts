@@ -10,6 +10,7 @@ import {
   PaymentStatus,
 } from "../../models/payment/payment-response.model";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
+import { environment } from "../../../environments/environment";
 
 /**
  * Service de gestion des paiements Mobile Money
@@ -44,7 +45,7 @@ export class PaymentService {
     if (otpOperators.includes(request.operator)) {
       return this.http
         .post<PaymentResponse>(
-          `http://213.32.120.11:3000/api/transactions/initiate`,
+          `${environment.apiUrl}/transactions/initiate`,
           request,
         )
         .pipe(
@@ -82,7 +83,7 @@ export class PaymentService {
   }): Observable<PaymentResponse> {
     return this.http
       .post<any>(
-        `http://213.32.120.11:3000/api/transactions/confirm`,
+        `${environment.apiUrl}/transactions/confirm`,
         otpPayload,
       )
       .pipe(

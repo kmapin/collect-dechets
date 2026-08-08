@@ -680,6 +680,50 @@
                 }
               </section>
 
+              <!-- Informations de contrat -->
+              <section class="subscription-info card bg-blue-100">
+                <div class="section-header">
+                  <h2>
+                    <i class="material-icons">description</i>
+                    Mon contrat
+                  </h2>
+                  <button
+                    class="btn btn-secondary btn-small"
+                    routerLink="/contrat"
+                    >
+                    <i class="material-icons">visibility</i>
+                    Voir mes contrats
+                  </button>
+                </div>
+
+                @if (activeContrat) {
+                  <div class="subscription-details">
+                    <div class="subscription-service">
+                      <h3>Collecte {{ contratFrequenceLabel(activeContrat.frequenceCollecte) }}</h3>
+                      <p>{{ contratAgencyName() }}</p>
+                    </div>
+                    <div class="subscription-pricing">
+                      <div class="price">
+                        {{ activeContrat.prixParPeriode }} <sup>F CFA</sup>
+                      </div>
+                      <div class="frequency">par période</div>
+                    </div>
+                    <div class="subscription-status">
+                      <span
+                        class="status-badge"
+                        [class]="'status-' + activeContrat.status"
+                        >
+                        {{ contratStatusLabel(activeContrat.status) }}
+                      </span>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="info-item">
+                    <span>Aucun contrat pour le moment.</span>
+                  </div>
+                }
+              </section>
+
               <!-- Paiement en ligne -->
               <!-- <section class="payment-section card">
               <div class="section-header">

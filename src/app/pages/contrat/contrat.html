@@ -1,0 +1,147 @@
+<div class="contrat-page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">Mes Contrats</h1>
+      <p class="page-subtitle">Consultez vos contrats de collecte et leurs documents</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="contrat-content">
+      @if (isLoading) {
+        <div class="contrat-card card">
+          <p>Chargement de vos contrats...</p>
+        </div>
+      }
+
+      @if (!isLoading && contrats.length === 0) {
+        <div class="contrat-card card">
+          <div class="info-item">
+            <span>Vous n'avez aucun contrat pour le moment.</span>
+          </div>
+        </div>
+      }
+
+      @for (contrat of contrats; track contrat._id) {
+        <div class="contrat-card card">
+          <div class="plan-summary">
+            <span class="status-badge" [class.active]="contrat.status === 'actif'" [class]="'status-badge status-' + contrat.status">
+              {{ statusLabel(contrat.status) }}
+            </span>
+            <span class="plan-badge">{{ frequenceLabel(contrat.frequenceCollecte) }}</span>
+          </div>
+
+          <div class="info-item-agencyName">
+            <strong>Agence :</strong>
+            <span class="font-semibold text-[--primary-color]">{{ agencyName(contrat) }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Prix par période :</strong>
+            <span class="text-[20px] font-semibold text-[--primary-color]">{{ contrat.prixParPeriode }} <sup>FCFA</sup></span>
+          </div>
+          <div class="info-item">
+            <strong>Passages par période :</strong>
+            <span>{{ contrat.passagesParPeriode }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Début :</strong>
+            <span>{{ contrat.startDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Fin :</strong>
+            <span>{{ contrat.endDate ? (contrat.endDate | date:'dd/MM/yyyy') : 'Indéterminée' }}</span>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn-secondary" (click)="toggleDetail(contrat._id)">
+              <i class="material-icons">{{ selectedContratId === contrat._id ? 'expand_less' : 'expand_more' }}</i>
+              {{ selectedContratId === contrat._id ? 'Masquer le détail' : 'Voir le détail' }}
+            </button>
+            @if (contrat.documentUrl) {
+              <button class="btn btn-primary" (click)="telechargerDocument(contrat)">
+                <i class="material-icons">picture_as_pdf</i>
+                Télécharger le document
+              </button>
+            }
+          </div>
+
+          @if (selectedContratId === contrat._id) {
+            <div class="subscription-info">
+              @if (contrat.status === 'resilie') {
+                <div class="info-item">
+                  <strong>Date de résiliation :</strong>
+                  <span>{{ contrat.dateResiliation | date:'dd/MM/yyyy' }}</span>
+                </div>
+                @if (contrat.raisonResiliation) {
+                  <div class="info-item">
+                    <strong>Motif :</strong>
+                    <span>{{ contrat.raisonResiliation }}</span>
+                  </div>
+                }
+              }
+              @if (pricing(contrat)) {
+                <div class="info-item">
+                  <strong>Plan tarifaire :</strong>
+                  <span>{{ pricing(contrat).planType | titlecase }}</span>
+                </div>
+              }
+              @if (!contrat.documentUrl) {
+                <div class="info-item">
+                  <span><em>Aucun document généré pour ce contrat pour l'instant.</em></span>
+                </div>
+              }
+
+              <h4 class="redevances-title">Redevances</h4>
+              @if (isLoadingRedevances[contrat._id]) {
+                <div class="info-item">
+                  <span>Chargement des redevances...</span>
+                </div>
+              }
+              @if (!isLoadingRedevances[contrat._id] && !(redevancesByContrat[contrat._id]?.length)) {
+                <div class="info-item">
+                  <span><em>Aucune redevance pour ce contrat pour l'instant.</em></span>
+                </div>
+              }
+              @for (redevance of redevancesByContrat[contrat._id]; track redevance._id) {
+                <div class="redevance-item">
+                  <div class="redevance-period">
+                    <strong>{{ redevance.periodLabel }}</strong>
+                    <span>Échéance : {{ redevance.dateEcheance | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                  <div class="redevance-amount">{{ redevance.montant }} FCFA</div>
+                  <span class="status-badge" [class]="'status-' + redevance.status">
+                    {{ redevanceStatusLabel(redevance.status) }}
+                  </span>
+                  @if (redevance.status === 'en_attente' || redevance.status === 'retard') {
+                    <button class="btn btn-primary btn-small" (click)="payerRedevance(redevance)">
+                      <i class="material-icons">payment</i>
+                      Payer
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Formulaire de paiement (redevance) -->
+  @if (showPaymentForm && tarifResponse) {
+    <div class="payment-drawer-overlay" (click)="closePaymentForm()">
+      <div class="payment-drawer" (click)="$event.stopPropagation()">
+        <div class="payment-drawer-header">
+          <h2>Paiement de la redevance</h2>
+          <button class="close-btn" (click)="closePaymentForm()">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="payment-drawer-body">
+          <app-mobile-money-form [tarifResponse]="tarifResponse" (showPaymentDrawer)="showPaymentForm = $event">
+          </app-mobile-money-form>
+        </div>
+      </div>
+    </div>
+  }
+</div>

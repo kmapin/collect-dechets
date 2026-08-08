@@ -92,6 +92,15 @@ export const routes: Routes = [
       import("./pages/subscription/subscription").then((c) => c.Subscription),
   },
 
+  // Mêmes règles d'accès que la vue Abonnement équivalente ci-dessus (Phase 6,
+  // CONCEPTION_ABONNEMENT_CONTRAT.md §6.2).
+  {
+    canActivate: [authGuard],
+    path: "contrat",
+    loadComponent: () =>
+      import("./pages/contrat/contrat").then((c) => c.ContratPage),
+  },
+
   {
     path: "schedule",
     loadComponent: () =>

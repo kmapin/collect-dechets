@@ -30,4 +30,8 @@ export interface PaymentRequest {
   numberMonths?: string;
   pricingId?: string;
 
+  /** Phase 8 — paiement d'une Redevance plutôt que d'un Abonnement : le
+   * backend dérive alors pricingId/agence/montant attendu depuis la
+   * Redevance elle-même (voir controllers/transaction.js::initiate). */
+  redevanceId?: string;
 }

@@ -11,6 +11,10 @@ import {
   ViewEncapsulation,
 } from "@angular/core";
 import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
+import { ContratService } from "../../../services/contrat.service";
+import { Contrat } from "../../../models/contrat.model";
+import { RedevanceService } from "../../../services/redevance.service";
+import { Redevance } from "../../../models/redevance.model";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import {
@@ -219,7 +223,8 @@ type TabId =
   | "clients"
   | "reports"
   | "messages"
-  | "vehicles";
+  | "vehicles"
+  | "contrats";
 
 interface Vehicle {
   _id?: string;
@@ -526,6 +531,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   activeClients: ClientApi[] = [];
   activeClientNbrs!: number;
   pendingClients: ClientApi[] = [];
+  // Tous les clients de l'agence, sans filtre sur le statut d'abonnement —
+  // `activeClients` ne contient que ceux ayant un abonnement actif, ce qui
+  // exclut à tort les clients sans abonnement lors de la création d'un
+  // Contrat (un client peut avoir un Contrat sans jamais avoir eu d'Abonnement).
+  allAgencyClients: ClientApi[] = [];
   isLoading: boolean = false;
 
   // Variables de state de chargement pour chaque section
@@ -567,6 +577,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     { id: "schedules", label: "Plannings", icon: "schedule", badge: null },
     { id: "clients", label: "Clients", icon: "person", badge: null },
     { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
+    { id: "contrats", label: "Contrats", icon: "description", badge: null },
     { id: "vehicles", label: "Mobilité", icon: "directions_car", badge: null },
     { id: "messages", label: "Messages", icon: "message", badge: 0 },
     // { id: "analytics", label: "Rapports", icon: "analytics", badge: null },
@@ -820,6 +831,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     private countriesOrgMockService: CountriesOrgMockService,
     private vehicleService: VehicleService,
     private websocketService: Webstockets,
+    private contratService: ContratService,
+    private redevanceService: RedevanceService,
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -1415,6 +1428,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         // sur leur dernière valeur chargée alors que la liste, elle, est à jour.
         this.loadAgencyStatistics(this.currentUser);
       }
+      // Phase 5 : les notifications Abonnement passent désormais par
+      // `notifyUsers` (Phase 3, backend) — donc par ce même canal socket, en
+      // plus du chargement initial. Le tableau "Clients" affiche l'historique
+      // d'abonnement par client (`filterClients()` ci-dessous) — un abonnement
+      // créé OU expiré automatiquement (scheduler minuit) doit s'y refléter
+      // sans re-chargement manuel de page. `filterClients()` s'auto-garde déjà
+      // (`if (!this.agency?.agencyId) return;`), sûr à appeler ici sans condition.
+      if (notification?.type === 'Subscribed') {
+        this.filterClients();
+      }
+      // Phase 6, CONCEPTION_ABONNEMENT_CONTRAT.md §6.4 : même principe que
+      // 'Signalement'/'Subscribed' ci-dessus — un contrat créé/résilié (par
+      // l'agence elle-même ou automatiquement par le scheduler, Phase 4)
+      // rafraîchit l'onglet "Contrats" en direct.
+      if (notification?.type === 'Contrat') {
+        this.loadContrats();
+      }
     });
 
     // Initialiser la liste filtrée des employés
@@ -1444,6 +1474,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.loadAgencyReports(this.currentUser);
     this.loadVehicles();
     this.loadTariffs();
+    this.loadContrats();
     this.loadPlannings();
     // this.loadCollectorPlannings();
     // this.cdr.detectChanges();
@@ -3132,6 +3163,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         console.log("ALL Agency_clients", clients);
 
         const clientsData = Array.isArray(clients?.data) ? clients.data : [];
+        this.allAgencyClients = clientsData;
 
         this.activeClients = clientsData.filter(
           (c: any) => this.getClientSubscriptionStatus(c) === "active",
@@ -3180,6 +3212,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         this.activeClients = [];
         this.filteredActiveClients = [];
         this.pendingClients = [];
+        this.allAgencyClients = [];
         this.isLoadingClients = false;
       },
     });
@@ -4070,6 +4103,197 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       },
     });
   }
+
+  // === Contrats (Phase 6, CONCEPTION_ABONNEMENT_CONTRAT.md §6.3) ===
+  contrats: Contrat[] = [];
+  isLoadingContrats = false;
+  showCreateContratModal = false;
+  newContrat: { clientId: string; pricingId: string; frequenceCollecte: string; endDate: string } = {
+    clientId: '',
+    pricingId: '',
+    frequenceCollecte: 'monthly',
+    endDate: '',
+  };
+  contratClientSearch = '';
+
+  /** Filtre la liste de clients du sélecteur "Nouveau contrat" par nom/prénom (recherche insensible à la casse). */
+  get filteredContratClients(): ClientApi[] {
+    const term = this.contratClientSearch.trim().toLowerCase();
+    if (!term) return this.allAgencyClients;
+    return this.allAgencyClients.filter((c: any) =>
+      `${c.firstName} ${c.lastName}`.toLowerCase().includes(term),
+    );
+  }
+
+  loadContrats(): void {
+    const agencyId = this.currentUser?.agencyId;
+    if (!agencyId) return;
+    this.isLoadingContrats = true;
+    this.contratService.getContratsByAgence$(agencyId).subscribe({
+      next: (contrats) => {
+        this.contrats = contrats;
+        this.isLoadingContrats = false;
+      },
+      error: () => {
+        this.isLoadingContrats = false;
+      },
+    });
+  }
+
+  openCreateContratModal(): void {
+    this.newContrat = { clientId: '', pricingId: '', frequenceCollecte: 'monthly', endDate: '' };
+    this.contratClientSearch = '';
+    this.showCreateContratModal = true;
+  }
+
+  closeCreateContratModal(): void {
+    this.showCreateContratModal = false;
+  }
+
+  onCreerContrat(): void {
+    const agencyId = this.currentUser?.agencyId;
+    if (!agencyId || !this.newContrat.clientId || !this.newContrat.pricingId || !this.newContrat.frequenceCollecte) {
+      this.notificationService.showError('Erreur', 'Merci de renseigner le client, le plan tarifaire et la fréquence.');
+      return;
+    }
+    this.contratService
+      .creerContrat$({
+        clientId: this.newContrat.clientId,
+        agencyId,
+        pricingId: this.newContrat.pricingId,
+        frequenceCollecte: this.newContrat.frequenceCollecte as any,
+        endDate: this.newContrat.endDate || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Succès', 'Contrat créé avec succès.');
+          this.closeCreateContratModal();
+          this.loadContrats();
+        },
+        error: (error) => {
+          this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de créer le contrat.');
+        },
+      });
+  }
+
+  onResilierContrat(contratId: string): void {
+    if (!confirm('Êtes-vous sûr de vouloir résilier ce contrat ?')) return;
+    const raisonResiliation = prompt('Motif de résiliation (optionnel) :') || undefined;
+    this.contratService.resilierContrat$(contratId, raisonResiliation).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Succès', 'Contrat résilié avec succès.');
+        this.loadContrats();
+      },
+      error: (error) => {
+        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de résilier le contrat.');
+      },
+    });
+  }
+
+  onSuspendreContrat(contratId: string): void {
+    if (!confirm('Êtes-vous sûr de vouloir suspendre ce contrat ?')) return;
+    this.contratService.suspendreContrat$(contratId).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Succès', 'Contrat suspendu avec succès.');
+        this.loadContrats();
+      },
+      error: (error) => {
+        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de suspendre le contrat.');
+      },
+    });
+  }
+
+  onReactiverContrat(contratId: string): void {
+    if (!confirm('Êtes-vous sûr de vouloir réactiver ce contrat ?')) return;
+    this.contratService.reactiverContrat$(contratId).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Succès', 'Contrat réactivé avec succès.');
+        this.loadContrats();
+      },
+      error: (error) => {
+        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de réactiver le contrat.');
+      },
+    });
+  }
+
+  onGenererDocument(contratId: string): void {
+    this.contratService.genererDocument$(contratId).subscribe({
+      next: (response: any) => {
+        this.notificationService.showSuccess('Succès', 'Document généré avec succès.');
+        if (response?.documentUrl) window.open(response.documentUrl, '_blank');
+        this.loadContrats();
+      },
+      error: (error) => {
+        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de générer le document.');
+      },
+    });
+  }
+
+  // === Redevances d'un contrat (drawer, accessible depuis l'onglet Contrats) ===
+  showRedevancesDrawer = false;
+  redevancesDrawerContrat: Contrat | null = null;
+  redevancesDrawerList: Redevance[] = [];
+  isLoadingRedevancesDrawer = false;
+
+  openRedevancesDrawer(contrat: Contrat): void {
+    this.redevancesDrawerContrat = contrat;
+    this.showRedevancesDrawer = true;
+    this.isLoadingRedevancesDrawer = true;
+    this.redevanceService.getRedevancesByContrat$(contrat._id).subscribe({
+      next: (redevances) => {
+        this.redevancesDrawerList = redevances;
+        this.isLoadingRedevancesDrawer = false;
+      },
+      error: () => {
+        this.isLoadingRedevancesDrawer = false;
+      },
+    });
+  }
+
+  closeRedevancesDrawer(): void {
+    this.showRedevancesDrawer = false;
+    this.redevancesDrawerContrat = null;
+    this.redevancesDrawerList = [];
+  }
+
+  redevanceStatusLabel(status: string): string {
+    const map: { [key: string]: string } = { en_attente: 'En attente', retard: 'En retard', paye: 'Payée', annule: 'Annulée' };
+    return map[status] || status;
+  }
+
+  /**
+   * Marque une redevance payée manuellement (espèces, etc.) — sans
+   * `transactionId`, pour un paiement constaté par l'agence hors mobile
+   * money (voir `RedevanceService.payerRedevance$`, Phase 8).
+   */
+  onMarquerRedevancePayee(redevance: Redevance): void {
+    if (!confirm(`Confirmer que la redevance "${redevance.periodLabel}" (${redevance.montant} FCFA) a été payée ?`)) return;
+    this.redevanceService.payerRedevance$(redevance._id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Succès', 'Redevance marquée comme payée.');
+        if (this.redevancesDrawerContrat) this.openRedevancesDrawer(this.redevancesDrawerContrat);
+      },
+      error: (error) => {
+        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de marquer cette redevance comme payée.');
+      },
+    });
+  }
+
+  contratClientName(contrat: Contrat): string {
+    const client = contrat.clientId as any;
+    return client?.firstName ? `${client.firstName} ${client.lastName}` : '';
+  }
+
+  contratFrequenceLabel(frequence: string): string {
+    const map: { [key: string]: string } = { daily: 'Quotidienne', weekly: 'Hebdomadaire', monthly: 'Mensuelle' };
+    return map[frequence] || frequence;
+  }
+
+  contratStatusLabel(status: string): string {
+    const map: { [key: string]: string } = { actif: 'Actif', suspendu: 'Suspendu', resilie: 'Résilié' };
+    return map[status] || status;
+  }
+
   //recupere les planning d une agence
   schedules: any[] = [];
   schedulesTeams: any[] = []; // équipes V2 pour résolution des noms

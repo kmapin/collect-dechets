@@ -147,11 +147,16 @@ export class Header  implements OnInit, OnDestroy {
   getNotificationType(type: string): string {
     const types: { [key: string]: string } = {
       'Subscribed': 'Abonnement',
+      // 'Unsubscribed' n'est plus (et n'a jamais été) une valeur émise par le
+      // backend (absente de l'enum `Notification.type`) — laissée par prudence
+      // pour d'éventuelles notifications déjà en base sous cet ancien type,
+      // coût de maintien nul (Phase 4/5, CONCEPTION_ABONNEMENT_CONTRAT.md).
       'Unsubscribed': 'Désabonnement',
       'Assingnment': 'Affectation',
       'Planning': 'Collecte programmée',
       'AgencyAdd': 'Agence ajoutée',
       'Signalement': 'Signalement',
+      'Contrat': 'Contrat',
 
     };
     return types[type] || type;

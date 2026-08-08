@@ -1,6 +1,6 @@
 import { CellWidthType } from "./../../../../../node_modules/jspdf-autotable/dist/index.d";
 import { BarcodeFormat } from "@zxing/library";
-import { AfterViewChecked, Component, ElementRef, OnInit, ViewChild } from "@angular/core";
+import { AfterViewChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule, TitleStrategy } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -23,6 +23,10 @@ import { MatIcon } from "@angular/material/icon";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Signalement } from "../../shared_pages/signalement/signalement";
+import { Subscription as RxSubscription } from "rxjs";
+import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
+import { ContratService } from "../../../services/contrat.service";
+import { Contrat } from "../../../models/contrat.model";
 
 interface PaymentHistory {
   id: string;
@@ -49,7 +53,7 @@ interface Subscription {
   templateUrl: './client-dashboard.html',
   styleUrl: './client-dashboard.scss'
 })
-export class ClientDashboard  implements OnInit, AfterViewChecked {
+export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
   @ViewChild('chatMessages') chatMessages!: ElementRef;
   currentUser!: any;
@@ -86,18 +90,26 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
   data: any;
   subscriptions: any[] = [];
   activeSubscription: any = null;
+  // "Mon contrat" (carte de la colonne droite, même patron que activeSubscription) —
+  // sans ceci, le client n'a aucune trace côté dashboard qu'il est lié à une
+  // agence par un Contrat plutôt que (ou en plus) d'un Abonnement.
+  activeContrat: Contrat | null = null;
   showRechargeModal: boolean = false;
 
   // Montant de recharge
   rechargeAmount: number = 0;
   displayAgencyName: any;
+  private newSubscriptionSub?: RxSubscription;
+
   constructor(
     private authService: AuthService,
     private collectionService: CollectionService,
     private clientService: ClientService,
     private notificationService: NotificationService,
     private messageService: MessagesService,
-    private agencyService: AgencyService
+    private agencyService: AgencyService,
+    private websocketService: Webstockets,
+    private contratService: ContratService
   ) {}
 
   ngOnInit(): void {
@@ -105,19 +117,70 @@ export class ClientDashboard  implements OnInit, AfterViewChecked {
     this.getUser();
     // console.log("Current User", this.currentUser);
     this.loadDashboardData();
-    
+
+    // Phase 5 : les notifications Abonnement passent désormais par
+    // `notifyUsers` (Phase 3, backend) — donc par ce même canal socket, en
+    // plus du chargement initial ci-dessus (`getUserSubscription()` dans
+    // `getUser()`). Sans ceci, un abonnement qui expire automatiquement
+    // (scheduler minuit) laisse le dashboard afficher un statut "actif"
+    // périmé jusqu'au prochain rechargement manuel de page.
+    this.newSubscriptionSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'Subscribed') {
+        this.getUserSubscription();
+      }
+      // Même principe pour Contrat (Phase 4 backend) : création, résiliation
+      // automatique (scheduler) ou manuelle doivent se refléter ici sans
+      // rechargement de page.
+      if (notification?.type === 'Contrat') {
+        this.loadActiveContrat();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.newSubscriptionSub?.unsubscribe();
   }
 
   getUser() {
     this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
       this.getUserSubscription();
+      this.loadActiveContrat();
       this.getClientWallet();
       this.getWeeklySchedule();
       this.loadUpcomingPlannings();
       this.loadPlanningHistory();
     });
     console.log("Current User", this.currentUser);
+  }
+
+  /** "Mon contrat" — même rôle que getUserSubscription() ci-dessus, pour le domaine Contrat. */
+  loadActiveContrat(): void {
+    const clientId = this.currentUser?._id;
+    if (!clientId) return;
+    this.contratService.getContratsByClient$(clientId).subscribe({
+      next: (contrats) => {
+        this.activeContrat = contrats.find((c) => c.status === 'actif') || contrats[0] || null;
+      },
+      error: () => {
+        this.activeContrat = null;
+      },
+    });
+  }
+
+  contratAgencyName(): string {
+    const agency = this.activeContrat?.agencyId as any;
+    return typeof agency === 'object' ? agency?.name : '';
+  }
+
+  contratFrequenceLabel(frequence?: string): string {
+    const map: { [key: string]: string } = { daily: 'Quotidienne', weekly: 'Hebdomadaire', monthly: 'Mensuelle' };
+    return frequence ? (map[frequence] || frequence) : '';
+  }
+
+  contratStatusLabel(status?: string): string {
+    const map: { [key: string]: string } = { actif: 'Actif', suspendu: 'Suspendu', resilie: 'Résilié' };
+    return status ? (map[status] || status) : '';
   }
 
   //  GET CLIENT WALLET

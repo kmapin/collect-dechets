@@ -22,6 +22,7 @@
   padding: 12px 0;
   border-bottom: 1px solid var(--medium-gray);
 }
+
 .info-item-agencyName {
   display: flex;
   justify-content: space-between;
@@ -46,10 +47,12 @@
   color: var(--success-color);
   font-weight: 500;
 }
+
 .status-premium {
   color: var(--warning-color);
   font-weight: 500;
 }
+
 .status-standard {
   color: var(--primary-color);
   font-weight: 500;
@@ -61,6 +64,7 @@
   gap: 16px;
   margin-bottom: 16px;
 }
+
 .plan-badge {
   display: flex;
   align-items: center;
@@ -71,18 +75,22 @@
   border-radius: 24px;
   background: #f5f5f5;
 }
+
 .plan-badge.premium {
   background: #fffbe6;
   color: #bfa100;
 }
+
 .plan-badge.standard {
   background: #e3f2fd;
   color: #2196f3;
 }
+
 .plan-badge.basic {
   background: #f5f5f5;
   color: #757575;
 }
+
 .status-badge {
   padding: 6px 12px;
   border-radius: 16px;
@@ -91,10 +99,12 @@
   background: #e8f5e9;
   color: #388e3c;
 }
+
 .status-badge.active {
   background: #e8f5e9;
   color: #388e3c;
 }
+
 .actions {
   margin-top: 24px;
   display: flex;
@@ -102,58 +112,56 @@
   flex-wrap: wrap;
 }
 
-/* Payment Modal Styles */
-.payment-modal-overlay {
+/* Payment Drawer Styles — même patron que .contact-drawer-* ci-dessous
+   (glisse depuis la droite), plutôt qu'un modal centré. */
+.payment-drawer-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 1000;
-  padding: 16px;
+  display: flex;
+  justify-content: flex-end;
 }
 
-.payment-modal {
+.payment-drawer {
   background: white;
-  border-radius: 8px;
-  max-width: 500px;
   width: 100%;
-  max-height: 90vh;
+  max-width: 620px;
+  height: 100%;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  animation: slideUp 0.3s ease-out;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.25s ease-out;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.payment-modal-header {
+.payment-drawer-header {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 24px;
+  padding-right: 56px;
   border-bottom: 1px solid var(--medium-gray);
 }
 
-.payment-modal-header h2 {
+.payment-drawer-header h2 {
   margin: 0;
   font-size: 1.5rem;
   color: var(--primary-color);
 }
 
+/* Positionné dans le coin haut-droit indépendamment du flex du header — le
+   bouton se retrouvait collé sous le titre au lieu de son côté droit
+   (problème de layout signalé). L'ancrage absolu le fixe quel que soit ce
+   qui casse le flex parent. */
 .close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   background: none;
   border: none;
   cursor: pointer;
@@ -162,6 +170,7 @@
   align-items: center;
   justify-content: center;
   color: var(--primary-color);
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
@@ -169,14 +178,14 @@
   border-radius: 4px;
 }
 
-.payment-modal-body {
+.payment-drawer-body {
+  flex: 1;
   padding: 24px;
 }
 
 @media (max-width: 600px) {
-  .payment-modal {
-    max-height: 100vh;
-    border-radius: 0;
+  .payment-drawer {
+    max-width: 100%;
   }
 
   .actions {
@@ -185,5 +194,97 @@
 
   .btn {
     width: 100%;
+  }
+}
+
+/* Drawer "Contactez l'agence" */
+.contact-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.contact-drawer {
+  background: white;
+  width: 100%;
+  max-width: 620px;
+  height: 100%;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.25s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.contact-drawer-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 56px 24px 24px;
+  border-bottom: 1px solid var(--medium-gray);
+}
+
+.contact-drawer-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--text-color, #1a1a1a);
+}
+
+.contact-drawer-header .close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.contact-drawer-body {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.contact-textarea {
+  width: 100%;
+  min-height: 220px;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--medium-gray);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.contact-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.contact-drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--medium-gray);
+}
+
+@media (max-width: 600px) {
+  .contact-drawer {
+    max-width: 100%;
   }
 }

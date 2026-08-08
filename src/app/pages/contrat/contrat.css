@@ -1,0 +1,230 @@
+.contrat-page {
+  min-height: 100vh;
+  background: var(--light-gray);
+}
+
+.contrat-content {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 32px;
+}
+
+.contrat-card {
+  padding: 32px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--medium-gray);
+}
+.info-item-agencyName {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.plan-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.plan-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 24px;
+  background: #f5f5f5;
+  color: #757575;
+}
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: #e8f5e9;
+  color: #388e3c;
+}
+.status-badge.status-actif {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+.status-badge.status-suspendu {
+  background: #fffbe6;
+  color: #bfa100;
+}
+.status-badge.status-resilie {
+  background: #ffebee;
+  color: #c62828;
+}
+.status-badge.status-en_attente {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.status-badge.status-retard {
+  background: #ffebee;
+  color: #c62828;
+}
+.status-badge.status-paye {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+.status-badge.status-annule {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.redevances-title {
+  margin: 16px 0 8px;
+  font-size: 1rem;
+  color: var(--primary-color);
+}
+
+.redevance-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--medium-gray);
+}
+.redevance-item:last-child {
+  border-bottom: none;
+}
+
+.redevance-period {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9rem;
+}
+.redevance-period span {
+  color: var(--text-secondary, #757575);
+  font-size: 0.8rem;
+}
+
+.redevance-amount {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+/* Formulaire de paiement (Phase 8, redevance) — même patron que
+   .payment-drawer-* dans subscription.css (glisse depuis la droite). */
+.payment-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.payment-drawer {
+  background: white;
+  width: 100%;
+  max-width: 520px;
+  height: 100%;
+  overflow-y: auto;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.25s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.payment-drawer-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  padding-right: 56px;
+  border-bottom: 1px solid var(--medium-gray);
+}
+
+.payment-drawer-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+}
+
+.close-btn:hover {
+  background: var(--light-gray);
+  border-radius: 4px;
+}
+
+.payment-drawer-body {
+  flex: 1;
+  padding: 24px;
+}
+
+@media (max-width: 600px) {
+  .payment-drawer {
+    max-width: 100%;
+  }
+}
+
+.actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.subscription-info {
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--medium-gray);
+}
+
+@media (max-width: 600px) {
+  .actions {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
