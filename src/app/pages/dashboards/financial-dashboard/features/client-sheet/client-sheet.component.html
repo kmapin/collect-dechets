@@ -27,11 +27,22 @@
       >
         Facturation
       </button>
+      <button
+        type="button"
+        role="tab"
+        *ngIf="afficherFacturation()"
+        [class.active]="ongletActif() === 'abonnements'"
+        [attr.aria-selected]="ongletActif() === 'abonnements'"
+        (click)="changerOnglet('abonnements')"
+      >
+        Abonnements &amp; Contrats
+      </button>
     </nav>
 
     <div class="fin-client-sheet__content">
       <app-client-info-tab *ngIf="ongletActif() === 'info'" [client]="client()" [loading]="chargement()" />
       <app-client-billing-tab *ngIf="ongletActif() === 'facturation' && afficherFacturation()" [idClient]="idClient()" />
+      <app-client-subscription-tab *ngIf="ongletActif() === 'abonnements' && afficherFacturation()" [idClient]="idClient()" />
     </div>
   </ng-container>
 </section>

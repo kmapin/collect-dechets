@@ -50,6 +50,24 @@ export class ContratService {
     );
   }
 
+  /**
+   * Contrats d'un client, scopés à l'agence de l'appelant (`resolveAgency`,
+   * JWT — jamais un `agencyId` transmis par le frontend). Un client peut
+   * avoir des contrats avec plusieurs agences ; `getContratsByClient$`
+   * renvoie TOUT l'historique du client (légitime pour "Mes contrats" côté
+   * client), ce qui ferait fuiter des contrats d'agences tierces si consommé
+   * tel quel par le dashboard financier — utiliser ce endpoint-ci pour ce cas.
+   */
+  getContratsByClientPourMonAgence$(clientId: string): Observable<Contrat[]> {
+    return this.http.get<Contrat[]>(`${environment.apiUrl}/finance/contrats/client/${clientId}`).pipe(
+      map((response) => response ?? []),
+      catchError((error) => {
+        console.error("Erreur lors de la récupération des contrats du client pour l'agence courante :", error);
+        return of([]);
+      }),
+    );
+  }
+
   getContratsByAgence$(agencyId: string): Observable<Contrat[]> {
     return this.http.get<Contrat[]>(`${environment.apiUrl}/contrats/agence/${agencyId}`).pipe(
       map((response) => response ?? []),

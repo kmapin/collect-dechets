@@ -8,16 +8,18 @@ import { CLIENT_DATA_SERVICE } from '../../data-access/tokens/client-data.token'
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { InfoTabComponent } from './tabs/info-tab.component';
 import { BillingTabComponent } from './tabs/billing-tab.component';
+import { SubscriptionTabComponent } from './tabs/subscription-tab.component';
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
 
-type OngletClientSheet = 'info' | 'facturation';
+type OngletClientSheet = 'info' | 'facturation' | 'abonnements';
 
-// F7/F8 — Fiche client : onglet Info (toujours visible) + onglet Facturation
-// (masqué si le rôle courant n'a pas droitsFinance, RG8).
+// F7/F8 — Fiche client : onglet Info (toujours visible) + onglets Facturation
+// et Abonnements/Contrats (masqués si le rôle courant n'a pas droitsFinance, RG8 —
+// même règle de visibilité, ces deux onglets exposant des informations de paiement).
 @Component({
   selector: 'app-client-sheet',
   standalone: true,
-  imports: [CommonModule, InfoTabComponent, BillingTabComponent, ErrorStateComponent],
+  imports: [CommonModule, InfoTabComponent, BillingTabComponent, SubscriptionTabComponent, ErrorStateComponent],
   templateUrl: './client-sheet.component.html',
   styleUrl: './client-sheet.component.scss',
 })
@@ -44,7 +46,7 @@ export class ClientSheetComponent {
   }
 
   changerOnglet(onglet: OngletClientSheet): void {
-    if (onglet === 'facturation' && !this.afficherFacturation()) return;
+    if ((onglet === 'facturation' || onglet === 'abonnements') && !this.afficherFacturation()) return;
     this.ongletActif.set(onglet);
   }
 

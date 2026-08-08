@@ -535,13 +535,28 @@ export class AgencyService {
     return this.http.post(`${environment.apiUrl}/subscription/subscribe/${currentUser}/pricing/${tariffId}/${numberMonths}`, {});
   }
 
-  //Get user Subscription from an agency 
+  //Get user Subscription from an agency
   getUserSubscription(userId: string): Observable<any[]> {
     return this.http.get<any[]>(`${environment.apiUrl}/subscription/client/${userId}`).pipe(
       map(response => {
         console.log("API- Get subscriptions==>", response);
         return response || [];
       })
+    );
+  }
+
+  /**
+   * Abonnements d'un client, scopés à l'agence de l'appelant (`resolveAgency`,
+   * JWT). Un client peut être abonné auprès de plusieurs agences ;
+   * `getUserSubscription` ci-dessus renvoie tout son historique (légitime pour
+   * la page "Mon abonnement" côté client) — utiliser ce endpoint-ci pour le
+   * dashboard financier, qui ne doit jamais voir les abonnements de ce client
+   * avec une agence tierce.
+   */
+  getUserSubscriptionPourMonAgence(userId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/finance/abonnements/client/${userId}`).pipe(
+      map(response => response || []),
+      catchError(() => of([])),
     );
   }
 
