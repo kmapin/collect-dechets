@@ -47,6 +47,12 @@
 .stat-icon {
   width: 60px;
   height: 60px;
+  // Sans ça, un contenu voisin large dans .stat-card (flex) — ex. le texte
+  // d'état vide "Pas de collecte prévue"/"Aucun abonnement actif", plus long
+  // que le contenu compact des autres cartes — compresse la largeur de ce
+  // cercle (flex-shrink initial vaut 1) sans toucher sa hauteur, déformant
+  // l'icône en ovale (déformation signalée). Taille fixe, jamais rétrécie.
+  flex-shrink: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
