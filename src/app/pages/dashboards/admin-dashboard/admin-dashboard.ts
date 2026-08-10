@@ -3265,10 +3265,17 @@ export class AdminDashboard implements OnInit, OnDestroy {
       next: (res: any) => {
         if (!res) return;
         const d = res?.data ?? res;
+        // Fusionne au lieu de remplacer, et n'inclut jamais `incidents` ici : cette route
+        // (state_agencies/stats/users → totalReportings = Collecte.status='Reported')
+        // reste bloquée à 0 depuis la migration vers Signalement (voir loadAllSignalements()
+        // ci-dessous, seule source fiable pour ce badge). Un remplacement complet écrasait
+        // silencieusement la bonne valeur si cette requête répondait après celle des
+        // signalements — d'où le badge correct seulement après un clic sur l'onglet
+        // (qui relance loadAllSignalements en dernier), jamais au chargement initial.
         this.tabBadges = {
+          ...this.tabBadges,
           agencies:   d.totalAgencies      ?? d.agencies      ?? 0,
           all_users:  d.totalUsers         ?? d.all_users         ?? 0,
-          incidents:  d.totalIncidents     ?? d.incidents     ?? d.totalSignalements ?? 0,
           collectors: d.totalCollectors    ?? d.collectors    ?? 0,
           clients:    d.totalClients       ?? d.clients       ?? 0,
           overview:   d.totalAgencies      ?? 0,
