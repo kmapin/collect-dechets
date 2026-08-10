@@ -165,9 +165,9 @@
           <div class="stat-info">
             <h3>Incidents non resolus</h3>
             <p class="stat-value">
-              {{ statisticsAdmin?.totalCollectionsReported ?? 0 }}
+              {{ getUnresolvedReportsCount() }}
             </p>
-            <span class="stat-trend" [class.negative]="(statisticsAdmin?.totalCollectionsReported ?? 0) > 10">
+            <span class="stat-trend" [class.negative]="getUnresolvedReportsCount() > 10">
               {{ getIncidentSeverity() }}
             </span>
           </div>
@@ -443,8 +443,8 @@
                   </div>
                 </div>
                 <div class="alert-status">
-                  <span class="status-badge" [class]="'status-' + incident.status.toLowerCase()">
-                    {{ getIncidentStatusText(incident.status.toLowerCase()) }}
+                  <span class="status-badge" [class]="'status-' + (incident.status)">
+                    {{ getIncidentStatusText(incident.status) }}
                   </span>
                 </div>
               </div>
@@ -1362,12 +1362,12 @@
               <div class="kpi-body">
                 <span class="kpi-label">Incidents résolus</span>
                 <span class="kpi-value">
-                  {{ statisticsAdmin?.reportsFromClients?.resolved ?? 0 }}
-                  / {{ statisticsAdmin?.reportsFromClients?.total ?? 0 }}
+                  {{ getResolvedReportsCount() }}
+                  / {{ getTotalReportsCount() }}
                 </span>
                 <div class="kpi-bar-track">
-                  <div class="kpi-bar-fill kpi-fill-orange" [style.width]="(statisticsAdmin?.reportsFromClients?.total
-                             ? (statisticsAdmin?.reportsFromClients?.resolved ?? 0) * 100 / statisticsAdmin!.reportsFromClients!.total
+                  <div class="kpi-bar-fill kpi-fill-orange" [style.width]="(getTotalReportsCount()
+                             ? getResolvedReportsCount() * 100 / getTotalReportsCount()
                              : 0) + '%'"></div>
                 </div>
               </div>
@@ -1408,7 +1408,7 @@
                 <span class="legend-dot" style="background:#22c55e"></span>
                 <span>Résolus: {{ getIncidentCountByStatus('resolved') }}</span>
                 <span class="legend-dot" style="background:#f97316;margin-left:12px;"></span>
-                <span>En cours: {{ getIncidentCountByStatus('pending') }}</span>
+                <span>En cours: {{ getIncidentCountByStatus('in_progress') }}</span>
                 <span class="legend-dot" style="background:#ef4444;margin-left:12px;"></span>
                 <span>Ouverts: {{ getIncidentCountByStatus('open') }}</span>
               </div>
@@ -1776,7 +1776,7 @@
               <select [(ngModel)]="incidentsFilter" (change)="filterIncidents()" class="filter-select">
                 <option value="all">Tous les statuts</option>
                 <option value="open">Ouvert</option>
-                <option value="pending">En cours</option>
+                <option value="in_progress">En cours</option>
                 <option value="resolved">Résolus</option>
               </select>
               <!-- Filtre gravité -->
@@ -1811,8 +1811,8 @@
                   <i class="material-icons">{{ getSeverityIcon(incident.severity | lowercase) }}</i>
                   {{ getSeverityText(incident.severity | lowercase) || 'Faible' }}
                 </span>
-                <span class="status-badge status-{{ incident.status | lowercase }}">
-                  {{ getIncidentStatusText(incident.status | lowercase) }}
+                <span class="status-badge status-{{ incident.status }}">
+                  {{ getIncidentStatusText(incident.status) }}
                 </span>
               </div>
 
@@ -1857,11 +1857,11 @@
                 <button class="cia-btn cia-view" (click)="openIncidentDrawer(incident)" title="Voir détails">
                   <i class="material-icons">visibility</i>
                 </button>
-                <button class="cia-btn cia-edit" *ngIf="incident.status === 'pending'"
+                <button class="cia-btn cia-edit" *ngIf="(incident.status) === 'open'"
                   (click)="investigateIncident(incident._id)" title="Enquêter">
                   <i class="material-icons">search</i>
                 </button>
-                <button class="cia-btn cia-toggle cia-toggle--on" *ngIf="incident.status !== 'resolved'"
+                <button class="cia-btn cia-toggle cia-toggle--on" *ngIf="(incident.status) !== 'resolved'"
                   (click)="openResolveDialog(incident._id)" title="Résoudre">
                   <i class="material-icons">check_circle</i>
                 </button>
@@ -1870,19 +1870,22 @@
             }
           </div>
           <!-- Pagination cartes -->
-          <div class="pagination-bar" *ngIf="filteredIncidents.length > 0">
-            <div class="pagination-info">
-              {{ (incidentsCurrentPage - 1) * incidentsItemsPerPage + 1 }}–{{ getIncidentsEndItem() }}
-              sur {{ incidentsTotalItems }} incidents
-            </div>
-            <div class="per-page-selector">
-              <select [ngModel]="incidentsItemsPerPage" (ngModelChange)="changeIncidentsItemsPerPage($event)"
-                class="filter-select">
-                <option [value]="12">12</option>
-                <option [value]="24">24</option>
-                <option [value]="48">48</option>
-              </select>
-              <span class="per-page-label">par page</span>
+          <div class="pagination-section" *ngIf="filteredIncidents.length > 0">
+            <div class="pagination-left">
+              <span class="pagination-details">
+                {{ (incidentsCurrentPage - 1) * incidentsItemsPerPage + 1 }}–{{ getIncidentsEndItem() }}
+                sur <strong>{{ incidentsTotalItems }}</strong> incident(s)
+              </span>
+              <div class="per-page-group">
+                <label class="per-page-label">Afficher</label>
+                <select class="per-page-select" [value]="incidentsItemsPerPage"
+                  (change)="changeIncidentsItemsPerPage(+($any($event.target).value))">
+                  <option [value]="10">10</option>
+                  <option [value]="20">20</option>
+                  <option [value]="50">50</option>
+                </select>
+                <span class="per-page-label">par page</span>
+              </div>
             </div>
             @if (incidentsTotalPages > 1) {
             <div class="pagination-controls">
@@ -1948,8 +1951,8 @@
                     </span>
                   </td>
                   <td>
-                    <span class="status-badge status-{{ incident.status | lowercase }}">
-                      {{ getIncidentStatusText(incident.status | lowercase) }}
+                    <span class="status-badge status-{{ incident.status }}">
+                      {{ getIncidentStatusText(incident.status) }}
                     </span>
                   </td>
                   <td>{{ incident.date | date:'dd/MM/yyyy HH:mm' }}</td>
@@ -1957,10 +1960,10 @@
                     <div class="table-actions">
                       <button class="action-btn action-view" (click)="openIncidentDrawer(incident)"
                         title="Voir détails"><i class="material-icons">visibility</i></button>
-                      <button class="action-btn" *ngIf="incident.status === 'pending'"
+                      <button class="action-btn" *ngIf="(incident.status) === 'open'"
                         (click)="investigateIncident(incident._id)" title="Enquêter"><i
                           class="material-icons">search</i></button>
-                      <button class="action-btn" *ngIf="incident.status !== 'resolved'"
+                      <button class="action-btn" *ngIf="(incident.status) !== 'resolved'"
                         (click)="openResolveDialog(incident._id)" title="Résoudre"><i
                           class="material-icons">check_circle</i></button>
                     </div>
@@ -1970,19 +1973,22 @@
               </tbody>
             </table>
             <!-- Pagination tableau -->
-            <div class="pagination-bar" *ngIf="filteredIncidents.length > 0">
-              <div class="pagination-info">
-                {{ (incidentsCurrentPage - 1) * incidentsItemsPerPage + 1 }}–{{ getIncidentsEndItem() }}
-                sur {{ incidentsTotalItems }} incidents
-              </div>
-              <div class="per-page-selector">
-                <select [ngModel]="incidentsItemsPerPage" (ngModelChange)="changeIncidentsItemsPerPage($event)"
-                  class="filter-select">
-                  <option [value]="10">10</option>
-                  <option [value]="20">20</option>
-                  <option [value]="50">50</option>
-                </select>
-                <span class="per-page-label">par page</span>
+            <div class="pagination-section" *ngIf="filteredIncidents.length > 0">
+              <div class="pagination-left">
+                <span class="pagination-details">
+                  {{ (incidentsCurrentPage - 1) * incidentsItemsPerPage + 1 }}–{{ getIncidentsEndItem() }}
+                  sur <strong>{{ incidentsTotalItems }}</strong> incident(s)
+                </span>
+                <div class="per-page-group">
+                  <label class="per-page-label">Afficher</label>
+                  <select class="per-page-select" [value]="incidentsItemsPerPage"
+                    (change)="changeIncidentsItemsPerPage(+($any($event.target).value))">
+                    <option [value]="10">10</option>
+                    <option [value]="20">20</option>
+                    <option [value]="50">50</option>
+                  </select>
+                  <span class="per-page-label">par page</span>
+                </div>
               </div>
               @if (incidentsTotalPages > 1) {
               <div class="pagination-controls">
@@ -2038,9 +2044,9 @@
                     <div class="incident-status">
                       <span
                         class="status-badge"
-                        [class]="'status-'+incident.status.toLowerCase()"
+                        [class]="'status-'+(incident.status)"
                       >
-                        {{ getIncidentStatusText(incident.status.toLowerCase()) }}
+                        {{ getIncidentStatusText(incident.status) }}
                       </span>
                     </div>
                   </div>
@@ -3147,8 +3153,8 @@
             <i class="material-icons">{{ getSeverityIcon(selectedIncident.severity | lowercase) }}</i>
             {{ getSeverityText(selectedIncident.severity | lowercase) }}
           </span>
-          <span class="status-badge status-{{ selectedIncident.status | lowercase }}">
-            {{ getIncidentStatusText(selectedIncident.status | lowercase) }}
+          <span class="status-badge status-{{ selectedIncident.status }}">
+            {{ getIncidentStatusText(selectedIncident.status) }}
           </span>
         </div>
         <h2 class="incident-drawer-type">
@@ -3217,7 +3223,7 @@
     </div>
 
     <!-- Commentaire de résolution -->
-    <div class="drawer-section" *ngIf="selectedIncident.status !== 'resolved'">
+    <div class="drawer-section" *ngIf="(selectedIncident.status) !== 'resolved'">
       <h4 class="drawer-section-title">
         <i class="material-icons">edit_note</i> Commentaire de résolution
       </h4>
@@ -3229,11 +3235,11 @@
 
     <!-- Pied — actions -->
     <div class="drawer-footer">
-      <button class="btn btn-secondary" *ngIf="selectedIncident.status !== 'resolved'"
+      <button class="btn btn-secondary" *ngIf="(selectedIncident.status) !== 'resolved'"
         (click)="investigateIncident(selectedIncident._id)">
         <i class="material-icons">search</i> Enquêter
       </button>
-      <button class="btn btn-success" *ngIf="selectedIncident.status !== 'resolved'"
+      <button class="btn btn-success" *ngIf="(selectedIncident.status) !== 'resolved'"
         (click)="resolveIncident(selectedIncident._id)">
         <i class="material-icons">check_circle</i> Résoudre
       </button>

@@ -41,6 +41,13 @@ interface AdminStatistics {
   monthlyClientPercentage: number;
   totalCollectionsCollected: number;
   totalCollectionsReported: number;
+  // Champs réellement renvoyés par GET /api/statistics (services/globalState.js) — voir
+  // BACKEND_ARCHITECTURE.md §3.7. `totalCollectionsReported`/`reportsFromClients`
+  // ci-dessus ne correspondent à aucun champ du backend (fautes de frappe / champ jamais
+  // implémenté) : conservés uniquement car `statistics` (mock, non branché sur l'API) les
+  // déclare encore. Les vrais compteurs d'incidents utilisent les deux champs suivants.
+  totalCollectionReported?: number;
+  pendingReportsCount?: number;
   dailyCollections: number;
   totalClients: number;
   totalCollectors: number;
@@ -106,6 +113,13 @@ interface GroupedZoneStatistics {
   cities: ZoneStatistic[];
 }
 
+// Aligné sur le modèle Signalement unifié réel (backend models/Signalement.js) — même
+// forme que shared_pages/signalement/signalement.ts::Incident et agency-dashboard.ts, qui
+// lisent déjà GET /api/signalements tel quel sans transformation. `status` est directement
+// 'open'|'in_progress'|'resolved' pour tout signalement créé depuis cette migration (plus
+// aucun signalement ne mute Collecte.status, voir models/Signalement.js) ; les valeurs
+// 'Collected'/'Reported'/'Scheduled' ne subsistent que pour d'éventuelles données historiques
+// jamais migrées par scripts/backfill-signalements-from-collecte.js.
 interface Incident {
   _id: string;
   agency?: {
@@ -128,20 +142,34 @@ interface Incident {
     lastName?: string;
     email?: string;
   };
+  reportedBy?: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+  };
+  resolutionTeamId?: { _id: string; name?: string } | null;
+  collecteId?: string | null;
+  planningId?: { _id: string; reference?: string; libelle?: string; date?: Date } | null;
+  origine?: "collecte" | "independant";
   photo?: [];
+  photos?: string[];
   agencyName?: string;
   type:
     | "missed_collection"
     | "compliance_issue"
     | "complaint"
-    | "technical_issue";
+    | "technical_issue"
+    | "other";
   comment: string;
   description: string;
-  severity: "Low" | "Medium" | "High" | "Critical";
+  severity: "low" | "medium" | "high" | "critical" | "other" | "Low" | "Medium" | "High" | "Critical";
   date: Date;
+  createdAt?: Date;
   status:
     | "open"
-    | "pending"
+    | "in_progress"
     | "resolved"
     | "Collected"
     | "Reported"
@@ -397,7 +425,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
   collectorsFilter = "all";
   complianceFilter = "all";
   statisticsPeriod = "month";
-  incidentsFilter: 'all' | 'open' | 'pending' | 'resolved' = 'all';
+  // Valeurs alignées sur Signalement.status (models/Signalement.js) — filtrable côté
+  // serveur par GET /api/signalements?status=... (contrairement à l'ancien
+  // Collecte.status, qui restait bloqué sur 'Reported' pour toujours).
+  incidentsFilter: 'all' | 'open' | 'in_progress' | 'resolved' = 'all';
   severityFilter:  'all' | 'critical' | 'high' | 'medium' | 'low' = 'all';
   incidentsSearchTerm   = '';
   incidentsCurrentPage  = 1;
@@ -1536,21 +1567,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
     if (!el) return;
     if (this.incidentsChart) { this.incidentsChart.destroy(); this.incidentsChart = null; }
 
-    let resolved = 0, pending = 0, open = 0;
-    if (this.incidents?.length) {
-      this.incidents.forEach(i => {
-        const s = (i.status ?? '').toLowerCase();
-        if (s === 'resolved' || s === 'collected') resolved++;
-        else if (s === 'pending' || s === 'reported' || s === 'scheduled') pending++;
-        else open++;
-      });
-    } else {
-      resolved = this.statisticsAdmin?.reportsFromClients?.resolved ?? 0;
-      pending  = this.statisticsAdmin?.reportsFromClients?.pending  ?? 0;
-    }
+    const resolved   = this.getIncidentCountByStatus('resolved');
+    const inProgress = this.getIncidentCountByStatus('in_progress');
+    const open       = this.getIncidentCountByStatus('open');
 
     const labels = ['Résolus', 'En cours', 'Ouverts'];
-    const data   = [resolved, pending, open];
+    const data   = [resolved, inProgress, open];
     const colors = ['#22c55e', '#f97316', '#ef4444'];
 
     const config: ChartConfiguration<'doughnut'> = {
@@ -1946,11 +1968,28 @@ export class AdminDashboard implements OnInit, OnDestroy {
     return "À améliorer";
   }
 
+  // this.incidents (GET /api/signalements, non filtré par statut — voir loadAllSignalements)
+  // est désormais la seule source fiable : services/globalState.js (statisticsAdmin) compte
+  // encore l'ancien Collecte.status='Reported', qui ne reçoit plus aucune écriture depuis la
+  // migration vers le modèle Signalement (voir models/Signalement.js) et resterait à 0 pour
+  // toujours si on continuait à s'y fier ici.
   getIncidentSeverity(): string {
-    const pending = this.statisticsAdmin?.totalCollectionsReported ?? 0;
+    const pending = this.getIncidentCountByStatus('open') + this.getIncidentCountByStatus('in_progress');
     if (pending <= 5) return "Faible";
     if (pending <= 10) return "Modéré";
     return "Élevé";
+  }
+
+  getTotalReportsCount(): number {
+    return this.incidents.length;
+  }
+
+  getResolvedReportsCount(): number {
+    return this.getIncidentCountByStatus('resolved');
+  }
+
+  getUnresolvedReportsCount(): number {
+    return this.getIncidentCountByStatus('open') + this.getIncidentCountByStatus('in_progress');
   }
 
   getStars(rating: number): number[] {
@@ -1973,18 +2012,11 @@ export class AdminDashboard implements OnInit, OnDestroy {
     return "coverage-poor";
   }
 
-  getIncidentCountByStatus(group: 'resolved' | 'pending' | 'open'): number {
-    if (!this.incidents?.length) {
-      if (group === 'resolved') return this.statisticsAdmin?.reportsFromClients?.resolved ?? 0;
-      if (group === 'pending')  return this.statisticsAdmin?.reportsFromClients?.pending  ?? 0;
-      return 0;
-    }
-    return this.incidents.filter(i => {
-      const s = (i.status ?? '').toLowerCase();
-      if (group === 'resolved') return s === 'resolved' || s === 'collected';
-      if (group === 'pending')  return s === 'pending' || s === 'reported' || s === 'scheduled';
-      return s === 'open';
-    }).length;
+  // Signalement.status (models/Signalement.js) est directement 'open'|'in_progress'|'resolved'
+  // pour toute donnée créée depuis la migration — plus besoin d'un champ resolutionStatus
+  // séparé comme pour l'ancien Collecte.status, qui restait bloqué sur 'Reported'.
+  getIncidentCountByStatus(group: 'resolved' | 'in_progress' | 'open'): number {
+    return this.incidents.filter(i => (i.status ?? 'open') === group).length;
   }
 
   getRecentIncidents(): Incident[] {
@@ -2026,14 +2058,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
     return types[type as keyof typeof types] || type;
   }
 
+  // Signalement.status réel (models/Signalement.js) : open|in_progress|resolved.
   getIncidentStatusText(status: string): string {
     const statuses = {
-      // open: "Ouvert",
-      pending: "En cours",
+      open: "Ouvert",
+      in_progress: "En cours",
       resolved: "Résolue",
-      reported: "En cours",
-      scheduled: "Programmée",
-      collected: "Collecté",
     };
     return statuses[status as keyof typeof statuses] || status;
   }
@@ -2182,19 +2212,52 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
   filterIncidents(): void {
-    // Repart toujours de la page 1 quand on filtre
-    this.incidentsCurrentPage = 1;
-    this.loadAllSignalements(1);
+    // status/severity/recherche sont tous appliqués côté client sur l'ensemble déjà
+    // chargé (this.incidents) — seul un changement d'agence (selectAgencyFilter)
+    // justifie un vrai rechargement serveur.
+    this.applyIncidentClientFilters(1);
+  }
+
+  // GET /api/signalements ne pagine pas et ne filtre ni sur severity ni sur un terme de
+  // recherche libre (voir routes/signalement.route.js) — tout `this.incidents` est déjà en
+  // mémoire après loadAllSignalements(), on affine et pagine donc entièrement ici.
+  private applyIncidentClientFilters(page = 1): void {
+    const term     = this.incidentsSearchTerm.trim().toLowerCase();
+    const severity = (this.severityFilter || 'all').toLowerCase();
+
+    const filtered = this.incidents.filter(i => {
+      const statusMatch = this.incidentsFilter === 'all' || i.status === this.incidentsFilter;
+      if (!statusMatch) return false;
+      const severityMatch = severity === 'all' || (i.severity || '').toLowerCase() === severity;
+      if (!severityMatch) return false;
+      if (!term) return true;
+      const haystack = [
+        i.agencyId?.name, i.agency?.name,
+        i.clientId?.firstName, i.clientId?.lastName, i.clientId?.email,
+        i.comment, i.description, i.type,
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(term);
+    });
+
+    this.incidentsTotalItems  = filtered.length;
+    this.incidentsTotalPages  = Math.max(1, Math.ceil(filtered.length / this.incidentsItemsPerPage));
+    this.incidentsCurrentPage = Math.min(Math.max(page, 1), this.incidentsTotalPages);
+    this.totalIncidents.set(filtered.length);
+
+    const start = (this.incidentsCurrentPage - 1) * this.incidentsItemsPerPage;
+    this.filteredIncidents = filtered.slice(start, start + this.incidentsItemsPerPage);
   }
 
   getPaginatedIncidents(): Incident[] {
-    // Les incidents reçus de l'API sont déjà la bonne page
+    // filteredIncidents est déjà la bonne page (applyIncidentClientFilters)
     return this.filteredIncidents;
   }
 
   goToIncidentsPage(page: number): void {
     if (page < 1 || page > this.incidentsTotalPages) return;
-    this.loadAllSignalements(page);
+    // Toutes les données sont déjà en mémoire (this.incidents) — pas besoin de recharger
+    // depuis le serveur pour changer de page, contrairement à l'ancienne pagination serveur.
+    this.applyIncidentClientFilters(page);
   }
 
   getIncidentsPageNumbers(): number[] {
@@ -2211,8 +2274,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   changeIncidentsItemsPerPage(limit: number): void {
     this.incidentsItemsPerPage = limit;
-    this.incidentsCurrentPage  = 1;
-    this.loadAllSignalements(1);
+    this.applyIncidentClientFilters(1);
   }
 
   // Action methods
@@ -2617,10 +2679,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
     );
   }
 
+  // Optimiste/local uniquement — n'appelle pas encore PATCH /signalements/:id/assign-team
+  // (ce backend exige un teamId réel, pas encore de sélecteur d'équipe dans cet onglet ;
+  // voir shared_pages/signalement/signalement.ts::openTeamPicker pour l'équivalent déjà
+  // câblé côté agency-dashboard). Ne change donc rien côté serveur pour l'instant.
   investigateIncident(incidentId: string): void {
     const incident = this.filteredIncidents.find((i) => i._id === incidentId);
     if (incident) {
-      incident.status = "pending";
+      incident.status = "in_progress";
       incident.assignedTo = "Inspecteur Municipal";
       this.filteredIncidents = [...this.filteredIncidents];
       if (this.selectedIncident?._id === incidentId) this.selectedIncident = { ...incident };
@@ -2629,15 +2695,16 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   resolveIncident(incidentId: string): void {
-    const resolvedBy = this.currentUser?._id ?? '';
-    this.adminService.resolveCollecte$(incidentId, resolvedBy, this.resolutionComment).subscribe({
+    // incidentId est un Signalement._id (jamais un Collecte._id — un signalement
+    // indépendant n'a pas de collecte à résoudre) : PATCH /signalements/:id/resolve,
+    // pas l'ancienne route Collecte-based.
+    this.adminService.resolveSignalement(incidentId, this.resolutionComment).subscribe({
       next: () => {
         const incident = this.filteredIncidents.find((i) => i._id === incidentId);
         if (incident) {
           incident.status = "resolved";
           this.filteredIncidents = [...this.filteredIncidents];
           if (this.selectedIncident?._id === incidentId) this.selectedIncident = { ...incident };
-          this.statistics.pendingReports--;
         }
         this.resolutionComment = '';
         this.visibleIncidentDrawer = false;
@@ -3051,27 +3118,35 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.loadAllSignalements(1);
   }
 
+  // Lit désormais le vrai modèle Signalement unifié (GET /api/signalements) — la mutation
+  // Collecte.status='Reported' n'existe plus depuis cette migration (voir models/Signalement.js),
+  // /api/collecte/all?status=Reported ne renverra donc plus jamais rien. Même pattern que
+  // agency-dashboard.ts::loadAgencyReports() : origine/status filtrables côté serveur,
+  // severity/recherche/pagination appliqués ici car l'endpoint ne les gère pas.
   loadAllSignalements(page = this.incidentsCurrentPage) {
     this.isLoadingIncidents = true;
-    const params = {
-      page,
-      limit:    this.incidentsItemsPerPage,
-      status:   this.incidentsFilter,
-      severity: this.severityFilter,
-      search:   this.incidentsSearchTerm,
-      agencyId: this.agencyIdFilter,
-    };
-    this.adminService.getAllReports(params).subscribe({
-      next: (response: any) => {
-        this.incidents         = response.collectes ?? response.data ?? [];
-        this.filteredIncidents = [...this.incidents];
-        const total            = response.total ?? response.count ?? this.incidents.length;
-        this.totalIncidents.set(total);
-        this.incidentsTotalItems  = total;
-        this.incidentsCurrentPage = page;
-        this.incidentsTotalPages  = Math.max(1, Math.ceil(total / this.incidentsItemsPerPage));
-        this.isLoadingIncidents   = false;
-        console.log("signalements in response", response);
+    this.adminService.getAllSignalements({
+      // Vide/'all' pour un super_admin = toutes agences confondues (backend, Prompt fix
+      // super_admin) ; sinon restreint à l'agence sélectionnée dans le filtre du tableau.
+      // status volontairement PAS envoyé ici : this.incidents doit rester l'ensemble
+      // complet (toutes valeurs de status) pour que les KPI/graphique restent corrects
+      // quel que soit le filtre de statut actif dans le tableau — voir
+      // applyIncidentClientFilters(), qui applique ce filtre uniquement à filteredIncidents.
+      agencyId: this.agencyIdFilter || undefined,
+    }).subscribe({
+      next: (signalements: any[]) => {
+        this.incidents = signalements ?? [];
+        this.applyIncidentClientFilters(page);
+        this.isLoadingIncidents = false;
+        console.log("signalements in response", signalements);
+        // Corrige le badge d'onglet chargé par loadTabBadges() : celui-ci vient de
+        // stateForAgency.js::getUserStatsForAdmin, qui compte encore l'ancien
+        // Collecte.status='Reported' (toujours 0 depuis la migration Signalement) —
+        // uniquement quand la vue n'est pas déjà restreinte à une seule agence, pour ne
+        // pas remplacer un total plateforme par un sous-ensemble filtré.
+        if (!this.agencyIdFilter) {
+          this.tabBadges = { ...this.tabBadges, incidents: this.getUnresolvedReportsCount() };
+        }
         if (this.chartsInitialized && this.activeTab === 'statistics') {
           this.buildIncidentsChart();
         }

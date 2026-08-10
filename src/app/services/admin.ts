@@ -29,7 +29,10 @@ export class Admin {
   }
 
   getGlobalUserStats(): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/state_agencies/stats/users`).pipe(
+    // Route backend montée avec un "S" majuscule (server.js) — Express est sensible à la
+    // casse, `/state_agencies/...` (minuscule, ce que documentait le Swagger) faisait donc
+    // 404 en silence à cause du catchError ci-dessous.
+    return this.http.get<any>(`${environment.apiUrl}/State_agencies/stats/users`).pipe(
       map((res: any) => {
         console.log('API > getGlobalUserStats:', res);
         return res;
@@ -148,6 +151,49 @@ export class Admin {
         console.log('API > getAllReports:', response);
         return response;
       })
+    );
+  }
+
+  /**
+   * Signalements réels (modèle Signalement unifié, remplace la mutation
+   * Collecte.status='Reported' — voir agency.service.ts::getAgencySignalements$,
+   * même pattern). `agencyId` n'a de sens que pour un super_admin : le backend
+   * (controllers/signalement.controller.js::listSignalements) le dérive de
+   * l'agence du membre du personnel pour tout autre rôle et ignore ce
+   * paramètre. Omis (ou vide) pour un super_admin → toutes agences confondues.
+   */
+  getAllSignalements(filters: { agencyId?: string; origine?: string; status?: string; clientId?: string; from?: string; to?: string } = {}): Observable<any[]> {
+    let requestParams = new HttpParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) requestParams = requestParams.set(key, value);
+    });
+    return this.http.get<{ success: boolean; data: any[] }>(`${environment.apiUrl}/signalements`, { params: requestParams }).pipe(
+      map((response: any) => {
+        console.log('API > getAllSignalements:', response);
+        return response?.data ?? [];
+      }),
+      catchError((error) => {
+        console.error('Erreur lors de la récupération des signalements :', error);
+        return of([]);
+      })
+    );
+  }
+
+  /** Affecte un signalement (lié à une collecte OU indépendant) à une équipe — `id` est
+   * toujours un Signalement._id, jamais un Collecte._id (un signalement indépendant n'a
+   * pas de collecte à cibler, voir assignReportToTeam$ ci-dessus, désormais legacy). */
+  assignSignalementToTeam(signalementId: string, teamId: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/signalements/${signalementId}/assign-team`, { teamId }).pipe(
+      map((response: any) => { console.log('API > assignSignalementToTeam:', response); return response; }),
+      catchError((err) => { console.error('assignSignalementToTeam error:', err); throw err; })
+    );
+  }
+
+  /** Résout un signalement (lié à une collecte OU indépendant) — voir assignSignalementToTeam ci-dessus. */
+  resolveSignalement(signalementId: string, resolutionComment?: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/signalements/${signalementId}/resolve`, { resolutionComment }).pipe(
+      map((response: any) => { console.log('API > resolveSignalement:', response); return response; }),
+      catchError((err) => { console.error('resolveSignalement error:', err); throw err; })
     );
   }
 
