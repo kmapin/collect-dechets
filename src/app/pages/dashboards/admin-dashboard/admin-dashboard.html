@@ -1857,11 +1857,11 @@
                 <button class="cia-btn cia-view" (click)="openIncidentDrawer(incident)" title="Voir détails">
                   <i class="material-icons">visibility</i>
                 </button>
-                <button class="cia-btn cia-edit" *ngIf="(incident.status) === 'open'"
+                <button class="cia-btn cia-edit" *ngIf="canResolveIncidents() && (incident.status) === 'open'"
                   (click)="investigateIncident(incident._id)" title="Enquêter">
                   <i class="material-icons">search</i>
                 </button>
-                <button class="cia-btn cia-toggle cia-toggle--on" *ngIf="(incident.status) !== 'resolved'"
+                <button class="cia-btn cia-toggle cia-toggle--on" *ngIf="canResolveIncidents() && (incident.status) !== 'resolved'"
                   (click)="openResolveDialog(incident._id)" title="Résoudre">
                   <i class="material-icons">check_circle</i>
                 </button>
@@ -1960,10 +1960,10 @@
                     <div class="table-actions">
                       <button class="action-btn action-view" (click)="openIncidentDrawer(incident)"
                         title="Voir détails"><i class="material-icons">visibility</i></button>
-                      <button class="action-btn" *ngIf="(incident.status) === 'open'"
+                      <button class="action-btn" *ngIf="canResolveIncidents() && (incident.status) === 'open'"
                         (click)="investigateIncident(incident._id)" title="Enquêter"><i
                           class="material-icons">search</i></button>
-                      <button class="action-btn" *ngIf="(incident.status) !== 'resolved'"
+                      <button class="action-btn" *ngIf="canResolveIncidents() && (incident.status) !== 'resolved'"
                         (click)="openResolveDialog(incident._id)" title="Résoudre"><i
                           class="material-icons">check_circle</i></button>
                     </div>
@@ -3232,8 +3232,9 @@
 
     </div>
 
-    <!-- Commentaire de résolution -->
-    <div class="drawer-section" *ngIf="(selectedIncident.status) !== 'resolved'">
+    <!-- Commentaire de résolution — saisie, réservée aux rôles qui peuvent réellement
+         traiter le signalement (pas super_admin/municipality, cantonnés à "Contacter l'agence") -->
+    <div class="drawer-section" *ngIf="canResolveIncidents() && (selectedIncident.status) !== 'resolved'">
       <h4 class="drawer-section-title">
         <i class="material-icons">edit_note</i> Commentaire de résolution
       </h4>
@@ -3245,11 +3246,11 @@
 
     <!-- Pied — actions -->
     <div class="drawer-footer">
-      <button class="btn btn-secondary" *ngIf="(selectedIncident.status) !== 'resolved'"
+      <button class="btn btn-secondary" *ngIf="canResolveIncidents() && (selectedIncident.status) !== 'resolved'"
         (click)="investigateIncident(selectedIncident._id)">
         <i class="material-icons">search</i> Enquêter
       </button>
-      <button class="btn btn-success" *ngIf="(selectedIncident.status) !== 'resolved'"
+      <button class="btn btn-success" *ngIf="canResolveIncidents() && (selectedIncident.status) !== 'resolved'"
         (click)="resolveIncident(selectedIncident._id)">
         <i class="material-icons">check_circle</i> Résoudre
       </button>

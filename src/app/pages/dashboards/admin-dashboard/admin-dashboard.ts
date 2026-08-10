@@ -2683,6 +2683,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   // Optimiste/local uniquement — n'appelle pas encore PATCH /signalements/:id/assign-team
+  // super_admin/municipality ont un rôle de supervision, pas de traitement terrain : ils ne
+  // peuvent qu'orienter le signalement vers l'agence concernée (Contacter Agence), jamais
+  // l'enquêter ou le résoudre eux-mêmes — ça reste le travail de l'agence (manager/collector).
+  canResolveIncidents(): boolean {
+    const role = this.currentUser?.role;
+    return role !== 'super_admin' && role !== 'municipality';
+  }
+
   // (ce backend exige un teamId réel, pas encore de sélecteur d'équipe dans cet onglet ;
   // voir shared_pages/signalement/signalement.ts::openTeamPicker pour l'équivalent déjà
   // câblé côté agency-dashboard). Ne change donc rien côté serveur pour l'instant.
