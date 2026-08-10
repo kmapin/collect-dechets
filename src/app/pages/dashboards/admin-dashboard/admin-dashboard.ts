@@ -174,6 +174,9 @@ interface Incident {
     | "Collected"
     | "Reported"
     | "Scheduled";
+  // Renseigné par PATCH /signalements/:id/resolve (models/Signalement.js) — le commentaire
+  // laissé au moment de la résolution, à afficher dans le détail une fois status='resolved'.
+  resolutionComment?: string;
   assignedTo?: string;
 }
 
@@ -2698,11 +2701,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
     // incidentId est un Signalement._id (jamais un Collecte._id — un signalement
     // indépendant n'a pas de collecte à résoudre) : PATCH /signalements/:id/resolve,
     // pas l'ancienne route Collecte-based.
-    this.adminService.resolveSignalement(incidentId, this.resolutionComment).subscribe({
+    const resolutionComment = this.resolutionComment;
+    this.adminService.resolveSignalement(incidentId, resolutionComment).subscribe({
       next: () => {
         const incident = this.filteredIncidents.find((i) => i._id === incidentId);
         if (incident) {
           incident.status = "resolved";
+          // Affiché immédiatement dans le détail sans attendre un rechargement complet.
+          if (resolutionComment) incident.resolutionComment = resolutionComment;
           this.filteredIncidents = [...this.filteredIncidents];
           if (this.selectedIncident?._id === incidentId) this.selectedIncident = { ...incident };
         }

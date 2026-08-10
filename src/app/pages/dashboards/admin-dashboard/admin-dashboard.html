@@ -3220,6 +3220,16 @@
         </div>
       </div>
 
+      <!-- Commentaire de résolution (une fois le signalement traité) -->
+      <div class="drawer-section" *ngIf="selectedIncident.status === 'resolved' && selectedIncident.resolutionComment">
+        <h4 class="drawer-section-title">
+          <i class="material-icons">check_circle</i> Commentaire de résolution
+        </h4>
+        <p class="incident-drawer-comment">
+          {{ selectedIncident.resolutionComment }}
+        </p>
+      </div>
+
     </div>
 
     <!-- Commentaire de résolution -->
