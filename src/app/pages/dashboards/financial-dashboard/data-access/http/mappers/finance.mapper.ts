@@ -34,13 +34,22 @@ export function mapPaiementListeDto(dto: unknown): PaiementListe {
 }
 
 // DTO réel : GET /finance/retraits (services/transaction.js::getWithdrawByAgencyPaginated).
+function optionalString(value: unknown): string | undefined {
+  return value !== undefined && value !== null ? String(value) : undefined;
+}
+
 export function mapRetraitDto(dto: unknown): Retrait {
   const d = dto as Record<string, unknown>;
   return {
     idRetrait: String(d['idRetrait']),
     montant: Number(d['montant']),
     dateRetrait: String(d['dateRetrait']),
-    motif: d['motif'] !== undefined && d['motif'] !== null ? String(d['motif']) : undefined,
+    motif: optionalString(d['motif']),
+    statut: optionalString(d['statut']),
+    initiateurNom: optionalString(d['initiateurNom']),
+    traitePar: optionalString(d['traitePar']),
+    dateTraitement: optionalString(d['dateTraitement']),
+    motifRejet: optionalString(d['motifRejet']),
   };
 }
 

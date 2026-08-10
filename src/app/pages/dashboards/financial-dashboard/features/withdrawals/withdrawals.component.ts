@@ -15,6 +15,22 @@ import { CreateWithdrawalDialogComponent } from './create-withdrawal-dialog.comp
 
 const TAILLE_PAGE = 10;
 
+// Mêmes libellés que admin-dashboard.ts::getWithdrawalStatusText (vue Super Admin) —
+// une seule terminologie pour les mêmes statuts réels de Withdraw.js (Règle 3 du Prompt 0).
+const LIBELLES_STATUT: Record<string, string> = {
+  EN_ATTENTE_VALIDATION: 'En attente',
+  INITIATED: 'Approuvé',
+  COMPLETED: 'Payé',
+  COMPLETED_WITH_ERROR: 'Traité avec erreur',
+  FAILED: 'Échoué',
+  REJETE: 'Rejeté',
+};
+
+function libelleStatut(statut?: string): string {
+  if (!statut) return '—';
+  return LIBELLES_STATUT[statut] ?? statut;
+}
+
 // F4 — Historique des retraits de l'agence (impacte le solde disponible, RG7), et création
 // d'un nouveau retrait (POST /finance/retraits, réellement branché — voir
 // CreateWithdrawalDialogComponent). La liste se rafraîchit automatiquement après création.
@@ -51,6 +67,12 @@ export class WithdrawalsComponent {
     { key: 'montant', label: 'Montant', sortable: true, format: r => formatMontantXof(r.montant) },
     { key: 'dateRetrait', label: 'Date', sortable: true, format: r => formatFrDate(r.dateRetrait) },
     { key: 'motif', label: 'Motif', format: r => r.motif ?? '—' },
+    { key: 'initiateurNom', label: 'Initié par', format: r => r.initiateurNom ?? '—' },
+    {
+      key: 'statut',
+      label: 'Statut',
+      format: r => (r.statut === 'REJETE' && r.motifRejet ? `${libelleStatut(r.statut)} — ${r.motifRejet}` : libelleStatut(r.statut)),
+    },
   ];
 
   get totalPages(): number {

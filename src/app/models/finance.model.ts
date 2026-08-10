@@ -2,12 +2,21 @@
 // FINANCE MODEL — Dashboard Financier Agence
 // ============================================================
 
+// Valeurs alignées sur les statuts RÉELS de models/Withdraw.js (backend) — Prompt 6.
+// Les noms de membres sont conservés (aucun site d'utilisation à modifier), seules
+// les valeurs sous-jacentes changent pour correspondre à l'énum backend réelle.
+// APPROVED reprend INITIATED (verrouillage transitoire pendant le paiement, quasi
+// jamais observable puisque résolu de façon synchrone) ; PROCESSED reprend
+// COMPLETED_WITH_ERROR (valeur existante côté backend, non utilisée à ce jour).
+// FAILED est un membre nouveau : un échec technique de paiement (Moov Money) est un
+// état réel et distinct d'un rejet décidé par le Super Admin (REJECTED).
 export enum WithdrawalStatus {
-  PENDING   = 'PENDING',
-  APPROVED  = 'APPROVED',
-  REJECTED  = 'REJECTED',
-  PROCESSED = 'PROCESSED',
-  PAID      = 'PAID',
+  PENDING   = 'EN_ATTENTE_VALIDATION',
+  APPROVED  = 'INITIATED',
+  REJECTED  = 'REJETE',
+  PROCESSED = 'COMPLETED_WITH_ERROR',
+  PAID      = 'COMPLETED',
+  FAILED    = 'FAILED',
 }
 
 export enum TransactionType {

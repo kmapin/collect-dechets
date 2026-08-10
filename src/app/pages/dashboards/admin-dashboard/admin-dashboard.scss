@@ -970,6 +970,12 @@
   color: #00838f;
 }
 
+/* Échec technique du paiement (Moov Money) — distinct d'un rejet Super Admin (Prompt 6) */
+.status-failed {
+  background: #fdecea;
+  color: #c62828;
+}
+
 .agencies-header,
 .statistics-header,
 .incidents-header,
@@ -3066,23 +3072,28 @@
     }
   }
 
-  .confirm-warning {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.82rem;
-    color: #92400e;
+}
 
-    .material-icons {
-      font-size: 1rem;
-      color: #f59e0b;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
+// Non-imbriqué sous .confirm-dialog-body : réutilisé tel quel dans le drawer
+// détail retrait (Motif de rejet) hors de tout dialog de confirmation — imbriqué
+// ici, il ne s'appliquait qu'aux dialogs et laissait l'icône/le texte sans
+// mise en page dans le drawer (icône en taille par défaut, pas de flex).
+.confirm-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  color: #92400e;
+
+  .material-icons {
+    font-size: 1rem;
+    color: #f59e0b;
+    flex-shrink: 0;
+    margin-top: 1px;
   }
 }
 

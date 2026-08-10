@@ -28,7 +28,7 @@ import { Signalement } from "../../shared_pages/signalement/signalement";
 import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
 import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
 import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
-import { WithdrawalRequestsMockService } from "../../../services/withdrawal-requests-mock.service";
+import { WithdrawalRequestsHttpService } from "../../../services/withdrawal-requests-http.service";
 import {
   AdminWithdrawalRequest,
   PaymentMethod,
@@ -597,7 +597,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     private router: Router,
     private cd: ChangeDetectorRef,
     private countriesOrgMockService: CountriesOrgMockService,
-    private withdrawalRequestsService: WithdrawalRequestsMockService,
+    private withdrawalRequestsService: WithdrawalRequestsHttpService,
   ) {
     this.drawerWidth;
   }
@@ -658,11 +658,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   // ════════════════════════════════════════════════════════════
   // ── Onglet Retraits — validation admin des demandes de retrait ──
-  // Alimenté par WithdrawalRequestsMockService (mock explicite, voir le
-  // commentaire d'en-tête de ce service pour le plan de bascule vers un vrai
-  // backend). Filtrage + pagination faits côté service (comme les vraies
-  // méthodes getWithdrawalRequests/searchWithdrawals/filterWithdrawals/
-  // paginateWithdrawals qu'aurait une API réelle), pas recalculés ici.
+  // Branché (Prompt 6) sur WithdrawalRequestsHttpService → GET/PATCH
+  // /api/admin/retraits (Prompt 5). Filtrage + pagination faits côté serveur
+  // (query params search/statut/agenceId/dateDebut/dateFin/page/pageSize),
+  // pas recalculés ici.
   // ════════════════════════════════════════════════════════════
 
   loadWithdrawalRequests(): void {
@@ -864,8 +863,20 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   // ── Présentation ──────────────────────────────────────────────
 
+  // Table explicite (pas de dérivation `.toLowerCase()` sur la valeur de l'enum) :
+  // les valeurs réelles du backend (EN_ATTENTE_VALIDATION, INITIATED, REJETE...)
+  // ne correspondent plus aux classes CSS existantes (.status-pending, .status-approved...),
+  // qui restent donc inchangées (Prompt 6 — visuel préservé).
   getWithdrawalStatusClass(status: WithdrawalStatus): string {
-    return 'status-' + status.toLowerCase();
+    const classes: Record<WithdrawalStatus, string> = {
+      [WithdrawalStatus.PENDING]:   'status-pending',
+      [WithdrawalStatus.APPROVED]:  'status-approved',
+      [WithdrawalStatus.REJECTED]:  'status-rejected',
+      [WithdrawalStatus.PROCESSED]: 'status-processed',
+      [WithdrawalStatus.PAID]:      'status-paid',
+      [WithdrawalStatus.FAILED]:    'status-failed',
+    };
+    return classes[status] ?? 'status-pending';
   }
 
   getWithdrawalStatusText(status: WithdrawalStatus): string {
@@ -873,8 +884,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
       [WithdrawalStatus.PENDING]:   'En attente',
       [WithdrawalStatus.APPROVED]:  'Approuvé',
       [WithdrawalStatus.REJECTED]:  'Rejeté',
-      [WithdrawalStatus.PROCESSED]: 'Traité',
+      [WithdrawalStatus.PROCESSED]: 'Traité avec erreur',
       [WithdrawalStatus.PAID]:      'Payé',
+      [WithdrawalStatus.FAILED]:    'Échoué',
     };
     return labels[status] ?? status;
   }
