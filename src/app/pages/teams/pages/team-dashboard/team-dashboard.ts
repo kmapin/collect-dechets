@@ -271,7 +271,7 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
     return new Chart(this.chartWeeklyRef.nativeElement, {
       type: 'bar',
       data: {
-        labels: teams.map(t => t.name.replace(/équipe\s*/i, '').trim().slice(0, 10)),
+        labels: teams.map(t => t.name.replace(/^(é|e)quipe\s*/i, '').trim().slice(0, 16)),
         datasets: [{
           label: 'Charge actuelle',
           data: teams.map(t => t.workload),
@@ -298,7 +298,12 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
     return new Chart(this.chartPerfRef.nativeElement, {
       type: 'bar',
       data: {
-        labels: teams.map(t => t.name.replace(/équipe\s*/i, '').trim().slice(0, 10)),
+        // `/équipe/i` seul ne matchait jamais les noms réels (ex. "Equipe Alpha 1",
+        // "EQUIPE BETA 1" — sans accent en base) : le préfixe n'était donc jamais
+        // retiré, et la troncature à 10 caractères faisait collisionner des
+        // équipes différentes sur le même libellé visible (ex. "Equipe Alpha 1"
+        // et "Equipe Alpha 3" affichaient toutes deux "Equipe Alp").
+        labels: teams.map(t => t.name.replace(/^(é|e)quipe\s*/i, '').trim().slice(0, 16)),
         datasets: [{
           label: 'Taux réussite',
           data: teams.map(t => t.successRate),
@@ -341,8 +346,13 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
         responsive: true,
         maintainAspectRatio: false,
         cutout: '74%',
+        // Légende désactivée ici et rendue en HTML/CSS à côté (voir
+        // .cc-donut-legend, team-dashboard.html) : une légende dessinée DANS
+        // le canvas (position:'bottom') pousse l'anneau vers le haut pour lui
+        // faire de la place, décentrant l'anneau par rapport à l'overlay
+        // "100%" (.cc-donut-center), qui lui reste centré sur toute la boîte.
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } },
+          legend: { display: false },
           tooltip: { callbacks: { label: ctx => ` ${ctx.parsed} équipe(s)` } },
         },
       },

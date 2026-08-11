@@ -319,9 +319,7 @@ $muted:#475569;
 
 .cc-body {
   padding: 12px;
-  flex: 1;
-  min-height: 0;
-  height: 180px;
+  flex: 0 0 180px;
   canvas { max-height: 100%; }
 }
 
@@ -357,6 +355,36 @@ $muted:#475569;
   font-size: 10px;
   color: var(--td-sub);
   margin-top: 3px;
+}
+
+// Colonne anneau + légende — la légende ne vit plus dans le canvas Chart.js
+// (voir team-dashboard.ts::_execChart()) pour que l'anneau remplisse tout
+// .cc-donut-wrap et reste centré avec l'overlay .cc-donut-center.
+.cc-donut-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.cc-donut-legend {
+  display: flex;
+  gap: 14px;
+}
+
+.cc-donut-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--td-txt);
+}
+
+.cc-donut-leg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
 // ── Right column ─────────────────────────────────────────────
