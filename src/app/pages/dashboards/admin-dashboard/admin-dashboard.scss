@@ -699,7 +699,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   color: var(--white);
+
+  // Manquait entièrement : sans fond coloré, l'icône blanche (color ci-dessus) se
+  // retrouvait sur fond transparent, quasi invisible sur le gris clair de .alert-item —
+  // mêmes couleurs que .severity-badge, pour rester cohérent avec le reste du dashboard.
+  &.severity-critical { background: #dc2626; }
+  &.severity-high     { background: #ea580c; }
+  &.severity-medium   { background: #ca8a04; }
+  &.severity-low      { background: #16a34a; }
 }
 
 // ── Grille cartes incidents ──────────────────────────────────────────────────

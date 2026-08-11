@@ -288,12 +288,12 @@
                     <div class="alert-title">
                       {{ getIncidentTypeText(incident.type.toLowerCase()) }}
                     </div>
-                    @if (incident.agencyName) {
-                    <div class="alert-agency">{{ incident.agencyName }}</div>
+                    @if (incident.agencyId) {
+                    <div class="alert-agency">{{ incident.agencyId.name }}</div>
                     }
                     <div class="alert-time">
                       <i class="material-icons">schedule</i>
-                      {{ incident.date | date : "dd/MM/yyyy HH:mm" }}
+                      {{ incident.createdAt | date : "dd/MM/yyyy HH:mm" }}
                     </div>
                   </div>
                   <div class="alert-status">

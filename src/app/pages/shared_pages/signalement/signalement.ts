@@ -226,7 +226,7 @@ export class Signalement {
       // Valeur réelle du nouveau modèle Signalement unifié (Prompt 04/05) —
       // absente jusqu'ici, s'affichait en texte brut non traduit.
       in_progress: "En cours",
-      resolved: "Résolue",
+      resolved: "Résolu",
       reported : "En cours",
       scheduled: "Programmée",
       collected: "Effectuée",

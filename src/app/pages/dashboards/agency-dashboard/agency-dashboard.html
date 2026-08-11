@@ -168,13 +168,13 @@
             <div class="collection-card card">
               <div class="collection-header">
                 <div class="collection-status">
-                  <span class="status-badge" [class]="'status-' + collecte.status.toLowerCase()">
-                    {{ getStatusText(collecte.status.toLowerCase()) || collecte.status }}
+                  <span class="status-badge" [class]="'status-' + (collecte.status || '').toLowerCase()">
+                    {{ getStatusText((collecte.status || '').toLowerCase()) || collecte.status }}
                   </span>
                   <span class="collection-time">{{ collecte.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
                 </div>
                 <div class="collection-actions">
-                  @if (collecte.status.toLowerCase() === 'scheduled') {
+                  @if ((collecte.status || '').toLowerCase() === 'scheduled') {
                   <button class="action-btn" (click)="trackCollection(collecte._id)"><i
                       class="material-icons">location_on</i></button>
                   }
@@ -182,12 +182,15 @@
               </div>
               <div class="collection-info">
                 <i class="material-icons">group</i>
-                {{ collecte.clientId.firstName + ' ' + collecte.clientId.lastName }}
-                <p><i class="material-icons">person</i> Collecteur : {{ collecte.collectorId.firstName + ' ' +
-                  collecte.collectorId.lastName }}</p>
-                <p><i class="material-icons">apartment</i> Agence : {{ collecte.agencyId.name }}</p>
-                <p><i class="material-icons">schedule</i> Scann&#233;e &#224; : {{ collecte.scannedAt | date:'dd/MM/yyyy
-                  HH:mm' }}</p>
+                {{ collecte.clientId?.firstName }} {{ collecte.clientId?.lastName }}
+                <!-- collectorId (V1) ou équipe du Planning d'origine (V2, code.equipeIds) — voir
+                     getCollecteAssigneeText(). Accès direct .firstName sur collectorId null
+                     (toujours le cas en V2) faisait planter tout le reste de la carte. -->
+                <p><i class="material-icons">person</i> Assigné à : {{ getCollecteAssigneeText(collecte) }}</p>
+                <p><i class="material-icons">apartment</i> Agence : {{ collecte.agencyId?.name ?? '—' }}</p>
+                <p><i class="material-icons">schedule</i> Scann&#233;e &#224; :
+                  {{ collecte.scannedAt ? (collecte.scannedAt | date:'dd/MM/yyyy HH:mm') : '—' }}
+                </p>
               </div>
             </div>
             }
@@ -199,7 +202,7 @@
               <thead>
                 <tr>
                   <th>Client</th>
-                  <th>Collecteur</th>
+                  <th>Assigné à</th>
                   <th>Agence</th>
                   <th>Statut</th>
                   <th>Cr&#233;&#233;e le</th>
@@ -210,18 +213,21 @@
               <tbody>
                 @for (collecte of pagedCollectes; track collecte) {
                 <tr>
-                  <td class="cell-name">{{ collecte.clientId.firstName }} {{ collecte.clientId.lastName }}</td>
-                  <td class="cell-name">{{ collecte.collectorId.firstName }} {{ collecte.collectorId.lastName }}</td>
-                  <td>{{ collecte.agencyId.name }}</td>
+                  <td class="cell-name">{{ collecte.clientId?.firstName }} {{ collecte.clientId?.lastName }}</td>
+                  <!-- collectorId (V1) ou équipe du Planning d'origine (V2, code.equipeIds) — voir
+                       getCollecteAssigneeText(). Accès direct .firstName sur collectorId null
+                       (toujours le cas en V2) faisait planter cette cellule et les suivantes. -->
+                  <td class="cell-name">{{ getCollecteAssigneeText(collecte) }}</td>
+                  <td>{{ collecte.agencyId?.name ?? '—' }}</td>
                   <td>
-                    <span class="collecte-status-badge" [class]="'cstatus-' + collecte.status.toLowerCase()">
-                      {{ getStatusText(collecte.status.toLowerCase()) || collecte.status }}
+                    <span class="collecte-status-badge" [class]="'cstatus-' + (collecte.status || '').toLowerCase()">
+                      {{ getStatusText((collecte.status || '').toLowerCase()) || collecte.status }}
                     </span>
                   </td>
                   <td>{{ collecte.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
                   <td>{{ collecte.scannedAt ? (collecte.scannedAt | date:'dd/MM/yyyy HH:mm') : '&#8212;' }}</td>
                   <td class="col-actions">
-                    @if (collecte.status.toLowerCase() === 'scheduled') {
+                    @if ((collecte.status || '').toLowerCase() === 'scheduled') {
                     <button class="action-btn" (click)="trackCollection(collecte._id)" title="Localiser"><i
                         class="material-icons">location_on</i></button>
                     } @else {

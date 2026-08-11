@@ -3280,6 +3280,21 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return statusTexts[status] || status;
   }
 
+  // Une Collecte V1 a un collectorId individuel ; une Collecte issue d'un Planning V2
+  // n'en a jamais (assignation par équipe) — l'équipe exécutante se trouve alors sur
+  // le Planning d'origine (collecte.code, malgré le nom — voir BACKEND_ARCHITECTURE.md
+  // §3.4), peuplée par services/collecte.service.js::AgencyCollectes jusqu'à equipeIds.name.
+  getCollecteAssigneeText(collecte: any): string {
+    if (collecte?.collectorId?.firstName) {
+      return `${collecte.collectorId.firstName} ${collecte.collectorId.lastName ?? ''}`.trim();
+    }
+    const equipes = collecte?.code?.equipeIds;
+    if (Array.isArray(equipes) && equipes.length) {
+      return equipes.map((e: any) => e?.name).filter(Boolean).join(', ') || '—';
+    }
+    return '—';
+  }
+
   getClientName(clientId: string): string {
     const client = this.clients.find((c) => c.id === clientId);
     return client ? client.name : "Client inconnu";

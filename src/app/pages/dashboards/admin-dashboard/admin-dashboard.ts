@@ -2066,7 +2066,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     const statuses = {
       open: "Ouvert",
       in_progress: "En cours",
-      resolved: "Résolue",
+      resolved: "Résolu",
     };
     return statuses[status as keyof typeof statuses] || status;
   }

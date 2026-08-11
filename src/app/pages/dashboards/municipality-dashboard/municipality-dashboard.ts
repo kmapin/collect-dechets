@@ -102,6 +102,7 @@ export interface Incident {
   /** Champ réel Collecte.resolutionTeamId (renommé depuis assignedTeamId, Phase 2 du
    * nettoyage Planning/Signalement/Assignation) — équipe affectée à la résolution. */
   resolutionTeamId?: { _id: string; name?: string } | null;
+  createdAt: Date;
 }
 // Aligné champ-à-champ sur la vraie réponse de GET /api/statistics
 // (services/globalState.js::getDashboardStats + controllers/globalSate.js) — vérifié
