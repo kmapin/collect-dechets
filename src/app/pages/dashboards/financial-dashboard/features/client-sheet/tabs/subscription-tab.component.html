@@ -24,7 +24,7 @@
               <td data-label="Début">{{ a.startDate ? formatDate(a.startDate) : '—' }}</td>
               <td data-label="Fin">{{ a.endDate ? formatDate(a.endDate) : '—' }}</td>
               <td data-label="Statut">
-                <app-status-badge [label]="badgeAbonnement(a.isActive).label" [icon]="badgeAbonnement(a.isActive).icon" [variant]="badgeAbonnement(a.isActive).variant" />
+                <app-status-badge [label]="badgeAbonnement(isSubscriptionCurrentlyActive(a)).label" [icon]="badgeAbonnement(isSubscriptionCurrentlyActive(a)).icon" [variant]="badgeAbonnement(isSubscriptionCurrentlyActive(a)).variant" />
               </td>
             </tr>
             <tr *ngIf="!abonnements().length">

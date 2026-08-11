@@ -10,16 +10,84 @@
 
   <div class="container">
     <div class="subscription-content">
+
+      <!-- Bandeau de continuité de service — piloté uniquement par
+           EligibilityService (source='CONTRACT'), jamais recalculé ici. Évite
+           qu'un client sous contrat actif ne voie que le message "Aucun
+           abonnement actif" du bloc Abonnement ci-dessous sans contexte. -->
+      @if (showContractContinuityBanner) {
+      <div class="subscription-card card eligibility-banner">
+        <div class="info-item-agencyName">
+          <i class="material-icons" style="color: var(--success-color)">verified</i>
+          <span class="font-semibold text-[--primary-color]">
+            Vous bénéficiez actuellement du service dans le cadre de votre contrat actif.
+          </span>
+        </div>
+      </div>
+      }
+
+      <!-- Bandeau symétrique — non éligible (ni contrat, ni abonnement actif),
+           piloté uniquement par `eligible`/`reason`, jamais recalculé ici. -->
+      @if (showIneligibilityBanner) {
+      <div class="subscription-card card eligibility-banner eligibility-banner--negative">
+        <div class="info-item-agencyName">
+          <i class="material-icons" style="color: var(--error-color)">error_outline</i>
+          <span class="font-semibold text-[--primary-color]">
+            {{ ineligibilityMessage() }}
+          </span>
+        </div>
+      </div>
+      }
+
+      <!-- MON CONTRAT -->
       <div class="subscription-card card">
         <h1 class="text-[28px] font-semibold text-[--primary-color]">
-          Abonnement Actuel
+          Mon Contrat
         </h1>
-        <!-- ...existing code... -->
-        @if (activeSubscription) {
+        @if (latestContrat) {
         <div class="subscription-info">
           <div class="plan-summary">
-            <span class="plan-badge" [ngClass]="activeSubscription.pricingId.planType">
-              @switch (activeSubscription.pricingId.planType) {
+            <span class="status-badge" [class.active]="latestContrat.status === 'actif'">
+              {{ contratStatusLabel(latestContrat.status) }}
+            </span>
+          </div>
+          <div class="info-item">
+            <strong>Fréquence de collecte:</strong>
+            <span>{{ contratFrequenceLabel(latestContrat.frequenceCollecte) }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Début:</strong>
+            <span>{{ latestContrat.startDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Fin:</strong>
+            <span>{{ latestContrat.endDate ? (latestContrat.endDate | date:'dd/MM/yyyy') : 'Non définie' }}</span>
+          </div>
+          @if (latestContrat.status === 'resilie' && latestContrat.raisonResiliation) {
+          <div class="info-item">
+            <strong>Motif de résiliation:</strong>
+            <span>{{ latestContrat.raisonResiliation }}</span>
+          </div>
+          }
+        </div>
+        } @else {
+        <div class="info-item">
+          <span>Aucun contrat associé à votre compte.</span>
+        </div>
+        }
+      </div>
+
+      <!-- MON ABONNEMENT -->
+      <div class="subscription-card card">
+        <h1 class="text-[28px] font-semibold text-[--primary-color]">
+          Mon Abonnement
+        </h1>
+        <!-- ...existing code... -->
+        @if (latestSubscription) {
+        <div class="subscription-info">
+          <div class="plan-summary">
+            <span class="plan-badge" [ngClass]="latestSubscription.pricingId.planType">
+              @switch (latestSubscription.pricingId.planType) {
               @case ('premium') {
               <i class="material-icons" style="font-size: 32px; color: gold">star</i>
               }
@@ -30,48 +98,52 @@
               <i class="material-icons" style="font-size: 32px; color: #9e9e9e">star_outline</i>
               }
               }
-              {{ activeSubscription.pricingId.planType | titlecase }}
+              {{ latestSubscription.pricingId.planType | titlecase }}
             </span>
-            <span class="status-badge" [class.active]="activeSubscription.isActive === true">
-              {{ (activeSubscription.isActive ? 'Actif' : 'Inactif') | titlecase }}
+            <span class="status-badge" [class.active]="activeSubscription === latestSubscription">
+              {{ subscriptionStatusLabel(latestSubscription) }}
             </span>
           </div>
           <div class="info-item-agencyName">
             <strong>Agence:</strong>
-            <span class="font-semibold text-[--primary-color]">{{ activeSubscription.agencyId?.name }}</span>
+            <span class="font-semibold text-[--primary-color]">{{ latestSubscription.agencyId?.name }}</span>
           </div>
           <div class="info-item">
             <strong>Adresses:</strong>
-            <span>{{ activeSubscription.agencyId?.address?.city }} - {{
-              activeSubscription.agencyId?.address?.neighborhood }} - {{
-              activeSubscription.agencyId?.address?.sector }}</span>
+            <span>{{ latestSubscription.agencyId?.address?.city }} - {{
+              latestSubscription.agencyId?.address?.neighborhood }} - {{
+              latestSubscription.agencyId?.address?.sector }}</span>
           </div>
           <div class="info-item">
             <strong>Code postal:</strong>
-            <span>{{ activeSubscription.agencyId?.address?.postalCode }}</span>
+            <span>{{ latestSubscription.agencyId?.address?.postalCode }}</span>
           </div>
           <div class="info-item">
             <strong>Prix:</strong>
-            <span class="text-[20px] font-semibold text-[--primary-color]">{{ activeSubscription.pricingId.price }}
+            <span class="text-[20px] font-semibold text-[--primary-color]">{{ latestSubscription.pricingId.price }}
               <sup class="tex-black">FCFA</sup>/ Mois</span>
           </div>
           <div class="info-item">
             <strong>Début:</strong>
-            <span>{{ activeSubscription.startDate | date:'dd/MM/yyyy' }}</span>
+            <span>{{ latestSubscription.startDate | date:'dd/MM/yyyy' }}</span>
           </div>
           <div class="info-item">
             <strong>Fin:</strong>
-            <span>{{ activeSubscription.endDate | date:'dd/MM/yyyy' }}</span>
+            <span>{{ latestSubscription.endDate | date:'dd/MM/yyyy' }}</span>
           </div>
           <div class="contact-info">
             <strong>Contacts:</strong>
-            <span>{{ activeSubscription.agencyId?.phone }}</span>
+            <span>{{ latestSubscription.agencyId?.phone }}</span>
           </div>
           <div class="actions">
+            <!-- Abonnement déjà actif et payé — rien à payer tant qu'il ne
+                 redevient pas inactif (expiré). -->
+            @if (activeSubscription !== latestSubscription) {
             <button class="btn btn-primary" (click)="initiatePayment()">
               <i class="material-icons">payment</i>
               Payer par mobile Money
             </button>
+            }
             <button class="btn btn-secondary" (click)="contactSupport()">
               Contactez l'agence
             </button>

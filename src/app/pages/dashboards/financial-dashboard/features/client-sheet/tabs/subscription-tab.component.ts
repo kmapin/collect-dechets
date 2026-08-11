@@ -9,6 +9,7 @@ import { formatMontantXof } from '../../../utils/money.util';
 import { formatFrDate } from '../../../../../../shared/format.util';
 import { StatusBadgeComponent } from '../../../shared/status-badge/status-badge.component';
 import { badgeAbonnement, badgeContrat } from '../../../shared/status-badge/status-badge.util';
+import { isSubscriptionCurrentlyActive } from '../../../../../../services/eligibility.service';
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 
 /**
@@ -51,6 +52,9 @@ export class SubscriptionTabComponent implements OnChanges {
 
   readonly badgeAbonnement = badgeAbonnement;
   readonly badgeContrat = badgeContrat;
+  // Ferme la fenêtre de latence du cron d'expiration (chantier
+  // EligibilityService) — `a.isActive` brut n'est plus lu par le template.
+  readonly isSubscriptionCurrentlyActive = isSubscriptionCurrentlyActive;
   readonly formatMontant = formatMontantXof;
   readonly formatDate = formatFrDate;
 

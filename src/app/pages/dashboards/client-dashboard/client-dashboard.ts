@@ -27,6 +27,7 @@ import { Subscription as RxSubscription } from "rxjs";
 import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
 import { ContratService } from "../../../services/contrat.service";
 import { Contrat } from "../../../models/contrat.model";
+import { EligibilityService, EligibilityResult, isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
 
 interface PaymentHistory {
   id: string;
@@ -89,11 +90,21 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   };
   data: any;
   subscriptions: any[] = [];
+  // Abonnement réellement actif (isActive===true ET endDate dans le futur) —
+  // plus jamais "le dernier élément du tableau" (chantier EligibilityService,
+  // même correctif que pages/subscription/subscription.ts).
   activeSubscription: any = null;
+  // Abonnement le plus récent (actif ou non) — affichage uniquement, pour ne
+  // pas faire disparaître le statut/les dates réels quand rien n'est actif.
+  latestSubscription: any = null;
   // "Mon contrat" (carte de la colonne droite, même patron que activeSubscription) —
   // sans ceci, le client n'a aucune trace côté dashboard qu'il est lié à une
   // agence par un Contrat plutôt que (ou en plus) d'un Abonnement.
   activeContrat: Contrat | null = null;
+  // Source unique de vérité pour "ce client bénéficie-t-il du service ?" —
+  // pilote uniquement le bandeau de continuité de service, jamais recalculée
+  // ici (EligibilityService, backend).
+  eligibility: EligibilityResult | null = null;
   showRechargeModal: boolean = false;
 
   // Montant de recharge
@@ -109,7 +120,8 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     private messageService: MessagesService,
     private agencyService: AgencyService,
     private websocketService: Webstockets,
-    private contratService: ContratService
+    private contratService: ContratService,
+    private eligibilityService: EligibilityService
   ) {}
 
   ngOnInit(): void {
@@ -127,12 +139,14 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     this.newSubscriptionSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
       if (notification?.type === 'Subscribed') {
         this.getUserSubscription();
+        this.loadEligibility();
       }
       // Même principe pour Contrat (Phase 4 backend) : création, résiliation
       // automatique (scheduler) ou manuelle doivent se refléter ici sans
       // rechargement de page.
       if (notification?.type === 'Contrat') {
         this.loadActiveContrat();
+        this.loadEligibility();
       }
     });
   }
@@ -146,6 +160,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       this.currentUser = user;
       this.getUserSubscription();
       this.loadActiveContrat();
+      this.loadEligibility();
       this.getClientWallet();
       this.getWeeklySchedule();
       this.loadUpcomingPlannings();
@@ -160,7 +175,15 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     if (!clientId) return;
     this.contratService.getContratsByClient$(clientId).subscribe({
       next: (contrats) => {
-        this.activeContrat = contrats.find((c) => c.status === 'actif') || contrats[0] || null;
+        // Fallback trié par startDate desc (même logique que
+        // pages/subscription/subscription.ts::latestContrat) — plutôt que
+        // contrats[0] brut, dont l'ordre dépend de ce que renvoie le backend et
+        // pouvait faire diverger ce dashboard de l'écran /subscription quand un
+        // client a plusieurs contrats non actifs.
+        const sortedByStartDateDesc = [...contrats].sort(
+          (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        );
+        this.activeContrat = sortedByStartDateDesc.find((c) => c.status === 'actif') || sortedByStartDateDesc[0] || null;
       },
       error: () => {
         this.activeContrat = null;
@@ -181,6 +204,41 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   contratStatusLabel(status?: string): string {
     const map: { [key: string]: string } = { actif: 'Actif', suspendu: 'Suspendu', resilie: 'Résilié' };
     return status ? (map[status] || status) : '';
+  }
+
+  loadEligibility(): void {
+    const clientId = this.currentUser?._id;
+    if (!clientId) return;
+    this.eligibilityService.checkEligibility$(clientId).subscribe({
+      next: (result) => { this.eligibility = result; },
+      error: () => { this.eligibility = null; },
+    });
+  }
+
+  /** Même mapping que pages/subscription/subscription.ts::subscriptionStatusLabel() — seul champ réel disponible sur Subscription (isActive). */
+  subscriptionStatusLabel(subscription: any): string {
+    if (!subscription) return '';
+    return isSubscriptionCurrentlyActive(subscription) ? 'Actif' : 'Expiré';
+  }
+
+  /** Piloté uniquement par EligibilityService — jamais recalculé ici (Prompt 0). */
+  get showContractContinuityBanner(): boolean {
+    return this.eligibility?.source === 'CONTRACT';
+  }
+
+  /** Symétrique du bandeau positif — piloté uniquement par `eligible`/`reason`. */
+  get showIneligibilityBanner(): boolean {
+    return this.eligibility !== null && this.eligibility.eligible === false;
+  }
+
+  /** Traduction d'affichage des valeurs réelles de `reason` — ne recalcule aucune règle. */
+  ineligibilityMessage(): string {
+    const map: { [key: string]: string } = {
+      SUBSCRIPTION_EXPIRED: "Votre abonnement a expiré et vous n'avez aucun contrat actif. Renouvelez votre abonnement ou contactez votre agence pour continuer à bénéficier du service.",
+      NO_ACTIVE_CONTRACT_OR_SUBSCRIPTION: "Vous n'avez actuellement ni abonnement ni contrat actif. Souscrivez un abonnement ou contactez votre agence pour bénéficier du service.",
+    };
+    const reason = this.eligibility?.reason;
+    return (reason && map[reason]) || "Vous ne bénéficiez actuellement d'aucun service actif.";
   }
 
   //  GET CLIENT WALLET
@@ -480,10 +538,14 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
           }`,
           // method: "Orange Money", // ou autre selon tes données
         }));
-        // Pour la subscription active
-        this.activeSubscription = this.subscriptions.length
-          ? this.subscriptions[this.subscriptions.length - 1]
-          : null;
+        // Abonnement réellement actif — jamais "le dernier élément du
+        // tableau" (chantier EligibilityService, même correctif que
+        // pages/subscription/subscription.ts::getUserSubscription()).
+        const sortedByEndDateDesc = [...this.subscriptions].sort(
+          (a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
+        );
+        this.activeSubscription = sortedByEndDateDesc.find((sub) => isSubscriptionCurrentlyActive(sub)) || null;
+        this.latestSubscription = sortedByEndDateDesc[0] || null;
         console.log("Active subscription ==>", this.activeSubscription);
         console.log("Payment history ==>", this.paymentHistory);
       },

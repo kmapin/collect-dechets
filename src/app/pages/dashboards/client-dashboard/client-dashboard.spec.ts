@@ -36,7 +36,8 @@ describe('ClientDashboard - planning unifié V1/V2 & signalement (Prompt 05)', (
       {} as any,
       {} as any,
       { onNewNotification: () => new Subject().asObservable() } as any,
-      {} as any
+      {} as any,
+      { checkEligibility$: () => ({ subscribe: () => {} }) } as any
     );
     component.currentUser = { _id: 'client-1', agencyId: 'agency-1' };
   });
@@ -129,6 +130,7 @@ describe('ClientDashboard - "Mon contrat" (carte dashboard + rafraîchissement s
       {} as any,
       websocketServiceSpy as any,
       contratServiceSpy as any,
+      { checkEligibility$: () => ({ subscribe: () => {} }) } as any,
     );
     component.currentUser = { _id: 'client-1', agencyId: 'agency-1' };
   });

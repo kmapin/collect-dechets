@@ -1394,8 +1394,8 @@
                   </td>
                   <td>{{ abonnement.numberMonths }}</td>
                   <td>
-                    <p-tag [value]="abonnement.isActive ? 'Actif':'Inactif'"
-                      [severity]="getSeverity(abonnement.isActive.toString())" />
+                    <p-tag [value]="isSubscriptionActiveDisplay(abonnement) ? 'Actif':'Inactif'"
+                      [severity]="getSeverity(isSubscriptionActiveDisplay(abonnement).toString())" />
                   </td>
                 </tr>
               </ng-template>

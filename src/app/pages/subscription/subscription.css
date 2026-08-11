@@ -12,6 +12,29 @@
   padding: 32px;
 }
 
+.subscription-card+.subscription-card {
+  margin-top: 24px;
+}
+
+/* Bandeau de continuité de service (source='CONTRACT') — même carte que les
+   autres blocs, un simple accent visuel à gauche pour le distinguer sans
+   introduire un nouveau langage graphique. */
+.eligibility-banner {
+  padding: 20px 32px;
+  border-left: 4px solid var(--success-color);
+}
+
+/* Bandeau symétrique — non éligible (ni contrat, ni abonnement actif). */
+.eligibility-banner--negative {
+  border-left-color: var(--error-color);
+}
+
+.eligibility-banner .info-item-agencyName {
+  border-bottom: none;
+  gap: 12px;
+  align-items: center;
+}
+
 .subscription-info {
   margin-top: 24px;
 }
@@ -110,6 +133,7 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  justify-content: end;
 }
 
 /* Payment Drawer Styles — même patron que .contact-drawer-* ci-dessous
@@ -190,6 +214,7 @@
 
   .actions {
     flex-direction: column;
+    justify-content: end;
   }
 
   .btn {

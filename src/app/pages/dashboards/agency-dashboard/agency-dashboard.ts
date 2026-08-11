@@ -13,6 +13,7 @@ import {
 import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
 import { ContratService } from "../../../services/contrat.service";
 import { Contrat } from "../../../models/contrat.model";
+import { isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
 import { RedevanceService } from "../../../services/redevance.service";
 import { Redevance } from "../../../models/redevance.model";
 import { CommonModule } from "@angular/common";
@@ -6575,6 +6576,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       default:
         return "info";
     }
+  }
+
+  /**
+   * Statut d'affichage réel d'un Abonnement — plus jamais `abonnement.isActive`
+   * brut (chantier EligibilityService) : ferme la fenêtre de latence du cron
+   * d'expiration (jusqu'à 24h) sans toucher au cron lui-même.
+   */
+  isSubscriptionActiveDisplay(abonnement: any): boolean {
+    return isSubscriptionCurrentlyActive(abonnement);
   }
 
   getStatusSeverity(status: string) {

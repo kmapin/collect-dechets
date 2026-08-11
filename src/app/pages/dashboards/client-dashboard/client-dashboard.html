@@ -131,10 +131,11 @@
               } @else {
                 <p>
                   Aucun abonnement actif.<br />
-                  <sub>
-                    Veuillez souscrire à un abonnement pour bénéficier de nos
-                    services.
-                  </sub>
+                  @if (showContractContinuityBanner) {
+                  <sub>Vous êtes couvert par votre contrat actif — voir "Mon contrat" ci-dessous.</sub>
+                  } @else {
+                  <sub>Consultez "Mon abonnement" ci-dessous pour souscrire.</sub>
+                  }
                 </p>
               }
             </div>
@@ -617,6 +618,33 @@
               </div>
 
               <div class="right-column">
+                <!-- Bandeau de continuité de service — piloté uniquement par
+                     EligibilityService (source='CONTRACT'), jamais recalculé
+                     ici. Même bandeau que pages/subscription/subscription.html. -->
+                @if (showContractContinuityBanner) {
+                <section class="subscription-info card bg-blue-100">
+                  <div class="info-item" style="border-bottom: none;">
+                    <i class="material-icons" style="color: var(--success-color)">verified</i>
+                    <span class="font-semibold">
+                      Vous bénéficiez actuellement du service dans le cadre de votre contrat actif.
+                    </span>
+                  </div>
+                </section>
+                }
+
+                <!-- Bandeau symétrique — non éligible, piloté uniquement par
+                     `eligible`/`reason`, jamais recalculé ici. -->
+                @if (showIneligibilityBanner) {
+                <section class="subscription-info card bg-blue-100" style="border-left: 4px solid var(--error-color);">
+                  <div class="info-item" style="border-bottom: none;">
+                    <i class="material-icons" style="color: var(--error-color)">error_outline</i>
+                    <span class="font-semibold">
+                      {{ ineligibilityMessage() }}
+                    </span>
+                  </div>
+                </section>
+                }
+
                 <!-- Informations d'abonnement -->
                 <section class="subscription-info card bg-blue-100">
                   <div class="section-header">
@@ -633,30 +661,30 @@
                     </button>
                   </div>
 
-                  @if (activeSubscription) {
+                  @if (latestSubscription) {
                     <div
                       class="subscription-details"
                       >
                       <div class="subscription-service">
-                        <h3>Collecte {{ activeSubscription.pricingId?.planType }}</h3>
-                        <p>{{ activeSubscription.agencyId?.name }}</p>
+                        <h3>Collecte {{ latestSubscription.pricingId?.planType }}</h3>
+                        <p>{{ latestSubscription.agencyId?.name }}</p>
                       </div>
                       <div class="subscription-pricing">
                         <div class="price">
-                          {{ activeSubscription.pricingId?.price }} <sup>F CFA</sup>
+                          {{ latestSubscription.pricingId?.price }} <sup>F CFA</sup>
                         </div>
                         <div class="frequency">par mois</div>
                       </div>
                       <div class="subscription-status">
                         <span
                           class="status-badge"
-                          [class]="'status-' + (activeSubscription.isActive ? 'active' : 'inactive')"
+                          [class]="'status-' + (activeSubscription === latestSubscription ? 'active' : 'inactive')"
                           >
-                          {{ getSubscriptionStatusText((activeSubscription.isActive ? 'active' : 'inactive')) }}
+                          {{ subscriptionStatusLabel(latestSubscription) }}
                         </span>
                         <button
                           class="btn btn-secondary btn-small"
-                          routerLink="/agencies/{{ activeSubscription.agencyId?._id }}"
+                          routerLink="/agencies/{{ latestSubscription.agencyId?._id }}"
                           >
                           <i class="material-icons">visibility</i>
                           Voir l'agence
