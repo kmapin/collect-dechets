@@ -245,7 +245,6 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this._fetchPlanning(id);
     this._loadTeams();
-    this._loadAgencyName();
   }
 
   ngAfterViewInit(): void {
@@ -266,6 +265,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       this.planning.set(cached);
       this._buildActivities(cached);
       this._loadRoundsIncidentsNotifications(id);
+      this._loadAgencyName(cached.agencyId);
       this.isLoading.set(false);
       return;
     }
@@ -275,6 +275,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
         this.planning.set(p);
         this._buildActivities(p);
         this._loadRoundsIncidentsNotifications(id);
+        this._loadAgencyName(p.agencyId);
         this.isLoading.set(false);
       },
       error: () => {
@@ -387,8 +388,13 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   // ── Agency name loader ────────────────────────────────────────
-  private _loadAgencyName(): void {
-    const agencyId = this.svc.agencyId;
+  // Prend l'agencyId du PLANNING affiché (this.planning()?.agencyId), jamais
+  // this.svc.agencyId (l'agence du VIEWER connecté, dérivée de son propre profil en
+  // localStorage) : pour un super_admin/municipality consultant un planning, agencyId
+  // vaut toujours '' côté viewer (rôles sans agence propre), donc agencyName restait
+  // vide pour toujours et le PDF retombait sur le fallback 'SAHELYS' — alors même que
+  // le planning affiché appartient bien à une agence réelle.
+  private _loadAgencyName(agencyId?: string): void {
     if (!agencyId) return;
     this.agencySvc.getAgencyByIdFromApi(agencyId).subscribe({
       next:  res => { if (res?.data?.name) this.agencyName.set(res.data.name); },
