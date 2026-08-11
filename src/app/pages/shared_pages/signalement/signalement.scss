@@ -194,7 +194,8 @@
 .sig-status--pending,
 .sig-status--reported,
 .sig-status--scheduled                             { background: #fff7ed; color: #ea580c; }
-.sig-status--investigating                         { background: #eff6ff; color: #2563eb; }
+.sig-status--investigating,
+.sig-status--in_progress                           { background: #eff6ff; color: #2563eb; }
 .sig-status--resolved,
 .sig-status--closed,
 .sig-status--collected                             { background: #f0fdf4; color: #16a34a; }
@@ -575,6 +576,123 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* Drawer de détail d'un signalement (openIncidentDrawer) */
+.sig-drawer-hero {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sig-drawer-badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sig-drawer-type {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.sig-drawer-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+
+  .material-icons {
+    font-size: 16px;
+  }
+}
+
+.sig-drawer-section {
+  margin-bottom: 20px;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.sig-drawer-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #6b7280;
+
+  .material-icons {
+    font-size: 18px;
+  }
+}
+
+.sig-drawer-comment {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #374151;
+  white-space: pre-wrap;
+}
+
+.sig-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sig-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #e5e7eb;
+
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+}
+
+.sig-detail-label {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.sig-detail-value {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #111827;
+  text-align: right;
+}
+
+.sig-drawer-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sig-photo-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary-color, #3b82f6);
+    color: var(--primary-color, #3b82f6);
+  }
 }
 
 .incident-agency-container {

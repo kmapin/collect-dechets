@@ -28,8 +28,18 @@ interface Incident {
     lastName ?:string;
     email?:string
   }
+  reportedBy?: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+  };
   photos?: string[];
-  agencyName: string;
+  // Optionnel : le vrai backend (GET /api/signalements) ne renvoie jamais ce champ à plat,
+  // seulement `agencyId.name` une fois peuplé — typé requis jusqu'ici, ce qui rendait le
+  // fallback `?? incident.agencyName ?? '—'` du drawer de détail toujours mort selon TS.
+  agencyName?: string;
   type:
     | "missed_collection"
     | "compliance_issue"
@@ -39,7 +49,10 @@ interface Incident {
   description: string;
   severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
-  status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
+  // "open"/"in_progress"/"resolved" : valeurs réelles de Signalement.status (models/Signalement.js).
+  // 'pending'/'Collected'/'Reported'/'Scheduled' ne subsistent que pour d'éventuelles
+  // données historiques Collecte-based non migrées.
+  status: "open" | "in_progress" | "pending" | "resolved" | 'Collected' | 'Reported' | 'Scheduled';
   /** Champ réel Collecte.resolutionTeamId (renommé depuis assignedTeamId, Phase 2 du
    * nettoyage Planning/Signalement/Assignation) — l'équipe à qui le signalement a été
    * affecté pour résolution. Distinct de `collectorId` (le collecteur de la collecte
@@ -56,6 +69,9 @@ interface Incident {
   collecteId?: string | null;
   planningId?: { _id: string; reference?: string; libelle?: string; date?: Date } | null;
   origine?: "collecte" | "independant";
+  // Renseigné par PATCH /signalements/:id/resolve une fois status='resolved'.
+  resolutionComment?: string;
+  resolvedAt?: Date;
 }
 @Component({
   selector: 'app-signalement',
@@ -217,6 +233,23 @@ export class Signalement {
 
     };
     return statuses[status as keyof typeof statuses] || status;
+  }
+
+  // Détail d'un signalement — même principe que le drawer d'admin-dashboard.ts
+  // (openIncidentDrawer/visibleIncidentDrawer), absent jusqu'ici de ce composant partagé :
+  // seules les actions rapides (assigner/résoudre/voir photo/contacter) étaient possibles
+  // depuis la ligne/carte, aucune vue détaillée complète du signalement.
+  visibleIncidentDrawer = false;
+  detailIncident: Incident | null = null;
+
+  openIncidentDrawer(incident: Incident): void {
+    this.detailIncident = incident;
+    this.visibleIncidentDrawer = true;
+  }
+
+  closeIncidentDrawer(): void {
+    this.visibleIncidentDrawer = false;
+    this.detailIncident = null;
   }
 
   selectedImage: string | null = null;

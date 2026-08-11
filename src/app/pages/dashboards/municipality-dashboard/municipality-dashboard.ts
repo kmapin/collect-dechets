@@ -42,14 +42,6 @@ import { MOCK_NETWORK_DELAY_MS } from "./mocks/municipality-mock.constants";
 import type { ChartConfiguration } from "chart.js";
 
 /**
- * Plafond de récupération pour loadAllSignalements() (Prompt 03) — <app-signalement>
- * pagine déjà côté client sur le tableau complet reçu, donc pas besoin de pagination
- * serveur ici, juste d'un volume suffisant. Provisoire : à ajuster selon le vrai volume
- * de signalements municipaux (le backend clampe à 500 max, voir services/qrValidation.js).
- */
-const INCIDENTS_FETCH_LIMIT = 300;
-
-/**
  * Vrai vocabulaire `PlanningV2.typeDechets`/`Collecte.wasteType` (Prompt 08) — remplace
  * les 4 catégories inventées du mock (`WASTE_TYPE_POOL`, mocks/municipality-mock.constants.ts,
  * encore utilisé par les sections Volume/Performance/Fréquence par zone, toujours mockées,
@@ -100,10 +92,12 @@ export interface Incident {
   description: string;
   severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
-  status: "open" | "pending" | "resolved"|'Collected' |'Reported'|'Scheduled';
-  /** Champ réel Collecte.resolutionStatus — `status` ci-dessus reste 'Reported' pour
-   * toujours après résolution (services/collecte.service.js::resolveReport ne le touche
-   * jamais), donc c'est le SEUL champ qui indique si un signalement est vraiment traité. */
+  // "open"/"in_progress"/"resolved" : valeurs réelles de Signalement.status (models/Signalement.js)
+  // pour toute donnée créée depuis la migration. 'Collected'/'Reported'/'Scheduled' ne
+  // subsistent que pour d'éventuelles données historiques Collecte-based non migrées.
+  status: "open" | "in_progress" | "resolved" | "pending" | 'Collected' | 'Reported' | 'Scheduled';
+  /** Champ legacy Collecte.resolutionStatus (signalements Collecte-based non migrés
+   * uniquement) — `status` porte directement la progression pour tout signalement récent. */
   resolutionStatus?: "pending" | "in_progress" | "resolved";
   /** Champ réel Collecte.resolutionTeamId (renommé depuis assignedTeamId, Phase 2 du
    * nettoyage Planning/Signalement/Assignation) — équipe affectée à la résolution. */
@@ -332,7 +326,10 @@ export class MunicipalityDashboard  implements OnInit {
   /** "Exporter" button (Prompt 16) — client-side export scoped to the Statistiques tab only. */
   statisticsExportFormat: "csv" | "excel" | "pdf" = "csv";
   isExportingStatistics = false;
-  incidentsFilter: "all" | "open" | "pending" | "resolved" = "all";
+  // Aligné sur Signalement.status réel (models/Signalement.js: open|in_progress|resolved) —
+  // 'pending' n'a jamais existé dans cet enum, le filtre "En cours" ne renvoyait donc jamais
+  // rien (même correctif que admin-dashboard.ts::incidentsFilter).
+  incidentsFilter: "all" | "open" | "in_progress" | "resolved" = "all";
   severityFilter: "all" | "Low" | "Medium" | "High" | "Critical" = "all";
   searchTerm="";
   neighborhoodFilter="";
@@ -842,52 +839,50 @@ export class MunicipalityDashboard  implements OnInit {
     return zones;
   }
 
-  /**Listes des signalements des users */
-  /**
-   * Charge les signalements (Prompt 03, BACKEND_INTEGRATION.md §0.5) — appelait
-   * auparavant getAllReports() sans aucun paramètre : le backend retombait sur ses
-   * défauts (`limit=25, skip=0`, aucun filtre de statut), donc ce tableau ne montrait
-   * jamais que les 25 collectes les plus récentes de l'agence, de N'IMPORTE QUEL statut
-   * (Scheduled/Collected/... noyant les vrais signalements), jamais le vrai total.
-   *
-   * `status: 'Reported'` : seule valeur de l'enum Collecte.status qui correspond à un
-   * signalement réel (voir models/Collecte.js) — sans ce filtre, le badge "Incidents" et
-   * getIncidentBreakdown() comptaient des collectes normales, pas des signalements.
-   *
-   * `limit: INCIDENTS_FETCH_LIMIT` : <app-signalement> pagine déjà côté client sur
+  /** Liste des signalements, toutes agences confondues (rôle municipality = supervision
+   * plateforme, comme super_admin). <app-signalement> pagine déjà côté client sur
    * l'intégralité du tableau reçu (pagedIncidents, signalement.ts) — pas de pagination
-   * serveur nécessaire ici, juste un plafond assez généreux pour couvrir le volume réel de
-   * signalements. 300 est un plafond provisoire (backend clampé à 500 max, Prompt 03) : à
-   * ajuster si le volume réel de signalements municipaux dépasse ce seuil, ou à remplacer
-   * par un vrai infinite-scroll si ça devient courant.
-   *
-   * Filtré en plus sur `resolutionStatus !== 'resolved'` : `status: 'Reported'` seul
-   * inclut aussi les signalements déjà résolus (resolveReport() ne change jamais `status`,
-   * voir Prompt 01/EditRecap.md). Sans ce filtre, le badge de l'onglet et le tableau
-   * comptaient un signalement de plus que la carte KPI "Incidents non résolus"
-   * (statisticsAdmin.pendingReportsCount, qui applique déjà ce même filtre côté serveur) —
-   * les deux nombres doivent représenter la même chose.
-   */
+   * serveur nécessaire ici. */
+  // Lit désormais le vrai modèle Signalement unifié (GET /api/signalements) — la mutation
+  // Collecte.status='Reported' n'existe plus depuis cette migration (voir models/Signalement.js),
+  // /api/collecte/all?status=Reported ne renverra donc plus jamais rien (même correctif que
+  // admin-dashboard.ts::loadAllSignalements). agencyId omis : 'municipality' est désormais
+  // autorisé côté backend à voir toutes les agences, comme 'super_admin'.
   loadAllSignalements() {
     this.isLoadingIncidents = true;
-    this.adminService.getAllReports({ status: 'Reported', limit: INCIDENTS_FETCH_LIMIT }).subscribe({
-      next: (response: any) => {
-        this.incidents = (response.collectes ?? []).filter(
-          (i: Incident) => i.resolutionStatus !== 'resolved'
-        );
+    this.adminService.getAllSignalements({}).subscribe({
+      next: (signalements: any[]) => {
+        this.incidents = signalements ?? [];
         this.isLoadingIncidents = false;
-        this.filteredIncidents = [...this.incidents];
+        this.filterIncidents();
         this.incidentBreakdown = this.getIncidentBreakdown();
         this.buildNotifications();
-        console.log("signalements in response", response);
         console.log("signalements in dashboard", this.filteredIncidents);
         const incidentsTab = this.tabs.find((tab) => tab.id === "incidents");
         if (incidentsTab) {
-          incidentsTab.badge = this.incidents.length;
+          // Compte "non résolus", pas le total brut (cohérent avec la carte KPI
+          // "Incidents non résolus" — voir getUnresolvedReportsCount()).
+          incidentsTab.badge = this.getUnresolvedReportsCount();
           this.cd.detectChanges();
         }
       },
+      error: (error) => {
+        console.error("Erreur lors du chargement des incidents:", error);
+        this.isLoadingIncidents = false;
+      },
     });
+  }
+
+  getTotalReportsCount(): number {
+    return this.incidents.length;
+  }
+
+  getUnresolvedReportsCount(): number {
+    return this.incidents.filter(i => (i.status ?? 'open') !== 'resolved').length;
+  }
+
+  getResolvedReportsCount(): number {
+    return this.incidents.filter(i => i.status === 'resolved').length;
   }
 
   // Utility methods
@@ -935,8 +930,11 @@ export class MunicipalityDashboard  implements OnInit {
     return "Non disponible";
   }
 
+  // statisticsAdmin?.pendingReportsCount (services/globalState.js) compte encore l'ancien
+  // Collecte.status='Reported', resté à 0 depuis la migration vers Signalement — this.incidents
+  // (GET /api/signalements, chargé par loadAllSignalements()) est la seule source fiable.
   getIncidentSeverity(): string {
-    const pending = this.statisticsAdmin?.pendingReportsCount ?? 0;
+    const pending = this.getUnresolvedReportsCount();
     if (pending <= 5) return "Faible";
     if (pending <= 10) return "Modéré";
     return "Élevé";
@@ -1180,10 +1178,14 @@ export class MunicipalityDashboard  implements OnInit {
     this.filteredIncidents = this.incidents.filter((incident) => {
       const statusMatch =
         this.incidentsFilter === "all" ||
-        incident.status === this.incidentsFilter;
+        (incident.status ?? "open") === this.incidentsFilter;
+      // Comparaison insensible à la casse : Signalement.severity (models/Signalement.js)
+      // est en minuscules (low|medium|high|critical|other), severityFilter est resté
+      // capitalisé pour l'affichage (Low/Medium/...) — une comparaison stricte ne
+      // matchait donc jamais aucune donnée réelle.
       const severityMatch =
         this.severityFilter === "all" ||
-        incident.severity === this.severityFilter;
+        (incident.severity || "").toLowerCase() === this.severityFilter.toLowerCase();
       return statusMatch && severityMatch;
     });
   }
@@ -1205,28 +1207,23 @@ export class MunicipalityDashboard  implements OnInit {
    * instead of mutating `incidents` directly.
    */
   /**
-   * Appelait auparavant seulement `target.status = "pending"`/`assignedTo` en mémoire —
-   * jamais persisté, et une valeur ('pending') qui n'existe même pas dans le vrai enum
-   * `Collecte.status`. Appelle maintenant le vrai `PATCH /collectes/:id/assign-team`
-   * (Admin.assignReportToTeam$, Prompt 06) et met à jour l'incident depuis la réponse
-   * serveur seulement après confirmation.
+   * incidentId est désormais un Signalement._id (jamais un Collecte._id — un signalement
+   * indépendant n'a pas de collecte à cibler) : PATCH /signalements/:id/assign-team, pas
+   * l'ancienne route Collecte-based (même correctif que admin-dashboard.ts).
    *
-   * Note (Prompt 06, confirmé par l'utilisateur) : "Seuls les managers peuvent
-   * assigner/résoudre" — ce handler reste donc **inatteignable en pratique** pour un
-   * agent de mairie : <app-signalement> ne rend le bouton "Assigner" que pour
-   * `currentUser?.role === 'manager'`, jamais 'municipality'. Corrigé quand même (au
-   * lieu de laisser une mutation locale fictive) par cohérence avec le reste du
-   * dashboard et au cas où cette règle de visibilité évoluerait.
+   * Note : "Seuls les managers peuvent assigner/résoudre" — <app-signalement> ne rend le
+   * bouton "Assigner" que pour `currentUser?.role === 'manager'`, jamais 'municipality' —
+   * ce handler reste donc inatteignable en pratique depuis CE dashboard. Corrigé quand même
+   * par cohérence et au cas où cette règle de visibilité évoluerait.
    */
   onAssignReport(payload: { incidentId: string; teamId: string }): void {
-    const assignedBy = this.currentUser?._id ?? this.currentUser?.id ?? '';
-    this.adminService.assignReportToTeam$(payload.incidentId, payload.teamId, assignedBy).subscribe({
+    this.adminService.assignSignalementToTeam(payload.incidentId, payload.teamId).subscribe({
       next: (response: any) => {
         const updated = response?.data;
         const target = this.incidents.find((i) => i._id === payload.incidentId);
         if (target) {
           target.resolutionTeamId = updated?.resolutionTeamId ?? target.resolutionTeamId;
-          target.resolutionStatus = updated?.resolutionStatus ?? 'in_progress';
+          target.status = updated?.status ?? 'in_progress';
         }
         this.filterIncidents();
         this.incidentBreakdown = this.getIncidentBreakdown();
@@ -1241,26 +1238,21 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   /**
-   * Appelait auparavant seulement `target.status = "resolved"` en mémoire — jamais
-   * persisté (aucun appel réseau), donc annulé au prochain rechargement, et incohérent
-   * avec le filtre de loadAllSignalements() (qui exclut resolutionStatus === 'resolved'
-   * depuis ce même correctif) : l'incident aurait affiché "Résolue" localement tout en
-   * continuant à compter dans "Incidents non résolus" jusqu'au rechargement suivant.
-   * Appelle maintenant le vrai `PATCH /collectes/:id/resolve` (Admin.resolveCollecte$,
-   * déjà écrit mais jamais appelé depuis aucun dashboard) et retire l'incident de la liste
-   * seulement après confirmation serveur — cohérent avec le fait que resolveReport() ne
-   * remet jamais `status` à autre chose que 'Reported' (voir EditRecap.md, Prompt 01).
+   * incidentId est un Signalement._id : PATCH /signalements/:id/resolve, pas l'ancienne
+   * route Collecte-based (même correctif que admin-dashboard.ts). Note d'inatteignabilité
+   * pratique identique à onAssignReport ci-dessus (bouton "Résoudre" réservé au rôle manager
+   * côté <app-signalement>) — corrigé par cohérence.
    */
   onResolvedIncident(incidentId: string): void {
-    const resolvedBy = this.currentUser?._id ?? this.currentUser?.id ?? '';
-    this.adminService.resolveCollecte$(incidentId, resolvedBy, 'Résolu depuis le tableau de bord municipal').subscribe({
+    this.adminService.resolveSignalement(incidentId, 'Résolu depuis le tableau de bord municipal').subscribe({
       next: () => {
-        this.incidents = this.incidents.filter((i) => i._id !== incidentId);
+        const target = this.incidents.find((i) => i._id === incidentId);
+        if (target) target.status = 'resolved';
         this.filterIncidents();
         this.incidentBreakdown = this.getIncidentBreakdown();
         this.buildNotifications();
         const incidentsTab = this.tabs.find((tab) => tab.id === "incidents");
-        if (incidentsTab) incidentsTab.badge = this.incidents.length;
+        if (incidentsTab) incidentsTab.badge = this.getUnresolvedReportsCount();
         this.notificationService.showSuccess("Incident résolu", "L'incident a été marqué comme résolu.");
       },
       error: (err) => {
@@ -1351,7 +1343,7 @@ export class MunicipalityDashboard  implements OnInit {
             "Collectes aujourd'hui",
             `${this.statisticsAdmin?.dailyCollectionCollected ?? "—"} / ${this.statisticsAdmin?.dailyCollections ?? "—"} (${this.getCollectionRate()}%)`,
           ],
-          ["Incidents non résolus", `${this.statisticsAdmin?.pendingReportsCount ?? 0}`],
+          ["Incidents non résolus", `${this.getUnresolvedReportsCount()}`],
         ],
         ...tableStyles,
       });

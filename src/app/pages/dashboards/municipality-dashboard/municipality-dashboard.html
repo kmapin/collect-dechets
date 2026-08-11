@@ -98,11 +98,9 @@
           <div class="stat-info">
             <h3>Incidents non résolus</h3>
             <p class="stat-value">
-              {{ statisticsAdmin?.pendingReportsCount ?? 0 }}
+              {{ getUnresolvedReportsCount() }}
             </p>
-            <span class="stat-trend" [class.negative]="
-                    (statisticsAdmin?.pendingReportsCount ?? 0) > 10
-                  ">
+            <span class="stat-trend" [class.negative]="getUnresolvedReportsCount() > 10">
               {{ getIncidentSeverity() }}
             </span>
           </div>
@@ -782,7 +780,7 @@
               <select [(ngModel)]="incidentsFilter" (change)="filterIncidents()" class="filter-select">
                 <option value="all">Tous les incidents</option>
                 <option value="open">Ouverts</option>
-                <option value="pending">En cours</option>
+                <option value="in_progress">En cours</option>
                 <option value="resolved">Résolus</option>
               </select>
               <select [(ngModel)]="severityFilter" (change)="filterIncidents()" class="filter-select">

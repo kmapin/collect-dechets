@@ -639,16 +639,56 @@
 }
 
 .filter-select {
+  min-width: 170px;
   padding: 8px 12px;
   border: 2px solid var(--medium-gray);
   border-radius: 6px;
   font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--white);
+  cursor: pointer;
   transition: border-color 0.3s ease;
 }
 
 .filter-select:focus {
   outline: none;
   border-color: var(--primary-color);
+}
+
+.filter-select:hover {
+  border-color: var(--surface-400, #9ca3af);
+}
+
+// Utilisé à 3 endroits dans ce dashboard (incidents filtrés, incidentBreakdown vide,
+// signalements filtrés) sans aucun style jusqu'ici — rendu brut du navigateur (icône/titre/
+// texte empilés à gauche, sans espacement), d'où l'écart visuel avec le reste des cartes.
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-secondary);
+
+  .material-icons {
+    font-size: 2.75rem;
+    color: var(--surface-300, #d1d5db);
+    margin-bottom: 12px;
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
 }
 
 .agencies-grid {

@@ -92,11 +92,14 @@
     <!-- Actions -->
     <div class="sig-col sig-col--actions">
       <div class="sig-actions">
+        <button class="sig-action-btn sig-action-btn--gray" (click)="openIncidentDrawer(incident)" title="Voir détails">
+          <i class="material-icons">visibility</i>
+        </button>
         @if (incident.agencyId && currentUser?.role === 'manager') {
           <button class="sig-action-btn sig-action-btn--blue" (click)="openTeamPicker(incident)" [title]="incident.resolutionTeamId?._id ? 'Réaffecter' : 'Assigner'">
             <i class="material-icons">assignment_ind</i>
           </button>
-          @if (incident.resolutionStatus !== 'resolved') {
+          @if (incident.status !== 'resolved') {
           <button class="sig-action-btn sig-action-btn--green" (click)="resolveIncident(incident._id)" title="Résoudre">
             <i class="material-icons">check_circle</i>
           </button>
@@ -174,6 +177,9 @@
             {{ incident.createdAt | date : "dd MMM yyyy, HH:mm" }}
           </div>
           <div class="sig-actions">
+            <button class="sig-action-btn sig-action-btn--gray" (click)="openIncidentDrawer(incident)" title="Voir détails">
+              <i class="material-icons">visibility</i>
+            </button>
             <button class="sig-action-btn sig-action-btn--blue" (click)="contactAgencyForIncident(incident?.agencyId?._id)" title="Contacter l'agence">
               <i class="material-icons">phone</i>
             </button>
@@ -331,6 +337,129 @@
         <button class="btn btn-primary" [disabled]="!selectedTeamId" (click)="confirmAssignTeam()">
           Confirmer l'affectation
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Détail d'un signalement -->
+@if (visibleIncidentDrawer && detailIncident; as incident) {
+<div class="drawer-overlay" (click)="closeIncidentDrawer()">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>Détails du signalement</h3>
+      <button class="drawer-close-btn" (click)="closeIncidentDrawer()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="drawer-body">
+
+      <!-- Bloc titre + badges -->
+      <div class="sig-drawer-hero">
+        <div class="sig-drawer-badges">
+          <span class="sig-severity" [ngClass]="'sig-severity--' + incident.severity.toLowerCase()">
+            <i class="material-icons">{{ getSeverityIcon(incident.severity.toLowerCase()) }}</i>
+            {{ getSeverityText(incident.severity.toLowerCase()) }}
+          </span>
+          <span class="sig-status" [ngClass]="'sig-status--' + incident.status.toLowerCase()">
+            {{ getIncidentStatusText(incident.status.toLowerCase()) }}
+          </span>
+        </div>
+        <h2 class="sig-drawer-type">{{ getIncidentTypeText(incident.type.toLowerCase()) }}</h2>
+        <p class="sig-drawer-date">
+          <i class="material-icons">schedule</i>
+          {{ incident.createdAt | date:'dd MMMM yyyy à HH:mm' }}
+        </p>
+      </div>
+
+      <!-- Description -->
+      <div class="sig-drawer-section">
+        <h4 class="sig-drawer-section-title">
+          <i class="material-icons">description</i> Description
+        </h4>
+        <p class="sig-drawer-comment">
+          {{ incident.comment || incident.description || 'Aucune description fournie.' }}
+        </p>
+        @if (incident.origine === 'independant') {
+          <span class="sig-origine sig-origine--independant">Signalement indépendant</span>
+        } @else if (incident.origine === 'collecte') {
+          <span class="sig-origine sig-origine--collecte">
+            Lié à une collecte
+            @if (incident.planningId; as planningRef) {
+              @if (planningRef._id) {
+                · <a [routerLink]="['/planning/detail', planningRef._id]">{{ planningRef.reference || planningRef.libelle || 'voir le planning' }}</a>
+              }
+            }
+          </span>
+        }
+      </div>
+
+      <!-- Parties impliquées -->
+      <div class="sig-drawer-section">
+        <h4 class="sig-drawer-section-title">
+          <i class="material-icons">people</i> Parties impliquées
+        </h4>
+        <div class="sig-detail-list">
+          <div class="sig-detail-row">
+            <span class="sig-detail-label">Agence</span>
+            <span class="sig-detail-value">{{ incident.agencyId?.name ?? incident.agency?.name ?? incident.agencyName ?? '—' }}</span>
+          </div>
+          <div class="sig-detail-row" *ngIf="incident.clientId?._id">
+            <span class="sig-detail-label">Client</span>
+            <span class="sig-detail-value">{{ incident.clientId?.firstName }} {{ incident.clientId?.lastName }}</span>
+          </div>
+          <div class="sig-detail-row" *ngIf="incident.reportedBy?._id">
+            <span class="sig-detail-label">Signalé par</span>
+            <span class="sig-detail-value">{{ incident.reportedBy?.firstName }} {{ incident.reportedBy?.lastName }}</span>
+          </div>
+          <div class="sig-detail-row" *ngIf="incident.resolutionTeamId?._id">
+            <span class="sig-detail-label">Équipe assignée</span>
+            <span class="sig-detail-value">{{ incident.resolutionTeamId?.name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photos -->
+      <div class="sig-drawer-section" *ngIf="incident.photos?.length">
+        <h4 class="sig-drawer-section-title">
+          <i class="material-icons">photo_library</i> Photos ({{ incident.photos!.length }})
+        </h4>
+        <div class="sig-drawer-photos">
+          <button *ngFor="let photo of incident.photos" class="sig-photo-thumb"
+            (click)="showPictures(); openImageModal(photo, incident)">
+            <i class="material-icons">image</i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Commentaire de résolution -->
+      <div class="sig-drawer-section" *ngIf="incident.status === 'resolved' && incident.resolutionComment">
+        <h4 class="sig-drawer-section-title">
+          <i class="material-icons">check_circle</i> Commentaire de résolution
+        </h4>
+        <p class="sig-drawer-comment">{{ incident.resolutionComment }}</p>
+      </div>
+
+    </div>
+    <div class="drawer-footer">
+      <div class="drawer-actions">
+        @if (incident.agencyId && currentUser?.role === 'manager') {
+          <button class="btn btn-secondary" (click)="openTeamPicker(incident); closeIncidentDrawer()">
+            {{ incident.resolutionTeamId?._id ? 'Réaffecter' : 'Assigner' }}
+          </button>
+          @if (incident.status !== 'resolved') {
+          <button class="btn btn-primary" (click)="resolveIncident(incident._id); closeIncidentDrawer()">
+            Résoudre
+          </button>
+          }
+        }
+        @if (currentUser?.role !== 'manager') {
+          <button class="btn btn-primary" (click)="contactAgencyForIncident(incident?.agencyId?._id); closeIncidentDrawer()">
+            Contacter l'agence
+          </button>
+        }
+        <button class="btn btn-secondary" (click)="closeIncidentDrawer()">Fermer</button>
       </div>
     </div>
   </div>
