@@ -249,6 +249,10 @@ export class PlanningCreate implements OnInit {
     this._watchTypeChange();
     this._loadTeams();
     this._loadClients();
+    // Alimente PlanningService.plannings(), dont app-planning-type-selector
+    // dérive le nombre de plannings par type (0 partout sans cet appel,
+    // puisque cette page n'appelait jusqu'ici jamais loadPlannings()).
+    this.svc.loadPlannings();
 
     // Détection du mode édition / duplication via query params
     const editId      = this.route.snapshot.queryParamMap.get('edit');
