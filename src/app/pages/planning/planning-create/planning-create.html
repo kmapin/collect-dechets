@@ -125,6 +125,7 @@
                   <mat-icon class="search-icon">search</mat-icon>
                   <input class="search-inp" type="text" placeholder="Nom, adresse…"
                          [value]="clientSearchQuery()"
+                         (focus)="onClientSearchFocus()"
                          (input)="searchClients($any($event.target).value)" />
                   @if (selectedClients().length > 0) {
                     <button type="button" class="clear-search" (click)="clearClient()">
@@ -141,7 +142,17 @@
                           <span class="cr-name">{{ c.name }}</span>
                           <span class="cr-addr">{{ c.address }}</span>
                         </div>
-                        <span class="cr-zone">{{ c.zone }}</span>
+                        <div class="cr-badges">
+                          <span class="cr-zone">{{ c.zone }}</span>
+                          @if (c.eligible !== undefined) {
+                            <span class="cr-eligibility"
+                                  [class.cr-eligibility--ok]="c.eligible"
+                                  [class.cr-eligibility--ko]="!c.eligible"
+                                  [pTooltip]="eligibilityReasonLabel(c.eligibilityReason)" tooltipPosition="left">
+                              {{ c.eligible ? 'Éligible' : 'Non éligible' }}
+                            </span>
+                          }
+                        </div>
                       </div>
                     }
                   </div>
@@ -241,10 +252,57 @@
                               @if (g.description) { <span class="eg-desc">{{ g.description }}</span> }
                               <span class="eg-count">{{ g.clients?.length ?? g.clientIds?.length ?? 0 }} client(s)</span>
                             </div>
+                            <div class="eg-actions">
+                              <button type="button" class="eg-action-btn" pTooltip="Gérer les membres" tooltipPosition="top"
+                                      (click)="toggleManageGroup(g, $event)">
+                                <mat-icon>{{ managingGroupId() === g._id ? 'expand_less' : 'manage_accounts' }}</mat-icon>
+                              </button>
+                              <button type="button" class="eg-action-btn eg-action-btn--danger" pTooltip="Supprimer le groupe" tooltipPosition="top"
+                                      (click)="deleteExistingGroup(g, $event)">
+                                <mat-icon>delete_outline</mat-icon>
+                              </button>
+                            </div>
                             @if (selectedExistingGroupId() === g._id) {
                               <mat-icon class="eg-selected-icon">check_circle</mat-icon>
                             }
                           </div>
+
+                          @if (managingGroupId() === g._id) {
+                            <div class="eg-manage-panel" (click)="$event.stopPropagation()">
+                              <span class="eg-manage-title">Membres du groupe</span>
+                              @if ((g.clients ?? []).length === 0) {
+                                <p class="eg-manage-empty">Aucun membre pour l'instant.</p>
+                              }
+                              <div class="eg-member-list">
+                                @for (m of g.clients; track m._id) {
+                                  <div class="eg-member-row">
+                                    <span class="eg-member-name">{{ m.firstName }} {{ m.lastName }}</span>
+                                    <button type="button" class="eg-member-remove" pTooltip="Retirer du groupe" tooltipPosition="top"
+                                            (click)="removeClientFromGroup(g, m, $event)">
+                                      <mat-icon>close</mat-icon>
+                                    </button>
+                                  </div>
+                                }
+                              </div>
+                              <div class="eg-add-member">
+                                <mat-icon class="search-icon">search</mat-icon>
+                                <input type="text" placeholder="Ajouter un client…"
+                                       [value]="groupMemberSearchQuery()"
+                                       (click)="$event.stopPropagation()"
+                                       (input)="searchGroupMemberCandidates(g, $any($event.target).value)" />
+                              </div>
+                              @if (groupMemberSuggestions().length > 0) {
+                                <div class="eg-add-suggestions">
+                                  @for (c of groupMemberSuggestions(); track c.id) {
+                                    <div class="eg-add-suggestion-row" (click)="addClientToGroup(g, c, $event)">
+                                      <span>{{ c.name }}</span>
+                                      <mat-icon>add_circle_outline</mat-icon>
+                                    </div>
+                                  }
+                                </div>
+                              }
+                            </div>
+                          }
                         }
                       </div>
                     </div>

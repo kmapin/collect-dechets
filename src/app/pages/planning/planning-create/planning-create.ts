@@ -40,6 +40,13 @@ interface ClientOpt {
   address: string;
   zone: string;
   phone?: string;
+  // Éligibilité réelle (EligibilityService, backend) — affichée dans la liste
+  // de sélection pour que l'agence le sache AVANT de choisir un client, plutôt
+  // que de découvrir le rejet seulement à la soumission (createPlanningV2
+  // bloque désormais la création d'un planning individuel pour un client non
+  // éligible, chantier EligibilityService).
+  eligible?: boolean;
+  eligibilityReason?: string;
 }
 
 @Component({
@@ -149,6 +156,11 @@ export class PlanningCreate implements OnInit {
   existingGroups          = signal<any[]>([]);
   isLoadingGroups         = signal(false);
   selectedExistingGroupId = signal<string | null>(null);
+
+  // ── Gestion d'un groupe existant (ajout/retrait de clients) ───
+  managingGroupId       = signal<string | null>(null);
+  groupMemberSearchQuery = signal('');
+  groupMemberSuggestions = signal<ClientOpt[]>([]);
 
   // ── Form signal (for computed) ───────────────────────────────
   formValue = signal<Record<string, any>>({});
@@ -434,6 +446,17 @@ export class PlanningCreate implements OnInit {
     });
   }
 
+  /** Traduction d'affichage des valeurs réelles de `reason` (EligibilityService) — ne recalcule aucune règle. */
+  eligibilityReasonLabel(reason?: string): string {
+    const map: { [key: string]: string } = {
+      ACTIVE_CONTRACT: 'Éligible via un contrat actif',
+      ACTIVE_SUBSCRIPTION: 'Éligible via un abonnement actif',
+      SUBSCRIPTION_EXPIRED: 'Abonnement expiré, aucun contrat actif',
+      NO_ACTIVE_CONTRACT_OR_SUBSCRIPTION: 'Aucun contrat ni abonnement actif',
+    };
+    return (reason && map[reason]) || '';
+  }
+
   private _loadClients(term?: string): void {
     this.isLoadingClients.set(true);
     this.svc.getClientsForAgency({ term, limit: 100 }).subscribe({
@@ -444,8 +467,16 @@ export class PlanningCreate implements OnInit {
           address: [c.address?.neighborhood, c.address?.city].filter(Boolean).join(', '),
           zone:    c.address?.arrondissement ?? '',
           phone:   c.phone,
+          eligible:          c.eligibility?.eligible,
+          eligibilityReason: c.eligibility?.reason,
         })));
         this.isLoadingClients.set(false);
+        // Chargement déclenché par le focus sur un champ encore vide (voir
+        // onClientSearchFocus()) : afficher les suggestions par défaut
+        // maintenant que la liste vient d'arriver, sans attendre une saisie.
+        if (!this.clientSearchQuery().trim()) {
+          this._showDefaultClientSuggestions();
+        }
       },
       error: () => this.isLoadingClients.set(false),
     });
@@ -607,9 +638,26 @@ export class PlanningCreate implements OnInit {
   }
 
   // ── Client search (individuel) ───────────────────────────────
+  private static readonly DEFAULT_CLIENT_SUGGESTIONS_COUNT = 8;
+
+  /** Quelques clients de l'agence, avant toute saisie — évite une liste vide au premier clic sur le champ. */
+  private _showDefaultClientSuggestions(): void {
+    this.filteredClients.set(this.apiClients().slice(0, PlanningCreate.DEFAULT_CLIENT_SUGGESTIONS_COUNT));
+  }
+
+  /** Déclenché au focus du champ — charge les clients si pas encore fait, puis affiche les suggestions par défaut. */
+  onClientSearchFocus(): void {
+    if (this.clientSearchQuery().trim()) return; // une recherche est déjà en cours, ne pas l'écraser
+    if (!this.apiClients().length && !this.isLoadingClients()) {
+      this._loadClients();
+    } else {
+      this._showDefaultClientSuggestions();
+    }
+  }
+
   searchClients(query: string): void {
     this.clientSearchQuery.set(query);
-    if (!query.trim()) { this.filteredClients.set([]); return; }
+    if (!query.trim()) { this._showDefaultClientSuggestions(); return; }
     const q = query.toLowerCase();
     this.filteredClients.set(
       this.apiClients().filter(c => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q))
@@ -651,6 +699,82 @@ export class PlanningCreate implements OnInit {
 
   selectExistingGroup(group: any): void {
     this.selectedExistingGroupId.set(group._id);
+  }
+
+  /** Message d'erreur du domaine ClientGroup — controllers/clientGroup.js renvoie `{success:false, error: "texte"}` (chaîne, pas d'objet imbriqué). */
+  private _groupErrorMessage(err: any, fallback: string): string {
+    return err?.error?.error ?? fallback;
+  }
+
+  toggleManageGroup(group: any, event: Event): void {
+    event.stopPropagation();
+    const next = this.managingGroupId() === group._id ? null : group._id;
+    this.managingGroupId.set(next);
+    this.groupMemberSearchQuery.set('');
+    this.groupMemberSuggestions.set([]);
+    // Nécessaire pour proposer des candidats à l'ajout — pas chargé
+    // automatiquement en mode "groupe existant" (seul le mode "individuel" le
+    // déclenchait jusqu'ici).
+    if (next && !this.apiClients().length && !this.isLoadingClients()) {
+      this._loadClients();
+    }
+  }
+
+  deleteExistingGroup(group: any, event: Event): void {
+    event.stopPropagation();
+    if (!confirm(`Supprimer le groupe "${group.name}" ? Cette action est irréversible.`)) return;
+    this.svc.deleteClientGroup(group._id).subscribe({
+      next: () => {
+        this.existingGroups.update(list => list.filter(g => g._id !== group._id));
+        if (this.selectedExistingGroupId() === group._id) this.selectedExistingGroupId.set(null);
+        if (this.managingGroupId() === group._id) this.managingGroupId.set(null);
+        this.msgSvc.add({ severity: 'success', summary: 'Groupe supprimé', detail: `"${group.name}" a été supprimé.` });
+      },
+      error: (err) => {
+        this.msgSvc.add({ severity: 'error', summary: 'Suppression impossible', detail: this._groupErrorMessage(err, 'Impossible de supprimer ce groupe.') });
+      },
+    });
+  }
+
+  removeClientFromGroup(group: any, client: any, event: Event): void {
+    event.stopPropagation();
+    this.svc.removeClientsFromGroup(group._id, [client._id]).subscribe({
+      next: () => {
+        this._loadExistingGroups();
+        this.msgSvc.add({ severity: 'success', summary: 'Client retiré', detail: `${client.firstName ?? ''} ${client.lastName ?? ''}`.trim() + ' retiré du groupe.' });
+      },
+      error: (err) => {
+        this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: this._groupErrorMessage(err, 'Impossible de retirer ce client.') });
+      },
+    });
+  }
+
+  searchGroupMemberCandidates(group: any, query: string): void {
+    this.groupMemberSearchQuery.set(query);
+    if (!query.trim()) { this.groupMemberSuggestions.set([]); return; }
+    const q = query.toLowerCase();
+    const currentMemberIds = new Set((group.clients ?? []).map((c: any) => c._id ?? c));
+    this.groupMemberSuggestions.set(
+      this.apiClients()
+        .filter(c => !currentMemberIds.has(c.id))
+        .filter(c => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q))
+        .slice(0, 8)
+    );
+  }
+
+  addClientToGroup(group: any, client: ClientOpt, event: Event): void {
+    event.stopPropagation();
+    this.svc.addClientsToGroup(group._id, [client.id]).subscribe({
+      next: () => {
+        this._loadExistingGroups();
+        this.groupMemberSearchQuery.set('');
+        this.groupMemberSuggestions.set([]);
+        this.msgSvc.add({ severity: 'success', summary: 'Client ajouté', detail: `${client.name} ajouté au groupe.` });
+      },
+      error: (err) => {
+        this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: this._groupErrorMessage(err, "Impossible d'ajouter ce client.") });
+      },
+    });
   }
 
   // ── Group client selection ───────────────────────────────────

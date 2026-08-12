@@ -355,6 +355,23 @@ export class PlanningService {
     );
   }
 
+  deleteClientGroup(groupId: string): Observable<any> {
+    return this.http.delete<any>(`${this.api}/client-groups/${groupId}`);
+  }
+
+  addClientsToGroup(groupId: string, clientIds: string[]): Observable<any> {
+    return this.http.post<any>(`${this.api}/client-groups/${groupId}/clients`, { clientIds }).pipe(
+      map(res => res?.data ?? res)
+    );
+  }
+
+  removeClientsFromGroup(groupId: string, clientIds: string[]): Observable<any> {
+    // DELETE avec corps de requête — HttpClient exige `{ body }` explicitement.
+    return this.http.request<any>('DELETE', `${this.api}/client-groups/${groupId}/clients`, { body: { clientIds } }).pipe(
+      map(res => res?.data ?? res)
+    );
+  }
+
   // ── Team ↔ Planning (read-modify-write) ──────────────────────
 
   addTeamToPlanning(planningId: string, teamId: string): Observable<Planning> {

@@ -383,6 +383,14 @@ $tr: .2s ease;
   .cr-name  { display: block; font-size: 13px; font-weight: 600; color: $text-1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
   .cr-addr  { display: block; font-size: 11px; color: $text-3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
   .cr-zone  { font-size: 11px; color: $text-2; background: #f1f5f9; padding: 2px 7px; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; display: inline-block; }
+  .cr-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+  // Éligibilité réelle (EligibilityService) — visible avant sélection, pour
+  // éviter que l'agence découvre le rejet seulement à la soumission du planning.
+  .cr-eligibility {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap;
+    &--ok { background: #dcfce7; color: #16a34a; }
+    &--ko { background: #fee2e2; color: #dc2626; }
+  }
 }
 
 .selected-client-card {
@@ -520,6 +528,52 @@ $tr: .2s ease;
 
   &.selected { border-color: $green; background: #f0fdf4; .eg-icon { background: #dcfce7; mat-icon { color: $green; } } }
   &:hover:not(.selected) { border-color: $text-3; background: $surface; }
+}
+
+.eg-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.eg-action-btn {
+  width: 30px; height: 30px; border-radius: 8px; border: none; background: transparent;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  color: $text-3; transition: background .15s, color .15s;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover { background: #eff6ff; color: #3b82f6; }
+  &--danger:hover { background: #fee2e2; color: #dc2626; }
+}
+
+/* Panneau de gestion des membres — ajout/retrait de clients d'un groupe existant */
+.eg-manage-panel {
+  margin: -4px 0 4px 50px;
+  padding: 12px 14px;
+  border: 1px dashed $border;
+  border-radius: 10px;
+  background: $surface;
+  cursor: default;
+}
+.eg-manage-title { display: block; font-size: 12px; font-weight: 700; color: $text-1; margin-bottom: 8px; }
+.eg-manage-empty { font-size: 12px; color: $text-3; margin: 0 0 8px; }
+.eg-member-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.eg-member-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 8px; border-radius: 6px; background: $card;
+  .eg-member-name { font-size: 12px; color: $text-1; }
+}
+.eg-member-remove {
+  width: 22px; height: 22px; border-radius: 50%; border: none; background: transparent;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; color: $text-3;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  &:hover { background: #fee2e2; color: #dc2626; }
+}
+.eg-add-member {
+  position: relative; display: flex; align-items: center;
+  input { width: 100%; padding: 7px 10px 7px 30px; border: 1px solid $border; border-radius: 7px; font-size: 12px; }
+  .search-icon { position: absolute; left: 8px; font-size: 16px; width: 16px; height: 16px; color: $text-3; }
+}
+.eg-add-suggestions { margin-top: 6px; display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow-y: auto; }
+.eg-add-suggestion-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; border-radius: 6px; font-size: 12px; color: $text-1; cursor: pointer;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; color: $green; }
+  &:hover { background: #f0fdf4; }
 }
 
 /* ---- Groups loading / empty states ---- */
