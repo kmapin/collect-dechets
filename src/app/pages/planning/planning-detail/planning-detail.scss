@@ -917,7 +917,8 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
 //  DIALOGS
 // ══════════════════════════════════════════════════════════════
 .dlg-backdrop {
-  position: fixed; inset: 0; z-index: 100;
+  position: fixed; inset: 0;
+  z-index: 1000;
   background: rgba(15,23,42,.45);
   backdrop-filter: blur(4px);
 }
@@ -925,7 +926,7 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
   position: fixed;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 101;
+  z-index: 1001;
   background: #fff;
   border-radius: $radius-lg;
   padding: 32px;
