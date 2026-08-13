@@ -31,7 +31,7 @@ interface ActivityEvent {
 // `failureReason`/`comment` sont l'observation par Collecte (jamais un compteur global)
 // que le collecteur peut toujours saisir, y compris sur une Collecte déjà manquée.
 interface PlanningCollecte {
-  id: string; clientId: string; clientName: string; status: string;
+  id: string; clientId: string; clientName: string; clientNeighborhood: string; status: string;
   failureReason: string | null; comment: string | null;
 }
 interface PlanningStats {
@@ -319,6 +319,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       id: c._id,
       clientId: typeof client === 'string' ? client : client?._id,
       clientName: client?.firstName ? `${client.firstName} ${client.lastName}` : '—',
+      clientNeighborhood: client?.address?.neighborhood || '',
       status: c.status,
       failureReason: c.failureReason ?? null,
       comment: c.comment ?? null,

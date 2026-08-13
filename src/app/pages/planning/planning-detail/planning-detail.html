@@ -424,12 +424,29 @@
           </div>
 
           <!-- Statistiques calculées directement depuis les Collecte réelles (Prompt 0) —
-               lecture seule, plus aucune saisie manuelle possible. -->
-          <div class="rc-stats">
-            <div class="rc-stat"><span class="rc-stat-val">{{ planningStats().totalHouseholds }}</span><span class="rc-stat-label">Total</span></div>
-            <div class="rc-stat"><span class="rc-stat-val" style="color:#16a34a">{{ planningStats().householdsCollected }}</span><span class="rc-stat-label">Collectés</span></div>
-            <div class="rc-stat"><span class="rc-stat-val" style="color:#ef4444">{{ missedCollectes().length }}</span><span class="rc-stat-label">Manqués</span></div>
-            <div class="rc-stat"><span class="rc-stat-val">{{ planningStats().completionRate }}%</span><span class="rc-stat-label">Taux</span></div>
+               lecture seule, plus aucune saisie manuelle possible. Cartes KPI identiques à
+               la section Statistiques, pour un rendu cohérent sur toute la page. -->
+          <div class="stats-grid stats-grid--compact">
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:#3b82f618;color:#3b82f6"><mat-icon>home</mat-icon></div>
+              <div class="kpi-val">{{ planningStats().totalHouseholds }}</div>
+              <div class="kpi-lbl">Total</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:#16a34a18;color:#16a34a"><mat-icon>check_circle</mat-icon></div>
+              <div class="kpi-val">{{ planningStats().householdsCollected }}</div>
+              <div class="kpi-lbl">Collectés</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:#ef444418;color:#ef4444"><mat-icon>report</mat-icon></div>
+              <div class="kpi-val">{{ missedCollectes().length }}</div>
+              <div class="kpi-lbl">Manqués</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon" style="background:#8b5cf618;color:#8b5cf6"><mat-icon>percent</mat-icon></div>
+              <div class="kpi-val">{{ planningStats().completionRate }}<span>%</span></div>
+              <div class="kpi-lbl">Taux</div>
+            </div>
           </div>
 
           @if (isLoadingCollectes()) {
@@ -438,18 +455,32 @@
               <p>Chargement des collectes…</p>
             </div>
           } @else if (collectes().length > 0) {
-            <div class="rc-list rc-list--tall">
+            <div class="incidents-list rc-collecte-list">
               @for (c of collectes(); track c.id) {
-                <div class="rc-item">
-                  <div class="rc-item-client">
-                    <span class="rc-client-name">{{ c.clientName }}</span>
-                    <span class="rc-client-status"
-                          [class.rc-client-status--ok]="c.status === 'Collected'"
-                          [class.rc-client-status--ko]="c.status === 'Missed'">
-                      {{ c.status === 'Collected' ? 'Collectée' : c.status === 'Missed' ? 'Manquée' : 'Programmée' }}
-                    </span>
+                <div class="incident-card"
+                     [style.--ic]="c.status === 'Collected' ? '#16a34a' : c.status === 'Missed' ? '#ef4444' : '#64748b'">
+                  <div class="inc-severity">
+                    <mat-icon [style.color]="c.status === 'Collected' ? '#16a34a' : c.status === 'Missed' ? '#ef4444' : '#64748b'">
+                      {{ c.status === 'Collected' ? 'check_circle' : c.status === 'Missed' ? 'report' : 'schedule' }}
+                    </mat-icon>
                   </div>
-                  @if (c.status === 'Missed') {
+                  <div class="inc-body">
+                    <div class="rc-item-client">
+                      <div class="rc-client-id">
+                        <span class="rc-client-name">{{ c.clientName }}</span>
+                        @if (c.clientNeighborhood) {
+                          <span class="rc-client-neighborhood">
+                            <mat-icon>location_on</mat-icon>{{ c.clientNeighborhood }}
+                          </span>
+                        }
+                      </div>
+                      <span class="rc-client-status"
+                            [class.rc-client-status--ok]="c.status === 'Collected'"
+                            [class.rc-client-status--ko]="c.status === 'Missed'">
+                        {{ c.status === 'Collected' ? 'Collectée' : c.status === 'Missed' ? 'Manquée' : 'Programmée' }}
+                      </span>
+                    </div>
+                    @if (c.status === 'Missed') {
                     <!-- Rattrapage (Prompt 0, étape 5) : motif par tentative, jamais un
                          compteur global — et une action "Retenter" par collecte, pas de
                          sélection multiple ni de création de round. -->
@@ -476,7 +507,8 @@
                         }
                       </button>
                     </div>
-                  }
+                    }
+                  </div>
                 </div>
               }
             </div>
