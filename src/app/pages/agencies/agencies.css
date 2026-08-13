@@ -352,6 +352,11 @@
 
     .agency-list-content {
       flex: 1;
+      /* Sans min-width:0, un item flex ne rétrécit jamais sous la largeur
+         naturelle de son contenu : la description en `white-space:nowrap`
+         (classe Tailwind `truncate`) poussait toute la carte au lieu d'être
+         tronquée avec l'ellipse. */
+      min-width: 0;
     }
 
     .agency-list-header {

@@ -28,8 +28,21 @@ interface ActivityEvent {
 }
 interface RoundHistory {
   id: string; date: string; teams: string[]; status: string;
-  householdsCollected: number; duration: string; completionRate: number;
+  totalHouseholds: number; householdsCollected: number; duration: string; completionRate: number;
 }
+// Chantier réconciliation PlanningRound/Collecte (Prompt 0) — une ligne de cette liste
+// représente une Collecte réelle, jamais un compteur agrégé. `failureReason`/`comment`
+// sont l'observation par client (jamais un compteur global) que le collecteur peut
+// toujours saisir, y compris sur une tournée déjà clôturée.
+interface RoundCollecte {
+  id: string; clientId: string; clientName: string; status: string;
+  failureReason: string | null; comment: string | null;
+}
+const FAILURE_REASON_LABELS: Record<string, string> = {
+  CLIENT_ABSENT: 'Client absent', ACCESS_IMPOSSIBLE: 'Accès impossible',
+  CONTAINER_ABSENT: 'Bac/container absent', VEHICLE_PROBLEM: 'Problème véhicule',
+  WEATHER: 'Intempéries', OTHER: 'Autre',
+};
 interface Notification {
   id: string; channel: 'sms' | 'email' | 'app';
   recipient: string; message: string;
@@ -81,10 +94,38 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   isRoundActioning  = signal(false);
   showEndRoundDlg   = signal(false);
   endingRound       = signal<RoundHistory | null>(null);
-  endRoundHouseholds = signal<number | null>(null);
   endRoundDuration   = signal('');
   hasActiveRound = computed(() => this.history().some(h => h.status === 'en_cours'));
   canStartRound  = computed(() => this.planning()?.status === 'en_cours' && !this.hasActiveRound());
+
+  // Chantier réconciliation PlanningRound/Collecte (Prompt 0) — plus de saisie manuelle
+  // d'un compteur global : la liste ci-dessous montre les VRAIES Collecte de la tournée en
+  // cours de clôture, chacune avec sa propre observation possible (jamais un total tapé).
+  endRoundCollectes          = signal<RoundCollecte[]>([]);
+  isLoadingEndRoundCollectes = signal(false);
+  savingObservationId        = signal<string | null>(null);
+
+  // Affectation d'un sous-ensemble des Collecte 'Scheduled' du Planning à un round
+  // (Prompt 0, flux cible étape 2).
+  showAssignDlg       = signal(false);
+  assigningRound      = signal<RoundHistory | null>(null);
+  unassignedCollectes = signal<RoundCollecte[]>([]);
+  selectedToAssign    = signal<Set<string>>(new Set());
+  isLoadingUnassigned = signal(false);
+  isAssigning         = signal(false);
+
+  // Round de rattrapage ciblant les Collecte 'Missed' du Planning (Prompt 0, étape 5).
+  showRattrapageDlg     = signal(false);
+  missedCollectes       = signal<RoundCollecte[]>([]);
+  selectedForRattrapage = signal<Set<string>>(new Set());
+  isLoadingMissed       = signal(false);
+  isCreatingRattrapage  = signal(false);
+  missedCollectesCount  = signal(0);
+
+  readonly failureReasonOptions = Object.entries(FAILURE_REASON_LABELS).map(([value, label]) => ({ value, label }));
+  failureReasonLabel(code: string | null): string {
+    return code ? (FAILURE_REASON_LABELS[code] ?? code) : '—';
+  }
 
   // ── Teams (real API data) ─────────────────────────────────────
   allTeams         = signal<TeamApi[]>([]);
@@ -292,11 +333,32 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
         date:                 new Date(r.date).toLocaleDateString('fr-FR'),
         teams:                (r.equipeIds ?? []).map((e: any) => e?.name ?? (typeof e === 'string' ? e : '—')),
         status:               r.status,
-        householdsCollected:  r.householdsCollected,
+        totalHouseholds:      r.totalHouseholds ?? 0,
+        householdsCollected:  r.householdsCollected ?? 0,
         duration:             r.duration ?? '—',
-        completionRate:       r.completionRate,
+        completionRate:       r.completionRate ?? 0,
       })));
     });
+  }
+
+  // Compte les Collecte 'Missed' du Planning (toutes tournées confondues) — pilote
+  // l'affichage du bouton "Créer un rattrapage" (Prompt 0, étape 5).
+  private _loadMissedCount(planningId: string): void {
+    this.svc.getPlanningCollectes(planningId, { status: 'Missed' }).subscribe(list => {
+      this.missedCollectesCount.set(list.length);
+    });
+  }
+
+  private _mapRoundCollecte(c: any): RoundCollecte {
+    const client = c.clientId;
+    return {
+      id: c._id,
+      clientId: typeof client === 'string' ? client : client?._id,
+      clientName: client?.firstName ? `${client.firstName} ${client.lastName}` : '—',
+      status: c.status,
+      failureReason: c.failureReason ?? null,
+      comment: c.comment ?? null,
+    };
   }
 
   /**
@@ -322,11 +384,44 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
+  // Plus de saisie d'un compteur au moment de clôturer (Prompt 0/4) : la liste des
+  // VRAIES Collecte affectées à cette tournée est chargée pour affichage/observation.
   openEndRoundDlg(round: RoundHistory): void {
     this.endingRound.set(round);
-    this.endRoundHouseholds.set(round.householdsCollected || null);
     this.endRoundDuration.set(round.duration !== '—' ? round.duration : '');
     this.showEndRoundDlg.set(true);
+    this._loadEndRoundCollectes(round.id);
+  }
+
+  private _loadEndRoundCollectes(roundId: string): void {
+    const p = this.planning();
+    if (!p) return;
+    this.isLoadingEndRoundCollectes.set(true);
+    this.svc.getPlanningCollectes(p.id, { roundId }).subscribe({
+      next: list => {
+        this.endRoundCollectes.set(list.map((c: any) => this._mapRoundCollecte(c)));
+        this.isLoadingEndRoundCollectes.set(false);
+      },
+      error: () => this.isLoadingEndRoundCollectes.set(false),
+    });
+  }
+
+  updateEndRoundCollecteField(id: string, patch: Partial<RoundCollecte>): void {
+    this.endRoundCollectes.update(list => list.map(c => c.id === id ? { ...c, ...patch } : c));
+  }
+
+  saveObservation(c: RoundCollecte): void {
+    this.savingObservationId.set(c.id);
+    this.svc.setCollecteObservation(c.id, { failureReason: c.failureReason || undefined, comment: c.comment || undefined }).subscribe({
+      next: () => {
+        this.msg.add({ severity: 'success', summary: 'Observation enregistrée' });
+        this.savingObservationId.set(null);
+      },
+      error: (err) => {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.message ?? "Impossible d'enregistrer l'observation" });
+        this.savingObservationId.set(null);
+      },
+    });
   }
 
   confirmEndRound(): void {
@@ -335,13 +430,13 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     if (!p || !round || this.isRoundActioning()) return;
     this.isRoundActioning.set(true);
     this.svc.updateRound(p.id, round.id, {
-      householdsCollected: this.endRoundHouseholds() ?? 0,
       duration: this.endRoundDuration() || undefined,
       status: 'termine',
     }).subscribe({
       next: () => {
-        this.msg.add({ severity: 'success', summary: 'Tournée terminée', detail: 'La tournée a été clôturée.' });
+        this.msg.add({ severity: 'success', summary: 'Tournée terminée', detail: 'Les collectes non réalisées de cette tournée sont désormais marquées manquées.' });
         this._loadRounds(p.id);
+        this._loadMissedCount(p.id);
         this.showEndRoundDlg.set(false);
         this.isRoundActioning.set(false);
       },
@@ -352,9 +447,100 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
+  // ── Affectation de Collecte à un round (Prompt 0, flux cible étape 2) ─────
+  openAssignDlg(round: RoundHistory): void {
+    this.assigningRound.set(round);
+    this.selectedToAssign.set(new Set());
+    this.showAssignDlg.set(true);
+    const p = this.planning();
+    if (!p) return;
+    this.isLoadingUnassigned.set(true);
+    this.svc.getPlanningCollectes(p.id, { unassigned: true, status: 'Scheduled' }).subscribe({
+      next: list => {
+        this.unassignedCollectes.set(list.map((c: any) => this._mapRoundCollecte(c)));
+        this.isLoadingUnassigned.set(false);
+      },
+      error: () => this.isLoadingUnassigned.set(false),
+    });
+  }
+
+  toggleAssignSelection(id: string): void {
+    this.selectedToAssign.update(set => {
+      const next = new Set(set);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  confirmAssign(): void {
+    const p = this.planning();
+    const round = this.assigningRound();
+    const ids = [...this.selectedToAssign()];
+    if (!p || !round || ids.length === 0 || this.isAssigning()) return;
+    this.isAssigning.set(true);
+    this.svc.assignCollectesToRound(p.id, round.id, ids).subscribe({
+      next: () => {
+        this.msg.add({ severity: 'success', summary: 'Collectes affectées', detail: `${ids.length} collecte(s) affectée(s) à la tournée.` });
+        this._loadRounds(p.id);
+        this.showAssignDlg.set(false);
+        this.isAssigning.set(false);
+      },
+      error: (err) => {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.error?.message ?? 'Affectation impossible' });
+        this.isAssigning.set(false);
+      },
+    });
+  }
+
+  // ── Round de rattrapage (Prompt 0, flux cible étape 5) ────────────────────
+  openRattrapageDlg(): void {
+    this.showRattrapageDlg.set(true);
+    const p = this.planning();
+    if (!p) return;
+    this.isLoadingMissed.set(true);
+    this.svc.getPlanningCollectes(p.id, { status: 'Missed' }).subscribe({
+      next: list => {
+        const mapped = list.map((c: any) => this._mapRoundCollecte(c));
+        this.missedCollectes.set(mapped);
+        this.selectedForRattrapage.set(new Set(mapped.map(c => c.id)));
+        this.isLoadingMissed.set(false);
+      },
+      error: () => this.isLoadingMissed.set(false),
+    });
+  }
+
+  toggleRattrapageSelection(id: string): void {
+    this.selectedForRattrapage.update(set => {
+      const next = new Set(set);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  confirmRattrapage(): void {
+    const p = this.planning();
+    const ids = [...this.selectedForRattrapage()];
+    if (!p || ids.length === 0 || this.isCreatingRattrapage()) return;
+    this.isCreatingRattrapage.set(true);
+    this.svc.createRattrapageRound(p.id, { collecteIds: ids }).subscribe({
+      next: () => {
+        this.msg.add({ severity: 'success', summary: 'Rattrapage créé', detail: `Nouvelle tournée de rattrapage pour ${ids.length} collecte(s).` });
+        this._loadRounds(p.id);
+        this._loadMissedCount(p.id);
+        this.showRattrapageDlg.set(false);
+        this.isCreatingRattrapage.set(false);
+      },
+      error: (err) => {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.error?.message ?? 'Impossible de créer le rattrapage' });
+        this.isCreatingRattrapage.set(false);
+      },
+    });
+  }
+
   // ── Tournées / Incidents / Notifications (données réelles) ────
   private _loadRoundsIncidentsNotifications(planningId: string): void {
     this._loadRounds(planningId);
+    this._loadMissedCount(planningId);
 
     // Corrigé (usage réel) : `getIncidents()` lisait `PlanningIncident`, un
     // modèle jamais alimenté par aucun code du produit (aucun bouton, aucun

@@ -658,6 +658,7 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
 }
 .ht-num { font-weight: 700; text-align: right; }
 .ht-dur { color: #64748b; white-space: nowrap; }
+.ht-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .rate-cell { display: flex; align-items: center; gap: 8px; min-width: 100px; }
 .rate-bar {
   flex: 1; height: 6px; border-radius: 999px; background: #f1f5f9; overflow: hidden;
@@ -940,6 +941,89 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
 
   h3 { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0; }
   p  { font-size: 14px; color: #64748b; margin: 0; line-height: 1.6; strong { color: #1e293b; } }
+
+  // Chantier réconciliation PlanningRound/Collecte (Prompt 0) — dialogues listant des
+  // collectes individuelles (clôture de round, affectation, rattrapage) ont besoin de plus
+  // de largeur que la boîte de confirmation générique.
+  &--wide { width: min(640px, calc(100vw - 40px)); }
+}
+
+// Statistiques calculées (jamais saisies) affichées en tête de la clôture de tournée.
+.rc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+.rc-stat {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 6px;
+  background: #f8fafc;
+  border-radius: $radius-sm;
+  .rc-stat-val   { font-size: 18px; font-weight: 700; color: #0f172a; }
+  .rc-stat-label { font-size: 11px; color: #64748b; text-align: center; }
+}
+
+// Liste des collectes (clôture de round / affectation / rattrapage) — une ligne = une
+// vraie Collecte, jamais un compteur agrégé.
+.rc-list {
+  width: 100%;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+.rc-empty { font-size: 13px; color: #94a3b8; padding: 12px 0; text-align: center; width: 100%; }
+.rc-item {
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: $radius-sm;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rc-item-client {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.rc-client-name { font-size: 13px; font-weight: 600; color: #1e293b; }
+.rc-client-status {
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: #e2e8f0; color: #475569;
+  &--ok { background: #dcfce7; color: #16a34a; }
+  &--ko { background: #fee2e2; color: #ef4444; }
+}
+.rc-item-fields {
+  display: flex; gap: 6px; align-items: center;
+  select, input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: $radius-sm;
+    font-size: 12px;
+    color: #0f172a;
+    &:focus { outline: none; border-color: #3b82f6; }
+  }
+}
+.rc-save-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; flex-shrink: 0;
+  border: 1px solid #e2e8f0; border-radius: $radius-sm;
+  background: #fff; color: #16a34a; cursor: pointer;
+  &:hover { background: #f0fdf4; }
+  &:disabled { opacity: .6; cursor: default; }
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+.rc-check-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  input[type="checkbox"] { width: 16px; height: 16px; }
 }
 .dlg-form {
   display: flex;

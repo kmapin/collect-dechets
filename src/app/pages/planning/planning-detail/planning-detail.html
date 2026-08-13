@@ -421,6 +421,12 @@
             <mat-icon class="sec-icon" style="--ic:#f59e0b">history</mat-icon>
             <h2>Historique des tournées</h2>
             <span class="sec-count">{{ history().length }} passages</span>
+            @if (missedCollectesCount() > 0) {
+              <button type="button" class="tb-btn tb-btn--ghost" (click)="openRattrapageDlg()"
+                      pTooltip="Créer une tournée ciblant les collectes manquées" tooltipPosition="bottom">
+                <mat-icon>replay</mat-icon>Rattrapage ({{ missedCollectesCount() }})
+              </button>
+            }
             @if (canStartRound()) {
               <button type="button" class="tb-btn tb-btn--ghost" [disabled]="isRoundActioning()" (click)="startRound()">
                 @if (isRoundActioning()) {
@@ -440,7 +446,7 @@
                     <th>Date</th>
                     <th>Équipes</th>
                     <th>Statut</th>
-                    <th>Ménages</th>
+                    <th>Ménages (total / collectés)</th>
                     <th>Durée</th>
                     <th>Taux</th>
                     <th></th>
@@ -462,7 +468,8 @@
                           {{ h.status === 'termine' ? 'Terminé' : h.status === 'en_cours' ? 'En cours' : 'Annulé' }}
                         </span>
                       </td>
-                      <td class="ht-num">{{ h.householdsCollected }}</td>
+                      <!-- Calculées depuis les Collecte réelles (Prompt 0) — plus jamais une saisie. -->
+                      <td class="ht-num">{{ h.householdsCollected }} / {{ h.totalHouseholds }}</td>
                       <td class="ht-dur">{{ h.duration }}</td>
                       <td>
                         <div class="rate-cell">
@@ -475,9 +482,12 @@
                           <span class="rate-pct">{{ h.completionRate }}%</span>
                         </div>
                       </td>
-                      <td>
+                      <td class="ht-actions">
                         @if (h.status === 'en_cours') {
+                          <button type="button" class="tb-btn tb-btn--ghost" (click)="openAssignDlg(h)">Affecter des collectes</button>
                           <button type="button" class="tb-btn tb-btn--ghost" (click)="openEndRoundDlg(h)">Terminer</button>
+                        } @else {
+                          <button type="button" class="tb-btn tb-btn--ghost" (click)="openEndRoundDlg(h)">Détail</button>
                         }
                       </td>
                     </tr>
@@ -731,27 +741,156 @@
        ════════════════════════════════════════════════════════ -->
   @if (showEndRoundDlg()) {
     <div class="dlg-backdrop" (click)="showEndRoundDlg.set(false)"></div>
-    <div class="dlg-box dlg-box--success">
+    <div class="dlg-box dlg-box--success dlg-box--wide">
       <div class="dlg-icon dlg-icon--success"><mat-icon>task_alt</mat-icon></div>
-      <h3>Terminer cette tournée ?</h3>
-      <p>Renseigne le résultat de la tournée du <strong>{{ endingRound()?.date }}</strong>.</p>
-      <div class="dlg-form">
-        <label>
-          Ménages collectés
-          <input type="number" min="0" [ngModel]="endRoundHouseholds()" (ngModelChange)="endRoundHouseholds.set($event)" />
-        </label>
-        <label>
-          Durée (ex. "2h15")
-          <input type="text" [ngModel]="endRoundDuration()" (ngModelChange)="endRoundDuration.set($event)" />
-        </label>
+      @if (endingRound()?.status === 'en_cours') {
+        <h3>Terminer cette tournée ?</h3>
+        <p>Les statistiques ci-dessous sont calculées depuis les collectes réelles — plus aucune saisie de compteur. Les collectes encore programmées basculeront en <strong>manquée</strong> à la clôture.</p>
+      } @else {
+        <h3>Détail de la tournée du {{ endingRound()?.date }}</h3>
+      }
+
+      <div class="rc-stats">
+        <div class="rc-stat"><span class="rc-stat-val">{{ endingRound()?.totalHouseholds }}</span><span class="rc-stat-label">Total affecté</span></div>
+        <div class="rc-stat"><span class="rc-stat-val" style="color:#16a34a">{{ endingRound()?.householdsCollected }}</span><span class="rc-stat-label">Collectés</span></div>
+        <div class="rc-stat"><span class="rc-stat-val" style="color:#ef4444">{{ (endingRound()?.totalHouseholds ?? 0) - (endingRound()?.householdsCollected ?? 0) }}</span><span class="rc-stat-label">Restants / manqués</span></div>
+        <div class="rc-stat"><span class="rc-stat-val">{{ endingRound()?.completionRate }}%</span><span class="rc-stat-label">Taux</span></div>
       </div>
+
+      @if (endingRound()?.status === 'en_cours') {
+        <div class="dlg-form">
+          <label>
+            Durée (ex. "2h15")
+            <input type="text" [ngModel]="endRoundDuration()" (ngModelChange)="endRoundDuration.set($event)" />
+          </label>
+        </div>
+      }
+
+      <div class="rc-list">
+        @if (isLoadingEndRoundCollectes()) {
+          <p class="rc-empty">Chargement des collectes…</p>
+        } @else if (endRoundCollectes().length === 0) {
+          <p class="rc-empty">Aucune collecte affectée à cette tournée.</p>
+        } @else {
+          @for (c of endRoundCollectes(); track c.id) {
+            <div class="rc-item">
+              <div class="rc-item-client">
+                <span class="rc-client-name">{{ c.clientName }}</span>
+                <span class="rc-client-status" [class.rc-client-status--ok]="c.status === 'Collected'" [class.rc-client-status--ko]="c.status === 'Missed'">
+                  {{ c.status === 'Collected' ? 'Collectée' : c.status === 'Missed' ? 'Manquée' : 'Programmée' }}
+                </span>
+              </div>
+              @if (c.status !== 'Collected') {
+                <div class="rc-item-fields">
+                  <select [ngModel]="c.failureReason" (ngModelChange)="updateEndRoundCollecteField(c.id, {failureReason: $event})">
+                    <option [ngValue]="null">Motif d'absence (optionnel)</option>
+                    @for (opt of failureReasonOptions; track opt.value) {
+                      <option [ngValue]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                  <input type="text" placeholder="Observation…" [ngModel]="c.comment" (ngModelChange)="updateEndRoundCollecteField(c.id, {comment: $event})" />
+                  <button type="button" class="rc-save-btn" [disabled]="savingObservationId() === c.id" (click)="saveObservation(c)">
+                    @if (savingObservationId() === c.id) {
+                      <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
+                    } @else {
+                      <mat-icon>save</mat-icon>
+                    }
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+
       <div class="dlg-actions">
-        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showEndRoundDlg.set(false)">Retour</button>
-        <button type="button" class="dlg-btn dlg-btn--success-confirm" [disabled]="isRoundActioning()" (click)="confirmEndRound()">
-          @if (isRoundActioning()) {
-            <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Enregistrement…
+        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showEndRoundDlg.set(false)">{{ endingRound()?.status === 'en_cours' ? 'Retour' : 'Fermer' }}</button>
+        @if (endingRound()?.status === 'en_cours') {
+          <button type="button" class="dlg-btn dlg-btn--success-confirm" [disabled]="isRoundActioning()" (click)="confirmEndRound()">
+            @if (isRoundActioning()) {
+              <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Enregistrement…
+            } @else {
+              <mat-icon>task_alt</mat-icon>Confirmer la fin de tournée
+            }
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════════
+       ASSIGN COLLECTES DIALOG (affecter des collectes à une tournée)
+       ════════════════════════════════════════════════════════ -->
+  @if (showAssignDlg()) {
+    <div class="dlg-backdrop" (click)="showAssignDlg.set(false)"></div>
+    <div class="dlg-box dlg-box--wide">
+      <div class="dlg-icon dlg-icon--blue"><mat-icon>playlist_add_check</mat-icon></div>
+      <h3>Affecter des collectes à cette tournée</h3>
+      <p>Sélectionne les collectes programmées de ce planning à confier à cette tournée du <strong>{{ assigningRound()?.date }}</strong>.</p>
+
+      <div class="rc-list">
+        @if (isLoadingUnassigned()) {
+          <p class="rc-empty">Chargement…</p>
+        } @else if (unassignedCollectes().length === 0) {
+          <p class="rc-empty">Aucune collecte programmée non encore affectée pour ce planning.</p>
+        } @else {
+          @for (c of unassignedCollectes(); track c.id) {
+            <label class="rc-check-item">
+              <input type="checkbox" [checked]="selectedToAssign().has(c.id)" (change)="toggleAssignSelection(c.id)" />
+              <span class="rc-client-name">{{ c.clientName }}</span>
+            </label>
+          }
+        }
+      </div>
+
+      <div class="dlg-actions">
+        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showAssignDlg.set(false)">Retour</button>
+        <button type="button" class="dlg-btn dlg-btn--success-confirm" [disabled]="isAssigning() || selectedToAssign().size === 0" (click)="confirmAssign()">
+          @if (isAssigning()) {
+            <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Affectation…
           } @else {
-            <mat-icon>task_alt</mat-icon>Confirmer la fin de tournée
+            <mat-icon>playlist_add_check</mat-icon>Affecter ({{ selectedToAssign().size }})
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════════
+       RATTRAPAGE DIALOG (nouvelle tournée ciblant les collectes MISSED)
+       ════════════════════════════════════════════════════════ -->
+  @if (showRattrapageDlg()) {
+    <div class="dlg-backdrop" (click)="showRattrapageDlg.set(false)"></div>
+    <div class="dlg-box dlg-box--wide">
+      <div class="dlg-icon dlg-icon--start"><mat-icon>replay</mat-icon></div>
+      <h3>Créer un round de rattrapage</h3>
+      <p>Une nouvelle tournée sera créée pour les collectes manquées sélectionnées ci-dessous — aucune collecte n'est dupliquée, seule leur affectation change.</p>
+
+      <div class="rc-list">
+        @if (isLoadingMissed()) {
+          <p class="rc-empty">Chargement…</p>
+        } @else if (missedCollectes().length === 0) {
+          <p class="rc-empty">Aucune collecte manquée pour ce planning.</p>
+        } @else {
+          @for (c of missedCollectes(); track c.id) {
+            <label class="rc-check-item">
+              <input type="checkbox" [checked]="selectedForRattrapage().has(c.id)" (change)="toggleRattrapageSelection(c.id)" />
+              <span class="rc-client-name">{{ c.clientName }}</span>
+              @if (c.failureReason) {
+                <span class="rc-client-status rc-client-status--ko">{{ failureReasonLabel(c.failureReason) }}</span>
+              }
+            </label>
+          }
+        }
+      </div>
+
+      <div class="dlg-actions">
+        <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showRattrapageDlg.set(false)">Retour</button>
+        <button type="button" class="dlg-btn dlg-btn--success-confirm" [disabled]="isCreatingRattrapage() || selectedForRattrapage().size === 0" (click)="confirmRattrapage()">
+          @if (isCreatingRattrapage()) {
+            <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Création…
+          } @else {
+            <mat-icon>replay</mat-icon>Créer le rattrapage ({{ selectedForRattrapage().size }})
           }
         </button>
       </div>
