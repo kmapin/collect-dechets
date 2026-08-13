@@ -447,47 +447,27 @@ export class PlanningService {
       .subscribe();
   }
 
-  // ── Tournées (rounds) ─────────────────────────────────────────
+  // ── Exécution (Collecte directe — PlanningRound déprécié, Prompt 0) ────
 
-  getRounds(planningId: string): Observable<any[]> {
-    return this.http.get<{ success: boolean; data: any[] }>(
-      `${this.api}/planning/v2/${planningId}/rounds`
-    ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
+  /** Statistiques du Planning calculées directement depuis ses Collecte — jamais saisies. */
+  getPlanningStats(planningId: string): Observable<{ totalHouseholds: number; householdsCollected: number; completionRate: number }> {
+    return this.http.get<{ success: boolean; data: { totalHouseholds: number; householdsCollected: number; completionRate: number } }>(
+      `${this.api}/planning/v2/${planningId}/stats`
+    ).pipe(map(res => res?.data ?? { totalHouseholds: 0, householdsCollected: 0, completionRate: 0 }), catchError(() => of({ totalHouseholds: 0, householdsCollected: 0, completionRate: 0 })));
   }
 
-  // Plus de `totalHouseholds` en entrée (chantier réconciliation PlanningRound/Collecte,
-  // Prompt 0) : le total est désormais dérivé des Collecte réellement affectées au round.
-  startRound(planningId: string, body: { date?: string; equipeIds?: string[] } = {}): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/rounds`, body);
-  }
-
-  // `body` ne doit plus jamais contenir `householdsCollected`/`totalHouseholds`/
-  // `completionRate` — le backend les rejette explicitement (VALIDATION_ERROR). Seuls
-  // `status`/`duration` restent pilotables depuis cet endpoint.
-  updateRound(planningId: string, roundId: string, body: { status?: string; duration?: string }): Observable<any> {
-    return this.http.put<any>(`${this.api}/planning/v2/${planningId}/rounds/${roundId}`, body);
-  }
-
-  /** Collecte d'un Planning — filtrable par round (`roundId`), par statut, ou par
-   * `unassigned:true` (Collecte 'Scheduled' pas encore affectées à un round). */
-  getPlanningCollectes(planningId: string, filter: { roundId?: string; status?: string; unassigned?: boolean } = {}): Observable<any[]> {
+  /** Collecte d'un Planning — filtrable par statut. */
+  getPlanningCollectes(planningId: string, filter: { status?: string } = {}): Observable<any[]> {
     let params = new HttpParams();
-    if (filter.roundId) params = params.set('roundId', filter.roundId);
     if (filter.status) params = params.set('status', filter.status);
-    if (filter.unassigned) params = params.set('unassigned', 'true');
     return this.http.get<{ success: boolean; data: any[] }>(
       `${this.api}/planning/v2/${planningId}/collectes`, { params }
     ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
   }
 
-  assignCollectesToRound(planningId: string, roundId: string, collecteIds: string[]): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/rounds/${roundId}/collectes`, { collecteIds });
-  }
-
-  /** Round de rattrapage — cible toutes les Collecte 'Missed' du Planning, ou un
-   * sous-ensemble via `collecteIds`. */
-  createRattrapageRound(planningId: string, body: { collecteIds?: string[]; equipeIds?: string[] } = {}): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/rattrapage`, body);
+  /** Rattrapage (Prompt 0, étape 5) — pas de nouvelle entité, retente la Collecte existante. */
+  retryCollecte(planningId: string, collecteId: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/collectes/${collecteId}/retry`, {});
   }
 
   /** Observation/motif d'absence sur UNE Collecte précise — jamais un compteur global. */

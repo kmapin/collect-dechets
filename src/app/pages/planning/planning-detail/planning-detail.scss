@@ -974,6 +974,10 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
   flex-direction: column;
   gap: 8px;
   text-align: left;
+
+  // Utilisée dans la section "Suivi des collectes" de la page (pas une petite boîte de
+  // dialogue) — peut se permettre plus de hauteur avant de scroller.
+  &--tall { max-height: 520px; }
 }
 .rc-empty { font-size: 13px; color: #94a3b8; padding: 12px 0; text-align: center; width: 100%; }
 .rc-item {
