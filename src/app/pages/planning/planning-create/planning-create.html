@@ -365,7 +365,8 @@
                             [minDate]="today"
                             placeholder="Sélectionner une date"
                             styleClass="w-full"
-                            [appendTo]="'body'" />
+                            [appendTo]="'body'"
+                            (onSelect)="onDateSelected($event)" />
             </div>
             <div class="form-group">
               <label class="form-lbl">Fréquence <span class="req">*</span></label>

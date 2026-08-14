@@ -360,6 +360,15 @@
                           }
                         </div>
                       }
+                      @if (collection.status.toLowerCase() === 'missed') {
+                        <button
+                          class="action-btn"
+                          (click)="reportIssue(collection.id)"
+                          >
+                          <i class="material-icons">report</i>
+                          Signaler
+                        </button>
+                      }
                     </div>
                   </div>
                 }

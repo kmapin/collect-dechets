@@ -90,6 +90,21 @@ export class PlanningCreate implements OnInit {
 
   readonly today = new Date();
 
+  // Bug remonté en usage réel : la date envoyée à l'API ne correspondait pas toujours à
+  // celle sélectionnée dans le p-datepicker (décalage constaté correspondant à un aller-
+  // retour du Date object par le composant, potentiellement via une sérialisation UTC
+  // interne). Plutôt que de continuer à faire confiance à `this.form.value.date` au moment
+  // de la soumission, on capture la date choisie IMMÉDIATEMENT à la sélection (événement
+  // `(onSelect)`, qui donne le Date object brut du calendrier) et on la fige aussitôt en
+  // chaîne "YYYY-MM-DD" — jamais re-réinterprétée ensuite. Utilisée en priorité à la
+  // soumission ; `_dateToApiStr(v.date)` ne sert plus que de repli si l'utilisateur n'a
+  // jamais interagi avec le picker (ne devrait pas arriver, le champ est requis).
+  pickedDateStr = signal<string | null>(null);
+
+  onDateSelected(d: Date | null): void {
+    this.pickedDateStr.set(d ? this._dateToApiStr(d) : null);
+  }
+
   // ── Steps ────────────────────────────────────────────────────
   readonly steps: StepDef[] = [
     { index: 0, label: 'Type',        icon: 'category',       description: 'Type de planning' },
@@ -274,6 +289,7 @@ export class PlanningCreate implements OnInit {
       next: planning => {
         // Date : construire localement pour éviter le décalage UTC du DatePicker
         const date = this._parsePlanningDate(planning.date);
+        this.pickedDateStr.set(date ? this._dateToApiStr(date) : null);
 
         // clientId et groupeId peuvent être des objets peuplés selon l'API
         const clientRaw: any = (planning as any).clientId;
@@ -366,6 +382,7 @@ export class PlanningCreate implements OnInit {
         const originalDate = this._parsePlanningDate(planning.date) ?? new Date();
         const nextDate = new Date(originalDate.getTime());
         nextDate.setDate(nextDate.getDate() + 7);
+        this.pickedDateStr.set(isNaN(nextDate.getTime()) ? null : this._dateToApiStr(nextDate));
 
         // clientId et groupeId peuvent être des objets peuplés
         const clientRaw: any = (planning as any).clientId;
@@ -520,6 +537,13 @@ export class PlanningCreate implements OnInit {
       if (!raw) return;
       const d = JSON.parse(raw);
       this.form.patchValue(d);
+      // Même précaution que pour l'édition/duplication : `d.date` vient d'un JSON.parse,
+      // donc une chaîne — repasse par le parsing "date seule" sûr plutôt que de faire
+      // confiance à un éventuel round-trip Date déjà fait avant la sauvegarde du brouillon.
+      if (typeof d.date === 'string') {
+        const parsed = this._parsePlanningDate(d.date);
+        this.pickedDateStr.set(parsed ? this._dateToApiStr(parsed) : null);
+      }
       if (d.wasteTypes?.length)    this.selectedWasteTypes.set(d.wasteTypes);
       if (d.teams?.length)         this.selectedTeamId.set(d.teams[0] ?? null);
       if (d.frequencyDays?.length) this.frequencyDaysSel.set(d.frequencyDays);
@@ -879,7 +903,7 @@ export class PlanningCreate implements OnInit {
       type:        v.type,
       libelle:     v.libelle,
       frequency:   v.frequency,
-      date:        this._dateToApiStr(v.date),
+      date:        this.pickedDateStr() || this._dateToApiStr(v.date),
       startTime:   v.startTime,
       endTime:     v.endTime || undefined,
       typeDechets: this.selectedWasteTypes(),
@@ -965,7 +989,7 @@ export class PlanningCreate implements OnInit {
       type:        v.type as PlanningType,
       libelle:     v.libelle,
       frequency:   v.frequency,
-      date:        this._dateToApiStr(v.date),
+      date:        this.pickedDateStr() || this._dateToApiStr(v.date),
       startTime:   v.startTime,
       endTime:     v.endTime || undefined,
       typeDechets: this.selectedWasteTypes(),
