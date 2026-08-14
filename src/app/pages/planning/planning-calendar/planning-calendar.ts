@@ -67,7 +67,13 @@ export class PlanningCalendarComponent implements OnInit {
   loadError  = this.svc.error;
 
   // ── Filter signals ────────────────────────────────────────────
-  sidebarOpen   = signal(true);
+  // Mobile first (bug remonté en usage réel) : ouvert par défaut quel que soit
+  // l'écran, le panneau de filtres (recherche/stats/statut/type/équipe/légende)
+  // poussait le calendrier entièrement hors écran sur mobile, où il occupe
+  // toute la largeur (voir le breakpoint 768px de planning-calendar.scss). Sur
+  // desktop (sidebar à côté du calendrier, jamais en pleine largeur), rester
+  // ouvert par défaut reste le comportement voulu.
+  sidebarOpen   = signal(typeof window === 'undefined' || window.innerWidth > 768);
   activeStatus  = signal<string[]>([]);
   activeTypes   = signal<string[]>([]);
   activeTeams   = signal<string[]>([]);

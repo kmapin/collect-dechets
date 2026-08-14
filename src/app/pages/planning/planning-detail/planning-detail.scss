@@ -121,6 +121,10 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
   min-height: 100vh;
   background: #f8fafc;
   font-family: inherit;
+  // Garde-fou mobile first : la page ne doit jamais défiler horizontalement,
+  // quel que soit le contenu qui déborderait par ailleurs (le débordement
+  // doit être géré localement — wrap/ellipsis — jamais par un scroll de page).
+  overflow-x: hidden;
 }
 
 // ── Skeleton ────────────────────────────────────────────────
@@ -1103,8 +1107,53 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
 }
 @media (max-width: 768px) {
   .pd-content { padding: 16px; }
-  .pd-topbar { padding: 0 12px; height: auto; min-height: 56px; flex-wrap: wrap; gap: 8px; padding-block: 8px; }
-  .pd-topbar__right { flex-wrap: wrap; }
+
+  // Le topbar (retour+fil d'Ariane / titre+badge / actions) passait sur une
+  // seule ligne tassée qui débordait horizontalement (toute la page
+  // scrollait sur le côté). Empilé en 3 blocs pleine largeur à la place —
+  // et non-sticky ici : figé en haut, il grandirait sur 3 lignes+ et
+  // mangerait une part disproportionnée d'un petit écran.
+  .pd-topbar {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    padding: 12px;
+    gap: 10px;
+  }
+  .pd-topbar__left,
+  .pd-topbar__center,
+  .pd-topbar__right {
+    width: 100%;
+    flex-shrink: 1;
+  }
+  .pd-topbar__right {
+    flex-wrap: wrap;
+  }
+  .tb-title-row {
+    flex-wrap: wrap;
+  }
+  .tb-title {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .tb-meta {
+    flex-wrap: wrap;
+  }
+
   .ifc-row { grid-template-columns: 1fr; }
+
+  // Ligne motif/observation/actions d'une Collecte manquée (section "Suivi
+  // des collectes") : select + input pleine largeur, boutons juste après,
+  // au lieu de 4 éléments tassés sur une seule ligne.
+  .rc-item-fields {
+    flex-wrap: wrap;
+    select, input { flex: 1 1 100%; }
+  }
+  .rc-item-client {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
 }
 

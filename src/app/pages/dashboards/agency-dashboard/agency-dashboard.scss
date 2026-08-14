@@ -422,29 +422,57 @@
   flex-wrap: wrap;
 }
 
-.btn.btn-finance {
+.qa-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  color: #fff;
+  justify-content: center;
+  gap: 0.5rem;
   border: none;
-  border-radius: 8px;
-  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  padding: 0.65rem 1.2rem;
+  font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
   font-weight: 600;
+  color: #fff;
   cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.15s;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+  white-space: nowrap;
   text-decoration: none;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);
-    color: #fff;
-  }
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
 
   .material-icons { font-size: 1.1rem; }
+
+  &:hover {
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.qa-btn--employee {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  &:hover { box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4); }
+}
+
+.qa-btn--tariff {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  &:hover { box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4); }
+}
+
+.qa-btn--portal {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+  &:hover { box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4); }
+}
+
+.qa-btn--finance {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+  &:hover { box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4); }
 }
 
 .error-message {
@@ -3534,20 +3562,28 @@ button:disabled {
   flex: 1;
   max-height: 500px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .chat-left-column-content-item {
   display: flex;
-  flex-direction:row;
+  flex-direction: row;
+  flex-wrap: wrap;
   justify-content: space-between;
   padding: 12px 16px;
-  min-width: 100%;
+  min-width: 0;
+  width: 100%;
   font-size: 14px;
+  word-break: break-word;
   align-self: start;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   background-color: var(--surface-300);
   transition: background-color 0.2s;
+
+  .tab-badge {
+    flex-shrink: 0;
+  }
 }
 
 .chat-left-column-content-item:hover {
@@ -3581,7 +3617,24 @@ button:disabled {
 
 @media (max-width: 768px) {
   .stats-grid {
-    grid-template-columns: repeat(1, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .stat-card {
+    padding: 14px;
+    gap: 10px;
+  }
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .stat-info h3 {
+    font-size: 0.78rem;
+  }
+  .stat-value {
+    font-size: 1.4rem;
   }
   .tab-content {
     padding: 3%;
@@ -3629,7 +3682,37 @@ button:disabled {
 
   .quick-actions{
     flex-direction: column;
-    gap: 16px;
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .qa-btn {
+    width: 100%;
+  }
+
+  .parent {
+    height: 75vh;
+    min-height: 420px;
+  }
+  .chat-left-column {
+    width: 40%;
+    padding: 6px;
+  }
+  .chat-left-column-header {
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+  .chat-left-column-content-item {
+    padding: 10px 8px;
+    font-size: 12.5px;
+  }
+  .chat-messages {
+    padding: 8px;
+  }
+  .div5,
+  .div6 {
+    max-width: 85%;
   }
 }
 

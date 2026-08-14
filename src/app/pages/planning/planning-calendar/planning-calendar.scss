@@ -840,8 +840,29 @@ $sb-w: 258px;
 // ── Mobile ────────────────────────────────────────────────────
 @media (max-width: 768px) {
   .pcal-root { height: auto; }
-  .pcal-body { flex-direction: column; overflow: visible; }
-  .pcal-main { padding: 8px; }
+  .pcal-body { flex-direction: column; overflow: visible; height: auto; }
+  // `.pcal-main{flex:1}` + `full-calendar{height:100%}` dépendent d'un
+  // ancêtre à hauteur déterminée pour se résoudre (`.pcal-body{height:100%}`
+  // en desktop). En colonne sur mobile avec `.pcal-root`/`.pcal-body` en
+  // `height:auto`, cette chaîne n'a plus rien à hériter et s'effondre à 0 —
+  // le calendrier disparaît. Une hauteur explicite ici casse la dépendance
+  // au lieu d'empiler les correctifs sur une cascade de pourcentages fragile.
+  .pcal-main { flex: none; height: 70vh; min-height: 480px; padding: 8px; }
   .pcal-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #f1f5f9; }
   .pcal-sidebar--hidden { height: 0; padding: 0; }
+
+  // Bandeau décoratif (dégradé + sous-titre + bouton "Tableau de bord") — pur
+  // habillage, sans fonction propre : le titre est déjà porté par le fil
+  // d'Ariane juste en dessous, et "Tableau de bord" existe déjà deux fois par
+  // ailleurs (fil d'Ariane + onglet de nav en haut). Sur un petit écran, il
+  // ne fait que repousser le calendrier hors champ pour rien.
+  .page-header { display: none; }
+
+  // FullCalendar a déjà son propre headerToolbar (prev/next/aujourd'hui à
+  // gauche, Mois/Semaine/Jour/Liste à droite — voir calendarOptions ci-contre)
+  // : les onglets de vue personnalisés et le bouton "Aujourd'hui" du topbar
+  // sont un doublon pur, coûteux en hauteur sur mobile. "Nouveau planning"
+  // reste affiché, lui n'a pas d'équivalent dans la barre de FullCalendar.
+  .pcal-topbar__center { display: none; }
+  .tb-today-btn { display: none; }
 }
