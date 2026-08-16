@@ -513,6 +513,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
   // Collecte.status, qui restait bloqué sur 'Reported' pour toujours).
   incidentsFilter: 'all' | 'open' | 'in_progress' | 'resolved' = 'all';
   severityFilter:  'all' | 'critical' | 'high' | 'medium' | 'low' = 'all';
+  // Chantier Signalements, item 1 : `origine` existe déjà côté modèle/API
+  // (models/Signalement.js), jamais exposé côté filtre admin jusqu'ici.
+  origineFilter: 'all' | 'collecte' | 'independant' = 'all';
   incidentsSearchTerm   = '';
   incidentsCurrentPage  = 1;
   incidentsTotalPages   = 1;
@@ -2306,6 +2309,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
     return types[type as keyof typeof types] || type;
   }
 
+  // Chantier Signalements, item 1 : `origine` (models/Signalement.js) — déjà peuplé
+  // côté API, jamais affiché côté admin jusqu'ici.
+  getOrigineText(origine: string | undefined): string {
+    if (origine === 'collecte') return 'Lié à une collecte';
+    if (origine === 'independant') return 'Indépendant';
+    return '—';
+  }
+
   // Signalement.status réel (models/Signalement.js) : open|in_progress|resolved.
   getIncidentStatusText(status: string): string {
     const statuses = {
@@ -2520,6 +2531,8 @@ export class AdminDashboard implements OnInit, OnDestroy {
       if (!statusMatch) return false;
       const severityMatch = severity === 'all' || (i.severity || '').toLowerCase() === severity;
       if (!severityMatch) return false;
+      const origineMatch = this.origineFilter === 'all' || i.origine === this.origineFilter;
+      if (!origineMatch) return false;
       if (!term) return true;
       const haystack = [
         i.agencyId?.name, i.agency?.name,
