@@ -242,6 +242,13 @@ applyFilters(): void {
     rating: this.minRating ? parseFloat(this.minRating) : null,
     status: 'active',
     // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
+    // Sans ceci, le backend retombe sur sa pagination par défaut (limit=10) —
+    // silencieusement, sans qu'aucun contrôle de pagination réel n'existe
+    // dans ce template pour voir la suite (les boutons de page étaient de la
+    // markup statique, jamais câblés). getAll:true (déjà utilisé par
+    // loadAgenciesFromApi() ci-dessus) garantit que le filtrage ne perd
+    // jamais silencieusement des agences au-delà de la première page.
+    getAll: true,
   };
 
   this.agencyService.searchAgencie(payload).subscribe({

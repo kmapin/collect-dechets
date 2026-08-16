@@ -1766,34 +1766,41 @@
   gap: 1.25rem;
 }
 
+/* Label au-dessus de la valeur (plutôt qu'une colonne de 140px à côté) — un
+   label français comme "DERNIÈRE MISE À JOUR" ne tient pas dans 140px, ce qui
+   forçait .info-item à déborder de sa cellule de grille (.info-row) et
+   faisait apparaître un scroll horizontal sur tout le drawer. */
 .info-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   width: 100%;
-  padding: 0;
+  min-width: 0;
+  padding: 0 0 10px;
   border-bottom: 1px solid #f0f0f0;
 }
 
 .info-item:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .info-label {
-  font-size: 0.95rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: #718096;
+  color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  flex: 0 0 140px;
 }
 
 .info-value {
-  font-size: 1rem;
-  color: #2d3748;
-  font-weight: 500;
-  text-align: right;
-  flex: 1;
+  font-size: 0.95rem;
+  color: #1f2937;
+  font-weight: 600;
+  text-align: left;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .link {
@@ -2550,6 +2557,14 @@
   grid-template-columns: 1fr 1fr;
   gap: 10px 20px;
   margin-bottom: 8px;
+
+  /* Sans ceci, un enfant de grille garde son min-width:auto par défaut — le
+     contenu le plus long (une adresse email, un libellé de date) empêchait
+     la colonne de rétrécir sous sa largeur naturelle et débordait du drawer
+     au lieu de passer à la ligne. */
+  > * {
+    min-width: 0;
+  }
 }
 
 .btn-warning {
@@ -2619,6 +2634,12 @@
   .drawer-actions .btn {
     width: 100%;
     justify-content: center;
+  }
+
+  /* 2 colonnes ("Prénom | Nom", "Email | Téléphone"...) redeviennent trop
+     étroites sur un vrai petit écran — une colonne unique reste lisible. */
+  .info-row {
+    grid-template-columns: 1fr;
   }
 }
 

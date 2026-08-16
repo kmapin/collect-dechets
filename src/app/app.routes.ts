@@ -159,6 +159,15 @@ export const routes: Routes = [
       ),
   },
 
+  {
+    canActivate: [adminOrManagerGuard],
+    path: "notification-settings",
+    loadComponent: () =>
+      import("./pages/notification-settings/notification-settings").then(
+        (c) => c.NotificationSettingsComponent,
+      ),
+  },
+
   // ================= MODULE FINANCIAL DASHBOARD (mock-data MVP) =================
   // RBAC is enforced per-child inside financial-dashboard.routes.ts (financeAccessGuard,
   // mock session — never the real auth guards), not here: the guard needs SESSION_SERVICE,

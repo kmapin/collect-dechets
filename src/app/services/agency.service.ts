@@ -235,6 +235,11 @@ export class AgencyService {
     httpParams = httpParams.append('search', agenciesFilter?.search || '');
     httpParams = httpParams.append('page',   agenciesFilter?.page  ?? 1);
     httpParams = httpParams.append('limit',  agenciesFilter?.limit ?? 10);
+    // `getAll` (déjà supporté côté backend, services/agency.js) court-circuite
+    // la pagination — nécessaire pour les écrans qui ont besoin de TOUTES les
+    // agences (ex: liste des destinataires d'une communication), par
+    // opposition aux vues paginées (onglet Agences).
+    if (agenciesFilter?.getAll) httpParams = httpParams.append('getAll', true);
     return this.http.get<any>(`${environment.apiUrl}/agencies`, { params: httpParams });
   }
 
@@ -515,13 +520,19 @@ export class AgencyService {
     return this.http.patch(`${environment.apiUrl}/agencies_validation/${id}/validate`, {}, { params: queryParams }).pipe();
   }
 
+  /**
+   * Passe désormais par le même endpoint de validation qu'activateAgency()
+   * (PATCH /agencies_validation/:id/validate?action=deactivate) au lieu du
+   * PUT générique /agencies/:id, qui contournait les règles métier de
+   * AgencyValidationService.changeStatus() (rejet si déjà inactive, si
+   * agence supprimée...) — un seul chemin pour activer/désactiver, plus de
+   * divergence de comportement entre les deux actions.
+   */
   deActivateAgency(id: string): Observable<any> {
-    return this.http.put(`${environment.apiUrl}/agencies/${id}`, { status: 'inactive' }).pipe(
-      map((response: any) => { console.log('API > deActivateAgency:', response); return response; }),
+    return this.activateAgency(id, 'deactivate').pipe(
       catchError((err) => { console.error('deActivateAgency error:', err); return of(null); })
     );
   }
-;
 
   private currentUserSubject = new BehaviorSubject<Employees | null>(null);
   getCurrentUser(): Employees | null {
@@ -1031,7 +1042,8 @@ export class AgencyService {
       phone: employeeData.phone,
       address: employeeData.address,
       agencyId: employeeData.agencyId, // Obligatoire pour les employés d'agence
-      isOwnerAgency: isOwnerAgency // false pour manager, true pour collector
+      isOwnerAgency: isOwnerAgency, // false pour manager, true pour collector
+      zones: employeeData.zones, // Zones de collecte assignées (manager ET collecteur)
     };
 
     return this.http.post<any>(`${environment.apiUrl}/register`, requestData).pipe(
@@ -1142,10 +1154,11 @@ export class AgencyService {
       phone: employeeData.phone,
       address: employeeData.address,
       agencyId: employeeData.agencyId,
-      isOwnerAgency: isOwnerAgency 
+      isOwnerAgency: isOwnerAgency,
+      zones: employeeData.zones,
     };
 
-  
+
     if (employeeData.password) {
       requestData.password = employeeData.password;
     }

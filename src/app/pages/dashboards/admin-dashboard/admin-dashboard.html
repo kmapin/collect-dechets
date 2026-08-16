@@ -10,20 +10,14 @@
           </p>
         </div>
         <div class="quick-actions">
-          <!-- <button
-                class="btn btn-primary"
-                (click)="showCommunicationModal = true"
-              >
-                <i class="material-icons">campaign</i>
-                Nouvelle Communication
-              </button> -->
-          <!-- <button
-                class="btn btn-secondary"
-                (click)="generateGlobalReport()"
-              >
-                <i class="material-icons">assessment</i>
-                Rapport Global
-              </button> -->
+          <button class="btn btn-primary" (click)="showCommunicationModal = true">
+            <i class="material-icons">campaign</i>
+            Nouvelle Communication
+          </button>
+          <button class="btn btn-secondary" routerLink="/notification-settings">
+            <i class="material-icons">settings</i>
+            Notifications
+          </button>
         </div>
       </div>
     </div>
@@ -2381,7 +2375,7 @@
               <span class="checkmark"></span>
               Toutes les agences
             </label>
-            <label *ngFor="let agency of agencyAudits" class="checkbox-label">
+            <label *ngFor="let agency of communicationRecipientAgencies" class="checkbox-label">
               <input type="checkbox" [value]="agency.id" (change)="toggleRecipient(agency.id, $event)" />
               <span class="checkmark"></span>
               {{ agency.name }}

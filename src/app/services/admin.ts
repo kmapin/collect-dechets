@@ -328,6 +328,21 @@ export class Admin {
     );
   }
 
+  /** Diffuse réellement une communication (persistance + notification temps réel) vers le personnel des agences sélectionnées — services/communication.js. */
+  sendCommunication$(payload: { title: string; message: string; recipients: string[] }): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/communications/send`, payload);
+  }
+
+  /** Sans `agencyId`, renvoie les alertes non-classées de TOUTES les agences (services/planning.js::getPlanningAlerts) — utilisé pour le flux d'alertes transverse du dashboard super_admin. */
+  getPlanningAlerts$(agencyId?: string): Observable<any> {
+    let params = new HttpParams();
+    if (agencyId) params = params.append('agencyId', agencyId);
+    return this.http.get<any>(`${environment.apiUrl}/planning/v2/alerts`, { params }).pipe(
+      map((res: any) => { console.log('API > getPlanningAlerts:', res); return res; }),
+      catchError(() => of({ success: false, data: [] }))
+    );
+  }
+
   getPlanningStats$(agencyId?: string): Observable<any> {
     let params = new HttpParams();
     if (agencyId) params = params.append('agencyId', agencyId);

@@ -10,8 +10,6 @@
           </p>
         </div>
         <div class="quick-actions">
-          <app-notification-bell [notifications]="notifications" (markAsRead)="onNotificationMarkAsRead($event)"
-            (markAllAsRead)="onAllNotificationsMarkAsRead()"></app-notification-bell>
           <button class="btn btn-secondary" [disabled]="isGeneratingReport" [attr.aria-busy]="isGeneratingReport"
             (click)="generateGlobalReport()">
             <i class="material-icons" [class.spin]="isGeneratingReport">{{ isGeneratingReport ? 'autorenew' :

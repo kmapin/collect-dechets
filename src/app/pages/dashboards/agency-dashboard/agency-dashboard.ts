@@ -11,6 +11,7 @@ import {
   ViewEncapsulation,
 } from "@angular/core";
 import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
+import { ConversationService, RealtimeMessage } from "../../../services/conversation.service";
 import { ContratService } from "../../../services/contrat.service";
 import { Contrat } from "../../../models/contrat.model";
 import { isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
@@ -65,7 +66,6 @@ import { Collection, CollectionStatus } from "../../../models/collection.model";
 import { ClientService, ClientApi } from "../../../services/client.service";
 import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
 import { Message } from "../../../models/message.model";
-import { MessagesService } from "../../../services/messages.service";
 import { SharedService } from "../../../services/shared-service";
 import { MatExpansionModule } from "@angular/material/expansion";
 import {
@@ -824,7 +824,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     private clientService: ClientService,
     private cdr: ChangeDetectorRef,
     private fb: FormBuilder,
-    private messageService: MessagesService,
     private sharedService: SharedService,
     private adminService: Admin,
     private route: ActivatedRoute,
@@ -832,6 +831,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     private countriesOrgMockService: CountriesOrgMockService,
     private vehicleService: VehicleService,
     private websocketService: Webstockets,
+    private conversationService: ConversationService,
     private contratService: ContratService,
     private redevanceService: RedevanceService,
   ) {
@@ -1255,18 +1255,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   // Gérer la validation des zones en fonction du rôle
   onRoleChange(): void {
-    const roleControl = this.employeeForm.get("role");
     const zonesControl = this.employeeForm.get("zones");
 
-    if (roleControl && zonesControl) {
-      // Les zones sont toujours optionnelles, même pour les collecteurs
+    if (zonesControl) {
+      // Les zones sont toujours optionnelles, pour tous les rôles — un
+      // manager peut désormais se voir assigner des zones au même titre
+      // qu'un collecteur (auparavant vidées de force dès que le rôle
+      // sélectionné était 'manager', empêchant toute assignation réelle).
       zonesControl.clearValidators();
-
-      if (roleControl.value === "manager") {
-        // Pour les managers, on vide les zones
-        zonesControl.setValue([]);
-      }
-
       zonesControl.updateValueAndValidity();
     }
   }
@@ -1410,6 +1406,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   private newSignalementSub?: Subscription;
+  private incomingMessageSub?: Subscription;
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
@@ -1446,6 +1443,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       if (notification?.type === 'Contrat') {
         this.loadContrats();
       }
+    });
+
+    // Messagerie temps réel : le backend émet `messageSent` vers l'expéditeur
+    // ET le destinataire (message.controller.js::sendMessage) — jusqu'ici ce
+    // canal n'était jamais écouté ici, donc un message client entrant
+    // n'apparaissait qu'après un rechargement manuel de page. On met à jour
+    // la conversation ouverte directement (pas de re-fetch HTTP complet), et
+    // on rafraîchit la liste des conversations/le badge non-lus dans tous les cas.
+    this.incomingMessageSub = this.conversationService.onIncomingMessage$().subscribe((message: RealtimeMessage) => {
+      this.appendIncomingMessage(message);
+      this.userMessages();
+      this.countUnreadMessages();
     });
 
     // Initialiser la liste filtrée des employés
@@ -1518,17 +1527,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   ngOnDestroy(): void {
     this.newSignalementSub?.unsubscribe();
+    this.incomingMessageSub?.unsubscribe();
   }
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
-    this.messageService
-      .getUserUnreadMessagesCount(this.currentUser?.agencyId || "")
+    this.conversationService
+      .getUnreadCount$(this.currentUser?.agencyId || "")
       .subscribe({
-        next: (response: any) => {
-          if (response) {
-            console.log("API > getUserUnreadMessagesCount:", response);
-            this.unreadMessageCount = response.unreadCount || 0;
-          }
+        next: (count: number) => {
+          this.unreadMessageCount = count;
         },
         error: (error: any) => {
           console.error("API > getUserUnreadMessagesCount:", error);
@@ -1538,17 +1545,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   userMessages() {
     this.isLoadingMessages = true;
-    this.messageService
-      .getMessagesForUser(this.currentUser?.agencyId || "")
+    this.conversationService
+      .getConversationsList$(this.currentUser?.agencyId || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
-            console.log("API > getMessagesForUser:", response);
             this.connectedUserMessages = response || [];
-            console.log(
-              "this.connectedUserMessages:",
-              this.connectedUserMessages,
-            );
           }
           this.isLoadingMessages = false;
         },
@@ -1563,16 +1565,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.data = client;
     this.displayAgencyName = client.firstName + " " + client.lastName;
     const clientId = client?._id || "";
-    this.clientService
-      .userAndAgencyConversation(this.currentUser?.agencyId || "", clientId)
+    this.conversationService
+      .openConversation$(this.currentUser?.agencyId || "", clientId)
       .subscribe((messages: any) => {
-        console.log("API >userAndAgencyConversation:", messages);
         if (messages) {
-          console.log("API >userAndAgencyConversation:", messages);
-          this.receivedMessages = (messages || []).sort(
-            (a: any, b: any) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-          );
+          this.receivedMessages = messages;
           this.countUnreadMessages();
           this.scrollToBottom();
 
@@ -1597,16 +1594,36 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       });
   }
   readAndRespondMessage(message: Message): void {
-    this.messageService.markMessagesAsRead(message._id || "").subscribe({
-      next: (response: any) => {
+    this.conversationService.markAsRead$(message._id || "").subscribe({
+      next: () => {
         this.receivedId = message.sender;
-        console.log("Lire et répondre au message:", message._id);
       },
       error: (error: any) => {
         console.error("Erreur lors de la lecture du message:", error);
       },
     });
   }
+
+  /** Ajoute un message (envoyé ou reçu en temps réel) à la conversation actuellement affichée, sans re-fetch HTTP complet. */
+  private appendIncomingMessage(message: any): void {
+    const selfId = this.currentUser?.agencyId;
+    const partnerId = this.data?._id;
+    const concernsOpenConversation =
+      !!partnerId &&
+      ((message.sender === selfId && message.receiver === partnerId) ||
+        (message.receiver === selfId && message.sender === partnerId));
+    if (!concernsOpenConversation) return;
+    // Évite un doublon si le message est déjà présent (ex: écho socket du
+    // message qu'on vient nous-même d'envoyer et déjà ajouté localement).
+    if ((this.receivedMessages || []).some((m: any) => m._id === message._id)) return;
+    const normalized = { ...message, read: (message.read ?? false).toString() };
+    this.receivedMessages = [...(this.receivedMessages || []), normalized];
+    this.scrollToBottom();
+    if (message.receiver === selfId) {
+      this.readAndRespondMessage(message);
+    }
+  }
+
   submitMessage() {
     if (!this.messageData.content) {
       this.notificationService.showError(
@@ -1634,12 +1651,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       content: this.messageData.content.trim(),
     };
 
-    console.log("Envoi du message:", messageData);
-    this.messageService.sendMessage(messageData).subscribe({
-      next: (response: any) => {
-        console.log("API > sendMessage:", response);
-        console.log("API > data:", this.data);
-        this.userAndAgencyConversation(this.data);
+    this.conversationService.sendMessage$(messageData).subscribe({
+      next: (sent: any) => {
+        // Ajout local du message envoyé (retourné par le POST) — remplace
+        // l'ancien re-fetch complet de la conversation ; la vue du client,
+        // elle, se met à jour via onIncomingMessage$ (temps réel).
+        this.appendIncomingMessage(sent);
         this.notificationService.showSuccess(
           "Message envoyé",
           "Votre message a bien été envoyé",
@@ -5034,6 +5051,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       role: employee.role || "",
       password: "", // Ne jamais pré-remplir le mot de passe
       confirmPassword: "", // Ne jamais pré-remplir la confirmation
+      zones: employee.zones || [],
       address: {
         city: employee.address?.city || "",
         arrondissement: employee.address?.arrondissement || "",

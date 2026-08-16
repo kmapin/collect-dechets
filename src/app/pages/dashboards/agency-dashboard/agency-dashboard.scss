@@ -475,6 +475,12 @@
   &:hover { box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4); }
 }
 
+.qa-btn--notif {
+  background: linear-gradient(135deg, #64748b, #475569);
+  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.3);
+  &:hover { box-shadow: 0 4px 14px rgba(71, 85, 105, 0.4); }
+}
+
 .error-message {
   color: red;
   font-size: 0.85em;

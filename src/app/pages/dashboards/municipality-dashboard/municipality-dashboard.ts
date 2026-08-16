@@ -20,7 +20,6 @@ import { FilterParams } from "../../../models/filterParams.model";
 import { Signalement } from "../../shared_pages/signalement/signalement";
 import { MiniChart } from "../../shared_pages/mini-chart/mini-chart";
 import { CoverageMap, type CoverageMapZone } from "../../shared_pages/coverage-map/coverage-map";
-import { NotificationBell, type BellNotification } from "../../shared_pages/notification-bell/notification-bell";
 import { MunicipalityMockDataService } from "./mocks/municipality-mock-data.service";
 import type {
   PerformanceOverview,
@@ -209,7 +208,7 @@ export interface GroupedZoneStatistics {
 
 @Component({
   selector: 'app-municipality-dashboard',
-  imports: [CommonModule, RouterModule, FormsModule, Signalement, MiniChart, CoverageMap, NotificationBell],
+  imports: [CommonModule, RouterModule, FormsModule, Signalement, MiniChart, CoverageMap],
   templateUrl: './municipality-dashboard.html',
   styleUrl: './municipality-dashboard.scss'
 })
@@ -297,16 +296,6 @@ export class MunicipalityDashboard  implements OnInit {
    * topPerformingAgencies above: getIncidentBreakdown() builds new objects each call. */
   incidentBreakdown: { type: string; count: number; percentage: number }[] = [];
 
-  /**
-   * Header notification bell (Prompt 14) — derived from data this dashboard
-   * already loads (incidents, agency compliance), not a separate invented
-   * feed. Rebuilt in buildNotifications() whenever `incidents`/`agencyAudits`
-   * (re)load; `readNotificationIds` survives those rebuilds so marking a
-   * notification read doesn't get silently undone the next time the OTHER
-   * source finishes loading (they load independently in loadMunicipalityData()).
-   */
-  notifications: BellNotification[] = [];
-  private readNotificationIds = new Set<string>();
   // zoneStatistics: ZoneStatistic[] = [];
 
   // Filters
@@ -432,7 +421,6 @@ export class MunicipalityDashboard  implements OnInit {
           this.agencyAudits = [];
           this.filteredAgencies = [];
           this.topPerformingAgencies = [];
-          this.buildNotifications();
           return;
         }
 
@@ -461,7 +449,6 @@ export class MunicipalityDashboard  implements OnInit {
           }));
           this.filteredAgencies = [...this.agencyAudits];
           this.topPerformingAgencies = this.getTopPerformingAgencies();
-          this.buildNotifications();
           const auditTab = this.tabs.find((tab) => tab.id === "agencies");
           if (auditTab) {
             auditTab.badge = this.agencyAudits.length;
@@ -857,7 +844,6 @@ export class MunicipalityDashboard  implements OnInit {
         this.isLoadingIncidents = false;
         this.filterIncidents();
         this.incidentBreakdown = this.getIncidentBreakdown();
-        this.buildNotifications();
         console.log("signalements in dashboard", this.filteredIncidents);
         const incidentsTab = this.tabs.find((tab) => tab.id === "incidents");
         if (incidentsTab) {
@@ -1059,82 +1045,6 @@ export class MunicipalityDashboard  implements OnInit {
     }));
   }
 
-  /**
-   * Header notification bell content (Prompt 14) — recent incidents +
-   * agencies with a compliance concern, merged and sorted by date. Called
-   * from both loadAgencyAudits() and loadAllSignalements()'s subscribes
-   * (they load independently), so it must tolerate running before the other
-   * source has arrived yet — an empty `this.incidents`/`this.agencyAudits`
-   * just contributes nothing, not an error.
-   */
-  private buildNotifications(): void {
-    const incidentNotifications: BellNotification[] = [...this.incidents]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 10)
-      .map((incident) => {
-        const id = `incident-${incident._id}`;
-        return {
-          id,
-          icon: "report_problem",
-          title: this.getIncidentTypeText(incident.type),
-          message: `${incident.agencyName} — ${incident.comment || incident.description || "Aucun détail fourni."}`,
-          date: new Date(incident.date),
-          read: this.readNotificationIds.has(id),
-          severity: this.severityForIncident(incident.severity),
-        };
-      });
-
-    // agency.complianceScore reste toujours `null` aujourd'hui (Prompt 05 : aucune règle de
-    // conformité définie, aucune source réelle) — les comparaisons `< 85`/`< 70` ci-dessous
-    // ne s'appliquent donc que si une vraie valeur existe un jour, jamais sur `null`.
-    const complianceNotifications: BellNotification[] = this.agencyAudits
-      .filter((agency) => agency.issues.length > 0 || (agency.complianceScore !== null && agency.complianceScore < 85) || agency.status !== "active")
-      .map((agency) => {
-        const id = `agency-${agency.id}`;
-        const reason = agency.issues.length > 0
-          ? agency.issues[0]
-          : agency.complianceScore !== null
-            ? `Score de conformité : ${agency.complianceScore}%`
-            : `Agence ${agency.status}`;
-        return {
-          id,
-          icon: "business",
-          title: `Conformité — ${agency.name}`,
-          message: reason,
-          date: new Date(agency.lastAudit),
-          read: this.readNotificationIds.has(id),
-          severity: ((agency.complianceScore !== null && agency.complianceScore < 70) || agency.status === "suspended" ? "high" : "medium") as BellNotification["severity"],
-        };
-      });
-
-    this.notifications = [...incidentNotifications, ...complianceNotifications]
-      .sort((a, b) => b.date.getTime() - a.date.getTime())
-      .slice(0, 20);
-  }
-
-  private severityForIncident(severity: Incident["severity"]): BellNotification["severity"] {
-    switch (severity) {
-      case "Critical":
-        return "critical";
-      case "High":
-        return "high";
-      case "Medium":
-        return "medium";
-      default:
-        return "low";
-    }
-  }
-
-  onNotificationMarkAsRead(id: string): void {
-    this.readNotificationIds.add(id);
-    this.notifications = this.notifications.map((n) => (n.id === id ? { ...n, read: true } : n));
-  }
-
-  onAllNotificationsMarkAsRead(): void {
-    this.notifications.forEach((n) => this.readNotificationIds.add(n.id));
-    this.notifications = this.notifications.map((n) => ({ ...n, read: true }));
-  }
-
   // Statistics
   showAdminStatistics(): void {
     this.adminService.getAllStatistics().subscribe({
@@ -1228,7 +1138,6 @@ export class MunicipalityDashboard  implements OnInit {
         }
         this.filterIncidents();
         this.incidentBreakdown = this.getIncidentBreakdown();
-        this.buildNotifications();
         this.notificationService.showSuccess("Signalement affecté", "Le signalement a été affecté à l'équipe.");
       },
       error: (err) => {
@@ -1251,7 +1160,6 @@ export class MunicipalityDashboard  implements OnInit {
         if (target) target.status = 'resolved';
         this.filterIncidents();
         this.incidentBreakdown = this.getIncidentBreakdown();
-        this.buildNotifications();
         const incidentsTab = this.tabs.find((tab) => tab.id === "incidents");
         if (incidentsTab) incidentsTab.badge = this.getUnresolvedReportsCount();
         this.notificationService.showSuccess("Incident résolu", "L'incident a été marqué comme résolu.");

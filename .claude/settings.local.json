@@ -12,7 +12,15 @@
       "Bash(node -e \"const fs=require\\('fs'\\); fs.readdirSync\\('node_modules/@fullcalendar'\\).forEach\\(p=>console.log\\(p\\)\\)\")",
       "Bash(node \"/c/Users/PC1/AppData/Local/Temp/claude/c--Users-PC1-Desktop-Taches-Taches-PROJET-SAHELYS-new-collect-dechets/2bd9cc9b-23a1-4b18-bfb4-76f64d6ec7a1/scratchpad/fix-nullbytes.js\" \"/c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/services/municipality.service.js\")",
       "Bash(tail -5 \"/c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/routes/municipalityRoutes.js\")",
-      "Read(//c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/routes/**)"
+      "Read(//c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/routes/**)",
+      "Bash(cd \"c:\\\\Users\\\\PC1\\\\Desktop\\\\Taches\\\\Taches\\\\PROJET_SAHELYS\\\\new\\\\collecte-dechets-back\" && grep -n \"resolveAgency\\\\|getDashboardKpi\\\\s*=\" -A 40 controllers/financeStats*.js 2>/dev/null | head -80; find . -iname \"financeStats*\" -not -path \"*/node_modules/*\")",
+      "Read(//c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/**)",
+      "Bash(find \"/c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/routes\" -iname \"*admin*\")",
+      "Read(//c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/services/**)",
+      "Read(//c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/models/**)",
+      "Read(//c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/controllers/**)",
+      "Bash(cd \"c:\\\\Users\\\\PC1\\\\Desktop\\\\Taches\\\\Taches\\\\PROJET_SAHELYS\\\\new\\\\collecte-dechets-back\" && grep -n \"getDashboardKpi\\\\s*=\\\\|async getDashboardKpi\" -A 60 services/financeStats.js | head -90)",
+      "Bash(cd \"c:\\\\Users\\\\PC1\\\\Desktop\\\\Taches\\\\Taches\\\\PROJET_SAHELYS\\\\new\\\\collecte-dechets-back\" && ls tests | grep -i \"team\\\\|qr\\\\|scan\\\\|collecte\" 2>/dev/null)"
     ]
   }
 }

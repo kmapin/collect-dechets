@@ -393,6 +393,8 @@ export class AdminDashboard implements OnInit, OnDestroy {
   };
 
   agencyAudits: AgencyAudit[] = [];
+  /** Liste complète (non paginée) des agences — alimente uniquement le picker de destinataires de "Nouvelle Communication" (voir loadCommunications()). */
+  communicationRecipientAgencies: { id: string; name: string }[] = [];
   clientsAudits: any[] = [];
   collectorsAudits: any[] = [];
   usersAudits: any[] = [];
@@ -583,12 +585,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
       icon: "account_balance_wallet",
       badge: null,
     },
-    // {
-    //   id: "communications",
-    //   label: "Communications",
-    //   icon: "campaign",
-    //   badge: null,
-    // },
+    {
+      id: "communications",
+      label: "Communications",
+      icon: "campaign",
+      badge: null,
+    },
   ];
   municipalitiesAudits: any;
   filteredMunicipalities: any[] = [];
@@ -686,6 +688,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
         break;
       case 'clients':
         this.showAdminClients();
+        break;
+      case 'communications':
+        this.loadCommunications();
         break;
     }
   }
@@ -1808,20 +1813,72 @@ export class AdminDashboard implements OnInit, OnDestroy {
   //   this.filteredIncidents = [...this.incidents];
   // }
 
+  /**
+   * Flux d'alertes système réel — remplace l'ancien tableau codé en dur.
+   * Réutilise les mêmes sources déjà éprouvées côté Municipalité/Planning
+   * (sévérité des Signalement, PlanningAlert type='danger'/'warning'), sans
+   * créer de nouvelle entité/notion d'alerte : le modèle Notification reste
+   * volontairement hors-sujet ici (voir DÉCISION PRODUIT en attente).
+   * Les communications envoyées manuellement (sendCommunication()) restent
+   * insérées dans ce même tableau, inchangé.
+   */
   loadCommunications(): void {
-    this.communications = [
-      {
-        id: "1",
-        type: "directive",
-        title: "Nouvelle réglementation tri sélectif",
-        message:
-          "Application des nouvelles consignes de tri à partir du 1er février",
-        recipients: ["1", "2"],
-        priority: "high",
-        sentAt: new Date(Date.now() - 3600000),
-        readBy: ["1"],
+    // Liste COMPLÈTE des agences pour le picker de destinataires — pas
+    // `agencyAudits` (paginé à 10 par défaut pour l'onglet Agences, ce qui
+    // faisait disparaître silencieusement les agences hors première page,
+    // ex. "OUAGA PROPRE"). `getAll: true` court-circuite la pagination
+    // côté backend (services/agency.js), déjà utilisé ailleurs (agencies.ts).
+    this.agencyService.getAllAgenciesFromApi({ getAll: true }).subscribe({
+      next: (response: any) => {
+        this.communicationRecipientAgencies = (response?.data ?? response ?? []).map((a: any) => ({
+          id: a._id,
+          name: a.name,
+        }));
       },
-    ];
+      error: () => {
+        this.communicationRecipientAgencies = [];
+      },
+    });
+    forkJoin({
+      signalements: this.adminService.getAllSignalements({}),
+      alerts: this.adminService.getPlanningAlerts$(),
+    }).subscribe({
+      next: ({ signalements, alerts }: { signalements: any[]; alerts: any }) => {
+        const fromSignalements: Communication[] = (signalements || [])
+          .filter((s: any) => s.status !== "resolved" && ["critical", "high"].includes(s.severity))
+          .map((s: any) => ({
+            id: `signalement-${s._id}`,
+            type: "alert",
+            title: s.severity === "critical" ? "Signalement critique" : "Signalement à forte sévérité",
+            message: s.comment || s.description || "Aucun détail fourni.",
+            recipients: s.agencyId ? [typeof s.agencyId === "object" ? s.agencyId._id : s.agencyId] : [],
+            priority: s.severity === "critical" ? "urgent" : "high",
+            sentAt: new Date(s.createdAt),
+            readBy: [],
+          } as Communication));
+
+        const fromPlanningAlerts: Communication[] = (alerts?.data || [])
+          .filter((a: any) => a.type === "danger" || a.type === "warning")
+          .map((a: any) => ({
+            id: `planning-alert-${a._id}`,
+            type: "alert",
+            title: a.title,
+            message: a.message,
+            recipients: a.agencyId ? [a.agencyId] : [],
+            priority: a.type === "danger" ? "urgent" : "high",
+            sentAt: new Date(a.createdAt),
+            readBy: [],
+          } as Communication));
+
+        this.communications = [...fromSignalements, ...fromPlanningAlerts].sort(
+          (a, b) => b.sentAt.getTime() - a.sentAt.getTime(),
+        );
+      },
+      error: (error) => {
+        console.error("Erreur lors du chargement des alertes système:", error);
+        this.communications = [];
+      },
+    });
   }
 
   // Utility methods
@@ -2128,7 +2185,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   getAgencyName(agencyId: string): string {
-    const agency = this.agencyAudits.find((a) => a.id === agencyId);
+    const agency =
+      this.agencyAudits.find((a) => a.id === agencyId) ||
+      this.communicationRecipientAgencies.find((a) => a.id === agencyId);
     return agency ? agency.name : "Agence inconnue";
   }
 
@@ -2415,62 +2474,23 @@ export class AdminDashboard implements OnInit, OnDestroy {
     if (!id) return;
     this.isLoadingActivity  = true;
     this.showActivitySection = true;
+    // GET /user/:id/activity est désormais un vrai endpoint (LoginHistory +
+    // ActivityLog) — un tableau vide est une réponse RÉELLE et légitime (cet
+    // utilisateur ne s'est pas reconnecté / n'a subi aucune action tracée
+    // depuis la mise en place), pas un signal d'échec. Le repli sur
+    // getMockActivity() masquait ce cas très fréquent en cachant un vrai
+    // "aucune activité" derrière de fausses données — retiré : le template a
+    // déjà un état vide honnête ("Aucune activité enregistrée").
     this.adminService.getUserActivity(id).subscribe({
       next: (response: any) => {
-        const apiData = response?.data ?? [];
-        this.userActivity = apiData.length > 0
-          ? apiData
-          : this.getMockActivity(this.selectedUser.role || '');
+        this.userActivity = response?.data ?? [];
         this.isLoadingActivity = false;
       },
       error: () => {
-        this.userActivity  = this.getMockActivity(this.selectedUser.role || '');
+        this.userActivity = [];
         this.isLoadingActivity = false;
       }
     });
-  }
-
-  private getMockActivity(role: string): ActivityEvent[] {
-    const now  = new Date();
-    const d = (offset: number) => new Date(now.getTime() - offset * 3600000).toISOString();
-    const maps: Record<string, ActivityEvent[]> = {
-      client: [
-        { type: 'subscription_created', label: 'Abonnement créé', detail: 'Plan mensuel souscrit', date: d(24),   icon: 'card_membership', color: '#3b82f6' },
-        { type: 'collection_done',      label: 'Collecte effectuée', detail: 'QR code scanné par le collecteur', date: d(72),  icon: 'local_shipping',  color: '#16a34a' },
-        { type: 'report_filed',         label: 'Signalement déposé', detail: 'Collecte manquée signalée',         date: d(120), icon: 'report_problem',  color: '#f59e0b' },
-        { type: 'payment_done',         label: 'Paiement effectué',  detail: 'Mobile Money — 5 000 FCFA',         date: d(200), icon: 'payments',        color: '#8b5cf6' },
-        { type: 'subscription_renewed', label: 'Abonnement renouvelé', detail: 'Renouvellement automatique',      date: d(720), icon: 'autorenew',       color: '#3b82f6' },
-      ],
-      collector: [
-        { type: 'collection_scanned',  label: 'Collecte scannée',     detail: '12 foyers collectés aujourd\'hui', date: d(2),   icon: 'qr_code_scanner', color: '#16a34a' },
-        { type: 'zone_assigned',       label: 'Zone assignée',        detail: 'Quartier Pissy — Secteur 17',      date: d(26),  icon: 'map',             color: '#3b82f6' },
-        { type: 'schedule_assigned',   label: 'Planning assigné',     detail: 'Tournée Lundi 07h–12h',            date: d(48),  icon: 'schedule',        color: '#8b5cf6' },
-        { type: 'collection_scanned',  label: 'Collecte scannée',     detail: '9 foyers collectés',               date: d(74),  icon: 'qr_code_scanner', color: '#16a34a' },
-        { type: 'report_resolved',     label: 'Signalement traité',   detail: 'Incident #0042 résolu',            date: d(120), icon: 'check_circle',    color: '#22c55e' },
-      ],
-      manager: [
-        { type: 'employee_added',    label: 'Employé ajouté',       detail: 'Nouveau collecteur enregistré',    date: d(5),   icon: 'person_add',     color: '#3b82f6' },
-        { type: 'zone_added',        label: 'Zone ajoutée',         detail: 'Quartier Gounghin ajouté',         date: d(30),  icon: 'add_location',   color: '#16a34a' },
-        { type: 'planning_created',  label: 'Planning créé',        detail: 'Semaine du 02/06 configurée',      date: d(55),  icon: 'event',          color: '#8b5cf6' },
-        { type: 'employee_removed',  label: 'Employé désactivé',    detail: 'Compte suspendu (fin contrat)',     date: d(120), icon: 'person_remove',  color: '#f59e0b' },
-        { type: 'tarif_updated',     label: 'Tarif mis à jour',     detail: 'Plan mensuel : 4500 → 5000 FCFA',  date: d(240), icon: 'price_change',   color: '#ec4899' },
-      ],
-      gestionnaire: [
-        { type: 'employee_added',    label: 'Employé ajouté',       detail: 'Nouveau collecteur enregistré',    date: d(5),   icon: 'person_add',     color: '#3b82f6' },
-        { type: 'zone_added',        label: 'Zone ajoutée',         detail: 'Quartier Gounghin ajouté',         date: d(30),  icon: 'add_location',   color: '#16a34a' },
-        { type: 'planning_created',  label: 'Planning créé',        detail: 'Semaine du 02/06 configurée',      date: d(55),  icon: 'event',          color: '#8b5cf6' },
-      ],
-      municipality: [
-        { type: 'agency_audited',    label: 'Agence auditée',       detail: 'GlobalFaso — conformité 78%',      date: d(12),  icon: 'fact_check',     color: '#3b82f6' },
-        { type: 'report_reviewed',   label: 'Signalement examiné',  detail: 'Incident #0051 — Pissy',           date: d(36),  icon: 'manage_search',  color: '#f59e0b' },
-        { type: 'agency_activated',  label: 'Agence activée',       detail: 'Eco-Propre activée',               date: d(96),  icon: 'verified',       color: '#22c55e' },
-        { type: 'report_reviewed',   label: 'Signalement examiné',  detail: 'Incident #0039 — Tampouy',         date: d(180), icon: 'manage_search',  color: '#f59e0b' },
-        { type: 'agency_suspended',  label: 'Agence suspendue',     detail: 'CleanBF — non-conformité',         date: d(300), icon: 'block',          color: '#dc2626' },
-      ],
-    };
-    return maps[role] ?? [
-      { type: 'login', label: 'Connexion', detail: 'Connexion à la plateforme', date: d(1), icon: 'login', color: '#6b7280' },
-    ];
   }
 
   getActivityTimeAgo(dateStr: string): string {
@@ -2755,7 +2775,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
   // Communication methods
   toggleAllAgencies(event: any): void {
     if (event.target.checked) {
-      this.newCommunication.recipients = this.agencyAudits.map((a) => a.id);
+      this.newCommunication.recipients = this.communicationRecipientAgencies.map((a) => a.id);
     } else {
       this.newCommunication.recipients = [];
     }
@@ -2774,36 +2794,56 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   sendCommunication(): void {
     if (
-      this.newCommunication.type &&
-      this.newCommunication.title &&
-      this.newCommunication.message &&
-      this.newCommunication.recipients.length > 0
+      !this.newCommunication.type ||
+      !this.newCommunication.title ||
+      !this.newCommunication.message ||
+      this.newCommunication.recipients.length === 0
     ) {
-      const communication: Communication = {
-        id: Math.random().toString(36).substr(2, 9),
-        type: this.newCommunication.type,
-        title: this.newCommunication.title,
-        message: this.newCommunication.message,
-        recipients: [...this.newCommunication.recipients],
-        priority: this.newCommunication.priority,
-        sentAt: new Date(),
-        readBy: [],
-      };
-
-      this.communications.unshift(communication);
-      this.showCommunicationModal = false;
-      this.newCommunication = {
-        type: "",
-        priority: "medium",
-        title: "",
-        message: "",
-        recipients: [],
-      };
-      this.notificationService.showSuccess(
-        "Envoyé",
-        "Communication envoyée avec succès",
-      );
+      return;
     }
+
+    const recipients = [...this.newCommunication.recipients];
+    const communication: Communication = {
+      id: Math.random().toString(36).substr(2, 9),
+      type: this.newCommunication.type,
+      title: this.newCommunication.title,
+      message: this.newCommunication.message,
+      recipients,
+      priority: this.newCommunication.priority,
+      sentAt: new Date(),
+      readBy: [],
+    };
+
+    // Envoi réel : persistance + notification temps réel (cloche générique)
+    // au personnel des agences sélectionnées — services/communication.js,
+    // réutilise notifyUsers() comme partout ailleurs dans l'app.
+    this.adminService.sendCommunication$({
+      title: this.newCommunication.title,
+      message: this.newCommunication.message,
+      recipients,
+    }).subscribe({
+      next: () => {
+        this.communications.unshift(communication);
+        this.showCommunicationModal = false;
+        this.newCommunication = {
+          type: "",
+          priority: "medium",
+          title: "",
+          message: "",
+          recipients: [],
+        };
+        this.notificationService.showSuccess(
+          "Envoyé",
+          "Communication envoyée avec succès",
+        );
+      },
+      error: () => {
+        this.notificationService.showError(
+          "Erreur",
+          "La communication n'a pas pu être envoyée.",
+        );
+      },
+    });
   }
 
   // Statistics

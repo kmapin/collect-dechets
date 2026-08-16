@@ -193,7 +193,8 @@ export interface AddEmployeeData {
   phone: string;
   address: UserAddress;
   agencyId: string;
-  isOwnerAgency?: boolean; 
+  isOwnerAgency?: boolean;
+  zones?: string[];
 }
 
 // Interface for registration response from backend

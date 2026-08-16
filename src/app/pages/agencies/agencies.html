@@ -342,26 +342,10 @@
   </div>
 
   <div class="pagination-wrapper">
-
-    <div class="pagination">
-
-      <button class="page-btn disabled">
-        <mat-icon>arrow_back</mat-icon> Précédent
-      </button>
-
-      <button class="page-number active">1</button>
-      <button class="page-number">2</button>
-      <button class="page-number">3</button>
-
-      <button class="page-btn next">
-        Suivant <mat-icon>arrow_forward</mat-icon>
-      </button>
-
-    </div>
-
+    <!-- La recherche charge toujours l'intégralité des résultats (getAll:true) —
+         pas de pagination réelle à piloter ici, seulement un résumé. -->
     <div class="pagination-info">
-      Page <b>1</b> sur <b>3</b> — Affichage de <b>1</b> à <b>{{ filteredAgencies.length }}</b> sur <b>{{ agencies!.pagination.total}}</b> agences
+      <b>{{ filteredAgencies.length }}</b> agence(s) affichée(s)
     </div>
-
   </div>
 </div>

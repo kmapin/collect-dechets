@@ -26,6 +26,10 @@
             <i class="material-icons">account_balance_wallet</i>
             <span>Finance</span>
           </button>
+          <button class="qa-btn qa-btn--notif" routerLink="/notification-settings">
+            <i class="material-icons">settings</i>
+            <span>Notifications</span>
+          </button>
         </div>
       </div>
     </div>
@@ -2487,8 +2491,9 @@
                     </div>
                   </div>
                   }
-                  <!-- Sélection multiple des zones -->
-                  @if (employeeForm.get('role')?.value === 'collector') {
+                  <!-- Sélection multiple des zones — collecteur ET manager (un manager peut
+                       superviser des zones au même titre qu'un collecteur les couvre). -->
+                  @if (employeeForm.get('role')?.value === 'collector' || employeeForm.get('role')?.value === 'manager') {
                   <div class="form-group full-width">
                     <label class="form-label">Zones assignées (optionnel)</label>
                     <div class="zone-selection" [class.error]="hasFieldError('employee', 'zones')">

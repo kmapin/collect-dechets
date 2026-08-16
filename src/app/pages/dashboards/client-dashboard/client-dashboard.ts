@@ -16,7 +16,6 @@ import {
 } from "../../../models/collection.model";
 import { ClientService } from "../../../services/client.service";
 import { map } from "rxjs";
-import { MessagesService } from "../../../services/messages.service";
 import { AgencyService } from "../../../services/agency.service";
 import { Message } from "../../../models/message.model";
 import { MatIcon } from "@angular/material/icon";
@@ -25,6 +24,7 @@ import autoTable from "jspdf-autotable";
 import { Signalement } from "../../shared_pages/signalement/signalement";
 import { Subscription as RxSubscription } from "rxjs";
 import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
+import { ConversationService, RealtimeMessage } from "../../../services/conversation.service";
 import { ContratService } from "../../../services/contrat.service";
 import { Contrat } from "../../../models/contrat.model";
 import { EligibilityService, EligibilityResult, isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
@@ -111,15 +111,16 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   rechargeAmount: number = 0;
   displayAgencyName: any;
   private newSubscriptionSub?: RxSubscription;
+  private incomingMessageSub?: RxSubscription;
 
   constructor(
     private authService: AuthService,
     private collectionService: CollectionService,
     private clientService: ClientService,
     private notificationService: NotificationService,
-    private messageService: MessagesService,
     private agencyService: AgencyService,
     private websocketService: Webstockets,
+    private conversationService: ConversationService,
     private contratService: ContratService,
     private eligibilityService: EligibilityService
   ) {}
@@ -149,10 +150,23 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         this.loadEligibility();
       }
     });
+
+    // Messagerie temps réel : le backend émet `messageSent` vers l'expéditeur
+    // ET le destinataire (message.controller.js::sendMessage) — jusqu'ici ce
+    // canal n'était jamais écouté ici, donc un message reçu n'apparaissait
+    // qu'après un rechargement manuel de page. On met à jour la conversation
+    // ouverte directement (pas de re-fetch HTTP complet), et on rafraîchit la
+    // liste des conversations/le badge non-lus dans tous les cas.
+    this.incomingMessageSub = this.conversationService.onIncomingMessage$().subscribe((message: RealtimeMessage) => {
+      this.appendIncomingMessage(message);
+      this.userMessages();
+      this.countUnreadMessages();
+    });
   }
 
   ngOnDestroy(): void {
     this.newSubscriptionSub?.unsubscribe();
+    this.incomingMessageSub?.unsubscribe();
   }
 
   getUser() {
@@ -589,14 +603,11 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   }
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
-    this.messageService
-      .getUserUnreadMessagesCount(this.currentUser?._id || "")
+    this.conversationService
+      .getUnreadCount$(this.currentUser?._id || "")
       .subscribe({
-        next: (response: any) => {
-          if (response) {
-            console.log("API > getUserUnreadMessagesCount:", response);
-            this.unreadMessageCount = response.unreadCount || 0;
-          }
+        next: (count: number) => {
+          this.unreadMessageCount = count;
         },
         error: (error: any) => {
           console.error("API > getUserUnreadMessagesCount:", error);
@@ -605,17 +616,12 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   userMessages() {
-    this.messageService
-      .getMessagesForUser(this.currentUser?._id || "")
+    this.conversationService
+      .getConversationsList$(this.currentUser?._id || "")
       .subscribe({
         next: (response: any) => {
           if (response) {
-            console.log("API > getMessagesForUser:", response);
             this.connectedUserMessages = response || [];
-            console.log(
-              "this.connectedUserMessages client:",
-              this.connectedUserMessages
-            );
           }
         },
         error: (error: any) => {
@@ -628,14 +634,12 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     this.data = agency;
     this.displayAgencyName = agency.name;
     const agencyId = agency?._id || "";
-    this.clientService
-      .userAndAgencyConversation(this.currentUser?._id || "", agencyId)
+    this.conversationService
+      .openConversation$(this.currentUser?._id || "", agencyId)
       .subscribe((messages: any) => {
-        console.log("API >userAndAgencyConversation:", messages);
         if (messages) {
-          console.log("API >userAndAgencyConversation:", messages);
           this.countUnreadMessages();
-          this.receivedMessages = (messages || []).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+          this.receivedMessages = messages;
           this.scrollToBottom()
           if (!agencyId) {
             this.receivedId = this.currentUser?._id;
@@ -658,10 +662,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       });
   }
   readAndRespondMessage(message: Message): void {
-    this.messageService.markMessagesAsRead(message._id || "").subscribe({
-      next: (response: any) => {
+    this.conversationService.markAsRead$(message._id || "").subscribe({
+      next: () => {
         this.receivedId = message.sender;
-        console.log("Lire et répondre au message:", message._id);
       },
       error: (error: any) => {
         console.error("Erreur lors de la lecture du message:", error);
@@ -692,12 +695,12 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       return;
     }
 
-    console.log("Envoi du message:", this.messageData);
-    this.messageService.sendMessage(this.messageData).subscribe({
-      next: (response: any) => {
-        console.log("API > sendMessage:", response);
-        console.log("API > data:", this.data);
-        this.userAndAgencyConversation(this.data);
+    this.conversationService.sendMessage$(this.messageData).subscribe({
+      next: (sent: any) => {
+        // Ajout local du message envoyé (retourné par le POST) — remplace
+        // l'ancien re-fetch complet de la conversation ; la vue du
+        // destinataire, elle, se met à jour via onIncomingMessage$ (temps réel).
+        this.appendIncomingMessage(sent);
         this.notificationService.showSuccess(
           "Message envoyé",
           "Votre message a bien été envoyé"
@@ -712,6 +715,26 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         );
       },
     });
+  }
+
+  /** Ajoute un message (envoyé ou reçu en temps réel) à la conversation actuellement affichée, sans re-fetch HTTP complet. */
+  private appendIncomingMessage(message: any): void {
+    const selfId = this.currentUser?._id;
+    const partnerId = this.data?._id;
+    const concernsOpenConversation =
+      !!partnerId &&
+      ((message.sender === selfId && message.receiver === partnerId) ||
+        (message.receiver === selfId && message.sender === partnerId));
+    if (!concernsOpenConversation) return;
+    // Évite un doublon si le message est déjà présent (ex: écho socket du
+    // message qu'on vient nous-même d'envoyer et déjà ajouté localement).
+    if ((this.receivedMessages || []).some((m: any) => m._id === message._id)) return;
+    const normalized = { ...message, read: (message.read ?? false).toString() };
+    this.receivedMessages = [...(this.receivedMessages || []), normalized];
+    this.scrollToBottom();
+    if (message.receiver === selfId) {
+      this.readAndRespondMessage(message);
+    }
   }
 
   /**Gestion des messages recus par le client connecté fin */
