@@ -79,6 +79,7 @@ describe('AgencyDashboard - signalements unifiés (Prompt 06)', () => {
       websocketServiceSpy as any,
       contratServiceSpy as any,
       {} as any,
+      {} as any,
     );
     component.currentUser = { _id: 'manager-1', agencyId: 'agency-1' } as any;
     component.tabs = [{ id: 'reports', badge: 0 } as any];
@@ -215,6 +216,7 @@ describe('AgencyDashboard - onglet Contrats (Phase 6)', () => {
       websocketServiceSpy as any,
       contratServiceSpy as any,
       redevanceServiceSpy as any,
+      {} as any,
     );
     component.currentUser = { _id: 'manager-1', agencyId: 'agency-1' } as any;
     component.tabs = [{ id: 'contrats', badge: null } as any];

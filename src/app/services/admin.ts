@@ -421,6 +421,24 @@ export class Admin {
   }
 
   /**
+   * GET /municipality/waste-records — table de faits paginée des collectes, déjà utilisée
+   * par le dashboard municipal (Prompt 12). Réutilisée telle quelle pour la vue admin-wide
+   * "Collectes effectuées" (`authMiddleware()` de cette route n'impose aucun rôle précis,
+   * donc déjà accessible à super_admin sans aucun changement backend) — pas de deuxième
+   * endpoint construit en parallèle.
+   */
+  getWasteRecords$(params: { from?: string; to?: string; days?: number; zoneId?: string; wasteType?: string; collectorId?: string; page?: number; limit?: number }): Observable<any> {
+    const httpParams: any = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') httpParams[key] = value;
+    });
+    return this.http.get<any>(`${environment.apiUrl}/municipality/waste-records`, { params: httpParams }).pipe(
+      map((res: any) => { console.log('API > getWasteRecords:', res); return res; }),
+      catchError((err) => { console.error('getWasteRecords error:', err); throw err; })
+    );
+  }
+
+  /**
    * GET /territories/cities (Prompt 14) — real lat/lng per city. NOT wired into the
    * Coverage Map yet: verified against the live database that the real `City`
    * collection currently has only 6 documents and none with latitude/longitude

@@ -107,6 +107,37 @@
             </span>
           </div>
         </div>
+        } @if (!isLoadingStatistics) {
+        <div class="stat-card card kpi-collectes-card">
+          <div class="stat-icon collections">
+            <i class="material-icons">local_shipping</i>
+          </div>
+          <div class="stat-info">
+            <h3>Nombre de collectes</h3>
+            <p class="stat-value">{{ statistics.filteredCollectionsCount ?? 0 }}</p>
+            <span class="stat-trend neutral">
+              {{ statistics.completedCollections || 0 }} effectuées au total · {{ statistics.todayCollections || 0 }} aujourd'hui
+            </span>
+            <div class="kpi-collectes-filters">
+              <select [(ngModel)]="collectesKpiPeriod" (change)="filterCollectesKpi()" class="filter-select">
+                <option value="today">Aujourd'hui</option>
+                <option value="week">Cette semaine</option>
+                <option value="month">Ce mois</option>
+              </select>
+              <select [(ngModel)]="collectesKpiWasteType" (change)="filterCollectesKpi()" class="filter-select">
+                <option value="">Tous types</option>
+                <option *ngFor="let type of collectesKpiWasteTypes" [value]="type">{{ type }}</option>
+              </select>
+              <input
+                type="text"
+                class="filter-select"
+                placeholder="Zone/quartier..."
+                [(ngModel)]="collectesKpiZone"
+                (change)="filterCollectesKpi()"
+                />
+            </div>
+          </div>
+        </div>
         }
       </div>
 
@@ -1584,6 +1615,80 @@
             </p>
           </div>
           } -->
+      </div>
+      }
+
+      <!-- Onglet Demandes express (passage spontané, DemandeCollecte — distinct des Signalements) -->
+      @if (activeTab === 'demandes') {
+      <div class="demandes-tab">
+        <div class="section-header">
+          <h2>Demandes de collecte express</h2>
+          <div class="section-actions">
+            <select [(ngModel)]="demandesFilter" (change)="filterDemandesCollecte()" class="filter-select">
+              <option value="pending">En attente</option>
+              <option value="accepted">Acceptées</option>
+              <option value="rejected">Refusées</option>
+              <option value="all">Toutes</option>
+            </select>
+          </div>
+        </div>
+        @if (isLoadingDemandes) {
+        <app-loading-spinner message="Chargement des demandes..." size="medium"></app-loading-spinner>
+        }
+        @if (!isLoadingDemandes) {
+        <div class="collectes-table-wrapper">
+          <table class="collectes-table">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Type(s) de déchets</th>
+                <th>Notes</th>
+                <th>Date souhaitée</th>
+                <th>Demandée le</th>
+                <th>Statut</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (demande of demandesCollecte; track demande._id) {
+              <tr>
+                <td class="cell-name">{{ demande.clientId?.firstName }} {{ demande.clientId?.lastName }}</td>
+                <td>{{ demande.wasteTypes.join(', ') || '—' }}</td>
+                <td>{{ demande.notes || '—' }}</td>
+                <td>{{ demande.requestedDate ? (demande.requestedDate | date:'dd/MM/yyyy') : '—' }}</td>
+                <td>{{ demande.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <span class="collecte-status-badge" [class]="'cstatus-' + demande.status">
+                    {{ demande.status === 'pending' ? 'En attente' : demande.status === 'accepted' ? 'Acceptée' : demande.status === 'rejected' ? 'Refusée' : 'Annulée' }}
+                  </span>
+                </td>
+                <td class="col-actions">
+                  @if (demande.status === 'pending') {
+                  <button class="action-btn" title="Accepter" [disabled]="processingDemandeId === demande._id"
+                    (click)="acceptDemandeCollecte(demande)">
+                    <i class="material-icons">check_circle</i>
+                  </button>
+                  <button class="action-btn" title="Refuser" [disabled]="processingDemandeId === demande._id"
+                    (click)="rejectDemandeCollecte(demande)">
+                    <i class="material-icons">cancel</i>
+                  </button>
+                  } @else {
+                  <span style="color:#9ca3af;font-size:0.85rem">&#8212;</span>
+                  }
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (demandesCollecte.length === 0) {
+        <div class="empty-state">
+          <i class="material-icons">local_shipping</i>
+          <h3>Aucune demande</h3>
+          <p>Aucune demande de collecte express pour l'instant</p>
+        </div>
+        }
+        }
       </div>
       }
 

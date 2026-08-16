@@ -585,6 +585,19 @@
   border-color: var(--primary-color);
 }
 
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: auto;
+    padding: 0;
+  }
+}
+
 .form-actions {
   display: flex;
   gap: 12px;

@@ -108,11 +108,14 @@ export interface ZoneCoverageApi {
 
 // ── API V2 — conflict check ─────────────────────────────────────
 export interface ConflictResult {
-  equipeId: string;
-  equipeName: string;
-  conflictType: string;
+  // Absents pour les conflits 'zone'/'client'/'group' (pas liés à une équipe précise).
+  equipeId?: string;
+  equipeName?: string;
+  conflictType: 'schedule' | 'schedule_week' | 'zone' | 'client' | 'group' | string;
   conflictingPlanningRef: string;
   message: string;
+  /** true = ne peut jamais être outrepassé ; false = nécessite acknowledgeConflicts:true pour continuer. */
+  blocking: boolean;
 }
 
 export interface SuggestionResult {
@@ -125,6 +128,7 @@ export interface SuggestionResult {
 export interface ConflictCheckResponse {
   conflicts: ConflictResult[];
   suggestions: SuggestionResult[];
+  hasBlockingConflict?: boolean;
 }
 
 // ── Team API V2 ─────────────────────────────────────────────────

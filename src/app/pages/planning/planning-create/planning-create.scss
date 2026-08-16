@@ -1374,22 +1374,40 @@ $tr: .2s ease;
   margin-bottom: 16px;
   mat-icon { font-size: 18px; }
 }
+/* Ambre par défaut (avertissement, outrepassable via la case à cocher) —
+   rouge uniquement quand au moins un conflit est réellement bloquant. */
 .conflict-banner {
-  border: 1.5px solid #fca5a5; border-radius: 12px;
-  background: #fef2f2; padding: 14px 16px;
+  border: 1.5px solid #fde68a; border-radius: 12px;
+  background: #fffbeb; padding: 14px 16px;
   display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;
+
+  &.conflict-banner--blocking {
+    border-color: #fca5a5;
+    background: #fef2f2;
+
+    .cb-head { color: $red; }
+    .cb-row { border-top-color: #fecaca; }
+  }
 }
 .cb-head {
   display: flex; align-items: center; gap: 8px;
-  color: $red; font-size: 14px;
+  color: #b45309; font-size: 14px;
   mat-icon { font-size: 20px; }
 }
 .cb-row {
   display: flex; gap: 10px; align-items: baseline;
-  padding: 4px 0; border-top: 1px solid #fecaca; font-size: 13px;
+  padding: 4px 0; border-top: 1px solid #fde68a; font-size: 13px;
+
+  &.cb-row--blocking { font-weight: 600; }
 }
 .cb-team { font-weight: 600; color: $text-1; white-space: nowrap; }
 .cb-msg  { color: $text-2; }
+.cb-hint { margin: 0; font-size: 12px; color: $red; font-weight: 600; }
+.cb-ack {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: $text-1; cursor: pointer;
+  input { width: 16px; height: 16px; }
+}
 
 /* ── Publish now row ────────────────────────────────────────── */
 .publish-now-row {

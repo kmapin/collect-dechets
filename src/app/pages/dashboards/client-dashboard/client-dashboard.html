@@ -26,6 +26,10 @@
             <i class="material-icons">report_problem</i>
             Signaler un problème
           </button> -->
+          <button class="btn btn-primary" (click)="openSpontaneousRequestModal()">
+            <i class="material-icons">local_shipping</i>
+            Collecte express
+          </button>
           <button class="btn btn-secondary" routerLink="/profile">
             <i class="material-icons">settings</i>
             Mon profil
@@ -987,6 +991,64 @@
       </div>
     </div>
   }
+
+    <!-- Modal de demande de collecte express (passage spontané, hors planning) -->
+    @if (showSpontaneousRequestModal) {
+      <div
+        class="modal-overlay"
+        (click)="showSpontaneousRequestModal = false"
+        >
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Demander une collecte express</h3>
+            <button class="close-btn" (click)="showSpontaneousRequestModal = false">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <form class="report-form" (ngSubmit)="submitSpontaneousRequest()">
+            <div class="form-group">
+              <label>Type(s) de déchets à collecter</label>
+              @for (option of spontaneousWasteTypeOptions; track option.value) {
+                <label class="checkbox-option">
+                  <input
+                    type="checkbox"
+                    [checked]="spontaneousRequestData.wasteTypes.includes(option.value)"
+                    (change)="toggleSpontaneousWasteType(option.value)"
+                    />
+                  {{ option.label }}
+                </label>
+              }
+            </div>
+            <div class="form-group">
+              <label>Date souhaitée (optionnel)</label>
+              <input type="date" [(ngModel)]="spontaneousRequestData.requestedDate" name="requestedDate" />
+            </div>
+            <div class="form-group">
+              <label>Notes (optionnel)</label>
+              <textarea
+                [(ngModel)]="spontaneousRequestData.notes"
+                name="notes"
+                rows="3"
+                placeholder="Précisions utiles pour l'agence..."
+              ></textarea>
+            </div>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="showSpontaneousRequestModal = false"
+                >
+                Annuler
+              </button>
+              <button type="submit" class="btn btn-primary" [disabled]="!spontaneousRequestData.wasteTypes.length || isSubmittingSpontaneousRequest">
+                <i class="material-icons">send</i>
+                {{ isSubmittingSpontaneousRequest ? 'Envoi...' : 'Envoyer la demande' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
 
   <!-- Modal de paiement -->
   @if (showPaymentModal) {

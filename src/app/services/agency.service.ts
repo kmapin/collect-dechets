@@ -381,8 +381,14 @@ export class AgencyService {
   }
 
   //recuperation des statistique liee a une agence
-  getAgencyStats$(agencyId: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/state_agencies/${agencyId}/stats`).pipe(
+  // `filters` (period/zone/wasteType) alimente le KPI "Nombre de collectes" — optionnel,
+  // rétrocompatible avec tous les appelants existants qui n'en passent aucun.
+  getAgencyStats$(agencyId: string, filters?: { period?: 'today' | 'week' | 'month'; zone?: string; wasteType?: string }): Observable<any> {
+    const params: any = {};
+    if (filters?.period) params.period = filters.period;
+    if (filters?.zone) params.zone = filters.zone;
+    if (filters?.wasteType) params.wasteType = filters.wasteType;
+    return this.http.get<any>(`${environment.apiUrl}/state_agencies/${agencyId}/stats`, { params }).pipe(
       map((response) => {
         console.log("Statistiques récupérées :", response);
         return response;

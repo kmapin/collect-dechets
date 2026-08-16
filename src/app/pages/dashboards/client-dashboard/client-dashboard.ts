@@ -2,7 +2,7 @@ import { CellWidthType } from "./../../../../../node_modules/jspdf-autotable/dis
 import { BarcodeFormat } from "@zxing/library";
 import { AfterViewChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { RouterModule, TitleStrategy } from "@angular/router";
+import { ActivatedRoute, RouterModule, TitleStrategy } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { AuthService } from "../../../services/auth.service";
 import { CollectionService } from "../../../services/collection.service";
@@ -28,6 +28,7 @@ import { ConversationService, RealtimeMessage } from "../../../services/conversa
 import { ContratService } from "../../../services/contrat.service";
 import { Contrat } from "../../../models/contrat.model";
 import { EligibilityService, EligibilityResult, isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
+import { DemandeCollecteService } from "../../../services/demande-collecte.service";
 
 interface PaymentHistory {
   id: string;
@@ -77,6 +78,25 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     agencyId: "",
     collecteId: ""
   };
+
+  // Demande de passage spontané ("Collecte express") — modèle/service dédié
+  // (DemandeCollecte), sémantiquement distinct d'un Signalement : il s'agit
+  // d'une demande de service, pas d'une réclamation/incident.
+  showSpontaneousRequestModal = false;
+  isSubmittingSpontaneousRequest = false;
+  spontaneousRequestData: { wasteTypes: string[]; notes: string; requestedDate: string } = {
+    wasteTypes: [],
+    notes: "",
+    requestedDate: "",
+  };
+  readonly spontaneousWasteTypeOptions = [
+    { value: "menagers", label: "Déchets ménagers" },
+    { value: "recyclables", label: "Recyclables" },
+    { value: "verts", label: "Déchets verts" },
+    { value: "encombrants", label: "Encombrants" },
+    { value: "speciaux", label: "Déchets spéciaux" },
+  ];
+  spontaneousRequests: any[] = [];
   unreadMessageCount: any;
   receivedMessages: any;
   connectedUserMessages: any;
@@ -122,7 +142,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     private websocketService: Webstockets,
     private conversationService: ConversationService,
     private contratService: ContratService,
-    private eligibilityService: EligibilityService
+    private eligibilityService: EligibilityService,
+    private demandeCollecteService: DemandeCollecteService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -130,6 +152,13 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     this.getUser();
     // console.log("Current User", this.currentUser);
     this.loadDashboardData();
+
+    // Point d'entrée du lien footer "Collecte express" (auparavant mort,
+    // href="#") : /dashboard/client?action=collecte-express ouvre directement
+    // le formulaire de demande de passage spontané.
+    if (this.route.snapshot.queryParamMap.get('action') === 'collecte-express') {
+      this.openSpontaneousRequestModal();
+    }
 
     // Phase 5 : les notifications Abonnement passent désormais par
     // `notifyUsers` (Phase 3, backend) — donc par ce même canal socket, en
@@ -587,6 +616,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     this.countUnreadMessages();
     this.userMessages();
     this.loadClientReports();
+    this.loadSpontaneousRequests();
   }
   /**Récupération des signalements d'un client */
   clientReports = [];
@@ -1048,6 +1078,95 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   reportIndependentIssue(): void {
     this.reportData.collecteId = "";
     this.showReportModal = true;
+  }
+
+  /**
+   * Demande de passage spontané ("Collecte express") — hors planning, en plus
+   * du planning régulier. Distincte d'un Signalement (voir reportIssue ci-
+   * dessus) : c'est une demande de service, pas une réclamation. L'éligibilité
+   * du client est vérifiée côté serveur (EligibilityService, source unique).
+   */
+  openSpontaneousRequestModal(): void {
+    this.spontaneousRequestData = { wasteTypes: [], notes: "", requestedDate: "" };
+    this.showSpontaneousRequestModal = true;
+  }
+
+  toggleSpontaneousWasteType(type: string): void {
+    const idx = this.spontaneousRequestData.wasteTypes.indexOf(type);
+    if (idx >= 0) {
+      this.spontaneousRequestData.wasteTypes.splice(idx, 1);
+    } else {
+      this.spontaneousRequestData.wasteTypes.push(type);
+    }
+  }
+
+  submitSpontaneousRequest(): void {
+    if (!this.spontaneousRequestData.wasteTypes.length || this.isSubmittingSpontaneousRequest) {
+      return;
+    }
+    const agencyId = this.currentUser?.subscribedAgencyId || this.currentUser?.agencyId;
+    if (!agencyId) {
+      this.notificationService.showError(
+        "Demande impossible",
+        "Vous devez être rattaché à une agence pour demander une collecte"
+      );
+      return;
+    }
+
+    this.isSubmittingSpontaneousRequest = true;
+    this.demandeCollecteService
+      .create({
+        agencyId,
+        wasteTypes: this.spontaneousRequestData.wasteTypes,
+        notes: this.spontaneousRequestData.notes,
+        requestedDate: this.spontaneousRequestData.requestedDate || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess(
+            "Demande envoyée",
+            "Votre demande de collecte express a été transmise à l'agence"
+          );
+          this.isSubmittingSpontaneousRequest = false;
+          this.showSpontaneousRequestModal = false;
+          this.loadSpontaneousRequests();
+        },
+        error: (error: any) => {
+          console.error("API > createDemandeCollecte:", error);
+          this.isSubmittingSpontaneousRequest = false;
+          this.notificationService.showError(
+            "Demande non envoyée",
+            error?.error?.error?.message || "Une erreur s'est produite lors de l'envoi de la demande"
+          );
+        },
+      });
+  }
+
+  loadSpontaneousRequests(): void {
+    this.demandeCollecteService.listForClient().subscribe({
+      next: (response) => {
+        this.spontaneousRequests = response?.data || [];
+      },
+      error: (error: any) => {
+        console.error("API > listForClient (demandes de collecte):", error);
+      },
+    });
+  }
+
+  cancelSpontaneousRequest(id: string): void {
+    this.demandeCollecteService.cancel(id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess("Demande annulée", "Votre demande a été annulée");
+        this.loadSpontaneousRequests();
+      },
+      error: (error: any) => {
+        console.error("API > cancelDemandeCollecte:", error);
+        this.notificationService.showError(
+          "Annulation impossible",
+          error?.error?.error?.message || "Une erreur s'est produite"
+        );
+      },
+    });
   }
 
   rateCollection(collectionId: string): void {

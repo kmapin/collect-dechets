@@ -694,16 +694,30 @@
               Vérification des conflits d'équipes…
             </div>
           } @else if (conflicts().length > 0) {
-            <div class="conflict-banner">
+            <div class="conflict-banner" [class.conflict-banner--blocking]="hasBlockingConflict()">
               <div class="cb-head">
-                <mat-icon>warning</mat-icon>
-                <strong>{{ conflicts().length }} conflit(s) détecté(s)</strong>
+                <mat-icon>{{ hasBlockingConflict() ? 'block' : 'warning' }}</mat-icon>
+                <strong>
+                  {{ conflicts().length }} conflit(s) détecté(s)
+                  {{ hasBlockingConflict() ? '— création impossible' : '— confirmation requise' }}
+                </strong>
               </div>
-              @for (c of conflicts(); track c.equipeId) {
-                <div class="cb-row">
-                  <span class="cb-team">{{ c.equipeName }}</span>
+              @for (c of conflicts(); track c.conflictingPlanningRef + c.conflictType) {
+                <div class="cb-row" [class.cb-row--blocking]="c.blocking">
+                  @if (c.equipeName) {
+                    <span class="cb-team">{{ c.equipeName }}</span>
+                  }
                   <span class="cb-msg">{{ c.message }}</span>
                 </div>
+              }
+              @if (hasBlockingConflict()) {
+                <p class="cb-hint">Ce conflit ne peut pas être ignoré — modifiez l'équipe, la date ou la cible avant de continuer.</p>
+              } @else {
+                <label class="cb-ack">
+                  <input type="checkbox" [checked]="acknowledgeConflicts()"
+                         (change)="acknowledgeConflicts.set(!acknowledgeConflicts())" />
+                  Je confirme malgré ces avertissements
+                </label>
               }
               <button type="button" class="btn-ghost-sm" (click)="goToStep(4)">
                 <mat-icon>edit</mat-icon> Modifier les équipes

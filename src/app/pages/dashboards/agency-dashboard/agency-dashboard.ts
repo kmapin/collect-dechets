@@ -16,6 +16,7 @@ import { ContratService } from "../../../services/contrat.service";
 import { Contrat } from "../../../models/contrat.model";
 import { isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
 import { RedevanceService } from "../../../services/redevance.service";
+import { DemandeCollecteService, DemandeCollecte } from "../../../services/demande-collecte.service";
 import { Redevance } from "../../../models/redevance.model";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
@@ -204,6 +205,7 @@ interface Statistics {
   todayCollections: number;
   pendingSignalements: number;
   completedCollections: number;
+  filteredCollectionsCount?: number;
   monthlyRevenue: number;
   averageRating: number;
   pendingReports: number;
@@ -223,6 +225,7 @@ type TabId =
   | "schedules"
   | "clients"
   | "reports"
+  | "demandes"
   | "messages"
   | "vehicles"
   | "contrats";
@@ -359,6 +362,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     pendingReports: 0,
     pendingSignalements: 0,
   };
+
+  // ── KPI "Nombre de collectes" (période/zone/type de déchet, chantier
+  // Planning/Collectes terrain, Priorité Basse) — filtre `statistics.filteredCollectionsCount`,
+  // recalculé côté serveur (services/stateForAgency.js::getAgencyStats), pas de logique
+  // dupliquée côté client.
+  collectesKpiPeriod: 'today' | 'week' | 'month' = 'today';
+  collectesKpiZone = '';
+  collectesKpiWasteType = '';
+  readonly collectesKpiWasteTypes = ['menagers', 'recyclables', 'verts', 'encombrants', 'speciaux'];
+
+  filterCollectesKpi(): void {
+    this.loadAgencyStatistics(this.currentUser);
+  }
+
   userData = {
     _id: "",
     role: UserRole.CLIENT as UserRole | null,
@@ -578,6 +595,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     { id: "schedules", label: "Plannings", icon: "schedule", badge: null },
     { id: "clients", label: "Clients", icon: "person", badge: null },
     { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
+    { id: "demandes", label: "Demandes express", icon: "local_shipping", badge: 0 },
     { id: "contrats", label: "Contrats", icon: "description", badge: null },
     { id: "vehicles", label: "Mobilité", icon: "directions_car", badge: null },
     { id: "messages", label: "Messages", icon: "message", badge: 0 },
@@ -834,6 +852,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     private conversationService: ConversationService,
     private contratService: ContratService,
     private redevanceService: RedevanceService,
+    private demandeCollecteService: DemandeCollecteService,
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -1443,6 +1462,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       if (notification?.type === 'Contrat') {
         this.loadContrats();
       }
+      // Nouvelle demande de collecte express (services/demandeCollecte.js::
+      // createDemandeCollecte, notifyUsers réutilisé — même canal que
+      // Signalement/Subscribed/Contrat ci-dessus, pas de canal socket dédié).
+      if (notification?.type === 'Planning' && this.activeTab === 'demandes') {
+        this.loadDemandesCollecte();
+      }
+      // Auto-refresh du KPI "Nombre de collectes" (Priorité Basse) — le même
+      // événement 'Planning' est aussi émis par services/qrValidation.js (scan
+      // d'une collecte) et demandeCollecte.js (création/acceptation/refus) :
+      // aucun nouveau canal socket, aucun polling — on recharge juste les
+      // statistiques déjà affichées, avec les filtres période/zone/type en cours.
+      if (notification?.type === 'Planning') {
+        this.loadAgencyStatistics(this.currentUser);
+      }
     });
 
     // Messagerie temps réel : le backend émet `messageSent` vers l'expéditeur
@@ -1482,6 +1515,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
+    this.loadDemandesCollecte();
     this.loadVehicles();
     this.loadTariffs();
     this.loadContrats();
@@ -3123,12 +3157,95 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
+  // ─── Demandes de collecte express (passage spontané, DemandeCollecte) ──
+  // Modèle/service dédié, distinct des Signalements ci-dessus.
+  demandesCollecte: DemandeCollecte[] = [];
+  isLoadingDemandes = false;
+  demandesFilter: 'pending' | 'accepted' | 'rejected' | 'all' = 'pending';
+  processingDemandeId: string | null = null;
+
+  loadDemandesCollecte(): void {
+    const agencyId = this.currentUser?.agencyId;
+    if (!agencyId) return;
+    this.isLoadingDemandes = true;
+    this.demandeCollecteService
+      .listForAgency(agencyId, this.demandesFilter !== 'all' ? this.demandesFilter : undefined)
+      .subscribe({
+        next: (response) => {
+          this.demandesCollecte = response?.data || [];
+          const demandesTab = this.tabs.find((tab) => tab.id === 'demandes');
+          if (demandesTab) {
+            demandesTab.badge = this.demandesCollecte.filter((d) => d.status === 'pending').length;
+            this.cdr.detectChanges();
+          }
+          this.isLoadingDemandes = false;
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement des demandes de collecte express :", error);
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible de charger les demandes de collecte express. Veuillez réessayer.",
+          );
+          this.isLoadingDemandes = false;
+        },
+      });
+  }
+
+  filterDemandesCollecte(): void {
+    this.loadDemandesCollecte();
+  }
+
+  acceptDemandeCollecte(demande: DemandeCollecte): void {
+    if (this.processingDemandeId) return;
+    this.processingDemandeId = demande._id;
+    this.demandeCollecteService.accept(demande._id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess("Demande acceptée", "La collecte a été planifiée pour le client");
+        this.processingDemandeId = null;
+        this.loadDemandesCollecte();
+      },
+      error: (error) => {
+        console.error("Erreur lors de l'acceptation de la demande :", error);
+        this.notificationService.showError(
+          "Erreur",
+          error?.error?.error?.message || "Impossible d'accepter cette demande",
+        );
+        this.processingDemandeId = null;
+      },
+    });
+  }
+
+  rejectDemandeCollecte(demande: DemandeCollecte): void {
+    if (this.processingDemandeId) return;
+    const rejectionReason = window.prompt("Motif du refus (optionnel) :") || '';
+    this.processingDemandeId = demande._id;
+    this.demandeCollecteService.reject(demande._id, rejectionReason).subscribe({
+      next: () => {
+        this.notificationService.showSuccess("Demande refusée", "Le client a été notifié");
+        this.processingDemandeId = null;
+        this.loadDemandesCollecte();
+      },
+      error: (error) => {
+        console.error("Erreur lors du refus de la demande :", error);
+        this.notificationService.showError(
+          "Erreur",
+          error?.error?.error?.message || "Impossible de refuser cette demande",
+        );
+        this.processingDemandeId = null;
+      },
+    });
+  }
+
   //recuperations des statistiques de l'agence
   loadAgencyStatistics(currentUser: any): void {
     if (currentUser && currentUser.agencyId) {
       this.isLoadingStatistics = true;
       const agencyId = currentUser.agencyId;
-      this.agencyService.getAgencyStats$(agencyId).subscribe({
+      this.agencyService.getAgencyStats$(agencyId, {
+        period: this.collectesKpiPeriod,
+        zone: this.collectesKpiZone || undefined,
+        wasteType: this.collectesKpiWasteType || undefined,
+      }).subscribe({
         next: (statistics) => {
           if (!statistics.success) return;
           this.statistics = statistics.data;

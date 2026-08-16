@@ -1,0 +1,51 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+export interface DemandeCollecte {
+  _id: string;
+  clientId: any;
+  agencyId: string;
+  wasteTypes: string[];
+  notes: string;
+  requestedDate: string | null;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  collecteId: string | null;
+  scheduledDate: string | null;
+  rejectionReason: string;
+  createdAt: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class DemandeCollecteService {
+  private readonly base = `${environment.apiUrl}/demandes-collecte`;
+
+  constructor(private http: HttpClient) {}
+
+  /** Client — crée une demande de passage spontané. L'éligibilité est vérifiée côté serveur (EligibilityService). */
+  create(payload: { agencyId: string; wasteTypes: string[]; notes?: string; requestedDate?: string }): Observable<{ success: boolean; data: DemandeCollecte }> {
+    return this.http.post<{ success: boolean; data: DemandeCollecte }>(this.base, payload);
+  }
+
+  listForClient(): Observable<{ success: boolean; data: DemandeCollecte[] }> {
+    return this.http.get<{ success: boolean; data: DemandeCollecte[] }>(`${this.base}/me`);
+  }
+
+  cancel(id: string): Observable<{ success: boolean; data: DemandeCollecte }> {
+    return this.http.patch<{ success: boolean; data: DemandeCollecte }>(`${this.base}/${id}/cancel`, {});
+  }
+
+  listForAgency(agencyId: string, status?: string): Observable<{ success: boolean; data: DemandeCollecte[] }> {
+    const params: any = status ? { status } : {};
+    return this.http.get<{ success: boolean; data: DemandeCollecte[] }>(`${this.base}/agency/${agencyId}`, { params });
+  }
+
+  accept(id: string, scheduledDate?: string): Observable<{ success: boolean; data: DemandeCollecte }> {
+    return this.http.patch<{ success: boolean; data: DemandeCollecte }>(`${this.base}/${id}/accept`, { scheduledDate });
+  }
+
+  reject(id: string, rejectionReason?: string): Observable<{ success: boolean; data: DemandeCollecte }> {
+    return this.http.patch<{ success: boolean; data: DemandeCollecte }>(`${this.base}/${id}/reject`, { rejectionReason });
+  }
+}

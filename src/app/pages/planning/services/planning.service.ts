@@ -407,15 +407,16 @@ export class PlanningService {
   checkConflicts(
     date: string,
     equipeIds: string[],
-    excludePlanningId?: string
+    excludePlanningId?: string,
+    extra?: { type?: string; quartierId?: string; secteurId?: string; clientId?: string; groupeId?: string },
   ): Observable<ConflictCheckResponse> {
-    const body: any = { date, equipeIds };
+    const body: any = { date, equipeIds, ...extra };
     if (excludePlanningId) body.excludePlanningId = excludePlanningId;
     return this.http.post<{ success: boolean; data: ConflictCheckResponse }>(
       `${this.api}/planning/v2/check-conflicts`, body
     ).pipe(
-      map(res => res.data ?? { conflicts: [], suggestions: [] }),
-      catchError(() => of({ conflicts: [], suggestions: [] }))
+      map(res => res.data ?? { conflicts: [], suggestions: [], hasBlockingConflict: false }),
+      catchError(() => of({ conflicts: [], suggestions: [], hasBlockingConflict: false }))
     );
   }
 

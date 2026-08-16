@@ -35,6 +35,7 @@ import {
   WithdrawalRequestFilter,
   WithdrawalStatus,
 } from "../../../models/withdrawal-request.model";
+import { ExportClientService } from "../financial-dashboard/data-access/export/export-client.service";
 interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
@@ -226,6 +227,7 @@ interface User {
     LoadingSpinnerComponent,
     DrawerModule,
   ],
+  providers: [ExportClientService],
   templateUrl: "./admin-dashboard.html",
   styleUrl: "./admin-dashboard.scss",
 })
@@ -404,6 +406,57 @@ export class AdminDashboard implements OnInit, OnDestroy {
   filteredCollectors: any[] = [];
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: GroupedZoneStatistics[] = [];
+
+  // ── Onglet "Collectes" (vue admin-wide, toutes agences confondues) ────────
+  // Réutilise GET /municipality/waste-records (Prompt 12, déjà utilisé par le
+  // dashboard municipal) — aucun nouvel endpoint, `authMiddleware()` de cette
+  // route n'impose déjà aucun rôle particulier donc accessible à super_admin
+  // sans changement backend.
+  wasteRecords: any[] = [];
+  isLoadingWasteRecords = false;
+  wasteRecordsPage = 1;
+  wasteRecordsLimit = 20;
+  wasteRecordsTotal = 0;
+  wasteRecordsTotalPages = 0;
+  wasteRecordsDays = 30;
+  wasteRecordsWasteTypeFilter = '';
+  wasteRecordsZoneFilter = '';
+  readonly wasteRecordsWasteTypes = ['menagers', 'recyclables', 'verts', 'encombrants', 'speciaux'];
+
+  loadWasteRecords(page: number = 1): void {
+    this.isLoadingWasteRecords = true;
+    this.wasteRecordsPage = page;
+    this.adminService
+      .getWasteRecords$({
+        days: this.wasteRecordsDays,
+        wasteType: this.wasteRecordsWasteTypeFilter || undefined,
+        zoneId: this.wasteRecordsZoneFilter || undefined,
+        page,
+        limit: this.wasteRecordsLimit,
+      })
+      .subscribe({
+        next: (res: any) => {
+          this.wasteRecords = res?.data || [];
+          this.wasteRecordsTotal = res?.pagination?.total || 0;
+          this.wasteRecordsTotalPages = res?.pagination?.totalPages || 0;
+          this.isLoadingWasteRecords = false;
+        },
+        error: (error: any) => {
+          console.error('Erreur lors du chargement des collectes (admin-wide) :', error);
+          this.notificationService.showError('Erreur', 'Impossible de charger les collectes.');
+          this.isLoadingWasteRecords = false;
+        },
+      });
+  }
+
+  filterWasteRecords(): void {
+    this.loadWasteRecords(1);
+  }
+
+  goToWasteRecordsPage(page: number): void {
+    if (page < 1 || page > this.wasteRecordsTotalPages) return;
+    this.loadWasteRecords(page);
+  }
   zoneCoverageData: { quartierId: string; quartierNom: string; planningsCount: number; equipesAssigned: number; completionRate: number; status: string }[] = [];
   planningStats: { totalPlannings: number; todayPlannings: number; inProgress: number; completedToday: number; executionRate: number } | null = null;
   isLoadingCoverage = false;
@@ -573,6 +626,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     // { id: "clients", label: "Clients", icon: "business", badge: null },
     { id: "all_users", label: "Utilisateurs", icon: "person", badge: null },
     { id: "statistics", label: "Statistiques", icon: "analytics", badge: null },
+    { id: "collectes", label: "Collectes", icon: "local_shipping", badge: null },
     {
       id: "incidents",
       label: "Incidents",
@@ -634,6 +688,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     private cd: ChangeDetectorRef,
     private countriesOrgMockService: CountriesOrgMockService,
     private withdrawalRequestsService: WithdrawalRequestsHttpService,
+    private exportClientService: ExportClientService,
   ) {
     this.drawerWidth;
   }
@@ -691,6 +746,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
         break;
       case 'communications':
         this.loadCommunications();
+        break;
+      case 'collectes':
+        this.loadWasteRecords();
         break;
     }
   }
@@ -2688,11 +2746,47 @@ export class AdminDashboard implements OnInit, OnDestroy {
     );
   }
 
+  /**
+   * Export réel de l'onglet "Statistiques Consolidées" — réutilise ExportClientService
+   * (financial-dashboard/data-access/export), seule implémentation d'ExportService dans
+   * le projet, plutôt que de dupliquer une logique CSV parallèle (voir aussi
+   * municipality-dashboard.ts::exportStatistics, qui suit la même convention `;`+BOM UTF-8
+   * mais sur ses propres sections — non touché ici, hors périmètre de ce chantier).
+   * Une seule table plate "Indicateur / Valeur" : KPIs consolidés + top agences + répartition
+   * déchets, chacun déjà calculé pour l'affichage (getCollectionRate(), etc.), aucune
+   * nouvelle source de données.
+   */
   exportStatistics(): void {
-    this.notificationService.showInfo(
-      "Export",
-      "Génération du fichier d'export...",
+    const rows: { metric: string; value: string | number }[] = [
+      { metric: 'Taux de collecte (%)', value: this.getCollectionRate() },
+      { metric: 'Croissance clients sur le mois (%)', value: this.statisticsAdmin?.monthlyClientPercentage ?? 0 },
+      { metric: 'Incidents résolus', value: this.getResolvedReportsCount() },
+      { metric: 'Incidents au total', value: this.getTotalReportsCount() },
+      { metric: 'Agences actives', value: this.statisticsAdmin?.totalActiveAgencies ?? 0 },
+      { metric: 'Agences au total', value: this.statisticsAdmin?.totalAgencies ?? 0 },
+    ];
+
+    const topAgencies = this.topAgenciesByCollections.length
+      ? this.topAgenciesByCollections
+      : this.getTopPerformingAgencies().map((a: any) => ({ ...a, collections: a.clients }));
+    topAgencies.forEach((a: any) => rows.push({ metric: `Agence — ${a.name}`, value: a.collections ?? a.clients ?? 0 }));
+
+    this.wasteStatistics.forEach((w) => rows.push({ metric: `Déchets — ${w.type} (%)`, value: w.percentage }));
+
+    if (!rows.length) {
+      this.notificationService.showInfo("Export", "Aucune donnée à exporter pour le moment.");
+      return;
+    }
+
+    this.exportClientService.exportToCsv(
+      rows,
+      [
+        { key: 'metric', label: 'Indicateur' },
+        { key: 'value', label: 'Valeur' },
+      ],
+      `statistiques-admin-${new Date().toISOString().slice(0, 10)}`,
     );
+    this.notificationService.showSuccess("Export réussi", "Le fichier des statistiques a été téléchargé.");
   }
 
   assignIncident(incidentId: string): void {

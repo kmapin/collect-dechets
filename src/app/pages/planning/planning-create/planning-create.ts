@@ -132,11 +132,18 @@ export class PlanningCreate implements OnInit {
     { id: 'speciaux',    label: 'Déchets spéciaux', icon: 'warning',     color: '#ef4444', bg: '#fef2f2' },
   ];
 
+  // Correctif de sécurité UX (Prompt 3, 1b) : les options récurrentes
+  // (hebdomadaire/bimensuel/mensuel) ont été retirées — aucun moteur de
+  // récurrence V2 ne consomme frequency/frequencyDays/endDate aujourd'hui
+  // (seul le pipeline V1 legacy, invisible depuis cet écran, sait dupliquer
+  // un planning). Les proposer laissait croire à une vraie récurrence alors
+  // que la saisie ("Jours de collecte", "Date de fin") était silencieusement
+  // ignorée — un seul planning pour la date choisie était créé quel que soit
+  // le choix. Décision produit en attente (porter le moteur V1 vers V2, ou
+  // retirer définitivement) — ne pas réintroduire ces options avant cette
+  // décision.
   readonly frequencies = [
-    { value: 'unique',       label: 'Collecte unique' },
-    { value: 'hebdomadaire', label: 'Hebdomadaire' },
-    { value: 'bimensuel',    label: 'Bimensuel (2×/semaine)' },
-    { value: 'mensuel',      label: 'Mensuel' },
+    { value: 'unique', label: 'Collecte unique' },
   ];
 
   readonly frequencyDays = [
@@ -153,6 +160,11 @@ export class PlanningCreate implements OnInit {
   // ── Conflict check ────────────────────────────────────────────
   conflicts         = signal<ConflictResult[]>([]);
   checkingConflicts = signal(false);
+  /** Coché explicitement par l'utilisateur pour outrepasser les conflits NON bloquants (jamais pour les bloquants, qui ne peuvent pas être outrepassés). */
+  acknowledgeConflicts = signal(false);
+
+  hasBlockingConflict = computed<boolean>(() => this.conflicts().some(c => c.blocking));
+  hasOnlyWarningConflicts = computed<boolean>(() => this.conflicts().length > 0 && !this.hasBlockingConflict());
 
   // ── Team operations (edit mode) ───────────────────────────────
   teamSaving   = signal(false);
@@ -247,7 +259,7 @@ export class PlanningCreate implements OnInit {
   });
 
   conflictingTeamIds = computed<string[]>(() =>
-    this.conflicts().map(c => c.equipeId)
+    this.conflicts().filter(c => !!c.equipeId).map(c => c.equipeId!)
   );
 
   availableTeamsToAdd = computed<TeamApi[]>(() =>
@@ -616,7 +628,16 @@ export class PlanningCreate implements OnInit {
       case 2: return !!fv['date'] && !!fv['startTime'];
       case 3: return this.selectedWasteTypes().length > 0;
       case 4: return !!this.selectedTeamId();
-      case 5: return true;
+      // Un conflit bloquant (même équipe+même jour, client/groupe déjà planifié
+      // cette semaine) empêche TOUJOURS de continuer. Un conflit non-bloquant
+      // (même équipe cette semaine sur un autre jour, même zone déjà couverte)
+      // exige une confirmation explicite de l'utilisateur (case à cocher) —
+      // avant ce correctif, cette étape était toujours valide, ignorant
+      // totalement les conflits détectés.
+      case 5:
+        if (this.hasBlockingConflict()) return false;
+        if (this.hasOnlyWarningConflicts()) return this.acknowledgeConflicts();
+        return true;
       case 6: return !!fv['libelle'];
       default: return true;
     }
@@ -852,8 +873,17 @@ export class PlanningCreate implements OnInit {
     const dateVal = this.formValue()['date'];
     if (!teamId || !dateVal) { this.conflicts.set([]); return; }
     this.checkingConflicts.set(true);
+    this.acknowledgeConflicts.set(false);
+    const fv = this.formValue();
     this.svc.checkConflicts(
-      this._dateToApiStr(dateVal), [teamId], this.editId() ?? undefined
+      this._dateToApiStr(dateVal), [teamId], this.editId() ?? undefined,
+      {
+        type: fv['type'],
+        quartierId: fv['quartierId'],
+        secteurId: fv['secteurId'],
+        clientId: fv['clientId'],
+        groupeId: this.groupMode() === 'existing' ? this.selectedExistingGroupId() ?? undefined : undefined,
+      },
     ).subscribe({
       next:  res => { this.conflicts.set(res.conflicts ?? []); this.checkingConflicts.set(false); },
       error: ()  => { this.conflicts.set([]);                  this.checkingConflicts.set(false); },
@@ -1005,6 +1035,11 @@ export class PlanningCreate implements OnInit {
     if (v.arrondissementId) body.arrondissementId = v.arrondissementId;
     if (v.secteurId)        body.secteurId        = v.secteurId;
     if (v.quartierId)       body.quartierId       = v.quartierId;
+    // Rejeté par le serveur si des conflits bloquants existent, quelle que
+    // soit cette valeur — n'autorise le passage outre que pour les conflits
+    // non-bloquants, et seulement si l'utilisateur les a explicitement
+    // acquittés à l'étape précédente (voir _isStepValid(5)).
+    body.acknowledgeConflicts = this.acknowledgeConflicts();
 
     // Métriques calculées côté client
     const clientsCount = this.estimatedHouseholds();

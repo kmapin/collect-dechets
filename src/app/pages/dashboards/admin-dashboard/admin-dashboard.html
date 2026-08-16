@@ -1318,6 +1318,10 @@
         <div *ngIf="activeTab === 'statistics'" class="statistics-tab">
           <div class="statistics-header">
             <h2>Statistiques Consolidées</h2>
+            <button class="btn btn-secondary" (click)="exportStatistics()">
+              <i class="material-icons">download</i>
+              Exporter (CSV)
+            </button>
           </div>
 
           <!-- ── KPIs ── -->
@@ -1689,6 +1693,73 @@
 
           </div>
 
+        </div>
+
+        <!-- Onglet Collectes (vue admin-wide, toutes agences confondues — GET /municipality/waste-records) -->
+        <div *ngIf="activeTab === 'collectes'" class="statistics-tab">
+          <div class="statistics-header">
+            <h2>Collectes effectuées (toutes agences)</h2>
+          </div>
+          <div class="statistics-filters">
+            <select [(ngModel)]="wasteRecordsDays" (change)="filterWasteRecords()" class="filter-select">
+              <option [ngValue]="7">7 derniers jours</option>
+              <option [ngValue]="30">30 derniers jours</option>
+              <option [ngValue]="90">90 derniers jours</option>
+              <option [ngValue]="365">12 derniers mois</option>
+            </select>
+            <select [(ngModel)]="wasteRecordsWasteTypeFilter" (change)="filterWasteRecords()" class="filter-select">
+              <option value="">Tous types de déchets</option>
+              <option *ngFor="let type of wasteRecordsWasteTypes" [value]="type">{{ type }}</option>
+            </select>
+            <input
+              type="text"
+              class="filter-select"
+              placeholder="Filtrer par zone/quartier..."
+              [(ngModel)]="wasteRecordsZoneFilter"
+              (change)="filterWasteRecords()"
+              />
+          </div>
+
+          <app-loading-spinner *ngIf="isLoadingWasteRecords" message="Chargement des collectes..." size="medium"></app-loading-spinner>
+
+          <div *ngIf="!isLoadingWasteRecords" class="collectes-table-wrapper">
+            <table class="collectes-table">
+              <thead>
+                <tr>
+                  <th>Agence</th>
+                  <th>Zone</th>
+                  <th>Type de déchet</th>
+                  <th>Statut</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let record of wasteRecords">
+                  <td>{{ record.agencyName || '—' }}</td>
+                  <td>{{ record.zoneName || '—' }}</td>
+                  <td>{{ record.wasteType }}</td>
+                  <td>{{ record.status }}</td>
+                  <td>{{ record.scheduledDate | date:'dd/MM/yyyy' }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div *ngIf="!wasteRecords.length" class="empty-state">
+              <i class="material-icons">local_shipping</i>
+              <h3>Aucune collecte</h3>
+              <p>Aucune collecte sur la période sélectionnée</p>
+            </div>
+            <div *ngIf="wasteRecordsTotalPages > 1" class="pagination-section">
+              <div class="pagination-controls">
+                <button class="pagination-btn" [disabled]="wasteRecordsPage === 1" (click)="goToWasteRecordsPage(wasteRecordsPage - 1)">
+                  <i class="material-icons">chevron_left</i>
+                </button>
+                <span class="pagination-details">Page {{ wasteRecordsPage }} / {{ wasteRecordsTotalPages }} — {{ wasteRecordsTotal }} collecte(s)</span>
+                <button class="pagination-btn" [disabled]="wasteRecordsPage === wasteRecordsTotalPages" (click)="goToWasteRecordsPage(wasteRecordsPage + 1)">
+                  <i class="material-icons">chevron_right</i>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Onglet Incidents -->
