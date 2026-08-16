@@ -2,6 +2,7 @@
   <div class="fin-payments__header">
     <h2>Paiements</h2>
     <app-search-filter placeholder="Rechercher un client…" [value]="recherche()" (valueChange)="onRechercheChange($event)" />
+    <button type="button" (click)="exporterCsv()" [disabled]="exportEnCours()">Exporter (CSV)</button>
   </div>
 
   <app-error-state *ngIf="erreur() as message" [message]="message" (retry)="reessayer()" />

@@ -12,10 +12,6 @@ import { RegisterUserData, User } from "../../../models/user.model";
 import { Agency } from "../../../models/agency.model";
 import { OUAGA_DATA } from "../../../data/mock-data";
 import { Admin } from "../../../services/admin";
-import {
-  MOCK_CITIES,
-  MOCK_ARRONDISSEMENTS,
-} from "../../../data/countries-org.mock";
 import { FilterParams } from "../../../models/filterParams.model";
 import { Signalement } from "../../shared_pages/signalement/signalement";
 import { MiniChart } from "../../shared_pages/mini-chart/mini-chart";
@@ -284,11 +280,8 @@ export class MunicipalityDashboard  implements OnInit {
   zoneStatistics: GroupedZoneStatistics[] = [];
   /** "Couverture Territoriale" table vs. map toggle (Prompt 13) — additive, table stays available. */
   coverageView: "table" | "map" = "table";
-  /** Same zoneStatistics data, reshaped + coordinate-enriched for <app-coverage-map> —
-   * recomputed in buildZoneStatisticsFromAdminStats(), right after zoneStatistics itself
-   * updates. Coordinates stay mock for now (Prompt 14, decided with the user): a real
-   * replacement (Admin.getCities$()) exists and is ready, but the real City collection
-   * currently has no populated coordinates — see EditRecapFront.md, Prompt 14. */
+  /** Même source que zoneStatistics, recalculées ensemble par loadTerritorialCoverage()
+   * (item 6, GET /planning/v2/zone-coverage — coordonnées réelles, Neighborhood.lat/lng). */
   coverageMapZones: CoverageMapZone[] = [];
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
@@ -325,9 +318,16 @@ export class MunicipalityDashboard  implements OnInit {
   neighborhoodFilter="";
   // incidentsFilter = "all";
 
+  // `getAll: true` (bug corrigé, chantier Rapports/Statistiques) : sans ça,
+  // getAllAgenciesFromApi() retombe sur limit=10 par défaut — l'onglet "Audit Agences"
+  // n'a aucune pagination dans son template (boucle @for sur la totalité de
+  // filteredAgencies), et generateGlobalReport() en tire sa section "Synthèse des
+  // agences", d'où l'incohérence visible avec la carte KPI (source différente, non
+  // tronquée) dans le même PDF.
   agenciesFilterParams: FilterParams = {
       status: this.agenciesFilter,
-      search:this.searchTerm
+      search:this.searchTerm,
+      getAll: true,
   }
   tabs = [
     { id: "overview", label: "Vue d'ensemble", icon: "dashboard", badge: null },
@@ -369,9 +369,8 @@ export class MunicipalityDashboard  implements OnInit {
     this.loadPerformanceIndicators();
     this.loadZoneFrequency();
     this.loadAllSignalements();
-    // showAdminStatistics() alimente aussi zoneStatistics/coverageMapZones une fois la
-    // réponse reçue (buildZoneStatisticsFromAdminStats()) — plus d'appel séparé ici
-    // (l'ancien loadZoneStat() appelait une route confirmée inexistante, voir Prompt 01).
+    // showAdminStatistics() déclenche aussi loadTerritorialCoverage() (item 6) une fois sa
+    // réponse reçue — pas d'appel séparé ici.
     this.showAdminStatistics();
     this.loadPerformanceOverview();
     // this.loadIncidents();
@@ -749,82 +748,56 @@ export class MunicipalityDashboard  implements OnInit {
   // pas juste ce fichier.
 
   /**
-   * Statistiques par ville pour l'onglet "Couverture Territoriale". Dérivées directement
-   * de `statisticsAdmin` (déjà chargé par showAdminStatistics()) plutôt que d'un appel
-   * HTTP séparé : l'ancien `Admin.getAllStatisticCity()` appelait `/auth/city/municipality`,
-   * une route confirmée absente de tout le backend (Prompt 01, BACKEND_INTEGRATION.md
-   * §0.2 — grep exhaustif de routes/*.js et du reste du repo backend, zéro résultat).
-   * Les nombres agences/clients/collectes par ville viennent bien de vraies agrégations
-   * serveur (agenciesByCity/clientsByCity/collectionsByCity, services/globalState.js).
+   * Corrigé (chantier Rapports/Statistiques/Performance, item 6 — "Taux de couverture") :
+   * l'ancienne version affichait un badge "0% couvert" figé pour CHAQUE ville (`coverage: 0`
+   * codé en dur, aucune notion de couverture par ville nulle part côté backend) et tirait sa
+   * liste de zones de `MOCK_CITIES` (catalogue statique de 5 pays, sans rapport avec les
+   * données réelles de la plateforme) + des coordonnées mockées
+   * (`MunicipalityMockDataService.getZoneCoordinates()`) pour la carte.
    *
-   * `coverage` (compliance) et `incidents` (signalements) restent à 0 : aucune de ces deux
-   * notions n'existe par ville nulle part dans le backend actuel (ni sur Agency, ni sur
-   * Collecte) — laissés à 0 plutôt qu'une valeur inventée, à combler par un futur jalon si
-   * cette donnée devient nécessaire.
-   *
-   * Limitation distincte, non résolue ici : la liste des villes elle-même vient de
-   * `MOCK_CITIES` (data/countries-org.mock.ts), un catalogue statique de 5 pays, pas de la
-   * vraie API territoriale (`GET /cities`, territory.route.js). Signalé comme dépendance
-   * mock séparée, hors du périmètre de cet alignement de contrat statistiques.
+   * Remplacé par `getZoneCoverage()` (services/planning.js, corrigé item 2a — renvoie
+   * désormais un vrai tableau par quartier avec lat/lng réelles) : MÊME calcul déjà
+   * exposé et consommé par admin-dashboard.ts::loadZoneStat(), pas de deuxième
+   * implémentation. Granularité par QUARTIER (pas par ville) puisque c'est la maille
+   * réelle de ce calcul — `completionRate` alimente enfin un vrai taux de couverture,
+   * `agenciesCount` (champ additif) une vraie compter d'agences par quartier.
+   * `clients`/`incidents` restent à 0 : aucune source réelle à cette maille (comme avant),
+   * pas de valeur inventée.
    */
-  buildZoneStatisticsFromAdminStats(): void {
-    const stats = this.statisticsAdmin;
-    const grouped: { [key: string]: ZoneStatistic[] } = {};
-
-    MOCK_CITIES.forEach((city) => {
-      const country = city.country.name || "Burkina Faso";
-      if (!grouped[country]) {
-        grouped[country] = [];
-      }
-
-      grouped[country].push({
-        country,
-        name: city.name,
-        agencies: stats?.agenciesByCity?.find((c) => c.city === city.name)?.numberOfAgencies ?? 0,
-        clients: stats?.clientsByCity?.find((c) => c.city === city.name)?.numberOfClients ?? 0,
-        collections: stats?.collectionsByCity?.find((c) => c.city === city.name)?.numberOfCollections ?? 0,
-        coverage: 0,
-        incidents: 0,
-        cities: [],
-      });
+  loadTerritorialCoverage(): void {
+    this.adminService.getZoneCoverage$().subscribe({
+      next: (res: any) => {
+        const rows = Array.isArray(res?.data) ? res.data : [];
+        const cities: ZoneStatistic[] = rows.map((r: any) => ({
+          country: 'Burkina Faso',
+          name: r.quartierNom,
+          agencies: r.agenciesCount ?? 0,
+          clients: 0,
+          collections: r.planningsCount ?? 0,
+          coverage: r.completionRate ?? 0,
+          incidents: 0,
+          cities: [],
+        }));
+        this.zoneStatistics = [{ country: 'Burkina Faso', cities }];
+        this.coverageMapZones = rows
+          .filter((r: any) => r.lat != null && r.lng != null)
+          .map((r: any) => ({
+            id: r.quartierId,
+            name: r.quartierNom,
+            coordinates: [r.lat, r.lng] as [number, number],
+            agencies: r.agenciesCount ?? 0,
+            clients: 0,
+            collections: r.planningsCount ?? 0,
+            incidents: 0,
+            coverage: r.completionRate ?? 0,
+          }));
+      },
+      error: (err) => {
+        console.error("Erreur lors du chargement de la couverture territoriale:", err);
+        this.zoneStatistics = [];
+        this.coverageMapZones = [];
+      },
     });
-
-    this.zoneStatistics = Object.keys(grouped).map((country) => ({
-      country,
-      cities: grouped[country],
-    }));
-    this.coverageMapZones = this.buildCoverageMapZones();
-  }
-
-  /**
-   * Reshapes the already-loaded zoneStatistics (same data as the tabular
-   * Couverture Territoriale view) into what <app-coverage-map> needs, adding
-   * only a coordinate lookup (mock — see MunicipalityMockDataService.
-   * getZoneCoordinates(), kept on purpose for now, Prompt 14). Not a second
-   * dataset: same agencies/clients/collections/incidents/coverage numbers
-   * the table already shows.
-   */
-  private buildCoverageMapZones(): CoverageMapZone[] {
-    const zones: CoverageMapZone[] = [];
-    for (const group of this.zoneStatistics) {
-      for (const city of group.cities) {
-        const coordinates = this.mockDataService.getZoneCoordinates(city.name);
-        if (!coordinates) {
-          continue;
-        }
-        zones.push({
-          id: city.name,
-          name: city.name,
-          coordinates,
-          agencies: city.agencies,
-          clients: city.clients,
-          collections: city.collections,
-          incidents: city.incidents,
-          coverage: city.coverage,
-        });
-      }
-    }
-    return zones;
   }
 
   /** Liste des signalements, toutes agences confondues (rôle municipality = supervision
@@ -1050,7 +1023,7 @@ export class MunicipalityDashboard  implements OnInit {
     this.adminService.getAllStatistics().subscribe({
       next: (statistics: { stats: MunicipalityStatistics }) => {
         this.statisticsAdmin = statistics.stats;
-        this.buildZoneStatisticsFromAdminStats();
+        this.loadTerritorialCoverage();
       },
       error: (err) => {
         console.error("Erreur lors de la récupération des statistiques:", err);
@@ -1078,7 +1051,8 @@ export class MunicipalityDashboard  implements OnInit {
     // });
     this.agenciesFilterParams = {
       status: this.agenciesFilter,
-      search:this.searchTerm
+      search:this.searchTerm,
+      getAll: true,
     }
     console.log('agenciesFilterParams', this.agenciesFilterParams);
     this.loadAgencyAudits(this.agenciesFilterParams);
@@ -1319,7 +1293,11 @@ export class MunicipalityDashboard  implements OnInit {
       const performanceIndicators = aggregatePerformanceRecords(filteredPerformanceRecords, this.performanceGroupBy);
       if (performanceIndicators.length > 0) {
         y = ensureSpace(y);
-        y = sectionTitle("Indicateurs de performance", y);
+        // "(Démo — données simulées)" : loadPerformanceIndicators() charge depuis
+        // MunicipalityMockDataService, aucun endpoint réel n'existe encore pour la
+        // performance par collecteur/zone (voir son propre commentaire) — le rapport ne
+        // doit pas laisser croire que ces chiffres sont mesurés.
+        y = sectionTitle("Indicateurs de performance (Démo — données simulées)", y);
         autoTable(doc, {
           startY: y,
           head: [["Regroupement", "Réel", "Objectif", "Statut"]],

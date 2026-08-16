@@ -18,10 +18,6 @@ import { ClientService } from "../../../services/client.service";
 import { SharedService } from "../../../services/shared-service";
 import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
 import { forkJoin, map, of, timeout, catchError } from "rxjs";
-import {
-  MOCK_CITIES,
-  MOCK_ARRONDISSEMENTS,
-} from "../../../data/countries-org.mock";
 import { FilterParams } from "../../../models/filterParams.model";
 import { DrawerModule } from "primeng/drawer";
 import { Signalement } from "../../shared_pages/signalement/signalement";
@@ -50,6 +46,9 @@ interface AdminStatistics {
   totalCollectionReported?: number;
   pendingReportsCount?: number;
   dailyCollections: number;
+  // Réellement renvoyé par GET /api/statistics (services/globalState.js) — jamais déclaré
+  // ici jusqu'ici, alors que getCollectionRate() en a besoin (item 3, voir plus bas).
+  dailyCollectionCollected?: number;
   totalClients: number;
   totalCollectors: number;
   activeClients: number;
@@ -69,6 +68,12 @@ interface AdminStatistics {
   averageRating: number;
   pendingReports: number;
   complianceRate: number;
+  // Réellement renvoyés par GET /api/statistics (services/globalState.js) — jamais
+  // déclarés ici jusqu'ici alors que déjà consommés côté municipality-dashboard.ts
+  // (buildZoneStatisticsFromAdminStats()) depuis la même réponse.
+  agenciesByCity?: { city: string; numberOfAgencies: number }[];
+  clientsByCity?: { city: string; numberOfClients: number }[];
+  collectionsByCity?: { city: string; numberOfCollections: number }[];
 }
 
 interface AgencyAudit {
@@ -421,6 +426,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
   wasteRecordsDays = 30;
   wasteRecordsWasteTypeFilter = '';
   wasteRecordsZoneFilter = '';
+  // Filtre "Collecteur" (chantier Rapports/Statistiques, item 5) — port du filtre déjà
+  // fonctionnel côté municipalité (performanceCollectorFilter) : `collectorId` était déjà
+  // supporté par ce même service (getWasteRecords$/getWasteRecords côté backend) mais
+  // jamais exposé ici. Options réutilisées depuis l'onglet Collecteurs (collectorsAudits),
+  // pas un deuxième fetch dédié.
+  wasteRecordsCollectorId = '';
   readonly wasteRecordsWasteTypes = ['menagers', 'recyclables', 'verts', 'encombrants', 'speciaux'];
 
   loadWasteRecords(page: number = 1): void {
@@ -431,6 +442,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
         days: this.wasteRecordsDays,
         wasteType: this.wasteRecordsWasteTypeFilter || undefined,
         zoneId: this.wasteRecordsZoneFilter || undefined,
+        collectorId: this.wasteRecordsCollectorId || undefined,
         page,
         limit: this.wasteRecordsLimit,
       })
@@ -451,6 +463,19 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   filterWasteRecords(): void {
     this.loadWasteRecords(1);
+  }
+
+  /**
+   * `record.collectorId` (GET /municipality/waste-records) est un ObjectId brut, jamais
+   * peuplé par le pipeline (voir son propre commentaire backend : "toujours vide sur les
+   * enregistrements V2 réels" — l'assignation V2 se fait par équipe, pas par collecteur
+   * individuel). Résolu ici en nom via collectorsAudits (déjà chargé) quand disponible,
+   * honnête ("—") sinon plutôt que d'afficher un id brut.
+   */
+  getWasteRecordCollectorName(collectorId: string | null): string {
+    if (!collectorId) return '—';
+    const collector = this.collectorsAudits.find((c: any) => c._id === collectorId);
+    return collector ? `${collector.firstName} ${collector.lastName}` : '—';
   }
 
   goToWasteRecordsPage(page: number): void {
@@ -720,6 +745,11 @@ export class AdminDashboard implements OnInit, OnDestroy {
       case 'statistics':
         this.chartsInitialized = false;
         this.isLoadingMap = true;
+        // `loadZoneStatistics()` lit désormais `statisticsAdmin` (item 2c) — jusqu'ici
+        // seul l'onglet 'overview' le chargeait, ce qui laissait cet onglet dépendre d'un
+        // passage préalable par 'overview' (déjà vrai avant ce correctif pour les KPI de
+        // cet onglet, ex. getCollectionRate()/monthlyClientPercentage). Rendu explicite ici.
+        this.showAdminStatistics();
         this.loadWasteStatistics();
         this.loadZoneStatistics();
         this.loadZoneStat();
@@ -749,6 +779,11 @@ export class AdminDashboard implements OnInit, OnDestroy {
         break;
       case 'collectes':
         this.loadWasteRecords();
+        // Filtre "Collecteur" (item 5) — réutilise collectorsAudits (onglet Collecteurs)
+        // plutôt qu'un nouveau fetch dédié ; ne recharge que si jamais chargé.
+        if (!this.collectorsAudits.length) {
+          this.loadAllCollectors();
+        }
         break;
     }
   }
@@ -818,6 +853,73 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   refreshWithdrawalRequests(): void {
     this.loadWithdrawalRequests();
+  }
+
+  isExportingWithdrawals = false;
+
+  /**
+   * Export réel (chantier Rapports/Statistiques, item 4 — écran à fort usage, retraits,
+   * jusqu'ici sans aucun export). Réutilise `filterWithdrawals()` (déjà existant, sert par
+   * ailleurs à peupler `withdrawalAgencyOptions` — `page:1, pageSize:1000`, la même
+   * convention "jeu complet filtré, pas juste la page visible" que le reste de ce chantier)
+   * avec les MÊMES filtres actuellement affichés à l'écran — pas juste `withdrawalRequests`
+   * (paginé côté serveur), pour ne pas reproduire le bug de troncature de l'item 1.
+   * Aucune écriture, aucun appel à accepterRetrait/rejeterRetrait — lecture seule sur des
+   * données déjà réelles, le module Retraits protégé n'est pas touché.
+   */
+  exportWithdrawalRequests(): void {
+    if (this.isExportingWithdrawals) return;
+    this.isExportingWithdrawals = true;
+    const filter: WithdrawalRequestFilter = {
+      search:   this.withdrawalSearchTerm || undefined,
+      status:   this.withdrawalStatusFilter,
+      agencyId: this.withdrawalAgencyFilter,
+      dateFrom: this.withdrawalDateFrom || undefined,
+      dateTo:   this.withdrawalDateTo || undefined,
+    };
+    this.withdrawalRequestsService.filterWithdrawals(filter).subscribe({
+      next: (rows) => {
+        this.isExportingWithdrawals = false;
+        if (!rows.length) {
+          this.notificationService.showInfo("Export", "Aucune demande de retrait à exporter pour ces filtres.");
+          return;
+        }
+        this.exportClientService.exportToCsv(
+          rows.map((w) => ({
+            agence: w.agencyName,
+            gestionnaire: w.agencyManagerName,
+            email: w.agencyManagerEmail,
+            montant: w.amount,
+            soldeDisponible: w.availableBalance,
+            methode: this.getPaymentMethodText(w.paymentMethod),
+            portefeuille: w.walletNumber,
+            dateDemande: w.requestDate,
+            statut: this.getWithdrawalStatusText(w.status),
+            traitePar: w.processedBy || '',
+            dateTraitement: w.processingDate || '',
+          })),
+          [
+            { key: 'agence', label: 'Agence' },
+            { key: 'gestionnaire', label: 'Gestionnaire' },
+            { key: 'email', label: 'Email' },
+            { key: 'montant', label: 'Montant demandé' },
+            { key: 'soldeDisponible', label: 'Solde disponible' },
+            { key: 'methode', label: 'Méthode' },
+            { key: 'portefeuille', label: 'Portefeuille / N° compte' },
+            { key: 'dateDemande', label: 'Date demande' },
+            { key: 'statut', label: 'Statut' },
+            { key: 'traitePar', label: 'Traité par' },
+            { key: 'dateTraitement', label: 'Date traitement' },
+          ],
+          `retraits-${new Date().toISOString().slice(0, 10)}`,
+        );
+        this.notificationService.showSuccess("Export réussi", "Le fichier des demandes de retrait a été téléchargé.");
+      },
+      error: (err) => {
+        this.isExportingWithdrawals = false;
+        this.notificationService.showError("Erreur", err?.message || "Impossible d'exporter les demandes de retrait.");
+      },
+    });
   }
 
   filterWithdrawalRequests(): void {
@@ -1157,37 +1259,41 @@ export class AdminDashboard implements OnInit, OnDestroy {
     // ];
   }
 
+  // Même table d'affichage que municipality-dashboard.ts (WASTE_TYPE_DISPLAY) — le
+  // backend (GET /municipality/waste-statistics) ne renvoie que la clé d'enum réelle
+  // (menagers/recyclables/...), jamais un libellé français ni une couleur.
+  private readonly WASTE_TYPE_DISPLAY: Record<string, { label: string; color: string }> = {
+    menagers: { label: 'Ménagers', color: '#4caf50' },
+    recyclables: { label: 'Recyclables', color: '#2196f3' },
+    verts: { label: 'Déchets verts', color: '#8bc34a' },
+    encombrants: { label: 'Encombrants', color: '#ff9800' },
+    speciaux: { label: 'Spéciaux', color: '#9c27b0' },
+  };
+
+  /**
+   * Branché (chantier Rapports/Statistiques, item 2b) sur le vrai endpoint
+   * GET /municipality/waste-statistics — déjà réel et utilisé par municipality-dashboard.ts,
+   * pas de deuxième implémentation. N'effectuait auparavant aucun appel HTTP (4 valeurs
+   * codées en dur).
+   */
   loadWasteStatistics(): void {
-    this.wasteStatistics = [
-      {
-        type: "Déchets ménagers",
-        quantity: 1250,
-        percentage: 45,
-        trend: "stable",
-        color: "#4caf50",
+    this.adminService.getWasteStatistics$(30).subscribe({
+      next: (response: any) => {
+        const rows = response?.data ?? [];
+        this.wasteStatistics = rows.map((row: any) => ({
+          type: this.WASTE_TYPE_DISPLAY[row.type]?.label ?? row.type,
+          quantity: row.quantity,
+          percentage: row.percentage,
+          trend: row.trend,
+          color: this.WASTE_TYPE_DISPLAY[row.type]?.color ?? '#9ca3af',
+        }));
+        this.buildWasteChart();
       },
-      {
-        type: "Recyclables",
-        quantity: 850,
-        percentage: 30,
-        trend: "up",
-        color: "#2196f3",
+      error: (error) => {
+        console.error("Erreur lors du chargement de la répartition des déchets:", error);
+        this.wasteStatistics = [];
       },
-      {
-        type: "Organiques",
-        quantity: 425,
-        percentage: 15,
-        trend: "up",
-        color: "#8bc34a",
-      },
-      {
-        type: "Verre",
-        quantity: 280,
-        percentage: 10,
-        trend: "stable",
-        color: "#00bcd4",
-      },
-    ];
+    });
   }
   get drawerWidth(): string {
     return window.innerWidth <= 768 ? "100%" : "33%";
@@ -1731,28 +1837,41 @@ export class AdminDashboard implements OnInit, OnDestroy {
     if (this.map) { this.map.remove(); this.map = null; }
   }
 
+  /**
+   * Corrigé (chantier Rapports/Statistiques, item 2c) : la version précédente associait
+   * `agencyService.getAgenceStats()` (12 lignes codées en dur) à `MOCK_CITIES` (catalogue
+   * multi-pays statique, non lié à l'app) par simple INDEX DE TABLEAU — une corrélation
+   * fictive entre deux jeux de données sans rapport. Le commentaire d'origine suggérait un
+   * vrai `GET /agences/stats` — vérifié (grep exhaustif de toutes les routes backend) :
+   * cet endpoint n'existe nulle part, `/agences` n'étant même pas un préfixe déclaré dans
+   * server.js. Impossible de "l'activer" tel quel.
+   *
+   * Réutilise à la place EXACTEMENT ce que municipality-dashboard.ts fait déjà
+   * (`buildZoneStatisticsFromAdminStats()`, même commentaire dans admin.ts::getAllStatistics)
+   * : `agenciesByCity`/`clientsByCity`/`collectionsByCity`, trois vraies agrégations Mongo
+   * par ville (services/globalState.js), déjà chargées dans `statisticsAdmin`
+   * (showAdminStatistics()) — aucun nouvel appel. Contrairement à la version municipalité,
+   * la liste des villes vient ici directement de l'agrégation réelle (`agenciesByCity`),
+   * pas de MOCK_CITIES : "retire le catalogue statique" appliqué au sens strict.
+   * `coverage`/`incidents` n'ont pas de source réelle à cette maille (par ville) et
+   * restent à 0, pas de nombre inventé — même choix que la version municipalité.
+   */
   loadZoneStatistics(): void {
-    const stats = this.agencyService.getAgenceStats();
-    const grouped: { [key: string]: any[] } = {};
+    const agenciesByCity = this.statisticsAdmin?.agenciesByCity ?? [];
+    const clientsByCity = this.statisticsAdmin?.clientsByCity ?? [];
+    const collectionsByCity = this.statisticsAdmin?.collectionsByCity ?? [];
 
-    MOCK_CITIES.forEach((city, index) => {
-      const country = city.country.name;
-      if (!grouped[country]) {
-        grouped[country] = [];
-      }
-      grouped[country].push({
-        name: city.name,
-        agencies: stats[index]?.agencies || 0,
-        clients: stats[index]?.clients || 0,
-        collections: stats[index]?.collections || 0,
-        coverage: stats[index]?.coverage || 0,
-        incidents: stats[index]?.incidents || 0,
-      });
-    });
-    this.zoneStatistics = Object.keys(grouped).map((country) => ({
-      country,
-      cities: grouped[country],
+    const cities = agenciesByCity.map((a) => ({
+      name: a.city,
+      country: 'Burkina Faso',
+      agencies: a.numberOfAgencies,
+      clients: clientsByCity.find((c) => c.city === a.city)?.numberOfClients ?? 0,
+      collections: collectionsByCity.find((c) => c.city === a.city)?.numberOfCollections ?? 0,
+      coverage: 0,
+      incidents: 0,
     }));
+
+    this.zoneStatistics = [{ country: 'Burkina Faso', cities }];
     console.log("this.zoneStatistics", this.zoneStatistics);
   }
 
@@ -1765,7 +1884,11 @@ export class AdminDashboard implements OnInit, OnDestroy {
       stats:    this.adminService.getPlanningStats$(agencyId),
     }).subscribe({
       next: ({ coverage, stats }) => {
-        this.zoneCoverageData = coverage?.data ?? [];
+        // Garde de sécurité (bug corrigé item 2a, backend renvoyait un objet agrégé
+        // unique au lieu du tableau par quartier attendu — TypeError systématique sur
+        // les .filter() ci-dessous) : le contrat backend est désormais un tableau, mais
+        // on ne fait plus jamais confiance à la forme sans vérifier.
+        this.zoneCoverageData = Array.isArray(coverage?.data) ? coverage.data : [];
         this.planningStats    = stats?.data ?? null;
         this.isLoadingCoverage = false;
       },
@@ -2027,12 +2150,19 @@ export class AdminDashboard implements OnInit, OnDestroy {
     // return 5;
   }
 
+  /**
+   * Corrigé (chantier Rapports/Statistiques, item 3) : lisait `this.statistics`, l'objet
+   * figé à des valeurs codées en dur (jamais réassigné depuis l'API — confirmé par grep
+   * sur tout le fichier), au lieu de `this.statisticsAdmin`, déjà chargé depuis la vraie
+   * réponse de GET /api/statistics (showAdminStatistics()). Même formule et mêmes champs
+   * réels que municipality-dashboard.ts::getCollectionRate() (dailyCollectionCollected /
+   * dailyCollections) — pas de deuxième calcul inventé.
+   */
   getCollectionRate(): number {
-    return Math.round(
-      (this.statistics.completedCollections /
-        this.statistics.todayCollections) *
-        100,
-    );
+    const collected = this.statisticsAdmin?.dailyCollectionCollected ?? 0;
+    const total = this.statisticsAdmin?.dailyCollections ?? 0;
+    if (total === 0) return 0;
+    return Math.round((collected / total) * 100);
   }
 
   getUserRole(userRole: string): string {
@@ -2184,6 +2314,43 @@ export class AdminDashboard implements OnInit, OnDestroy {
       resolved: "Résolu",
     };
     return statuses[status as keyof typeof statuses] || status;
+  }
+
+  /**
+   * Export réel (chantier Rapports/Statistiques, item 4 — écran à fort usage,
+   * incidents/signalements, jusqu'ici sans aucun export). Réutilise getFilteredIncidents()
+   * (même filtre status/severity/recherche que l'écran, non paginé) plutôt que
+   * `filteredIncidents` (déjà tronqué à la page courante) — même précaution que
+   * exportWithdrawalRequests().
+   */
+  exportIncidents(): void {
+    const rows = this.getFilteredIncidents();
+    if (!rows.length) {
+      this.notificationService.showInfo("Export", "Aucun incident à exporter pour ces filtres.");
+      return;
+    }
+    this.exportClientService.exportToCsv(
+      rows.map((i) => ({
+        agence: i.agencyId?.name || i.agency?.name || i.agencyName || '',
+        client: [i.clientId?.firstName, i.clientId?.lastName].filter(Boolean).join(' '),
+        type: this.getIncidentTypeText(i.type),
+        gravite: this.getSeverityText(i.severity),
+        statut: this.getIncidentStatusText(i.status),
+        description: i.comment || i.description || '',
+        date: i.createdAt ? new Date(i.createdAt).toLocaleString('fr-FR') : '',
+      })),
+      [
+        { key: 'agence', label: 'Agence' },
+        { key: 'client', label: 'Client' },
+        { key: 'type', label: 'Type' },
+        { key: 'gravite', label: 'Gravité' },
+        { key: 'statut', label: 'Statut' },
+        { key: 'description', label: 'Description' },
+        { key: 'date', label: 'Date' },
+      ],
+      `incidents-${new Date().toISOString().slice(0, 10)}`,
+    );
+    this.notificationService.showSuccess("Export réussi", "Le fichier des incidents a été téléchargé.");
   }
 
   getComplianceClass(score: number): string {
@@ -2341,11 +2508,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
   // GET /api/signalements ne pagine pas et ne filtre ni sur severity ni sur un terme de
   // recherche libre (voir routes/signalement.route.js) — tout `this.incidents` est déjà en
   // mémoire après loadAllSignalements(), on affine et pagine donc entièrement ici.
-  private applyIncidentClientFilters(page = 1): void {
+  /** Prédicat de filtrage des incidents, factorisé (item 4) pour être réutilisé tel quel
+   *  par l'export — sans ça, exporter reviendrait à ré-écrire ce filtre une deuxième fois
+   *  ou (pire) à n'exporter que la page visible, exactement le bug de troncature de l'item 1. */
+  private getFilteredIncidents(): Incident[] {
     const term     = this.incidentsSearchTerm.trim().toLowerCase();
     const severity = (this.severityFilter || 'all').toLowerCase();
 
-    const filtered = this.incidents.filter(i => {
+    return this.incidents.filter(i => {
       const statusMatch = this.incidentsFilter === 'all' || i.status === this.incidentsFilter;
       if (!statusMatch) return false;
       const severityMatch = severity === 'all' || (i.severity || '').toLowerCase() === severity;
@@ -2358,6 +2528,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
       ].filter(Boolean).join(' ').toLowerCase();
       return haystack.includes(term);
     });
+  }
+
+  private applyIncidentClientFilters(page = 1): void {
+    const filtered = this.getFilteredIncidents();
 
     this.incidentsTotalItems  = filtered.length;
     this.incidentsTotalPages  = Math.max(1, Math.ceil(filtered.length / this.incidentsItemsPerPage));
@@ -2551,6 +2725,31 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
 
+  // ── Statistiques collecteur (chantier Rapports/Statistiques, item 3) ────
+  // GET /statistics/collector/:id, endpoint réel jusqu'ici jamais appelé côté frontend
+  // (viewCollectorDetails() n'était qu'un toast, sans aucun appel HTTP).
+  collectorStats: { totalCollectes: number; totalScheduledCollectes: number; totalCollectedCollectes: number; totalReportedCollectes: number } | null = null;
+  isLoadingCollectorStats = false;
+
+  loadCollectorStats(): void {
+    const id = this.selectedUser?._id || this.selectedUser?.id;
+    if (!id || this.selectedUser?.role !== 'collector') {
+      this.collectorStats = null;
+      return;
+    }
+    this.isLoadingCollectorStats = true;
+    this.adminService.getCollectorStatistics(id).subscribe({
+      next: (response: any) => {
+        this.collectorStats = response?.stats ?? null;
+        this.isLoadingCollectorStats = false;
+      },
+      error: () => {
+        this.collectorStats = null;
+        this.isLoadingCollectorStats = false;
+      },
+    });
+  }
+
   getActivityTimeAgo(dateStr: string): string {
     const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
     if (diff < 3600)   return `il y a ${Math.round(diff / 60)} min`;
@@ -2651,7 +2850,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.isEditingUser      = false;
     this.showActivitySection = false;
     this.userActivity       = [];
+    this.collectorStats     = null;
     this.visible1 = true;
+    this.loadCollectorStats();
   }
 
   // Ouvre le drawer en mode EDIT directement depuis la liste
@@ -2706,12 +2907,18 @@ export class AdminDashboard implements OnInit, OnDestroy {
       },
     });
   }
-  viewCollectorDetails(clientId: string): void {
-    this.notificationService.showInfo(
-      "Détails",
-      "Ouverture des détails du collecteur",
-    );
+  /**
+   * Corrigé (chantier Rapports/Statistiques, item 3) : ouvrait auparavant un simple toast
+   * ("Ouverture des détails du collecteur"), sans aucune donnée réelle. Réutilise
+   * désormais le drawer "Fiche Utilisateur" déjà existant (quickViewUser(), onglet
+   * Utilisateurs) plutôt que de construire un second composant de détails — celui-ci
+   * charge en plus les vraies statistiques du collecteur (loadCollectorStats(),
+   * GET /statistics/collector/:id) quand le rôle est 'collector'.
+   */
+  viewCollectorDetails(collector: any): void {
+    this.quickViewUser(collector);
   }
+
   auditMunicipality(municipalityId: string): void {
     this.notificationService.showInfo(
       "Audit",
@@ -2746,17 +2953,11 @@ export class AdminDashboard implements OnInit, OnDestroy {
     );
   }
 
-  /**
-   * Export réel de l'onglet "Statistiques Consolidées" — réutilise ExportClientService
-   * (financial-dashboard/data-access/export), seule implémentation d'ExportService dans
-   * le projet, plutôt que de dupliquer une logique CSV parallèle (voir aussi
-   * municipality-dashboard.ts::exportStatistics, qui suit la même convention `;`+BOM UTF-8
-   * mais sur ses propres sections — non touché ici, hors périmètre de ce chantier).
-   * Une seule table plate "Indicateur / Valeur" : KPIs consolidés + top agences + répartition
-   * déchets, chacun déjà calculé pour l'affichage (getCollectionRate(), etc.), aucune
-   * nouvelle source de données.
-   */
-  exportStatistics(): void {
+  // Sélecteur de format (item 3 : "implémente réellement l'export PDF/Excel ici,
+  // actuellement un stub non câblé à aucun bouton" — CSV seul avant ce correctif).
+  statisticsExportFormat: 'csv' | 'pdf' | 'excel' = 'csv';
+
+  private buildStatisticsExportRows(): { metric: string; value: string | number }[] {
     const rows: { metric: string; value: string | number }[] = [
       { metric: 'Taux de collecte (%)', value: this.getCollectionRate() },
       { metric: 'Croissance clients sur le mois (%)', value: this.statisticsAdmin?.monthlyClientPercentage ?? 0 },
@@ -2772,20 +2973,44 @@ export class AdminDashboard implements OnInit, OnDestroy {
     topAgencies.forEach((a: any) => rows.push({ metric: `Agence — ${a.name}`, value: a.collections ?? a.clients ?? 0 }));
 
     this.wasteStatistics.forEach((w) => rows.push({ metric: `Déchets — ${w.type} (%)`, value: w.percentage }));
+    return rows;
+  }
 
+  /**
+   * Export réel de l'onglet "Statistiques Consolidées" (chantier Rapports/Statistiques,
+   * item 3 : "implémente réellement l'export PDF/Excel ici" — CSV seul avant ce
+   * correctif). CSV/PDF réutilisent ExportClientService (financial-dashboard/data-access/
+   * export), seule implémentation d'ExportService du projet — pas de logique parallèle.
+   * Excel réutilise le même import dynamique `xlsx` que municipality-dashboard.ts
+   * ::exportStatisticsExcel() (même dépendance déjà installée, même approche), faute
+   * d'un `exportToExcel()` sur ExportClientService (CSV/PDF seulement).
+   */
+  async exportStatistics(): Promise<void> {
+    const rows = this.buildStatisticsExportRows();
     if (!rows.length) {
       this.notificationService.showInfo("Export", "Aucune donnée à exporter pour le moment.");
       return;
     }
+    const columns = [
+      { key: 'metric' as const, label: 'Indicateur' },
+      { key: 'value' as const, label: 'Valeur' },
+    ];
+    const filenameBase = `statistiques-admin-${new Date().toISOString().slice(0, 10)}`;
 
-    this.exportClientService.exportToCsv(
-      rows,
-      [
-        { key: 'metric', label: 'Indicateur' },
-        { key: 'value', label: 'Valeur' },
-      ],
-      `statistiques-admin-${new Date().toISOString().slice(0, 10)}`,
-    );
+    if (this.statisticsExportFormat === 'csv') {
+      this.exportClientService.exportToCsv(rows, columns, filenameBase);
+    } else if (this.statisticsExportFormat === 'pdf') {
+      this.exportClientService.exportToPdf(rows, columns, filenameBase, {
+        titre: 'SAHELYS – Statistiques Consolidées',
+        sousTitre: `Exporté le ${new Date().toLocaleDateString('fr-FR')}`,
+      });
+    } else {
+      const XLSX = await import('xlsx');
+      const worksheet = XLSX.utils.json_to_sheet(rows.map((r) => ({ Indicateur: r.metric, Valeur: r.value })));
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Statistiques');
+      XLSX.writeFile(workbook, `${filenameBase}.xlsx`);
+    }
     this.notificationService.showSuccess("Export réussi", "Le fichier des statistiques a été téléchargé.");
   }
 
@@ -2949,6 +3174,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
         this.statisticsAdmin = statistics.stats;
         this.isLoadingStatistics = false;
         console.log(" statistics in dashboard", this.statisticsAdmin);
+        // loadZoneStatistics() (item 2c) lit statisticsAdmin.agenciesByCity/... — recalculé
+        // dès que la vraie réponse arrive, pas seulement à l'appel synchrone depuis
+        // loadTabData() (qui peut s'exécuter avant que cette requête ait résolu).
+        if (this.activeTab === 'statistics') {
+          this.loadZoneStatistics();
+        }
       },
       error: (error) => {
         console.error("Erreur lors du chargement des statistiques:", error);

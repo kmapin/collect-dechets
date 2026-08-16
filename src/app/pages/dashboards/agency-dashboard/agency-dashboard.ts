@@ -3890,10 +3890,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
-  exportReport(): void {
-    // No need to call notificationService.showInfo here, as it's already handled in the template
-  }
-
   // Form methods - DEPRECATED: Utiliser toggleZoneSelection à la place
   toggleZoneAssignment(zoneId: string, event: any): void {
     // Rediriger vers la nouvelle méthode reactive form

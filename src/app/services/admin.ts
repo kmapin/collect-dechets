@@ -28,6 +28,17 @@ export class Admin {
     );
   }
 
+  /**
+   * GET /statistics/collector/:collectorId (routes/globalStateRoutes.js, endpoint réel,
+   * jamais appelé côté frontend jusqu'ici — chantier Rapports/Statistiques, item 3).
+   */
+  getCollectorStatistics(collectorId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/statistics/collector/${collectorId}`).pipe(
+      map((response: any) => { console.log('API > getCollectorStatistics:', response); return response; }),
+      catchError((err) => { console.error('getCollectorStatistics error:', err); throw err; })
+    );
+  }
+
   getGlobalUserStats(): Observable<any> {
     // Route backend montée avec un "S" majuscule (server.js) — Express est sensible à la
     // casse, `/state_agencies/...` (minuscule, ce que documentait le Swagger) faisait donc

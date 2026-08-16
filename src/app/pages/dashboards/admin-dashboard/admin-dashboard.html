@@ -1301,7 +1301,7 @@
                     </h5>
                   </div>
                   <div class="agency-actions d-flex justify-content-end align-items">
-                    <button class="btn btn-secondary" (click)="viewCollectorDetails(collector._id)">
+                    <button class="btn btn-secondary" (click)="viewCollectorDetails(collector)">
                       <i class="material-icons">visibility</i>
                       Détails
                     </button>
@@ -1318,10 +1318,17 @@
         <div *ngIf="activeTab === 'statistics'" class="statistics-tab">
           <div class="statistics-header">
             <h2>Statistiques Consolidées</h2>
-            <button class="btn btn-secondary" (click)="exportStatistics()">
-              <i class="material-icons">download</i>
-              Exporter (CSV)
-            </button>
+            <div class="section-actions">
+              <select [(ngModel)]="statisticsExportFormat" class="filter-select">
+                <option value="csv">CSV</option>
+                <option value="pdf">PDF</option>
+                <option value="excel">Excel</option>
+              </select>
+              <button class="btn btn-secondary" (click)="exportStatistics()">
+                <i class="material-icons">download</i>
+                Exporter
+              </button>
+            </div>
           </div>
 
           <!-- ── KPIs ── -->
@@ -1718,6 +1725,10 @@
               [(ngModel)]="wasteRecordsZoneFilter"
               (change)="filterWasteRecords()"
               />
+            <select [(ngModel)]="wasteRecordsCollectorId" (change)="filterWasteRecords()" class="filter-select">
+              <option value="">Tous les collecteurs</option>
+              <option *ngFor="let c of collectorsAudits" [value]="c._id">{{ c.firstName }} {{ c.lastName }}</option>
+            </select>
           </div>
 
           <app-loading-spinner *ngIf="isLoadingWasteRecords" message="Chargement des collectes..." size="medium"></app-loading-spinner>
@@ -1728,6 +1739,7 @@
                 <tr>
                   <th>Agence</th>
                   <th>Zone</th>
+                  <th>Collecteur</th>
                   <th>Type de déchet</th>
                   <th>Statut</th>
                   <th>Date</th>
@@ -1737,6 +1749,7 @@
                 <tr *ngFor="let record of wasteRecords">
                   <td>{{ record.agencyName || '—' }}</td>
                   <td>{{ record.zoneName || '—' }}</td>
+                  <td>{{ getWasteRecordCollectorName(record.collectorId) }}</td>
                   <td>{{ record.wasteType }}</td>
                   <td>{{ record.status }}</td>
                   <td>{{ record.scheduledDate | date:'dd/MM/yyyy' }}</td>
@@ -1852,6 +1865,10 @@
                 <option value="medium">Moyenne</option>
                 <option value="low">Faible</option>
               </select>
+              <button class="btn btn-secondary" (click)="exportIncidents()" title="Exporter (CSV)">
+                <i class="material-icons">download</i>
+                Exporter
+              </button>
             </div>
           </div>
 
@@ -2207,6 +2224,10 @@
               </button>
               <button class="btn btn-secondary" (click)="refreshWithdrawalRequests()" title="Actualiser">
                 <i class="material-icons">refresh</i>
+              </button>
+              <button class="btn btn-secondary" (click)="exportWithdrawalRequests()" [disabled]="isExportingWithdrawals" title="Exporter (CSV)">
+                <i class="material-icons">download</i>
+                Exporter
               </button>
             </div>
           </div>
@@ -2601,6 +2622,45 @@
             </div>
           </div>
         </div>
+
+        <!-- Section : Statistiques du collecteur (item 3, GET /statistics/collector/:id) -->
+        @if (selectedUser.role === 'collector') {
+        <div class="divider"></div>
+        <div class="section contact-info">
+          <div class="section-header">
+            <i class="material-icons section-icon-mat">local_shipping</i>
+            <h4>Statistiques du jour</h4>
+          </div>
+          <div class="section-content">
+            @if (isLoadingCollectorStats) {
+            <p>Chargement...</p>
+            }
+            @if (!isLoadingCollectorStats && collectorStats) {
+            <div class="info-row">
+              <div class="info-item">
+                <span class="info-label">Collectes du jour</span>
+                <span class="info-value">{{ collectorStats.totalCollectes }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Programmées</span>
+                <span class="info-value">{{ collectorStats.totalScheduledCollectes }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Collectées</span>
+                <span class="info-value">{{ collectorStats.totalCollectedCollectes }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Signalées</span>
+                <span class="info-value">{{ collectorStats.totalReportedCollectes }}</span>
+              </div>
+            </div>
+            }
+            @if (!isLoadingCollectorStats && !collectorStats) {
+            <p>Aucune statistique disponible.</p>
+            }
+          </div>
+        </div>
+        }
 
         <!-- Section : Agence (si applicable) -->
         @if (selectedUser.agency?.name || selectedUser.agencyName) {
