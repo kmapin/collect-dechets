@@ -432,6 +432,19 @@ export class Admin {
   }
 
   /**
+   * GET /finance/dashboard/kpi?agencyId=... — chantier Finance/Paiements, item 8. Réutilise
+   * le MÊME endpoint que le dashboard financier agence (services/financeStats.js::
+   * getDashboardKpi), pas un second calcul du taux de recouvrement côté admin.
+   * `resolveAgency.js` autorise déjà l'override `?agencyId=` pour super_admin — aucun
+   * changement backend nécessaire pour cet usage admin-wide.
+   */
+  getFinanceKpi$(agencyId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/finance/dashboard/kpi`, { params: { agencyId } }).pipe(
+      catchError((err) => { console.error('getFinanceKpi error:', err); return of(null); })
+    );
+  }
+
+  /**
    * GET /municipality/waste-records — table de faits paginée des collectes, déjà utilisée
    * par le dashboard municipal (Prompt 12). Réutilisée telle quelle pour la vue admin-wide
    * "Collectes effectuées" (`authMiddleware()` de cette route n'impose aucun rôle précis,

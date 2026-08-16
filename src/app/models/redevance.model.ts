@@ -2,7 +2,10 @@
  * Miroir de `models/Redevance.js` (backend) — une ligne de facturation
  * périodique d'un Contrat.
  */
-export type RedevanceStatus = 'en_attente' | 'retard' | 'paye' | 'annule';
+// 'echec' ajouté (chantier Finance/Paiements, item 2 — backend models/Redevance.js) :
+// un paiement mobile money en échec se propage désormais jusqu'ici, plutôt que de
+// laisser la Redevance indéfiniment 'en_attente'.
+export type RedevanceStatus = 'en_attente' | 'retard' | 'paye' | 'annule' | 'echec';
 
 export interface Redevance {
   _id: string;
@@ -17,4 +20,8 @@ export interface Redevance {
   transactionId: string | { _id: string; reference: string; amount: number; status: string; completedAt?: string } | null;
   createdAt: string;
   updatedAt: string;
+  // Item 2 — compteur de tentatives/relances, voir services/paymentRetryScheduler.js.
+  echecCount?: number;
+  dernierEchecLe?: string | null;
+  echecDefinitif?: boolean;
 }

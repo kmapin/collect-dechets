@@ -799,17 +799,63 @@
                   <i class="material-icons">receipt</i>
                   Historique des paiements
                 </h2>
-                <button
-                  class="btn btn-secondary btn-small"
-                  (click)="downloadInvoices()"
-                  >
-                  <i class="material-icons">download</i>
-                  Télécharger
-                </button>
+                <div class="payment-history-actions">
+                  <button
+                    class="btn btn-secondary btn-small"
+                    (click)="downloadInvoices()"
+                    title="Télécharger en PDF"
+                    >
+                    <i class="material-icons">picture_as_pdf</i>
+                    PDF
+                  </button>
+                  <button
+                    class="btn btn-secondary btn-small"
+                    (click)="exportPaymentHistoryCsv()"
+                    title="Exporter en CSV"
+                    >
+                    <i class="material-icons">description</i>
+                    CSV
+                  </button>
+                  <button
+                    class="btn btn-secondary btn-small"
+                    (click)="exportPaymentHistoryExcel()"
+                    title="Exporter en Excel"
+                    >
+                    <i class="material-icons">grid_on</i>
+                    Excel
+                  </button>
+                </div>
+              </div>
+
+              <!-- Filtres période/statut (chantier Finance/Paiements, item 4) — le filtre
+                   "client" demandé ne s'applique pas ici : le client ne voit que ses
+                   propres paiements. -->
+              <div class="payment-history-filters">
+                <select [(ngModel)]="paymentPeriodFilter" (change)="filterPaymentHistory()" class="filter-select">
+                  <option value="all">Toute la période</option>
+                  <option value="3m">3 derniers mois</option>
+                  <option value="6m">6 derniers mois</option>
+                  <option value="12m">12 derniers mois</option>
+                </select>
+                <select [(ngModel)]="paymentStatusFilter" (change)="filterPaymentHistory()" class="filter-select">
+                  <option value="all">Tous les statuts</option>
+                  <option value="completed">Payé</option>
+                  <option value="pending">En attente</option>
+                  <option value="late">En retard</option>
+                  <option value="failed">Échec</option>
+                  <option value="cancelled">Annulé</option>
+                </select>
               </div>
 
               <div class="payments-list">
-                @for (payment of paymentHistory; track payment) {
+                @if (isLoadingPaymentHistory) {
+                  <div class="empty-state">
+                    <i class="material-icons">hourglass_empty</i>
+                    <p>Chargement...</p>
+                  </div>
+                }
+                @if (!isLoadingPaymentHistory) {
+                @for (payment of paymentHistory; track payment.id) {
                   <div class="payment-item">
                     <div class="payment-date">
                       <div class="day">{{ payment.date | date : "dd" }}</div>
@@ -817,23 +863,28 @@
                     </div>
                     <div class="payment-details">
                       <h4>{{ payment.description }}</h4>
-                      <p class="payment-method-text">{{ payment.method }}</p>
+                      <p class="payment-method-text">
+                        {{ payment.method }}<span *ngIf="payment.agencyName"> — {{ payment.agencyName }}</span>
+                      </p>
                     </div>
                     <div class="payment-amount">
                       <span class="amount">{{ payment.amount }} FCFA</span>
                       <span
                         class="status-badge"
-                        [class]="'status-' + (payment.status ? 'active' : 'inactive')"
+                        [class]="'status-' + payment.status"
                         >
-                        {{ getPaymentStatusText((payment.status? 'active' :'')) === "active" ?
-                        "Actif" : getPaymentStatusText((payment.status? 'inactive' :'')) ===
-                        "inactive" ? "Inactif" :
-                        getPaymentStatusText(payment.status) === "cancelled" ?
-                        "Annulé" : getPaymentStatusText(payment.status) ===
-                        "refunded" ? "Remboursé" :
-                        getPaymentStatusText(payment.status) === "expired" ?
-                        "Expiré" : "En attente de réabonnement" }}
+                        {{ getPaymentStatusText(payment.status) }}
                       </span>
+                      <!-- Reçu unitaire (item 5) — uniquement pour un paiement effectivement payé -->
+                      <button
+                        *ngIf="payment.status === 'completed'"
+                        class="btn btn-secondary btn-small"
+                        (click)="downloadReceipt(payment)"
+                        title="Télécharger le reçu de ce paiement"
+                        >
+                        <i class="material-icons">receipt_long</i>
+                        Reçu
+                      </button>
                     </div>
                   </div>
                 }
@@ -844,6 +895,7 @@
                     <h3>Aucun paiement</h3>
                     <p>Vos paiements apparaîtront ici</p>
                   </div>
+                }
                 }
               </div>
             </section>

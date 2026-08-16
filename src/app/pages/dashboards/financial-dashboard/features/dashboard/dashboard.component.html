@@ -4,6 +4,46 @@
     <app-period-selector [mode]="mode()" (modeChange)="onModeChange($event)" />
   </div>
 
+  <!-- Filtres "Montant total des paiements" (chantier Finance/Paiements, item 6) —
+       appliqués à Total collecté / Revenus nets uniquement. -->
+  <div class="fin-dashboard__filters">
+    <input
+      type="text"
+      placeholder="Filtrer par zone/quartier..."
+      [ngModel]="filtreZone()"
+      (ngModelChange)="filtreZone.set($event)"
+      (change)="onFiltresChange()"
+      />
+    <select [ngModel]="filtrePlanType()" (ngModelChange)="filtrePlanType.set($event); onFiltresChange()">
+      <option value="">Tous les types de tarif</option>
+      <option value="standard">Standard</option>
+      <option value="premium">Premium</option>
+      <option value="enterprise">Enterprise</option>
+    </select>
+    <div class="fin-dashboard__client-filter">
+      <input
+        type="text"
+        placeholder="Filtrer par client..."
+        [ngModel]="filtreClientRecherche()"
+        (ngModelChange)="filtreClientRecherche.set($event)"
+        (input)="rechercherClients()"
+        (focus)="rechercherClients()"
+        />
+      <button
+        type="button"
+        *ngIf="filtreClientSelectionne()"
+        class="fin-dashboard__client-clear"
+        (click)="selectionnerClient(null)"
+        title="Retirer le filtre client"
+        >×</button>
+      <ul class="fin-dashboard__client-dropdown" *ngIf="clientDropdownOuvert() && clientsSuggeres().length">
+        <li *ngFor="let c of clientsSuggeres()" (click)="selectionnerClient(c)">
+          {{ c.prenom }} {{ c.nom }} <span *ngIf="c.quartier">— {{ c.quartier }}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
   <app-error-state *ngIf="erreurKpi() as message" [message]="message" (retry)="reessayerKpi()" />
 
   <ng-container *ngIf="!erreurKpi()">
@@ -35,6 +75,13 @@
           [value]="formatMontant(k.enAttente)"
           sousTexte="Dû par les clients en retard (RG5)"
         />
+        <app-kpi-card
+          label="Taux de recouvrement"
+          icon="pie_chart"
+          tone="neutre"
+          [value]="k.tauxRecouvrement + '%'"
+          [sousTexte]="formatMontant(k.totalCollecte) + ' collecté / ' + formatMontant(k.montantFacture) + ' facturé'"
+        />
       </ng-container>
       <ng-template #squelette>
         <app-kpi-card *ngFor="let i of [0, 1, 2, 3]" [loading]="true" />
@@ -49,7 +96,10 @@
   </ng-container>
 
   <div class="fin-dashboard__stats-header">
-    <h2>Statistiques (6 derniers mois)</h2>
+    <h2>Statistiques ({{ nombreMoisGraphiques() }} derniers mois)</h2>
+    <select [ngModel]="nombreMoisGraphiques()" (ngModelChange)="nombreMoisGraphiques.set($event); onFenetreChange()">
+      <option *ngFor="let n of optionsFenetre" [value]="n">{{ n }} mois</option>
+    </select>
     <button type="button" class="fin-dashboard__export-btn" (click)="exporterCsv()">
       <i class="material-icons" aria-hidden="true">download</i>
       Exporter (CSV)

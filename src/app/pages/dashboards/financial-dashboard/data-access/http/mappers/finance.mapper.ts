@@ -12,6 +12,10 @@ export function mapDashboardKpiDto(dto: unknown): DashboardKpi {
     totalCollecte: Number(d['totalCollecte']),
     revenusNets: Number(d['revenusNets']),
     enAttente: Number(d['enAttente']),
+    // Item 8 — absents avant ce correctif côté backend, `?? 0` seulement pour un DTO
+    // capturé avant le déploiement du correctif (jamais une valeur inventée sinon).
+    montantFacture: Number(d['montantFacture'] ?? 0),
+    tauxRecouvrement: Number(d['tauxRecouvrement'] ?? 0),
     devise: String(d['devise']),
     misAJourLe: String(d['misAJourLe']),
   };

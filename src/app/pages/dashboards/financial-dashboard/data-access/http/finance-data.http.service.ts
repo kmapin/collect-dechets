@@ -7,6 +7,7 @@ import { DashboardKpi, Page, PageParams, Periode, Retrait } from '../../models';
 import {
   FinanceDataService,
   FinanceStatsSeries,
+  MontantTotalFilter,
   OperateurRetrait,
   PaiementFilter,
   PaiementListe,
@@ -14,6 +15,16 @@ import {
   RetraitFilter,
 } from '../contracts/finance-data.service';
 import { mapDashboardKpiDto, mapPaiementListeDto, mapRepartitionModePaiementDto, mapRetraitDto } from './mappers/finance.mapper';
+
+// Factorisé (item 6) : les 2 endpoints filtrables (kpi, stats) partagent le même trio de
+// query params optionnels.
+function applyMontantTotalFilters(params: HttpParams, filters?: MontantTotalFilter): HttpParams {
+  let result = params;
+  if (filters?.zone) result = result.set('zone', filters.zone);
+  if (filters?.idClient) result = result.set('idClient', filters.idClient);
+  if (filters?.planType) result = result.set('planType', filters.planType);
+  return result;
+}
 
 // Implémentation réelle, câblée en dur sur FINANCE_DATA_SERVICE dans
 // financial-dashboard.routes.ts. enregistrerRetrait attend { montant, customerMsisdn,
@@ -23,20 +34,22 @@ export class FinanceDataHttpService implements FinanceDataService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/finance`;
 
-  getDashboardKpi(periode?: Periode): Observable<DashboardKpi> {
+  getDashboardKpi(periode?: Periode, filters?: MontantTotalFilter): Observable<DashboardKpi> {
     let httpParams = new HttpParams();
     if (periode) httpParams = httpParams.set('mois', periode.mois).set('annee', periode.annee);
-    // GET /finance/dashboard/kpi?mois=&annee=
+    httpParams = applyMontantTotalFilters(httpParams, filters);
+    // GET /finance/dashboard/kpi?mois=&annee=&zone=&idClient=&planType=
     return this.http.get<unknown>(`${this.base}/dashboard/kpi`, { params: httpParams }).pipe(map(mapDashboardKpiDto));
   }
 
-  getStats(plage: { debut: Periode; fin: Periode }): Observable<FinanceStatsSeries> {
-    const httpParams = new HttpParams()
+  getStats(plage: { debut: Periode; fin: Periode }, filters?: MontantTotalFilter): Observable<FinanceStatsSeries> {
+    let httpParams = new HttpParams()
       .set('debutMois', plage.debut.mois)
       .set('debutAnnee', plage.debut.annee)
       .set('finMois', plage.fin.mois)
       .set('finAnnee', plage.fin.annee);
-    // GET /finance/dashboard/stats?debutMois=&debutAnnee=&finMois=&finAnnee=
+    httpParams = applyMontantTotalFilters(httpParams, filters);
+    // GET /finance/dashboard/stats?debutMois=&debutAnnee=&finMois=&finAnnee=&zone=&idClient=&planType=
     return this.http.get<FinanceStatsSeries>(`${this.base}/dashboard/stats`, { params: httpParams });
   }
 
@@ -80,8 +93,11 @@ export class FinanceDataHttpService implements FinanceDataService {
 
   enregistrerRetrait(payload: { montant: number; customerMsisdn: string; operator: OperateurRetrait; motif?: string }): Observable<Retrait> {
     // POST /finance/retraits { montant, customerMsisdn, operator, motif } — controllers/
-    // financeStats.js::enregistrerRetrait (débit réel du wallet, appel Moov Money, rollback
-    // compensatoire en cas d'échec).
+    // financeStats.js::enregistrerRetrait délègue à TransactionService.demanderRetrait :
+    // AUCUN débit ni appel Moov Money à ce stade (corrigé, chantier Finance/Paiements
+    // item 3 — ce commentaire décrivait par erreur le comportement du circuit legacy
+    // sendUserMoney/send-money, pas celui de cet endpoint). Le débit + l'appel opérateur
+    // n'ont lieu qu'à l'acceptation Super Admin (accepterRetrait, module Retraits).
     return this.http.post<unknown>(`${this.base}/retraits`, payload).pipe(map(mapRetraitDto));
   }
 }

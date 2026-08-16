@@ -1,10 +1,13 @@
 import { ChartConfiguration } from 'chart.js';
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DashboardKpi } from '../../models';
 import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
 import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
-import { FinanceStatsSeries, RepartitionModePaiement } from '../../data-access/contracts/finance-data.service';
+import { CLIENT_DATA_SERVICE } from '../../data-access/tokens/client-data.token';
+import { Client } from '../../models/client.model';
+import { FinanceStatsSeries, MontantTotalFilter, RepartitionModePaiement } from '../../data-access/contracts/finance-data.service';
 import { formatMontantXof } from '../../utils/money.util';
 import { periodeCourante, plageDerniersMois } from '../../utils/periode.util';
 import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
@@ -16,14 +19,13 @@ import { buildCollectedOverTimeConfig } from './charts/collected-over-time.chart
 import { buildPaidVsUnpaidConfig } from './charts/paid-vs-unpaid.chart';
 import { buildRevenueBreakdownConfig } from './charts/revenue-breakdown.chart';
 
-const NOMBRE_MOIS_GRAPHIQUES = 6; // F2 : "stats longue durée" — fenêtre glissante fixe pour le MVP
-
 // F1 (cartes KPI) + F2 (graphiques longue durée + export) du tableau de bord financier.
 @Component({
   selector: 'app-finance-dashboard',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     KpiCardComponent,
     PeriodSelectorComponent,
     FinanceChartComponent,
@@ -36,8 +38,56 @@ const NOMBRE_MOIS_GRAPHIQUES = 6; // F2 : "stats longue durée" — fenêtre gli
 export class DashboardComponent {
   private readonly financeData = inject(FINANCE_DATA_SERVICE);
   private readonly exportService = inject(EXPORT_SERVICE);
+  private readonly clientData = inject(CLIENT_DATA_SERVICE);
 
   readonly formatMontant = formatMontantXof;
+
+  // ── Filtres "Montant total des paiements" (chantier Finance/Paiements, item 6) ──
+  // Appliqués à totalCollecte/revenusNets uniquement (voir commentaire backend
+  // FinanceStatsService.getDashboardKpi) — pas à soldeDisponible/enAttente.
+  readonly filtreZone = signal('');
+  readonly filtrePlanType = signal<'' | 'standard' | 'premium' | 'enterprise'>('');
+  readonly filtreClientRecherche = signal('');
+  readonly filtreClientSelectionne = signal<Client | null>(null);
+  readonly clientsSuggeres = signal<Client[]>([]);
+  readonly clientDropdownOuvert = signal(false);
+
+  private get filtresActifs(): MontantTotalFilter {
+    return {
+      zone: this.filtreZone() || undefined,
+      idClient: this.filtreClientSelectionne()?.idClient || undefined,
+      planType: this.filtrePlanType() || undefined,
+    };
+  }
+
+  onFiltresChange(): void {
+    this.chargerKpi();
+    this.chargerGraphiques();
+  }
+
+  rechercherClients(): void {
+    const search = this.filtreClientRecherche().trim();
+    this.clientDropdownOuvert.set(true);
+    this.clientData.getClients({ page: 1, pageSize: 10, filter: search ? { search } : undefined }).subscribe({
+      next: (page) => this.clientsSuggeres.set(page.items),
+      error: () => this.clientsSuggeres.set([]),
+    });
+  }
+
+  selectionnerClient(client: Client | null): void {
+    this.filtreClientSelectionne.set(client);
+    this.filtreClientRecherche.set(client ? `${client.prenom} ${client.nom}` : '');
+    this.clientDropdownOuvert.set(false);
+    this.onFiltresChange();
+  }
+
+  // ── Fenêtre des graphiques/export (item 6 : "au-delà de la fenêtre fixe de 6 mois") ──
+  readonly nombreMoisGraphiques = signal(6);
+  readonly optionsFenetre = [6, 12, 24];
+
+  onFenetreChange(): void {
+    this.chargerGraphiques();
+  }
 
   // ── KPI (F1) ──────────────────────────────────────────────────
   readonly mode = signal<PeriodSelectorMode>('court');
@@ -105,6 +155,8 @@ export class DashboardComponent {
     this.chargerGraphiques();
   }
 
+  // Étend l'export au-delà des 6 mois fixes + applique les mêmes filtres zone/client/
+  // type de tarif que les KPI affichés à l'écran (item 6).
   exporterCsv(): void {
     const s = this.stats();
     if (!s) return;
@@ -122,7 +174,7 @@ export class DashboardComponent {
         { key: 'facturesPayees', label: 'Factures payées' },
         { key: 'facturesImpayees', label: 'Factures impayées' },
       ],
-      `stats-financieres-${periodeCourante().annee}-${periodeCourante().mois}`,
+      `stats-financieres-${this.nombreMoisGraphiques()}mois-${periodeCourante().annee}-${periodeCourante().mois}`,
     );
   }
 
@@ -131,7 +183,7 @@ export class DashboardComponent {
     this.erreurKpi.set(null);
     const periode = this.mode() === 'court' ? periodeCourante() : undefined;
 
-    this.financeData.getDashboardKpi(periode).subscribe({
+    this.financeData.getDashboardKpi(periode, this.filtresActifs).subscribe({
       next: kpi => {
         this.kpi.set(kpi);
         this.chargementKpi.set(false);
@@ -146,9 +198,10 @@ export class DashboardComponent {
   private chargerGraphiques(): void {
     this.chargementGraphiques.set(true);
     this.erreurGraphiques.set(null);
-    const plage = plageDerniersMois(NOMBRE_MOIS_GRAPHIQUES);
+    const plage = plageDerniersMois(this.nombreMoisGraphiques());
+    const filtres = this.filtresActifs;
 
-    this.financeData.getStats(plage).subscribe({
+    this.financeData.getStats(plage, filtres).subscribe({
       next: stats => {
         this.stats.set(stats);
         this.chargementGraphiques.set(false);

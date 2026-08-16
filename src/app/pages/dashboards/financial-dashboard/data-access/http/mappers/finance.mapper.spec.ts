@@ -14,6 +14,8 @@ describe('finance.mapper', () => {
         totalCollecte: 84000,
         revenusNets: 84000,
         enAttente: 15000,
+        montantFacture: 99000,
+        tauxRecouvrement: 84.8,
         devise: 'XOF',
         misAJourLe: '2026-07-29T10:00:00.000Z',
       };
@@ -22,6 +24,8 @@ describe('finance.mapper', () => {
         totalCollecte: 84000,
         revenusNets: 84000,
         enAttente: 15000,
+        montantFacture: 99000,
+        tauxRecouvrement: 84.8,
         devise: 'XOF',
         misAJourLe: '2026-07-29T10:00:00.000Z',
       });

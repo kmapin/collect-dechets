@@ -577,6 +577,7 @@
                   <th>Collecteurs</th>
                   <th>Gestionnaires</th>
                   <th>Zones</th>
+                  <th>Recouvrement</th>
                   <th class="col-actions">Actions</th>
                 </tr>
               </thead>
@@ -599,6 +600,10 @@
                     <ng-template #loadingCell3><span class="stats-loading">…</span></ng-template>
                   </td>
                   <td>{{ agency.zones }}</td>
+                  <td>
+                    <span *ngIf="agency.tauxRecouvrement !== undefined; else loadingCellRecouvrement">{{ agency.tauxRecouvrement }}%</span>
+                    <ng-template #loadingCellRecouvrement><span class="stats-loading">…</span></ng-template>
+                  </td>
                   <td class="col-actions">
                     <div class="table-actions">
                       <button class="action-btn" (click)="viewAgencyDetails(agency.id)" title="Détails"><i
@@ -684,6 +689,13 @@
                   <div class="metric">
                     <i class="material-icons">star</i>
                     <span>{{ agency.rating | number:'1.1-1' }}/5</span>
+                  </div>
+                  <div class="metric">
+                    <i class="material-icons">pie_chart</i>
+                    <span *ngIf="agency.tauxRecouvrement !== undefined; else ldRecouvrement">
+                      {{ agency.tauxRecouvrement }}% recouvrement
+                    </span>
+                    <ng-template #ldRecouvrement><span class="stats-loading">…</span></ng-template>
                   </div>
                 </div>
               </div>

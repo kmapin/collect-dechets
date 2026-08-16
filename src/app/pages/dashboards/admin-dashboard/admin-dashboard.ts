@@ -93,6 +93,9 @@ interface AgencyAudit {
   issues: string[];
   userId: string;
   statsLoaded: boolean;
+  // Chantier Finance/Paiements, item 8 — chargé séparément (loadAgenciesFinanceStats()),
+  // undefined tant que non résolu (pas 0, pour distinguer "pas encore chargé" de "0%").
+  tauxRecouvrement?: number;
 }
 
 interface WasteStatistic {
@@ -1202,6 +1205,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
         // Charger les stats détaillées pour chaque agence de la page courante
         this.loadAgenciesStats(this.agencyAudits.map(a => a.id));
+        // Taux de recouvrement (item 8) — même source de données que le dashboard
+        // financier agence, un appel par agence de la page courante.
+        this.loadAgenciesFinanceStats(this.agencyAudits.map(a => a.id));
 
         // Charger les collectes effectuées pour le top 5 si onglet statistiques actif
         if (this.activeTab === 'statistics') {
@@ -1328,6 +1334,26 @@ export class AdminDashboard implements OnInit, OnDestroy {
         });
         this.filteredAgencies = [...this.agencyAudits];
       }
+    });
+  }
+
+  /**
+   * Taux de recouvrement par agence (chantier Finance/Paiements, item 8) — réutilise
+   * GET /finance/dashboard/kpi?agencyId=... (Admin.getFinanceKpi$), le MÊME endpoint que
+   * le dashboard financier agence (resolveAgency.js autorise déjà l'override agencyId
+   * pour super_admin) : pas un second calcul du ratio côté admin.
+   */
+  loadAgenciesFinanceStats(agencyIds: string[]): void {
+    if (!agencyIds.length) return;
+    const requests = agencyIds.map(id =>
+      this.adminService.getFinanceKpi$(id).pipe(catchError(() => of(null)))
+    );
+    forkJoin(requests).subscribe((results) => {
+      results.forEach((kpi: any, i) => {
+        const audit = this.agencyAudits.find(a => a.id === agencyIds[i]);
+        if (audit && kpi) audit.tauxRecouvrement = kpi.tauxRecouvrement;
+      });
+      this.filteredAgencies = [...this.agencyAudits];
     });
   }
 

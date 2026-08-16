@@ -264,6 +264,33 @@
   color: #f57c00;
 }
 
+// Historique des paiements (chantier Finance/Paiements, item 4) — statuts réels
+// dérivés de Redevance.status (.status-completed/.status-cancelled déjà stylés ci-dessus).
+.status-pending {
+  background: #fff3e0;
+  color: #f57c00;
+}
+.status-late {
+  background: #ffe0b2;
+  color: #e65100;
+}
+.status-failed {
+  background: #ffebee;
+  color: var(--error-color);
+}
+
+.payment-history-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.payment-history-filters {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 16px;
+  flex-wrap: wrap;
+}
+
 // Statuts Contrat (valeurs françaises, distinctes des statuts Collecte/Abonnement ci-dessus).
 .status-actif {
   background: #e8f5e8;
@@ -434,6 +461,10 @@
 
 .payment-amount {
   text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
 }
 
 .amount {

@@ -29,14 +29,21 @@ import { ContratService } from "../../../services/contrat.service";
 import { Contrat } from "../../../models/contrat.model";
 import { EligibilityService, EligibilityResult, isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
 import { DemandeCollecteService } from "../../../services/demande-collecte.service";
+import { RedevanceService } from "../../../services/redevance.service";
+import { ExportClientService } from "../financial-dashboard/data-access/export/export-client.service";
 
 interface PaymentHistory {
   id: string;
   date: Date;
   amount: number;
-  status: "completed" | "pending" | "failed";
+  status: "completed" | "pending" | "late" | "cancelled" | "failed";
   description: string;
   method?: string;
+  // Nom de l'agence émettrice (chantier Finance/Paiements, item 4 : "champ utilisateur
+  // par ligne") — un client peut avoir des Contrat/Redevance avec plusieurs agences
+  // (getRedevancesByClient() n'est jamais scopé à une seule agence, contrairement à
+  // getFacturesByClient()), donc utile pour désambiguïser d'un coup d'œil.
+  agencyName?: string;
 }
 
 interface Subscription {
@@ -52,6 +59,7 @@ interface Subscription {
 @Component({
   selector: 'app-client-dashboard',
   imports: [CommonModule, RouterModule, FormsModule, MatIcon, Signalement],
+  providers: [ExportClientService],
   templateUrl: './client-dashboard.html',
   styleUrl: './client-dashboard.scss'
 })
@@ -144,7 +152,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     private contratService: ContratService,
     private eligibilityService: EligibilityService,
     private demandeCollecteService: DemandeCollecteService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private redevanceService: RedevanceService,
+    private exportClientService: ExportClientService
   ) {}
 
   ngOnInit(): void {
@@ -208,6 +218,10 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       this.getWeeklySchedule();
       this.loadUpcomingPlannings();
       this.loadPlanningHistory();
+      // Dépend de currentUser._id (chantier Finance/Paiements, item 4) — même raison que
+      // loadActiveContrat() ci-dessus : appelée ici, pas depuis loadDashboardData()
+      // (qui s'exécute avant que currentUser$ n'émette).
+      this.loadPaymentHistory();
     });
     console.log("Current User", this.currentUser);
   }
@@ -571,16 +585,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       next: (response: any[]) => {
         this.subscriptions = response || [];
         console.log("Subscriptions ==>", this.subscriptions);
-        this.paymentHistory = this.subscriptions.map((sub: any) => ({
-          id: sub._id,
-          date: sub.startDate ? new Date(sub.startDate) : new Date(),
-          amount: sub.pricingId.price,
-          status: sub.isActive, // "active", "suspended", "cancelled" ou autre
-          description: `Abonnement ${sub.pricingId.planType} - ${
-            sub.agencyId?.name || ""
-          }`,
-          // method: "Orange Money", // ou autre selon tes données
-        }));
+        // paymentHistory n'est plus construit depuis les Abonnements (chantier
+        // Finance/Paiements, item 4) — voir loadRedevancesHistory(), la vraie source de
+        // "paiements" (redevances récurrentes), distincte du statut d'un Abonnement.
         // Abonnement réellement actif — jamais "le dernier élément du
         // tableau" (chantier EligibilityService, même correctif que
         // pages/subscription/subscription.ts::getUserSubscription()).
@@ -611,7 +618,8 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     // Charger les données du tableau de bord
     this.loadUpcomingCollections();
     this.loadCollectionHistory();
-    this.loadPaymentHistory();
+    // loadPaymentHistory() déplacée dans getUser() (dépend de currentUser._id, voir son
+    // propre commentaire) — plus appelée ici.
     this.loadSubscription();
     this.countUnreadMessages();
     this.userMessages();
@@ -874,25 +882,67 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     this.filteredHistory = [...this.collectionHistory];
   }
 
+  // ── Historique des paiements (chantier Finance/Paiements, item 4) ────────
+  // Corrigé : branché sur le vrai GET /redevances/client/:clientId
+  // (RedevanceService.getRedevancesByClient$, jamais appelé jusqu'ici) au lieu d'une
+  // liste reconstruite depuis les Abonnements, ou (loadPaymentHistory(), ci-dessus,
+  // supprimée) 2 lignes codées en dur qui coexistaient silencieusement avec les
+  // données réelles.
+  private static readonly REDEVANCE_STATUS_MAP: Record<string, PaymentHistory['status']> = {
+    paye: 'completed',
+    en_attente: 'pending',
+    retard: 'late',
+    annule: 'cancelled',
+    echec: 'failed',
+  };
+
+  allPaymentHistory: PaymentHistory[] = [];
+  isLoadingPaymentHistory = false;
+  // "Filtres période/statut/client" demandés — le filtre "client" ne s'applique pas ici
+  // (l'utilisateur ne peut voir QUE ses propres paiements) ; conservés "période"+"statut".
+  paymentPeriodFilter: 'all' | '3m' | '6m' | '12m' = 'all';
+  paymentStatusFilter: 'all' | PaymentHistory['status'] = 'all';
+
   loadPaymentHistory(): void {
-    this.paymentHistory = [
-      {
-        id: "1",
-        date: new Date("2024-01-01"),
-        amount: 25.99,
-        status: "completed",
-        description: "Abonnement mensuel - Janvier 2024",
-        method: "Carte bancaire **** 1234",
+    const clientId = this.currentUser?._id;
+    if (!clientId) return;
+    this.isLoadingPaymentHistory = true;
+    this.redevanceService.getRedevancesByClient$(clientId).subscribe({
+      next: (redevances) => {
+        this.allPaymentHistory = redevances.map((r) => {
+          const agency = typeof r.agencyId === 'object' ? r.agencyId : null;
+          const transaction = typeof r.transactionId === 'object' ? r.transactionId : null;
+          return {
+            id: r._id,
+            date: new Date(r.dateEcheance),
+            amount: r.montant,
+            status: ClientDashboard.REDEVANCE_STATUS_MAP[r.status] ?? 'pending',
+            description: `Redevance — ${r.periodLabel}`,
+            method: transaction ? 'Mobile Money' : 'Paiement manuel',
+            agencyName: agency?.name,
+          };
+        });
+        this.filterPaymentHistory();
+        this.isLoadingPaymentHistory = false;
       },
-      {
-        id: "2",
-        date: new Date("2023-12-01"),
-        amount: 25.99,
-        status: "completed",
-        description: "Abonnement mensuel - Décembre 2023",
-        method: "Carte bancaire **** 1234",
+      error: (error) => {
+        console.error('Erreur lors du chargement de l\'historique des paiements:', error);
+        this.isLoadingPaymentHistory = false;
       },
-    ];
+    });
+  }
+
+  filterPaymentHistory(): void {
+    const now = new Date();
+    const monthsWindow = { '3m': 3, '6m': 6, '12m': 12, all: null } as const;
+    const months = monthsWindow[this.paymentPeriodFilter];
+    const since = months ? new Date(now.getFullYear(), now.getMonth() - months, now.getDate()) : null;
+
+    this.paymentHistory = this.allPaymentHistory.filter((p) => {
+      const statusMatch = this.paymentStatusFilter === 'all' || p.status === this.paymentStatusFilter;
+      if (!statusMatch) return false;
+      return !since || p.date >= since;
+    });
   }
 
   loadSubscription(): void {
@@ -1028,6 +1078,8 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     const statusTexts = {
       completed: "Payé",
       pending: "En attente",
+      late: "En retard",
+      cancelled: "Annulé",
       failed: "Échec",
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
@@ -1237,6 +1289,51 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   //   );
   // }
 
+  /**
+   * Export CSV/Excel de l'historique des paiements (chantier Finance/Paiements, item 4 —
+   * "le PDF existant reste"). Réutilise ExportClientService (déjà la seule implémentation
+   * d'ExportService du projet, voir admin-dashboard.ts/agency-dashboard.ts) plutôt qu'un
+   * mécanisme d'export propre à cet écran. Excel via le même import dynamique `xlsx` que
+   * admin-dashboard.ts::exportStatistics() (ExportClientService n'a pas d'exportToExcel).
+   */
+  exportPaymentHistoryCsv(): void {
+    const rows = this.paymentHistory.map((p) => ({
+      date: p.date.toLocaleDateString('fr-FR'),
+      description: p.description,
+      agence: p.agencyName || '—',
+      methode: p.method || '—',
+      montant: p.amount,
+      statut: this.getPaymentStatusText(p.status),
+    }));
+    this.exportClientService.exportToCsv(
+      rows,
+      [
+        { key: 'date', label: 'Date' },
+        { key: 'description', label: 'Description' },
+        { key: 'agence', label: 'Agence' },
+        { key: 'methode', label: 'Méthode' },
+        { key: 'montant', label: 'Montant (FCFA)' },
+        { key: 'statut', label: 'Statut' },
+      ],
+      `historique-paiements-${new Date().toISOString().slice(0, 10)}`,
+    );
+  }
+
+  async exportPaymentHistoryExcel(): Promise<void> {
+    const XLSX = await import('xlsx');
+    const worksheet = XLSX.utils.json_to_sheet(this.paymentHistory.map((p) => ({
+      Date: p.date.toLocaleDateString('fr-FR'),
+      Description: p.description,
+      Agence: p.agencyName || '—',
+      Méthode: p.method || '—',
+      'Montant (FCFA)': p.amount,
+      Statut: this.getPaymentStatusText(p.status),
+    })));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Paiements');
+    XLSX.writeFile(workbook, `historique-paiements-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
   editAddress(): void {
     this.notificationService.showInfo(
       "Modification",
@@ -1316,6 +1413,75 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
 
     doc.save("Historique-paiement-client.pdf");
   }
+
+  /**
+   * Reçu de paiement UNITAIRE (chantier Finance/Paiements, item 5) — jusqu'ici le client
+   * n'avait accès qu'au PDF listant TOUT l'historique (downloadInvoices() ci-dessus),
+   * sans le mot "reçu" ni la période concernée pour une transaction précise. Réutilise
+   * exactement la même bibliothèque/mise en page (jsPDF, même bandeau ZéroDéchet+) plutôt
+   * que d'introduire un second mécanisme de génération PDF.
+   */
+  downloadReceipt(payment: PaymentHistory): void {
+    const doc = new jsPDF();
+
+    doc.setFillColor(41, 128, 185);
+    doc.rect(0, 0, doc.internal.pageSize.width, 30, "F");
+
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text("ZéroDéchet+", 14, 20);
+
+    doc.setFontSize(13);
+    doc.setTextColor(230, 230, 230);
+    doc.setFont("helvetica", "normal");
+    doc.text("Collecter aujourd’hui, préserver demain.", 14, 27);
+
+    doc.setFontSize(20);
+    doc.setTextColor(41, 128, 185);
+    doc.setFont("helvetica", "bold");
+    doc.text("REÇU DE PAIEMENT", 14, 45);
+
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Référence : ${payment.id}`, 14, 53);
+    doc.text(`Émis le : ${new Date().toLocaleDateString("fr-FR")}`, 14, 59);
+
+    autoTable(doc, {
+      startY: 68,
+      body: [
+        ["Client", `${this.currentUser?.firstName || ""} ${this.currentUser?.lastName || ""}`],
+        ["Agence", payment.agencyName || "—"],
+        ["Période concernée", payment.description],
+        ["Méthode de paiement", payment.method || "—"],
+        ["Date du paiement", new Date(payment.date).toLocaleDateString("fr-FR")],
+        ["Statut", this.getPaymentStatusText(payment.status)],
+        ["Montant payé", `${payment.amount} FCFA`],
+      ],
+      theme: "grid",
+      styles: { fontSize: 11, cellPadding: 4 },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 60 } },
+    });
+
+    const pageHeight = doc.internal.pageSize.height || 297;
+    doc.setDrawColor(41, 128, 185);
+    doc.setLineWidth(0.7);
+    doc.line(14, pageHeight - 20, 195, pageHeight - 20);
+
+    doc.setFontSize(12);
+    doc.setTextColor(41, 128, 185);
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      "Merci pour votre confiance !",
+      doc.internal.pageSize.width / 2,
+      pageHeight - 12,
+      { align: "center" }
+    );
+
+    doc.save(`Recu-paiement-${payment.id}.pdf`);
+  }
+
   ngAfterViewChecked() {
     this.scrollToBottom();
   }

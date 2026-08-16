@@ -45,6 +45,9 @@ export interface FinancialSummary {
 }
 
 // ── Transaction de paiement ───────────────────────────────────
+// Valeurs alignées sur l'énum RÉELLE de models/transaction.js (chantier
+// Finance/Paiements, item 3) — 'SUCCESS'/'FAILED'/'PENDING' seul n'a jamais
+// correspondu à aucune valeur réellement écrite par le backend.
 export interface PaymentTransaction {
   _id:            string;
   agencyId:       string;
@@ -55,19 +58,23 @@ export interface PaymentTransaction {
   commission:     number;
   netAmount:      number;
   method:         PaymentMethod;
-  status:         'SUCCESS' | 'FAILED' | 'PENDING';
+  status:         'INITIATED' | 'OTP_PENDING' | 'PENDING' | 'COMPLETED' | 'COMPLETED_WITH_ERROR' | 'FAILED' | 'CANCELLED';
   reference:      string;
   description:    string;
   createdAt:      string;
 }
 
-// ── Demande / Historique de retrait ──────────────────────────
-export interface WithdrawalRequest {
-  amount:          number;
-  method:          PaymentMethod;
-  accountNumber:   string;
-  accountName:     string;
-  note?:           string;
+// ── Demande de retrait ────────────────────────────────────────
+// Remplace l'ancien WithdrawalRequest {amount, method, accountNumber, accountName, note}
+// (chantier Finance/Paiements, item 3) : ce shape ne correspondait à aucun endpoint réel
+// (POST /finance/agency/:id/withdrawal n'existe pas côté backend, requestWithdrawal()
+// n'était d'ailleurs appelée nulle part). Body exact attendu par POST /finance/retraits
+// (controllers/financeStats.js::enregistrerRetrait → TransactionService.demanderRetrait).
+export interface DemanderRetraitPayload {
+  montant:        number;
+  customerMsisdn: string;
+  operator:       PaymentMethod;
+  motif?:         string;
 }
 
 export interface WithdrawalRecord {

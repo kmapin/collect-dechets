@@ -102,12 +102,14 @@ export class AgencyFinance implements OnInit, OnDestroy {
   readonly pageSize = 10;
 
   // ── Chart ────────────────────────────────────────────────────
-  chartPeriod: 'week' | 'month' | 'year' = 'month';
+  // 'week' retiré (item 3) : GET /finance/dashboard/stats (FinanceStatsService.
+  // getStatsParPeriode) n'agrège qu'au mois — aucune granularité hebdomadaire réelle
+  // n'existe côté backend, mieux vaut ne pas proposer une option qu'on ne peut pas servir.
+  chartPeriod: 'month' | 'year' = 'month';
   chartData:    any = {};
   chartOptions: any = {};
 
-  readonly periodOptions: { label: string; value: 'week' | 'month' | 'year' }[] = [
-    { label: 'Cette semaine', value: 'week'  },
+  readonly periodOptions: { label: string; value: 'month' | 'year' }[] = [
     { label: 'Ce mois',       value: 'month' },
     { label: 'Cette année',   value: 'year'  },
   ];
@@ -182,7 +184,17 @@ export class AgencyFinance implements OnInit, OnDestroy {
     this.financeService
       .getFinancialSummary(this.agencyId)
       .pipe(takeUntil(this.destroy$), finalize(() => (this.isLoadingSummary = false)))
-      .subscribe({ next: (d) => { this.summary = d; this.cdr.markForCheck(); } });
+      .subscribe({
+        next: (d) => { this.summary = d; this.cdr.markForCheck(); },
+        error: (err) => {
+          console.error('[AgencyFinance] loadSummary:', err);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Impossible de charger le résumé financier.',
+          });
+        },
+      });
   }
 
   loadChartData(): void {
@@ -194,6 +206,14 @@ export class AgencyFinance implements OnInit, OnDestroy {
         next: (d) => {
           this.chartData = this.buildChartDataset(d);
           this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error('[AgencyFinance] loadChartData:', err);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Erreur',
+            detail: 'Impossible de charger le graphique.',
+          });
         },
       });
   }
@@ -313,16 +333,18 @@ export class AgencyFinance implements OnInit, OnDestroy {
     }
 
     const { amount, method, accountNumber } = this.withdrawalForm.value;
+    // Corrigé (item 3) : demanderRetrait$() (POST /finance/retraits, vrai workflow
+    // Super Admin) remplace payment$() (POST /transactions/send-money, legacy, débit
+    // immédiat sans validation) — body attendu par TransactionService.demanderRetrait.
     const payload = {
+      montant: amount,
+      customerMsisdn: accountNumber,
       operator: method,
-      destination: accountNumber,
-      amount,
-      userId: this.authService.getCurrentUser()?._id ?? '',
     };
 
     this.isSubmittingWd = true;
     this.financeService
-      .payment$(payload)
+      .demanderRetrait$(payload)
       .pipe(finalize(() => (this.isSubmittingWd = false)))
       .subscribe({
         next: () => {
@@ -330,7 +352,7 @@ export class AgencyFinance implements OnInit, OnDestroy {
           this.messageService.add({
             severity: 'success',
             summary: 'Demande envoyée',
-            detail: 'Votre demande de retrait est en cours de traitement.',
+            detail: 'Votre demande de retrait est en attente de validation par le Super Admin.',
           });
           this.loadSummary();
           this.loadWithdrawals();
@@ -387,31 +409,42 @@ export class AgencyFinance implements OnInit, OnDestroy {
     }).format(value) + ' XOF';
   }
 
+  // Corrigé (item 3) : ces deux maps ne correspondaient à AUCUNE valeur réellement écrite
+  // par le backend (ni models/transaction.js, ni models/Withdraw.js) — un statut réel
+  // s'affichait donc toujours tel quel, jamais traduit. Couvre les deux énums réels (pas
+  // de collision de clé entre les deux modèles).
   getStatusSeverity(
     status: string
   ): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
     const map: Record<string, 'success' | 'info' | 'warn' | 'danger' | 'secondary'> = {
-      SUCCESS:     'success',
-      APPROVED:    'success',
-      PROCESSED:   'info',
-      INITIATED:   'info',
-      PENDING:     'warn',
-      PENDING_OTP: 'warn',
-      FAILED:      'danger',
-      REJECTED:    'danger',
+      // Transaction (models/transaction.js)
+      INITIATED:            'info',
+      OTP_PENDING:          'warn',
+      PENDING:              'warn',
+      COMPLETED:            'success',
+      COMPLETED_WITH_ERROR: 'warn',
+      FAILED:               'danger',
+      CANCELLED:            'secondary',
+      // Withdraw (models/Withdraw.js)
+      EN_ATTENTE_VALIDATION: 'warn',
+      REJETE:                'danger',
     };
     return map[status] ?? 'secondary';
   }
 
   getStatusLabel(status: string): string {
     const map: Record<string, string> = {
-      SUCCESS:   'Succès',
-      APPROVED:  'Approuvé',
-      PROCESSED: 'Traité',
-      PENDING:   'En attente',
-      PENDING_OTP: 'OTP requis',
-      FAILED:    'Échoué',
-      REJECTED:  'Rejeté',
+      // Transaction (models/transaction.js)
+      INITIATED:            'Initié',
+      OTP_PENDING:          'OTP en attente',
+      PENDING:              'En attente',
+      COMPLETED:            'Complété',
+      COMPLETED_WITH_ERROR: 'Complété avec erreur',
+      FAILED:               'Échoué',
+      CANCELLED:            'Annulé',
+      // Withdraw (models/Withdraw.js)
+      EN_ATTENTE_VALIDATION: 'En attente de validation',
+      REJETE:                'Rejeté',
     };
     return map[status] ?? status;
   }

@@ -10,6 +10,17 @@ export interface RetraitFilter {
   search?: string;
 }
 
+// Filtres additifs (chantier Finance/Paiements, item 6 : "Montant total des paiements")
+// sur getDashboardKpi()/getStats() — appliqués uniquement à totalCollecte/revenusNets
+// (soldeDisponible/enAttente restent des soldes de portefeuille, non décomposables par
+// client/zone/tarif). `zone` = quartier en texte libre (Redevance n'a pas de champ zone
+// propre, jointure via le client — même convention que partout ailleurs dans l'app).
+export interface MontantTotalFilter {
+  zone?: string;
+  idClient?: string;
+  planType?: string;
+}
+
 // Restreint à ce que le backend accepte réellement pour un retrait (services/transaction.js::
 // sendUserMoney) : 'TELECEL_MONEY' existe comme opérateur ailleurs dans l'app (vérification
 // de numéro), mais est explicitement rejeté ici — pas encore disponible pour les retraits.
@@ -39,8 +50,8 @@ export interface PaiementListe extends Paiement {
 
 // Couvre F1 (KPI), F2 (stats + répartition par mode), F3 (paiements), F4 (retraits).
 export abstract class FinanceDataService {
-  abstract getDashboardKpi(periode?: Periode): Observable<DashboardKpi>;
-  abstract getStats(plage: { debut: Periode; fin: Periode }): Observable<FinanceStatsSeries>;
+  abstract getDashboardKpi(periode?: Periode, filters?: MontantTotalFilter): Observable<DashboardKpi>;
+  abstract getStats(plage: { debut: Periode; fin: Periode }, filters?: MontantTotalFilter): Observable<FinanceStatsSeries>;
   abstract getRepartitionModePaiement(plage: { debut: Periode; fin: Periode }): Observable<RepartitionModePaiement[]>;
   abstract getPaiements(params?: PageParams<PaiementFilter>): Observable<Page<PaiementListe>>;
   abstract getRetraits(params?: PageParams<RetraitFilter>): Observable<Page<Retrait>>;
