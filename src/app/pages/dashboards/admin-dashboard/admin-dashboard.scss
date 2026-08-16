@@ -942,6 +942,14 @@
   color: #f57c00;
 }
 
+// Statuts Collecte (onglet "Collectes", GET /municipality/waste-records)
+.cstatus-scheduled  { background: #e0f2fe; color: #0369a1; }
+.cstatus-collected  { background: #dcfce7; color: #15803d; }
+.cstatus-missed     { background: #fee2e2; color: #b91c1c; }
+.cstatus-in_progress{ background: #fef9c3; color: #854d0e; }
+.cstatus-cancelled  { background: #f3f4f6; color: #6b7280; }
+.cstatus-reported   { background: #fee2e2; color: #b91c1c; }
+
 .status-resolved {
   background: #e8f5e8;
   color: var(--success-color);
@@ -1002,28 +1010,47 @@
 .incidents-header,
 .communications-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--medium-gray);
+
+  // Le titre ne doit jamais rétrécir/se scinder sur deux lignes pour laisser de la
+  // place aux filtres — quand ça ne tient pas sur une ligne, c'est le bloc filtres
+  // (large, plusieurs contrôles) qui doit passer à la ligne suivante, pas le titre.
+  > h2 {
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin: 0;
+  }
 }
 
 .agencies-filters,
 .statistics-filters,
 .incidents-filters {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: center !important;
   justify-items: center !important;
+  margin-bottom: 16px;
 }
 
 .filter-select {
   padding: 8px 12px;
+  min-width: 170px;
   border: 2px solid var(--medium-gray);
   border-radius: 6px;
   font-size: 0.9rem;
+  background: #fff;
   transition: border-color 0.3s ease;
+}
+
+input.filter-select {
+  min-width: 200px;
 }
 
 .filter-select:focus {

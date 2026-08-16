@@ -991,6 +991,27 @@ body {
   color: var(--text-secondary);
 }
 
+.search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 2px;
+  display: flex;
+  cursor: pointer;
+  color: var(--text-secondary);
+
+  .material-icons {
+    font-size: 18px;
+  }
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
 .chip {
   display: inline-flex;
   align-items: center;

@@ -1733,8 +1733,8 @@
 
           <app-loading-spinner *ngIf="isLoadingWasteRecords" message="Chargement des collectes..." size="medium"></app-loading-spinner>
 
-          <div *ngIf="!isLoadingWasteRecords" class="collectes-table-wrapper">
-            <table class="collectes-table">
+          <div *ngIf="!isLoadingWasteRecords" class="admin-table-wrapper">
+            <table class="admin-table">
               <thead>
                 <tr>
                   <th>Agence</th>
@@ -1751,7 +1751,11 @@
                   <td>{{ record.zoneName || '—' }}</td>
                   <td>{{ getWasteRecordCollectorName(record.collectorId) }}</td>
                   <td>{{ record.wasteType }}</td>
-                  <td>{{ record.status }}</td>
+                  <td>
+                    <span class="status-badge" [class]="'cstatus-' + (record.status || '').toLowerCase()">
+                      {{ record.status }}
+                    </span>
+                  </td>
                   <td>{{ record.scheduledDate | date:'dd/MM/yyyy' }}</td>
                 </tr>
               </tbody>
@@ -1793,7 +1797,7 @@
               </div>
               <!-- Recherche texte -->
               <div class="search-box">
-                <i class="material-icons">search</i>
+                <i class="material-icons search-icon">search</i>
                 <input type="text" placeholder="Rechercher..." [(ngModel)]="incidentsSearchTerm"
                   (input)="filterIncidents()" class="search-input" />
                 <button *ngIf="incidentsSearchTerm" class="search-clear"
