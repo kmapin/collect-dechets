@@ -624,6 +624,24 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   //Statistics for admin
   statisticsAdmin: AdminStatistics | null = null;
+
+  // Extrait dans un getter (plutôt que le calcul inline avec ?./??/! dans le template) :
+  // le vérificateur de templates Angular ne propage pas toujours le narrowing d'un chaînage
+  // optionnel multi-niveaux (statisticsAdmin?.x ? statisticsAdmin.y : ...) de la même façon
+  // que le TypeScript standard — ngc/esbuild rejette alors ce que le langage-service accepte.
+  // Un getter isole le null-check dans du TS classique, où le narrowing est fiable.
+  get agencyActivityRatio(): number {
+    const stats = this.statisticsAdmin;
+    if (!stats || !stats.totalAgencies) return 0;
+    return (stats.totalActiveAgencies * 100) / stats.totalAgencies;
+  }
+
+  // Même raison que agencyActivityRatio ci-dessus : selectedUser.agency?.slogan réutilisé
+  // dans un *ngIf puis l'interpolation qu'il garde n'est pas narrowé de façon fiable par le
+  // vérificateur de templates Angular.
+  get selectedUserAgencySlogan(): string | undefined {
+    return this.selectedUser.agency?.slogan;
+  }
   //List all clients for admin dashboard
   clients: any;
 

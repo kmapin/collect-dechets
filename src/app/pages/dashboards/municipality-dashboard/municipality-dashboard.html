@@ -143,16 +143,15 @@
                   </div>
                   @if (isLoadingPerformanceOverview) {
                   <div class="metric-value metric-value--loading">…</div>
-                  } @else if (performanceOverview?.averageSatisfaction === null ||
-                  performanceOverview?.averageSatisfaction === undefined) {
+                  } @else if (performanceOverviewSatisfaction === null) {
                   <div class="metric-value metric-value--unknown">Non disponible</div>
                   } @else {
                   <div class="metric-value">
-                    {{ performanceOverview.averageSatisfaction }}/5
+                    {{ performanceOverviewSatisfaction }}/5
                   </div>
                   <div class="rating-stars">
                     @for (
-                    star of getStars(performanceOverview.averageSatisfaction)
+                    star of getStars(performanceOverviewSatisfaction)
                     ; track
                     star) {
                     <i class="material-icons star">star</i>

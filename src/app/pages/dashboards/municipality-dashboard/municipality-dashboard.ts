@@ -218,6 +218,16 @@ export class MunicipalityDashboard  implements OnInit {
   // (réel, Prompt 07). Voir loadPerformanceOverview().
   performanceOverview: PerformanceOverview | null = null;
   isLoadingPerformanceOverview = false;
+
+  // Extrait dans un getter (plutôt que performanceOverview?.averageSatisfaction inline dans
+  // le template) : le vérificateur de templates Angular ne narrow pas de façon fiable un
+  // chaînage optionnel multi-niveaux réutilisé dans plusieurs expressions d'un même bloc
+  // @if/@else — ngc/esbuild rejette alors ce que le langage-service jugeait redondant.
+  // Un getter isole le null-check dans du TS classique (narrowing fiable), et le template
+  // ne teste/lit plus qu'un seul identifiant simple.
+  get performanceOverviewSatisfaction(): number | null {
+    return this.performanceOverview?.averageSatisfaction ?? null;
+  }
   // isPerformanceOverviewMocked / isAgencyPerformanceMocked supprimés (Prompt 15, §7) :
   // les deux valaient déjà `false` en dur (complianceRate/performance d'agence sont de
   // vrais agrégats serveur depuis les Prompts 05/07 ; averageSatisfaction reste `null`

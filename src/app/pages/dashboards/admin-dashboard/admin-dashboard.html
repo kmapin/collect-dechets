@@ -1403,9 +1403,7 @@
                   / {{ statisticsAdmin?.totalAgencies ?? 0 }}
                 </span>
                 <div class="kpi-bar-track">
-                  <div class="kpi-bar-fill kpi-fill-purple" [style.width]="(statisticsAdmin?.totalAgencies
-                             ? statisticsAdmin.totalActiveAgencies * 100 / statisticsAdmin.totalAgencies
-                             : 0) + '%'"></div>
+                  <div class="kpi-bar-fill kpi-fill-purple" [style.width]="agencyActivityRatio + '%'"></div>
                 </div>
               </div>
             </div>
@@ -2715,9 +2713,9 @@
                 <span class="info-label">Nom de l'agence</span>
                 <span class="info-value">{{ selectedUser.agency?.name || selectedUser.agencyName || '—' }}</span>
               </div>
-              <div class="info-item" *ngIf="selectedUser.agency?.slogan">
+              <div class="info-item" *ngIf="selectedUserAgencySlogan">
                 <span class="info-label">Slogan</span>
-                <span class="info-value">{{ selectedUser.agency.slogan }}</span>
+                <span class="info-value">{{ selectedUserAgencySlogan }}</span>
               </div>
             </div>
           </div>
