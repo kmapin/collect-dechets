@@ -15,7 +15,8 @@ import {
   CollectionStatus1,
 } from "../../../models/collection.model";
 import { ClientService } from "../../../services/client.service";
-import { map } from "rxjs";
+import { map, forkJoin, of } from "rxjs";
+import { catchError } from "rxjs/operators";
 import { AgencyService } from "../../../services/agency.service";
 import { Message } from "../../../models/message.model";
 import { MatIcon } from "@angular/material/icon";
@@ -31,6 +32,7 @@ import { EligibilityService, EligibilityResult, isSubscriptionCurrentlyActive } 
 import { DemandeCollecteService } from "../../../services/demande-collecte.service";
 import { RedevanceService } from "../../../services/redevance.service";
 import { ExportClientService } from "../financial-dashboard/data-access/export/export-client.service";
+import { FinanceService } from "../../../services/finance.service";
 
 interface PaymentHistory {
   id: string;
@@ -154,7 +156,8 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     private demandeCollecteService: DemandeCollecteService,
     private route: ActivatedRoute,
     private redevanceService: RedevanceService,
-    private exportClientService: ExportClientService
+    private exportClientService: ExportClientService,
+    private financeService: FinanceService
   ) {}
 
   ngOnInit(): void {
@@ -896,6 +899,27 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     echec: 'failed',
   };
 
+  // Moyen de paiement réel (Transaction.operator, models/transaction.js) — remplace le
+  // libellé générique "Mobile Money" qui ne reflétait pas l'opérateur effectivement utilisé.
+  private static readonly OPERATOR_LABEL_MAP: Record<string, string> = {
+    ORANGE_MONEY: 'Orange Money',
+    MOOV_MONEY: 'Moov Money',
+    TELECEL_MONEY: 'Telecel Money',
+    QRPAY: 'QR Pay',
+  };
+
+  // Statuts Transaction (models/transaction.js) — distincts des statuts Redevance
+  // ci-dessus, utilisés pour les paiements d'Abonnement (voir loadPaymentHistory()).
+  private static readonly TRANSACTION_STATUS_MAP: Record<string, PaymentHistory['status']> = {
+    COMPLETED: 'completed',
+    COMPLETED_WITH_ERROR: 'completed',
+    PENDING: 'pending',
+    OTP_PENDING: 'pending',
+    INITIATED: 'pending',
+    FAILED: 'failed',
+    CANCELLED: 'cancelled',
+  };
+
   allPaymentHistory: PaymentHistory[] = [];
   isLoadingPaymentHistory = false;
   // "Filtres période/statut/client" demandés — le filtre "client" ne s'applique pas ici
@@ -903,13 +927,32 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   paymentPeriodFilter: 'all' | '3m' | '6m' | '12m' = 'all';
   paymentStatusFilter: 'all' | PaymentHistory['status'] = 'all';
 
+  // "afficher les paiements abonnement ET contrat (redevances)" : la seule source de
+  // "paiement" pour un client était jusqu'ici la Redevance (contrat). Un client sous
+  // Abonnement (pas de contrat) avait donc un historique vide alors qu'il paie bien
+  // chaque mois. Ajout de la Transaction liée à l'Abonnement (Transaction.subscriptionId,
+  // renseigné uniquement pour un paiement Mobile Money — voir services/subscription.js,
+  // le paiement par wallet ne crée aucune Transaction, donc aucun historique possible pour
+  // ce cas précis, pas de données à afficher) via le même GET /transactions/agency/:id déjà
+  // utilisé par le dashboard financier agence (FinanceService.getTransactions), filtré par
+  // userId — aucune nouvelle route backend créée.
   loadPaymentHistory(): void {
     const clientId = this.currentUser?._id;
     if (!clientId) return;
     this.isLoadingPaymentHistory = true;
-    this.redevanceService.getRedevancesByClient$(clientId).subscribe({
-      next: (redevances) => {
-        this.allPaymentHistory = redevances.map((r) => {
+    const agencyId = this.currentUser?.subscribedAgencyId || this.currentUser?.agencyId;
+
+    forkJoin({
+      redevances: this.redevanceService.getRedevancesByClient$(clientId),
+      subscriptionTransactions: agencyId
+        ? this.financeService.getTransactions(agencyId, { userId: clientId }).pipe(
+            map((res: any) => (res?.data || []).filter((t: any) => !!t.subscriptionId)),
+            catchError(() => of([] as any[]))
+          )
+        : of([] as any[]),
+    }).subscribe({
+      next: ({ redevances, subscriptionTransactions }) => {
+        const fromRedevances: PaymentHistory[] = redevances.map((r) => {
           const agency = typeof r.agencyId === 'object' ? r.agencyId : null;
           const transaction = typeof r.transactionId === 'object' ? r.transactionId : null;
           return {
@@ -918,10 +961,25 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
             amount: r.montant,
             status: ClientDashboard.REDEVANCE_STATUS_MAP[r.status] ?? 'pending',
             description: `Redevance — ${r.periodLabel}`,
-            method: transaction ? 'Mobile Money' : 'Paiement manuel',
+            method: transaction
+              ? ClientDashboard.OPERATOR_LABEL_MAP[transaction.operator ?? ''] ?? 'Mobile Money'
+              : 'Paiement manuel',
             agencyName: agency?.name,
           };
         });
+
+        const fromSubscriptions: PaymentHistory[] = subscriptionTransactions.map((t: any) => ({
+          id: t._id,
+          date: new Date(t.completedAt || t.createdAt),
+          amount: t.amount,
+          status: ClientDashboard.TRANSACTION_STATUS_MAP[t.status] ?? 'pending',
+          description: `Abonnement${t.pricing?.planType ? ' — ' + t.pricing.planType : ''}`,
+          method: ClientDashboard.OPERATOR_LABEL_MAP[t.operator ?? ''] ?? 'Mobile Money',
+        }));
+
+        this.allPaymentHistory = [...fromRedevances, ...fromSubscriptions].sort(
+          (a, b) => b.date.getTime() - a.date.getTime()
+        );
         this.filterPaymentHistory();
         this.isLoadingPaymentHistory = false;
       },

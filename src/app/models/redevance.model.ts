@@ -17,7 +17,7 @@ export interface Redevance {
   dateEcheance: string;
   status: RedevanceStatus;
   datePaiement: string | null;
-  transactionId: string | { _id: string; reference: string; amount: number; status: string; completedAt?: string } | null;
+  transactionId: string | { _id: string; reference: string; amount: number; status: string; completedAt?: string; operator?: string } | null;
   createdAt: string;
   updatedAt: string;
   // Item 2 — compteur de tentatives/relances, voir services/paymentRetryScheduler.js.
