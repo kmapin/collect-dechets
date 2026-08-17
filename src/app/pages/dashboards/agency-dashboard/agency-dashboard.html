@@ -1664,14 +1664,16 @@
                 </td>
                 <td class="col-actions">
                   @if (demande.status === 'pending') {
-                  <button class="action-btn" title="Accepter" [disabled]="processingDemandeId === demande._id"
-                    (click)="acceptDemandeCollecte(demande)">
-                    <i class="material-icons">check_circle</i>
-                  </button>
-                  <button class="action-btn" title="Refuser" [disabled]="processingDemandeId === demande._id"
-                    (click)="rejectDemandeCollecte(demande)">
-                    <i class="material-icons">cancel</i>
-                  </button>
+                  <div class="table-actions">
+                    <button class="action-btn" title="Accepter" [disabled]="processingDemandeId === demande._id"
+                      (click)="acceptDemandeCollecte(demande)">
+                      <i class="material-icons">check_circle</i>
+                    </button>
+                    <button class="action-btn" title="Refuser" [disabled]="processingDemandeId === demande._id"
+                      (click)="rejectDemandeCollecte(demande)">
+                      <i class="material-icons">cancel</i>
+                    </button>
+                  </div>
                   } @else {
                   <span style="color:#9ca3af;font-size:0.85rem">&#8212;</span>
                   }
@@ -1744,24 +1746,26 @@
                   }
                 </td>
                 <td class="col-actions">
-                  <button class="action-btn" (click)="openRedevancesDrawer(contrat)" title="Voir les redevances">
-                    <i class="material-icons">receipt_long</i>
-                  </button>
-                  @if (contrat.status === 'actif') {
-                  <button class="action-btn" (click)="onSuspendreContrat(contrat._id)" title="Suspendre">
-                    <i class="material-icons">pause_circle</i>
-                  </button>
-                  }
-                  @if (contrat.status === 'suspendu') {
-                  <button class="action-btn" (click)="onReactiverContrat(contrat._id)" title="Réactiver">
-                    <i class="material-icons">play_circle</i>
-                  </button>
-                  }
-                  @if (contrat.status !== 'resilie') {
-                  <button class="action-btn danger" (click)="onResilierContrat(contrat._id)" title="Résilier">
-                    <i class="material-icons">cancel</i>
-                  </button>
-                  }
+                  <div class="table-actions">
+                    <button class="action-btn" (click)="openRedevancesDrawer(contrat)" title="Voir les redevances">
+                      <i class="material-icons">receipt_long</i>
+                    </button>
+                    @if (contrat.status === 'actif') {
+                    <button class="action-btn" (click)="onSuspendreContrat(contrat._id)" title="Suspendre">
+                      <i class="material-icons">pause_circle</i>
+                    </button>
+                    }
+                    @if (contrat.status === 'suspendu') {
+                    <button class="action-btn" (click)="onReactiverContrat(contrat._id)" title="Réactiver">
+                      <i class="material-icons">play_circle</i>
+                    </button>
+                    }
+                    @if (contrat.status !== 'resilie') {
+                    <button class="action-btn danger" (click)="onResilierContrat(contrat._id)" title="Résilier">
+                      <i class="material-icons">cancel</i>
+                    </button>
+                    }
+                  </div>
                 </td>
               </tr>
               }
