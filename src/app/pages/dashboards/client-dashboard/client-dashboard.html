@@ -1044,39 +1044,48 @@
     </div>
   }
 
-    <!-- Modal de demande de collecte express (passage spontané, hors planning) -->
+    <!-- Drawer de demande de collecte express (passage spontané, hors planning) —
+         même patron que les drawers admin-dashboard.html (drawer-overlay/drawer-content/
+         drawer-header/drawer-body/drawer-section/drawer-footer). -->
     @if (showSpontaneousRequestModal) {
       <div
-        class="modal-overlay"
+        class="drawer-overlay"
         (click)="showSpontaneousRequestModal = false"
         >
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
+        <div class="drawer-content" (click)="$event.stopPropagation()">
+          <div class="drawer-header">
             <h3>Demander une collecte express</h3>
-            <button class="close-btn" (click)="showSpontaneousRequestModal = false">
+            <button class="drawer-close-btn" (click)="showSpontaneousRequestModal = false">
               <i class="material-icons">close</i>
             </button>
           </div>
-          <form class="report-form" (ngSubmit)="submitSpontaneousRequest()">
-            <div class="form-group">
-              <label>Type(s) de déchets à collecter</label>
+          <form class="drawer-body" (ngSubmit)="submitSpontaneousRequest()">
+            <div class="drawer-section">
+              <h4 class="drawer-section-title">
+                <i class="material-icons">delete</i> Type(s) de déchets à collecter
+              </h4>
               @for (option of spontaneousWasteTypeOptions; track option.value) {
-                <label class="checkbox-option">
+                <label class="checkbox-label">
                   <input
                     type="checkbox"
                     [checked]="spontaneousRequestData.wasteTypes.includes(option.value)"
                     (change)="toggleSpontaneousWasteType(option.value)"
                     />
+                  <span class="checkmark"></span>
                   {{ option.label }}
                 </label>
               }
             </div>
-            <div class="form-group">
-              <label>Date souhaitée (optionnel)</label>
+            <div class="drawer-section">
+              <h4 class="drawer-section-title">
+                <i class="material-icons">event</i> Date souhaitée (optionnel)
+              </h4>
               <input type="date" [(ngModel)]="spontaneousRequestData.requestedDate" name="requestedDate" />
             </div>
-            <div class="form-group">
-              <label>Notes (optionnel)</label>
+            <div class="drawer-section">
+              <h4 class="drawer-section-title">
+                <i class="material-icons">notes</i> Notes (optionnel)
+              </h4>
               <textarea
                 [(ngModel)]="spontaneousRequestData.notes"
                 name="notes"
@@ -1084,7 +1093,9 @@
                 placeholder="Précisions utiles pour l'agence..."
               ></textarea>
             </div>
-            <div class="form-actions">
+          </form>
+          <div class="drawer-footer">
+            <div class="drawer-actions">
               <button
                 type="button"
                 class="btn btn-secondary"
@@ -1092,12 +1103,12 @@
                 >
                 Annuler
               </button>
-              <button type="submit" class="btn btn-primary" [disabled]="!spontaneousRequestData.wasteTypes.length || isSubmittingSpontaneousRequest">
+              <button type="button" class="btn btn-primary" (click)="submitSpontaneousRequest()" [disabled]="!spontaneousRequestData.wasteTypes.length || isSubmittingSpontaneousRequest">
                 <i class="material-icons">send</i>
                 {{ isSubmittingSpontaneousRequest ? 'Envoi...' : 'Envoyer la demande' }}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     }
