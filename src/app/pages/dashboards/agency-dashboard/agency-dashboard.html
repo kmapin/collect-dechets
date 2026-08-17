@@ -3010,30 +3010,46 @@
   </div>
 </div>
 } @if (showHistoryModal) {
-<div class="modal-overlay" (click)="closeHistoryModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
+<div class="drawer-overlay" (click)="closeHistoryModal()">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
       <h3>Historique des Collectes</h3>
-      <button class="close-btn" (click)="closeHistoryModal()">
+      <button class="drawer-close-btn" (click)="closeHistoryModal()">
         <i class="material-icons">close</i>
       </button>
     </div>
-    <div class="modal-body">
-      <ul>
-        @for (collecte of historyCollecte; track collecte) {
-        <li>
-          <p>
-            <strong>Date :</strong>
-            {{ collecte?.scannedAt | date : "dd/MM/yyyy" }}
-          </p>
-          <p><strong>Statut :</strong> {{ collecte.status }}</p>
-          <p>
-            <strong>Client :</strong> {{ collecte?.clientId.firstName }} {{
-            collecte?.clientId.clientName }}
-          </p>
-        </li>
-        }
-      </ul>
+    <div class="drawer-body">
+      @if (historyCollecte.length) {
+      <div class="drawer-section">
+        <div class="collecte-history-list">
+          @for (collecte of historyCollecte; track collecte) {
+          <div class="collecte-history-item">
+            <div class="collecte-history-icon">
+              <i class="material-icons">local_shipping</i>
+            </div>
+            <div class="collecte-history-main">
+              <div class="collecte-history-client">
+                {{ collecte?.clientId?.firstName }} {{ collecte?.clientId?.lastName }}
+              </div>
+              <div class="collecte-history-date">
+                <i class="material-icons">event</i>
+                {{ collecte?.scannedAt | date : "dd/MM/yyyy à HH:mm" }}
+              </div>
+            </div>
+            <span class="status-badge" [class]="'status-' + (collecte.status | lowercase)">
+              {{ collecte.status }}
+            </span>
+          </div>
+          }
+        </div>
+      </div>
+      } @else {
+      <div class="empty-state">
+        <i class="material-icons">history</i>
+        <h3>Aucun historique</h3>
+        <p>Aucune collecte n'a encore été enregistrée pour cette agence.</p>
+      </div>
+      }
     </div>
   </div>
 </div>

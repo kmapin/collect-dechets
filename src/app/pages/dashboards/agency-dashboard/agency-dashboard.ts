@@ -5351,7 +5351,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   loadCollectHistory(): void {
     this.isLoading = true;
-    const agencyId = this.currentUser?._id;
+    const agencyId = this.currentUser?.agencyId;
 
     if (!agencyId) {
       console.error(
@@ -5365,9 +5365,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       return;
     }
 
-    this.agencyService.getAgencyAllCollectes$(agencyId).subscribe({
+    this.agencyService.getAgencyCompletedCollectes$(agencyId).subscribe({
       next: (response) => {
-        this.historyCollecte = response.data || [];
+        this.historyCollecte = response || [];
         console.log(
           "Historique des Collectes récupérées :",
           this.historyCollecte,

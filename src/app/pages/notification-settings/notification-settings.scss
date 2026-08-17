@@ -1,13 +1,25 @@
-.ns-page {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 24px 16px 64px;
+// En-tête (.page-header/.container/.header-content/.page-title/.page-subtitle)
+// réutilise le langage visuel global défini dans src/styles.scss — même bandeau
+// dégradé que Tableau de bord financier (finance-layout.html) et les autres
+// dashboards. Pas de redéfinition ici : ce sont des classes globales.
+.ns-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
 
-.ns-header {
-  margin-bottom: 24px;
-  h1 { margin: 0 0 6px; }
-  .ns-subtitle { color: var(--text-secondary, #6b7280); margin: 0; }
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+}
+
+.ns-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
 }
 
 .ns-loading {
@@ -18,29 +30,84 @@
 
 .ns-section {
   background: var(--white, #fff);
-  border-radius: 12px;
-  box-shadow: var(--shadow-light, 0 1px 4px rgba(0,0,0,0.08));
-  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 20px 24px;
   margin-bottom: 20px;
+  transition: box-shadow 0.2s ease;
 
-  h2 { margin: 0 0 12px; font-size: 1.05rem; }
-  .ns-hint { color: var(--text-secondary, #6b7280); font-size: 0.85rem; margin: -6px 0 12px; }
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  h2 {
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .material-icons {
+      font-size: 20px;
+      color: #3b82f6;
+    }
+  }
+
+  .ns-hint {
+    color: var(--text-secondary, #6b7280);
+    font-size: 0.85rem;
+    margin: -6px 0 12px;
+  }
+
+  > input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--medium-gray, #d1d5db);
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color, #3b82f6);
+    }
+  }
 }
 
 .ns-toggle {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.15s ease;
 
-  input[type="checkbox"] { width: 18px; height: 18px; }
+  &:hover {
+    background: #f9fafb;
+  }
 
-  em { color: var(--text-secondary, #6b7280); font-style: normal; font-size: 0.82rem; }
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color, #3b82f6);
+  }
+
+  em {
+    color: var(--text-secondary, #6b7280);
+    font-style: normal;
+    font-size: 0.82rem;
+  }
 
   &--disabled {
     cursor: not-allowed;
     opacity: 0.65;
+
+    &:hover {
+      background: transparent;
+    }
   }
 }
 
@@ -55,11 +122,21 @@
   flex-direction: column;
   gap: 4px;
 
-  label { font-size: 0.82rem; color: var(--text-secondary, #6b7280); }
+  label {
+    font-size: 0.82rem;
+    color: var(--text-secondary, #6b7280);
+  }
+
   input {
-    padding: 8px 10px;
-    border: 1px solid var(--medium-gray, #d1d5db);
-    border-radius: 6px;
+    padding: 10px 12px;
+    border: 2px solid var(--medium-gray, #d1d5db);
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color, #3b82f6);
+    }
   }
 }
 
@@ -75,13 +152,25 @@
 
   input {
     flex: 1;
-    padding: 8px 10px;
-    border: 1px solid var(--medium-gray, #d1d5db);
-    border-radius: 6px;
+    padding: 10px 12px;
+    border: 2px solid var(--medium-gray, #d1d5db);
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color, #3b82f6);
+    }
   }
 }
 
 @media (max-width: 600px) {
+  .ns-header {
+    padding: 20px 16px;
+
+    h1 { font-size: 1.4rem; }
+  }
+
   .ns-grid { grid-template-columns: 1fr; }
   .ns-test-row { flex-direction: column; }
 }

@@ -930,6 +930,18 @@ export class AgencyService {
       })
     );
   }
+  //recuperation de l'historique reel des collectes terminees pour une agence
+  getAgencyCompletedCollectes$(agencyId: string): Observable<any[]> {
+    const url = `${environment.apiUrl}/collectes/agency/${agencyId}/completed-collectes`;
+
+    return this.http.get<any>(url).pipe(
+      map(response => Array.isArray(response) ? response : (response?.data || [])),
+      catchError((error) => {
+        console.error("Erreur backend lors de la récupération de l'historique des collectes :", error);
+        return throwError(() => error);
+      })
+    );
+  }
   //recuperation l historique  des collecte pour une agence
   getAgencyAllHistoryCollectes$(agencyId: string): Observable<PaginatedResponse<any>> {
     const url = `${environment.apiUrl}/collecte/agency/${agencyId}`;

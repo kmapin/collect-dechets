@@ -1025,6 +1025,67 @@
   color: #111827;
 }
 
+.collecte-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.collecte-history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.collecte-history-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(76, 175, 80, 0.12);
+  color: #4caf50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .material-icons {
+    font-size: 20px;
+  }
+}
+
+.collecte-history-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.collecte-history-client {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collecte-history-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #6b7280;
+  font-size: 0.8rem;
+
+  .material-icons {
+    font-size: 14px;
+  }
+}
+
 .status-scheduled {
   background: #e3f2fd;
   color: var(--primary-color);

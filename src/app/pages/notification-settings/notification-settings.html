@@ -1,16 +1,24 @@
-<div class="ns-page">
-  <div class="ns-header">
-    <h1>Configuration des notifications</h1>
-    <p class="ns-subtitle">
-      {{ isGlobal ? 'Réglages globaux — s\'appliquent à toute agence sans configuration propre.' : 'Réglages de votre agence — remplacent les réglages globaux pour vos notifications.' }}
-    </p>
-  </div>
+<div class="ns-shell">
+  <header class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Configuration des notifications</h1>
+          <p class="page-subtitle">
+            {{ isGlobal ? 'Réglages globaux — s\'appliquent à toute agence sans configuration propre.' : 'Réglages de votre agence — remplacent les réglages globaux pour vos notifications.' }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container ns-page">
 
   <div *ngIf="isLoading" class="ns-loading">Chargement…</div>
 
   <form *ngIf="!isLoading" class="ns-form" (ngSubmit)="save()">
     <section class="ns-section">
-      <h2>Canaux</h2>
+      <h2><i class="material-icons">tune</i> Canaux</h2>
       <label class="ns-toggle">
         <input type="checkbox" [(ngModel)]="settings.channels.email" name="channelEmail" />
         <span>Email</span>
@@ -26,7 +34,7 @@
     </section>
 
     <section class="ns-section">
-      <h2>Événements relayés par email</h2>
+      <h2><i class="material-icons">mail</i> Événements relayés par email</h2>
       <p class="ns-hint">Un événement non listé ici est activé par défaut.</p>
       <label class="ns-toggle" *ngFor="let evt of eventTypes">
         <input type="checkbox" [checked]="isEventEnabled(evt.key)" (change)="toggleEvent(evt.key)" />
@@ -35,7 +43,7 @@
     </section>
 
     <section class="ns-section">
-      <h2>Configuration SMTP</h2>
+      <h2><i class="material-icons">dns</i> Configuration SMTP</h2>
       <p class="ns-hint">Laisser vide pour utiliser la configuration par défaut du serveur.</p>
       <div class="ns-grid">
         <div class="ns-field">
@@ -58,7 +66,7 @@
     </section>
 
     <section class="ns-section">
-      <h2>Clé API SMS Gateway <em>(à venir)</em></h2>
+      <h2><i class="material-icons">sms</i> Clé API SMS Gateway <em>(à venir)</em></h2>
       <input type="text" [(ngModel)]="settings.smsGatewayApiKey" name="smsGatewayApiKey" disabled
         title="Aucune intégration SMS n'existe aujourd'hui — champ préparé pour une future activation." />
     </section>
@@ -70,7 +78,7 @@
     </div>
 
     <section class="ns-section ns-section--test">
-      <h2>Tester l'envoi</h2>
+      <h2><i class="material-icons">send</i> Tester l'envoi</h2>
       <div class="ns-test-row">
         <input type="email" [(ngModel)]="testEmail" name="testEmail" placeholder="adresse@exemple.com" />
         <button type="button" class="btn btn-secondary" [disabled]="isSendingTest" (click)="sendTest()">
@@ -79,4 +87,5 @@
       </div>
     </section>
   </form>
+  </div>
 </div>
