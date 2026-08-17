@@ -575,17 +575,17 @@
                   <!-- Message -->
                   @if (showMessageModal) {
                     <div
-                      class="modal-overlay"
+                      class="drawer-overlay"
                       (click)="showMessageModal = false"
                       >
-                      <div class="modal-content" (click)="$event.stopPropagation()">
-                        <div class="modal-header">
+                      <div class="drawer-content" (click)="$event.stopPropagation()">
+                        <div class="drawer-header">
                           <h3>Décrivez nous votre besoins</h3>
-                          <button class="close-btn" (click)="showMessageModal = false">
+                          <button class="drawer-close-btn" (click)="showMessageModal = false">
                             <i class="material-icons">close</i>
                           </button>
                         </div>
-                        <form class="report-form">
+                        <form class="drawer-body">
                           <!-- <div class="form-group">
                           <label>Destinataire</label>
                           <select [(ngModel)]="messageData.receiver" name="receiver" required>
@@ -597,35 +597,39 @@
                             <option value="other">Autre</option>
                           </select>
                         </div>-->
-                        <div class="form-group">
-                          <label>Message</label>
-                          <textarea
-                            [(ngModel)]="messageData.content"
-                            name="content"
-                            rows="4"
-                            placeholder="Votre message..."
-                            required
-                          ></textarea>
+                          <div class="drawer-section">
+                            <h4 class="drawer-section-title">
+                              <i class="material-icons">message</i> Message
+                            </h4>
+                            <textarea
+                              [(ngModel)]="messageData.content"
+                              name="content"
+                              rows="4"
+                              placeholder="Votre message..."
+                              required
+                            ></textarea>
+                          </div>
+                        </form>
+                        <div class="drawer-footer">
+                          <div class="drawer-actions">
+                            <button
+                              type="button"
+                              class="btn btn-secondary"
+                              (click)="showMessageModal = false"
+                              >
+                              Annuler
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-primary"
+                              (click)="submitMessage(); showMessageModal = false"
+                              >
+                              <i class="material-icons">send</i>
+                              Envoyer
+                            </button>
+                          </div>
                         </div>
-                        <div class="form-actions">
-                          <button
-                            type="button"
-                            class="btn btn-secondary"
-                            (click)="showMessageModal = false"
-                            >
-                            Annuler
-                          </button>
-                          <button
-                            type="button"
-                            class="btn btn-primary"
-                            (click)="submitMessage(); showMessageModal = false"
-                            >
-                            <i class="material-icons">send</i>
-                            Envoyer
-                          </button>
-                        </div>
-                      </form>
-                    </div>
+                      </div>
                   </div>
                 }
               </div>
@@ -979,19 +983,21 @@
     <!-- Modal de signalement -->
     @if (showReportModal) {
       <div
-        class="modal-overlay"
+        class="drawer-overlay"
         (click)="showReportModal = false"
         >
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
+        <div class="drawer-content" (click)="$event.stopPropagation()">
+          <div class="drawer-header">
             <h3>{{ reportData.collecteId ? 'Signaler un problème sur cette collecte' : 'Signaler un problème général' }}</h3>
-            <button class="close-btn" (click)="showReportModal = false">
+            <button class="drawer-close-btn" (click)="showReportModal = false">
               <i class="material-icons">close</i>
             </button>
           </div>
-          <form class="report-form" (ngSubmit)="submitReport()">
-            <div class="form-group">
-              <label>Type de problème</label>
+          <form class="drawer-body" (ngSubmit)="submitReport()">
+            <div class="drawer-section">
+              <h4 class="drawer-section-title">
+                <i class="material-icons">report_problem</i> Type de problème
+              </h4>
               <select [(ngModel)]="reportData.type" name="type" required>
                 <option value="">Sélectionnez</option>
                 <option value="missed_collection">Collecte manquée</option>
@@ -1001,8 +1007,10 @@
                 <option value="other">Autre</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Description</label>
+            <div class="drawer-section">
+              <h4 class="drawer-section-title">
+                <i class="material-icons">notes</i> Description
+              </h4>
               <textarea
                 [(ngModel)]="reportData.description"
                 name="description"
@@ -1011,8 +1019,10 @@
                 required
               ></textarea>
             </div>
-            <div class="form-group">
-              <label>Etat du problème</label>
+            <div class="drawer-section">
+              <h4 class="drawer-section-title">
+                <i class="material-icons">priority_high</i> Etat du problème
+              </h4>
               <select [(ngModel)]="reportData.severity" name="severity" required>
                 <option value="">Sélectionnez</option>
                 <option value="low">Faible</option>
@@ -1026,21 +1036,23 @@
             <label>Date du problème</label>
             <input type="date" [(ngModel)]="reportData.date" name="date" required>
           </div>-->
-          <div class="form-actions">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              (click)="showReportModal = false"
-              >
-              Annuler
-            </button>
-            <button type="submit" class="btn btn-primary">
-              <i class="material-icons">send</i>
-              Envoyer
-            </button>
+          </form>
+          <div class="drawer-footer">
+            <div class="drawer-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="showReportModal = false"
+                >
+                Annuler
+              </button>
+              <button type="button" class="btn btn-primary" (click)="submitReport()">
+                <i class="material-icons">send</i>
+                Envoyer
+              </button>
+            </div>
           </div>
-        </form>
-      </div>
+        </div>
     </div>
   }
 
@@ -1116,46 +1128,50 @@
   <!-- Modal de paiement -->
   @if (showPaymentModal) {
     <div
-      class="modal-overlay"
+      class="drawer-overlay"
       (click)="showPaymentModal = false"
       >
-      <div class="modal-content payment-modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
+      <div class="drawer-content" (click)="$event.stopPropagation()">
+        <div class="drawer-header">
           <h3>Paiement sécurisé</h3>
-          <button class="close-btn" (click)="showPaymentModal = false">
+          <button class="drawer-close-btn" (click)="showPaymentModal = false">
             <i class="material-icons">close</i>
           </button>
         </div>
-        <div class="payment-form">
-          <div class="payment-summary">
-            <h4>Récapitulatif</h4>
-            <div class="summary-item">
-              <span>{{ subscription?.serviceName }}</span>
-              <span>{{ subscription?.price }}€</span>
+        <div class="drawer-body">
+          <div class="payment-form">
+            <div class="payment-summary">
+              <h4>Récapitulatif</h4>
+              <div class="summary-item">
+                <span>{{ subscription?.serviceName }}</span>
+                <span>{{ subscription?.price }}€</span>
+              </div>
+              <div class="summary-total">
+                <span>Total</span>
+                <span>{{ subscription?.price }}€</span>
+              </div>
             </div>
-            <div class="summary-total">
-              <span>Total</span>
-              <span>{{ subscription?.price }}€</span>
+            <div class="payment-methods">
+              <h4>Mode de paiement</h4>
+              <div class="payment-option">
+                <input type="radio" id="card" name="payment" value="card" checked />
+                <label for="card">
+                  <i class="material-icons">credit_card</i>
+                  Carte bancaire
+                </label>
+              </div>
+              <div class="payment-option">
+                <input type="radio" id="transfer" name="payment" value="transfer" />
+                <label for="transfer">
+                  <i class="material-icons">account_balance</i>
+                  Virement bancaire
+                </label>
+              </div>
             </div>
           </div>
-          <div class="payment-methods">
-            <h4>Mode de paiement</h4>
-            <div class="payment-option">
-              <input type="radio" id="card" name="payment" value="card" checked />
-              <label for="card">
-                <i class="material-icons">credit_card</i>
-                Carte bancaire
-              </label>
-            </div>
-            <div class="payment-option">
-              <input type="radio" id="transfer" name="payment" value="transfer" />
-              <label for="transfer">
-                <i class="material-icons">account_balance</i>
-                Virement bancaire
-              </label>
-            </div>
-          </div>
-          <div class="form-actions">
+        </div>
+        <div class="drawer-footer">
+          <div class="drawer-actions">
             <button
               type="button"
               class="btn btn-secondary"
@@ -1180,71 +1196,75 @@
   <!-- Modal de de recharge du wallet -->
   @if (showRechargeModal) {
     <div
-      class="modal-overlay"
+      class="drawer-overlay"
       (click)="showRechargeModal = false"
       >
-      <div class="modal-content payment-modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
+      <div class="drawer-content" (click)="$event.stopPropagation()">
+        <div class="drawer-header">
           <h3>Recharger mon compte</h3>
-          <button class="close-btn" (click)="showRechargeModal = false">
+          <button class="drawer-close-btn" (click)="showRechargeModal = false">
             <i class="material-icons">close</i>
           </button>
         </div>
-        <div class="payment-form">
-          <div class="payment-methods">
-            <h4>Mode de paiement</h4>
-            <div class="payment-option">
-              <input type="radio" id="card" name="payment" value="card" checked />
-              <label for="card">
-                <i class="material-icons">billet</i>
-                Orange money
-              </label>
-            </div>
-            <div class="payment-option">
-              <label for="amount">Montant :</label>
-              <input
-                type="number"
-                min="100"
-                id="amount"
-                name="amount"
-                [(ngModel)]="rechargeAmount"
-                placeholder="Entrez le montant en FCFA"
-                />
+        <div class="drawer-body">
+          <div class="payment-form">
+            <div class="payment-methods">
+              <h4>Mode de paiement</h4>
+              <div class="payment-option">
+                <input type="radio" id="card" name="payment" value="card" checked />
+                <label for="card">
+                  <i class="material-icons">billet</i>
+                  Orange money
+                </label>
               </div>
-              <!-- <div class="payment-option" >
-              <input type="radio" id="transfer" name="payment" value="transfer" [disabled]="true">
-              <label for="transfer">
-                <i class="material-icons">account_balance</i>
-                Virement bancaire
-              </label>
+              <div class="payment-option">
+                <label for="amount">Montant :</label>
+                <input
+                  type="number"
+                  min="100"
+                  id="amount"
+                  name="amount"
+                  [(ngModel)]="rechargeAmount"
+                  placeholder="Entrez le montant en FCFA"
+                  />
+                </div>
+                <!-- <div class="payment-option" >
+                <input type="radio" id="transfer" name="payment" value="transfer" [disabled]="true">
+                <label for="transfer">
+                  <i class="material-icons">account_balance</i>
+                  Virement bancaire
+                </label>
+              </div>
+              <div class="payment-option">
+                <input type="radio" id="card" name="payment" value="card"  [disabled]="true">
+                <label for="card">
+                  <i class="material-icons">credit_card</i>
+                  Carte bancaire
+                </label>
+              </div> -->
             </div>
-            <div class="payment-option">
-              <input type="radio" id="card" name="payment" value="card"  [disabled]="true">
-              <label for="card">
-                <i class="material-icons">credit_card</i>
-                Carte bancaire
-              </label>
-            </div> -->
+            <div class="payment-summary">
+              <h4>Récapitulatif</h4>
+              <div class="summary-item">
+                <span>Solde actuel</span>
+                <span>{{ clientBalance | number }} <sup>FCFA</sup></span>
+              </div>
+              <div class="summary-item">
+                <span>Ajout</span>
+                <span>{{ rechargeAmount | number }} <sup>FCFA</sup></span>
+              </div>
+              <div class="summary-total">
+                <span>Total</span>
+                <span
+                  >{{ clientBalance + rechargeAmount | number }}
+                  <sup>FCFA</sup></span
+                  >
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="payment-summary">
-            <h4>Récapitulatif</h4>
-            <div class="summary-item">
-              <span>Solde actuel</span>
-              <span>{{ clientBalance | number }} <sup>FCFA</sup></span>
-            </div>
-            <div class="summary-item">
-              <span>Ajout</span>
-              <span>{{ rechargeAmount | number }} <sup>FCFA</sup></span>
-            </div>
-            <div class="summary-total">
-              <span>Total</span>
-              <span
-                >{{ clientBalance + rechargeAmount | number }}
-                <sup>FCFA</sup></span
-                >
-              </div>
-            </div>
-            <div class="form-actions">
+          <div class="drawer-footer">
+            <div class="drawer-actions">
               <button
                 type="button"
                 class="btn btn-secondary"

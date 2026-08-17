@@ -1,12 +1,13 @@
-<div class="modal-overlay" (click)="annuler()">
-  <div class="modal-content fin-create-withdrawal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3 class="modal-title">Nouveau retrait</h3>
-      <button type="button" class="close-btn" (click)="annuler()" aria-label="Fermer">
+<div class="drawer-overlay" (click)="annuler()">
+  <div class="drawer-content fin-create-withdrawal" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>Nouveau retrait</h3>
+      <button type="button" class="drawer-close-btn" (click)="annuler()" aria-label="Fermer">
         <i class="material-icons" aria-hidden="true">close</i>
       </button>
     </div>
 
+    <div class="drawer-body">
     <div class="fin-create-withdrawal__error" role="alert" *ngIf="erreur() as message">
       <i class="material-icons" aria-hidden="true">error_outline</i>
       {{ message }}
@@ -74,6 +75,7 @@
           {{ enregistrement() ? 'Enregistrement…' : 'Confirmer le retrait' }}
         </button>
       </div>
+    </div>
     </div>
   </div>
 </div>

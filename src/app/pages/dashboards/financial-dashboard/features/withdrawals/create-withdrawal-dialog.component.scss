@@ -1,34 +1,107 @@
-// Le CSS global .modal-overlay (styles.scss) aligne le panneau à droite
-// (justify-content: end — effet "tiroir"). Centré ici à la place, override scopé à ce
-// composant uniquement (encapsulation Angular) : n'affecte pas les 6 autres écrans qui
-// utilisent la même classe globale avec l'alignement à droite.
-.modal-overlay {
-  justify-content: center;
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeInDrawer 0.3s ease;
 }
 
-// Le CSS global .modal-header/.close-btn (styles.scss) positionne .close-btn en
-// position: fixed — pensé pour des modals plus larges ailleurs dans l'app, ça chevauche le
-// titre ici. Override scopé à ce composant uniquement (encapsulation Angular), sans toucher
-// aux 6 autres écrans qui utilisent ces mêmes classes globales.
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+@keyframes fadeInDrawer {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-  .modal-title {
+.drawer-content {
+  background: var(--white);
+  width: 480px;
+  max-width: 90vw;
+  height: 100%;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRightDrawer 0.3s ease;
+  overflow: hidden;
+}
+
+@keyframes slideInRightDrawer {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
     margin: 0;
   }
+}
 
-  .close-btn {
-    position: static;
-    background: none;
-    color: #64748b;
+.drawer-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 1.5rem;
+  transition: color 0.2s ease;
+  padding: 4px;
+  border-radius: 4px;
 
-    &:hover {
-      color: #1e293b;
-    }
+  &:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
   }
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.drawer-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .drawer-content {
+    width: 100%;
+    max-width: 100vw;
+  }
+  .drawer-header,
+  .drawer-body,
+  .drawer-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .drawer-header h3 { font-size: 1.125rem; }
+  .drawer-actions { flex-direction: column; }
+  .drawer-actions .btn { width: 100%; justify-content: center; }
 }
 
 .fin-create-withdrawal {

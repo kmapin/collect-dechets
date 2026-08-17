@@ -529,17 +529,7 @@
           <div class="agencies-header">
             <h2>Audit des Agences</h2>
             <div class="agencies-filters">
-              <!-- Toggle carte / tableau -->
-              <div class="view-mode-toggle">
-                <button class="view-mode-btn" [class.active]="agenciesViewMode === 'card'"
-                  (click)="agenciesViewMode = 'card'">
-                  <i class="material-icons">grid_view</i><span>Cartes</span>
-                </button>
-                <button class="view-mode-btn" [class.active]="agenciesViewMode === 'table'"
-                  (click)="agenciesViewMode = 'table'">
-                  <i class="material-icons">table_rows</i><span>Tableau</span>
-                </button>
-              </div>
+             
               <div class="search">
                 <i class="material-icons search-icon">search</i>
                 <input type="text" id="search" class="search-input" name="search" placeholder="Rechercher par nom"
@@ -551,6 +541,18 @@
                 <option value="inactive">Inactives</option>
                 <option value="deleted">Supprimées</option>
               </select>
+
+              <!-- Toggle carte / tableau -->
+              <div class="view-mode-toggle">
+                <button class="view-mode-btn" [class.active]="agenciesViewMode === 'card'"
+                  (click)="agenciesViewMode = 'card'">
+                  <i class="material-icons">grid_view</i><span>Cartes</span>
+                </button>
+                <button class="view-mode-btn" [class.active]="agenciesViewMode === 'table'"
+                  (click)="agenciesViewMode = 'table'">
+                  <i class="material-icons">table_rows</i><span>Tableau</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1796,17 +1798,7 @@
           <div class="incidents-header">
             <h2>Gestion des Incidents</h2>
             <div class="incidents-filters">
-              <!-- Toggle carte / tableau -->
-              <div class="view-mode-toggle">
-                <button class="view-mode-btn" [class.active]="incidentsViewMode === 'card'"
-                  (click)="incidentsViewMode = 'card'">
-                  <i class="material-icons">grid_view</i><span>Cartes</span>
-                </button>
-                <button class="view-mode-btn" [class.active]="incidentsViewMode === 'table'"
-                  (click)="incidentsViewMode = 'table'">
-                  <i class="material-icons">table_rows</i><span>Tableau</span>
-                </button>
-              </div>
+      
               <!-- Recherche texte -->
               <div class="search-box">
                 <i class="material-icons search-icon">search</i>
@@ -1891,6 +1883,18 @@
                 <i class="material-icons">download</i>
                 Exporter
               </button>
+
+              <!-- Toggle carte / tableau -->
+              <div class="view-mode-toggle">
+                <button class="view-mode-btn" [class.active]="incidentsViewMode === 'card'"
+                  (click)="incidentsViewMode = 'card'">
+                  <i class="material-icons">grid_view</i><span>Cartes</span>
+                </button>
+                <button class="view-mode-btn" [class.active]="incidentsViewMode === 'table'"
+                  (click)="incidentsViewMode = 'table'">
+                  <i class="material-icons">table_rows</i><span>Tableau</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2446,69 +2450,79 @@
     </div>
   </div>
 
-  <!-- Modal Communication -->
-  <div class="modal-overlay" *ngIf="showCommunicationModal" (click)="showCommunicationModal = false">
-    <div class="modal-content communication-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
+  <!-- Drawer Communication -->
+  <div class="drawer-overlay" *ngIf="showCommunicationModal" (click)="showCommunicationModal = false">
+    <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
         <h3>Nouvelle Communication</h3>
-        <button class="close-btn" (click)="showCommunicationModal = false">
+        <button class="drawer-close-btn" (click)="showCommunicationModal = false">
           <i class="material-icons">close</i>
         </button>
       </div>
-      <form class="communication-form" (ngSubmit)="sendCommunication()">
-        <div class="form-group">
-          <label>Type de communication *</label>
-          <select [(ngModel)]="newCommunication.type" name="type" required>
-            <option value="">Sélectionner un type</option>
-            <option value="notification">Notification</option>
-            <option value="directive">Directive</option>
-            <option value="alert">Alerte</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Priorité *</label>
-          <select [(ngModel)]="newCommunication.priority" name="priority" required>
-            <option value="low">Faible</option>
-            <option value="medium">Moyenne</option>
-            <option value="high">Élevée</option>
-            <option value="urgent">Urgente</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Titre *</label>
-          <input type="text" [(ngModel)]="newCommunication.title" name="title" placeholder="Titre de la communication"
-            required />
-        </div>
-        <div class="form-group">
-          <label>Message *</label>
-          <textarea [(ngModel)]="newCommunication.message" name="message" rows="4" placeholder="Contenu du message..."
-            required></textarea>
-        </div>
-        <div class="form-group">
-          <label>Destinataires *</label>
-          <div class="recipients-checkboxes">
-            <label class="checkbox-label">
-              <input type="checkbox" (change)="toggleAllAgencies($event)" />
-              <span class="checkmark"></span>
-              Toutes les agences
-            </label>
-            <label *ngFor="let agency of communicationRecipientAgencies" class="checkbox-label">
-              <input type="checkbox" [value]="agency.id" (change)="toggleRecipient(agency.id, $event)" />
-              <span class="checkmark"></span>
-              {{ agency.name }}
-            </label>
+      <form class="drawer-body" (ngSubmit)="sendCommunication()">
+        <div class="drawer-section">
+          <h4 class="drawer-section-title"><i class="material-icons">campaign</i> Type &amp; priorité</h4>
+          <div class="form-group">
+            <label>Type de communication *</label>
+            <select [(ngModel)]="newCommunication.type" name="type" required>
+              <option value="">Sélectionner un type</option>
+              <option value="notification">Notification</option>
+              <option value="directive">Directive</option>
+              <option value="alert">Alerte</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priorité *</label>
+            <select [(ngModel)]="newCommunication.priority" name="priority" required>
+              <option value="low">Faible</option>
+              <option value="medium">Moyenne</option>
+              <option value="high">Élevée</option>
+              <option value="urgent">Urgente</option>
+            </select>
           </div>
         </div>
-        <div class="form-actions">
+        <div class="drawer-section">
+          <h4 class="drawer-section-title"><i class="material-icons">edit_note</i> Contenu</h4>
+          <div class="form-group">
+            <label>Titre *</label>
+            <input type="text" [(ngModel)]="newCommunication.title" name="title" placeholder="Titre de la communication"
+              required />
+          </div>
+          <div class="form-group">
+            <label>Message *</label>
+            <textarea [(ngModel)]="newCommunication.message" name="message" rows="4" placeholder="Contenu du message..."
+              required></textarea>
+          </div>
+        </div>
+        <div class="drawer-section">
+          <h4 class="drawer-section-title"><i class="material-icons">group</i> Destinataires</h4>
+          <div class="form-group">
+            <div class="recipients-checkboxes">
+              <label class="checkbox-label">
+                <input type="checkbox" (change)="toggleAllAgencies($event)" />
+                <span class="checkmark"></span>
+                Toutes les agences
+              </label>
+              <label *ngFor="let agency of communicationRecipientAgencies" class="checkbox-label">
+                <input type="checkbox" [value]="agency.id" (change)="toggleRecipient(agency.id, $event)" />
+                <span class="checkmark"></span>
+                {{ agency.name }}
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
+      <div class="drawer-footer">
+        <div class="drawer-actions">
           <button type="button" class="btn btn-secondary" (click)="showCommunicationModal = false">
             Annuler
           </button>
-          <button type="submit" class="btn btn-primary">
+          <button type="button" class="btn btn-primary" (click)="sendCommunication()">
             <i class="material-icons">send</i>
             Envoyer
           </button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 </div>

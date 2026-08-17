@@ -1977,21 +1977,25 @@
         </div>
         <!-- Message -->
         @if (showMessageModal) {
-        <div class="modal-overlay" (click)="showMessageModal = false">
-          <div class="modal-content" (click)="$event.stopPropagation()">
-            <div class="modal-header">
+        <div class="drawer-overlay" (click)="showMessageModal = false">
+          <div class="drawer-content" (click)="$event.stopPropagation()">
+            <div class="drawer-header">
               <h3>Décrivez nous votre besoins</h3>
-              <button class="close-btn" (click)="showMessageModal = false">
+              <button class="drawer-close-btn" (click)="showMessageModal = false">
                 <i class="material-icons">close</i>
               </button>
             </div>
-            <form class="report-form">
-              <div class="form-group">
-                <label>Message</label>
-                <textarea [(ngModel)]="messageData.content" name="content" rows="4" placeholder="Votre message..."
-                  required></textarea>
-              </div>
-              <div class="form-actions">
+            <div class="drawer-body">
+              <form class="report-form">
+                <div class="form-group">
+                  <label>Message</label>
+                  <textarea [(ngModel)]="messageData.content" name="content" rows="4" placeholder="Votre message..."
+                    required></textarea>
+                </div>
+              </form>
+            </div>
+            <div class="drawer-footer">
+              <div class="drawer-actions">
                 <button type="button" class="btn btn-secondary" (click)="showMessageModal = false">
                   Annuler
                 </button>
@@ -2000,7 +2004,7 @@
                   Envoyer
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
         }
@@ -3001,12 +3005,17 @@
   </div>
 </div>
 } @if (selectedImage) {
-<div class="modal-overlay" (click)="closeImageModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <img [src]="selectedImage" alt="Image en plein écran" class="full-image" />
-    <button class="close-btn" (click)="closeImageModal()">
-      <i class="material-icons">close</i>
-    </button>
+<div class="drawer-overlay" (click)="closeImageModal()">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>Image</h3>
+      <button class="drawer-close-btn" (click)="closeImageModal()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <img [src]="selectedImage" alt="Image en plein écran" class="full-image" />
+    </div>
   </div>
 </div>
 } @if (showHistoryModal) {
@@ -3183,18 +3192,18 @@
 
 <!-- Modal de confirmation de suppression -->
 @if (showDeleteConfirmation) {
-<div class="modal-overlay" (click)="cancelDeleteEmployee()">
-  <div class="modal-content delete-confirmation" (click)="$event.stopPropagation()">
-    <div class="modal-header">
+<div class="drawer-overlay" (click)="cancelDeleteEmployee()">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
       <h3>
         <i class="material-icons text-danger">warning</i>
         Confirmer la suppression
       </h3>
-      <button class="close-btn" (click)="cancelDeleteEmployee()" [disabled]="isDeleting">
+      <button class="drawer-close-btn" (click)="cancelDeleteEmployee()" [disabled]="isDeleting">
         <i class="material-icons">close</i>
       </button>
     </div>
-    <div class="modal-body">
+    <div class="drawer-body">
       <p class="confirmation-text">
         Êtes-vous sûr de vouloir supprimer
         <strong>{{ employeeToDelete?.displayName }}</strong> ?
@@ -3205,19 +3214,21 @@
         du système.
       </p>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" (click)="cancelDeleteEmployee()" [disabled]="isDeleting">
-        <i class="material-icons">close</i>
-        Annuler
-      </button>
-      <button class="btn btn-danger" (click)="confirmDeleteEmployee()" [disabled]="isDeleting">
-        <i class="material-icons">delete_forever</i>
-        @if (!isDeleting) {
-        <span>Supprimer définitivement</span>
-        } @if (isDeleting) {
-        <span>Suppression...</span>
-        }
-      </button>
+    <div class="drawer-footer">
+      <div class="drawer-actions">
+        <button class="btn btn-secondary" (click)="cancelDeleteEmployee()" [disabled]="isDeleting">
+          <i class="material-icons">close</i>
+          Annuler
+        </button>
+        <button class="btn btn-danger" (click)="confirmDeleteEmployee()" [disabled]="isDeleting">
+          <i class="material-icons">delete_forever</i>
+          @if (!isDeleting) {
+          <span>Supprimer définitivement</span>
+          } @if (isDeleting) {
+          <span>Suppression...</span>
+          }
+        </button>
+      </div>
     </div>
   </div>
 </div>

@@ -511,233 +511,261 @@
                                   <!-- Modal de signalement d'incident -->
                                   @if (showIncidentModal) {
                                     <div
-                                      class="modal-overlay"
+                                      class="drawer-overlay"
                                       (click)="showIncidentModal = false"
                                       >
-                                      <div class="modal-content" (click)="$event.stopPropagation()">
-                                        <div class="modal-header">
+                                      <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+                                        <div class="drawer-header">
                                           <h3>Signaler un incident</h3>
-                                          <button class="close-btn" (click)="showIncidentModal = false">
+                                          <button class="drawer-close-btn" (click)="showIncidentModal = false">
                                             <i class="material-icons">close</i>
                                           </button>
                                         </div>
                                         <form class="incident-form" (ngSubmit)="submitIncident()">
-                                          <div class="form-group">
-                                            <label>Type d'incident</label>
-                                            <select [(ngModel)]="incidentData.type" name="type" required>
-                                              <option value="">Sélectionnez un type</option>
-                                              <option value="non_compliant">Déchets non conformes</option>
-                                              <option value="access_blocked">Accès bloqué</option>
-                                              <option value="equipment_issue">Problème d'équipement</option>
-                                              <option value="other">Autre</option>
-                                            </select>
-                                          </div>
-                                          <div class="form-group">
-                                            <label>Collection concernée</label>
-                                            <select
-                                              [(ngModel)]="incidentData.collectionId"
-                                              name="collectionId"
-                                              required
-                                              >
-                                              <option value="">Sélectionnez une collecte</option>
-                                              @for (point of collectionPoints; track point) {
-                                                <option [value]="point.id">
-                                                  {{ point.clientName }} - {{ point.address }}
-                                                </option>
-                                              }
-                                            </select>
-                                          </div>
-                                          <div class="form-group">
-                                            <label>Description</label>
-                                            <textarea
-                                              [(ngModel)]="incidentData.description"
-                                              name="description"
-                                              rows="4"
-                                              placeholder="Décrivez l'incident..."
-                                              required
-                                            ></textarea>
-                                          </div>
-                                          <div class="form-group">
-                                            <label>Photos (optionnel)</label>
-                                            <div class="photo-upload">
-                                              <input
-                                                type="file"
-                                                #incidentPhotoInput
-                                                multiple
-                                                accept="image/*"
-                                                (change)="onIncidentPhotosSelected($event)"
-                                                style="display: none"
-                                                />
-                                                <button
-                                                  type="button"
-                                                  class="upload-btn"
-                                                  (click)="incidentPhotoInput.click()"
+                                          <div class="drawer-body">
+                                            <div class="drawer-section">
+                                              <h4 class="drawer-section-title">
+                                                <i class="material-icons">report_problem</i>
+                                                Type & collecte concernée
+                                              </h4>
+                                              <div class="form-group">
+                                                <label>Type d'incident</label>
+                                                <select [(ngModel)]="incidentData.type" name="type" required>
+                                                  <option value="">Sélectionnez un type</option>
+                                                  <option value="non_compliant">Déchets non conformes</option>
+                                                  <option value="access_blocked">Accès bloqué</option>
+                                                  <option value="equipment_issue">Problème d'équipement</option>
+                                                  <option value="other">Autre</option>
+                                                </select>
+                                              </div>
+                                              <div class="form-group">
+                                                <label>Collection concernée</label>
+                                                <select
+                                                  [(ngModel)]="incidentData.collectionId"
+                                                  name="collectionId"
+                                                  required
                                                   >
-                                                  <i class="material-icons">camera_alt</i>
-                                                  Ajouter des photos
-                                                </button>
-                                                @if (incidentPhotos.length > 0) {
-                                                  <div class="photo-preview">
-                                                    @for (photo of incidentPhotos; track photo) {
-                                                      <div class="photo-item">
-                                                        <img [src]="photo.preview" alt="Photo incident" />
-                                                        <button
-                                                          type="button"
-                                                          class="remove-photo"
-                                                          (click)="removeIncidentPhoto(photo)"
-                                                          >
-                                                          <i class="material-icons">close</i>
-                                                        </button>
+                                                  <option value="">Sélectionnez une collecte</option>
+                                                  @for (point of collectionPoints; track point) {
+                                                    <option [value]="point.id">
+                                                      {{ point.clientName }} - {{ point.address }}
+                                                    </option>
+                                                  }
+                                                </select>
+                                              </div>
+                                            </div>
+                                            <div class="drawer-section">
+                                              <h4 class="drawer-section-title">
+                                                <i class="material-icons">description</i>
+                                                Description
+                                              </h4>
+                                              <div class="form-group">
+                                                <textarea
+                                                  [(ngModel)]="incidentData.description"
+                                                  name="description"
+                                                  rows="4"
+                                                  placeholder="Décrivez l'incident..."
+                                                  required
+                                                ></textarea>
+                                              </div>
+                                            </div>
+                                            <div class="drawer-section">
+                                              <h4 class="drawer-section-title">
+                                                <i class="material-icons">photo_camera</i>
+                                                Photos
+                                              </h4>
+                                              <div class="form-group">
+                                                <div class="photo-upload">
+                                                  <input
+                                                    type="file"
+                                                    #incidentPhotoInput
+                                                    multiple
+                                                    accept="image/*"
+                                                    (change)="onIncidentPhotosSelected($event)"
+                                                    style="display: none"
+                                                    />
+                                                    <button
+                                                      type="button"
+                                                      class="upload-btn"
+                                                      (click)="incidentPhotoInput.click()"
+                                                      >
+                                                      <i class="material-icons">camera_alt</i>
+                                                      Ajouter des photos
+                                                    </button>
+                                                    @if (incidentPhotos.length > 0) {
+                                                      <div class="photo-preview">
+                                                        @for (photo of incidentPhotos; track photo) {
+                                                          <div class="photo-item">
+                                                            <img [src]="photo.preview" alt="Photo incident" />
+                                                            <button
+                                                              type="button"
+                                                              class="remove-photo"
+                                                              (click)="removeIncidentPhoto(photo)"
+                                                              >
+                                                              <i class="material-icons">close</i>
+                                                            </button>
+                                                          </div>
+                                                        }
                                                       </div>
                                                     }
                                                   </div>
-                                                }
+                                                </div>
                                               </div>
                                             </div>
-                                            <div class="form-actions">
-                                              <button
-                                                type="button"
-                                                class="btn btn-secondary"
-                                                (click)="showIncidentModal = false"
-                                                >
-                                                Annuler
-                                              </button>
-                                              <button type="submit" class="btn btn-primary">
-                                                <i class="material-icons">send</i>
-                                                Signaler
-                                              </button>
-                                            </div>
                                           </form>
+                                        <div class="drawer-footer">
+                                          <div class="drawer-actions">
+                                            <button
+                                              type="button"
+                                              class="btn btn-secondary"
+                                              (click)="showIncidentModal = false"
+                                              >
+                                              Annuler
+                                            </button>
+                                            <button type="button" class="btn btn-primary" (click)="submitIncident()">
+                                              <i class="material-icons">send</i>
+                                              Signaler
+                                            </button>
+                                          </div>
                                         </div>
                                       </div>
-                                    }
+                                    </div>
+                                  }
 
                                     <!-- Modal QR Scanner -->
                                     @if (showQrScanner) {
                                       <div
-                                        class="modal-overlay"
+                                        class="drawer-overlay"
                                         (click)="showQrScanner = !showQrScanner"
                                         >
-                                        <div class="modal-content" (click)="$event.stopPropagation()">
-                                          <div class="modal-header">
+                                        <div class="drawer-content" (click)="$event.stopPropagation()">
+                                          <div class="drawer-header">
                                             <h3>Scanner un QR Code</h3>
-                                            <button class="close-btn" (click)="showQrScanner = !showQrScanner">
+                                            <button class="drawer-close-btn" (click)="showQrScanner = !showQrScanner">
                                               <i class="material-icons">close</i>
                                             </button>
                                           </div>
-                                          <div class="scanner-container">
-                                            @if (!cameraError) {
-                                              <zxing-scanner
-                                                [formats]="qrFormats"
-                                                (scanSuccess)="onQrCodeResult($event)"
-                                                (scanError)="onScanError($event)"
-                                                (camerasFound)="onCamerasFound($event)"
-                                                [torch]="false"
-                                                [tryHarder]="true"
-                                                [device]="selectedDevice"
-                                                [autostart]="true"
-                                                [previewFitMode]="'cover'"
-                                              ></zxing-scanner>
-                                            }
-                                            <!-- Message d'erreur de caméra -->
-                                            @if (cameraError) {
-                                              <div class="camera-error">
-                                                <div class="error-content">
-                                                  <i class="material-icons error-icon">videocam_off</i>
-                                                  <h3>Caméra inaccessible</h3>
-                                                  <p>{{ cameraErrorMessage }}</p>
-                                                  <div class="error-actions">
-                                                    <button class="btn btn-primary" (click)="retryCamera()">
-                                                      <i class="material-icons">refresh</i>
-                                                      Réessayer
-                                                    </button>
-                                                    <button class="btn btn-secondary" (click)="useFileImport()">
-                                                      <i class="material-icons">upload_file</i>
-                                                      Importer une image
-                                                    </button>
+                                          <div class="drawer-body">
+                                            <div class="scanner-container">
+                                              @if (!cameraError) {
+                                                <zxing-scanner
+                                                  [formats]="qrFormats"
+                                                  (scanSuccess)="onQrCodeResult($event)"
+                                                  (scanError)="onScanError($event)"
+                                                  (camerasFound)="onCamerasFound($event)"
+                                                  [torch]="false"
+                                                  [tryHarder]="true"
+                                                  [device]="selectedDevice"
+                                                  [autostart]="true"
+                                                  [previewFitMode]="'cover'"
+                                                ></zxing-scanner>
+                                              }
+                                              <!-- Message d'erreur de caméra -->
+                                              @if (cameraError) {
+                                                <div class="camera-error">
+                                                  <div class="error-content">
+                                                    <i class="material-icons error-icon">videocam_off</i>
+                                                    <h3>Caméra inaccessible</h3>
+                                                    <p>{{ cameraErrorMessage }}</p>
+                                                    <div class="error-actions">
+                                                      <button class="btn btn-primary" (click)="retryCamera()">
+                                                        <i class="material-icons">refresh</i>
+                                                        Réessayer
+                                                      </button>
+                                                      <button class="btn btn-secondary" (click)="useFileImport()">
+                                                        <i class="material-icons">upload_file</i>
+                                                        Importer une image
+                                                      </button>
+                                                    </div>
                                                   </div>
                                                 </div>
-                                              </div>
-                                            }
+                                              }
+                                            </div>
+                                            <!-- Input file caché pour l'import de QR code -->
+                                            <input
+                                              #fileInput
+                                              type="file"
+                                              accept="image/*"
+                                              style="display: none"
+                                              (change)="onFileSelected($event)"
+                                              />
                                           </div>
-                                          <div class="scanner-controls">
-                                            <button
-                                              class="btn btn-secondary"
-                                              (click)="showQrScanner = !showQrScanner"
-                                              >
-                                              Fermer
-                                            </button>
-                                            <button class="btn btn-info btn-full" (click)="importQrFromFile()">
-                                              <i class="material-icons">upload_file</i>
-                                              Importer QR Code
-                                            </button>
-                                          </div>
-                                          <!-- Input file caché pour l'import de QR code -->
-                                          <input
-                                            #fileInput
-                                            type="file"
-                                            accept="image/*"
-                                            style="display: none"
-                                            (change)="onFileSelected($event)"
-                                            />
+                                          <div class="drawer-footer">
+                                            <div class="drawer-actions">
+                                              <button
+                                                class="btn btn-secondary"
+                                                (click)="showQrScanner = !showQrScanner"
+                                                >
+                                                Fermer
+                                              </button>
+                                              <button class="btn btn-info btn-full" (click)="importQrFromFile()">
+                                                <i class="material-icons">upload_file</i>
+                                                Importer QR Code
+                                              </button>
+                                            </div>
                                           </div>
                                         </div>
-                                      }
+                                      </div>
+                                    }
                                       <!-- Modal infos client scanné -->
                                       @if (showClientModal) {
                                         <div
-                                          class="modal-overlay"
+                                          class="drawer-overlay"
                                           (click)="showClientModal = false"
                                           >
-                                          <div class="modal-content" (click)="$event.stopPropagation()">
-                                            <div class="modal-header">
+                                          <div class="drawer-content" (click)="$event.stopPropagation()">
+                                            <div class="drawer-header">
                                               <h3>Informations du client</h3>
-                                              <button class="close-btn" (click)="showClientModal = false">
+                                              <button class="drawer-close-btn" (click)="showClientModal = false">
                                                 <i class="material-icons">close</i>
                                               </button>
                                             </div>
-                                            @if (scannedClient) {
-                                              <div>
-                                                <p>
-                                                  <strong>Nom :</strong> {{ scannedClient?.firstName }} {{
-                                                  scannedClient?.lastName }}
-                                                </p>
-                                                <p><strong>Téléphone :</strong> {{ scannedClient?.phone }}</p>
-                                                <p><strong>Statut :</strong> {{ scannedClient?.subscriptionStatus }}</p>
-                                                <p>
-                                                  <strong>Adresse :</strong>
-                                                  {{ scannedClient?.address?.doorNumber }} {{
-                                                  scannedClient?.address?.street }}, {{
-                                                  scannedClient?.address?.neighborhood }}, {{
-                                                  scannedClient?.address?.city }}
-                                                </p>
-                                                <p>
-                                                  <strong>Couleur porte :</strong>
-                                                  {{ scannedClient?.address?.doorColor }}
-                                                </p>
-                                                <p>
-                                                  <strong>Arrondissement :</strong>
-                                                  {{ scannedClient?.address?.arrondissement }}
-                                                </p>
-                                                <p><strong>Secteur :</strong> {{ scannedClient?.address?.sector }}</p>
-                                                <p>
-                                                  <strong>Code postal :</strong>
-                                                  {{ scannedClient?.address?.postalCode }}
-                                                </p>
+                                            <div class="drawer-body">
+                                              @if (scannedClient) {
+                                                <div>
+                                                  <p>
+                                                    <strong>Nom :</strong> {{ scannedClient?.firstName }} {{
+                                                    scannedClient?.lastName }}
+                                                  </p>
+                                                  <p><strong>Téléphone :</strong> {{ scannedClient?.phone }}</p>
+                                                  <p><strong>Statut :</strong> {{ scannedClient?.subscriptionStatus }}</p>
+                                                  <p>
+                                                    <strong>Adresse :</strong>
+                                                    {{ scannedClient?.address?.doorNumber }} {{
+                                                    scannedClient?.address?.street }}, {{
+                                                    scannedClient?.address?.neighborhood }}, {{
+                                                    scannedClient?.address?.city }}
+                                                  </p>
+                                                  <p>
+                                                    <strong>Couleur porte :</strong>
+                                                    {{ scannedClient?.address?.doorColor }}
+                                                  </p>
+                                                  <p>
+                                                    <strong>Arrondissement :</strong>
+                                                    {{ scannedClient?.address?.arrondissement }}
+                                                  </p>
+                                                  <p><strong>Secteur :</strong> {{ scannedClient?.address?.sector }}</p>
+                                                  <p>
+                                                    <strong>Code postal :</strong>
+                                                    {{ scannedClient?.address?.postalCode }}
+                                                  </p>
+                                                </div>
+                                              }
+                                            </div>
+                                            <div class="drawer-footer">
+                                              <div class="drawer-actions">
+                                                <button
+                                                  class="btn btn-success btn-full"
+                                                  (click)="confirmCurrentCollection()"
+                                                  >
+                                                  <i class="material-icons">check_circle</i>
+                                                  Confirmer la collecte
+                                                </button>
+                                                <button class="btn btn-secondary btn-full" (click)="cancelCollection()">
+                                                  <i class="material-icons">cancel</i>
+                                                  Annuler
+                                                </button>
                                               </div>
-                                            }
-                                            <div class="confirmation-actions">
-                                              <button
-                                                class="btn btn-success btn-full"
-                                                (click)="confirmCurrentCollection()"
-                                                >
-                                                <i class="material-icons">check_circle</i>
-                                                Confirmer la collecte
-                                              </button>
-                                              <button class="btn btn-secondary btn-full" (click)="cancelCollection()">
-                                                <i class="material-icons">cancel</i>
-                                                Annuler
-                                              </button>
                                             </div>
                                           </div>
                                         </div>

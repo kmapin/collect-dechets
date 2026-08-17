@@ -1175,7 +1175,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.isLoadingAgencies = true;
     this.agencyService.getAllAgenciesFromApi(agenciesFilter).subscribe({
       next: (agencies) => {
-        this.agencyAudits = (agencies.data ?? []).map((agency: any) => ({
+        this.agencyAudits = (Array.isArray(agencies?.data) ? agencies.data : []).map((agency: any) => ({
           id: agency?._id,
           name: agency?.name,
           status: agency?.status || "inactive",
@@ -1975,25 +1975,33 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.loadZoneStat();
   }
 
+  // Garde supplémentaire au niveau des getters (en plus de celle déjà posée à
+  // l'affectation dans loadZoneStat()) : quelle que soit la cause d'une forme
+  // inattendue de zoneCoverageData, ces getters ne doivent plus jamais planter.
+  private get safeZoneCoverageData(): typeof this.zoneCoverageData {
+    return Array.isArray(this.zoneCoverageData) ? this.zoneCoverageData : [];
+  }
+
   get coveragePercent(): number {
-    if (!this.zoneCoverageData.length) return 0;
-    const covered = this.zoneCoverageData.filter(z => z.planningsCount > 0).length;
-    return Math.round((covered / this.zoneCoverageData.length) * 100);
+    const data = this.safeZoneCoverageData;
+    if (!data.length) return 0;
+    const covered = data.filter(z => z.planningsCount > 0).length;
+    return Math.round((covered / data.length) * 100);
   }
 
   get criticalZones(): typeof this.zoneCoverageData {
-    return this.zoneCoverageData
+    return this.safeZoneCoverageData
       .filter(z => z.completionRate < 30 || z.equipesAssigned === 0)
       .sort((a, b) => a.completionRate - b.completionRate)
       .slice(0, 4);
   }
 
   get activeZonesCount(): number {
-    return this.zoneCoverageData.filter(z => z.completionRate >= 50 || z.status === 'active').length;
+    return this.safeZoneCoverageData.filter(z => z.completionRate >= 50 || z.status === 'active').length;
   }
 
   get coveredZonesCount(): number {
-    return this.zoneCoverageData.filter(z => z.planningsCount > 0).length;
+    return this.safeZoneCoverageData.filter(z => z.planningsCount > 0).length;
   }
 
   // loadIncidents1(): void {
@@ -2040,7 +2048,8 @@ export class AdminDashboard implements OnInit, OnDestroy {
     // côté backend (services/agency.js), déjà utilisé ailleurs (agencies.ts).
     this.agencyService.getAllAgenciesFromApi({ getAll: true }).subscribe({
       next: (response: any) => {
-        this.communicationRecipientAgencies = (response?.data ?? response ?? []).map((a: any) => ({
+        const list = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
+        this.communicationRecipientAgencies = list.map((a: any) => ({
           id: a._id,
           name: a.name,
         }));
@@ -3233,7 +3242,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.isLoadingClients = true;
     this.clientService.getAllClients().subscribe({
       next: (response: any) => {
-        this.clientsAudits = response?.data.map((client: any) => {
+        this.clientsAudits = (Array.isArray(response?.data) ? response.data : []).map((client: any) => {
           return {
             _id: client._id,
             data: client,
