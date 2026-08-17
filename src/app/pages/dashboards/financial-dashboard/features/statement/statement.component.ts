@@ -68,6 +68,15 @@ export class StatementComponent {
     });
   }
 
+  // Au clic dans le champ (avant toute frappe) : liste des clients de l'agence, pour
+  // parcourir plutôt que de devoir taper un nom au moins partiellement.
+  onRechercheFocus(): void {
+    if (this.recherche().trim()) return;
+    this.clientData.getClients({ pageSize: 8 }).subscribe(page => {
+      this.resultatsRecherche.set(page.items);
+    });
+  }
+
   selectionnerClient(client: Client): void {
     this.clientSelectionne.set(client);
     this.resultatsRecherche.set([]);

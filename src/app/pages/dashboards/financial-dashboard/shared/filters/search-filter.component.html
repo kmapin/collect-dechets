@@ -7,5 +7,6 @@
     [placeholder]="placeholder"
     [ngModel]="value"
     (ngModelChange)="onInput($event)"
+    (focus)="focused.emit()"
   />
 </label>

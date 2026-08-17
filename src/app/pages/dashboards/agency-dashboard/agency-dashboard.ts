@@ -223,13 +223,12 @@ type TabId =
   | "employees"
   | "zones"
   | "schedules"
-  | "clients"
   | "reports"
   | "demandes"
   | "messages"
   | "vehicles"
   | "contrats";
-
+// | "clients"
 interface Vehicle {
   _id?: string;
   plate: string;
@@ -593,7 +592,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     { id: "employees", label: "Employés", icon: "people", badge: null },
     { id: "zones", label: "Zones", icon: "map", badge: null },
     { id: "schedules", label: "Plannings", icon: "schedule", badge: null },
-    { id: "clients", label: "Clients", icon: "person", badge: null },
+    // { id: "clients", label: "Clients", icon: "person", badge: null },
     { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
     { id: "demandes", label: "Demandes express", icon: "local_shipping", badge: 0 },
     { id: "contrats", label: "Contrats", icon: "description", badge: null },
@@ -4261,6 +4260,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     endDate: '',
   };
   contratClientSearch = '';
+  contratClientDropdownOpen = false;
 
   /** Filtre la liste de clients du sélecteur "Nouveau contrat" par nom/prénom (recherche insensible à la casse). */
   get filteredContratClients(): ClientApi[] {
@@ -4269,6 +4269,22 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return this.allAgencyClients.filter((c: any) =>
       `${c.firstName} ${c.lastName}`.toLowerCase().includes(term),
     );
+  }
+
+  openContratClientDropdown(): void {
+    this.contratClientDropdownOpen = true;
+  }
+
+  selectContratClient(client: ClientApi): void {
+    this.newContrat.clientId = (client as any)._id;
+    this.contratClientDropdownOpen = false;
+    this.contratClientSearch = '';
+  }
+
+  /** Libellé affiché dans le déclencheur du combobox "Client" (nom du client sélectionné, sinon vide). */
+  selectedContratClientLabel(): string {
+    const client = this.allAgencyClients.find((c: any) => c._id === this.newContrat.clientId) as any;
+    return client ? `${client.firstName} ${client.lastName}` : '';
   }
 
   loadContrats(): void {
@@ -4289,6 +4305,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   openCreateContratModal(): void {
     this.newContrat = { clientId: '', pricingId: '', frequenceCollecte: 'monthly', endDate: '' };
     this.contratClientSearch = '';
+    this.contratClientDropdownOpen = false;
     this.showCreateContratModal = true;
   }
 

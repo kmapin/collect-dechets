@@ -1,5 +1,6 @@
 import { ClientStatut, FactureStatut } from '../../models';
 import { StatusBadgeVariant } from './status-badge.component';
+import { SourceEligibilite } from '../../data-access/contracts/facture-data.service';
 
 export interface BadgeInfo {
   label: string;
@@ -13,11 +14,25 @@ export function badgeStatutClient(statut: ClientStatut): BadgeInfo {
     : { label: 'Inactif', icon: 'block', variant: 'neutral' };
 }
 
-// RG4 : retard = nombre de factures mensuelles impayées cumulées.
-export function badgeSituationPaiement(moisRetard: number): BadgeInfo {
-  if (moisRetard <= 0) return { label: 'À jour', icon: 'check_circle', variant: 'success' };
+// "À jour" ⟺ abonnement actif OU contrat actif (aJour, dérivé côté backend de
+// EligibilityService.checkClientEligibility — jamais recalculé ici). Un contrat actif
+// reste éligible même en retard de paiement (voir eligibility.service.js), donc aJour
+// prime toujours sur moisRetard. moisRetard (RG4, nombre de factures mensuelles impayées
+// cumulées) ne sert qu'à distinguer, pour un client NON éligible, un simple impayé résiduel
+// (ex. contrat résilié avec redevance impayée) de l'absence totale d'abonnement/contrat.
+const LABEL_SOURCE: Record<SourceEligibilite, string> = {
+  CONTRACT: 'Contrat',
+  SUBSCRIPTION: 'Abonnement',
+  NONE: '',
+};
+
+export function badgeSituationPaiement(
+  { aJour, moisRetard, source }: { aJour: boolean; moisRetard: number; source: SourceEligibilite },
+): BadgeInfo {
+  if (aJour) return { label: `À jour (${LABEL_SOURCE[source]})`, icon: 'check_circle', variant: 'success' };
   if (moisRetard === 1) return { label: '1 mois de retard', icon: 'warning', variant: 'warning' };
-  return { label: `${moisRetard} mois de retard`, icon: 'error', variant: 'danger' };
+  if (moisRetard > 1) return { label: `${moisRetard} mois de retard`, icon: 'error', variant: 'danger' };
+  return { label: 'Aucun abonnement/contrat actif', icon: 'block', variant: 'neutral' };
 }
 
 export function badgeFacture(statut: FactureStatut): BadgeInfo {

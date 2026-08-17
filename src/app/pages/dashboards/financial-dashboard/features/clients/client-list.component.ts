@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Client, ClientStatut } from '../../models';
 import { CLIENT_DATA_SERVICE } from '../../data-access/tokens/client-data.token';
 import { FACTURE_DATA_SERVICE } from '../../data-access/tokens/facture-data.token';
+import { SituationPaiementClient } from '../../data-access/contracts/facture-data.service';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeSituationPaiement, badgeStatutClient } from '../../shared/status-badge/status-badge.util';
@@ -42,7 +43,7 @@ export class ClientListComponent {
   readonly total = signal(0);
   readonly chargement = signal(true);
   readonly erreur = signal<string | null>(null);
-  private readonly moisRetardParClient = signal<Map<string, number>>(new Map());
+  private readonly situationParClient = signal<Map<string, SituationPaiementClient>>(new Map());
 
   readonly badgeStatut = badgeStatutClient;
   readonly badgeSituation = badgeSituationPaiement;
@@ -84,14 +85,14 @@ export class ClientListComponent {
     this.router.navigate(['/dashboard/financial/clients', idClient]);
   }
 
-  moisRetardDe(idClient: string): number {
-    return this.moisRetardParClient().get(idClient) ?? 0;
+  situationDe(idClient: string): SituationPaiementClient {
+    return this.situationParClient().get(idClient) ?? { idClient, moisRetard: 0, aJour: false, source: 'NONE' };
   }
 
   private chargerSituations(): void {
     this.factureData.getSituationClients().subscribe({
-      next: situations => this.moisRetardParClient.set(new Map(situations.map(s => [s.idClient, s.moisRetard]))),
-      error: () => this.moisRetardParClient.set(new Map()),
+      next: situations => this.situationParClient.set(new Map(situations.map(s => [s.idClient, s]))),
+      error: () => this.situationParClient.set(new Map()),
     });
   }
 

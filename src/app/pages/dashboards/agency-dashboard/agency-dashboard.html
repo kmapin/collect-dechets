@@ -1213,7 +1213,7 @@
 
         <!-- Onglet Clients -->
         <!-- Clients Actifs  -->
-        @if (activeTab === 'clients') {
+        <!-- @if (activeTab === 'clients') {
         <div class="clients-tab">
           <div class="section-header">
             <h2>Clients Actifs et leurs abonnements</h2>
@@ -1226,7 +1226,6 @@
               </button>
             </div>
           </div>
-          <!-- Barre de recherche des clients (conditionnelle) -->
           @if (showClientsSearch) {
           <div class="clients-search-section" [@slideInOut]>
             <div class="search-container">
@@ -1242,7 +1241,6 @@
                 }
               </div>
             </div>
-            <!-- Filtres supplémentaires -->
             <div class="clients-filters">
               <div class="filter-group">
                 <label for="clientCityFilter">Ville :</label>
@@ -1286,7 +1284,6 @@
                 </select>
               </div>
             </div>
-            <!-- Résultats de la recherche -->
             @if (clientsSearch || clientsCityFilter !== 'all' ||
             clientsNeighborhoodFilter !== 'all' || clientsStatusFilter !==
             'all') {
@@ -1312,7 +1309,6 @@
             }
           </div>
           }
-          <!-- Indicateur de chargement pour les clients -->
           @if (isLoadingClients || isLoadingFilteredClients) {
           <app-loading-spinner
             [message]="isLoadingFilteredClients ? 'Filtrage des clients...' : 'Chargement des clients...'" size="medium"
@@ -1320,7 +1316,6 @@
           </app-loading-spinner>
           } @if (!isLoadingClients) {
           <div class="clients-table">
-            <!-- New table to update-->
             <p-table [value]="filteredActiveClients" dataKey="_id" [expandedRowKeys]="expandedRows"
               (onRowExpand)="onRowExpand($event)" (onRowCollapse)="onRowCollapse($event)" class="table">
               <ng-template #caption>
@@ -1450,7 +1445,6 @@
           </p-table>
         </div>
         }
-        <!-- Section de pagination pour les clients -->
         @if (!isLoadingClients && !isLoadingFilteredClients &&
         filteredActiveClients.length > 0 && clientsTotalPages > 1) {
         <div class="pagination-section" [@slideFromLeft]>
@@ -1482,7 +1476,7 @@
         </div>
         }
       </div>
-      }
+      } -->
 
       <!-- Onglet Signalements -->
       @if (activeTab === 'reports') {
@@ -1839,17 +1833,38 @@
           <div class="drawer-body">
             <div class="form-group">
               <label>Client</label>
-              <input type="text" class="filter-select" placeholder="Rechercher un client par nom..."
-                [(ngModel)]="contratClientSearch" />
-              <select class="filter-select" [(ngModel)]="newContrat.clientId" style="margin-top: 8px;">
-                <option value="">Sélectionner un client</option>
-                @for (client of filteredContratClients; track client._id) {
-                <option [value]="client._id">{{ client.firstName }} {{ client.lastName }}</option>
+              <div class="client-select-wrap" [class.open]="contratClientDropdownOpen">
+                <button type="button" class="client-select-trigger"
+                  (click)="contratClientDropdownOpen ? (contratClientDropdownOpen=false) : openContratClientDropdown()">
+                  <i class="material-icons">person_search</i>
+                  <span class="client-select-label">{{ selectedContratClientLabel() || 'Rechercher un client...' }}</span>
+                  <i class="material-icons client-select-chevron">expand_more</i>
+                </button>
+
+                @if (contratClientDropdownOpen) {
+                <div class="client-dropdown-panel" (click)="$event.stopPropagation()">
+                  <div class="client-dropdown-search">
+                    <i class="material-icons">search</i>
+                    <input type="text" placeholder="Rechercher un client par nom..."
+                      [(ngModel)]="contratClientSearch" name="contratClientSearch" class="client-dropdown-input"
+                      autofocus />
+                  </div>
+                  <div class="client-dropdown-list">
+                    @if (!filteredContratClients.length) {
+                    <div class="client-dropdown-empty">Aucun client ne correspond à cette recherche.</div>
+                    }
+                    @for (client of filteredContratClients; track client._id) {
+                    <div class="client-dropdown-item" [class.selected]="newContrat.clientId === client._id"
+                      (click)="selectContratClient(client)">
+                      <i class="material-icons">person</i>
+                      {{ client.firstName }} {{ client.lastName }}
+                    </div>
+                    }
+                  </div>
+                </div>
+                <div class="client-dropdown-overlay" (click)="contratClientDropdownOpen=false"></div>
                 }
-              </select>
-              @if (!filteredContratClients.length) {
-              <small class="form-help">Aucun client ne correspond à cette recherche.</small>
-              }
+              </div>
             </div>
             <div class="form-group">
               <label>Plan tarifaire</label>

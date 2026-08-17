@@ -59,9 +59,9 @@
             </td>
             <td data-label="Situation paiement" *ngIf="afficherColonneFinance()">
               <app-status-badge
-                [label]="badgeSituation(moisRetardDe(client.idClient)).label"
-                [icon]="badgeSituation(moisRetardDe(client.idClient)).icon"
-                [variant]="badgeSituation(moisRetardDe(client.idClient)).variant"
+                [label]="badgeSituation(situationDe(client.idClient)).label"
+                [icon]="badgeSituation(situationDe(client.idClient)).icon"
+                [variant]="badgeSituation(situationDe(client.idClient)).variant"
               />
             </td>
           </tr>

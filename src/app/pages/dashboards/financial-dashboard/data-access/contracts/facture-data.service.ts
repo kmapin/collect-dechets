@@ -12,9 +12,18 @@ export interface SuiviMensuelFilter {
 
 // Situation de paiement "à date" d'un client (F6 — badge de retard dans la liste
 // clients), indépendante d'une période précise contrairement à SuiviAbonneMensuel (F12).
+export type SourceEligibilite = 'CONTRACT' | 'SUBSCRIPTION' | 'NONE';
+
 export interface SituationPaiementClient {
   idClient: string;
-  moisRetard: number; // RG4 — cumulé jusqu'à la dernière facture générée, 0 si à jour
+  moisRetard: number; // RG4 — cumulé jusqu'à la dernière facture générée
+  // Source unique de vérité : EligibilityService.checkClientEligibility (abonnement actif
+  // OU contrat actif). Prime toujours sur moisRetard pour le badge "à jour" — un contrat
+  // actif reste éligible même en retard de paiement (voir eligibility.service.js backend).
+  aJour: boolean;
+  // Précise CE QUI rend le client "à jour" (Abonnement vs Contrat), plutôt qu'un badge
+  // générique — 'NONE' si aJour est false.
+  source: SourceEligibilite;
 }
 
 // Couvre F6 (situation paiement clients), F8 (factures d'un client), F9 (génération —

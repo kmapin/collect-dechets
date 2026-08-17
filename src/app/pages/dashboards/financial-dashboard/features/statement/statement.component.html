@@ -1,7 +1,7 @@
 <section class="fin-statement" aria-label="Relevé de paiement">
   <div class="fin-statement__toolbar no-print">
     <div class="fin-statement__search">
-      <app-search-filter placeholder="Rechercher un client…" [value]="recherche()" (valueChange)="onRechercheChange($event)" />
+      <app-search-filter placeholder="Rechercher un client…" [value]="recherche()" (valueChange)="onRechercheChange($event)" (focused)="onRechercheFocus()" />
       <ul class="fin-statement__suggestions" *ngIf="resultatsRecherche().length">
         <li *ngFor="let client of resultatsRecherche()">
           <button type="button" (click)="selectionnerClient(client)">
