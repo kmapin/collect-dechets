@@ -1,4 +1,3 @@
-import { ModePaiement } from '../../../models/enums';
 import {
   mapDashboardKpiDto,
   mapPaiementListeDto,
@@ -33,13 +32,13 @@ describe('finance.mapper', () => {
   });
 
   describe('mapPaiementListeDto', () => {
-    it('mappe un item réel GET /finance/paiements, idFacture absent (jamais renvoyé par le backend)', () => {
+    it('traduit le code opérateur exact (Transaction.operator) en libellé lisible, idFacture absent (jamais renvoyé par le backend)', () => {
       const dto = {
         idPaiement: '64f1a2b3c4d5e6f7a8b9c0d1',
         idClient: '64f1a2b3c4d5e6f7a8b9c0d2',
         montant: 5000,
         datePaiement: '2026-07-15T08:30:00.000Z',
-        modePaiement: 'MobileMoney',
+        modePaiement: 'ORANGE_MONEY',
         clientNom: 'Ouédraogo Awa',
       };
       expect(mapPaiementListeDto(dto)).toEqual({
@@ -48,7 +47,7 @@ describe('finance.mapper', () => {
         idClient: '64f1a2b3c4d5e6f7a8b9c0d2',
         montant: 5000,
         datePaiement: '2026-07-15T08:30:00.000Z',
-        modePaiement: 'MobileMoney' as ModePaiement,
+        modePaiement: 'Orange Money',
         clientNom: 'Ouédraogo Awa',
       });
     });
@@ -77,14 +76,26 @@ describe('finance.mapper', () => {
   });
 
   describe('mapRepartitionModePaiementDto', () => {
-    it('regroupe les 3 opérateurs mobile money backend sous un seul bucket MobileMoney', () => {
+    it('distingue chaque opérateur exact plutôt que de les regrouper sous un bucket générique', () => {
       const dto = [
         { mode: 'ORANGE_MONEY', montant: 30000 },
         { mode: 'MOOV_MONEY', montant: 45000 },
         { mode: 'TELECEL_MONEY', montant: 5000 },
       ];
       expect(mapRepartitionModePaiementDto(dto)).toEqual([
-        { mode: ModePaiement.MOBILE_MONEY, montant: 80000 },
+        { mode: 'Orange Money', montant: 30000 },
+        { mode: 'Moov Money', montant: 45000 },
+        { mode: 'Telecel Money', montant: 5000 },
+      ]);
+    });
+
+    it('cumule les montants quand le même opérateur apparaît plusieurs fois', () => {
+      const dto = [
+        { mode: 'ORANGE_MONEY', montant: 30000 },
+        { mode: 'ORANGE_MONEY', montant: 12000 },
+      ];
+      expect(mapRepartitionModePaiementDto(dto)).toEqual([
+        { mode: 'Orange Money', montant: 42000 },
       ]);
     });
 

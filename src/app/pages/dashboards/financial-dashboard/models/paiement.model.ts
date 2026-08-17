@@ -1,5 +1,3 @@
-import { ModePaiement } from './enums';
-
 // Table 24 — Paiement. RG3 : un paiement peut solder une facture ; idFacture reste optionnel
 // car la réconciliation paiement↔facture n'est pas figée (spec §1.12).
 export interface Paiement {
@@ -8,5 +6,8 @@ export interface Paiement {
   idClient: string;
   montant: number;
   datePaiement: string; // ISO date
-  modePaiement?: ModePaiement; // optionnel — TBC (modes de paiement, §1.12)
+  // Libellé de l'opérateur exact ("Orange Money"/"Moov Money"/"Telecel Money"/"QR Pay") —
+  // plus le bucket générique ModePaiement (Especes/MobileMoney/Autre), qui masquait
+  // l'opérateur réellement utilisé (voir mapPaiementListeDto).
+  modePaiement?: string;
 }

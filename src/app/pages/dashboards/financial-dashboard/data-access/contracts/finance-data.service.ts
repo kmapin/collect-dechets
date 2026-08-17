@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { DashboardKpi, ModePaiement, Page, PageParams, Paiement, Periode, Retrait } from '../../models';
+import { DashboardKpi, Page, PageParams, Paiement, Periode, Retrait } from '../../models';
 
 export interface PaiementFilter {
   idClient?: string;
@@ -36,8 +36,12 @@ export interface FinanceStatsSeries {
   facturesImpayees: number[];
 }
 
+// `mode` est le libellé du moyen de paiement RÉEL (opérateur exact — "Orange Money",
+// "Moov Money", "Telecel Money", "QR Pay" — voir mapRepartitionModePaiementDto), pas le
+// bucket générique ModePaiement.MOBILE_MONEY utilisé ailleurs pour un paiement individuel
+// (Paiement.modePaiement) : demande produit explicite de distinguer les opérateurs ici.
 export interface RepartitionModePaiement {
-  mode: ModePaiement;
+  mode: string;
   montant: number;
 }
 

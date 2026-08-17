@@ -41,6 +41,7 @@ describe('ClientDashboard - planning unifié V1/V2 & signalement (Prompt 05)', (
       {} as any,
       { snapshot: { queryParamMap: { get: () => null } } } as any,
       { getRedevancesByClient$: () => ({ subscribe: () => {} }) } as any,
+      {} as any,
       {} as any
     );
     component.currentUser = { _id: 'client-1', agencyId: 'agency-1' };
@@ -138,6 +139,7 @@ describe('ClientDashboard - "Mon contrat" (carte dashboard + rafraîchissement s
       { listForClient: () => ({ subscribe: () => {} }) } as any,
       { snapshot: { queryParamMap: { get: () => null } } } as any,
       { getRedevancesByClient$: () => ({ subscribe: () => {} }) } as any,
+      {} as any,
       {} as any,
     );
     component.currentUser = { _id: 'client-1', agencyId: 'agency-1' };

@@ -353,6 +353,12 @@ input[type="number"]::-ms-expand {
     }
 
     .login-type-option {
+      display: flex;
+      /* Sans ça, un item de grille 1fr ne rétrécit jamais en-dessous du
+         min-content de son contenu (ici le mot "telephone") : sur un écran
+         plus étroit que celui testé, la grille 2 colonnes déborde au lieu de
+         rétrécir. */
+      min-width: 0;
       cursor: pointer;
       transition: all 0.3s ease;
     }
@@ -362,6 +368,12 @@ input[type="number"]::-ms-expand {
     }
 
     .login-type-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-width: 0;
       padding: 20px;
       border: 2px solid var(--medium-gray);
       border-radius: 12px;
@@ -390,6 +402,7 @@ input[type="number"]::-ms-expand {
       font-size: 1.1rem;
       font-weight: 600;
       margin-bottom: 8px;
+      overflow-wrap: break-word;
     }
 
     .login-type-card p {
@@ -406,26 +419,10 @@ input[type="number"]::-ms-expand {
         max-width: 500px;
       }
 
+      /* Plus assez de place pour afficher le formulaire ET ce panneau côte à
+         côte : masqué plutôt qu'empilé au-dessus du formulaire. */
       .login-info {
-        order: -1;
-        text-align: center;
-        margin-bottom: 20px;
-      }
-
-      .info-content h2 {
-        font-size: 2rem;
-        margin-bottom: 24px;
-      }
-
-      .features-list {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-      }
-
-      .feature-item {
-        flex-direction: column;
-        text-align: center;
+        display: none;
       }
     }
 
@@ -440,13 +437,5 @@ input[type="number"]::-ms-expand {
 
       .demo-buttons {
         grid-template-columns: 1fr;
-      }
-
-      .features-list {
-        grid-template-columns: 1fr;
-      }
-
-      .info-content h2 {
-        font-size: 1.8rem;
       }
     }

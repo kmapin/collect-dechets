@@ -1,6 +1,24 @@
 import { DashboardKpi, Retrait } from '../../../models';
-import { ModePaiement } from '../../../models/enums';
 import { PaiementListe, RepartitionModePaiement } from '../../contracts/finance-data.service';
+
+// Libellés FR des opérateurs exacts renvoyés par le backend (Transaction.operator,
+// models/transaction.js) — même convention que client-dashboard.ts::OPERATOR_LABEL_MAP /
+// admin-dashboard.ts / agency-finance.ts, dupliquée ici faute de module partagé existant
+// pour ce mapping trivial. Réutilisée par mapPaiementListeDto ET
+// mapRepartitionModePaiementDto ci-dessous — les deux affichaient auparavant un bucket
+// générique ("MobileMoney") au lieu de l'opérateur réellement utilisé.
+const OPERATOR_LABELS: Record<string, string> = {
+  ORANGE_MONEY: 'Orange Money',
+  MOOV_MONEY: 'Moov Money',
+  TELECEL_MONEY: 'Telecel Money',
+  QRPAY: 'QR Pay',
+};
+
+function operatorLabel(raw: unknown): string | undefined {
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  const operateur = String(raw);
+  return OPERATOR_LABELS[operateur] ?? operateur;
+}
 
 // DTO réel capturé sur le backend collecte-dechets (services/financeStats.js::getDashboardKpi) —
 // noms de champs déjà alignés 1:1 côté serveur, conversion = construction explicite typée
@@ -32,7 +50,7 @@ export function mapPaiementListeDto(dto: unknown): PaiementListe {
     idClient: String(d['idClient']),
     montant: Number(d['montant']),
     datePaiement: String(d['datePaiement']),
-    modePaiement: d['modePaiement'] as ModePaiement | undefined,
+    modePaiement: operatorLabel(d['modePaiement']),
     clientNom: String(d['clientNom']),
   };
 }
@@ -59,23 +77,20 @@ export function mapRetraitDto(dto: unknown): Retrait {
 
 // DTO réel : GET /finance/dashboard/repartition-mode (services/financeStats.js::
 // getRepartitionModePaiement) — groupe par OPÉRATEUR EXACT ('ORANGE_MONEY'/'MOOV_MONEY'/
-// 'TELECEL_MONEY'), sur demande explicite du prompt backend d'origine (Prompt 3), alors que
-// ModePaiement frontend n'a que 3 buckets génériques (Especes/MobileMoney/Autre) sans
-// granularité par opérateur. Les 3 valeurs backend sont donc TOUTES des canaux mobile money :
-// regroupées ici sous ModePaiement.MOBILE_MONEY, en sommant leurs montants (perte du détail
-// par opérateur assumée au niveau de CE graphique — à revoir si un jour le produit veut
-// distinguer Orange/Moov/Telecel dans l'UI).
+// 'TELECEL_MONEY'/'QRPAY'). Demande produit explicite : afficher le moyen de paiement exact
+// plutôt que le bucket générique ModePaiement.MOBILE_MONEY (utilisé ailleurs pour un paiement
+// individuel, Paiement.modePaiement) — un opérateur inconnu retombe sur sa valeur brute plutôt
+// que d'être masqué, pour rester visible côté produit si un nouvel opérateur apparaît.
 // Fonction absente jusqu'ici (le http service castait directement la réponse HTTP, cf.
 // finance-data.http.service.ts) : ajoutée ici plutôt que dans un composant feature/*, comme
 // demandé par le Prompt F1 pour toute différence de forme de données. Câblée au Prompt F4.
 export function mapRepartitionModePaiementDto(dto: unknown[]): RepartitionModePaiement[] {
-  const totalParBucket = new Map<ModePaiement, number>();
+  const totalParOperateur = new Map<string, number>();
   for (const raw of dto) {
     const row = raw as Record<string, unknown>;
     const montant = Number(row['montant']);
-    // ORANGE_MONEY | MOOV_MONEY | TELECEL_MONEY → toujours MobileMoney à ce jour.
-    const bucket = ModePaiement.MOBILE_MONEY;
-    totalParBucket.set(bucket, (totalParBucket.get(bucket) ?? 0) + montant);
+    const label = operatorLabel(row['mode']) ?? '';
+    totalParOperateur.set(label, (totalParOperateur.get(label) ?? 0) + montant);
   }
-  return [...totalParBucket.entries()].map(([mode, montant]) => ({ mode, montant }));
+  return [...totalParOperateur.entries()].map(([mode, montant]) => ({ mode, montant }));
 }
