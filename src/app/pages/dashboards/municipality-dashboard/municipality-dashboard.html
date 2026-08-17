@@ -148,11 +148,11 @@
                   <div class="metric-value metric-value--unknown">Non disponible</div>
                   } @else {
                   <div class="metric-value">
-                    {{ performanceOverview?.averageSatisfaction }}/5
+                    {{ performanceOverview.averageSatisfaction }}/5
                   </div>
                   <div class="rating-stars">
                     @for (
-                    star of getStars(performanceOverview?.averageSatisfaction ?? 0)
+                    star of getStars(performanceOverview.averageSatisfaction)
                     ; track
                     star) {
                     <i class="material-icons star">star</i>

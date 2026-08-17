@@ -1404,7 +1404,7 @@
                 </span>
                 <div class="kpi-bar-track">
                   <div class="kpi-bar-fill kpi-fill-purple" [style.width]="(statisticsAdmin?.totalAgencies
-                             ? (statisticsAdmin?.totalActiveAgencies ?? 0) * 100 / statisticsAdmin!.totalAgencies
+                             ? statisticsAdmin.totalActiveAgencies * 100 / statisticsAdmin.totalAgencies
                              : 0) + '%'"></div>
                 </div>
               </div>
@@ -2717,7 +2717,7 @@
               </div>
               <div class="info-item" *ngIf="selectedUser.agency?.slogan">
                 <span class="info-label">Slogan</span>
-                <span class="info-value">{{ selectedUser.agency?.slogan }}</span>
+                <span class="info-value">{{ selectedUser.agency.slogan }}</span>
               </div>
             </div>
           </div>
