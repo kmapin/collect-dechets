@@ -2297,7 +2297,7 @@
               <thead>
                 <tr>
                   <th>Agence</th>
-                  <th>Gestionnaire</th>
+                  <!-- <th>Gestionnaire</th> -->
                   <th>Montant demandé</th>
                   <th>Frais</th>
                   <th>Solde disponible</th>
@@ -2305,7 +2305,7 @@
                   <th>Portefeuille / N° compte</th>
                   <th>Date demande</th>
                   <th>Statut</th>
-                  <th>Traité par</th>
+                  <!-- <th>Traité par</th> -->
                   <th>Date traitement</th>
                   <th class="col-actions">Actions</th>
                 </tr>
@@ -2317,10 +2317,10 @@
                     <strong>{{ w.agencyName }}</strong><br>
                     <span class="stats-loading">{{ w.country }}</span>
                   </td>
-                  <td>
+                  <!-- <td>
                     {{ w.agencyManagerName }}<br>
                     <span class="stats-loading">{{ w.agencyManagerEmail }}</span>
-                  </td>
+                  </td> -->
                   <td>{{ formatXof(w.amount) }}</td>
                   <td>{{ w.platformAmount ? formatXof(w.platformAmount) : '—' }}</td>
                   <td>{{ formatXof(w.availableBalance) }}</td>
@@ -2329,7 +2329,7 @@
                   <td>{{ w.requestDate | date:'dd/MM/yyyy HH:mm' }}</td>
                   <td><span class="status-badge" [class]="getWithdrawalStatusClass(w.status)">{{
                       getWithdrawalStatusText(w.status) }}</span></td>
-                  <td>{{ w.processedBy || '—' }}</td>
+                  <!-- <td>{{ w.processedBy || '—' }}</td> -->
                   <td>{{ w.processingDate ? (w.processingDate | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
                   <td class="col-actions">
                     <div class="table-actions">

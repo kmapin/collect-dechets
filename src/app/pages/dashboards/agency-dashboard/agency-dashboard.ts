@@ -4528,34 +4528,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return "";
   }
 
-  // recuperation des planning d un colector
-  collectorplannings: any[] = [];
-  // loadCollectorPlannings(): void {
-  //   this.isLoading = true;
-  //   const collectorId = "68c3f853a00747732407d946";
-  //   if (!collectorId) {
-  //     console.error("[DEBUG] Aucun collectorId trouvé ");
-  //     this.isLoading = false;
-  //     return;
-  //   }
-  //   this.agencyService.getPlaningCollectory$(collectorId).subscribe({
-  //     next: (data: any[]) => {
-  //       this.collectorplannings = data;
-  //       console.log(
-  //         "Plannings récupérés pour le collecteur :",
-  //         this.collectorplannings
-  //       );
-  //       this.isLoading = false;
-  //     },
-  //     error: (error) => {
-  //       // console.error(
-  //       //   "[DEBUG] Erreur lors du chargement des plannings du collecteur :",
-  //       //   error
-  //       // );
-  //       this.isLoading = false;
-  //     },
-  //   });
-  // }
 
   // supprimer un planning
   deletePlanning(schedulesId: string): void {
@@ -4592,10 +4564,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         );
         let errorMessage = "Impossible de supprimer le planning";
 
-        // Gestion détaillée des erreurs du backend
-        if (error.error?.message) {
+        // Gestion détaillée des erreurs du backend — `error.error.error.message`
+        // en premier : forme renvoyée par deletePlanningV2 (ex. BUSINESS_RULE_
+        // VIOLATION quand le planning n'est plus au statut 'brouillon'), migré
+        // depuis l'ancien endpoint V1 qui renvoyait un `message` à plat.
+        if (error.error?.error?.message) {
+          errorMessage = error.error.error.message;
+        } else if (error.error?.message) {
           errorMessage = error.error.message;
-        } else if (error.error?.error) {
+        } else if (typeof error.error?.error === 'string') {
           errorMessage = error.error.error;
         } else if (error.message) {
           errorMessage = error.message;
@@ -5505,25 +5482,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     );
   }
 
-  //   toggleScheduleStatus(schedule: any): void {
-  //   const updatedStatus = !schedule.isActive;
-  //   this.agencyService.updateSchedule$(schedule._id, { isActive: updatedStatus }).subscribe({
-  //     next: () => {
-  //       schedule.isActive = updatedStatus;
-  //       this.notificationService.showSuccess(
-  //         "Succès",
-  //         `Le planning a été ${updatedStatus ? "activé" : "désactivé"} avec succès.`
-  //       );
-  //     },
-  //     error: (error) => {
-  //       console.error("Erreur lors de la mise à jour du statut du planning :", error);
-  //       this.notificationService.showError(
-  //         "Erreur",
-  //         "Impossible de mettre à jour le statut du planning."
-  //       );
-  //     },
-  //   });
-  // }
   loadZonesMock(): void {
     this.serviceZones = OUAGA_DATA.map((arrondissement) => ({
       id: Math.random().toString(36).substr(2, 9),

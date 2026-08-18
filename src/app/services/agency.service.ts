@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, delay, map, tap } from 'rxjs/operators';
-import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, CollectionSchedule, EmployeeRole, tarif, Tarif, PlanningResponse, PaginatedResponse } from '../models/agency.model';
+import { Agency, ServiceZone, WasteService, Employee, Employees, ServiceZones, EmployeeRole, tarif, Tarif, PlanningResponse, PaginatedResponse } from '../models/agency.model';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { AddEmployeeData, RegisterResponse, User } from '../models/user.model';
@@ -702,39 +702,6 @@ export class AgencyService {
   //     })
   //   );
   // }
-  // //ajouter une planification
-  addSchedule$(schedule: CollectionSchedule): Observable<CollectionSchedule | null> {
-    return this.http.post<CollectionSchedule>(`${environment.apiUrl}/planning/create`, schedule).pipe(
-      map((response: CollectionSchedule) => {
-        console.log("API > planification enregistre :", response);
-        return response;
-      }),
-      catchError(error => {
-        console.error("Erreur lors de l'enregistrement de la planification:", error);
-        throw error; // Propager l'erreur pour une meilleure gestion
-      })
-    );
-  }
-
-  //modifier une planification
-  updateSchedule$(id: string, schedule: Partial<CollectionSchedule>): Observable<CollectionSchedule> {
-    return this.http.put<CollectionSchedule>(`${environment.apiUrl}/planning/update/${id}`, schedule).pipe(
-      map((response: CollectionSchedule) => {
-        console.log("API > planification mise à jour :", response);
-        return response;
-      }),
-      catchError(error => {
-        console.error("Erreur lors de la mise à jour de la planification:", error);
-        throw error;
-      })
-    );
-  }
-  //recupere les planing d une agence (ancien endpoint)
-  getAllPlaningAgency$(agencyId: string): Observable<any> {
-    const url = `${environment.apiUrl}/planning/agency/${agencyId}`;
-    return this.http.get<any>(url);
-  }
-
   // Récupère les plannings V2 d'une agence
   getAllPlanningsV2$(agencyId: string, pageSize = 200): Observable<any[]> {
     const params = new HttpParams()
@@ -754,9 +721,11 @@ export class AgencyService {
     );
   }
 
-  //supprimer un  planing d une agence
+  // Supprime un planning (V2 — seul un planning au statut 'brouillon' peut être
+  // supprimé, règle métier déjà appliquée par deletePlanningV2 côté backend ;
+  // migré depuis l'ancien endpoint legacy /planning/delete/:id, nettoyage V1).
   deletePlanning$(id: string): Observable<boolean> {
-    return this.http.delete(`${environment.apiUrl}/planning/delete/${id}`).pipe(
+    return this.http.delete(`${environment.apiUrl}/planning/v2/${id}`).pipe(
       map(() => {
         console.log(`planning ${id} supprimé avec succès`);
         return true;
@@ -767,15 +736,7 @@ export class AgencyService {
       })
     );
   }
-  //recupere les plannings d un collecteur
-  getPlaningCollectory$(collectorId: string): Observable<any[]> {
-    const collector = this.agencies.find(a => a._id === collectorId);
-    const url = `${environment.apiUrl}/planning/collector/${collectorId}`;
-    console.log("URL de la requête :", url);
-    return this.http.get<Tarif[]>(url);
-
-  }
-  //recupere les employees  d une agence en fonction de leur role 
+  //recupere les employees  d une agence en fonction de leur role
   getEmployeesByRole(agencyId: string, role: string): Observable<Employee[] | null> {
     const url = `${environment.apiUrl}/agences/${agencyId}/employés/role/${role}`;
 
@@ -978,32 +939,6 @@ export class AgencyService {
     // const url = `${environment.apiUrl}/rapports/collector/${collectorid}`;
     const url = `${environment.apiUrl}/collectes/collector/${collectorid}/reporting-collectes`;
     return this.http.get<any>(url);
-  }
-
-  updatePlanning$(id: string, planningData: any): Observable<{
-    success: boolean;
-    planning?: any;
-    error?: any;
-    message?: string
-  }> {
-    return this.http.put<any>(`${environment.apiUrl}/planning/update/${id}`, planningData).pipe(
-      map(response => {
-        console.log("API > updatePlanning :", response);
-        if (response) {
-          return { success: true, planning: response, message: 'Planning mis à jour avec succès' };
-        } else {
-          return { success: false, error: 'Aucune donnée reçue', message: 'Erreur lors de la mise à jour' };
-        }
-      }),
-      catchError(error => {
-        console.error("Erreur API updatePlanning :", error);
-        return throwError(() => ({
-          success: false,
-          error: error.error || 'Une erreur est survenue',
-          message: error.error?.message || error.message || 'Erreur inconnue'
-        }));
-      })
-    );
   }
 
   updateTarif$(tarifId: string, tarifData: any): Observable<{

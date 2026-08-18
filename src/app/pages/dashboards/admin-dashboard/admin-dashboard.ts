@@ -927,7 +927,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
           })),
           [
             { key: 'agence', label: 'Agence' },
-            { key: 'gestionnaire', label: 'Gestionnaire' },
+            // { key: 'gestionnaire', label: 'Gestionnaire' },
             { key: 'email', label: 'Email' },
             { key: 'montant', label: 'Montant demandé' },
             { key: 'soldeDisponible', label: 'Solde disponible' },
@@ -935,7 +935,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
             { key: 'portefeuille', label: 'Portefeuille / N° compte' },
             { key: 'dateDemande', label: 'Date demande' },
             { key: 'statut', label: 'Statut' },
-            { key: 'traitePar', label: 'Traité par' },
+            // { key: 'traitePar', label: 'Traité par' },
             { key: 'dateTraitement', label: 'Date traitement' },
           ],
           `retraits-${new Date().toISOString().slice(0, 10)}`,
