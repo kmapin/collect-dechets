@@ -6442,6 +6442,67 @@ select[disabled]:focus {
 }
 
 // ─── Collecte status badge (table) ───────────────────────────────────────────
+// Filtre de statut "Demandes de collecte express" — remplace le <select>
+// par un groupe de boutons (même palette que .collecte-status-badge
+// ci-dessous, pour que le bouton actif rappelle visuellement le badge
+// des lignes qu'il filtre).
+.status-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.status-filter-btn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+  }
+
+  &.active {
+    border-color: transparent;
+  }
+
+  &.sf-pending.active {
+    background: #fef9c3;
+    color: #854d0e;
+  }
+
+  &.sf-accepted.active {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  &.sf-rejected.active {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  &.sf-all.active {
+    background: #e5e7eb;
+    color: #374151;
+  }
+}
+
+@media (max-width: 480px) {
+  .status-filter-group {
+    width: 100%;
+  }
+  .status-filter-btn {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
 .collecte-status-badge {
   display: inline-block;
   padding: 3px 10px;

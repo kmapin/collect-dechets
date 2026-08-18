@@ -1834,12 +1834,40 @@
             <div class="section-header">
               <h2>Demandes de collecte express</h2>
               <div class="section-actions">
-                <select [(ngModel)]="demandesFilter" (change)="filterDemandesCollecte()" class="filter-select">
-                  <option value="pending">En attente</option>
-                  <option value="accepted">Acceptées</option>
-                  <option value="rejected">Refusées</option>
-                  <option value="all">Toutes</option>
-                </select>
+                <div class="status-filter-group" role="group" aria-label="Filtrer par statut">
+                  <button
+                    type="button"
+                    class="status-filter-btn sf-pending"
+                    [class.active]="demandesFilter === 'pending'"
+                    (click)="setDemandesFilter('pending')"
+                  >
+                    En attente
+                  </button>
+                  <button
+                    type="button"
+                    class="status-filter-btn sf-accepted"
+                    [class.active]="demandesFilter === 'accepted'"
+                    (click)="setDemandesFilter('accepted')"
+                  >
+                    Acceptées
+                  </button>
+                  <button
+                    type="button"
+                    class="status-filter-btn sf-rejected"
+                    [class.active]="demandesFilter === 'rejected'"
+                    (click)="setDemandesFilter('rejected')"
+                  >
+                    Refusées
+                  </button>
+                  <button
+                    type="button"
+                    class="status-filter-btn sf-all"
+                    [class.active]="demandesFilter === 'all'"
+                    (click)="setDemandesFilter('all')"
+                  >
+                    Toutes
+                  </button>
+                </div>
               </div>
             </div>
             @if (isLoadingDemandes) {

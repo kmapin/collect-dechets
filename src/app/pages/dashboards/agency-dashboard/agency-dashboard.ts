@@ -3198,6 +3198,12 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.loadDemandesCollecte();
   }
 
+  setDemandesFilter(filter: 'pending' | 'accepted' | 'rejected' | 'all'): void {
+    if (this.demandesFilter === filter) return;
+    this.demandesFilter = filter;
+    this.filterDemandesCollecte();
+  }
+
   acceptDemandeCollecte(demande: DemandeCollecte): void {
     if (this.processingDemandeId) return;
     this.processingDemandeId = demande._id;
