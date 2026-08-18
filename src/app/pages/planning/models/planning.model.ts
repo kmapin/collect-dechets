@@ -86,7 +86,7 @@ export interface PlanningStatsApi {
   executionRate: number;
 }
 
-// ── API V2 — planning evolution (GET /planning/v2/evolution) ──
+// ── API V2 — planning evolution (GET /planning/evolution) ──
 export interface CollectionEvolutionDay {
   dayKey: string;
   label: string;

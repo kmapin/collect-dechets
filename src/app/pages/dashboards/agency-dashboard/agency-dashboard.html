@@ -1900,6 +1900,36 @@
                                 <i class="material-icons">cancel</i>
                               </button>
                             </div>
+                          } @else if (demande.status === "accepted" && !demande.collecteId?.executedByTeamId) {
+                            <div class="table-actions">
+                              <button
+                                class="action-btn"
+                                title="Assigner à une équipe"
+                                [disabled]="processingDemandeId === demande._id"
+                                (click)="openDemandeTeamPicker(demande)"
+                              >
+                                <i class="material-icons">groups</i>
+                              </button>
+                            </div>
+                          } @else if (demande.status === "accepted" && demande.collecteId?.executedByTeamId && !demande.collecteId?.code) {
+                            <div class="table-actions">
+                              <span class="assigned-team-chip" [title]="'Équipe assignée : ' + demande.collecteId?.executedByTeamId?.name">
+                                {{ demande.collecteId?.executedByTeamId?.name }}
+                              </span>
+                              <button
+                                class="action-btn"
+                                title="Créer le planning de suivi"
+                                [disabled]="processingDemandeId === demande._id"
+                                (click)="createFollowUpPlanning(demande)"
+                              >
+                                <i class="material-icons">event_available</i>
+                              </button>
+                            </div>
+                          } @else if (demande.status === "accepted" && demande.collecteId?.code) {
+                            <span class="assigned-team-chip assigned-team-chip--done" title="Suivi complet : équipe assignée et planning créé">
+                              <i class="material-icons">check_circle</i>
+                              {{ demande.collecteId?.executedByTeamId?.name }}
+                            </span>
                           } @else {
                             <span style="color: #9ca3af; font-size: 0.85rem">&#8212;</span>
                           }
@@ -1917,6 +1947,67 @@
                 </div>
               }
             }
+          </div>
+        }
+
+        <!-- Picker d'équipe pour une demande express acceptée (même pattern que
+             le picker d'équipe des signalements, shared_pages/signalement) -->
+        @if (showDemandeTeamPicker) {
+          <div class="drawer-overlay" (click)="closeDemandeTeamPicker()">
+            <div class="drawer-content" (click)="$event.stopPropagation()">
+              <div class="drawer-header">
+                <h3>Affecter la collecte express à une équipe</h3>
+                <button class="drawer-close-btn" (click)="closeDemandeTeamPicker()">
+                  <i class="material-icons">close</i>
+                </button>
+              </div>
+              <div class="drawer-body">
+                @if (isLoadingDemandeTeams) {
+                  <p class="team-picker-empty">Chargement des équipes…</p>
+                } @else if (demandeTeams.length === 0) {
+                  <p class="team-picker-empty">Aucune équipe disponible pour cette agence.</p>
+                } @else {
+                  <div class="team-picker-list">
+                    @for (team of demandeTeams; track team._id) {
+                      <label
+                        class="team-picker-item"
+                        [class.team-picker-item--selected]="selectedDemandeTeamId === team._id"
+                        [class.team-picker-item--disabled]="!isDemandeTeamAvailable(team)"
+                      >
+                        <input
+                          type="radio"
+                          name="demandeTeamPicker"
+                          [value]="team._id"
+                          [(ngModel)]="selectedDemandeTeamId"
+                          [disabled]="!isDemandeTeamAvailable(team)"
+                        />
+                        <div class="team-picker-info">
+                          <span class="team-picker-name">{{ team.name }}</span>
+                          @if (team.collectors?.length) {
+                            <span class="team-picker-size">{{ team.collectors.length }} collecteur(s)</span>
+                          }
+                        </div>
+                        @if (!isDemandeTeamAvailable(team)) {
+                          <span class="team-picker-unavailable">{{ getDemandeTeamStatusLabel(team) }}</span>
+                        }
+                      </label>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="drawer-footer">
+                <div class="drawer-actions">
+                  <button class="btn btn-secondary" (click)="closeDemandeTeamPicker()">Annuler</button>
+                  <button
+                    class="btn btn-primary"
+                    [disabled]="!selectedDemandeTeamId || processingDemandeId === demandeTeamPickerTarget?._id"
+                    (click)="confirmAssignDemandeTeam()"
+                  >
+                    Confirmer l'affectation
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         }
 

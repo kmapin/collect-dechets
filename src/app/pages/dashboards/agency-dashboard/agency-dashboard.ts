@@ -3239,6 +3239,96 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     });
   }
 
+  // ─── Demande express acceptée : assigner une équipe, puis créer le planning
+  // de suivi — deux actions séparées (voir services/demandeCollecte.js pour le
+  // détail : la Collecte existe déjà depuis l'acceptation, jamais de doublon).
+  showDemandeTeamPicker = false;
+  demandeTeamPickerTarget: DemandeCollecte | null = null;
+  demandeTeams: any[] = [];
+  selectedDemandeTeamId = '';
+  isLoadingDemandeTeams = false;
+
+  openDemandeTeamPicker(demande: DemandeCollecte): void {
+    this.demandeTeamPickerTarget = demande;
+    this.selectedDemandeTeamId = demande.collecteId?.executedByTeamId?._id ?? '';
+    this.showDemandeTeamPicker = true;
+    this.demandeTeams = [];
+    const agencyId = this.currentUser?.agencyId;
+    if (!agencyId) return;
+    this.isLoadingDemandeTeams = true;
+    this.agencyService.getTeamsV2$(agencyId).subscribe({
+      next: (teams) => {
+        this.demandeTeams = teams || [];
+        this.isLoadingDemandeTeams = false;
+      },
+      error: () => {
+        this.demandeTeams = [];
+        this.isLoadingDemandeTeams = false;
+      },
+    });
+  }
+
+  closeDemandeTeamPicker(): void {
+    this.showDemandeTeamPicker = false;
+    this.demandeTeamPickerTarget = null;
+    this.selectedDemandeTeamId = '';
+  }
+
+  isDemandeTeamAvailable(team: any): boolean {
+    return !team?.status || team.status === 'active';
+  }
+
+  getDemandeTeamStatusLabel(team: any): string {
+    const labels: Record<string, string> = {
+      inactive: 'Inactive',
+      on_mission: 'En mission',
+      maintenance: 'En maintenance',
+    };
+    return labels[team?.status] || 'Indisponible';
+  }
+
+  confirmAssignDemandeTeam(): void {
+    if (!this.demandeTeamPickerTarget || !this.selectedDemandeTeamId) return;
+    const demandeId = this.demandeTeamPickerTarget._id;
+    this.processingDemandeId = demandeId;
+    this.demandeCollecteService.assignTeam(demandeId, this.selectedDemandeTeamId).subscribe({
+      next: () => {
+        this.notificationService.showSuccess("Équipe assignée", "L'équipe a été notifiée");
+        this.processingDemandeId = null;
+        this.closeDemandeTeamPicker();
+        this.loadDemandesCollecte();
+      },
+      error: (error) => {
+        console.error("Erreur lors de l'assignation de l'équipe :", error);
+        this.notificationService.showError(
+          "Erreur",
+          error?.error?.error?.message || "Impossible d'assigner cette équipe",
+        );
+        this.processingDemandeId = null;
+      },
+    });
+  }
+
+  createFollowUpPlanning(demande: DemandeCollecte): void {
+    if (this.processingDemandeId) return;
+    this.processingDemandeId = demande._id;
+    this.demandeCollecteService.createPlanning(demande._id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess("Planning créé", "Le planning de suivi a été créé et le client notifié");
+        this.processingDemandeId = null;
+        this.loadDemandesCollecte();
+      },
+      error: (error) => {
+        console.error("Erreur lors de la création du planning de suivi :", error);
+        this.notificationService.showError(
+          "Erreur",
+          error?.error?.error?.message || "Impossible de créer le planning de suivi",
+        );
+        this.processingDemandeId = null;
+      },
+    });
+  }
+
   //recuperations des statistiques de l'agence
   loadAgencyStatistics(currentUser: any): void {
     if (currentUser && currentUser.agencyId) {

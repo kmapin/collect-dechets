@@ -112,7 +112,7 @@ export class PlanningService {
     const agencyId = this.agencyId;
     const params = agencyId ? new HttpParams().set('agencyId', agencyId) : new HttpParams();
     this.http.get<{ success: boolean; data: PlanningStatsApi }>(
-      `${this.api}/planning/v2/stats`, { params }
+      `${this.api}/planning/stats`, { params }
     ).pipe(
       catchError(() => of(null))
     ).subscribe(res => {
@@ -124,7 +124,7 @@ export class PlanningService {
     const agencyId = this.agencyId;
     const params = agencyId ? new HttpParams().set('agencyId', agencyId) : new HttpParams();
     this.http.get<{ success: boolean; data: ZoneCoverageApi[] }>(
-      `${this.api}/planning/v2/zone-coverage`, { params }
+      `${this.api}/planning/zone-coverage`, { params }
     ).pipe(
       catchError(() => of(null))
     ).subscribe(res => {
@@ -155,7 +155,7 @@ export class PlanningService {
     let params = agencyId ? new HttpParams().set('agencyId', agencyId) : new HttpParams();
     params = params.set('days', days);
     this.http.get<{ success: boolean; data: CollectionEvolutionDay[] }>(
-      `${this.api}/planning/v2/evolution`, { params }
+      `${this.api}/planning/evolution`, { params }
     ).pipe(
       catchError(() => of(null))
     ).subscribe(res => {
@@ -183,7 +183,7 @@ export class PlanningService {
     this._error.set(null);
 
     forkJoin([
-      this.http.get<ApiListResponse<PlanningV2Api>>(`${this.api}/planning/v2`, { params }),
+      this.http.get<ApiListResponse<PlanningV2Api>>(`${this.api}/planning`, { params }),
       this.getTeamsForAgency(),
     ]).subscribe({
       next: result => {
@@ -204,7 +204,7 @@ export class PlanningService {
 
   getPlanning(id: string): Observable<Planning> {
     return forkJoin([
-      this.http.get<{ success: boolean; data: PlanningV2Api }>(`${this.api}/planning/v2/${id}`),
+      this.http.get<{ success: boolean; data: PlanningV2Api }>(`${this.api}/planning/${id}`),
       this.getTeamsForAgency(),
     ]).pipe(
       map(([res]) => this._mapPlanningV2(res.data, this._teams()))
@@ -260,7 +260,7 @@ export class PlanningService {
 
   createPlanning(body: PlanningV2CreateBody): Observable<Planning> {
     return this.http.post<{ success: boolean; data: PlanningV2Api }>(
-      `${this.api}/planning/v2`, body
+      `${this.api}/planning`, body
     ).pipe(
       map(res => {
         const planning = this._mapPlanningV2(res.data, this._teams());
@@ -271,7 +271,7 @@ export class PlanningService {
   }
 
   updatePlanning(id: string, body: Partial<PlanningV2CreateBody>): Observable<Planning> {
-    return this.http.put<any>(`${this.api}/planning/v2/${id}`, body).pipe(
+    return this.http.put<any>(`${this.api}/planning/${id}`, body).pipe(
       map(res => {
         const api: PlanningV2Api = res?.data ?? res;
         const planning = this._mapPlanningV2(api, this._teams());
@@ -283,7 +283,7 @@ export class PlanningService {
 
   deletePlanning(id: string): Observable<void> {
     return this.http.delete<{ success: boolean }>(
-      `${this.api}/planning/v2/${id}`
+      `${this.api}/planning/${id}`
     ).pipe(
       map(() => {
         this._plannings.update(list => list.filter(p => p.id !== id));
@@ -294,7 +294,7 @@ export class PlanningService {
   // ── Status transitions ────────────────────────────────────────
 
   publishPlanning(id: string): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${id}/publish`, {}).pipe(
+    return this.http.post<any>(`${this.api}/planning/${id}/publish`, {}).pipe(
       tap(res => {
         if (res?.data?.planningStatus) {
           this._plannings.update(list =>
@@ -306,7 +306,7 @@ export class PlanningService {
   }
 
   startPlanning(id: string): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${id}/start`, {}).pipe(
+    return this.http.post<any>(`${this.api}/planning/${id}/start`, {}).pipe(
       tap(res => {
         if (res?.data?.planningStatus) {
           this._plannings.update(list =>
@@ -318,7 +318,7 @@ export class PlanningService {
   }
 
   completePlanning(id: string): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${id}/complete`, {}).pipe(
+    return this.http.post<any>(`${this.api}/planning/${id}/complete`, {}).pipe(
       tap(res => {
         if (res?.data?.planningStatus) {
           this._plannings.update(list =>
@@ -330,7 +330,7 @@ export class PlanningService {
   }
 
   cancelPlanning(id: string): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${id}/cancel`, {}).pipe(
+    return this.http.post<any>(`${this.api}/planning/${id}/cancel`, {}).pipe(
       tap(res => {
         if (res?.data?.planningStatus) {
           this._plannings.update(list =>
@@ -383,14 +383,14 @@ export class PlanningService {
   }
 
   private _setTeamOnPlanning(planningId: string, teamId: string | null): Observable<Planning> {
-    return this.http.get<any>(`${this.api}/planning/v2/${planningId}`).pipe(
+    return this.http.get<any>(`${this.api}/planning/${planningId}`).pipe(
       switchMap(res => {
         const api: PlanningV2Api = res?.data ?? res;
         if (teamId && (api.teamId === teamId)) {
           return of(this._mapPlanningV2(api, this._teams()));
         }
         const body = this._buildUpdateBody(api, { teamId });
-        return this.http.put<any>(`${this.api}/planning/v2/${planningId}`, body).pipe(
+        return this.http.put<any>(`${this.api}/planning/${planningId}`, body).pipe(
           map(r => {
             const updated: PlanningV2Api = r?.data ?? r;
             const p = this._mapPlanningV2(updated, this._teams());
@@ -413,7 +413,7 @@ export class PlanningService {
     const body: any = { date, equipeIds, ...extra };
     if (excludePlanningId) body.excludePlanningId = excludePlanningId;
     return this.http.post<{ success: boolean; data: ConflictCheckResponse }>(
-      `${this.api}/planning/v2/check-conflicts`, body
+      `${this.api}/planning/check-conflicts`, body
     ).pipe(
       map(res => res.data ?? { conflicts: [], suggestions: [], hasBlockingConflict: false }),
       catchError(() => of({ conflicts: [], suggestions: [], hasBlockingConflict: false }))
@@ -425,7 +425,7 @@ export class PlanningService {
   loadAlerts(): void {
     const agencyId = this.agencyId;
     const params = agencyId ? new HttpParams().set('agencyId', agencyId) : new HttpParams();
-    this.http.get<{ success: boolean; data: any[] }>(`${this.api}/planning/v2/alerts`, { params })
+    this.http.get<{ success: boolean; data: any[] }>(`${this.api}/planning/alerts`, { params })
       .pipe(catchError(() => of(null)))
       .subscribe(res => {
         if (res?.data) {
@@ -443,7 +443,7 @@ export class PlanningService {
 
   dismissAlert(id: string): void {
     this._alerts.update(list => list.filter(a => a.id !== id));
-    this.http.patch(`${this.api}/planning/v2/alerts/${id}/dismiss`, {})
+    this.http.patch(`${this.api}/planning/alerts/${id}/dismiss`, {})
       .pipe(catchError(() => of(null)))
       .subscribe();
   }
@@ -453,7 +453,7 @@ export class PlanningService {
   /** Statistiques du Planning calculées directement depuis ses Collecte — jamais saisies. */
   getPlanningStats(planningId: string): Observable<{ totalHouseholds: number; householdsCollected: number; completionRate: number }> {
     return this.http.get<{ success: boolean; data: { totalHouseholds: number; householdsCollected: number; completionRate: number } }>(
-      `${this.api}/planning/v2/${planningId}/stats`
+      `${this.api}/planning/${planningId}/stats`
     ).pipe(map(res => res?.data ?? { totalHouseholds: 0, householdsCollected: 0, completionRate: 0 }), catchError(() => of({ totalHouseholds: 0, householdsCollected: 0, completionRate: 0 })));
   }
 
@@ -462,13 +462,13 @@ export class PlanningService {
     let params = new HttpParams();
     if (filter.status) params = params.set('status', filter.status);
     return this.http.get<{ success: boolean; data: any[] }>(
-      `${this.api}/planning/v2/${planningId}/collectes`, { params }
+      `${this.api}/planning/${planningId}/collectes`, { params }
     ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
   }
 
   /** Rattrapage (Prompt 0, étape 5) — pas de nouvelle entité, retente la Collecte existante. */
   retryCollecte(planningId: string, collecteId: string): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/collectes/${collecteId}/retry`, {});
+    return this.http.post<any>(`${this.api}/planning/${planningId}/collectes/${collecteId}/retry`, {});
   }
 
   /** Observation/motif d'absence sur UNE Collecte précise — jamais un compteur global. */
@@ -482,16 +482,16 @@ export class PlanningService {
 
   getIncidents(planningId: string): Observable<any[]> {
     return this.http.get<{ success: boolean; data: any[] }>(
-      `${this.api}/planning/v2/${planningId}/incidents`
+      `${this.api}/planning/${planningId}/incidents`
     ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
   }
 
   createIncident(planningId: string, body: FormData): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/incidents`, body);
+    return this.http.post<any>(`${this.api}/planning/${planningId}/incidents`, body);
   }
 
   resolveIncident(planningId: string, incidentId: string): Observable<any> {
-    return this.http.patch<any>(`${this.api}/planning/v2/${planningId}/incidents/${incidentId}/resolve`, {});
+    return this.http.patch<any>(`${this.api}/planning/${planningId}/incidents/${incidentId}/resolve`, {});
   }
 
   /**
@@ -515,12 +515,12 @@ export class PlanningService {
 
   getPlanningNotifications(planningId: string): Observable<any[]> {
     return this.http.get<{ success: boolean; data: any[] }>(
-      `${this.api}/planning/v2/${planningId}/notifications`
+      `${this.api}/planning/${planningId}/notifications`
     ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
   }
 
   sendPlanningNotification(planningId: string, target: 'all' | 'teams' | 'clients' = 'all'): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/v2/${planningId}/notifications/send`, { target });
+    return this.http.post<any>(`${this.api}/planning/${planningId}/notifications/send`, { target });
   }
 
   // ── Private helpers ───────────────────────────────────────────

@@ -20,7 +20,8 @@
       "Read(//c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/models/**)",
       "Read(//c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back/controllers/**)",
       "Bash(cd \"c:\\\\Users\\\\PC1\\\\Desktop\\\\Taches\\\\Taches\\\\PROJET_SAHELYS\\\\new\\\\collecte-dechets-back\" && grep -n \"getDashboardKpi\\\\s*=\\\\|async getDashboardKpi\" -A 60 services/financeStats.js | head -90)",
-      "Bash(cd \"c:\\\\Users\\\\PC1\\\\Desktop\\\\Taches\\\\Taches\\\\PROJET_SAHELYS\\\\new\\\\collecte-dechets-back\" && ls tests | grep -i \"team\\\\|qr\\\\|scan\\\\|collecte\" 2>/dev/null)"
+      "Bash(cd \"c:\\\\Users\\\\PC1\\\\Desktop\\\\Taches\\\\Taches\\\\PROJET_SAHELYS\\\\new\\\\collecte-dechets-back\" && ls tests | grep -i \"team\\\\|qr\\\\|scan\\\\|collecte\" 2>/dev/null)",
+      "Bash(cd \"/c/Users/PC1/Desktop/Taches/Taches/PROJET_SAHELYS/new/collecte-dechets-back\" && grep -n \"fee-config\" routes/financeStatsRoute.js)"
     ]
   }
 }

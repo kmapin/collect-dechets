@@ -11,7 +11,14 @@ export interface DemandeCollecte {
   notes: string;
   requestedDate: string | null;
   status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
-  collecteId: string | null;
+  // Peuplé (executedByTeamId/code) une fois la demande acceptée — source unique
+  // de vérité côté backend, jamais dupliquée sur DemandeCollecte elle-même.
+  collecteId: {
+    _id: string;
+    date: string;
+    executedByTeamId: { _id: string; name: string } | null;
+    code: string | null;
+  } | null;
   scheduledDate: string | null;
   rejectionReason: string;
   createdAt: string;
@@ -43,6 +50,16 @@ export class DemandeCollecteService {
 
   accept(id: string, scheduledDate?: string): Observable<{ success: boolean; data: DemandeCollecte }> {
     return this.http.patch<{ success: boolean; data: DemandeCollecte }>(`${this.base}/${id}/accept`, { scheduledDate });
+  }
+
+  /** Assigne une équipe à la Collecte déjà créée à l'acceptation. */
+  assignTeam(id: string, teamId: string): Observable<{ success: boolean; data: DemandeCollecte }> {
+    return this.http.patch<{ success: boolean; data: DemandeCollecte }>(`${this.base}/${id}/assign-team`, { teamId });
+  }
+
+  /** Crée le planning de suivi (nécessite une équipe déjà assignée). */
+  createPlanning(id: string): Observable<{ success: boolean; data: { demande: DemandeCollecte; planning: any } }> {
+    return this.http.post<{ success: boolean; data: { demande: DemandeCollecte; planning: any } }>(`${this.base}/${id}/planning`, {});
   }
 
   reject(id: string, rejectionReason?: string): Observable<{ success: boolean; data: DemandeCollecte }> {

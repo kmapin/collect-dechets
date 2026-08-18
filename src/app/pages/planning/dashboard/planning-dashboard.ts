@@ -239,7 +239,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
   }
 
-  // ── Line – évolution des plannings (GET /planning/v2/evolution, réel) ─────
+  // ── Line – évolution des plannings (GET /planning/evolution, réel) ─────
   // Méthode séparée (pas juste un bloc dans _initCharts()) : appelée aussi depuis
   // l'effect() du constructeur, pour se redessiner dès que planningService.evolution()
   // change (après un premier chargement OU après un clic sur Semaine/Mois), sans

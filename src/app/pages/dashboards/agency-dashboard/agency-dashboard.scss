@@ -807,6 +807,114 @@
   }
 }
 
+/* Demandes express — équipe assignée / planning de suivi (même langage visuel
+   que .fee-payer-chip ci-dessus). */
+.assigned-team-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  margin-right: 6px;
+
+  i {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  &--done {
+    background: #dcfce7;
+    color: #166534;
+  }
+}
+
+/* ---- Team picker (repris de shared_pages/signalement/signalement.scss —
+   même composant visuel, pas de composant partagé extrait pour l'instant) ---- */
+.team-picker-empty {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.team-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+
+  input[type="radio"] {
+    flex-shrink: 0;
+  }
+}
+
+.team-picker-item:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+
+.team-picker-item--selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.team-picker-item--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: #f9fafb;
+
+  &:hover {
+    border-color: #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .team-picker-name { color: #9ca3af; }
+}
+
+.team-picker-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.team-picker-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.team-picker-size {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+.team-picker-unavailable {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #9ca3af;
+  background: #f3f4f6;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
 /* Boutons action — palette adoucie (Prompt 9/9) : les classes globales .btn-secondary/
    .btn-danger (styles.scss) sont pleines et saturées, pensées pour un CTA isolé, pas
    pour deux boutons secondaires côte à côte dans une carte de liste — surchargées ici

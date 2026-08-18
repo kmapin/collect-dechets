@@ -707,7 +707,7 @@ export class AgencyService {
     const params = new HttpParams()
       .set('agencyId', agencyId)
       .set('pageSize', String(pageSize));
-    return this.http.get<any>(`${environment.apiUrl}/planning/v2`, { params }).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/planning`, { params }).pipe(
       map(res => res?.data ?? []),
       catchError(() => of([]))
     );
@@ -725,7 +725,7 @@ export class AgencyService {
   // supprimé, règle métier déjà appliquée par deletePlanningV2 côté backend ;
   // migré depuis l'ancien endpoint legacy /planning/delete/:id, nettoyage V1).
   deletePlanning$(id: string): Observable<boolean> {
-    return this.http.delete(`${environment.apiUrl}/planning/v2/${id}`).pipe(
+    return this.http.delete(`${environment.apiUrl}/planning/${id}`).pipe(
       map(() => {
         console.log(`planning ${id} supprimé avec succès`);
         return true;

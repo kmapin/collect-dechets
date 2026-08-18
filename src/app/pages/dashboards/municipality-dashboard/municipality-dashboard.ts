@@ -291,7 +291,7 @@ export class MunicipalityDashboard  implements OnInit {
   /** "Couverture Territoriale" table vs. map toggle (Prompt 13) — additive, table stays available. */
   coverageView: "table" | "map" = "table";
   /** Même source que zoneStatistics, recalculées ensemble par loadTerritorialCoverage()
-   * (item 6, GET /planning/v2/zone-coverage — coordonnées réelles, Neighborhood.lat/lng). */
+   * (item 6, GET /planning/zone-coverage — coordonnées réelles, Neighborhood.lat/lng). */
   coverageMapZones: CoverageMapZone[] = [];
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];

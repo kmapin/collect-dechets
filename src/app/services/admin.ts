@@ -333,7 +333,7 @@ export class Admin {
   getZoneCoverage$(agencyId?: string): Observable<any> {
     let params = new HttpParams();
     if (agencyId) params = params.append('agencyId', agencyId);
-    return this.http.get<any>(`${environment.apiUrl}/planning/v2/zone-coverage`, { params }).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/planning/zone-coverage`, { params }).pipe(
       map((res: any) => { console.log('API > getZoneCoverage:', res); return res; }),
       catchError(() => of({ success: false, data: [] }))
     );
@@ -348,7 +348,7 @@ export class Admin {
   getPlanningAlerts$(agencyId?: string): Observable<any> {
     let params = new HttpParams();
     if (agencyId) params = params.append('agencyId', agencyId);
-    return this.http.get<any>(`${environment.apiUrl}/planning/v2/alerts`, { params }).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/planning/alerts`, { params }).pipe(
       map((res: any) => { console.log('API > getPlanningAlerts:', res); return res; }),
       catchError(() => of({ success: false, data: [] }))
     );
@@ -357,7 +357,7 @@ export class Admin {
   getPlanningStats$(agencyId?: string): Observable<any> {
     let params = new HttpParams();
     if (agencyId) params = params.append('agencyId', agencyId);
-    return this.http.get<any>(`${environment.apiUrl}/planning/v2/stats`, { params }).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/planning/stats`, { params }).pipe(
       map((res: any) => { console.log('API > getPlanningStats:', res); return res; }),
       catchError(() => of({ success: false, data: null }))
     );
@@ -483,7 +483,7 @@ export class Admin {
    * "no markers at all". Decided with the user to keep the map on mock coordinates
    * (`MunicipalityMockDataService.getZoneCoordinates()`) for now; this method is ready
    * to swap in once real city coordinate data exists — see EditRecapFront.md, Prompt 14.
-   * NOT `GET /planning/v2/zone-coverage`: confirmed (again — wrong twice already, see
+   * NOT `GET /planning/zone-coverage`: confirmed (again — wrong twice already, see
    * EditRecap.md Prompts 07/11) that endpoint's real return shape is one aggregate
    * object, not a per-quartier array with lat/lng. Same request/response pattern
    * already used by `zone-selector.ts` for this same endpoint
