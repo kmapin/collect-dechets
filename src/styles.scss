@@ -388,6 +388,55 @@ body {
   transform: translateY(-1px);
 }
 
+// Boutons "quick actions" des bannières de dashboard (agency/client/...) — un
+// seul traitement cohérent ("verre dépoli" translucide), commun à tous les
+// dashboards, plutôt qu'une teinte différente par bouton/par page (constat
+// utilisateur : "les couleurs des boutons ne concorde pas" sur plusieurs
+// dashboards). Reste lisible sur n'importe quelle bannière à dégradé coloré ;
+// seule l'icône distingue chaque action, jamais sa couleur de fond.
+.qa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  padding: 0.65rem 1.2rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.qa-btn .material-icons {
+  font-size: 1.1rem;
+}
+
+.qa-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.qa-btn:active {
+  transform: translateY(0);
+}
+
+.qa-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .form-group {
   margin-bottom: 20px;
 }

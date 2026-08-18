@@ -422,64 +422,8 @@
   flex-wrap: wrap;
 }
 
-.qa-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border: none;
-  border-radius: 10px;
-  padding: 0.65rem 1.2rem;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: box-shadow 0.2s ease, transform 0.15s ease;
-
-  .material-icons { font-size: 1.1rem; }
-
-  &:hover {
-    color: #fff;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-.qa-btn--employee {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
-  &:hover { box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4); }
-}
-
-.qa-btn--tariff {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-  &:hover { box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4); }
-}
-
-.qa-btn--portal {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
-  &:hover { box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4); }
-}
-
-.qa-btn--finance {
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
-  &:hover { box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4); }
-}
-
-.qa-btn--notif {
-  background: linear-gradient(135deg, #64748b, #475569);
-  box-shadow: 0 2px 8px rgba(71, 85, 105, 0.3);
-  &:hover { box-shadow: 0 4px 14px rgba(71, 85, 105, 0.4); }
-}
+// .qa-btn — déplacé dans styles.scss (global) pour être partagé entre tous les
+// dashboards (agency/client/...) avec le même traitement visuel cohérent.
 
 .error-message {
   color: red;

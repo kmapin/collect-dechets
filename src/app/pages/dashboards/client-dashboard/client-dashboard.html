@@ -9,28 +9,28 @@
           </p>
         </div>
         <div class="quick-actions">
-          <button class="btn btn-primary" (click)="scrollToChat()">
+          <button class="qa-btn" (click)="scrollToChat()">
             <i class="material-icons">message</i>Mes messages
             <span class="tab-badge">{{ unreadMessageCount ? unreadMessageCount : 0 }}</span>
           </button>
           @if (currentUser?.subscribedAgencyId) {
             <button
-              class="btn btn-primary"
+              class="qa-btn"
               routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}"
               >
               <i class="material-icons">business</i>
               Mon agence
             </button>
           }
-          <!-- <button class="btn btn-primary" (click)="showReportModal = true">
+          <!-- <button class="qa-btn" (click)="showReportModal = true">
             <i class="material-icons">report_problem</i>
             Signaler un problème
           </button> -->
-          <button class="btn btn-primary" (click)="openSpontaneousRequestModal()">
+          <button class="qa-btn" (click)="openSpontaneousRequestModal()">
             <i class="material-icons">local_shipping</i>
             Collecte express
           </button>
-          <button class="btn btn-secondary" routerLink="/profile">
+          <button class="qa-btn" routerLink="/profile">
             <i class="material-icons">settings</i>
             Mon profil
           </button>
