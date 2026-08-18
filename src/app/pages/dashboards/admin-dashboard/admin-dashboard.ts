@@ -96,6 +96,9 @@ interface AgencyAudit {
   // Chantier Finance/Paiements, item 8 — chargé séparément (loadAgenciesFinanceStats()),
   // undefined tant que non résolu (pas 0, pour distinguer "pas encore chargé" de "0%").
   tauxRecouvrement?: number;
+  // Chantier Frais plateforme (Prompt F8/9) — chargé séparément (loadAgenciesPlatformFees()),
+  // undefined tant que non résolu (colonne "Frais plateforme" de l'onglet Agences).
+  platformFees?: number;
 }
 
 interface WasteStatistic {
@@ -1226,6 +1229,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
         // Taux de recouvrement (item 8) — même source de données que le dashboard
         // financier agence, un appel par agence de la page courante.
         this.loadAgenciesFinanceStats(this.agencyAudits.map(a => a.id));
+        // Frais plateforme (chantier Frais plateforme, Prompt F8/9) — colonne dédiée,
+        // distincte du taux de recouvrement ci-dessus.
+        this.loadAgenciesPlatformFees(this.agencyAudits.map(a => a.id));
 
         // Charger les collectes effectuées pour le top 5 si onglet statistiques actif
         if (this.activeTab === 'statistics') {
@@ -1370,6 +1376,26 @@ export class AdminDashboard implements OnInit, OnDestroy {
       results.forEach((kpi: any, i) => {
         const audit = this.agencyAudits.find(a => a.id === agencyIds[i]);
         if (audit && kpi) audit.tauxRecouvrement = kpi.tauxRecouvrement;
+      });
+      this.filteredAgencies = [...this.agencyAudits];
+    });
+  }
+
+  /**
+   * Frais plateforme perçus par agence (chantier Frais plateforme, Prompt F8/9) —
+   * même convention que loadAgenciesFinanceStats ci-dessus (un appel par agence,
+   * resolveAgency.js autorise déjà l'override agencyId pour super_admin) : pas de
+   * second calcul, réutilise FeeService.getPlatformFeesSummary (Prompt F6/9).
+   */
+  loadAgenciesPlatformFees(agencyIds: string[]): void {
+    if (!agencyIds.length) return;
+    const requests = agencyIds.map(id =>
+      this.adminService.getPlatformFees$(id).pipe(catchError(() => of(null)))
+    );
+    forkJoin(requests).subscribe((results) => {
+      results.forEach((resume: any, i) => {
+        const audit = this.agencyAudits.find(a => a.id === agencyIds[i]);
+        if (audit && resume) audit.platformFees = resume.totalPlatformAmount;
       });
       this.filteredAgencies = [...this.agencyAudits];
     });

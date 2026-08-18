@@ -13,4 +13,15 @@ export interface Retrait {
   traitePar?: string;
   dateTraitement?: string; // ISO date
   motifRejet?: string;
+  // Chantier Frais plateforme (Prompt F5/F8) — snapshot figé à la demande, jamais
+  // recalculé ensuite. `undefined` pour un retrait antérieur à ce chantier —
+  // affiché comme "aucun frais historisé", jamais une valeur inventée.
+  grossAmount?: number;
+  feeType?: 'FIXED' | 'PERCENTAGE';
+  feeValue?: number;
+  feeAmount?: number;
+  feeOption?: 'A' | 'B';
+  netAmountReceived?: number;
+  walletDebitAmount?: number;
+  platformAmount?: number;
 }

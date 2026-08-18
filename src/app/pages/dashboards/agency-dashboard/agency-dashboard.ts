@@ -897,6 +897,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       price: ["", [Validators.required, Validators.min(0)]],
       description: ["", [Validators.required, Validators.minLength(10)]],
       nbPassages: ["", [Validators.required, Validators.min(1)]],
+      // Chantier Frais plateforme (Prompt F4/F8) — qui supporte le frais
+      // plateforme pour ce plan, par défaut 'AGENCE' (comportement historique
+      // inchangé tant que non explicitement basculé).
+      feePayer: ["AGENCE", Validators.required],
     });
 
     // Formulaire de zone
@@ -4155,6 +4159,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         numberOfPasses: formValue.nbPassages,
         createdAt: new Date(),
         updatedAt: new Date(),
+        feePayer: formValue.feePayer || "AGENCE",
       };
       console.log("[DEBUG] Tarif:", tarif);
       this.agencyService.addTariff(tarif).subscribe({
@@ -4637,6 +4642,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       price: formValue.price,
       description: formValue.description || "",
       numberOfPasses: formValue.nbPassages || 0,
+      feePayer: formValue.feePayer || "AGENCE",
     };
 
     this.agencyService.updateTariff$(actualTariffId, payload).subscribe({
@@ -4766,6 +4772,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       price: tariff.price || "",
       description: tariff.description || "",
       nbPassages: tariff.numberOfPasses || "",
+      feePayer: tariff.feePayer || "AGENCE",
     });
 
     // Marquer le formulaire comme non touché et propre pour éviter les erreurs de validation

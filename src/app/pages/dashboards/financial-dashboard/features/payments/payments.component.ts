@@ -35,9 +35,14 @@ export class PaymentsComponent {
   readonly erreur = signal<string | null>(null);
   readonly exportEnCours = signal(false);
 
+  // Chantier Frais plateforme (Prompt F4/F8) : "Montant" seul ne dit pas ce que l'agence
+  // reçoit réellement une fois les frais appliqués — "Frais" et "Net agence" rendent ce
+  // détail visible. `?? '—'` : un paiement antérieur à ce chantier n'a pas ces champs.
   readonly colonnes: DataTableColumn<PaiementListe>[] = [
     { key: 'clientNom', label: 'Client', sortable: true },
     { key: 'montant', label: 'Montant', sortable: true, format: r => formatMontantXof(r.montant) },
+    { key: 'feeAmount', label: 'Frais', format: r => (r.feeAmount !== undefined ? formatMontantXof(r.feeAmount) : '—') },
+    { key: 'netAmount', label: 'Net agence', format: r => (r.netAmount !== undefined ? formatMontantXof(r.netAmount) : '—') },
     { key: 'datePaiement', label: 'Date', sortable: true, format: r => formatFrDate(r.datePaiement) },
     { key: 'modePaiement', label: 'Mode', format: r => r.modePaiement ?? '—' },
   ];
@@ -88,6 +93,8 @@ export class PaymentsComponent {
           const rows = page.items.map((p) => ({
             client: p.clientNom,
             montant: p.montant,
+            frais: p.feeAmount ?? '—',
+            netAgence: p.netAmount ?? '—',
             date: formatFrDate(p.datePaiement),
             mode: p.modePaiement ?? '—',
           }));
@@ -96,6 +103,8 @@ export class PaymentsComponent {
             [
               { key: 'client', label: 'Client' },
               { key: 'montant', label: 'Montant (FCFA)' },
+              { key: 'frais', label: 'Frais (FCFA)' },
+              { key: 'netAgence', label: 'Net agence (FCFA)' },
               { key: 'date', label: 'Date' },
               { key: 'mode', label: 'Mode' },
             ],

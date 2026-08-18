@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../../../../../environments/environment';
 import { DashboardKpi, Page, PageParams, Periode, Retrait } from '../../models';
 import {
+  FeeOptionRetrait,
   FinanceDataService,
   FinanceStatsSeries,
   MontantTotalFilter,
@@ -91,13 +92,15 @@ export class FinanceDataHttpService implements FinanceDataService {
       .pipe(map(res => ({ items: res.items.map(mapRetraitDto), total: res.total, page: res.page, pageSize: res.pageSize })));
   }
 
-  enregistrerRetrait(payload: { montant: number; customerMsisdn: string; operator: OperateurRetrait; motif?: string }): Observable<Retrait> {
-    // POST /finance/retraits { montant, customerMsisdn, operator, motif } — controllers/
-    // financeStats.js::enregistrerRetrait délègue à TransactionService.demanderRetrait :
-    // AUCUN débit ni appel Moov Money à ce stade (corrigé, chantier Finance/Paiements
-    // item 3 — ce commentaire décrivait par erreur le comportement du circuit legacy
-    // sendUserMoney/send-money, pas celui de cet endpoint). Le débit + l'appel opérateur
-    // n'ont lieu qu'à l'acceptation Super Admin (accepterRetrait, module Retraits).
+  enregistrerRetrait(payload: { montant: number; customerMsisdn: string; operator: OperateurRetrait; motif?: string; feeOption: FeeOptionRetrait }): Observable<Retrait> {
+    // POST /finance/retraits { montant, customerMsisdn, operator, motif, feeOption } —
+    // controllers/financeStats.js::enregistrerRetrait délègue à TransactionService.
+    // demanderRetrait : AUCUN débit ni appel Moov Money à ce stade (corrigé, chantier
+    // Finance/Paiements item 3 — ce commentaire décrivait par erreur le comportement du
+    // circuit legacy sendUserMoney/send-money, pas celui de cet endpoint). Le débit +
+    // l'appel opérateur n'ont lieu qu'à l'acceptation Super Admin (accepterRetrait,
+    // module Retraits). `feeOption` obligatoire depuis le chantier Frais plateforme
+    // (Prompt F5) — choisi par l'agence à chaque demande, jamais un réglage permanent.
     return this.http.post<unknown>(`${this.base}/retraits`, payload).pipe(map(mapRetraitDto));
   }
 }

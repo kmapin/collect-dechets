@@ -63,8 +63,14 @@ export class WithdrawalsComponent {
   readonly erreur = signal<string | null>(null);
   readonly afficherFormulaireCreation = signal(false);
 
+  // Chantier Frais plateforme (Prompt F5/F8) : "Montant" (demandé) ne suffit plus à
+  // décrire ce qui a réellement été reçu/débité — "Frais" et "Net reçu" rendent le
+  // détail visible plutôt qu'un montant unique opaque. `?? '—'` : un retrait antérieur
+  // à ce chantier n'a pas ces champs (compatibilité rétroactive honnête).
   readonly colonnes: DataTableColumn<Retrait>[] = [
-    { key: 'montant', label: 'Montant', sortable: true, format: r => formatMontantXof(r.montant) },
+    { key: 'montant', label: 'Montant demandé', sortable: true, format: r => formatMontantXof(r.montant) },
+    { key: 'feeAmount', label: 'Frais', format: r => (r.feeAmount !== undefined ? formatMontantXof(r.feeAmount) : '—') },
+    { key: 'netAmountReceived', label: 'Net reçu', format: r => (r.netAmountReceived !== undefined ? formatMontantXof(r.netAmountReceived) : '—') },
     { key: 'dateRetrait', label: 'Date', sortable: true, format: r => formatFrDate(r.dateRetrait) },
     { key: 'motif', label: 'Motif', format: r => r.motif ?? '—' },
     { key: 'initiateurNom', label: 'Initié par', format: r => r.initiateurNom ?? '—' },

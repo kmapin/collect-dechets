@@ -188,12 +188,15 @@ export interface Employees {
 export interface Tarif {
   _id?: string;
   agencyId: string;
-  planType: TarifType;       
-  price: number;           
-  description?: string;    
-  numberOfPasses?: number;     
-  createdAt?: Date;         
-  updatedAt?: Date;        
+  planType: TarifType;
+  price: number;
+  description?: string;
+  numberOfPasses?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+  // Chantier Frais plateforme (Prompt F4/F8) — qui supporte le frais plateforme
+  // pour ce plan tarifaire ('AGENCE' par défaut, voir modèle backend Pricing).
+  feePayer?: 'CLIENT' | 'AGENCE';
 }
 export type TarifType = 'standard' | 'premium' | 'vip';
 export enum  EmployeeRole {

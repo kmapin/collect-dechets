@@ -1,0 +1,80 @@
+<div class="fc-shell">
+  <header class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Frais plateforme</h1>
+          <p class="page-subtitle">
+            Configuration globale (s'applique à toutes les agences) des frais prélevés par la plateforme sur les paiements clients et les retraits agence.
+          </p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container fc-page">
+    <div *ngIf="isLoading" class="fc-loading">Chargement…</div>
+
+    <form *ngIf="!isLoading" class="fc-form" (ngSubmit)="save()">
+      <section class="fc-section">
+        <h2><i class="material-icons">payments</i> Frais sur paiement client</h2>
+        <p class="fc-hint">
+          Prélevé sur chaque paiement client (abonnement ou redevance) réglé avec succès. Le plan tarifaire de l'agence détermine qui, du client ou de l'agence, supporte ce frais.
+        </p>
+
+        <label class="fc-toggle">
+          <input type="checkbox" [(ngModel)]="clientPaymentFee.enabled" name="clientFeeEnabled" />
+          <span>Activer les frais sur paiement client</span>
+        </label>
+
+        <div class="fc-grid" [class.fc-grid--disabled]="!clientPaymentFee.enabled">
+          <div class="fc-field">
+            <label>Type</label>
+            <select [(ngModel)]="clientPaymentFee.type" name="clientFeeType" [disabled]="!clientPaymentFee.enabled">
+              <option *ngFor="let t of feeTypes" [ngValue]="t.value">{{ t.label }}</option>
+            </select>
+          </div>
+          <div class="fc-field">
+            <label>Valeur</label>
+            <input type="number" min="0" [(ngModel)]="clientPaymentFee.value" name="clientFeeValue"
+              [disabled]="!clientPaymentFee.enabled" />
+          </div>
+        </div>
+        <p class="fc-error" *ngIf="blockError('clientPaymentFee') as err">{{ err }}</p>
+      </section>
+
+      <section class="fc-section">
+        <h2><i class="material-icons">account_balance_wallet</i> Frais sur retrait agence</h2>
+        <p class="fc-hint">
+          Prélevé sur chaque retrait accepté. L'agence choisit, à chaque demande, si ce frais est déduit du montant reçu (Option A) ou ajouté au débit de son solde (Option B).
+        </p>
+
+        <label class="fc-toggle">
+          <input type="checkbox" [(ngModel)]="agencyWithdrawalFee.enabled" name="withdrawalFeeEnabled" />
+          <span>Activer les frais sur retrait agence</span>
+        </label>
+
+        <div class="fc-grid" [class.fc-grid--disabled]="!agencyWithdrawalFee.enabled">
+          <div class="fc-field">
+            <label>Type</label>
+            <select [(ngModel)]="agencyWithdrawalFee.type" name="withdrawalFeeType" [disabled]="!agencyWithdrawalFee.enabled">
+              <option *ngFor="let t of feeTypes" [ngValue]="t.value">{{ t.label }}</option>
+            </select>
+          </div>
+          <div class="fc-field">
+            <label>Valeur</label>
+            <input type="number" min="0" [(ngModel)]="agencyWithdrawalFee.value" name="withdrawalFeeValue"
+              [disabled]="!agencyWithdrawalFee.enabled" />
+          </div>
+        </div>
+        <p class="fc-error" *ngIf="blockError('agencyWithdrawalFee') as err">{{ err }}</p>
+      </section>
+
+      <div class="fc-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="isSaving || hasErrors">
+          {{ isSaving ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

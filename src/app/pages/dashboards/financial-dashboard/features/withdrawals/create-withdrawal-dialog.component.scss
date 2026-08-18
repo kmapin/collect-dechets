@@ -143,8 +143,13 @@
       color: #475569;
     }
 
+    // :not([type="radio"]):not([type="checkbox"]) — sans cette exclusion, ces
+    // deux inputs (radio Option A/B ci-dessous) héritent aussi de width:100%/
+    // padding/border et s'affichent comme de longues barres pleines au lieu de
+    // ronds de sélection (même piège déjà rencontré et corrigé ailleurs dans
+    // l'app, ex. client-dashboard.scss, avec la même exclusion).
     select,
-    input {
+    input:not([type="radio"]):not([type="checkbox"]) {
       width: 100%;
       box-sizing: border-box;
       padding: 0.55rem 0.7rem;
@@ -167,19 +172,178 @@
     color: #b91c1c;
   }
 
+  &__radio {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 400;
+    background: #fff;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover {
+      border-color: #93c5fd;
+    }
+
+    // Carte mise en évidence dès que son propre radio est coché — évite un
+    // binding supplémentaire côté TS juste pour un état visuel (:has() est
+    // supporté par tous les navigateurs cibles de cette app, cf. mêmes
+    // moteurs que le reste des styles natifs déjà utilisés ici).
+    &:has(input:checked) {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+
+    input[type="radio"] {
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      margin: 2px 0 0;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+
+    span {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #1e293b;
+    }
+
+    em {
+      font-style: normal;
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: #6b7280;
+    }
+  }
+
+  &__confirmation {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  &__confirm-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+
+  &__confirm-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #2563eb;
+    margin-bottom: 6px;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  &__confirm-header h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  &__confirm-header p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+
+  &__hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    padding: 18px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+    border: 1px solid #dbeafe;
+  }
+
+  &__hero-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  &__hero-value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: #1e3a8a;
+    line-height: 1.2;
+  }
+
+  &__hero-sub {
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
   &__recap {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 6px 16px;
-    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    margin: 4px 0 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  &__recap-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    font-size: 0.86rem;
+    background: #fff;
+
+    & + & {
+      border-top: 1px solid #f1f5f9;
+    }
 
     dt {
-      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
       color: #6b7280;
+      font-weight: 500;
+      white-space: nowrap;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: #94a3b8;
+      }
     }
 
     dd {
       margin: 0;
+      font-weight: 600;
+      color: #1e293b;
+      text-align: right;
+      word-break: break-word;
     }
   }
 
@@ -193,6 +357,5 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 16px;
   }
 }

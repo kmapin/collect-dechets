@@ -52,12 +52,24 @@ export function mapPaiementListeDto(dto: unknown): PaiementListe {
     datePaiement: String(d['datePaiement']),
     modePaiement: operatorLabel(d['modePaiement']),
     clientNom: String(d['clientNom']),
+    // Chantier Frais plateforme (Prompt F4/F8) — snapshot figé, voir paiement.model.ts.
+    grossAmount: d['grossAmount'] !== undefined && d['grossAmount'] !== null ? Number(d['grossAmount']) : undefined,
+    feeType: (d['feeType'] as PaiementListe['feeType']) ?? undefined,
+    feeValue: d['feeValue'] !== undefined && d['feeValue'] !== null ? Number(d['feeValue']) : undefined,
+    feeAmount: d['feeAmount'] !== undefined && d['feeAmount'] !== null ? Number(d['feeAmount']) : undefined,
+    feePayer: (d['feePayer'] as PaiementListe['feePayer']) ?? undefined,
+    netAmount: d['netAmount'] !== undefined && d['netAmount'] !== null ? Number(d['netAmount']) : undefined,
+    platformAmount: d['platformAmount'] !== undefined && d['platformAmount'] !== null ? Number(d['platformAmount']) : undefined,
   };
 }
 
 // DTO réel : GET /finance/retraits (services/transaction.js::getWithdrawByAgencyPaginated).
 function optionalString(value: unknown): string | undefined {
   return value !== undefined && value !== null ? String(value) : undefined;
+}
+
+function optionalNumber(value: unknown): number | undefined {
+  return value !== undefined && value !== null ? Number(value) : undefined;
 }
 
 export function mapRetraitDto(dto: unknown): Retrait {
@@ -72,6 +84,15 @@ export function mapRetraitDto(dto: unknown): Retrait {
     traitePar: optionalString(d['traitePar']),
     dateTraitement: optionalString(d['dateTraitement']),
     motifRejet: optionalString(d['motifRejet']),
+    // Chantier Frais plateforme (Prompt F5/F8) — snapshot figé, voir retrait.model.ts.
+    grossAmount: optionalNumber(d['grossAmount']),
+    feeType: optionalString(d['feeType']) as Retrait['feeType'],
+    feeValue: optionalNumber(d['feeValue']),
+    feeAmount: optionalNumber(d['feeAmount']),
+    feeOption: optionalString(d['feeOption']) as Retrait['feeOption'],
+    netAmountReceived: optionalNumber(d['netAmountReceived']),
+    walletDebitAmount: optionalNumber(d['walletDebitAmount']),
+    platformAmount: optionalNumber(d['platformAmount']),
   };
 }
 

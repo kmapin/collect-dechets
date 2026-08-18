@@ -2719,6 +2719,14 @@
                       placeholder="Décrivez ce tarif..." rows="3"></textarea>
                     <span class="error-message">{{ getFieldError('tariff', 'description') }}</span>
                   </div>
+                  <!-- Chantier Frais plateforme (Prompt F4/F8) : qui supporte le frais plateforme -->
+                  <div class="form-group full-width">
+                    <label class="form-label required">Frais plateforme à la charge de</label>
+                    <select formControlName="feePayer" class="form-select">
+                      <option value="AGENCE">L'agence (déduit du montant reçu)</option>
+                      <option value="CLIENT">Le client (en plus du prix affiché)</option>
+                    </select>
+                  </div>
                 </form>
               </div>
               <div class="drawer-footer">
@@ -2843,7 +2851,7 @@
         <!-- Drawer Mes Tarifs -->
         @if (showTariffsModal) {
         <div class="drawer-overlay" (click)="closeTariffsModal()">
-          <div class="drawer-content" (click)="$event.stopPropagation()">
+          <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
             <div class="drawer-header">
               <h3>
                 {{ tariffToUpdate ? 'Modifier le Tarif' : 'Liste des tarifs'
@@ -2875,6 +2883,13 @@
                     <i class="material-icons text-sm align-middle">info</i>
                     {{ tariff.description }}
                   </p>
+                  <!-- Chantier Frais plateforme (Prompt 9/9) : qui supporte les
+                       frais plateforme pour ce tarif, visible directement dans la
+                       liste (pas seulement dans le formulaire d'édition). -->
+                  <span class="fee-payer-chip" [class.fee-payer-chip--client]="tariff.feePayer === 'CLIENT'">
+                    <i class="material-icons text-sm">{{ tariff.feePayer === 'CLIENT' ? 'person' : 'store' }}</i>
+                    Frais à la charge {{ tariff.feePayer === 'CLIENT' ? 'du client' : "de l'agence" }}
+                  </span>
                   <!-- Boutons dâ€™action dans le modal -->
                   <div class="tariff-actions">
                     <button class="btn btn-secondary flex items-center gap-1" (click)="editTariff(tariff)">

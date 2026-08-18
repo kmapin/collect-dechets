@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Output, inject, signal, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,8 +7,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
-import { OperateurRetrait } from '../../data-access/contracts/finance-data.service';
+import { FeeOptionRetrait, OperateurRetrait } from '../../data-access/contracts/finance-data.service';
 import { formatMontantXof } from '../../utils/money.util';
+import { FeeConfigService } from '../../../../../services/fee-config.service';
 
 type Etape = 'formulaire' | 'confirmation';
 
@@ -41,6 +43,7 @@ interface OperateurInfo {
 export class CreateWithdrawalDialogComponent {
   private readonly fb = inject(FormBuilder);
   private readonly financeData = inject(FINANCE_DATA_SERVICE);
+  private readonly feeConfigService = inject(FeeConfigService);
 
   /** `true` si le retrait a bien été créé, `false` sur annulation — jamais émis 2 fois. */
   @Output() ferme = new EventEmitter<boolean>();
@@ -56,15 +59,70 @@ export class CreateWithdrawalDialogComponent {
 
   readonly formatMontant = formatMontantXof;
 
+  // Chantier Frais plateforme (Prompt F5/F8) — frais visibles AVANT la transaction
+  // (décision Checkpoint) : config lue une fois à l'ouverture, jamais recalculée côté
+  // serveur ici — le backend revérifie/fige tout à la soumission (demanderRetrait),
+  // cet aperçu n'est qu'un confort d'affichage, jamais la source de vérité.
+  private readonly agencyWithdrawalFee = signal<{ enabled: boolean; type: 'FIXED' | 'PERCENTAGE'; value: number } | null>(null);
+
   readonly form = this.fb.nonNullable.group({
     operator: this.fb.control<OperateurRetrait | null>(null, Validators.required),
     customerMsisdn: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],
     montant: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
     motif: ['', Validators.maxLength(200)],
+    feeOption: this.fb.control<FeeOptionRetrait | null>(null, Validators.required),
   });
+
+  // form.value n'est pas un signal (Reactive Forms) — converti explicitement via
+  // toSignal() pour que les aperçus ci-dessous se recalculent réellement à chaque
+  // saisie, au lieu d'être figés à leur valeur d'initialisation (piège classique :
+  // computed() ne réagit qu'à des signaux lus en son sein, jamais à un getter simple).
+  private readonly montantSignal = toSignal(this.form.controls.montant.valueChanges, {
+    initialValue: this.form.controls.montant.value,
+  });
+
+  constructor() {
+    this.feeConfigService.getGlobal$().subscribe({
+      next: (res) => {
+        const fee = res?.data?.agencyWithdrawalFee ?? null;
+        this.agencyWithdrawalFee.set(fee);
+        // Frais désactivés : Option A/B sont strictement équivalentes (feeAmount=0),
+        // le choix n'a alors aucun effet — on le fixe à 'A' pour satisfaire le
+        // Validators.required sans imposer un choix dénué de sens à l'agence.
+        if (!fee?.enabled) this.form.controls.feeOption.setValue('A');
+      },
+      error: () => this.agencyWithdrawalFee.set(null),
+    });
+  }
 
   get operatorLabel(): string {
     return this.operateurs.find(o => o.value === this.form.value.operator)?.label ?? '';
+  }
+
+  private computeFeeAmount(montant: number): number {
+    const fee = this.agencyWithdrawalFee();
+    if (!fee || !fee.enabled) return 0;
+    return fee.type === 'PERCENTAGE' ? Math.round((montant * fee.value) / 100) : fee.value;
+  }
+
+  /** Aperçu Option A (déduit du montant reçu) — null tant que le montant n'est pas saisi. */
+  readonly apercuOptionA = computed(() => {
+    const montant = this.montantSignal();
+    if (!montant || montant <= 0) return null;
+    const fee = this.computeFeeAmount(montant);
+    return { feeAmount: fee, netAmountReceived: montant - fee, walletDebitAmount: montant };
+  });
+
+  /** Aperçu Option B (agence prend les frais en plus du débit). */
+  readonly apercuOptionB = computed(() => {
+    const montant = this.montantSignal();
+    if (!montant || montant <= 0) return null;
+    const fee = this.computeFeeAmount(montant);
+    return { feeAmount: fee, netAmountReceived: montant, walletDebitAmount: montant + fee };
+  });
+
+  get fraisActifs(): boolean {
+    return !!this.agencyWithdrawalFee()?.enabled;
   }
 
   passerAConfirmation(): void {
@@ -86,13 +144,13 @@ export class CreateWithdrawalDialogComponent {
 
   confirmer(): void {
     if (this.form.invalid || this.enregistrement()) return;
-    const { operator, customerMsisdn, montant, motif } = this.form.getRawValue();
-    if (!operator || !customerMsisdn || !montant) return;
+    const { operator, customerMsisdn, montant, motif, feeOption } = this.form.getRawValue();
+    if (!operator || !customerMsisdn || !montant || !feeOption) return;
 
     this.enregistrement.set(true);
     this.erreur.set(null);
 
-    this.financeData.enregistrerRetrait({ montant, customerMsisdn, operator, motif: motif || undefined }).subscribe({
+    this.financeData.enregistrerRetrait({ montant, customerMsisdn, operator, motif: motif || undefined, feeOption }).subscribe({
       next: () => {
         this.enregistrement.set(false);
         this.ferme.emit(true);
@@ -104,7 +162,7 @@ export class CreateWithdrawalDialogComponent {
     });
   }
 
-  messageErreur(controle: 'operator' | 'customerMsisdn' | 'montant' | 'motif'): string {
+  messageErreur(controle: 'operator' | 'customerMsisdn' | 'montant' | 'motif' | 'feeOption'): string {
     const champ = this.form.get(controle);
     if (!champ || !champ.errors || !champ.touched) return '';
     if (champ.errors['required']) return 'Ce champ est obligatoire';

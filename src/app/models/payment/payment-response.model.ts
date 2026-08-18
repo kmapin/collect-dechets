@@ -41,4 +41,14 @@ export interface PaymentResponse {
   reference?: string;
   success?: boolean;
   data?: any;
+
+  // Chantier Frais plateforme (Prompt 9/9) — snapshot de frais figé à
+  // l'initiation (controllers/transaction.js::initiate), présent uniquement si
+  // le plan tarifaire applique des frais. `grossAmount` = prix du service seul,
+  // `amount` (déjà déclaré ci-dessus) = ce qui est réellement débité — égal à
+  // grossAmount+feeAmount uniquement quand feePayer='CLIENT'.
+  grossAmount?: number;
+  feeAmount?: number;
+  feePayer?: 'CLIENT' | 'AGENCE';
+  netAmount?: number;
 }

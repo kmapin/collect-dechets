@@ -49,6 +49,30 @@
         </span>
       </div>
 
+      <!-- Chantier Frais plateforme (Prompt F5/F8) : choix obligatoire à CHAQUE demande,
+           frais visibles avant la transaction (décision Checkpoint) via un aperçu calculé
+           côté client à partir de la config lue à l'ouverture — le backend refige/revérifie
+           tout à la soumission, cet aperçu n'est qu'un confort d'affichage. -->
+      <div class="fin-create-withdrawal__field" *ngIf="fraisActifs">
+        <label>Qui supporte les frais plateforme ? *</label>
+        <label class="fin-create-withdrawal__radio">
+          <input type="radio" formControlName="feeOption" value="A" />
+          <span>
+            Option A — déduits du montant reçu
+            <em *ngIf="apercuOptionA() as a">vous recevrez {{ formatMontant(a.netAmountReceived) }}, débit wallet {{ formatMontant(a.walletDebitAmount) }}</em>
+          </span>
+        </label>
+        <label class="fin-create-withdrawal__radio">
+          <input type="radio" formControlName="feeOption" value="B" />
+          <span>
+            Option B — à votre charge, en plus du débit
+            <em *ngIf="apercuOptionB() as b">vous recevrez {{ formatMontant(b.netAmountReceived) }}, débit wallet {{ formatMontant(b.walletDebitAmount) }}</em>
+          </span>
+        </label>
+        <span class="fin-create-withdrawal__field-error" *ngIf="form.get('feeOption')?.invalid && form.get('feeOption')?.touched">
+          {{ messageErreur('feeOption') }}
+        </span>
+      </div>
       <div class="fin-create-withdrawal__actions">
         <button mat-button type="button" (click)="annuler()">Annuler</button>
         <button mat-flat-button color="primary" type="submit">Continuer</button>
@@ -56,16 +80,49 @@
     </form>
 
     <div class="fin-create-withdrawal__confirmation" *ngIf="etape() === 'confirmation'">
-      <p>Confirmez-vous ce retrait ?</p>
+      <div class="fin-create-withdrawal__confirm-header">
+        <div class="fin-create-withdrawal__confirm-icon">
+          <mat-icon>account_balance_wallet</mat-icon>
+        </div>
+        <h4>Confirmez votre retrait</h4>
+        <p>Vérifiez les informations avant de valider.</p>
+      </div>
+
+      <!-- Montant réellement reçu mis en avant — c'est l'information la plus
+           consultée, pas la ligne perdue dans une liste plate de détails. -->
+      <div class="fin-create-withdrawal__hero">
+        <span class="fin-create-withdrawal__hero-label">Vous recevrez</span>
+        <span class="fin-create-withdrawal__hero-value">
+          {{ formatMontant((form.value.feeOption === 'B' ? apercuOptionB() : apercuOptionA())?.netAmountReceived ?? form.value.montant ?? 0) }}
+        </span>
+        <span class="fin-create-withdrawal__hero-sub" *ngIf="fraisActifs">
+          {{ formatMontant(form.value.montant ?? 0) }} demandé
+          <ng-container *ngIf="form.value.feeOption === 'B'; else optionADeduit">
+            + {{ formatMontant(apercuOptionB()?.feeAmount ?? 0) }} de frais à votre charge
+          </ng-container>
+          <ng-template #optionADeduit>
+            − {{ formatMontant(apercuOptionA()?.feeAmount ?? 0) }} de frais plateforme déduits
+          </ng-template>
+        </span>
+      </div>
+
       <dl class="fin-create-withdrawal__recap">
-        <dt>Opérateur</dt>
-        <dd>{{ operatorLabel }}</dd>
-        <dt>Numéro</dt>
-        <dd>{{ form.value.customerMsisdn }}</dd>
-        <dt>Montant</dt>
-        <dd>{{ formatMontant(form.value.montant ?? 0) }}</dd>
-        <dt *ngIf="form.value.motif">Motif</dt>
-        <dd *ngIf="form.value.motif">{{ form.value.motif }}</dd>
+        <div class="fin-create-withdrawal__recap-row">
+          <dt><mat-icon>smartphone</mat-icon> Opérateur</dt>
+          <dd>{{ operatorLabel }}</dd>
+        </div>
+        <div class="fin-create-withdrawal__recap-row">
+          <dt><mat-icon>call</mat-icon> Numéro</dt>
+          <dd>{{ form.value.customerMsisdn }}</dd>
+        </div>
+        <div class="fin-create-withdrawal__recap-row" *ngIf="fraisActifs">
+          <dt><mat-icon>account_balance</mat-icon> Débit de votre wallet</dt>
+          <dd>{{ formatMontant((form.value.feeOption === 'B' ? apercuOptionB() : apercuOptionA())?.walletDebitAmount ?? 0) }}</dd>
+        </div>
+        <div class="fin-create-withdrawal__recap-row" *ngIf="form.value.motif">
+          <dt><mat-icon>notes</mat-icon> Motif</dt>
+          <dd>{{ form.value.motif }}</dd>
+        </div>
       </dl>
 
       <div class="fin-create-withdrawal__actions">

@@ -1,5 +1,6 @@
 import { Routes } from "@angular/router";
 import { adminGuard,adminOrManagerGuard,managerGuard, authGuard, clientGuard, municipalityGuard }  from './core/guards/auth.guard';
+import { feeConfigAdminGuard } from './core/guards/fee-config-admin.guard';
 
 export const routes: Routes = [
   {
@@ -165,6 +166,18 @@ export const routes: Routes = [
     loadComponent: () =>
       import("./pages/notification-settings/notification-settings").then(
         (c) => c.NotificationSettingsComponent,
+      ),
+  },
+
+  {
+    // Chantier Frais plateforme (Prompt F8/9) — réservé au Super Admin
+    // (feeConfigAdminGuard, pas adminOrManagerGuard : voir son commentaire
+    // pour le bug de court-circuit qu'il évite).
+    canActivate: [feeConfigAdminGuard],
+    path: "fee-config-settings",
+    loadComponent: () =>
+      import("./pages/fee-config-settings/fee-config-settings").then(
+        (c) => c.FeeConfigSettingsComponent,
       ),
   },
 

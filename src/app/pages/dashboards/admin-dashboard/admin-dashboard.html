@@ -18,6 +18,10 @@
             <i class="material-icons">settings</i>
             Notifications
           </button>
+          <button class="btn btn-secondary" routerLink="/fee-config-settings">
+            <i class="material-icons">payments</i>
+            Frais plateforme
+          </button>
         </div>
       </div>
     </div>
@@ -580,6 +584,7 @@
                   <th>Gestionnaires</th>
                   <th>Zones</th>
                   <th>Recouvrement</th>
+                  <th>Frais plateforme</th>
                   <th class="col-actions">Actions</th>
                 </tr>
               </thead>
@@ -605,6 +610,10 @@
                   <td>
                     <span *ngIf="agency.tauxRecouvrement !== undefined; else loadingCellRecouvrement">{{ agency.tauxRecouvrement }}%</span>
                     <ng-template #loadingCellRecouvrement><span class="stats-loading">…</span></ng-template>
+                  </td>
+                  <td>
+                    <span *ngIf="agency.platformFees !== undefined; else loadingCellPlatformFees">{{ formatXof(agency.platformFees) }}</span>
+                    <ng-template #loadingCellPlatformFees><span class="stats-loading">…</span></ng-template>
                   </td>
                   <td class="col-actions">
                     <div class="table-actions">
@@ -2290,6 +2299,7 @@
                   <th>Agence</th>
                   <th>Gestionnaire</th>
                   <th>Montant demandé</th>
+                  <th>Frais</th>
                   <th>Solde disponible</th>
                   <th>Méthode</th>
                   <th>Portefeuille / N° compte</th>
@@ -2312,6 +2322,7 @@
                     <span class="stats-loading">{{ w.agencyManagerEmail }}</span>
                   </td>
                   <td>{{ formatXof(w.amount) }}</td>
+                  <td>{{ w.platformAmount ? formatXof(w.platformAmount) : '—' }}</td>
                   <td>{{ formatXof(w.availableBalance) }}</td>
                   <td>{{ getPaymentMethodText(w.paymentMethod) }}</td>
                   <td>{{ w.walletNumber }}</td>
@@ -3476,15 +3487,24 @@
         </p>
       </div>
 
-      <!-- Montant net — mis en avant, c'est l'information la plus consultée -->
+      <!-- Montant net — mis en avant, c'est l'information la plus consultée.
+           Chantier Frais plateforme (Prompt F5/F8) : la formule "demandé − frais = net"
+           n'est vraie qu'en Option A. En Option B, l'agence reçoit le montant demandé
+           intégralement et c'est le débit du WALLET qui augmente des frais — d'où
+           l'affichage explicite des deux montants (reçu / débité) plutôt qu'une
+           soustraction unique qui serait fausse pour la moitié des cas. -->
       <div class="wd-amount-hero">
         <div class="wd-amount-hero__block">
-          <span class="wd-amount-hero__label">Montant net à verser</span>
+          <span class="wd-amount-hero__label">Montant net transféré à l'agence</span>
           <span class="wd-amount-hero__value">{{ formatXof(selectedWithdrawal.netAmount) }}</span>
         </div>
         <div class="wd-amount-hero__breakdown">
           <span>{{ formatXof(selectedWithdrawal.amount) }} demandé</span>
-          <span class="wd-amount-hero__fee">− {{ formatXof(selectedWithdrawal.fees) }} de frais</span>
+          <span class="wd-amount-hero__fee" *ngIf="selectedWithdrawal.platformAmount">
+            {{ formatXof(selectedWithdrawal.platformAmount) }} de frais plateforme
+            ({{ selectedWithdrawal.feeOption === 'B' ? 'à la charge de l’agence, en plus du débit' : 'déduits du montant reçu' }})
+          </span>
+          <span *ngIf="selectedWithdrawal.walletDebitAmount">Débité du wallet agence : {{ formatXof(selectedWithdrawal.walletDebitAmount) }}</span>
         </div>
       </div>
 

@@ -32,8 +32,18 @@ export interface AdminWithdrawalRequest {
   // ── Retrait demandé ───────────────────────────────────────────
   amount: number;
   currency: string;
+  // Chantier Frais plateforme (Prompt F5/F8) — `fees`/`netAmount` restent les noms
+  // historiques de ce modèle (déjà utilisés par le template), désormais alimentés par
+  // le VRAI snapshot de frais (feeAmount/netAmountReceived) plutôt que hardcodés
+  // `undefined`. Champs enrichis ajoutés à côté pour le détail complet (Prompt F8,
+  // item 3 : "n'affiche pas juste un montant unique opaque").
   fees: number;
   netAmount: number;
+  feeType?: 'FIXED' | 'PERCENTAGE';
+  feeValue?: number;
+  feeOption?: 'A' | 'B';
+  walletDebitAmount?: number;
+  platformAmount?: number;
   paymentMethod: PaymentMethod;
   walletNumber: string;
   requestDate: string; // ISO

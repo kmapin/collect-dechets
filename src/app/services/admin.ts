@@ -445,6 +445,19 @@ export class Admin {
   }
 
   /**
+   * GET /finance/platform-fees?agencyId=... (chantier Frais plateforme, Prompt F8) —
+   * agrégation construite au Prompt F6/9 (FeeService.getPlatformFeesSummary), exposée
+   * au Prompt F8. Même convention que getFinanceKpi$ ci-dessus : resolveAgency.js
+   * autorise déjà l'override ?agencyId= pour super_admin, aucun changement backend
+   * supplémentaire nécessaire pour cet usage admin-wide.
+   */
+  getPlatformFees$(agencyId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/finance/platform-fees`, { params: { agencyId } }).pipe(
+      catchError((err) => { console.error('getPlatformFees error:', err); return of(null); })
+    );
+  }
+
+  /**
    * GET /municipality/waste-records — table de faits paginée des collectes, déjà utilisée
    * par le dashboard municipal (Prompt 12). Réutilisée telle quelle pour la vue admin-wide
    * "Collectes effectuées" (`authMiddleware()` de cette route n'impose aucun rôle précis,

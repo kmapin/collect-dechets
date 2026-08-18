@@ -26,6 +26,11 @@ export interface MontantTotalFilter {
 // de numéro), mais est explicitement rejeté ici — pas encore disponible pour les retraits.
 export type OperateurRetrait = 'MOOV_MONEY' | 'ORANGE_MONEY';
 
+// Chantier Frais plateforme (Prompt F5/F8) — choisi par l'agence À CHAQUE demande
+// (jamais un réglage permanent) : 'A' = frais déduits du montant reçu, 'B' = agence
+// les prend en plus du débit de son wallet. Obligatoire depuis le Prompt F5.
+export type FeeOptionRetrait = 'A' | 'B';
+
 // Série agrégée pour les graphiques F2 — pas un modèle de domaine (Table 20-27),
 // donc définie ici plutôt que dans finance/models (voir Prompt 3 vs Prompt 4/8).
 export interface FinanceStatsSeries {
@@ -59,5 +64,5 @@ export abstract class FinanceDataService {
   abstract getRepartitionModePaiement(plage: { debut: Periode; fin: Periode }): Observable<RepartitionModePaiement[]>;
   abstract getPaiements(params?: PageParams<PaiementFilter>): Observable<Page<PaiementListe>>;
   abstract getRetraits(params?: PageParams<RetraitFilter>): Observable<Page<Retrait>>;
-  abstract enregistrerRetrait(payload: { montant: number; customerMsisdn: string; operator: OperateurRetrait; motif?: string }): Observable<Retrait>;
+  abstract enregistrerRetrait(payload: { montant: number; customerMsisdn: string; operator: OperateurRetrait; motif?: string; feeOption: FeeOptionRetrait }): Observable<Retrait>;
 }

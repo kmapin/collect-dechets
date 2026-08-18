@@ -10,4 +10,13 @@ export interface Paiement {
   // plus le bucket générique ModePaiement (Especes/MobileMoney/Autre), qui masquait
   // l'opérateur réellement utilisé (voir mapPaiementListeDto).
   modePaiement?: string;
+  // Chantier Frais plateforme (Prompt F4/F8) — snapshot figé au paiement, jamais
+  // recalculé. `undefined` pour un paiement antérieur à ce chantier.
+  grossAmount?: number;
+  feeType?: 'FIXED' | 'PERCENTAGE';
+  feeValue?: number;
+  feeAmount?: number;
+  feePayer?: 'CLIENT' | 'AGENCE';
+  netAmount?: number;
+  platformAmount?: number;
 }

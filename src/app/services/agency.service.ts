@@ -622,7 +622,8 @@ export class AgencyService {
       description: tariff.description || '',
       numberOfPasses: tariff.numberOfPasses || 0,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      feePayer: tariff.feePayer || 'AGENCE',
     };
 
     return this.http.post<Tarif>(`${environment.apiUrl}/pricing`, newTariff).pipe(

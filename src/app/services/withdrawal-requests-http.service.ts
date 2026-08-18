@@ -48,6 +48,15 @@ interface BackendRetraitItem {
   rejectionReason: string | null;
   createdAt?: string;
   updatedAt?: string;
+  // Chantier Frais plateforme (Prompt F5/F8) — snapshot figé à la demande, voir
+  // services/transaction.js::getAllRetraitsPaginated/getRetraitById.
+  feeType?: 'FIXED' | 'PERCENTAGE' | null;
+  feeValue?: number | null;
+  feeAmount?: number | null;
+  feeOption?: 'A' | 'B' | null;
+  netAmountReceived?: number | null;
+  walletDebitAmount?: number | null;
+  platformAmount?: number | null;
 }
 
 function mapBackendRetrait(item: BackendRetraitItem): AdminWithdrawalRequest {
@@ -60,9 +69,16 @@ function mapBackendRetrait(item: BackendRetraitItem): AdminWithdrawalRequest {
     agencyManagerPhone: item.gestionnairePhone ?? (undefined as unknown as string),
     country: undefined as unknown as string,
     amount: item.amount,
-    currency: undefined as unknown as string,
-    fees: undefined as unknown as number,
-    netAmount: undefined as unknown as number,
+    currency: 'FCFA',
+    // `?? item.amount` : un retrait antérieur à ce chantier (ou sans frais) n'a pas ces
+    // champs — comportement honnête, jamais une valeur inventée (fees=0, netAmount=amount).
+    fees: item.feeAmount ?? 0,
+    netAmount: item.netAmountReceived ?? item.amount,
+    feeType: item.feeType ?? undefined,
+    feeValue: item.feeValue ?? undefined,
+    feeOption: item.feeOption ?? undefined,
+    walletDebitAmount: item.walletDebitAmount ?? undefined,
+    platformAmount: item.platformAmount ?? undefined,
     paymentMethod: item.paymentMethod as AdminWithdrawalRequest['paymentMethod'],
     walletNumber: item.walletNumber,
     requestDate: item.requestDate,

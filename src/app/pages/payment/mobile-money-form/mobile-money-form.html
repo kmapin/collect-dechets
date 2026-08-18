@@ -113,6 +113,29 @@
         </mat-card-content>
       </mat-card>
     }
+    <!-- Chantier Frais plateforme (Prompt 9/9) : visible dès que le paiement est
+         initié (avant la confirmation OTP/USSD, jamais après) — uniquement quand
+         ce plan tarifaire fait supporter les frais au client (feePayer='CLIENT'),
+         puisque sinon rien n'est ajouté au montant affiché sur le tarif. -->
+    @if (paymentResponse && paymentResponse.feePayer === 'CLIENT' && (paymentResponse.feeAmount ?? 0) > 0) {
+      <div class="fee-info-banner">
+        <mat-icon>info</mat-icon>
+        <div class="fee-info-content">
+          <div class="fee-info-row">
+            <span>Prix du service</span>
+            <span>{{ paymentResponse.grossAmount }} FCFA</span>
+          </div>
+          <div class="fee-info-row">
+            <span>Frais plateforme (à votre charge)</span>
+            <span>+ {{ paymentResponse.feeAmount }} FCFA</span>
+          </div>
+          <div class="fee-info-row fee-info-total">
+            <span>Total débité</span>
+            <span>{{ paymentResponse.amount }} FCFA</span>
+          </div>
+        </div>
+      </div>
+    }
     @if (paymentResponse && paymentResponse.requiresOtp && paymentResponse.status === 'PENDING_OTP') {
       <div>
         <app-otp-input
