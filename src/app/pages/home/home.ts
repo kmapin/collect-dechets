@@ -427,7 +427,8 @@ private mapApiAgency(apiAgency: any): Agency {
     clients: apiAgency.clients || [],
     collections: apiAgency.collections || [],
     incidents: apiAgency.incidents || [],
-    rating: apiAgency.rating || 0,
+    rating: apiAgency.rating ?? null,
+    ratingsCount: apiAgency.ratingsCount || 0,
     totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
     acceptTerms: apiAgency.acceptTerms || false,
     receiveOffers: apiAgency.receiveOffers || false,
@@ -505,7 +506,7 @@ generateRandomStarsList(): void {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'rating':
-          return b.rating - a.rating;
+          return (b.rating ?? 0) - (a.rating ?? 0);
         case 'price':
           return this.getMinPrice(a) - this.getMinPrice(b);
         case 'clients':
@@ -605,7 +606,7 @@ generateRandomStarsList(): void {
 
   }
 
-  getStars(rating: number): number[] {
+  getStars(rating: number | null): number[] {
     if (!rating || rating < 0) return [];
     return new Array(Math.floor(rating)).fill(0);
   }

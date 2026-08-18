@@ -148,6 +148,11 @@ export class ClientService {
     );
   }
 
+  /** Note l'agence après une Collecte effectuée (1-5 étoiles + commentaire optionnel). */
+  rateCollecte(collecteId: string, stars: number, comment?: string): Observable<{ success: boolean; data: { _id: string; stars: number; comment?: string; createdAt: string } }> {
+    return this.http.post<any>(`${environment.apiUrl}/collectes/${collecteId}/rating`, { stars, comment });
+  }
+
   getClientPlanningForDate(clientId: string, date: string): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/zones/plannings/${clientId}/date/${date}`).pipe(
       map((response: any) => {

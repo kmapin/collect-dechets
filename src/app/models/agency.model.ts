@@ -33,8 +33,11 @@ export interface Agency {
   schedule: CollectionSchedule[];
   collectors: any[];
   clients: AgencyClient[];
-  rating: number;
-  randomStars?: number | undefined; // Pour générer un nombre aléatoire d'étoiles
+  // Moyenne réelle des CollecteRating reçues (chantier "notation agences",
+  // services/collecteRating.js) — `null` tant qu'aucune note n'existe, jamais
+  // une valeur fabriquée. `ratingsCount` pour l'affichage type "4.6 (128 avis)".
+  rating: number | null;
+  ratingsCount?: number;
   totalClients: number;
   acceptTerms: boolean;
   receiveOffers: boolean;

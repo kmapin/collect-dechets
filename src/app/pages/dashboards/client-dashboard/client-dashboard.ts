@@ -551,14 +551,19 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
           (report: any) => ({
             id: report._id,
             clientId: report.clientId,
-            agencyId: report.agencyId,
+            agencyId: report.agencyId?._id || report.agencyId,
+            agencyName: report.agencyId?.name || "votre agence",
             collectorId: report.collectorId,
             date: report.date,
             scheduledDate: report.createdAt ? new Date(report.createdAt) : null,
             collectedDate: report.updatedAt ? new Date(report.updatedAt) : null, // si dispo
             status: report.status === "Collected" ? "Completed" : report.status, // adapter au template
             wasteTypes: report.type || ["Déchets ménagers"], // valeur par défaut si absent
-            rating: report.rating || 0,
+            // Notation agence : `report.rating` est soit null (jamais notée), soit
+            // {_id, stars, comment, createdAt} (voir GET .../collecte-history,
+            // enrichi côté backend — services/collecte.service.js::UserCollecteHistory).
+            rating: report.rating?.stars || 0,
+            isRated: !!report.rating,
             photos: report.photos,
             positionGPS: report.positionGPS,
             createdAt: report.createdAt,
@@ -1279,11 +1284,69 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     });
   }
 
+  // ─── Notation d'une collecte effectuée ──────────────────────────────────
+  showRatingModal = false;
+  ratingTarget: any | null = null;
+  ratingStars = 0;
+  ratingHoverStars = 0;
+  ratingComment = "";
+  isSubmittingRating = false;
+
   rateCollection(collectionId: string): void {
-    this.notificationService.showInfo(
-      "Évaluation",
-      "Fonctionnalité d'évaluation à venir"
-    );
+    const collection = this.collectionHistory.find((c) => c.id === collectionId);
+    if (!collection || collection.isRated) return;
+    this.ratingTarget = collection;
+    this.ratingStars = 0;
+    this.ratingHoverStars = 0;
+    this.ratingComment = "";
+    this.showRatingModal = true;
+  }
+
+  closeRatingModal(): void {
+    if (this.isSubmittingRating) return;
+    this.showRatingModal = false;
+    this.ratingTarget = null;
+  }
+
+  setRatingStars(value: number): void {
+    this.ratingStars = value;
+  }
+
+  submitRating(): void {
+    if (!this.ratingTarget || !this.ratingStars || this.isSubmittingRating) return;
+    this.isSubmittingRating = true;
+    this.clientService
+      .rateCollecte(this.ratingTarget.id, this.ratingStars, this.ratingComment.trim() || undefined)
+      .subscribe({
+        next: () => {
+          // Mise à jour locale immédiate — pas de rechargement de toute la liste ;
+          // un rechargement normal (F5) la reconfirmera depuis le backend.
+          this.ratingTarget.isRated = true;
+          this.ratingTarget.rating = this.ratingStars;
+          this.isSubmittingRating = false;
+          this.showRatingModal = false;
+          this.notificationService.showSuccess(
+            "Merci pour votre avis !",
+            "Votre note a bien été enregistrée."
+          );
+          this.ratingTarget = null;
+        },
+        error: (error: any) => {
+          this.isSubmittingRating = false;
+          // Le bouton "Noter" reste affiché (isRated n'est jamais mis à true ici) :
+          // la note n'a réellement pas été enregistrée côté serveur.
+          const message =
+            error?.error?.error?.code === "ALREADY_RATED"
+              ? "Cette collecte a déjà été notée."
+              : error?.error?.error?.message || "Impossible d'enregistrer votre note. Réessayez.";
+          this.notificationService.showError("Erreur", message);
+          // Une note déjà existante côté serveur (double clic, autre onglet) doit
+          // quand même faire disparaître le bouton "Noter" de cette ligne.
+          if (error?.error?.error?.code === "ALREADY_RATED" && this.ratingTarget) {
+            this.ratingTarget.isRated = true;
+          }
+        },
+      });
   }
 
   submitReport(): void {

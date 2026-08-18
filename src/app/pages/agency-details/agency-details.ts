@@ -124,7 +124,6 @@ export class AgencyDetails implements OnInit {
 
   agencies: Agency[] = [];
   filteredAgencies: Agency[] = [];
-  randomStarsList: number[] = [];
 
   showSubscriptionModal = false;
 
@@ -436,7 +435,8 @@ export class AgencyDetails implements OnInit {
       clients: apiAgency.clients || [],
       collections: apiAgency.collections || [],
       incidents: apiAgency.incidents || [],
-      rating: apiAgency.rating || 0,
+      rating: apiAgency.rating ?? null,
+      ratingsCount: apiAgency.ratingsCount || 0,
       totalClients:
         apiAgency.totalClients ||
         (apiAgency.clients ? apiAgency?.clients?.length : 0),
@@ -474,7 +474,7 @@ export class AgencyDetails implements OnInit {
     });
   }
 
-  getStars(rating: number): number[] {
+  getStars(rating: number | null): number[] {
     if (!rating || rating < 0) return [];
     return new Array(Math.floor(rating)).fill(0);
   }
@@ -884,16 +884,6 @@ export class AgencyDetails implements OnInit {
     });
   }
 
-  /**
-   * Charge les agences depuis l'API backend et remplace les données locales
-   */
-  generateRandomStarsList(): void {
-    this.randomStarsList = Array.from(
-      { length: this.filteredAgencies.length },
-      () => Math.floor(Math.random() * 5) + 1,
-    );
-  }
-
   loadAgenciesFromApi(): void {
     const payload: any = {
     term: this.searchQuery || '',
@@ -912,7 +902,6 @@ export class AgencyDetails implements OnInit {
       );
       this.filteredAgencies = this.agencyService.getRandomAgencies(this.agencies);
       console.log("Agences chargées :", this.filteredAgencies);
-      this.generateRandomStarsList();
       // this.applyFilters();
     });
   }

@@ -389,10 +389,10 @@ export class MunicipalityDashboard  implements OnInit {
   /**
    * GET /municipality/performance-overview (Prompt 07). `complianceRate` est un vrai
    * agrégat serveur (Collected / (total - Cancelled), toutes agences) — plus mocké.
-   * `averageSatisfaction` reste toujours `null` : aucune entité rating/review/feedback
-   * n'existe nulle part dans le schéma backend actuel (confirmé en relisant tous les
-   * modèles réels, pas seulement les schémas Swagger déclarés) — escaladé comme question
-   * produit (voir EditRecap.md), jamais fabriqué en proxy sans décision explicite.
+   * `averageSatisfaction` a désormais une vraie source (CollecteRating, chantier
+   * "notation agences") — moyenne des notes toutes agences confondues,
+   * services/municipality.service.js::getPerformanceOverview. Reste `null` tant
+   * qu'aucune note n'existe nulle part, jamais fabriqué en proxy.
    */
   loadPerformanceOverview(): void {
     this.isLoadingPerformanceOverview = true;

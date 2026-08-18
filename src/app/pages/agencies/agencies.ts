@@ -30,7 +30,6 @@ export class Agencies  implements OnInit {
   agencyTariffs: WasteService[] = [];
   cities: string[] = ['Ouagadougou', 'Bobo-Dioulasso'];
   suggestions: any[] = [];
-  randomStarsList: number[] = [];
 
 // cities: string[] = [...];
 //sectors: string[] = [...]; // à remplir
@@ -189,8 +188,8 @@ currentUser!: any ;
       clients: apiAgency.clients || [],
       collections: apiAgency.collections || [],
       incidents: apiAgency.incidents || [],
-      rating: apiAgency.rating || 0,
-      randomStars: Math.floor(Math.random() * 5) + 1,
+      rating: apiAgency.rating ?? null,
+      ratingsCount: apiAgency.ratingsCount || 0,
       totalClients: apiAgency.totalClients || (apiAgency.clients ? apiAgency.clients.length : 0),
       acceptTerms: apiAgency.acceptTerms || false,
       receiveOffers: apiAgency.receiveOffers || false,
@@ -221,7 +220,6 @@ currentUser!: any ;
       console.log("Agences chargées depuis l'API backend:", this.agencies);
       this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));;
       console.log("Agences chargées :", this.agencies);
-      this.generateRandomStarsList()
       // this.applyFilters();
     });
   }
@@ -255,7 +253,6 @@ applyFilters(): void {
     next: (response: any) => {
       this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
       console.log("Agences filtrées dans applyFilters:", this.filteredAgencies);
-      this.generateRandomStarsList();
       this.sortAgencies();
     },
 
@@ -276,7 +273,7 @@ applyFilters(): void {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'rating':
-          return b.rating - a.rating;
+          return (b.rating ?? 0) - (a.rating ?? 0);
         case 'price':
           return this.getMinPrice(a) - this.getMinPrice(b);
         case 'clients':
@@ -296,21 +293,9 @@ applyFilters(): void {
     this.applyFilters();
   }
 
-  // getStars(rating: number, randomStars?: number): number[] {
-  //   console.log("Rating:", rating+1, "Random Stars:", randomStars);
-  //   const stars = randomStars !== undefined ? randomStars : Math.floor(rating);
-  //   return stars > 0 ? Array(stars).fill(0) : [];
-  // }
-  generateRandomStarsList(): void {
-    this.randomStarsList = Array.from({ length: this.filteredAgencies.length }, () =>
-      Math.floor(Math.random() * 5) + 1
-    );
-  }
-  getStars(rating: number, randomStars?: number): number[]
-   {
-    console.log("Rating:", rating+1, "Random Stars:", randomStars);
-    const stars = randomStars !== undefined ? randomStars : Math.floor(rating);
-    return stars > 0 ? Array(stars).fill(0) : [];
+  getStars(rating: number | null): number[] {
+    if (!rating || rating < 0) return [];
+    return Array(Math.floor(rating)).fill(0);
   }
   getMinPrice(agency: Agency): number {
     return Math.min(...agency.services.map(service => service.price));

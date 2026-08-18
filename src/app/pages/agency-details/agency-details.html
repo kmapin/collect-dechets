@@ -36,10 +36,10 @@
                   <i class="material-icons star">star</i>
                   }
                 </div>
-                <span class="rating-text">{{ agency?.rating }}/5</span>
-                <span class="reviews-count"
-                  >({{ agency?.totalClients }} avis)</span
-                >
+                <span class="rating-text">{{ agency?.rating ?? "—" }}/5</span>
+                @if (agency?.ratingsCount) {
+                  <span class="reviews-count">({{ agency?.ratingsCount }} avis)</span>
+                }
               </div>
               <div class="agency-status">
                 @if (agency?.status) {
@@ -445,7 +445,7 @@
                   <i class="material-icons">star</i>
                 </div>
                 <div class="stat-details">
-                  <span class="stat-number">{{ agency?.rating }}/5</span>
+                  <span class="stat-number">{{ agency?.rating ?? "—" }}/5</span>
                   <span class="stat-label">Note moyenne</span>
                 </div>
               </div>
@@ -476,12 +476,11 @@
                   <h4>{{ agency.name }}</h4>
                   <div class="similar-agency-rating">
                     <div class="stars">
-                      <i class="material-icons star">star</i>
-                      <i class="material-icons star">star</i>
-                      <i class="material-icons star">star</i>
-                      <i class="material-icons star">star</i>
+                      @for (star of getStars(agency.rating); track star) {
+                        <i class="material-icons star">star</i>
+                      }
                     </div>
-                    <span>4.2/5</span>
+                    <span>{{ agency.rating ?? "—" }}/5</span>
                   </div>
                 </div>
                 <button

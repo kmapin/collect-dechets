@@ -1207,7 +1207,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
           userId: agency?.userId,
           collectionsToday: 0,
           completionRate: 0,
-          rating: 0,
+          // Moyenne réelle des CollecteRating de l'agence (chantier "notation
+          // agences") — était codé en dur à 0 alors que la valeur réelle est déjà
+          // dans la réponse (`agency.rating`), jamais lue jusqu'ici.
+          rating: agency?.rating || 0,
           revenue: 0,
           lastAudit: new Date(),
           complianceScore: 0,

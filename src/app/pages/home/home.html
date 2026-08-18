@@ -284,7 +284,7 @@
                     [alt]="agency.name" />
                     <div class="logo-glow"></div>
                   </div>
-                  @if (agency.rating >= 4.5) {
+                  @if ((agency.rating ?? 0) >= 4.5) {
                     <div class="agency-badge">
                       <i class="material-icons">star</i>
                       <span>Top Rated</span>
@@ -302,8 +302,10 @@
                         <i class="material-icons star">star</i>
                       }
                     </div>
-                    <span class="rating-text">{{ agency.rating }}/5</span>
-                    <span class="reviews-count">({{ agency.totalClients }} avis)</span>
+                    <span class="rating-text">{{ agency.rating ?? "—" }}/5</span>
+                    @if (agency.ratingsCount) {
+                      <span class="reviews-count">({{ agency.ratingsCount }} avis)</span>
+                    }
                   </div>
                   <div class="agency-info">
                     <div class="info-item">

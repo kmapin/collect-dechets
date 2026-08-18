@@ -161,7 +161,7 @@
             <p class="agency-description truncate">{{ agency?.agencyDescription }}</p>
             <div
               class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full">
-              @for (star of getStars(agency.rating, agency.randomStars); track $index) {
+              @for (star of getStars(agency.rating); track $index) {
               <i class="material-icons star">star</i>
               }
             </div>
@@ -240,7 +240,7 @@
             </div> -->
                 <div
                   class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full">
-                  @for (star of getStars(agency.rating, agency.randomStars); track $index) {
+                  @for (star of getStars(agency.rating); track $index) {
                   <i class="material-icons star">star</i>
                   }
                 </div>

@@ -343,22 +343,24 @@
                       <div
                         class="history-rating"
                         >
-                        <div class="stars">
-                          @for (
-                            star of getStars(collection.rating || 0)
-                            ; track
-                            star) {
-                            <i
-                              class="material-icons star"
-                              >star</i
-                              >
-                            }
-                          </div>
-                          @if (!collection.rating) {
+                        @if (collection.isRated) {
+                          <div class="stars" title="Votre note">
+                            @for (
+                              star of getStars(collection.rating || 0)
+                              ; track
+                              star) {
+                              <i
+                                class="material-icons star"
+                                >star</i
+                                >
+                              }
+                            </div>
+                          } @else {
                             <button
                               class="rate-btn"
                               (click)="rateCollection(collection.id)"
                               >
+                              <i class="material-icons">star_rate</i>
                               Noter
                             </button>
                           }
@@ -1279,6 +1281,57 @@
                 >
                 <i class="material-icons">lock</i>
                 Payer {{ rechargeAmount | number }} FCFA
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Modal de notation de l'agence (après une collecte effectuée) -->
+    @if (showRatingModal) {
+      <div class="drawer-overlay" (click)="closeRatingModal()">
+        <div class="drawer-content rating-modal-content" (click)="$event.stopPropagation()">
+          <div class="drawer-header">
+            <h3>Noter {{ ratingTarget?.agencyName }}</h3>
+            <button class="drawer-close-btn" [disabled]="isSubmittingRating" (click)="closeRatingModal()">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <div class="drawer-body">
+            <p class="rating-modal-subtitle">Comment s'est passée votre collecte ?</p>
+            <div class="rating-star-picker" (mouseleave)="ratingHoverStars = 0">
+              @for (star of [1, 2, 3, 4, 5]; track star) {
+                <i
+                  class="material-icons rating-star-input"
+                  [class.filled]="(ratingHoverStars || ratingStars) >= star"
+                  (mouseenter)="ratingHoverStars = star"
+                  (click)="setRatingStars(star)"
+                  >star</i
+                >
+              }
+            </div>
+            <textarea
+              class="rating-comment-input"
+              rows="3"
+              maxlength="500"
+              placeholder="Un commentaire à ajouter ? (optionnel)"
+              [(ngModel)]="ratingComment"
+              [disabled]="isSubmittingRating"
+            ></textarea>
+          </div>
+          <div class="drawer-footer">
+            <div class="drawer-actions">
+              <button type="button" class="btn btn-secondary" [disabled]="isSubmittingRating" (click)="closeRatingModal()">
+                Annuler
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="!ratingStars || isSubmittingRating"
+                (click)="submitRating()"
+              >
+                {{ isSubmittingRating ? "Envoi…" : "Envoyer ma note" }}
               </button>
             </div>
           </div>

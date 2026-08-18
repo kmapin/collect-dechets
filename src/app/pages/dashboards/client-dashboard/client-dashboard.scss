@@ -360,13 +360,68 @@
 }
 
 .rate-btn {
-  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
   background: var(--primary-color);
   color: var(--white);
   border: none;
   border-radius: 4px;
   font-size: 0.8rem;
   cursor: pointer;
+
+  .material-icons {
+    font-size: 14px;
+  }
+}
+
+// Modale de notation d'agence (même patron .drawer-overlay/.drawer-content
+// que les modales paiement/recharge de ce même composant).
+.rating-modal-content {
+  max-width: 420px;
+}
+
+.rating-modal-subtitle {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.rating-star-picker {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.rating-star-input {
+  font-size: 34px;
+  color: var(--border-color, #d1d5db);
+  cursor: pointer;
+  transition: color 0.12s ease, transform 0.12s ease;
+
+  &:hover {
+    transform: scale(1.08);
+  }
+
+  &.filled {
+    color: var(--warning-color);
+  }
+}
+
+.rating-comment-input {
+  width: 100%;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
 }
 
 .subscription-details {
