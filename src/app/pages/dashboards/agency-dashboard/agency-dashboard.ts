@@ -868,7 +868,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       {
         firstName: ["", [Validators.required, Validators.minLength(2)]],
         lastName: ["", [Validators.required, Validators.minLength(2)]],
-        email: ["", [Validators.required, Validators.email]],
+        // Optionnel côté backend (services/auth.js::registerUser accepte email
+        // undefined, connexion possible par téléphone seul) — l'astérisque
+        // required était une contrainte frontend uniquement, sans contrepartie.
+        email: ["", [Validators.email]],
         password: ["", [Validators.required, Validators.minLength(6)]],
         confirmPassword: ["", [Validators.required]],
         phone: ["", [Validators.required, Validators.pattern(/^[0-9+\-\s]+$/)]],

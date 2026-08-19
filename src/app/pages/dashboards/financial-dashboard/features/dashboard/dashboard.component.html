@@ -54,7 +54,7 @@
           icon="account_balance_wallet"
           tone="neutre"
           [value]="formatMontant(k.soldeDisponible)"
-          sousTexte="Paiements moins retraits (RG7, formule à confirmer)"
+          sousTexte="Paiements moins retraits"
         />
         <app-kpi-card
           label="Total collecté"
@@ -73,7 +73,7 @@
           icon="schedule"
           tone="attention"
           [value]="formatMontant(k.enAttente)"
-          sousTexte="Dû par les clients en retard (RG5)"
+          sousTexte="Dû par les clients en retard"
         />
         <app-kpi-card
           label="Taux de recouvrement"
