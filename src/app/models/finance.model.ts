@@ -17,6 +17,11 @@ export enum WithdrawalStatus {
   PROCESSED = 'COMPLETED_WITH_ERROR',
   PAID      = 'COMPLETED',
   FAILED    = 'FAILED',
+  // Appel Moov Money échoué SANS réponse reçue (timeout/coupure réseau) — l'issue
+  // réelle est inconnue, une résolution manuelle Super Admin est nécessaire
+  // (voir services/transaction.js::_executerPaiementRetrait, backend). Distinct
+  // de FAILED : ici on ne sait PAS si le virement a eu lieu.
+  TO_VERIFY = 'A_VERIFIER_MANUELLEMENT',
 }
 
 export enum TransactionType {

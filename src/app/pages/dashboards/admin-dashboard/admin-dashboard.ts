@@ -1101,6 +1101,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
       [WithdrawalStatus.PROCESSED]: 'status-processed',
       [WithdrawalStatus.PAID]:      'status-paid',
       [WithdrawalStatus.FAILED]:    'status-failed',
+      // Issue Moov réellement inconnue (pas juste un échec constaté) — nécessite
+      // une action urgente du Super Admin, pas un statut de routine parmi
+      // d'autres. Réutilise .status-open (rouge, déjà utilisé pour les
+      // signalements ouverts nécessitant une action) plutôt qu'inventer une
+      // nouvelle classe.
+      [WithdrawalStatus.TO_VERIFY]: 'status-open',
     };
     return classes[status] ?? 'status-pending';
   }
@@ -1113,6 +1119,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       [WithdrawalStatus.PROCESSED]: 'Traité avec erreur',
       [WithdrawalStatus.PAID]:      'Payé',
       [WithdrawalStatus.FAILED]:    'Échoué',
+      [WithdrawalStatus.TO_VERIFY]: '⚠ À vérifier manuellement',
     };
     return labels[status] ?? status;
   }
