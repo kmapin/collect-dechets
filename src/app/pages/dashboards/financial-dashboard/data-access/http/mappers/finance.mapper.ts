@@ -12,6 +12,10 @@ const OPERATOR_LABELS: Record<string, string> = {
   MOOV_MONEY: 'Moov Money',
   TELECEL_MONEY: 'Telecel Money',
   QRPAY: 'QR Pay',
+  // Paiement de redevance constaté manuellement par l'agence (espèces, etc.), sans
+  // Transaction liée (services/financeStats.js::getRepartitionModePaiement) — pas un
+  // opérateur mobile money, mais doit rester lisible plutôt que retomber sur la clé brute.
+  ESPECES_AUTRE: 'Espèces / autre',
 };
 
 function operatorLabel(raw: unknown): string | undefined {
@@ -59,7 +63,10 @@ export function mapPaiementListeDto(dto: unknown): PaiementListe {
     feeAmount: d['feeAmount'] !== undefined && d['feeAmount'] !== null ? Number(d['feeAmount']) : undefined,
     feePayer: (d['feePayer'] as PaiementListe['feePayer']) ?? undefined,
     netAmount: d['netAmount'] !== undefined && d['netAmount'] !== null ? Number(d['netAmount']) : undefined,
-    platformAmount: d['platformAmount'] !== undefined && d['platformAmount'] !== null ? Number(d['platformAmount']) : undefined,
+    // platformAmount volontairement non mappé — voir paiement.model.ts.
+    // Période du contrat/abonnement concerné (demande produit) — voir paiement.model.ts.
+    dateDebut: d['dateDebut'] !== undefined && d['dateDebut'] !== null ? String(d['dateDebut']) : undefined,
+    dateFin: d['dateFin'] !== undefined && d['dateFin'] !== null ? String(d['dateFin']) : undefined,
   };
 }
 
@@ -92,7 +99,7 @@ export function mapRetraitDto(dto: unknown): Retrait {
     feeOption: optionalString(d['feeOption']) as Retrait['feeOption'],
     netAmountReceived: optionalNumber(d['netAmountReceived']),
     walletDebitAmount: optionalNumber(d['walletDebitAmount']),
-    platformAmount: optionalNumber(d['platformAmount']),
+    // platformAmount volontairement non mappé — voir retrait.model.ts.
   };
 }
 

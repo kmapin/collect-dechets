@@ -97,9 +97,17 @@
 
   <div class="fin-dashboard__stats-header">
     <h2>Statistiques ({{ nombreMoisGraphiques() }} derniers mois)</h2>
-    <select [ngModel]="nombreMoisGraphiques()" (ngModelChange)="nombreMoisGraphiques.set($event); onFenetreChange()">
-      <option *ngFor="let n of optionsFenetre" [value]="n">{{ n }} mois</option>
-    </select>
+    <div class="fin-dashboard__fenetre-group">
+      <button
+        *ngFor="let n of optionsFenetre"
+        type="button"
+        class="fin-dashboard__fenetre-btn"
+        [class.fin-dashboard__fenetre-btn--active]="nombreMoisGraphiques() === n"
+        (click)="setFenetre(n)"
+      >
+        {{ n }} mois
+      </button>
+    </div>
     <button type="button" class="fin-dashboard__export-btn" (click)="exporterCsv()">
       <i class="material-icons" aria-hidden="true">download</i>
       Exporter (CSV)

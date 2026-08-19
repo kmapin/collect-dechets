@@ -89,6 +89,11 @@ export class DashboardComponent {
     this.chargerGraphiques();
   }
 
+  setFenetre(n: number): void {
+    this.nombreMoisGraphiques.set(n);
+    this.onFenetreChange();
+  }
+
   // ── KPI (F1) ──────────────────────────────────────────────────
   readonly mode = signal<PeriodSelectorMode>('court');
   readonly kpi = signal<DashboardKpi | null>(null);

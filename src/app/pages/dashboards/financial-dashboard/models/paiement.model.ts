@@ -18,5 +18,12 @@ export interface Paiement {
   feeAmount?: number;
   feePayer?: 'CLIENT' | 'AGENCE';
   netAmount?: number;
-  platformAmount?: number;
+  // platformAmount (gain de la plateforme) volontairement absent : une agence ne
+  // doit jamais voir la commission de la plateforme (demande produit explicite),
+  // le backend ne le renvoie plus sur cet endpoint agence.
+  // Période du contrat/abonnement concerné par ce paiement (demande produit) — ISO date.
+  // `undefined` si non résolue côté backend (ne devrait pas arriver pour un paiement
+  // complété, mais jamais une date inventée côté frontend).
+  dateDebut?: string;
+  dateFin?: string;
 }

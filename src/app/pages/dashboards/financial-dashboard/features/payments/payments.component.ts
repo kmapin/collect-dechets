@@ -41,10 +41,18 @@ export class PaymentsComponent {
   readonly colonnes: DataTableColumn<PaiementListe>[] = [
     { key: 'clientNom', label: 'Client', sortable: true },
     { key: 'montant', label: 'Montant', sortable: true, format: r => formatMontantXof(r.montant) },
-    { key: 'feeAmount', label: 'Frais', format: r => (r.feeAmount !== undefined ? formatMontantXof(r.feeAmount) : '—') },
-    { key: 'netAmount', label: 'Net agence', format: r => (r.netAmount !== undefined ? formatMontantXof(r.netAmount) : '—') },
+    // L'agence ne doit jamais voir le frais quand il est à la charge du client
+    // (feePayer='CLIENT') — seul le sien (feePayer='AGENCE') reste visible ici.
+    // Sans impact sur "Net agence" ci-dessous : quand le client paie le frais,
+    // netAmount vaut déjà grossAmount (services/fee.js::calculateClientPaymentFee),
+    // donc cette colonne ne révèle rien du frais côté client.
+    // { key: 'feeAmount', label: 'Frais', format: r => (r.feePayer === 'CLIENT' || r.feeAmount === undefined ? '—' : formatMontantXof(r.feeAmount)) },
+    // { key: 'netAmount', label: 'Net agence', format: r => (r.netAmount !== undefined ? formatMontantXof(r.netAmount) : '—') },
     { key: 'datePaiement', label: 'Date', sortable: true, format: r => formatFrDate(r.datePaiement) },
     { key: 'modePaiement', label: 'Mode', format: r => r.modePaiement ?? '—' },
+    // Période du contrat/abonnement concerné par ce paiement (demande produit).
+    { key: 'dateDebut', label: 'Date début', format: r => (r.dateDebut ? formatFrDate(r.dateDebut) : '—') },
+    { key: 'dateFin', label: 'Date fin', format: r => (r.dateFin ? formatFrDate(r.dateFin) : '—') },
   ];
 
   get totalPages(): number {
@@ -93,20 +101,25 @@ export class PaymentsComponent {
           const rows = page.items.map((p) => ({
             client: p.clientNom,
             montant: p.montant,
-            frais: p.feeAmount ?? '—',
-            netAgence: p.netAmount ?? '—',
+            // Même règle que la colonne "Frais" à l'écran ci-dessus.
+            // frais: p.feePayer === 'CLIENT' || p.feeAmount === undefined ? '—' : p.feeAmount,
+            // netAgence: p.netAmount ?? '—',
             date: formatFrDate(p.datePaiement),
             mode: p.modePaiement ?? '—',
+            dateDebut: p.dateDebut ? formatFrDate(p.dateDebut) : '—',
+            dateFin: p.dateFin ? formatFrDate(p.dateFin) : '—',
           }));
           this.exportService.exportToCsv(
             rows,
             [
               { key: 'client', label: 'Client' },
               { key: 'montant', label: 'Montant (FCFA)' },
-              { key: 'frais', label: 'Frais (FCFA)' },
-              { key: 'netAgence', label: 'Net agence (FCFA)' },
+              // { key: 'frais', label: 'Frais (FCFA)' },
+              // { key: 'netAgence', label: 'Net agence (FCFA)' },
               { key: 'date', label: 'Date' },
               { key: 'mode', label: 'Mode' },
+              { key: 'dateDebut', label: 'Date début' },
+              { key: 'dateFin', label: 'Date fin' },
             ],
             `paiements-${new Date().toISOString().slice(0, 10)}`,
           );

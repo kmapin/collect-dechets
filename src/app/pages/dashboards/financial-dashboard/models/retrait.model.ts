@@ -23,5 +23,7 @@ export interface Retrait {
   feeOption?: 'A' | 'B';
   netAmountReceived?: number;
   walletDebitAmount?: number;
-  platformAmount?: number;
+  // platformAmount (gain de la plateforme) volontairement absent : une agence ne
+  // doit jamais voir la commission de la plateforme (demande produit explicite),
+  // le backend ne le renvoie plus sur cet endpoint agence.
 }
