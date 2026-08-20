@@ -199,7 +199,8 @@
 .collection-address,
 .history-time,
 .history-collector,
-.payment-method-text {
+.payment-method-text,
+.payment-period-text {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -289,6 +290,14 @@
   gap: 12px;
   margin: 0 0 16px;
   flex-wrap: wrap;
+}
+
+// Même libellé que celui inséré dans le PDF/CSV/Excel exportés (periodeCouvertePaiements())
+// — rappel discret de la fenêtre réellement appliquée par le filtre "période" ci-dessus.
+.payment-history-periode {
+  margin: -8px 0 16px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 // Statuts Contrat (valeurs françaises, distinctes des statuts Collecte/Abonnement ci-dessus).

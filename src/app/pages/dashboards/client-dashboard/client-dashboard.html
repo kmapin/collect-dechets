@@ -853,6 +853,10 @@
                 </select>
               </div>
 
+              <!-- Même libellé que celui inséré dans le PDF/CSV/Excel exportés — jamais un
+                   texte différent entre l'écran et les documents téléchargés. -->
+              <p class="payment-history-periode">{{ periodeCouvertePaiements() }}</p>
+
               <div class="payments-list">
                 @if (isLoadingPaymentHistory) {
                   <div class="empty-state">
@@ -872,6 +876,10 @@
                       <p class="payment-method-text">
                         {{ payment.method }}<span *ngIf="payment.agencyName"> — {{ payment.agencyName }}</span>
                       </p>
+                      <!-- Même valeur que la colonne "Période concernée" des exports
+                           (periodeConcernee()) — jamais un texte différent entre l'écran
+                           et les documents téléchargés. -->
+                      <p class="payment-period-text">Période concernée : {{ periodeConcernee(payment) }}</p>
                     </div>
                     <div class="payment-amount">
                       <span class="amount">{{ payment.amount }} FCFA</span>

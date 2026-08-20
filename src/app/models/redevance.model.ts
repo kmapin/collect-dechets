@@ -24,4 +24,11 @@ export interface Redevance {
   echecCount?: number;
   dernierEchecLe?: string | null;
   echecDefinitif?: boolean;
+  // Période de facturation réelle (chantier "dates début/fin des exports") — distincte
+  // de dateEcheance (le jour d'échéance) et de datePaiement (le règlement). Calculée par
+  // services/redevance.js::_calculerPeriodePourRedevance depuis dateEcheance +
+  // Contrat.frequenceCollecte. periodeFin absent si la fréquence du contrat est inconnue
+  // (jamais une date fabriquée côté backend).
+  periodeDebut?: string;
+  periodeFin?: string | null;
 }

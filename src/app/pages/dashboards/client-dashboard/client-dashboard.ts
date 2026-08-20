@@ -46,6 +46,14 @@ interface PaymentHistory {
   // (getRedevancesByClient() n'est jamais scopé à une seule agence, contrairement à
   // getFacturesByClient()), donc utile pour désambiguïser d'un coup d'œil.
   agencyName?: string;
+  // Période RÉELLEMENT concernée par CE paiement précis (chantier "dates début/fin des
+  // exports") — distincte de `date` (l'échéance/le règlement) et de la fenêtre de filtre
+  // 3m/6m/12m (this.paymentHistoryPeriod, une seule par écran, pas par ligne). Signalé en
+  // usage réel : la Description seule ("Redevance — Août 2026"/"Abonnement — premium")
+  // ne suffisait pas à un export exploitable — absent (undefined) si la source réelle
+  // (Redevance.periodeFin ou Subscription) n'a pas pu être résolue, jamais fabriqué.
+  periodeDebut?: Date;
+  periodeFin?: Date;
 }
 
 interface Subscription {
@@ -1021,6 +1029,8 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
               ? ClientDashboard.OPERATOR_LABEL_MAP[transaction.operator ?? ''] ?? 'Mobile Money'
               : 'Paiement manuel',
             agencyName: agency?.name,
+            periodeDebut: r.periodeDebut ? new Date(r.periodeDebut) : undefined,
+            periodeFin: r.periodeFin ? new Date(r.periodeFin) : undefined,
           };
         });
 
@@ -1031,6 +1041,13 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
           status: ClientDashboard.TRANSACTION_STATUS_MAP[t.status] ?? 'pending',
           description: `Abonnement${t.pricing?.planType ? ' — ' + t.pricing.planType : ''}`,
           method: ClientDashboard.OPERATOR_LABEL_MAP[t.operator ?? ''] ?? 'Mobile Money',
+          // Signalé en usage réel : "Agence : —" sur le reçu d'un paiement d'Abonnement —
+          // jamais peuplé pour ce chemin (contrairement aux lignes Redevance ci-dessus,
+          // dont agencyId est déjà populate côté backend). `t.agence` vient du nouveau
+          // lookup ajouté à TransactionService.getTransactionByAgency.
+          agencyName: t.agence?.name,
+          periodeDebut: t.subscription?.startDate ? new Date(t.subscription.startDate) : undefined,
+          periodeFin: t.subscription?.endDate ? new Date(t.subscription.endDate) : undefined,
         }));
 
         this.allPaymentHistory = [...fromRedevances, ...fromSubscriptions].sort(
@@ -1463,11 +1480,25 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   // Libellé de la fenêtre RÉELLEMENT utilisée pour charger `this.paymentHistory`
   // (this.paymentHistoryPeriod, posé par loadPaymentHistory() — jamais recalculé
   // séparément ici) : "Historique complet" pour 'all' (jamais de plage fabriquée),
-  // sinon "JJ/MM/AAAA au JJ/MM/AAAA" — même fenêtre que celle envoyée au backend.
-  private periodeCouvertePaiements(): string {
+  // sinon "JJ/MM/AAAA au JJ/MM/AAAA" — même fenêtre que celle envoyée au backend. Public
+  // (pas privé) : affiché à l'écran (client-dashboard.html) ET réutilisé tel quel dans
+  // les 3 exports (PDF/CSV/Excel) — jamais un texte différent entre l'écran et le document.
+  periodeCouvertePaiements(): string {
     const periode = this.paymentHistoryPeriod;
     if (!periode) return 'Historique complet';
     return `${periode.debut.toLocaleDateString('fr-FR')} au ${periode.fin.toLocaleDateString('fr-FR')}`;
+  }
+
+  // Période RÉELLEMENT concernée par CE paiement précis (p.periodeDebut/periodeFin,
+  // posés par loadPaymentHistory() depuis Redevance/Subscription — jamais recalculés
+  // ici). Distinct de periodeCouvertePaiements() ci-dessus (la fenêtre de filtre,
+  // identique sur toutes les lignes) : signalé en usage réel qu'un export où chaque
+  // ligne affichait la même valeur générique ("Historique complet") n'était pas
+  // exploitable — l'utilisateur veut savoir à quel mois/quelle période CE paiement se
+  // rapporte. "—" si la source réelle n'a pas pu être résolue, jamais une date fabriquée.
+  periodeConcernee(p: PaymentHistory): string {
+    if (!p.periodeDebut || !p.periodeFin) return '—';
+    return `${p.periodeDebut.toLocaleDateString('fr-FR')} au ${p.periodeFin.toLocaleDateString('fr-FR')}`;
   }
 
   /**
@@ -1490,6 +1521,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       methode: p.method || '—',
       montant: p.amount,
       statut: this.getPaymentStatusText(p.status),
+      periodeConcernee: this.periodeConcernee(p),
       periodeCouverte,
     }));
     this.exportClientService.exportToCsv(
@@ -1501,6 +1533,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         { key: 'methode', label: 'Méthode' },
         { key: 'montant', label: 'Montant (FCFA)' },
         { key: 'statut', label: 'Statut' },
+        { key: 'periodeConcernee', label: 'Période concernée' },
         { key: 'periodeCouverte', label: 'Période couverte' },
       ],
       `historique-paiements-${new Date().toISOString().slice(0, 10)}`,
@@ -1517,6 +1550,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       Méthode: p.method || '—',
       'Montant (FCFA)': p.amount,
       Statut: this.getPaymentStatusText(p.status),
+      'Période concernée': this.periodeConcernee(p),
       'Période couverte': periodeCouverte,
     })));
     const workbook = XLSX.utils.book_new();
@@ -1572,16 +1606,20 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     // jamais recalculée séparément ici.
     doc.text(`Période : ${this.periodeCouvertePaiements()}`, 14, 65);
 
-    // Tableau des paiements
+    // Tableau des paiements — "Période concernée" (chantier "dates début/fin des
+    // exports") : la période RÉELLE de CE paiement (Redevance/Subscription), distincte
+    // de la ligne "Période : ..." ci-dessus (la fenêtre de filtre 3m/6m/12m, identique
+    // sur tout le document).
     autoTable(doc, {
       startY: 71,
-      head: [["Date", "Description", "Méthode", "Montant", "Statut"]],
+      head: [["Date", "Description", "Méthode", "Montant", "Statut", "Période concernée"]],
       body: this.paymentHistory.map((payment) => [
         payment.date ? new Date(payment.date).toLocaleDateString("fr-FR") : "",
         payment.description,
         payment.method!,
         `${payment.amount} FCFA`,
         this.getPaymentStatusText(payment.status),
+        this.periodeConcernee(payment),
       ]),
       theme: "grid",
       styles: { fontSize: 10, cellPadding: 3 },
@@ -1642,12 +1680,17 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     doc.text(`Référence : ${payment.id}`, 14, 53);
     doc.text(`Émis le : ${new Date().toLocaleDateString("fr-FR")}`, 14, 59);
 
+    // "Période concernée" : la période RÉELLE (Redevance/Subscription) si résolue,
+    // sinon la description existante en repli (ex. "Abonnement — premium" reste plus
+    // informatif qu'un simple "—" quand la période n'a pas pu être déterminée).
+    const periodeReceipt = this.periodeConcernee(payment);
     autoTable(doc, {
       startY: 68,
       body: [
         ["Client", `${this.currentUser?.firstName || ""} ${this.currentUser?.lastName || ""}`],
         ["Agence", payment.agencyName || "—"],
-        ["Période concernée", payment.description],
+        ["Description", payment.description],
+        ["Période concernée", periodeReceipt !== '—' ? periodeReceipt : payment.description],
         ["Méthode de paiement", payment.method || "—"],
         ["Date du paiement", new Date(payment.date).toLocaleDateString("fr-FR")],
         ["Statut", this.getPaymentStatusText(payment.status)],

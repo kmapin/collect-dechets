@@ -119,14 +119,9 @@ export class StatementComponent {
       : undefined;
     const ligneClient = `${client.nom} ${client.prenom}${client.quartier ? ' — ' + client.quartier : ''}`;
 
-    // Période EXACTE utilisée pour charger `this.lignes()` (mêmes signals debut()/fin()
-    // que ceux passés à factureData.getReleve() dans chargerReleve()) — jamais recalculée
-    // séparément, pour que le PDF ne puisse pas afficher une période différente des
-    // données qu'il contient. Formatage direct (toLocaleDateString), pas de détour par
-    // une string ISO/UTC : ces Date sont déjà des dates locales (bornesPeriode), les
-    // reconvertir en ISO risquerait de décaler le jour affiché selon le fuseau horaire
-    // du navigateur (même piège que celui documenté sur formatFrDate côté chaînes ISO).
-    const lignePeriode = this.lignePeriode();
+    // Même libellé que celui affiché à l'écran (this.libellePeriode, computed) — jamais
+    // un texte différent entre l'interface et le PDF exporté.
+    const lignePeriode = this.libellePeriode();
 
     this.exportService.exportToPdf(
       rows,
@@ -149,7 +144,10 @@ export class StatementComponent {
   // GET /finance/factures/releve — jamais un calcul indépendant) : "Historique complet"
   // si ni debut ni fin ne sont renseignés (jamais une date fabriquée pour ce cas — la
   // plage est réellement illimitée), sinon "Période du JJ mois AAAA au JJ mois AAAA".
-  private lignePeriode(): string {
+  // Public (computed, pas juste une méthode privée) : affiché à l'écran (statement.
+  // component.html) ET réutilisé tel quel dans le PDF (telechargerPdf ci-dessus) — une
+  // seule source, jamais un texte différent entre l'écran et le document exporté.
+  readonly libellePeriode = computed(() => {
     const debut = this.debut();
     const fin = this.fin();
     if (!debut && !fin) return 'Historique complet';
@@ -161,7 +159,7 @@ export class StatementComponent {
     if (dateDebut && dateFin) return `Période du ${dateDebut.toLocaleDateString('fr-FR', optionsDate)} au ${dateFin.toLocaleDateString('fr-FR', optionsDate)}`;
     if (dateDebut) return `Période à partir du ${dateDebut.toLocaleDateString('fr-FR', optionsDate)}`;
     return `Période jusqu'au ${dateFin!.toLocaleDateString('fr-FR', optionsDate)}`;
-  }
+  });
 
   private chargerClientParId(idClient: string): void {
     this.clientData.getClient(idClient).subscribe(client => {

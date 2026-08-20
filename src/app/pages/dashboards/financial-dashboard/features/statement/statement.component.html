@@ -32,6 +32,9 @@
     <header class="fin-statement__header">
       <h2>Relevé de paiement</h2>
       <p class="fin-statement__client">{{ c.nom }} {{ c.prenom }}<span *ngIf="c.quartier"> — {{ c.quartier }}</span></p>
+      <!-- Même libellé que celui inséré dans le PDF exporté (telechargerPdf) — jamais un
+           texte différent entre l'écran et le document. -->
+      <p class="fin-statement__periode">{{ libellePeriode() }}</p>
     </header>
 
     <app-empty-state
