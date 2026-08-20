@@ -820,6 +820,7 @@
   font-size: 0.78rem;
   font-weight: 500;
   margin-right: 6px;
+  white-space: nowrap;
 
   i {
     font-size: 14px;
@@ -3309,6 +3310,46 @@
 .report-card {
   padding: 20px;
   border-left: 4px solid var(--error-color);
+}
+
+// Onglet "Avis clients" (note + commentaire) — même structure de liste/carte
+// que .reports-list/.report-card ci-dessus, teinte neutre-or (étoiles) plutôt
+// que la teinte "erreur" utilisée pour les signalements.
+.avis-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.avis-card {
+  padding: 20px;
+  border-left: 4px solid #f59e0b;
+}
+
+.avis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.avis-stars {
+  display: flex;
+  align-items: center;
+
+  i {
+    font-size: 1.1rem;
+    color: #f59e0b;
+  }
+}
+
+.avis-comment,
+.avis-date {
+  margin: 4px 0;
+  color: var(--text-secondary);
 }
 
 .report-header {
@@ -6319,10 +6360,19 @@ select[disabled]:focus {
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: #fff;
+  // Mobile first : sur un écran étroit, on défile horizontalement plutôt que de
+  // laisser chaque colonne s'écraser (une colonne "Notes" à largeur libre finissait
+  // par afficher un mot par ligne — table illisible et anormalement haute).
+  -webkit-overflow-scrolling: touch;
 }
 
 .collectes-table {
+  // `min-width` plutôt que `width: 100%` seul : garde une largeur de colonne
+  // minimale raisonnable même sur mobile, et laisse .collectes-table-wrapper
+  // (overflow-x: auto ci-dessus) gérer le défilement horizontal — mêmes colonnes
+  // lisibles sur mobile que sur desktop, jamais écrasées.
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
   font-size: 0.875rem;
 
@@ -6365,6 +6415,20 @@ select[disabled]:focus {
 
   .cell-name {
     white-space: nowrap;
+  }
+
+  // Valeurs courtes (type de déchets, dates) : jamais coupées mot par mot.
+  .cell-nowrap {
+    white-space: nowrap;
+  }
+
+  // Texte libre (notes client) : largeur bornée avec un retour à la ligne
+  // normal (plusieurs mots par ligne), plutôt qu'une colonne écrasée à la
+  // largeur du mot le plus court — cause du rendu "un mot par ligne" signalé.
+  .cell-notes {
+    white-space: normal;
+    min-width: 160px;
+    max-width: 260px;
   }
 }
 

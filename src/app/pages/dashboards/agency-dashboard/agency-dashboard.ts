@@ -227,7 +227,8 @@ type TabId =
   | "demandes"
   | "messages"
   | "vehicles"
-  | "contrats";
+  | "contrats"
+  | "avis";
 // | "clients"
 interface Vehicle {
   _id?: string;
@@ -318,6 +319,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   currentUser: RegisterUserData | null = null;
   agencyReports: Incident[] = [];
+
+  // Avis clients (note + commentaire) — onglet "Avis clients", GET /collectes/ratings.
+  agencyRatings: any[] = [];
+  isLoadingRatings = false;
+  ratingsTotal = 0;
+  ratingsPage = 1;
+  readonly ratingsPageSize = 10;
   ouagaData: QuartierData[] = OUAGA_DATA;
   agency: Agency | null = null;
   activeTab: TabId = "employees"; // Changé pour debug - était "collections"
@@ -594,6 +602,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     { id: "schedules", label: "Plannings", icon: "schedule", badge: null },
     // { id: "clients", label: "Clients", icon: "person", badge: null },
     { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
+    { id: "avis", label: "Avis clients", icon: "star", badge: null },
     { id: "demandes", label: "Demandes express", icon: "local_shipping", badge: 0 },
     { id: "contrats", label: "Contrats", icon: "description", badge: null },
     { id: "vehicles", label: "Mobilité", icon: "directions_car", badge: null },
@@ -1521,6 +1530,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
     // this.loadZonesForAgency(this.currentUser);
     this.loadAgencyReports(this.currentUser);
+    this.loadAgencyRatings();
     this.loadDemandesCollecte();
     this.loadVehicles();
     this.loadTariffs();
@@ -3161,6 +3171,33 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     } else {
       console.warn("Aucun ID d'utilisateur courant disponible.");
     }
+  }
+
+  // Chargement des avis clients — agence dérivée du profil authentifié côté
+  // serveur (jamais passée en paramètre ici), même principe que loadAgencyReports.
+  loadAgencyRatings(page: number = 1): void {
+    this.isLoadingRatings = true;
+    this.agencyService.getAgencyRatings$({ page, pageSize: this.ratingsPageSize }).subscribe({
+      next: (result) => {
+        this.agencyRatings = result.items;
+        this.ratingsTotal = result.total;
+        this.ratingsPage = result.page;
+        this.isLoadingRatings = false;
+      },
+      error: (error) => {
+        console.error("Erreur lors du chargement des avis clients :", error);
+        this.isLoadingRatings = false;
+      },
+    });
+  }
+
+  get ratingsTotalPages(): number {
+    return Math.max(1, Math.ceil(this.ratingsTotal / this.ratingsPageSize));
+  }
+
+  changerPageRatings(page: number): void {
+    if (page < 1 || page > this.ratingsTotalPages) return;
+    this.loadAgencyRatings(page);
   }
 
   // ─── Demandes de collecte express (passage spontané, DemandeCollecte) ──

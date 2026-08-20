@@ -340,6 +340,29 @@ export class AgencyService {
   }
 
   /**
+   * Avis clients (note + commentaire) de l'agence — GET /collectes/ratings,
+   * paginé. `agencyId` n'est pas un paramètre : le serveur le dérive toujours
+   * du profil du manager authentifié (voir collecte.controller.js::
+   * listAgencyRatings côté backend), jamais pris du client — même principe que
+   * getAgencySignalements$ ci-dessus.
+   */
+  getAgencyRatings$(params: { page?: number; pageSize?: number } = {}): Observable<{ items: any[]; total: number; page: number; pageSize: number }> {
+    let httpParams = new HttpParams();
+    if (params.page) httpParams = httpParams.set('page', params.page);
+    if (params.pageSize) httpParams = httpParams.set('pageSize', params.pageSize);
+
+    return this.http
+      .get<{ success: boolean; data: { items: any[]; total: number; page: number; pageSize: number } }>(`${environment.apiUrl}/collectes/ratings`, { params: httpParams })
+      .pipe(
+        map((response) => response?.data ?? { items: [], total: 0, page: 1, pageSize: 10 }),
+        catchError((error) => {
+          console.error("Erreur lors de la récupération des avis clients :", error);
+          return of({ items: [], total: 0, page: 1, pageSize: 10 });
+        })
+      );
+  }
+
+  /**
    * Affecte un signalement (lié à une collecte OU indépendant) à une équipe.
    * Remplace `assignReportToTeam$()` pour tout signalement issu de
    * `getAgencySignalements$()` : un signalement indépendant n'a pas de

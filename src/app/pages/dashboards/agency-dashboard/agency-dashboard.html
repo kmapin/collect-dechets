@@ -1828,6 +1828,59 @@
           </div>
         }
 
+        <!-- Onglet Avis clients (note + commentaire, GET /collectes/ratings) -->
+        @if (activeTab === "avis") {
+          <div class="avis-tab">
+            <div class="section-header">
+              <h2>Avis clients</h2>
+            </div>
+
+            @if (isLoadingRatings) {
+              <app-loading-spinner message="Chargement des avis..." size="medium"></app-loading-spinner>
+            }
+
+            @if (!isLoadingRatings && !agencyRatings.length) {
+              <div class="empty-state">
+                <i class="material-icons">star_border</i>
+                <h3>Aucun avis pour le moment</h3>
+                <p>Les avis laissés par vos clients après une collecte apparaîtront ici.</p>
+              </div>
+            }
+
+            @if (!isLoadingRatings && agencyRatings.length) {
+              <div class="avis-list">
+                @for (avis of agencyRatings; track avis._id) {
+                  <div class="avis-card card">
+                    <div class="avis-header">
+                      <strong>{{ avis.clientId?.firstName }} {{ avis.clientId?.lastName }}</strong>
+                      <span class="avis-stars">
+                        @for (s of getStars(avis.stars); track $index) {
+                          <i class="material-icons">star</i>
+                        }
+                        @for (s of getStars(5 - avis.stars); track $index) {
+                          <i class="material-icons">star_border</i>
+                        }
+                      </span>
+                    </div>
+                    @if (avis.comment) {
+                      <p class="avis-comment">{{ avis.comment }}</p>
+                    }
+                    <p class="avis-date">{{ avis.createdAt | date: "dd/MM/yyyy" }}</p>
+                  </div>
+                }
+              </div>
+
+              @if (ratingsTotalPages > 1) {
+                <div class="pagination">
+                  <button type="button" [disabled]="ratingsPage <= 1" (click)="changerPageRatings(ratingsPage - 1)">Précédent</button>
+                  <span>Page {{ ratingsPage }} / {{ ratingsTotalPages }}</span>
+                  <button type="button" [disabled]="ratingsPage >= ratingsTotalPages" (click)="changerPageRatings(ratingsPage + 1)">Suivant</button>
+                </div>
+              }
+            }
+          </div>
+        }
+
         <!-- Onglet Demandes express (passage spontané, DemandeCollecte — distinct des Signalements) -->
         @if (activeTab === "demandes") {
           <div class="demandes-tab">
@@ -1891,10 +1944,10 @@
                     @for (demande of demandesCollecte; track demande._id) {
                       <tr>
                         <td class="cell-name">{{ demande.clientId?.firstName }} {{ demande.clientId?.lastName }}</td>
-                        <td>{{ demande.wasteTypes.join(", ") || "—" }}</td>
-                        <td>{{ demande.notes || "—" }}</td>
-                        <td>{{ demande.requestedDate ? (demande.requestedDate | date: "dd/MM/yyyy") : "—" }}</td>
-                        <td>{{ demande.createdAt | date: "dd/MM/yyyy HH:mm" }}</td>
+                        <td class="cell-nowrap">{{ demande.wasteTypes.join(", ") || "—" }}</td>
+                        <td class="cell-notes">{{ demande.notes || "—" }}</td>
+                        <td class="cell-nowrap">{{ demande.requestedDate ? (demande.requestedDate | date: "dd/MM/yyyy") : "—" }}</td>
+                        <td class="cell-nowrap">{{ demande.createdAt | date: "dd/MM/yyyy HH:mm" }}</td>
                         <td>
                           <span class="collecte-status-badge" [class]="'cstatus-' + demande.status">
                             {{
