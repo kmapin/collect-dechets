@@ -601,6 +601,12 @@
   visibility: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  /* Sans ça, sur un écran court avec beaucoup de liens (utilisateur connecté +
+     "Mon abonnement"), le menu dépasse la fenêtre sans aucun moyen de faire
+     défiler jusqu'aux derniers éléments (ex. Déconnexion, masqué). */
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-menu.open {

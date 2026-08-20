@@ -42,6 +42,11 @@ export interface ClientApi {
   nonPassageReports: any[];
   createdAt: string;
   subscribedAgencyId: string[];
+  // Réellement renvoyé par GET /agency_employees/:agencyId/clients
+  // (services/agencyEmployee.js::getClientsByAgency, calculé via
+  // EligibilityService.checkClientEligibility) — `subscriptionHistory`
+  // ci-dessus n'existe pas côté backend, c'est ce champ qui fait foi.
+  eligibility?: { eligible: boolean; source: string; reason: string };
 }
 
 @Injectable({

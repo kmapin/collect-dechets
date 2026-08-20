@@ -576,7 +576,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   // Cache pour les valeurs calculées afin d'éviter ExpressionChangedAfterItHasBeenCheckedError
   private _cachedWorkloadPercentage: number | null = null;
-  private _cachedEstimatedCoverage: number | null = null;
   private _cachedTotalZoneClients: number | null = null;
   private _cacheTimestamp: number = 0;
   private readonly CACHE_DURATION = 1000; // 1 seconde
@@ -3411,13 +3410,20 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  // Helper pour récupérer le statut d'abonnement
+  // Helper pour récupérer le statut d'abonnement — `c.subscriptionHistory`
+  // n'existe PAS sur le DTO réel renvoyé par GET /agency_employees/:agencyId/clients
+  // (services/agencyEmployee.js::getClientsByAgency ne sélectionne jamais ce
+  // champ, qui n'existe même pas sur le modèle User backend) : ce champ était
+  // toujours `undefined`, donc `activeClients` était TOUJOURS vide ("0 clients"
+  // partout où ce chiffre est affiché), quel que soit le nombre réel de clients
+  // actifs. Le seul champ réel indiquant si un client est à jour est
+  // `c.eligibility.eligible` (renvoyé par ce même endpoint, calculé par
+  // services/eligibility.service.js::checkClientEligibility — contrat actif OU
+  // abonnement actif non expiré), déjà la source de vérité utilisée ailleurs
+  // dans l'app pour cette notion. Pas d'équivalent "pending" dans ce modèle
+  // (binaire éligible/non éligible) : reste `undefined` comme avant pour ce cas.
   getClientSubscriptionStatus(c: any): string | undefined {
-    return c.subscriptionHistory && c.subscriptionHistory.length
-      ? c.subscriptionHistory[
-        c.subscriptionHistory.length - 1
-      ].status?.toLowerCase()
-      : undefined;
+    return c.eligibility?.eligible === true ? "active" : undefined;
   }
 
   clientNbrs!: number;
@@ -5182,6 +5188,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
             console.log("Structure d'une zone:", this.zones[0]);
           }
 
+          // Par défaut, afficher les infos de la première zone plutôt que de
+          // laisser le panneau de détails vide tant que l'utilisateur n'a rien
+          // cliqué — ne touche pas à une sélection déjà faite (ex. rechargement
+          // après une action sur la zone actuellement affichée).
+          if (this.zones.length > 0 && !this.selectedZoneForDisplay) {
+            this.selectedZoneForDisplay = this.zones[0];
+          }
+
           // Invalider le cache car les zones ont changé
           this.invalidateCache();
 
@@ -5215,7 +5229,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
    */
   private invalidateCache(): void {
     this._cachedWorkloadPercentage = null;
-    this._cachedEstimatedCoverage = null;
     this._cachedTotalZoneClients = null;
     this._cacheTimestamp = 0;
   }
@@ -6636,28 +6649,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // === MÉTHODES POUR L'AFFICHAGE MODERNE DES ZONES ===
 
   /**
-   * Obtenir la couverture estimée en pourcentage avec mise en cache
-   */
-  getEstimatedCoverage(): number {
-    const now = Date.now();
-    if (
-      this._cachedEstimatedCoverage !== null &&
-      now - this._cacheTimestamp < this.CACHE_DURATION
-    ) {
-      return this._cachedEstimatedCoverage;
-    }
-
-    // Calcul simple basé sur le nombre de zones définies
-    const totalPossibleZones = 20; // Nombre estimé de zones possibles dans la ville
-    this._cachedEstimatedCoverage = Math.min(
-      100,
-      Math.round((this.zones.length / totalPossibleZones) * 100),
-    );
-    this._cacheTimestamp = now;
-    return this._cachedEstimatedCoverage;
-  }
-
-  /**
    * Obtenir le nombre total de clients dans toutes les zones avec mise en cache
    */
   getTotalZoneClients(): number {
@@ -6674,43 +6665,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       : 0;
     this._cacheTimestamp = now;
     return this._cachedTotalZoneClients;
-  }
-
-  /**
-   * Obtenir le nombre d'entreprises dans une zone
-   */
-  getZoneBusinessCount(zone: any): number {
-    // Utilisation d'une valeur stable basée sur l'index/nom de la zone pour éviter ExpressionChangedAfterItHasBeenCheckedError
-    const zoneIndex = this.zones.indexOf(zone);
-    const zoneIdentifier =
-      zone._id || zone.id || zone.neighborhood || zone || zoneIndex;
-    const hash = this.getStableHash(zoneIdentifier.toString());
-    return Math.floor(hash * 15) + 5; // Entre 5 et 20 entreprises
-  }
-
-  /**
-   * Obtenir le nombre de ménages dans une zone
-   */
-  getZoneHouseholdCount(zone: any): number {
-    // Utilisation d'une valeur stable basée sur l'index/nom de la zone pour éviter ExpressionChangedAfterItHasBeenCheckedError
-    const zoneIndex = this.zones.indexOf(zone);
-    const zoneIdentifier =
-      zone._id || zone.id || zone.neighborhood || zone || zoneIndex;
-    const hash = this.getStableHash(zoneIdentifier.toString() + "_households");
-    return Math.floor(hash * 50) + 20; // Entre 20 et 70 ménages
-  }
-
-  /**
-   * Génère un hash stable entre 0 et 1 pour une chaîne donnée
-   */
-  private getStableHash(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash) / 2147483647; // Normaliser entre 0 et 1
   }
 
   /**

@@ -1195,8 +1195,25 @@
   .stats-grid {
     grid-template-columns: 1fr;
   }
+  // align-items: stretch + width: 100% sur le bouton (même pattern déjà établi
+  // pour ce même composant .qa-btn dans agency-dashboard.scss) : sans ça, en
+  // colonne, chaque bouton ne prend que sa largeur de contenu (inline-flex,
+  // voir .qa-btn dans styles.scss) et reste centré avec de l'espace vide de
+  // chaque côté au lieu d'occuper toute la largeur disponible.
   .quick-actions {
     flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .qa-btn {
+    width: 100%;
+  }
+
+  // Espace sous le dernier bouton (colonne empilée) : sinon il touche
+  // directement le bas de l'en-tête dégradé, juste avant les cartes blanches.
+  .quick-actions .qa-btn:last-child {
+    margin-bottom: 1rem;
   }
 
   // Le titre passe sur sa propre ligne (flex-basis:100%), les boutons

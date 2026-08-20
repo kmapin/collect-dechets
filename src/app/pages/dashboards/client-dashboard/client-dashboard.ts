@@ -508,13 +508,34 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
 
     return Math.round((completed / totalCollections) * 100);
   }
-  // Taux de collectes non complétées
+  // Taux de collectes non complétées — même périmètre (mois en cours,
+  // history + upcoming) que getCompletedCollectionRate()/
+  // getUpcomingCollectionRate() ci-dessus : avant ce correctif, cette méthode
+  // utilisait un dénominateur totalement différent (getMonthlyCollectionsLength(),
+  // qui multiplie par 4) et un numérateur non filtré par mois
+  // (getTotalUnCompletedCollectionLength(), tout l'historique), ce qui faisait
+  // que les 3 pourcentages affichés ensemble ne totalisaient jamais 100%.
   getUncompletedCollectionRate() {
-    const totalCollections = this.getMonthlyCollectionsLength();
-    const unCompletedCollections = this.getTotalUnCompletedCollectionLength();
+    const now = new Date();
+
+    const isCurrentMonth = (date: Date | string) => {
+      const d = new Date(date);
+      return (
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      );
+    };
+
+    const history = this.filteredHistories.filter((c: any) => isCurrentMonth(c.date));
+    const upcoming = this.weeklySchedule.filter(c => isCurrentMonth(c.date!));
+    const totalCollections = upcoming.length + history.length;
+
+    const unCompleted = history.filter(
+      (c: any) => c.status === "Missed" || c.status === "Cancelled"
+    ).length;
     if (totalCollections === 0) return 0;
 
-    return Math.round((unCompletedCollections / totalCollections) * 100);
+    return Math.round((unCompleted / totalCollections) * 100);
   }
 
   // Taux de collectes à venir

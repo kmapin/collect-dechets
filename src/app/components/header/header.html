@@ -276,7 +276,11 @@
               <span>Mon profil</span>
             </a>
             @if (currentUser.role === 'client') {
-            <a routerLink="/subscription" class="dropdown-item">
+            <a
+              routerLink="/subscription"
+              class="mobile-nav-link"
+              (click)="closeMobileMenu()"
+            >
               <i class="material-icons">card_membership</i>
               <span>Mon abonnement</span>
             </a>
