@@ -1,4 +1,4 @@
-import { ClientStatut, FactureStatut } from '../../models';
+import { ClientStatut, FactureStatut, PaiementAgentStatus } from '../../models';
 import { StatusBadgeVariant } from './status-badge.component';
 import { SourceEligibilite } from '../../data-access/contracts/facture-data.service';
 
@@ -61,4 +61,28 @@ export function badgeContrat(statut: 'actif' | 'suspendu' | 'resilie'): BadgeInf
   if (statut === 'actif') return { label: 'Actif', icon: 'check_circle', variant: 'success' };
   if (statut === 'suspendu') return { label: 'Suspendu', icon: 'pause_circle', variant: 'warning' };
   return { label: 'Résilié', icon: 'cancel', variant: 'danger' };
+}
+
+// Historique "Paiement agents" (F5, chantier M2 — paiement réel Moov Money).
+// A_VERIFIER_MANUELLEMENT en 'danger' (pas 'warning') : nécessite une action urgente
+// du Super Admin, pas un statut de routine — même logique que WithdrawalStatus.
+// TO_VERIFY côté admin-dashboard (réutilisée séparément, module Retraits, pas
+// modifiée ici).
+export function badgePaiementAgent(statut: PaiementAgentStatus): BadgeInfo {
+  switch (statut) {
+    case 'EN_ATTENTE_VALIDATION':
+      return { label: 'En attente de validation', icon: 'hourglass_empty', variant: 'warning' };
+    case 'INITIATED':
+      return { label: 'Validation en cours', icon: 'hourglass_top', variant: 'warning' };
+    case 'COMPLETED':
+      return { label: 'Payé', icon: 'check_circle', variant: 'success' };
+    case 'A_VERIFIER_MANUELLEMENT':
+      return { label: '⚠ À vérifier manuellement', icon: 'error', variant: 'danger' };
+    case 'FAILED':
+      return { label: 'Échoué', icon: 'cancel', variant: 'danger' };
+    case 'REJETE':
+      return { label: 'Rejeté', icon: 'block', variant: 'neutral' };
+    default:
+      return { label: statut, icon: 'help_outline', variant: 'neutral' };
+  }
 }

@@ -13,6 +13,261 @@
     color: #94a3b8;
   }
 
+  // Panneau "demandes en attente" (chantier M2, rôle super_admin uniquement) — même
+  // palette que __warning (attention, action requise) mais plus prononcée, en pleine
+  // largeur au-dessus du formulaire.
+  &__validation-panel {
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.5rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+  }
+
+  &__validation-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 0.85rem;
+    font-size: 0.92rem;
+    color: #92400e;
+  }
+
+  &__validation-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  &__validation-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    background: #fff;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+
+  &__validation-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__validation-detail {
+    flex-basis: 100%;
+    color: #b45309;
+    font-size: 0.78rem;
+  }
+
+  &__validation-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  // Indication du provider (Moov réel / interne) avant soumission — même palette que
+  // __success/__error selon le sens (Moov = information neutre-positive, interne =
+  // information neutre), jamais un avertissement (aucune des deux voies n'est un
+  // problème en soi).
+  &__provider-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    margin: 0;
+
+    i {
+      font-size: 1.05rem;
+      flex-shrink: 0;
+    }
+
+    &--moov {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    &--interne {
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+
+    // Sélection mixte (agents Moov + internes à la fois) — reprend la teinte
+    // "attention" déjà utilisée par __warning, cohérent avec le fait qu'il faut lire
+    // attentivement la répartition avant de confirmer un paiement groupé.
+    &--mixte {
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+    }
+  }
+
+  // Barre d'actions groupées (chantier "sélection multiple") — même palette que
+  // __validation-panel, en dégradé un peu plus soutenu pour rester visible une fois
+  // une sélection active.
+  &__validation-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.85rem;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #92400e;
+  }
+
+  &__validation-checkbox {
+    display: flex;
+    align-items: center;
+  }
+
+  // Détail par agent après un envoi/traitement (individuel ou groupé) — remplace
+  // l'ancien message de succès unique, qui masquait un échec partiel dès que
+  // plusieurs agents étaient concernés.
+  &__result-list {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.7rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+
+      i {
+        font-size: 1.05rem;
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  &__result--ok {
+    background: #ecfdf5;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+  }
+
+  &__result--echec {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+  }
+
+  &__field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  &__select-actions {
+    display: flex;
+    gap: 0.5rem;
+
+    button {
+      padding: 0.15rem 0.5rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #2563eb;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+
+      &:hover {
+        color: #1d4ed8;
+      }
+    }
+  }
+
+  &__agent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 0.4rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+
+  &__agent-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.4rem;
+    font-size: 0.85rem;
+    color: #1e293b;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover {
+      background: #eef2ff;
+    }
+  }
+
+  &__agent-nom {
+    flex: 1;
+  }
+
+  &__agent-mode {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    white-space: nowrap;
+
+    &--moov {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    &--interne {
+      background: #f1f5f9;
+      color: #475569;
+    }
+  }
+
+  &__confirmation-list {
+    list-style: none;
+    margin: 0 0 0.85rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    color: #1e293b;
+  }
+
+  &__progress {
+    margin: 0 0 0.85rem;
+    font-size: 0.82rem;
+    color: #64748b;
+  }
+
   // Formulaire compact à gauche, historique qui occupe le reste de la largeur —
   // évite le grand vide à droite quand .fin-agent-payment n'était pas limité en largeur.
   &__layout {
@@ -24,7 +279,7 @@
 
   &__form-card {
     flex: 1 1 340px;
-    max-width: 420px;
+    max-width: 460px;
   }
 
   &__history {
@@ -191,6 +446,29 @@
     font-size: 0.85rem;
     color: #1e293b;
     background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 1px;
+    }
+  }
+
+  // Motif de rejet (individuel et groupé) — même style que __montant-filter, en plus
+  // large pour un texte libre plutôt qu'un nombre.
+  &__reject-motif {
+    min-width: 220px;
+    flex: 1 1 220px;
+    padding: 0.45rem 0.75rem;
+    font: inherit;
+    font-size: 0.85rem;
+    color: #1e293b;
+    background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
 

@@ -1,33 +1,238 @@
 <section class="fin-agent-payment" aria-label="Paiement des agents">
   <h2>Paiement des agents</h2>
   <p class="fin-agent-payment__note">
-    Le paiement débite réellement le solde de l'agence. Le montant à verser est saisi
-    manuellement — aucune suggestion automatique n'est calculée pour l'instant.
+    Sélectionnez un ou plusieurs agents : le même montant leur sera appliqué. Pour un
+    agent avec un numéro Moov Money reconnu, la demande déclenche un virement Moov Money
+    réel, mais seulement après validation par un administrateur — aucun virement n'est
+    envoyé à la création. Pour un agent sans numéro Moov fiable, le paiement reste interne
+    (débit du solde de l'agence) et immédiat.
   </p>
+
+  <!-- Demandes en attente d'une action du rôle validateur (administrateur finance de
+       l'agence, ou super_admin) — visible uniquement pour ce rôle, même restriction que
+       côté backend. -->
+  <div class="fin-agent-payment__validation-panel" *ngIf="estValidateur() && demandesEnAttente().length">
+    <h3 class="fin-agent-payment__validation-title">
+      <i class="material-icons" aria-hidden="true">gavel</i>
+      Demandes nécessitant une action ({{ demandesEnAttente().length }})
+    </h3>
+
+    <div class="fin-agent-payment__select-actions">
+      <button type="button" (click)="toutSelectionnerValidation()">Tout sélectionner</button>
+      <button type="button" (click)="toutDeselectionnerValidation()">Aucun</button>
+    </div>
+
+    <p class="fin-agent-payment__error" role="alert" *ngIf="erreurTraitement() as message">
+      <i class="material-icons" aria-hidden="true">error_outline</i>
+      {{ message }}
+    </p>
+
+    <!-- Résultat de la dernière action groupée — détail par agent, jamais un seul
+         message global qui masquerait un échec partiel. -->
+    <ul class="fin-agent-payment__result-list" *ngIf="resultatsTraitement().length">
+      <li *ngFor="let resultat of resultatsTraitement()" [class.fin-agent-payment__result--ok]="resultat.ok" [class.fin-agent-payment__result--echec]="!resultat.ok">
+        <i class="material-icons" aria-hidden="true">{{ resultat.ok ? 'check_circle' : 'error' }}</i>
+        <strong>{{ resultat.nom }}</strong> — {{ resultat.message }}
+      </li>
+    </ul>
+
+    <div class="fin-agent-payment__validation-toolbar" *ngIf="idsSelectionnesValidation().size">
+      <span>{{ idsSelectionnesValidation().size }} sélectionnée(s)</span>
+      <button
+        type="button"
+        class="fin-agent-payment__submit-btn"
+        *ngIf="nombreSelectionneAValider() > 0"
+        [disabled]="traitementBulkEnCours()"
+        (click)="validerSelection()"
+      >
+        {{ traitementBulkEnCours() ? 'Envoi en cours…' : 'Valider la sélection (' + nombreSelectionneAValider() + ')' }}
+      </button>
+      <ng-container *ngIf="nombreSelectionneAValider() > 0">
+        <input
+          type="text"
+          class="fin-agent-payment__reject-motif"
+          placeholder="Motif de rejet (obligatoire pour rejeter la sélection)"
+          [ngModel]="motifRejetSelection()"
+          (ngModelChange)="motifRejetSelection.set($event)"
+        />
+        <button
+          type="button"
+          class="fin-agent-payment__cancel-btn"
+          [disabled]="traitementBulkEnCours() || !motifRejetSelection().trim()"
+          (click)="rejeterSelection()"
+        >
+          Rejeter la sélection ({{ nombreSelectionneAValider() }})
+        </button>
+      </ng-container>
+      <button
+        type="button"
+        class="fin-agent-payment__submit-btn"
+        *ngIf="nombreSelectionneAmbigu() > 0"
+        [disabled]="traitementBulkEnCours()"
+        (click)="confirmerEffectueSelection()"
+      >
+        Confirmer effectué ({{ nombreSelectionneAmbigu() }})
+      </button>
+      <button
+        type="button"
+        class="fin-agent-payment__cancel-btn"
+        *ngIf="nombreSelectionneAmbigu() > 0"
+        [disabled]="traitementBulkEnCours()"
+        (click)="confirmerNonEffectueSelection()"
+      >
+        Confirmer non effectué ({{ nombreSelectionneAmbigu() }})
+      </button>
+    </div>
+
+    <ul class="fin-agent-payment__validation-list">
+      <li class="fin-agent-payment__validation-item" *ngFor="let demande of demandesEnAttente()">
+        <label class="fin-agent-payment__validation-checkbox">
+          <input
+            type="checkbox"
+            [checked]="idsSelectionnesValidation().has(demande.idPaiementAgent)"
+            (change)="toggleSelectionValidation(demande.idPaiementAgent)"
+          />
+        </label>
+
+        <div class="fin-agent-payment__validation-info">
+          <strong>{{ nomAgent(demande.idAgent) }}</strong> — {{ formatMontant(demande.montant) }}
+          <app-status-badge
+            [label]="badgeStatut(demande.status).label"
+            [icon]="badgeStatut(demande.status).icon"
+            [variant]="badgeStatut(demande.status).variant"
+          />
+          <span class="fin-agent-payment__validation-detail" *ngIf="demande.status === 'A_VERIFIER_MANUELLEMENT' && demande.failureReason">
+            Échec de l'appel Moov Money sans réponse reçue ({{ demande.failureReason }}) — le solde de l'agence n'a
+            PAS été recrédité automatiquement, l'issue réelle est inconnue.
+          </span>
+        </div>
+
+        <div class="fin-agent-payment__validation-actions">
+          <ng-container *ngIf="demande.status === 'EN_ATTENTE_VALIDATION'">
+            <ng-container *ngIf="idDemandeEnRejet() !== demande.idPaiementAgent; else formulaireRejet">
+              <button
+                type="button"
+                class="fin-agent-payment__submit-btn"
+                [disabled]="traitementEnCours() === demande.idPaiementAgent"
+                (click)="valider(demande)"
+              >
+                {{ traitementEnCours() === demande.idPaiementAgent ? 'Envoi en cours…' : 'Valider' }}
+              </button>
+              <button
+                type="button"
+                class="fin-agent-payment__cancel-btn"
+                [disabled]="traitementEnCours() === demande.idPaiementAgent"
+                (click)="ouvrirRejet(demande)"
+              >
+                Rejeter
+              </button>
+            </ng-container>
+            <ng-template #formulaireRejet>
+              <input
+                type="text"
+                class="fin-agent-payment__reject-motif"
+                placeholder="Motif de rejet (obligatoire)"
+                [ngModel]="motifRejetIndividuel()"
+                (ngModelChange)="motifRejetIndividuel.set($event)"
+              />
+              <button
+                type="button"
+                class="fin-agent-payment__cancel-btn"
+                [disabled]="!motifRejetIndividuel().trim()"
+                (click)="confirmerRejet(demande)"
+              >
+                Confirmer le rejet
+              </button>
+              <button type="button" class="fin-agent-payment__cancel-btn" (click)="annulerRejet()">Annuler</button>
+            </ng-template>
+          </ng-container>
+
+          <ng-container *ngIf="demande.status === 'A_VERIFIER_MANUELLEMENT'">
+            <button
+              type="button"
+              class="fin-agent-payment__submit-btn"
+              [disabled]="traitementEnCours() === demande.idPaiementAgent"
+              (click)="confirmerEffectue(demande)"
+            >
+              Confirmer effectué
+            </button>
+            <button
+              type="button"
+              class="fin-agent-payment__cancel-btn"
+              [disabled]="traitementEnCours() === demande.idPaiementAgent"
+              (click)="confirmerNonEffectue(demande)"
+            >
+              Confirmer non effectué
+            </button>
+          </ng-container>
+        </div>
+      </li>
+    </ul>
+  </div>
 
   <div class="fin-agent-payment__layout">
     <div class="fin-agent-payment__form-card">
-      <div class="fin-agent-payment__success" role="status" *ngIf="messageSucces() as message">
-        <i class="material-icons" aria-hidden="true">check_circle</i>
-        {{ message }}
-      </div>
-
       <div class="fin-agent-payment__error" role="alert" *ngIf="erreurEnregistrement() as message">
         <i class="material-icons" aria-hidden="true">error_outline</i>
         {{ message }}
       </div>
 
+      <!-- Résultat du dernier envoi (un ou plusieurs agents) — détail par agent. -->
+      <ul class="fin-agent-payment__result-list" *ngIf="resultatsEnvoi().length">
+        <li *ngFor="let resultat of resultatsEnvoi()" [class.fin-agent-payment__result--ok]="resultat.ok" [class.fin-agent-payment__result--echec]="!resultat.ok">
+          <i class="material-icons" aria-hidden="true">{{ resultat.ok ? 'check_circle' : 'error' }}</i>
+          <strong>{{ resultat.nom }}</strong> — {{ resultat.message }}
+        </li>
+      </ul>
+
       <form class="fin-agent-payment__form" *ngIf="etape() === 'formulaire'" (ngSubmit)="passerAConfirmation()">
         <div class="fin-agent-payment__field">
-          <label for="agent-select">Agent</label>
-          <select id="agent-select" name="agent" required [ngModel]="idAgentSelectionne()" (ngModelChange)="idAgentSelectionne.set($event)" [disabled]="chargementAgents()">
-            <option [ngValue]="null" disabled>{{ chargementAgents() ? 'Chargement…' : 'Sélectionner un agent' }}</option>
-            <option *ngFor="let agent of agents()" [ngValue]="agent.idAgent">{{ agent.nom }} {{ agent.prenom }}</option>
-          </select>
+          <div class="fin-agent-payment__field-header">
+            <label>Agents</label>
+            <div class="fin-agent-payment__select-actions" *ngIf="agents().length">
+              <button type="button" (click)="toutSelectionner()">Tout sélectionner</button>
+              <button type="button" (click)="toutDeselectionner()">Aucun</button>
+            </div>
+          </div>
+          <app-search-filter
+            *ngIf="agents().length"
+            placeholder="Rechercher un agent…"
+            [value]="rechercheAgentFormulaire()"
+            (valueChange)="rechercheAgentFormulaire.set($event)"
+          />
+          <div class="fin-agent-payment__agent-list" role="group" aria-label="Sélection des agents à payer">
+            <p class="fin-agent-payment__empty" *ngIf="chargementAgents()">Chargement…</p>
+            <label class="fin-agent-payment__agent-item" *ngFor="let agent of agentsFiltres()">
+              <input
+                type="checkbox"
+                [checked]="idsAgentsSelectionnes().includes(agent.idAgent)"
+                (change)="toggleAgent(agent.idAgent)"
+              />
+              <span class="fin-agent-payment__agent-nom">{{ agent.nom }} {{ agent.prenom }}</span>
+              <span class="fin-agent-payment__agent-mode" [ngClass]="agent.moovEligible ? 'fin-agent-payment__agent-mode--moov' : 'fin-agent-payment__agent-mode--interne'">
+                {{ agent.moovEligible ? 'Moov Money' : 'Interne' }}
+              </span>
+            </label>
+            <p class="fin-agent-payment__empty" *ngIf="!chargementAgents() && !agents().length">Aucun agent dans cette agence.</p>
+            <p class="fin-agent-payment__empty" *ngIf="!chargementAgents() && agents().length && !agentsFiltres().length">
+              Aucun agent ne correspond à cette recherche.
+            </p>
+          </div>
         </div>
 
+        <!-- Visible avant toute soumission (demande produit) : jamais une surprise après coup. -->
+        <p class="fin-agent-payment__provider-hint" *ngIf="agentsSelectionnes().length" [ngClass]="nombreInterne() === 0 ? 'fin-agent-payment__provider-hint--moov' : (nombreMoov() === 0 ? 'fin-agent-payment__provider-hint--interne' : 'fin-agent-payment__provider-hint--mixte')">
+          <i class="material-icons" aria-hidden="true">info</i>
+          <span>
+            {{ agentsSelectionnes().length }} agent(s) sélectionné(s) —
+            <strong *ngIf="nombreMoov() > 0">{{ nombreMoov() }} paiement via Moov Money (en attente de validation)</strong>
+            <span *ngIf="nombreMoov() > 0 && nombreInterne() > 0">, </span>
+            <strong *ngIf="nombreInterne() > 0">{{ nombreInterne() }} en paiement interne (débit immédiat)</strong>.
+          </span>
+        </p>
+
         <div class="fin-agent-payment__field">
-          <label for="montant-input">Montant (FCFA)</label>
+          <label for="montant-input">Montant par agent (FCFA)</label>
           <input
             id="montant-input"
             name="montant"
@@ -42,8 +247,9 @@
 
         <p class="fin-agent-payment__warning" role="alert" *ngIf="soldeInsuffisant()">
           <i class="material-icons" aria-hidden="true">warning</i>
-          Ce montant dépasse le solde disponible ({{ formatMontant(soldeDisponible() ?? 0) }}). Réduisez le montant pour
-          continuer : le serveur refuse tout paiement dépassant le solde de l'agence.
+          Le débit immédiat estimé ({{ formatMontant(coutImmediatEstime()) }}, pour les {{ nombreInterne() }} agent(s) en
+          paiement interne) dépasse le solde disponible ({{ formatMontant(soldeDisponible() ?? 0) }}). Réduisez le
+          montant ou la sélection pour continuer.
         </p>
 
         <button type="submit" class="fin-agent-payment__submit-btn" [disabled]="!formulaireValide()">
@@ -54,7 +260,22 @@
       <div class="fin-agent-payment__confirmation" *ngIf="etape() === 'confirmation'">
         <p>
           Confirmez-vous le paiement de <strong>{{ formatMontant(montant() ?? 0) }}</strong> à
-          <strong>{{ agentSelectionne()?.nom }} {{ agentSelectionne()?.prenom }}</strong> ?
+          <strong>{{ agentsSelectionnes().length }} agent(s)</strong> :
+        </p>
+        <ul class="fin-agent-payment__confirmation-list">
+          <li *ngFor="let agent of agentsSelectionnes()">
+            {{ agent.nom }} {{ agent.prenom }} —
+            <span [ngClass]="agent.moovEligible ? 'fin-agent-payment__agent-mode--moov' : 'fin-agent-payment__agent-mode--interne'">
+              {{ agent.moovEligible ? 'Moov Money (en attente de validation)' : 'Interne (débit immédiat)' }}
+            </span>
+          </li>
+        </ul>
+        <p class="fin-agent-payment__provider-hint fin-agent-payment__provider-hint--mixte" *ngIf="nombreInterne() > 0">
+          <i class="material-icons" aria-hidden="true">warning</i>
+          Débit immédiat estimé pour les paiements internes : {{ formatMontant(coutImmediatEstime()) }}.
+        </p>
+        <p class="fin-agent-payment__progress" *ngIf="progressionEnvoi() as progression">
+          Envoi {{ progression.fait }} / {{ progression.total }}…
         </p>
         <div class="fin-agent-payment__confirmation-actions">
           <button type="button" class="fin-agent-payment__cancel-btn" (click)="retourFormulaire()" [disabled]="enregistrement()">
@@ -93,6 +314,9 @@
             <th scope="col">Agent</th>
             <th scope="col">Montant</th>
             <th scope="col">Date</th>
+            <th scope="col">Statut</th>
+            <th scope="col">Mode</th>
+            <th scope="col">Référence</th>
           </tr>
         </thead>
         <tbody>
@@ -101,16 +325,25 @@
               <td data-label="Agent">{{ nomAgent(paiement.idAgent) }}</td>
               <td data-label="Montant">{{ formatMontant(paiement.montant) }}</td>
               <td data-label="Date">{{ formatDate(paiement.datePaiement) }}</td>
+              <td data-label="Statut">
+                <app-status-badge
+                  [label]="badgeStatut(paiement.status).label"
+                  [icon]="badgeStatut(paiement.status).icon"
+                  [variant]="badgeStatut(paiement.status).variant"
+                />
+              </td>
+              <td data-label="Mode">{{ paiement.provider === 'MOOV' ? 'Moov Money' : 'Interne' }}</td>
+              <td data-label="Référence">{{ paiement.reference ?? '—' }}</td>
             </tr>
             <tr *ngIf="!historiqueFiltre().length">
-              <td colspan="3" class="fin-agent-payment__empty">
+              <td colspan="6" class="fin-agent-payment__empty">
                 {{ historique().length ? 'Aucun paiement ne correspond à ces filtres.' : 'Aucun paiement agent enregistré.' }}
               </td>
             </tr>
           </ng-container>
           <ng-template #squelette>
             <tr *ngFor="let i of [0, 1, 2]" aria-hidden="true">
-              <td *ngFor="let c of [0, 1, 2]"><span class="fin-agent-payment__skeleton-cell"></span></td>
+              <td *ngFor="let c of [0, 1, 2, 3, 4, 5]"><span class="fin-agent-payment__skeleton-cell"></span></td>
             </tr>
           </ng-template>
         </tbody>

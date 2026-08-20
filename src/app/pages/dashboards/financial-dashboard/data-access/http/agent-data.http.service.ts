@@ -41,4 +41,30 @@ export class AgentDataHttpService implements AgentDataService {
     // POST /finance/agents/paiements { idAgent, montant }
     return this.http.post<unknown>(`${this.base}/paiements`, payload).pipe(map(mapPaiementAgentDto));
   }
+
+  // PATCH /finance/agents/paiements/:id/valider — réservé super_admin côté backend.
+  validerPaiementAgent(idPaiementAgent: string): Observable<PaiementAgent> {
+    return this.http.patch<unknown>(`${this.base}/paiements/${idPaiementAgent}/valider`, {}).pipe(map(mapPaiementAgentDto));
+  }
+
+  // PATCH /finance/agents/paiements/:id/rejeter { motif }
+  rejeterPaiementAgent(idPaiementAgent: string, motif: string): Observable<PaiementAgent> {
+    return this.http
+      .patch<unknown>(`${this.base}/paiements/${idPaiementAgent}/rejeter`, { motif })
+      .pipe(map(mapPaiementAgentDto));
+  }
+
+  // PATCH /finance/agents/paiements/:id/confirmer-virement-effectue
+  confirmerVirementEffectue(idPaiementAgent: string): Observable<PaiementAgent> {
+    return this.http
+      .patch<unknown>(`${this.base}/paiements/${idPaiementAgent}/confirmer-virement-effectue`, {})
+      .pipe(map(mapPaiementAgentDto));
+  }
+
+  // PATCH /finance/agents/paiements/:id/confirmer-virement-non-effectue
+  confirmerVirementNonEffectue(idPaiementAgent: string): Observable<PaiementAgent> {
+    return this.http
+      .patch<unknown>(`${this.base}/paiements/${idPaiementAgent}/confirmer-virement-non-effectue`, {})
+      .pipe(map(mapPaiementAgentDto));
+  }
 }
