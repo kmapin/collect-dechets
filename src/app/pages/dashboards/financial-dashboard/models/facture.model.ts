@@ -11,8 +11,15 @@ export interface Facture {
   periode: Periode;
   montant: number;
   statut: FactureStatut;
-  dateGeneration: string; // ISO date
-  datePaiement?: string; // ISO date — absent tant que la facture est Impayée
+  dateGeneration: string; // ISO date — émission, distincte de la période couverte
+  datePaiement?: string; // ISO date — règlement, absent tant que la facture est Impayée
+  // Période de facturation réelle (chantier "dates début/fin des exports") — distincte
+  // de dateGeneration/datePaiement. Calculée côté backend depuis Redevance.dateEcheance
+  // + Contrat.frequenceCollecte (services/redevance.js::_calculerPeriodePourRedevance),
+  // jamais recalculée ici. periodeFin absent si la fréquence du contrat est inconnue
+  // (jamais une date fabriquée côté frontend non plus).
+  periodeDebut?: string; // ISO date
+  periodeFin?: string; // ISO date
 }
 
 // ── Vue F12 : ligne de suivi mensuel des abonnés ──────────────────────
@@ -25,10 +32,14 @@ export interface SuiviAbonneMensuel {
 }
 
 // ── Vue F10 : ligne de relevé de paiement ─────────────────────────────
-// RG9 : facturé le / payé le / statut / montant.
+// RG9 : facturé le / payé le / statut / montant. periodeDebut/periodeFin additifs
+// (chantier "dates début/fin des exports") — Redevance.dateEcheance/frequenceCollecte
+// pour une ligne Facture, Subscription.startDate/endDate pour une ligne Abonnement.
 export interface LigneReleve {
   factureLe: string; // = Facture.dateGeneration
   payeLe?: string; // = Facture.datePaiement, absent si impayée
   statut: FactureStatut;
   montant: number;
+  periodeDebut?: string; // ISO date
+  periodeFin?: string; // ISO date
 }

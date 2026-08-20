@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -25,8 +25,15 @@ export class RedevanceService {
     );
   }
 
-  getRedevancesByClient$(clientId: string): Observable<Redevance[]> {
-    return this.http.get<Redevance[]>(`${environment.apiUrl}/redevances/client/${clientId}`).pipe(
+  // `plage` (chantier "historique paiements — vraie plage de dates") : optionnelle,
+  // filtre sur dateEcheance côté backend (services/redevance.js::getRedevancesByClient)
+  // — jamais un filtrage a posteriori côté client.
+  getRedevancesByClient$(clientId: string, plage?: { debut?: Date; fin?: Date }): Observable<Redevance[]> {
+    let params = new HttpParams();
+    if (plage?.debut) params = params.set('dateDebut', plage.debut.toISOString());
+    if (plage?.fin) params = params.set('dateFin', plage.fin.toISOString());
+
+    return this.http.get<Redevance[]>(`${environment.apiUrl}/redevances/client/${clientId}`, { params }).pipe(
       map((response) => response ?? []),
       catchError((error) => {
         console.error('Erreur lors de la récupération des redevances du client :', error);

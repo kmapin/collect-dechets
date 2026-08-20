@@ -4,7 +4,7 @@ import { FactureStatut, Periode, SuiviAbonneMensuel } from '../../models';
 import { FACTURE_DATA_SERVICE } from '../../data-access/tokens/facture-data.token';
 import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
 import { formatMontantXof } from '../../utils/money.util';
-import { periodeCourante } from '../../utils/periode.util';
+import { periodeCourante, bornesPeriode } from '../../utils/periode.util';
 import { MonthSelectorComponent } from '../../shared/month-selector/month-selector.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeSuiviMensuel } from '../../shared/status-badge/status-badge.util';
@@ -55,9 +55,21 @@ export class MonthlyTrackingComponent {
   }
 
   exporterCsv(): void {
+    // Période EXACTE de l'écran (this.periode(), celle envoyée à getSuiviMensuel() dans
+    // charger()) reportée sur CHAQUE ligne — jusqu'ici seul le nom de fichier portait le
+    // mois/année, le contenu du CSV n'indiquait la période nulle part (signalé : "Excel/
+    // CSV → dates absentes"). Toutes les lignes de cet écran partagent la même période
+    // (suivi MENSUEL, un mois à la fois) : pas une période par ligne différente.
+    const { debut, fin } = bornesPeriode(this.periode());
+    const optionsDate: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'long', year: 'numeric' };
+    const periodeDu = debut.toLocaleDateString('fr-FR', optionsDate);
+    const periodeAu = fin.toLocaleDateString('fr-FR', optionsDate);
+
     const rows = this.items().map(ligne => ({
       client: `${ligne.client.nom} ${ligne.client.prenom}`,
       quartier: ligne.client.quartier ?? '',
+      periodeDu,
+      periodeAu,
       montant: ligne.facture?.montant ?? 0,
       statut: ligne.statut,
       moisRetard: ligne.moisRetard,
@@ -67,6 +79,8 @@ export class MonthlyTrackingComponent {
       [
         { key: 'client', label: 'Client' },
         { key: 'quartier', label: 'Quartier' },
+        { key: 'periodeDu', label: 'Période du' },
+        { key: 'periodeAu', label: 'Au' },
         { key: 'montant', label: 'Montant (FCFA)' },
         { key: 'statut', label: 'Statut' },
         { key: 'moisRetard', label: 'Mois de retard' },

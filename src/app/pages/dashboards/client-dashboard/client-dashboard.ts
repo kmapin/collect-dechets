@@ -952,6 +952,25 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   // (l'utilisateur ne peut voir QUE ses propres paiements) ; conservés "période"+"statut".
   paymentPeriodFilter: 'all' | '3m' | '6m' | '12m' = 'all';
   paymentStatusFilter: 'all' | PaymentHistory['status'] = 'all';
+  // Plage RÉELLEMENT envoyée au backend pour le dernier chargement (chantier "historique
+  // paiements — vraie plage de dates") — `null` pour 'all' (historique complet, jamais de
+  // plage fabriquée). Les exports (PDF/CSV/Excel) lisent CETTE valeur, jamais un recalcul
+  // séparé au moment de l'export : garantit que le document affiche exactement la période
+  // qui a servi à récupérer les données qu'il contient.
+  paymentHistoryPeriod: { debut: Date; fin: Date } | null = null;
+
+  // `debut` = aujourd'hui - N mois (jour exact, ex. 20/08/2025 → 20/08/2026 pour "12
+  // derniers mois") — PAS une borne de mois calendaire (Periode) comme dans le module
+  // financier agence : ici la fenêtre est glissante, ancrée sur "aujourd'hui".
+  private calculerPeriodePaiement(): { debut: Date; fin: Date } | null {
+    const monthsWindow = { '3m': 3, '6m': 6, '12m': 12, all: null } as const;
+    const months = monthsWindow[this.paymentPeriodFilter];
+    if (!months) return null;
+    const fin = new Date();
+    const debut = new Date();
+    debut.setMonth(debut.getMonth() - months);
+    return { debut, fin };
+  }
 
   // "afficher les paiements abonnement ET contrat (redevances)" : la seule source de
   // "paiement" pour un client était jusqu'ici la Redevance (contrat). Un client sous
@@ -962,16 +981,27 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   // ce cas précis, pas de données à afficher) via le même GET /transactions/agency/:id déjà
   // utilisé par le dashboard financier agence (FinanceService.getTransactions), filtré par
   // userId — aucune nouvelle route backend créée.
+  // Période calculée UNE SEULE FOIS ici et réutilisée pour les deux requêtes ET pour les
+  // exports (this.paymentHistoryPeriod) — jamais recalculée séparément côté export, ce qui
+  // pourrait produire un document affichant une période différente de celle réellement
+  // demandée au backend.
   loadPaymentHistory(): void {
     const clientId = this.currentUser?._id;
     if (!clientId) return;
     this.isLoadingPaymentHistory = true;
     const agencyId = this.currentUser?.subscribedAgencyId || this.currentUser?.agencyId;
 
+    const periode = this.calculerPeriodePaiement();
+    this.paymentHistoryPeriod = periode;
+
     forkJoin({
-      redevances: this.redevanceService.getRedevancesByClient$(clientId),
+      redevances: this.redevanceService.getRedevancesByClient$(clientId, periode ?? undefined),
       subscriptionTransactions: agencyId
-        ? this.financeService.getTransactions(agencyId, { userId: clientId }).pipe(
+        ? this.financeService.getTransactions(agencyId, {
+            userId: clientId,
+            startDate: periode?.debut.toISOString(),
+            endDate: periode?.fin.toISOString(),
+          }).pipe(
             map((res: any) => (res?.data || []).filter((t: any) => !!t.subscriptionId)),
             catchError(() => of([] as any[]))
           )
@@ -1016,17 +1046,16 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     });
   }
 
+  // Filtre STATUT uniquement — la période est désormais appliquée réellement par le
+  // backend (loadPaymentHistory(), dateDebut/dateFin transmis à la requête), plus un
+  // second filtrage par date ici : `allPaymentHistory` est déjà scopé à la bonne plage,
+  // le refiltrer par date côté client ferait courir le risque d'un écart silencieux entre
+  // les deux calculs (ex. arrondi de fuseau horaire) qui masquerait des lignes pourtant
+  // correctement renvoyées par le serveur.
   filterPaymentHistory(): void {
-    const now = new Date();
-    const monthsWindow = { '3m': 3, '6m': 6, '12m': 12, all: null } as const;
-    const months = monthsWindow[this.paymentPeriodFilter];
-    const since = months ? new Date(now.getFullYear(), now.getMonth() - months, now.getDate()) : null;
-
-    this.paymentHistory = this.allPaymentHistory.filter((p) => {
-      const statusMatch = this.paymentStatusFilter === 'all' || p.status === this.paymentStatusFilter;
-      if (!statusMatch) return false;
-      return !since || p.date >= since;
-    });
+    this.paymentHistory = this.allPaymentHistory.filter(
+      (p) => this.paymentStatusFilter === 'all' || p.status === this.paymentStatusFilter,
+    );
   }
 
   loadSubscription(): void {
@@ -1431,14 +1460,29 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   //   );
   // }
 
+  // Libellé de la fenêtre RÉELLEMENT utilisée pour charger `this.paymentHistory`
+  // (this.paymentHistoryPeriod, posé par loadPaymentHistory() — jamais recalculé
+  // séparément ici) : "Historique complet" pour 'all' (jamais de plage fabriquée),
+  // sinon "JJ/MM/AAAA au JJ/MM/AAAA" — même fenêtre que celle envoyée au backend.
+  private periodeCouvertePaiements(): string {
+    const periode = this.paymentHistoryPeriod;
+    if (!periode) return 'Historique complet';
+    return `${periode.debut.toLocaleDateString('fr-FR')} au ${periode.fin.toLocaleDateString('fr-FR')}`;
+  }
+
   /**
    * Export CSV/Excel de l'historique des paiements (chantier Finance/Paiements, item 4 —
    * "le PDF existant reste"). Réutilise ExportClientService (déjà la seule implémentation
    * d'ExportService du projet, voir admin-dashboard.ts/agency-dashboard.ts) plutôt qu'un
    * mécanisme d'export propre à cet écran. Excel via le même import dynamique `xlsx` que
    * admin-dashboard.ts::exportStatistics() (ExportClientService n'a pas d'exportToExcel).
+   * `periodeCouverte` (chantier "dates début/fin des exports") : même valeur sur chaque
+   * ligne — n'est pas la période DE ce paiement précis (déjà dans `date`), mais la
+   * fenêtre de filtre 3m/6m/12m/tout réellement appliquée à la requête, pour qu'on ne
+   * puisse jamais lire ce fichier sans savoir quelle période il couvre.
    */
   exportPaymentHistoryCsv(): void {
+    const periodeCouverte = this.periodeCouvertePaiements();
     const rows = this.paymentHistory.map((p) => ({
       date: p.date.toLocaleDateString('fr-FR'),
       description: p.description,
@@ -1446,6 +1490,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       methode: p.method || '—',
       montant: p.amount,
       statut: this.getPaymentStatusText(p.status),
+      periodeCouverte,
     }));
     this.exportClientService.exportToCsv(
       rows,
@@ -1456,12 +1501,14 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         { key: 'methode', label: 'Méthode' },
         { key: 'montant', label: 'Montant (FCFA)' },
         { key: 'statut', label: 'Statut' },
+        { key: 'periodeCouverte', label: 'Période couverte' },
       ],
       `historique-paiements-${new Date().toISOString().slice(0, 10)}`,
     );
   }
 
   async exportPaymentHistoryExcel(): Promise<void> {
+    const periodeCouverte = this.periodeCouvertePaiements();
     const XLSX = await import('xlsx');
     const worksheet = XLSX.utils.json_to_sheet(this.paymentHistory.map((p) => ({
       Date: p.date.toLocaleDateString('fr-FR'),
@@ -1470,6 +1517,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       Méthode: p.method || '—',
       'Montant (FCFA)': p.amount,
       Statut: this.getPaymentStatusText(p.status),
+      'Période couverte': periodeCouverte,
     })));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Paiements');
@@ -1519,10 +1567,14 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       53
     );
     doc.text(`Date: ${new Date().toLocaleDateString("fr-FR")}`, 14, 59);
+    // Période couverte (chantier "dates début/fin des exports") — même fenêtre que celle
+    // réellement envoyée au backend par loadPaymentHistory() (this.paymentHistoryPeriod),
+    // jamais recalculée séparément ici.
+    doc.text(`Période : ${this.periodeCouvertePaiements()}`, 14, 65);
 
     // Tableau des paiements
     autoTable(doc, {
-      startY: 65,
+      startY: 71,
       head: [["Date", "Description", "Méthode", "Montant", "Statut"]],
       body: this.paymentHistory.map((payment) => [
         payment.date ? new Date(payment.date).toLocaleDateString("fr-FR") : "",

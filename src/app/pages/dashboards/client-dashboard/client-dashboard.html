@@ -837,7 +837,7 @@
                    "client" demandé ne s'applique pas ici : le client ne voit que ses
                    propres paiements. -->
               <div class="payment-history-filters">
-                <select [(ngModel)]="paymentPeriodFilter" (change)="filterPaymentHistory()" class="filter-select">
+                <select [(ngModel)]="paymentPeriodFilter" (change)="loadPaymentHistory()" class="filter-select">
                   <option value="all">Toute la période</option>
                   <option value="3m">3 derniers mois</option>
                   <option value="6m">6 derniers mois</option>

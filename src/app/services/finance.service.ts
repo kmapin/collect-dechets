@@ -48,16 +48,22 @@ export class FinanceService {
   }
 
   // ── Historique des paiements de l'agence ───────────────────
-  // GET /api/transactions/agency/{agencyId}?operator=&userId=&page=&limit=
+  // GET /api/transactions/agency/{agencyId}?operator=&userId=&dateDebut=&dateFin=&page=&limit=
+  // `startDate`/`endDate` (déjà déclarés sur FinanceFilters mais jusqu'ici jamais lus ni
+  // envoyés — chantier "historique paiements — vraie plage de dates") sont transmis en
+  // `dateDebut`/`dateFin` : mêmes noms que controllers/transaction.js::getTransactionByAgency
+  // vient d'ajouter (filtre réel sur Transaction.createdAt), pas des noms inventés ici.
   getTransactions(
     agencyId: string,
     filters: FinanceFilters = {}
   ): Observable<PaginatedFinanceResponse<PaymentTransaction>> {
     let params = new HttpParams();
-    if (filters.operator) params = params.set('operator', filters.operator);
-    if (filters.userId)   params = params.set('userId',   filters.userId);
-    if (filters.page)     params = params.set('page',     String(filters.page));
-    if (filters.limit)    params = params.set('limit',    String(filters.limit));
+    if (filters.operator)  params = params.set('operator',  filters.operator);
+    if (filters.userId)    params = params.set('userId',    filters.userId);
+    if (filters.startDate) params = params.set('dateDebut', filters.startDate);
+    if (filters.endDate)   params = params.set('dateFin',   filters.endDate);
+    if (filters.page)      params = params.set('page',      String(filters.page));
+    if (filters.limit)     params = params.set('limit',     String(filters.limit));
 
     return this.http
       .get<any>(`${this.api}/transactions/agency/${agencyId}`, { params })

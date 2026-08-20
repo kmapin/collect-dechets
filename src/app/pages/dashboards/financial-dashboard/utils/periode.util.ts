@@ -29,3 +29,16 @@ const MOIS_FR_LONG = [
 export function labelPeriodeFr(periode: Periode): string {
   return `${MOIS_FR_LONG[periode.mois - 1]} ${periode.annee}`;
 }
+
+/**
+ * Bornes calendaires réelles d'une période mensuelle : 1er jour au dernier jour du mois
+ * (inclusif) — mêmes bornes que la requête backend pour ce type de plage (dateEcheance
+ * $gte 1er jour, $lt 1er jour du mois suivant, cf. services/redevance.js::getReleveClient),
+ * jamais un calcul différent côté frontend. `new Date(annee, mois, 0)` : jour 0 du mois
+ * suivant = dernier jour du mois demandé (astuce standard JS Date, pas une valeur magique).
+ */
+export function bornesPeriode(periode: Periode): { debut: Date; fin: Date } {
+  const debut = new Date(periode.annee, periode.mois - 1, 1);
+  const fin = new Date(periode.annee, periode.mois, 0);
+  return { debut, fin };
+}

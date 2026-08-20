@@ -15,6 +15,8 @@ export function mapFactureDto(dto: unknown): Facture {
     statut: d['statut'] as FactureStatut,
     dateGeneration: String(d['dateGeneration']),
     datePaiement: d['datePaiement'] !== undefined && d['datePaiement'] !== null ? String(d['datePaiement']) : undefined,
+    periodeDebut: d['periodeDebut'] !== undefined && d['periodeDebut'] !== null ? String(d['periodeDebut']) : undefined,
+    periodeFin: d['periodeFin'] !== undefined && d['periodeFin'] !== null ? String(d['periodeFin']) : undefined,
   };
 }
 
@@ -43,6 +45,8 @@ export function mapSuiviAbonneMensuelDto(dto: unknown): SuiviAbonneMensuel {
       statut: f['statut'] as FactureStatut,
       dateGeneration: String(f['dateGeneration']),
       datePaiement: f['datePaiement'] !== undefined && f['datePaiement'] !== null ? String(f['datePaiement']) : undefined,
+      periodeDebut: f['periodeDebut'] !== undefined && f['periodeDebut'] !== null ? String(f['periodeDebut']) : undefined,
+      periodeFin: f['periodeFin'] !== undefined && f['periodeFin'] !== null ? String(f['periodeFin']) : undefined,
     } : null,
     statut: d['statut'] as FactureStatut | 'NonGeneree',
     moisRetard: Number(d['moisRetard']),
@@ -57,5 +61,7 @@ export function mapLigneReleveDto(dto: unknown): LigneReleve {
     payeLe: d['payeLe'] !== undefined && d['payeLe'] !== null ? String(d['payeLe']) : undefined,
     statut: d['statut'] as FactureStatut,
     montant: Number(d['montant']),
+    periodeDebut: d['periodeDebut'] !== undefined && d['periodeDebut'] !== null ? String(d['periodeDebut']) : undefined,
+    periodeFin: d['periodeFin'] !== undefined && d['periodeFin'] !== null ? String(d['periodeFin']) : undefined,
   };
 }

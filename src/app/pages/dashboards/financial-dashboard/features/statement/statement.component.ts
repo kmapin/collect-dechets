@@ -7,6 +7,7 @@ import { FACTURE_DATA_SERVICE } from '../../data-access/tokens/facture-data.toke
 import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../utils/money.util';
+import { bornesPeriode } from '../../utils/periode.util';
 import { formatFrDate } from '../../../../../shared/format.util';
 import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
 import { MonthFilterComponent } from '../../shared/filters/month-filter.component';
@@ -118,6 +119,15 @@ export class StatementComponent {
       : undefined;
     const ligneClient = `${client.nom} ${client.prenom}${client.quartier ? ' — ' + client.quartier : ''}`;
 
+    // Période EXACTE utilisée pour charger `this.lignes()` (mêmes signals debut()/fin()
+    // que ceux passés à factureData.getReleve() dans chargerReleve()) — jamais recalculée
+    // séparément, pour que le PDF ne puisse pas afficher une période différente des
+    // données qu'il contient. Formatage direct (toLocaleDateString), pas de détour par
+    // une string ISO/UTC : ces Date sont déjà des dates locales (bornesPeriode), les
+    // reconvertir en ISO risquerait de décaler le jour affiché selon le fuseau horaire
+    // du navigateur (même piège que celui documenté sur formatFrDate côté chaînes ISO).
+    const lignePeriode = this.lignePeriode();
+
     this.exportService.exportToPdf(
       rows,
       [
@@ -129,10 +139,28 @@ export class StatementComponent {
       `releve-${client.nom}-${client.prenom}`.toLowerCase().replace(/\s+/g, '-'),
       {
         titre: 'Relevé de paiement',
-        sousTitre: ligneAgence ? [ligneAgence, ligneClient] : ligneClient,
+        sousTitre: ligneAgence ? [ligneAgence, ligneClient, lignePeriode] : [ligneClient, lignePeriode],
         total: { label: 'Total', valeur: this.formatMontant(this.totalMontant()) },
       },
     );
+  }
+
+  // Libellé de la période effectivement demandée (mêmes bornes que la requête
+  // GET /finance/factures/releve — jamais un calcul indépendant) : "Historique complet"
+  // si ni debut ni fin ne sont renseignés (jamais une date fabriquée pour ce cas — la
+  // plage est réellement illimitée), sinon "Période du JJ mois AAAA au JJ mois AAAA".
+  private lignePeriode(): string {
+    const debut = this.debut();
+    const fin = this.fin();
+    if (!debut && !fin) return 'Historique complet';
+
+    const optionsDate: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'long', year: 'numeric' };
+    const dateDebut = debut ? bornesPeriode(debut).debut : null;
+    const dateFin = fin ? bornesPeriode(fin).fin : null;
+
+    if (dateDebut && dateFin) return `Période du ${dateDebut.toLocaleDateString('fr-FR', optionsDate)} au ${dateFin.toLocaleDateString('fr-FR', optionsDate)}`;
+    if (dateDebut) return `Période à partir du ${dateDebut.toLocaleDateString('fr-FR', optionsDate)}`;
+    return `Période jusqu'au ${dateFin!.toLocaleDateString('fr-FR', optionsDate)}`;
   }
 
   private chargerClientParId(idClient: string): void {
