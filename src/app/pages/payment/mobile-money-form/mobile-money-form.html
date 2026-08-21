@@ -58,8 +58,11 @@
           <!-- Montant -->
           <mat-form-field appearance="outline">
             <mat-label>Montant</mat-label>
+            <!-- Lecture seule (demande produit) : le montant vient du tarif sélectionné
+                 (tarifResponse.amount, voir ngOnChanges/createForm) et n'a jamais été
+                 destiné à être modifié librement par le client. -->
             <input matInput formControlName="amount" type="number" placeholder="0" min="1" max="1000000"
-              required>
+              readonly required>
               <mat-icon matPrefix>attach_money</mat-icon>
               <span matSuffix>FCFA</span>
               @if (paymentForm.get('amount')?.invalid) {
@@ -69,11 +72,11 @@
               }
               <mat-hint>Montant maximum: 1,000,000 FCFA</mat-hint>
             </mat-form-field>
-            <!-- Description -->
+            <!-- Description — non obligatoire (demande produit) -->
             <mat-form-field appearance="outline">
               <mat-label>Description / Référence</mat-label>
-              <textarea matInput formControlName="description" placeholder="Motif du paiement" rows="3"
-              maxlength="200" required></textarea>
+              <textarea matInput formControlName="description" placeholder="Motif du paiement (optionnel)" rows="3"
+              maxlength="200"></textarea>
               <mat-icon matPrefix>description</mat-icon>
               @if (paymentForm.get('description')?.invalid) {
                 <mat-error>

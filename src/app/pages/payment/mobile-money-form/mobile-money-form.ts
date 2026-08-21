@@ -147,8 +147,11 @@ export class MobileMoneyFormComponent implements OnInit {
         Validators.min(1),
         Validators.max(1000000)
       ]],
+      // Non obligatoire (demande produit) : un client doit pouvoir payer sans saisir de
+      // motif. minLength(3) reste actif si un texte est saisi (Validators.minLength ne
+      // s'applique pas à une valeur vide), pour éviter une description à 1-2 caractères
+      // sans intérêt plutôt qu'une description absente.
       description: ['', [
-        Validators.required,
         Validators.minLength(3),
         Validators.maxLength(200)
       ]]

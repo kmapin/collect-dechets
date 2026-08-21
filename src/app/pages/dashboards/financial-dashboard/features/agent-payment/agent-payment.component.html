@@ -225,7 +225,7 @@
           <i class="material-icons" aria-hidden="true">info</i>
           <span>
             {{ agentsSelectionnes().length }} agent(s) sélectionné(s) —
-            <strong *ngIf="nombreMoov() > 0">{{ nombreMoov() }} paiement via Moov Money (en attente de validation)</strong>
+            <strong *ngIf="nombreMoov() > 0">{{ nombreMoov() }} paiement(s) via Moov Money (en attente de validation)</strong>
             <span *ngIf="nombreMoov() > 0 && nombreInterne() > 0">, </span>
             <strong *ngIf="nombreInterne() > 0">{{ nombreInterne() }} en paiement interne (débit immédiat)</strong>.
           </span>

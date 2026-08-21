@@ -141,52 +141,63 @@
     }
   }
   
-  .form-actions {
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  button {
+    flex: 1;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    padding: 0 1.25rem;
+
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 24px;
+
     display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-    
-    button {
-      flex: 1;
-      height: 48px;
-      font-size: 1rem;
-      font-weight: 500;
-      border-radius: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      transition: all 0.3s ease;
-    }
-    
-    .cancel-button {
-      border-color: rgba(0, 0, 0, 0.2);
-      
-      &:hover:not(:disabled) {
-        background: rgba(0, 0, 0, 0.05);
-        border-color: rgba(0, 0, 0, 0.4);
-      }
-    }
-    
-    .submit-button {
-      background: linear-gradient(135deg,  #3b84ed 0%,  #4bac5b 100%);
-      color: aliceblue;
-      &:not(:disabled):hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 119, 255, 0.4);
-      }
-      
-      &:disabled {
-        opacity: 0.6;
-      }
-      
-      .button-spinner {
-        display: inline-block;
-        margin-right: 0.5rem;
-      }
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+  }
+
+  .cancel-button {
+    border-color: rgba(0, 0, 0, 0.2);
+
+    &:hover:not(:disabled) {
+      background: rgba(0, 0, 0, 0.05);
+      border-color: rgba(0, 0, 0, 0.4);
     }
   }
-  
+
+  .submit-button {
+    background: linear-gradient(
+      135deg,
+      #3b84ed 0%,
+      #4bac5b 100%
+    );
+    color: aliceblue;
+
+    &:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 119, 255, 0.4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+    }
+
+    .button-spinner {
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+  }
+}
   /* Animations */
   @keyframes slideIn {
     from {

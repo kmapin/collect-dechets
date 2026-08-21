@@ -5,6 +5,13 @@
   padding: 1rem;
 }
 
+// Montant en lecture seule (fixé par le tarif sélectionné) — indication visuelle
+// discrète pour que ça ne ressemble pas à un champ éditable comme les autres.
+input[readonly] {
+  background-color: #f8fafc;
+  cursor: default;
+}
+
 .fee-info-banner {
   display: flex;
   gap: 10px;
