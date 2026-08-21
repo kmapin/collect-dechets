@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { NotificationService } from '../../../services/notification.service';
 import { CommonModule, DatePipe, NgIf } from '@angular/common';
@@ -81,7 +81,7 @@ interface Incident {
 })
 
 
-export class Signalement {
+export class Signalement implements OnDestroy {
 
   @Input() incidents: Incident[] = [];
   @Input() currentUser:RegisterUserData | null = null;
@@ -245,11 +245,35 @@ export class Signalement {
   openIncidentDrawer(incident: Incident): void {
     this.detailIncident = incident;
     this.visibleIncidentDrawer = true;
+    this.actualiserDrawerOuvertSurBody();
   }
 
   closeIncidentDrawer(): void {
     this.visibleIncidentDrawer = false;
     this.detailIncident = null;
+    this.actualiserDrawerOuvertSurBody();
+  }
+
+  // Bug remonté en usage réel : le drawer ".drawer-overlay" (position: fixed, censé
+  // couvrir tout le viewport) apparaissait confiné à la zone de la carte "Historique de
+  // mes signalements" plutôt qu'en plein écran. Cause : `.card:hover` (styles.scss,
+  // classe globale très utilisée) applique un `transform`, et un `transform` sur un
+  // ANCÊTRE crée un nouveau bloc de référence pour tout descendant en `position: fixed`
+  // — le fixed cesse alors d'être relatif au viewport et devient relatif à cet ancêtre
+  // transformé (piège CSS connu). Le survol reste actif juste après le clic qui ouvre le
+  // drawer (le curseur n'a pas bougé), donc le bug était systématique dans cet usage.
+  // Correctif : neutraliser ce transform le temps qu'un drawer de ce composant est ouvert
+  // (classe posée sur <body>, règle globale dans styles.scss) — plutôt que de retirer
+  // l'effet de survol de `.card` pour toute l'application.
+  private actualiserDrawerOuvertSurBody(): void {
+    const unDrawerEstOuvert = this.visibleIncidentDrawer || !!this.selectedImage || this.showTeamPickerModal;
+    document.body.classList.toggle('signalement-drawer-open', unDrawerEstOuvert);
+  }
+
+  // Évite une classe restée collée sur <body> si le composant est détruit (changement
+  // de page) pendant qu'un drawer était encore ouvert.
+  ngOnDestroy(): void {
+    document.body.classList.remove('signalement-drawer-open');
   }
 
   selectedImage: string | null = null;
@@ -257,10 +281,12 @@ export class Signalement {
   openImageModal(imageUrl: string, incident: Incident): void {
     this.selectedImage = imageUrl;
     this.incidentSelected = incident;
+    this.actualiserDrawerOuvertSurBody();
   }
 
   closeImageModal(): void {
     this.selectedImage = null;
+    this.actualiserDrawerOuvertSurBody();
   }
   resolveIncident(incidentId: string): void {
   this.resolvedIncident.emit(incidentId);
@@ -304,6 +330,7 @@ export class Signalement {
     this.teamPickerIncident = incident;
     this.selectedTeamId = incident.resolutionTeamId?._id ?? '';
     this.showTeamPickerModal = true;
+    this.actualiserDrawerOuvertSurBody();
     this.teams = [];
     const agencyId = incident.agencyId?._id ?? incident.agency?._id;
     if (!agencyId) return;
@@ -324,6 +351,7 @@ export class Signalement {
     this.showTeamPickerModal = false;
     this.teamPickerIncident = null;
     this.selectedTeamId = '';
+    this.actualiserDrawerOuvertSurBody();
   }
 
   confirmAssignTeam(): void {

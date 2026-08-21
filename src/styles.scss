@@ -317,6 +317,17 @@ body {
   transform: translateY(-2px);
 }
 
+// Un `transform` sur un ancêtre crée un nouveau bloc de référence pour tout descendant
+// en `position: fixed` — le drawer .drawer-overlay (shared_pages/signalement) rendu à
+// l'intérieur d'une .card devenait alors confiné à cette carte au lieu de couvrir tout le
+// viewport (bug remonté en usage réel, le survol restant actif juste après le clic qui
+// ouvre le drawer). `body.signalement-drawer-open` est posée/retirée par
+// signalement.ts pendant qu'un de ses 3 drawers est ouvert — neutralise ce transform le
+// temps du drawer, sans retirer l'effet de survol des cartes partout ailleurs.
+body.signalement-drawer-open .card:hover {
+  transform: none;
+}
+
 .btn {
   padding: 12px;
   border: none;
