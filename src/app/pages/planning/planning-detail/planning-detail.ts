@@ -33,6 +33,11 @@ interface ActivityEvent {
 interface PlanningCollecte {
   id: string; clientId: string; clientName: string; clientNeighborhood: string; status: string;
   failureReason: string | null; comment: string | null;
+  // Nouvelle date prévue saisie AVANT de cliquer "Retenter" (chantier "redéfinir la date
+  // prévue au rattrapage") — état local du formulaire, jamais persisté tel quel : seul
+  // retryCollecte(c) l'envoie au backend. `null` par défaut : la Collecte garde sa date
+  // d'origine si le manager ne change rien (comportement historique inchangé).
+  newDate: string | null;
 }
 interface PlanningStats {
   totalHouseholds: number; householdsCollected: number; completionRate: number;
@@ -73,6 +78,10 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   // ── Formatage de dates (partagé) — exposé pour le template ─────
   formatFrDate     = formatFrDate;
   formatFrDateTime = formatFrDateTime;
+  // `[min]` de l'input date du rattrapage (chantier "redéfinir la date prévue") — même
+  // borne que la validation backend (nouvelleDate ne peut pas être dans le passé),
+  // affichée AVANT l'envoi plutôt que découverte seulement via une erreur serveur.
+  readonly todayIso = new Date().toISOString().slice(0, 10);
 
   // ── State ─────────────────────────────────────────────────────
   agencyName    = signal('');
@@ -323,6 +332,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       status: c.status,
       failureReason: c.failureReason ?? null,
       comment: c.comment ?? null,
+      newDate: null,
     };
   }
 
@@ -347,13 +357,25 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
 
   // Rattrapage (Prompt 0, étape 5) — retente directement la Collecte existante, pas de
   // nouvelle entité ni de sélection multiple à confirmer : une action par Collecte.
+  // `c.newDate` (chantier "redéfinir la date prévue au rattrapage") : optionnel, saisi via
+  // l'input date de la ligne — omis, la Collecte garde sa date d'origine (backend inchangé
+  // dans ce cas). Validée côté backend (pas dans le passé) — un rejet remonte via l'erreur
+  // ci-dessous, jamais silencieusement ignoré.
   retryCollecte(c: PlanningCollecte): void {
     const p = this.planning();
     if (!p || this.retryingId()) return;
     this.retryingId.set(c.id);
-    this.svc.retryCollecte(p.id, c.id).subscribe({
+    this.svc.retryCollecte(p.id, c.id, c.newDate).subscribe({
       next: () => {
-        this.msg.add({ severity: 'success', summary: 'Collecte remise en programmation', detail: `${c.clientName} sera retentée.` });
+        // formatFrDate (pas new Date(...).toLocaleDateString) : c.newDate est une date
+        // seule (YYYY-MM-DD, valeur native d'un <input type="date">) — un parsing
+        // naïf via `new Date(string)` la traite comme minuit UTC, ce qui peut décaler le
+        // jour affiché d'un cran dans un fuseau horaire négatif (même piège déjà
+        // documenté sur formatFrDate/format.util.ts).
+        const detail = c.newDate
+          ? `${c.clientName} sera retentée le ${this.formatFrDate(c.newDate)}.`
+          : `${c.clientName} sera retentée.`;
+        this.msg.add({ severity: 'success', summary: 'Collecte remise en programmation', detail });
         this._loadCollectes(p.id);
         this._loadStats(p.id);
         this.retryingId.set(null);

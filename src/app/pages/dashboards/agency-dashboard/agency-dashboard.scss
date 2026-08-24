@@ -3271,6 +3271,21 @@
   overflow-x: auto;
 }
 
+// Mobile first (liste des contrats) : sans min-width + overflow-x, les colonnes
+// Document/Actions s'écrasaient sur un écran étroit — les icônes d'action (voir/générer
+// document, suspendre/réactiver, résilier) devenaient minuscules et collées les unes aux
+// autres au lieu de rester lisibles avec un défilement horizontal. Scopé à ce wrapper
+// (pas la classe .table seule, aussi utilisée par un <p-table> ailleurs dans ce fichier).
+.contrats-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  .table {
+    min-width: 700px;
+  }
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

@@ -466,9 +466,17 @@ export class PlanningService {
     ).pipe(map(res => res?.data ?? []), catchError(() => of([])));
   }
 
-  /** Rattrapage (Prompt 0, étape 5) — pas de nouvelle entité, retente la Collecte existante. */
-  retryCollecte(planningId: string, collecteId: string): Observable<any> {
-    return this.http.post<any>(`${this.api}/planning/${planningId}/collectes/${collecteId}/retry`, {});
+  /**
+   * Rattrapage (Prompt 0, étape 5) — pas de nouvelle entité, retente la Collecte existante.
+   * `nouvelleDate` (demande produit "permettre de redéfinir la date prévue lors d'un
+   * rattrapage") : optionnelle — omise, la Collecte garde sa date d'origine (comportement
+   * historique inchangé). Format YYYY-MM-DD (valeur native d'un <input type="date">).
+   */
+  retryCollecte(planningId: string, collecteId: string, nouvelleDate?: string | null): Observable<any> {
+    return this.http.post<any>(
+      `${this.api}/planning/${planningId}/collectes/${collecteId}/retry`,
+      nouvelleDate ? { date: nouvelleDate } : {},
+    );
   }
 
   /** Observation/motif d'absence sur UNE Collecte précise — jamais un compteur global. */

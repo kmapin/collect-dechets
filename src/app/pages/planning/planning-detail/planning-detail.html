@@ -499,6 +499,20 @@
                           <mat-icon>save</mat-icon>
                         }
                       </button>
+                      <!-- Nouvelle date prévue (optionnelle) — chantier "permettre de
+                           redéfinir la date prévue lors d'un rattrapage" : omise, la
+                           Collecte garde sa date d'origine (comportement inchangé).
+                           [min]=todayIso : même borne que la validation backend
+                           (jamais dans le passé), visible avant l'envoi. -->
+                      <input
+                        type="date"
+                        class="rc-retry-date"
+                        [min]="todayIso"
+                        [ngModel]="c.newDate"
+                        (ngModelChange)="updateCollecteField(c.id, {newDate: $event})"
+                        pTooltip="Nouvelle date prévue (optionnel)"
+                        tooltipPosition="top"
+                      />
                       <button type="button" class="tb-btn tb-btn--ghost" [disabled]="retryingId() === c.id" (click)="retryCollecte(c)">
                         @if (retryingId() === c.id) {
                           <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Retenter…
