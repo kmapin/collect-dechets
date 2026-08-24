@@ -101,6 +101,38 @@ export const municipalityGuard: CanActivateFn = () => {
   );
 };
 
+/**
+ * Guard inverse d'authGuard : un utilisateur déjà connecté ne doit plus pouvoir
+ * revenir sur une page publique d'authentification (login) — que ce soit via une
+ * URL tapée directement ou via le bouton "précédent" du navigateur, qui redéclenche
+ * bien la résolution des guards Angular Router (popstate est intercepté comme
+ * n'importe quelle navigation). Redirige vers le dashboard de son rôle, jamais vers
+ * la page de connexion.
+ */
+export const guestGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  return authService.isAuthenticated$.pipe(
+    map((isAuth) => {
+      if (!isAuth) return true;
+
+      const role = authService.getCurrentUser()?.role;
+      let dashboardRoute = '/';
+      switch (role) {
+        case UserRole.CLIENT: dashboardRoute = '/dashboard/client'; break;
+        case UserRole.MANAGER: dashboardRoute = '/dashboard/agency'; break;
+        case UserRole.COLLECTOR: dashboardRoute = '/dashboard/collector'; break;
+        case UserRole.MUNICIPALITY: dashboardRoute = '/dashboard/municipality'; break;
+        case UserRole.SUPER_ADMIN: dashboardRoute = '/dashboard/admin'; break;
+      }
+
+      router.navigate([dashboardRoute], { replaceUrl: true });
+      return false;
+    }),
+  );
+};
+
 export const adminOrManagerGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);

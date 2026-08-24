@@ -1,5 +1,5 @@
 import { Routes } from "@angular/router";
-import { adminGuard,adminOrManagerGuard,managerGuard, authGuard, clientGuard, municipalityGuard }  from './core/guards/auth.guard';
+import { adminGuard,adminOrManagerGuard,managerGuard, authGuard, clientGuard, municipalityGuard, guestGuard }  from './core/guards/auth.guard';
 import { feeConfigAdminGuard } from './core/guards/fee-config-admin.guard';
 
 export const routes: Routes = [
@@ -34,6 +34,7 @@ export const routes: Routes = [
   },
 
   {
+    canActivate: [guestGuard],
     path: "login",
     loadComponent: () =>
       import("./pages/auth/login/login").then((c) => c.Login),

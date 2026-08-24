@@ -157,6 +157,9 @@ export class Login implements OnInit {
     };
 
     const route = dashboardRoutes[role as keyof typeof dashboardRoutes] || '/';
-    this.router.navigate([route]);
+    // replaceUrl : /login ne doit pas rester dans l'historique du navigateur après une
+    // connexion réussie, sinon le bouton "précédent" y ramènerait l'utilisateur avant
+    // même que guestGuard n'ait la main.
+    this.router.navigate([route], { replaceUrl: true });
   }
 }
