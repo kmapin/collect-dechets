@@ -601,6 +601,9 @@
   visibility: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  /* Explicite, toujours au-dessus de .mobile-menu-overlay (z-index: 1) : le tiroir
+     lui-même ne doit jamais être masqué par le calque qui sert à le fermer. */
+  z-index: 2;
   /* Sans ça, sur un écran court avec beaucoup de liens (utilisateur connecté +
      "Mon abonnement"), le menu dépasse la fenêtre sans aucun moyen de faire
      défiler jusqu'aux derniers éléments (ex. Déconnexion, masqué). */
@@ -743,7 +746,12 @@
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
-  z-index: -1;
+  /* z-index positif et explicite (pas -1) : un z-index négatif peut faire passer ce
+     calque DERRIÈRE le contenu de la page selon le contexte d'empilement, ce qui
+     empêchait le clic sur la zone grisée en dehors du menu de le fermer. Doit rester
+     strictement inférieur au z-index de .mobile-menu (voir ci-dessous) pour ne jamais
+     recouvrir le tiroir lui-même. */
+  z-index: 1;
 }
 
 .mobile-menu-overlay.show {

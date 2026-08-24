@@ -299,10 +299,19 @@
     </div>
   </div>
 
-  <!-- Overlay pour fermer le menu mobile -->
-  <div
-    class="mobile-menu-overlay"
-    [class.show]="isMobileMenuOpen"
-    (click)="closeMobileMenu()"
-  ></div>
 </header>
+
+<!--
+  Overlay pour fermer le menu mobile — volontairement HORS de <header class="navbar">
+  (pas seulement hors de .container) : .navbar a un backdrop-filter (blur), qui crée
+  un nouveau containing block pour ses descendants position:fixed, exactement comme
+  `filter`. Placé à l'intérieur, ce calque se retrouvait confiné à la hauteur de
+  .navbar (~92px, top:0/bottom:0 résolus contre SA boîte, pas le viewport) au lieu de
+  couvrir tout l'écran — la zone sous le tiroir (footer, contenu de page) ne recevait
+  alors plus jamais le clic censé fermer le menu.
+-->
+<div
+  class="mobile-menu-overlay"
+  [class.show]="isMobileMenuOpen"
+  (click)="closeMobileMenu()"
+></div>

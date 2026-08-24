@@ -1,12 +1,12 @@
 import { Component, OnInit, OnDestroy, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { User,RegisterUserData, UserRole } from '../../models/user.model';
 import { NotificationService } from '../../services/notification.service';
 import { Webstockets, SocketNotification } from '../../core/services/webstockets';
 import { MatIconModule } from '@angular/material/icon';
-import { interval, Subscription, switchMap } from 'rxjs';
+import { filter, interval, Subscription, switchMap } from 'rxjs';
 @Component({
   selector: 'app-header',
   imports: [CommonModule, RouterModule, MatIconModule],
@@ -22,6 +22,7 @@ export class Header  implements OnInit, OnDestroy {
   showNotifications = false;
     private refreshSub!: Subscription;
     private newNotificationSub?: Subscription;
+    private routerEventsSub?: Subscription;
   notifications: any[] = [];
   constructor(
     private authService: AuthService,
@@ -60,11 +61,22 @@ export class Header  implements OnInit, OnDestroy {
 
     // this.startAutoRefresh();
     this.cdr.detectChanges();
+
+    // Filet de sécurité générique : ferme le menu mobile dès qu'une navigation aboutit,
+    // quel que soit le lien cliqué — plutôt que de dépendre uniquement du
+    // (click)="closeMobileMenu()" posé sur chaque lien individuellement (facile à
+    // oublier sur un futur lien ajouté au menu).
+    this.routerEventsSub = this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe(() => {
+        if (this.isMobileMenuOpen) this.closeMobileMenu();
+      });
   }
 
   ngOnDestroy(): void {
     if (this.refreshSub) this.refreshSub.unsubscribe();
     if (this.newNotificationSub) this.newNotificationSub.unsubscribe();
+    if (this.routerEventsSub) this.routerEventsSub.unsubscribe();
   }
 
   @HostListener('window:scroll', [])
