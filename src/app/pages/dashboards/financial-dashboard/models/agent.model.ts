@@ -10,4 +10,10 @@ export interface Agent {
   // paiement pour cet agent sera un virement Moov réel ou un paiement interne —
   // affiché AVANT toute soumission (demande produit explicite).
   moovEligible: boolean;
+  // Ajouté avec l'activation d'Orange Money pour PaiementAgent (services/paiementAgent.js::
+  // _resolveProviderPourAgent, essayé EN PREMIER par le backend, avant Moov) — même
+  // principe que moovEligible, jamais les deux vrais en même temps pour un agent donné
+  // aujourd'hui (aucun chevauchement des préfixes Orange/Moov). Un agent ni orangeEligible
+  // ni moovEligible reste payé en interne (immédiat), comme avant.
+  orangeEligible: boolean;
 }

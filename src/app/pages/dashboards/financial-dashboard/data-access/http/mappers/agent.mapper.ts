@@ -14,6 +14,7 @@ export function mapAgentDto(dto: unknown): Agent {
     prenom: d['prenom'] !== undefined && d['prenom'] !== null ? String(d['prenom']) : undefined,
     telephone: d['telephone'] !== undefined && d['telephone'] !== null ? String(d['telephone']) : undefined,
     moovEligible: Boolean(d['moovEligible']),
+    orangeEligible: Boolean(d['orangeEligible']),
   };
 }
 

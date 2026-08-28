@@ -20,10 +20,11 @@ interface OperateurInfo {
 }
 
 // Formulaire de création d'un retrait (F4) — POST /finance/retraits, réellement branché sur
-// le backend (débit wallet + appel Moov Money réel, voir services/transaction.js::
-// sendUserMoney). 'ORANGE_MONEY' fait partie du type OperateurRetrait mais est refusé par le
-// serveur pour l'instant (message explicite renvoyé) — proposé mais désactivé dans le
-// sélecteur, plutôt que masqué, pour rester honnête sur ce qui existe côté modèle.
+// le backend (débit wallet + appel Moov Money OU Orange Money réel, voir
+// services/transaction.js::sendUserMoney / _executerCashOutOrangeMoney). Les deux
+// opérateurs sont désormais actifs côté serveur (Orange Money via apiOM.js::CashOut,
+// même connecteur REST/OAuth2 que le paiement client, activé après migration de
+// l'ancienne API XML/mTLS).
 //
 // Rendu en overlay custom (.modal-overlay/.modal-content, cf. admin-dashboard.html et 5
 // autres écrans de l'app), et champs en HTML natif stylé (même convention que
@@ -50,7 +51,7 @@ export class CreateWithdrawalDialogComponent {
 
   readonly operateurs: OperateurInfo[] = [
     { value: 'MOOV_MONEY', label: 'Moov Money', disponible: true },
-    { value: 'ORANGE_MONEY', label: 'Orange Money (bientôt disponible)', disponible: false },
+    { value: 'ORANGE_MONEY', label: 'Orange Money', disponible: true },
   ];
 
   readonly etape = signal<Etape>('formulaire');

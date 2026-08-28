@@ -2,10 +2,10 @@
   <h2>Paiement des agents</h2>
   <p class="fin-agent-payment__note">
     Sélectionnez un ou plusieurs agents : le même montant leur sera appliqué. Pour un
-    agent avec un numéro Moov Money reconnu, la demande déclenche un virement Moov Money
-    réel, mais seulement après validation par un administrateur — aucun virement n'est
-    envoyé à la création. Pour un agent sans numéro Moov fiable, le paiement reste interne
-    (débit du solde de l'agence) et immédiat.
+    agent avec un numéro Orange Money ou Moov Money reconnu, la demande déclenche un
+    virement réel (Orange Money essayé en premier), mais seulement après validation par
+    un administrateur — aucun virement n'est envoyé à la création. Pour un agent sans
+    numéro fiable, le paiement reste interne (débit du solde de l'agence) et immédiat.
   </p>
 
   <!-- Demandes en attente d'une action du rôle validateur (administrateur finance de
@@ -209,8 +209,8 @@
                 (change)="toggleAgent(agent.idAgent)"
               />
               <span class="fin-agent-payment__agent-nom">{{ agent.nom }} {{ agent.prenom }}</span>
-              <span class="fin-agent-payment__agent-mode" [ngClass]="agent.moovEligible ? 'fin-agent-payment__agent-mode--moov' : 'fin-agent-payment__agent-mode--interne'">
-                {{ agent.moovEligible ? 'Moov Money' : 'Interne' }}
+              <span class="fin-agent-payment__agent-mode" [ngClass]="modeClass(agent)">
+                {{ modeLabel(agent) }}
               </span>
             </label>
             <p class="fin-agent-payment__empty" *ngIf="!chargementAgents() && !agents().length">Aucun agent dans cette agence.</p>
@@ -221,10 +221,12 @@
         </div>
 
         <!-- Visible avant toute soumission (demande produit) : jamais une surprise après coup. -->
-        <p class="fin-agent-payment__provider-hint" *ngIf="agentsSelectionnes().length" [ngClass]="nombreInterne() === 0 ? 'fin-agent-payment__provider-hint--moov' : (nombreMoov() === 0 ? 'fin-agent-payment__provider-hint--interne' : 'fin-agent-payment__provider-hint--mixte')">
+        <p class="fin-agent-payment__provider-hint" *ngIf="agentsSelectionnes().length" [ngClass]="nombreInterne() === 0 ? 'fin-agent-payment__provider-hint--moov' : (nombreMoov() === 0 && nombreOrange() === 0 ? 'fin-agent-payment__provider-hint--interne' : 'fin-agent-payment__provider-hint--mixte')">
           <i class="material-icons" aria-hidden="true">info</i>
           <span>
             {{ agentsSelectionnes().length }} agent(s) sélectionné(s) —
+            <strong *ngIf="nombreOrange() > 0">{{ nombreOrange() }} paiement(s) via Orange Money (en attente de validation)</strong>
+            <span *ngIf="nombreOrange() > 0 && (nombreMoov() > 0 || nombreInterne() > 0)">, </span>
             <strong *ngIf="nombreMoov() > 0">{{ nombreMoov() }} paiement(s) via Moov Money (en attente de validation)</strong>
             <span *ngIf="nombreMoov() > 0 && nombreInterne() > 0">, </span>
             <strong *ngIf="nombreInterne() > 0">{{ nombreInterne() }} en paiement interne (débit immédiat)</strong>.
@@ -265,8 +267,8 @@
         <ul class="fin-agent-payment__confirmation-list">
           <li *ngFor="let agent of agentsSelectionnes()">
             {{ agent.nom }} {{ agent.prenom }} —
-            <span [ngClass]="agent.moovEligible ? 'fin-agent-payment__agent-mode--moov' : 'fin-agent-payment__agent-mode--interne'">
-              {{ agent.moovEligible ? 'Moov Money (en attente de validation)' : 'Interne (débit immédiat)' }}
+            <span [ngClass]="modeClass(agent)">
+              {{ modeLabel(agent, true) }}
             </span>
           </li>
         </ul>
@@ -332,7 +334,7 @@
                   [variant]="badgeStatut(paiement.status).variant"
                 />
               </td>
-              <td data-label="Mode">{{ paiement.provider === 'MOOV' ? 'Moov Money' : 'Interne' }}</td>
+              <td data-label="Mode">{{ providerLabel(paiement.provider) }}</td>
               <td data-label="Référence">{{ paiement.reference ?? '—' }}</td>
             </tr>
             <tr *ngIf="!historiqueFiltre().length">

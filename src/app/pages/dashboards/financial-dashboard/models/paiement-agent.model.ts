@@ -10,10 +10,13 @@
 // (demande EN_ATTENTE_VALIDATION rejetée par le validateur, avant tout débit/virement).
 export type PaiementAgentStatus = 'EN_ATTENTE_VALIDATION' | 'INITIATED' | 'COMPLETED' | 'FAILED' | 'A_VERIFIER_MANUELLEMENT' | 'REJETE';
 
-// 'INTERNE' : agent sans numéro Moov Money fiable — comportement historique, aucun
-// transfert réel (écriture comptable interne uniquement). 'MOOV' : virement Moov
-// Money réel, déclenché à la validation Super Admin (jamais à la création).
-export type PaiementAgentProvider = 'MOOV' | 'INTERNE';
+// 'INTERNE' : agent sans numéro Moov/Orange Money fiable — comportement historique,
+// aucun transfert réel (écriture comptable interne uniquement). 'MOOV'/'ORANGE_MONEY' :
+// virement réel, déclenché à la validation Super Admin (jamais à la création). Orange
+// Money essayé EN PREMIER par le backend (services/paiementAgent.js::
+// _resolveProviderPourAgent) — activé après migration de l'ancienne API OM (XML/mTLS)
+// vers apiOM.js (REST/OAuth2, CashOut).
+export type PaiementAgentProvider = 'MOOV' | 'ORANGE_MONEY' | 'INTERNE';
 
 export interface PaiementAgent {
   readonly idPaiementAgent: string;

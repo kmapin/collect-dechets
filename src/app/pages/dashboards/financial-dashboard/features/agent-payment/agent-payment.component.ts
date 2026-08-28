@@ -113,10 +113,15 @@ export class AgentPaymentComponent {
   });
 
   readonly agentsSelectionnes = computed(() => this.agents().filter(a => this.idsAgentsSelectionnes().includes(a.idAgent)));
-  readonly nombreMoov = computed(() => this.agentsSelectionnes().filter(a => a.moovEligible).length);
-  readonly nombreInterne = computed(() => this.agentsSelectionnes().filter(a => !a.moovEligible).length);
-  // Seuls les paiements INTERNES débitent immédiatement — un paiement Moov reste
-  // EN_ATTENTE_VALIDATION, aucun débit avant la validation Super Admin.
+  // Orange Money essayé EN PREMIER par le backend (services/paiementAgent.js::
+  // _resolveProviderPourAgent) — un agent orangeEligible n'est donc jamais compté comme
+  // Moov, même si moovEligible était aussi vrai (aucun chevauchement de préfixes
+  // aujourd'hui, mais l'ordre de résolution est celui qui fait foi).
+  readonly nombreOrange = computed(() => this.agentsSelectionnes().filter(a => a.orangeEligible).length);
+  readonly nombreMoov = computed(() => this.agentsSelectionnes().filter(a => !a.orangeEligible && a.moovEligible).length);
+  readonly nombreInterne = computed(() => this.agentsSelectionnes().filter(a => !a.orangeEligible && !a.moovEligible).length);
+  // Seuls les paiements INTERNES débitent immédiatement — un paiement Moov ou Orange
+  // Money reste EN_ATTENTE_VALIDATION, aucun débit avant la validation Super Admin.
   readonly coutImmediatEstime = computed(() => (this.montant() ?? 0) * this.nombreInterne());
 
   readonly soldeInsuffisant = computed(() => {
@@ -372,6 +377,27 @@ export class AgentPaymentComponent {
   nomAgent(idAgent: string): string {
     const agent = this.agents().find(a => a.idAgent === idAgent);
     return agent ? `${agent.nom} ${agent.prenom ?? ''}`.trim() : idAgent;
+  }
+
+  // Même ordre de résolution que le backend (Orange Money essayé avant Moov, voir
+  // nombreOrange/nombreMoov ci-dessus) — un seul endroit pour ce libellé, réutilisé par
+  // la liste de sélection, le récapitulatif de confirmation et l'historique.
+  modeLabel(agent: Agent, enAttente = false): string {
+    if (agent.orangeEligible) return enAttente ? 'Orange Money (en attente de validation)' : 'Orange Money';
+    if (agent.moovEligible) return enAttente ? 'Moov Money (en attente de validation)' : 'Moov Money';
+    return enAttente ? 'Interne (débit immédiat)' : 'Interne';
+  }
+
+  modeClass(agent: Agent): string {
+    if (agent.orangeEligible) return 'fin-agent-payment__agent-mode--orange';
+    if (agent.moovEligible) return 'fin-agent-payment__agent-mode--moov';
+    return 'fin-agent-payment__agent-mode--interne';
+  }
+
+  providerLabel(provider: PaiementAgent['provider']): string {
+    if (provider === 'ORANGE_MONEY') return 'Orange Money';
+    if (provider === 'MOOV') return 'Moov Money';
+    return 'Interne';
   }
 
   private chargerAgents(): void {

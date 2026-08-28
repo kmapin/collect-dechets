@@ -245,6 +245,12 @@
       color: #1d4ed8;
     }
 
+    // Même couleur de marque qu'ailleurs dans l'app (mobile-money-form.ts::operators).
+    &--orange {
+      background: #fff3e6;
+      color: #c2410c;
+    }
+
     &--interne {
       background: #f1f5f9;
       color: #475569;
