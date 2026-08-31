@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { FINANCE_NAV_ITEMS } from './finance-nav.config';
+import { aLaPermission } from '../../models';
 
 // Shell du module Financial Dashboard : pas de sidebar (choix explicite) — navigation
 // par onglets, pattern maison identique aux autres dashboards (DISCOVERY.md §2), mais
@@ -18,10 +19,14 @@ import { FINANCE_NAV_ITEMS } from './finance-nav.config';
 })
 export class FinanceLayout {
   private readonly session = inject(SESSION_SERVICE);
-  private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
+  // `initialValue: null` (et non session.getCurrentUser(), qui lève tant que GET
+  // /finance/session/moi n'a pas répondu) : navItems() doit rester utilisable (liste vide)
+  // pendant le court instant où la session réelle est encore en vol, plutôt que de
+  // planter le shell — voir SessionHttpService.
+  private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: null });
 
   readonly navItems = computed(() => {
-    const role = this.currentUser().role;
-    return FINANCE_NAV_ITEMS.filter(item => !item.rolesAutorises || item.rolesAutorises.includes(role));
+    const utilisateur = this.currentUser();
+    return FINANCE_NAV_ITEMS.filter(item => aLaPermission(utilisateur, ...item.permissions));
   });
 }

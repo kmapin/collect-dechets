@@ -1,91 +1,492 @@
-@use '../../styles/responsive' as resp;
-
-.fin-roles-admin {
-  h2 {
-    margin: 0 0 0.25rem;
-    font-size: 1.05rem;
-    color: #1e293b;
-  }
-
-  &__note {
+.access-mgmt {
+  &__header {
     margin: 0 0 1.25rem;
-    font-size: 0.82rem;
-    color: #94a3b8;
+
+    h2 {
+      margin: 0 0 0.25rem;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--surface-800, #1e293b);
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--surface-500, #64748b);
+    }
   }
 
-  &__table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.88rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    overflow: hidden;
+  &__body {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.25rem;
+    align-items: start;
 
-    th {
-      text-align: left;
-      padding: 0.65rem 0.9rem;
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // ── Panneau liste ──────────────────────────────────────────────
+  &__list-panel {
+    // min-width: 0 indispensable sur un item de grid/flex : sans lui, un enfant large
+    // (ici les tableaux transposés de large contenu) refuse de rétrécir sous sa propre
+    // largeur intrinsèque et pousse toute la carte — voire la page entière — au-delà du
+    // viewport au lieu de faire défiler seulement le tableau (cf. .detail-table-scroll).
+    min-width: 0;
+    background: var(--white);
+    border: 1px solid var(--surface-200, #e2e8f0);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    h3 {
+      margin: 0;
+      font-size: 0.95rem;
       font-weight: 600;
-      color: #475569;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
+      color: var(--surface-800, #1e293b);
     }
-
-    td {
-      padding: 0.6rem 0.9rem;
-      border-bottom: 1px solid #f1f5f9;
-      color: #1e293b;
-    }
-
-    @include resp.table-to-cards;
   }
 
-  &__toggle {
+  &__count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--surface-500, #64748b);
+    background: var(--surface-100, #f1f5f9);
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+  }
+
+  &__search {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--surface-200, #e2e8f0);
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+
+    i {
+      font-size: 1.1rem;
+      color: var(--surface-400, #94a3b8);
+    }
+
+    input {
+      border: none;
+      outline: none;
+      flex: 1;
+      font-size: 0.85rem;
+      color: var(--surface-800, #1e293b);
+      background: transparent;
+
+      &::placeholder {
+        color: var(--surface-400, #94a3b8);
+      }
+    }
+  }
+
+  &__filter {
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.85rem;
+    color: var(--surface-700, #334155);
+    background: var(--white);
+    border: 1px solid var(--surface-200, #e2e8f0);
+    border-radius: 8px;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-height: 32rem;
+    overflow-y: auto;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+
+      &:hover {
+        background: var(--surface-50, #f8fafc);
+      }
+
+      &.selected {
+        background: var(--surface-100, #eff6ff);
+        outline: 1px solid var(--primary-color, #3b82f6);
+      }
+    }
+  }
+
+  &__empty {
+    padding: 1rem 0.5rem;
+    font-size: 0.82rem;
+    color: var(--surface-500, #64748b);
+    text-align: center;
+    cursor: default;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  // ── Panneau détail ─────────────────────────────────────────────
+  &__detail {
+    // Même raison que .access-mgmt__list-panel ci-dessus : cet item de grid doit pouvoir
+    // rétrécir sous la largeur intrinsèque des tableaux transposés qu'il contient, sinon
+    // c'est toute la carte (et la page, sur mobile) qui déborde au lieu du seul tableau.
+    min-width: 0;
+    background: var(--white);
+    border: 1px solid var(--surface-200, #e2e8f0);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  &__skeleton-line {
+    height: 2.25rem;
+    border-radius: 8px;
+    background: var(--surface-100, #e2e8f0);
+    animation: access-mgmt-skeleton-pulse 1.4s ease-in-out infinite;
+
+    & + & {
+      margin-top: 0.5rem;
+    }
+  }
+}
+
+// ── Avatar & badges de rôle ────────────────────────────────────────
+.avatar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--white);
+  background: var(--surface-400, #94a3b8);
+
+  &--lg {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.05rem;
+  }
+
+  &.role-Comptable {
+    background: var(--accent-color, #ff7043);
+  }
+
+  &.role-ManagerTerrain {
+    background: var(--secondary-color, #4caf50);
+  }
+
+  &.role-Administrateur {
+    background: var(--primary-color, #3b82f6);
+  }
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+
+  .name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--surface-800, #1e293b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.role-badge {
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+
+  &.role-Comptable {
+    color: #c2410c;
+    background: #ffedd5;
+  }
+
+  &.role-ManagerTerrain {
+    color: #15803d;
+    background: #dcfce7;
+  }
+
+  &.role-Administrateur {
+    color: #1d4ed8;
+    background: #dbeafe;
+  }
+}
+
+// ── Détail : en-tête & sections ─────────────────────────────────
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+
+  h3 {
+    margin: 0 0 0.3rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--surface-800, #1e293b);
+  }
+}
+
+.detail-section {
+  border-top: 1px solid var(--surface-100, #f1f5f9);
+  padding-top: 1rem;
+
+  h4 {
+    margin: 0 0 0.6rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--primary-color, #2563eb);
+  }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--surface-500, #64748b);
+    margin-bottom: 0.3rem;
+  }
+
+  select {
+    width: 100%;
+    max-width: 22rem;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+    color: var(--surface-800, #1e293b);
+    background: var(--white);
+    border: 1px solid var(--surface-200, #e2e8f0);
+    border-radius: 8px;
+  }
+
+  &__hint {
+    margin: 0 0 0.6rem;
+    font-size: 0.8rem;
+    color: var(--surface-500, #64748b);
+
+    &--warning {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: #9a3412;
+
+      i {
+        font-size: 1rem;
+        color: var(--accent-color, #ff7043);
+      }
+    }
+  }
+}
+
+// Un onglet/droit par COLONNE, "Onglet"/"Rôle financier"/"Accès"/etc. en en-tête de LIGNE
+// (première colonne, `<th scope="row">`) — défile horizontalement plutôt que verticalement.
+.detail-table-scroll {
+  overflow-x: auto;
+  // `overflow-y` explicite : sans lui, la spec CSS force ce second axe à `auto` dès que
+  // `overflow-x` vaut autre chose que `visible`, ce qui faisait apparaître une barre de
+  // défilement verticale parasite (débordant même hors du panneau) alors qu'il n'y a
+  // jamais de contenu à faire défiler verticalement ici.
+  overflow-y: hidden;
+  max-width: 100%;
+  border-radius: 10px;
+
+  & + & {
+    margin-top: 0.75rem;
+  }
+}
+
+.detail-table {
+  // Jamais étiré au-delà de son propre contenu (pas de min-width: 100%, qui forçait
+  // navigateur à répartir l'espace en trop de façon incohérente entre les colonnes,
+  // rendant la mise en page instable/non responsive) — la largeur totale dépend
+  // uniquement du nombre et de la longueur des colonnes ; `.detail-table-scroll` prend le
+  // relais avec un défilement horizontal si ça dépasse l'espace disponible.
+  width: max-content;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  background: var(--white);
+  border: 1px solid var(--surface-200, #e2e8f0);
+  border-radius: 10px;
+
+  th[scope='row'] {
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    font-weight: 600;
+    color: var(--surface-500, #64748b);
+    background: var(--surface-50, #f8fafc);
+    border-right: 1px solid var(--surface-200, #e2e8f0);
+    white-space: nowrap;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+  }
+
+  td {
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid var(--surface-100, #f1f5f9);
+    color: var(--surface-800, #1e293b);
+    white-space: nowrap;
+  }
+
+  tr:last-child td,
+  tr:last-child th[scope='row'] {
+    border-bottom: none;
+  }
+
+  &__check-cell {
+    text-align: center;
+  }
+
+  // Section sans effet tant que droitsFinance (section 2) est désactivé — grisée pour ne
+  // jamais donner l'impression qu'un droit coché est réellement accordé.
+  &--inactive {
+    opacity: 0.55;
+
+    td, th[scope='row'] {
+      color: var(--surface-500, #64748b);
+    }
+  }
+}
+
+.check-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--surface-400, #94a3b8);
+
+  i {
+    font-size: 1.35rem;
+  }
+
+  &.checked {
+    color: var(--primary-color, #2563eb);
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color, #2563eb);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+// ── Bandeau "modifications non enregistrées" ────────────────────────
+.dirty-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #9a3412;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+
+  i {
+    font-size: 1.1rem;
+    color: var(--accent-color, #ff7043);
+  }
+}
+
+// ── Barre d'actions (sections 3/4) ───────────────────────────────────
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-100, #f1f5f9);
+
+  &__spacer {
+    flex: 1;
+  }
+
+  &__ghost,
+  &__primary {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.3rem 0.7rem;
-    font-size: 0.82rem;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: #64748b;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    border-radius: 999px;
+    border-radius: 8px;
     cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
 
     i {
       font-size: 1.1rem;
     }
+  }
 
-    &.active {
-      color: #16a34a;
-      background: #ecfdf5;
-      border-color: #bbf7d0;
-    }
+  &__ghost {
+    color: var(--surface-700, #334155);
+    background: var(--white);
+    border: 1px solid var(--surface-200, #e2e8f0);
 
-    &:focus-visible {
-      outline: 2px solid #2563eb;
-      outline-offset: 2px;
+    &:hover:not(:disabled) {
+      background: var(--surface-50, #f8fafc);
     }
   }
 
-  &__skeleton-cell {
-    display: block;
-    height: 0.8rem;
-    width: 70%;
-    border-radius: 4px;
-    background: #e2e8f0;
-    animation: fin-roles-admin-skeleton-pulse 1.4s ease-in-out infinite;
+  &__primary {
+    color: var(--white);
+    background: var(--primary-color, #2563eb);
+    border: 1px solid transparent;
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.95);
+    }
   }
 }
 
-@keyframes fin-roles-admin-skeleton-pulse {
+@keyframes access-mgmt-skeleton-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fin-roles-admin__skeleton-cell {
+  .access-mgmt__skeleton-line {
     animation: none;
   }
 }

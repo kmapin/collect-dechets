@@ -171,7 +171,7 @@
   </div>
 
   <div class="fin-agent-payment__layout">
-    <div class="fin-agent-payment__form-card">
+    <div class="fin-agent-payment__form-card" *ngIf="peutCreer()">
       <div class="fin-agent-payment__error" role="alert" *ngIf="erreurEnregistrement() as message">
         <i class="material-icons" aria-hidden="true">error_outline</i>
         {{ message }}

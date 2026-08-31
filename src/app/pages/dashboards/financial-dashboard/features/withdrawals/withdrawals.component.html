@@ -4,7 +4,7 @@
     <div class="fin-withdrawals__filters">
       <app-month-filter label="Filtrer par mois" (periodeChange)="onPeriodeChange($event)" />
       <app-search-filter placeholder="Rechercher un motif…" [value]="recherche()" (valueChange)="onRechercheChange($event)" />
-      <button mat-flat-button color="primary" type="button" (click)="ouvrirNouveauRetrait()">
+      <button *ngIf="peutCreer()" mat-flat-button color="primary" type="button" (click)="ouvrirNouveauRetrait()">
         <mat-icon aria-hidden="true">add</mat-icon>
         Nouveau retrait
       </button>

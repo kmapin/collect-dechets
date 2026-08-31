@@ -1782,3 +1782,70 @@ Migration backend déjà exécutée contre la vraie base avant ce changement (vo
 ## Vérifications effectuées
 - `npx tsc --noEmit -p tsconfig.json` → `EXIT:0`.
 - Grep exhaustif sur tout `src/app` : aucune référence de code résiduelle à `assignedTeamId` (seulement des commentaires explicatifs mentionnant l'ancien nom pour le contexte historique).
+
+---
+
+# RBAC financier réel (onglets + droits) — "Gestion des accès"
+
+Voir `EditRecap.md` (backend) pour le détail complet du modèle, de l'enforcement serveur
+et de la non-élévation de privilège — ceci couvre la partie frontend de ce chantier
+(collect-dechets), toujours dans `src/app/pages/dashboards/financial-dashboard/`.
+
+## Modèle
+
+`models/finance-permission.ts` (nouveau) : type `FinancePermission` (13 clés, identiques
+au backend), `PERMISSIONS_ONGLETS` (8 entrées cle/label/route, pilote le filtrage de
+`FINANCE_NAV_ITEMS` ET la section "Accès aux onglets" de `roles-admin`),
+`GROUPES_DROITS_FINANCIERS` (section "Droits financiers", uniquement les clés d'action —
+jamais les clés `*.view`, déjà couvertes ailleurs), `PRESETS_ROLE` (aide UI, bouton
+"appliquer les droits par défaut du rôle"), `aLaPermission()` (ET logique
+droitsFinance + clé détenue, même règle que `requireFinancePermission` côté serveur).
+`Utilisateur`/`SessionUtilisateur` : `+ permissions: FinancePermission[]`.
+
+`session.mapper.ts` : `permissions` mappé avec défaut `[]` si absent du DTO (fail-closed —
+compat avec un backend pas encore migré). `SessionService` : `toggleDroitsFinance`/
+`setFinancialRole` passent de `void` à `Observable<Utilisateur>` (corrige une course réelle
+avec l'ancien pattern fire-and-forget : `roles-admin.component.ts` rappelait `charger()`
+juste après le PATCH sans attendre sa fin) ; nouvelle méthode `setPermissions()`.
+
+## Enforcement
+
+`guards/finance-permission.guard.ts` (nouveau) remplace `guards/finance-admin.guard.ts`
+(supprimé, son seul appelant — la route `roles-admin` — porte désormais
+`data: { permissions: ['roles.view'] }`, un cas parmi d'autres de ce garde générique). Lit
+`route.data.permissions`, redirige vers le premier onglet encore autorisé (calculé sur
+`FINANCE_NAV_ITEMS` filtré) plutôt que systématiquement vers `acces-refuse`. Composé après
+`financeAccessGuard` (coupe-circuit `droitsFinance`, inchangé) sur chaque route enfant de
+`financial-dashboard.routes.ts`. `finance-nav.config.ts` : `rolesAutorises?: Role[]` →
+`permissions: FinancePermission[]` ; `finance-layout.ts` filtre par `aLaPermission()` au
+lieu d'un test de rôle, et passe `toSignal(..., { initialValue: null })` au lieu de
+`session.getCurrentUser()` (qui lève tant que `GET /finance/session/moi` n'a pas répondu).
+
+Profondeur de défense côté actions (cosmétique, le serveur refuse déjà l'appel) :
+`withdrawals.component` masque "Nouveau retrait" sous `withdrawals.create` ;
+`agent-payment.component` masque le formulaire de demande sous `agent_payments.create`
+(la restriction de validation/rejet/confirmation, `estValidateur`, existait déjà et
+correspond exactement à `agent_payments.manage` — non touchée).
+
+## UI `roles-admin`
+
+Le détail passe de 2 à 4 sections. Sections 1 (rôle) et 2 (`droitsFinance`, renommée
+"Accès au module financier") restent instantanées, comme avant. Sections 3 ("Accès aux
+onglets", 8 lignes) et 4 ("Droits financiers", groupée par domaine) nouvelles, sur un
+brouillon local (`Set<FinancePermission>`) appliqué uniquement au clic "Enregistrer les
+modifications" (l'endpoint `setPermissions` remplace la liste complète — l'appliquer à
+chaque case cochée écraserait la liste à chaque clic). Bouton "Appliquer les droits par
+défaut du rôle" (recharge le préréglage dans le brouillon, sans enregistrer). Un bandeau
+bloque le changement d'utilisateur sélectionné tant que le brouillon n'est pas enregistré
+ou annulé. Les 2 clés de gouvernance sont affichées cochées + désactivées (non
+décochables) pour un utilisateur `role === Role.ADMINISTRATEUR`.
+
+## Vérifications effectuées
+
+- `ng build --configuration=development` → succès, aucune erreur.
+- `npx tsc --noEmit -p tsconfig.spec.json` → aucune erreur dans un fichier touché par ce
+  chantier (2 erreurs préexistantes et sans rapport dans `facture.mapper.spec.ts` et
+  `municipality-dashboard.spec.ts` empêchent `ng test` de démarrer — confirmé non liées à
+  ce chantier via `git status` avant toute modification).
+- `session.mapper.spec.ts` mis à jour (permissions présentes/absentes) — non exécutable en
+  isolation faute de runner fonctionnel sur ce dépôt actuellement (cf. point précédent).

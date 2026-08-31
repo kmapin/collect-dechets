@@ -8,4 +8,5 @@ export * from './retrait.model';
 export * from './agent.model';
 export * from './paiement-agent.model';
 export * from './utilisateur.model';
+export * from './finance-permission';
 export * from './dashboard-kpi.model';

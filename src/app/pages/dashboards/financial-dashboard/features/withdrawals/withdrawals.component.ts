@@ -1,10 +1,12 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Periode, Retrait } from '../../models';
+import { aLaPermission, Periode, Retrait } from '../../models';
 import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
+import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDate } from '../../../../../shared/format.util';
 import { DataTableColumn, DataTableComponent } from '../../shared/data-table/data-table.component';
@@ -53,6 +55,13 @@ function libelleStatut(statut?: string): string {
 export class WithdrawalsComponent {
   private readonly financeData = inject(FINANCE_DATA_SERVICE);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly session = inject(SESSION_SERVICE);
+  private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: null });
+
+  // Profondeur de défense (cosmétique) : le serveur refuse déjà POST /finance/retraits
+  // sans withdrawals.create (requireFinancePermission) — masquer le bouton évite juste
+  // un aller-retour inutile pour un utilisateur qui n'a pas ce droit.
+  readonly peutCreer = computed(() => aLaPermission(this.currentUser(), 'withdrawals.create'));
 
   readonly recherche = signal('');
   readonly periode = signal<Periode | null>(null);

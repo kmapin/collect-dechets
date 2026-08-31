@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
-import { Agent, PaiementAgent, Role } from '../../models';
+import { aLaPermission, Agent, PaiementAgent, Role } from '../../models';
 import { AGENT_DATA_SERVICE } from '../../data-access/tokens/agent-data.token';
 import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
@@ -65,14 +65,18 @@ export class AgentPaymentComponent {
   private readonly session = inject(SESSION_SERVICE);
 
   // currentUser$ plutôt que getCurrentUser() seul en initialValue : cette route est
-  // accessible dès que droitsFinance est vrai (financeAccessGuard, pas financeAdminGuard —
-  // voir financial-dashboard.routes.ts "Comptable ET Administrateur"), donc la session
-  // financière a déjà été chargée par le guard avant que ce composant ne se construise,
-  // même convention que client-list/client-sheet/finance-layout de ce module.
+  // accessible dès que droitsFinance est vrai et que 'agent_payments.view' est détenue
+  // (financeAccessGuard + financePermissionGuard, voir financial-dashboard.routes.ts),
+  // donc la session financière a déjà été chargée par le garde avant que ce composant ne
+  // se construise, même convention que client-list/client-sheet/finance-layout de ce module.
   private readonly utilisateurFinance = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
   readonly estValidateur = computed(
     () => this.utilisateurFinance().role === Role.ADMINISTRATEUR || this.authService.hasRole(UserRole.SUPER_ADMIN),
   );
+  // Profondeur de défense (cosmétique) : le serveur refuse déjà POST /finance/agents/
+  // paiements sans agent_payments.create (requireFinancePermission) — masquer le
+  // formulaire évite juste un aller-retour inutile.
+  readonly peutCreer = computed(() => aLaPermission(this.utilisateurFinance(), 'agent_payments.create'));
 
   readonly agents = signal<Agent[]>([]);
   readonly chargementAgents = signal(true);

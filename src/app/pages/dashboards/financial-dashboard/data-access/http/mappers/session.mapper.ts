@@ -1,6 +1,13 @@
 import { Utilisateur } from '../../../models';
 import { Role } from '../../../models/enums';
+import { FinancePermission } from '../../../models/finance-permission';
 import { SessionUtilisateur } from '../../contracts/session.service';
+
+// Défaut `[]` si le champ est absent (backend pas encore migré) — fail-closed : un
+// utilisateur sans `permissions` connues ne doit avoir accès à aucun onglet ni action.
+function _mapPermissions(valeur: unknown): FinancePermission[] {
+  return Array.isArray(valeur) ? (valeur as unknown[]).map(String) as FinancePermission[] : [];
+}
 
 // DTO réel : GET /finance/session/moi (controllers/financeUsers.js::getMoi). `role` peut
 // valoir `null` côté serveur si financialRole n'a pas encore été assigné à l'utilisateur —
@@ -16,6 +23,7 @@ export function mapSessionUtilisateurDto(dto: unknown): SessionUtilisateur {
     nomAffiche: String(d['nomAffiche']),
     role: d['role'] as Role,
     droitsFinance: Boolean(d['droitsFinance']),
+    permissions: _mapPermissions(d['permissions']),
     agence: a
       ? { nom: String(a['nom']), ville: a['ville'] ? String(a['ville']) : undefined, quartier: a['quartier'] ? String(a['quartier']) : undefined }
       : undefined,
@@ -31,5 +39,6 @@ export function mapUtilisateurDto(dto: unknown): Utilisateur {
     identifiants: String(d['identifiants']),
     role: d['role'] as Role,
     droitsFinance: Boolean(d['droitsFinance']),
+    permissions: _mapPermissions(d['permissions']),
   };
 }

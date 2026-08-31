@@ -16,7 +16,7 @@ import { AgentDataHttpService } from './data-access/http/agent-data.http.service
 import { SessionHttpService } from './data-access/http/session.http.service';
 import { ExportClientService } from './data-access/export/export-client.service';
 import { financeAccessGuard } from './guards/finance-access.guard';
-import { financeAdminGuard } from './guards/finance-admin.guard';
+import { financePermissionGuard } from './guards/finance-permission.guard';
 
 // financeAccessGuard is attached to each protected child (not to the shell route itself,
 // and not to the `dashboard/financial` mount in app.routes.ts): it injects SESSION_SERVICE,
@@ -53,60 +53,70 @@ export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
       },
       {
         path: 'statistiques', // F1 (Prompt 7) — F2 charts/export ajoutés au Prompt 8
-        canActivate: [financeAccessGuard],
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['dashboard.view'] },
         loadComponent: () =>
           import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
         title: 'Tableau de bord financier',
       },
       {
         path: 'payments', // F3
-        canActivate: [financeAccessGuard],
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['payments.view'] },
         loadComponent: () => import('./features/payments/payments.component').then(m => m.PaymentsComponent),
         title: 'Paiements',
       },
       {
         path: 'withdrawals', // F4
-        canActivate: [financeAccessGuard],
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['withdrawals.view'] },
         loadComponent: () => import('./features/withdrawals/withdrawals.component').then(m => m.WithdrawalsComponent),
         title: 'Retraits',
       },
       {
         path: 'clients', // F6
-        canActivate: [financeAccessGuard],
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['clients.view'] },
         loadComponent: () => import('./features/clients/client-list.component').then(m => m.ClientListComponent),
         title: 'Clients',
       },
       {
         path: 'clients/:idClient', // F7/F8
-        canActivate: [financeAccessGuard],
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['clients.view'] },
         loadComponent: () => import('./features/client-sheet/client-sheet.component').then(m => m.ClientSheetComponent),
         title: 'Fiche client',
       },
       {
         path: 'monthly-tracking', // F12
-        canActivate: [financeAccessGuard],
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['monthly_tracking.view'] },
         loadComponent: () =>
           import('./features/monthly-tracking/monthly-tracking.component').then(m => m.MonthlyTrackingComponent),
         title: 'Suivi mensuel',
       },
       {
         path: 'statement', // F10
-        canActivate: [financeAccessGuard],
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['statements.view'] },
         loadComponent: () => import('./features/statement/statement.component').then(m => m.StatementComponent),
         title: 'Relevé',
       },
       {
-        path: 'agent-payment', // F5 — Comptable ET Administrateur (spec §1.11)
-        canActivate: [financeAccessGuard],
+        path: 'agent-payment', // F5
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['agent_payments.view'] },
         loadComponent: () =>
           import('./features/agent-payment/agent-payment.component').then(m => m.AgentPaymentComponent),
         title: 'Paiement agents',
       },
       {
-        // F11 admin — réservé à l'Administrateur (spec §1.11 : "Roles admin denied" pour
-        // le Comptable) — financeAdminGuard s'ajoute à financeAccessGuard.
+        // F11 admin — RBAC financier réel : clé 'roles.view', implicite pour
+        // Role.ADMINISTRATEUR (voir PERMISSIONS_GOUVERNANCE), assignable en lecture seule
+        // à un autre rôle par un administrateur (setPermissions).
         path: 'roles-admin',
-        canActivate: [financeAccessGuard, financeAdminGuard],
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['roles.view'] },
         loadComponent: () => import('./features/roles-admin/roles-admin.component').then(m => m.RolesAdminComponent),
         title: 'Rôles & droits',
       },
