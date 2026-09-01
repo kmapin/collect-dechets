@@ -149,11 +149,13 @@ export class OtpInputComponent implements OnInit {
   }
 
   /**
-   * Annule la saisie OTP
+   * Annule la saisie OTP — le parent (mobile-money-form.ts::onCancelOtp) revient déjà
+   * à l'étape précédente du formulaire ; naviguer en plus vers /payment ici sortait
+   * l'utilisateur de la page/du drawer courant (ex. "Abonnement" sur agency-details)
+   * au lieu de le laisser sur place.
    */
   onCancel(): void {
     this.cancelOtp.emit();
-    this.router.navigate(['/payment']);   
   }
 
   /**
