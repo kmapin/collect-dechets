@@ -5,7 +5,8 @@
     agent avec un numéro Orange Money ou Moov Money reconnu, la demande déclenche un
     virement réel (Orange Money essayé en premier), mais seulement après validation par
     un administrateur — aucun virement n'est envoyé à la création. Pour un agent sans
-    numéro fiable, le paiement reste interne (débit du solde de l'agence) et immédiat.
+    numéro fiable, le paiement reste interne (effectué hors plateforme) et immédiat, sans
+    effet sur le solde de l'agence.
   </p>
 
   <!-- Demandes en attente d'une action du rôle validateur (administrateur finance de
@@ -229,7 +230,7 @@
             <span *ngIf="nombreOrange() > 0 && (nombreMoov() > 0 || nombreInterne() > 0)">, </span>
             <strong *ngIf="nombreMoov() > 0">{{ nombreMoov() }} paiement(s) via Moov Money (en attente de validation)</strong>
             <span *ngIf="nombreMoov() > 0 && nombreInterne() > 0">, </span>
-            <strong *ngIf="nombreInterne() > 0">{{ nombreInterne() }} en paiement interne (débit immédiat)</strong>.
+            <strong *ngIf="nombreInterne() > 0">{{ nombreInterne() }} en paiement interne (hors plateforme, immédiat)</strong>.
           </span>
         </p>
 
@@ -246,13 +247,6 @@
             (ngModelChange)="montant.set($event)"
           />
         </div>
-
-        <p class="fin-agent-payment__warning" role="alert" *ngIf="soldeInsuffisant()">
-          <i class="material-icons" aria-hidden="true">warning</i>
-          Le débit immédiat estimé ({{ formatMontant(coutImmediatEstime()) }}, pour les {{ nombreInterne() }} agent(s) en
-          paiement interne) dépasse le solde disponible ({{ formatMontant(soldeDisponible() ?? 0) }}). Réduisez le
-          montant ou la sélection pour continuer.
-        </p>
 
         <button type="submit" class="fin-agent-payment__submit-btn" [disabled]="!formulaireValide()">
           Continuer
@@ -272,10 +266,6 @@
             </span>
           </li>
         </ul>
-        <p class="fin-agent-payment__provider-hint fin-agent-payment__provider-hint--mixte" *ngIf="nombreInterne() > 0">
-          <i class="material-icons" aria-hidden="true">warning</i>
-          Débit immédiat estimé pour les paiements internes : {{ formatMontant(coutImmediatEstime()) }}.
-        </p>
         <p class="fin-agent-payment__progress" *ngIf="progressionEnvoi() as progression">
           Envoi {{ progression.fait }} / {{ progression.total }}…
         </p>

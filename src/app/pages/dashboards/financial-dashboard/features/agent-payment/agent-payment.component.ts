@@ -6,7 +6,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
 import { aLaPermission, Agent, PaiementAgent, Role } from '../../models';
 import { AGENT_DATA_SERVICE } from '../../data-access/tokens/agent-data.token';
-import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDateTime } from '../../../../../shared/format.util';
@@ -45,10 +44,9 @@ interface ResultatAction {
 // sélectionnés (décision confirmée — pas un montant par agent). Chaque paiement/validation
 // reste un appel individuel au backend (aucun endpoint "bulk" — le backend ne traite qu'un
 // paiement à la fois, cf. services/paiementAgent.js), mais exécuté en SÉQUENCE (concatMap,
-// jamais en parallèle) : pour les paiements internes, plusieurs débits parallèles sur le
-// MÊME wallet agence ne seraient pas sûrs (services/wallet.js::removeBalanceService n'est
-// pas atomique, lecture-puis-écriture) ; pour les validations Moov, ça évite aussi de
-// bombarder l'API Moov de plusieurs appels concurrents. Chaque élément réussit ou échoue
+// jamais en parallèle) : pour les validations Moov/Orange Money, ça évite de bombarder
+// l'API opérateur de plusieurs appels concurrents (un paiement interne n'a plus cette
+// contrainte depuis qu'il ne débite plus le wallet agence). Chaque élément réussit ou échoue
 // indépendamment — un échec sur un agent n'annule pas les autres, un résumé par agent est
 // affiché à la fin plutôt qu'un unique message de succès/échec global.
 @Component({
@@ -60,7 +58,6 @@ interface ResultatAction {
 })
 export class AgentPaymentComponent {
   private readonly agentData = inject(AGENT_DATA_SERVICE);
-  private readonly financeData = inject(FINANCE_DATA_SERVICE);
   private readonly authService = inject(AuthService);
   private readonly session = inject(SESSION_SERVICE);
 
@@ -87,8 +84,6 @@ export class AgentPaymentComponent {
   // Filtres de l'historique — purement client-side (liste déjà chargée en mémoire).
   readonly rechercheAgent = signal('');
   readonly montantMin = signal<number | null>(null);
-
-  readonly soldeDisponible = signal<number | null>(null);
 
   // ── Formulaire de demande (sélection multiple, montant partagé) ─────────────────
   readonly idsAgentsSelectionnes = signal<string[]>([]);
@@ -123,20 +118,13 @@ export class AgentPaymentComponent {
   // aujourd'hui, mais l'ordre de résolution est celui qui fait foi).
   readonly nombreOrange = computed(() => this.agentsSelectionnes().filter(a => a.orangeEligible).length);
   readonly nombreMoov = computed(() => this.agentsSelectionnes().filter(a => !a.orangeEligible && a.moovEligible).length);
+  // Un paiement interne est effectué hors plateforme (espèces...) — jamais de débit du
+  // wallet agence (comme Moov/Orange Money, qui restent EN_ATTENTE_VALIDATION sans
+  // débit avant la validation Super Admin), donc aucune vérification de solde ici.
   readonly nombreInterne = computed(() => this.agentsSelectionnes().filter(a => !a.orangeEligible && !a.moovEligible).length);
-  // Seuls les paiements INTERNES débitent immédiatement — un paiement Moov ou Orange
-  // Money reste EN_ATTENTE_VALIDATION, aucun débit avant la validation Super Admin.
-  readonly coutImmediatEstime = computed(() => (this.montant() ?? 0) * this.nombreInterne());
 
-  readonly soldeInsuffisant = computed(() => {
-    const solde = this.soldeDisponible();
-    return solde !== null && this.coutImmediatEstime() > solde;
-  });
-  // Le serveur rejette (400 "Solde insuffisant") tout paiement interne dépassant le
-  // solde disponible — bloqué ici aussi pour éviter des allers-retours réseau voués à
-  // l'échec (le coût immédiat estimé ne compte que les agents en paiement interne).
   readonly formulaireValide = computed(
-    () => this.idsAgentsSelectionnes().length > 0 && (this.montant() ?? 0) > 0 && !this.soldeInsuffisant(),
+    () => this.idsAgentsSelectionnes().length > 0 && (this.montant() ?? 0) > 0,
   );
 
   toggleAgent(idAgent: string): void {
@@ -177,7 +165,6 @@ export class AgentPaymentComponent {
 
   constructor() {
     this.chargerAgents();
-    this.chargerSolde();
     this.chargerHistorique();
   }
 
@@ -215,7 +202,6 @@ export class AgentPaymentComponent {
       this.idsAgentsSelectionnes.set([]);
       this.montant.set(null);
       this.chargerHistorique();
-      this.chargerSolde();
     });
   }
 
@@ -333,7 +319,6 @@ export class AgentPaymentComponent {
       next: () => {
         this.traitementEnCours.set(null);
         this.chargerHistorique();
-        this.chargerSolde();
       },
       error: (err: HttpErrorResponse) => {
         this.traitementEnCours.set(null);
@@ -353,7 +338,6 @@ export class AgentPaymentComponent {
       this.resultatsTraitement.set(resultats);
       this.idsSelectionnesValidation.set(new Set());
       this.chargerHistorique();
-      this.chargerSolde();
     });
   }
 
@@ -389,7 +373,7 @@ export class AgentPaymentComponent {
   modeLabel(agent: Agent, enAttente = false): string {
     if (agent.orangeEligible) return enAttente ? 'Orange Money (en attente de validation)' : 'Orange Money';
     if (agent.moovEligible) return enAttente ? 'Moov Money (en attente de validation)' : 'Moov Money';
-    return enAttente ? 'Interne (débit immédiat)' : 'Interne';
+    return 'Interne';
   }
 
   modeClass(agent: Agent): string {
@@ -415,9 +399,6 @@ export class AgentPaymentComponent {
     });
   }
 
-  private chargerSolde(): void {
-    this.financeData.getDashboardKpi().subscribe(kpi => this.soldeDisponible.set(kpi.soldeDisponible));
-  }
 
   private chargerHistorique(): void {
     this.chargementHistorique.set(true);
