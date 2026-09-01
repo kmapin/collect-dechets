@@ -127,6 +127,27 @@ export class AgentPaymentComponent {
     () => this.idsAgentsSelectionnes().length > 0 && (this.montant() ?? 0) > 0,
   );
 
+  // ── Numéro de réception personnalisé (par agent sélectionné) ────────────────────
+  // Par défaut, le paiement part vers le numéro enregistré sur la fiche agent
+  // (agent.telephone) — l'agence peut le remplacer ici si l'agent souhaite recevoir
+  // ce paiement précis sur un autre numéro. Reverifié côté backend à l'envoi (voir
+  // services/paiementAgent.js::_resolveProviderPourAgent) : le mode de paiement réel
+  // (Orange Money/Moov Money/Interne) suit le numéro effectivement utilisé, jamais
+  // celui de la fiche agent si un numéro personnalisé est saisi.
+  readonly numerosPersonnalises = signal<Record<string, string>>({});
+
+  numeroPour(agent: Agent): string {
+    return this.numerosPersonnalises()[agent.idAgent] ?? agent.telephone ?? '';
+  }
+
+  onNumeroChange(idAgent: string, valeur: string): void {
+    this.numerosPersonnalises.update(v => ({ ...v, [idAgent]: valeur }));
+  }
+
+  numeroModifie(agent: Agent): boolean {
+    return this.numeroPour(agent).trim() !== (agent.telephone ?? '').trim();
+  }
+
   toggleAgent(idAgent: string): void {
     const courant = this.idsAgentsSelectionnes();
     this.idsAgentsSelectionnes.set(
@@ -187,20 +208,22 @@ export class AgentPaymentComponent {
     this.erreurEnregistrement.set(null);
     this.progressionEnvoi.set({ fait: 0, total: ids.length });
 
-    this.executerEnSequence(ids, (idAgent, index) =>
-      this.agentData.payerAgent({ idAgent, montant }).pipe(
+    this.executerEnSequence(ids, (idAgent, index) => {
+      const numero = this.numerosPersonnalises()[idAgent]?.trim();
+      return this.agentData.payerAgent({ idAgent, montant, ...(numero ? { phoneNumber: numero } : {}) }).pipe(
         map(paiement => {
           this.progressionEnvoi.set({ fait: index + 1, total: ids.length });
           return paiement;
         }),
-      ),
-    ).subscribe(resultats => {
+      );
+    }).subscribe(resultats => {
       this.enregistrement.set(false);
       this.progressionEnvoi.set(null);
       this.resultatsEnvoi.set(resultats);
       this.etape.set('formulaire');
       this.idsAgentsSelectionnes.set([]);
       this.montant.set(null);
+      this.numerosPersonnalises.set({});
       this.chargerHistorique();
     });
   }

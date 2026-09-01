@@ -233,6 +233,50 @@
     flex: 1;
   }
 
+  &__hint {
+    margin: 0;
+    font-size: 0.76rem;
+    color: #94a3b8;
+  }
+
+  // Liste des numéros de réception (un par agent sélectionné) — même conteneur
+  // scrollable que __agent-list, pour rester cohérent visuellement juste au-dessus.
+  &__phone-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 0.4rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+
+  &__phone-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__phone-nom {
+    flex: 1 1 40%;
+    min-width: 0;
+    font-size: 0.82rem;
+    color: #1e293b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__phone-input {
+    flex: 1 1 55%;
+    min-width: 0;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.82rem;
+    background: #fff;
+  }
+
   &__agent-mode {
     font-size: 0.72rem;
     font-weight: 600;

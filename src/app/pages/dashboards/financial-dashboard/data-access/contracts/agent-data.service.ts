@@ -16,7 +16,11 @@ export interface PaiementAgentFilter {
 export abstract class AgentDataService {
   abstract getAgents(params?: PageParams): Observable<Page<Agent>>;
   abstract getPaiementsAgent(params?: PageParams<PaiementAgentFilter>): Observable<Page<PaiementAgent>>;
-  abstract payerAgent(payload: { idAgent: string; montant: number }): Observable<PaiementAgent>;
+  // `phoneNumber` (optionnel) : numéro de réception du paiement différent de celui
+  // enregistré sur la fiche agent (l'agent veut être payé sur un autre compte Mobile
+  // Money) — remplace agent.phone pour cette demande, y compris pour déterminer le
+  // provider (voir services/paiementAgent.js::_resolveProviderPourAgent, backend).
+  abstract payerAgent(payload: { idAgent: string; montant: number; phoneNumber?: string }): Observable<PaiementAgent>;
   abstract validerPaiementAgent(idPaiementAgent: string): Observable<PaiementAgent>;
   abstract rejeterPaiementAgent(idPaiementAgent: string, motif: string): Observable<PaiementAgent>;
   abstract confirmerVirementEffectue(idPaiementAgent: string): Observable<PaiementAgent>;

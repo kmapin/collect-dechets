@@ -37,8 +37,8 @@ export class AgentDataHttpService implements AgentDataService {
       .pipe(map(res => ({ items: res.items.map(mapPaiementAgentDto), total: res.total, page: res.page, pageSize: res.pageSize })));
   }
 
-  payerAgent(payload: { idAgent: string; montant: number }): Observable<PaiementAgent> {
-    // POST /finance/agents/paiements { idAgent, montant }
+  payerAgent(payload: { idAgent: string; montant: number; phoneNumber?: string }): Observable<PaiementAgent> {
+    // POST /finance/agents/paiements { idAgent, montant, phoneNumber? }
     return this.http.post<unknown>(`${this.base}/paiements`, payload).pipe(map(mapPaiementAgentDto));
   }
 

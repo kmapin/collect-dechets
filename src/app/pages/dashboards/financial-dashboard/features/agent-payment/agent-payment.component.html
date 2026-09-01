@@ -234,6 +234,26 @@
           </span>
         </p>
 
+        <div class="fin-agent-payment__field" *ngIf="agentsSelectionnes().length">
+          <label>Numéro de réception du paiement</label>
+          <p class="fin-agent-payment__hint">
+            Par défaut, le numéro enregistré de l'agent. Modifiable si l'agent souhaite recevoir ce paiement sur un autre numéro.
+          </p>
+          <div class="fin-agent-payment__phone-list">
+            <div class="fin-agent-payment__phone-item" *ngFor="let agent of agentsSelectionnes()">
+              <span class="fin-agent-payment__phone-nom">{{ agent.nom }} {{ agent.prenom }}</span>
+              <input
+                type="tel"
+                class="fin-agent-payment__phone-input"
+                [name]="'numero-' + agent.idAgent"
+                placeholder="Numéro de réception"
+                [ngModel]="numeroPour(agent)"
+                (ngModelChange)="onNumeroChange(agent.idAgent, $event)"
+              />
+            </div>
+          </div>
+        </div>
+
         <div class="fin-agent-payment__field">
           <label for="montant-input">Montant par agent (FCFA)</label>
           <input
@@ -261,8 +281,11 @@
         <ul class="fin-agent-payment__confirmation-list">
           <li *ngFor="let agent of agentsSelectionnes()">
             {{ agent.nom }} {{ agent.prenom }} —
-            <span [ngClass]="modeClass(agent)">
+            <span *ngIf="!numeroModifie(agent)" [ngClass]="modeClass(agent)">
               {{ modeLabel(agent, true) }}
+            </span>
+            <span *ngIf="numeroModifie(agent)" class="fin-agent-payment__agent-mode fin-agent-payment__agent-mode--interne">
+              Numéro personnalisé ({{ numeroPour(agent) }}) — mode déterminé à l'envoi
             </span>
           </li>
         </ul>
