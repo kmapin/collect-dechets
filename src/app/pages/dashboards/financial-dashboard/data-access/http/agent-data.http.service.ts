@@ -29,9 +29,16 @@ export class AgentDataHttpService implements AgentDataService {
     let httpParams = new HttpParams();
     if (params?.page) httpParams = httpParams.set('page', params.page);
     if (params?.pageSize) httpParams = httpParams.set('pageSize', params.pageSize);
-    if (params?.filter?.idAgent) httpParams = httpParams.set('idAgent', params.filter.idAgent);
+    const filtre = params?.filter;
+    if (filtre?.idAgent) httpParams = httpParams.set('idAgent', filtre.idAgent);
+    if (filtre?.search) httpParams = httpParams.set('search', filtre.search);
+    if (filtre?.statut) httpParams = httpParams.set('statut', filtre.statut);
+    if (filtre?.provider) httpParams = httpParams.set('provider', filtre.provider);
+    if (filtre?.montantMin !== undefined && filtre.montantMin !== null) httpParams = httpParams.set('montantMin', filtre.montantMin);
+    if (filtre?.dateDebut) httpParams = httpParams.set('dateDebut', filtre.dateDebut);
+    if (filtre?.dateFin) httpParams = httpParams.set('dateFin', filtre.dateFin);
 
-    // GET /finance/agents/paiements?page=&pageSize=&idAgent=
+    // GET /finance/agents/paiements?page=&pageSize=&idAgent=&search=&statut=&provider=&montantMin=&dateDebut=&dateFin=
     return this.http
       .get<{ items: unknown[]; total: number; page: number; pageSize: number }>(`${this.base}/paiements`, { params: httpParams })
       .pipe(map(res => ({ items: res.items.map(mapPaiementAgentDto), total: res.total, page: res.page, pageSize: res.pageSize })));

@@ -334,7 +334,24 @@
 
   &__history {
     flex: 2 1 480px;
-    min-width: 320px;
+    // min-width: 0, pas 320px : un enfant large (le tableau, 7 colonnes depuis l'ajout
+    // de la colonne Actions) refusait sinon de rétrécir sous sa largeur intrinsèque et
+    // poussait toute la page au-delà du viewport au lieu de faire défiler seulement le
+    // tableau (cf. __table-wrap ci-dessous) — même piège déjà rencontré sur
+    // roles-admin.component.scss/contracts.component.scss.
+    min-width: 0;
+  }
+
+  // Défilement horizontal scopé au tableau seul (pas toute la page) quand ses 7
+  // colonnes ne tiennent pas dans __history une fois rétréci par le flex ci-dessus.
+  &__table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    .fin-agent-payment__table {
+      min-width: 720px;
+    }
   }
 
   &__success,
@@ -487,6 +504,59 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 0.6rem;
+  }
+
+  // Boutons d'export (PDF/Excel/CSV) — même idiome "icône + libellé" que
+  // monthly-tracking.component.scss/statement.component.scss (autres écrans de ce
+  // module utilisant déjà EXPORT_SERVICE).
+  &__export-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+
+    i {
+      font-size: 1.05rem;
+    }
+
+    &:hover:not(:disabled) {
+      background: #e2e8f0;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__reset-filters-btn {
+    padding: 0.45rem 0.75rem;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #2563eb;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover {
+      color: #1d4ed8;
+    }
   }
 
   &__montant-filter {
@@ -738,5 +808,19 @@
 @media (prefers-reduced-motion: reduce) {
   .fin-agent-payment__skeleton-cell {
     animation: none;
+  }
+}
+
+// En dessous de 640px, resp.table-to-cards (appelé sur &__table ci-dessus) transforme
+// déjà les lignes en cartes empilées pleine largeur — le min-width:720px de
+// &__table-wrap n'a alors plus lieu d'être : il forcerait un défilement horizontal
+// inutile sur des cartes qui n'en ont pas besoin.
+@media (max-width: 640px) {
+  .fin-agent-payment__table-wrap {
+    overflow-x: visible;
+
+    .fin-agent-payment__table {
+      min-width: 0;
+    }
   }
 }

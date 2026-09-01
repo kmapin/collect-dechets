@@ -3,10 +3,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
-import { aLaPermission, Agent, PaiementAgent, PaiementAgentActionable, PaiementAgentDetail, Role } from '../../models';
+import { Observable, catchError, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
+import { aLaPermission, Agent, Page, PaiementAgent, PaiementAgentActionable, PaiementAgentDetail, Role } from '../../models';
 import { AGENT_DATA_SERVICE } from '../../data-access/tokens/agent-data.token';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
+import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
+import { ExportColumn } from '../../data-access/contracts/export.service';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDateTime } from '../../../../../shared/format.util';
 import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
@@ -68,6 +70,7 @@ export class AgentPaymentComponent {
   private readonly authService = inject(AuthService);
   private readonly session = inject(SESSION_SERVICE);
   private readonly notificationService = inject(NotificationService);
+  private readonly exportService = inject(EXPORT_SERVICE);
 
   // currentUser$ plutôt que getCurrentUser() seul en initialValue : cette route est
   // accessible dès que droitsFinance est vrai et que 'agent_payments.view' est détenue
@@ -89,9 +92,16 @@ export class AgentPaymentComponent {
   readonly historique = signal<PaiementAgent[]>([]);
   readonly chargementHistorique = signal(true);
 
-  // Filtres de l'historique — purement client-side (liste déjà chargée en mémoire).
+  // Filtres de l'historique — appliqués CÔTÉ SERVEUR (chantier "filtres côté
+  // backend") : chaque changement relance chargerHistorique() avec les critères
+  // courants (voir onRechercheChange/onMontantMinChange/etc. et appliquerFiltres()
+  // ci-dessous), jamais un filtrage en mémoire d'un lot déjà chargé.
   readonly rechercheAgent = signal('');
   readonly montantMin = signal<number | null>(null);
+  readonly statutFiltre = signal<PaiementAgent['status'] | 'all'>('all');
+  readonly providerFiltre = signal<PaiementAgent['provider'] | 'all'>('all');
+  readonly dateDebutFiltre = signal<string | null>(null); // YYYY-MM-DD
+  readonly dateFinFiltre = signal<string | null>(null); // YYYY-MM-DD
 
   // ── Formulaire de demande (sélection multiple, montant partagé) ─────────────────
   readonly idsAgentsSelectionnes = signal<string[]>([]);
@@ -112,6 +122,12 @@ export class AgentPaymentComponent {
   readonly formatMontant = formatMontantXof;
   readonly formatDate = formatFrDateTime;
   readonly badgeStatut = badgePaiementAgent;
+
+  // Options des filtres statut/mode (historique) — mêmes valeurs que le domaine
+  // backend (models/PaiementAgent.js), jamais un sous-ensemble ou un libellé inventé.
+  readonly statutsDisponibles: PaiementAgent['status'][] =
+    ['EN_ATTENTE_VALIDATION', 'INITIATED', 'COMPLETED', 'FAILED', 'A_VERIFIER_MANUELLEMENT', 'REJETE'];
+  readonly providersDisponibles: PaiementAgent['provider'][] = ['MOOV', 'ORANGE_MONEY', 'INTERNE'];
 
   readonly agentsFiltres = computed(() => {
     const recherche = this.rechercheAgentFormulaire().trim().toLowerCase();
@@ -176,25 +192,142 @@ export class AgentPaymentComponent {
     this.idsAgentsSelectionnes.set([]);
   }
 
-  // Demandes nécessitant une action du rôle validateur — dérivées du même historique
-  // déjà chargé, pas un second endpoint/état séparé.
-  readonly demandesEnAttente = computed(() =>
-    this.historique().filter(p => p.status === 'EN_ATTENTE_VALIDATION' || p.status === 'A_VERIFIER_MANUELLEMENT'),
+  // Demandes nécessitant une action du rôle validateur — chargées INDÉPENDAMMENT de
+  // l'historique filtré ci-dessous (chantier "filtres côté backend" : avant, dérivées
+  // par un simple computed() sur le même historique() en mémoire ; si historique()
+  // devenait le résultat d'un filtre serveur — ex. provider=INTERNE — ce panneau
+  // perdrait de vue les demandes MOOV/ORANGE_MONEY en attente, une régression
+  // silencieuse). Chargé une fois (pageSize large, jamais filtré) via
+  // chargerDemandesEnAttente(), rafraîchi après toute action qui change ce statut.
+  readonly demandesEnAttente = signal<PaiementAgent[]>([]);
+
+  // Distingue "aucun paiement du tout" de "aucun paiement ne correspond aux filtres"
+  // dans le message d'état vide — nécessaire depuis que le filtrage est serveur :
+  // historique() ne contient plus jamais que le résultat DÉJÀ filtré, il n'y a plus
+  // de lot brut côté client à comparer.
+  readonly filtresActifs = computed(() =>
+    !!this.rechercheAgent().trim()
+    || this.montantMin() !== null
+    || this.statutFiltre() !== 'all'
+    || this.providerFiltre() !== 'all'
+    || !!this.dateDebutFiltre()
+    || !!this.dateFinFiltre(),
   );
 
-  readonly historiqueFiltre = computed(() => {
-    const recherche = this.rechercheAgent().trim().toLowerCase();
-    const seuil = this.montantMin();
-    return this.historique().filter(paiement => {
-      if (recherche && !this.nomAgent(paiement.idAgent).toLowerCase().includes(recherche)) return false;
-      if (seuil !== null && paiement.montant < seuil) return false;
-      return true;
+  private appliquerFiltres(): void {
+    this.chargerHistorique();
+  }
+
+  onRechercheChange(valeur: string): void {
+    this.rechercheAgent.set(valeur);
+    this.appliquerFiltres();
+  }
+
+  onMontantMinChange(valeur: number | null): void {
+    this.montantMin.set(valeur);
+    this.appliquerFiltres();
+  }
+
+  onStatutFiltreChange(valeur: PaiementAgent['status'] | 'all'): void {
+    this.statutFiltre.set(valeur);
+    this.appliquerFiltres();
+  }
+
+  onProviderFiltreChange(valeur: PaiementAgent['provider'] | 'all'): void {
+    this.providerFiltre.set(valeur);
+    this.appliquerFiltres();
+  }
+
+  onDateDebutFiltreChange(valeur: string | null): void {
+    this.dateDebutFiltre.set(valeur);
+    this.appliquerFiltres();
+  }
+
+  onDateFinFiltreChange(valeur: string | null): void {
+    this.dateFinFiltre.set(valeur);
+    this.appliquerFiltres();
+  }
+
+  reinitialiserFiltres(): void {
+    this.rechercheAgent.set('');
+    this.montantMin.set(null);
+    this.statutFiltre.set('all');
+    this.providerFiltre.set('all');
+    this.dateDebutFiltre.set(null);
+    this.dateFinFiltre.set(null);
+    this.appliquerFiltres();
+  }
+
+  // ── Export (PDF / Excel / CSV) ───────────────────────────────────────────────────
+  // Exporte historique(), qui EST déjà le résultat filtré côté serveur (chantier
+  // "filtres côté backend") — l'export reflète donc ce que l'écran affiche
+  // actuellement, jamais une surprise (lignes exportées différentes de ce qui est visible).
+  readonly exportEnCours = signal<'pdf' | 'excel' | 'csv' | null>(null);
+
+  private readonly EXPORT_COLUMNS: ExportColumn<Record<string, string>>[] = [
+    { key: 'agent', label: 'Agent' },
+    { key: 'montant', label: 'Montant' },
+    { key: 'date', label: 'Date' },
+    { key: 'statut', label: 'Statut' },
+    { key: 'mode', label: 'Mode' },
+    { key: 'reference', label: 'Référence' },
+  ];
+
+  private lignesExport(): Record<string, string>[] {
+    return this.historique().map(p => ({
+      agent: this.nomAgent(p.idAgent),
+      montant: this.formatMontant(p.montant),
+      date: this.formatDate(p.datePaiement),
+      statut: this.badgeStatut(p.status).label,
+      mode: this.providerLabel(p.provider),
+      reference: p.reference ?? '—',
+    }));
+  }
+
+  private nomFichierExport(extension: string): string {
+    return `paiements-agents-${new Date().toISOString().slice(0, 10)}.${extension}`;
+  }
+
+  exporterCsv(): void {
+    this.exportService.exportToCsv(this.lignesExport(), this.EXPORT_COLUMNS, this.nomFichierExport('csv'));
+  }
+
+  exporterPdf(): void {
+    this.exportService.exportToPdf(this.lignesExport(), this.EXPORT_COLUMNS, this.nomFichierExport('pdf'), {
+      titre: 'Historique des paiements agents',
+      sousTitre: `${this.historique().length} paiement(s)`,
     });
-  });
+  }
+
+  // Pas de wrapper partagé pour Excel dans ce module (ExportService ne couvre que
+  // CSV/PDF) — même import dynamique `xlsx` que client-dashboard.ts::
+  // exportPaymentHistoryExcel()/admin-dashboard.ts::exportStatistics(), convention
+  // déjà établie à 3 endroits plutôt qu'un nouveau wrapper pour un seul usage de plus.
+  async exporterExcel(): Promise<void> {
+    this.exportEnCours.set('excel');
+    try {
+      const XLSX = await import('xlsx');
+      const worksheet = XLSX.utils.json_to_sheet(this.historique().map(p => ({
+        Agent: this.nomAgent(p.idAgent),
+        Montant: p.montant,
+        Date: this.formatDate(p.datePaiement),
+        Statut: this.badgeStatut(p.status).label,
+        Mode: this.providerLabel(p.provider),
+        Référence: p.reference ?? '—',
+      })));
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Paiements');
+      XLSX.writeFile(workbook, this.nomFichierExport('xlsx'));
+    } catch {
+      this.notificationService.showError('Erreur', "Impossible de générer le fichier Excel pour le moment.");
+    } finally {
+      this.exportEnCours.set(null);
+    }
+  }
 
   constructor() {
     this.chargerAgents();
-    this.chargerHistorique();
+    this.rafraichirListes();
   }
 
   passerAConfirmation(): void {
@@ -232,7 +365,7 @@ export class AgentPaymentComponent {
       this.idsAgentsSelectionnes.set([]);
       this.montant.set(null);
       this.numerosPersonnalises.set({});
-      this.chargerHistorique();
+      this.rafraichirListes();
     });
   }
 
@@ -349,7 +482,7 @@ export class AgentPaymentComponent {
     appel().subscribe({
       next: () => {
         this.traitementEnCours.set(null);
-        this.chargerHistorique();
+        this.rafraichirListes();
       },
       error: (err: HttpErrorResponse) => {
         this.traitementEnCours.set(null);
@@ -368,7 +501,7 @@ export class AgentPaymentComponent {
       this.traitementBulkEnCours.set(false);
       this.resultatsTraitement.set(resultats);
       this.idsSelectionnesValidation.set(new Set());
-      this.chargerHistorique();
+      this.rafraichirListes();
     });
   }
 
@@ -487,7 +620,7 @@ export class AgentPaymentComponent {
         }
         if (detail.status !== paiement.status) {
           this.notificationService.showSuccess('Statut mis à jour', `Nouveau statut : ${this.badgeStatut(detail.status).label}.`);
-          this.chargerHistorique();
+          this.rafraichirListes();
         } else {
           this.notificationService.showInfo('Statut inchangé', `Toujours : ${this.badgeStatut(detail.status).label}.`);
         }
@@ -543,14 +676,49 @@ export class AgentPaymentComponent {
   }
 
 
+  // Filtres appliqués côté serveur (chantier "filtres côté backend") — voir
+  // onRechercheChange/onMontantMinChange/etc., qui appellent appliquerFiltres() ->
+  // chargerHistorique() à chaque changement.
   private chargerHistorique(): void {
     this.chargementHistorique.set(true);
-    this.agentData.getPaiementsAgent({ pageSize: 50 }).subscribe({
+    const statut = this.statutFiltre();
+    const provider = this.providerFiltre();
+    this.agentData.getPaiementsAgent({
+      pageSize: 50,
+      filter: {
+        search: this.rechercheAgent() || undefined,
+        montantMin: this.montantMin() ?? undefined,
+        statut: statut !== 'all' ? statut : undefined,
+        provider: provider !== 'all' ? provider : undefined,
+        dateDebut: this.dateDebutFiltre() ?? undefined,
+        dateFin: this.dateFinFiltre() ?? undefined,
+      },
+    }).subscribe({
       next: page => {
         this.historique.set([...page.items].sort((a, b) => (a.datePaiement < b.datePaiement ? 1 : -1)));
         this.chargementHistorique.set(false);
       },
       error: () => this.chargementHistorique.set(false),
     });
+  }
+
+  // Panneau de validation (demandesEnAttente) — TOUJOURS non filtré, indépendant des
+  // filtres de l'historique ci-dessus (voir le commentaire sur demandesEnAttente) :
+  // deux appels ciblés plutôt qu'un large lot re-filtré en mémoire, chaque statut
+  // pertinent étant déjà un filtre serveur supporté.
+  private chargerDemandesEnAttente(): void {
+    forkJoin([
+      this.agentData.getPaiementsAgent({ pageSize: 100, filter: { statut: 'EN_ATTENTE_VALIDATION' } }),
+      this.agentData.getPaiementsAgent({ pageSize: 100, filter: { statut: 'A_VERIFIER_MANUELLEMENT' } }),
+    ]).subscribe({
+      next: ([enAttente, aVerifier]: [Page<PaiementAgent>, Page<PaiementAgent>]) =>
+        this.demandesEnAttente.set([...enAttente.items, ...aVerifier.items]),
+      error: () => {},
+    });
+  }
+
+  private rafraichirListes(): void {
+    this.chargerHistorique();
+    this.chargerDemandesEnAttente();
   }
 }

@@ -306,11 +306,25 @@
     <div class="fin-agent-payment__history">
       <div class="fin-agent-payment__history-header">
         <h3 class="fin-agent-payment__history-title">Historique des paiements</h3>
+        <div class="fin-agent-payment__export-actions">
+          <button type="button" class="fin-agent-payment__export-btn" (click)="exporterPdf()" [disabled]="!historique().length">
+            <i class="material-icons" aria-hidden="true">picture_as_pdf</i> PDF
+          </button>
+          <button type="button" class="fin-agent-payment__export-btn" (click)="exporterExcel()" [disabled]="!historique().length || exportEnCours() === 'excel'">
+            <i class="material-icons" aria-hidden="true">grid_on</i> {{ exportEnCours() === 'excel' ? 'Génération…' : 'Excel' }}
+          </button>
+          <button type="button" class="fin-agent-payment__export-btn" (click)="exporterCsv()" [disabled]="!historique().length">
+            <i class="material-icons" aria-hidden="true">description</i> CSV
+          </button>
+        </div>
+        <!-- Filtres serveur (chantier "filtres côté backend") : chaque changement relance
+             chargerHistorique() avec les critères courants (voir onXxxChange ci-dessous),
+             jamais un filtrage en mémoire d'un lot déjà chargé. -->
         <div class="fin-agent-payment__filters">
           <app-search-filter
             placeholder="Rechercher un agent…"
             [value]="rechercheAgent()"
-            (valueChange)="rechercheAgent.set($event)"
+            (valueChange)="onRechercheChange($event)"
           />
           <input
             type="number"
@@ -318,11 +332,47 @@
             min="0"
             placeholder="Montant minimum"
             [ngModel]="montantMin()"
-            (ngModelChange)="montantMin.set($event)"
+            (ngModelChange)="onMontantMinChange($event)"
             aria-label="Filtrer par montant minimum"
           />
+          <select
+            class="fin-agent-payment__montant-filter"
+            [ngModel]="statutFiltre()"
+            (ngModelChange)="onStatutFiltreChange($event)"
+            aria-label="Filtrer par statut"
+          >
+            <option value="all">Statut : tous</option>
+            <option *ngFor="let s of statutsDisponibles" [value]="s">{{ badgeStatut(s).label }}</option>
+          </select>
+          <select
+            class="fin-agent-payment__montant-filter"
+            [ngModel]="providerFiltre()"
+            (ngModelChange)="onProviderFiltreChange($event)"
+            aria-label="Filtrer par mode de paiement"
+          >
+            <option value="all">Mode : tous</option>
+            <option *ngFor="let p of providersDisponibles" [value]="p">{{ providerLabel(p) }}</option>
+          </select>
+          <input
+            type="date"
+            class="fin-agent-payment__montant-filter"
+            [ngModel]="dateDebutFiltre()"
+            (ngModelChange)="onDateDebutFiltreChange($event)"
+            aria-label="Date de début"
+          />
+          <input
+            type="date"
+            class="fin-agent-payment__montant-filter"
+            [ngModel]="dateFinFiltre()"
+            (ngModelChange)="onDateFinFiltreChange($event)"
+            aria-label="Date de fin"
+          />
+          <button type="button" class="fin-agent-payment__reset-filters-btn" (click)="reinitialiserFiltres()">
+            Réinitialiser
+          </button>
         </div>
       </div>
+      <div class="fin-agent-payment__table-wrap">
       <table class="fin-agent-payment__table">
         <thead>
           <tr>
@@ -337,7 +387,7 @@
         </thead>
         <tbody>
           <ng-container *ngIf="!chargementHistorique(); else squelette">
-            <tr *ngFor="let paiement of historiqueFiltre()">
+            <tr *ngFor="let paiement of historique()">
               <td data-label="Agent">{{ nomAgent(paiement.idAgent) }}</td>
               <td data-label="Montant">{{ formatMontant(paiement.montant) }}</td>
               <td data-label="Date">{{ formatDate(paiement.datePaiement) }}</td>
@@ -388,9 +438,9 @@
                 </div>
               </td>
             </tr>
-            <tr *ngIf="!historiqueFiltre().length">
+            <tr *ngIf="!historique().length">
               <td colspan="7" class="fin-agent-payment__empty">
-                {{ historique().length ? 'Aucun paiement ne correspond à ces filtres.' : 'Aucun paiement agent enregistré.' }}
+                {{ filtresActifs() ? 'Aucun paiement ne correspond à ces filtres.' : 'Aucun paiement agent enregistré.' }}
               </td>
             </tr>
           </ng-container>
@@ -401,6 +451,7 @@
           </ng-template>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 

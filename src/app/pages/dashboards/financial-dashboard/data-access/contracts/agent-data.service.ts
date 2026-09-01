@@ -1,8 +1,19 @@
 import { Observable } from 'rxjs';
 import { Agent, Page, PageParams, PaiementAgent, PaiementAgentDetail } from '../../models';
 
+// Filtres serveur de l'historique (chantier "filtres côté backend" — remplace le
+// filtrage client-side précédent, liste chargée une fois puis filtrée en mémoire).
+// `search` : nom/prénom de l'agent, résolu côté backend via User (ignoré si idAgent
+// est fourni). `dateDebut`/`dateFin` : YYYY-MM-DD, bornes incluses (voir
+// services/paiementAgent.js::getPaiementsAgence pour la borne de fin de journée).
 export interface PaiementAgentFilter {
   idAgent?: string;
+  search?: string;
+  statut?: PaiementAgent['status'];
+  provider?: PaiementAgent['provider'];
+  montantMin?: number;
+  dateDebut?: string;
+  dateFin?: string;
 }
 
 // Couvre F5 — payerAgent() crée la demande : paiement interne immédiat (comportement
