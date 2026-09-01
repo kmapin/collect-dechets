@@ -1,4 +1,4 @@
-import { Agent, PaiementAgent } from '../../../models';
+import { Agent, PaiementAgent, PaiementAgentDetail } from '../../../models';
 
 // DTO réel : GET /finance/agents (services/paiementAgent.js::getAgentsByAgence). Pas de
 // champ solde ici (Agent n'en a pas côté modèle) : le solde affiché ailleurs vient de
@@ -37,5 +37,34 @@ export function mapPaiementAgentDto(dto: unknown): PaiementAgent {
     failureReason: d['failureReason'] !== undefined && d['failureReason'] !== null ? String(d['failureReason']) : undefined,
     rejectionReason: d['rejectionReason'] !== undefined && d['rejectionReason'] !== null ? String(d['rejectionReason']) : undefined,
     libelle: d['libelle'] !== undefined && d['libelle'] !== null ? String(d['libelle']) : undefined,
+  };
+}
+
+// DTO réel : GET /finance/agents/paiements/:id (services/paiementAgent.js::toDetailDto)
+// — écran de détail + "vérifier le statut". Champs déjà nommés `null` côté backend
+// (jamais absents) quand non applicables, donc `?? null` suffit (pas de `undefined`
+// à absorber comme pour mapPaiementAgentDto, DTO plus ancien/moins strict).
+export function mapPaiementAgentDetailDto(dto: unknown): PaiementAgentDetail {
+  const d = dto as Record<string, unknown>;
+  return {
+    idPaiementAgent: String(d['idPaiementAgent']),
+    idAgent: String(d['idAgent']),
+    agentNom: (d['agentNom'] as string | null) ?? null,
+    montant: Number(d['montant']),
+    datePaiement: String(d['datePaiement']),
+    status: (d['status'] as PaiementAgentDetail['status']) ?? 'COMPLETED',
+    provider: (d['provider'] as PaiementAgentDetail['provider']) ?? 'INTERNE',
+    phoneNumber: (d['phoneNumber'] as string | null) ?? null,
+    operator: (d['operator'] as PaiementAgentDetail['operator']) ?? null,
+    reference: (d['reference'] as string | null) ?? null,
+    providerTransactionId: (d['providerTransactionId'] as string | null) ?? null,
+    failureReason: (d['failureReason'] as string | null) ?? null,
+    rejectionReason: (d['rejectionReason'] as string | null) ?? null,
+    initiatedByNom: (d['initiatedByNom'] as string | null) ?? null,
+    validatedByNom: (d['validatedByNom'] as string | null) ?? null,
+    initiatedAt: (d['initiatedAt'] as string | null) ?? null,
+    completedAt: (d['completedAt'] as string | null) ?? null,
+    createdAt: String(d['createdAt']),
+    updatedAt: String(d['updatedAt']),
   };
 }

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { Agent, Page, PageParams, PaiementAgent } from '../../models';
+import { Agent, Page, PageParams, PaiementAgent, PaiementAgentDetail } from '../../models';
 
 export interface PaiementAgentFilter {
   idAgent?: string;
@@ -16,6 +16,11 @@ export interface PaiementAgentFilter {
 export abstract class AgentDataService {
   abstract getAgents(params?: PageParams): Observable<Page<Agent>>;
   abstract getPaiementsAgent(params?: PageParams<PaiementAgentFilter>): Observable<Page<PaiementAgent>>;
+  // Écran de détail + "vérifier le statut" (simple re-fetch de l'état réel en base —
+  // voir services/paiementAgent.js::getPaiementByIdAgence pour la limite documentée :
+  // aucun opérateur Mobile Money n'expose de vérification automatisée exploitable
+  // pour ce flux aujourd'hui, jamais simulée ici).
+  abstract getPaiementDetail(idPaiementAgent: string): Observable<PaiementAgentDetail>;
   // `phoneNumber` (optionnel) : numéro de réception du paiement différent de celui
   // enregistré sur la fiche agent (l'agent veut être payé sur un autre compte Mobile
   // Money) — remplace agent.phone pour cette demande, y compris pour déterminer le

@@ -3,9 +3,9 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../../../../environments/environment';
-import { Agent, Page, PageParams, PaiementAgent } from '../../models';
+import { Agent, Page, PageParams, PaiementAgent, PaiementAgentDetail } from '../../models';
 import { AgentDataService, PaiementAgentFilter } from '../contracts/agent-data.service';
-import { mapAgentDto, mapPaiementAgentDto } from './mappers/agent.mapper';
+import { mapAgentDto, mapPaiementAgentDetailDto, mapPaiementAgentDto } from './mappers/agent.mapper';
 
 // Implémentation réelle, câblée en dur sur AGENT_DATA_SERVICE dans
 // financial-dashboard.routes.ts — voir INTEGRATION.md pour la liste des endpoints.
@@ -35,6 +35,13 @@ export class AgentDataHttpService implements AgentDataService {
     return this.http
       .get<{ items: unknown[]; total: number; page: number; pageSize: number }>(`${this.base}/paiements`, { params: httpParams })
       .pipe(map(res => ({ items: res.items.map(mapPaiementAgentDto), total: res.total, page: res.page, pageSize: res.pageSize })));
+  }
+
+  // GET /finance/agents/paiements/:id
+  getPaiementDetail(idPaiementAgent: string): Observable<PaiementAgentDetail> {
+    return this.http
+      .get<unknown>(`${this.base}/paiements/${idPaiementAgent}`)
+      .pipe(map(mapPaiementAgentDetailDto));
   }
 
   payerAgent(payload: { idAgent: string; montant: number; phoneNumber?: string }): Observable<PaiementAgent> {

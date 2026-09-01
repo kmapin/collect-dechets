@@ -532,6 +532,161 @@
     }
   }
 
+  // ── Actions de l'historique (détail / reçu / vérification de statut) ────────────
+  &__col-actions {
+    white-space: nowrap;
+  }
+
+  &__row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  &__action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 8px;
+    color: #475569;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.82rem;
+
+    i {
+      font-size: 1.1rem;
+    }
+
+    &:hover:not(:disabled) {
+      background: #e2e8f0;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    // Variante "icône + texte" (bouton "Vérifier le statut" dans l'en-tête du
+    // drawer de détail) — même fond/couleur que le bouton icône seule, largeur libre.
+    &--wide {
+      width: auto;
+      padding: 0.4rem 0.7rem;
+    }
+  }
+
+  // ── Drawer de détail — même vocabulaire que features/contracts/
+  // contracts.component.scss (drawer overlay/drawer/header/close/body), scopé ici.
+  // z-index 9999 (pas 50, comme le drawer de contracts.component.scss dont la même
+  // limite existe déjà — jamais corrigée là-bas, hors périmètre ici) : le bandeau
+  // d'en-tête global de l'app (.page-header, app.component.ts) est fixe en z-index
+  // 1000 et masquait entièrement l'en-tête du drawer, positionné lui aussi à inset:0.
+  // 9999 aligne ce drawer sur .confirm-dialog-overlay (admin-dashboard.scss), déjà
+  // au-dessus de tout sauf le toast global (10001, voir notification.css).
+  &__drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    justify-content: flex-end;
+    z-index: 9999;
+  }
+
+  &__drawer {
+    width: 100%;
+    max-width: 26rem;
+    height: 100%;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-strong, -4px 0 16px rgba(0, 0, 0, 0.15));
+  }
+
+  &__drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: #1e293b;
+    }
+  }
+
+  &__drawer-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 999px;
+
+    &:hover {
+      background: #f1f5f9;
+    }
+  }
+
+  &__drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+  }
+
+  &__drawer-footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  &__detail-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  &__detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__detail-label {
+    color: #64748b;
+    flex-shrink: 0;
+  }
+
+  &__detail-value {
+    color: #1e293b;
+    font-weight: 600;
+    text-align: right;
+    word-break: break-word;
+  }
+
   &__table {
     width: 100%;
     border-collapse: collapse;

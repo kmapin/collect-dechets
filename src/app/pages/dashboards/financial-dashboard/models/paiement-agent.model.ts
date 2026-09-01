@@ -39,3 +39,50 @@ export interface PaiementAgent {
   // silencieux sur "interne" vs "Moov réel").
   libelle?: string;
 }
+
+// Sous-ensemble commun à PaiementAgent (liste) et PaiementAgentDetail (détail
+// enrichi, voir plus bas) — suffisant pour les actions génériques (reçu,
+// vérification de statut) déclenchables aussi bien depuis une ligne de
+// l'historique que depuis le drawer de détail déjà chargé. Les champs optionnels
+// acceptent `string | null` (pas seulement `undefined`) : PaiementAgentDetail
+// (DTO backend) envoie explicitement `null`, jamais `undefined`.
+export interface PaiementAgentActionable {
+  readonly idPaiementAgent: string;
+  idAgent: string;
+  montant: number;
+  datePaiement: string; // ISO
+  status: PaiementAgentStatus;
+  provider: PaiementAgentProvider;
+  reference?: string | null;
+  failureReason?: string | null;
+  rejectionReason?: string | null;
+}
+
+// DTO enrichi de GET /finance/agents/paiements/:id (services/paiementAgent.js::
+// toDetailDto) — écran de détail + action "vérifier le statut" (simple re-fetch,
+// voir le composant). Distinct de PaiementAgent (liste) : celui-ci résout les noms
+// (agent/initiateur/validateur) côté backend plutôt que de les faire deviner au
+// frontend, et expose les champs d'audit (dates, provider, référence opérateur).
+export interface PaiementAgentDetail {
+  readonly idPaiementAgent: string;
+  idAgent: string;
+  // null si l'agent a été désactivé/supprimé depuis (jamais un plantage) — voir
+  // toDetailDto, backend.
+  agentNom: string | null;
+  montant: number;
+  datePaiement: string; // ISO
+  status: PaiementAgentStatus;
+  provider: PaiementAgentProvider;
+  phoneNumber: string | null;
+  operator: 'MOOV_MONEY' | 'ORANGE_MONEY' | null;
+  reference: string | null;
+  providerTransactionId: string | null;
+  failureReason: string | null;
+  rejectionReason: string | null;
+  initiatedByNom: string | null;
+  validatedByNom: string | null;
+  initiatedAt: string | null; // ISO
+  completedAt: string | null; // ISO
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+}

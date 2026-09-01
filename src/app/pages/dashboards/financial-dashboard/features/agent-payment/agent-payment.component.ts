@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
-import { aLaPermission, Agent, PaiementAgent, Role } from '../../models';
+import { aLaPermission, Agent, PaiementAgent, PaiementAgentActionable, PaiementAgentDetail, Role } from '../../models';
 import { AGENT_DATA_SERVICE } from '../../data-access/tokens/agent-data.token';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../utils/money.util';
@@ -12,6 +12,13 @@ import { formatFrDateTime } from '../../../../../shared/format.util';
 import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgePaiementAgent } from '../../shared/status-badge/status-badge.util';
+import {
+  construireRecuPaiementAgent,
+  nomFichierRecuPaiementAgent,
+  ouvrirRecuDansNouvelOnglet,
+  telechargerRecuPdf,
+} from '../../shared/receipt/paiement-agent-recu.util';
+import { NotificationService } from '../../../../../services/notification.service';
 // Rôle validateur : manager avec financialRole='administrateur' DE L'AGENCE CONCERNÉE
 // (résolu via SESSION_SERVICE, le rôle FINANCIER de ce module), OU super_admin sans
 // restriction d'agence (résolu via le service d'authentification GLOBAL de l'app) — même
@@ -60,6 +67,7 @@ export class AgentPaymentComponent {
   private readonly agentData = inject(AGENT_DATA_SERVICE);
   private readonly authService = inject(AuthService);
   private readonly session = inject(SESSION_SERVICE);
+  private readonly notificationService = inject(NotificationService);
 
   // currentUser$ plutôt que getCurrentUser() seul en initialValue : cette route est
   // accessible dès que droitsFinance est vrai et que 'agent_payments.view' est détenue
@@ -409,6 +417,118 @@ export class AgentPaymentComponent {
     if (provider === 'ORANGE_MONEY') return 'Orange Money';
     if (provider === 'MOOV') return 'Moov Money';
     return 'Interne';
+  }
+
+  // ── Détail / reçu / vérification de statut ──────────────────────────────────────
+  // Le reçu (voir/télécharger) réutilise l'historique déjà chargé (aucun aller-retour
+  // réseau, voir shared/receipt/paiement-agent-recu.util.ts) ; le détail et la
+  // vérification de statut vont chercher l'état réel en base (GET /finance/agents/
+  // paiements/:id) — nécessaire pour les champs absents de la liste (nom résolu,
+  // initiateur/validateur, référence opérateur, dates d'audit).
+  readonly showDetailDrawer = signal(false);
+  readonly detailPaiement = signal<PaiementAgentDetail | null>(null);
+  readonly chargementDetail = signal(false);
+  readonly erreurDetail = signal<string | null>(null);
+  readonly verificationEnCours = signal<string | null>(null);
+  readonly recuEnCours = signal<string | null>(null);
+
+  // Un reçu n'a de sens que pour un paiement effectivement PAYÉ — jamais généré pour
+  // une demande encore en attente ou échouée (rien à justifier).
+  recuDisponible(paiement: PaiementAgentActionable): boolean {
+    return paiement.status === 'COMPLETED';
+  }
+
+  // "Vérifier le statut" n'a d'intérêt que tant que l'issue n'est pas déjà définitive
+  // (voir le README applicatif / le rapport livré : aucun opérateur Mobile Money
+  // n'expose de vérification automatisée exploitable pour ce flux aujourd'hui — ceci
+  // re-synchronise l'état réel en base, utile si un autre administrateur a déjà agi).
+  verificationPossible(paiement: PaiementAgentActionable): boolean {
+    return paiement.status === 'EN_ATTENTE_VALIDATION'
+      || paiement.status === 'INITIATED'
+      || paiement.status === 'A_VERIFIER_MANUELLEMENT'
+      || paiement.status === 'FAILED'
+      || paiement.status === 'REJETE';
+  }
+
+  voirDetail(paiement: PaiementAgent): void {
+    this.showDetailDrawer.set(true);
+    this.detailPaiement.set(null);
+    this.erreurDetail.set(null);
+    this.chargementDetail.set(true);
+    this.agentData.getPaiementDetail(paiement.idPaiementAgent).subscribe({
+      next: detail => {
+        this.detailPaiement.set(detail);
+        this.chargementDetail.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.chargementDetail.set(false);
+        this.erreurDetail.set(err.error?.message ?? 'Paiement introuvable ou accès refusé.');
+      },
+    });
+  }
+
+  closeDetailDrawer(): void {
+    this.showDetailDrawer.set(false);
+    this.detailPaiement.set(null);
+    this.erreurDetail.set(null);
+  }
+
+  // Re-synchronise l'état réel depuis la base (voir verificationPossible ci-dessus
+  // pour la limite documentée) : ne simule jamais un appel opérateur. Si le statut a
+  // changé (ex. un autre administrateur vient de valider/résoudre la demande), le
+  // détail ouvert (le cas échéant) et l'historique sont rafraîchis.
+  verifierStatut(paiement: PaiementAgentActionable): void {
+    this.verificationEnCours.set(paiement.idPaiementAgent);
+    this.agentData.getPaiementDetail(paiement.idPaiementAgent).subscribe({
+      next: detail => {
+        this.verificationEnCours.set(null);
+        if (this.detailPaiement()?.idPaiementAgent === detail.idPaiementAgent) {
+          this.detailPaiement.set(detail);
+        }
+        if (detail.status !== paiement.status) {
+          this.notificationService.showSuccess('Statut mis à jour', `Nouveau statut : ${this.badgeStatut(detail.status).label}.`);
+          this.chargerHistorique();
+        } else {
+          this.notificationService.showInfo('Statut inchangé', `Toujours : ${this.badgeStatut(detail.status).label}.`);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.verificationEnCours.set(null);
+        this.notificationService.showError('Erreur', err.error?.message ?? 'Impossible de vérifier ce paiement pour le moment.');
+      },
+    });
+  }
+
+  voirRecu(paiement: PaiementAgentActionable): void {
+    this.genererRecu(paiement, 'voir');
+  }
+
+  telechargerRecu(paiement: PaiementAgentActionable): void {
+    this.genererRecu(paiement, 'telecharger');
+  }
+
+  private genererRecu(paiement: PaiementAgentActionable, action: 'voir' | 'telecharger'): void {
+    if (!this.recuDisponible(paiement)) {
+      this.notificationService.showWarning('Reçu indisponible', "Aucun reçu n'est disponible tant que ce paiement n'est pas payé.");
+      return;
+    }
+    this.recuEnCours.set(paiement.idPaiementAgent);
+    try {
+      const nom = this.nomAgent(paiement.idAgent);
+      const agenceNom = this.utilisateurFinance().agence?.nom;
+      const doc = construireRecuPaiementAgent(paiement, nom, agenceNom);
+      if (action === 'voir') {
+        ouvrirRecuDansNouvelOnglet(doc);
+      } else {
+        telechargerRecuPdf(doc, nomFichierRecuPaiementAgent(paiement, nom));
+      }
+    } catch {
+      this.notificationService.showError('Erreur', action === 'voir'
+        ? "Impossible d'afficher le reçu pour le moment."
+        : 'Impossible de générer le reçu pour le moment.');
+    } finally {
+      this.recuEnCours.set(null);
+    }
   }
 
   private chargerAgents(): void {

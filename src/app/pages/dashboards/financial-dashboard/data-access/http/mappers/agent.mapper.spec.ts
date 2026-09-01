@@ -1,4 +1,4 @@
-import { mapAgentDto, mapPaiementAgentDto } from './agent.mapper';
+import { mapAgentDto, mapPaiementAgentDetailDto, mapPaiementAgentDto } from './agent.mapper';
 
 describe('agent.mapper', () => {
   describe('mapAgentDto', () => {
@@ -100,6 +100,80 @@ describe('agent.mapper', () => {
       expect(result.status).toBe('COMPLETED');
       expect(result.provider).toBe('INTERNE');
       expect(result.failureReason).toBeUndefined();
+    });
+  });
+
+  describe('mapPaiementAgentDetailDto', () => {
+    it('mappe le détail réel GET /finance/agents/paiements/:id (chantier actions historique)', () => {
+      const dto = {
+        idPaiementAgent: '64f1a2b3c4d5e6f7a8b9c0f1',
+        idAgent: '64f1a2b3c4d5e6f7a8b9c0e1',
+        agentNom: 'Kaboré Boukari',
+        montant: 15000,
+        datePaiement: '2026-07-20T09:00:00.000Z',
+        status: 'COMPLETED',
+        provider: 'MOOV',
+        phoneNumber: '+22670123456',
+        operator: 'MOOV_MONEY',
+        reference: 'AGT-1753000000-abcdef',
+        providerTransactionId: 'TX-REAL-1',
+        failureReason: null,
+        rejectionReason: null,
+        initiatedByNom: 'Awa Ouédraogo',
+        validatedByNom: 'Karim Traoré',
+        initiatedAt: '2026-07-20T09:00:00.000Z',
+        completedAt: '2026-07-20T09:05:00.000Z',
+        createdAt: '2026-07-20T09:00:00.000Z',
+        updatedAt: '2026-07-20T09:05:00.000Z',
+      };
+      expect(mapPaiementAgentDetailDto(dto)).toEqual({
+        idPaiementAgent: '64f1a2b3c4d5e6f7a8b9c0f1',
+        idAgent: '64f1a2b3c4d5e6f7a8b9c0e1',
+        agentNom: 'Kaboré Boukari',
+        montant: 15000,
+        datePaiement: '2026-07-20T09:00:00.000Z',
+        status: 'COMPLETED',
+        provider: 'MOOV',
+        phoneNumber: '+22670123456',
+        operator: 'MOOV_MONEY',
+        reference: 'AGT-1753000000-abcdef',
+        providerTransactionId: 'TX-REAL-1',
+        failureReason: null,
+        rejectionReason: null,
+        initiatedByNom: 'Awa Ouédraogo',
+        validatedByNom: 'Karim Traoré',
+        initiatedAt: '2026-07-20T09:00:00.000Z',
+        completedAt: '2026-07-20T09:05:00.000Z',
+        createdAt: '2026-07-20T09:00:00.000Z',
+        updatedAt: '2026-07-20T09:05:00.000Z',
+      });
+    });
+
+    it("agent supprimé depuis (agentNom null côté backend) : jamais un plantage, jamais un nom inventé", () => {
+      const dto = {
+        idPaiementAgent: '64f1a2b3c4d5e6f7a8b9c0f2',
+        idAgent: '64f1a2b3c4d5e6f7a8b9c0e9',
+        agentNom: null,
+        montant: 5000,
+        datePaiement: '2026-07-20T09:00:00.000Z',
+        status: 'COMPLETED',
+        provider: 'INTERNE',
+        phoneNumber: null,
+        operator: null,
+        reference: null,
+        providerTransactionId: null,
+        failureReason: null,
+        rejectionReason: null,
+        initiatedByNom: null,
+        validatedByNom: null,
+        initiatedAt: null,
+        completedAt: null,
+        createdAt: '2026-07-20T09:00:00.000Z',
+        updatedAt: '2026-07-20T09:00:00.000Z',
+      };
+      const result = mapPaiementAgentDetailDto(dto);
+      expect(result.agentNom).toBeNull();
+      expect(result.montant).toBe(5000);
     });
   });
 });

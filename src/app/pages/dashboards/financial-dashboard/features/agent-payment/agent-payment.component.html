@@ -332,6 +332,7 @@
             <th scope="col">Statut</th>
             <th scope="col">Mode</th>
             <th scope="col">Référence</th>
+            <th scope="col" class="fin-agent-payment__col-actions">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -349,20 +350,163 @@
               </td>
               <td data-label="Mode">{{ providerLabel(paiement.provider) }}</td>
               <td data-label="Référence">{{ paiement.reference ?? '—' }}</td>
+              <td data-label="Actions" class="fin-agent-payment__col-actions">
+                <div class="fin-agent-payment__row-actions">
+                  <button type="button" class="fin-agent-payment__action-btn" (click)="voirDetail(paiement)" title="Voir le détail">
+                    <i class="material-icons" aria-hidden="true">visibility</i>
+                  </button>
+                  <button
+                    *ngIf="recuDisponible(paiement)"
+                    type="button"
+                    class="fin-agent-payment__action-btn"
+                    (click)="voirRecu(paiement)"
+                    [disabled]="recuEnCours() === paiement.idPaiementAgent"
+                    title="Voir le reçu"
+                  >
+                    <i class="material-icons" aria-hidden="true">receipt_long</i>
+                  </button>
+                  <button
+                    *ngIf="recuDisponible(paiement)"
+                    type="button"
+                    class="fin-agent-payment__action-btn"
+                    (click)="telechargerRecu(paiement)"
+                    [disabled]="recuEnCours() === paiement.idPaiementAgent"
+                    title="Télécharger le reçu"
+                  >
+                    <i class="material-icons" aria-hidden="true">download</i>
+                  </button>
+                  <button
+                    *ngIf="verificationPossible(paiement)"
+                    type="button"
+                    class="fin-agent-payment__action-btn"
+                    (click)="verifierStatut(paiement)"
+                    [disabled]="verificationEnCours() === paiement.idPaiementAgent"
+                    title="Vérifier le statut"
+                  >
+                    <i class="material-icons" aria-hidden="true">{{ verificationEnCours() === paiement.idPaiementAgent ? 'hourglass_empty' : 'refresh' }}</i>
+                  </button>
+                </div>
+              </td>
             </tr>
             <tr *ngIf="!historiqueFiltre().length">
-              <td colspan="6" class="fin-agent-payment__empty">
+              <td colspan="7" class="fin-agent-payment__empty">
                 {{ historique().length ? 'Aucun paiement ne correspond à ces filtres.' : 'Aucun paiement agent enregistré.' }}
               </td>
             </tr>
           </ng-container>
           <ng-template #squelette>
             <tr *ngFor="let i of [0, 1, 2]" aria-hidden="true">
-              <td *ngFor="let c of [0, 1, 2, 3, 4, 5]"><span class="fin-agent-payment__skeleton-cell"></span></td>
+              <td *ngFor="let c of [0, 1, 2, 3, 4, 5, 6]"><span class="fin-agent-payment__skeleton-cell"></span></td>
             </tr>
           </ng-template>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Drawer de détail — même vocabulaire que features/contracts/contracts.component.html
+       (drawer overlay/drawer/header/close/body), scopé à ce composant. -->
+  <div class="fin-agent-payment__drawer-overlay" *ngIf="showDetailDrawer()" (click)="closeDetailDrawer()">
+    <div class="fin-agent-payment__drawer" (click)="$event.stopPropagation()">
+      <div class="fin-agent-payment__drawer-header">
+        <h3>Détail du paiement</h3>
+        <button type="button" class="fin-agent-payment__drawer-close" (click)="closeDetailDrawer()">
+          <i class="material-icons" aria-hidden="true">close</i>
+        </button>
+      </div>
+      <div class="fin-agent-payment__drawer-body">
+        <p class="fin-agent-payment__error" role="alert" *ngIf="erreurDetail() as message">
+          <i class="material-icons" aria-hidden="true">error_outline</i>
+          {{ message }}
+        </p>
+        <p class="fin-agent-payment__empty" *ngIf="chargementDetail()">Chargement…</p>
+
+        <ng-container *ngIf="detailPaiement() as detail">
+          <div class="fin-agent-payment__detail-status">
+            <app-status-badge
+              [label]="badgeStatut(detail.status).label"
+              [icon]="badgeStatut(detail.status).icon"
+              [variant]="badgeStatut(detail.status).variant"
+            />
+            <button
+              *ngIf="verificationPossible(detail)"
+              type="button"
+              class="fin-agent-payment__action-btn fin-agent-payment__action-btn--wide"
+              (click)="verifierStatut(detail)"
+              [disabled]="verificationEnCours() === detail.idPaiementAgent"
+              title="Vérifier le statut"
+            >
+              <i class="material-icons" aria-hidden="true">{{ verificationEnCours() === detail.idPaiementAgent ? 'hourglass_empty' : 'refresh' }}</i>
+              Vérifier le statut
+            </button>
+          </div>
+
+          <div class="fin-agent-payment__detail-row">
+            <span class="fin-agent-payment__detail-label">Agent</span>
+            <span class="fin-agent-payment__detail-value">{{ detail.agentNom ?? 'Agent introuvable' }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row">
+            <span class="fin-agent-payment__detail-label">Fonction</span>
+            <span class="fin-agent-payment__detail-value">Agent collecteur</span>
+          </div>
+          <div class="fin-agent-payment__detail-row">
+            <span class="fin-agent-payment__detail-label">Montant</span>
+            <span class="fin-agent-payment__detail-value">{{ formatMontant(detail.montant) }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row">
+            <span class="fin-agent-payment__detail-label">Date du paiement</span>
+            <span class="fin-agent-payment__detail-value">{{ formatDate(detail.datePaiement) }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row">
+            <span class="fin-agent-payment__detail-label">Mode de paiement</span>
+            <span class="fin-agent-payment__detail-value">{{ providerLabel(detail.provider) }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row" *ngIf="detail.phoneNumber">
+            <span class="fin-agent-payment__detail-label">Numéro de réception</span>
+            <span class="fin-agent-payment__detail-value">{{ detail.phoneNumber }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row">
+            <span class="fin-agent-payment__detail-label">Référence</span>
+            <span class="fin-agent-payment__detail-value">{{ detail.reference ?? '—' }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row" *ngIf="detail.providerTransactionId">
+            <span class="fin-agent-payment__detail-label">Référence opérateur</span>
+            <span class="fin-agent-payment__detail-value">{{ detail.providerTransactionId }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row" *ngIf="detail.failureReason">
+            <span class="fin-agent-payment__detail-label">Motif d'échec</span>
+            <span class="fin-agent-payment__detail-value">{{ detail.failureReason }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row" *ngIf="detail.rejectionReason">
+            <span class="fin-agent-payment__detail-label">Motif de rejet</span>
+            <span class="fin-agent-payment__detail-value">{{ detail.rejectionReason }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row" *ngIf="detail.initiatedByNom">
+            <span class="fin-agent-payment__detail-label">Initié par</span>
+            <span class="fin-agent-payment__detail-value">{{ detail.initiatedByNom }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row" *ngIf="detail.validatedByNom">
+            <span class="fin-agent-payment__detail-label">Validé par</span>
+            <span class="fin-agent-payment__detail-value">{{ detail.validatedByNom }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row">
+            <span class="fin-agent-payment__detail-label">Créé le</span>
+            <span class="fin-agent-payment__detail-value">{{ formatDate(detail.createdAt) }}</span>
+          </div>
+          <div class="fin-agent-payment__detail-row">
+            <span class="fin-agent-payment__detail-label">Dernière modification</span>
+            <span class="fin-agent-payment__detail-value">{{ formatDate(detail.updatedAt) }}</span>
+          </div>
+        </ng-container>
+      </div>
+      <div class="fin-agent-payment__drawer-footer" *ngIf="detailPaiement() as detail">
+        <button *ngIf="recuDisponible(detail)" type="button" class="fin-agent-payment__cancel-btn" (click)="voirRecu(detail)">
+          <i class="material-icons" aria-hidden="true">receipt_long</i> Voir le reçu
+        </button>
+        <button *ngIf="recuDisponible(detail)" type="button" class="fin-agent-payment__submit-btn" (click)="telechargerRecu(detail)">
+          <i class="material-icons" aria-hidden="true">download</i> Télécharger le reçu
+        </button>
+      </div>
     </div>
   </div>
 </section>
