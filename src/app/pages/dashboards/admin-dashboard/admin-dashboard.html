@@ -2344,6 +2344,14 @@
                         <i class="material-icons">cancel</i>
                       </button>
                       }
+                      @if (w.status === WithdrawalStatus.TO_VERIFY) {
+                      <button class="action-btn success" (click)="openConfirmVirementDialog(w, 'effectue')" title="Confirmer virement effectué">
+                        <i class="material-icons">check_circle</i>
+                      </button>
+                      <button class="action-btn danger" (click)="openConfirmVirementDialog(w, 'non_effectue')" title="Confirmer virement non effectué">
+                        <i class="material-icons">cancel</i>
+                      </button>
+                      }
                     </div>
                   </td>
                 </tr>
@@ -3612,6 +3620,17 @@
     </div>
     }
 
+    @if (selectedWithdrawal?.status === WithdrawalStatus.TO_VERIFY) {
+    <div class="drawer-footer">
+      <button class="btn btn-success" (click)="openConfirmVirementDialog(selectedWithdrawal!, 'effectue')">
+        <i class="material-icons">check_circle</i> Confirmer virement effectué
+      </button>
+      <button class="btn btn-danger" (click)="openConfirmVirementDialog(selectedWithdrawal!, 'non_effectue')">
+        <i class="material-icons">cancel</i> Confirmer virement non effectué
+      </button>
+    </div>
+    }
+
   </div>
 </div>
 }
@@ -3699,6 +3718,58 @@
         {{ isRejectingWithdrawal ? 'Rejet...' : 'Confirmer le rejet' }}
       </button>
     </div>
+  </div>
+</div>
+}
+
+<!-- ══════════════════════════════════════════════
+       DIALOG RÉSOLUTION MANUELLE — RETRAIT "À VÉRIFIER MANUELLEMENT"
+       (virement opérateur ambigu, timeout sans réponse claire)
+  ══════════════════════════════════════════════ -->
+@if (showConfirmVirementDialog && withdrawalToConfirmVirement && virementConfirmMode) {
+<div class="confirm-dialog-overlay" (click)="closeConfirmVirementDialog()">
+  <div class="confirm-dialog-box" (click)="$event.stopPropagation()">
+
+    <div class="confirm-dialog-header" [class.confirm-dialog-header--success]="virementConfirmMode === 'effectue'">
+      <div class="confirm-icon" [class.confirm-icon--success]="virementConfirmMode === 'effectue'">
+        <i class="material-icons">{{ virementConfirmMode === 'effectue' ? 'check_circle' : 'cancel' }}</i>
+      </div>
+      <div>
+        <h3>{{ virementConfirmMode === 'effectue' ? 'Le virement a-t-il réellement eu lieu ?' : "Le virement n'a-t-il jamais eu lieu ?" }}</h3>
+        <p>{{ virementConfirmMode === 'effectue' ? 'Aucun nouveau débit ne sera effectué : le solde reste inchangé.' : "Le solde de l'agence sera recrédité du montant du retrait." }}</p>
+      </div>
+    </div>
+
+    <div class="confirm-dialog-body">
+      <div class="confirm-user-card">
+        <div class="confirm-avatar" [style.background-color]="virementConfirmMode === 'effectue' ? '#16a34a' : '#dc2626'">
+          {{ withdrawalToConfirmVirement.agencyName[0] }}
+        </div>
+        <div class="confirm-user-info">
+          <strong>{{ withdrawalToConfirmVirement.agencyName }}</strong>
+          <span>{{ withdrawalToConfirmVirement.agencyManagerName }} — {{ formatXof(withdrawalToConfirmVirement.amount) }}</span>
+        </div>
+      </div>
+      <div class="confirm-warning">
+        <i class="material-icons">info</i>
+        À confirmer uniquement après vérification réelle auprès de l'opérateur mobile money — cette action est définitive.
+      </div>
+    </div>
+
+    <div class="confirm-dialog-footer">
+      <button class="btn-cancel" (click)="closeConfirmVirementDialog()" [disabled]="isConfirmingVirement">
+        Annuler
+      </button>
+      <button
+        [class]="virementConfirmMode === 'effectue' ? 'btn-approve-confirm' : 'btn-reject-confirm'"
+        (click)="confirmVirement()"
+        [disabled]="isConfirmingVirement"
+      >
+        <i class="material-icons">{{ isConfirmingVirement ? 'hourglass_empty' : (virementConfirmMode === 'effectue' ? 'check_circle' : 'cancel') }}</i>
+        {{ isConfirmingVirement ? 'Traitement...' : (virementConfirmMode === 'effectue' ? 'Confirmer effectué' : 'Confirmer non effectué') }}
+      </button>
+    </div>
+
   </div>
 </div>
 }

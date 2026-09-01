@@ -559,6 +559,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
   withdrawalRejectionReason = '';
   isRejectingWithdrawal = false;
 
+  // Résolution manuelle d'un retrait A_VERIFIER_MANUELLEMENT (timeout opérateur sans
+  // réponse HTTP claire à l'acceptation — voir services/transaction.js). Un seul dialog
+  // pour les deux issues (mode 'effectue'/'non_effectue'), même schéma que approve/reject.
+  showConfirmVirementDialog = false;
+  withdrawalToConfirmVirement: AdminWithdrawalRequest | null = null;
+  virementConfirmMode: 'effectue' | 'non_effectue' | null = null;
+  isConfirmingVirement = false;
+
   // Select agence custom avec scroll infini
   agencyIdFilter       = '';
   agencyDropdownOpen   = false;
@@ -852,7 +860,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isLoadingWithdrawals = false;
-        this.withdrawalsErrorMessage = err?.message || 'Impossible de charger les demandes de retrait.';
+        this.withdrawalsErrorMessage = err?.error?.message || 'Impossible de charger les demandes de retrait.';
         this.notificationService.showError('Erreur', this.withdrawalsErrorMessage!);
       },
     });
@@ -944,7 +952,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isExportingWithdrawals = false;
-        this.notificationService.showError("Erreur", err?.message || "Impossible d'exporter les demandes de retrait.");
+        this.notificationService.showError("Erreur", err?.error?.message || "Impossible d'exporter les demandes de retrait.");
       },
     });
   }
@@ -1001,7 +1009,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       next: (request) => { this.selectedWithdrawal = request; },
       error: (err) => {
         this.visibleWithdrawalDetailDrawer = false;
-        this.notificationService.showError('Erreur', err?.message || 'Demande de retrait introuvable.');
+        this.notificationService.showError('Erreur', err?.error?.message || 'Demande de retrait introuvable.');
       },
     });
   }
@@ -1039,7 +1047,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isApprovingWithdrawal = false;
-        this.notificationService.showError('Erreur', err?.message || "Impossible d'approuver cette demande.");
+        this.notificationService.showError('Erreur', err?.error?.message || "Impossible d'approuver cette demande.");
       },
     });
   }
@@ -1082,7 +1090,46 @@ export class AdminDashboard implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.isRejectingWithdrawal = false;
-        this.notificationService.showError('Erreur', err?.message || 'Impossible de rejeter cette demande.');
+        this.notificationService.showError('Erreur', err?.error?.message || 'Impossible de rejeter cette demande.');
+      },
+    });
+  }
+
+  // ── Résolution manuelle (virement ambigu) ───────────────────────
+
+  openConfirmVirementDialog(request: AdminWithdrawalRequest, mode: 'effectue' | 'non_effectue'): void {
+    this.withdrawalToConfirmVirement = request;
+    this.virementConfirmMode = mode;
+    this.showConfirmVirementDialog = true;
+  }
+
+  closeConfirmVirementDialog(): void {
+    this.showConfirmVirementDialog = false;
+    this.withdrawalToConfirmVirement = null;
+    this.virementConfirmMode = null;
+  }
+
+  confirmVirement(): void {
+    if (!this.withdrawalToConfirmVirement || !this.virementConfirmMode) return;
+    this.isConfirmingVirement = true;
+    const id = this.withdrawalToConfirmVirement.id;
+    const appel = this.virementConfirmMode === 'effectue'
+      ? this.withdrawalRequestsService.confirmerVirementEffectue(id)
+      : this.withdrawalRequestsService.confirmerVirementNonEffectue(id);
+
+    appel.subscribe({
+      next: () => {
+        this.isConfirmingVirement = false;
+        this.showConfirmVirementDialog = false;
+        this.withdrawalToConfirmVirement = null;
+        this.virementConfirmMode = null;
+        this.notificationService.showSuccess('Retrait résolu', 'La demande de retrait a été mise à jour avec succès.');
+        this.loadWithdrawalRequests();
+        if (this.visibleWithdrawalDetailDrawer) this.closeWithdrawalDetailDrawer();
+      },
+      error: (err) => {
+        this.isConfirmingVirement = false;
+        this.notificationService.showError('Erreur', err?.error?.message || 'Impossible de résoudre cette demande.');
       },
     });
   }

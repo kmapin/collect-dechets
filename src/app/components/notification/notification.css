@@ -2,7 +2,11 @@
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 1001;
+  /* Toujours au-dessus de tout overlay de dialog de confirmation (jusqu'à
+     z-index: 10000 dans agency-dashboard.scss) : sinon un toast déclenché
+     pendant qu'un dialog est ouvert se retrouve visuellement assombri sous
+     le fond semi-transparent du dialog, illisible pour l'utilisateur. */
+  z-index: 10001;
   max-width: 400px;
   width: 100%;
 }

@@ -156,4 +156,16 @@ export class WithdrawalRequestsHttpService {
   rejectWithdrawal(id: string, payload: RejectWithdrawalPayload): Observable<AdminWithdrawalRequest> {
     return this.http.patch<BackendRetraitItem>(`${this.base}/${id}/rejeter`, { motif: payload.reason }).pipe(map(mapBackendRetrait));
   }
+
+  // Résolution manuelle d'un retrait A_VERIFIER_MANUELLEMENT (timeout opérateur sans
+  // réponse HTTP claire — voir services/transaction.js::_executerCashOutOrangeMoney/
+  // apiOM.js) : l'admin confirme, après vérification hors-app côté opérateur, si le
+  // virement a réellement eu lieu (aucun débit supplémentaire) ou non (wallet recrédité).
+  confirmerVirementEffectue(id: string): Observable<AdminWithdrawalRequest> {
+    return this.http.patch<BackendRetraitItem>(`${this.base}/${id}/confirmer-virement-effectue`, {}).pipe(map(mapBackendRetrait));
+  }
+
+  confirmerVirementNonEffectue(id: string): Observable<AdminWithdrawalRequest> {
+    return this.http.patch<BackendRetraitItem>(`${this.base}/${id}/confirmer-virement-non-effectue`, {}).pipe(map(mapBackendRetrait));
+  }
 }
