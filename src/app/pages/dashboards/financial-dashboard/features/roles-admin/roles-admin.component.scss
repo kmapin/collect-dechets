@@ -478,6 +478,25 @@
       filter: brightness(0.95);
     }
   }
+
+  // En dessous de ~600px, les 3 boutons + le spacer se compressaient sur une seule
+  // ligne : le libellé le plus long ("Appliquer les droits par défaut du rôle")
+  // retournait à la ligne sur lui-même en écrasant Annuler/Enregistrer. On empile
+  // plutôt les 3 boutons en pleine largeur.
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    &__spacer {
+      display: none;
+    }
+
+    &__ghost,
+    &__primary {
+      justify-content: center;
+      width: 100%;
+    }
+  }
 }
 
 @keyframes access-mgmt-skeleton-pulse {
