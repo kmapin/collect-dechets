@@ -74,9 +74,14 @@
           <div class="dropdown-notification" [class.show]="showNotifications">
             <div class="dropdown-header">
               <strong>Notifications</strong>
+              @if (unreadCount() > 0) {
+              <button type="button" class="mark-all-read-btn" (click)="markAllAsRead($event)">
+                Tout marquer comme lu
+              </button>
+              }
             </div>
             <div class="notifications-list">
-              @if (notifications && notifications.length > 0) { 
+              @if (notifications && notifications.length > 0) {
                 @for (notif of notifications; track notif) {
               <div
                 class="notification-item"
@@ -115,6 +120,9 @@
               <div class="empty-notification">Aucune notification</div>
               }
             </div>
+            <a routerLink="/notifications" class="dropdown-footer" (click)="showNotifications = false">
+              Voir toutes les notifications
+            </a>
           </div>
         </div>
         }
@@ -160,6 +168,10 @@
             <a routerLink="/profile" class="dropdown-item">
               <i class="material-icons">person</i>
               <span>Mon profil</span>
+            </a>
+            <a routerLink="/notifications" class="dropdown-item">
+              <i class="material-icons">notifications</i>
+              <span>Notifications</span>
             </a>
             @if (currentUser.role === 'client') {
             <a routerLink="/subscription" class="dropdown-item">
@@ -274,6 +286,14 @@
             >
               <i class="material-icons">person</i>
               <span>Mon profil</span>
+            </a>
+            <a
+              routerLink="/notifications"
+              class="mobile-nav-link"
+              (click)="closeMobileMenu()"
+            >
+              <i class="material-icons">notifications</i>
+              <span>Notifications</span>
             </a>
             @if (currentUser.role === 'client') {
             <a

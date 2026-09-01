@@ -12,12 +12,8 @@ import {
 } from "@angular/core";
 import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
 import { ConversationService, RealtimeMessage } from "../../../services/conversation.service";
-import { ContratService } from "../../../services/contrat.service";
-import { Contrat } from "../../../models/contrat.model";
 import { isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
-import { RedevanceService } from "../../../services/redevance.service";
 import { DemandeCollecteService, DemandeCollecte } from "../../../services/demande-collecte.service";
-import { Redevance } from "../../../models/redevance.model";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import {
@@ -227,7 +223,6 @@ type TabId =
   | "demandes"
   | "messages"
   | "vehicles"
-  | "contrats"
   | "avis";
 // | "clients"
 interface Vehicle {
@@ -603,7 +598,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
     { id: "avis", label: "Avis clients", icon: "star", badge: null },
     { id: "demandes", label: "Demandes express", icon: "local_shipping", badge: 0 },
-    { id: "contrats", label: "Contrats", icon: "description", badge: null },
     { id: "vehicles", label: "Mobilité", icon: "directions_car", badge: null },
     { id: "messages", label: "Messages", icon: "message", badge: 0 },
     // { id: "analytics", label: "Rapports", icon: "analytics", badge: null },
@@ -857,8 +851,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     private vehicleService: VehicleService,
     private websocketService: Webstockets,
     private conversationService: ConversationService,
-    private contratService: ContratService,
-    private redevanceService: RedevanceService,
     private demandeCollecteService: DemandeCollecteService,
   ) {
     const today = new Date();
@@ -1469,13 +1461,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       if (notification?.type === 'Subscribed') {
         this.filterClients();
       }
-      // Phase 6, CONCEPTION_ABONNEMENT_CONTRAT.md §6.4 : même principe que
-      // 'Signalement'/'Subscribed' ci-dessus — un contrat créé/résilié (par
-      // l'agence elle-même ou automatiquement par le scheduler, Phase 4)
-      // rafraîchit l'onglet "Contrats" en direct.
-      if (notification?.type === 'Contrat') {
-        this.loadContrats();
-      }
+      // Onglet "Contrats" déplacé vers le dashboard financier (chantier "Contrats ->
+      // dashboard financier") — ce rafraîchissement en direct vit désormais dans
+      // features/contracts/contracts.component.ts, plus rien à faire ici.
       // Nouvelle demande de collecte express (services/demandeCollecte.js::
       // createDemandeCollecte, notifyUsers réutilisé — même canal que
       // Signalement/Subscribed/Contrat ci-dessus, pas de canal socket dédié).
@@ -1533,7 +1521,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.loadDemandesCollecte();
     this.loadVehicles();
     this.loadTariffs();
-    this.loadContrats();
     this.loadPlannings();
     // this.loadCollectorPlannings();
     // this.cdr.detectChanges();
@@ -4394,214 +4381,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         this.isLoadingTariffs = false;
       },
     });
-  }
-
-  // === Contrats (Phase 6, CONCEPTION_ABONNEMENT_CONTRAT.md §6.3) ===
-  contrats: Contrat[] = [];
-  isLoadingContrats = false;
-  showCreateContratModal = false;
-  newContrat: { clientId: string; pricingId: string; frequenceCollecte: string; endDate: string } = {
-    clientId: '',
-    pricingId: '',
-    frequenceCollecte: 'monthly',
-    endDate: '',
-  };
-  contratClientSearch = '';
-  contratClientDropdownOpen = false;
-
-  /** Filtre la liste de clients du sélecteur "Nouveau contrat" par nom/prénom (recherche insensible à la casse). */
-  get filteredContratClients(): ClientApi[] {
-    const term = this.contratClientSearch.trim().toLowerCase();
-    if (!term) return this.allAgencyClients;
-    return this.allAgencyClients.filter((c: any) =>
-      `${c.firstName} ${c.lastName}`.toLowerCase().includes(term),
-    );
-  }
-
-  openContratClientDropdown(): void {
-    this.contratClientDropdownOpen = true;
-  }
-
-  selectContratClient(client: ClientApi): void {
-    this.newContrat.clientId = (client as any)._id;
-    this.contratClientDropdownOpen = false;
-    this.contratClientSearch = '';
-  }
-
-  /** Libellé affiché dans le déclencheur du combobox "Client" (nom du client sélectionné, sinon vide). */
-  selectedContratClientLabel(): string {
-    const client = this.allAgencyClients.find((c: any) => c._id === this.newContrat.clientId) as any;
-    return client ? `${client.firstName} ${client.lastName}` : '';
-  }
-
-  loadContrats(): void {
-    const agencyId = this.currentUser?.agencyId;
-    if (!agencyId) return;
-    this.isLoadingContrats = true;
-    this.contratService.getContratsByAgence$(agencyId).subscribe({
-      next: (contrats) => {
-        this.contrats = contrats;
-        this.isLoadingContrats = false;
-      },
-      error: () => {
-        this.isLoadingContrats = false;
-      },
-    });
-  }
-
-  openCreateContratModal(): void {
-    this.newContrat = { clientId: '', pricingId: '', frequenceCollecte: 'monthly', endDate: '' };
-    this.contratClientSearch = '';
-    this.contratClientDropdownOpen = false;
-    this.showCreateContratModal = true;
-  }
-
-  closeCreateContratModal(): void {
-    this.showCreateContratModal = false;
-  }
-
-  onCreerContrat(): void {
-    const agencyId = this.currentUser?.agencyId;
-    if (!agencyId || !this.newContrat.clientId || !this.newContrat.pricingId || !this.newContrat.frequenceCollecte) {
-      this.notificationService.showError('Erreur', 'Merci de renseigner le client, le plan tarifaire et la fréquence.');
-      return;
-    }
-    this.contratService
-      .creerContrat$({
-        clientId: this.newContrat.clientId,
-        agencyId,
-        pricingId: this.newContrat.pricingId,
-        frequenceCollecte: this.newContrat.frequenceCollecte as any,
-        endDate: this.newContrat.endDate || undefined,
-      })
-      .subscribe({
-        next: () => {
-          this.notificationService.showSuccess('Succès', 'Contrat créé avec succès.');
-          this.closeCreateContratModal();
-          this.loadContrats();
-        },
-        error: (error) => {
-          this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de créer le contrat.');
-        },
-      });
-  }
-
-  onResilierContrat(contratId: string): void {
-    if (!confirm('Êtes-vous sûr de vouloir résilier ce contrat ?')) return;
-    const raisonResiliation = prompt('Motif de résiliation (optionnel) :') || undefined;
-    this.contratService.resilierContrat$(contratId, raisonResiliation).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Contrat résilié avec succès.');
-        this.loadContrats();
-      },
-      error: (error) => {
-        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de résilier le contrat.');
-      },
-    });
-  }
-
-  onSuspendreContrat(contratId: string): void {
-    if (!confirm('Êtes-vous sûr de vouloir suspendre ce contrat ?')) return;
-    this.contratService.suspendreContrat$(contratId).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Contrat suspendu avec succès.');
-        this.loadContrats();
-      },
-      error: (error) => {
-        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de suspendre le contrat.');
-      },
-    });
-  }
-
-  onReactiverContrat(contratId: string): void {
-    if (!confirm('Êtes-vous sûr de vouloir réactiver ce contrat ?')) return;
-    this.contratService.reactiverContrat$(contratId).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Contrat réactivé avec succès.');
-        this.loadContrats();
-      },
-      error: (error) => {
-        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de réactiver le contrat.');
-      },
-    });
-  }
-
-  onGenererDocument(contratId: string): void {
-    this.contratService.genererDocument$(contratId).subscribe({
-      next: (response: any) => {
-        this.notificationService.showSuccess('Succès', 'Document généré avec succès.');
-        if (response?.documentUrl) window.open(response.documentUrl, '_blank');
-        this.loadContrats();
-      },
-      error: (error) => {
-        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de générer le document.');
-      },
-    });
-  }
-
-  // === Redevances d'un contrat (drawer, accessible depuis l'onglet Contrats) ===
-  showRedevancesDrawer = false;
-  redevancesDrawerContrat: Contrat | null = null;
-  redevancesDrawerList: Redevance[] = [];
-  isLoadingRedevancesDrawer = false;
-
-  openRedevancesDrawer(contrat: Contrat): void {
-    this.redevancesDrawerContrat = contrat;
-    this.showRedevancesDrawer = true;
-    this.isLoadingRedevancesDrawer = true;
-    this.redevanceService.getRedevancesByContrat$(contrat._id).subscribe({
-      next: (redevances) => {
-        this.redevancesDrawerList = redevances;
-        this.isLoadingRedevancesDrawer = false;
-      },
-      error: () => {
-        this.isLoadingRedevancesDrawer = false;
-      },
-    });
-  }
-
-  closeRedevancesDrawer(): void {
-    this.showRedevancesDrawer = false;
-    this.redevancesDrawerContrat = null;
-    this.redevancesDrawerList = [];
-  }
-
-  redevanceStatusLabel(status: string): string {
-    const map: { [key: string]: string } = { en_attente: 'En attente', retard: 'En retard', paye: 'Payée', annule: 'Annulée' };
-    return map[status] || status;
-  }
-
-  /**
-   * Marque une redevance payée manuellement (espèces, etc.) — sans
-   * `transactionId`, pour un paiement constaté par l'agence hors mobile
-   * money (voir `RedevanceService.payerRedevance$`, Phase 8).
-   */
-  onMarquerRedevancePayee(redevance: Redevance): void {
-    if (!confirm(`Confirmer que la redevance "${redevance.periodLabel}" (${redevance.montant} FCFA) a été payée ?`)) return;
-    this.redevanceService.payerRedevance$(redevance._id).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Redevance marquée comme payée.');
-        if (this.redevancesDrawerContrat) this.openRedevancesDrawer(this.redevancesDrawerContrat);
-      },
-      error: (error) => {
-        this.notificationService.showError('Erreur', error?.error?.message || 'Impossible de marquer cette redevance comme payée.');
-      },
-    });
-  }
-
-  contratClientName(contrat: Contrat): string {
-    const client = contrat.clientId as any;
-    return client?.firstName ? `${client.firstName} ${client.lastName}` : '';
-  }
-
-  contratFrequenceLabel(frequence: string): string {
-    const map: { [key: string]: string } = { daily: 'Quotidienne', weekly: 'Hebdomadaire', monthly: 'Mensuelle' };
-    return map[frequence] || frequence;
-  }
-
-  contratStatusLabel(status: string): string {
-    const map: { [key: string]: string } = { actif: 'Actif', suspendu: 'Suspendu', resilie: 'Résilié' };
-    return map[status] || status;
   }
 
   //recupere les planning d une agence

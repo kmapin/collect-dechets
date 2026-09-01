@@ -1,0 +1,194 @@
+<section class="fin-contracts" aria-label="Contrats">
+  <div class="fin-contracts__header">
+    <h2>Contrats</h2>
+    <button *ngIf="peutGerer()" type="button" class="btn btn-primary" (click)="openCreateModal()">
+      <i class="material-icons" aria-hidden="true">add</i>
+      Nouveau contrat
+    </button>
+  </div>
+
+  <app-loading-spinner *ngIf="chargement()" message="Chargement des contrats..." size="medium" />
+
+  <div class="fin-contracts__error" role="alert" *ngIf="erreur() as message">
+    <i class="material-icons" aria-hidden="true">error_outline</i>
+    {{ message }}
+    <button type="button" class="btn btn-secondary" (click)="reessayer()">Réessayer</button>
+  </div>
+
+  <ng-container *ngIf="!chargement() && !erreur()">
+    <div class="fin-contracts__table-wrap" *ngIf="contrats().length">
+      <table class="fin-contracts__table">
+        <thead>
+          <tr>
+            <th scope="col">Client</th>
+            <th scope="col">Fréquence</th>
+            <th scope="col">Prix / période</th>
+            <th scope="col">Statut</th>
+            <th scope="col">Document</th>
+            <th scope="col" *ngIf="peutGerer()">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let contrat of contrats()">
+            <td data-label="Client">{{ contratClientName(contrat) }}</td>
+            <td data-label="Fréquence">{{ contratFrequenceLabel(contrat.frequenceCollecte) }}</td>
+            <td data-label="Prix / période">{{ contrat.prixParPeriode }} FCFA</td>
+            <td data-label="Statut">
+              <app-status-badge [label]="badgeContrat(contrat.status).label" [icon]="badgeContrat(contrat.status).icon" [variant]="badgeContrat(contrat.status).variant" />
+            </td>
+            <td data-label="Document">
+              <a *ngIf="contrat.documentUrl" [href]="contrat.documentUrl" target="_blank" class="fin-contracts__action-btn" title="Voir le document">
+                <i class="material-icons" aria-hidden="true">picture_as_pdf</i>
+              </a>
+              <button
+                *ngIf="!contrat.documentUrl && peutGerer()"
+                type="button"
+                class="fin-contracts__action-btn"
+                (click)="onGenererDocument(contrat)"
+                title="Générer le document"
+              >
+                <i class="material-icons" aria-hidden="true">description</i>
+              </button>
+            </td>
+            <td data-label="Actions" *ngIf="peutGerer()">
+              <div class="fin-contracts__row-actions">
+                <button type="button" class="fin-contracts__action-btn" (click)="openRedevancesDrawer(contrat)" title="Voir les redevances">
+                  <i class="material-icons" aria-hidden="true">receipt_long</i>
+                </button>
+                <button *ngIf="contrat.status === 'actif'" type="button" class="fin-contracts__action-btn" (click)="onSuspendreContrat(contrat)" title="Suspendre">
+                  <i class="material-icons" aria-hidden="true">pause_circle</i>
+                </button>
+                <button *ngIf="contrat.status === 'suspendu'" type="button" class="fin-contracts__action-btn" (click)="onReactiverContrat(contrat)" title="Réactiver">
+                  <i class="material-icons" aria-hidden="true">play_circle</i>
+                </button>
+                <button *ngIf="contrat.status !== 'resilie'" type="button" class="fin-contracts__action-btn fin-contracts__action-btn--danger" (click)="onResilierContrat(contrat)" title="Résilier">
+                  <i class="material-icons" aria-hidden="true">cancel</i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="fin-contracts__empty" *ngIf="!contrats().length">
+      <i class="material-icons" aria-hidden="true">description</i>
+      <h3>Aucun contrat</h3>
+      <p>Aucun contrat n'a encore été créé pour cette agence.</p>
+    </div>
+  </ng-container>
+
+  <!-- Drawer des redevances d'un contrat -->
+  <div class="fin-contracts__drawer-overlay" *ngIf="showRedevancesDrawer()" (click)="closeRedevancesDrawer()">
+    <div class="fin-contracts__drawer" (click)="$event.stopPropagation()">
+      <div class="fin-contracts__drawer-header">
+        <h3>Redevances — {{ redevancesDrawerContrat() ? contratClientName(redevancesDrawerContrat()!) : '' }}</h3>
+        <button type="button" class="fin-contracts__drawer-close" (click)="closeRedevancesDrawer()">
+          <i class="material-icons" aria-hidden="true">close</i>
+        </button>
+      </div>
+      <div class="fin-contracts__drawer-body">
+        <app-loading-spinner *ngIf="chargementRedevances()" message="Chargement des redevances..." size="medium" />
+        <div class="fin-contracts__empty" *ngIf="!chargementRedevances() && !redevancesDrawerList().length">
+          <i class="material-icons" aria-hidden="true">receipt_long</i>
+          <h3>Aucune redevance</h3>
+          <p>Aucune redevance n'a encore été générée pour ce contrat.</p>
+        </div>
+        <div class="fin-contracts__redevance" *ngFor="let redevance of redevancesDrawerList()">
+          <div class="fin-contracts__redevance-period">
+            <strong>{{ redevance.periodLabel }}</strong>
+            <span>Échéance : {{ formatDate(redevance.dateEcheance) }}</span>
+          </div>
+          <div class="fin-contracts__redevance-amount">{{ redevance.montant }} FCFA</div>
+          <span class="fin-contracts__redevance-status">{{ redevanceStatusLabel(redevance.status) }}</span>
+          <button
+            *ngIf="peutGerer() && (redevance.status === 'en_attente' || redevance.status === 'retard')"
+            type="button"
+            class="fin-contracts__action-btn"
+            (click)="onMarquerRedevancePayee(redevance)"
+            title="Marquer comme payée"
+          >
+            <i class="material-icons" aria-hidden="true">check_circle</i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer de création de contrat -->
+  <div class="fin-contracts__drawer-overlay" *ngIf="showCreateModal()" (click)="closeCreateModal()">
+    <div class="fin-contracts__drawer" (click)="$event.stopPropagation()">
+      <div class="fin-contracts__drawer-header">
+        <h3>Nouveau contrat</h3>
+        <button type="button" class="fin-contracts__drawer-close" (click)="closeCreateModal()">
+          <i class="material-icons" aria-hidden="true">close</i>
+        </button>
+      </div>
+      <div class="fin-contracts__drawer-body">
+        <div class="fin-contracts__form-group">
+          <label for="contract-client">Client</label>
+          <div class="fin-contracts__client-select" [class.open]="clientDropdownOpen()">
+            <button id="contract-client" type="button" class="fin-contracts__client-trigger" (click)="toggleClientDropdown()">
+              <i class="material-icons" aria-hidden="true">person_search</i>
+              <span>{{ selectedClientLabel() || 'Rechercher un client...' }}</span>
+              <i class="material-icons" aria-hidden="true">expand_more</i>
+            </button>
+
+            <div class="fin-contracts__client-dropdown" *ngIf="clientDropdownOpen()" (click)="$event.stopPropagation()">
+              <div class="fin-contracts__client-search">
+                <i class="material-icons" aria-hidden="true">search</i>
+                <input
+                  type="text"
+                  placeholder="Rechercher un client par nom..."
+                  [ngModel]="clientSearch()"
+                  (ngModelChange)="clientSearch.set($event)"
+                />
+              </div>
+              <div class="fin-contracts__client-list">
+                <div class="fin-contracts__client-empty" *ngIf="!filteredClients().length">Aucun client ne correspond à cette recherche.</div>
+                <div
+                  *ngFor="let client of filteredClients()"
+                  class="fin-contracts__client-item"
+                  [class.selected]="newContrat().clientId === client.idClient"
+                  (click)="selectClient(client)"
+                >
+                  <i class="material-icons" aria-hidden="true">person</i>
+                  {{ client.nom }} {{ client.prenom }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fin-contracts__form-group">
+          <label for="contract-pricing">Plan tarifaire</label>
+          <select id="contract-pricing" [ngModel]="newContrat().pricingId" (ngModelChange)="setPricingId($event)">
+            <option value="">Sélectionner un plan</option>
+            <option *ngFor="let tarif of tariffs()" [value]="tarif._id">{{ tarif.planType }} — {{ tarif.price }} FCFA</option>
+          </select>
+        </div>
+
+        <div class="fin-contracts__form-group">
+          <label for="contract-frequence">Fréquence de collecte</label>
+          <select id="contract-frequence" [ngModel]="newContrat().frequenceCollecte" (ngModelChange)="setFrequenceCollecte($event)">
+            <option value="daily">Quotidienne</option>
+            <option value="weekly">Hebdomadaire</option>
+            <option value="monthly">Mensuelle</option>
+          </select>
+        </div>
+
+        <div class="fin-contracts__form-group">
+          <label for="contract-end-date">Date de fin (optionnel)</label>
+          <input id="contract-end-date" type="date" [ngModel]="newContrat().endDate" (ngModelChange)="setEndDate($event)" />
+        </div>
+      </div>
+      <div class="fin-contracts__drawer-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Annuler</button>
+        <button type="button" class="btn btn-primary" (click)="onCreerContrat()">
+          <i class="material-icons" aria-hidden="true">check</i>
+          Créer le contrat
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

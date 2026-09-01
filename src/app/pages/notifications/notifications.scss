@@ -1,0 +1,325 @@
+// .page-header/.container/.page-title/.page-subtitle/.card/.btn* sont des classes
+// globales (src/styles.scss), réutilisées telles quelles — même bandeau dégradé que le
+// reste de l'app (voir notification-settings.scss pour le même principe). Seules les
+// classes préfixées .nf- sont propres à cette page.
+
+.nf-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+}
+
+.nf-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+// ── Barre d'outils (filtres + tout marquer comme lu) ────────────────────────
+.nf-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.nf-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--light-gray, #f5f5f5);
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.nf-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.active {
+    background: var(--white);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-light);
+  }
+}
+
+.nf-tab-badge {
+  background: var(--primary-color);
+  color: var(--white);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.nf-tab.active .nf-tab-badge {
+  background: var(--error-color);
+}
+
+.nf-mark-all {
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// ── États (chargement / erreur / vide) ──────────────────────────────────────
+.nf-state {
+  text-align: center;
+  padding: 56px 24px;
+
+  h2 {
+    margin: 12px 0 8px;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+  }
+
+  p {
+    margin: 0 0 16px;
+    color: var(--text-secondary);
+  }
+}
+
+.nf-state-icon {
+  font-size: 48px;
+  color: var(--surface-400, #9ca3af);
+
+  &--error {
+    color: var(--error-color);
+  }
+
+  &--success {
+    color: var(--success-color);
+  }
+}
+
+// ── Liste ────────────────────────────────────────────────────────────────
+ul.nf-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.nf-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 20px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--surface-50, #f9fafb);
+  }
+
+  & + & {
+    border-top: 1px solid var(--surface-100, #f3f4f6);
+  }
+
+  &--unread {
+    background: var(--surface-50, #f9fafb);
+    border-left-color: var(--primary-color);
+
+    &:hover {
+      background: var(--surface-100, #f3f4f6);
+    }
+
+    .nf-item-label {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+  }
+}
+
+.nf-item-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-100, #f3f4f6);
+  color: var(--text-secondary);
+
+  i {
+    font-size: 20px;
+  }
+}
+
+// Une couleur discrète par famille d'événement — jamais d'alarme (--error-color
+// réservé à Supprimer/l'état d'erreur), pour rester sobre comme demandé.
+.nf-icon--Planning { background: rgba(0, 188, 212, 0.12); color: var(--primary-color); }
+.nf-icon--Signalement { background: rgba(255, 112, 67, 0.14); color: var(--accent-color); }
+.nf-icon--Subscribed, .nf-icon--Contrat { background: rgba(76, 175, 80, 0.14); color: var(--secondary-color); }
+.nf-icon--Redevance, .nf-icon--Retrait, .nf-icon--PaiementAgent { background: rgba(0, 96, 100, 0.12); color: var(--blue, #006064); }
+
+.nf-item-body {
+  flex: 1;
+  min-width: 0; // sans ça, un message long pousse la ligne en largeur au lieu de passer à la ligne
+}
+
+.nf-item-label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.nf-item-message {
+  margin: 2px 0 4px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.nf-item-date {
+  font-size: 0.78rem;
+  color: var(--surface-400, #9ca3af);
+}
+
+.nf-item-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--primary-color);
+  margin-top: 6px;
+}
+
+.nf-item-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.nf-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-100, #f3f4f6);
+  }
+}
+
+.nf-menu-popover {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  z-index: 5;
+  min-width: 180px;
+  background: var(--white);
+  border-radius: 10px;
+  box-shadow: var(--shadow-medium);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+
+    i {
+      font-size: 18px;
+    }
+
+    &:hover {
+      background: var(--surface-50, #f9fafb);
+    }
+  }
+
+  .nf-menu-danger {
+    color: var(--error-color);
+  }
+}
+
+.nf-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+// ── Responsive ───────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .nf-page {
+    padding: 16px 8px 48px;
+  }
+
+  .nf-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nf-tabs {
+    justify-content: stretch;
+  }
+
+  .nf-tab {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .nf-mark-all {
+    justify-content: center;
+  }
+
+  .nf-item {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .nf-item-icon {
+    width: 32px;
+    height: 32px;
+
+    i {
+      font-size: 18px;
+    }
+  }
+
+  .nf-menu-trigger {
+    width: 44px;
+    height: 44px;
+  }
+}

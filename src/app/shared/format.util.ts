@@ -29,3 +29,25 @@ export function formatFrTime(iso: string | null | undefined): string {
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
+
+/**
+ * Date relative ("il y a 10 min") — chantier Notifications. Seuils repris
+ * d'admin-dashboard.ts pour rester cohérent avec l'unique autre endroit de l'app qui
+ * affiche déjà une date relative ; au-delà de 7 jours, délègue à formatFrDateTime plutôt
+ * que d'inventer un 3e format ("il y a N semaines/mois").
+ */
+export function formatFrRelative(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+
+  const secondes = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (secondes < 60) return "à l'instant";
+  const minutes = Math.floor(secondes / 60);
+  if (minutes < 60) return `il y a ${minutes} min`;
+  const heures = Math.floor(minutes / 60);
+  if (heures < 24) return `il y a ${heures} h`;
+  const jours = Math.floor(heures / 24);
+  if (jours < 7) return `il y a ${jours} j`;
+  return formatFrDateTime(iso);
+}

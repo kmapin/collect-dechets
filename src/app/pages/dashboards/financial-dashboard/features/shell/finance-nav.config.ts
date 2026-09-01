@@ -19,5 +19,6 @@ export const FINANCE_NAV_ITEMS: FinanceNavItem[] = [
   { route: 'monthly-tracking', label: 'Suivi mensuel', icon: 'event_available', permissions: ['monthly_tracking.view'] },
   { route: 'statement', label: 'Relevé', icon: 'receipt_long', permissions: ['statements.view'] },
   { route: 'agent-payment', label: 'Paiement agents', icon: 'badge', permissions: ['agent_payments.view'] },
+  { route: 'contracts', label: 'Contrats', icon: 'description', permissions: ['contracts.view'] },
   { route: 'roles-admin', label: 'Rôles & droits', icon: 'admin_panel_settings', permissions: ['roles.view'] },
 ];

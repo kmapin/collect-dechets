@@ -15,6 +15,8 @@ export type FinancePermission =
   | 'agent_payments.view'
   | 'agent_payments.create'
   | 'agent_payments.manage'
+  | 'contracts.view'
+  | 'contracts.manage'
   | 'roles.view'
   | 'roles.manage';
 
@@ -38,6 +40,7 @@ export const PERMISSIONS_ONGLETS: OngletPermission[] = [
   { cle: 'monthly_tracking.view', label: 'Suivi mensuel', route: 'monthly-tracking' },
   { cle: 'statements.view', label: 'Relevé', route: 'statement' },
   { cle: 'agent_payments.view', label: 'Paiement agents', route: 'agent-payment' },
+  { cle: 'contracts.view', label: 'Contrats', route: 'contracts' },
   { cle: 'roles.view', label: 'Rôles & droits', route: 'roles-admin' },
 ];
 
@@ -63,6 +66,7 @@ export const GROUPES_DROITS_FINANCIERS: GroupeDroitsFinanciers[] = [
       { cle: 'agent_payments.manage', label: 'Valider / rejeter / confirmer un paiement agent' },
     ],
   },
+  { titre: 'Contrats', droits: [{ cle: 'contracts.manage', label: 'Créer / résilier / suspendre / réactiver un contrat' }] },
   { titre: 'Gouvernance', droits: [{ cle: 'roles.manage', label: "Gérer les niveaux d'accès financiers" }] },
 ];
 
@@ -78,10 +82,12 @@ export const PRESETS_ROLE: Record<Role, FinancePermission[]> = {
     'monthly_tracking.view', 'monthly_tracking.generate',
     'statements.view',
     'agent_payments.view', 'agent_payments.create',
+    'contracts.view', 'contracts.manage',
   ],
   [Role.MANAGER_TERRAIN]: [
     'dashboard.view', 'payments.view', 'clients.view',
     'monthly_tracking.view', 'statements.view', 'agent_payments.view',
+    'contracts.view',
   ],
   [Role.ADMINISTRATEUR]: PERMISSIONS_ONGLETS.map(o => o.cle).concat(
     GROUPES_DROITS_FINANCIERS.flatMap(g => g.droits.map(d => d.cle)),

@@ -1,0 +1,141 @@
+<div class="nf-shell" (click)="closeMenu()">
+  <header class="page-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Notifications</h1>
+          <p class="page-subtitle">Retrouvez ici tout ce qui concerne votre compte et vos activités.</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container nf-page">
+    <div class="card nf-toolbar">
+      <div class="nf-tabs" role="tablist" aria-label="Filtrer les notifications">
+        <button
+          type="button"
+          class="nf-tab"
+          role="tab"
+          [class.active]="filter() === 'all'"
+          [attr.aria-selected]="filter() === 'all'"
+          (click)="setFilter('all')"
+        >
+          Tout
+        </button>
+        <button
+          type="button"
+          class="nf-tab"
+          role="tab"
+          [class.active]="filter() === 'unread'"
+          [attr.aria-selected]="filter() === 'unread'"
+          (click)="setFilter('unread')"
+        >
+          Non lu
+          @if (unreadCount() > 0) {
+            <span class="nf-tab-badge">{{ unreadCount() }}</span>
+          }
+        </button>
+      </div>
+
+      <button type="button" class="btn btn-secondary nf-mark-all" [disabled]="unreadCount() === 0" (click)="markAllAsRead()">
+        <i class="material-icons">done_all</i>
+        Tout marquer comme lu
+      </button>
+    </div>
+
+    @if (state() === 'loading') {
+      <app-loading-spinner message="Chargement des notifications…" />
+    }
+
+    @if (state() === 'error') {
+      <div class="card nf-state">
+        <i class="material-icons nf-state-icon nf-state-icon--error">error_outline</i>
+        <h2>Impossible de charger vos notifications</h2>
+        <p>Une erreur est survenue. Vérifiez votre connexion et réessayez.</p>
+        <button type="button" class="btn btn-primary" (click)="reload()">Réessayer</button>
+      </div>
+    }
+
+    @if (state() === 'ready') {
+      @if (isEmpty() && filter() === 'all') {
+        <div class="card nf-state">
+          <i class="material-icons nf-state-icon">notifications_none</i>
+          <h2>Aucune notification</h2>
+          <p>Vous êtes à jour. Vos nouvelles notifications apparaîtront ici.</p>
+        </div>
+      }
+      @if (isEmpty() && filter() === 'unread') {
+        <div class="card nf-state">
+          <i class="material-icons nf-state-icon nf-state-icon--success">done_all</i>
+          <h2>Aucune notification non lue</h2>
+          <p>Vous êtes à jour.</p>
+          <button type="button" class="btn btn-secondary" (click)="setFilter('all')">Voir tout</button>
+        </div>
+      }
+
+      @if (!isEmpty()) {
+        <ul class="card nf-list">
+          @for (item of items(); track item._id) {
+            <li
+              class="nf-item"
+              [class.nf-item--unread]="!item.read"
+              (click)="open(item)"
+            >
+              <span class="nf-item-icon" [ngClass]="'nf-icon--' + item.type">
+                <i class="material-icons">{{ typeIcon(item.type) }}</i>
+              </span>
+
+              <div class="nf-item-body">
+                <span class="nf-item-label">{{ typeLabel(item.type) }}</span>
+                <p class="nf-item-message">{{ item.message }}</p>
+                <span class="nf-item-date" [title]="formatFull(item.createdAt)">{{ formatRelative(item.createdAt) }}</span>
+              </div>
+
+              @if (!item.read) {
+                <span class="nf-item-dot" aria-hidden="true"></span>
+              }
+
+              <div class="nf-item-menu">
+                <button
+                  type="button"
+                  class="nf-menu-trigger"
+                  aria-label="Actions"
+                  (click)="toggleMenu(item, $event)"
+                >
+                  <i class="material-icons">more_vert</i>
+                </button>
+                @if (openMenuId() === item._id) {
+                  <div class="nf-menu-popover" (click)="$event.stopPropagation()">
+                    @if (!item.read) {
+                      <button type="button" (click)="markRead(item, $event)">
+                        <i class="material-icons">done</i>
+                        Marquer comme lu
+                      </button>
+                    }
+                    <button type="button" class="nf-menu-danger" (click)="remove(item, $event)">
+                      <i class="material-icons">delete_outline</i>
+                      Supprimer
+                    </button>
+                  </div>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+
+        @if (hasMore()) {
+          <div class="nf-load-more">
+            <button type="button" class="btn btn-secondary" [disabled]="loadingMore()" (click)="loadMore()">
+              @if (loadingMore()) {
+                Chargement…
+              } @else {
+                Voir plus
+              }
+            </button>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>

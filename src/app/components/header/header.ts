@@ -1,12 +1,15 @@
-import { Component, OnInit, OnDestroy, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ElementRef, ChangeDetectorRef, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { User,RegisterUserData, UserRole } from '../../models/user.model';
+import { User,RegisterUserData } from '../../models/user.model';
 import { NotificationService } from '../../services/notification.service';
-import { Webstockets, SocketNotification } from '../../core/services/webstockets';
+import { Webstockets } from '../../core/services/webstockets';
+import { NotificationItem, notificationTypeLabel } from '../../models/notification.model';
+import { resolveNotificationNavigation, dashboardRouteForRole } from '../../shared/notification-route.util';
 import { MatIconModule } from '@angular/material/icon';
-import { filter, interval, Subscription, switchMap } from 'rxjs';
+import { filter, Subscription } from 'rxjs';
 @Component({
   selector: 'app-header',
   imports: [CommonModule, RouterModule, MatIconModule],
@@ -20,10 +23,16 @@ export class Header  implements OnInit, OnDestroy {
   isMobileMenuOpen = false;
   isScrolled = false;
   showNotifications = false;
-    private refreshSub!: Subscription;
     private newNotificationSub?: Subscription;
     private routerEventsSub?: Subscription;
-  notifications: any[] = [];
+  notifications: NotificationItem[] = [];
+  // Chantier "Notifications" (inbox réelle) : source unique du compteur non-lu,
+  // partagée avec la page /notifications — plus de recalcul local à partir de la
+  // seule liste chargée dans ce dropdown (qui ne voit de toute façon plus tout
+  // l'historique). Le template continue d'appeler `unreadCount()` sans changement,
+  // un signal étant lui aussi invocable comme une fonction.
+  readonly unreadCount = toSignal(inject(NotificationService).unreadCount$, { initialValue: 0 });
+
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -53,13 +62,12 @@ export class Header  implements OnInit, OnDestroy {
     // la répercute ici en direct, sans attendre un refresh manuel. Le contrat
     // socket (`joinRoom(userId)` + écoute `newNotification`) est déjà correct
     // côté `auth.service.ts`/`webstockets.ts` — rien à changer là.
-    this.newNotificationSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
-      if (this.notifications.some((n) => n._id === (notification as any)._id)) return;
+    this.newNotificationSub = this.websocketService.onNewNotification().subscribe((notification: NotificationItem) => {
+      if (this.notifications.some((n) => n._id === notification._id)) return;
       this.notifications = [notification, ...this.notifications];
       this.cdr.detectChanges();
     });
 
-    // this.startAutoRefresh();
     this.cdr.detectChanges();
 
     // Filet de sécurité générique : ferme le menu mobile dès qu'une navigation aboutit,
@@ -74,7 +82,6 @@ export class Header  implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.refreshSub) this.refreshSub.unsubscribe();
     if (this.newNotificationSub) this.newNotificationSub.unsubscribe();
     if (this.routerEventsSub) this.routerEventsSub.unsubscribe();
   }
@@ -84,23 +91,12 @@ export class Header  implements OnInit, OnDestroy {
     this.isScrolled = window.pageYOffset > 50;
   }
 
+  // Chantier "Notifications" : délègue à la même fonction que la page /notifications
+  // (notification-route.util.ts) — une seule copie du mapping rôle→dashboard, pour
+  // qu'elles ne puissent jamais diverger (l'ancien switch en dur ici avait dérivé,
+  // voir navigateToNotification ci-dessous).
   getDashboardRoute(): string {
-    if (!this.currentUser) return '/';
-
-    switch (this.currentUser.role) {
-      case UserRole.CLIENT:
-        return '/dashboard/client';
-      case UserRole.MANAGER:
-        return '/dashboard/agency';
-      case UserRole.COLLECTOR:
-        return '/dashboard/collector';
-      case UserRole.MUNICIPALITY:
-        return '/dashboard/municipality';
-      case UserRole.SUPER_ADMIN:
-        return '/dashboard/admin';
-      default:
-        return '/';
-    }
+    return dashboardRouteForRole(this.currentUser?.role ?? null);
   }
 
   getRoleLabel(role: string): string {
@@ -116,10 +112,6 @@ export class Header  implements OnInit, OnDestroy {
     this.showNotifications = !this.showNotifications;
   }
 
-  // markAllAsRead(event: Event): void {
-  //   event.stopPropagation();
-
-  // }
   logout(): void {
     localStorage.clear()
    
@@ -157,53 +149,33 @@ export class Header  implements OnInit, OnDestroy {
   }
 
   getNotificationType(type: string): string {
-    const types: { [key: string]: string } = {
-      'Subscribed': 'Abonnement',
-      // 'Unsubscribed' n'est plus (et n'a jamais été) une valeur émise par le
-      // backend (absente de l'enum `Notification.type`) — laissée par prudence
-      // pour d'éventuelles notifications déjà en base sous cet ancien type,
-      // coût de maintien nul (Phase 4/5, CONCEPTION_ABONNEMENT_CONTRAT.md).
-      'Unsubscribed': 'Désabonnement',
-      'Assingnment': 'Affectation',
-      'Planning': 'Collecte programmée',
-      'AgencyAdd': 'Agence ajoutée',
-      'Signalement': 'Signalement',
-      'Contrat': 'Contrat',
-
-    };
-    return types[type] || type;
+    return notificationTypeLabel(type);
   }
   loadNotifications(): void {
-    const userId = this.currentUser?._id;
-    if (!userId) {
-      console.warn('UUID utilisateur introuvable.');
-      return;
-    }
-    this.notificationService.getAllNotificationsAgency$(userId).subscribe({
-      next: (data: any) => {
-        console.log('Notifications reçues :', data);
-        this.notifications = data;
+    if (!this.currentUser) return;
+    // Un dropdown n'a pas besoin de tout l'historique — la page /notifications gère
+    // la pagination complète ; les 10 plus récentes suffisent ici.
+    this.notificationService.getMyNotifications$({ page: 1, pageSize: 10 }).subscribe({
+      next: (result) => {
+        this.notifications = result.items;
       },
       error: (err) => {
         console.error('Erreur lors du chargement des notifications :', err);
       }
     });
-
+    this.notificationService.refreshUnreadCount();
   }
-unreadCount(): number {
-  return this.notifications.filter(n => !n.read).length;
-}
 
 markAsRead(notifId: string): void {
   const notif = this.notifications.find(n => n._id === notifId);
 
   if (notif && !notif.read) {
-    this.notificationService.markNotificationAsRead$(notifId).subscribe({
+    this.notificationService.markAsRead$(notifId).subscribe({
       next: () => {
         notif.read = true;
-      
+
       },
-      error: (err) => {
+      error: (err: unknown) => {
         console.error(`Erreur lors du marquage comme lu de la notification ${notifId} :`, err);
       }
     });
@@ -211,22 +183,19 @@ markAsRead(notifId: string): void {
 }
 
 
-  //  markAllAsRead(event: Event): void {
-  //     event.stopPropagation(); 
+  markAllAsRead(event: Event): void {
+    event.stopPropagation();
+    this.notificationService.markAllAsRead$().subscribe({
+      next: () => {
+        this.notifications = this.notifications.map(n => ({ ...n, read: true }));
+      },
+      error: (err) => {
+        console.error('Erreur lors du marquage global comme lu :', err);
+        this.notificationService.showError('Erreur', 'Impossible de marquer toutes les notifications comme lues.');
+      },
+    });
+  }
 
-  //     const unreadNotifications = this.notifications.filter(n => !n.read);
-
-  //     unreadNotifications.forEach(notif => {
-  //       this.notificationService.markNotificationAsRead$(notif.id).subscribe({
-  //         next: () => {
-  //           notif.read = true; 
-  //         },
-  //         error: (err) => {
-  //           console.error(`Erreur pour la notif ${notif.id} :`, err);
-  //         }
-  //       });
-  //     });
-  //   }
   isDeleting = false;
 
   deleteNotification(notificationId: string): void {
@@ -265,30 +234,7 @@ markAsRead(notifId: string): void {
     }
   }
 
-startAutoRefresh(): void {
-    const userId = this.currentUser?.id;
-    if (!userId) {
-      console.warn('UUID utilisateur introuvable.');
-      return;
-    }
-
-    // Rafraîchir toutes les  secondes
-    this.refreshSub = interval(5000)
-      .pipe(
-        switchMap(() => this.notificationService.getAllNotificationsAgency$(userId))
-      )
-      .subscribe({
-        next: (data: any) => {
-          console.log('Notifications reçues :', data);
-          this.notifications = data.notifications;
-        },
-        error: (err) => {
-          console.error('Erreur lors du chargement des notifications :', err);
-        }
-      });
-  }
-
-navigateToNotification(notif: any): void {
+navigateToNotification(notif: NotificationItem): void {
   if (!notif || !notif.type) {
     console.warn('Type de notification introuvable.');
     return;
@@ -298,42 +244,13 @@ navigateToNotification(notif: any): void {
   if (!notif.read) {
     this.markAsRead(notif._id);
   }
-  const userRole = this.currentUser?.role?.toLowerCase();
-  switch (notif.type.toLowerCase()) {
-    case 'signalement':
-      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
-        fragment: 'reports',
-        queryParams: { source: 'notification' }
-      });
-      break;
-    case 'planning':
-      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
-        fragment: 'schedules',
-        queryParams: { source: 'notification' }
-      });
-      break;
-    case 'zones':
-      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
-        fragment: 'zones',
-        queryParams: { source: 'notification' }
-      });
-      break;
-    case 'subscribed':
-      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
-        fragment: 'clients',
-        queryParams: { source: 'notification' }
-      });
-      break;
-    case 'employee':
-      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`], { 
-        fragment: 'employees',
-        queryParams: { source: 'notification' }
-      });
-      break;
-    default:
-      this.router.navigate([`/dashboard/${userRole==='manager' ? 'agency' : userRole}`]);
-      break;
-  }
+
+  // Source UNIQUE de décision de routage — partagée avec la page /notifications
+  // (chantier "Notifications"). Corrige au passage un bug réel : l'ancien switch en
+  // dur construisait `/dashboard/super_admin` (inexistant, 404 silencieux) au lieu
+  // de `/dashboard/admin` — getDashboardRoute() est déjà correcte pour les 5 rôles.
+  const nav = resolveNotificationNavigation(notif, this.getDashboardRoute(), this.currentUser?.role ?? null);
+  this.router.navigate(nav.commands, nav.extras);
 }
 }
 

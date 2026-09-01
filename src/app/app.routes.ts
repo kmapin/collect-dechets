@@ -171,6 +171,15 @@ export const routes: Routes = [
   },
 
   {
+    canActivate: [authGuard],
+    path: "notifications",
+    loadComponent: () =>
+      import("./pages/notifications/notifications").then(
+        (c) => c.NotificationsComponent,
+      ),
+  },
+
+  {
     // Chantier Frais plateforme (Prompt F8/9) — réservé au Super Admin
     // (feeConfigAdminGuard, pas adminOrManagerGuard : voir son commentaire
     // pour le bug de court-circuit qu'il évite).

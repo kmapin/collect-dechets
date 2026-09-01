@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject, Observable } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
+import { NotificationItem } from '../../models/notification.model';
 
 export interface SocketMessage {
   _id: string;
@@ -11,18 +12,15 @@ export interface SocketMessage {
   content: string;
   read?: boolean;
   created_at: Date;
-  updated_at: Date; 
+  updated_at: Date;
 }
 
-export interface SocketNotification {
-  _id: string;
-  user_id: string;
-  type: string;
-  title: string;
-  message: string;
-  read: boolean;
-  created_at: Date;
-}
+// Chantier Notifications : l'ancienne interface `SocketNotification` déclarée ici
+// (`user_id`/`created_at`/`title`) ne correspondait à AUCUN champ réel du document
+// backend (`models/Notification.js` a `user`/`createdAt`, jamais de `title`) — remplacée
+// par le vrai modèle partagé `NotificationItem`, alias gardé pour ne pas casser un import
+// existant ailleurs.
+export type SocketNotification = NotificationItem;
 
 @Injectable({
   providedIn: 'root',
@@ -40,6 +38,7 @@ export class Webstockets {
   private newNotification$ = new Subject<SocketNotification>();
   private notificationRead$ = new Subject<{ id: string }>();
   private notificationDeleted$ = new Subject<{ id: string }>();
+  private allNotificationsRead$ = new Subject<{ modifiedCount: number }>();
 
   constructor() {
     // Initialiser le socket mais ne pas se connecter automatiquement
@@ -146,6 +145,11 @@ export class Webstockets {
       console.log(' Notification supprimée:', data);
       this.notificationDeleted$.next(data);
     });
+
+    this.socket.on('allNotificationsRead', (data: { modifiedCount: number }) => {
+      console.log(' Toutes les notifications marquées comme lues:', data);
+      this.allNotificationsRead$.next(data);
+    });
   }
 
   /**
@@ -229,6 +233,10 @@ export class Webstockets {
 
   onNotificationDeleted(): Observable<{ id: string }> {
     return this.notificationDeleted$.asObservable();
+  }
+
+  onAllNotificationsRead(): Observable<{ modifiedCount: number }> {
+    return this.allNotificationsRead$.asObservable();
   }
 
   // ============================================================

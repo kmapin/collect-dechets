@@ -427,6 +427,38 @@
   font-style: italic;
 }
 
+/* Chantier "Notifications" (inbox réelle) */
+.mark-all-read-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.mark-all-read-btn:hover {
+  background: rgba(0, 188, 212, 0.08);
+}
+
+.dropdown-footer {
+  display: block;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-color);
+  border-top: 1px solid #e5e7eb;
+  text-decoration: none;
+}
+
+.dropdown-footer:hover {
+  background: rgba(0, 188, 212, 0.08);
+}
+
 .dropdown-header {
   padding: 16px;
   border-bottom: 1px solid var(--medium-gray);

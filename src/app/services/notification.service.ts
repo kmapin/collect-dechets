@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { Subject, Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { Webstockets, SocketNotification } from '../core/services/webstockets';
+import { Webstockets } from '../core/services/webstockets';
+import { NotificationItem, NotificationPage, UnreadCountResponse, notificationTypeLabel } from '../models/notification.model';
 
 export interface NotificationI {
   id: string;
@@ -24,14 +25,22 @@ export interface NotificationAction {
 export class NotificationService {
   private notificationSubject = new Subject<NotificationI>();
   public notifications$ = this.notificationSubject.asObservable();
-  
-  // Sujets pour les notifications depuis le backend
-  private realtimeNotificationsSubject = new BehaviorSubject<SocketNotification[]>([]);
-  public realtimeNotifications$ = this.realtimeNotificationsSubject.asObservable();
-  
+
+  // Chantier "Notifications" (inbox réelle) : source UNIQUE du compteur non-lu,
+  // partagée par la cloche du header et la page /notifications. Amorcée par
+  // refreshUnreadCount() (GET /unread-count, valeur autoritaire), puis ajustée
+  // uniquement par les événements socket ci-dessous — jamais de décrément local en
+  // plus de l'écho socket (double comptage sinon), ce qui est sûr maintenant que
+  // chaque route notification n'émet plus qu'à la room de son propriétaire réel.
+  // L'ancien `realtimeNotificationsSubject`/`realtimeNotifications$` (0 consommateur,
+  // 3e liste parallèle jamais lue) a été supprimé plutôt que branché : header.ts et la
+  // page /notifications tiennent chacun leur propre liste, une liste de plus dans ce
+  // service aurait été exactement la duplication de source de vérité à éviter.
   private unreadCountSubject = new BehaviorSubject<number>(0);
   public unreadCount$ = this.unreadCountSubject.asObservable();
-  
+
+  private readonly notificationsBase = `${environment.apiUrl}/notifications`;
+
   constructor(
     private http: HttpClient,
     private websocketService: Webstockets
@@ -43,53 +52,38 @@ export class NotificationService {
    * Configure les listeners pour les événements WebSocket en temps réel
    */
   private setupWebSocketListeners(): void {
-    // Écouter les nouvelles notifications
-    this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
-      console.log(' Nouvelle notification reçue via WebSocket:', notification);
-      
-      // Ajouter la notification à la liste
-      const currentNotifications = this.realtimeNotificationsSubject.value;
-      this.realtimeNotificationsSubject.next([notification, ...currentNotifications]);
-      
-      // Incrémenter le compteur de non lus
+    // Nouvelle notification — incrémente le compteur (si non lue) et affiche un toast.
+    // NOTIFICATION_TYPE_LABELS remplace `notification.title`, qui n'a jamais existé sur
+    // le vrai document backend (seul `message` existe) — corrige un bug réel : le toast
+    // affichait `undefined` comme titre depuis la mise en place de ce listener.
+    this.websocketService.onNewNotification().subscribe((notification: NotificationItem) => {
       if (!notification.read) {
         this.unreadCountSubject.next(this.unreadCountSubject.value + 1);
       }
-      
-      // Afficher une notification toast
-      this.showInfo(notification.title, notification.message);
+      this.showInfo(notificationTypeLabel(notification.type), notification.message);
     });
 
-    // Écouter les notifications lues
-    this.websocketService.onNotificationRead().subscribe(({ id }) => {
-      console.log('👁️ Notification lue via WebSocket:', id);
-      
-      // Mettre à jour le statut de la notification
-      const currentNotifications = this.realtimeNotificationsSubject.value;
-      const updatedNotifications = currentNotifications.map(notif =>
-        notif._id === id ? { ...notif, read: true } : notif
-      );
-      this.realtimeNotificationsSubject.next(updatedNotifications);
-      
-      // Décrémenter le compteur de non lus
+    this.websocketService.onNotificationRead().subscribe(() => {
       this.unreadCountSubject.next(Math.max(0, this.unreadCountSubject.value - 1));
     });
 
-    // Écouter les notifications supprimées
-    this.websocketService.onNotificationDeleted().subscribe(({ id }) => {
-      console.log(' Notification supprimée via WebSocket:', id);
-      
-      // Retirer la notification de la liste
-      const currentNotifications = this.realtimeNotificationsSubject.value;
-      const notification = currentNotifications.find(n => n._id === id);
-      
-      const filteredNotifications = currentNotifications.filter(notif => notif._id !== id);
-      this.realtimeNotificationsSubject.next(filteredNotifications);
-      
-      // Décrémenter le compteur si la notification était non lue
-      if (notification && !notification.read) {
-        this.unreadCountSubject.next(Math.max(0, this.unreadCountSubject.value - 1));
-      }
+    // Une notification supprimée peut être plus ancienne que la session (pas dans un
+    // état local qu'on pourrait consulter pour savoir si elle était non lue) — un
+    // re-fetch du compteur autoritaire est plus sûr qu'un delta local ici.
+    this.websocketService.onNotificationDeleted().subscribe(() => {
+      this.refreshUnreadCount();
+    });
+
+    this.websocketService.onAllNotificationsRead().subscribe(() => {
+      this.unreadCountSubject.next(0);
+    });
+  }
+
+  /** Recharge le compteur non-lu depuis le backend (valeur autoritaire). */
+  refreshUnreadCount(): void {
+    this.getMyUnreadCount$().subscribe({
+      next: res => this.unreadCountSubject.next(res.count),
+      error: () => {},
     });
   }
 
@@ -133,21 +127,29 @@ export class NotificationService {
 
     this.notificationSubject.next(notification);
   }
-      getAllNotificationsAgency$(userId: string): Observable<any[]> {
-      const url=`${environment.apiUrl}/notifications/${userId}`;
-      console.log("URL de la requête :", url); 
-      return this.http.get<any[]>(url);
-  
-    }
-    //marquer un message comme lu 
-    markNotificationAsRead$(notificationId: string): Observable<any> {
-        const url = `${environment.apiUrl}/notifications/update/${notificationId}`;
-        return this.http.put(url, notificationId);
-    }
 
-    //suppressin d une notification
-    deleteNotification$(notificationId: string): Observable<any> {
-      const url = `${environment.apiUrl}/notifications/delete/${notificationId}`;
-      return this.http.delete(url);
+  // ── API réelle (inbox) — identité toujours dérivée du JWT côté serveur, jamais
+  // d'id utilisateur transmis dans l'URL (voir routes/notification.route.js). ──────
+
+  getMyNotifications$(opts: { page?: number; pageSize?: number; read?: boolean } = {}): Observable<NotificationPage> {
+    let url = `${this.notificationsBase}?page=${opts.page ?? 1}&pageSize=${opts.pageSize ?? 20}`;
+    if (opts.read === true || opts.read === false) url += `&read=${opts.read}`;
+    return this.http.get<NotificationPage>(url);
+  }
+
+  getMyUnreadCount$(): Observable<UnreadCountResponse> {
+    return this.http.get<UnreadCountResponse>(`${this.notificationsBase}/unread-count`);
+  }
+
+  markAsRead$(notificationId: string): Observable<{ data: boolean; message: string }> {
+    return this.http.put<{ data: boolean; message: string }>(`${this.notificationsBase}/update/${notificationId}`, {});
+  }
+
+  markAllAsRead$(): Observable<{ data: boolean; modifiedCount: number; message: string }> {
+    return this.http.patch<{ data: boolean; modifiedCount: number; message: string }>(`${this.notificationsBase}/read-all`, {});
+  }
+
+  deleteNotification$(notificationId: string): Observable<{ data: boolean; message: string }> {
+    return this.http.delete<{ data: boolean; message: string }>(`${this.notificationsBase}/delete/${notificationId}`);
   }
 }

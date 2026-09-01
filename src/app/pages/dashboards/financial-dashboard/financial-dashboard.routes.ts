@@ -111,6 +111,15 @@ export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
         title: 'Paiement agents',
       },
       {
+        // Onglet "Contrats" — déplacé depuis agency-dashboard (chantier "Contrats ->
+        // dashboard financier"), désormais soumis au RBAC réel de ce module.
+        path: 'contracts',
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['contracts.view'] },
+        loadComponent: () => import('./features/contracts/contracts.component').then(m => m.ContractsComponent),
+        title: 'Contrats',
+      },
+      {
         // F11 admin — RBAC financier réel : clé 'roles.view', implicite pour
         // Role.ADMINISTRATEUR (voir PERMISSIONS_GOUVERNANCE), assignable en lecture seule
         // à un autre rôle par un administrateur (setPermissions).
