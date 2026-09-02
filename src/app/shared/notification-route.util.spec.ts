@@ -68,11 +68,10 @@ describe('notification-route.util', () => {
       });
     });
 
-    it('manager + Contrat -> /dashboard/agency?tab=contrats (onglet dédié, plus précis que la liste clients finance)', () => {
+    it('manager + Contrat -> /dashboard/financial/contracts (chantier "Contrats -> dashboard financier", onglet réel)', () => {
       const notif = { type: 'Contrat' as const, target: null };
       expect(resolveNotificationNavigation(notif, '/dashboard/agency', 'manager')).toEqual({
-        commands: ['/dashboard/agency'],
-        extras: { queryParams: { tab: 'contrats', source: 'notification' } },
+        commands: ['/dashboard/financial/contracts'],
       });
     });
 
@@ -83,10 +82,10 @@ describe('notification-route.util', () => {
       });
     });
 
-    it('super_admin + Contrat -> /dashboard/financial/clients (mécanisme d\'onglet non applicable, dashboard différent)', () => {
+    it('super_admin + Contrat -> /dashboard/financial/contracts (même onglet réel, sans dépendre du mécanisme ?tab= agence)', () => {
       const notif = { type: 'Contrat' as const, target: null };
       expect(resolveNotificationNavigation(notif, '/dashboard/admin', 'super_admin')).toEqual({
-        commands: ['/dashboard/financial/clients'],
+        commands: ['/dashboard/financial/contracts'],
       });
     });
 

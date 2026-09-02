@@ -27,15 +27,16 @@ export function dashboardRouteForRole(role: string | null | undefined): string {
 // `#employees`/`#zones`) qui ne ciblait AUCUN élément existant dans AUCUN template de
 // l'app (grep exhaustif sur tout `src/app`) : ce fragment n'a jamais fait quoi que ce
 // soit. `TabId` réel (agency-dashboard.ts) : collections|employees|zones|schedules|
-// reports|demandes|messages|vehicles|contrats|avis — PAS "clients" (délibérément
-// commenté dans son propre code, aucun onglet client n'existe côté agence).
+// reports|demandes|messages|vehicles|avis — PAS "clients" (délibérément commenté dans
+// son propre code, aucun onglet client n'existe côté agence), et PAS "contrats" depuis
+// le chantier "Contrats -> dashboard financier" (onglet retiré d'agency-dashboard,
+// déplacé vers /dashboard/financial/contracts — voir l'étape 3 ci-dessous).
 // Seul le rôle `manager` atterrit sur `/dashboard/agency` ; ce mapping n'est donc
 // appliqué que pour ce rôle (le dashboard `super_admin` est un composant différent,
 // non vérifié, hors périmètre de cette table).
 const AGENCY_TAB_BY_TYPE: Record<string, string> = {
   Signalement: 'reports',
   Planning: 'schedules',
-  Contrat: 'contrats',
 };
 
 /**
@@ -75,17 +76,20 @@ export function resolveNotificationNavigation(
   // 3. Onglets réels et précis du dashboard financier (financial-dashboard), pour le
   // personnel finance-habilité — un manager/super_admin sans droit financier atterrira
   // sur l'écran "Accès restreint" (financeAccessGuard/financePermissionGuard), un
-  // résultat honnête, jamais un échec silencieux.
+  // résultat honnête, jamais un échec silencieux. Contrat : chantier "Contrats ->
+  // dashboard financier" (onglet réel /dashboard/financial/contracts, clé de
+  // permission 'contracts.view' — remplace l'ancien ?tab=contrats d'agency-dashboard,
+  // retiré).
   if (role === 'manager' || role === 'super_admin') {
     if (notif.type === 'Retrait') return { commands: ['/dashboard/financial/withdrawals'] };
     if (notif.type === 'PaiementAgent') return { commands: ['/dashboard/financial/agent-payment'] };
+    if (notif.type === 'Contrat') return { commands: ['/dashboard/financial/contracts'] };
   }
 
   // 4. Onglet réel du dashboard agence (?tab=, mécanisme vérifié — voir commentaire de
   // AGENCY_TAB_BY_TYPE), pour un manager. Couvre Signalement/Planning (sans target,
-  // c.-à-d. avant qu'un vrai Planning n'existe) et Contrat (onglet "Contrats" dédié,
-  // plus précis que la liste clients du dashboard financier ci-dessous et accessible
-  // sans droit financier particulier).
+  // c.-à-d. avant qu'un vrai Planning n'existe) — Contrat est traité à l'étape 3
+  // ci-dessus, plus dans cette table.
   if (role === 'manager' && dashboardRoute === '/dashboard/agency' && AGENCY_TAB_BY_TYPE[notif.type]) {
     return {
       commands: [dashboardRoute],
@@ -93,10 +97,10 @@ export function resolveNotificationNavigation(
     };
   }
 
-  // 5. Repli restant pour Subscribed/Contrat côté personnel (pas d'onglet "abonnements"
-  // dans le dashboard agence, et cas super_admin non couvert par l'étape 4) — la liste
-  // clients du dashboard financier reste le meilleur repli réel disponible.
-  if ((role === 'manager' || role === 'super_admin') && (notif.type === 'Subscribed' || notif.type === 'Contrat')) {
+  // 5. Repli restant pour Subscribed côté personnel (pas d'onglet "abonnements" dans le
+  // dashboard agence) — la liste clients du dashboard financier reste le meilleur repli
+  // réel disponible. Contrat ne passe plus jamais par ici (traité à l'étape 3).
+  if ((role === 'manager' || role === 'super_admin') && notif.type === 'Subscribed') {
     return { commands: ['/dashboard/financial/clients'] };
   }
 

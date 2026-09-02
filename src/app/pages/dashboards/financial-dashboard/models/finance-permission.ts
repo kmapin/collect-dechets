@@ -33,7 +33,7 @@ export interface OngletPermission {
 }
 
 export const PERMISSIONS_ONGLETS: OngletPermission[] = [
-  { cle: 'dashboard.view', label: 'Tableau de bord', route: 'statistiques' },
+  { cle: 'dashboard.view', label: 'Statistiques', route: 'statistiques' },
   { cle: 'payments.view', label: 'Paiements', route: 'payments' },
   { cle: 'withdrawals.view', label: 'Retraits', route: 'withdrawals' },
   { cle: 'clients.view', label: 'Clients', route: 'clients' },
