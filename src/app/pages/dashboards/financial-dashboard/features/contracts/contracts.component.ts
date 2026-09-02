@@ -285,14 +285,16 @@ export class ContractsComponent {
     });
   }
 
-  // `AgencyService.getAgencyAllTarifs$` renvoie déjà `Observable<Tarif[]>` (pas
-  // `{data: Tarif[]}` — la version d'agency-dashboard.ts lisait `response.data`, un bug
-  // préexistant sans effet visible, corrigé ici, pas reproduit).
+  // Le typage `Observable<Tarif[]>` de `AgencyService.getAgencyAllTarifs$` ne correspond
+  // pas à la réponse réelle du serveur : `getPricingsController` renvoie
+  // `{success, data: Tarif[]}` (routes/pricingAgency.js), jamais un tableau nu — tous les
+  // autres appelants (agency-dashboard.ts, agencies.ts, agency-details.ts) lisent déjà
+  // `response.data`, ce n'était pas un bug à corriger.
   private chargerTarifs(): void {
     const agencyId = this.agencyId();
     if (!agencyId) return;
     this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
-      next: (tarifs: Tarif[]) => this.tariffs.set(tarifs ?? []),
+      next: (response: any) => this.tariffs.set(response?.data ?? []),
       error: () => this.tariffs.set([]),
     });
   }
