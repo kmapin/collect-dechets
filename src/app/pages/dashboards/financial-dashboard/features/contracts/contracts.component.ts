@@ -21,7 +21,7 @@ import { badgeContrat } from '../../shared/status-badge/status-badge.util';
 
 // Onglet "Contrats" — déplacé depuis agency-dashboard.ts (chantier "Contrats -> dashboard
 // financier") vers ce module, désormais soumis à son RBAC réel (clés `contracts.view`/
-// `contracts.manage`, voir models/finance-permission.ts). Réutilise directement
+// `contracts.create`/`contracts.manage`, voir models/finance-permission.ts). Réutilise directement
 // `ContratService`/`RedevanceService` (`src/app/services/...`, `providedIn:'root'`) — même
 // précédent déjà établi par `client-sheet/tabs/subscription-tab.component.ts` pour ce même
 // domaine, plutôt qu'un nouveau triplet contract/token/http (aucun des 5 domaines
@@ -43,9 +43,13 @@ export class ContractsComponent {
   private readonly notificationService = inject(NotificationService);
 
   // Profondeur de défense (cosmétique) : le serveur refuse déjà les mutations sans
-  // 'contracts.manage' (requireFinancePermission) — masquer les actions évite juste un
-  // aller-retour inutile pour un utilisateur qui n'a que 'contracts.view'.
+  // 'contracts.create'/'contracts.manage' (requireFinancePermission) — masquer les actions
+  // évite juste un aller-retour inutile pour un utilisateur qui n'a que 'contracts.view'.
+  // Deux droits distincts (retour utilisateur, gestion des accès) : créer un contrat
+  // (POST /) est accordable indépendamment de résilier/suspendre/réactiver/générer le
+  // document (toujours 'contracts.manage', voir routes/contratRoute.js).
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
+  readonly peutCreer = computed(() => aLaPermission(this.currentUser(), 'contracts.create'));
   readonly peutGerer = computed(() => aLaPermission(this.currentUser(), 'contracts.manage'));
 
   readonly badgeContrat = badgeContrat;
