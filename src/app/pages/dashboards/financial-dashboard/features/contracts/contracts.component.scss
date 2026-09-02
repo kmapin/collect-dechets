@@ -122,13 +122,19 @@
   }
 
   // ── Drawers (redevances / nouveau contrat) ──────────────────────────────
+  // z-index 9999 (pas 50) : le bandeau d'en-tête global de l'app (.page-header,
+  // app.component.ts) est fixe en z-index 1000 et masquait l'en-tête de ce drawer,
+  // lui aussi positionné en inset:0 — même correctif que agent-payment.component.scss
+  // (même bug, signalé par capture d'écran sur ce drawer précis). 9999 aligne ce
+  // drawer sur .confirm-dialog-overlay (admin-dashboard.scss), déjà au-dessus de
+  // tout sauf le toast global (10001, voir notification.css).
   &__drawer-overlay {
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.45);
     display: flex;
     justify-content: flex-end;
-    z-index: 50;
+    z-index: 9999;
   }
 
   &__drawer {

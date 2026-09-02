@@ -29,13 +29,16 @@
 }
 
 // ── Add-team drawer (same pattern as team-members) ───────────
+// z-index 9999/10000 (pas 200/201) : le bandeau d'en-tête global de l'app
+// (.page-header, app.component.ts, z-index:1000) masquait ce drawer — même bug
+// et même correctif qu'agent-payment.component.scss/contracts.component.scss.
 .tmd-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.35);
-  z-index: 200; backdrop-filter: blur(2px);
+  z-index: 9999; backdrop-filter: blur(2px);
 }
 .tmd-drawer {
   position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 100vw;
-  background: #fff; z-index: 201; display: flex; flex-direction: column;
+  background: #fff; z-index: 10000; display: flex; flex-direction: column;
   box-shadow: -4px 0 32px rgba(0,0,0,.15);
 }
 .tmd-head {

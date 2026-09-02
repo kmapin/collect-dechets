@@ -668,6 +668,10 @@
 }
 
 /* Modal backdrop */
+/* z-index 9999 (pas 999) : le bandeau d'en-tête global de l'app (.page-header,
+   app.component.ts, z-index:1000) pouvait légèrement transparaître au-dessus de ce
+   fond assombri — même correctif qu'agent-payment.component.scss/contracts.
+   component.scss (backdrop -> 9999, contenu -> 10000 juste en dessous). */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -675,7 +679,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 9999;
 }
 
 /* Modal content */
@@ -687,7 +691,7 @@
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  z-index: 9999;
 }
 
 /* Contenu du modal */
@@ -704,7 +708,7 @@
   width: 90%;
   /* responsive */
   max-height: 80vh;
-  z-index: 1000;
+  z-index: 10000;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;

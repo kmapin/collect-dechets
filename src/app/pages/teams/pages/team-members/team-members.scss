@@ -385,12 +385,17 @@ $ease:     cubic-bezier(.4,0,.2,1);
 }
 
 // ── Add member drawer ─────────────────────────────────────────────
+// z-index 9999/10000 (pas 300/400) : le bandeau d'en-tête global de l'app
+// (.page-header, app.component.ts) est fixe en z-index 1000 et masquait l'en-tête
+// de ce drawer (.tmd-head) — même bug que agent-payment.component.scss/
+// contracts.component.scss, même correctif (aligné sur .confirm-dialog-overlay,
+// admin-dashboard.scss). L'écart de 1 entre overlay et drawer est conservé.
 .drawer-overlay {
-  position:fixed; inset:0; background:rgba(15,23,42,.35); z-index:300;
+  position:fixed; inset:0; background:rgba(15,23,42,.35); z-index:9999;
   animation:fadeIn .2s $ease;
 }
 .tm-drawer {
-  position:fixed; top:0; right:0; bottom:0; width:400px; max-width:100vw; z-index:400;
+  position:fixed; top:0; right:0; bottom:0; width:400px; max-width:100vw; z-index:10000;
   background:$card; box-shadow:-8px 0 48px rgba(0,0,0,.16);
   display:flex; flex-direction:column;
   transform:translateX(100%); transition:transform .28s $ease;
@@ -556,15 +561,18 @@ $ease:     cubic-bezier(.4,0,.2,1);
   mat-icon { font-size: 13px; }
 }
 // ── Vehicle modal ────────────────────────────────────────────────
+// z-index 9999/10000 (pas 400/401) : le bandeau d'en-tête global de l'app
+// (.page-header, app.component.ts, z-index:1000) masquait ce modal — même bug
+// et même correctif qu'agent-payment.component.scss/contracts.component.scss.
 .vm-bg {
-  position:fixed; inset:0; background:rgba(15,23,42,.4); z-index:400;
+  position:fixed; inset:0; background:rgba(15,23,42,.4); z-index:9999;
   animation:fadeIn .18s $ease;
 }
 .vm-modal {
   position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
   width:min(440px, 96vw); max-height:80vh;
   background:$card; border-radius:20px; box-shadow:0 24px 64px rgba(0,0,0,.2);
-  z-index:401; overflow:hidden; display:flex; flex-direction:column;
+  z-index:10000; overflow:hidden; display:flex; flex-direction:column;
   animation:popIn .22s $ease;
 }
 .vmm-head {
@@ -608,15 +616,16 @@ $ease:     cubic-bezier(.4,0,.2,1);
 .vmc-status { font-size:11px; font-weight:600; margin-top:1px; }
 
 // ── Delete confirm ───────────────────────────────────────────────
+// z-index 9999/10000 (pas 400/401) : même bug/correctif que .vm-bg/.vm-modal ci-dessus.
 .del-bg {
-  position:fixed; inset:0; background:rgba(15,23,42,.4); z-index:400;
+  position:fixed; inset:0; background:rgba(15,23,42,.4); z-index:9999;
   animation:fadeIn .18s $ease;
 }
 .del-modal {
   position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
   width:min(380px, 94vw); background:$card;
   border-radius:20px; box-shadow:0 24px 64px rgba(0,0,0,.2);
-  z-index:401; padding:32px 28px 24px; text-align:center;
+  z-index:10000; padding:32px 28px 24px; text-align:center;
   animation:popIn .22s $ease;
 }
 .del-ico {

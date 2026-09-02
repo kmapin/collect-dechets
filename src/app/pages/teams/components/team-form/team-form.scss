@@ -2,8 +2,11 @@
 //  Team Form Drawer
 // ═══════════════════════════════════════════════════════════
 
+// z-index 9999/10000 (pas 200/201) : le bandeau d'en-tête global de l'app
+// (.page-header, app.component.ts, z-index:1000) masquait ce drawer — même bug
+// et même correctif qu'agent-payment.component.scss/contracts.component.scss.
 .tf-backdrop {
-  position: fixed; inset: 0; z-index: 200;
+  position: fixed; inset: 0; z-index: 9999;
   background: rgba(15,23,42,.5);
   backdrop-filter: blur(4px);
   animation: fadeIn .2s ease;
@@ -11,7 +14,7 @@
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .tf-drawer {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 10000;
   width: min(520px, 100vw);
   background: #fff;
   display: flex;
