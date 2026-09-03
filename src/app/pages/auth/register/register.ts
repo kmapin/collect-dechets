@@ -7,7 +7,6 @@ import { AuthService } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 import { UserRole, RegisterUserData, RegisterResponse } from '../../../models/user.model';
 import { Agency } from '../../../models/agency.model';
-import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
 import { Admin } from '../../../services/admin';
 import { AgencyService } from '../../../services/agency.service';
 import { TerritoryHttpService } from '../../../services/territory-http.service';
@@ -80,7 +79,6 @@ export class Register implements OnInit {
 
 
 
-  arrondissements: QuartierData[] = OUAGA_DATA;
   arrondissementss: Arrondissement[] = [];
   cities: City[] = [];
   secteurss: Sector[] = [];

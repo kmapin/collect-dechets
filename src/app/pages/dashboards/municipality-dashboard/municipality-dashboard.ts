@@ -10,7 +10,6 @@ import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
 import { RegisterUserData, User } from "../../../models/user.model";
 import { Agency } from "../../../models/agency.model";
-import { OUAGA_DATA } from "../../../data/mock-data";
 import { Admin } from "../../../services/admin";
 import { FilterParams } from "../../../models/filterParams.model";
 import { Signalement } from "../../shared_pages/signalement/signalement";

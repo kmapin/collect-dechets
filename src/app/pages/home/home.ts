@@ -4,11 +4,12 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AgencyService } from '../../services/agency.service';
 import { Agency } from '../../models/agency.model';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, forkJoin, of, Subject } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import * as L from 'leaflet';
 import { NotificationService } from '../../services/notification.service';
-import { Arrondissement, Quartier, Sector } from '../../models/countries-org.model';
-import { CountriesOrgMockService } from '../../services/countries-org-mock.service';
+import { Arrondissement, City, Quartier, Sector } from '../../models/countries-org.model';
+import { TerritoryHttpService } from '../../services/territory-http.service';
 
 
 @Component({
@@ -142,12 +143,13 @@ export class Home  implements OnInit {
     private agencyService: AgencyService,
     private notificationsService: NotificationService,
     private router: Router,
-    private countriesOrgMockService: CountriesOrgMockService
-    
+    private territoryService: TerritoryHttpService
+
   ) {}
 
   ngOnInit(): void {
     this.loadFeaturedAgenciesFromApi();
+    this.loadCities();
     this.applyFilters();
     this.searchSubject.pipe(
           debounceTime(300),
@@ -628,49 +630,70 @@ agencies: Agency[] = [];
   selectedService = '';
   minRating = '';
   viewMode: 'grid' | 'list' | 'map' = 'grid';
-  cities: string[] = ['Ouagadougou', 'Bobo-Dioulasso'];
+  // Chantier "unifier la géographie" — remplace le catalogue statique
+  // (CountriesOrgMockService) par le vrai référentiel (TerritoryHttpService,
+  // GET /api/territories/*). Chargé de façon asynchrone dans ngOnInit().
+  cities: City[] = [];
 
   arrondissementss: Arrondissement[] = [];
   secteurss: Sector[] = [];
   quartierss: Quartier[] = [];
-  
-  // selectedCity: string = '';
+
   selectedArrondissement: string = '';
   selectedSector: string = '';
   selectedNeighborhood: string = '';
-  // minRating: string = '';
-  
+
+  private loadCities(): void {
+    this.territoryService.getAllCities().pipe(
+      catchError((err) => { console.error('Erreur chargement des villes :', err); return of([]); }),
+    ).subscribe((cities) => { this.cities = cities; });
+  }
+
   onCityChange(city: string) {
     console.log('selected city ==>', city);
-    const cityObj = this.cities.find(c => c === city);
-    // this.arrondissementss = cityObj ? this.countriesOrgMockService.getArrondissementsByCityLabel(cityObj) : [];
+    const cityObj = this.cities.find(c => c.name === city);
     this.selectedArrondissement = '';
     this.secteurss = [];
     this.selectedSector = '';
     this.quartierss = [];
     this.selectedNeighborhood = '';
-    this.getCitiesContent(city);
+    if (cityObj) this.getCitiesContent(cityObj.id);
     this.applyFilters();
   }
 
-   getCitiesContent(ville: string){
-    this.arrondissementss = this.countriesOrgMockService.getAllArrondissementsByVille(ville);  
-    this.secteurss = this.countriesOrgMockService.getAllSectorsByVille(ville);
-    this.quartierss = this.countriesOrgMockService.getAllNeighborhoodsByVille(ville);
+  // Équivalent asynchrone de l'ancien CountriesOrgMockService.getAllArrondissementsByVille/
+  // getAllSectorsByVille/getAllNeighborhoodsByVille(nomVille) — voir agencies.ts::
+  // getCitiesContent pour le même correctif et son explication complète (le référentiel
+  // réel ne cascade qu'à un niveau à la fois, par id).
+  getCitiesContent(cityId: string): void {
+    this.territoryService.getArrondissementsByCity(cityId).pipe(
+      catchError((err) => { console.error('Erreur chargement des arrondissements :', err); return of([]); }),
+    ).subscribe((arrondissements) => {
+      this.arrondissementss = arrondissements;
+      if (!arrondissements.length) { this.secteurss = []; this.quartierss = []; return; }
+
+      forkJoin(arrondissements.map(a => this.territoryService.getSectorsByArrondissement(a.id))).pipe(
+        catchError((err) => { console.error('Erreur chargement des secteurs :', err); return of([] as Sector[][]); }),
+      ).subscribe((sectorLists) => {
+        const sectors = sectorLists.flat();
+        this.secteurss = sectors;
+        if (!sectors.length) { this.quartierss = []; return; }
+
+        forkJoin(sectors.map(s => this.territoryService.getNeighborhoodsBySector(s.id))).pipe(
+          catchError((err) => { console.error('Erreur chargement des quartiers :', err); return of([] as Quartier[][]); }),
+        ).subscribe((neighborhoodLists) => { this.quartierss = neighborhoodLists.flat(); });
+      });
+    });
   }
-  
+
   onArrondissementChange(arrondissement: string) {
-    const arrObj = this.arrondissementss.find(a => a.name === arrondissement);
-    // this.secteurss = arrObj ? this.countriesOrgMockService.getSectorsByArrondissement(arrObj.id) : [];
     this.selectedSector = '';
     this.quartierss = [];
     this.selectedNeighborhood = '';
     // this.applyFilters();
   }
-  
+
   onSecteurChange(secteur: string) {
-    const secteurObj = this.secteurss.find(s => s.name === secteur);
-    // this.quartierss = secteurObj ? this.countriesOrgMockService.getNeighborhoodsBySector(secteurObj.id) : [];
     this.selectedNeighborhood = '';
     this.applyFilters();
   }

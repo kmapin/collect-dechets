@@ -186,8 +186,8 @@
               <label class="filter-label">Ville</label>
               <select [(ngModel)]="searchQuery" (change)="onCityChange(searchQuery)" class="filter-select">
                 <option value="">Aucune ...</option>
-                @for (city of cities; track city) {
-                  <option [value]="city">{{ city }}</option>
+                @for (city of cities; track city.id) {
+                  <option [value]="city.name">{{ city.name }}</option>
                 }
               </select>
             </div>

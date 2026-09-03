@@ -13,7 +13,6 @@ import { CountriesOrgMockService } from "../../services/countries-org-mock.servi
 import { TerritoryHttpService } from "../../services/territory-http.service";
 
 import { DrawerModule } from "primeng/drawer";
-import { OUAGA_DATA, QuartierData } from "../../data/mock-data";
 import {
   Arrondissement,
   City,
@@ -103,7 +102,6 @@ export class AgencyDetails implements OnInit {
   selectedSector: string = '';
   selectedNeighborhood: string = '';
 
-  arrondissements: QuartierData[] = OUAGA_DATA;
   arrondissementss: Arrondissement[] = [];
   cities: City[] = [];
   secteurss: Sector[] = [];

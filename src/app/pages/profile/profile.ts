@@ -5,7 +5,6 @@ import { Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { AuthService } from "../../services/auth.service";
 import { RegisterUserData, User } from "../../models/user.model";
-import { OUAGA_DATA, QuartierData } from "../../data/mock-data";
 import { NotificationService } from "../../services/notification.service";
 import QRCode from "qrcode";
 import jsPDF  from "jspdf";
@@ -95,10 +94,6 @@ export class Profile implements OnInit {
   isLoadingQuartiers = false;
 
   user: any;
-  // Pour le select en cascade
-  arrondissements: QuartierData[] = OUAGA_DATA;
-  secteurs: { secteur: string; quartiers: string[] }[] = [];
-  quartiers: string[] = [];
 
   // Pour agency
   allServices: string[] = [
@@ -108,7 +103,6 @@ export class Profile implements OnInit {
     "Collecte spéciale",
     "Traitement déchets dangereux",
   ];
-  allSecteurs: { secteur: string; quartiers: string[] }[] = [];
   isLoading: boolean = false;
   currentUserId: string | null = null;
   constructor(
@@ -199,8 +193,6 @@ export class Profile implements OnInit {
       if (this.user.address.city) {
         this.onCityChange(this.user.address.city);
       }
-      // Pour agency, charger tous les secteurs
-      this.allSecteurs = this.arrondissements.flatMap((a) => a.secteurs);
     });
     console.log("Current User", this.user);
   }
@@ -284,7 +276,6 @@ export class Profile implements OnInit {
   onArrondissementChange(arrondissement?: string) {
     this.secteurss = [];
     this.quartierss = [];
-    this.quartiers = [];
     if (!arrondissement) return;
 
     const sectorObj = this.arrondissementss.find((a) => a.name === arrondissement);
@@ -305,7 +296,6 @@ export class Profile implements OnInit {
 
   onSecteurChange(secteur: string) {
     this.quartierss = [];
-    this.quartiers = [];
     this.userData.address.neighborhood = this.userData.address.neighborhood || "";
     if (!secteur) return;
 
@@ -323,8 +313,6 @@ export class Profile implements OnInit {
     this.arrondissementss = [];
     this.secteurss = [];
     this.quartierss = [];
-    this.secteurs = [];
-    this.quartiers = [];
     if (!city) return;
 
     const cityObj = this.cities.find((c) => c.name === city);
