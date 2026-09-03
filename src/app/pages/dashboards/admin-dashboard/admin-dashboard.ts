@@ -258,6 +258,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
   private map: L.Map | null = null;
   agenciesGeoData: any[] = [];
   isLoadingMap = false;
+  // Comptes clients réels par agence (sidebar "Couverture Territoriale") — indexé
+  // par agenceId, chargé pour la liste COMPLÈTE (agenciesGeoData), pas seulement les
+  // agences de la page courante de `agencyAudits` (voir loadAgencyMapClientCounts()).
+  private agencyMapClientCounts: Record<string, number> = {};
   selectedAgency: any = null;
   selectedAgencyIndex: number | null = null;
   private agencyZoneLayers    = new Map<number, L.Circle[]>();
@@ -1451,15 +1455,33 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   loadTopAgenciesByCollections(): void {
-    const agencies = this.agencyAudits;
-    if (!agencies.length) return;
+    // Liste COMPLÈTE des agences — pas `agencyAudits` (paginé à 10 par défaut
+    // pour l'onglet Agences, en plus filtrable par recherche/statut), qui faisait
+    // silencieusement disparaître du "Top 5" toute agence hors page courante /
+    // filtre actif. Même correctif déjà appliqué à loadCommunications() ci-dessous
+    // pour exactement le même bug (agences manquantes du picker destinataires).
+    this.agencyService.getAllAgenciesFromApi({ getAll: true }).subscribe({
+      next: (response: any) => {
+        const list = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
+        const agencies = list.map((a: any) => ({ id: a._id, name: a.name }));
+        if (!agencies.length) return;
+        this.loadTopAgenciesByCollectionsFor(agencies);
+      },
+      error: () => {},
+    });
+  }
 
+  private loadTopAgenciesByCollectionsFor(agencies: { id: string; name: string }[]): void {
     const requests = agencies.map(a =>
       this.agencyService.getCompletedCollectes$(a.id).pipe(
         map((res: any) => {
-          const count = res?.total ?? res?.count
-            ?? (Array.isArray(res?.data) ? res.data.length : 0)
-            ?? (Array.isArray(res) ? res.length : 0);
+          // AgencyCompletedCollectes (collecte.service.js) renvoie un tableau Mongoose brut,
+          // pas une enveloppe { data, total } — ce cas doit être vérifié en premier : les anciennes
+          // vérifications res.total/res.count/res.data passaient toutes à 0 avant d'atteindre
+          // Array.isArray(res), forçant "collections" à 0 pour chaque agence (chart invisible).
+          const count = Array.isArray(res) ? res.length
+            : Array.isArray(res?.data) ? res.data.length
+            : (res?.total ?? res?.count ?? 0);
           return { id: a.id, name: a.name, collections: count };
         }),
         catchError(() => of({ id: a.id, name: a.name, collections: 0 }))
@@ -1489,6 +1511,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
         if (this.chartsInitialized && this.activeTab === 'statistics') {
           this.buildAgenciesChart();
         }
+        this.loadAgencyMapClientCounts();
         setTimeout(() => this.initTerritorialMap(), 100);
       },
       error: () => {
@@ -1496,6 +1519,33 @@ export class AdminDashboard implements OnInit, OnDestroy {
         setTimeout(() => this.initTerritorialMap(), 100);
       },
     });
+  }
+
+  /**
+   * Charge le nombre réel de clients actifs (state_agencies/:id/stats, même source
+   * que le panneau de détail — loadSelectedAgencyStats()) pour TOUTES les agences de
+   * la carte (agenciesGeoData). La liste sidebar affichait auparavant
+   * `getAgencyAudit(ag.name)?.clients`, une recherche par nom dans `agencyAudits`
+   * (paginé à 10 par défaut pour l'onglet Agences) : toute agence hors page courante
+   * n'y était jamais trouvée et affichait "—", même avec de vrais clients en base.
+   */
+  private loadAgencyMapClientCounts(): void {
+    const agencies = this.agenciesGeoData.filter((ag: any) => ag?._id);
+    if (!agencies.length) return;
+    const requests = agencies.map((ag: any) =>
+      this.agencyService.getAgencyStats$(ag._id).pipe(catchError(() => of(null)))
+    );
+    forkJoin(requests).subscribe((results: any[]) => {
+      results.forEach((res: any, i) => {
+        const data = res?.data ?? res;
+        const count = data?.totalClientsActifs ?? data?.totalClients ?? 0;
+        this.agencyMapClientCounts[agencies[i]._id] = count;
+      });
+    });
+  }
+
+  getMapAgencyClientCount(ag: any): number | string {
+    return this.agencyMapClientCounts[ag?._id] ?? '—';
   }
 
   initTerritorialMap(): void {

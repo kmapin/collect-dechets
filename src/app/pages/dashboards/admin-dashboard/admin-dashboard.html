@@ -326,6 +326,11 @@
                 <!-- KPIs -->
                 <div class="coverage-kpis">
                   <div class="coverage-kpi">
+                    <div class="ckpi-icon" [class.ckpi-icon-good]="coveragePercent>=70"
+                      [class.ckpi-icon-warn]="coveragePercent>=40 && coveragePercent<70"
+                      [class.ckpi-icon-danger]="coveragePercent<40">
+                      <i class="material-icons">public</i>
+                    </div>
                     <div class="ckpi-value" [class.ckpi-good]="coveragePercent>=70"
                       [class.ckpi-warn]="coveragePercent>=40 && coveragePercent<70"
                       [class.ckpi-danger]="coveragePercent<40">
@@ -334,10 +339,17 @@
                     <div class="ckpi-label">Zones couvertes</div>
                   </div>
                   <div class="coverage-kpi">
+                    <div class="ckpi-icon ckpi-icon-good">
+                      <i class="material-icons">bolt</i>
+                    </div>
                     <div class="ckpi-value ckpi-good">{{ activeZonesCount }}</div>
                     <div class="ckpi-label">Zones actives</div>
                   </div>
                   <div class="coverage-kpi">
+                    <div class="ckpi-icon" [class.ckpi-icon-danger]="criticalZones.length>0"
+                      [class.ckpi-icon-good]="criticalZones.length===0">
+                      <i class="material-icons">priority_high</i>
+                    </div>
                     <div class="ckpi-value" [class.ckpi-danger]="criticalZones.length>0"
                       [class.ckpi-good]="criticalZones.length===0">
                       {{ criticalZones.length }}
@@ -381,20 +393,23 @@
                 <!-- Zones critiques -->
                 <div class="coverage-critical" *ngIf="criticalZones.length">
                   <div class="coverage-critical-title">
-                    <i class="material-icons">warning</i> Zones nécessitant une intervention
+                    <span class="cct-icon"><i class="material-icons">warning</i></span>
+                    Zones nécessitant une intervention
                   </div>
                   <div class="critical-zone-list">
                     <div *ngFor="let z of criticalZones" class="critical-zone-item">
-                      <span class="czname">{{ z.quartierNom }}</span>
+                      <div class="cz-top">
+                        <span class="czname"><i class="material-icons czname-icon">place</i>{{ z.quartierNom }}</span>
+                        <span class="czteam" [class.czteam-none]="z.equipesAssigned === 0">
+                          <i class="material-icons">groups</i>{{ z.equipesAssigned }} équipe{{ z.equipesAssigned > 1 ? 's' : '' }}
+                        </span>
+                      </div>
                       <div class="czbar-wrap">
                         <div class="czbar-track">
                           <div class="czbar-fill" [style.width]="z.completionRate + '%'"></div>
                         </div>
                         <span class="czrate">{{ z.completionRate }}%</span>
                       </div>
-                      <span class="czteam" [class.czteam-none]="z.equipesAssigned === 0">
-                        <i class="material-icons">groups</i>{{ z.equipesAssigned }}
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -1538,7 +1553,7 @@
 
                     <div class="tes-right">
                       <div class="tes-count" [style.color]="AGENCY_PALETTE[i % AGENCY_PALETTE.length]">
-                        {{ getAgencyAudit(ag.name)?.clients ?? '—' }}
+                        {{ getMapAgencyClientCount(ag) }}
                       </div>
                       <div class="tes-label">clients</div>
                     </div>
