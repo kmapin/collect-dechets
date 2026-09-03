@@ -728,6 +728,7 @@ export class MunicipalityDashboard  implements OnInit {
   getFrequencyLabel(frequency: CollectionFrequency): string {
     const labels: Record<CollectionFrequency, string> = {
       unique: "Ponctuelle",
+      quotidien: "Quotidienne",
       hebdomadaire: "Hebdomadaire",
       bimensuel: "Bimensuelle",
       mensuel: "Mensuelle",

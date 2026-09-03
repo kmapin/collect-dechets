@@ -158,7 +158,7 @@ export interface PerformanceIndicator {
  * Collecte.clientId -> User.address.neighborhood, planned via
  * Planning.quartierId -> Neighborhood.name, reconciled by name).
  */
-export type PlannedFrequency = 'unique' | 'hebdomadaire' | 'bimensuel' | 'mensuel';
+export type PlannedFrequency = 'unique' | 'quotidien' | 'hebdomadaire' | 'bimensuel' | 'mensuel';
 export type CollectionFrequency = PlannedFrequency | 'none';
 
 /**

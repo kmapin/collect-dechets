@@ -174,7 +174,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   });
 
   frequencyLabel = computed(() => {
-    const m: Record<string, string> = { unique: 'Collecte unique', hebdomadaire: 'Hebdomadaire', bimensuel: 'Bimensuel', mensuel: 'Mensuel' };
+    const m: Record<string, string> = { unique: 'Collecte unique', quotidien: 'Quotidien', hebdomadaire: 'Hebdomadaire', bimensuel: 'Bimensuel', mensuel: 'Mensuel' };
     return m[this.planning()?.frequency ?? ''] ?? '—';
   });
 

@@ -132,25 +132,20 @@ export class PlanningCreate implements OnInit {
     { id: 'speciaux',    label: 'Déchets spéciaux', icon: 'warning',     color: '#ef4444', bg: '#fef2f2' },
   ];
 
-  // Correctif de sécurité UX (Prompt 3, 1b) : les options récurrentes
-  // (hebdomadaire/bimensuel/mensuel) ont été retirées — aucun moteur de
-  // récurrence V2 ne consomme frequency/frequencyDays/endDate aujourd'hui
-  // (seul le pipeline V1 legacy, invisible depuis cet écran, sait dupliquer
-  // un planning). Les proposer laissait croire à une vraie récurrence alors
-  // que la saisie ("Jours de collecte", "Date de fin") était silencieusement
-  // ignorée — un seul planning pour la date choisie était créé quel que soit
-  // le choix. Décision produit en attente (porter le moteur V1 vers V2, ou
-  // retirer définitivement) — ne pas réintroduire ces options avant cette
-  // décision.
+  // Moteur V1 legacy supprimé, récurrence V2 câblée (backend
+  // services/planning.js::completePlanning génère automatiquement l'occurrence
+  // suivante à la clôture du planning précédent, selon `frequency`) — les options
+  // récurrentes sont donc réactivées. Le rythme ("tous les X jours") est
+  // entièrement dérivé de `frequency` : plus de sélection de jours de la semaine
+  // ni de date de fin (aucune des deux n'est un concept que le backend implémente
+  // — une série récurrente continue jusqu'à annulation explicite, voir
+  // cancelPlanning côté backend).
   readonly frequencies = [
-    { value: 'unique', label: 'Collecte unique' },
-  ];
-
-  readonly frequencyDays = [
-    { value: 'lundi', label: 'Lun' }, { value: 'mardi', label: 'Mar' },
-    { value: 'mercredi', label: 'Mer' }, { value: 'jeudi', label: 'Jeu' },
-    { value: 'vendredi', label: 'Ven' }, { value: 'samedi', label: 'Sam' },
-    { value: 'dimanche', label: 'Dim' },
+    { value: 'unique',       label: 'Collecte unique' },
+    { value: 'quotidien',    label: 'Quotidien' },
+    { value: 'hebdomadaire', label: 'Hebdomadaire' },
+    { value: 'bimensuel',    label: 'Bimensuel' },
+    { value: 'mensuel',      label: 'Mensuel' },
   ];
 
   // ── API-loaded data ──────────────────────────────────────────
@@ -174,7 +169,6 @@ export class PlanningCreate implements OnInit {
   selectedWasteTypes      = signal<WasteType[]>([]);
   selectedTeamId          = signal<string | null>(null);
   selectedClients         = signal<ClientOpt[]>([]);
-  frequencyDaysSel        = signal<string[]>([]);
   filteredClients         = signal<ClientOpt[]>([]);
   clientSearchQuery       = signal('');
 
@@ -530,8 +524,6 @@ export class PlanningCreate implements OnInit {
       startTime:           ['08:00', Validators.required],
       endTime:             [''],
       frequency:           ['unique', Validators.required],
-      frequencyDays:       [[]],
-      endDate:             [null],
       wasteTypes:          [[]],
       specialInstructions: [''],
       teams:               [[]],
@@ -558,7 +550,6 @@ export class PlanningCreate implements OnInit {
       }
       if (d.wasteTypes?.length)    this.selectedWasteTypes.set(d.wasteTypes);
       if (d.teams?.length)         this.selectedTeamId.set(d.teams[0] ?? null);
-      if (d.frequencyDays?.length) this.frequencyDaysSel.set(d.frequencyDays);
     } catch { /* ignore */ }
   }
 
@@ -849,15 +840,6 @@ export class PlanningCreate implements OnInit {
     }, { emitEvent: true });
   }
 
-  // ── Frequency days ───────────────────────────────────────────
-  toggleFreqDay(day: string): void {
-    const cur  = this.frequencyDaysSel();
-    const next = cur.includes(day) ? cur.filter(d => d !== day) : [...cur, day];
-    this.frequencyDaysSel.set(next);
-    this.form.get('frequencyDays')?.setValue(next);
-  }
-  isDaySelected(day: string): boolean { return this.frequencyDaysSel().includes(day); }
-
   // ── Waste types ──────────────────────────────────────────────
   toggleWasteType(id: WasteType): void {
     const cur  = this.selectedWasteTypes();
@@ -1117,7 +1099,6 @@ export class PlanningCreate implements OnInit {
     this.selectedWasteTypes.set([]);
     this.selectedTeamId.set(null);
     this.selectedClients.set([]);
-    this.frequencyDaysSel.set([]);
     this.currentStep.set(0);
   }
 

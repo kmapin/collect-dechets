@@ -1,7 +1,10 @@
 // ── Enums ───────────────────────────────────────────────────────
 export type PlanningType = 'individuel' | 'groupe' | 'zone' | 'secteur';
 export type PlanningStatus = 'brouillon' | 'planifie' | 'en_cours' | 'termine' | 'annule';
-export type PlanningFrequency = 'unique' | 'hebdomadaire' | 'bimensuel' | 'mensuel';
+// Suppression du moteur V1 (isRecurring/recurrenceType, backend) — `frequency` est
+// désormais la SEULE source de vérité pour la récurrence, générée automatiquement à la
+// clôture du planning précédent (backend services/planning.js::completePlanning).
+export type PlanningFrequency = 'unique' | 'quotidien' | 'hebdomadaire' | 'bimensuel' | 'mensuel';
 export type WasteType = 'menagers' | 'recyclables' | 'verts' | 'encombrants' | 'speciaux';
 
 // ── API V2 — équipe peuplée (l'API renvoie parfois des objets, pas juste des IDs) ──

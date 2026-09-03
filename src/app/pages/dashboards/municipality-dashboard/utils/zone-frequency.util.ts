@@ -4,12 +4,15 @@ import type { CollectionFrequency, PlannedFrequency, ZoneFrequencyRecord, ZoneFr
  * Canonical "collections per month" weight per frequency tier — lets planned
  * vs. actual (both enums) be compared/sorted numerically. Matches the real
  * backend's enum (`Planning.frequency`, see GET /municipality/zone-frequency):
- * 'hebdomadaire' (weekly) > 'bimensuel' (twice a month) > 'mensuel' (monthly)
- * > 'unique' (a one-time collection — less frequent than a recurring monthly
- * cadence, so weighted below it) > 'none' (zero real activity in the window,
- * only ever appears on the actual side).
+ * 'quotidien' (daily) > 'hebdomadaire' (weekly) > 'bimensuel' (twice a month)
+ * > 'mensuel' (monthly) > 'unique' (a one-time collection — less frequent than
+ * a recurring monthly cadence, so weighted below it) > 'none' (zero real
+ * activity in the window, only ever appears on the actual side). Same
+ * geometric halving as before 'quotidien' was added (each tier = half the one
+ * above), not a literal collections-per-month count.
  */
 export const FREQUENCY_WEIGHT: Record<CollectionFrequency, number> = {
+  quotidien: 8,
   hebdomadaire: 4,
   bimensuel: 2,
   mensuel: 1,

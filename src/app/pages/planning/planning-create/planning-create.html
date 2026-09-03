@@ -396,23 +396,12 @@
 
           @if (form.get('frequency')?.value !== 'unique') {
             <div class="repeat-section">
-              <h3>Jours de collecte</h3>
-              <div class="day-pills">
-                @for (d of frequencyDays; track d.value) {
-                  <button type="button" class="day-pill" [class.active]="isDaySelected(d.value)"
-                          (click)="toggleFreqDay(d.value)">{{ d.label }}</button>
-                }
-              </div>
-              <div class="form-group" style="margin-top:16px; max-width:280px">
-                <label class="form-lbl">Date de fin (optionnel)</label>
-                <p-datepicker formControlName="endDate"
-                              [showIcon]="true"
-                              [inline]="false"
-                              dateFormat="dd/mm/yy"
-                              placeholder="Date de fin"
-                              styleClass="w-full"
-                              [appendTo]="'body'" />
-              </div>
+              <p class="repeat-hint">
+                <mat-icon>autorenew</mat-icon>
+                Un nouveau planning sera généré automatiquement selon cette fréquence à
+                chaque clôture, en reprenant la même configuration (équipe, déchets,
+                cible), jusqu'à annulation explicite de la série.
+              </p>
             </div>
           }
         </div>

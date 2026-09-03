@@ -683,29 +683,23 @@ $tr: .2s ease;
   strong { font-weight: 700; }
 }
 
-/* ---- Frequency day pills ---- */
+/* ---- Récurrence : information (aucune saisie, dérivée de `frequency` seul) ---- */
 .repeat-section {
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px dashed $border;
-  h3 { font-size: 13px; font-weight: 600; color: $text-2; margin: 0 0 10px; }
 }
 
-.day-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-
-.day-pill {
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1.5px solid $border;
-  background: $card;
-  font-size: 12px;
-  font-weight: 600;
+.repeat-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: 12.5px;
   color: $text-2;
-  cursor: pointer;
-  transition: all $tr;
+  line-height: 1.5;
 
-  &.active { background: $green; border-color: $green; color: #fff; }
-  &:hover:not(.active) { border-color: $green; color: $green; }
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: $green; flex-shrink: 0; }
 }
 
 /* ---- Waste cards ---- */
