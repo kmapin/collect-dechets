@@ -170,10 +170,17 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       this._initCharts();
     }, 1200);
 
-    // Refresh recent plannings periodically
+    // Refresh recent plannings periodically — vrai re-fetch réseau (chantier
+    // "automatiser le statut des plannings") : le backend recalcule désormais le statut
+    // à la lecture (getPlanningsV2), donc un simple re-tri du cache local ne suffit plus
+    // à faire apparaître une transition automatique (planifie -> en_cours -> termine)
+    // sans reload de page.
     this.refreshTimer = setInterval(() => {
-      this.recentPlannings.set(this.planningService.getRecentPlannings(6));
-      this._initCharts();
+      this.planningService.loadPlannings();
+      setTimeout(() => {
+        this.recentPlannings.set(this.planningService.getRecentPlannings(6));
+        this._initCharts();
+      }, 800);
     }, 30_000);
   }
 
