@@ -21,7 +21,6 @@ import { forkJoin, map, of, timeout, catchError, switchMap } from "rxjs";
 import { FilterParams } from "../../../models/filterParams.model";
 import { DrawerModule } from "primeng/drawer";
 import { Signalement } from "../../shared_pages/signalement/signalement";
-import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
 import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
 import { TerritoryHttpService } from "../../../services/territory-http.service";
 import { WithdrawalRequestsHttpService } from "../../../services/withdrawal-requests-http.service";
@@ -656,12 +655,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
   //List all clients for admin dashboard
   clients: any;
 
-  
-  // Listes pour les filtres déroulants
-  availableCities: string[] = [];
-  availableNeighborhoods: string[] = [];
-  filteredNeighborhoods: string[] = [];
-
   // Nouveaux filtres basés sur l'API backend
   employeesCityFilter: string = "";
   employeesNeighborhoodFilter: string = "";
@@ -756,7 +749,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.getClientGrowth();
-    this.initializeCitiesAndNeighborhoods();
     this.initializeFiltersData();
     this.loadTabBadges();
     this.loadTabData(this.activeTab);
@@ -3886,51 +3878,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
 
-  
-    /**
-     * Initialise les listes de villes et quartiers à partir des données mock
-     */
-    initializeCitiesAndNeighborhoods(): void {
-      try {
-        // S'assurer que OUAGA_DATA existe et est un tableau
-        if (!OUAGA_DATA || !Array.isArray(OUAGA_DATA)) {
-          console.warn("OUAGA_DATA non disponible ou incorrect");
-          this.availableCities = [];
-          this.availableNeighborhoods = [];
-          this.filteredNeighborhoods = [];
-          return;
-        }
-  
-        // Extraire les arrondissements comme "villes"
-        this.availableCities = OUAGA_DATA.map((data) => data.arrondissement);
-  
-        // Extraire tous les quartiers
-        this.availableNeighborhoods = [];
-        OUAGA_DATA.forEach((arrond) => {
-          if (arrond.secteurs && Array.isArray(arrond.secteurs)) {
-            arrond.secteurs.forEach((secteur) => {
-              if (secteur.quartiers && Array.isArray(secteur.quartiers)) {
-                this.availableNeighborhoods.push(...secteur.quartiers);
-              }
-            });
-          }
-        });
-  
-        // Supprimer les doublons et trier
-        this.availableNeighborhoods = [
-          ...new Set(this.availableNeighborhoods),
-        ].sort();
-        this.filteredNeighborhoods = [...this.availableNeighborhoods];
-      } catch (error) {
-        console.error(
-          "Erreur lors de l'initialisation des villes et quartiers:",
-          error,
-        );
-        this.availableCities = [];
-        this.availableNeighborhoods = [];
-        this.filteredNeighborhoods = [];
-      }
-    }
 
 
 

@@ -2591,9 +2591,9 @@
                                   (change)="onEmployeeArrondissementChange($event)"
                                 >
                                   <option value="">Choisir un arrondissement</option>
-                                  @for (arr of arrondissements; track arr) {
-                                    <option [value]="arr.arrondissement">
-                                      {{ arr.arrondissement }}
+                                  @for (arr of arrondissements; track arr.id) {
+                                    <option [value]="arr.name">
+                                      {{ arr.name }}
                                     </option>
                                   }
                                 </select>
@@ -2612,9 +2612,9 @@
                                   (change)="onEmployeeSecteurChange($event)"
                                 >
                                   <option value="">Choisir un secteur</option>
-                                  @for (secteur of secteurs; track secteur) {
-                                    <option [value]="secteur.secteur">
-                                      {{ secteur.secteur }}
+                                  @for (secteur of secteurs; track secteur.id) {
+                                    <option [value]="secteur.name">
+                                      {{ secteur.name }}
                                     </option>
                                   }
                                 </select>
@@ -3309,8 +3309,8 @@
             [disabled]="arrondissements.length === 0"
           >
             <option value="">Sélectionner un arrondissement</option>
-            @for (arr of arrondissements; track arr) {
-              <option [value]="arr.arrondissement">{{ arr.arrondissement }}</option>
+            @for (arr of arrondissements; track arr.id) {
+              <option [value]="arr.name">{{ arr.name }}</option>
             }
           </select>
         </div>
@@ -3324,8 +3324,8 @@
             [disabled]="secteurs.length === 0"
           >
             <option value="">Sélectionner un secteur</option>
-            @for (secteur of secteurs; track secteur) {
-              <option [value]="secteur.secteur">{{ secteur.secteur }}</option>
+            @for (secteur of secteurs; track secteur.id) {
+              <option [value]="secteur.name">{{ secteur.name }}</option>
             }
           </select>
         </div>

@@ -321,7 +321,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   ratingsTotal = 0;
   ratingsPage = 1;
   readonly ratingsPageSize = 10;
-  ouagaData: QuartierData[] = OUAGA_DATA;
   agency: Agency | null = null;
   activeTab: TabId = "employees"; // Changé pour debug - était "collections"
 
@@ -454,11 +453,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   // Chargement des données
   isLoadingFilteredEmployees: boolean = false;
-
-  // Listes pour les filtres déroulants
-  availableCities: string[] = [];
-  availableNeighborhoods: string[] = [];
-  filteredNeighborhoods: string[] = [];
 
   // Propriétés pour la recherche et le filtrage des clients
   clientsSearch: string = "";
@@ -1499,8 +1493,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       this.filteredEmployees.length,
     );
 
-    // Initialiser les listes de villes et quartiers
-    this.initializeCitiesAndNeighborhoods();
     this.initializeFiltersData();
 
     console.log("this.currentUser", this.currentUser);
@@ -2527,84 +2519,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     );
   }
 
-  /**
-   * Initialise les listes de villes et quartiers à partir des données mock
-   */
-  initializeCitiesAndNeighborhoods(): void {
-    try {
-      // S'assurer que OUAGA_DATA existe et est un tableau
-      if (!OUAGA_DATA || !Array.isArray(OUAGA_DATA)) {
-        console.warn("OUAGA_DATA non disponible ou incorrect");
-        this.availableCities = [];
-        this.availableNeighborhoods = [];
-        this.filteredNeighborhoods = [];
-        return;
-      }
-
-      // Extraire les arrondissements comme "villes"
-      this.availableCities = OUAGA_DATA.map((data) => data.arrondissement);
-
-      // Extraire tous les quartiers
-      this.availableNeighborhoods = [];
-      OUAGA_DATA.forEach((arrond) => {
-        if (arrond.secteurs && Array.isArray(arrond.secteurs)) {
-          arrond.secteurs.forEach((secteur) => {
-            if (secteur.quartiers && Array.isArray(secteur.quartiers)) {
-              this.availableNeighborhoods.push(...secteur.quartiers);
-            }
-          });
-        }
-      });
-
-      // Supprimer les doublons et trier
-      this.availableNeighborhoods = [
-        ...new Set(this.availableNeighborhoods),
-      ].sort();
-      this.filteredNeighborhoods = [...this.availableNeighborhoods];
-    } catch (error) {
-      console.error(
-        "Erreur lors de l'initialisation des villes et quartiers:",
-        error,
-      );
-      this.availableCities = [];
-      this.availableNeighborhoods = [];
-      this.filteredNeighborhoods = [];
-    }
-  }
-
-  /**
-   * Filtre les quartiers en fonction de la ville sélectionnée pour les employés
-   */
-  onEmployeeFilterCityChange(): void {
-    if (this.employeesCityFilter) {
-      const selectedArrond = OUAGA_DATA.find(
-        (data) => data.arrondissement === this.employeesCityFilter,
-      );
-      if (selectedArrond) {
-        this.filteredNeighborhoods = [];
-        selectedArrond.secteurs.forEach((secteur) => {
-          this.filteredNeighborhoods.push(...secteur.quartiers);
-        });
-        this.filteredNeighborhoods.sort();
-
-        // Réinitialiser le quartier si il n'est plus dans la liste
-        if (
-          this.employeesNeighborhoodFilter &&
-          !this.filteredNeighborhoods.includes(this.employeesNeighborhoodFilter)
-        ) {
-          this.employeesNeighborhoodFilter = "";
-        }
-      }
-    } else {
-      // Si aucune ville sélectionnée, montrer tous les quartiers
-      this.filteredNeighborhoods = [...this.availableNeighborhoods];
-      this.employeesNeighborhoodFilter = "";
-    }
-
-    // Appliquer les filtres
-    this.filterEmployees();
-  }
-
   // === MÉTHODES DE FILTRAGE ET RECHERCHE DES CLIENTS ===
 
   /**
@@ -2895,17 +2809,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         .sort();
     }
 
-    // Si aucun quartier trouvé dans les clients, utiliser le mock comme fallback
-    if (clientNeighborhoods.length === 0) {
-      const allQuartiers: string[] = [];
-      OUAGA_DATA.forEach((arrond) => {
-        arrond.secteurs.forEach((secteur) => {
-          allQuartiers.push(...secteur.quartiers);
-        });
-      });
-      clientNeighborhoods = [...new Set(allQuartiers)].sort();
-    }
-
+    // Chantier "unifier la géographie" — l'ancien fallback listait TOUS les quartiers
+    // d'Ouagadougou (OUAGA_DATA) dès qu'aucun client actif n'existait encore, quelle
+    // que soit la ville réelle de l'agence — jamais une liste pertinente pour une
+    // agence hors Ouagadougou. Liste vide (aucun résultat) est plus honnête ici que
+    // des données inventées.
     return clientNeighborhoods;
   }
 
@@ -5180,33 +5088,43 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     confirmPasswordControl?.updateValueAndValidity();
   }
 
-  // Méthode pour charger les dépendances de l'adresse lors de l'édition
+  // Recharge, pour un employé existant (mode édition), les arrondissements/secteurs/
+  // quartiers correspondant à son adresse déjà enregistrée — même référentiel réel
+  // (TerritoryHttpService) que le reste de la cascade ci-dessus. Note : ce bloc
+  // adresse n'est de toute façon affiché que pour l'AJOUT d'employé (`@if
+  // (!isEditingEmployee)` côté template), donc son résultat n'est pas visible en
+  // édition aujourd'hui — conservé pour rester cohérent si ce comportement change.
   private loadEmployeeAddressDependencies(address: any): void {
-    // Charger les arrondissements pour la ville sélectionnée
-    if (address.city && address.city === "Ouagadougou") {
-      // Utiliser OUAGA_DATA directement puisque nous avons seulement Ouagadougou pour l'instant
-      this.arrondissements = OUAGA_DATA || [];
+    if (!address?.city) return;
+    if (this.cities.length === 0) this.loadCitiesForAddress();
 
-      // Charger les secteurs pour l'arrondissement sélectionné
-      if (address.arrondissement && this.arrondissements.length > 0) {
-        const selectedArrondissement = this.arrondissements.find(
-          (arr) => arr.arrondissement === address.arrondissement,
-        );
-        if (selectedArrondissement) {
-          this.secteurs = selectedArrondissement.secteurs || [];
+    const cityObj = this.cities.find((c) => c.name === address.city);
+    if (!cityObj) return;
 
-          // Charger les quartiers pour le secteur sélectionné
-          if (address.sector && this.secteurs.length > 0) {
-            const selectedSecteur = this.secteurs.find(
-              (sect) => sect.secteur === address.sector,
-            );
-            if (selectedSecteur) {
-              this.quartiers = selectedSecteur.quartiers || [];
-            }
-          }
-        }
-      }
-    }
+    this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
+      next: (arrondissements) => {
+        this.arrondissements = arrondissements;
+        if (!address.arrondissement) return;
+
+        const arrObj = arrondissements.find((a) => a.name === address.arrondissement);
+        if (!arrObj) return;
+        this.territoryService.getSectorsByArrondissement(arrObj.id).subscribe({
+          next: (sectors) => {
+            this.secteurs = sectors;
+            if (!address.sector) return;
+
+            const secteurObj = sectors.find((s) => s.name === address.sector);
+            if (!secteurObj) return;
+            this.territoryService.getNeighborhoodsBySector(secteurObj.id).subscribe({
+              next: (quartiers) => { this.quartiers = quartiers.map((q) => q.name); },
+              error: () => { this.quartiers = []; },
+            });
+          },
+          error: () => { this.secteurs = []; },
+        });
+      },
+      error: () => { this.arrondissements = []; },
+    });
   }
 
   // recuperations des collecte par jour d une agences
@@ -5444,192 +5362,154 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       isActive: true,
     }));
   }
-  arrondissements: QuartierData[] = OUAGA_DATA;
+  // Chantier "unifier la géographie" — remplace le catalogue statique OUAGA_DATA
+  // (Ouagadougou uniquement, arrondissement/secteur en dur) par le vrai référentiel
+  // (TerritoryHttpService, GET /api/territories/*). `userData.address.*`/
+  // `employeeForm.address.*` continuent de porter des NOMS (pas des id) — c'est ce
+  // que le backend attend déjà (PATCH /agencies/:id/zone { zones: string[] }, voir
+  // addZoneAgency ci-dessous) — seule la résolution interne id→enfants change.
+  arrondissements: Arrondissement[] = [];
   cities: City[] = [];
-  secteurs: { secteur: string; quartiers: string[] }[] = [];
+  secteurs: Sector[] = [];
   quartiers: string[] = [];
-  onArrondissementChange(arrondissement?: string) {
-    if (arrondissement) {
-      // Utiliser OUAGA_DATA pour trouver les secteurs
-      const arrondissementData = this.arrondissements.find(
-        (a) => a.arrondissement === arrondissement,
-      );
-      if (arrondissementData && arrondissementData.secteurs) {
-        this.secteurs = arrondissementData.secteurs;
-      } else {
-        this.secteurs = [];
-      }
 
-      console.log("Secteurs  ==> ", this.secteurs);
-      this.quartiers = [];
-      this.userData.address.sector = "";
-      this.userData.address.neighborhood = [];
-    }
+  private loadCitiesForAddress(): void {
+    this.territoryService.getAllCities().subscribe({
+      next: (cities) => { this.cities = cities; },
+      error: (err) => { console.error('Erreur chargement des villes :', err); this.cities = []; },
+    });
+  }
+
+  onArrondissementChange(arrondissement?: string) {
+    this.secteurs = [];
+    this.quartiers = [];
+    this.userData.address.sector = "";
+    this.userData.address.neighborhood = [];
+    if (!arrondissement) return;
+
+    const arrondissementObj = this.arrondissements.find((a) => a.name === arrondissement);
+    if (!arrondissementObj) return;
+    this.territoryService.getSectorsByArrondissement(arrondissementObj.id).subscribe({
+      next: (sectors) => { this.secteurs = sectors; },
+      error: (err) => { console.error('Erreur chargement des secteurs :', err); this.secteurs = []; },
+    });
   }
 
   onSecteurChange(secteur: string) {
-    if (secteur) {
-      // Trouver le secteur dans OUAGA_DATA et récupérer ses quartiers
-      const secteurObj = this.secteurs.find((s) => s.secteur === secteur);
-      if (secteurObj) {
-        this.quartiers = secteurObj.quartiers || [];
-        console.log("Quartiers disponibles :", this.quartiers);
-      } else {
-        this.quartiers = [];
-      }
-      this.userData.address.neighborhood = [];
-    } else {
-      this.quartiers = [];
-      this.userData.address.neighborhood = [];
-    }
+    this.quartiers = [];
+    this.userData.address.neighborhood = [];
+    if (!secteur) return;
+
+    const secteurObj = this.secteurs.find((s) => s.name === secteur);
+    if (!secteurObj) return;
+    this.territoryService.getNeighborhoodsBySector(secteurObj.id).subscribe({
+      next: (quartiers) => { this.quartiers = quartiers.map((q) => q.name); },
+      error: (err) => { console.error('Erreur chargement des quartiers :', err); this.quartiers = []; },
+    });
   }
 
   onCityChange(city: string) {
-    if (city && city === "Ouagadougou") {
-      // Pour Ouagadougou, les arrondissements sont déjà chargés depuis OUAGA_DATA
-    } else {
-      // Pour les autres villes, réinitialiser
-      this.secteurs = [];
-      this.quartiers = [];
-    }
-
-    // Réinitialiser tous les champs dépendants
+    this.arrondissements = [];
     this.secteurs = [];
     this.quartiers = [];
     this.userData.address.arrondissement = "";
     this.userData.address.sector = "";
     this.userData.address.neighborhood = [];
+    if (!city) return;
+
+    const cityObj = this.cities.find((c) => c.name === city);
+    if (!cityObj) return;
+    this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
+      next: (arrondissements) => { this.arrondissements = arrondissements; },
+      error: (err) => { console.error('Erreur chargement des arrondissements :', err); this.arrondissements = []; },
+    });
   }
 
   // Méthodes spécifiques pour le formulaire d'employé
   onEmployeeCityChange(event: Event) {
     const selectedCity = (event.target as HTMLSelectElement)?.value;
+    this.arrondissements = [];
+    this.secteurs = [];
+    this.quartiers = [];
+    this.employeeForm.patchValue({
+      address: { arrondissement: "", sector: "", neighborhood: "" },
+    });
 
-    if (selectedCity === "Ouagadougou") {
-      // Activer le contrôle arrondissement
-      this.employeeForm.get("address.arrondissement")?.enable();
-    } else {
-      // Pour les autres villes, réinitialiser et désactiver
-      this.secteurs = [];
-      this.quartiers = [];
+    const cityObj = this.cities.find((c) => c.name === selectedCity);
+    if (!cityObj) {
       this.employeeForm.get("address.arrondissement")?.disable();
       this.employeeForm.get("address.sector")?.disable();
       this.employeeForm.get("address.neighborhood")?.disable();
+      return;
     }
 
-    // Réinitialiser tous les champs dépendants
-    this.employeeForm.patchValue({
-      address: {
-        arrondissement: "",
-        sector: "",
-        neighborhood: "",
-      },
+    this.employeeForm.get("address.arrondissement")?.enable();
+    this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
+      next: (arrondissements) => { this.arrondissements = arrondissements; },
+      error: (err) => { console.error('Erreur chargement des arrondissements :', err); this.arrondissements = []; },
     });
-    this.secteurs = [];
-    this.quartiers = [];
   }
 
   onEmployeeArrondissementChange(event: Event) {
     const arrondissement = (event.target as HTMLSelectElement)?.value;
-    if (arrondissement) {
-      const arrondissementObj = this.arrondissements.find(
-        (arr) => arr.arrondissement === arrondissement,
-      );
-
-      if (arrondissementObj) {
-        this.secteurs = arrondissementObj.secteurs || [];
-        // Activer le contrôle secteur
-        this.employeeForm.get("address.sector")?.enable();
-
-        // Réinitialiser les champs dépendants dans le formulaire employé
-        this.employeeForm.get("address.sector")?.setValue("");
-        this.employeeForm.get("address.neighborhood")?.setValue("");
-        this.quartiers = [];
-        // Désactiver le quartier jusqu'à sélection du secteur
-        this.employeeForm.get("address.neighborhood")?.disable();
-      }
-    } else {
+    this.quartiers = [];
+    if (!arrondissement) {
       this.secteurs = [];
-      this.quartiers = [];
       this.employeeForm.get("address.sector")?.disable();
       this.employeeForm.get("address.neighborhood")?.disable();
+      return;
     }
+
+    const arrondissementObj = this.arrondissements.find((arr) => arr.name === arrondissement);
+    if (!arrondissementObj) return;
+
+    this.employeeForm.get("address.sector")?.enable();
+    this.employeeForm.get("address.sector")?.setValue("");
+    this.employeeForm.get("address.neighborhood")?.setValue("");
+    this.employeeForm.get("address.neighborhood")?.disable();
+    this.territoryService.getSectorsByArrondissement(arrondissementObj.id).subscribe({
+      next: (sectors) => { this.secteurs = sectors; },
+      error: (err) => { console.error('Erreur chargement des secteurs :', err); this.secteurs = []; },
+    });
   }
 
   onEmployeeSecteurChange(event: Event) {
     const secteur = (event.target as HTMLSelectElement)?.value;
-    if (secteur) {
-      const secteurObj = this.secteurs.find((s) => s.secteur === secteur);
-
-      if (secteurObj) {
-        this.quartiers = secteurObj.quartiers || [];
-        // Activer le contrôle quartier
-        this.employeeForm.get("address.neighborhood")?.enable();
-
-        // Réinitialiser le quartier dans le formulaire employé
-        this.employeeForm.get("address.neighborhood")?.setValue("");
-      }
-    } else {
+    if (!secteur) {
       this.quartiers = [];
       this.employeeForm.get("address.neighborhood")?.disable();
+      return;
     }
+
+    const secteurObj = this.secteurs.find((s) => s.name === secteur);
+    if (!secteurObj) return;
+
+    this.employeeForm.get("address.neighborhood")?.enable();
+    this.employeeForm.get("address.neighborhood")?.setValue("");
+    this.territoryService.getNeighborhoodsBySector(secteurObj.id).subscribe({
+      next: (quartiers) => { this.quartiers = quartiers.map((q) => q.name); },
+      error: (err) => { console.error('Erreur chargement des quartiers :', err); this.quartiers = []; },
+    });
   }
 
-  // Initialiser les données mock pour l'adresse d'employé
+  // Initialise les dépendances d'adresse pour le formulaire d'ajout d'employé.
   private initializeAddressDataForEmployee(): void {
-    // Utiliser directement les données OUAGA_DATA du fichier mock-data.ts
-    // Ces données sont déjà chargées dans this.arrondissements
-
-    // Réinitialiser les autres données
+    this.arrondissements = [];
     this.secteurs = [];
     this.quartiers = [];
+    if (this.cities.length === 0) this.loadCitiesForAddress();
 
-    // Créer une liste simple de villes (pour l'instant juste Ouagadougou)
-    this.cities = [
-      {
-        id: "1",
-        name: "Ouagadougou",
-        code: "OUA",
-        country: { id: "1", name: "Burkina Faso", code: "BF" },
-      },
-      {
-        id: "2",
-        name: "Bobo-Dioulasso",
-        code: "BOB",
-        country: { id: "1", name: "Burkina Faso", code: "BF" },
-      },
-    ];
-
-    // Initialiser l'état disabled des contrôles d'adresse
     this.employeeForm.get("address.arrondissement")?.disable();
     this.employeeForm.get("address.sector")?.disable();
     this.employeeForm.get("address.neighborhood")?.disable();
   }
 
-  // Initialiser les données mock pour la sélection des zones de couverture
+  // Initialise les dépendances d'adresse pour la sélection des zones de couverture.
   private initializeAddressDataForZones(): void {
-    // Les arrondissements sont déjà chargés depuis OUAGA_DATA
-    // Réinitialiser les autres données
+    this.arrondissements = [];
     this.secteurs = [];
     this.quartiers = [];
-
-    // Initialiser les villes si pas déjà fait
-    if (this.cities.length === 0) {
-      this.cities = [
-        {
-          id: "1",
-          name: "Ouagadougou",
-          code: "OUA",
-          country: { id: "1", name: "Burkina Faso", code: "BF" },
-        },
-        {
-          id: "2",
-          name: "Bobo-Dioulasso",
-          code: "BOB",
-          country: { id: "1", name: "Burkina Faso", code: "BF" },
-        },
-      ];
-    }
+    if (this.cities.length === 0) this.loadCitiesForAddress();
   }
 
   openZoneModalcouverture(): void {
