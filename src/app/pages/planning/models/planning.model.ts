@@ -182,6 +182,8 @@ export interface TerritoryItem {
   sectorId?: string;
   latitude?: number;
   longitude?: number;
+  /** Chantier "unifier la géographie" — désormais présent sur les 5 modèles backend. */
+  code?: string;
 }
 
 // ── API paginated list wrapper ──────────────────────────────────

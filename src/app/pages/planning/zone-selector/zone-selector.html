@@ -1,30 +1,10 @@
 <div class="zs-root">
 
   <!-- ════════════════════════════════════════════════════════
-       GLOBAL STATS BAR
+       STATS BAR — plus de "ménages"/"actifs"/"couverture" (chiffres inventés,
+       retirés — aucune contrepartie réelle côté backend à ce niveau d'agrégation).
        ════════════════════════════════════════════════════════ -->
   <div class="zs-statsbar">
-    <div class="zs-stat">
-      <mat-icon class="stat-icon" style="color:#3b82f6">home</mat-icon>
-      <div class="stat-body">
-        <span class="stat-val">{{ globalHouseholds() }}</span>
-        <span class="stat-lbl">Ménages</span>
-      </div>
-    </div>
-    <div class="zs-stat">
-      <mat-icon class="stat-icon" style="color:#16a34a">verified</mat-icon>
-      <div class="stat-body">
-        <span class="stat-val">{{ globalActive() }}</span>
-        <span class="stat-lbl">Abonnés actifs</span>
-      </div>
-    </div>
-    <div class="zs-stat">
-      <mat-icon class="stat-icon" style="color:#8b5cf6">pie_chart</mat-icon>
-      <div class="stat-body">
-        <span class="stat-val">{{ globalCoverage() }}%</span>
-        <span class="stat-lbl">Couverture</span>
-      </div>
-    </div>
     <div class="zs-stat">
       <mat-icon class="stat-icon" style="color:#f59e0b">grid_view</mat-icon>
       <div class="stat-body">
@@ -33,6 +13,13 @@
       </div>
     </div>
   </div>
+
+  @if (loadError()) {
+    <div class="zs-load-error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ loadError() }}</span>
+    </div>
+  }
 
   <!-- ════════════════════════════════════════════════════════
        MAIN SPLIT LAYOUT
@@ -59,18 +46,6 @@
             </button>
           }
         </div>
-        <button
-          type="button"
-          class="zs-filter-btn"
-          [class.active]="activeOnly()"
-          (click)="toggleActiveFilter()"
-          pTooltip="Afficher uniquement les zones avec abonnements actifs"
-          tooltipPosition="right"
-        >
-          <mat-icon>filter_list</mat-icon>
-          <span>Actifs uniquement</span>
-          <span class="filter-dot" [class.on]="activeOnly()"></span>
-        </button>
       </div>
 
       <!-- Legend -->
@@ -85,7 +60,12 @@
 
       <!-- Tree -->
       <div class="zs-tree-wrap">
-        @if (filteredTree().length === 0) {
+        @if (isLoading()) {
+          <div class="zs-empty">
+            <mat-icon>hourglass_top</mat-icon>
+            <span>Chargement de la géographie…</span>
+          </div>
+        } @else if (filteredTree().length === 0) {
           <div class="zs-empty">
             <mat-icon>search_off</mat-icon>
             <span>Aucune zone trouvée</span>
@@ -109,13 +89,6 @@
                 {{ getLevelIcon(node.data.level) }}
               </mat-icon>
               <span class="tnode-label" [pTooltip]="node.label" tooltipPosition="top">{{ node.label }}</span>
-              <div class="tnode-stats">
-                <span class="tnode-hh">{{ node.data.households }}</span>
-                <mat-icon class="tnode-hh-ico">home</mat-icon>
-                @if (node.data.active > 0) {
-                  <span class="tnode-active">{{ node.data.active }} actifs</span>
-                }
-              </div>
             </div>
           </ng-template>
         </p-tree>
@@ -147,29 +120,27 @@
             </div>
           }
 
-          <!-- Metrics -->
+          <!-- Nombre réel de clients (chantier "résoudre de vrais clients zone/secteur")
+               — plus de ménages/actifs/couverture fictifs : un seul chiffre réel, ou
+               "Non disponible" pendant le chargement/en cas d'échec. -->
           <div class="sel-metrics">
             <div class="sel-metric">
-              <span class="met-val">{{ selHouseholds() }}</span>
-              <span class="met-lbl">Ménages</span>
-            </div>
-            <div class="sel-metric">
-              <span class="met-val" style="color:#16a34a">{{ selActive() }}</span>
-              <span class="met-lbl">Actifs</span>
-            </div>
-            <div class="sel-metric">
-              <span class="met-val" style="color:#8b5cf6">{{ selCoverage() }}%</span>
-              <span class="met-lbl">Couverture</span>
+              @if (selClientCountLoading()) {
+                <span class="met-val">…</span>
+              } @else if (selClientCount() !== null) {
+                <span class="met-val">{{ selClientCount() }}</span>
+              } @else {
+                <span class="met-val met-val--unavailable">Non disponible</span>
+              }
+              <span class="met-lbl">Clients</span>
             </div>
           </div>
-
-          <!-- Coverage bar -->
-          <div class="sel-bar-wrap">
-            <div class="sel-bar">
-              <div class="sel-bar-fill" [style.width.%]="selCoverage()" [style.background]="getLevelColor(selectedNode()!.data.level)"></div>
+          @if (selClientCountError()) {
+            <div class="sel-count-error">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ selClientCountError() }}</span>
             </div>
-            <span class="sel-bar-lbl">{{ selCoverage() }}% des ménages abonnés</span>
-          </div>
+          }
         </div>
       }
 
@@ -199,7 +170,13 @@
         <div class="map-sel-badge" [style.--sc]="getLevelColor(selectedNode()!.data.level)">
           <mat-icon>place</mat-icon>
           <span class="map-sel-name" [pTooltip]="selectedNode()!.label" tooltipPosition="top">{{ selectedNode()!.label }}</span>
-          <span class="map-sel-hh">{{ selHouseholds() }} ménages</span>
+          @if (selClientCountLoading()) {
+            <span class="map-sel-hh">…</span>
+          } @else if (selClientCount() !== null) {
+            <span class="map-sel-hh">{{ selClientCount() }} client(s)</span>
+          } @else {
+            <span class="map-sel-hh">Non disponible</span>
+          }
         </div>
       }
 

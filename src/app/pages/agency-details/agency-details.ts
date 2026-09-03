@@ -10,6 +10,7 @@ import { MessagesService } from "../../services/messages.service";
 import { Message } from "../../models/message.model";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { CountriesOrgMockService } from "../../services/countries-org-mock.service";
+import { TerritoryHttpService } from "../../services/territory-http.service";
 
 import { DrawerModule } from "primeng/drawer";
 import { OUAGA_DATA, QuartierData } from "../../data/mock-data";
@@ -111,6 +112,10 @@ export class AgencyDetails implements OnInit {
   quartierss: Quartier[] = [];
   validationErrors: { [key: string]: string[] } = {};
   generalError: string = "";
+  isLoadingCities = false;
+  isLoadingArrondissements = false;
+  isLoadingSecteurs = false;
+  isLoadingQuartiers = false;
 
   agency: any = "";
   agencyId: string | null = null;
@@ -154,7 +159,11 @@ export class AgencyDetails implements OnInit {
   };
   constructor(
     private route: ActivatedRoute,
+    // Chantier "migrer le frontend vers TerritoryHttpService" — laissé branché
+    // uniquement pour getQuartierInfos() (composite, sans équivalent HTTP) ; toute la
+    // cascade pays/ville/arrondissement/secteur/quartier utilise TerritoryHttpService.
     private countriesOrgMockService: CountriesOrgMockService,
+    private territoryService: TerritoryHttpService,
     private agencyService: AgencyService,
     private authService: AuthService,
     private notificationService: NotificationService,
@@ -696,69 +705,80 @@ export class AgencyDetails implements OnInit {
 
   //Edit agency
   edit: boolean = false;
+  // Chantier "migrer le frontend vers TerritoryHttpService" — `onCityChange` peut
+  // se rappeler lui-même en cascade (via `editAgency()`, pour pré-remplir l'édition
+  // d'une agence déjà adressée) : chaque étage n'enchaîne le suivant qu'une fois sa
+  // propre requête résolue (dans le `next` du subscribe), jamais en supposant une
+  // réponse synchrone comme avant.
   onArrondissementChange(arrondissement?: string) {
-    if (arrondissement) {
-      const sectorObj = this.arrondissementss.find(
-        (a) => a.name === arrondissement,
-      );
-      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(
-        sectorObj?.id || "",
-      );
-      // if(this.edit) return
-      this.secteurss = sectors ? sectors : [];
-      console.log("Secteurs  ==> ", this.secteurss);
-      this.quartiers = [];
-      this.userData.address.sector = this.userData.address.sector || "";
-      if (this.userData.address.sector)
-        this.onSecteurChange(this.userData.address.sector);
-      this.userData.address.neighborhood =
-        this.userData.address.neighborhood || "";
-    }
+    this.secteurss = [];
+    this.quartierss = [];
+    this.quartiers = [];
+    if (!arrondissement) return;
+
+    const sectorObj = this.arrondissementss.find((a) => a.name === arrondissement);
+    this.userData.address.sector = this.userData.address.sector || "";
+    this.userData.address.neighborhood = this.userData.address.neighborhood || "";
+    if (!sectorObj?.id) return;
+
+    this.isLoadingSecteurs = true;
+    this.territoryService.getSectorsByArrondissement(sectorObj.id).subscribe({
+      next: (sectors) => {
+        this.secteurss = sectors;
+        this.isLoadingSecteurs = false;
+        if (this.userData.address.sector) this.onSecteurChange(this.userData.address.sector);
+      },
+      error: () => { this.secteurss = []; this.isLoadingSecteurs = false; },
+    });
   }
 
   onSecteurChange(secteur: string) {
-    if (secteur) {
-      const secteurObj = this.secteurss.find((s) => s.name === secteur);
-      const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(
-        secteurObj?.id || "",
-      );
-      console.log("Quartiers  ==> ", quartiers);
-      this.quartierss = quartiers;
-      this.userData.address.neighborhood =
-        this.userData.address.neighborhood || "";
-    }
-    const secteurObj = this.secteurs.find((s) => s.secteur === secteur);
-    this.quartiers = secteurObj ? secteurObj.quartiers : [];
-    this.userData.address.neighborhood =
-      this.userData.address.neighborhood || "";
+    this.quartierss = [];
+    this.quartiers = [];
+    this.userData.address.neighborhood = this.userData.address.neighborhood || "";
+    if (!secteur) return;
+
+    const secteurObj = this.secteurss.find((s) => s.name === secteur);
+    if (!secteurObj?.id) return;
+
+    this.isLoadingQuartiers = true;
+    this.territoryService.getNeighborhoodsBySector(secteurObj.id).subscribe({
+      next: (quartiers) => { this.quartierss = quartiers; this.isLoadingQuartiers = false; },
+      error: () => { this.quartierss = []; this.isLoadingQuartiers = false; },
+    });
   }
 
   onCityChange(city: string) {
-    if (city) {
-      const cityObj = this.cities.find((c) => c.name === city);
-      console.log("City Object ==> ", cityObj);
-      const arr = this.countriesOrgMockService.getArrondissementsByCity(
-        cityObj?.id || "",
-      );
-      this.arrondissementss = arr ? arr : [];
-      console.log("Arrondissements  ==> ", this.arrondissementss);
-      this.secteurs = [];
-      this.quartiers = [];
-      this.userData.address.arrondissement =
-        this.userData.address.arrondissement || "";
-      if (this.userData.address.arrondissement)
-        this.onArrondissementChange(this.userData.address.arrondissement);
-      this.userData.address.sector = this.userData.address.sector || "";
-      this.userData.address.neighborhood =
-        this.userData.address.neighborhood || "";
-    }
+    this.arrondissementss = [];
+    this.secteurss = [];
+    this.quartierss = [];
+    this.secteurs = [];
+    this.quartiers = [];
+    if (!city) return;
+
+    const cityObj = this.cities.find((c) => c.name === city);
+    this.userData.address.arrondissement = this.userData.address.arrondissement || "";
+    this.userData.address.sector = this.userData.address.sector || "";
+    this.userData.address.neighborhood = this.userData.address.neighborhood || "";
+    if (!cityObj?.id) return;
+
+    this.isLoadingArrondissements = true;
+    this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
+      next: (arr) => {
+        this.arrondissementss = arr;
+        this.isLoadingArrondissements = false;
+        if (this.userData.address.arrondissement) this.onArrondissementChange(this.userData.address.arrondissement);
+      },
+      error: () => { this.arrondissementss = []; this.isLoadingArrondissements = false; },
+    });
   }
+
   getAllCountries() {
-    console.log(
-      "All cities ==> ",
-      this.countriesOrgMockService.getCitiesByCountry("1"),
-    );
-    this.cities = this.countriesOrgMockService.getCitiesByCountry("1");
+    this.isLoadingCities = true;
+    this.territoryService.getAllCities().subscribe({
+      next: (cities) => { this.cities = cities; this.isLoadingCities = false; },
+      error: () => { this.cities = []; this.isLoadingCities = false; },
+    });
   }
   isButtonDisabled(): boolean {
     const disabled = this.isLoading;

@@ -16,14 +16,20 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import * as L from 'leaflet';
 import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../../services/auth.service';
 import { TerritoryItem } from '../models/planning.model';
 
 // ── Types ──────────────────────────────────────────────────────
+// Chantier "migrer le frontend / résoudre de vrais clients zone/secteur" — `households`/
+// `active` étaient des constantes inventées (40/15 par quartier, 120/45 par secteur même
+// sans quartier chargé) sans AUCUNE contrepartie côté backend (aucun modèle ne stocke de
+// décompte de ménages) : retirées. Le seul nombre affiché désormais (`clientCount`, sur
+// la sélection courante uniquement — jamais sur les 137 nœuds de l'arbre, qui coûterait
+// 137 requêtes) vient de GET /planning/zone-client-count, un vrai comptage de clients
+// réels + éligibles pour la géographie choisie.
 interface ZoneMeta {
   level: 'ville' | 'arrondissement' | 'secteur' | 'quartier';
   id: string;
-  households: number;
-  active: number;
   coords: [number, number];
   color: string;
 }
@@ -38,8 +44,8 @@ export interface ZoneSelection {
   secteur?:          string;
   quartier?:         string;
   label:             string;
-  households:        number;
-  active:            number;
+  /** null = en cours de chargement ou indisponible — jamais une estimation inventée. */
+  clientCount:       number | null;
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -59,41 +65,38 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private http    = inject(HttpClient);
   private ngZone  = inject(NgZone);
+  private auth    = inject(AuthService);
   private api     = environment.apiUrl;
   private leafletMap!: L.Map;
   private circleMarkers = new Map<string, L.CircleMarker>();
 
   // ── State ────────────────────────────────────────────────────
   searchQuery   = signal('');
-  activeOnly    = signal(false);
   selectedNode  = signal<TreeNode | null>(null);
   isLoading     = signal(true);
+  loadError     = signal<string | null>(null);
   rawTree       = signal<TreeNode[]>([]);
 
   // ── Filtered tree ─────────────────────────────────────────────
+  // Chantier "résoudre de vrais clients zone/secteur" — le filtre "Actifs uniquement"
+  // reposait entièrement sur le champ `active` fictif, retiré : plus de second critère,
+  // seulement la recherche par nom.
   filteredTree = computed<TreeNode[]>(() => {
-    const q  = this.searchQuery().toLowerCase().trim();
-    const ao = this.activeOnly();
-    if (!q && !ao) return this.rawTree();
-    return this._filterNodes(this.rawTree(), q, ao);
+    const q = this.searchQuery().toLowerCase().trim();
+    if (!q) return this.rawTree();
+    return this._filterNodes(this.rawTree(), q);
   });
 
-  // ── Global stats ──────────────────────────────────────────────
-  globalHouseholds = computed<number>(() => this._leafSum(this.rawTree(), 'households'));
-  globalActive     = computed<number>(() => this._leafSum(this.rawTree(), 'active'));
-  globalCoverage   = computed<number>(() => {
-    const h = this.globalHouseholds(), a = this.globalActive();
-    return h ? Math.round((a / h) * 100) : 0;
-  });
   totalSecteurs = computed<number>(() => this._countByLevel(this.rawTree(), 'secteur'));
 
-  // ── Selected zone stats ───────────────────────────────────────
-  selHouseholds = computed<number>(() => this.selectedNode()?.data?.households ?? 0);
-  selActive     = computed<number>(() => this.selectedNode()?.data?.active ?? 0);
-  selCoverage   = computed<number>(() => {
-    const h = this.selHouseholds(), a = this.selActive();
-    return h ? Math.round((a / h) * 100) : 0;
-  });
+  // ── Comptage réel de clients pour la sélection courante ─────────
+  // Chantier "résoudre de vrais clients zone/secteur" — un seul appel réseau, pour le
+  // nœud sélectionné uniquement (jamais un total pré-calculé sur les 137 nœuds de
+  // l'arbre). `null` = en cours de chargement ou indisponible, jamais une estimation.
+  selClientCount        = signal<number | null>(null);
+  selClientCountLoading = signal(false);
+  selClientCountError   = signal<string | null>(null);
+
   selBreadcrumb = computed<string[]>(() => {
     const n = this.selectedNode();
     if (!n) return [];
@@ -117,22 +120,30 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Load territory from API ───────────────────────────────────
   private _loadTerritories(): void {
+    this.isLoading.set(true);
+    this.loadError.set(null);
+    // Chaque flux dégrade individuellement vers [] pour ne pas bloquer les 3 autres
+    // niveaux si un seul échoue, mais on garde trace de l'échec pour l'afficher —
+    // avant ce chantier, ces `catchError` avalaient l'erreur sans jamais la montrer.
+    let anyFailed = false;
+    const onLevelError = () => { anyFailed = true; return of([]); };
+
     forkJoin({
       cities:         this.http.get<{ success?: boolean; data?: TerritoryItem[] }>(`${this.api}/territories/cities`).pipe(
                         map(r => (r as any)?.data ?? (Array.isArray(r) ? r : [])),
-                        catchError(() => of([])),
+                        catchError(onLevelError),
                       ),
       arrondissements:this.http.get<{ success?: boolean; data?: TerritoryItem[] }>(`${this.api}/territories/arrondissements`).pipe(
                         map(r => (r as any)?.data ?? (Array.isArray(r) ? r : [])),
-                        catchError(() => of([])),
+                        catchError(onLevelError),
                       ),
       sectors:        this.http.get<{ success?: boolean; data?: TerritoryItem[] }>(`${this.api}/territories/sectors`).pipe(
                         map(r => (r as any)?.data ?? (Array.isArray(r) ? r : [])),
-                        catchError(() => of([])),
+                        catchError(onLevelError),
                       ),
       neighborhoods:  this.http.get<{ success?: boolean; data?: TerritoryItem[] }>(`${this.api}/territories/neighborhoods`).pipe(
                         map(r => (r as any)?.data ?? (Array.isArray(r) ? r : [])),
-                        catchError(() => of([])),
+                        catchError(onLevelError),
                       ),
     }).subscribe(({ cities, arrondissements, sectors, neighborhoods }) => {
       const tree = this._buildTreeFromApi(
@@ -143,6 +154,9 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
       );
       this.rawTree.set(tree);
       this.isLoading.set(false);
+      if (anyFailed) {
+        this.loadError.set("Certaines géographies n'ont pas pu être chargées — la liste peut être incomplète.");
+      }
       // Re-plot markers after tree is built
       if (this.leafletMap) {
         this.ngZone.runOutsideAngular(() => this._plotAllMarkers(this.rawTree()));
@@ -175,12 +189,10 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
             label: nbh.name,
             leaf:  true,
             data: {
-              level:      'quartier' as const,
-              id:          nbh._id,
-              households:  40,
-              active:      15,
-              coords:      [nbh.latitude ?? 12.3647, nbh.longitude ?? -1.5337] as [number, number],
-              color:       '#f59e0b',
+              level:  'quartier' as const,
+              id:      nbh._id,
+              coords:  [nbh.latitude ?? 12.3647, nbh.longitude ?? -1.5337] as [number, number],
+              color:   '#f59e0b',
             } satisfies ZoneMeta,
           }));
 
@@ -190,12 +202,10 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
             leaf:     neighborhoodNodes.length === 0,
             children: neighborhoodNodes.length ? neighborhoodNodes : undefined,
             data: {
-              level:      'secteur' as const,
-              id:          sec._id,
-              households:  neighborhoodNodes.reduce((s, n) => s + (n.data?.households ?? 0), 120),
-              active:      neighborhoodNodes.reduce((s, n) => s + (n.data?.active ?? 0), 45),
-              coords:      [sec.latitude ?? 12.3647, sec.longitude ?? -1.5337] as [number, number],
-              color:       '#16a34a',
+              level:  'secteur' as const,
+              id:      sec._id,
+              coords:  [sec.latitude ?? 12.3647, sec.longitude ?? -1.5337] as [number, number],
+              color:   '#16a34a',
             } satisfies ZoneMeta,
           };
         });
@@ -205,12 +215,10 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
           label:    arr.name,
           children: sectorNodes,
           data: {
-            level:      'arrondissement' as const,
-            id:          arr._id,
-            households:  sectorNodes.reduce((s, n) => s + (n.data?.households ?? 0), 0),
-            active:      sectorNodes.reduce((s, n) => s + (n.data?.active ?? 0), 0),
-            coords:      [arr.latitude ?? 12.3647, arr.longitude ?? -1.5337] as [number, number],
-            color:       '#8b5cf6',
+            level:  'arrondissement' as const,
+            id:      arr._id,
+            coords:  [arr.latitude ?? 12.3647, arr.longitude ?? -1.5337] as [number, number],
+            color:   '#8b5cf6',
           } satisfies ZoneMeta,
         };
       });
@@ -221,12 +229,10 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
         expanded: ci === 0,
         children: arrNodes,
         data: {
-          level:      'ville' as const,
-          id:          city._id,
-          households:  arrNodes.reduce((s, n) => s + (n.data?.households ?? 0), 0),
-          active:      arrNodes.reduce((s, n) => s + (n.data?.active ?? 0), 0),
-          coords:      [city.latitude ?? 12.3647, city.longitude ?? -1.5337] as [number, number],
-          color:       cityColor,
+          level:  'ville' as const,
+          id:      city._id,
+          coords:  [city.latitude ?? 12.3647, city.longitude ?? -1.5337] as [number, number],
+          color:   cityColor,
         } satisfies ZoneMeta,
       };
     });
@@ -234,8 +240,6 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Interactions ──────────────────────────────────────────────
   onSearch(q: string): void { this.searchQuery.set(q); }
-
-  toggleActiveFilter(): void { this.activeOnly.update(v => !v); }
 
   onNodeSelect(event: { node: TreeNode }): void {
     this.selectedNode.set(event.node);
@@ -246,13 +250,15 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
   onNodeUnselect(): void {
     this.selectedNode.set(null);
     this._resetMarkers();
-    this.selectionChange.emit({ label: '', households: 0, active: 0 });
+    this._resetClientCount();
+    this.selectionChange.emit({ label: '', clientCount: null });
   }
 
   clearSelection(): void {
     this.selectedNode.set(null);
     this._resetMarkers();
-    this.selectionChange.emit({ label: '', households: 0, active: 0 });
+    this._resetClientCount();
+    this.selectionChange.emit({ label: '', clientCount: null });
   }
 
   isSelected(key: string): boolean { return this.selectedNode()?.key === key; }
@@ -268,10 +274,6 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getLevelLabel(level: string): string {
     return ({ ville: 'Ville', arrondissement: 'Arrondissement', secteur: 'Secteur', quartier: 'Quartier' } as Record<string, string>)[level] ?? level;
-  }
-
-  getRatePct(active: number, total: number): number {
-    return total ? Math.round((active / total) * 100) : 0;
   }
 
   // ── Leaflet map ───────────────────────────────────────────────
@@ -319,9 +321,10 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private _tooltipHtml(node: TreeNode): string {
-    const d = node.data as ZoneMeta;
-    const rate = this.getRatePct(d.active, d.households);
-    return `<div class="zs-tt"><strong>${node.label}</strong><div>${d.households} ménages · ${d.active} actifs (${rate}%)</div></div>`;
+    // Plus de compteur ici (ni ménages ni actifs) — afficher un vrai nombre par survol
+    // coûterait une requête par nœud (jusqu'à 137) ; le compte réel n'est chargé que
+    // pour la sélection courante (voir selClientCount / _fetchClientCount).
+    return `<div class="zs-tt"><strong>${node.label}</strong></div>`;
   }
 
   private _markerRadius(meta: ZoneMeta): number {
@@ -366,11 +369,11 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
   private _emitSelection(node: TreeNode): void {
     const meta = node.data as ZoneMeta;
 
-    // Build selection with both names and IDs
+    // Build selection with names and IDs — clientCount part vient dans une 2e émission
+    // une fois résolu (voir _fetchClientCount), jamais inventé ici.
     const sel: ZoneSelection = {
-      label:      node.label ?? '',
-      households: node.data?.households ?? 0,
-      active:     node.data?.active ?? 0,
+      label:       node.label ?? '',
+      clientCount: null,
     };
 
     // Walk the ancestor chain to build full path with IDs
@@ -393,6 +396,50 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.selectionChange.emit(sel);
+    this._fetchClientCount(sel);
+  }
+
+  /**
+   * Chantier "résoudre de vrais clients zone/secteur" — un seul appel réseau pour la
+   * sélection courante, réutilise GET /planning/zone-client-count (backend : agence +
+   * rôle client + statut actif + correspondance géographique + éligibilité, la MÊME
+   * résolution que la génération de Collecte au démarrage du planning). Ré-émet
+   * `selectionChange` avec le compte réel une fois résolu — jamais une estimation.
+   */
+  private _fetchClientCount(sel: ZoneSelection): void {
+    const agencyId = this.auth.getCurrentUser()?.agencyId;
+    this.selClientCount.set(null);
+    this.selClientCountError.set(null);
+    if (!agencyId) return;
+
+    this.selClientCountLoading.set(true);
+    this.http.get<{ success?: boolean; data?: { count: number } }>(`${this.api}/planning/zone-client-count`, {
+      params: {
+        agencyId,
+        ...(sel.villeId ? { villeId: sel.villeId } : {}),
+        ...(sel.arrondissementId ? { arrondissementId: sel.arrondissementId } : {}),
+        ...(sel.secteurId ? { secteurId: sel.secteurId } : {}),
+        ...(sel.quartierId ? { quartierId: sel.quartierId } : {}),
+      },
+    }).pipe(
+      catchError(() => of(null)),
+    ).subscribe((res) => {
+      this.selClientCountLoading.set(false);
+      const count = res?.data?.count;
+      if (typeof count === 'number') {
+        this.selClientCount.set(count);
+        this.selectionChange.emit({ ...sel, clientCount: count });
+      } else {
+        this.selClientCountError.set('Nombre de clients indisponible.');
+        this.selectionChange.emit({ ...sel, clientCount: null });
+      }
+    });
+  }
+
+  private _resetClientCount(): void {
+    this.selClientCount.set(null);
+    this.selClientCountLoading.set(false);
+    this.selClientCountError.set(null);
   }
 
   // ── Tree helpers ──────────────────────────────────────────────
@@ -423,25 +470,16 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
     return [];
   }
 
-  private _filterNodes(nodes: TreeNode[], q: string, ao: boolean): TreeNode[] {
+  private _filterNodes(nodes: TreeNode[], q: string): TreeNode[] {
     const out: TreeNode[] = [];
     for (const n of nodes) {
-      const labelMatch  = !q || (n.label ?? '').toLowerCase().includes(q);
-      const activeMatch = !ao || (n.data?.active ?? 0) > 0;
-      const kids = n.children ? this._filterNodes(n.children, q, ao) : undefined;
-      if ((labelMatch && activeMatch) || kids?.length) {
+      const labelMatch = !q || (n.label ?? '').toLowerCase().includes(q);
+      const kids = n.children ? this._filterNodes(n.children, q) : undefined;
+      if (labelMatch || kids?.length) {
         out.push({ ...n, children: kids, expanded: !!(q || kids?.length) });
       }
     }
     return out;
-  }
-
-  private _leafSum(nodes: TreeNode[], field: 'households' | 'active'): number {
-    return nodes.reduce((acc, n) => {
-      if (n.leaf) return acc + (n.data?.[field] ?? 0);
-      if (n.children) return acc + this._leafSum(n.children, field);
-      return acc;
-    }, 0);
   }
 
   private _countByLevel(nodes: TreeNode[], level: string): number {

@@ -10,7 +10,7 @@ import { Agency } from '../../../models/agency.model';
 import { OUAGA_DATA, QuartierData } from '../../../data/mock-data';
 import { Admin } from '../../../services/admin';
 import { AgencyService } from '../../../services/agency.service';
-import { CountriesOrgMockService } from '../../../services/countries-org-mock.service';
+import { TerritoryHttpService } from '../../../services/territory-http.service';
 import { Arrondissement, City, Quartier, Sector } from '../../../models/countries-org.model';
 
 @Component({
@@ -90,6 +90,10 @@ export class Register implements OnInit {
   agencyId: string = '';
   showPassword = false;
   isLoading = false;
+  isLoadingCities = false;
+  isLoadingArrondissements = false;
+  isLoadingSecteurs = false;
+  isLoadingQuartiers = false;
 
   // Error handling properties
   validationErrors: { [key: string]: string[] } = {};
@@ -104,7 +108,7 @@ export class Register implements OnInit {
     private adminService: Admin,
     private activatedRoute: ActivatedRoute,
     private agencyService: AgencyService,
-    private countriesOrgMockService: CountriesOrgMockService
+    private territoryService: TerritoryHttpService
   ) { }
 
   ngOnInit(): void {
@@ -125,7 +129,6 @@ export class Register implements OnInit {
   }
   formCountriesDataInit() {
     this.getAllCountries();
-    this.test();
   }
   togglePassword(): void {
     this.showPassword = !this.showPassword;
@@ -474,44 +477,57 @@ export class Register implements OnInit {
   }
 
   onArrondissementChange(arrondissement?: string) {
-    if (arrondissement) {
-      const sectorObj = this.arrondissementss.find(a => a.name === arrondissement);
-      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(sectorObj?.id || '');
-      this.secteurss = sectors ? sectors : [];
-      console.log("Secteurs  ==> ", this.secteurss);
-      this.quartiers = [];
-      this.userData.address.sector = '';
-      this.userData.address.neighborhood = '';
-    }
+    // Réinitialise les niveaux enfants AVANT de lancer la requête — un changement
+    // rapide de parent n'affiche jamais un enfant obsolète.
+    this.secteurss = [];
+    this.quartierss = [];
+    this.quartiers = [];
+    this.userData.address.sector = '';
+    this.userData.address.neighborhood = '';
+    if (!arrondissement) return;
+
+    const sectorObj = this.arrondissementss.find(a => a.name === arrondissement);
+    if (!sectorObj?.id) return;
+    this.isLoadingSecteurs = true;
+    this.territoryService.getSectorsByArrondissement(sectorObj.id).subscribe({
+      next: (sectors) => { this.secteurss = sectors; this.isLoadingSecteurs = false; },
+      error: () => { this.secteurss = []; this.isLoadingSecteurs = false; },
+    });
   }
 
   onSecteurChange(secteur: string) {
-    if (secteur) {
-      const secteurObj = this.secteurss.find(s => s.name === secteur);
-      const quartiers = this.countriesOrgMockService.getNeighborhoodsBySector(secteurObj?.id || '');
-      console.log("Quartiers  ==> ", quartiers);
-      this.quartierss = quartiers;
-      this.userData.address.neighborhood = this.userData.address.neighborhood || '';
-    }
-    const secteurObj = this.secteurs.find(s => s.secteur === secteur);
-    this.quartiers = secteurObj ? secteurObj.quartiers : [];
-    this.userData.address.neighborhood = this.userData.address.neighborhood || '';
+    this.quartierss = [];
+    this.quartiers = [];
+    this.userData.address.neighborhood = '';
+    if (!secteur) return;
+
+    const secteurObj = this.secteurss.find(s => s.name === secteur);
+    if (!secteurObj?.id) return;
+    this.isLoadingQuartiers = true;
+    this.territoryService.getNeighborhoodsBySector(secteurObj.id).subscribe({
+      next: (quartiers) => { this.quartierss = quartiers; this.isLoadingQuartiers = false; },
+      error: () => { this.quartierss = []; this.isLoadingQuartiers = false; },
+    });
   }
 
   onCityChange(city: string) {
-    if (city) {
-      const cityObj = this.cities.find(c => c.name === city);
-      console.log("City Object ==> ", cityObj);
-      const arr = this.countriesOrgMockService.getArrondissementsByCity(cityObj?.id || '');
-      this.arrondissementss = arr ? arr : [];
-      console.log("Arrondissements  ==> ", this.arrondissementss);
-      this.secteurs = [];
-      this.quartiers = [];
-      this.userData.address.arrondissement = '';
-      this.userData.address.sector = '';
-      this.userData.address.neighborhood = '';
-    };
+    this.arrondissementss = [];
+    this.secteurss = [];
+    this.quartierss = [];
+    this.secteurs = [];
+    this.quartiers = [];
+    this.userData.address.arrondissement = '';
+    this.userData.address.sector = '';
+    this.userData.address.neighborhood = '';
+    if (!city) return;
 
+    const cityObj = this.cities.find(c => c.name === city);
+    if (!cityObj?.id) return;
+    this.isLoadingArrondissements = true;
+    this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
+      next: (arr) => { this.arrondissementss = arr; this.isLoadingArrondissements = false; },
+      error: () => { this.arrondissementss = []; this.isLoadingArrondissements = false; },
+    });
   }
   private validateForm(): boolean {
     // Vérifier que le rôle est bien sélectionné
@@ -691,12 +707,14 @@ export class Register implements OnInit {
     return this.validationErrors[fieldName] && this.validationErrors[fieldName].length > 0;
   }
 
-  test() {
-    console.log("All sectors ==> ", this.countriesOrgMockService.getSectorsByArrondissement("1"));
-  }
-
+  // Chantier "migrer le frontend vers TerritoryHttpService" — le pays reste codé en dur
+  // ("1" = Burkina Faso) : aucun composant ne permettait déjà de le changer, non
+  // modifié ici (hors périmètre de cette migration).
   getAllCountries() {
-    console.log("All cities ==> ", this.countriesOrgMockService.getCitiesByCountry("1"));
-    this.cities = this.countriesOrgMockService.getCitiesByCountry("1");
+    this.isLoadingCities = true;
+    this.territoryService.getAllCities().subscribe({
+      next: (cities) => { this.cities = cities; this.isLoadingCities = false; },
+      error: () => { this.cities = []; this.isLoadingCities = false; },
+    });
   }
 }

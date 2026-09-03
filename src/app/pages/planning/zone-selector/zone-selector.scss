@@ -13,13 +13,11 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 // ── Stats bar ─────────────────────────────────────────────────
+// Chantier "résoudre de vrais clients zone/secteur" — un seul indicateur réel
+// (Secteurs) désormais ; les 3 autres (ménages/actifs/couverture) étaient fictifs.
 .zs-statsbar {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   gap: 12px;
-
-  @media (max-width: 768px) { grid-template-columns: repeat(2, 1fr); }
-  @media (max-width: 480px) { grid-template-columns: 1fr 1fr; }
 }
 
 .zs-stat {
@@ -66,12 +64,23 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
   display: grid;
   grid-template-columns: 360px 1fr;
   gap: 16px;
-  min-height: 520px;
-  max-height: 600px;
+  // `min-height`/`max-height` seuls ne bornent pas la piste de la grille : sans hauteur
+  // FERME, `.zs-sidebar` s'étire à la hauteur de son contenu (pas à celle de la grille),
+  // donc `.zs-tree-wrap` (flex:1; min-height:0; overflow-y:auto) n'avait jamais de
+  // hauteur réellement bornée sur laquelle défiler — un arbre déplié en profondeur
+  // débordait (ou, avec overflow:hidden seul, se faisait juste rogner) au lieu de
+  // scroller. `height` fixe force la piste de grille, donc `.zs-sidebar` (stretch par
+  // défaut) à cette hauteur exacte, et c'est CETTE contrainte qui active enfin le
+  // scroll interne de `.zs-tree-wrap`.
+  height: 600px;
+  // Garde-fou : sans ça, une piste de grille peut malgré tout dépasser la hauteur fixée
+  // (dimensionnement Leaflet ou contenu imprévu) et déborder visuellement sous la carte.
+  overflow: hidden;
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
-    max-height: none;
+    height: auto;
+    overflow: visible;
   }
 }
 
@@ -85,6 +94,13 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 16px;
   padding: 16px;
   overflow: hidden;
+  // Valeur ABSOLUE, comme .zs-map-panel (même raisonnement : lever toute ambiguïté de
+  // résolution de %-height sur un item de grille) — nécessaire pour que .zs-tree-wrap
+  // (flex:1; min-height:0) ait une hauteur réellement bornée sur laquelle défiler.
+  height: 600px;
+  max-height: 600px;
+
+  @media (max-width: 900px) { height: auto; max-height: none; }
 }
 
 // ── Controls ──────────────────────────────────────────────────
@@ -417,7 +433,9 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
 
 .sel-metrics {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  // Chantier "résoudre de vrais clients zone/secteur" — un seul indicateur réel
+  // (Clients) désormais, plus de ménages/actifs/couverture fictifs.
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 
@@ -433,12 +451,36 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
   font-weight: 800;
   color: #0f172a;
   font-variant-numeric: tabular-nums;
+
+  &--unavailable {
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+  }
 }
 
 .met-lbl {
   font-size: 10px;
   color: #94a3b8;
   font-weight: 500;
+}
+
+.sel-count-error,
+.zs-load-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 8px 10px;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+.zs-load-error {
+  margin: 0 0 8px;
 }
 
 .sel-bar-wrap {
@@ -467,22 +509,34 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
 
 // ── Map panel ─────────────────────────────────────────────────
 .zs-map-panel {
+  // `position: relative` seul ne crée PAS de contexte d'empilement — les contrôles
+  // internes de Leaflet (`.leaflet-control-zoom`, `.leaflet-control-attribution`) ont
+  // leur propre z-index (jusqu'à 1000, fixé par la feuille de style de Leaflet) qui,
+  // sans `z-index` ici, s'échappe et se compare directement au reste de la page
+  // (dropdowns, modales...) au lieu de rester confiné à cette carte. `z-index: 0` force
+  // ce panneau à créer son propre contexte d'empilement : tout ce que Leaflet dessine à
+  // l'intérieur reste piégé ici, quelle que soit sa valeur interne.
   position: relative;
+  z-index: 0;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid #f1f5f9;
-  min-height: 400px;
+  // Valeur ABSOLUE (pas 100%) qui reprend exactement celle de .zs-split (héritage de
+  // pourcentage à travers une grille : cohérence non garantie selon la façon dont le
+  // navigateur résout un %-height sur un item de grille — passé en dur pour lever toute
+  // ambiguïté, quitte à devoir modifier les deux si la valeur change un jour). Leaflet
+  // fige une hauteur en JS à l'initialisation (_initMap) et ne la recalcule jamais tout
+  // seul ensuite, d'où le débordement observé si ce panneau grandit après coup.
+  height: 600px;
+  max-height: 600px;
 
-  @media (max-width: 900px) { min-height: 350px; }
+  @media (max-width: 900px) { height: 350px; max-height: 350px; }
 }
 
 .zs-map {
   width: 100%;
   height: 100%;
-  min-height: 400px;
   background: #f8fafc;
-
-  @media (max-width: 900px) { min-height: 350px; }
 }
 
 // ── Map legend overlay ────────────────────────────────────────
@@ -490,7 +544,12 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
   position: absolute;
   top: 12px;
   left: 12px;
-  z-index: 1000;
+  // Leaflet place son contrôle de zoom (+/-) au même coin (top-left) par défaut, avec
+  // z-index:1000 — à égalité, ce panneau (plus tard dans le DOM) gagnait le conflit et
+  // passait PAR-DESSUS les boutons de zoom, les rendant inutilisables. Abaissé sous le
+  // z-index des contrôles Leaflet (1000), tout en restant au-dessus des tuiles/marqueurs
+  // de la carte (panes Leaflet ≤ 700).
+  z-index: 650;
   background: rgba(255,255,255,.92);
   backdrop-filter: blur(8px);
   border: 1px solid #e2e8f0;
@@ -540,7 +599,11 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1000;
+  // Même conflit que .map-legend-overlay ci-dessus : à z-index:1000, ce badge (large,
+  // jusqu'à 420px, centré en bas) passait par-dessus l'attribution OpenStreetMap et le
+  // bouton de zoom arrière (bottom-right/bottom-left, contrôles Leaflet). Abaissé sous
+  // les contrôles Leaflet, reste au-dessus des tuiles/marqueurs.
+  z-index: 650;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -613,6 +676,5 @@ $ease: cubic-bezier(0.16, 1, 0.3, 1);
 
 // ── Mobile ────────────────────────────────────────────────────
 @media (max-width: 480px) {
-  .zs-statsbar { grid-template-columns: 1fr 1fr; }
-  .zs-legend   { display: none; }
+  .zs-legend { display: none; }
 }

@@ -108,10 +108,19 @@
               <h2>Sélection de la cible</h2>
               <p>Définissez la cible de ce planning de collecte</p>
             </div>
-            @if (estimatedHouseholds() > 0) {
+            @if (estimatedHouseholds() !== null && estimatedHouseholds()! > 0) {
               <div class="hh-badge">
                 <mat-icon>home</mat-icon>
-                <strong>{{ estimatedHouseholds() }}</strong> ménage(s)
+                <strong>{{ estimatedHouseholds() }}</strong>
+                {{ currentType() === 'zone' || currentType() === 'secteur' ? 'client(s)' : 'ménage(s)' }}
+              </div>
+            } @else if ((currentType() === 'zone' || currentType() === 'secteur') && (formValue()['quartierId'] || formValue()['secteurId'] || formValue()['arrondissementId'] || formValue()['villeId'])) {
+              <!-- Chantier "résoudre de vrais clients zone/secteur" — une géographie est
+                   choisie mais le comptage réel n'est pas (encore) disponible : jamais
+                   une estimation, "Non disponible" explicite. -->
+              <div class="hh-badge hh-badge--unavailable">
+                <mat-icon>hourglass_top</mat-icon>
+                <span>Non disponible</span>
               </div>
             }
           </div>
@@ -537,7 +546,7 @@
               [selectedDate]="formValue()['date']"
               [selectedTeamIds]="selectedTeamId() ? [selectedTeamId()!] : []"
               [newStartTime]="formValue()['startTime'] ?? '08:00'"
-              [estimatedHouseholds]="estimatedHouseholds()"
+              [estimatedHouseholds]="estimatedHouseholds() ?? 0"
               [externalTeams]="apiTeams()"
               (teamsChange)="onTeamsChange($event)"
             ></app-team-conflict-detector>
@@ -590,7 +599,14 @@
                   </span>
                 </div>
               }
-              <div class="sum-row"><span class="sum-lbl">Ménages est.</span><span class="sum-val sum-bold">{{ estimatedHouseholds() }}</span></div>
+              @if (currentType() === 'zone' || currentType() === 'secteur') {
+                <div class="sum-row">
+                  <span class="sum-lbl">Clients</span>
+                  <span class="sum-val sum-bold">{{ estimatedHouseholds() !== null ? estimatedHouseholds() : 'Non disponible' }}</span>
+                </div>
+              } @else {
+                <div class="sum-row"><span class="sum-lbl">Ménages est.</span><span class="sum-val sum-bold">{{ estimatedHouseholds() }}</span></div>
+              }
             </div>
 
             <!-- Calendrier -->

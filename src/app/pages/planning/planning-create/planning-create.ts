@@ -192,7 +192,14 @@ export class PlanningCreate implements OnInit {
   // ── Computed ─────────────────────────────────────────────────
   currentType = computed<string>(() => this.formValue()['type'] ?? '');
 
-  estimatedHouseholds = computed<number>(() => {
+  // Chantier "résoudre de vrais clients zone/secteur" — pour zone/secteur, `50` était une
+  // constante inventée (jamais lue depuis la sélection réelle). Remplacée par le vrai
+  // comptage renvoyé par ZoneSelectorComponent (GET /planning/zone-client-count) via
+  // `onZoneSelected()` ci-dessous. `null` = pas encore résolu / indisponible — jamais une
+  // estimation par défaut.
+  zoneClientCount = signal<number | null>(null);
+
+  estimatedHouseholds = computed<number | null>(() => {
     const fv   = this.formValue();
     const type = fv['type'] ?? '';
     if (type === 'individuel') return this.selectedClients().length > 0 ? 1 : 0;
@@ -203,7 +210,7 @@ export class PlanningCreate implements OnInit {
       }
       return this.selectedClients().length;
     }
-    if (type === 'zone' || type === 'secteur') return 50;
+    if (type === 'zone' || type === 'secteur') return this.zoneClientCount();
     return 0;
   });
 
@@ -574,6 +581,7 @@ export class PlanningCreate implements OnInit {
       this.groupMode.set(null);
       this.selectedExistingGroupId.set(null);
       this.existingGroups.set([]);
+      this.zoneClientCount.set(null);
     });
   }
 
@@ -838,6 +846,10 @@ export class PlanningCreate implements OnInit {
       quartier:        sel.quartier       ?? '',
       quartierId:      sel.quartierId     ?? '',
     }, { emitEvent: true });
+    // ZoneSelectorComponent émet d'abord avec clientCount:null (sélection immédiate),
+    // puis une 2e fois une fois le vrai comptage résolu (voir zone-selector.ts) — les
+    // deux émissions sont reflétées ici, jamais une estimation locale.
+    this.zoneClientCount.set(sel.clientCount);
   }
 
   // ── Waste types ──────────────────────────────────────────────
@@ -929,8 +941,10 @@ export class PlanningCreate implements OnInit {
     if (v.arrondissementId)  body.arrondissementId  = v.arrondissementId;
     if (v.secteurId)         body.secteurId         = v.secteurId;
     if (v.quartierId)        body.quartierId        = v.quartierId;
+    // `cc` peut être `null` (zone/secteur : comptage pas encore résolu ou indisponible)
+    // — dans ce cas on n'envoie rien plutôt qu'une estimation, `cc > 0` l'exclut déjà.
     const cc = this.estimatedHouseholds();
-    if (cc > 0) { body.clientsCount = cc; body.estimatedDuration = Math.ceil(cc * 5); }
+    if (cc !== null && cc > 0) { body.clientsCount = cc; body.estimatedDuration = Math.ceil(cc * 5); }
     return body;
   }
 
@@ -970,6 +984,8 @@ export class PlanningCreate implements OnInit {
   calculateEndTime(): void {
     const start = this.form.get('startTime')?.value as string;
     const h = this.estimatedHouseholds();
+    // `h` peut être `null` (zone/secteur : comptage pas encore résolu/indisponible) —
+    // `!h` couvre ce cas comme `0` : pas de calcul auto, l'utilisateur saisit l'heure.
     if (!start || !h) return;
     const [hh, mm] = start.split(':').map(Number);
     const endMin   = hh * 60 + mm + Math.ceil(h * 5);
@@ -1023,9 +1039,10 @@ export class PlanningCreate implements OnInit {
     // acquittés à l'étape précédente (voir _isStepValid(5)).
     body.acknowledgeConflicts = this.acknowledgeConflicts();
 
-    // Métriques calculées côté client
+    // Métriques calculées côté client — `null` (zone/secteur non résolu/indisponible)
+    // n'envoie jamais de valeur inventée, exclu par `clientsCount > 0` ci-dessous.
     const clientsCount = this.estimatedHouseholds();
-    if (clientsCount > 0) {
+    if (clientsCount !== null && clientsCount > 0) {
       body.clientsCount      = clientsCount;
       body.estimatedDuration = Math.ceil(clientsCount * 5);
     }

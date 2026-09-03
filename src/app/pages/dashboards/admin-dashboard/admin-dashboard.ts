@@ -17,13 +17,13 @@ import { MatCardModule } from "@angular/material/card";
 import { ClientService } from "../../../services/client.service";
 import { SharedService } from "../../../services/shared-service";
 import { LoadingSpinnerComponent } from "../../../components/loading-spinner/loading-spinner.component";
-import { forkJoin, map, of, timeout, catchError } from "rxjs";
+import { forkJoin, map, of, timeout, catchError, switchMap } from "rxjs";
 import { FilterParams } from "../../../models/filterParams.model";
 import { DrawerModule } from "primeng/drawer";
 import { Signalement } from "../../shared_pages/signalement/signalement";
 import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
 import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
-import { CountriesOrgMockService } from "../../../services/countries-org-mock.service";
+import { TerritoryHttpService } from "../../../services/territory-http.service";
 import { WithdrawalRequestsHttpService } from "../../../services/withdrawal-requests-http.service";
 import {
   AdminWithdrawalRequest,
@@ -746,7 +746,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     private sharedService: SharedService,
     private router: Router,
     private cd: ChangeDetectorRef,
-    private countriesOrgMockService: CountriesOrgMockService,
+    private territoryService: TerritoryHttpService,
     private withdrawalRequestsService: WithdrawalRequestsHttpService,
     private exportClientService: ExportClientService,
   ) {
@@ -3698,35 +3698,53 @@ export class AdminDashboard implements OnInit, OnDestroy {
       acceptTerms: true,
       address: { city: '', arrondissement: '', sector: '', neighborhood: '', street: '', doorNumber: '' },
     };
-    this.agentCities          = this.countriesOrgMockService.getCitiesByCountry('1');
     this.agentArrondissements = [];
     this.agentSectors         = [];
     this.agentNeighborhoods   = [];
     this.visibleAddAgentDrawer = true;
+    this.territoryService.getAllCities().subscribe({
+      next: (cities) => { this.agentCities = cities; },
+      error: () => { this.agentCities = []; },
+    });
   }
 
   onAgentCityChange(): void {
-    const city = this.agentCities.find(c => c.name === this.newAgentData.address.city);
-    this.agentArrondissements = city ? this.countriesOrgMockService.getArrondissementsByCity(city.id) : [];
+    this.agentArrondissements = [];
     this.agentSectors         = [];
     this.agentNeighborhoods   = [];
     this.newAgentData.address.arrondissement = '';
     this.newAgentData.address.sector         = '';
     this.newAgentData.address.neighborhood   = '';
+    const city = this.agentCities.find(c => c.name === this.newAgentData.address.city);
+    if (!city) return;
+    this.territoryService.getArrondissementsByCity(city.id).subscribe({
+      next: (arr) => { this.agentArrondissements = arr; },
+      error: () => { this.agentArrondissements = []; },
+    });
   }
 
   onAgentArrondissementChange(): void {
-    const arr = this.agentArrondissements.find(a => a.name === this.newAgentData.address.arrondissement);
-    this.agentSectors       = arr ? this.countriesOrgMockService.getSectorsByArrondissement(arr.id) : [];
+    this.agentSectors       = [];
     this.agentNeighborhoods = [];
     this.newAgentData.address.sector       = '';
     this.newAgentData.address.neighborhood = '';
+    const arr = this.agentArrondissements.find(a => a.name === this.newAgentData.address.arrondissement);
+    if (!arr) return;
+    this.territoryService.getSectorsByArrondissement(arr.id).subscribe({
+      next: (sectors) => { this.agentSectors = sectors; },
+      error: () => { this.agentSectors = []; },
+    });
   }
 
   onAgentSectorChange(): void {
-    const sec = this.agentSectors.find(s => s.name === this.newAgentData.address.sector);
-    this.agentNeighborhoods = sec ? this.countriesOrgMockService.getNeighborhoodsBySector(sec.id) : [];
+    this.agentNeighborhoods = [];
     this.newAgentData.address.neighborhood = '';
+    const sec = this.agentSectors.find(s => s.name === this.newAgentData.address.sector);
+    if (!sec) return;
+    this.territoryService.getNeighborhoodsBySector(sec.id).subscribe({
+      next: (quartiers) => { this.agentNeighborhoods = quartiers; },
+      error: () => { this.agentNeighborhoods = []; },
+    });
   }
 
   submitNewMunicipalityAgent(): void {
@@ -3924,41 +3942,66 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
 /**
-   * Initialise les données pour les filtres (même système que l'enregistrement)
+   * Chantier "migrer le frontend vers TerritoryHttpService" — agrège les quartiers de
+   * plusieurs secteurs en un seul flux (remplace la boucle `forEach` + `push`
+   * synchrone, qui supposait une réponse immédiate).
    */
-  initializeFiltersData(): void {
-    // Charger les villes du Burkina Faso (country id = '1')
-    this.availableEmployeeCities =
-      this.countriesOrgMockService.getCitiesByCountry("1");
-
-    // Par défaut, charger les arrondissements de Ouagadougou (city id = '1')
-    this.availableEmployeeArrondissements =
-      this.countriesOrgMockService.getArrondissementsByCity("1");
-
-    // Charger tous les quartiers de Ouagadougou par défaut
-    this.loadAllNeighborhoodsForCity("1");
+  private _aggregateNeighborhoodsForSectors(sectors: Sector[]) {
+    if (!sectors.length) return of([] as Quartier[]);
+    return forkJoin(sectors.map((s) => this.territoryService.getNeighborhoodsBySector(s.id))).pipe(
+      map((lists) => lists.flat()),
+    );
   }
 
   /**
-   * Charge tous les quartiers d'une ville donnée
+   * Initialise les données pour les filtres (même système que l'enregistrement)
    */
-  loadAllNeighborhoodsForCity(cityId: string): void {
-    const arrondissements =
-      this.countriesOrgMockService.getArrondissementsByCity(cityId);
-    this.availableEmployeeNeighborhoods = [];
-
-    arrondissements.forEach((arr) => {
-      const sectors = this.countriesOrgMockService.getSectorsByArrondissement(
-        arr.id,
-      );
-      sectors.forEach((sector) => {
-        const neighborhoods =
-          this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
-        this.availableEmployeeNeighborhoods.push(...neighborhoods);
-      });
+  initializeFiltersData(): void {
+    // Chantier "migrer le frontend vers TerritoryHttpService" — l'id "1" (ville
+    // "Ouagadougou" dans CountriesOrgMockService) était un id de mock, jamais un vrai
+    // `_id` Mongo : recherché par nom une fois les vraies villes chargées, plutôt que
+    // fabriqué. Si "Ouagadougou" n'est pas trouvée, les arrondissements/quartiers par
+    // défaut restent simplement vides (l'utilisateur choisit une ville).
+    this.territoryService.getAllCities().subscribe({
+      next: (cities) => {
+        this.availableEmployeeCities = cities;
+        const ouaga = cities.find((c) => c.name === 'Ouagadougou');
+        if (!ouaga) return;
+        this.territoryService.getArrondissementsByCity(ouaga.id).subscribe({
+          next: (arr) => { this.availableEmployeeArrondissements = arr; },
+          error: () => { this.availableEmployeeArrondissements = []; },
+        });
+        this.loadAllNeighborhoodsForCity(ouaga.id);
+      },
+      error: () => { this.availableEmployeeCities = []; },
     });
   }
-  
+
+  /**
+   * Charge tous les quartiers d'une ville donnée — enchaîne arrondissements -> secteurs
+   * (un `forkJoin` par arrondissement) -> quartiers (un `forkJoin` par secteur), puis
+   * aplatit le tout en un seul tableau, au lieu des boucles `forEach`+`push` synchrones
+   * d'avant ce chantier (qui supposaient un retour immédiat du service mock).
+   */
+  loadAllNeighborhoodsForCity(cityId: string): void {
+    this.availableEmployeeNeighborhoods = [];
+    this.territoryService.getArrondissementsByCity(cityId).pipe(
+      switchMap((arrondissements) => {
+        if (!arrondissements.length) return of([] as Quartier[]);
+        return forkJoin(
+          arrondissements.map((arr) =>
+            this.territoryService.getSectorsByArrondissement(arr.id).pipe(
+              switchMap((sectors) => this._aggregateNeighborhoodsForSectors(sectors)),
+            ),
+          ),
+        ).pipe(map((lists) => lists.flat()));
+      }),
+    ).subscribe({
+      next: (neighborhoods) => { this.availableEmployeeNeighborhoods = neighborhoods; },
+      error: () => { this.availableEmployeeNeighborhoods = []; },
+    });
+  }
+
   /**
    * Gère le changement de ville pour les filtres employés
    */
@@ -3967,21 +4010,18 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.employeesArrondissementFilter = "";
     this.employeesSectorFilter = null;
     this.employeesNeighborhoodFilter = "";
+    this.availableEmployeeArrondissements = [];
+    this.availableEmployeeSectors = [];
+    this.availableEmployeeNeighborhoods = [];
 
     if (this.employeesCityFilter) {
       // Charger les arrondissements de la ville sélectionnée
-      this.availableEmployeeArrondissements =
-        this.countriesOrgMockService.getArrondissementsByCity(
-          this.employeesCityFilter,
-        );
+      this.territoryService.getArrondissementsByCity(this.employeesCityFilter).subscribe({
+        next: (arr) => { this.availableEmployeeArrondissements = arr; },
+        error: () => { this.availableEmployeeArrondissements = []; },
+      });
       this.loadAllNeighborhoodsForCity(this.employeesCityFilter);
-    } else {
-      this.availableEmployeeArrondissements = [];
-      this.availableEmployeeSectors = [];
-      this.availableEmployeeNeighborhoods = [];
     }
-
-
   }
 /**
    * Gère le changement d'arrondissement pour les filtres employés
@@ -3990,27 +4030,21 @@ export class AdminDashboard implements OnInit, OnDestroy {
     // Réinitialiser les filtres dépendants
     this.employeesSectorFilter = null;
     this.employeesNeighborhoodFilter = "";
+    this.availableEmployeeSectors = [];
+    this.availableEmployeeNeighborhoods = [];
 
     if (this.employeesArrondissementFilter) {
-      // Charger les secteurs de l'arrondissement sélectionné
-      this.availableEmployeeSectors =
-        this.countriesOrgMockService.getSectorsByArrondissement(
-          this.employeesArrondissementFilter,
-        );
-
-      // Charger les quartiers de cet arrondissement
-      this.availableEmployeeNeighborhoods = [];
-      this.availableEmployeeSectors.forEach((sector) => {
-        const neighborhoods =
-          this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
-        this.availableEmployeeNeighborhoods.push(...neighborhoods);
+      // Charger les secteurs de l'arrondissement sélectionné, puis leurs quartiers
+      this.territoryService.getSectorsByArrondissement(this.employeesArrondissementFilter).pipe(
+        switchMap((sectors) => {
+          this.availableEmployeeSectors = sectors;
+          return this._aggregateNeighborhoodsForSectors(sectors);
+        }),
+      ).subscribe({
+        next: (neighborhoods) => { this.availableEmployeeNeighborhoods = neighborhoods; },
+        error: () => { this.availableEmployeeSectors = []; this.availableEmployeeNeighborhoods = []; },
       });
-    } else {
-      this.availableEmployeeSectors = [];
-      this.availableEmployeeNeighborhoods = [];
     }
-
-
   }
 
   /**
@@ -4022,18 +4056,16 @@ export class AdminDashboard implements OnInit, OnDestroy {
     if (this.employeesSectorFilter) {
       // Charger les quartiers du secteur sélectionné
       const sectorId = this.employeesSectorFilter.toString();
-      this.availableEmployeeNeighborhoods =
-        this.countriesOrgMockService.getNeighborhoodsBySector(sectorId);
-    } else {
+      this.territoryService.getNeighborhoodsBySector(sectorId).subscribe({
+        next: (quartiers) => { this.availableEmployeeNeighborhoods = quartiers; },
+        error: () => { this.availableEmployeeNeighborhoods = []; },
+      });
+    } else if (this.employeesArrondissementFilter) {
       // Si aucun secteur sélectionné, charger tous les quartiers de l'arrondissement
-      if (this.employeesArrondissementFilter) {
-        this.availableEmployeeNeighborhoods = [];
-        this.availableEmployeeSectors.forEach((sector) => {
-          const neighborhoods =
-            this.countriesOrgMockService.getNeighborhoodsBySector(sector.id);
-          this.availableEmployeeNeighborhoods.push(...neighborhoods);
-        });
-      }
+      this._aggregateNeighborhoodsForSectors(this.availableEmployeeSectors).subscribe({
+        next: (neighborhoods) => { this.availableEmployeeNeighborhoods = neighborhoods; },
+        error: () => { this.availableEmployeeNeighborhoods = []; },
+      });
     }
   }
 
