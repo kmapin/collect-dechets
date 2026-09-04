@@ -29,4 +29,9 @@ export interface Quartier {
     name: string;
     code: string;
     sector: Sector;
+    // Géolocalisation réelle (models/neighbourhood.js) — optionnels : un quartier créé
+    // avant le chantier "géolocalisation des quartiers" peut ne pas encore en avoir
+    // (scripts/addCoordinates.js les rétro-remplit progressivement).
+    latitude?: number | null;
+    longitude?: number | null;
 }

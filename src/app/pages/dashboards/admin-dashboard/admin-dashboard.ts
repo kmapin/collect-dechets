@@ -1502,7 +1502,34 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   // ── Carte territoriale ────────────────────────────────────
 
+  // Coordonnées RÉELLES par nom de quartier (models/neighbourhood.js::latitude/longitude),
+  // chargées une fois — priorité sur OUAGA_COORDS (mock codé en dur, gardé en repli pour
+  // les quartiers pas encore géolocalisés en base, voir scripts/addCoordinates.js).
+  private quartierCoordsByName: Record<string, [number, number]> = {};
+
+  private loadQuartierCoords(): void {
+    this.territoryService.getAllNeighborhoods().subscribe({
+      next: (quartiers) => {
+        quartiers.forEach((q: any) => {
+          if (q?.name && typeof q.latitude === 'number' && typeof q.longitude === 'number') {
+            this.quartierCoordsByName[q.name] = [q.latitude, q.longitude];
+          }
+        });
+        // Les pins/zones ont pu être dessinés avant la fin de cet appel (indépendant de
+        // loadAgenciesForMap) — redessine avec les vraies coordonnées une fois reçues.
+        if (this.map) this.initTerritorialMap();
+      },
+      error: () => {},
+    });
+  }
+
+  /** Vraie géolocalisation du quartier si connue, sinon repli sur le mock OUAGA_COORDS. */
+  private _zoneCoord(zone: string): [number, number] | undefined {
+    return this.quartierCoordsByName[zone] ?? this.OUAGA_COORDS[zone];
+  }
+
   loadAgenciesForMap(): void {
+    this.loadQuartierCoords();
     this.agencyService.getAllAgenciesFromApi({ page: 1, limit: 100 }).subscribe({
       next: (res: any) => {
         const raw = Array.isArray(res) ? res : (res?.data ?? res?.agencies ?? []);
@@ -1594,7 +1621,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
       // ── Zone circles (stocker par index) ──
       zones.forEach((zone: string) => {
-        const coords = this.OUAGA_COORDS[zone] ?? this.fallbackCoord(zone, index);
+        const coords = this._zoneCoord(zone) ?? this.fallbackCoord(zone, index);
         if (!coords) return;
 
         const circle = L.circle(coords, {
@@ -1644,7 +1671,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       this.agencyDotLayers.set(index, dot);
 
       // ── Pin agence ──
-      const pinCoords = this.OUAGA_COORDS[hood] ?? this.fallbackCoord(name, index);
+      const pinCoords = this._zoneCoord(hood) ?? this.fallbackCoord(name, index);
       const audit     = this.agencyAudits.find(a => a.name === name);
       const clients   = audit?.clients ?? '—';
 
@@ -1871,7 +1898,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   getZoneCentroid(zones: string[], fallbackIndex: number): [number, number] {
     const coords = (zones ?? [])
-      .map((z: string) => this.OUAGA_COORDS[z])
+      .map((z: string) => this._zoneCoord(z))
       .filter(Boolean) as [number, number][];
     if (!coords.length) return this.fallbackCoord('', fallbackIndex);
     const lat = coords.reduce((s, c) => s + c[0], 0) / coords.length;

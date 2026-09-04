@@ -1,0 +1,144 @@
+<div class="qm-page">
+  <div class="qm-page__header">
+    <div>
+      <h1>Gestion des quartiers</h1>
+      <p>Créez et géolocalisez les quartiers utilisés dans toute l'application (zones d'agence, adresses, planning, carte territoriale).</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="ouvrirCreation()">
+      <i class="material-icons">add_location_alt</i>
+      Nouveau quartier
+    </button>
+  </div>
+
+  <div class="qm-alert" *ngIf="!isLoading && quartiersSansGeolocalisation > 0">
+    <i class="material-icons">warning_amber</i>
+    {{ quartiersSansGeolocalisation }} quartier(s) sans géolocalisation — la carte "Couverture Territoriale" utilisera un repli approximatif pour ceux-ci.
+  </div>
+
+  <div class="qm-error" *ngIf="erreur">
+    <i class="material-icons">error_outline</i>
+    {{ erreur }}
+    <button type="button" class="btn btn-secondary" (click)="reessayer()">Réessayer</button>
+  </div>
+
+  <div class="qm-loading" *ngIf="isLoading">Chargement des quartiers...</div>
+
+  <ng-container *ngIf="!isLoading && !erreur">
+    <div class="qm-search">
+      <i class="material-icons">search</i>
+      <input type="text" placeholder="Rechercher un quartier, secteur, arrondissement, ville..." [(ngModel)]="search" (ngModelChange)="filterer()" />
+    </div>
+
+    <div class="qm-table-wrap">
+      <table class="qm-table">
+        <thead>
+          <tr>
+            <th>Quartier</th>
+            <th>Code</th>
+            <th>Secteur</th>
+            <th>Arrondissement</th>
+            <th>Ville</th>
+            <th>Géolocalisation</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let q of filteredQuartiers">
+            <td data-label="Quartier">{{ q.name }}</td>
+            <td data-label="Code">{{ q.code || '—' }}</td>
+            <td data-label="Secteur">{{ q.sectorName }}</td>
+            <td data-label="Arrondissement">{{ q.arrondissementName }}</td>
+            <td data-label="Ville">{{ q.cityName }}</td>
+            <td data-label="Géolocalisation">
+              <span *ngIf="q.latitude !== null && q.longitude !== null" class="qm-coords">{{ q.latitude }}, {{ q.longitude }}</span>
+              <span *ngIf="q.latitude === null || q.longitude === null" class="qm-coords qm-coords--missing">
+                <i class="material-icons">location_off</i> Non renseignée
+              </span>
+            </td>
+            <td data-label="Actions">
+              <button type="button" class="qm-action-btn" (click)="ouvrirEdition(q)" title="Modifier">
+                <i class="material-icons">edit</i>
+              </button>
+              <button type="button" class="qm-action-btn qm-action-btn--danger" (click)="supprimer(q)" title="Supprimer">
+                <i class="material-icons">delete</i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!filteredQuartiers.length">
+            <td colspan="7" class="qm-empty">Aucun quartier trouvé.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- Drawer création/édition -->
+  <div class="qm-drawer-overlay" *ngIf="showForm" (click)="fermerForm()">
+    <div class="qm-drawer" (click)="$event.stopPropagation()">
+      <div class="qm-drawer__header">
+        <h2>{{ editingId ? 'Modifier le quartier' : 'Nouveau quartier' }}</h2>
+        <button type="button" class="qm-drawer__close" (click)="fermerForm()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <div class="qm-drawer__body">
+        <div class="qm-form-group">
+          <label for="qm-name">Nom du quartier *</label>
+          <input id="qm-name" type="text" [ngModel]="form.name" (ngModelChange)="setField('name', $event)" />
+        </div>
+
+        <div class="qm-form-group">
+          <label for="qm-code">Code (optionnel)</label>
+          <input id="qm-code" type="text" [ngModel]="form.code" (ngModelChange)="setField('code', $event)" />
+        </div>
+
+        <div class="qm-form-group">
+          <label for="qm-city">Ville *</label>
+          <select id="qm-city" [ngModel]="form.cityId" (ngModelChange)="onCityChange($event)">
+            <option value="" disabled>Choisir une ville</option>
+            <option *ngFor="let city of cities" [value]="city.id">{{ city.name }}</option>
+          </select>
+        </div>
+
+        <div class="qm-form-group">
+          <label for="qm-arrondissement">Arrondissement *</label>
+          <select id="qm-arrondissement" [ngModel]="form.arrondissementId" (ngModelChange)="onArrondissementChange($event)" [disabled]="!form.cityId">
+            <option value="" disabled>Choisir un arrondissement</option>
+            <option *ngFor="let arr of formArrondissements" [value]="arr.id">{{ arr.name }}</option>
+          </select>
+        </div>
+
+        <div class="qm-form-group">
+          <label for="qm-sector">Secteur *</label>
+          <select id="qm-sector" [ngModel]="form.sectorId" (ngModelChange)="onSectorChange($event)" [disabled]="!form.arrondissementId">
+            <option value="" disabled>Choisir un secteur</option>
+            <option *ngFor="let sector of formSectors" [value]="sector.id">{{ sector.name }}</option>
+          </select>
+        </div>
+
+        <div class="qm-form-row">
+          <div class="qm-form-group">
+            <label for="qm-lat">Latitude *</label>
+            <input id="qm-lat" type="number" step="0.0001" [ngModel]="form.latitude" (ngModelChange)="setField('latitude', $event)" placeholder="ex. 12.3714" />
+          </div>
+          <div class="qm-form-group">
+            <label for="qm-lng">Longitude *</label>
+            <input id="qm-lng" type="number" step="0.0001" [ngModel]="form.longitude" (ngModelChange)="setField('longitude', $event)" placeholder="ex. -1.5197" />
+          </div>
+        </div>
+        <p class="qm-hint">
+          <i class="material-icons">info</i>
+          Astuce : sur Google Maps, faites un clic droit sur le point exact du quartier pour copier ses coordonnées.
+        </p>
+      </div>
+
+      <div class="qm-drawer__footer">
+        <button type="button" class="btn btn-secondary" (click)="fermerForm()">Annuler</button>
+        <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="enregistrer()">
+          {{ isSaving ? 'Enregistrement...' : (editingId ? 'Enregistrer' : 'Créer le quartier') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

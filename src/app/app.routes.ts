@@ -230,6 +230,17 @@ export const routes: Routes = [
       ),
   },
 
+  // Chantier "géolocalisation des quartiers" — donnée de référence plateforme-wide
+  // (comme fee-config-settings ci-dessus), super_admin uniquement.
+  {
+    canActivate: [adminGuard],
+    path: "quartiers",
+    loadComponent: () =>
+      import("./pages/quartiers-management/quartiers-management").then(
+        (c) => c.QuartiersManagementComponent,
+      ),
+  },
+
   // ================= AUTRES =================
 
   {
