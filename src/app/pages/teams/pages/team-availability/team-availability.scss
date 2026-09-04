@@ -83,7 +83,7 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
   display: flex; flex-wrap: wrap; align-items: stretch;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 24px;
+  padding: 16px 0;
 }
 
 .kpi-row {
@@ -144,7 +144,7 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
 .av-filters {
   width: fit-content;
   max-width: calc(100% - 48px); // 48px = 2 × 24px de marge latérale
-  margin: 0 24px 16px;
+  margin: 0 0 16px;
   padding: 8px 14px;
   display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
 }
@@ -179,7 +179,7 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
 .tl-wrap {
   // 24px de chaque côté, comme .av-strip/.av-filters au-dessus — sans ça la grille
   // touchait les bords de l'écran alors que les rangées de filtres avaient une marge.
-  padding: 0 24px;
+  padding: 0;
   overflow-x: auto;
   min-height: 300px;
 }

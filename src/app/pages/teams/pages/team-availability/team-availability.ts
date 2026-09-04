@@ -20,6 +20,7 @@ import { Team, TeamStatus } from '../../models/team.model';
 import { PlanningService } from '../../../planning/services/planning.service';
 import { Planning } from '../../../planning/models/planning.model';
 import { teamStatusColor, teamStatusLabel } from '../../models/team-labels';
+import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planning-teams-tabs';
 
 // ── Local types ──────────────────────────────────────────────────────
 type AvailView = 'timeline' | 'calendar' | 'heatmap' | 'alertes';
@@ -64,7 +65,7 @@ const HEAT_HOURS = Array.from({ length: H_SPAN }, (_, i) => i + H_START);
   standalone: true,
   imports: [
     CommonModule, FormsModule, MatIconModule,
-    TooltipModule, ToastModule, FullCalendarModule,
+    TooltipModule, ToastModule, FullCalendarModule, PlanningTeamsTabs,
   ],
   providers: [MessageService],
   templateUrl: './team-availability.html',

@@ -1,25 +1,29 @@
 <p-toast />
 
-<div class="tl-root">
-
-  <!-- ══════════════════════════════════════════════════════════
-       EN-TÊTE (dégradé, cohérent avec finance/planning/team-dashboard)
-       ══════════════════════════════════════════════════════════ -->
-  <header class="page-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="welcome-section">
-          <h1 class="page-title">Gestion des équipes</h1>
-          <p class="page-subtitle">{{ stats().total }} équipes · {{ stats().totalMembers }} membres au total</p>
-        </div>
-        <div class="quick-actions">
-          <button class="tl-new-btn" (click)="openCreate()">
-            <mat-icon>add</mat-icon>Nouvelle équipe
-          </button>
-        </div>
+<!-- ══════════════════════════════════════════════════════════
+      EN-TÊTE (dégradé, cohérent avec finance/planning/team-dashboard)
+      ══════════════════════════════════════════════════════════ -->
+<header class="page-header">
+  <div class="container">
+    <div class="header-content">
+      <div class="welcome-section">
+        <h1 class="page-title">Gestion des équipes</h1>
+        <p class="page-subtitle">{{ stats().total }} équipes · {{ stats().totalMembers }} membres au total</p>
+      </div>
+      <div class="quick-actions">
+        <button class="tl-new-btn" (click)="openCreate()">
+          <mat-icon>add</mat-icon>Nouvelle équipe
+        </button>
       </div>
     </div>
-  </header>
+  </div>
+</header>
+
+<div class="tl-root">
+
+  <div class="container">
+    <app-planning-teams-tabs></app-planning-teams-tabs>
+  </div>
 
   <div class="container tl-body">
 

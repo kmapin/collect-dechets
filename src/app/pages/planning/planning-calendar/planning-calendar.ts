@@ -18,6 +18,7 @@ import listPlugin from '@fullcalendar/list';
 import frLocale from '@fullcalendar/core/locales/fr';
 import { PlanningService } from '../services/planning.service';
 import { Planning } from '../models/planning.model';
+import { PlanningTeamsTabs } from '../../../shared/planning-teams-tabs/planning-teams-tabs';
 
 // ── Constants ─────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
@@ -51,6 +52,7 @@ const TYPE_ICONS: Record<string, string> = {
   imports: [
     CommonModule, RouterLink, FormsModule, MatIconModule,
     TooltipModule, ToastModule, SkeletonModule, FullCalendarModule,
+    PlanningTeamsTabs,
   ],
   templateUrl: './planning-calendar.html',
   styleUrl:    './planning-calendar.scss',

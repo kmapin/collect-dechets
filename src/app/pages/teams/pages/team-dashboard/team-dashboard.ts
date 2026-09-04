@@ -13,6 +13,7 @@ import * as L from 'leaflet';
 import { TeamService } from '../../services/team.service';
 import { Team } from '../../models/team.model';
 import { teamStatusColor, teamStatusLabel, successRateColor } from '../../models/team-labels';
+import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planning-teams-tabs';
 
 Chart.register(...registerables);
 
@@ -44,7 +45,7 @@ interface MaintAlert {
 @Component({
   selector: 'app-team-dashboard',
   standalone: true,
-  imports: [CommonModule, MatIconModule, TooltipModule, ToastModule],
+  imports: [CommonModule, MatIconModule, TooltipModule, ToastModule, PlanningTeamsTabs],
   providers: [MessageService],
   templateUrl: './team-dashboard.html',
   styleUrl: './team-dashboard.scss',

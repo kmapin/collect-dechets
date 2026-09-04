@@ -19,6 +19,7 @@ import { TeamForm } from '../../components/team-form/team-form';
 import { TeamDetailModal } from '../../components/team-detail-modal/team-detail-modal';
 import { Team, TeamFormData, TeamStatus, TeamMember } from '../../models/team.model';
 import { teamStatusLabel, teamStatusColor, vehicleStatusColor } from '../../models/team-labels';
+import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planning-teams-tabs';
 
 @Component({
   selector: 'app-team-list',
@@ -26,7 +27,7 @@ import { teamStatusLabel, teamStatusColor, vehicleStatusColor } from '../../mode
   imports: [
     CommonModule, FormsModule, MatIconModule,
     TableModule, TooltipModule, ToastModule, SkeletonModule, TagModule, ContextMenuModule,
-    TeamCard, TeamForm, TeamDetailModal,
+    TeamCard, TeamForm, TeamDetailModal, PlanningTeamsTabs,
   ],
   providers: [MessageService],
   templateUrl: './team-list.html',

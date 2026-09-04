@@ -1,31 +1,34 @@
 <p-toast />
-
-<div class="av-root container">
-
   <!-- ══════════════════════ EN-TÊTE (dégradé, cohérent avec les autres écrans) ══ -->
-  <header class="page-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="welcome-section avh-brand">
-          <button class="avh-back" (click)="router.navigate(['/teams/list'])">
-            <mat-icon>arrow_back_ios_new</mat-icon>
-          </button>
-          <div>
-            <h1 class="page-title">Disponibilités équipes</h1>
-            <p class="page-subtitle">{{ currentTime() | date:'EEEE d MMMM yyyy':'':'fr-FR' }}</p>
-          </div>
-        </div>
-
-        <div class="quick-actions">
-          <div class="avh-clock">{{ currentTime() | date:'HH:mm' }}</div>
-          <button class="avh-refresh" (click)="refresh()" [class.avh-refresh--spin]="refreshing()"
-                  pTooltip="Actualiser" tooltipPosition="bottom">
-            <mat-icon>refresh</mat-icon>
-          </button>
+<header class="page-header">
+  <div class="container">
+    <div class="header-content">
+      <div class="welcome-section avh-brand">
+        <button class="avh-back" (click)="router.navigate(['/teams/list'])">
+          <mat-icon>arrow_back_ios_new</mat-icon>
+        </button>
+        <div>
+          <h1 class="page-title">Disponibilités équipes</h1>
+          <p class="page-subtitle">{{ currentTime() | date:'EEEE d MMMM yyyy':'':'fr-FR' }}</p>
         </div>
       </div>
+
+      <div class="quick-actions">
+        <div class="avh-clock">{{ currentTime() | date:'HH:mm' }}</div>
+        <button class="avh-refresh" (click)="refresh()" [class.avh-refresh--spin]="refreshing()"
+                pTooltip="Actualiser" tooltipPosition="bottom">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
     </div>
-  </header>
+  </div>
+</header>
+
+<div class="container">
+  <app-planning-teams-tabs></app-planning-teams-tabs>
+</div>
+
+<div class="av-root container">
 
   <!-- ══════════════════════ KPI STRIP + TABS ══════════════════════ -->
   <div class="av-strip">

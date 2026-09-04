@@ -16,6 +16,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { PlanningService } from '../services/planning.service';
 import { Planning, PlanningAlert, PlanningStatus } from '../models/planning.model';
 import { TeamService } from '../../teams/services/team.service';
+import { PlanningTeamsTabs } from '../../../shared/planning-teams-tabs/planning-teams-tabs';
 
 interface StatCard {
   label: string;
@@ -35,7 +36,7 @@ interface StatCard {
     ChartModule, TableModule, ButtonModule, TagModule,
     TooltipModule, SkeletonModule,
     BadgeModule, ProgressBarModule,
-    ToastModule, ConfirmDialogModule,
+    ToastModule, ConfirmDialogModule,PlanningTeamsTabs
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './planning-dashboard.html',
