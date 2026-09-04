@@ -36,6 +36,13 @@ export class MonthlyTrackingComponent {
   readonly nombreImpayes = computed(() => this.items().filter(i => i.statut === FactureStatut.IMPAYEE).length);
   readonly nombreAbonnes = computed(() => this.items().length);
 
+  // "NonGeneree" (aucune facture créée pour ce client cette période — pas encore
+  // exigible) n'a presque rien à montrer dans le tableau (Montant/Date de paiement
+  // toujours vides) : signalé comme trop de colonnes vides pour être lisible. Retiré de
+  // l'AFFICHAGE uniquement — `items()`/`nombreAbonnes()` gardent tous les abonnés (le
+  // compte "X impayés / Y abonnés" et l'export CSV restent complets).
+  readonly lignesAffichees = computed(() => this.items().filter(i => i.statut !== 'NonGeneree'));
+
   constructor() {
     this.charger();
   }

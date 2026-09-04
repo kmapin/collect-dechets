@@ -3432,9 +3432,52 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   // Utility methods
+  /**
+   * "En tournée" — auparavant `this.employees.filter(e => e.role === 'collector' &&
+   * e.isActive)`, TOUJOURS égal à 0 : `this.employees` n'est jamais alimenté nulle part
+   * dans ce composant (seule sa déclaration `= []` existe, aucune affectation réelle —
+   * vérifié par recherche exhaustive). Cette section était donc, comme d'autres dans
+   * cette appli, non câblée à une vraie source de données.
+   *
+   * Recalculé désormais depuis les VRAIS plannings déjà chargés (`this.schedules`,
+   * `loadPlannings()`) : un employé est "en tournée" s'il est membre d'une équipe
+   * assignée à un planning dont le statut réel est `'en_cours'` (voir
+   * models/planning.js enum, même valeur que le badge "En cours" affiché dans l'onglet
+   * Plannings). Un même employé sur plusieurs plannings en cours n'est compté qu'une fois.
+   */
   getActiveCollectorsToday(): number {
-    return this.employees.filter((e) => e.role === "collector" && e.isActive)
-      .length;
+    const idsEnTournee = new Set<string>();
+    this.schedules
+      .filter((s) => s.status === "en_cours")
+      .forEach((s) => {
+        this._resolveTeamMemberIds(s.teamIds, this.schedulesTeams).forEach((id) =>
+          idsEnTournee.add(id),
+        );
+      });
+    return idsEnTournee.size;
+  }
+
+  /**
+   * `equipeIds` du planning (devenu `teamIds` après mapping, voir loadPlannings()) n'est
+   * peuplé qu'avec `name code status` par le backend (services/planning.js::getPlanningsV2)
+   * — jamais `members`. Toujours re-résoudre l'équipe COMPLÈTE via `schedulesTeams`
+   * (chargées séparément, `members` bien présent — champ embarqué du schéma TeamV2, pas
+   * une référence, donc renvoyé par défaut), jamais faire confiance à l'objet équipe
+   * partiellement peuplé du planning lui-même.
+   */
+  private _resolveTeamMemberIds(teamIds: any[], teams: any[]): string[] {
+    if (!Array.isArray(teamIds) || !teamIds.length) return [];
+    const ids: string[] = [];
+    teamIds.forEach((e: any) => {
+      const teamId = typeof e === "string" ? e : e?._id;
+      const team = teams.find((t: any) => t._id === teamId);
+      const members = Array.isArray(team?.members) ? team.members : [];
+      members.forEach((m: any) => {
+        const userId = typeof m?.userId === "object" ? m.userId?._id : m?.userId;
+        if (userId) ids.push(String(userId));
+      });
+    });
+    return ids;
   }
 
   getCollectionRate(): number {
