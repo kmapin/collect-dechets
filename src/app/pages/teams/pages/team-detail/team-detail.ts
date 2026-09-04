@@ -77,21 +77,24 @@ export class TeamDetail implements OnInit, OnDestroy {
         this.isLoading.set(false);
         if (this.mapElRef?.nativeElement) this._initMap();
       }, 300);
-      return;
     }
 
-    // Fallback: fetch from API V2 (includes recentMissions)
+    
     this.svc.getTeamV2(id).subscribe({
       next: team => {
         this.team.set(team);
-        setTimeout(() => {
-          this.isLoading.set(false);
-          if (this.mapElRef?.nativeElement) this._initMap();
-        }, 300);
+        if (!cached) {
+          setTimeout(() => {
+            this.isLoading.set(false);
+            if (this.mapElRef?.nativeElement) this._initMap();
+          }, 300);
+        }
       },
       error: () => {
-        this.notFound.set(true);
-        this.isLoading.set(false);
+        if (!cached) {
+          this.notFound.set(true);
+          this.isLoading.set(false);
+        }
       },
     });
   }
