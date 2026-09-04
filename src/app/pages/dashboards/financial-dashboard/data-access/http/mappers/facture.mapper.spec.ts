@@ -92,7 +92,7 @@ describe('facture.mapper', () => {
       expect(mapLigneReleveDto(dto)).toEqual({
         factureLe: '2026-06-01T00:00:00.000Z',
         payeLe: '2026-06-03T00:00:00.000Z',
-        statut: 'Payée',
+        statut: FactureStatut.PAYEE,
         montant: 5000,
       });
     });

@@ -24,14 +24,9 @@
     </div>
     <div class="info-tab__field" *ngIf="c.dateCreation">
       <dt>Client depuis</dt>
-      <dd>{{ c.dateCreation }}</dd>
+      <dd>{{ c.dateCreation | date:'dd/MM/yyyy HH:mm' }}</dd>
     </div>
   </dl>
-
-  <button type="button" class="info-tab__edit-btn" disabled title="Édition non disponible dans ce MVP (spec §1.12 — TBC)">
-    <i class="material-icons" aria-hidden="true">edit</i>
-    Modifier (bientôt disponible)
-  </button>
 </div>
 
 <ng-template #squelette>

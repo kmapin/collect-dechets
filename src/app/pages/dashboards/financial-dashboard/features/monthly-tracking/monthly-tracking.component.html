@@ -30,6 +30,7 @@
           <th scope="col">Quartier</th>
           <th scope="col">Montant</th>
           <th scope="col">Statut</th>
+          <th scope="col">Date de paiement</th>
         </tr>
       </thead>
       <tbody>
@@ -39,16 +40,18 @@
             <td data-label="Quartier">{{ ligne.client.quartier ?? '—' }}</td>
             <td data-label="Montant">{{ ligne.facture ? formatMontant(ligne.facture.montant) : '—' }}</td>
             <td data-label="Statut">
-              <app-status-badge [label]="badgeSuivi(ligne.statut).label" [icon]="badgeSuivi(ligne.statut).icon" [variant]="badgeSuivi(ligne.statut).variant" />
+              <app-status-badge [label]="badgeSuivi(ligne.statut).label" [icon]="badgeSuivi(ligne.statut).icon"
+                [variant]="badgeSuivi(ligne.statut).variant" />
             </td>
+            <td data-label="Date de paiement">{{ ligne.facture?.datePaiement ? (ligne.facture!.datePaiement | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
           </tr>
           <tr *ngIf="!items().length">
-            <td colspan="4" class="fin-monthly__empty">Aucune facture générée pour cette période.</td>
+            <td colspan="5" class="fin-monthly__empty">Aucune facture générée pour cette période.</td>
           </tr>
         </ng-container>
         <ng-template #squelette>
-          <tr *ngFor="let i of [0, 1, 2, 3, 4]" aria-hidden="true">
-            <td *ngFor="let c of [0, 1, 2, 3]"><span class="fin-monthly__skeleton-cell"></span></td>
+          <tr *ngFor="let i of [0, 1, 2, 3, 4, 5]" aria-hidden="true">
+            <td *ngFor="let c of [0, 1, 2, 3, 5]"><span class="fin-monthly__skeleton-cell"></span></td>
           </tr>
         </ng-template>
       </tbody>

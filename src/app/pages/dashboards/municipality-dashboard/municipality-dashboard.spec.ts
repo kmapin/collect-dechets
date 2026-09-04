@@ -10,6 +10,7 @@ function buildIncident(overrides: Partial<Incident>): Incident {
     severity: 'Low',
     date: new Date(),
     status: 'open',
+    createdAt: new Date(),
     ...overrides,
   };
 }

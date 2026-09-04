@@ -13,11 +13,6 @@ export interface Facture {
   statut: FactureStatut;
   dateGeneration: string; // ISO date — émission, distincte de la période couverte
   datePaiement?: string; // ISO date — règlement, absent tant que la facture est Impayée
-  // Période de facturation réelle (chantier "dates début/fin des exports") — distincte
-  // de dateGeneration/datePaiement. Calculée côté backend depuis Redevance.dateEcheance
-  // + Contrat.frequenceCollecte (services/redevance.js::_calculerPeriodePourRedevance),
-  // jamais recalculée ici. periodeFin absent si la fréquence du contrat est inconnue
-  // (jamais une date fabriquée côté frontend non plus).
   periodeDebut?: string; // ISO date
   periodeFin?: string; // ISO date
 }
