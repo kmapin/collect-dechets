@@ -1,28 +1,28 @@
 <p-toast />
-
-<div class="pcal-root" [class.pcal-root--collapsed]="!sidebarOpen()">
-
-  <!-- ════════════════════════════════════════════════════════
+<!-- ════════════════════════════════════════════════════════
        EN-TÊTE (dégradé, cohérent avec les autres écrans)
        ════════════════════════════════════════════════════════ -->
-  <header class="page-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="welcome-section">
-          <div>
-            <h1 class="page-title">Calendrier des Plannings</h1>
-            <p class="page-subtitle">Vue d'ensemble de tous les plannings programmés</p>
-          </div>
-        </div>
-        <div class="quick-actions">
-          <a routerLink="/planning/dashboard" class="pcal-hdr-back">
-            <mat-icon>arrow_back_ios_new</mat-icon>
-            <span>Tableau de bord</span>
-          </a>
+<header class="page-header">
+  <div class="container">
+    <div class="header-content">
+      <div class="welcome-section">
+        <div>
+          <h1 class="page-title">Calendrier des Plannings</h1>
+          <p class="page-subtitle">Vue d'ensemble de tous les plannings programmés</p>
         </div>
       </div>
+      <div class="quick-actions">
+        <a routerLink="/planning/dashboard" class="pcal-hdr-back">
+          <mat-icon>arrow_back_ios_new</mat-icon>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
     </div>
-  </header>
+  </div>
+</header>
+<div class="pcal-root container" [class.pcal-root--collapsed]="!sidebarOpen()">
+
+
 
   <!-- ════════════════════════════════════════════════════════
        TOP BAR
@@ -43,16 +43,16 @@
 
     <div class="pcal-topbar__center">
       <div class="tb-view-tabs">
-        <button type="button" [class.active]="currentView() === 'dayGridMonth'"   (click)="switchView('dayGridMonth')">
+        <button type="button" [class.active]="currentView() === 'dayGridMonth'" (click)="switchView('dayGridMonth')">
           <mat-icon>calendar_view_month</mat-icon>Mois
         </button>
-        <button type="button" [class.active]="currentView() === 'timeGridWeek'"   (click)="switchView('timeGridWeek')">
+        <button type="button" [class.active]="currentView() === 'timeGridWeek'" (click)="switchView('timeGridWeek')">
           <mat-icon>calendar_view_week</mat-icon>Semaine
         </button>
-        <button type="button" [class.active]="currentView() === 'timeGridDay'"    (click)="switchView('timeGridDay')">
+        <button type="button" [class.active]="currentView() === 'timeGridDay'" (click)="switchView('timeGridDay')">
           <mat-icon>calendar_today</mat-icon>Jour
         </button>
-        <button type="button" [class.active]="currentView() === 'listWeek'"       (click)="switchView('listWeek')">
+        <button type="button" [class.active]="currentView() === 'listWeek'" (click)="switchView('listWeek')">
           <mat-icon>view_list</mat-icon>Liste
         </button>
       </div>
@@ -77,13 +77,12 @@
       <!-- Search -->
       <div class="sb-search-wrap">
         <mat-icon class="sb-search-ico">search</mat-icon>
-        <input type="text" class="sb-search" placeholder="Rechercher…"
-               [ngModel]="searchQuery()"
-               (ngModelChange)="searchQuery.set($event)" />
+        <input type="text" class="sb-search" placeholder="Rechercher…" [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)" />
         @if (searchQuery()) {
-          <button type="button" class="sb-search-clear" (click)="searchQuery.set('')">
-            <mat-icon>close</mat-icon>
-          </button>
+        <button type="button" class="sb-search-clear" (click)="searchQuery.set('')">
+          <mat-icon>close</mat-icon>
+        </button>
         }
       </div>
 
@@ -115,19 +114,16 @@
         <div class="sb-section-head">
           <h4 class="sb-section-title">Statut</h4>
           @if (activeStatus().length > 0) {
-            <button type="button" class="sb-clear" (click)="activeStatus.set([])">Tout</button>
+          <button type="button" class="sb-clear" (click)="activeStatus.set([])">Tout</button>
           }
         </div>
         <div class="sb-chips">
           @for (s of statuses; track s) {
-            <button type="button"
-                    class="sb-chip"
-                    [class.sb-chip--active]="activeStatus().includes(s)"
-                    [style.--cc]="statusColor(s)"
-                    (click)="toggleStatus(s)">
-              <span class="chip-dot" [style.background]="statusColor(s)"></span>
-              {{ statusLabel(s) }}
-            </button>
+          <button type="button" class="sb-chip" [class.sb-chip--active]="activeStatus().includes(s)"
+            [style.--cc]="statusColor(s)" (click)="toggleStatus(s)">
+            <span class="chip-dot" [style.background]="statusColor(s)"></span>
+            {{ statusLabel(s) }}
+          </button>
           }
         </div>
       </div>
@@ -137,19 +133,16 @@
         <div class="sb-section-head">
           <h4 class="sb-section-title">Type</h4>
           @if (activeTypes().length > 0) {
-            <button type="button" class="sb-clear" (click)="activeTypes.set([])">Tout</button>
+          <button type="button" class="sb-clear" (click)="activeTypes.set([])">Tout</button>
           }
         </div>
         <div class="sb-chips">
           @for (t of types; track t) {
-            <button type="button"
-                    class="sb-chip"
-                    [class.sb-chip--active]="activeTypes().includes(t)"
-                    [style.--cc]="typeColor(t)"
-                    (click)="toggleType(t)">
-              <span class="material-icons chip-icon" style="font-size:13px">{{ typeIcon(t) }}</span>
-              {{ typeLabel(t) }}
-            </button>
+          <button type="button" class="sb-chip" [class.sb-chip--active]="activeTypes().includes(t)"
+            [style.--cc]="typeColor(t)" (click)="toggleType(t)">
+            <span class="material-icons chip-icon" style="font-size:13px">{{ typeIcon(t) }}</span>
+            {{ typeLabel(t) }}
+          </button>
           }
         </div>
       </div>
@@ -159,24 +152,23 @@
         <div class="sb-section-head">
           <h4 class="sb-section-title">Équipes</h4>
           @if (activeTeams().length > 0) {
-            <button type="button" class="sb-clear" (click)="activeTeams.set([])">Tout</button>
+          <button type="button" class="sb-clear" (click)="activeTeams.set([])">Tout</button>
           }
         </div>
         @if (teamNames().length === 0) {
-          <p class="sb-empty-hint">Aucune équipe chargée</p>
+        <p class="sb-empty-hint">Aucune équipe chargée</p>
         }
         <div class="sb-team-list">
           @for (team of teamNames(); track team) {
-            <label class="sb-team-item" [class.active]="activeTeams().includes(team)">
-              <input type="checkbox" class="sr-only"
-                     [checked]="activeTeams().includes(team)"
-                     (change)="toggleTeam(team)" />
-              <span class="team-checkbox" [class.checked]="activeTeams().includes(team)">
-                <mat-icon>check</mat-icon>
-              </span>
-              <span class="material-icons team-ico">groups</span>
-              <span>{{ team }}</span>
-            </label>
+          <label class="sb-team-item" [class.active]="activeTeams().includes(team)">
+            <input type="checkbox" class="sr-only" [checked]="activeTeams().includes(team)"
+              (change)="toggleTeam(team)" />
+            <span class="team-checkbox" [class.checked]="activeTeams().includes(team)">
+              <mat-icon>check</mat-icon>
+            </span>
+            <span class="material-icons team-ico">groups</span>
+            <span>{{ team }}</span>
+          </label>
           }
         </div>
       </div>
@@ -186,18 +178,18 @@
         <h4 class="sb-section-title">Légende</h4>
         <div class="sb-leg-grid">
           @for (s of statuses; track s) {
-            <div class="sb-leg-item">
-              <span class="leg-bar" [style.background]="statusColor(s)"></span>
-              <span>{{ statusLabel(s) }}</span>
-            </div>
+          <div class="sb-leg-item">
+            <span class="leg-bar" [style.background]="statusColor(s)"></span>
+            <span>{{ statusLabel(s) }}</span>
+          </div>
           }
         </div>
       </div>
 
       @if (hasFilters()) {
-        <button type="button" class="sb-clear-all" (click)="clearFilters()">
-          <mat-icon>filter_list_off</mat-icon>Effacer les filtres
-        </button>
+      <button type="button" class="sb-clear-all" (click)="clearFilters()">
+        <mat-icon>filter_list_off</mat-icon>Effacer les filtres
+      </button>
       }
 
     </aside>
@@ -205,16 +197,16 @@
     <!-- ── CALENDAR ─────────────────────────────────────────── -->
     <main class="pcal-main">
       @if (isLoading()) {
-        <div class="pcal-loading">
-          <mat-icon style="animation:spin 1s linear infinite;font-size:32px;color:#3b82f6">sync</mat-icon>
-          <span>Chargement des plannings…</span>
-        </div>
+      <div class="pcal-loading">
+        <mat-icon style="animation:spin 1s linear infinite;font-size:32px;color:#3b82f6">sync</mat-icon>
+        <span>Chargement des plannings…</span>
+      </div>
       }
       @if (loadError()) {
-        <div class="pcal-error">
-          <mat-icon>error_outline</mat-icon>
-          <span>{{ loadError() }}</span>
-        </div>
+      <div class="pcal-error">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ loadError() }}</span>
+      </div>
       }
       <full-calendar #calendarEl [options]="calendarOptions()"></full-calendar>
     </main>
@@ -227,90 +219,93 @@
      EVENT DETAIL POPUP
      ════════════════════════════════════════════════════════ -->
 @if (popupOpen() && selectedEvent()) {
-  <div class="ev-backdrop" (click)="closePopup()"></div>
-  <div class="ev-popup" [@.disabled]="true">
+<div class="ev-backdrop" (click)="closePopup()"></div>
+<div class="ev-popup" [@.disabled]="true">
 
-    <!-- Header -->
-    <div class="ev-popup__header" [style.border-left-color]="statusColor(selectedEvent().status)">
-      <div class="ev-popup__type-ico" [style.background]="typeColor(selectedEvent().type) + '18'" [style.color]="typeColor(selectedEvent().type)">
-        <span class="material-icons">{{ typeIcon(selectedEvent().type) }}</span>
-      </div>
-      <div class="ev-popup__title-block">
-        <h3>{{ selectedEvent().title }}</h3>
-        <div class="ev-popup__badges">
-          <span class="ev-badge" [style.background]="statusColor(selectedEvent().status) + '20'" [style.color]="statusColor(selectedEvent().status)">
-            {{ statusLabel(selectedEvent().status) }}
-          </span>
-          <span class="ev-badge" [style.background]="typeColor(selectedEvent().type) + '18'" [style.color]="typeColor(selectedEvent().type)">
-            {{ typeLabel(selectedEvent().type) }}
-          </span>
-        </div>
-      </div>
-      <button type="button" class="ev-popup__close" (click)="closePopup()">
-        <mat-icon>close</mat-icon>
-      </button>
+  <!-- Header -->
+  <div class="ev-popup__header" [style.border-left-color]="statusColor(selectedEvent().status)">
+    <div class="ev-popup__type-ico" [style.background]="typeColor(selectedEvent().type) + '18'"
+      [style.color]="typeColor(selectedEvent().type)">
+      <span class="material-icons">{{ typeIcon(selectedEvent().type) }}</span>
     </div>
-
-    <!-- Info rows -->
-    <div class="ev-popup__body">
-      <div class="ev-info-row">
-        <mat-icon>calendar_today</mat-icon>
-        <span>{{ selectedEvent().start | date:'EEEE dd MMMM yyyy':'':'fr' }}</span>
+    <div class="ev-popup__title-block">
+      <h3>{{ selectedEvent().title }}</h3>
+      <div class="ev-popup__badges">
+        <span class="ev-badge" [style.background]="statusColor(selectedEvent().status) + '20'"
+          [style.color]="statusColor(selectedEvent().status)">
+          {{ statusLabel(selectedEvent().status) }}
+        </span>
+        <span class="ev-badge" [style.background]="typeColor(selectedEvent().type) + '18'"
+          [style.color]="typeColor(selectedEvent().type)">
+          {{ typeLabel(selectedEvent().type) }}
+        </span>
       </div>
-      @if (selectedEvent().start) {
-        <div class="ev-info-row">
-          <mat-icon>schedule</mat-icon>
-          <span>{{ selectedEvent().start | date:'HH:mm' }}
-            @if (selectedEvent().end) { – {{ selectedEvent().end | date:'HH:mm' }} }
-          </span>
-        </div>
-      }
-      @if (selectedEvent().teams?.length) {
-        <div class="ev-info-row">
-          <mat-icon>groups</mat-icon>
-          <span>{{ selectedEvent().teams.join(', ') }}</span>
-        </div>
-      }
-      @if (selectedEvent().zone) {
-        <div class="ev-info-row">
-          <mat-icon>place</mat-icon>
-          <span>{{ selectedEvent().zone }}</span>
-        </div>
-      }
-      @if (selectedEvent().clientName) {
-        <div class="ev-info-row">
-          <mat-icon>person</mat-icon>
-          <span>{{ selectedEvent().clientName }}</span>
-        </div>
-      }
-      @if (selectedEvent().wasteTypes?.length) {
-        <div class="ev-info-row">
-          <mat-icon>delete_outline</mat-icon>
-          <span>{{ selectedEvent().wasteTypes.join(', ') }}</span>
-        </div>
-      }
-      @if (selectedEvent().hasIncident) {
-        <div class="ev-info-row ev-info-row--warn">
-          <mat-icon>warning</mat-icon>
-          <span>Incident signalé sur cette mission</span>
-        </div>
-      }
     </div>
-
-    <!-- Actions -->
-    <div class="ev-popup__actions">
-      <button type="button" class="ev-action ev-action--ghost" (click)="duplicateEvent()">
-        <mat-icon>content_copy</mat-icon>Dupliquer
-      </button>
-      @if (selectedEvent().status === 'brouillon') {
-        <button type="button" class="ev-action ev-action--secondary" (click)="editEvent()">
-          <mat-icon>edit</mat-icon>Modifier
-        </button>
-      }
-      <button type="button" class="ev-action ev-action--primary" (click)="viewDetail()">
-        <mat-icon>visibility</mat-icon>Voir le détail
-      </button>
-    </div>
-
+    <button type="button" class="ev-popup__close" (click)="closePopup()">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
+
+  <!-- Info rows -->
+  <div class="ev-popup__body">
+    <div class="ev-info-row">
+      <mat-icon>calendar_today</mat-icon>
+      <span>{{ selectedEvent().start | date:'EEEE dd MMMM yyyy':'':'fr' }}</span>
+    </div>
+    @if (selectedEvent().start) {
+    <div class="ev-info-row">
+      <mat-icon>schedule</mat-icon>
+      <span>{{ selectedEvent().start | date:'HH:mm' }}
+        @if (selectedEvent().end) { – {{ selectedEvent().end | date:'HH:mm' }} }
+      </span>
+    </div>
+    }
+    @if (selectedEvent().teams?.length) {
+    <div class="ev-info-row">
+      <mat-icon>groups</mat-icon>
+      <span>{{ selectedEvent().teams.join(', ') }}</span>
+    </div>
+    }
+    @if (selectedEvent().zone) {
+    <div class="ev-info-row">
+      <mat-icon>place</mat-icon>
+      <span>{{ selectedEvent().zone }}</span>
+    </div>
+    }
+    @if (selectedEvent().clientName) {
+    <div class="ev-info-row">
+      <mat-icon>person</mat-icon>
+      <span>{{ selectedEvent().clientName }}</span>
+    </div>
+    }
+    @if (selectedEvent().wasteTypes?.length) {
+    <div class="ev-info-row">
+      <mat-icon>delete_outline</mat-icon>
+      <span>{{ selectedEvent().wasteTypes.join(', ') }}</span>
+    </div>
+    }
+    @if (selectedEvent().hasIncident) {
+    <div class="ev-info-row ev-info-row--warn">
+      <mat-icon>warning</mat-icon>
+      <span>Incident signalé sur cette mission</span>
+    </div>
+    }
+  </div>
+
+  <!-- Actions -->
+  <div class="ev-popup__actions">
+    <button type="button" class="ev-action ev-action--ghost" (click)="duplicateEvent()">
+      <mat-icon>content_copy</mat-icon>Dupliquer
+    </button>
+    @if (selectedEvent().status === 'brouillon') {
+    <button type="button" class="ev-action ev-action--secondary" (click)="editEvent()">
+      <mat-icon>edit</mat-icon>Modifier
+    </button>
+    }
+    <button type="button" class="ev-action ev-action--primary" (click)="viewDetail()">
+      <mat-icon>visibility</mat-icon>Voir le détail
+    </button>
+  </div>
+
+</div>
 }

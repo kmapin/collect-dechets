@@ -19,12 +19,11 @@ $shadow:    0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
 $shadow-md: 0 4px 24px rgba(0,0,0,0.1);
 
 /* ---- Container ---- */
-.pd-container {
-  padding: 24px;
-  background: $surface;
-  min-height: 100%;
-  position: relative;
-}
+// .pd-container {
+//   padding: 24px;
+//   background: $surface;
+//   position: relative;
+// }
 
 /* ---- Header (page-header / header-content / quick-actions : cf. agency-dashboard.scss) ---- */
 .header-content {

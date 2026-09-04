@@ -46,8 +46,9 @@ $muted:#475569;
 .td-root {
   display: flex;
   flex-direction: column;
+  height: 100%;
   min-height: 100%;
-  background: var(--td-bg0);
+  // background: var(--td-bg0);
   color: var(--td-txt);
   font-family: 'Inter', 'Roboto', sans-serif;
   transition: background 300ms, color 300ms;
