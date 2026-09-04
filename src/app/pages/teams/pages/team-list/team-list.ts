@@ -144,9 +144,10 @@ export class TeamList implements OnInit {
         label: 'Changer le statut',
         icon:  'pi pi-sync',
         items: [
+          // 'En mission' retiré : désormais automatique (Planning en_cours assigné),
+          // voir services/teamV2.js::_computeEffectiveStatus.
           { label: 'Active',      icon: 'pi pi-check-circle', disabled: team.status === 'active',      command: () => this.changeStatus(team, 'active') },
           { label: 'Inactive',    icon: 'pi pi-ban',          disabled: team.status === 'inactive',    command: () => this.changeStatus(team, 'inactive') },
-          { label: 'En mission',  icon: 'pi pi-send',         disabled: team.status === 'on_mission',  command: () => this.changeStatus(team, 'on_mission') },
           { label: 'Maintenance', icon: 'pi pi-wrench',       disabled: team.status === 'maintenance', command: () => this.changeStatus(team, 'maintenance') },
         ],
       },
@@ -232,11 +233,13 @@ export class TeamList implements OnInit {
   }
 
   toggleStatus(team: Team): void {
-    const next: TeamStatus = team.status === 'active' ? 'inactive' : 'active';
+    const next: 'active' | 'inactive' = team.status === 'active' ? 'inactive' : 'active';
     this.changeStatus(team, next);
   }
 
-  changeStatus(team: Team, status: TeamStatus): void {
+  // 'on_mission' exclu du type : ce n'est plus un statut assignable manuellement
+  // (voir services/teamV2.js::_computeEffectiveStatus côté backend).
+  changeStatus(team: Team, status: 'active' | 'inactive' | 'maintenance'): void {
     this.svc.changeStatus(team.id, status).subscribe({
       next: t => {
         const labels: Record<TeamStatus, string> = {

@@ -110,21 +110,22 @@ export class TeamDetail implements OnInit, OnDestroy {
 
   // ── Actions ───────────────────────────────────────────────
   statusMenuOpen = false;
-  readonly allStatuses: { value: TeamStatus; label: string; icon: string; color: string }[] = [
+  // 'on_mission' retiré : désormais dérivé automatiquement d'un Planning
+  // en_cours assigné à l'équipe (backend, services/teamV2.js::_computeEffectiveStatus).
+  readonly allStatuses: { value: 'active' | 'inactive' | 'maintenance'; label: string; icon: string; color: string }[] = [
     { value: 'active',      label: 'Active',       icon: 'check_circle',  color: '#16a34a' },
     { value: 'inactive',    label: 'Inactive',     icon: 'cancel',        color: '#94a3b8' },
-    { value: 'on_mission',  label: 'En mission',   icon: 'send',          color: '#f59e0b' },
     { value: 'maintenance', label: 'Maintenance',  icon: 'build',         color: '#ef4444' },
   ];
 
   toggleStatus(): void {
     const t = this.team();
     if (!t) return;
-    const next: TeamStatus = t.status === 'active' ? 'inactive' : 'active';
+    const next: 'active' | 'inactive' = t.status === 'active' ? 'inactive' : 'active';
     this.changeStatus(next);
   }
 
-  changeStatus(status: TeamStatus): void {
+  changeStatus(status: 'active' | 'inactive' | 'maintenance'): void {
     const t = this.team();
     if (!t) return;
     this.statusMenuOpen = false;

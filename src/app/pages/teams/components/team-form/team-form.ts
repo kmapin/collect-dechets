@@ -42,10 +42,12 @@ export class TeamForm implements OnInit, OnChanges {
     { value: 'manager',   label: 'Manager'    },
     { value: 'collector', label: 'Collecteur' },
   ];
+  // 'on_mission' retiré : désormais dérivé automatiquement d'un Planning
+  // en_cours assigné à l'équipe (backend, services/teamV2.js::_computeEffectiveStatus)
+  // plutôt qu'un choix manuel — voir team-labels.ts pour son affichage (inchangé).
   readonly statuses = [
     { value: 'active',      label: 'Active'      },
     { value: 'inactive',    label: 'Inactive'    },
-    { value: 'on_mission',  label: 'En mission'  },
     { value: 'maintenance', label: 'Maintenance' },
   ];
 
