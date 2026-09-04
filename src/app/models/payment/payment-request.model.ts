@@ -34,4 +34,9 @@ export interface PaymentRequest {
    * backend dérive alors pricingId/agence/montant attendu depuis la
    * Redevance elle-même (voir controllers/transaction.js::initiate). */
   redevanceId?: string;
+
+  /** Chantier "paiement groupé + réduction agence" — mutuellement exclusif avec
+   * redevanceId ci-dessus : règle en une fois toutes les Redevance couvertes par une
+   * proposition déjà configurée par l'agence (montant déjà réduit). */
+  paiementGroupeId?: string;
 }

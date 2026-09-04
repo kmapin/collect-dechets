@@ -91,6 +91,26 @@
                 </div>
               }
 
+              @if (propositionByContrat[contrat._id]; as proposition) {
+                <div class="paiement-groupe-offer">
+                  <div class="paiement-groupe-offer__header">
+                    <i class="material-icons">local_offer</i>
+                    <strong>Offre de paiement groupé de votre agence</strong>
+                  </div>
+                  <p>
+                    Réglez {{ proposition.redevanceIds.length }} redevance(s) en une seule fois pour
+                    <strong>{{ proposition.montantAPayer }} FCFA</strong>
+                    @if (proposition.montantReduction > 0) {
+                      <span class="paiement-groupe-offer__barre"> au lieu de {{ proposition.montantTotalAvantReduction }} FCFA</span>
+                    }
+                  </p>
+                  <button class="btn btn-primary btn-small" (click)="payerPropositionGroupee(proposition)">
+                    <i class="material-icons">payment</i>
+                    Payer {{ proposition.montantAPayer }} FCFA maintenant
+                  </button>
+                </div>
+              }
+
               <h4 class="redevances-title">Redevances</h4>
               @if (isLoadingRedevances[contrat._id]) {
                 <div class="info-item">
@@ -132,7 +152,7 @@
     <div class="payment-drawer-overlay" (click)="closePaymentForm()">
       <div class="payment-drawer" (click)="$event.stopPropagation()">
         <div class="payment-drawer-header">
-          <h2>Paiement de la redevance</h2>
+          <h2>{{ tarifResponse?.paiementGroupeId ? 'Paiement groupé' : 'Paiement de la redevance' }}</h2>
           <button class="close-btn" (click)="closePaymentForm()">
             <i class="material-icons">close</i>
           </button>

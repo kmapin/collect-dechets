@@ -8,6 +8,7 @@ import { ContratService } from '../../../../../services/contrat.service';
 import { RedevanceService } from '../../../../../services/redevance.service';
 import { Contrat, FrequenceCollecte } from '../../../../../models/contrat.model';
 import { Redevance } from '../../../../../models/redevance.model';
+import { ApercuPaiementGroupe, PaiementGroupeRedevance, ReductionType } from '../../../../../models/paiement-groupe-redevance.model';
 import { Tarif } from '../../../../../models/agency.model';
 import { formatFrDate } from '../../../../../shared/format.util';
 import { Client } from '../../models';
@@ -89,6 +90,18 @@ export class ContractsComponent {
   readonly redevancesDrawerContrat = signal<Contrat | null>(null);
   readonly redevancesDrawerList = signal<Redevance[]>([]);
   readonly chargementRedevances = signal(false);
+
+  // ── Paiement groupé + réduction (chantier "payer toutes les redevances d'un
+  // contrat en une fois, avec une réduction accordée par l'agence") ──────────
+  readonly paiementGroupeActif = signal<PaiementGroupeRedevance | null>(null);
+  readonly showPaiementGroupeForm = signal(false);
+  readonly paiementGroupeApercu = signal<ApercuPaiementGroupe | null>(null);
+  readonly chargementApercu = signal(false);
+  readonly paiementGroupeForm = signal<{ genererTout: boolean; reductionType: ReductionType; reductionValeur: number }>({
+    genererTout: false,
+    reductionType: 'pourcentage',
+    reductionValeur: 0,
+  });
 
   constructor() {
     this.charger();
@@ -265,12 +278,119 @@ export class ContractsComponent {
       },
       error: () => this.chargementRedevances.set(false),
     });
+    this.chargerPaiementGroupeActif(contrat._id);
   }
 
   closeRedevancesDrawer(): void {
     this.showRedevancesDrawer.set(false);
     this.redevancesDrawerContrat.set(null);
     this.redevancesDrawerList.set([]);
+    this.paiementGroupeActif.set(null);
+    this.showPaiementGroupeForm.set(false);
+    this.paiementGroupeApercu.set(null);
+  }
+
+  private chargerPaiementGroupeActif(contratId: string): void {
+    this.redevanceService.getPropositionActivePaiementGroupe$(contratId).subscribe({
+      next: proposition => this.paiementGroupeActif.set(proposition),
+      error: () => this.paiementGroupeActif.set(null),
+    });
+  }
+
+  ouvrirFormPaiementGroupe(): void {
+    this.paiementGroupeForm.set({ genererTout: false, reductionType: 'pourcentage', reductionValeur: 0 });
+    this.paiementGroupeApercu.set(null);
+    this.showPaiementGroupeForm.set(true);
+    this.chargerApercuPaiementGroupe();
+  }
+
+  fermerFormPaiementGroupe(): void {
+    this.showPaiementGroupeForm.set(false);
+    this.paiementGroupeApercu.set(null);
+  }
+
+  setGenererTout(genererTout: boolean): void {
+    this.paiementGroupeForm.update(v => ({ ...v, genererTout }));
+    this.chargerApercuPaiementGroupe();
+  }
+
+  setReductionType(reductionType: ReductionType): void {
+    this.paiementGroupeForm.update(v => ({ ...v, reductionType }));
+  }
+
+  setReductionValeur(reductionValeur: number): void {
+    this.paiementGroupeForm.update(v => ({ ...v, reductionValeur }));
+  }
+
+  chargerApercuPaiementGroupe(): void {
+    const contrat = this.redevancesDrawerContrat();
+    if (!contrat) return;
+    this.chargementApercu.set(true);
+    this.redevanceService.apercuPaiementGroupe$(contrat._id, this.paiementGroupeForm().genererTout).subscribe({
+      next: apercu => {
+        this.paiementGroupeApercu.set(apercu);
+        this.chargementApercu.set(false);
+      },
+      error: (err: any) => {
+        this.chargementApercu.set(false);
+        this.notificationService.showError('Erreur', err?.error?.message ?? "Impossible de calculer l'aperçu.");
+      },
+    });
+  }
+
+  /** Montant réellement à payer après réduction, calculé côté frontend pour un aperçu
+   * immédiat pendant la saisie — le backend recalcule et fait foi à la création réelle
+   * (services/paiementGroupe.js::_calculerReduction), jamais fait confiance ici seul. */
+  montantApresReductionApercu(): number {
+    const apercu = this.paiementGroupeApercu();
+    const { reductionType, reductionValeur } = this.paiementGroupeForm();
+    if (!apercu) return 0;
+    const total = apercu.montantTotal;
+    const reduction = reductionType === 'pourcentage'
+      ? Math.round(total * ((reductionValeur || 0) / 100))
+      : (reductionValeur || 0);
+    return Math.max(0, total - Math.min(reduction, total));
+  }
+
+  onCreerPropositionPaiementGroupe(): void {
+    const contrat = this.redevancesDrawerContrat();
+    if (!contrat) return;
+    const { genererTout, reductionType, reductionValeur } = this.paiementGroupeForm();
+    this.redevanceService.creerPropositionPaiementGroupe$(contrat._id, { genererTout, reductionType, reductionValeur }).subscribe({
+      next: (res) => {
+        this.notificationService.showSuccess('Succès', 'Proposition de paiement groupé créée. Le client a été notifié.');
+        this.paiementGroupeActif.set(res.proposition);
+        this.showPaiementGroupeForm.set(false);
+        this.openRedevancesDrawer(contrat); // recharge les redevances (générées si genererTout)
+      },
+      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de créer la proposition de paiement groupé.'),
+    });
+  }
+
+  onAnnulerPaiementGroupe(): void {
+    const proposition = this.paiementGroupeActif();
+    if (!proposition || !confirm('Annuler cette proposition de paiement groupé ?')) return;
+    this.redevanceService.annulerPropositionPaiementGroupe$(proposition._id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Succès', 'Proposition annulée.');
+        this.paiementGroupeActif.set(null);
+      },
+      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? "Impossible d'annuler cette proposition."),
+    });
+  }
+
+  onPayerManuelPaiementGroupe(): void {
+    const proposition = this.paiementGroupeActif();
+    const contrat = this.redevancesDrawerContrat();
+    if (!proposition || !contrat) return;
+    if (!confirm(`Confirmer que le paiement groupé de ${proposition.montantAPayer} FCFA a été reçu ?`)) return;
+    this.redevanceService.payerManuelPaiementGroupe$(proposition._id).subscribe({
+      next: () => {
+        this.notificationService.showSuccess('Succès', 'Paiement groupé enregistré.');
+        this.openRedevancesDrawer(contrat);
+      },
+      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? "Impossible d'enregistrer ce paiement groupé."),
+    });
   }
 
   redevanceStatusLabel(status: string): string {

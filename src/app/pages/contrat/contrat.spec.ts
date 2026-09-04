@@ -10,7 +10,7 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
   let component: ContratPage;
   let authServiceSpy: { getCurrentUser: jasmine.Spy; currentUser$: Subject<any> };
   let contratServiceSpy: { getContratsByClient$: jasmine.Spy };
-  let redevanceServiceSpy: { getRedevancesByContrat$: jasmine.Spy };
+  let redevanceServiceSpy: { getRedevancesByContrat$: jasmine.Spy; getPropositionActivePaiementGroupe$: jasmine.Spy };
   let newNotification$: Subject<any>;
   let websocketServiceSpy: { onNewNotification: jasmine.Spy };
 
@@ -32,6 +32,9 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
     redevanceServiceSpy = {
       getRedevancesByContrat$: jasmine.createSpy('getRedevancesByContrat$').and.returnValue({
         subscribe: ({ next }: any) => next && next([{ _id: 'r1', status: 'en_attente', montant: 5000, periodLabel: 'Mai 2026' }]),
+      }),
+      getPropositionActivePaiementGroupe$: jasmine.createSpy('getPropositionActivePaiementGroupe$').and.returnValue({
+        subscribe: ({ next }: any) => next && next(null),
       }),
     };
     websocketServiceSpy = { onNewNotification: jasmine.createSpy('onNewNotification').and.returnValue(newNotification$.asObservable()) };

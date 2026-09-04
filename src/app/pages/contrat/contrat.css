@@ -93,6 +93,32 @@
   color: var(--primary-color);
 }
 
+.paiement-groupe-offer {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+}
+.paiement-groupe-offer__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ad6800;
+  margin-bottom: 6px;
+}
+.paiement-groupe-offer__header i {
+  font-size: 1.1rem;
+}
+.paiement-groupe-offer p {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+}
+.paiement-groupe-offer__barre {
+  color: var(--text-secondary, #757575);
+  text-decoration: line-through;
+}
+
 .redevance-item {
   display: flex;
   align-items: center;

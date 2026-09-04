@@ -6,6 +6,7 @@ import { ContratService } from '../../services/contrat.service';
 import { RedevanceService } from '../../services/redevance.service';
 import { Contrat } from '../../models/contrat.model';
 import { Redevance } from '../../models/redevance.model';
+import { PaiementGroupeRedevance } from '../../models/paiement-groupe-redevance.model';
 import { Webstockets, SocketNotification } from '../../core/services/webstockets';
 import { MobileMoneyFormComponent } from '../payment/mobile-money-form/mobile-money-form';
 
@@ -29,6 +30,10 @@ export class ContratPage implements OnInit, OnDestroy {
   selectedContratId: string | null = null;
   redevancesByContrat: { [contratId: string]: Redevance[] } = {};
   isLoadingRedevances: { [contratId: string]: boolean } = {};
+  // Proposition de paiement groupé + réduction en attente (configurée par l'agence),
+  // le cas échéant — voir services/paiementGroupe.js. `null` une fois chargé s'il n'y
+  // en a aucune, `undefined` tant que non encore chargé.
+  propositionByContrat: { [contratId: string]: PaiementGroupeRedevance | null | undefined } = {};
   showPaymentForm = false;
   tarifResponse: any = null;
   private newContratSub?: RxSubscription;
@@ -60,6 +65,7 @@ export class ContratPage implements OnInit, OnDestroy {
       // sans attendre un rechargement manuel de page.
       if (notification?.type === 'Redevance' && this.selectedContratId) {
         this.loadRedevances(this.selectedContratId);
+        this.loadPropositionPaiementGroupe(this.selectedContratId);
       }
     });
   }
@@ -88,6 +94,17 @@ export class ContratPage implements OnInit, OnDestroy {
     if (this.selectedContratId && !this.redevancesByContrat[contratId]) {
       this.loadRedevances(contratId);
     }
+    if (this.selectedContratId && this.propositionByContrat[contratId] === undefined) {
+      this.loadPropositionPaiementGroupe(contratId);
+    }
+  }
+
+  /** Proposition de paiement groupé en attente pour ce contrat, configurée par l'agence (le cas échéant). */
+  loadPropositionPaiementGroupe(contratId: string): void {
+    this.redevanceService.getPropositionActivePaiementGroupe$(contratId).subscribe({
+      next: (proposition) => { this.propositionByContrat[contratId] = proposition; },
+      error: () => { this.propositionByContrat[contratId] = null; },
+    });
   }
 
   /** Redevances (factures périodiques) du contrat, chargées à la demande à l'ouverture du détail. */
@@ -121,13 +138,30 @@ export class ContratPage implements OnInit, OnDestroy {
     this.showPaymentForm = true;
   }
 
+  /**
+   * Paiement d'une proposition de paiement groupé (chantier "paiement groupé +
+   * réduction agence") — même patron que payerRedevance() ci-dessus, `paiementGroupeId`
+   * fait dériver côté backend le montant déjà réduit et les redevances à régler.
+   */
+  payerPropositionGroupee(proposition: PaiementGroupeRedevance): void {
+    this.tarifResponse = {
+      paiementGroupeId: proposition._id,
+      userId: this.currentUser?._id,
+      amount: proposition.montantAPayer,
+    };
+    this.showPaymentForm = true;
+  }
+
   closePaymentForm(): void {
     this.showPaymentForm = false;
     this.tarifResponse = null;
     // Le paiement vient (probablement) de se conclure — recharge la liste du
     // contrat ouvert par prudence, même si la notification socket (ci-dessus)
     // devrait déjà l'avoir fait.
-    if (this.selectedContratId) this.loadRedevances(this.selectedContratId);
+    if (this.selectedContratId) {
+      this.loadRedevances(this.selectedContratId);
+      this.loadPropositionPaiementGroupe(this.selectedContratId);
+    }
   }
 
   redevanceStatusLabel(status: string): string {

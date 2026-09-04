@@ -101,6 +101,69 @@
         </button>
       </div>
       <div class="fin-contracts__drawer-body">
+
+        <!-- Paiement groupé + réduction -->
+        <div class="fin-contracts__paiement-groupe" *ngIf="peutGerer()">
+          <ng-container *ngIf="paiementGroupeActif() as proposition; else pasDePropositionActive">
+            <div class="fin-contracts__pg-card">
+              <div class="fin-contracts__pg-header">
+                <i class="material-icons" aria-hidden="true">local_offer</i>
+                <strong>Proposition de paiement groupé en attente</strong>
+              </div>
+              <p>{{ proposition.redevanceIds.length }} redevance(s) — {{ proposition.montantTotalAvantReduction }} FCFA
+                <ng-container *ngIf="proposition.montantReduction > 0"> − {{ proposition.montantReduction }} FCFA de réduction</ng-container>
+                = <strong>{{ proposition.montantAPayer }} FCFA</strong> à payer
+              </p>
+              <div class="fin-contracts__pg-actions">
+                <button type="button" class="btn btn-primary" (click)="onPayerManuelPaiementGroupe()">Marquer payé (manuel)</button>
+                <button type="button" class="btn btn-secondary" (click)="onAnnulerPaiementGroupe()">Annuler la proposition</button>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #pasDePropositionActive>
+            <button *ngIf="!showPaiementGroupeForm()" type="button" class="btn btn-secondary" (click)="ouvrirFormPaiementGroupe()">
+              <i class="material-icons" aria-hidden="true">local_offer</i>
+              Configurer un paiement groupé
+            </button>
+
+            <div class="fin-contracts__pg-card" *ngIf="showPaiementGroupeForm()">
+              <div class="fin-contracts__pg-header">
+                <strong>Nouvelle proposition de paiement groupé</strong>
+              </div>
+
+              <label class="fin-contracts__pg-checkbox">
+                <input type="checkbox" [checked]="paiementGroupeForm().genererTout" (change)="setGenererTout($any($event.target).checked)" />
+                Générer aussi les échéances futures jusqu'à la fin du contrat
+              </label>
+
+              <div class="fin-contracts__pg-row">
+                <label>
+                  Réduction
+                  <select [ngModel]="paiementGroupeForm().reductionType" (ngModelChange)="setReductionType($event)">
+                    <option value="pourcentage">Pourcentage (%)</option>
+                    <option value="montant">Montant fixe (FCFA)</option>
+                  </select>
+                </label>
+                <label>
+                  Valeur
+                  <input type="number" min="0" [ngModel]="paiementGroupeForm().reductionValeur" (ngModelChange)="setReductionValeur($event)" />
+                </label>
+              </div>
+
+              <app-loading-spinner *ngIf="chargementApercu()" message="Calcul de l'aperçu..." size="small" />
+              <p class="fin-contracts__pg-apercu" *ngIf="!chargementApercu() && paiementGroupeApercu() as apercu">
+                Total : {{ apercu.montantTotal }} FCFA → <strong>{{ montantApresReductionApercu() }} FCFA</strong> après réduction
+                ({{ apercu.redevancesExistantes.length + apercu.redevancesAGenerer.length }} redevance(s))
+              </p>
+
+              <div class="fin-contracts__pg-actions">
+                <button type="button" class="btn btn-primary" (click)="onCreerPropositionPaiementGroupe()">Créer la proposition</button>
+                <button type="button" class="btn btn-secondary" (click)="fermerFormPaiementGroupe()">Annuler</button>
+              </div>
+            </div>
+          </ng-template>
+        </div>
+
         <app-loading-spinner *ngIf="chargementRedevances()" message="Chargement des redevances..." size="medium" />
         <div class="fin-contracts__empty" *ngIf="!chargementRedevances() && !redevancesDrawerList().length">
           <i class="material-icons" aria-hidden="true">receipt_long</i>

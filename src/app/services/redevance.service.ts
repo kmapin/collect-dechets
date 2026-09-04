@@ -4,6 +4,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Redevance } from '../models/redevance.model';
+import { ApercuPaiementGroupe, PaiementGroupeRedevance, ReductionType } from '../models/paiement-groupe-redevance.model';
 
 /**
  * Un appel par endpoint `routes/redevanceRoute.js`, même patron que
@@ -93,6 +94,60 @@ export class RedevanceService {
       }),
       catchError((error) => {
         console.error('Erreur lors du paiement de la redevance :', error);
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  // ── Paiement groupé + réduction ────────────────────────────────────────
+
+  /** Réservé à l'agence titulaire du contrat — voir routes/redevanceRoute.js. */
+  apercuPaiementGroupe$(contratId: string, genererTout: boolean): Observable<ApercuPaiementGroupe> {
+    const params = new HttpParams().set('genererTout', String(genererTout));
+    return this.http.get<ApercuPaiementGroupe>(`${environment.apiUrl}/redevances/contrat/${contratId}/paiement-groupe/apercu`, { params }).pipe(
+      catchError((error) => {
+        console.error("Erreur lors de l'aperçu du paiement groupé :", error);
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  creerPropositionPaiementGroupe$(
+    contratId: string,
+    payload: { genererTout: boolean; reductionType: ReductionType; reductionValeur: number },
+  ): Observable<{ message: string; proposition: PaiementGroupeRedevance }> {
+    return this.http.post<any>(`${environment.apiUrl}/redevances/contrat/${contratId}/paiement-groupe`, payload).pipe(
+      catchError((error) => {
+        console.error('Erreur lors de la création de la proposition de paiement groupé :', error);
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  /** Accessible au client propriétaire du contrat, à l'agence titulaire, ou à un super_admin. Renvoie `null` si aucune proposition n'est en attente. */
+  getPropositionActivePaiementGroupe$(contratId: string): Observable<PaiementGroupeRedevance | null> {
+    return this.http.get<PaiementGroupeRedevance | null>(`${environment.apiUrl}/redevances/contrat/${contratId}/paiement-groupe/actif`).pipe(
+      catchError((error) => {
+        console.error('Erreur lors de la récupération de la proposition de paiement groupé :', error);
+        return of(null);
+      }),
+    );
+  }
+
+  annulerPropositionPaiementGroupe$(paiementGroupeId: string): Observable<{ message: string; proposition: PaiementGroupeRedevance }> {
+    return this.http.patch<any>(`${environment.apiUrl}/redevances/paiement-groupe/${paiementGroupeId}/annuler`, {}).pipe(
+      catchError((error) => {
+        console.error("Erreur lors de l'annulation de la proposition de paiement groupé :", error);
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  /** Paiement constaté manuellement par l'agence (espèces, etc.) — sans Transaction associée. */
+  payerManuelPaiementGroupe$(paiementGroupeId: string): Observable<{ message: string; proposition: PaiementGroupeRedevance }> {
+    return this.http.patch<any>(`${environment.apiUrl}/redevances/paiement-groupe/${paiementGroupeId}/payer-manuel`, {}).pipe(
+      catchError((error) => {
+        console.error('Erreur lors du paiement groupé manuel :', error);
         return throwError(() => error);
       }),
     );
