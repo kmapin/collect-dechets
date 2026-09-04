@@ -37,11 +37,24 @@
               <app-status-badge [label]="badgeContrat(contrat.status).label" [icon]="badgeContrat(contrat.status).icon" [variant]="badgeContrat(contrat.status).variant" />
             </td>
             <td data-label="Document">
-              <a *ngIf="contrat.documentUrl" [href]="contrat.documentUrl" target="_blank" class="fin-contracts__action-btn" title="Voir le document">
-                <i class="material-icons" aria-hidden="true">picture_as_pdf</i>
-              </a>
+              <!-- `documentPublicId` (pas `documentUrl`) détermine s'il existe un document
+                   réellement consultable : les documents uploadés type 'private' (chantier
+                   correctif Cloudinary 401) n'ont d'URL signée valide que via ce champ.
+                   Un contrat créé AVANT ce chantier a `documentUrl` rempli (ancienne URL
+                   publique, désormais bloquée par Cloudinary) mais jamais `documentPublicId`
+                   — sans ce correctif, il affichait "Voir le document" (qui échouait), sans
+                   jamais proposer "Générer le document" pour le régénérer proprement. -->
               <button
-                *ngIf="!contrat.documentUrl && peutGerer()"
+                *ngIf="contrat.documentPublicId"
+                type="button"
+                class="fin-contracts__action-btn"
+                (click)="onVoirDocument(contrat)"
+                title="Voir le document"
+              >
+                <i class="material-icons" aria-hidden="true">picture_as_pdf</i>
+              </button>
+              <button
+                *ngIf="!contrat.documentPublicId && peutGerer()"
                 type="button"
                 class="fin-contracts__action-btn"
                 (click)="onGenererDocument(contrat)"

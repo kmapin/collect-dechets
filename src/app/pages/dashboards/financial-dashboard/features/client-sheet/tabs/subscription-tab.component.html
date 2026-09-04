@@ -66,7 +66,7 @@
                 <app-status-badge [label]="badgeContrat(c.status).label" [icon]="badgeContrat(c.status).icon" [variant]="badgeContrat(c.status).variant" />
               </td>
               <td data-label="Document">
-                <a *ngIf="c.documentUrl" [href]="c.documentUrl" target="_blank" rel="noopener">Voir le PDF</a>
+                <button *ngIf="c.documentUrl" type="button" class="subscription-tab__link-btn" (click)="voirDocument(c)">Voir le PDF</button>
                 <span *ngIf="!c.documentUrl">—</span>
               </td>
             </tr>

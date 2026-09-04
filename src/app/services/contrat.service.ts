@@ -149,4 +149,23 @@ export class ContratService {
       }),
     );
   }
+
+  /**
+   * Le PDF du contrat est stocké sur Cloudinary en type 'private' (voir
+   * services/pdfContrat.js côté backend) — plus d'URL publique permanente, une URL
+   * signée expirant après 5 min doit être régénérée à chaque consultation. `contrat.documentUrl`
+   * (stocké en base) n'est donc plus directement ouvrable, seul cet appel l'est.
+   */
+  getDocumentUrl$(contratId: string): Observable<{ documentUrl: string; expiresIn: number }> {
+    return this.http.get<any>(`${environment.apiUrl}/contrats/${contratId}/document-url`).pipe(
+      map((response) => {
+        console.log('API > getDocumentUrl$:', response);
+        return response;
+      }),
+      catchError((error) => {
+        console.error('Erreur lors de la récupération de l\'URL du document du contrat :', error);
+        return throwError(() => error);
+      }),
+    );
+  }
 }

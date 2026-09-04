@@ -229,6 +229,18 @@ export class ContractsComponent {
     });
   }
 
+  /**
+   * `contrat.documentUrl` (stocké en base) n'est plus consultable directement — PDF en
+   * type Cloudinary 'private' (backend, services/pdfContrat.js) : une URL signée à
+   * durée limitée doit être régénérée à chaque consultation.
+   */
+  onVoirDocument(contrat: Contrat): void {
+    this.contratService.getDocumentUrl$(contrat._id).subscribe({
+      next: (res) => window.open(res.documentUrl, '_blank'),
+      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible d\'ouvrir le document.'),
+    });
+  }
+
   onGenererDocument(contrat: Contrat): void {
     this.contratService.genererDocument$(contrat._id).subscribe({
       next: (reponse: any) => {

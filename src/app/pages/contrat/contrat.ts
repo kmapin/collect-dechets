@@ -137,7 +137,13 @@ export class ContratPage implements OnInit, OnDestroy {
 
   telechargerDocument(contrat: Contrat): void {
     if (!contrat.documentUrl) return;
-    window.open(contrat.documentUrl, '_blank');
+    // `contrat.documentUrl` (stocké en base) n'est plus consultable directement — PDF en
+    // type Cloudinary 'private' (backend, services/pdfContrat.js) : une URL signée à
+    // durée limitée doit être régénérée à chaque consultation.
+    this.contratService.getDocumentUrl$(contrat._id).subscribe({
+      next: (res) => window.open(res.documentUrl, '_blank'),
+      error: () => {},
+    });
   }
 
   frequenceLabel(frequence: string): string {

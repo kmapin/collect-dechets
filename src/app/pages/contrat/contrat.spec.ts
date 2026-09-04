@@ -15,7 +15,7 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
   let websocketServiceSpy: { onNewNotification: jasmine.Spy };
 
   const CONTRATS = [
-    { _id: 'c1', clientId: 'client-1', agencyId: { _id: 'a1', name: 'Agence Test' }, pricingId: { _id: 'p1', price: 5000, planType: 'standard' }, frequenceCollecte: 'monthly', status: 'actif', prixParPeriode: 5000, passagesParPeriode: 4, startDate: '2026-01-01', endDate: null, documentUrl: null },
+    { _id: 'c1', clientId: 'client-1', agencyId: { _id: 'a1', name: 'Agence Test' }, pricingId: { _id: 'p1', price: 5000, planType: 'standard' }, frequenceCollecte: 'monthly', status: 'actif', prixParPeriode: 5000, passagesParPeriode: 4, startDate: '2026-01-01', endDate: null, documentUrl: null, documentPublicId: null },
   ];
 
   beforeEach(() => {

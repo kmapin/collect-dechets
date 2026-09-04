@@ -71,6 +71,18 @@ export class SubscriptionTabComponent implements OnChanges {
     return typeof agence === 'object' ? agence?.name ?? '—' : '—';
   }
 
+  /**
+   * `contrat.documentUrl` (stocké en base) n'est plus consultable directement — PDF en
+   * type Cloudinary 'private' (backend, services/pdfContrat.js) : une URL signée à
+   * durée limitée doit être régénérée à chaque consultation.
+   */
+  voirDocument(contrat: Contrat): void {
+    this.contratService.getDocumentUrl$(contrat._id).subscribe({
+      next: (res) => window.open(res.documentUrl, '_blank'),
+      error: () => {},
+    });
+  }
+
   private charger(): void {
     if (!this.idClient) return;
     this.chargement.set(true);

@@ -18,7 +18,11 @@ export interface Contrat {
   status: ContratStatus;
   dateResiliation: string | null;
   raisonResiliation: string | null;
+  /** secure_url au moment de l'upload — informatif seulement (type Cloudinary 'private',
+   * plus consultable tel quel) ; utiliser ContratService.getDocumentUrl$() pour une URL
+   * signée à jour. */
   documentUrl: string | null;
+  documentPublicId: string | null;
   createdAt: string;
   updatedAt: string;
 }
