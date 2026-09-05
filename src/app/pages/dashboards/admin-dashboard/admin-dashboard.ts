@@ -1672,8 +1672,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
       // ── Pin agence ──
       const pinCoords = this._zoneCoord(hood) ?? this.fallbackCoord(name, index);
-      const audit     = this.agencyAudits.find(a => a.name === name);
-      const clients   = audit?.clients ?? '—';
 
       const icon = L.divIcon({
         html: `<div class="agency-pin" style="background:${color}">
@@ -1688,7 +1686,17 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
       const marker = L.marker(pinCoords, { icon });
 
-      marker.bindPopup(`
+      // Même défaut préexistant que `clients`/`audit` ci-dessus corrigeait déjà pour la
+      // sidebar (recherche par nom dans `agencyAudits`, paginé — jamais trouvée hors page
+      // courante) : ce popup construisait sa propre valeur figée de la même façon
+      // erronée. Recalculée via getMapAgencyClientCount() (même source réelle que la
+      // sidebar, state_agencies/:id/stats) — ET reconstruite à CHAQUE ouverture
+      // (popupopen), pas seulement une fois à l'initialisation de la carte : le HTML
+      // passé à bindPopup() est figé au moment de l'appel, or loadAgencyMapClientCounts()
+      // (forkJoin réseau) répond après le setTimeout(100ms) qui déclenche
+      // initTerritorialMap() — sans ce rafraîchissement, le popup restait bloqué sur
+      // "—" même une fois la vraie donnée arrivée.
+      const buildPopupHtml = () => `
         <div class="map-popup">
           <div class="popup-header" style="border-left:4px solid ${color}">
             <span class="popup-initials" style="background:${color}">${initials}</span>
@@ -1700,7 +1708,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
             </div>
           </div>
           <div class="popup-body">
-            <div class="popup-row"><i class="material-icons">people</i>&nbsp;${clients} clients</div>
+            <div class="popup-row"><i class="material-icons">people</i>&nbsp;${this.getMapAgencyClientCount(agency)} clients</div>
             <div class="popup-row"><i class="material-icons">location_on</i>&nbsp;${hood || agency?.address?.city || '—'}</div>
             ${agency?.slogan ? `<div class="popup-slogan">"${agency.slogan}"</div>` : ''}
             <div class="popup-zones">
@@ -1711,7 +1719,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
             </div>
           </div>
         </div>
-      `, { maxWidth: 290 });
+      `;
+
+      marker.bindPopup(buildPopupHtml(), { maxWidth: 290 });
+      marker.on('popupopen', () => marker.setPopupContent(buildPopupHtml()));
 
       marker.on('click', () => this.selectAgencyOnMap(agency, index));
       marker.addTo(this.map!);
@@ -1888,7 +1899,13 @@ export class AdminDashboard implements OnInit, OnDestroy {
   getSelectedCompletionRate(): number {
     if (this.selectedAgencyStats) {
       const today = this.selectedAgencyStats.todayCollections ?? 0;
-      const done  = this.selectedAgencyStats.completedCollections ?? 0;
+      // `completedCollections` est TOUT TEMPS confondu (voir agency-dashboard.html
+      // "effectuées au total"), pas scopé à aujourd'hui comme `today` ci-dessus — les
+      // diviser produisait des taux impossibles (>100%, ex. 700%) dès qu'une agence
+      // avait plus de collectes 'Collected' au total que de collectes datées aujourd'hui.
+      // `collectedToday` (backend, services/stateForAgency.js) est la seule valeur
+      // réellement scopée au même jour que `today`.
+      const done = this.selectedAgencyStats.collectedToday ?? 0;
       if (today > 0) return Math.round((done / today) * 100);
     }
     return this.getAgencyAudit(this.selectedAgency?.name)?.completionRate ?? 0;

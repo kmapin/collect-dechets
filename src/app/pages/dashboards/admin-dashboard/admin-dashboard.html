@@ -1628,8 +1628,8 @@
                     <div class="tsd-kpi">
                       <div class="tsd-kpi-val"
                         [style.color]="AGENCY_PALETTE[selectedAgencyIndex! % AGENCY_PALETTE.length]">
-                        <span *ngIf="!isLoadingAgencyDetail">{{ (selectedAgencyStats?.averageRating ?? 0) |
-                          number:'1.1-1' }}</span>
+                        <span *ngIf="!isLoadingAgencyDetail">{{ selectedAgencyStats?.rating != null ?
+                          (selectedAgencyStats.rating | number:'1.1-1') : '—' }}</span>
                         <span *ngIf="isLoadingAgencyDetail" class="tsd-kpi-loader">…</span>
                       </div>
                       <div class="tsd-kpi-lbl">Note / 5</div>
@@ -1650,7 +1650,7 @@
                       </div>
                     </div>
                     <div class="tsd-completion-sub" *ngIf="selectedAgencyStats?.todayCollections">
-                      {{ selectedAgencyStats.completedCollections }} / {{ selectedAgencyStats.todayCollections }}
+                      {{ selectedAgencyStats.collectedToday ?? 0 }} / {{ selectedAgencyStats.todayCollections }}
                       collectes aujourd'hui
                     </div>
                   </div>
