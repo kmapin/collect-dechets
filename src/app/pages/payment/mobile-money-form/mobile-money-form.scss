@@ -266,15 +266,9 @@ form {
       background-color: transparent;
     }
 
-    // "Double bordure" au clic dans un champ invalide (ex. Numéro de téléphone) : le
-    // <input matInput> reste un <input> HTML natif — le navigateur lui applique sa propre
-    // bague de focus native (bleue) PAR-DESSUS le contour MDC (rouge, état invalide) dès
-    // que le champ est focus, faute d'un `outline: none` explicite dessus dans ce fichier
-    // (Material ne le neutralise pas systématiquement selon navigateur/version). Les deux
-    // contours se superposent visuellement → effet de bordure double.
-    .mat-mdc-input-element:focus {
-      outline: none;
-    }
+    // Le fix "double bordure au focus" (.mat-mdc-input-element:focus { outline: none })
+    // vivait ici auparavant — généralisé et déplacé dans src/styles.scss (générique à
+    // tout champ Material de l'app, pas spécifique à ce formulaire).
   }
 
   .mat-mdc-outlined-button:not(:disabled) {

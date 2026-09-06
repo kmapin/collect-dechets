@@ -110,6 +110,32 @@ conflits entre tailwind et material
   border-left: none;
 }
 
+/*
+  Correctifs de compatibilité Angular Material — CENTRALISÉS ICI.
+  ─────────────────────────────────────────────────────────────
+  Avant d'ajouter un `::ng-deep .mat-mdc-*`/`.mdc-*` dans le SCSS d'un
+  composant pour corriger un rendu Material cassé (pas juste une
+  personnalisation de couleur/taille propre à cette page), vérifie d'abord
+  si le même symptôme n'est pas déjà couvert ici — évite de re-diagnostiquer
+  et re-patcher le même problème dans un nouveau fichier (cf. le fix
+  notched-outline ci-dessus, initialement isolé, maintenant regroupé avec
+  celui-ci).
+*/
+
+/*
+  Anneau de focus double sur un <input matInput> invalide (ex. formulaire
+  mobile-money-form, où ce fix vivait auparavant en local avant d'être
+  généralisé ici). Le <input matInput> reste un <input> HTML natif — le
+  navigateur lui applique sa propre bague de focus native PAR-DESSUS le
+  contour MDC dès que le champ est focus, faute d'un `outline: none`
+  explicite (Material ne le neutralise pas systématiquement selon
+  navigateur/version). Les deux contours se superposent → bordure double.
+  Générique à TOUT champ Material de l'app, pas seulement ce formulaire-là.
+*/
+.mat-mdc-input-element:focus {
+  outline: none;
+}
+
 /* loader global */
 .loading-wrapper {
   display: flex;
