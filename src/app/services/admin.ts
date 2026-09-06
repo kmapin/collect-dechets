@@ -340,8 +340,18 @@ export class Admin {
   }
 
   /** Diffuse réellement une communication (persistance + notification temps réel) vers le personnel des agences sélectionnées — services/communication.js. */
-  sendCommunication$(payload: { title: string; message: string; recipients: string[] }): Observable<any> {
+  sendCommunication$(payload: { title: string; message: string; recipients: string[]; priority?: string; type?: string }): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/communications/send`, payload);
+  }
+
+  /** Liste les communications envoyées, regroupées par envoi — services/communication.js::listCommunications. */
+  getCommunications$(): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/communications`);
+  }
+
+  /** Suppression complète (toutes les Notification du même envoi, y compris chez les destinataires) — services/communication.js::deleteCommunication. */
+  deleteCommunication$(broadcastId: string): Observable<any> {
+    return this.http.delete<any>(`${environment.apiUrl}/communications/${broadcastId}`);
   }
 
   /** Sans `agencyId`, renvoie les alertes non-classées de TOUTES les agences (services/planning.js::getPlanningAlerts) — utilisé pour le flux d'alertes transverse du dashboard super_admin. */

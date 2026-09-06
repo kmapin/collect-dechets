@@ -136,6 +136,26 @@ conflits entre tailwind et material
   outline: none;
 }
 
+/*
+  Focus visuel cohérent pour TOUS les <input>/<textarea> HTML natifs de l'app
+  (hors Material/PrimeNG, qui gèrent déjà leur propre indicateur de focus —
+  exclus explicitement ci-dessous pour ne jamais leur ajouter une 3e bordure).
+  Beaucoup de composants neutralisent `outline`/`border` sur leurs champs sans
+  toujours reposer un indicateur de focus derrière (certains le font via
+  `:focus-within` sur le conteneur, d'autres pas du tout) — un seul endroit
+  garantit désormais le même contour bleu partout, plutôt que de dépendre de
+  ce que chaque composant a pensé à refaire. `!important` nécessaire : la
+  quasi-totalité des styles de champ dans l'app posent déjà un `outline:none`/
+  `border:none` scopé au composant (donc plus spécifique qu'une règle globale
+  sur la balise `input` seule) — sans lui, cette règle serait systématiquement
+  écrasée exactement comme elle est censée corriger.
+*/
+input:not(.mat-mdc-input-element):not(.p-inputtext):focus,
+textarea:not(.mat-mdc-input-element):not(.p-inputtext):focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: -1px !important;
+}
+
 /* loader global */
 .loading-wrapper {
   display: flex;

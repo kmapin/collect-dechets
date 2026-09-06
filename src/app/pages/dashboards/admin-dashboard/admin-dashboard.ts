@@ -2221,11 +2221,13 @@ export class AdminDashboard implements OnInit, OnDestroy {
   /**
    * Flux d'alertes système réel — remplace l'ancien tableau codé en dur.
    * Réutilise les mêmes sources déjà éprouvées côté Municipalité/Planning
-   * (sévérité des Signalement, PlanningAlert type='danger'/'warning'), sans
-   * créer de nouvelle entité/notion d'alerte : le modèle Notification reste
-   * volontairement hors-sujet ici (voir DÉCISION PRODUIT en attente).
-   * Les communications envoyées manuellement (sendCommunication()) restent
-   * insérées dans ce même tableau, inchangé.
+   * (sévérité des Signalement, PlanningAlert type='danger'/'warning'), plus
+   * les VRAIES communications envoyées manuellement (services/communication.js
+   * ::listCommunications) — jusqu'ici jamais rechargées depuis le backend :
+   * `sendCommunication()` les ajoutait seulement en mémoire (`unshift`), donc
+   * elles disparaissaient au rechargement de l'onglet/de la page dès qu'aucun
+   * signalement/alerte sévère n'était actif au même moment (onglet vide malgré
+   * des données bien persistées en base — bug remonté par l'utilisateur).
    */
   loadCommunications(): void {
     // Liste COMPLÈTE des agences pour le picker de destinataires — pas
@@ -2245,11 +2247,13 @@ export class AdminDashboard implements OnInit, OnDestroy {
         this.communicationRecipientAgencies = [];
       },
     });
+    this.isLoadingCommunications = true;
     forkJoin({
       signalements: this.adminService.getAllSignalements({}),
       alerts: this.adminService.getPlanningAlerts$(),
+      communications: this.adminService.getCommunications$(),
     }).subscribe({
-      next: ({ signalements, alerts }: { signalements: any[]; alerts: any }) => {
+      next: ({ signalements, alerts, communications }: { signalements: any[]; alerts: any; communications: any }) => {
         const fromSignalements: Communication[] = (signalements || [])
           .filter((s: any) => s.status !== "resolved" && ["critical", "high"].includes(s.severity))
           .map((s: any) => ({
@@ -2276,13 +2280,74 @@ export class AdminDashboard implements OnInit, OnDestroy {
             readBy: [],
           } as Communication));
 
-        this.communications = [...fromSignalements, ...fromPlanningAlerts].sort(
+        // Communications réellement envoyées (services/communication.js::listCommunications,
+        // regroupées par broadcastId). `type`/`priority` peuvent être `null` pour les
+        // envois antérieurs à ce correctif (jamais persistés avant) — repli sur les mêmes
+        // valeurs par défaut que le formulaire d'envoi, jamais une valeur inventée au hasard.
+        const fromCommunications: Communication[] = (communications?.data || []).map((c: any) => ({
+          id: `communication-${c.broadcastId}`,
+          type: c.subtype || "notification",
+          title: c.title || "(Sans titre)",
+          message: c.message,
+          recipients: c.recipientAgencyIds || [],
+          priority: c.priority || "medium",
+          sentAt: new Date(c.sentAt),
+          readBy: c.readCount ? new Array(c.readCount).fill("") : [],
+        } as Communication));
+
+        this.communications = [...fromCommunications, ...fromSignalements, ...fromPlanningAlerts].sort(
           (a, b) => b.sentAt.getTime() - a.sentAt.getTime(),
         );
+        this.isLoadingCommunications = false;
       },
       error: (error) => {
         console.error("Erreur lors du chargement des alertes système:", error);
         this.communications = [];
+        this.isLoadingCommunications = false;
+      },
+    });
+  }
+
+  // ── Dialog de confirmation suppression communication ─────
+  // Même pattern que showDeleteDialog/userToDelete/confirmDeleteUser() ci-dessus
+  // (dialog custom, pas le confirm() natif du navigateur — cohérent avec le
+  // reste de l'app).
+  showDeleteCommunicationDialog = false;
+  communicationToDelete: Communication | null = null;
+  isDeletingCommunication = false;
+
+  /**
+   * Ouvre le dialog de confirmation. Uniquement pour les vraies communications
+   * envoyées (préfixe `communication-`, voir loadCommunications()) — jamais
+   * proposée pour un signalement/alerte planning, qui a son propre cycle de
+   * vie ailleurs dans l'app.
+   */
+  deleteCommunication(comm: Communication): void {
+    this.communicationToDelete = comm;
+    this.showDeleteCommunicationDialog = true;
+  }
+
+  /**
+   * Suppression complète (décision produit validée) : disparaît aussi de la
+   * cloche/l'historique des destinataires qui l'avaient déjà reçue — pas un
+   * simple masquage côté admin.
+   */
+  confirmDeleteCommunication(): void {
+    if (!this.communicationToDelete) return;
+    const comm = this.communicationToDelete;
+    const broadcastId = comm.id.replace("communication-", "");
+    this.isDeletingCommunication = true;
+    this.adminService.deleteCommunication$(broadcastId).subscribe({
+      next: () => {
+        this.communications = this.communications.filter((c) => c.id !== comm.id);
+        this.notificationService.showSuccess("Supprimée", "Communication supprimée avec succès");
+        this.showDeleteCommunicationDialog = false;
+        this.communicationToDelete = null;
+        this.isDeletingCommunication = false;
+      },
+      error: () => {
+        this.notificationService.showError("Erreur", "La communication n'a pas pu être supprimée.");
+        this.isDeletingCommunication = false;
       },
     });
   }
@@ -3357,27 +3422,24 @@ export class AdminDashboard implements OnInit, OnDestroy {
     }
 
     const recipients = [...this.newCommunication.recipients];
-    const communication: Communication = {
-      id: Math.random().toString(36).substr(2, 9),
-      type: this.newCommunication.type,
-      title: this.newCommunication.title,
-      message: this.newCommunication.message,
-      recipients,
-      priority: this.newCommunication.priority,
-      sentAt: new Date(),
-      readBy: [],
-    };
 
     // Envoi réel : persistance + notification temps réel (cloche générique)
     // au personnel des agences sélectionnées — services/communication.js,
-    // réutilise notifyUsers() comme partout ailleurs dans l'app.
+    // réutilise notifyUsers() comme partout ailleurs dans l'app. `priority`/
+    // `type` étaient jusqu'ici capturés dans le formulaire mais jamais envoyés
+    // au backend (silencieusement perdus) — corrigé au passage.
     this.adminService.sendCommunication$({
       title: this.newCommunication.title,
       message: this.newCommunication.message,
       recipients,
+      priority: this.newCommunication.priority,
+      type: this.newCommunication.type,
     }).subscribe({
       next: () => {
-        this.communications.unshift(communication);
+        // Recharge depuis le backend plutôt qu'un ajout local optimiste : la
+        // communication tout juste envoyée doit obtenir son VRAI broadcastId
+        // (nécessaire pour le bouton supprimer), pas un id local fictif.
+        this.loadCommunications();
         this.showCommunicationModal = false;
         this.newCommunication = {
           type: "",

@@ -1618,11 +1618,34 @@ input.filter-select {
   color: var(--text-primary);
 }
 
+.communication-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .communication-priority {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 500;
+}
+
+.comm-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+
+  i.material-icons { font-size: 18px; }
+  &:hover { background: #ffebee; color: var(--error-color); }
 }
 
 .priority-low {

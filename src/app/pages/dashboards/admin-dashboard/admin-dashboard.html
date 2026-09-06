@@ -2445,6 +2445,17 @@
           </div>
 
           <div class="communications-list">
+            <div *ngIf="isLoadingCommunications" class="empty-state">
+              <i class="material-icons">hourglass_top</i>
+              <h3>Chargement…</h3>
+            </div>
+
+            <div *ngIf="!isLoadingCommunications && !communications.length" class="empty-state">
+              <i class="material-icons">campaign</i>
+              <h3>Aucune communication</h3>
+              <p>Aucune communication, alerte ou signalement à afficher pour le moment.</p>
+            </div>
+
             <div *ngFor="let comm of communications" class="communication-card card">
               <div class="communication-header">
                 <div class="communication-type">
@@ -2453,8 +2464,14 @@
                     }}</i>
                   <span>{{ getCommunicationTypeText(comm.type) }}</span>
                 </div>
-                <div class="communication-priority" [class]="'priority-' + comm.priority">
-                  {{ getPriorityText(comm.priority) }}
+                <div class="communication-header-actions">
+                  <div class="communication-priority" [class]="'priority-' + comm.priority">
+                    {{ getPriorityText(comm.priority) }}
+                  </div>
+                  <button *ngIf="comm.id.startsWith('communication-')" class="comm-delete-btn"
+                    (click)="deleteCommunication(comm)" title="Supprimer">
+                    <i class="material-icons">delete</i>
+                  </button>
                 </div>
               </div>
 
@@ -3007,6 +3024,51 @@
       <button class="btn-delete-confirm" (click)="confirmDeleteUser()" [disabled]="isDeletingUser">
         <i class="material-icons">{{ isDeletingUser ? 'hourglass_empty' : 'delete' }}</i>
         {{ isDeletingUser ? 'Suppression...' : 'Supprimer définitivement' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+}
+
+<!-- ═══════ Dialog de confirmation Suppression Communication ═══════ -->
+@if (showDeleteCommunicationDialog && communicationToDelete) {
+<div class="confirm-dialog-overlay" (click)="showDeleteCommunicationDialog = false">
+  <div class="confirm-dialog-box" (click)="$event.stopPropagation()">
+
+    <!-- En-tête -->
+    <div class="confirm-dialog-header">
+      <div class="confirm-icon">
+        <i class="material-icons">delete_forever</i>
+      </div>
+      <div>
+        <h3>Supprimer cette communication ?</h3>
+        <p>Cette action est définitive et irréversible</p>
+      </div>
+    </div>
+
+    <!-- Corps -->
+    <div class="confirm-dialog-body">
+      <div class="confirm-user-card">
+        <div class="confirm-user-info">
+          <strong>{{ communicationToDelete.title }}</strong>
+          <span>{{ communicationToDelete.message }}</span>
+        </div>
+      </div>
+      <div class="confirm-warning">
+        <i class="material-icons">warning</i>
+        Elle disparaîtra aussi de l'historique des destinataires qui l'ont déjà reçue.
+      </div>
+    </div>
+
+    <!-- Pied -->
+    <div class="confirm-dialog-footer">
+      <button class="btn-cancel" (click)="showDeleteCommunicationDialog = false" [disabled]="isDeletingCommunication">
+        Annuler
+      </button>
+      <button class="btn-delete-confirm" (click)="confirmDeleteCommunication()" [disabled]="isDeletingCommunication">
+        <i class="material-icons">{{ isDeletingCommunication ? 'hourglass_empty' : 'delete' }}</i>
+        {{ isDeletingCommunication ? 'Suppression...' : 'Supprimer définitivement' }}
       </button>
     </div>
 
