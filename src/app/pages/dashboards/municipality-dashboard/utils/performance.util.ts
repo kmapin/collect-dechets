@@ -29,8 +29,8 @@ function groupKeyFor(record: PerformanceRecord, groupBy: PerformanceGroupType): 
       return { id: record.zoneName, label: record.zoneName };
     case 'wasteType':
       return { id: record.wasteType, label: record.wasteType };
-    case 'collector':
-      return { id: record.collectorId, label: record.collectorName };
+    case 'team':
+      return { id: record.teamId, label: record.teamName };
   }
 }
 

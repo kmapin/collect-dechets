@@ -1,3 +1,4 @@
+import { of } from 'rxjs';
 import { MunicipalityDashboard, Incident } from './municipality-dashboard';
 
 function buildIncident(overrides: Partial<Incident>): Incident {
@@ -22,7 +23,6 @@ describe('MunicipalityDashboard - filterIncidents', () => {
     // Constructor deps aren't exercised by filterIncidents(), so lightweight
     // stand-ins are enough — no TestBed/HTTP wiring needed for this unit test.
     component = new MunicipalityDashboard(
-      {} as any,
       {} as any,
       {} as any,
       {} as any,
@@ -90,7 +90,6 @@ describe('MunicipalityDashboard - getIncidentBreakdown', () => {
       {} as any,
       {} as any,
       {} as any,
-      {} as any,
       {} as any
     );
   });
@@ -129,19 +128,21 @@ describe('MunicipalityDashboard - getIncidentBreakdown', () => {
 });
 
 describe('MunicipalityDashboard - loadPerformanceOverview', () => {
-  it('delegates to MunicipalityMockDataService and populates performanceOverview', () => {
-    const mockDataService = {
-      getPerformanceOverview: () => ({ averageSatisfaction: 4.1, complianceRate: 88 }),
+  it('calls GET /municipality/performance-overview (adminService) and populates performanceOverview', () => {
+    // Stale test fixed: this used to stub a since-removed MunicipalityMockDataService
+    // 8th constructor param — loadPerformanceOverview() now calls
+    // adminService.getPerformanceOverview$() (real backend), the 3rd constructor param.
+    const adminService = {
+      getPerformanceOverview$: () => of({ data: { averageSatisfaction: 4.1, complianceRate: 88 } }),
     };
     const component = new MunicipalityDashboard(
       {} as any,
       {} as any,
+      adminService as any,
       {} as any,
       {} as any,
       {} as any,
-      {} as any,
-      {} as any,
-      mockDataService as any
+      {} as any
     );
 
     component.loadPerformanceOverview();

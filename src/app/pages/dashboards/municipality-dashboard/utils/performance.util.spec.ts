@@ -34,8 +34,8 @@ describe('performance.util - aggregatePerformanceRecords', () => {
       id: 'perf-x',
       zoneName: 'Arrondissement 1',
       wasteType: 'Déchets ménagers',
-      collectorId: 'collector-x',
-      collectorName: 'Issa Ouédraogo',
+      teamId: 'team-x',
+      teamName: 'Équipe Ouédraogo',
       actual: 80,
       target: 80,
       ...overrides,
@@ -66,15 +66,15 @@ describe('performance.util - aggregatePerformanceRecords', () => {
     ]);
   });
 
-  it('produces one entry per collector when grouping by collector (no averaging needed)', () => {
+  it('produces one entry per team when grouping by team (no averaging needed)', () => {
     const records: PerformanceRecord[] = [
-      buildRecord({ collectorId: 'c1', collectorName: 'Issa Ouédraogo', actual: 55, target: 85 }),
-      buildRecord({ collectorId: 'c2', collectorName: 'Aminata Compaoré', actual: 92, target: 82 }),
+      buildRecord({ teamId: 't1', teamName: 'Équipe Nord', actual: 55, target: 85 }),
+      buildRecord({ teamId: 't2', teamName: 'Équipe Sud', actual: 92, target: 82 }),
     ];
 
-    expect(aggregatePerformanceRecords(records, 'collector')).toEqual([
-      { id: 'c1', label: 'Issa Ouédraogo', actual: 55, target: 85 },
-      { id: 'c2', label: 'Aminata Compaoré', actual: 92, target: 82 },
+    expect(aggregatePerformanceRecords(records, 'team')).toEqual([
+      { id: 't1', label: 'Équipe Nord', actual: 55, target: 85 },
+      { id: 't2', label: 'Équipe Sud', actual: 92, target: 82 },
     ]);
   });
 

@@ -442,6 +442,19 @@ export class Admin {
   }
 
   /**
+   * GET /municipality/performance-indicators. Remplace le panneau simulé (dimension
+   * "équipe" plutôt que "collecteur individuel" — voir services/municipality.service.js
+   * ::getPerformanceIndicators côté backend pour le détail). `actual` réel, `target` =
+   * objectif de politique fixe (jamais une valeur mesurée).
+   */
+  getPerformanceIndicators$(days: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/municipality/performance-indicators`, { params: { days } }).pipe(
+      map((res: any) => { console.log('API > getPerformanceIndicators:', res); return res; }),
+      catchError((err) => { console.error('getPerformanceIndicators error:', err); throw err; })
+    );
+  }
+
+  /**
    * GET /finance/dashboard/kpi?agencyId=... — chantier Finance/Paiements, item 8. Réutilise
    * le MÊME endpoint que le dashboard financier agence (services/financeStats.js::
    * getDashboardKpi), pas un second calcul du taux de recouvrement côté admin.

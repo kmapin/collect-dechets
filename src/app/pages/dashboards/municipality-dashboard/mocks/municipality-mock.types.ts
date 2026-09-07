@@ -106,32 +106,37 @@ export interface PerformanceOverview {
 }
 
 /**
- * "Graphiques de performance" (Prompt 09) — how the bar chart's entries can
- * be grouped. `zone`/`collector` map onto existing geography/collector
- * fixtures; `wasteType` maps onto `WASTE_TYPE_POOL`.
+ * "Graphiques de performance" — how the bar chart's entries can be grouped.
+ * `collector` (individual) was replaced by `team` when this section moved off
+ * mock data (GET /municipality/performance-indicators, backend): only
+ * scanned Collecte carry an individual collector id (`collectedBy`), missed/
+ * scheduled ones only carry their assigned team (`executedByTeamId`) — an
+ * individual-collector completion rate would be structurally wrong at the
+ * denominator. `zone`/`team` map onto real geography/team data; `wasteType`
+ * maps onto the 5 real enum values.
  */
-export type PerformanceGroupType = 'zone' | 'wasteType' | 'collector';
+export type PerformanceGroupType = 'zone' | 'wasteType' | 'team';
 
 /**
- * One collector's actual-vs-target completion rate, tagged with every
- * dimension (zone, waste type, collector) the feature can filter/group by.
- * New: this is a flat "fact" per collector rather than a `targetCompletionRate`
- * field bolted onto `ZoneStatistic`/`AgencyAudit`/`MockCollector` individually —
- * grouping by zone/wasteType/collector and filtering by any of the three at
- * once requires a single record carrying all three dimensions together;
- * scattering the target field across three separate per-entity types would
- * make cross-dimension filtering (e.g. "collector X's zone Y performance for
- * waste type Z") impossible without re-joining them anyway.
+ * One (zone, waste type, team) actual-vs-target completion rate — real data
+ * since GET /municipality/performance-indicators (backend
+ * services/municipality.service.js::getPerformanceIndicators). This is a flat
+ * "fact" rather than a `targetCompletionRate` field bolted onto
+ * `ZoneStatistic`/`AgencyAudit` individually — grouping by zone/wasteType/team
+ * and filtering by any of the three at once requires a single record carrying
+ * all three dimensions together. `target` is a fixed municipal policy
+ * objective (90%, set server-side), never a measured value — only `actual` is
+ * computed from real Collecte.
  */
 export interface PerformanceRecord {
   id: string;
   zoneName: string;
   wasteType: string;
-  collectorId: string;
-  collectorName: string;
-  /** 0–100, actual completion rate. */
+  teamId: string;
+  teamName: string;
+  /** 0–100, actual completion rate — real, computed from Collecte. */
   actual: number;
-  /** 0–100, target/objective completion rate. */
+  /** 0–100, fixed policy target — never a measured value. */
   target: number;
 }
 

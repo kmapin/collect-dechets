@@ -495,10 +495,10 @@
                     (click)="setPerformanceGroupBy('wasteType')">
                     Type de déchet
                   </button>
-                  <button type="button" class="segmented-btn" [class.active]="performanceGroupBy === 'collector'"
-                    [attr.aria-pressed]="performanceGroupBy === 'collector'"
-                    (click)="setPerformanceGroupBy('collector')">
-                    Collecteur
+                  <button type="button" class="segmented-btn" [class.active]="performanceGroupBy === 'team'"
+                    [attr.aria-pressed]="performanceGroupBy === 'team'"
+                    (click)="setPerformanceGroupBy('team')">
+                    Équipe
                   </button>
                 </div>
 
@@ -521,12 +521,12 @@
                     }
                   </select>
 
-                  <label for="perf-collector">Collecteur</label>
-                  <select id="perf-collector" class="filter-select" [(ngModel)]="performanceCollectorFilter"
+                  <label for="perf-team">Équipe</label>
+                  <select id="perf-team" class="filter-select" [(ngModel)]="performanceTeamFilter"
                     (change)="applyPerformanceFilters()">
-                    <option value="all">Tous les collecteurs</option>
-                    @for (collector of performanceCollectorOptions; track collector.id) {
-                    <option [value]="collector.id">{{ collector.name }}</option>
+                    <option value="all">Toutes les équipes</option>
+                    @for (team of performanceTeamOptions; track team.id) {
+                    <option [value]="team.id">{{ team.name }}</option>
                     }
                   </select>
                 </div>

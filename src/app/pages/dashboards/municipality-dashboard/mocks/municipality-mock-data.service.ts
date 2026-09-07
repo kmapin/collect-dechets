@@ -1,10 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
 import {
   DEFAULT_SEED,
-  MOCK_NETWORK_DELAY_MS,
-  WASTE_TYPE_POOL,
   ZONE_COORDINATES,
 } from './municipality-mock.constants';
 import {
@@ -13,7 +9,6 @@ import {
   generateAgencyAudits,
   generateGroupedZoneStatistics,
   generateAgencyPerformanceMetrics,
-  generatePerformanceRecords,
 } from './municipality-mock.generators';
 import type {
   MunicipalityZone,
@@ -21,7 +16,6 @@ import type {
   AgencyAudit,
   GroupedZoneStatistics,
   AgencyPerformanceMetrics,
-  PerformanceRecord,
 } from './municipality-mock.types';
 
 /**
@@ -81,19 +75,12 @@ export class MunicipalityMockDataService {
     return generateAgencyPerformanceMetrics(agencyId, seed);
   }
 
-  /** Waste category labels — for populating the "Type de déchet" filter dropdown. */
-  getWasteTypeLabels(): string[] {
-    return WASTE_TYPE_POOL.map((w) => w.label);
-  }
-
-  getPerformanceRecords(seed: number = DEFAULT_SEED): PerformanceRecord[] {
-    return generatePerformanceRecords(seed);
-  }
-
-  /** Same data as getPerformanceRecords(), wrapped as an Observable — see getWasteRecords$() for why. */
-  getPerformanceRecords$(seed: number = DEFAULT_SEED): Observable<PerformanceRecord[]> {
-    return of(this.getPerformanceRecords(seed)).pipe(delay(MOCK_NETWORK_DELAY_MS));
-  }
+  // getWasteTypeLabels()/getPerformanceRecords()/getPerformanceRecords$() supprimées :
+  // GET /municipality/performance-indicators est maintenant réel (voir
+  // MunicipalityDashboard.loadPerformanceIndicators()) — plus aucun appelant. Dimension
+  // "collecteur individuel" (ex-PerformanceRecord.collectorId/collectorName) remplacée
+  // par "équipe" au passage — voir services/municipality.service.js::
+  // getPerformanceIndicators (backend) pour pourquoi.
 
   /**
    * Coverage Map — mock coordinates, kept on purpose (Prompt 14, decided with the

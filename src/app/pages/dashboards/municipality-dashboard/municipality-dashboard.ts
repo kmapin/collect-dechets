@@ -15,7 +15,6 @@ import { FilterParams } from "../../../models/filterParams.model";
 import { Signalement } from "../../shared_pages/signalement/signalement";
 import { MiniChart } from "../../shared_pages/mini-chart/mini-chart";
 import { CoverageMap, type CoverageMapZone } from "../../shared_pages/coverage-map/coverage-map";
-import { MunicipalityMockDataService } from "./mocks/municipality-mock-data.service";
 import type {
   PerformanceOverview,
   MonthlyTrendPoint,
@@ -242,18 +241,20 @@ export class MunicipalityDashboard  implements OnInit {
   isLoadingMonthlyTrend = false;
   collectionEvolutionConfig: ChartConfiguration | null = null;
 
-  // "Graphiques de performance" (Prompt 09) — actual vs. target by zone/waste type/collector.
+  // "Graphiques de performance" — actual vs. target by zone/waste type/team.
+  // Real data since GET /municipality/performance-indicators (team dimension,
+  // not individual collector — see PerformanceGroupType/PerformanceRecord).
   performanceRecords: PerformanceRecord[] = [];
   isLoadingPerformanceIndicators = false;
   performanceGroupBy: PerformanceGroupType = 'zone';
   performanceZoneFilter = 'all';
   performanceWasteTypeFilter = 'all';
-  performanceCollectorFilter = 'all';
+  performanceTeamFilter = 'all';
   performanceChartConfig: ChartConfiguration | null = null;
   underperformingIndicators: PerformanceIndicator[] = [];
   performanceZoneOptions: string[] = [];
   performanceWasteTypeOptions: string[] = [];
-  performanceCollectorOptions: { id: string; name: string }[] = [];
+  performanceTeamOptions: { id: string; name: string }[] = [];
 
   // "Fréquence de collecte par zone" (Prompt 10) — planned vs. actual cadence per zone.
   zoneFrequencyRecords: ZoneFrequencyRecord[] = [];
@@ -351,7 +352,6 @@ export class MunicipalityDashboard  implements OnInit {
     // },
   ];
   statisticsAdmin: MunicipalityStatistics | null = null;
-  clientGrowth: number = 0;
 
   constructor(
     private authService: AuthService,
@@ -360,14 +360,12 @@ export class MunicipalityDashboard  implements OnInit {
     private collectionService: CollectionService,
     private notificationService: NotificationService,
     private router: Router,
-    private cd: ChangeDetectorRef,
-    private mockDataService: MunicipalityMockDataService
+    private cd: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadMunicipalityData();
-    this.getClientGrowth();
     this.filterIncidents();
   }
 
@@ -551,20 +549,25 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   /**
-   * Mock-backed for now (see MunicipalityMockDataService) — no endpoint
-   * exists yet for per-collector actual-vs-target performance. Loads the
-   * flat record list once, derives the filter dropdown option lists from
-   * it, then applies whatever filters/grouping are currently selected.
+   * GET /municipality/performance-indicators (real backend). Team dimension,
+   * not individual collector — see PerformanceGroupType/PerformanceRecord.
+   * `days` (not the mock's `seed` reshuffle) drives the real date-range window
+   * server-side, same convention as loadZoneFrequency()/loadWasteStatistics().
+   * Loads the flat record list once, derives the filter dropdown option lists
+   * from it, then applies whatever filters/grouping are currently selected.
    */
   loadPerformanceIndicators(onDone?: () => void): void {
     this.isLoadingPerformanceIndicators = true;
-    const { seed } = this.getPeriodConfig(this.statisticsPeriod());
-    this.mockDataService.getPerformanceRecords$(seed).subscribe({
-      next: (records) => {
+    const { days } = this.getPeriodConfig(this.statisticsPeriod());
+    this.adminService.getPerformanceIndicators$(days).subscribe({
+      next: (response: any) => {
+        const records: PerformanceRecord[] = response?.data ?? [];
         this.performanceRecords = records;
         this.performanceZoneOptions = Array.from(new Set(records.map((r) => r.zoneName))).sort();
-        this.performanceWasteTypeOptions = this.mockDataService.getWasteTypeLabels();
-        this.performanceCollectorOptions = records.map((r) => ({ id: r.collectorId, name: r.collectorName }));
+        this.performanceWasteTypeOptions = Object.keys(WASTE_TYPE_DISPLAY);
+        this.performanceTeamOptions = Array.from(
+          new Map(records.map((r) => [r.teamId, { id: r.teamId, name: r.teamName }])).values()
+        );
         this.applyPerformanceFilters(onDone);
       },
       error: (err) => {
@@ -598,6 +601,9 @@ export class MunicipalityDashboard  implements OnInit {
    *      - waste records (`GET /waste-records`, Prompt 12) — fully period-affected, but
    *        not currently called by any Statistiques-tab section (no raw-record list UI
    *        exists yet; the endpoint is available for a future one).
+   *      - performance indicators (`GET /performance-indicators`) — fully period-affected,
+   *        same from/to/days window as waste breakdown/zone frequency (real backend,
+   *        no more mock `seed` reshuffle — removed once that endpoint was built for real).
    *  - `months`: how many trailing months the evolution chart shows (`GET
    *    /monthly-trend`, Prompt 09) — fully period-affected, and also what "Volume
    *    Global Collecté" derives from (Prompt 12: no separate fetch/window of its own,
@@ -606,20 +612,14 @@ export class MunicipalityDashboard  implements OnInit {
    *    period (an explicit judgment call — "today"/"week" don't map onto "months of
    *    trend" literally, so this degrades gracefully instead of forcing a
    *    literal-but-useless 1-month chart).
-   *  - `seed`: performance indicators — the one section with NO real backend endpoint
-   *    at all yet (still `MunicipalityMockDataService`, per-collector snapshot, no date
-   *    field on its records whatsoever). A distinct seed per period reshuffles the mock
-   *    numbers as a stand-in for period-sensitivity; this is NOT part of the real
-   *    from/to contract the other four sections share, and will be removed once/if that
-   *    endpoint is built for real rather than extended to accept a period.
    */
-  private getPeriodConfig(period: StatisticsPeriod): { days: number; months: number; seed: number } {
-    const configs: Record<StatisticsPeriod, { days: number; months: number; seed: number }> = {
-      today: { days: 1, months: 3, seed: 91001 },
-      week: { days: 7, months: 3, seed: 91101 },
-      month: { days: 30, months: 6, seed: 91202 },
-      quarter: { days: 90, months: 9, seed: 91303 },
-      year: { days: 365, months: 12, seed: 91404 },
+  private getPeriodConfig(period: StatisticsPeriod): { days: number; months: number } {
+    const configs: Record<StatisticsPeriod, { days: number; months: number }> = {
+      today: { days: 1, months: 3 },
+      week: { days: 7, months: 3 },
+      month: { days: 30, months: 6 },
+      quarter: { days: 90, months: 9 },
+      year: { days: 365, months: 12 },
     };
     return configs[period];
   }
@@ -642,7 +642,7 @@ export class MunicipalityDashboard  implements OnInit {
         (record) =>
           (this.performanceZoneFilter === "all" || record.zoneName === this.performanceZoneFilter) &&
           (this.performanceWasteTypeFilter === "all" || record.wasteType === this.performanceWasteTypeFilter) &&
-          (this.performanceCollectorFilter === "all" || record.collectorId === this.performanceCollectorFilter)
+          (this.performanceTeamFilter === "all" || record.teamId === this.performanceTeamFilter)
       );
 
       const indicators = aggregatePerformanceRecords(filtered, this.performanceGroupBy);
@@ -660,18 +660,12 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   /**
-   * Mock-backed for now (see MunicipalityMockDataService) — no endpoint
-   * exists yet for planned-vs-actual collection frequency. Same load
-   * pattern as loadPerformanceIndicators(): fetch the flat records once,
-   * derive filter option lists, then apply filters/sort.
-   */
-  /**
-   * GET /municipality/zone-frequency (Prompt 11, real backend). `days` (not `seed` — the
-   * mock's seed-reshuffle hack has no real equivalent) drives the ACTUAL side's real
-   * date-range window server-side; the PLANNED side reflects current Planning policy
-   * regardless of window. `zoneFrequencyWasteTypeOptions` now lists the 5 real enum keys
-   * (WASTE_TYPE_DISPLAY) rather than the mock's French-labeled placeholders — the
-   * filter's `[value]` must match `record.wasteType`'s raw key, display via getWasteTypeLabel().
+   * GET /municipality/zone-frequency (Prompt 11, real backend). `days` drives the ACTUAL
+   * side's real date-range window server-side; the PLANNED side reflects current Planning
+   * policy regardless of window. `zoneFrequencyWasteTypeOptions` lists the 5 real enum keys
+   * (WASTE_TYPE_DISPLAY) — the filter's `[value]` must match `record.wasteType`'s raw key,
+   * display via getWasteTypeLabel(). Same load pattern as loadPerformanceIndicators():
+   * fetch the flat records once, derive filter option lists, then apply filters/sort.
    */
   loadZoneFrequency(onDone?: () => void): void {
     this.isLoadingZoneFrequency = true;
@@ -878,11 +872,6 @@ export class MunicipalityDashboard  implements OnInit {
       suspended: "Suspendue",
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
-  }
-
-  getClientGrowth() {
-    this.clientGrowth = Math.floor(Math.random() * 10) + 5;
-    this.cd.detectChanges();
   }
 
   getCollectionRate(): number {
@@ -1293,21 +1282,20 @@ export class MunicipalityDashboard  implements OnInit {
         y = finalY() + 10;
       }
 
-      // Section 5 — Performance indicators (Prompt 09 — respects its zone/waste-type/collector filters + groupBy)
+      // Section 5 — Performance indicators (respects its zone/waste-type/team filters + groupBy)
       const filteredPerformanceRecords = this.performanceRecords.filter(
         (record) =>
           (this.performanceZoneFilter === "all" || record.zoneName === this.performanceZoneFilter) &&
           (this.performanceWasteTypeFilter === "all" || record.wasteType === this.performanceWasteTypeFilter) &&
-          (this.performanceCollectorFilter === "all" || record.collectorId === this.performanceCollectorFilter)
+          (this.performanceTeamFilter === "all" || record.teamId === this.performanceTeamFilter)
       );
       const performanceIndicators = aggregatePerformanceRecords(filteredPerformanceRecords, this.performanceGroupBy);
       if (performanceIndicators.length > 0) {
         y = ensureSpace(y);
-        // "(Démo — données simulées)" : loadPerformanceIndicators() charge depuis
-        // MunicipalityMockDataService, aucun endpoint réel n'existe encore pour la
-        // performance par collecteur/zone (voir son propre commentaire) — le rapport ne
-        // doit pas laisser croire que ces chiffres sont mesurés.
-        y = sectionTitle("Indicateurs de performance (Démo — données simulées)", y);
+        // Real data since GET /municipality/performance-indicators — `actual` computed
+        // from real Collecte, `target` a fixed municipal policy objective (not measured,
+        // see the endpoint's own comment). No longer "(Démo — données simulées)".
+        y = sectionTitle("Indicateurs de performance", y);
         autoTable(doc, {
           startY: y,
           head: [["Regroupement", "Réel", "Objectif", "Statut"]],
@@ -1567,7 +1555,7 @@ export class MunicipalityDashboard  implements OnInit {
         (record) =>
           (this.performanceZoneFilter === "all" || record.zoneName === this.performanceZoneFilter) &&
           (this.performanceWasteTypeFilter === "all" || record.wasteType === this.performanceWasteTypeFilter) &&
-          (this.performanceCollectorFilter === "all" || record.collectorId === this.performanceCollectorFilter)
+          (this.performanceTeamFilter === "all" || record.teamId === this.performanceTeamFilter)
       );
       const performanceIndicators = aggregatePerformanceRecords(filteredPerformanceRecords, this.performanceGroupBy);
       sections.push({

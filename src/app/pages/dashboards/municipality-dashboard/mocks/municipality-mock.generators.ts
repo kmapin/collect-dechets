@@ -35,7 +35,6 @@ import type {
   ZoneStatistic,
   GroupedZoneStatistics,
   AgencyPerformanceMetrics,
-  PerformanceRecord,
 } from './municipality-mock.types';
 
 function slugify(value: string): string {
@@ -164,40 +163,12 @@ export function generateAgencyPerformanceMetrics(
   return { completionRate, rating, revenue, collectionsToday, complianceScore, issues };
 }
 
-/**
- * One "actual vs target" record per collector — the finest granularity
- * naturally available in the mock fixtures — tagged with its zone and
- * primary waste type so the Performance Indicators feature (Prompt 09)
- * can filter/group by any of the three dimensions from a single flat list,
- * instead of three separate per-entity `targetCompletionRate` fields that
- * couldn't be cross-filtered without re-joining them anyway.
- *
- * `target` varies mildly per collector (78–92, a plausible per-collector
- * negotiated objective) and `actual` is `target + delta` with a wide delta
- * spread (-35..+20) so under/on-target/over-target cases are all common —
- * never "actual ≈ target for everyone".
- */
-export function generatePerformanceRecords(seed: number = DEFAULT_SEED): PerformanceRecord[] {
-  const random = createSeededRandom(seed + 9);
-  const collectors = generateCollectors(24, seed);
-
-  return collectors.map((collector, index) => {
-    const target = randomInt(random, 78, 92);
-    const delta = randomInt(random, -35, 20);
-    const actual = Math.min(100, Math.max(0, target + delta));
-
-    const record: PerformanceRecord = {
-      id: `perf-${index + 1}-${collector.id}`,
-      zoneName: collector.assignedZone,
-      wasteType: collector.primaryWasteType,
-      collectorId: collector.id!,
-      collectorName: `${collector.firstName} ${collector.lastName}`,
-      actual,
-      target,
-    };
-    return record;
-  });
-}
+// generatePerformanceRecords() supprimée : GET /municipality/performance-indicators
+// est maintenant réel (voir MunicipalityDashboard.loadPerformanceIndicators()) — plus
+// aucun appelant. Dimension "collecteur individuel" remplacée par "équipe" au passage
+// (voir services/municipality.service.js::getPerformanceIndicators, backend, pour
+// pourquoi un taux réel/total par collecteur individuel aurait été structurellement
+// faux au dénominateur).
 
 // generateWasteRecords() supprimée (Prompt 12) : "Volume Global Collecté" était son
 // dernier appelant réel (via MunicipalityMockDataService.getWasteRecords$()) — cette
