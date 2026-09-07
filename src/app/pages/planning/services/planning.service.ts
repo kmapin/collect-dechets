@@ -9,6 +9,7 @@ import {
   PlanningV2Api, PlanningV2CreateBody, PlanningStatsApi,
   ZoneCoverageApi, ConflictCheckResponse, TeamApi,
   ApiListResponse, WASTE_TYPE_LABELS, CollectionEvolutionDay,
+  PopulatedClientRef,
 } from '../models/planning.model';
 
 @Injectable({ providedIn: 'root' })
@@ -579,6 +580,7 @@ export class PlanningService {
       groupeId:         this._refId(api.groupeId as any),
       clientName:       this._clientName(api.clientId),
       groupName:        this._refName(api.groupeId as any),
+      locationLabel:    this._locationLabel(api),
       agencyId:         api.agencyId,
       managerId:        api.managerId,
       publishedAt:      api.publishedAt ?? undefined,
@@ -637,5 +639,51 @@ export class PlanningService {
     if (!val || typeof val === 'string') return undefined;
     const full = `${val.firstName ?? ''} ${val.lastName ?? ''}`.trim();
     return full || undefined;
+  }
+
+  /**
+   * Localisation à afficher pour un planning — logique différente selon le type
+   * (voir Planning.locationLabel pour le détail), calculée une seule fois ici pour ne
+   * jamais diverger entre planning-detail.ts et planning-summary-drawer.ts.
+   */
+  private _locationLabel(api: PlanningV2Api): string {
+    const territory = [
+      this._refName(api.quartierId), this._refName(api.secteurId),
+      this._refName(api.arrondissementId), this._refName(api.villeId),
+    ].filter(Boolean).join(' › ');
+
+    if (api.type === 'individuel') {
+      const client = typeof api.clientId === 'object' ? api.clientId : null;
+      return client?.address?.neighborhood
+        || client?.address?.sector
+        || client?.address?.arrondissement
+        || territory
+        || this._clientName(api.clientId)
+        || '—';
+    }
+
+    if (api.type === 'groupe') {
+      const group = typeof api.groupeId === 'object' ? api.groupeId : null;
+      const members = (group?.clients ?? []).filter((c): c is PopulatedClientRef => typeof c === 'object');
+      const commonZone = this._commonAddressField(members, 'neighborhood')
+        ?? this._commonAddressField(members, 'sector')
+        ?? this._commonAddressField(members, 'arrondissement');
+      return commonZone || territory || this._refName(api.groupeId as any) || '—';
+    }
+
+    // zone | secteur : uniquement le territoire ciblé par le planning.
+    return territory || '—';
+  }
+
+  /** Valeur d'adresse commune à TOUS les membres, ou undefined dès qu'un seul diverge
+   * (ou qu'un membre n'a pas cette valeur) — jamais une valeur approximative/majoritaire. */
+  private _commonAddressField(
+    members: PopulatedClientRef[],
+    field: 'neighborhood' | 'sector' | 'arrondissement',
+  ): string | undefined {
+    if (!members.length) return undefined;
+    const first = members[0].address?.[field];
+    if (!first) return undefined;
+    return members.every(m => m.address?.[field] === first) ? first : undefined;
   }
 }

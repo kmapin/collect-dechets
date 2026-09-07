@@ -20,6 +20,22 @@ export interface TerritoryRef {
   name: string;
 }
 
+// ── API V2 — client peuplé (clientId d'un planning individuel, ou un membre de
+// groupeId.clients) — `address` est un sous-document complet (User.address), jamais
+// une chaîne à plat.
+export interface PopulatedClientRef {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: {
+    neighborhood?: string;
+    sector?: string;
+    arrondissement?: string;
+    city?: string;
+  };
+}
+
 // ── API V2 — response ───────────────────────────────────────────
 export interface PlanningV2Api {
   _id: string;
@@ -42,8 +58,10 @@ export interface PlanningV2Api {
   agencyId?: string;
   managerId?: string;
   // L'API peuple parfois ces champs (objet complet) au lieu de renvoyer un simple ID
-  clientId?: string | { _id: string; firstName?: string; lastName?: string; phone?: string; address?: string } | null;
-  groupeId?: string | { _id: string; name?: string; clients?: string[] } | null;
+  clientId?: string | PopulatedClientRef | null;
+  // `clients` est peuplé (objets, pas juste des ids) depuis le chantier "localisation
+  // planning par groupe" — voir PlanningService._locationLabel.
+  groupeId?: string | { _id: string; name?: string; clients?: (string | PopulatedClientRef)[] } | null;
   villeId?: string | TerritoryRef;
   arrondissementId?: string | TerritoryRef;
   secteurId?: string | TerritoryRef;
@@ -221,6 +239,15 @@ export interface Planning {
   clientName?: string;
   groupeId?: string;
   groupName?: string;
+  /**
+   * Localisation à afficher, calculée une seule fois ici (PlanningService._locationLabel)
+   * plutôt que dupliquée dans chaque vue (planning-detail, planning-summary-drawer) :
+   * quartier du client pour un planning individuel, zone/secteur commun aux membres pour
+   * un planning groupe (uniquement si tous les membres partagent la même valeur — jamais
+   * une valeur approximative), secteur/quartier/ville pour zone|secteur. '—' si rien de
+   * fiable n'est disponible.
+   */
+  locationLabel: string;
   // Scheduling
   date: string;
   startTime: string;

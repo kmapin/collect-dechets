@@ -182,11 +182,11 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     return m[this.planning()?.frequency ?? ''] ?? '—';
   });
 
-  locationLabel = computed(() => {
-    const p = this.planning();
-    if (!p) return '—';
-    return [p.ville, p.arrondissement, p.secteur, p.quartier].filter(Boolean).join(' › ') || p.zone || '—';
-  });
+  // Calculé une seule fois dans PlanningService._locationLabel (quartier du client pour
+  // un planning individuel, zone/secteur commun aux membres pour un groupe, territoire
+  // ciblé pour zone|secteur) — jamais réimplémenté ici pour ne pas diverger de
+  // planning-summary-drawer.ts, qui affiche la même information.
+  locationLabel = computed(() => this.planning()?.locationLabel ?? '—');
 
   criticalIncidents = computed(() => this.incidents().filter(i => i.severity === 'critical' && !i.resolved).length);
 

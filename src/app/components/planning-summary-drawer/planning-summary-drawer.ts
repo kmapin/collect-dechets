@@ -87,14 +87,6 @@ export class PlanningSummaryDrawer implements AfterViewInit, OnDestroy {
     });
   }
 
-  locationLabel(p: Planning): string {
-    const territory = [p.quartier, p.secteur, p.arrondissement, p.ville].filter(Boolean).join(', ');
-    if (territory) return territory;
-    if (p.type === 'individuel' && p.clientName) return p.clientName;
-    if (p.type === 'groupe' && p.groupName) return p.groupName;
-    return '—';
-  }
-
   close(): void {
     this.closed.emit();
   }
