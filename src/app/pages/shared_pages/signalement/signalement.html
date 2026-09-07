@@ -41,7 +41,7 @@
           Lié à une collecte
           @if (incident.planningId; as planningRef) {
             @if (planningRef._id) {
-              · <a [routerLink]="['/planning/detail', planningRef._id]">{{ planningRef.reference || planningRef.libelle || 'voir le planning' }}</a>
+              · <a href="javascript:void(0)" (click)="viewPlanning(planningRef._id)">{{ planningRef.reference || planningRef.libelle || 'voir le planning' }}</a>
             }
           }
         </span>
@@ -156,7 +156,7 @@
             Lié à une collecte
             @if (incident.planningId; as planningRef) {
               @if (planningRef._id) {
-                · <a [routerLink]="['/planning/detail', planningRef._id]">{{ planningRef.reference || planningRef.libelle || 'voir le planning' }}</a>
+                · <a href="javascript:void(0)" (click)="viewPlanning(planningRef._id)">{{ planningRef.reference || planningRef.libelle || 'voir le planning' }}</a>
               }
             }
           </span>
@@ -388,7 +388,7 @@
             Lié à une collecte
             @if (incident.planningId; as planningRef) {
               @if (planningRef._id) {
-                · <a [routerLink]="['/planning/detail', planningRef._id]">{{ planningRef.reference || planningRef.libelle || 'voir le planning' }}</a>
+                · <a href="javascript:void(0)" (click)="viewPlanning(planningRef._id)">{{ planningRef.reference || planningRef.libelle || 'voir le planning' }}</a>
               }
             }
           </span>
@@ -465,3 +465,8 @@
   </div>
 </div>
 }
+
+<app-planning-summary-drawer
+  [planningId]="planningSummaryId"
+  (closed)="planningSummaryId = null"
+></app-planning-summary-drawer>

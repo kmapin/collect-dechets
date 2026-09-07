@@ -4,7 +4,26 @@ import { NotificationItem } from '../models/notification.model';
 export interface NotificationNavigation {
   commands: any[];
   extras?: NavigationExtras;
+  /**
+   * Quand renseigné (id du planning), l'appelant doit ouvrir la vue résumée en
+   * drawer (app-planning-summary-drawer) au lieu de naviguer — `commands` reste vide
+   * et ne doit PAS être passé à router.navigate() dans ce cas. Concerne les rôles
+   * sans accès à la page complète /planning/detail/:id (super_admin, municipality,
+   * client — voir planning.routes.ts::agencyStaffOnlyGuard, même restriction côté
+   * route directe) : celle-ci expose des actions de gestion et la position exacte
+   * de chaque client, réservées au personnel de l'agence (manager/collector).
+   */
+  openPlanningSummary?: string;
 }
+
+// Seuls ces rôles opèrent réellement le planning (accès à la page complète, voir
+// planning.routes.ts::agencyStaffOnlyGuard) — tout autre rôle atterrissant sur un lien
+// planning (notification, ou lien "Lié à une collecte" d'un signalement, voir
+// signalement.ts::viewPlanning) n'obtient qu'un résumé en lecture seule (drawer).
+// Exporté pour rester l'UNIQUE source de vérité — ne jamais redéfinir cette liste
+// ailleurs (le guard agencyStaffOnlyGuard reste séparé pour des raisons de dépendances
+// circulaires, mais doit être gardé synchronisé avec celle-ci).
+export const PLANNING_DETAIL_ROLES = new Set(['manager', 'collector']);
 
 // Mapping rôle -> route de dashboard, extrait de header.ts::getDashboardRoute() —
 // UNIQUE copie désormais (header.ts délègue ici), pour que la page /notifications et
@@ -56,9 +75,14 @@ export function resolveNotificationNavigation(
   dashboardRoute: string,
   role: string | null | undefined,
 ): NotificationNavigation {
-  // 1. Seul type de ressource avec une vraie route de détail côté frontend.
+  // 1. Seul type de ressource avec une vraie route de détail côté frontend — mais
+  // réservée au personnel de l'agence (voir PLANNING_DETAIL_ROLES ci-dessus) : les
+  // autres rôles obtiennent un résumé en drawer plutôt qu'un accès à la page complète.
   if (notif.target?.kind === 'planning' && notif.target.id) {
-    return { commands: ['/planning/detail', notif.target.id] };
+    if (role && PLANNING_DETAIL_ROLES.has(role)) {
+      return { commands: ['/planning/detail', notif.target.id] };
+    }
+    return { commands: [], openPlanningSummary: notif.target.id };
   }
 
   // 2. Abonnement/contrat du client LUI-MÊME — correct par construction : si la

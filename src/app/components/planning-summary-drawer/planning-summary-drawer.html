@@ -1,0 +1,90 @@
+<div class="drawer-overlay" *ngIf="planningId" (click)="close()">
+  <div class="drawer-content" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>
+        <i class="material-icons">event_note</i>
+        Aperçu du planning
+      </h3>
+      <button type="button" class="drawer-close-btn" (click)="close()" title="Fermer">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="psd-loading" *ngIf="loading">
+        <i class="material-icons psd-spin">autorenew</i>
+        Chargement…
+      </div>
+
+      <div class="psd-error" *ngIf="error && !loading">
+        <i class="material-icons">error_outline</i>
+        Impossible de charger les détails de ce planning.
+      </div>
+
+      <ng-container *ngIf="planning as p">
+        <div class="psd-title-row">
+          <span class="psd-reference">{{ p.reference }}</span>
+          <span class="psd-badge" [class]="'psd-badge--' + p.status">{{ statusLabels[p.status] ?? p.status }}</span>
+        </div>
+        <h4 class="psd-libelle">{{ p.libelle }}</h4>
+
+        <div class="psd-grid">
+          <div class="psd-item">
+            <i class="material-icons">category</i>
+            <div>
+              <span class="psd-label">Type</span>
+              <span class="psd-value">{{ typeLabels[p.type] ?? p.type }}</span>
+            </div>
+          </div>
+          <div class="psd-item">
+            <i class="material-icons">place</i>
+            <div>
+              <span class="psd-label">Concerné</span>
+              <span class="psd-value">{{ locationLabel(p) }}</span>
+            </div>
+          </div>
+          <div class="psd-item">
+            <i class="material-icons">event</i>
+            <div>
+              <span class="psd-label">Date</span>
+              <span class="psd-value">{{ formatFrDate(p.date) }}</span>
+            </div>
+          </div>
+          <div class="psd-item">
+            <i class="material-icons">schedule</i>
+            <div>
+              <span class="psd-label">Horaire</span>
+              <span class="psd-value">{{ p.startTime }}{{ p.endTime ? ' – ' + p.endTime : '' }}</span>
+            </div>
+          </div>
+          <div class="psd-item" *ngIf="p.teams.length">
+            <i class="material-icons">groups</i>
+            <div>
+              <span class="psd-label">Équipe</span>
+              <span class="psd-value">{{ p.teams.join(', ') }}</span>
+            </div>
+          </div>
+          <div class="psd-item" *ngIf="p.clientsCount">
+            <i class="material-icons">people</i>
+            <div>
+              <span class="psd-label">Clients concernés</span>
+              <span class="psd-value">{{ p.clientsCount }}</span>
+            </div>
+          </div>
+          <div class="psd-item" *ngIf="p.wasteTypes.length">
+            <i class="material-icons">delete</i>
+            <div>
+              <span class="psd-label">Déchets</span>
+              <span class="psd-value">{{ p.wasteTypes.join(', ') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="psd-notes" *ngIf="p.notes">
+          <span class="psd-label">Notes</span>
+          <p>{{ p.notes }}</p>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

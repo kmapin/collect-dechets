@@ -6,6 +6,8 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { AgencyService } from '../../../services/agency.service';
 import { RegisterUserData } from '../../../models/user.model';
+import { PLANNING_DETAIL_ROLES } from '../../../shared/notification-route.util';
+import { PlanningSummaryDrawer } from '../../../components/planning-summary-drawer/planning-summary-drawer';
 interface Incident {
   _id: string;
   agency?: {
@@ -75,7 +77,7 @@ interface Incident {
 }
 @Component({
   selector: 'app-signalement',
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, PlanningSummaryDrawer],
   templateUrl: './signalement.html',
   styleUrl: './signalement.scss',
 })
@@ -149,6 +151,25 @@ export class Signalement implements OnDestroy {
     this.pageSize = size;
     this.currentPage = 1;
   }
+
+  // ── Lien "Lié à une collecte · <référence>" ─────────────────────────────
+  // Même restriction que la cloche de notifications (voir notification-route.util.ts) :
+  // seul le personnel de l'agence (manager/collector) a accès à la page complète
+  // /planning/detail/:id (actions de gestion + position exacte de chaque client) —
+  // les autres rôles consultant ce signalement (ex. municipality) obtiennent un
+  // résumé en lecture seule dans ce même composant.
+  planningSummaryId: string | null = null;
+
+  viewPlanning(planningId: string | undefined): void {
+    if (!planningId) return;
+    const role = this.currentUser?.role;
+    if (role && PLANNING_DETAIL_ROLES.has(role)) {
+      this.router.navigate(['/planning/detail', planningId]);
+      return;
+    }
+    this.planningSummaryId = planningId;
+  }
+
     constructor(
       private authService: AuthService,
       private agencyService: AgencyService,

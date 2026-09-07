@@ -1,0 +1,175 @@
+/* Reproduit exactement .drawer-overlay/.drawer-content/.drawer-header/.drawer-body/
+   .drawer-close-btn de shared_pages/signalement/signalement.scss (le drawer "Détails
+   du signalement") — même overlay, mêmes animations, même mise en page d'en-tête, pour
+   que ce drawer s'ouvre visuellement de la même façon côté client. L'encapsulation de
+   vue Angular empêche de réutiliser directement les classes globales de ce composant
+   frère : on duplique donc les règles nécessaires plutôt que de casser l'isolation. */
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: psd-fade-in 0.3s ease;
+}
+
+@keyframes psd-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.drawer-content {
+  background: white;
+  width: 480px;
+  height: 100%;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  animation: psd-slide-in 0.3s ease;
+  overflow: hidden;
+}
+
+@keyframes psd-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.drawer-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.drawer-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 1.5rem;
+  transition: color 0.2s ease;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+}
+
+.drawer-close-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.psd-loading, .psd-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  padding: 24px 0;
+}
+.psd-error { color: #dc2626; }
+
+.psd-spin { animation: psd-spin 1s linear infinite; }
+@keyframes psd-spin { to { transform: rotate(360deg); } }
+
+.psd-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.psd-reference {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.psd-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+.psd-badge--planifie { background: #dbeafe; color: #1d4ed8; }
+.psd-badge--en_cours  { background: #fef3c7; color: #b45309; }
+.psd-badge--termine   { background: #dcfce7; color: #15803d; }
+.psd-badge--annule    { background: #fee2e2; color: #b91c1c; }
+.psd-badge--brouillon { background: #f1f5f9; color: #64748b; }
+
+.psd-libelle {
+  margin: 0 0 20px;
+  font-size: 1.15rem;
+  color: #0f172a;
+}
+
+.psd-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.psd-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.psd-item i {
+  color: #3b82f6;
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+.psd-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.psd-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.psd-value {
+  font-size: 0.95rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.psd-notes {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+.psd-notes p {
+  margin: 6px 0 0;
+  color: #475569;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}

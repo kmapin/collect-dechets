@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { agencyStaffOnlyGuard } from '../../core/guards/auth.guard';
 
 export const PLANNING_ROUTES: Routes = [
   {
@@ -74,6 +75,7 @@ export const PLANNING_ROUTES: Routes = [
       },
       {
         path: 'detail/:id',
+        canActivate: [agencyStaffOnlyGuard],
         loadComponent: () =>
           import('./planning-detail/planning-detail').then(m => m.PlanningDetailComponent),
         title: 'Planning – Détail',

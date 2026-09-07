@@ -10,13 +10,17 @@ import { NotificationItem, notificationTypeLabel } from '../../models/notificati
 import { resolveNotificationNavigation, dashboardRouteForRole } from '../../shared/notification-route.util';
 import { MatIconModule } from '@angular/material/icon';
 import { filter, Subscription } from 'rxjs';
+import { PlanningSummaryDrawer } from '../planning-summary-drawer/planning-summary-drawer';
 @Component({
   selector: 'app-header',
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, PlanningSummaryDrawer],
   templateUrl: './header.html',
   styleUrl: './header.css'
 })
 export class Header  implements OnInit, OnDestroy {
+  // Rôles sans accès à /planning/detail/:id (voir notification-route.util.ts) :
+  // au clic sur une notification Planning, on ouvre ce résumé en drawer à la place.
+  planningSummaryId: string | null = null;
   currentUser: RegisterUserData | null = null;
   isAuthenticated = false;
   showUserMenu = false;
@@ -250,6 +254,11 @@ navigateToNotification(notif: NotificationItem): void {
   // dur construisait `/dashboard/super_admin` (inexistant, 404 silencieux) au lieu
   // de `/dashboard/admin` — getDashboardRoute() est déjà correcte pour les 5 rôles.
   const nav = resolveNotificationNavigation(notif, this.getDashboardRoute(), this.currentUser?.role ?? null);
+  if (nav.openPlanningSummary) {
+    this.showNotifications = false;
+    this.planningSummaryId = nav.openPlanningSummary;
+    return;
+  }
   this.router.navigate(nav.commands, nav.extras);
 }
 }

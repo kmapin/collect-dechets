@@ -9,6 +9,7 @@ import { LoadingSpinnerComponent } from '../../components/loading-spinner/loadin
 import { NotificationItem, notificationTypeLabel, notificationTypeIcon } from '../../models/notification.model';
 import { resolveNotificationNavigation, dashboardRouteForRole } from '../../shared/notification-route.util';
 import { formatFrRelative, formatFrDateTime } from '../../shared/format.util';
+import { PlanningSummaryDrawer } from '../../components/planning-summary-drawer/planning-summary-drawer';
 
 type FilterKey = 'all' | 'unread';
 type PageState = 'loading' | 'ready' | 'error';
@@ -23,7 +24,7 @@ const PAGE_SIZE = 20;
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [CommonModule, LoadingSpinnerComponent],
+  imports: [CommonModule, LoadingSpinnerComponent, PlanningSummaryDrawer],
   templateUrl: './notifications.html',
   styleUrl: './notifications.scss',
 })
@@ -32,6 +33,10 @@ export class NotificationsComponent implements OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+
+  // Rôles sans accès à /planning/detail/:id (voir notification-route.util.ts) : au
+  // clic sur une notification Planning, un résumé s'ouvre en drawer à la place.
+  readonly planningSummaryId = signal<string | null>(null);
 
   readonly filter = signal<FilterKey>('all');
   readonly items = signal<NotificationItem[]>([]);
@@ -125,6 +130,10 @@ export class NotificationsComponent implements OnInit {
     }
     const role = this.auth.getCurrentUser()?.role ?? null;
     const nav = resolveNotificationNavigation(item, dashboardRouteForRole(role), role);
+    if (nav.openPlanningSummary) {
+      this.planningSummaryId.set(nav.openPlanningSummary);
+      return;
+    }
     this.router.navigate(nav.commands, nav.extras);
   }
 

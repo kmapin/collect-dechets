@@ -17,11 +17,24 @@ describe('notification-route.util', () => {
   });
 
   describe('resolveNotificationNavigation', () => {
-    it('notification liée à un planning -> /planning/detail/:id, quel que soit le rôle', () => {
+    it('notification liée à un planning + manager/collector -> /planning/detail/:id (personnel de l\'agence)', () => {
       const notif = { type: 'Planning' as const, target: { kind: 'planning' as const, id: 'p1' } };
       expect(resolveNotificationNavigation(notif, '/dashboard/agency', 'manager')).toEqual({
         commands: ['/planning/detail', 'p1'],
       });
+      expect(resolveNotificationNavigation(notif, '/dashboard/collector', 'collector')).toEqual({
+        commands: ['/planning/detail', 'p1'],
+      });
+    });
+
+    it('notification liée à un planning + super_admin/municipality/client -> résumé en drawer (pas d\'accès à la page complète)', () => {
+      const notif = { type: 'Planning' as const, target: { kind: 'planning' as const, id: 'p1' } };
+      for (const role of ['super_admin', 'municipality', 'client']) {
+        expect(resolveNotificationNavigation(notif, '/dashboard/admin', role)).toEqual({
+          commands: [],
+          openPlanningSummary: 'p1',
+        });
+      }
     });
 
     it('client + Subscribed -> /subscription (sa propre ressource, sans id)', () => {

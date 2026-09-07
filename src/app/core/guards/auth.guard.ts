@@ -2,6 +2,7 @@ import { inject } from "@angular/core";
 import { CanActivateFn, Router } from "@angular/router";
 import { AuthService } from "../../services/auth.service";
 import { UserRole } from "../../models/user.model";
+import { dashboardRouteForRole, PLANNING_DETAIL_ROLES } from "../../shared/notification-route.util";
 import { map } from "rxjs";
 
 /**
@@ -153,4 +154,36 @@ export const adminOrManagerGuard: CanActivateFn = () => {
       return false;
     }),
   );
+};
+
+/**
+ * Guard pour /planning/detail/:id — réservé au personnel qui opère réellement le
+ * planning (manager/collecteur) : cette page expose des actions de gestion
+ * (démarrer/annuler/réaffecter) et la position exacte de chaque client. super_admin,
+ * municipality et client n'y ont pas accès — ils obtiennent un résumé en lecture
+ * seule (drawer) au clic sur une notification ou un lien "Lié à une collecte" à la
+ * place — voir notification-route.util.ts::PLANNING_DETAIL_ROLES, UNIQUE source de
+ * vérité pour cette liste de rôles (réutilisée ici, jamais redéfinie), et
+ * planning-summary-drawer.ts.
+ *
+ * Contrairement aux guards ci-dessus, le rôle est vérifié explicitement — un
+ * utilisateur authentifié mais du mauvais rôle est redirigé vers SON tableau de
+ * bord (jamais laissé passer, jamais renvoyé au login puisqu'il est bien connecté).
+ */
+export const agencyStaffOnlyGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  const user = authService.getCurrentUser();
+
+  if (!user) {
+    router.navigate(["/login"]);
+    return false;
+  }
+  if (user.role && PLANNING_DETAIL_ROLES.has(user.role)) {
+    return true;
+  }
+
+  console.warn("Accès refusé: page réservée au personnel de l'agence (manager/collecteur)");
+  router.navigate([dashboardRouteForRole(user.role)]);
+  return false;
 };
