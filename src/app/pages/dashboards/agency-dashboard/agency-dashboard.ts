@@ -61,7 +61,6 @@ import {
 } from "../../../models/agency.model";
 import { Collection, CollectionStatus } from "../../../models/collection.model";
 import { ClientService, ClientApi } from "../../../services/client.service";
-import { OUAGA_DATA, QuartierData } from "../../../data/mock-data";
 import { Message } from "../../../models/message.model";
 import { SharedService } from "../../../services/shared-service";
 import { MatExpansionModule } from "@angular/material/expansion";
@@ -1771,7 +1770,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         this.loadEmployees(this.currentUser.agencyId);
       }
     }
-    this.loadCollections();
     // this.loadServiceZones();
     // this.loadSchedules();
     console.log("[loadAgencyData] agency avant loadClients:", this.agency);
@@ -2031,43 +2029,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       "Ouverture du formulaire d'attribution",
     );
     return;
-  }
-
-  loadCollections(): void {
-    // Simuler les collectes
-    this.collections = [
-      {
-        id: "1",
-        clientId: "client1",
-        agencyId: "agency1",
-        collectorId: "collector1",
-        scheduledDate: new Date(),
-        status: CollectionStatus.IN_PROGRESS,
-        address: {
-          street: "Rue des Roses",
-          doorNumber: "15",
-          doorColor: "blue",
-          neighborhood: "Centre-ville",
-          city: "Oouagadougou",
-          postalCode: "75001",
-        },
-        wasteTypes: [
-          {
-            id: "1",
-            name: "Déchets ménagers",
-            description: "",
-            icon: "delete",
-            color: "#4caf50",
-            instructions: [],
-            acceptedItems: [],
-            rejectedItems: [],
-          },
-        ],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-    this.filteredCollections = [...this.collections];
   }
 
   employeesNbrs!: number;
@@ -3565,14 +3526,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       : "Inconnu";
   }
 
-  getCollectionProgress(collection: Collection): number {
-    // Simuler le progrès de collecte avec une valeur stable
-    const seed = collection.id
-      .split("")
-      .reduce((a, b) => a + b.charCodeAt(0), 0);
-    return seed % 100;
-  }
-
   getRoleText(role: string): string {
     const roleTexts = {
       admin: "Administrateur",
@@ -3627,19 +3580,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     if (!schedule) return 'Zone inconnue';
     return schedule.zone || schedule.quartier || schedule.secteur || schedule.ville
       || schedule.libelle || 'Zone inconnue';
-  }
-
-  getZoneClients(zoneId: string): number {
-    // Simuler le nombre de clients par zone
-    return Math.floor(Math.random() * 200) + 50;
-  }
-
-  getEmployeeCollections(employeeId: string): number {
-    return Math.floor(Math.random() * 20) + 5;
-  }
-
-  getEmployeeRating(employeeId: string): number {
-    return Math.round((Math.random() * 2 + 3) * 10) / 10;
   }
 
   getEmployeeName(employeeId: string): string {
@@ -3849,25 +3789,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
-  }
-
-  getCollectorPerformance(): any[] {
-    return this.employees
-      .filter((e) => e.role === "collector")
-      .map((e) => ({
-        name: `${e.firstName} ${e.lastName}`,
-        collectionsCount: this.getEmployeeCollections(e.id),
-        score: Math.floor(Math.random() * 30) + 70,
-      }));
-  }
-
-  getZoneStatistics(): any[] {
-    return this.serviceZones.map((zone) => ({
-      name: zone.name,
-      clients: this.getZoneClients(zone.id),
-      collections: Math.floor(Math.random() * 100) + 50,
-      revenue: Math.floor(Math.random() * 5000) + 2000,
-    }));
   }
 
   // Filter methods
@@ -5432,21 +5353,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     );
   }
 
-  loadZonesMock(): void {
-    this.serviceZones = OUAGA_DATA.map((arrondissement) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: arrondissement.arrondissement,
-      description: arrondissement.secteurs
-        .map((secteur) => `${secteur.secteur}: ${secteur.quartiers.join(", ")}`)
-        .join("; "),
-      boundaries: [],
-      neighborhoods: arrondissement.secteurs.flatMap(
-        (secteur) => secteur.quartiers,
-      ),
-      cities: ["Ouagadougou"],
-      isActive: true,
-    }));
-  }
   // Chantier "unifier la géographie" — remplace le catalogue statique OUAGA_DATA
   // (Ouagadougou uniquement, arrondissement/secteur en dur) par le vrai référentiel
   // (TerritoryHttpService, GET /api/territories/*). `userData.address.*`/
@@ -5911,49 +5817,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     //     this.generateZoneAnalyticsDataFallback();
     //   }
     // });
-  }
-
-  /**
-   * Méthode de fallback pour générer les données localement
-   */
-  private generateZoneAnalyticsDataFallback(): void {
-    this.zoneAnalyticsData = this.zones.map((zone, index) => {
-      const zoneName = zone.neighborhood || zone;
-      const zoneClients = this.activeClients.filter(
-        (client) => client.address?.neighborhood === zoneName,
-      );
-
-      const households = zoneClients.filter(
-        (client) => this.getClientType(client) === "household",
-      ).length;
-      const businesses = zoneClients.filter(
-        (client) => this.getClientType(client) === "business",
-      ).length;
-      const institutions = zoneClients.filter(
-        (client) => this.getClientType(client) === "institution",
-      ).length;
-
-      const totalClients = zoneClients.length;
-      const estimatedTime = Math.ceil(totalClients * 0.15); // 9 minutes par client
-      const requiredTeam = Math.ceil(totalClients / 25);
-      const requiredVehicles = Math.ceil(requiredTeam / 2);
-      const capacityUsage = Math.min((totalClients / 50) * 100, 100);
-      const growth = Math.floor(Math.random() * 21) - 10;
-
-      return {
-        id: `zone-${index}`,
-        name: zoneName,
-        totalClients,
-        households,
-        businesses,
-        institutions,
-        capacityUsage,
-        estimatedTime,
-        requiredTeam,
-        requiredVehicles,
-        growth,
-      };
-    });
   }
 
   /**
@@ -6443,81 +6306,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     console.log("Zone sélectionnée:", zone);
   }
 
-  /**
-   * Obtenir la date de dernière collecte pour une zone
-   */
-  getLastCollectionDate(zone: any): Date {
-    // Simulation d'une date de dernière collecte
-    const today = new Date();
-    const daysAgo = Math.floor(Math.random() * 7) + 1; // Entre 1 et 7 jours
-    return new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-  }
-
-  //Données pour les tests
-
   expandedRows: any = {};
-  orders = [
-    {
-      id: "O1001",
-      customer: "John Doe",
-      date: "2025-01-10",
-      amount: 1200,
-      status: "DELIVERED",
-    },
-    {
-      id: "O1002",
-      customer: "Jane Smith",
-      date: "2025-01-15",
-      amount: 1200,
-      status: "PENDING",
-    },
-  ];
-
-  products = [
-    {
-      id: "P001",
-      name: "Laptop Pro",
-      image: "laptop.png",
-      price: 1200,
-      category: "Electronics",
-      rating: 4,
-      inventoryStatus: "INSTOCK",
-      orders: [
-        {
-          id: "O1001",
-          customer: "John Doe",
-          date: "2025-01-10",
-          amount: 1200,
-          status: "DELIVERED",
-        },
-        {
-          id: "O1002",
-          customer: "Jane Smith",
-          date: "2025-01-15",
-          amount: 1200,
-          status: "PENDING",
-        },
-      ],
-    },
-    {
-      id: "P002",
-      name: "Smartphone X",
-      image: "phone.png",
-      price: 800,
-      category: "Mobile",
-      rating: 5,
-      inventoryStatus: "LOWSTOCK",
-      orders: [
-        {
-          id: "O2001",
-          customer: "Alice Brown",
-          date: "2025-01-12",
-          amount: 800,
-          status: "CANCELLED",
-        },
-      ],
-    },
-  ];
 
   expandAll() {
     this.expandedRows = {};
@@ -6556,19 +6345,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
    */
   isSubscriptionActiveDisplay(abonnement: any): boolean {
     return isSubscriptionCurrentlyActive(abonnement);
-  }
-
-  getStatusSeverity(status: string) {
-    switch (status) {
-      case "DELIVERED":
-        return "success";
-      case "PENDING":
-        return "warning";
-      case "CANCELLED":
-        return "danger";
-      default:
-        return "info";
-    }
   }
 
   // Utiliser une API tierce pour générer le QR code

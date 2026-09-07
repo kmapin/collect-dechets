@@ -385,29 +385,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
     from Japan. A small, agile dog that copes very well with mountainous terrain, the Shiba Inu was
     originally bred for hunting.`;
   // Data
-  statistics: AdminStatistics = {
-    totalAgencies: 15,
-    dailyCollections: 10,
-    totalActiveAgencies: 14,
-    monthlyClientPercentage: 5,
-    totalCollectionsCollected: 0,
-    totalCollectionsReported: 0,
-    totalClients: 12500,
-    activeClients: 12000,
-    totalCollectors: 85,
-    todayCollections: 450,
-    completedCollections: 425,
-    completeCollections: 425,
-    totalMunicipalities: 25,
-    totalMunicipalityAgents: 25,
-    totalManagers: 25,
-    totalCollections: 425,
-    totalRevenue: 485000,
-    averageRating: 4.2,
-    pendingReports: 8,
-    complianceRate: 92,
-  };
-
   agencyAudits: AgencyAudit[] = [];
   /** Liste complète (non paginée) des agences — alimente uniquement le picker de destinataires de "Nouvelle Communication" (voir loadCommunications()). */
   communicationRecipientAgencies: { id: string; name: string }[] = [];
@@ -718,7 +695,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
   ];
   municipalitiesAudits: any;
   filteredMunicipalities: any[] = [];
-  clientGrowth: number = 0;
   signalementsAudits: any;
   filteredSignalements: any[] = [];
   isDisabled = true;
@@ -765,7 +741,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    this.getClientGrowth();
     this.initializeFiltersData();
     this.loadTabBadges();
     this.loadTabData(this.activeTab);
@@ -2449,13 +2424,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
   }
-  getClientGrowth() {
-    // return Math.floor(Math.random() * 10) + 5;
-    this.clientGrowth = Math.floor(Math.random() * 10) + 5;
-    this.cd.detectChanges();
-    // return 5;
-  }
-
   /**
    * Corrigé (chantier Rapports/Statistiques, item 3) : lisait `this.statistics`, l'objet
    * figé à des valeurs codées en dur (jamais réassigné depuis l'API — confirmé par grep
@@ -2525,12 +2493,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
       },
     });
   }
-  getComplianceText(): string {
-    if (this.statistics.complianceRate >= 95) return "Excellent";
-    if (this.statistics.complianceRate >= 85) return "Bon";
-    return "À améliorer";
-  }
-
   // this.incidents (GET /api/signalements, non filtré par statut — voir loadAllSignalements)
   // est désormais la seule source fiable : services/globalState.js (statisticsAdmin) compte
   // encore l'ancien Collecte.status='Reported', qui ne reçoit plus aucune écriture depuis la

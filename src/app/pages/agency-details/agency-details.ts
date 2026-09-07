@@ -9,7 +9,6 @@ import { RegisterUserData } from "../../models/user.model";
 import { MessagesService } from "../../services/messages.service";
 import { Message } from "../../models/message.model";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
-import { CountriesOrgMockService } from "../../services/countries-org-mock.service";
 import { TerritoryHttpService } from "../../services/territory-http.service";
 
 import { DrawerModule } from "primeng/drawer";
@@ -132,7 +131,6 @@ export class AgencyDetails implements OnInit {
 
   showReportModal = false;
   unreadMessageCount: any;
-  quartierInfos: any;
   agencyZones: string[] = [];
   visible2: boolean = false;
   visible1: boolean = false;
@@ -157,10 +155,6 @@ export class AgencyDetails implements OnInit {
   };
   constructor(
     private route: ActivatedRoute,
-    // Chantier "migrer le frontend vers TerritoryHttpService" — laissé branché
-    // uniquement pour getQuartierInfos() (composite, sans équivalent HTTP) ; toute la
-    // cascade pays/ville/arrondissement/secteur/quartier utilise TerritoryHttpService.
-    private countriesOrgMockService: CountriesOrgMockService,
     private territoryService: TerritoryHttpService,
     private agencyService: AgencyService,
     private authService: AuthService,
@@ -223,12 +217,6 @@ export class AgencyDetails implements OnInit {
     return window.innerWidth <= 768 ? "100%" : "33%";
   }
 
-  getQuartierInfos(qrt: string) {
-    const data = this.countriesOrgMockService.getQuartierInfo(qrt);
-    this.quartierInfos = data;
-    console.log("Quartier Infos==>", this.quartierInfos);
-    return data;
-  }
 
   // recuperations des tarifs liee a une agences
   tariffs: Tarif[] = [];

@@ -77,7 +77,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
   @ViewChild('chatMessages') chatMessages!: ElementRef;
   currentUser!: any;
-  upcomingCollections: Collection[] = [];
   collectionHistory: any[] = [];
   filteredHistory: Collection[] = [];
   filteredHistories: any;
@@ -658,11 +657,8 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
 
   loadDashboardData(): void {
     // Charger les données du tableau de bord
-    this.loadUpcomingCollections();
-    this.loadCollectionHistory();
     // loadPaymentHistory() déplacée dans getUser() (dépend de currentUser._id, voir son
     // propre commentaire) — plus appelée ici.
-    this.loadSubscription();
     this.countUnreadMessages();
     this.userMessages();
     this.loadClientReports();
@@ -824,111 +820,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
 
   /**Gestion des messages recus par le client connecté fin */
 
-  loadUpcomingCollections(): void {
-    // Simuler les prochaines collectes
-    this.upcomingCollections = [
-      {
-        id: "1",
-        clientId: "client1",
-        agencyId: "agency1",
-        collectorId: "collector1",
-        scheduledDate: new Date("2024-01-15T09:00:00"),
-        status: CollectionStatus.SCHEDULED,
-        address: {
-          street: "Rue des Roses",
-          doorNumber: "15",
-          doorColor: "blue",
-          neighborhood: "Centre-ville",
-          city: "Paris",
-          postalCode: "75001",
-        },
-        wasteTypes: [
-          {
-            id: "1",
-            name: "Déchets ménagers",
-            description: "",
-            icon: "delete",
-            color: "#4caf50",
-            instructions: [],
-            acceptedItems: [],
-            rejectedItems: [],
-          },
-        ],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: "2",
-        clientId: "client1",
-        agencyId: "agency1",
-        collectorId: "collector1",
-        scheduledDate: new Date("2024-01-18T10:00:00"),
-        status: CollectionStatus.SCHEDULED,
-        address: {
-          street: "Rue des Roses",
-          doorNumber: "15",
-          doorColor: "blue",
-          neighborhood: "Centre-ville",
-          city: "Paris",
-          postalCode: "75001",
-        },
-        wasteTypes: [
-          {
-            id: "2",
-            name: "Recyclables",
-            description: "",
-            icon: "recycling",
-            color: "#2196f3",
-            instructions: [],
-            acceptedItems: [],
-            rejectedItems: [],
-          },
-        ],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-  }
-
-  loadCollectionHistory(): void {
-    // Simuler l'historique des collectes
-    this.collectionHistory = [
-      {
-        id: "3",
-        clientId: "client1",
-        agencyId: "agency1",
-        collectorId: "collector1",
-        scheduledDate: new Date("2024-01-08T09:00:00"),
-        collectedDate: new Date("2024-01-08T09:30:00"),
-        status: CollectionStatus.COMPLETED,
-        address: {
-          street: "Rue des Roses",
-          doorNumber: "15",
-          doorColor: "blue",
-          neighborhood: "Centre-ville",
-          city: "Paris",
-          postalCode: "75001",
-        },
-        wasteTypes: [
-          {
-            id: "1",
-            name: "Déchets ménagers",
-            description: "",
-            icon: "delete",
-            color: "#4caf50",
-            instructions: [],
-            acceptedItems: [],
-            rejectedItems: [],
-          },
-        ],
-        rating: 5,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-    this.filteredHistory = [...this.collectionHistory];
-  }
-
   // ── Historique des paiements (chantier Finance/Paiements, item 4) ────────
   // Corrigé : branché sur le vrai GET /redevances/client/:clientId
   // (RedevanceService.getRedevancesByClient$, jamais appelé jusqu'ici) au lieu d'une
@@ -1085,38 +976,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     );
   }
 
-  loadSubscription(): void {
-    this.subscription = {
-      id: "1",
-      serviceName: "Collecte Standard",
-      agencyName: "EcoClean Services",
-      price: 25.99,
-      frequency: "mensuel",
-      status: "active",
-      nextPayment: new Date("2024-02-01"),
-    };
-  }
-
-  getNextCollection(): string {
-    if (this.upcomingCollections.length > 0) {
-      return this.upcomingCollections[0].scheduledDate.toLocaleDateString(
-        "fr-FR",
-        {
-          day: "numeric",
-          month: "long",
-        }
-      );
-    }
-    return "Aucune programmée";
-  }
-
-  getNextCollectionType(): string {
-    if (this.upcomingCollections.length > 0) {
-      return this.upcomingCollections[0].wasteTypes[0]?.name || "";
-    }
-    return "";
-  }
-
   // getMonthlyCollections(): string {
   //   const completed = this.collectionHistory.filter(c => c.status === CollectionStatus.COMPLETED).length;
   //   const total = this.collectionHistory.length + this.upcomingCollections.length;
@@ -1231,11 +1090,18 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   refreshCollections(): void {
-    this.loadUpcomingCollections();
-    this.loadCollectionHistory();
+    // Corrigé : appelait deux méthodes qui remplissaient `upcomingCollections`/
+    // `collectionHistory` avec des données fictives codées en dur (Paris, dates
+    // 2024), écrasant à chaque clic le vrai planning chargé par
+    // getWeeklySchedule()/loadPlanningHistory() — et cassant au passage
+    // rateCollection() (qui cherche la collecte réelle dans `collectionHistory`)
+    // jusqu'au rechargement de la page. Ce bouton vit dans la section "Planning
+    // de la semaine" (weeklySchedule) : il doit donc rafraîchir cette même
+    // source réelle.
+    this.getWeeklySchedule();
     this.notificationService.showSuccess(
       "Actualisé",
-      "Les collectes ont été mises à jour"
+      "Le planning a été mis à jour"
     );
   }
 

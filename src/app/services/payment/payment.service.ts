@@ -100,23 +100,6 @@ export class PaymentService {
   }
 
   /**
-   * Vérifie le statut d'une transaction
-   * @param transactionId Identifiant de la transaction
-   * @returns Observable de la réponse de paiement
-   */
-  checkTransactionStatus(transactionId: string): Observable<PaymentResponse> {
-    // Simulation d'une vérification de statut
-    const response: PaymentResponse = {
-      transactionId,
-      status: PaymentStatus.SUCCESS,
-      message: "Transaction trouvée",
-      timestamp: new Date(),
-    };
-
-    return of(response).pipe(delay(1000));
-  }
-
-  /**
    * Génère un identifiant de transaction unique
    * @returns Identifiant de transaction au format TXN-XXXXXXXXXX
    */

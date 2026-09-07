@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { delay, map, tap, catchError } from 'rxjs/operators';
+import { map, tap, catchError } from 'rxjs/operators';
 import { ClientUser, User, UserRole, RegisterUserData, RegisterResponse, UserAddress } from '../models/user.model';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../environments/environment';
@@ -73,21 +73,6 @@ export class AuthService {
     return this.http.get<any>(`${environment.apiUrl}/profile/${userId}`).pipe(
       map((response: any) => {
         console.log('API > getUserProfile:', response);
-        return response;
-      })
-    );
-  }
-  login(email: string, password: string): Observable<{ success: boolean; user?: RegisterUserData; error?: string }> {
-    // Simulate API call
-    return of({ success: true, user: this.mockUser(email) }).pipe(
-      delay(1000),
-      map(response => {
-        if (response.success && response.user) {
-          localStorage.setItem('currentUser', JSON.stringify(response.user));
-          this.currentUserSubject.next(response.user);
-          // this.currentUserSubjectLocalStorage.next(response.user);
-          this.isAuthenticatedSubject.next(true);
-        }
         return response;
       })
     );
@@ -567,40 +552,4 @@ export class AuthService {
     };
   }
 
-  private mockUser(email: string): RegisterUserData {
-    // Mock user data for demonstration
-    let role = UserRole.CLIENT;
-    if (email.includes('manager')) role = UserRole.MANAGER;
-    if (email.includes('collector')) role = UserRole.COLLECTOR;
-    if (email.includes('municipality')) role = UserRole.MUNICIPALITY;
-
-    return {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: email,
-      phone: '74567890',
-      role: role,
-      address: {
-        street: 'Rue Test',
-        arrondissement: 'Test',
-        sector: 'Test',
-        doorNumber: '1',
-        doorColor: 'Bleu',
-        neighborhood: 'Test',
-        city: 'Dakar',
-        postalCode: '10000',
-        longitude: -17.444,
-        latitude: 14.692,
-      },
-      status: 'active',
-      acceptTerms: true,
-      receiveOffers: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // Legacy fields for backwards compatibility
-      // firstName: 'John',
-      id: Math.random().toString(36).substr(2, 9),
-      isActive: true
-    };
-  }
 }
