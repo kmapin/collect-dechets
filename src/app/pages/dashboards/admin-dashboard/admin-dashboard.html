@@ -1785,6 +1785,7 @@
                   <th>Type de déchet</th>
                   <th>Statut</th>
                   <th>Date</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1799,6 +1800,11 @@
                     </span>
                   </td>
                   <td>{{ record.scheduledDate | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    <button class="action-btn" [disabled]="!record.planningId" (click)="viewWasteRecordPlanning(record)" [title]="record.planningId ? 'Voir le détail du planning' : 'Aucun planning associé'">
+                      <i class="material-icons">visibility</i>
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -3858,3 +3864,8 @@
   </div>
 </div>
 }
+
+<app-planning-summary-drawer
+  [planningId]="planningSummaryId"
+  (closed)="planningSummaryId = null"
+></app-planning-summary-drawer>

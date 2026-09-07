@@ -3075,6 +3075,15 @@ input.filter-select {
     transform: scale(0.95);
   }
 
+  &:disabled {
+    background: #f3f4f6 !important;
+    color: #cbd5e1 !important;
+    border-color: transparent !important;
+    cursor: not-allowed;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
   /* Voir détails — gris bleuté */
   &:not(.edit):not(.danger):not(.toggle-btn) {
     background: #eff6ff;

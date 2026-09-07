@@ -21,6 +21,7 @@ import { forkJoin, map, of, timeout, catchError, switchMap } from "rxjs";
 import { FilterParams } from "../../../models/filterParams.model";
 import { DrawerModule } from "primeng/drawer";
 import { Signalement } from "../../shared_pages/signalement/signalement";
+import { PlanningSummaryDrawer } from "../../../components/planning-summary-drawer/planning-summary-drawer";
 import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
 import { TerritoryHttpService } from "../../../services/territory-http.service";
 import { WithdrawalRequestsHttpService } from "../../../services/withdrawal-requests-http.service";
@@ -236,6 +237,7 @@ interface User {
     MatCardModule,
     LoadingSpinnerComponent,
     DrawerModule,
+    PlanningSummaryDrawer,
   ],
   providers: [ExportClientService],
   templateUrl: "./admin-dashboard.html",
@@ -419,6 +421,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
   // pas un deuxième fetch dédié.
   wasteRecordsCollectorId = '';
   readonly wasteRecordsWasteTypes = ['menagers', 'recyclables', 'verts', 'encombrants', 'speciaux'];
+
+  // Résumé du planning d'une ligne — super_admin n'a pas accès à la page complète
+  // /planning/detail/:id (agencyStaffOnlyGuard), donc un simple aperçu en drawer plutôt
+  // qu'une navigation (même composant que la cloche de notifications/Signalement).
+  planningSummaryId: string | null = null;
+  viewWasteRecordPlanning(record: any): void {
+    if (record?.planningId) this.planningSummaryId = record.planningId;
+  }
 
   loadWasteRecords(page: number = 1): void {
     this.isLoadingWasteRecords = true;
