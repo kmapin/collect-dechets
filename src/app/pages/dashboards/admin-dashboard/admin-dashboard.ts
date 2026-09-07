@@ -487,6 +487,19 @@ export class AdminDashboard implements OnInit, OnDestroy {
     return collector ? `${collector.firstName} ${collector.lastName}` : '—';
   }
 
+  /** Libellé FR d'un statut Collecte (models/Collecte.js, back) — affiché brut jusqu'ici. */
+  getWasteRecordStatusText(status?: string): string {
+    const statusTexts: Record<string, string> = {
+      Scheduled: 'Programmée',
+      Collected: 'Collectée',
+      Completed: 'Terminée',
+      Cancelled: 'Annulée',
+      Reported: 'Signalée',
+      Missed: 'Manquée',
+    };
+    return status ? (statusTexts[status] || status) : '—';
+  }
+
   goToWasteRecordsPage(page: number): void {
     if (page < 1 || page > this.wasteRecordsTotalPages) return;
     this.loadWasteRecords(page);
@@ -1595,9 +1608,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
       scrollWheelZoom: true,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
-      subdomains: 'abcd',
+    // CARTO (basemaps.cartocdn.com/light_all) exige désormais une clé API — affichait
+    // "API KEY REQUIRED" en filigrane sur toute la carte. Même fond OpenStreetMap brut,
+    // sans clé, que toutes les autres cartes de l'app (team-dashboard, zone-selector,
+    // coverage-map, planning-detail, home, team-detail).
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
       maxZoom: 19,
     }).addTo(this.map);
 

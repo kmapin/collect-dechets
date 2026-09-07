@@ -782,10 +782,21 @@
   // Manquait entièrement : sans fond coloré, l'icône blanche (color ci-dessus) se
   // retrouvait sur fond transparent, quasi invisible sur le gris clair de .alert-item —
   // mêmes couleurs que .severity-badge, pour rester cohérent avec le reste du dashboard.
-  &.severity-critical { background: #dc2626; }
-  &.severity-high     { background: #ea580c; }
-  &.severity-medium   { background: #ca8a04; }
-  &.severity-low      { background: #16a34a; }
+  &.severity-critical {
+    background: #dc2626;
+  }
+
+  &.severity-high {
+    background: #ea580c;
+  }
+
+  &.severity-medium {
+    background: #ca8a04;
+  }
+
+  &.severity-low {
+    background: #16a34a;
+  }
 }
 
 // ── Grille cartes incidents ──────────────────────────────────────────────────
@@ -1019,12 +1030,35 @@
 }
 
 // Statuts Collecte (onglet "Collectes", GET /municipality/waste-records)
-.cstatus-scheduled  { background: #e0f2fe; color: #0369a1; }
-.cstatus-collected  { background: #dcfce7; color: #15803d; }
-.cstatus-missed     { background: #fee2e2; color: #b91c1c; }
-.cstatus-in_progress{ background: #fef9c3; color: #854d0e; }
-.cstatus-cancelled  { background: #f3f4f6; color: #6b7280; }
-.cstatus-reported   { background: #fee2e2; color: #b91c1c; }
+.cstatus-scheduled {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.cstatus-collected {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.cstatus-missed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.cstatus-in_progress {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.cstatus-cancelled {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.cstatus-reported {
+  background: #fee2e2;
+  color: #b91c1c;
+}
 
 .status-resolved {
   background: #e8f5e8;
@@ -1097,7 +1131,7 @@
   // Le titre ne doit jamais rétrécir/se scinder sur deux lignes pour laisser de la
   // place aux filtres — quand ça ne tient pas sur une ligne, c'est le bloc filtres
   // (large, plusieurs contrôles) qui doit passer à la ligne suivante, pas le titre.
-  > h2 {
+  >h2 {
     flex-shrink: 0;
     white-space: nowrap;
     margin: 0;
@@ -1591,8 +1625,8 @@ input.filter-select {
 }
 
 .communications-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 16px;
   max-height: 500px;
   overflow-y: auto;
@@ -1644,8 +1678,14 @@ input.filter-select {
   cursor: pointer;
   transition: background .15s, color .15s;
 
-  i.material-icons { font-size: 18px; }
-  &:hover { background: #ffebee; color: var(--error-color); }
+  i.material-icons {
+    font-size: 18px;
+  }
+
+  &:hover {
+    background: #ffebee;
+    color: var(--error-color);
+  }
 }
 
 .priority-low {
@@ -2698,7 +2738,7 @@ input.filter-select {
      contenu le plus long (une adresse email, un libellé de date) empêchait
      la colonne de rétrécir sous sa largeur naturelle et débordait du drawer
      au lieu de passer à la ligne. */
-  > * {
+  >* {
     min-width: 0;
   }
 }
@@ -5496,5 +5536,12 @@ input.filter-select {
     background: #fff;
     border-color: var(--primary-color, #00bcd4);
     box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.14);
+  }
+}
+
+/* Grands écrans */
+@media (min-width: 1200px) {
+  .communications-list {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

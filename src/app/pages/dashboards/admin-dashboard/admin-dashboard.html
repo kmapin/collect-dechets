@@ -1793,7 +1793,7 @@
                   <td>{{ record.wasteType }}</td>
                   <td>
                     <span class="status-badge" [class]="'cstatus-' + (record.status || '').toLowerCase()">
-                      {{ record.status }}
+                      {{ getWasteRecordStatusText(record.status) }}
                     </span>
                   </td>
                   <td>{{ record.scheduledDate | date:'dd/MM/yyyy' }}</td>
