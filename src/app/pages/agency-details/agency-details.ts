@@ -363,7 +363,9 @@ export class AgencyDetails implements OnInit {
         },
       });
   }
+  isSendingMessage = false;
   submitMessage(agencyId: string) {
+    if (this.isSendingMessage) return;
     console.log("this.agencyId", agencyId);
     if (!this.currentUser) {
       this.notificationService.showError(
@@ -388,8 +390,10 @@ export class AgencyDetails implements OnInit {
     }
 
     console.log("Envoi du message:", this.messageData);
+    this.isSendingMessage = true;
     this.messageService.sendMessage(this.messageData).subscribe({
       next: (response: any) => {
+        this.isSendingMessage = false;
         console.log("API > sendMessage:", response);
         this.notificationService.showSuccess(
           "Message envoyé",
@@ -398,6 +402,7 @@ export class AgencyDetails implements OnInit {
         this.showReportModal = false;
       },
       error: (error: any) => {
+        this.isSendingMessage = false;
         console.error("API > sendMessage:", error);
         this.notificationService.showError(
           "Message non envoyé",
@@ -485,11 +490,14 @@ export class AgencyDetails implements OnInit {
     if (!rating || rating < 0) return [];
     return new Array(Math.floor(rating)).fill(0);
   }
+  isDeletingAgency = false;
   deleteAgency(agencyId: string): void {
-    if (!this.agency) return;
+    if (!this.agency || this.isDeletingAgency) return;
 
+    this.isDeletingAgency = true;
     this.agencyService.deleteAgency(agencyId).subscribe({
       next: (response) => {
+        this.isDeletingAgency = false;
         if(response.success){
           this.notificationService.showSuccess(
             "Agence supprimée",
@@ -498,6 +506,7 @@ export class AgencyDetails implements OnInit {
         }
       },
       error: (error) => {
+        this.isDeletingAgency = false;
         this.notificationService.showError(
           "Agence non supprimée",
           error.error?.message
@@ -639,7 +648,9 @@ export class AgencyDetails implements OnInit {
   }
   //Activer ou desactiver une agence
   agencyStatus: string = "";
+  isTogglingAgencyStatus = false;
   activateAgency(id: string) {
+    if (this.isTogglingAgencyStatus) return;
     if (this.agency?.status === "active") {
       this.agencyStatus = "deactivate";
     } else {
@@ -647,8 +658,10 @@ export class AgencyDetails implements OnInit {
     }
 
     console.log("agency status", this.agencyStatus);
+    this.isTogglingAgencyStatus = true;
     this.agencyService.activateAgency(id, this.agencyStatus).subscribe({
       next: (response: any) => {
+        this.isTogglingAgencyStatus = false;
         console.log("agency activated  in dashboard", response);
         if (response.success) {
           this.notificationService.showSuccess("Activation", response.message);
@@ -661,6 +674,7 @@ export class AgencyDetails implements OnInit {
         }
       },
       error: (error: any) => {
+        this.isTogglingAgencyStatus = false;
         console.error("Error activating agency:", error);
         const msg = error?.error?.message || "Error activating agency";
         this.notificationService.showSuccess("Activation", msg);

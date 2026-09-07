@@ -635,6 +635,7 @@
                             <select
                               class="finance-role-select"
                               [ngModel]="employee.financialRole || ''"
+                              [disabled]="financialRoleEnCours.has(employee._id)"
                               (ngModelChange)="assignFinancialRole(employee, $event)"
                               title="Rôle financier"
                             >
@@ -663,6 +664,7 @@
                           class="action-btn toggle-btn"
                           [class.toggle-active]="employee.status === 'active'"
                           [class.toggle-inactive]="employee.status !== 'active'"
+                          [disabled]="employeeStatusToggleEnCours.has(employee._id)"
                           (click)="toggleEmployeeStatus(employee)"
                           title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }} l'Employe"
                         >
@@ -737,6 +739,7 @@
                                 class="action-btn toggle-btn"
                                 [class.toggle-active]="employee.status === 'active'"
                                 [class.toggle-inactive]="employee.status !== 'active'"
+                                [disabled]="employeeStatusToggleEnCours.has(employee._id)"
                                 (click)="toggleEmployeeStatus(employee)"
                                 title="{{ employee.status === 'active' ? 'Désactiver' : 'Activer' }}"
                               >
@@ -748,6 +751,7 @@
                                 <select
                                   class="finance-role-select finance-role-select-table"
                                   [ngModel]="employee.financialRole || ''"
+                                  [disabled]="financialRoleEnCours.has(employee._id)"
                                   (ngModelChange)="assignFinancialRole(employee, $event)"
                                   title="Rôle financier"
                                 >
@@ -1143,7 +1147,7 @@
                             <button class="action-btn edit" (click)="editSchedule(schedule)" title="Modifier">
                               <i class="material-icons">edit</i>
                             </button>
-                            <button class="action-btn danger" (click)="deletePlanning(schedule._id)" title="Supprimer">
+                            <button class="action-btn danger" [disabled]="isDeleting" (click)="deletePlanning(schedule._id)" title="Supprimer">
                               <i class="material-icons">delete</i>
                             </button>
                           </div>
@@ -1470,6 +1474,8 @@
               <app-signalement
                 [incidents]="agencyReports"
                 [currentUser]="currentUser"
+                [resolvingIncidentIds]="resolvingIncidentEnCours"
+                [assigningIncidentIds]="reportAssignmentEnCours"
                 (isLoadingIncidents)="isLoadingReports = $event"
                 (assignReportToTeam)="onAssignReportToTeam($event)"
                 (resolvedIncident)="resolveIncident($event)"
@@ -1926,7 +1932,7 @@
                       placeholder="Composez votre message"
                     />
                     <div class="chat-actions">
-                      <button type="button" (click)="submitMessage()" class="btn_send btn-secondary">
+                      <button type="button" [disabled]="isSendingChatMessage" (click)="submitMessage()" class="btn_send btn-secondary">
                         <mat-icon class="material-icons">send</mat-icon>
                       </button>
                     </div>
@@ -1963,7 +1969,7 @@
                       <button type="button" class="btn btn-secondary" (click)="showMessageModal = false">
                         Annuler
                       </button>
-                      <button type="button" class="btn btn-primary" (click)="submitMessage(); showMessageModal = false">
+                      <button type="button" class="btn btn-primary" [disabled]="isSendingChatMessage" (click)="submitMessage(); showMessageModal = false">
                         <i class="material-icons">send</i>
                         Envoyer
                       </button>
@@ -2141,7 +2147,7 @@
                             <button class="action-btn edit" (click)="openEditVehicleModal(vehicle)" title="Modifier">
                               <i class="material-icons">edit</i>
                             </button>
-                            <button class="action-btn danger" (click)="deleteVehicle(vehicle)" title="Supprimer">
+                            <button class="action-btn danger" [disabled]="vehicleDeletionEnCours.has(vehicle._id!)" (click)="deleteVehicle(vehicle)" title="Supprimer">
                               <i class="material-icons">delete</i>
                             </button>
                           </div>
@@ -2203,7 +2209,7 @@
                       <button class="action-btn edit" (click)="openEditVehicleModal(vehicle)" title="Modifier">
                         <i class="material-icons">edit</i>
                       </button>
-                      <button class="action-btn danger" (click)="deleteVehicle(vehicle)" title="Supprimer">
+                      <button class="action-btn danger" [disabled]="vehicleDeletionEnCours.has(vehicle._id!)" (click)="deleteVehicle(vehicle)" title="Supprimer">
                         <i class="material-icons">delete</i>
                       </button>
                       <button
@@ -3034,7 +3040,7 @@
                             <button class="btn btn-secondary flex items-center gap-1" (click)="editTariff(tariff)">
                               <i class="material-icons text-base">edit</i>
                             </button>
-                            <button class="btn btn-danger flex items-center gap-1" (click)="deleteTariff(tariff)">
+                            <button class="btn btn-danger flex items-center gap-1" [disabled]="isDeleting" (click)="deleteTariff(tariff)">
                               <i class="material-icons text-base">delete</i>
                             </button>
                           </div>
@@ -3357,7 +3363,7 @@
       <div class="drawer-footer">
         <div class="drawer-actions">
           <button class="btn btn-outline" (click)="closeZoneModalcouverture()">Annuler</button>
-          <button class="btn btn-primary" (click)="addZoneAgency()">
+          <button class="btn btn-primary" [disabled]="isSavingZoneAgency" (click)="addZoneAgency()">
             <i class="material-icons">add</i>
             Ajouter
           </button>

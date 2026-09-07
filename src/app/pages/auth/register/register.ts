@@ -256,6 +256,7 @@ export class Register implements OnInit {
       .replace(/^\+?(226|225)?/, '');
   }
   onRegister(): void {
+    if (this.isLoading) return;
     console.log('[DEBUG] onRegister() appelée');
     console.log('[DEBUG] Données utilisateur:', this.userData);
     console.log('[DEBUG] isLoading:', this.isLoading);

@@ -96,11 +96,11 @@
           <i class="material-icons">visibility</i>
         </button>
         @if (incident.agencyId && currentUser?.role === 'manager') {
-          <button class="sig-action-btn sig-action-btn--blue" (click)="openTeamPicker(incident)" [title]="incident.resolutionTeamId?._id ? 'Réaffecter' : 'Assigner'">
+          <button class="sig-action-btn sig-action-btn--blue" [disabled]="assigningIncidentIds.has(incident._id)" (click)="openTeamPicker(incident)" [title]="incident.resolutionTeamId?._id ? 'Réaffecter' : 'Assigner'">
             <i class="material-icons">assignment_ind</i>
           </button>
           @if (incident.status !== 'resolved') {
-          <button class="sig-action-btn sig-action-btn--green" (click)="resolveIncident(incident._id)" title="Résoudre">
+          <button class="sig-action-btn sig-action-btn--green" [disabled]="resolvingIncidentIds.has(incident._id)" (click)="resolveIncident(incident._id)" title="Résoudre">
             <i class="material-icons">check_circle</i>
           </button>
           }
@@ -334,7 +334,7 @@
     <div class="drawer-footer">
       <div class="drawer-actions">
         <button class="btn btn-secondary" (click)="closeTeamPicker()">Annuler</button>
-        <button class="btn btn-primary" [disabled]="!selectedTeamId" (click)="confirmAssignTeam()">
+        <button class="btn btn-primary" [disabled]="!selectedTeamId || (teamPickerIncident && assigningIncidentIds.has(teamPickerIncident._id))" (click)="confirmAssignTeam()">
           Confirmer l'affectation
         </button>
       </div>
@@ -445,11 +445,11 @@
     <div class="drawer-footer">
       <div class="drawer-actions">
         @if (incident.agencyId && currentUser?.role === 'manager') {
-          <button class="btn btn-secondary" (click)="openTeamPicker(incident); closeIncidentDrawer()">
+          <button class="btn btn-secondary" [disabled]="assigningIncidentIds.has(incident._id)" (click)="openTeamPicker(incident); closeIncidentDrawer()">
             {{ incident.resolutionTeamId?._id ? 'Réaffecter' : 'Assigner' }}
           </button>
           @if (incident.status !== 'resolved') {
-          <button class="btn btn-primary" (click)="resolveIncident(incident._id); closeIncidentDrawer()">
+          <button class="btn btn-primary" [disabled]="resolvingIncidentIds.has(incident._id)" (click)="resolveIncident(incident._id); closeIncidentDrawer()">
             Résoudre
           </button>
           }

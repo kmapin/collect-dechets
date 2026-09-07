@@ -65,7 +65,7 @@
             Modifier
           </button>
           } @if (currentUser?.role === 'super_admin') {
-          <button class="btn btn-accent btn-large" (click)="activateAgency(agency?._id)">
+          <button class="btn btn-accent btn-large" [disabled]="isTogglingAgencyStatus" (click)="activateAgency(agency?._id)">
             @if (agency?.status!== 'active' ) {
             <i class="material-icons">check</i>
             Activer } @else {
@@ -79,7 +79,7 @@
           </button>
           <!-- Buton de suppression -->
            @if (currentUser?.role === 'super_admin') {
-          <button class="btn btn-danger btn-large" (click)="deleteAgency(agency?._id)">
+          <button class="btn btn-danger btn-large" [disabled]="isDeletingAgency" (click)="deleteAgency(agency?._id)">
             <i class="material-icons">delete</i>
             Supprimer
           </button>
@@ -786,6 +786,7 @@
         <button
           type="button"
           class="btn btn-primary"
+          [disabled]="isSendingMessage"
           (click)="submitMessage(agency._id) ; showReportModal = false"
         >
           <i class="material-icons">send</i>

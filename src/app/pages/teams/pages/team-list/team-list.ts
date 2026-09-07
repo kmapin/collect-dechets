@@ -2,6 +2,7 @@ import {
   Component, OnInit, ViewChild, signal, computed, inject, effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -55,6 +56,7 @@ export class TeamList implements OnInit {
   // ── UI State ──────────────────────────────────────────────
   loading           = signal(true);
   formOpen          = signal(false);
+  formSaving        = signal(false);
   modalTeam         = signal<Team | null>(null);
   modalOpen         = signal(false);
   modalLoading      = signal(false);
@@ -176,6 +178,7 @@ export class TeamList implements OnInit {
   openEdit(t: Team): void { this.editingTeam.set(t); this.formOpen.set(true); }
 
   onFormSave(data: TeamFormData): void {
+    if (this.formSaving()) return;
     const editing = this.editingTeam();
     const vehicle = data.vehicleId
       ? this.svc.availableVehicles().find(v => v.id === data.vehicleId)
@@ -207,8 +210,9 @@ export class TeamList implements OnInit {
         : undefined,
     };
 
+    this.formSaving.set(true);
     if (editing) {
-      this.svc.updateV2(editing.id, payload).subscribe({
+      this.svc.updateV2(editing.id, payload).pipe(finalize(() => this.formSaving.set(false))).subscribe({
         next: () => {
           this.msg.add({ severity: 'success', summary: 'Modifié', detail: `${data.name} mis à jour` });
           this.formOpen.set(false);
@@ -219,7 +223,7 @@ export class TeamList implements OnInit {
         },
       });
     } else {
-      this.svc.createV2(payload).subscribe({
+      this.svc.createV2(payload).pipe(finalize(() => this.formSaving.set(false))).subscribe({
         next: t => {
           this.msg.add({ severity: 'success', summary: 'Créé !', detail: `Équipe ${t.name} créée` });
           this.formOpen.set(false);
@@ -239,8 +243,11 @@ export class TeamList implements OnInit {
 
   // 'on_mission' exclu du type : ce n'est plus un statut assignable manuellement
   // (voir services/teamV2.js::_computeEffectiveStatus côté backend).
+  readonly statusChangeEnCours = new Set<string>();
   changeStatus(team: Team, status: 'active' | 'inactive' | 'maintenance'): void {
-    this.svc.changeStatus(team.id, status).subscribe({
+    if (this.statusChangeEnCours.has(team.id)) return;
+    this.statusChangeEnCours.add(team.id);
+    this.svc.changeStatus(team.id, status).pipe(finalize(() => this.statusChangeEnCours.delete(team.id))).subscribe({
       next: t => {
         const labels: Record<TeamStatus, string> = {
           active: 'activée', inactive: 'désactivée',
@@ -257,13 +264,22 @@ export class TeamList implements OnInit {
 
   confirmDelete(team: Team): void { this.deletingTeam.set(team); this.confirmDeleteOpen.set(true); }
 
+  isDeletingTeam = false;
   doDelete(): void {
+    if (this.isDeletingTeam) return;
     const t = this.deletingTeam();
     if (!t) return;
-    this.svc.delete(t.id).subscribe(() => {
-      this.msg.add({ severity: 'warn', summary: 'Supprimé', detail: `${t.name} supprimée` });
-      this.confirmDeleteOpen.set(false);
-      this.deletingTeam.set(null);
+    this.isDeletingTeam = true;
+    this.svc.delete(t.id).pipe(finalize(() => this.isDeletingTeam = false)).subscribe({
+      next: () => {
+        this.msg.add({ severity: 'warn', summary: 'Supprimé', detail: `${t.name} supprimée` });
+        this.confirmDeleteOpen.set(false);
+        this.deletingTeam.set(null);
+      },
+      error: err => {
+        const detail = err?.error?.error?.message ?? 'Impossible de supprimer cette équipe.';
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail });
+      },
     });
   }
 

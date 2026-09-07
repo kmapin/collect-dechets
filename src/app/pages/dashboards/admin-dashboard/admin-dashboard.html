@@ -641,11 +641,11 @@
                       <ng-container *ngIf="agency?.status === 'active'; else actTpl">
                         <button class="action-btn" (click)="contactAgency(agency.id)" title="Contacter"><i
                             class="material-icons">message</i></button>
-                        <button class="action-btn toggle-btn toggle-active" (click)="deactivateAgency(agency.id)"
+                        <button class="action-btn toggle-btn toggle-active" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="deactivateAgency(agency.id)"
                           title="Désactiver"><i class="material-icons">block</i></button>
                       </ng-container>
                       <ng-template #actTpl>
-                        <button class="action-btn toggle-btn toggle-inactive" (click)="activateAgency(agency.id)"
+                        <button class="action-btn toggle-btn toggle-inactive" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="activateAgency(agency.id)"
                           title="Activer"><i class="material-icons">check_circle</i></button>
                       </ng-template>
                     </div>
@@ -751,19 +751,19 @@
                 </button>
                 <!-- Toggle actif / inactif -->
                 <ng-container *ngIf="agency?.status === 'active'; else cardActivate">
-                  <button class="cia-btn cia-toggle cia-toggle--on" (click)="deactivateAgency(agency.id)"
+                  <button class="cia-btn cia-toggle cia-toggle--on" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="deactivateAgency(agency.id)"
                     title="Désactiver">
                     <i class="material-icons">toggle_on</i>
                   </button>
                 </ng-container>
                 <ng-template #cardActivate>
-                  <button class="cia-btn cia-toggle cia-toggle--off" (click)="activateAgency(agency.id)"
+                  <button class="cia-btn cia-toggle cia-toggle--off" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="activateAgency(agency.id)"
                     title="Activer">
                     <i class="material-icons">toggle_off</i>
                   </button>
                 </ng-template>
                 <!-- Supprimer -->
-                <button class="cia-btn cia-delete" (click)="deleteAgency(agency.id)" title="Supprimer">
+                <button class="cia-btn cia-delete" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="deleteAgency(agency.id)" title="Supprimer">
                   <i class="material-icons">delete</i>
                 </button>
               </div>
@@ -1070,6 +1070,7 @@
                       </button>
                       <select *ngIf="user.data?.role === 'manager'" class="finance-role-select"
                         [ngModel]="user.data?.financialRole || ''"
+                        [disabled]="financialRoleEnCours.has(user.data?._id)"
                         (ngModelChange)="assignFinancialRole(user.data, $event)" title="Rôle financier">
                         <option value="">Aucun rôle financier</option>
                         <option value="comptable">Comptable</option>
@@ -1187,6 +1188,7 @@
                       </button>
                       <select *ngIf="user?.data?.role === 'manager'" class="finance-role-select"
                         [ngModel]="user?.data?.financialRole || ''"
+                        [disabled]="financialRoleEnCours.has(user.data?._id)"
                         (ngModelChange)="assignFinancialRole(user.data, $event)" title="Rôle financier">
                         <option value="">Aucun rôle financier</option>
                         <option value="comptable">Comptable</option>
@@ -2225,6 +2227,7 @@
                     </button> 
                     <button
                       class="btn btn-success"
+                      [disabled]="resolvingIncidentEnCours.has(incident.id)"
                       (click)="resolveIncident(incident.id)"
                       *ngIf="incident.status === 'resolved'"
                     >
@@ -2570,7 +2573,7 @@
           <button type="button" class="btn btn-secondary" (click)="showCommunicationModal = false">
             Annuler
           </button>
-          <button type="button" class="btn btn-primary" (click)="sendCommunication()">
+          <button type="button" class="btn btn-primary" [disabled]="isSendingCommunication" (click)="sendCommunication()">
             <i class="material-icons">send</i>
             Envoyer
           </button>
@@ -3243,7 +3246,7 @@
     </div>
     <div class="resolve-dialog-footer">
       <button class="btn-cancel" (click)="resolveDialogVisible = false">Annuler</button>
-      <button class="btn-reset-send" (click)="confirmResolveFromDialog()">
+      <button class="btn-reset-send" [disabled]="resolvingIncidentEnCours.has(resolveDialogIncidentId)" (click)="confirmResolveFromDialog()">
         <i class="material-icons">check_circle</i>
         Confirmer la résolution
       </button>
@@ -3531,6 +3534,7 @@
         <i class="material-icons">search</i> Enquêter
       </button>
       <button class="btn btn-success" *ngIf="canResolveIncidents() && (selectedIncident.status) !== 'resolved'"
+        [disabled]="resolvingIncidentEnCours.has(selectedIncident._id)"
         (click)="resolveIncident(selectedIncident._id)">
         <i class="material-icons">check_circle</i> Résoudre
       </button>

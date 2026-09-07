@@ -768,30 +768,40 @@ export class PlanningCreate implements OnInit {
     }
   }
 
+  readonly groupMutationEnCours = signal<string | null>(null);
   deleteExistingGroup(group: any, event: Event): void {
     event.stopPropagation();
+    if (this.groupMutationEnCours()) return;
     if (!confirm(`Supprimer le groupe "${group.name}" ? Cette action est irréversible.`)) return;
+    this.groupMutationEnCours.set(group._id);
     this.svc.deleteClientGroup(group._id).subscribe({
       next: () => {
+        this.groupMutationEnCours.set(null);
         this.existingGroups.update(list => list.filter(g => g._id !== group._id));
         if (this.selectedExistingGroupId() === group._id) this.selectedExistingGroupId.set(null);
         if (this.managingGroupId() === group._id) this.managingGroupId.set(null);
         this.msgSvc.add({ severity: 'success', summary: 'Groupe supprimé', detail: `"${group.name}" a été supprimé.` });
       },
       error: (err) => {
+        this.groupMutationEnCours.set(null);
         this.msgSvc.add({ severity: 'error', summary: 'Suppression impossible', detail: this._groupErrorMessage(err, 'Impossible de supprimer ce groupe.') });
       },
     });
   }
 
+  readonly groupMemberMutationEnCours = signal<string | null>(null);
   removeClientFromGroup(group: any, client: any, event: Event): void {
     event.stopPropagation();
+    if (this.groupMemberMutationEnCours()) return;
+    this.groupMemberMutationEnCours.set(client._id);
     this.svc.removeClientsFromGroup(group._id, [client._id]).subscribe({
       next: () => {
+        this.groupMemberMutationEnCours.set(null);
         this._loadExistingGroups();
         this.msgSvc.add({ severity: 'success', summary: 'Client retiré', detail: `${client.firstName ?? ''} ${client.lastName ?? ''}`.trim() + ' retiré du groupe.' });
       },
       error: (err) => {
+        this.groupMemberMutationEnCours.set(null);
         this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: this._groupErrorMessage(err, 'Impossible de retirer ce client.') });
       },
     });
@@ -812,14 +822,18 @@ export class PlanningCreate implements OnInit {
 
   addClientToGroup(group: any, client: ClientOpt, event: Event): void {
     event.stopPropagation();
+    if (this.groupMemberMutationEnCours()) return;
+    this.groupMemberMutationEnCours.set(client.id);
     this.svc.addClientsToGroup(group._id, [client.id]).subscribe({
       next: () => {
+        this.groupMemberMutationEnCours.set(null);
         this._loadExistingGroups();
         this.groupMemberSearchQuery.set('');
         this.groupMemberSuggestions.set([]);
         this.msgSvc.add({ severity: 'success', summary: 'Client ajouté', detail: `${client.name} ajouté au groupe.` });
       },
       error: (err) => {
+        this.groupMemberMutationEnCours.set(null);
         this.msgSvc.add({ severity: 'error', summary: 'Erreur', detail: this._groupErrorMessage(err, "Impossible d'ajouter ce client.") });
       },
     });

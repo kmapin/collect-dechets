@@ -32,6 +32,10 @@ export class TeamForm implements OnInit, OnChanges {
    *  uniquement à détecter si un véhicule listé est déjà pris par une autre
    *  équipe ; aucun appel API supplémentaire. */
   @Input() teams: Team[] = [];
+  // Contrôlé par le parent (seul à connaître l'issue réelle de la requête HTTP,
+  // ce composant ne fait qu'émettre) — remplace l'ancien champ local `saving`
+  // jamais réinitialisé en cas d'erreur (le formulaire restait bloqué indéfiniment).
+  @Input() saving = false;
   @Output() save   = new EventEmitter<TeamFormData>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -51,7 +55,6 @@ export class TeamForm implements OnInit, OnChanges {
     { value: 'maintenance', label: 'Maintenance' },
   ];
 
-  saving = false;
   activeTab = 0;
 
   vehicleTypeIcon(type: string): string {
@@ -177,8 +180,8 @@ export class TeamForm implements OnInit, OnChanges {
   }
 
   onSubmit(): void {
+    if (this.saving) return;
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.saving = true;
     const data: TeamFormData = this.form.getRawValue() as TeamFormData;
     console.log("Team data to save=====>", data)
     this.save.emit(data);

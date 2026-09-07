@@ -391,6 +391,7 @@
     [availableVehicles]="svc.availableVehicles()"
     [availableZones]="svc.availableZones()"
     [availableCollectors]="svc.collectors()"
+    [saving]="formSaving()"
     (save)="onFormSave($event)"
     (cancel)="formOpen.set(false)">
   </app-team-form>
@@ -410,7 +411,7 @@
     </p>
     <div class="dlg-actions">
       <button class="dlg-btn dlg-btn--ghost" (click)="confirmDeleteOpen.set(false)">Annuler</button>
-      <button class="dlg-btn dlg-btn--danger" (click)="doDelete()">
+      <button class="dlg-btn dlg-btn--danger" [disabled]="isDeletingTeam" (click)="doDelete()">
         <mat-icon>delete_forever</mat-icon>Supprimer
       </button>
     </div>

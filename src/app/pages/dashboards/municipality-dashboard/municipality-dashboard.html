@@ -791,6 +791,7 @@
           </div>
           @if (filteredIncidents.length > 0 || incidents.length === 0) {
           <app-signalement [incidents]="filteredIncidents" [currentUser]="currentUser"
+            [resolvingIncidentIds]="resolvingIncidentEnCours" [assigningIncidentIds]="reportAssignmentEnCours"
             (isLoadingIncidents)="isLoadingIncidents = $event" (assignReportToTeam)="onAssignReport($event)"
             (resolvedIncident)="onResolvedIncident($event)"></app-signalement>
           } @else {

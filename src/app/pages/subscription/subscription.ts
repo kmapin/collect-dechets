@@ -252,6 +252,7 @@ constructor(
   }
 
   sendContactMessage() {
+    if (this.isSendingMessage) return;
     const content = this.contactMessage.trim();
     if (!content) {
       this.notificationService.showError('Message vide', 'Le contenu du message ne peut pas être vide.');

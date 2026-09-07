@@ -221,14 +221,21 @@ export class QuartiersManagementComponent implements OnInit {
     });
   }
 
+  isDeleting = false;
   supprimer(q: QuartierRow): void {
+    if (this.isDeleting) return;
     if (!confirm(`Supprimer le quartier "${q.name}" ? Cette action est irréversible.`)) return;
+    this.isDeleting = true;
     this.territoryService.deleteNeighborhood(q.id).subscribe({
       next: () => {
+        this.isDeleting = false;
         this.notificationService.showSuccess('Succès', 'Quartier supprimé.');
         this.charger();
       },
-      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de supprimer ce quartier.'),
+      error: (err: any) => {
+        this.isDeleting = false;
+        this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de supprimer ce quartier.');
+      },
     });
   }
 }

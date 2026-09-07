@@ -376,6 +376,7 @@ export class Profile implements OnInit {
   }
 
   onUpdateUser(): void {
+    if (this.isLoading) return;
     console.log("[DEBUG] onRegister() appelée");
     console.log("[DEBUG] Données utilisateur:", this.userData);
 
@@ -406,11 +407,12 @@ export class Profile implements OnInit {
       this.userData.agencyDescription
     );
 
+    this.isLoading = true;
     this.sharedService
       .updateUser(this.userData._id, registrationData)
       .subscribe({
         next: (response) => {
-          // this.isLoading = false;
+          this.isLoading = false;
 
           console.log("[DEBUG] Réponse modification agence:", response);
           // Use the unified RegisterResponse structure
@@ -427,6 +429,7 @@ export class Profile implements OnInit {
           }
         },
         error: (error) => {
+          this.isLoading = false;
           this.handleRegistrationError(error.error || error.message || error);
         },
       });

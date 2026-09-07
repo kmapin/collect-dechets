@@ -332,7 +332,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   // Virer dans le Wallet du client
+  isProcessingWalletPayment = false;
   walletPayment() {
+    if (this.isProcessingWalletPayment) return;
     const clientId = this.currentUser?._id || "";
     console.log("Client ID:", clientId);
     if (!clientId) return;
@@ -350,9 +352,11 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       return;
     }
 
+    this.isProcessingWalletPayment = true;
     this.clientService.walletPayment(paymentData).subscribe({
       next: (response: any) => {
         console.log("Paiement effectué avec succès:", response?.wallet);
+        this.isProcessingWalletPayment = false;
         this.getClientWallet();
         this.notificationService.showSuccess(
           "Paiement réussi",
@@ -362,6 +366,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         this.rechargeAmount = 0;
       },
       error: (error: any) => {
+        this.isProcessingWalletPayment = false;
         this.notificationService.showError(
           "Erreur de paiement",
           "Une erreur est survenue lors du paiement. Veuillez réessayer."
@@ -746,7 +751,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       },
     });
   }
+  isSendingChatMessage = false;
   submitMessage() {
+    if (this.isSendingChatMessage) return;
     if (!this.currentUser) {
       this.notificationService.showError(
         "Connexion requise",
@@ -770,8 +777,10 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       return;
     }
 
+    this.isSendingChatMessage = true;
     this.conversationService.sendMessage$(this.messageData).subscribe({
       next: (sent: any) => {
+        this.isSendingChatMessage = false;
         // Ajout local du message envoyé (retourné par le POST) — remplace
         // l'ancien re-fetch complet de la conversation ; la vue du
         // destinataire, elle, se met à jour via onIncomingMessage$ (temps réel).
@@ -783,6 +792,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         this.messageData.content = "";
       },
       error: (error: any) => {
+        this.isSendingChatMessage = false;
         console.error("API > sendMessage:", error);
         this.notificationService.showError(
           "Message non envoyé",
@@ -1416,7 +1426,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       });
   }
 
+  isSubmittingReport = false;
   submitReport(): void {
+    if (this.isSubmittingReport) return;
     // `collecteId` omis (chaîne vide) → signalement indépendant, voir
     // `reportIndependentIssue()` — le serveur dérive alors clientId/agencyId
     // du profil authentifié, `data.clientId`/`data.agencyId` ci-dessous ne
@@ -1434,8 +1446,10 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       return;
     }
 
+    this.isSubmittingReport = true;
     this.clientService.createSignalement(data).subscribe({
       next: (response: any) => {
+        this.isSubmittingReport = false;
         console.log("API > createSignalement:", response);
         this.notificationService.showSuccess(
           "Signalement envoyé",
@@ -1446,6 +1460,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         this.loadClientReports();
       },
       error: (error: any) => {
+        this.isSubmittingReport = false;
         console.error("API > createSignalement:", error);
         this.notificationService.showError(
           "Signalement non envoyé",

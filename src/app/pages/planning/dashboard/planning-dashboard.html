@@ -279,7 +279,7 @@
                   @if (p.status === 'brouillon') {
                     <button class="action-btn publish"
                             pTooltip="Publier" tooltipPosition="top"
-                            [disabled]="actionLoading() === p.id"
+                            [disabled]="!!actionLoading()"
                             (click)="publishPlanning(p)">
                       <mat-icon>send</mat-icon>
                     </button>
@@ -289,7 +289,7 @@
                   @if (p.status === 'planifie') {
                     <button class="action-btn start"
                             pTooltip="Démarrer" tooltipPosition="top"
-                            [disabled]="actionLoading() === p.id"
+                            [disabled]="!!actionLoading()"
                             (click)="startPlanning(p)">
                       <mat-icon>play_arrow</mat-icon>
                     </button>
@@ -299,7 +299,7 @@
                   @if (p.status === 'en_cours') {
                     <button class="action-btn complete"
                             pTooltip="Terminer" tooltipPosition="top"
-                            [disabled]="actionLoading() === p.id"
+                            [disabled]="!!actionLoading()"
                             (click)="completePlanning(p)">
                       <mat-icon>check_circle</mat-icon>
                     </button>
@@ -309,7 +309,7 @@
                   @if (p.status !== 'termine' && p.status !== 'annule') {
                     <button class="action-btn cancel"
                             pTooltip="Annuler" tooltipPosition="top"
-                            [disabled]="actionLoading() === p.id"
+                            [disabled]="!!actionLoading()"
                             (click)="cancelPlanning(p)">
                       <mat-icon>cancel</mat-icon>
                     </button>
@@ -319,7 +319,7 @@
                   @if (p.status === 'brouillon' || p.status === 'annule') {
                     <button class="action-btn delete"
                             pTooltip="Supprimer" tooltipPosition="top"
-                            [disabled]="actionLoading() === p.id"
+                            [disabled]="!!actionLoading()"
                             (click)="deletePlanning(p)">
                       <mat-icon>delete_outline</mat-icon>
                     </button>

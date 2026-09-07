@@ -57,6 +57,7 @@
                 *ngIf="!contrat.documentPublicId && peutGerer()"
                 type="button"
                 class="fin-contracts__action-btn"
+                [disabled]="!!contratMutationEnCours()"
                 (click)="onGenererDocument(contrat)"
                 title="Générer le document"
               >
@@ -68,13 +69,13 @@
                 <button type="button" class="fin-contracts__action-btn" (click)="openRedevancesDrawer(contrat)" title="Voir les redevances">
                   <i class="material-icons" aria-hidden="true">receipt_long</i>
                 </button>
-                <button *ngIf="contrat.status === 'actif'" type="button" class="fin-contracts__action-btn" (click)="onSuspendreContrat(contrat)" title="Suspendre">
+                <button *ngIf="contrat.status === 'actif'" type="button" class="fin-contracts__action-btn" [disabled]="!!contratMutationEnCours()" (click)="onSuspendreContrat(contrat)" title="Suspendre">
                   <i class="material-icons" aria-hidden="true">pause_circle</i>
                 </button>
-                <button *ngIf="contrat.status === 'suspendu'" type="button" class="fin-contracts__action-btn" (click)="onReactiverContrat(contrat)" title="Réactiver">
+                <button *ngIf="contrat.status === 'suspendu'" type="button" class="fin-contracts__action-btn" [disabled]="!!contratMutationEnCours()" (click)="onReactiverContrat(contrat)" title="Réactiver">
                   <i class="material-icons" aria-hidden="true">play_circle</i>
                 </button>
-                <button *ngIf="contrat.status !== 'resilie'" type="button" class="fin-contracts__action-btn fin-contracts__action-btn--danger" (click)="onResilierContrat(contrat)" title="Résilier">
+                <button *ngIf="contrat.status !== 'resilie'" type="button" class="fin-contracts__action-btn fin-contracts__action-btn--danger" [disabled]="!!contratMutationEnCours()" (click)="onResilierContrat(contrat)" title="Résilier">
                   <i class="material-icons" aria-hidden="true">cancel</i>
                 </button>
               </div>
@@ -115,8 +116,8 @@
                 = <strong>{{ proposition.montantAPayer }} FCFA</strong> à payer
               </p>
               <div class="fin-contracts__pg-actions">
-                <button type="button" class="btn btn-primary" (click)="onPayerManuelPaiementGroupe()">Marquer payé (manuel)</button>
-                <button type="button" class="btn btn-secondary" (click)="onAnnulerPaiementGroupe()">Annuler la proposition</button>
+                <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="onPayerManuelPaiementGroupe()">Marquer payé (manuel)</button>
+                <button type="button" class="btn btn-secondary" [disabled]="paiementGroupeEnCours()" (click)="onAnnulerPaiementGroupe()">Annuler la proposition</button>
               </div>
             </div>
           </ng-container>
@@ -157,8 +158,8 @@
               </p>
 
               <div class="fin-contracts__pg-actions">
-                <button type="button" class="btn btn-primary" (click)="onCreerPropositionPaiementGroupe()">Créer la proposition</button>
-                <button type="button" class="btn btn-secondary" (click)="fermerFormPaiementGroupe()">Annuler</button>
+                <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="onCreerPropositionPaiementGroupe()">Créer la proposition</button>
+                <button type="button" class="btn btn-secondary" [disabled]="paiementGroupeEnCours()" (click)="fermerFormPaiementGroupe()">Annuler</button>
               </div>
             </div>
           </ng-template>
@@ -181,6 +182,7 @@
             *ngIf="peutGerer() && (redevance.status === 'en_attente' || redevance.status === 'retard')"
             type="button"
             class="fin-contracts__action-btn"
+            [disabled]="!!redevanceEnCours()"
             (click)="onMarquerRedevancePayee(redevance)"
             title="Marquer comme payée"
           >
@@ -260,7 +262,7 @@
       </div>
       <div class="fin-contracts__drawer-footer">
         <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Annuler</button>
-        <button type="button" class="btn btn-primary" (click)="onCreerContrat()">
+        <button type="button" class="btn btn-primary" [disabled]="creationContratEnCours()" (click)="onCreerContrat()">
           <i class="material-icons" aria-hidden="true">check</i>
           Créer le contrat
         </button>

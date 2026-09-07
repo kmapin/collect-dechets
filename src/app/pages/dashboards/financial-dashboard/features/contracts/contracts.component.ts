@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../../../services/auth.service';
 import { AgencyService } from '../../../../../services/agency.service';
@@ -59,6 +60,17 @@ export class ContractsComponent {
   readonly contrats = signal<Contrat[]>([]);
   readonly chargement = signal(true);
   readonly erreur = signal<string | null>(null);
+
+  // Protection anti double-soumission (chantier "double clic") : un flag par
+  // domaine d'action, remis à `false`/`null` via `finalize()` (succès ET erreur),
+  // même idiome que `agency-finance.ts`. `contratMutationEnCours`/`redevanceEnCours`
+  // gardent l'id concerné pour un futur usage plus fin, mais le gabarit désactive
+  // TOUTES les actions du même domaine tant qu'une requête est en vol : le bouton
+  // resterait sinon visuellement actif alors qu'un second clic serait ignoré.
+  readonly creationContratEnCours = signal(false);
+  readonly contratMutationEnCours = signal<string | null>(null);
+  readonly redevanceEnCours = signal<string | null>(null);
+  readonly paiementGroupeEnCours = signal(false);
 
   // ── Création d'un contrat ────────────────────────────────────────────────
   readonly showCreateModal = signal(false);
@@ -186,14 +198,17 @@ export class ContractsComponent {
   }
 
   onCreerContrat(): void {
+    if (this.creationContratEnCours()) return;
     const agencyId = this.agencyId();
     const { clientId, pricingId, frequenceCollecte, endDate } = this.newContrat();
     if (!agencyId || !clientId || !pricingId || !frequenceCollecte) {
       this.notificationService.showError('Erreur', 'Merci de renseigner le client, le plan tarifaire et la fréquence.');
       return;
     }
+    this.creationContratEnCours.set(true);
     this.contratService
       .creerContrat$({ clientId, agencyId, pricingId, frequenceCollecte, endDate: endDate || undefined })
+      .pipe(finalize(() => this.creationContratEnCours.set(false)))
       .subscribe({
         next: () => {
           this.notificationService.showSuccess('Succès', 'Contrat créé avec succès.');
@@ -209,37 +224,49 @@ export class ContractsComponent {
   // ── Mutations ────────────────────────────────────────────────────────────
 
   onResilierContrat(contrat: Contrat): void {
+    if (this.contratMutationEnCours()) return;
     if (!confirm('Êtes-vous sûr de vouloir résilier ce contrat ?')) return;
     const raison = prompt('Motif de résiliation (optionnel) :') || undefined;
-    this.contratService.resilierContrat$(contrat._id, raison).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Contrat résilié avec succès.');
-        this.charger();
-      },
-      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de résilier le contrat.'),
-    });
+    this.contratMutationEnCours.set(contrat._id);
+    this.contratService.resilierContrat$(contrat._id, raison)
+      .pipe(finalize(() => this.contratMutationEnCours.set(null)))
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Succès', 'Contrat résilié avec succès.');
+          this.charger();
+        },
+        error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de résilier le contrat.'),
+      });
   }
 
   onSuspendreContrat(contrat: Contrat): void {
+    if (this.contratMutationEnCours()) return;
     if (!confirm('Êtes-vous sûr de vouloir suspendre ce contrat ?')) return;
-    this.contratService.suspendreContrat$(contrat._id).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Contrat suspendu avec succès.');
-        this.charger();
-      },
-      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de suspendre le contrat.'),
-    });
+    this.contratMutationEnCours.set(contrat._id);
+    this.contratService.suspendreContrat$(contrat._id)
+      .pipe(finalize(() => this.contratMutationEnCours.set(null)))
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Succès', 'Contrat suspendu avec succès.');
+          this.charger();
+        },
+        error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de suspendre le contrat.'),
+      });
   }
 
   onReactiverContrat(contrat: Contrat): void {
+    if (this.contratMutationEnCours()) return;
     if (!confirm('Êtes-vous sûr de vouloir réactiver ce contrat ?')) return;
-    this.contratService.reactiverContrat$(contrat._id).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Contrat réactivé avec succès.');
-        this.charger();
-      },
-      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de réactiver le contrat.'),
-    });
+    this.contratMutationEnCours.set(contrat._id);
+    this.contratService.reactiverContrat$(contrat._id)
+      .pipe(finalize(() => this.contratMutationEnCours.set(null)))
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Succès', 'Contrat réactivé avec succès.');
+          this.charger();
+        },
+        error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de réactiver le contrat.'),
+      });
   }
 
   /**
@@ -255,14 +282,18 @@ export class ContractsComponent {
   }
 
   onGenererDocument(contrat: Contrat): void {
-    this.contratService.genererDocument$(contrat._id).subscribe({
-      next: (reponse: any) => {
-        this.notificationService.showSuccess('Succès', 'Document généré avec succès.');
-        if (reponse?.documentUrl) window.open(reponse.documentUrl, '_blank');
-        this.charger();
-      },
-      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de générer le document.'),
-    });
+    if (this.contratMutationEnCours()) return;
+    this.contratMutationEnCours.set(contrat._id);
+    this.contratService.genererDocument$(contrat._id)
+      .pipe(finalize(() => this.contratMutationEnCours.set(null)))
+      .subscribe({
+        next: (reponse: any) => {
+          this.notificationService.showSuccess('Succès', 'Document généré avec succès.');
+          if (reponse?.documentUrl) window.open(reponse.documentUrl, '_blank');
+          this.charger();
+        },
+        error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de générer le document.'),
+      });
   }
 
   // ── Drawer redevances ────────────────────────────────────────────────────
@@ -353,44 +384,56 @@ export class ContractsComponent {
   }
 
   onCreerPropositionPaiementGroupe(): void {
+    if (this.paiementGroupeEnCours()) return;
     const contrat = this.redevancesDrawerContrat();
     if (!contrat) return;
     const { genererTout, reductionType, reductionValeur } = this.paiementGroupeForm();
-    this.redevanceService.creerPropositionPaiementGroupe$(contrat._id, { genererTout, reductionType, reductionValeur }).subscribe({
-      next: (res) => {
-        this.notificationService.showSuccess('Succès', 'Proposition de paiement groupé créée. Le client a été notifié.');
-        this.paiementGroupeActif.set(res.proposition);
-        this.showPaiementGroupeForm.set(false);
-        this.openRedevancesDrawer(contrat); // recharge les redevances (générées si genererTout)
-      },
-      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de créer la proposition de paiement groupé.'),
-    });
+    this.paiementGroupeEnCours.set(true);
+    this.redevanceService.creerPropositionPaiementGroupe$(contrat._id, { genererTout, reductionType, reductionValeur })
+      .pipe(finalize(() => this.paiementGroupeEnCours.set(false)))
+      .subscribe({
+        next: (res) => {
+          this.notificationService.showSuccess('Succès', 'Proposition de paiement groupé créée. Le client a été notifié.');
+          this.paiementGroupeActif.set(res.proposition);
+          this.showPaiementGroupeForm.set(false);
+          this.openRedevancesDrawer(contrat); // recharge les redevances (générées si genererTout)
+        },
+        error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de créer la proposition de paiement groupé.'),
+      });
   }
 
   onAnnulerPaiementGroupe(): void {
+    if (this.paiementGroupeEnCours()) return;
     const proposition = this.paiementGroupeActif();
     if (!proposition || !confirm('Annuler cette proposition de paiement groupé ?')) return;
-    this.redevanceService.annulerPropositionPaiementGroupe$(proposition._id).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Proposition annulée.');
-        this.paiementGroupeActif.set(null);
-      },
-      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? "Impossible d'annuler cette proposition."),
-    });
+    this.paiementGroupeEnCours.set(true);
+    this.redevanceService.annulerPropositionPaiementGroupe$(proposition._id)
+      .pipe(finalize(() => this.paiementGroupeEnCours.set(false)))
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Succès', 'Proposition annulée.');
+          this.paiementGroupeActif.set(null);
+        },
+        error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? "Impossible d'annuler cette proposition."),
+      });
   }
 
   onPayerManuelPaiementGroupe(): void {
+    if (this.paiementGroupeEnCours()) return;
     const proposition = this.paiementGroupeActif();
     const contrat = this.redevancesDrawerContrat();
     if (!proposition || !contrat) return;
     if (!confirm(`Confirmer que le paiement groupé de ${proposition.montantAPayer} FCFA a été reçu ?`)) return;
-    this.redevanceService.payerManuelPaiementGroupe$(proposition._id).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Paiement groupé enregistré.');
-        this.openRedevancesDrawer(contrat);
-      },
-      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? "Impossible d'enregistrer ce paiement groupé."),
-    });
+    this.paiementGroupeEnCours.set(true);
+    this.redevanceService.payerManuelPaiementGroupe$(proposition._id)
+      .pipe(finalize(() => this.paiementGroupeEnCours.set(false)))
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Succès', 'Paiement groupé enregistré.');
+          this.openRedevancesDrawer(contrat);
+        },
+        error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? "Impossible d'enregistrer ce paiement groupé."),
+      });
   }
 
   redevanceStatusLabel(status: string): string {
@@ -399,15 +442,19 @@ export class ContractsComponent {
   }
 
   onMarquerRedevancePayee(redevance: Redevance): void {
+    if (this.redevanceEnCours()) return;
     if (!confirm(`Confirmer que la redevance "${redevance.periodLabel}" (${redevance.montant} FCFA) a été payée ?`)) return;
-    this.redevanceService.payerRedevance$(redevance._id).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Succès', 'Redevance marquée comme payée.');
-        const contrat = this.redevancesDrawerContrat();
-        if (contrat) this.openRedevancesDrawer(contrat);
-      },
-      error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de marquer cette redevance comme payée.'),
-    });
+    this.redevanceEnCours.set(redevance._id);
+    this.redevanceService.payerRedevance$(redevance._id)
+      .pipe(finalize(() => this.redevanceEnCours.set(null)))
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Succès', 'Redevance marquée comme payée.');
+          const contrat = this.redevancesDrawerContrat();
+          if (contrat) this.openRedevancesDrawer(contrat);
+        },
+        error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de marquer cette redevance comme payée.'),
+      });
   }
 
   private chargerClients(): void {

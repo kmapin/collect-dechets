@@ -471,7 +471,7 @@
     </p>
     <div class="del-btns">
       <button class="del-btn del-btn--ghost" (click)="deleteTarget.set(null)">Annuler</button>
-      <button class="del-btn del-btn--danger" (click)="doDelete()">
+      <button class="del-btn del-btn--danger" [disabled]="isRemovingMember" (click)="doDelete()">
         <mat-icon>person_remove</mat-icon>Retirer
       </button>
     </div>

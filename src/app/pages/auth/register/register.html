@@ -643,7 +643,7 @@
                                                   </button>
                                                 }
                                                 @if (agencyId) {
-                                                  <button type="submit" class="btn btn-primary btn-full">
+                                                  <button type="submit" class="btn btn-primary btn-full" [disabled]="isLoading">
                                                     @if (isLoading) {
                                                       <i class="material-icons">hourglass_empty</i>
                                                     }

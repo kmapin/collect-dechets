@@ -319,6 +319,7 @@ export class AgencyFinance implements OnInit, OnDestroy {
   }
 
   submitWithdrawal(): void {
+    if (this.isSubmittingWd) return;
     if (this.withdrawalForm.invalid) {
       this.withdrawalForm.markAllAsTouched();
       return;

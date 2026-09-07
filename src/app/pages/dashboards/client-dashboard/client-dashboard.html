@@ -562,6 +562,7 @@
                             <div class="chat-actions">
                               <button
                                 type="button"
+                                [disabled]="isSendingChatMessage"
                                 (click)="submitMessage()"
                                 class="btn_send btn-secondary"
                                 >
@@ -624,6 +625,7 @@
                             <button
                               type="button"
                               class="btn btn-primary"
+                              [disabled]="isSendingChatMessage"
                               (click)="submitMessage(); showMessageModal = false"
                               >
                               <i class="material-icons">send</i>
@@ -1056,7 +1058,7 @@
                 >
                 Annuler
               </button>
-              <button type="button" class="btn btn-primary" (click)="submitReport()">
+              <button type="button" class="btn btn-primary" [disabled]="isSubmittingReport" (click)="submitReport()">
                 <i class="material-icons">send</i>
                 Envoyer
               </button>
@@ -1285,6 +1287,7 @@
               <button
                 type="button"
                 class="btn btn-primary"
+                [disabled]="isProcessingWalletPayment"
                 (click)="walletPayment()"
                 >
                 <i class="material-icons">lock</i>

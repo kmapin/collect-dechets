@@ -2,6 +2,7 @@ import {
   Component, OnInit, inject, signal, computed, HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -259,10 +260,13 @@ export class TeamMembers implements OnInit {
   }
 
   // ── Delete ────────────────────────────────────────────────────
+  isRemovingMember = false;
   doDelete(): void {
+    if (this.isRemovingMember) return;
     const m = this.deleteTarget();
     if (!m) return;
-    this.svc.removeMemberV2(this.team()!.id, m.id).subscribe({
+    this.isRemovingMember = true;
+    this.svc.removeMemberV2(this.team()!.id, m.id).pipe(finalize(() => this.isRemovingMember = false)).subscribe({
       next: () => {
         this.members.update(list => list.filter(x => x.id !== m.id));
         this.msg.add({ severity: 'warn', summary: 'Retiré', detail: `${m.name} retiré de l'équipe` });

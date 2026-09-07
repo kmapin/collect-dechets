@@ -798,7 +798,7 @@
       <p>Cette action est irréversible. Le planning <strong>{{ planning()!.reference }}</strong> sera marqué comme annulé.</p>
       <div class="dlg-actions">
         <button type="button" class="dlg-btn dlg-btn--ghost" (click)="showCancelDlg.set(false)">Retour</button>
-        <button type="button" class="dlg-btn dlg-btn--danger" (click)="cancelPlanning()">
+        <button type="button" class="dlg-btn dlg-btn--danger" [disabled]="isActioning()" (click)="cancelPlanning()">
           <mat-icon>cancel</mat-icon>Confirmer l'annulation
         </button>
       </div>

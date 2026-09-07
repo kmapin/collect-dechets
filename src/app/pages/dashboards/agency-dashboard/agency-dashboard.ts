@@ -700,6 +700,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   saveVehicle(): void {
+    if (this.isSavingVehicle) return;
     if (!this.vehicleForm.plate || !this.vehicleForm.model || !this.vehicleForm.type) {
       this.notificationService.showError('Erreur', 'Veuillez remplir les champs obligatoires.');
       return;
@@ -756,10 +757,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
+  readonly vehicleDeletionEnCours = new Set<string>();
   deleteVehicle(vehicle: Vehicle): void {
-    if (!vehicle._id || !confirm(`Supprimer l'engin ${vehicle.plate} ?`)) return;
+    if (!vehicle._id || this.vehicleDeletionEnCours.has(vehicle._id)) return;
+    if (!confirm(`Supprimer l'engin ${vehicle.plate} ?`)) return;
+    this.vehicleDeletionEnCours.add(vehicle._id);
     this.vehicleService.remove(vehicle._id).subscribe({
       next: () => {
+        this.vehicleDeletionEnCours.delete(vehicle._id!);
         this.vehicles = this.vehicles.filter(v => v._id !== vehicle._id);
         this.filterVehicles();
         const vehiclesTab = this.tabs.find(t => t.id === 'vehicles');
@@ -767,7 +772,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         this.notificationService.showSuccess('Succès', 'Engin supprimé.');
         this.cdr.detectChanges();
       },
-      error: () => this.notificationService.showError('Erreur', 'Impossible de supprimer l\'engin.')
+      error: () => {
+        this.vehicleDeletionEnCours.delete(vehicle._id!);
+        this.notificationService.showError('Erreur', 'Impossible de supprimer l\'engin.');
+      }
     });
   }
 
@@ -1652,7 +1660,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
+  isSendingChatMessage = false;
   submitMessage() {
+    if (this.isSendingChatMessage) return;
     if (!this.messageData.content) {
       this.notificationService.showError(
         "Message invalide",
@@ -1679,8 +1689,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       content: this.messageData.content.trim(),
     };
 
+    this.isSendingChatMessage = true;
     this.conversationService.sendMessage$(messageData).subscribe({
       next: (sent: any) => {
+        this.isSendingChatMessage = false;
         // Ajout local du message envoyé (retourné par le POST) — remplace
         // l'ancien re-fetch complet de la conversation ; la vue du client,
         // elle, se met à jour via onIncomingMessage$ (temps réel).
@@ -1692,6 +1704,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         this.messageData.content = "";
       },
       error: (error: any) => {
+        this.isSendingChatMessage = false;
         console.error("API > sendMessage:", error);
         this.notificationService.showError(
           "Message non envoyé",
@@ -1717,7 +1730,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
    * dans le composant partagé <app-signalement> (signalement.ts), qui émet directement
    * `{ incidentId, teamId }` une fois l'équipe choisie.
    */
+  readonly reportAssignmentEnCours = new Set<string>();
   onAssignReportToTeam(payload: { incidentId: string; teamId: string }): void {
+    if (this.reportAssignmentEnCours.has(payload.incidentId)) return;
+    this.reportAssignmentEnCours.add(payload.incidentId);
     // Prompt 06 : `agencyReports` vient désormais de `/api/signalements` — chaque
     // `incidentId` est un vrai `Signalement._id`, jamais un `Collecte._id`. Un
     // signalement indépendant n'a pas de collecte à cibler ; l'ancienne route
@@ -1725,11 +1741,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     // structurellement plus être utilisée ici.
     this.agencyService.assignSignalementToTeam$(payload.incidentId, payload.teamId).subscribe({
       next: () => {
+        this.reportAssignmentEnCours.delete(payload.incidentId);
         this.notificationService.showSuccess("Succès", "Signalement affecté à l'équipe avec succès.");
         this.loadAgencyReports(this.currentUser);
         this.loadAgencyStatistics(this.currentUser);
       },
       error: (err) => {
+        this.reportAssignmentEnCours.delete(payload.incidentId);
         console.error("Erreur assignation :", err);
         const message = err?.error?.message || "Échec de l'affectation.";
         this.notificationService.showError("Erreur", message);
@@ -3581,10 +3599,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // Assigne/retire le rôle financier d'un employé (select "Aucun" => financialRole=null,
   // ce qui révoque aussi droitsFinance côté backend). Réservé aux administrateurs finance
   // (estAdministrateurFinance ci-dessus), contrôle rejoué côté serveur de toute façon.
+  readonly financialRoleEnCours = new Set<string>();
   assignFinancialRole(employee: any, value: string): void {
+    if (this.financialRoleEnCours.has(employee._id)) return;
     const financialRole = value || null;
+    this.financialRoleEnCours.add(employee._id);
     this.agencyService.setEmployeeFinancialRole$(employee._id, financialRole as any).subscribe({
       next: () => {
+        this.financialRoleEnCours.delete(employee._id);
         employee.financialRole = financialRole;
         this.notificationService.showSuccess(
           'Succès',
@@ -3594,6 +3616,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         );
       },
       error: (error) => {
+        this.financialRoleEnCours.delete(employee._id);
         console.error("Erreur lors de l'assignation du rôle financier :", error);
         this.notificationService.showError('Erreur', "Impossible d'assigner le rôle financier.");
       },
@@ -4033,6 +4056,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     // console.log('isEmployeeFormValid ?', this.isEmployeeFormValid());
     // console.log('currentUser.agencyId ?', this.currentUser?.agencyId);
 
+    if (this.isLoading) return;
+
     if (this.isEmployeeFormValid() && this.currentUser?.agencyId) {
       const formValue = this.employeeForm.value;
 
@@ -4043,6 +4068,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         this.employeeToEdit._id
       ) {
         // Mode modification - utiliser updateEmployee
+        this.isLoading = true;
         this.updateEmployeeData(this.employeeToEdit._id);
         return;
       }
@@ -4059,6 +4085,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         agencyId: this.currentUser.agencyId,
       };
 
+      this.isLoading = true;
       this.agencyService.addEmployeeToAgency(employeeData).subscribe({
         next: (response: any) => {
           this.isLoading = false;
@@ -4235,6 +4262,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   //creation ou modification d un tarif
   addTariff(): void {
+    if (this.isLoading) return;
     if (this.tariffForm.valid) {
       // Vérifier si on est en mode modification ou création
       if (
@@ -4243,6 +4271,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         this.tariffToUpdate._id
       ) {
         // Mode modification - utiliser updateTariff
+        this.isLoading = true;
         this.updateTariff(this.tariffToUpdate._id);
         return;
       }
@@ -4261,6 +4290,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         feePayer: formValue.feePayer || "AGENCE",
       };
       console.log("[DEBUG] Tarif:", tarif);
+      this.isLoading = true;
       this.agencyService.addTariff(tarif).subscribe({
         next: (response: any) => {
           this.isLoading = false;
@@ -4422,6 +4452,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   // supprimer un planning
   deletePlanning(schedulesId: string): void {
+    if (this.isDeleting) return;
     if (!schedulesId) {
       console.warn("Aucun ID de planning fourni.");
       this.notificationService.showWarning(
@@ -4557,6 +4588,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   // supprimer un tarif
   deleteTariff(tariff: any): void {
+    if (this.isDeleting) return;
     this.isDeleting = true;
     const tariffId = tariff._id;
 
@@ -4823,14 +4855,19 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
    * au lieu de l'ancien `resolveReport$` (`PATCH /collectes/:id/resolve`), qui
    * échouerait pour tout signalement indépendant (aucune Collecte à résoudre).
    */
+  readonly resolvingIncidentEnCours = new Set<string>();
   resolveIncident(id: string) {
+    if (this.resolvingIncidentEnCours.has(id)) return;
+    this.resolvingIncidentEnCours.add(id);
     this.agencyService.resolveSignalement$(id).subscribe({
       next: () => {
+        this.resolvingIncidentEnCours.delete(id);
         this.notificationService.showSuccess("Résolu", "Le signalement a été marqué comme résolu.");
         this.loadAgencyReports(this.currentUser);
         this.loadAgencyStatistics(this.currentUser);
       },
       error: (error: any) => {
+        this.resolvingIncidentEnCours.delete(id);
         console.error("Erreur lors de la résolution du signalement:", error);
         const msg = error?.error?.message || "Impossible de résoudre ce signalement pour le moment.";
         this.notificationService.showError("Erreur", msg);
@@ -5314,13 +5351,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.showHistoryModal = false;
   }
   //modification  du status de l employee
+  readonly employeeStatusToggleEnCours = new Set<string>();
   toggleEmployeeStatus(employee: any): void {
+    if (this.employeeStatusToggleEnCours.has(employee._id)) return;
     console.log("Toggle employee status:", employee);
     // const updatedStatus = !employee.isActive;
+    this.employeeStatusToggleEnCours.add(employee._id);
     this.agencyService
       .updateEmployeeStatus$(employee._id)
       .subscribe({
         next: (response: any) => {
+          this.employeeStatusToggleEnCours.delete(employee._id);
           // employee.isActive = updatedStatus;
 
           // Recharger les collecteurs si c'est un collecteur dont le statut a changé
@@ -5335,6 +5376,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
           this.loadEmployees(this.currentUser?.agencyId!);
         },
         error: (error) => {
+          this.employeeStatusToggleEnCours.delete(employee._id);
           console.error("Erreur lors de la mise à jour du statut :", error);
           this.notificationService.showError(
             "Erreur",
@@ -5576,7 +5618,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.zoneFormDetailedErrors = {};
   }
 
+  isSavingZoneAgency = false;
   addZoneAgency(): void {
+    if (this.isSavingZoneAgency) return;
     // Réinitialiser les erreurs
     this.zoneFormError = null;
     this.zoneFormDetailedErrors = {};
@@ -5599,8 +5643,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     console.log("Zone mise à jour :", zoneData);
+    this.isSavingZoneAgency = true;
     this.agencyService.updateAgencyZones$(agencyId, zoneData).subscribe({
       next: (response) => {
+        this.isSavingZoneAgency = false;
         console.log("Zone mise à jour :", response);
 
         // Utiliser directement les zones retournées par l'API de modification
@@ -5625,6 +5671,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         this.closeZoneModalcouverture();
       },
       error: (error) => {
+        this.isSavingZoneAgency = false;
         console.error("Erreur lors de la mise à jour de la zone :", error);
 
         // Utilisation de la méthode utilitaire pour obtenir un message convivial

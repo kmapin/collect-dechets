@@ -2497,11 +2497,19 @@ export class AdminDashboard implements OnInit, OnDestroy {
     return financialRole ? (labels[financialRole as keyof typeof labels] || financialRole) : 'Aucun';
   }
 
+  // Empêche une seconde sélection sur le même utilisateur (menu déroulant re-changé
+  // rapidement) de partir avant que la première requête PATCH n'ait répondu — deux
+  // requêtes concurrentes sur le même utilisateur pourraient sinon se terminer dans
+  // le désordre et laisser `financialRole` sur une valeur différente du dernier choix.
+  readonly financialRoleEnCours = new Set<string>();
   assignFinancialRole(user: any, value: string): void {
+    if (this.financialRoleEnCours.has(user._id)) return;
     const financialRole = value || null;
     const cibleAgencyId = user?.agencyId?._id || user?.agencyId;
+    this.financialRoleEnCours.add(user._id);
     this.agencyService.setEmployeeFinancialRole$(user._id, financialRole as any, cibleAgencyId).subscribe({
       next: () => {
+        this.financialRoleEnCours.delete(user._id);
         user.financialRole = financialRole;
         this.notificationService.showSuccess(
           'Succès',
@@ -2511,6 +2519,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
         );
       },
       error: (error) => {
+        this.financialRoleEnCours.delete(user._id);
         console.error("Erreur lors de l'assignation du rôle financier :", error);
         this.notificationService.showError('Erreur', "Impossible d'assigner le rôle financier.");
       },
@@ -3360,13 +3369,17 @@ export class AdminDashboard implements OnInit, OnDestroy {
     }
   }
 
+  readonly resolvingIncidentEnCours = new Set<string>();
   resolveIncident(incidentId: string): void {
+    if (this.resolvingIncidentEnCours.has(incidentId)) return;
     // incidentId est un Signalement._id (jamais un Collecte._id — un signalement
     // indépendant n'a pas de collecte à résoudre) : PATCH /signalements/:id/resolve,
     // pas l'ancienne route Collecte-based.
     const resolutionComment = this.resolutionComment;
+    this.resolvingIncidentEnCours.add(incidentId);
     this.adminService.resolveSignalement(incidentId, resolutionComment).subscribe({
       next: () => {
+        this.resolvingIncidentEnCours.delete(incidentId);
         const incident = this.filteredIncidents.find((i) => i._id === incidentId);
         if (incident) {
           incident.status = "resolved";
@@ -3380,6 +3393,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
         this.notificationService.showSuccess("Résolu", "Incident marqué comme résolu");
       },
       error: () => {
+        this.resolvingIncidentEnCours.delete(incidentId);
         this.notificationService.showError("Erreur", "Impossible de résoudre l'incident");
       },
     });
@@ -3427,8 +3441,10 @@ export class AdminDashboard implements OnInit, OnDestroy {
     }
   }
 
+  isSendingCommunication = false;
   sendCommunication(): void {
     if (
+      this.isSendingCommunication ||
       !this.newCommunication.type ||
       !this.newCommunication.title ||
       !this.newCommunication.message ||
@@ -3438,6 +3454,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     }
 
     const recipients = [...this.newCommunication.recipients];
+    this.isSendingCommunication = true;
 
     // Envoi réel : persistance + notification temps réel (cloche générique)
     // au personnel des agences sélectionnées — services/communication.js,
@@ -3452,6 +3469,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       type: this.newCommunication.type,
     }).subscribe({
       next: () => {
+        this.isSendingCommunication = false;
         // Recharge depuis le backend plutôt qu'un ajout local optimiste : la
         // communication tout juste envoyée doit obtenir son VRAI broadcastId
         // (nécessaire pour le bouton supprimer), pas un id local fictif.
@@ -3470,6 +3488,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
         );
       },
       error: () => {
+        this.isSendingCommunication = false;
         this.notificationService.showError(
           "Erreur",
           "La communication n'a pas pu être envoyée.",
@@ -3690,10 +3709,17 @@ export class AdminDashboard implements OnInit, OnDestroy {
   //   });
   // }
 
+  // Un seul id à la fois : évite qu'un double-clic (ou activer+désactiver enchaînés
+  // avant la fin de la première requête) sur la même agence ne parte deux fois.
+  readonly agencyMutationEnCours = new Set<string>();
+
   activateAgency(id: string) {
+    if (this.agencyMutationEnCours.has(id)) return;
+    this.agencyMutationEnCours.add(id);
     const status = "activate";
     this.agencyService.activateAgency(id, status).subscribe({
       next: (response: any) => {
+        this.agencyMutationEnCours.delete(id);
         console.log("agency activated  in dashboard", response);
         if (response.message) {
           this.notificationService.showSuccess(
@@ -3704,6 +3730,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
         }
       },
       error: (error: any) => {
+        this.agencyMutationEnCours.delete(id);
         console.error("Error activating agency:", error);
         const msg = error?.error?.message || "Error activating agency";
         this.notificationService.showSuccess("Activation", msg);
@@ -3712,13 +3739,17 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   deactivateAgency(id: string) {
+    if (this.agencyMutationEnCours.has(id)) return;
+    this.agencyMutationEnCours.add(id);
     this.agencyService.deActivateAgency(id).subscribe({
       next: (response: any) => {
+        this.agencyMutationEnCours.delete(id);
         console.log("agency deactivated in dashboard", response);
         this.notificationService.showSuccess("Désactivation", "Agence désactivée avec succès");
         this.loadAgencyAudits(this.agenciesFilterParams);
       },
       error: (error: any) => {
+        this.agencyMutationEnCours.delete(id);
         console.error("Error deactivating agency:", error);
         const msg = error?.error?.message || "Erreur lors de la désactivation";
         this.notificationService.showError("Désactivation", msg);
@@ -3727,14 +3758,18 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   deleteAgency(id: string) {
+    if (this.agencyMutationEnCours.has(id)) return;
     if (!confirm("Confirmer la suppression de cette agence ?")) return;
+    this.agencyMutationEnCours.add(id);
     this.agencyService.deleteAgency(id).subscribe({
       next: (response: any) => {
+        this.agencyMutationEnCours.delete(id);
         console.log("agency deleted in dashboard", response);
         this.notificationService.showSuccess("Suppression", "Agence supprimée avec succès");
         this.loadAgencyAudits(this.agenciesFilterParams);
       },
       error: (error: any) => {
+        this.agencyMutationEnCours.delete(id);
         console.error("Error deleting agency:", error);
         const msg = error?.error?.message || "Erreur lors de la suppression";
         this.notificationService.showError("Suppression", msg);

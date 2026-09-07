@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <form [formGroup]="otpForm">
+    <form [formGroup]="otpForm" (ngSubmit)="onVerifyOtp()">
       <mat-form-field appearance="outline" class="otp-field">
         <mat-label>Code OTP</mat-label>
         <input
@@ -69,7 +69,7 @@
           <button
             mat-raised-button
             color="primary"
-            (click)="onVerifyOtp()"
+            type="submit"
             class="submit-button"
             [disabled]="otpForm.invalid || isProcessing">
             

@@ -117,6 +117,7 @@ export class ForgotPassword {
   // -------------------------------- Pour l'envoie du code otp sur l'email du user
 
   forgotSubmit() {
+    if (this.loading) return;
     this.successMessage = '';
     this.errorMessage = '';
     if (this.forgotForm.invalid) {
@@ -142,6 +143,7 @@ export class ForgotPassword {
   // -------------------------------- Pour la vérification du code otp recu par email lors de la saisie du user
 
   verifyOtpCode() {
+    if (this.loading) return;
     const code = this.otp.join('');
     if (code.length !== 6 || /[^0-9]/.test(code)) {
       this.errorMessage = 'Veuillez entrer un code à 6 chiffres.';
@@ -171,6 +173,7 @@ export class ForgotPassword {
 
   // -------------------------------- Pour la demande d'un nouveau code otp
   resendCode() {
+    if (this.loading) return;
     const email = this.forgotForm.value.email;
     this.loading = true;
     this.authService.forgotPassword$(email).subscribe({
@@ -188,6 +191,7 @@ export class ForgotPassword {
 
   // -------------------------------- Pour le nouveau mot de passe
   submitNewPassword() {
+    if (this.loading) return;
     this.formSubmitted = true;
     this.errorMessage = '';
     this.successMessage = '';

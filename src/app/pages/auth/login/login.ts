@@ -51,6 +51,7 @@ export class Login implements OnInit {
       .replace(/^\+?(226|225)?/, '');
   }
   onLogin(): void {
+    if (this.isLoading) return;
     if (!(this.credentials.email || this.credentials.phone) || !this.credentials.password) {
       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs');
       return;

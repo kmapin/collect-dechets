@@ -105,6 +105,7 @@ export class NotificationSettingsComponent implements OnInit {
   }
 
   save(): void {
+    if (this.isSaving) return;
     this.isSaving = true;
     const request$ = this.isGlobal
       ? this.settingsService.updateGlobal$(this.settings)
@@ -123,6 +124,7 @@ export class NotificationSettingsComponent implements OnInit {
   }
 
   sendTest(): void {
+    if (this.isSendingTest) return;
     if (!this.testEmail) {
       this.notificationService.showError('Erreur', 'Saisissez une adresse email de test.');
       return;

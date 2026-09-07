@@ -382,6 +382,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
   /** brouillon → planifie */
   publishPlanning(p: Planning): void {
+    if (this.actionLoading()) return;
     this.confirm.confirm({
       message: `Publier le planning <strong>${p.reference}</strong> ?<br>Il sera visible et exécutable par les équipes.`,
       header: 'Confirmer la publication',
@@ -408,6 +409,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
   /** planifie → en_cours */
   startPlanning(p: Planning): void {
+    if (this.actionLoading()) return;
     this.actionLoading.set(p.id);
     this.planningService.startPlanning(p.id).subscribe({
       next: (res) => {
@@ -424,6 +426,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
   /** en_cours → termine */
   completePlanning(p: Planning): void {
+    if (this.actionLoading()) return;
     this.actionLoading.set(p.id);
     this.planningService.completePlanning(p.id).subscribe({
       next: (res) => {
@@ -440,6 +443,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
   /** planifie | en_cours → annule */
   cancelPlanning(p: Planning): void {
+    if (this.actionLoading()) return;
     this.confirm.confirm({
       message: `Annuler le planning <strong>${p.reference}</strong> ?<br>Cette action est irréversible.`,
       header: 'Confirmer l\'annulation',
@@ -470,6 +474,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
   /** brouillon → supprimé */
   deletePlanning(p: Planning): void {
+    if (this.actionLoading()) return;
     this.confirm.confirm({
       message: `Supprimer définitivement le planning <strong>${p.reference}</strong> ?<br>Cette action est irréversible.`,
       header: 'Confirmer la suppression',

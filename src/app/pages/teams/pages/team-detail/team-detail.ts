@@ -3,6 +3,7 @@ import {
   ViewChild, ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { ToastModule } from 'primeng/toast';
@@ -43,6 +44,7 @@ export class TeamDetail implements OnInit, OnDestroy {
   team        = signal<Team | null>(null);
   activeTab   = signal<'members' | 'vehicle' | 'zones' | 'missions'>('members');
   formOpen    = signal(false);
+  formSaving  = signal(false);
   showDelDlg  = signal(false);
 
   statusColor = computed(() => teamStatusColor(this.team()?.status ?? ''));
@@ -128,11 +130,14 @@ export class TeamDetail implements OnInit, OnDestroy {
     this.changeStatus(next);
   }
 
+  isChangingStatus = false;
   changeStatus(status: 'active' | 'inactive' | 'maintenance'): void {
+    if (this.isChangingStatus) return;
     const t = this.team();
     if (!t) return;
     this.statusMenuOpen = false;
-    this.svc.changeStatus(t.id, status).subscribe({
+    this.isChangingStatus = true;
+    this.svc.changeStatus(t.id, status).pipe(finalize(() => this.isChangingStatus = false)).subscribe({
       next: updated => {
         this.team.set(updated);
         const labels: Record<TeamStatus, string> = {
@@ -149,6 +154,7 @@ export class TeamDetail implements OnInit, OnDestroy {
   }
 
   onFormSave(data: TeamFormData): void {
+    if (this.formSaving()) return;
     const t = this.team();
     if (!t) return;
     const vehicle = data.vehicleId
@@ -165,6 +171,7 @@ export class TeamDetail implements OnInit, OnDestroy {
       availability: 'disponible' as const,
       joinedAt:     t.members[i]?.joinedAt ?? new Date().toISOString().split('T')[0],
     }));
+    this.formSaving.set(true);
     this.svc.updateV2(t.id, {
       name:        data.name,
       color:       data.color,
@@ -177,7 +184,7 @@ export class TeamDetail implements OnInit, OnDestroy {
       vehicle: vehicle
         ? { ...vehicle, lastMaintenance: t.vehicle?.lastMaintenance ?? '—', fuelLevel: t.vehicle?.fuelLevel ?? 80, mileage: t.vehicle?.mileage ?? 0 }
         : undefined,
-    }).subscribe({
+    }).pipe(finalize(() => this.formSaving.set(false))).subscribe({
       next: updated => {
         this.team.set(updated);
         this.msg.add({ severity: 'success', summary: 'Sauvegardé', detail: `${updated.name} mis à jour` });
@@ -190,10 +197,13 @@ export class TeamDetail implements OnInit, OnDestroy {
     });
   }
 
+  isDeletingTeam = false;
   doDelete(): void {
+    if (this.isDeletingTeam) return;
     const t = this.team();
     if (!t) return;
-    this.svc.delete(t.id).subscribe({
+    this.isDeletingTeam = true;
+    this.svc.delete(t.id).pipe(finalize(() => this.isDeletingTeam = false)).subscribe({
       next: () => {
         this.showDelDlg.set(false);
         this.router.navigate(['/teams/list']);

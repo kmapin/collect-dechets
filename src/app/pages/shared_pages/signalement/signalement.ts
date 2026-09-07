@@ -85,6 +85,12 @@ export class Signalement implements OnDestroy {
 
   @Input() incidents: Incident[] = [];
   @Input() currentUser:RegisterUserData | null = null;
+  // Renseignés par le dashboard parent (seul à connaître l'état de la requête HTTP
+  // réelle, ce composant ne fait qu'émettre) — désactivent les boutons "Résoudre"/
+  // "Assigner" pendant qu'une requête est déjà en vol pour ce signalement, pour
+  // empêcher un double-clic d'émettre deux fois le même événement.
+  @Input() resolvingIncidentIds: Set<string> = new Set();
+  @Input() assigningIncidentIds: Set<string> = new Set();
   filteredIncidents: Incident[] = [];
 
 
@@ -289,8 +295,8 @@ export class Signalement implements OnDestroy {
     this.actualiserDrawerOuvertSurBody();
   }
   resolveIncident(incidentId: string): void {
-  this.resolvedIncident.emit(incidentId);
-    
+    if (this.resolvingIncidentIds.has(incidentId)) return;
+    this.resolvedIncident.emit(incidentId);
   }
 
   //For Actons butttons
@@ -356,6 +362,7 @@ export class Signalement implements OnDestroy {
 
   confirmAssignTeam(): void {
     if (!this.teamPickerIncident || !this.selectedTeamId) return;
+    if (this.assigningIncidentIds.has(this.teamPickerIncident._id)) return;
     this.assignReportToTeam.emit({ incidentId: this.teamPickerIncident._id, teamId: this.selectedTeamId });
     this.closeTeamPicker();
   }

@@ -1100,9 +1100,13 @@ export class MunicipalityDashboard  implements OnInit {
    * ce handler reste donc inatteignable en pratique depuis CE dashboard. Corrigé quand même
    * par cohérence et au cas où cette règle de visibilité évoluerait.
    */
+  readonly reportAssignmentEnCours = new Set<string>();
   onAssignReport(payload: { incidentId: string; teamId: string }): void {
+    if (this.reportAssignmentEnCours.has(payload.incidentId)) return;
+    this.reportAssignmentEnCours.add(payload.incidentId);
     this.adminService.assignSignalementToTeam(payload.incidentId, payload.teamId).subscribe({
       next: (response: any) => {
+        this.reportAssignmentEnCours.delete(payload.incidentId);
         const updated = response?.data;
         const target = this.incidents.find((i) => i._id === payload.incidentId);
         if (target) {
@@ -1114,6 +1118,7 @@ export class MunicipalityDashboard  implements OnInit {
         this.notificationService.showSuccess("Signalement affecté", "Le signalement a été affecté à l'équipe.");
       },
       error: (err) => {
+        this.reportAssignmentEnCours.delete(payload.incidentId);
         console.error("Erreur lors de l'affectation du signalement:", err);
         this.notificationService.showError("Erreur", "Impossible d'affecter ce signalement pour le moment.");
       },
@@ -1126,9 +1131,13 @@ export class MunicipalityDashboard  implements OnInit {
    * pratique identique à onAssignReport ci-dessus (bouton "Résoudre" réservé au rôle manager
    * côté <app-signalement>) — corrigé par cohérence.
    */
+  readonly resolvingIncidentEnCours = new Set<string>();
   onResolvedIncident(incidentId: string): void {
+    if (this.resolvingIncidentEnCours.has(incidentId)) return;
+    this.resolvingIncidentEnCours.add(incidentId);
     this.adminService.resolveSignalement(incidentId, 'Résolu depuis le tableau de bord municipal').subscribe({
       next: () => {
+        this.resolvingIncidentEnCours.delete(incidentId);
         const target = this.incidents.find((i) => i._id === incidentId);
         if (target) target.status = 'resolved';
         this.filterIncidents();
@@ -1138,6 +1147,7 @@ export class MunicipalityDashboard  implements OnInit {
         this.notificationService.showSuccess("Incident résolu", "L'incident a été marqué comme résolu.");
       },
       error: (err) => {
+        this.resolvingIncidentEnCours.delete(incidentId);
         console.error("Erreur lors de la résolution de l'incident:", err);
         this.notificationService.showError("Erreur", "Impossible de résoudre cet incident pour le moment.");
       },
