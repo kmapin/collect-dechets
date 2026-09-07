@@ -33,6 +33,10 @@ interface ActivityEvent {
 interface PlanningCollecte {
   id: string; clientId: string; clientName: string; clientNeighborhood: string; status: string;
   failureReason: string | null; comment: string | null;
+  // Position réelle du client (User.address.latitude/longitude, populée par le backend
+  // sur Collecte.clientId) — utilisée pour placer les vrais points sur la carte
+  // "Suivi des collectes" (_renderCollectePoints ci-dessous), jamais une position inventée.
+  latitude: number | null; longitude: number | null;
   // Nouvelle date prévue saisie AVANT de cliquer "Retenter" (chantier "redéfinir la date
   // prévue au rattrapage") — état local du formulaire, jamais persisté tel quel : seul
   // retryCollecte(c) l'envoie au backend. `null` par défaut : la Collecte garde sa date
@@ -317,6 +321,10 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       next: list => {
         this.collectes.set(list.map((c: any) => this._mapCollecte(c)));
         this.isLoadingCollectes.set(false);
+        // La carte peut déjà exister (chargement lent) ou pas encore (_initMap() la
+        // redessinera lui-même une fois prête) — dans les deux cas ce point de vérité
+        // unique évite de dupliquer la logique de placement des marqueurs.
+        this._renderCollectePoints();
       },
       error: () => this.isLoadingCollectes.set(false),
     });
@@ -332,6 +340,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       status: c.status,
       failureReason: c.failureReason ?? null,
       comment: c.comment ?? null,
+      latitude: typeof client?.address?.latitude === 'number' ? client.address.latitude : null,
+      longitude: typeof client?.address?.longitude === 'number' ? client.address.longitude : null,
       newDate: null,
     };
   }
@@ -730,6 +740,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   // ── Leaflet map ───────────────────────────────────────────────
+  private collecteMarkersLayer?: L.LayerGroup;
+
   private _initMap(): void {
     if (!this.mapElRef?.nativeElement) return;
     const p = this.planning();
@@ -743,19 +755,40 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     L.circle(center, { radius: 600, color: '#16a34a', fillColor: '#16a34a', fillOpacity: 0.1, weight: 2 })
       .bindTooltip(p?.libelle ?? 'Zone de collecte').addTo(this.leafletMap);
 
-    const waypoints: [number, number][] = [
-      [center[0] - 0.005, center[1] - 0.006],
-      [center[0] - 0.002, center[1] - 0.008],
-      [center[0] + 0.003, center[1] - 0.004],
-      [center[0] + 0.005, center[1] + 0.002],
-      [center[0] + 0.001, center[1] + 0.007],
-      [center[0] - 0.004, center[1] + 0.005],
-    ];
-    L.polyline(waypoints, { color: '#3b82f6', weight: 3, dashArray: '6,4' }).addTo(this.leafletMap);
-    waypoints.forEach((wp, i) => {
-      L.circleMarker(wp, { radius: 7, fillColor: i === 0 ? '#16a34a' : '#3b82f6', color: '#fff', weight: 2, fillOpacity: 1 })
-        .bindTooltip(`Point ${i + 1}`).addTo(this.leafletMap);
+    this.collecteMarkersLayer = L.layerGroup().addTo(this.leafletMap);
+    // Les Collecte peuvent déjà être chargées si la réponse HTTP est arrivée avant ce
+    // setTimeout(600ms) de ngAfterViewInit — sinon _loadCollectes() se chargera lui-même
+    // de dessiner les points une fois sa propre réponse arrivée.
+    this._renderCollectePoints();
+  }
+
+  /**
+   * Place sur la carte les positions RÉELLES (User.address.latitude/longitude) des
+   * clients effectivement inclus dans ce planning — une Collecte = un client réel, jamais
+   * un point inventé. Un client sans coordonnées enregistrées est simplement omis (aucune
+   * position de repli fictive) ; si aucun client n'a de coordonnées, la carte reste
+   * affichée (fond de carte + cercle de zone) sans point ni itinéraire.
+   */
+  private _renderCollectePoints(): void {
+    if (!this.leafletMap || !this.collecteMarkersLayer) return;
+    this.collecteMarkersLayer.clearLayers();
+
+    const points = this.collectes()
+      .filter(c => typeof c.latitude === 'number' && typeof c.longitude === 'number' && !(c.latitude === 0 && c.longitude === 0))
+      .map(c => ({ c, latlng: [c.latitude as number, c.longitude as number] as [number, number] }));
+    if (!points.length) return;
+
+    const latlngs = points.map(pt => pt.latlng);
+    L.polyline(latlngs, { color: '#3b82f6', weight: 3, dashArray: '6,4' }).addTo(this.collecteMarkersLayer);
+    points.forEach((pt, i) => {
+      L.circleMarker(pt.latlng, { radius: 7, fillColor: i === 0 ? '#16a34a' : '#3b82f6', color: '#fff', weight: 2, fillOpacity: 1 })
+        .bindTooltip(`${pt.c.clientName}${pt.c.clientNeighborhood ? ' — ' + pt.c.clientNeighborhood : ''}`)
+        .addTo(this.collecteMarkersLayer!);
     });
+
+    // Recentre/zoome la carte pour que les vrais points soient toujours visibles, plutôt
+    // que de rester bloquée sur le centre par défaut si les clients en sont éloignés.
+    this.leafletMap.fitBounds(L.latLngBounds(latlngs).pad(0.25));
   }
 
   // ── Journal d'activités — construit à partir des vraies dates de transition

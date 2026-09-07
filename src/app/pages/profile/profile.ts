@@ -1,6 +1,7 @@
 import { City } from './../../models/countries-org.model';
 import { map } from 'rxjs';
-import { Component, OnInit } from "@angular/core";
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from "@angular/core";
+import * as L from "leaflet";
 
 import { FormsModule } from "@angular/forms";
 import { AuthService } from "../../services/auth.service";
@@ -22,7 +23,7 @@ import { SharedService } from "../../services/shared-service";
   templateUrl: "./profile.html",
   styleUrl: "./profile.css",
 })
-export class Profile implements OnInit {
+export class Profile implements OnInit, OnDestroy {
   userData: RegisterUserData = {
     _id: "",
     id: "",
@@ -105,6 +106,19 @@ export class Profile implements OnInit {
   ];
   isLoading: boolean = false;
   currentUserId: string | null = null;
+
+  // ── Position géographique réelle (chantier "coordonnées client") ─────────
+  // Setter plutôt qu'un @ViewChild classique : cette carte vit dans une section
+  // affichée seulement `@if (user?.role === 'client')`, donc le <div> n'existe pas
+  // encore au moment de ngOnInit/ngAfterViewInit — le setter est rappelé par Angular
+  // dès que l'élément apparaît réellement dans le DOM (une fois `user` chargé).
+  private profileMap?: L.Map;
+  private profileMarker?: L.Marker;
+  isLocatingMe = false;
+  @ViewChild('profileMapEl') set profileMapEl(el: ElementRef<HTMLDivElement> | undefined) {
+    if (el && !this.profileMap) this._initProfileMap(el.nativeElement);
+  }
+
   constructor(
     private authService: AuthService,
     private notificationService: NotificationService,
@@ -124,6 +138,10 @@ export class Profile implements OnInit {
       // s'exécuter avant que `this.cities` soit peuplé.
       this.getAllCountries(() => this.getUser(this.currentUserId!));
     }
+  }
+
+  ngOnDestroy(): void {
+    this.profileMap?.remove();
   }
 
   // generer code qr en image
@@ -193,8 +211,100 @@ export class Profile implements OnInit {
       if (this.user.address.city) {
         this.onCityChange(this.user.address.city);
       }
+      // La carte peut déjà exister si l'utilisateur avait déjà le rôle 'client' au
+      // premier rendu (le setter @ViewChild ne se redéclenche pas juste parce que
+      // `userData` change) — on repositionne alors le marqueur sur la vraie valeur
+      // fraîchement chargée depuis le serveur, plutôt que de la laisser sur 0/0.
+      if (this.profileMap) {
+        this._setProfileMarkerPosition(
+          this.userData.address.latitude || this.DEFAULT_MAP_CENTER[0],
+          this.userData.address.longitude || this.DEFAULT_MAP_CENTER[1],
+        );
+      }
     });
     console.log("Current User", this.user);
+  }
+
+  // Centre par défaut (Ouagadougou) — utilisé uniquement tant qu'aucune coordonnée
+  // réelle n'est encore enregistrée pour ce client (latitude/longitude à 0).
+  private readonly DEFAULT_MAP_CENTER: [number, number] = [12.3714, -1.5197];
+
+  private _initProfileMap(container: HTMLDivElement): void {
+    const lat = this.userData.address.latitude || this.DEFAULT_MAP_CENTER[0];
+    const lng = this.userData.address.longitude || this.DEFAULT_MAP_CENTER[1];
+
+    this.profileMap = L.map(container, { center: [lat, lng], zoom: 15, zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap', maxZoom: 19,
+    }).addTo(this.profileMap);
+
+    // Icône explicite : l'icône par défaut de Leaflet référence des images relatives
+    // (images/marker-icon.png) qui ne survivent pas au bundling Angular — sans ceci le
+    // marqueur s'affiche comme une image cassée. Même contournement déjà utilisé dans
+    // ce projet pour la position utilisateur sur la carte d'accueil (home.ts).
+    const pinIcon = L.icon({
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+    this.profileMarker = L.marker([lat, lng], { draggable: true, icon: pinIcon }).addTo(this.profileMap);
+    this.profileMarker.on('dragend', () => {
+      const pos = this.profileMarker!.getLatLng();
+      this._applyPosition(pos.lat, pos.lng);
+    });
+    // Cliquer ailleurs sur la carte déplace aussi le marqueur — plus rapide qu'un
+    // glisser-déposer précis pour une première position approximative.
+    this.profileMap.on('click', (e: L.LeafletMouseEvent) => {
+      this._applyPosition(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Le conteneur peut être mesuré avec une taille nulle si la section vient tout
+    // juste de devenir visible (transition CSS/reflow pas encore terminé) — sans ce
+    // recalcul différé, Leaflet peut afficher une carte grise tant qu'aucun geste
+    // utilisateur (zoom/pan) ne force un redraw.
+    setTimeout(() => this.profileMap?.invalidateSize(), 200);
+  }
+
+  private _setProfileMarkerPosition(lat: number, lng: number): void {
+    this.profileMarker?.setLatLng([lat, lng]);
+    this.profileMap?.setView([lat, lng], this.profileMap.getZoom());
+  }
+
+  private _applyPosition(lat: number, lng: number): void {
+    this.userData.address.latitude = lat;
+    this.userData.address.longitude = lng;
+    this._setProfileMarkerPosition(lat, lng);
+  }
+
+  /**
+   * Utilise la géolocalisation réelle de l'appareil (plus précise qu'un
+   * clic approximatif sur la carte) — l'utilisateur doit ensuite cliquer sur
+   * "Modifier le compte" pour persister, exactement comme les autres champs
+   * de ce formulaire (aucun appel réseau supplémentaire introduit ici).
+   */
+  useMyLocation(): void {
+    if (this.isLocatingMe) return;
+    if (!navigator.geolocation) {
+      this.notificationService.showError('Erreur', "La géolocalisation n'est pas disponible sur cet appareil.");
+      return;
+    }
+    this.isLocatingMe = true;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.isLocatingMe = false;
+        this._applyPosition(position.coords.latitude, position.coords.longitude);
+        this.notificationService.showSuccess('Position détectée', "Votre position a été placée sur la carte — n'oubliez pas d'enregistrer.");
+      },
+      (error) => {
+        this.isLocatingMe = false;
+        this.notificationService.showError('Erreur', "Impossible d'obtenir votre position : " + error.message);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   }
 
   getRoleLabel(role: string): string {

@@ -271,6 +271,33 @@
               </select>
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <label class="form-label">
+                <i class="material-icons">my_location</i>
+                Position géographique réelle
+              </label>
+              <p class="form-hint">
+                Placez précisément votre position sur la carte (glissez le repère ou cliquez à
+                l'endroit voulu), ou utilisez la géolocalisation de votre appareil.
+              </p>
+              <button
+                type="button"
+                class="btn btn-secondary btn-small"
+                [disabled]="isLocatingMe"
+                (click)="useMyLocation()"
+              >
+                <i class="material-icons">{{ isLocatingMe ? 'hourglass_empty' : 'my_location' }}</i>
+                {{ isLocatingMe ? 'Localisation…' : 'Utiliser ma position actuelle' }}
+              </button>
+              <div #profileMapEl class="profile-map"></div>
+              @if (userData.address.latitude && userData.address.longitude) {
+              <span class="form-hint">
+                Coordonnées actuelles : {{ userData.address.latitude.toFixed(5) }}, {{ userData.address.longitude.toFixed(5) }}
+              </span>
+              }
+            </div>
+          </div>
         </div>
         <!-- <button
                         (click)="onUpdateAgency()"
