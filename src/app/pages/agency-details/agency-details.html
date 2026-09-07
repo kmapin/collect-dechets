@@ -107,7 +107,11 @@
       <div class="content-layout">
         <!-- Left Column - Main Information -->
         <div class="main-column">
-          <!-- Quick Stats -->
+          <!-- Quick Stats — réservé au manager DE cette agence, aux agents de mairie
+               (role 'municipality') et au super_admin : un client/visiteur consultant
+               cette même page publique n'a pas à voir le nombre de clients/employés
+               de l'agence. -->
+          @if (currentUser?.role === 'super_admin' || currentUser?.role === 'municipality' || (currentUser?.role === 'manager' && currentUser?.agencyId === agency?._id)) {
           <section class="quick-stats">
             <div class="stat-item">
               <div class="stat-icon">
@@ -150,6 +154,7 @@
               </div>
             </div>
           </section>
+          }
 
           <!-- Services Section -->
           <!-- <section class="services-section card">
