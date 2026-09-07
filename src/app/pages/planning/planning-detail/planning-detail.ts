@@ -780,9 +780,13 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
 
     const latlngs = points.map(pt => pt.latlng);
     L.polyline(latlngs, { color: '#3b82f6', weight: 3, dashArray: '6,4' }).addTo(this.collecteMarkersLayer);
-    points.forEach((pt, i) => {
-      L.circleMarker(pt.latlng, { radius: 7, fillColor: i === 0 ? '#16a34a' : '#3b82f6', color: '#fff', weight: 2, fillOpacity: 1 })
-        .bindTooltip(`${pt.c.clientName}${pt.c.clientNeighborhood ? ' — ' + pt.c.clientNeighborhood : ''}`)
+    // Tous les points sont de vrais clients à collecter — aucun n'est un "point de
+    // départ" (l'agence n'a pas de coordonnées réelles fiables aujourd'hui pour en
+    // afficher un ; voir la légende, entrée "Départ" retirée en conséquence). Colorer
+    // le premier point en vert ferait croire à tort qu'il s'agit d'un point spécial.
+    points.forEach((pt) => {
+      L.circleMarker(pt.latlng, { radius: 7, fillColor: '#3b82f6', color: '#fff', weight: 2, fillOpacity: 1 })
+        .bindTooltip(`Point de collecte — ${pt.c.clientName}${pt.c.clientNeighborhood ? ' — ' + pt.c.clientNeighborhood : ''}`)
         .addTo(this.collecteMarkersLayer!);
     });
 
