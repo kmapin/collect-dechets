@@ -271,18 +271,15 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   // ── Fetch from API ────────────────────────────────────────────
+  // Toujours un vrai GET /planning/:id, jamais l'entrée du cache de la liste
+  // (this.svc.plannings(), alimentée par GET /planning) : cette dernière ne peuple QUE
+  // equipeIds/quartierId/secteurId (services/planning.js::getPlanningsV2) — ni
+  // clientId ni groupeId, contrairement à GET /planning/:id (getPlanningV2ById).
+  // Servir cette entrée allégée ici affichait "Localisation : —" pour un planning
+  // individuel/groupe tant que la page n'était pas rechargée (le cache ne survit qu'à
+  // l'intérieur d'une même session SPA) — corrigé en ne faisant plus confiance à ce
+  // raccourci pour cette page, qui a besoin des champs réellement peuplés.
   private _fetchPlanning(id: string): void {
-    // First check if already in service cache
-    const cached = this.svc.plannings().find(p => p.id === id);
-    if (cached) {
-      this.planning.set(cached);
-      this._buildActivities(cached);
-      this._loadExecutionIncidentsNotifications(id);
-      this._loadAgencyName(cached.agencyId);
-      this.isLoading.set(false);
-      return;
-    }
-
     this.svc.getPlanning(id).subscribe({
       next: (p) => {
         this.planning.set(p);

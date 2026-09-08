@@ -71,15 +71,21 @@ export class PlanningService {
       };
     }
     // Fallback: compute from local plannings list
-    const all   = this._plannings();
-    const total = all.length || 1;
+    const all = this._plannings();
+    // 'annule'/'brouillon' exclus du dénominateur du taux d'exécution — un planning
+    // annulé par l'agence n'a jamais été réellement exécuté (ni un succès, ni un échec)
+    // et un brouillon n'a pas encore démarré : ni l'un ni l'autre ne doit faire
+    // artificiellement baisser executionRate. Même restriction que le vrai
+    // getPlanningStats() backend (services/planning.js), que ce fallback local imite.
+    const eligible = all.filter(p => p.status !== 'annule' && p.status !== 'brouillon');
+    const eligibleTotal = eligible.length || 1;
     return {
       totalPlannings: all.length,
       todayPlannings: all.filter(p => p.status === 'en_cours' || p.status === 'planifie').length,
       inProgress:     all.filter(p => p.status === 'en_cours').length,
       completedToday: all.filter(p => p.status === 'termine').length,
       availableTeams: this._teams().filter(t => t.status === 'active').length,
-      executionRate:  Math.round((all.filter(p => p.status === 'termine').length / total) * 100),
+      executionRate:  Math.round((eligible.filter(p => p.status === 'termine').length / eligibleTotal) * 100),
     };
   });
 
