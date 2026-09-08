@@ -295,9 +295,7 @@ export class Register implements OnInit {
           neighborhood: this.userData.address.neighborhood,
           city: this.userData.address.city,
           postalCode: this.userData.address.postalCode,
-          longitude: -17.444,
-          latitude: 14.692
-          
+          ...this.getQuartierCoordinates(),
         },
         ...(this.agencyId && { agencyId: this.agencyId })
       };
@@ -354,8 +352,7 @@ export class Register implements OnInit {
           neighborhood: this.userData.address.neighborhood,
           city: this.userData.address.city,
           postalCode: this.userData.address.postalCode,
-          longitude: -17.444,
-          latitude: 14.692
+          ...this.getQuartierCoordinates(),
         },
         // Agency-specific data - ensure they are always included for agency role
    
@@ -370,8 +367,7 @@ export class Register implements OnInit {
           owner: '',
           documents: [],
           status: 'inactive',
-          longitude: -17.444,
-          latitude: 14.692 
+          ...this.getQuartierCoordinates(),
         }
       };
 
@@ -422,8 +418,7 @@ export class Register implements OnInit {
           neighborhood: this.userData.address.neighborhood,
           city: this.userData.address.city,
           postalCode: this.userData.address.postalCode,
-          longitude: -17.444,
-          latitude: 14.692
+          ...this.getQuartierCoordinates(),
         },
         ...(this.agencyId && { agencyId: this.agencyId })
       };
@@ -507,6 +502,21 @@ export class Register implements OnInit {
       next: (quartiers) => { this.quartierss = quartiers; this.isLoadingQuartiers = false; },
       error: () => { this.quartierss = []; this.isLoadingQuartiers = false; },
     });
+  }
+
+  /**
+   * Coordonnées réelles du quartier choisi (models/neighbourhood.js, chantier
+   * "géolocalisation des quartiers") — remplace les coordonnées de Dakar codées en dur
+   * qui étaient envoyées pour TOUT nouvel utilisateur, quel que soit son quartier réel.
+   * `undefined` (jamais une valeur de repli inventée) si le quartier sélectionné n'a pas
+   * encore été rétro-rempli en coordonnées (voir le commentaire sur Quartier.latitude).
+   */
+  private getQuartierCoordinates(): { latitude?: number; longitude?: number } {
+    const quartier = this.quartierss.find(q => q.name === this.userData.address.neighborhood);
+    return {
+      latitude: quartier?.latitude ?? undefined,
+      longitude: quartier?.longitude ?? undefined,
+    };
   }
 
   onCityChange(city: string) {

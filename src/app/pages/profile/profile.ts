@@ -292,6 +292,18 @@ export class Profile implements OnInit, OnDestroy {
       this.notificationService.showError('Erreur', "La géolocalisation n'est pas disponible sur cet appareil.");
       return;
     }
+    // Les navigateurs refusent la géolocalisation hors "contexte sécurisé" (HTTPS, ou
+    // localhost) — sans cette vérification, getCurrentPosition() renvoie un message
+    // d'erreur brut du navigateur ("Only secure origins are allowed...") peu clair pour
+    // l'utilisateur final. Vérifié AVANT l'appel plutôt que découvert seulement via
+    // l'échec, pour donner tout de suite un message exploitable.
+    if (!window.isSecureContext) {
+      this.notificationService.showError(
+        'Géolocalisation indisponible',
+        "La géolocalisation nécessite une connexion sécurisée (HTTPS). Placez votre position manuellement sur la carte en attendant.",
+      );
+      return;
+    }
     this.isLocatingMe = true;
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -301,7 +313,10 @@ export class Profile implements OnInit, OnDestroy {
       },
       (error) => {
         this.isLocatingMe = false;
-        this.notificationService.showError('Erreur', "Impossible d'obtenir votre position : " + error.message);
+        const detail = error.code === error.PERMISSION_DENIED
+          ? "Vous avez refusé l'accès à votre position — autorisez la géolocalisation dans les réglages de votre navigateur, ou placez votre position manuellement sur la carte."
+          : "Impossible d'obtenir votre position. Placez-la manuellement sur la carte.";
+        this.notificationService.showError('Géolocalisation indisponible', detail);
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
