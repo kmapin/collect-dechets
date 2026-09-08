@@ -342,7 +342,10 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       comment: c.comment ?? null,
       latitude: typeof client?.address?.latitude === 'number' ? client.address.latitude : null,
       longitude: typeof client?.address?.longitude === 'number' ? client.address.longitude : null,
-      newDate: null,
+      // Pré-rempli au jour J plutôt que vide — le manager n'a plus qu'à ajuster si la
+      // replanification vise un autre jour (le champ reste modifiable, [min]="todayIso"
+      // interdit toujours une date dans le passé).
+      newDate: this.todayIso,
     };
   }
 
@@ -367,10 +370,11 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
 
   // Rattrapage (Prompt 0, étape 5) — retente directement la Collecte existante, pas de
   // nouvelle entité ni de sélection multiple à confirmer : une action par Collecte.
-  // `c.newDate` (chantier "redéfinir la date prévue au rattrapage") : optionnel, saisi via
-  // l'input date de la ligne — omis, la Collecte garde sa date d'origine (backend inchangé
-  // dans ce cas). Validée côté backend (pas dans le passé) — un rejet remonte via l'erreur
-  // ci-dessous, jamais silencieusement ignoré.
+  // `c.newDate` (chantier "redéfinir la date prévue au rattrapage") : pré-rempli au jour J
+  // (_mapCollecte) plutôt que vide, modifiable via l'input date de la ligne — le manager
+  // choisit explicitement une autre date seulement s'il le souhaite. Validée côté backend
+  // (pas dans le passé) — un rejet remonte via l'erreur ci-dessous, jamais silencieusement
+  // ignoré.
   retryCollecte(c: PlanningCollecte): void {
     const p = this.planning();
     if (!p || this.retryingId()) return;
