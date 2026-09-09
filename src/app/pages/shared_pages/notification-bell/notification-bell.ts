@@ -1,14 +1,6 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-/**
- * Structurally typed (not imported from a dashboard) so this component stays
- * dashboard-agnostic and reusable elsewhere — same convention as
- * CoverageMapZone in coverage-map.ts. The caller owns deriving these from
- * whatever domain data it already has (incidents, agency audits, ...) and
- * owns the read/unread state, since that doesn't naturally exist on the
- * source records.
- */
 export interface BellNotification {
   id: string;
   icon: string;
@@ -19,16 +11,6 @@ export interface BellNotification {
   severity: 'low' | 'medium' | 'high' | 'critical';
 }
 
-/**
- * Generic notification bell + dropdown — header-mounted, presentational only.
- * The app already has a global backend/WebSocket-driven bell in
- * app-header/header.ts, but it's generic (not dashboard-aware) and, per the
- * business complaint this component addresses, effectively non-functional
- * for municipality users. This component is purely in-memory: the caller
- * passes already-derived notifications in and reacts to markAsRead/
- * markAllAsRead — no HTTP calls, no persistence, matching the "no backend
- * yet" phase every other Municipality Dashboard mock feature follows.
- */
 @Component({
   selector: 'app-notification-bell',
   standalone: true,

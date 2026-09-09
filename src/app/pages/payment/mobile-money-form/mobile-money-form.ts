@@ -15,9 +15,6 @@ import { Router } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OtpInputComponent } from '../otp-input/otp-input';
 
-/**
- * Interface pour les informations d'affichage des opérateurs
- */
 interface OperatorInfo {
   id: number;
   value: MobileMoneyOperator;
@@ -107,8 +104,6 @@ export class MobileMoneyFormComponent implements OnInit {
       this.paymentResponse = this.paymentService.currentPaymentResponse;
       console.log('paymentResponse',this.paymentResponse);
       if (this.paymentResponse.status === 'SUCCESS' || this.paymentResponse.status === 'FAILED') {
-        // Optionnel : nettoyer après affichage
-        // this.paymentService.currentPaymentResponse = null;
       }
     }; 
   }
@@ -132,9 +127,6 @@ export class MobileMoneyFormComponent implements OnInit {
   get amount() { return this.paymentForm.get('amount'); }
   get description() { return this.paymentForm.get('description'); }
 
-  /**
-   * Crée et initialise le formulaire de paiement
-   */
   private createForm(): FormGroup {
     return this.fb.group({
       operator: ['', Validators.required],
@@ -147,10 +139,6 @@ export class MobileMoneyFormComponent implements OnInit {
         Validators.min(1),
         Validators.max(1000000)
       ]],
-      // Non obligatoire (demande produit) : un client doit pouvoir payer sans saisir de
-      // motif. minLength(3) reste actif si un texte est saisi (Validators.minLength ne
-      // s'applique pas à une valeur vide), pour éviter une description à 1-2 caractères
-      // sans intérêt plutôt qu'une description absente.
       description: ['', [
         Validators.minLength(3),
         Validators.maxLength(200)
@@ -158,9 +146,6 @@ export class MobileMoneyFormComponent implements OnInit {
     });
   }
 
-  /**
-   * Soumet le formulaire et traite le paiement
-   */
   onSubmit(): void {
     if (this.paymentForm.valid && !this.isProcessing) {
       this.isProcessing = true;
@@ -198,8 +183,6 @@ export class MobileMoneyFormComponent implements OnInit {
           console.log('paymentResponse in payment form', this.paymentResponse);
           if (response.status === 'PENDING_OTP' || response.requiresOtp) {
             this.paymentService.currentPaymentResponse = response;
-            // this.currentStep = 'otp';
-            // this.router.navigate(['/otp']);
           }
         },
         error: (error) => {
@@ -211,9 +194,6 @@ export class MobileMoneyFormComponent implements OnInit {
     }
   }
 
-  /**
-   * Retourne le message d'erreur pour un champ donné
-   */
   getErrorMessage(fieldName: string): string {
     const field = this.paymentForm.get(fieldName);
     

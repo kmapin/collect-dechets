@@ -21,13 +21,6 @@ import { LoadingSpinnerComponent } from '../../../../../components/loading-spinn
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeContrat } from '../../shared/status-badge/status-badge.util';
 
-// Onglet "Contrats" — déplacé depuis agency-dashboard.ts (chantier "Contrats -> dashboard
-// financier") vers ce module, désormais soumis à son RBAC réel (clés `contracts.view`/
-// `contracts.create`/`contracts.manage`, voir models/finance-permission.ts). Réutilise directement
-// `ContratService`/`RedevanceService` (`src/app/services/...`, `providedIn:'root'`) — même
-// précédent déjà établi par `client-sheet/tabs/subscription-tab.component.ts` pour ce même
-// domaine, plutôt qu'un nouveau triplet contract/token/http (aucun des 5 domaines
-// existants de ce module ne couvre les contrats).
 @Component({
   selector: 'app-contracts',
   standalone: true,
@@ -44,12 +37,6 @@ export class ContractsComponent {
   private readonly session = inject(SESSION_SERVICE);
   private readonly notificationService = inject(NotificationService);
 
-  // Profondeur de défense (cosmétique) : le serveur refuse déjà les mutations sans
-  // 'contracts.create'/'contracts.manage' (requireFinancePermission) — masquer les actions
-  // évite juste un aller-retour inutile pour un utilisateur qui n'a que 'contracts.view'.
-  // Deux droits distincts (retour utilisateur, gestion des accès) : créer un contrat
-  // (POST /) est accordable indépendamment de résilier/suspendre/réactiver/générer le
-  // document (toujours 'contracts.manage', voir routes/contratRoute.js).
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
   readonly peutCreer = computed(() => aLaPermission(this.currentUser(), 'contracts.create'));
   readonly peutGerer = computed(() => aLaPermission(this.currentUser(), 'contracts.manage'));
@@ -61,18 +48,12 @@ export class ContractsComponent {
   readonly chargement = signal(true);
   readonly erreur = signal<string | null>(null);
 
-  // Protection anti double-soumission (chantier "double clic") : un flag par
-  // domaine d'action, remis à `false`/`null` via `finalize()` (succès ET erreur),
-  // même idiome que `agency-finance.ts`. `contratMutationEnCours`/`redevanceEnCours`
-  // gardent l'id concerné pour un futur usage plus fin, mais le gabarit désactive
-  // TOUTES les actions du même domaine tant qu'une requête est en vol : le bouton
-  // resterait sinon visuellement actif alors qu'un second clic serait ignoré.
   readonly creationContratEnCours = signal(false);
   readonly contratMutationEnCours = signal<string | null>(null);
   readonly redevanceEnCours = signal<string | null>(null);
   readonly paiementGroupeEnCours = signal(false);
 
-  // ── Création d'un contrat ────────────────────────────────────────────────
+  // Création d'un contrat 
   readonly showCreateModal = signal(false);
   readonly clients = signal<Client[]>([]);
   readonly tariffs = signal<Tarif[]>([]);
@@ -97,14 +78,14 @@ export class ContractsComponent {
     return client ? `${client.nom} ${client.prenom}` : '';
   });
 
-  // ── Drawer redevances d'un contrat ───────────────────────────────────────
+  // Drawer redevances d'un contrat 
   readonly showRedevancesDrawer = signal(false);
   readonly redevancesDrawerContrat = signal<Contrat | null>(null);
   readonly redevancesDrawerList = signal<Redevance[]>([]);
   readonly chargementRedevances = signal(false);
 
   // ── Paiement groupé + réduction (chantier "payer toutes les redevances d'un
-  // contrat en une fois, avec une réduction accordée par l'agence") ──────────
+  // contrat en une fois, avec une réduction accordée par l'agence")
   readonly paiementGroupeActif = signal<PaiementGroupeRedevance | null>(null);
   readonly showPaiementGroupeForm = signal(false);
   readonly paiementGroupeApercu = signal<ApercuPaiementGroupe | null>(null);
@@ -158,7 +139,7 @@ export class ContractsComponent {
     return labels[frequence] ?? frequence;
   }
 
-  // ── Création ─────────────────────────────────────────────────────────────
+  // Création 
 
   openCreateModal(): void {
     this.newContrat.set({ clientId: '', pricingId: '', frequenceCollecte: 'monthly', endDate: '' });
@@ -183,8 +164,7 @@ export class ContractsComponent {
     this.clientSearch.set('');
   }
 
-  // Le spread d'objet (`{...v, x}`) n'est pas supporté par le parseur d'expressions de
-  // template Angular — d'où ces petits setters plutôt qu'un binding inline dans le HTML.
+  //  Setters plutôt qu'un binding inline dans le HTML.
   setPricingId(pricingId: string): void {
     this.newContrat.update(v => ({ ...v, pricingId }));
   }
@@ -220,8 +200,6 @@ export class ContractsComponent {
         },
       });
   }
-
-  // ── Mutations ────────────────────────────────────────────────────────────
 
   onResilierContrat(contrat: Contrat): void {
     if (this.contratMutationEnCours()) return;
@@ -296,7 +274,7 @@ export class ContractsComponent {
       });
   }
 
-  // ── Drawer redevances ────────────────────────────────────────────────────
+  // Drawer redevances 
 
   openRedevancesDrawer(contrat: Contrat): void {
     this.redevancesDrawerContrat.set(contrat);

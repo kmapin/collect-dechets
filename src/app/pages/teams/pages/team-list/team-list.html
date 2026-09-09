@@ -1,8 +1,5 @@
 <p-toast />
 
-<!-- ══════════════════════════════════════════════════════════
-      EN-TÊTE (dégradé, cohérent avec finance/planning/team-dashboard)
-      ══════════════════════════════════════════════════════════ -->
 <header class="page-header">
   <div class="container">
     <div class="header-content">
@@ -27,9 +24,6 @@
 
   <div class="container tl-body">
 
-  <!-- ══════════════════════════════════════════════════════════
-       BARRE D'OUTILS (recherche, vue, filtres, exports)
-       ══════════════════════════════════════════════════════════ -->
   <div class="tl-toolbar">
     <!-- Search -->
     <div class="tl-search">
@@ -69,9 +63,6 @@
     </button>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       KPI CARDS
-       ══════════════════════════════════════════════════════════ -->
   <div class="stats-grid">
     <div class="stat-card card">
       <div class="stat-icon blue"><mat-icon>groups</mat-icon></div>
@@ -118,9 +109,6 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       FILTER BAR
-       ══════════════════════════════════════════════════════════ -->
   @if (store.showFilters()) {
     <div class="filter-bar">
       <!-- Status chips -->
@@ -182,9 +170,6 @@
     }
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       TABLE VIEW
-       ══════════════════════════════════════════════════════════ -->
   @if (store.viewMode() === 'table') {
     <div class="teams-table-wrap">
       <table class="teams-table">
@@ -318,9 +303,6 @@
     </div>
   }
 
-  <!-- ══════════════════════════════════════════════════════════
-       GRID VIEW
-       ══════════════════════════════════════════════════════════ -->
   @if (store.viewMode() === 'grid') {
     <div class="teams-grid">
       @for (team of paginatedTeams(); track team.id) {
@@ -341,9 +323,6 @@
     </div>
   }
 
-  <!-- ══════════════════════════════════════════════════════════
-       PAGINATION
-       ══════════════════════════════════════════════════════════ -->
   @if (filteredTeams().length > store.pageSize) {
     <div class="pagination">
       <span class="pg-info">{{ pageStart() }}–{{ pageEnd() }} sur {{ filteredTeams().length }}</span>
@@ -367,9 +346,6 @@
 
 </div><!-- /tl-root -->
 
-<!-- ══════════════════════════════════════════════════════════
-     TEAM DETAIL MODAL
-     ══════════════════════════════════════════════════════════ -->
 <app-team-detail-modal
   [team]="modalTeam()"
   [visible]="modalOpen()"
@@ -381,9 +357,6 @@
   (navigateDetail)="goToDetail($event)">
 </app-team-detail-modal>
 
-<!-- ══════════════════════════════════════════════════════════
-     TEAM FORM DRAWER
-     ══════════════════════════════════════════════════════════ -->
 @if (formOpen()) {
   <app-team-form
     [team]="editingTeam()"
@@ -397,9 +370,6 @@
   </app-team-form>
 }
 
-<!-- ══════════════════════════════════════════════════════════
-     DELETE CONFIRM
-     ══════════════════════════════════════════════════════════ -->
 @if (confirmDeleteOpen() && deletingTeam()) {
   <div class="dlg-backdrop" (click)="confirmDeleteOpen.set(false)"></div>
   <div class="dlg-box">

@@ -4,7 +4,7 @@ import { Client } from '../../../models';
 import { StatusBadgeComponent } from '../../../shared/status-badge/status-badge.component';
 import { badgeStatutClient } from '../../../shared/status-badge/status-badge.util';
 
-// F7 — Informations générales du client, lecture seule (édition TBC, spec §1.12).
+// Informations générales du client, lecture seule.
 @Component({
   selector: 'app-client-info-tab',
   standalone: true,

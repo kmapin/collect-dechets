@@ -2,17 +2,6 @@ import { FormBuilder } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { AgencyDashboard } from './agency-dashboard';
 
-/**
- * Prompt 06 :
- *  - point 3 — `filterIncidents()` (jusqu'ici entièrement mort : logique
- *    commentée, ne changeait jamais la liste affichée malgré des `<select>`
- *    apparemment fonctionnels) doit désormais réellement recharger via le
- *    nouveau `getAgencySignalements$()`, filtrable par origine ; l'assignation/
- *    résolution doit cibler les nouveaux endpoints Signalement (les anciens,
- *    Collecte-based, ne peuvent pas adresser un signalement indépendant).
- *  - point 4 — un `newNotification` de type 'Signalement' reçu en direct doit
- *    déclencher un rechargement de la liste, sans refresh manuel.
- */
 function stubLoaders(component: AgencyDashboard, except: string[] = []): void {
   const loaderNames = [
     'initializeCitiesAndNeighborhoods', 'initializeFiltersData',
@@ -141,8 +130,6 @@ describe('AgencyDashboard - signalements unifiés (Prompt 06)', () => {
     component.ngOnInit();
     component.ngOnDestroy();
     newNotification$.next({ type: 'Signalement' });
-    // Aucune assertion de crash n'est le test : si le composant détruit
-    // réagissait encore, ce serait un signe de fuite d'abonnement.
     expect(true).toBe(true);
   });
 });

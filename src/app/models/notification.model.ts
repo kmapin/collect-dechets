@@ -1,9 +1,3 @@
-// Chantier "Notifications" (inbox réelle) — forme réelle du document backend
-// (models/Notification.js), PAS celle (fausse) de `SocketNotification` dans
-// webstockets.ts : le champ est `user` (pas `user_id`), les horodatages sont
-// `createdAt`/`updatedAt` (pas `created_at`), et il n'y a JAMAIS eu de champ `title`
-// (seulement `message`) — voir NOTIFICATION_TYPE_LABELS ci-dessous pour la dérivation
-// d'un titre côté UI.
 export type NotificationType =
   | 'Subscribed'
   | 'Planning'
@@ -13,9 +7,6 @@ export type NotificationType =
   | 'Retrait'
   | 'Communication'
   | 'PaiementAgent'
-  // Valeurs historiques : plus jamais émises par le backend, gardées uniquement pour
-  // ne pas planter sur d'anciens documents déjà en base (même principe que
-  // header.ts::getNotificationType() conservait déjà 'Unsubscribed').
   | 'Assingnment'
   | 'AgencyAdd'
   | 'Unsubscribed';
@@ -44,8 +35,6 @@ export interface NotificationItem {
   updatedAt: string;
   /** Calculé côté serveur à partir du premier `related*` non-null — jamais persisté. */
   target: NotificationTarget | null;
-  /** Objet peuplé quand `target.kind === 'planning'` ; seul type de ressource ayant
-   * une vraie route de détail côté frontend (`/planning/detail/:id`). */
   planningRef?: NotificationPlanningRef | null;
   relatedPlanning?: string | null;
   relatedSignalement?: string | null;
@@ -66,8 +55,6 @@ export interface UnreadCountResponse {
   count: number;
 }
 
-// Libellés repris tels quels de header.ts::getNotificationType() (déjà en prod, ne
-// change aucun libellé existant) et complétés pour les 4 types réels qui manquaient.
 export const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   Subscribed: 'Abonnement',
   Planning: 'Collecte programmée',

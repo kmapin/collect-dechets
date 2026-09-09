@@ -5,12 +5,6 @@ import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Contrat, CreerContratPayload } from '../models/contrat.model';
 
-/**
- * Patron déjà en place pour Abonnement/Signalement dans `agency.service.ts`
- * (Phase 6, CONCEPTION_ABONNEMENT_CONTRAT.md §6.1) : `HttpClient` direct,
- * `.pipe(map(...), catchError(...))`, pas de signal ni d'état interne.
- * Un appel par endpoint backend (`routes/contratRoute.js`).
- */
 @Injectable({
   providedIn: 'root',
 })

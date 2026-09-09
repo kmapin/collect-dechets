@@ -2,9 +2,6 @@
 
 <div class="finance-dashboard">
 
-  <!-- ══════════════════════════════════════════════════════════
-       PAGE HEADER
-  ══════════════════════════════════════════════════════════ -->
   <div class="fin-header">
     <div class="fin-header__inner">
       <button class="btn-back" (click)="goBack()">
@@ -32,9 +29,6 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       KPI CARDS
-  ══════════════════════════════════════════════════════════ -->
   <div class="fin-kpi-grid">
 
     <!-- Solde disponible -->
@@ -106,9 +100,6 @@
 
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       GRAPHIQUE DES PAIEMENTS
-  ══════════════════════════════════════════════════════════ -->
   <div class="fin-section">
     <div class="fin-section__header">
       <div class="fin-section__title-group">
@@ -151,9 +142,6 @@
     }
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       HISTORIQUE DES PAIEMENTS
-  ══════════════════════════════════════════════════════════ -->
   <div class="fin-section">
     <div class="fin-section__header">
       <div class="fin-section__title-group">
@@ -270,9 +258,6 @@
     }
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       HISTORIQUE DES RETRAITS
-  ══════════════════════════════════════════════════════════ -->
   <div class="fin-section">
     <div class="fin-section__header">
       <div class="fin-section__title-group">
@@ -382,9 +367,6 @@
 
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODAL — DEMANDE DE RETRAIT
-══════════════════════════════════════════════════════════ -->
 <p-dialog
   [(visible)]="showWithdrawalDialog"
   header="Nouvelle demande de retrait"
@@ -448,29 +430,8 @@
     </div>
 
     <!-- Nom du compte -->
-    <!-- <div class="wd-field">
-      <label class="wd-label">Nom du bénéficiaire <span class="req">*</span></label>
-      <input
-        pInputText
-        formControlName="accountName"
-        placeholder="Nom complet"
-        class="wd-input w-full" />
-      @if (withdrawalForm.get('accountName')?.invalid && withdrawalForm.get('accountName')?.touched) {
-        <span class="wd-error">Nom requis (min. 3 caractères)</span>
-      }
-    </div> -->
 
     <!-- Note optionnelle -->
-    <!-- <div class="wd-field">
-      <label class="wd-label">Note (optionnel)</label>
-      <textarea
-        pTextarea
-        formControlName="note"
-        rows="3"
-        placeholder="Précisions sur la demande..."
-        class="wd-textarea w-full">
-      </textarea>
-    </div> -->
 
   </form>
 

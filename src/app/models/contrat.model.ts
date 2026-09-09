@@ -1,6 +1,3 @@
-/**
- * Miroir de `models/Contrat.js` (backend) — Phase 6, CONCEPTION_ABONNEMENT_CONTRAT.md §6.1.
- */
 export type FrequenceCollecte = 'daily' | 'weekly' | 'monthly';
 
 export type ContratStatus = 'actif' | 'suspendu' | 'resilie';
@@ -18,9 +15,6 @@ export interface Contrat {
   status: ContratStatus;
   dateResiliation: string | null;
   raisonResiliation: string | null;
-  /** secure_url au moment de l'upload — informatif seulement (type Cloudinary 'private',
-   * plus consultable tel quel) ; utiliser ContratService.getDocumentUrl$() pour une URL
-   * signée à jour. */
   documentUrl: string | null;
   documentPublicId: string | null;
   createdAt: string;

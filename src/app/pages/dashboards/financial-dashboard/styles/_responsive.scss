@@ -1,6 +1,3 @@
-// Mixin partagé "tableau → cartes" sur petit écran (mobile-first, spec §1.5/§1.13 —
-// simplicité pour utilisateurs peu lettrés + faible connectivité). Nécessite que chaque
-// <td> porte un attribut data-label (voir shared/data-table et les tableaux des écrans).
 @mixin table-to-cards($breakpoint: 640px) {
   @media (max-width: $breakpoint) {
     thead {

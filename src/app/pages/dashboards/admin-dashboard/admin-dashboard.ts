@@ -38,16 +38,9 @@ interface AdminStatistics {
   monthlyClientPercentage: number;
   totalCollectionsCollected: number;
   totalCollectionsReported: number;
-  // Champs réellement renvoyés par GET /api/statistics (services/globalState.js) — voir
-  // BACKEND_ARCHITECTURE.md §3.7. `totalCollectionsReported`/`reportsFromClients`
-  // ci-dessus ne correspondent à aucun champ du backend (fautes de frappe / champ jamais
-  // implémenté) : conservés uniquement car `statistics` (mock, non branché sur l'API) les
-  // déclare encore. Les vrais compteurs d'incidents utilisent les deux champs suivants.
   totalCollectionReported?: number;
   pendingReportsCount?: number;
   dailyCollections: number;
-  // Réellement renvoyé par GET /api/statistics (services/globalState.js) — jamais déclaré
-  // ici jusqu'ici, alors que getCollectionRate() en a besoin (item 3, voir plus bas).
   dailyCollectionCollected?: number;
   totalClients: number;
   totalCollectors: number;
@@ -68,9 +61,6 @@ interface AdminStatistics {
   averageRating: number;
   pendingReports: number;
   complianceRate: number;
-  // Réellement renvoyés par GET /api/statistics (services/globalState.js) — jamais
-  // déclarés ici jusqu'ici alors que déjà consommés côté municipality-dashboard.ts
-  // (buildZoneStatisticsFromAdminStats()) depuis la même réponse.
   agenciesByCity?: { city: string; numberOfAgencies: number }[];
   clientsByCity?: { city: string; numberOfClients: number }[];
   collectionsByCity?: { city: string; numberOfCollections: number }[];
@@ -93,11 +83,7 @@ interface AgencyAudit {
   issues: string[];
   userId: string;
   statsLoaded: boolean;
-  // Chantier Finance/Paiements, item 8 — chargé séparément (loadAgenciesFinanceStats()),
-  // undefined tant que non résolu (pas 0, pour distinguer "pas encore chargé" de "0%").
   tauxRecouvrement?: number;
-  // Chantier Frais plateforme (Prompt F8/9) — chargé séparément (loadAgenciesPlatformFees()),
-  // undefined tant que non résolu (colonne "Frais plateforme" de l'onglet Agences).
   platformFees?: number;
 }
 
@@ -125,13 +111,6 @@ interface GroupedZoneStatistics {
   cities: ZoneStatistic[];
 }
 
-// Aligné sur le modèle Signalement unifié réel (backend models/Signalement.js) — même
-// forme que shared_pages/signalement/signalement.ts::Incident et agency-dashboard.ts, qui
-// lisent déjà GET /api/signalements tel quel sans transformation. `status` est directement
-// 'open'|'in_progress'|'resolved' pour tout signalement créé depuis cette migration (plus
-// aucun signalement ne mute Collecte.status, voir models/Signalement.js) ; les valeurs
-// 'Collected'/'Reported'/'Scheduled' ne subsistent que pour d'éventuelles données historiques
-// jamais migrées par scripts/backfill-signalements-from-collecte.js.
 interface Incident {
   _id: string;
   agency?: {
@@ -186,8 +165,6 @@ interface Incident {
     | "Collected"
     | "Reported"
     | "Scheduled";
-  // Renseigné par PATCH /signalements/:id/resolve (models/Signalement.js) — le commentaire
-  // laissé au moment de la résolution, à afficher dans le détail une fois status='resolved'.
   resolutionComment?: string;
   assignedTo?: string;
 }
@@ -260,9 +237,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
   private map: L.Map | null = null;
   agenciesGeoData: any[] = [];
   isLoadingMap = false;
-  // Comptes clients réels par agence (sidebar "Couverture Territoriale") — indexé
-  // par agenceId, chargé pour la liste COMPLÈTE (agenciesGeoData), pas seulement les
-  // agences de la page courante de `agencyAudits` (voir loadAgencyMapClientCounts()).
   private agencyMapClientCounts: Record<string, number> = {};
   selectedAgency: any = null;
   selectedAgencyIndex: number | null = null;
@@ -400,11 +374,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: GroupedZoneStatistics[] = [];
 
-  // ── Onglet "Collectes" (vue admin-wide, toutes agences confondues) ────────
-  // Réutilise GET /municipality/waste-records (Prompt 12, déjà utilisé par le
-  // dashboard municipal) — aucun nouvel endpoint, `authMiddleware()` de cette
-  // route n'impose déjà aucun rôle particulier donc accessible à super_admin
-  // sans changement backend.
   wasteRecords: any[] = [];
   isLoadingWasteRecords = false;
   wasteRecordsPage = 1;
@@ -414,17 +383,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
   wasteRecordsDays = 30;
   wasteRecordsWasteTypeFilter = '';
   wasteRecordsZoneFilter = '';
-  // Filtre "Collecteur" (chantier Rapports/Statistiques, item 5) — port du filtre déjà
-  // fonctionnel côté municipalité (performanceCollectorFilter) : `collectorId` était déjà
-  // supporté par ce même service (getWasteRecords$/getWasteRecords côté backend) mais
-  // jamais exposé ici. Options réutilisées depuis l'onglet Collecteurs (collectorsAudits),
-  // pas un deuxième fetch dédié.
   wasteRecordsCollectorId = '';
   readonly wasteRecordsWasteTypes = ['menagers', 'recyclables', 'verts', 'encombrants', 'speciaux'];
 
-  // Résumé du planning d'une ligne — super_admin n'a pas accès à la page complète
-  // /planning/detail/:id (agencyStaffOnlyGuard), donc un simple aperçu en drawer plutôt
-  // qu'une navigation (même composant que la cloche de notifications/Signalement).
   planningSummaryId: string | null = null;
   viewWasteRecordPlanning(record: any): void {
     if (record?.planningId) this.planningSummaryId = record.planningId;
@@ -461,13 +422,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.loadWasteRecords(1);
   }
 
-  /**
-   * `record.collectorId` (GET /municipality/waste-records) est un ObjectId brut, jamais
-   * peuplé par le pipeline (voir son propre commentaire backend : "toujours vide sur les
-   * enregistrements V2 réels" — l'assignation V2 se fait par équipe, pas par collecteur
-   * individuel). Résolu ici en nom via collectorsAudits (déjà chargé) quand disponible,
-   * honnête ("—") sinon plutôt que d'afficher un id brut.
-   */
   getWasteRecordCollectorName(collectorId: string | null): string {
     if (!collectorId) return '—';
     const collector = this.collectorsAudits.find((c: any) => c._id === collectorId);

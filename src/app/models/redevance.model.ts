@@ -1,10 +1,3 @@
-/**
- * Miroir de `models/Redevance.js` (backend) — une ligne de facturation
- * périodique d'un Contrat.
- */
-// 'echec' ajouté (chantier Finance/Paiements, item 2 — backend models/Redevance.js) :
-// un paiement mobile money en échec se propage désormais jusqu'ici, plutôt que de
-// laisser la Redevance indéfiniment 'en_attente'.
 export type RedevanceStatus = 'en_attente' | 'retard' | 'paye' | 'annule' | 'echec';
 
 export interface Redevance {
@@ -24,11 +17,6 @@ export interface Redevance {
   echecCount?: number;
   dernierEchecLe?: string | null;
   echecDefinitif?: boolean;
-  // Période de facturation réelle (chantier "dates début/fin des exports") — distincte
-  // de dateEcheance (le jour d'échéance) et de datePaiement (le règlement). Calculée par
-  // services/redevance.js::_calculerPeriodePourRedevance depuis dateEcheance +
-  // Contrat.frequenceCollecte. periodeFin absent si la fréquence du contrat est inconnue
-  // (jamais une date fabriquée côté backend).
   periodeDebut?: string;
   periodeFin?: string | null;
 }

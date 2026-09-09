@@ -130,13 +130,8 @@ interface Incident {
   date: Date;
   status: "open" | "pending" | "resolved" | 'Collected' | 'Reported' | 'Scheduled';
   assignedTo?: string;
-  /** Champ réel Collecte.resolutionTeamId (renommé depuis assignedTeamId, Phase 2 du
-   * nettoyage Planning/Signalement/Assignation) — équipe affectée à la résolution. */
   resolutionTeamId?: { _id: string; name?: string } | null;
   resolutionStatus?: "pending" | "in_progress" | "resolved";
-  // Champs du modèle Signalement unifié (Prompt 04 backend / Prompt 06 frontend) —
-  // absents des anciens signalements Collecte-based, présents sur tout ce qui vient
-  // désormais de `GET /api/signalements`.
   collecteId?: string | null;
   planningId?: { _id: string; reference?: string; libelle?: string; date?: Date } | null;
   origine?: "collecte" | "independant";
@@ -331,19 +326,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   collectors: Employees[] = [];
   zonesAgency: ServiceZone[] = [];
   manager: Employees[] = [];
-  // Data
-  // statistics: Statistics = {
-  //   totalClients: 1250,
-  //   activeCollectors: 8,
-  //   todayCollections: 45,
-  //   completedCollections: 38,
-  //   monthlyRevenue: 32450,
-  //   averageRating: 4.3,
-  //   pendingReports: 3
-  // };
   incidentsFilter = "all";
   severityFilter = "all";
-  // Filtre par origine (Prompt 06 point 3) — 'all' | 'collecte' | 'independant'.
   origineFilter = "all";
   filteredIncidents: any[] = [];
   statistics: Statistics = {
@@ -363,10 +347,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     pendingSignalements: 0,
   };
 
-  // ── KPI "Nombre de collectes" (période/zone/type de déchet, chantier
-  // Planning/Collectes terrain, Priorité Basse) — filtre `statistics.filteredCollectionsCount`,
-  // recalculé côté serveur (services/stateForAgency.js::getAgencyStats), pas de logique
-  // dupliquée côté client.
   collectesKpiPeriod: 'today' | 'week' | 'month' = 'today';
   collectesKpiZone = '';
   collectesKpiWasteType = '';
@@ -394,8 +374,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       neighborhood: [] as string[],
       city: "",
       postalCode: "",
-      // latitude: '',
-      // longitude: ''
     },
     agencyName: "",
     agencyDescription: "",
@@ -510,8 +488,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   editingZone = false;
 
-  // Forms - Supprimés les objets pour utiliser les reactive forms
-  // newEmployee, newTariff, newZone, newSchedule seront gérés par les FormGroups
 
   // Propriétés temporaires pour compatibilité (à supprimer après migration du template)
   newEmployee: any = {
@@ -544,10 +520,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   activeClients: ClientApi[] = [];
   activeClientNbrs!: number;
   pendingClients: ClientApi[] = [];
-  // Tous les clients de l'agence, sans filtre sur le statut d'abonnement —
-  // `activeClients` ne contient que ceux ayant un abonnement actif, ce qui
-  // exclut à tort les clients sans abonnement lors de la création d'un
-  // Contrat (un client peut avoir un Contrat sans jamais avoir eu d'Abonnement).
   allAgencyClients: ClientApi[] = [];
   isLoading: boolean = false;
 
@@ -573,9 +545,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   zoneAnalyticsData: ZoneAnalytics[] = [];
   zoneRecommendations: LocalZoneRecommendation[] = [];
 
-  // get activeClientNbr(): number {
-  //   return this.activeClients.length;
-  // }
 
   tabs: DashboardTab[] = [
     {
@@ -5093,8 +5062,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // quartiers correspondant à son adresse déjà enregistrée — même référentiel réel
   // (TerritoryHttpService) que le reste de la cascade ci-dessus. Note : ce bloc
   // adresse n'est de toute façon affiché que pour l'AJOUT d'employé (`@if
-  // (!isEditingEmployee)` côté template), donc son résultat n'est pas visible en
-  // édition aujourd'hui — conservé pour rester cohérent si ce comportement change.
   private loadEmployeeAddressDependencies(address: any): void {
     if (!address?.city) return;
     if (this.cities.length === 0) this.loadCitiesForAddress();
@@ -5353,12 +5320,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     );
   }
 
-  // Chantier "unifier la géographie" — remplace le catalogue statique OUAGA_DATA
-  // (Ouagadougou uniquement, arrondissement/secteur en dur) par le vrai référentiel
-  // (TerritoryHttpService, GET /api/territories/*). `userData.address.*`/
-  // `employeeForm.address.*` continuent de porter des NOMS (pas des id) — c'est ce
-  // que le backend attend déjà (PATCH /agencies/:id/zone { zones: string[] }, voir
-  // addZoneAgency ci-dessous) — seule la résolution interne id→enfants change.
   arrondissements: Arrondissement[] = [];
   cities: City[] = [];
   secteurs: Sector[] = [];
@@ -5516,9 +5477,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.zoneFormDetailedErrors = {};
   }
 
-  /**
-   * Méthode pour fermer les alertes d'erreur de zone
-   */
   dismissZoneError(): void {
     this.zoneFormError = null;
     this.zoneFormDetailedErrors = {};
@@ -5597,10 +5555,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     });
   }
 
-  /**
-   * Valide les données de zone avant l'envoi
-   * @returns boolean - true si les données sont valides
-   */
   private validateZoneData(): boolean {
     const { city, arrondissement, sector, neighborhood } =
       this.userData.address;
@@ -5648,11 +5602,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return true;
   }
 
-  /**
-   * Méthode utilitaire pour obtenir un message d'erreur convivial
-   * @param error - L'erreur retournée par le backend
-   * @returns string - Message d'erreur formaté
-   */
   private getFriendlyZoneErrorMessage(error: any): string {
     if (error?.error) {
       const backendError = error.error;
@@ -5694,13 +5643,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     } catch (err) { }
   }
 
-  // ================================
-  // méthodes d analyse
-  // ================================
 
-  /**
-   * Actualise les données d'analyse des zones
-   */
   refreshZoneAnalytics(): void {
     this.generateZoneAnalyticsData();
     this.generateZoneRecommendations();
@@ -5710,9 +5653,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     );
   }
 
-  /**
-   * Retourne le nombre total de clients par type
-   */
   getTotalClientsByType(
     type: "household" | "business" | "institution",
   ): number {
@@ -5721,9 +5661,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     ).length;
   }
 
-  /**
-   * Retourne le pourcentage de clients par type
-   */
   getPercentageByType(type: "household" | "business" | "institution"): number {
     const total = this.activeClients.length;
     if (total === 0) return 0;
@@ -5731,9 +5668,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return Math.round((typeCount / total) * 100);
   }
 
-  /**
-   * Calcule le pourcentage de charge de travail avec mise en cache
-   */
   getWorkloadPercentage(): number {
     const now = Date.now();
     if (
@@ -5759,9 +5693,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return this._cachedWorkloadPercentage;
   }
 
-  /**
-   * Retourne le statut de la charge de travail
-   */
   getWorkloadStatus(): string {
     const percentage = this.getWorkloadPercentage();
     if (percentage <= 80) return "Optimal";
@@ -5769,9 +5700,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return "Critique";
   }
 
-  /**
-   * Génère et retourne les données d'analyse par zone
-   */
   getZoneAnalyticsData(): ZoneAnalytics[] {
     // S'assurer que zoneAnalyticsData est un tableau
     if (!this.zoneAnalyticsData || !Array.isArray(this.zoneAnalyticsData)) {
@@ -5784,44 +5712,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return this.zoneAnalyticsData;
   }
 
-  /**
-   * Génère les données d'analyse des zones en utilisant l'API
-   */
   private generateZoneAnalyticsData(): void {
     if (!this.currentUser?._id) return;
 
-    // this.agencyService.getZoneAnalytics$(this.currentUser._id).subscribe({
-    //   next: (response) => {
-    //     if (response.success && response.data) {
-    //       this.zoneAnalyticsData = response.data.map(zone => ({
-    //         id: zone.zoneId,
-    //         name: zone.zoneName,
-    //         totalClients: zone.clientStats.totalClients,
-    //         households: zone.clientStats.households,
-    //         businesses: zone.clientStats.businesses,
-    //         institutions: zone.clientStats.institutions,
-    //         capacityUsage: zone.workloadMetrics.capacityUsagePercentage,
-    //         estimatedTime: zone.workloadMetrics.estimatedWorkHours,
-    //         requiredTeam: zone.workloadMetrics.requiredTeamSize,
-    //         requiredVehicles: zone.workloadMetrics.requiredVehicles,
-    //         growth: zone.growthMetrics.monthlyGrowthRate
-    //       }));
-    //     } else {
 
-    //       this.generateZoneAnalyticsDataFallback();
-    //     }
-    //   },
-    //   error: (error) => {
-    //     console.error('Erreur lors du chargement des analytics:', error);
 
-    //     this.generateZoneAnalyticsDataFallback();
-    //   }
-    // });
   }
 
-  /**
-   * Détermine le type d'un client basé sur ses données
-   */
   private getClientType(
     client: ClientApi,
   ): "household" | "business" | "institution" {
@@ -5842,27 +5739,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return "household";
   }
 
-  /**
-   * Retourne le statut de capacité pour une zone
-   */
   getCapacityStatus(capacityUsage: number): string {
     if (capacityUsage <= 70) return "good";
     if (capacityUsage <= 90) return "warning";
     return "critical";
   }
 
-  /**
-   * Retourne l'icône appropriée pour le niveau de capacité
-   */
   getCapacityIcon(capacityUsage: number): string {
     if (capacityUsage <= 70) return "check_circle";
     if (capacityUsage <= 90) return "warning";
     return "error";
   }
 
-  /**
-   * Affiche les détails d'une zone spécifique
-   */
   viewZoneDetails(zoneId: string): void {
     this.loadZoneDetails(zoneId);
 
@@ -6225,9 +6113,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.notificationService.showSuccess("Optimisation réussie", message);
   }
 
-  /**
-   * Génère un rapport pour une zone
-   */
   generateZoneReport(
     zoneId: string,
     reportType:
@@ -6264,9 +6149,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       });
   }
 
-  /**
-   * Méthode pour actualiser toutes les données d'une zone
-   */
   refreshZoneData(zoneId?: string): void {
     if (zoneId) {
       this.loadZoneDetails(zoneId);
@@ -6279,9 +6161,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   // === MÉTHODES POUR L'AFFICHAGE MODERNE DES ZONES ===
 
-  /**
-   * Obtenir le nombre total de clients dans toutes les zones avec mise en cache
-   */
   getTotalZoneClients(): number {
     const now = Date.now();
     if (
@@ -6298,9 +6177,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return this._cachedTotalZoneClients;
   }
 
-  /**
-   * Sélectionner une zone pour afficher ses détails
-   */
   selectZone(zone: any): void {
     this.selectedZoneForDisplay = zone;
     console.log("Zone sélectionnée:", zone);
@@ -6338,11 +6214,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  /**
-   * Statut d'affichage réel d'un Abonnement — plus jamais `abonnement.isActive`
-   * brut (chantier EligibilityService) : ferme la fenêtre de latence du cron
-   * d'expiration (jusqu'à 24h) sans toucher au cron lui-même.
-   */
   isSubscriptionActiveDisplay(abonnement: any): boolean {
     return isSubscriptionCurrentlyActive(abonnement);
   }

@@ -76,9 +76,6 @@
   <div class="steps-body">
     <form [formGroup]="form" autocomplete="off">
 
-      <!-- ================================================
-           ÉTAPE 0 – TYPE DE PLANNING
-           ================================================ -->
       @if (currentStep() === 0) {
         <div class="step-panel">
           <div class="step-header">
@@ -95,9 +92,6 @@
         </div>
       }
 
-      <!-- ================================================
-           ÉTAPE 1 – SÉLECTION CIBLE
-           ================================================ -->
       @if (currentStep() === 1) {
         <div class="step-panel">
           <div class="step-header">
@@ -115,9 +109,6 @@
                 {{ currentType() === 'zone' || currentType() === 'secteur' ? 'client(s)' : 'ménage(s)' }}
               </div>
             } @else if ((currentType() === 'zone' || currentType() === 'secteur') && (formValue()['quartierId'] || formValue()['secteurId'] || formValue()['arrondissementId'] || formValue()['villeId'])) {
-              <!-- Chantier "résoudre de vrais clients zone/secteur" — une géographie est
-                   choisie mais le comptage réel n'est pas (encore) disponible : jamais
-                   une estimation, "Non disponible" explicite. -->
               <div class="hh-badge hh-badge--unavailable">
                 <mat-icon>hourglass_top</mat-icon>
                 <span>Non disponible</span>
@@ -344,9 +335,6 @@
         </div>
       }
 
-      <!-- ================================================
-           ÉTAPE 2 – PARAMÈTRES TEMPORELS
-           ================================================ -->
       @if (currentStep() === 2) {
         <div class="step-panel">
           <div class="step-header">
@@ -416,9 +404,6 @@
         </div>
       }
 
-      <!-- ================================================
-           ÉTAPE 3 – TYPES DE DÉCHETS
-           ================================================ -->
       @if (currentStep() === 3) {
         <div class="step-panel">
           <div class="step-header">
@@ -458,9 +443,6 @@
         </div>
       }
 
-      <!-- ================================================
-           ÉTAPE 4 – AFFECTATION ÉQUIPES
-           ================================================ -->
       @if (currentStep() === 4) {
         <div class="step-panel">
           <div class="step-header">
@@ -554,9 +536,6 @@
         </div>
       }
 
-      <!-- ================================================
-           ÉTAPE 5 – RÉCAPITULATIF
-           ================================================ -->
       @if (currentStep() === 5) {
         <div class="step-panel">
           <div class="step-header">
@@ -677,9 +656,6 @@
         </div>
       }
 
-      <!-- ================================================
-           ÉTAPE 6 – PUBLICATION
-           ================================================ -->
       @if (currentStep() === 6) {
         <div class="step-panel">
           <div class="step-header">
@@ -786,14 +762,6 @@
               </div>
               }
 
-              <!-- Prompt 06 point 1 : les deux interrupteurs "Notifier les clients"/
-                   "Notifier les équipes" ne pilotaient plus rien côté backend
-                   (jamais lus dans submitForm(), zéro effet réel) depuis que le
-                   pipeline unifié notifie automatiquement à chaque transition
-                   (publish/start/complete) sans exception ni condition — les
-                   garder aurait laissé croire qu'on peut désactiver une
-                   notification qui part de toute façon. Remplacés par une note
-                   informative fidèle au comportement réel. -->
               <div class="pub-option pub-option--info">
                 <div class="pub-option-info">
                   <div class="pub-icon"><mat-icon>notifications_active</mat-icon></div>

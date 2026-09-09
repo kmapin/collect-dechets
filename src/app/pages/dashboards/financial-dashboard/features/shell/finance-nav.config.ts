@@ -4,13 +4,10 @@ export interface FinanceNavItem {
   route: string; // relatif à /dashboard/financial
   label: string;
   icon: string;
-  /** Une des clés suffit (sémantique OU) — voir aLaPermission / requireFinancePermission. */
   permissions: FinancePermission[];
 }
 
-// RBAC financier réel (onglets + droits) — une clé de permission par onglet, cf.
-// models/finance-permission.ts::PERMISSIONS_ONGLETS (même mapping, dupliqué ici pour
-// rester un simple tableau littéral facile à lire aux côtés de route/label/icon).
+
 export const FINANCE_NAV_ITEMS: FinanceNavItem[] = [
   { route: 'statistiques', label: 'Statistiques', icon: 'dashboard', permissions: ['dashboard.view'] },
   { route: 'payments', label: 'Paiements', icon: 'payments', permissions: ['payments.view'] },

@@ -32,10 +32,6 @@ export class CountriesOrgMockService {
   getNeighborhoodsBySector(sectorId: string): Quartier[] {
     return MOCK_QUARTIERS.filter(quartier => quartier.sector.id === sectorId);
   }
-  // getArrondissementsByCityLabel(cityLabel: string): Arrondissement[] {
-  //   const city = MOCK_CITIES.find(c => c.city.label === cityLabel);
-  //   return city ? this.getArrondissementsByCity(city.id) : [];
-  // }
 
   getCountryById(id: string): Country | undefined {
     return MOCK_COUNTRIES.find(country => country.id === id);

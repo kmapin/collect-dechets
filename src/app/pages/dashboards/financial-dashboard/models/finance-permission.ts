@@ -1,8 +1,6 @@
 import { Role } from './enums';
 
-// RBAC financier réel (onglets + droits) — chaînes identiques au backend
-// (config/financePermissions.js), pas de table de traduction (même convention que
-// FINANCIAL_ROLE_TO_FRONTEND côté serveur pour `Role`).
+
 export type FinancePermission =
   | 'dashboard.view'
   | 'payments.view'
@@ -21,16 +19,14 @@ export type FinancePermission =
   | 'roles.view'
   | 'roles.manage';
 
-// Implicites pour Role.ADMINISTRATEUR, jamais décochables dans l'UI (anti-verrouillage de
-// l'écran d'administration lui-même) — même liste que PERMISSIONS_GOUVERNANCE côté backend.
+
 export const PERMISSIONS_GOUVERNANCE: FinancePermission[] = ['roles.view', 'roles.manage'];
 
-// Une entrée par onglet réel du dashboard financier — pilote à la fois le filtrage de
-// FINANCE_NAV_ITEMS et la section "Accès aux onglets" de roles-admin.
+
 export interface OngletPermission {
   cle: FinancePermission;
   label: string;
-  route: string; // relatif à /dashboard/financial, cf. financial-dashboard.routes.ts
+  route: string; 
 }
 
 export const PERMISSIONS_ONGLETS: OngletPermission[] = [
@@ -55,8 +51,7 @@ export interface GroupeDroitsFinanciers {
   droits: DroitFinancier[];
 }
 
-// Section "Droits financiers" de roles-admin — uniquement les clés d'action (les clés
-// `*.view` sont déjà couvertes par la section "Accès aux onglets", jamais dupliquées ici).
+
 export const GROUPES_DROITS_FINANCIERS: GroupeDroitsFinanciers[] = [
   { titre: 'Retraits', droits: [{ cle: 'withdrawals.create', label: 'Créer un retrait' }] },
   { titre: 'Facturation', droits: [{ cle: 'monthly_tracking.generate', label: 'Générer les factures du mois' }] },
@@ -77,10 +72,7 @@ export const GROUPES_DROITS_FINANCIERS: GroupeDroitsFinanciers[] = [
   { titre: 'Gouvernance', droits: [{ cle: 'roles.manage', label: "Gérer les niveaux d'accès financiers" }] },
 ];
 
-// Préréglages par rôle — aide UI uniquement (bouton "appliquer les droits par défaut du
-// rôle" dans roles-admin) ; l'autorité réelle est recalculée côté serveur à chaque
-// enregistrement (setFinancialRole réinitialise déjà au même préréglage, voir
-// FinanceUsersService côté backend).
+
 export const PRESETS_ROLE: Record<Role, FinancePermission[]> = {
   [Role.COMPTABLE]: [
     'dashboard.view', 'payments.view',
@@ -106,9 +98,7 @@ export interface UtilisateurAvecPermissions {
   permissions: FinancePermission[];
 }
 
-// Coupe-circuit + droit : mêmes règles que requireFinancePermission côté backend (ET
-// logique entre droitsFinance et les clés détenues), réutilisé par le garde, le shell
-// (filtrage des onglets) et roles-admin (case à cocher "implicite pour un administrateur").
+
 export function aLaPermission(u: UtilisateurAvecPermissions | null | undefined, ...cles: FinancePermission[]): boolean {
   if (!u || !u.droitsFinance) return false;
   return cles.some(c => u.permissions.includes(c));

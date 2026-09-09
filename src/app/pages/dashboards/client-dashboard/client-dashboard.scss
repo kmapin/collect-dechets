@@ -47,11 +47,6 @@
 .stat-icon {
   width: 60px;
   height: 60px;
-  // Sans ça, un contenu voisin large dans .stat-card (flex) — ex. le texte
-  // d'état vide "Pas de collecte prévue"/"Aucun abonnement actif", plus long
-  // que le contenu compact des autres cartes — compresse la largeur de ce
-  // cercle (flex-shrink initial vaut 1) sans toucher sa hauteur, déformant
-  // l'icône en ovale (déformation signalée). Taille fixe, jamais rétrécie.
   flex-shrink: 0;
   border-radius: 50%;
   display: flex;
@@ -265,8 +260,6 @@
   color: #f57c00;
 }
 
-// Historique des paiements (chantier Finance/Paiements, item 4) — statuts réels
-// dérivés de Redevance.status (.status-completed/.status-cancelled déjà stylés ci-dessus).
 .status-pending {
   background: #fff3e0;
   color: #f57c00;
@@ -292,8 +285,6 @@
   flex-wrap: wrap;
 }
 
-// Même libellé que celui inséré dans le PDF/CSV/Excel exportés (periodeCouvertePaiements())
-// — rappel discret de la fenêtre réellement appliquée par le filtre "période" ci-dessus.
 .payment-history-periode {
   margin: -8px 0 16px;
   font-size: 0.85rem;
@@ -385,8 +376,6 @@
   }
 }
 
-// Modale de notation d'agence (même patron .drawer-overlay/.drawer-content
-// que les modales paiement/recharge de ce même composant).
 .rating-modal-content {
   max-width: 420px;
 }
@@ -1204,11 +1193,6 @@
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  // align-items: stretch + width: 100% sur le bouton (même pattern déjà établi
-  // pour ce même composant .qa-btn dans agency-dashboard.scss) : sans ça, en
-  // colonne, chaque bouton ne prend que sa largeur de contenu (inline-flex,
-  // voir .qa-btn dans styles.scss) et reste centré avec de l'espace vide de
-  // chaque côté au lieu d'occuper toute la largeur disponible.
   .quick-actions {
     flex-direction: column;
     align-items: stretch;
@@ -1219,17 +1203,10 @@
     width: 100%;
   }
 
-  // Espace sous le dernier bouton (colonne empilée) : sinon il touche
-  // directement le bas de l'en-tête dégradé, juste avant les cartes blanches.
   .quick-actions .qa-btn:last-child {
     margin-bottom: 1rem;
   }
 
-  // Le titre passe sur sa propre ligne (flex-basis:100%), les boutons
-  // (Actualiser/Signaler, un par section) suivent sur la ligne d'après, côte à
-  // côte, même largeur et même hauteur (align-items:stretch écrase le
-  // `center` du parent, sinon un bouton au texte plus long resterait plus
-  // haut que l'autre) — plutôt que tassés tous ensemble avec le titre.
   .section-header {
     flex-wrap: wrap;
     align-items: stretch;

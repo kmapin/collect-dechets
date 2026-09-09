@@ -9,9 +9,6 @@ export interface DataTableColumn<T> {
   format?: (row: T) => string;
 }
 
-// Table générique réutilisable (F3/F4 et au-delà) : tri client-side, squelette de
-// chargement, état vide — le tri reste local à l'écran (les params serveur-style ne
-// couvrent que page/filtre/période, voir ARCHITECTURE.md §4).
 @Component({
   selector: 'app-data-table',
   standalone: true,

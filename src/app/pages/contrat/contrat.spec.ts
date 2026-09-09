@@ -1,11 +1,6 @@
 import { Subject } from 'rxjs';
 import { ContratPage } from './contrat';
 
-/**
- * Phase 6, CONCEPTION_ABONNEMENT_CONTRAT.md §6.2 — vue client "Mes contrats".
- * Même style de test que `client-dashboard.spec.ts`/`agency-dashboard.spec.ts` :
- * construction directe du composant (pas de TestBed), spies minimalistes.
- */
 describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
   let component: ContratPage;
   let authServiceSpy: { getCurrentUser: jasmine.Spy; currentUser$: Subject<any> };
@@ -133,8 +128,6 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
     component.ngOnInit();
     component.ngOnDestroy();
     newNotification$.next({ type: 'Contrat' });
-    // Si le composant détruit réagissait encore, getContratsByClient$ serait
-    // rappelée ici — l'absence d'assertion d'appel est le test.
     expect(true).toBe(true);
   });
 });

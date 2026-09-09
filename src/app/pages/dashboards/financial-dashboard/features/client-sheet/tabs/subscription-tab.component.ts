@@ -12,26 +12,6 @@ import { badgeAbonnement, badgeContrat } from '../../../shared/status-badge/stat
 import { isSubscriptionCurrentlyActive } from '../../../../../../services/eligibility.service';
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 
-/**
- * Onglet "Abonnements & Contrats" de la fiche client — suivi demandé côté
- * dashboard financier. Réutilise directement les services applicatifs déjà
- * existants (`AgencyService`, `ContratService`, `providedIn: 'root'`) plutôt
- * que d'ajouter un nouveau "seam" Contract/Token/HttpService comme le reste
- * du module (`CLIENT_DATA_SERVICE`, etc.) : ces deux domaines (Abonnement,
- * Contrat) sont déjà entièrement backés en dehors de `/finance/*`, la
- * duplication d'une couche de mapping n'ajouterait rien.
- * `idClient` (Table 20, module Finance) est le même `User._id` réel que
- * `clientId` côté Abonnement/Contrat — confirmé par
- * `controllers/financeClients.js::getClient` (validation `ObjectId`, résolu
- * depuis le même `User`), donc transmissible directement sans conversion.
- *
- * IMPORTANT : utilise les variantes `...PourMonAgence`/`...PourMonAgence$`,
- * pas `getUserSubscription`/`getContratsByClient$` — un client peut être
- * abonné/sous contrat auprès de PLUSIEURS agences, et l'agence courante ne
- * doit voir que ses propres abonnements/contrats avec ce client, jamais ceux
- * du même client avec une agence tierce (agencyId scopé côté backend via
- * `resolveAgency`/JWT, jamais transmis depuis ce composant).
- */
 @Component({
   selector: 'app-client-subscription-tab',
   standalone: true,
@@ -52,8 +32,6 @@ export class SubscriptionTabComponent implements OnChanges {
 
   readonly badgeAbonnement = badgeAbonnement;
   readonly badgeContrat = badgeContrat;
-  // Ferme la fenêtre de latence du cron d'expiration (chantier
-  // EligibilityService) — `a.isActive` brut n'est plus lu par le template.
   readonly isSubscriptionCurrentlyActive = isSubscriptionCurrentlyActive;
   readonly formatMontant = formatMontantXof;
   readonly formatDate = formatFrDate;
@@ -71,11 +49,6 @@ export class SubscriptionTabComponent implements OnChanges {
     return typeof agence === 'object' ? agence?.name ?? '—' : '—';
   }
 
-  /**
-   * `contrat.documentUrl` (stocké en base) n'est plus consultable directement — PDF en
-   * type Cloudinary 'private' (backend, services/pdfContrat.js) : une URL signée à
-   * durée limitée doit être régénérée à chaque consultation.
-   */
   voirDocument(contrat: Contrat): void {
     this.contratService.getDocumentUrl$(contrat._id).subscribe({
       next: (res) => window.open(res.documentUrl, '_blank'),

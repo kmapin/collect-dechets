@@ -14,12 +14,6 @@ export function badgeStatutClient(statut: ClientStatut): BadgeInfo {
     : { label: 'Inactif', icon: 'block', variant: 'neutral' };
 }
 
-// "À jour" ⟺ abonnement actif OU contrat actif (aJour, dérivé côté backend de
-// EligibilityService.checkClientEligibility — jamais recalculé ici). Un contrat actif
-// reste éligible même en retard de paiement (voir eligibility.service.js), donc aJour
-// prime toujours sur moisRetard. moisRetard (RG4, nombre de factures mensuelles impayées
-// cumulées) ne sert qu'à distinguer, pour un client NON éligible, un simple impayé résiduel
-// (ex. contrat résilié avec redevance impayée) de l'absence totale d'abonnement/contrat.
 const LABEL_SOURCE: Record<SourceEligibilite, string> = {
   CONTRACT: 'Contrat',
   SUBSCRIPTION: 'Abonnement',

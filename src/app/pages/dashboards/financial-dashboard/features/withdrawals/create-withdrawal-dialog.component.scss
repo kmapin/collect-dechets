@@ -129,8 +129,6 @@
     gap: 1rem;
   }
 
-  // Champs en HTML natif stylé (même convention que agent-payment.component.scss) —
-  // mat-form-field/mat-select/mat-input ne se rendaient pas correctement dans cette app.
   &__field {
     display: flex;
     flex-direction: column;
@@ -143,11 +141,6 @@
       color: #475569;
     }
 
-    // :not([type="radio"]):not([type="checkbox"]) — sans cette exclusion, ces
-    // deux inputs (radio Option A/B ci-dessous) héritent aussi de width:100%/
-    // padding/border et s'affichent comme de longues barres pleines au lieu de
-    // ronds de sélection (même piège déjà rencontré et corrigé ailleurs dans
-    // l'app, ex. client-dashboard.scss, avec la même exclusion).
     select,
     input:not([type="radio"]):not([type="checkbox"]) {
       width: 100%;
@@ -188,10 +181,6 @@
       border-color: #93c5fd;
     }
 
-    // Carte mise en évidence dès que son propre radio est coché — évite un
-    // binding supplémentaire côté TS juste pour un état visuel (:has() est
-    // supporté par tous les navigateurs cibles de cette app, cf. mêmes
-    // moteurs que le reste des styles natifs déjà utilisés ici).
     &:has(input:checked) {
       border-color: #2563eb;
       background: #eff6ff;

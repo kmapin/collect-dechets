@@ -958,12 +958,6 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   }
 }
 
-// ── Add member drawer ─────────────────────────────────────────────
-// z-index 9999/10000 (pas 300/400) : le bandeau d'en-tête global de l'app
-// (.page-header, app.component.ts) est fixe en z-index 1000 et masquait l'en-tête
-// de ce drawer (.tmd-head) — même bug que agent-payment.component.scss/
-// contracts.component.scss, même correctif (aligné sur .confirm-dialog-overlay,
-// admin-dashboard.scss). L'écart de 1 entre overlay et drawer est conservé.
 .drawer-overlay {
   position: fixed;
   inset: 0;
@@ -1453,10 +1447,6 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   }
 }
 
-// ── Vehicle modal ────────────────────────────────────────────────
-// z-index 9999/10000 (pas 400/401) : le bandeau d'en-tête global de l'app
-// (.page-header, app.component.ts, z-index:1000) masquait ce modal — même bug
-// et même correctif qu'agent-payment.component.scss/contracts.component.scss.
 .vm-bg {
   position: fixed;
   inset: 0;
@@ -1625,8 +1615,6 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   margin-top: 1px;
 }
 
-// ── Delete confirm ───────────────────────────────────────────────
-// z-index 9999/10000 (pas 400/401) : même bug/correctif que .vm-bg/.vm-modal ci-dessus.
 .del-bg {
   position: fixed;
   inset: 0;

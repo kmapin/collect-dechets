@@ -1,17 +1,7 @@
 import type { PerformanceRecord, PerformanceIndicator, PerformanceGroupType } from '../mocks/municipality-mock.types';
 
-/**
- * Pure "actual vs target" classification, independent of mock data or
- * Angular — usable against real data the day a real endpoint exists.
- */
 export type PerformanceStatus = 'under' | 'on-target' | 'over';
 
-/**
- * Classifies `actual` against `target`. `thresholdPoints` (percentage
- * points) is how far below/above target counts as "significant" —
- * default 10, matching the business ask to flag entries "significantly
- * below target", not just marginally so.
- */
 export function comparePerformance(actual: number, target: number, thresholdPoints = 10): PerformanceStatus {
   const diff = actual - target;
   if (diff <= -thresholdPoints) {
@@ -34,12 +24,6 @@ function groupKeyFor(record: PerformanceRecord, groupBy: PerformanceGroupType): 
   }
 }
 
-/**
- * Groups flat per-collector records by zone/wasteType/collector and
- * averages actual/target within each group — pure, no side effects.
- * Group order follows first-appearance order in `records` (deterministic
- * given a deterministic input, no extra sort needed).
- */
 export function aggregatePerformanceRecords(
   records: PerformanceRecord[],
   groupBy: PerformanceGroupType

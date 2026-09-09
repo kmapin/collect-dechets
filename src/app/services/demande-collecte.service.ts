@@ -11,8 +11,6 @@ export interface DemandeCollecte {
   notes: string;
   requestedDate: string | null;
   status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
-  // Peuplé (executedByTeamId/code) une fois la demande acceptée — source unique
-  // de vérité côté backend, jamais dupliquée sur DemandeCollecte elle-même.
   collecteId: {
     _id: string;
     date: string;

@@ -1,7 +1,4 @@
 <p-toast />
-<!-- ════════════════════════════════════════════════════════
-       EN-TÊTE (dégradé, cohérent avec les autres écrans)
-       ════════════════════════════════════════════════════════ -->
 <header class="page-header">
   <div class="container">
     <div class="header-content">
@@ -25,9 +22,6 @@
 </div>
 <div class="pcal-root container" [class.pcal-root--collapsed]="!sidebarOpen()">
 
-  <!-- ════════════════════════════════════════════════════════
-       TOP BAR
-       ════════════════════════════════════════════════════════ -->
   <div class="pcal-topbar">
     <div class="pcal-topbar__left">
       <button type="button" class="tb-icon-btn" (click)="toggleSidebar()" pTooltip="Filtres" tooltipPosition="bottom">
@@ -67,9 +61,6 @@
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════════════════
-       BODY: sidebar + calendar
-       ════════════════════════════════════════════════════════ -->
   <div class="pcal-body">
 
     <!-- ── SIDEBAR ─────────────────────────────────────────── -->
@@ -216,9 +207,6 @@
 
 </div>
 
-<!-- ════════════════════════════════════════════════════════
-     EVENT DETAIL POPUP
-     ════════════════════════════════════════════════════════ -->
 @if (popupOpen() && selectedEvent()) {
 <div class="ev-backdrop" (click)="closePopup()"></div>
 <div class="ev-popup" [@.disabled]="true">

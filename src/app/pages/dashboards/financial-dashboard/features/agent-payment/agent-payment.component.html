@@ -9,9 +9,6 @@
     effet sur le solde de l'agence.
   </p>
 
-  <!-- Demandes en attente d'une action du rôle validateur (administrateur finance de
-       l'agence, ou super_admin) — visible uniquement pour ce rôle, même restriction que
-       côté backend. -->
   <div class="fin-agent-payment__validation-panel" *ngIf="estValidateur() && demandesEnAttente().length">
     <h3 class="fin-agent-payment__validation-title">
       <i class="material-icons" aria-hidden="true">gavel</i>
@@ -28,8 +25,6 @@
       {{ message }}
     </p>
 
-    <!-- Résultat de la dernière action groupée — détail par agent, jamais un seul
-         message global qui masquerait un échec partiel. -->
     <ul class="fin-agent-payment__result-list" *ngIf="resultatsTraitement().length">
       <li *ngFor="let resultat of resultatsTraitement()" [class.fin-agent-payment__result--ok]="resultat.ok" [class.fin-agent-payment__result--echec]="!resultat.ok">
         <i class="material-icons" aria-hidden="true">{{ resultat.ok ? 'check_circle' : 'error' }}</i>
@@ -317,9 +312,6 @@
             <i class="material-icons" aria-hidden="true">description</i> CSV
           </button>
         </div>
-        <!-- Filtres serveur (chantier "filtres côté backend") : chaque changement relance
-             chargerHistorique() avec les critères courants (voir onXxxChange ci-dessous),
-             jamais un filtrage en mémoire d'un lot déjà chargé. -->
         <div class="fin-agent-payment__filters">
           <app-search-filter
             placeholder="Rechercher un agent…"
@@ -455,8 +447,6 @@
     </div>
   </div>
 
-  <!-- Drawer de détail — même vocabulaire que features/contracts/contracts.component.html
-       (drawer overlay/drawer/header/close/body), scopé à ce composant. -->
   <div class="fin-agent-payment__drawer-overlay" *ngIf="showDetailDrawer()" (click)="closeDetailDrawer()">
     <div class="fin-agent-payment__drawer" (click)="$event.stopPropagation()">
       <div class="fin-agent-payment__drawer-header">

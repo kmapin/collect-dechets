@@ -1,11 +1,5 @@
 import { ClientService } from './client.service';
 
-/**
- * Prompt 05 : `createSignalement()` doit couvrir les deux parcours (lié à une
- * collecte / indépendant) via un seul point d'entrée HTTP (`POST /signalements`),
- * et `getClientReports()` doit désormais lire le nouvel endpoint unifié
- * (`GET /signalements?clientId=`) plutôt que l'ancienne route Collecte-only.
- */
 describe('ClientService - createSignalement / getClientReports (Prompt 05)', () => {
   let httpSpy: { post: jasmine.Spy; get: jasmine.Spy };
   let service: ClientService;

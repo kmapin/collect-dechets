@@ -2,9 +2,6 @@
 
 <div class="tc-page container">
 
-  <!-- ══════════════════════════════════════════════════════════
-       PAGE HEADER
-       ══════════════════════════════════════════════════════════ -->
   <div class="tc-page-header">
     <div class="tph-left">
       <button class="tph-back" type="button" (click)="cancel()" pTooltip="Retour à la liste" tooltipPosition="bottom">
@@ -37,9 +34,6 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       STEPPER
-       ══════════════════════════════════════════════════════════ -->
   <div class="tc-stepper">
     @for (step of steps; track step.key) {
       <button type="button" class="tcs-step"
@@ -61,14 +55,8 @@
     }
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       FORM
-       ══════════════════════════════════════════════════════════ -->
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
-    <!-- ─────────────────────────────────────────────────────────
-         STEP 1 · INFOS DE BASE
-         ───────────────────────────────────────────────────────── -->
     @if (currentStep() === 0) {
       <div class="tc-panel step-enter">
         <div class="tc-panel-header">
@@ -240,9 +228,6 @@
       </div>
     }
 
-    <!-- ─────────────────────────────────────────────────────────
-         STEP 2 · VÉHICULE & ZONES
-         ───────────────────────────────────────────────────────── -->
     @if (currentStep() === 1) {
       <div class="tc-panel step-enter">
         <div class="tc-panel-header">
@@ -370,9 +355,6 @@
       </div>
     }
 
-    <!-- ─────────────────────────────────────────────────────────
-         STEP 3 · MEMBRES & HORAIRES
-         ───────────────────────────────────────────────────────── -->
     @if (currentStep() === 2) {
       <div class="tc-panel step-enter">
         <div class="tc-panel-header">
@@ -536,9 +518,6 @@
       </div>
     }
 
-    <!-- ─────────────────────────────────────────────────────────
-         STEP 4 · APERÇU & CONFIRMATION
-         ───────────────────────────────────────────────────────── -->
     @if (currentStep() === 3) {
       <div class="tc-panel step-enter">
         <div class="tc-panel-header">
@@ -682,9 +661,6 @@
       </div>
     }
 
-    <!-- ══════════════════════════════════════════════════════════
-         NAVIGATION FOOTER
-         ══════════════════════════════════════════════════════════ -->
     <div class="tc-footer">
       <button type="button" class="tc-btn tc-btn--ghost" (click)="cancel()">
         <mat-icon>close</mat-icon>Annuler

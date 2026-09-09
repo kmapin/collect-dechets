@@ -83,11 +83,6 @@
           </div>
         </div>
 
-        <!-- Revenus/Conformité désactivés (déjà commentés avant Prompt 01) : `statistics`
-        (l'objet mocké qui les alimentait) a été retiré — aucune source réelle pour
-        totalRevenue/complianceRate nulle part dans le backend actuel. À réactiver quand
-        une vraie source existera (Milestone 05, Agency Performance Metrics), en lisant
-        statisticsAdmin (ou un futur champ dédié), jamais un objet local mocké. -->
 
         <div class="stat-card card">
           <div class="stat-icon incidents">
@@ -323,16 +318,6 @@
                 <option value="inactive">Inactives</option>
                 <option value="deleted">Supprimées</option>
               </select>
-              <!-- <select
-              [(ngModel)]="complianceFilter"
-              (change)="filterAgencies()"
-              class="filter-select"
-              >
-              <option value="all">Tous niveaux</option>
-              <option value="excellent">Excellent (95%+)</option>
-              <option value="good">Bon (85-94%)</option>
-              <option value="poor">Faible (85%)</option>
-            </select> -->
             </div>
           </div>
           <div class="agencies-grid">
@@ -411,13 +396,6 @@
                   <i class="material-icons">visibility</i>
                   Détails
                 </button>
-                <!-- <button
-                class="btn btn-primary"
-                (click)="auditAgency(agency.id)"
-                >
-                <i class="material-icons">fact_check</i>
-                Auditer
-              </button> -->
                 <button class="btn btn-accent" (click)="contactAgency(agency.id)">
                   <i class="material-icons">message</i>
                   Contacter
@@ -642,12 +620,6 @@
                 </h2>
               </div>
 
-              <!-- Prompt 12 : plus de filtres zone/type/collecteur ici — la source réelle
-              (GET /monthly-trend, déjà chargée pour "Évolution des Collectes") est un
-              agrégat plateforme, non filtrable par zone/type/collecteur. "Réel"/"Objectif"
-              sont désormais des COMPTES de collectes (completedCollections/totalCollections),
-              pas un poids : aucune source de poids réelle n'existe nulle part dans le
-              schéma (voir EditRecap.md, Prompts 08/09/12). -->
               @if (isLoadingMonthlyTrend) {
               <div class="zone-frequency-state">
                 <i class="material-icons spin">autorenew</i>

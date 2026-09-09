@@ -24,7 +24,6 @@ export const PLANNING_ROUTES: Routes = [
           import('./planning-create/planning-create').then(m => m.PlanningCreate),
         title: 'Planning – Nouveau planning',
       },
-      // Les routes suivantes seront implémentées dans les prompts suivants
       {
         path: 'list',
         loadComponent: () =>

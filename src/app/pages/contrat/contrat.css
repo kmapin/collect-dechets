@@ -152,8 +152,6 @@
   font-size: 0.85rem;
 }
 
-/* Formulaire de paiement (Phase 8, redevance) — même patron que
-   .payment-drawer-* dans subscription.css (glisse depuis la droite). */
 .payment-drawer-overlay {
   position: fixed;
   top: 0;

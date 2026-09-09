@@ -1,6 +1,3 @@
-/**
- * Énumération des statuts de paiement possibles
- */
 export enum PaymentStatus {
   /** Paiement en attente de validation */
   PENDING = 'PENDING',
@@ -15,9 +12,6 @@ export enum PaymentStatus {
   FAILED = 'FAILED'
 }
 
-/**
- * Interface représentant la réponse d'une transaction de paiement
- */
 export interface PaymentResponse {
   /** Identifiant unique de la transaction */
   transactionId: string;
@@ -42,11 +36,6 @@ export interface PaymentResponse {
   success?: boolean;
   data?: any;
 
-  // Chantier Frais plateforme (Prompt 9/9) — snapshot de frais figé à
-  // l'initiation (controllers/transaction.js::initiate), présent uniquement si
-  // le plan tarifaire applique des frais. `grossAmount` = prix du service seul,
-  // `amount` (déjà déclaré ci-dessus) = ce qui est réellement débité — égal à
-  // grossAmount+feeAmount uniquement quand feePayer='CLIENT'.
   grossAmount?: number;
   feeAmount?: number;
   feePayer?: 'CLIENT' | 'AGENCE';

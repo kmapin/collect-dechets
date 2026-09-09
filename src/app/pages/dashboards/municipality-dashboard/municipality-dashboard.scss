@@ -218,9 +218,6 @@
   gap: 6px;
 }
 
-// .demo-data-badge supprimée (Prompt 15, §7) : ses 3 seuls usages dans le template ont
-// été retirés (isPerformanceOverviewMocked/isAgencyPerformanceMocked valaient déjà
-// `false` en dur, aucun badge ne s'affichait plus).
 
 .metric-value {
   font-size: 1.5rem;
@@ -409,15 +406,6 @@
   flex-wrap: wrap;
   gap: 16px;
 }
-/*
-      // .zone-metric {
-      //   display: flex;
-      //   align-items: center;
-      //   gap: 6px;
-      //   font-size: 0.9rem;
-      //   color: var(--text-secondary);
-      // }
-      */
 .zone-metric i {
   font-size: 16px;
   color: var(--primary-color);
@@ -659,9 +647,6 @@
   border-color: var(--surface-400, #9ca3af);
 }
 
-// Utilisé à 3 endroits dans ce dashboard (incidents filtrés, incidentBreakdown vide,
-// signalements filtrés) sans aucun style jusqu'ici — rendu brut du navigateur (icône/titre/
-// texte empilés à gauche, sans espacement), d'où l'écart visuel avec le reste des cartes.
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -754,8 +739,6 @@
   margin-bottom: 8px;
 }
 
-// .metric-row-demo-label supprimée (Prompt 15, §7) — même raison que .demo-data-badge
-// ci-dessus, son seul usage dans le template a été retiré.
 
 .metric {
   display: flex;

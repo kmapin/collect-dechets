@@ -9,8 +9,7 @@ import { StatusBadgeComponent } from '../../../shared/status-badge/status-badge.
 import { badgeFacture } from '../../../shared/status-badge/status-badge.util';
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 
-// F8 — Factures mensuelles du client (RG3 : statut dérivé de la présence d'un paiement).
-// Onglet gated finance (RG8) au niveau du parent (client-sheet.component.ts).
+// Facturation
 @Component({
   selector: 'app-client-billing-tab',
   standalone: true,

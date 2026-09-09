@@ -1,13 +1,7 @@
 import { ChartConfiguration } from 'chart.js';
 import type { MonthlyTrendPoint } from '../mocks/municipality-mock.types';
 
-/**
- * "Évolution des Collectes" — number of collections per month (not
- * tonnage: that's already covered by the waste-breakdown chart). Two
- * lines — total scheduled vs. actually completed — reusing the exact
- * `MonthlyTrendPoint` fields from the Prompt 00 mock service, no new
- * time-series generator.
- */
+
 export function buildCollectionEvolutionConfig(data: MonthlyTrendPoint[]): ChartConfiguration {
   const config: ChartConfiguration<'line'> = {
     type: 'line',

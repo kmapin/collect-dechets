@@ -22,10 +22,6 @@
     gap: 0.25rem;
     border-bottom: 1px solid #e2e8f0;
     margin-bottom: 1.25rem;
-    // Mobile first : sur un écran étroit, les 3 onglets ("Abonnements & Contrats" en
-    // particulier) dépassaient la largeur du conteneur sans aucun moyen de défiler
-    // jusqu'aux onglets coupés — jamais de flex-wrap (couperait un libellé au milieu de
-    // façon imprévisible) ni de rétrécissement (illisible), un défilement horizontal.
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 

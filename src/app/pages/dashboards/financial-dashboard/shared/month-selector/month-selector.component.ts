@@ -2,8 +2,6 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Periode } from '../../models';
 import { decalerPeriode, labelPeriodeFr } from '../../utils/periode.util';
 
-// Stepper mensuel (◀ Mois AAAA ▶) — F12, réutilisable partout où l'utilisateur doit
-// choisir un mois unique (contrairement à shared/filters/month-filter, effaçable/optionnel).
 @Component({
   selector: 'app-month-selector',
   standalone: true,

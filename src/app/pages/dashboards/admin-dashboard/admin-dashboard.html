@@ -99,15 +99,6 @@
             <p>
               <span class="stat-trend positive">+{{ statisticsAdmin?.monthlyClientPercentage }}% ce mois</span>
 
-              <!--| <span
-                    class="stat-trend"
-                    [class.positive]="
-                      statisticsAdmin?.totalClients ===
-                      statisticsAdmin?.activeClients
-                    "
-                  >
-                    {{ getClientStatusText() }}
-                  </span> -->
             </p>
           </div>
         </div>
@@ -130,35 +121,7 @@
           </div>
         </div>
 
-        <!-- <div class="stat-card card">
-              <div class="stat-icon revenue">
-                <i class="material-icons">euro</i>
-              </div>
-              <div class="stat-info">
-                <h3>Revenus totaux</h3>
-                <p class="stat-value">
-                  {{ statistics.totalRevenue | number : "1.0-0" }}€
-                </p>
-                <span class="stat-trend positive">+12.3% vs mois dernier</span>
-              </div>
-            </div> -->
 
-        <!-- <div class="stat-card card">
-              <div class="stat-icon compliance">
-                <i class="material-icons">verified</i>
-              </div>
-              <div class="stat-info">
-                <h3>Conformité</h3>
-                <p class="stat-value">{{ statistics.complianceRate }}%</p>
-                <span
-                  class="stat-trend"
-                  [class.positive]="statistics.complianceRate >= 95"
-                  [class.negative]="statistics.complianceRate < 85"
-                >
-                  {{ getComplianceText() }}
-                </span>
-              </div>
-            </div> -->
 
         <div class="stat-card card">
           <div class="stat-icon incidents">
@@ -199,51 +162,6 @@
         <!-- Onglet Vue d'ensemble -->
         <div *ngIf="activeTab === 'overview'" class="overview-tab">
           <div class="overview-grid">
-            <!-- <div class="overview-section card">
-                  <h3>
-                    <i class="material-icons">trending_up</i>
-                    Performance Globale
-                  </h3>
-                  <div class="performance-metrics">
-                    <div class="metric-item">
-                      <div class="metric-label">Taux de collecte</div>
-                      <div class="metric-value">{{ getCollectionRate() }}%</div>
-                      <div class="metric-bar">
-                        <div
-                          class="metric-fill"
-                          [style.width]="getCollectionRate() + '%'"
-                        ></div>
-                      </div>
-                    </div>
-                    <div class="metric-item">
-                      <div class="metric-label">Satisfaction client</div>
-                      <div class="metric-value">
-                        {{ statistics.averageRating }}/5
-                      </div>
-                      <div class="rating-stars">
-                        <i
-                          *ngFor="
-                            let star of getStars(statistics.averageRating)
-                          "
-                          class="material-icons star"
-                          >star</i
-                        >
-                      </div>
-                    </div>
-                    <div class="metric-item">
-                      <div class="metric-label">Conformité réglementaire</div>
-                      <div class="metric-value">
-                        {{ statistics.complianceRate }}%
-                      </div>
-                      <div class="metric-bar">
-                        <div
-                          class="metric-fill compliance"
-                          [style.width]="statistics.complianceRate + '%'"
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                </div> -->
 
             <div class="overview-section card">
               <h3>
@@ -479,26 +397,6 @@
                   <span>Ajouter un agent de mairie</span>
                 </a>
               </div>
-              <!--<select
-                    [(ngModel)]="agenciesFilter"
-                    (change)="filterAgencies()"
-                    class="filter-select"
-                  >
-                    <option value="all">Toutes les Municipalités</option>
-                    <option value="active">Actives</option>
-                    <option value="inactive">Inactives</option>
-                    <option value="suspended">Suspendues</option>
-                  </select>
-                   <select
-                    [(ngModel)]="complianceFilter"
-                    (change)="filterAgencies()"
-                    class="filter-select"
-                  >
-                    <option value="all">Tous niveaux</option>
-                    <option value="excellent">Excellent (95%+)</option>
-                    <option value="good">Bon (85-94%)</option>
-                    <option value="poor">Faible (<85%)</option>
-                  </select> -->
             </div>
           </div>
 
@@ -521,28 +419,12 @@
                   <i class="material-icons">visibility</i>
                   Détails
                 </button>
-                <!-- <button
-                      class="btn btn-primary"
-                      (click)="auditMunicipality(municipality._id)"
-                    >
-                      <i class="material-icons">fact_check</i>
-                      Auditer
-                    </button> -->
                 <button class="btn btn-accent" (click)="contactMunicipality(municipality._id)">
                   <i class="material-icons">message</i>
                   Contacter
                 </button>
               </div>
 
-              <!-- <div class="agency-footer">
-                    <span class="last-audit"
-                      >Dernier audit:
-                      {{ municipality.lastAudit | date : "dd/MM/yyyy" }}</span
-                    >
-                    <span class="revenue"
-                      >{{ municipality.revenue | number : "1.0-0" }}€/mois</span
-                    >
-                  </div> -->
             </div>
           </div>
         </div>
@@ -768,15 +650,6 @@
                 </button>
               </div>
 
-              <!-- <div class="agency-footer">
-                    <span class="last-audit"
-                      >Dernier audit:
-                      {{ agency.lastAudit | date : "dd/MM/yyyy" }}</span
-                    >
-                    <span class="revenue"
-                      >{{ agency.revenue | number : "1.0-0" }}€/mois</span
-                    >
-                  </div> -->
             </div>
           </div><!-- fin vue cartes agences -->
 
@@ -844,16 +717,6 @@
                 <option value="pending">Abonnement en attente</option>
                 <option value="cancelled">Abonnement annulé</option>
               </select>
-              <!-- <select
-                    [(ngModel)]="complianceFilter"
-                    (change)="filterClients()"
-                    class="filter-select"
-                  >
-                    <option value="all">Tous niveaux</option>
-                    <option value="excellent">Excellent (95%+)</option>
-                    <option value="good">Bon (85-94%)</option>
-                    <option value="poor">Faible (<85%)</option>
-                  </select> -->
             </div>
           </div>
 
@@ -891,23 +754,6 @@
                           }}</span>
                       </mat-card-subtitle>
 
-                      <!--<mat-card-subtitle--
-                            >Abonnement actif:
-                            <span
-                              class="subscription-badge"
-                              [class]="
-                                Math.round(
-                                  (client?.active_subscription?.length /
-                                    client?.data?.subscriptionHistory?.length) *
-                                    100
-                                ) > 50
-                                  ? 'status-success'
-                                  : 'status-inconnu'
-                              "
-                              >{{ client?.active_subscription?.length }}/{{
-                                client?.data?.subscriptionHistory?.length
-                              }}</span
-                            ></mat-card-subtitle-->
                       <ng-container *ngIf="client?.data?.avatar; else noImage">
                         <img mat-card-md-image class="rounded"
                           src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
@@ -1116,23 +962,6 @@
                               ">{{ user?.data?.status==='active' ? 'Actif':'Inactif' }}</span>
                       </mat-card-subtitle>
 
-                      <!--<mat-card-subtitle--
-                            >Abonnement actif:
-                            <span
-                              class="subscription-badge"
-                              [class]="
-                                Math.round(
-                                  (client?.active_subscription?.length /
-                                    client?.data?.subscriptionHistory?.length) *
-                                    100
-                                ) > 50
-                                  ? 'status-success'
-                                  : 'status-inconnu'
-                              "
-                              >{{ client?.active_subscription?.length }}/{{
-                                client?.data?.subscriptionHistory?.length
-                              }}</span
-                            ></mat-card-subtitle-->
                       <ng-container *ngIf="user?.data?.avatar; else noImage">
                         <img mat-card-md-image class="rounded"
                           src="https://images.pexels.com/photos/771742/pexels-photo-771742.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop"
@@ -1200,11 +1029,6 @@
                 </mat-card>
               </div>
             </ng-container>
-            <!-- <ng-template #noUsers>
-                  <div>
-                    <h4 class="text-center">Aucun utilisateur trouvé</h4>
-                  </div>
-                </ng-template> -->
           </div>
           <!--end row-->
 
@@ -1272,16 +1096,6 @@
                 <option value="active">actif</option>
                 <option value="inactive">Inactif</option>
               </select>
-              <!-- <select
-                    [(ngModel)]="complianceFilter"
-                    (change)="filterCollectors()"
-                    class="filter-select"
-                  >
-                    <option value="all">Tous niveaux</option>
-                    <option value="excellent">Excellent (95%+)</option>
-                    <option value="good">Bon (85-94%)</option>
-                    <option value="poor">Faible (<85%)</option>
-                  </select> -->
             </div>
           </div>
 
@@ -2162,99 +1976,10 @@
           }
           <!-- <div *ngIf="!isLoadingIncidents" class="incidents-list grid-2"> -->
           <!-- État vide pour les incidents -->
-          <!-- <div *ngIf="!filteredIncidents.length" class="empty-state">
-                  <i class="material-icons">report_problem</i>
-                  <h3>Aucun incident trouvé</h3>
-                  <p>Aucun incident ne correspond aux critères sélectionnés pour le moment.</p>
-                </div> -->
 
-          <!-- <div
-                  *ngFor="let incident of filteredIncidents"
-                  class="incident-card card"
-                >
-                  <div class="incident-header">
-                    <div
-                      class="incident-severity"
-                      [class]="'severity-' + incident.severity.toLowerCase()"
-                    >
-                      <i class="material-icons">{{
-                        getSeverityIcon(incident.severity.toLowerCase())
-                      }}</i>
-                      <span>{{
-                        getSeverityText(incident.severity.toLowerCase())
-                          ? getSeverityText(incident.severity.toLowerCase())
-                          : "Faible"
-                      }}</span>
-                    </div>
-                    <div class="incident-status">
-                      <span
-                        class="status-badge"
-                        [class]="'status-'+(incident.status)"
-                      >
-                        {{ getIncidentStatusText(incident.status) }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="incident-content">
-                    <h4>{{ getIncidentTypeText(incident.type.toLowerCase()) }}</h4>
-                    <p class="incident-agency">
-                      <span class="agency-label">Agence: </span> {{incident?.agencyId?.name }}
-                    </p>
-                    <p class="incident-description">
-                      {{ incident.comment }}
-                    </p>
-                    <p class="incident-date">
-                      {{ incident.date | date : "dd/MM/yyyy HH:mm" }}
-                    </p>
-                  </div>
-
-                  <div class="incident-assignment" *ngIf="incident.collectorId?._id">
-                    <i class="material-icons">person</i>
-                    <span>Assigné à {{ incident.collectorId?.firstName }} {{ incident.collectorId?.lastName }}</span>
-                  </div>
-
-                  <div class="incident-actions">
-                    <button
-                      class="btn btn-secondary"
-                      (click)="assignIncident(incident.id)"
-                      *ngIf="incident.status === 'open'"
-                    >
-                      <i class="material-icons">assignment_ind</i>
-                      Assigner
-                    </button>
-                    <button
-                      class="btn btn-primary"
-                      (click)="investigateIncident(incident.id)"
-                      *ngIf="incident.status === 'pending'"
-                    >
-                      <i class="material-icons">search</i>
-                      Enquêter
-                    </button> 
-                    <button
-                      class="btn btn-success"
-                      [disabled]="resolvingIncidentEnCours.has(incident.id)"
-                      (click)="resolveIncident(incident.id)"
-                      *ngIf="incident.status === 'resolved'"
-                    >
-                      <i class="material-icons">check</i>
-                      Résoudre
-                    </button>
-                    <button
-                      class="btn btn-accent"
-                      (click)="contactAgencyForIncident(incident?.agencyId?._id)"
-                    >
-                      <i class="material-icons">phone</i>
-                      Contacter Agence
-                    </button>
-                  </div>
-                </div> -->
           <!-- </div> -->
         </div>
 
-        <!-- ══════════════════════════════════════════════
-                 ONGLET RETRAITS — validation admin des demandes de retrait
-            ══════════════════════════════════════════════ -->
         <div *ngIf="activeTab === 'withdrawals'" class="withdrawals-tab">
           <div class="agencies-header">
             <h2>Demandes de retrait</h2>
@@ -2345,10 +2070,6 @@
                     <strong>{{ w.agencyName }}</strong><br>
                     <span class="stats-loading">{{ w.country }}</span>
                   </td>
-                  <!-- <td>
-                    {{ w.agencyManagerName }}<br>
-                    <span class="stats-loading">{{ w.agencyManagerEmail }}</span>
-                  </td> -->
                   <td>{{ formatXof(w.amount) }}</td>
                   <td>{{ w.platformAmount ? formatXof(w.platformAmount) : '—' }}</td>
                   <td>{{ formatXof(w.availableBalance) }}</td>
@@ -3224,9 +2945,6 @@
 </div>
 }
 
-<!-- ══════════════════════════════════════════════
-       DIALOG RÉSOLUTION INCIDENT (depuis la liste)
-  ══════════════════════════════════════════════ -->
 @if (resolveDialogVisible) {
 <div class="confirm-dialog-overlay" (click)="resolveDialogVisible = false">
   <div class="resolve-dialog" (click)="$event.stopPropagation()">
@@ -3261,9 +2979,6 @@
 </div>
 }
 
-<!-- ══════════════════════════════════════════════
-       DRAWER AJOUT AGENT DE MAIRIE
-  ══════════════════════════════════════════════ -->
 @if (visibleAddAgentDrawer) {
 <div class="drawer-overlay" (click)="visibleAddAgentDrawer = false">
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
@@ -3399,9 +3114,6 @@
 </div>
 }
 
-<!-- ══════════════════════════════════════════════
-       DRAWER DÉTAILS INCIDENT
-  ══════════════════════════════════════════════ -->
 @if (visibleIncidentDrawer && selectedIncident) {
 <div class="drawer-overlay" (click)="visibleIncidentDrawer = false">
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
@@ -3484,8 +3196,6 @@
             <span class="detail-label">Origine</span>
             <span class="detail-value">{{ getOrigineText(selectedIncident.origine) }}</span>
           </div>
-          <!-- Suivi de statut : équipe assignée (resolutionTeamId, déjà peuplée côté API,
-               écrite par assignSignalementToTeam$() — mécanisme manager, non touché ici) -->
           <div class="detail-row" *ngIf="selectedIncident.resolutionTeamId">
             <span class="detail-label">Équipe assignée</span>
             <span class="detail-value">{{ selectedIncident.resolutionTeamId!.name }}</span>
@@ -3521,8 +3231,6 @@
 
     </div>
 
-    <!-- Commentaire de résolution — saisie, réservée aux rôles qui peuvent réellement
-         traiter le signalement (pas super_admin/municipality, cantonnés à "Contacter l'agence") -->
     <div class="drawer-section" *ngIf="canResolveIncidents() && (selectedIncident.status) !== 'resolved'">
       <h4 class="drawer-section-title">
         <i class="material-icons">edit_note</i> Commentaire de résolution
@@ -3554,9 +3262,6 @@
 </div>
 }
 
-<!-- ══════════════════════════════════════════════
-       DRAWER DÉTAILS DEMANDE DE RETRAIT
-  ══════════════════════════════════════════════ -->
 @if (visibleWithdrawalDetailDrawer) {
 <div class="drawer-overlay" (click)="closeWithdrawalDetailDrawer()">
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
@@ -3586,12 +3291,6 @@
         </p>
       </div>
 
-      <!-- Montant net — mis en avant, c'est l'information la plus consultée.
-           Chantier Frais plateforme (Prompt F5/F8) : la formule "demandé − frais = net"
-           n'est vraie qu'en Option A. En Option B, l'agence reçoit le montant demandé
-           intégralement et c'est le débit du WALLET qui augmente des frais — d'où
-           l'affichage explicite des deux montants (reçu / débité) plutôt qu'une
-           soustraction unique qui serait fausse pour la moitié des cas. -->
       <div class="wd-amount-hero">
         <div class="wd-amount-hero__block">
           <span class="wd-amount-hero__label">Montant net transféré à l'agence</span>
@@ -3726,9 +3425,6 @@
 </div>
 }
 
-<!-- ══════════════════════════════════════════════
-       DIALOG CONFIRMATION APPROBATION RETRAIT
-  ══════════════════════════════════════════════ -->
 @if (showApproveWithdrawalDialog && withdrawalToApprove) {
 <div class="confirm-dialog-overlay" (click)="closeApproveWithdrawalDialog()">
   <div class="confirm-dialog-box" (click)="$event.stopPropagation()">
@@ -3773,9 +3469,6 @@
 </div>
 }
 
-<!-- ══════════════════════════════════════════════
-       DIALOG REJET RETRAIT (motif obligatoire)
-  ══════════════════════════════════════════════ -->
 @if (showRejectWithdrawalDialog && withdrawalToReject) {
 <div class="confirm-dialog-overlay" (click)="closeRejectWithdrawalDialog()">
   <div class="resolve-dialog" (click)="$event.stopPropagation()">
@@ -3813,10 +3506,6 @@
 </div>
 }
 
-<!-- ══════════════════════════════════════════════
-       DIALOG RÉSOLUTION MANUELLE — RETRAIT "À VÉRIFIER MANUELLEMENT"
-       (virement opérateur ambigu, timeout sans réponse claire)
-  ══════════════════════════════════════════════ -->
 @if (showConfirmVirementDialog && withdrawalToConfirmVirement && virementConfirmMode) {
 <div class="confirm-dialog-overlay" (click)="closeConfirmVirementDialog()">
   <div class="confirm-dialog-box" (click)="$event.stopPropagation()">

@@ -16,9 +16,6 @@
   margin-top: 24px;
 }
 
-/* Bandeau de continuité de service (source='CONTRACT') — même carte que les
-   autres blocs, un simple accent visuel à gauche pour le distinguer sans
-   introduire un nouveau langage graphique. */
 .eligibility-banner {
   padding: 20px 32px;
   border-left: 4px solid var(--success-color);
@@ -136,8 +133,6 @@
   justify-content: end;
 }
 
-/* Payment Drawer Styles — même patron que .contact-drawer-* ci-dessous
-   (glisse depuis la droite), plutôt qu'un modal centré. */
 .payment-drawer-overlay {
   position: fixed;
   top: 0;
@@ -178,10 +173,6 @@
   color: var(--primary-color);
 }
 
-/* Positionné dans le coin haut-droit indépendamment du flex du header — le
-   bouton se retrouvait collé sous le titre au lieu de son côté droit
-   (problème de layout signalé). L'ancrage absolu le fixe quel que soit ce
-   qui casse le flex parent. */
 .close-btn {
   position: absolute;
   top: 16px;

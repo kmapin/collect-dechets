@@ -1,7 +1,4 @@
 .qm-page {
-  // Bande dégradée (.page-header, style global) désormais pleine largeur, comme sur
-  // les autres pages de gestion (team-list, planning-dashboard, fee-config-settings...)
-  // — seul le corps (recherche/tableau) garde la largeur de lecture centrée d'origine.
   &__body {
     padding: 1.5rem;
     max-width: 72rem;
@@ -9,8 +6,6 @@
   }
 }
 
-// ── En-tête (header-content/welcome-section/quick-actions : même convention que
-//    planning-dashboard.scss/team-list.scss) ──────────────────────────────────
 .header-content {
   display: flex;
   align-items: center;
@@ -86,9 +81,6 @@
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  // Même pattern que .tl-search (team-list.scss)/.team-create/.team-form/.planning-create :
-  // le contour de recherche se surligne en bleu au focus d'un enfant — cohérent avec le
-  // reste de l'app, absent ici jusqu'ici (aucun rapport avec Tailwind/Material).
   transition: border-color .15s;
   &:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
 

@@ -1,7 +1,3 @@
-/**
- * Miroir de `models/PaiementGroupeRedevance.js` (backend) — proposition de paiement
- * groupé de plusieurs Redevance d'un contrat, avec une réduction accordée par l'agence.
- */
 import { Redevance } from './redevance.model';
 
 export type ReductionType = 'pourcentage' | 'montant';

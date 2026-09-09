@@ -50,8 +50,6 @@ export class Home  implements OnInit {
       description: 'Analysez et comparez facilement, tarifs et évaluations des différentes agences pour faire le meilleur choix.',
       items: [
         'Comparaison des tarifs',
-        // 'Évaluations clients vérifiées',
-        // 'Détails des services',
         'Zones de couverture'
       ]
     },
@@ -166,8 +164,6 @@ export class Home  implements OnInit {
   }
 
   ngAfterViewInit(): void {
-    // this.initMap();
-    // this.useGeolocations();
 
   }
 
@@ -366,15 +362,9 @@ startLiveNavigation(destLat: number, destLng: number, name: string) {
       const city = data.address.city || data.address.town || data.address.village || '';
       const sector = data.address.suburb || data.address.quarter || '';
       const neighborhood = data.address.neighbourhood || '';
-      // this.searchQuery = city;
-      // this.selectedCity = city;
       this.applyFilters();
-      // alert(`Vous êtes à ${city}, secteur ${sector}, quartier ${neighborhood}`); 
-      // this.notificationsService.showSuccess('Localisation réussie', `Vous êtes à ${city}, secteur ${sector}, quartier ${neighborhood}`);
     } catch (err) {
       console.error('Erreur géocodage:', err);
-      // alert('Impossible de récupérer les informations de localisation');
-      // this.notificationsService.showError('Erreur', 'Impossible de récupérer les informations de localisation');
     }
   }
 
@@ -395,9 +385,6 @@ startLiveNavigation(destLat: number, destLng: number, name: string) {
   }
 
 
-  /**
-   * Transforme une agence API en objet compatible avec le template
-   */
 private mapApiAgency(apiAgency: any): Agency {
   return {
     _id: apiAgency._id || '',
@@ -442,9 +429,6 @@ private mapApiAgency(apiAgency: any): Agency {
 }
 
 
-  /**
-   * Charge les agences depuis l'API backend et affiche les 4 premières en vedette
-   */
   loadFeaturedAgenciesFromApi(): void {
     this.applyFilters();
   }
@@ -480,11 +464,7 @@ applyFilters(): void {
 
       // if(response.data.length < 5){
 
-      //   this.filteredAgencies = (response.data || []).map((a: any) => this.mapApiAgency(a));
-      // } else {
 
-      //   this.filteredAgencies = (response.data || []).slice(0, 4).map((a: any) => this.mapApiAgency(a));
-      // }
       this.generateRandomStarsList();
       this.sortAgencies();
     },

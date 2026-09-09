@@ -37,10 +37,6 @@
               <span>Commencer gratuitement</span>
               <div class="btn-shine"></div>
             </a>
-            <!-- <button class="btn btn-secondary btn-hero" (click)="playDemo()">
-            <i class="material-icons">play_circle</i>
-            <span>Voir la démo</span>
-          </button> -->
         </div>
 
         <div class="hero-trust">
@@ -221,15 +217,6 @@
               ville.</sub>
             }
           </div>
-          <!-- <div class="filter-group">
-          <label class="filter-label">Note minimum</label>
-          <select [(ngModel)]="minRating" (change)="applyFilters()" class="filter-select">
-            <option value="">Toutes</option>
-            <option value="3">3 étoiles et plus</option>
-            <option value="4">4 étoiles et plus</option>
-            <option value="4.5">4.5 étoiles et plus</option>
-          </select>
-        </div> -->
       </div>
       <div class="filters-actions" style="text-align:right; margin-top:8px;">
         <button
@@ -317,33 +304,13 @@
                       <i class="material-icons">people</i>
                       <span>{{ agency.totalClients }} clients</span>
                     </div>
-                    <!-- <div class="info-item">
-                    <i class="material-icons">build</i>
-                    <span>{{ agency.services.length }} services</span>
-                  </div> -->
                 </div>
-                <!-- <div class="services-preview">
-                <h4>Services proposés</h4>
-                <div class="services-tags">
-                  <div *ngFor="let service of agency.services.slice(0, 3)" class="service-tag">
-                    <span class="service-name">{{ service.name }}</span>
-                    <span class="service-price">{{ service.price }}€</span>
-                  </div>
-                  <div *ngIf="agency.services.length > 3" class="service-tag more-services">
-                    +{{ agency.services.length - 3 }} autres
-                  </div>
-                </div>
-              </div> -->
             </div>
             <div class="agency-actions">
               <button class="btn btn-secondary" (click)="viewAgencyDetails(agency._id)">
                 <i class="material-icons">info</i>
                 Voir détails
               </button>
-              <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
-              <i class="material-icons">add</i>
-              S'abonner
-            </button> -->
           </div>
           <div class="card-glow"></div>
         </div>

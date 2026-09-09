@@ -1,9 +1,5 @@
 <div class="zs-root">
 
-  <!-- ════════════════════════════════════════════════════════
-       STATS BAR — plus de "ménages"/"actifs"/"couverture" (chiffres inventés,
-       retirés — aucune contrepartie réelle côté backend à ce niveau d'agrégation).
-       ════════════════════════════════════════════════════════ -->
   <div class="zs-statsbar">
     <div class="zs-stat">
       <mat-icon class="stat-icon" style="color:#f59e0b">grid_view</mat-icon>
@@ -21,9 +17,6 @@
     </div>
   }
 
-  <!-- ════════════════════════════════════════════════════════
-       MAIN SPLIT LAYOUT
-       ════════════════════════════════════════════════════════ -->
   <div class="zs-split">
 
     <!-- ── LEFT SIDEBAR ──────────────────────────────────────── -->
@@ -120,9 +113,6 @@
             </div>
           }
 
-          <!-- Nombre réel de clients (chantier "résoudre de vrais clients zone/secteur")
-               — plus de ménages/actifs/couverture fictifs : un seul chiffre réel, ou
-               "Non disponible" pendant le chargement/en cas d'échec. -->
           <div class="sel-metrics">
             <div class="sel-metric">
               @if (selClientCountLoading()) {

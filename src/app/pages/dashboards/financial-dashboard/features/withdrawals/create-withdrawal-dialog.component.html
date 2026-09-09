@@ -49,10 +49,6 @@
         </span>
       </div>
 
-      <!-- Chantier Frais plateforme (Prompt F5/F8) : choix obligatoire à CHAQUE demande,
-           frais visibles avant la transaction (décision Checkpoint) via un aperçu calculé
-           côté client à partir de la config lue à l'ouverture — le backend refige/revérifie
-           tout à la soumission, cet aperçu n'est qu'un confort d'affichage. -->
       <div class="fin-create-withdrawal__field" *ngIf="fraisActifs">
         <label>Qui supporte les frais plateforme ? *</label>
         <label class="fin-create-withdrawal__radio">
@@ -88,8 +84,6 @@
         <p>Vérifiez les informations avant de valider.</p>
       </div>
 
-      <!-- Montant réellement reçu mis en avant — c'est l'information la plus
-           consultée, pas la ligne perdue dans une liste plate de détails. -->
       <div class="fin-create-withdrawal__hero">
         <span class="fin-create-withdrawal__hero-label">Vous recevrez</span>
         <span class="fin-create-withdrawal__hero-value">

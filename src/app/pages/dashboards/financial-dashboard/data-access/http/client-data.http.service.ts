@@ -7,9 +7,6 @@ import { Client, Page, PageParams } from '../../models';
 import { ClientDataService, ClientFilter } from '../contracts/client-data.service';
 import { mapClientDto } from './mappers/client.mapper';
 
-// Implémentation réelle, câblée en dur sur CLIENT_DATA_SERVICE dans
-// financial-dashboard.routes.ts (module Client entièrement backé). Endpoints documentés
-// ci-dessous et dans INTEGRATION.md.
 @Injectable()
 export class ClientDataHttpService implements ClientDataService {
   private readonly http = inject(HttpClient);

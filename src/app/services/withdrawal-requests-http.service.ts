@@ -11,20 +11,6 @@ import {
   WithdrawalRequestFilter,
 } from '../models/withdrawal-request.model';
 
-/**
- * Branchement réel (Prompt 6) — remplace WithdrawalRequestsMockService derrière
- * exactement la même API publique (mêmes noms de méthodes, mêmes types de retour),
- * comme prévu par le commentaire d'en-tête de ce dernier : aucun composant
- * consommateur n'a eu à changer au-delà de l'injection de cette classe.
- *
- * Champs sans source réelle en base (fees, netAmount, currency, country,
- * recentWithdrawals) restent volontairement `undefined`/`[]` plutôt
- * qu'inventés (Règle 4 du Prompt 0). `agencyManagerPhone` (User.phone) et
- * `pendingWithdrawalsCount/Amount`/`totalWithdrawn` (agrégats Withdraw par
- * agence) sont en revanche réellement calculés côté backend — omis à tort à
- * l'Étape 6 alors qu'ils étaient dérivables, corrigé après retour utilisateur
- * (capture d'écran montrant le drawer détail vide sur ces lignes).
- */
 interface BackendRetraitItem {
   id: string;
   agencyId: string;
@@ -48,8 +34,6 @@ interface BackendRetraitItem {
   rejectionReason: string | null;
   createdAt?: string;
   updatedAt?: string;
-  // Chantier Frais plateforme (Prompt F5/F8) — snapshot figé à la demande, voir
-  // services/transaction.js::getAllRetraitsPaginated/getRetraitById.
   feeType?: 'FIXED' | 'PERCENTAGE' | null;
   feeValue?: number | null;
   feeAmount?: number | null;
@@ -70,8 +54,6 @@ function mapBackendRetrait(item: BackendRetraitItem): AdminWithdrawalRequest {
     country: undefined as unknown as string,
     amount: item.amount,
     currency: 'FCFA',
-    // `?? item.amount` : un retrait antérieur à ce chantier (ou sans frais) n'a pas ces
-    // champs — comportement honnête, jamais une valeur inventée (fees=0, netAmount=amount).
     fees: item.feeAmount ?? 0,
     netAmount: item.netAmountReceived ?? item.amount,
     feeType: item.feeType ?? undefined,

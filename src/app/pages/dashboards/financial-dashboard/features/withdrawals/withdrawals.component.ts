@@ -17,8 +17,7 @@ import { CreateWithdrawalDialogComponent } from './create-withdrawal-dialog.comp
 
 const TAILLE_PAGE = 10;
 
-// Mêmes libellés que admin-dashboard.ts::getWithdrawalStatusText (vue Super Admin) —
-// une seule terminologie pour les mêmes statuts réels de Withdraw.js (Règle 3 du Prompt 0).
+
 const LIBELLES_STATUT: Record<string, string> = {
   EN_ATTENTE_VALIDATION: 'En attente',
   INITIATED: 'Approuvé',
@@ -33,9 +32,7 @@ function libelleStatut(statut?: string): string {
   return LIBELLES_STATUT[statut] ?? statut;
 }
 
-// F4 — Historique des retraits de l'agence (impacte le solde disponible, RG7), et création
-// d'un nouveau retrait (POST /finance/retraits, réellement branché — voir
-// CreateWithdrawalDialogComponent). La liste se rafraîchit automatiquement après création.
+//  Historique des retraits de l'agence 
 @Component({
   selector: 'app-withdrawals',
   standalone: true,
@@ -58,9 +55,7 @@ export class WithdrawalsComponent {
   private readonly session = inject(SESSION_SERVICE);
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: null });
 
-  // Profondeur de défense (cosmétique) : le serveur refuse déjà POST /finance/retraits
-  // sans withdrawals.create (requireFinancePermission) — masquer le bouton évite juste
-  // un aller-retour inutile pour un utilisateur qui n'a pas ce droit.
+  
   readonly peutCreer = computed(() => aLaPermission(this.currentUser(), 'withdrawals.create'));
 
   readonly recherche = signal('');
@@ -72,10 +67,7 @@ export class WithdrawalsComponent {
   readonly erreur = signal<string | null>(null);
   readonly afficherFormulaireCreation = signal(false);
 
-  // Chantier Frais plateforme (Prompt F5/F8) : "Montant" (demandé) ne suffit plus à
-  // décrire ce qui a réellement été reçu/débité — "Frais" et "Net reçu" rendent le
-  // détail visible plutôt qu'un montant unique opaque. `?? '—'` : un retrait antérieur
-  // à ce chantier n'a pas ces champs (compatibilité rétroactive honnête).
+  // Frais plateforme 
   readonly colonnes: DataTableColumn<Retrait>[] = [
     { key: 'montant', label: 'Montant demandé', sortable: true, format: r => formatMontantXof(r.montant) },
     { key: 'feeAmount', label: 'Frais', format: r => (r.feeAmount !== undefined ? formatMontantXof(r.feeAmount) : '—') },

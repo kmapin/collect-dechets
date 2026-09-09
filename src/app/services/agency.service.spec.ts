@@ -1,12 +1,5 @@
 import { AgencyService } from './agency.service';
 
-/**
- * Prompt 06 : signalements unifiés côté agence — `getAgencySignalements$()`
- * remplace `getAgencyReports$()` (legacy Collecte-only), et
- * `assignSignalementToTeam$()`/`resolveSignalement$()` remplacent
- * `assignReportToTeam$()`/`resolveReport$()` (qui ne peuvent structurellement
- * pas adresser un signalement indépendant, sans `collecteId`).
- */
 describe('AgencyService - signalements unifiés (Prompt 06)', () => {
   let httpSpy: { get: jasmine.Spy; patch: jasmine.Spy };
   let service: AgencyService;

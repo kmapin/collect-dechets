@@ -33,9 +33,6 @@ export interface Agency {
   schedule: CollectionSchedule[];
   collectors: any[];
   clients: AgencyClient[];
-  // Moyenne réelle des CollecteRating reçues (chantier "notation agences",
-  // services/collecteRating.js) — `null` tant qu'aucune note n'existe, jamais
-  // une valeur fabriquée. `ratingsCount` pour l'affichage type "4.6 (128 avis)".
   rating: number | null;
   ratingsCount?: number;
   totalClients: number;
@@ -197,8 +194,6 @@ export interface Tarif {
   numberOfPasses?: number;
   createdAt?: Date;
   updatedAt?: Date;
-  // Chantier Frais plateforme (Prompt F4/F8) — qui supporte le frais plateforme
-  // pour ce plan tarifaire ('AGENCE' par défaut, voir modèle backend Pricing).
   feePayer?: 'CLIENT' | 'AGENCE';
 }
 export type TarifType = 'standard' | 'premium' | 'vip';
@@ -208,23 +203,7 @@ export enum  EmployeeRole {
   COLLECTOR = 'collector'
 }
 
-// export enum  UserRole {
-//   ADMIN = 'admin',
-//   MANAGER = 'manager',
-//   COLLECTOR = 'collector',
-//   CLIENT = 'client',
-//   AGENCY = 'agence'
-// }
 
-// export interface CollectionSchedule {
-//   id: string;
-//   zoneId: string;
-//   dayOfWeek: number;
-//   startTime: string;
-//   endTime: string;
-//   collectorId: string;
-//   isActive: boolean;
-// }
 export interface CollectionSchedule {
   _id?: string;
   zone: string; 

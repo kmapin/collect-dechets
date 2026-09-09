@@ -26,21 +26,11 @@ interface Incident {
 interface ActivityEvent {
   date: string; icon: string; color: string; title: string; detail: string;
 }
-// Chantier simplification Planning→Collecte (Prompt 0) — PlanningRound déprécié. Une
-// ligne de cette liste représente une Collecte réelle, jamais un compteur agrégé.
-// `failureReason`/`comment` sont l'observation par Collecte (jamais un compteur global)
-// que le collecteur peut toujours saisir, y compris sur une Collecte déjà manquée.
+
 interface PlanningCollecte {
   id: string; clientId: string; clientName: string; clientNeighborhood: string; status: string;
   failureReason: string | null; comment: string | null;
-  // Position réelle du client (User.address.latitude/longitude, populée par le backend
-  // sur Collecte.clientId) — utilisée pour placer les vrais points sur la carte
-  // "Suivi des collectes" (_renderCollectePoints ci-dessous), jamais une position inventée.
   latitude: number | null; longitude: number | null;
-  // Nouvelle date prévue saisie AVANT de cliquer "Retenter" (chantier "redéfinir la date
-  // prévue au rattrapage") — état local du formulaire, jamais persisté tel quel : seul
-  // retryCollecte(c) l'envoie au backend. `null` par défaut : la Collecte garde sa date
-  // d'origine si le manager ne change rien (comportement historique inchangé).
   newDate: string | null;
 }
 interface PlanningStats {
@@ -79,12 +69,9 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
 
   private leafletMap!: L.Map;
 
-  // ── Formatage de dates (partagé) — exposé pour le template ─────
+  // ── Formatage de dates ─────
   formatFrDate     = formatFrDate;
   formatFrDateTime = formatFrDateTime;
-  // `[min]` de l'input date du rattrapage (chantier "redéfinir la date prévue") — même
-  // borne que la validation backend (nouvelleDate ne peut pas être dans le passé),
-  // affichée AVANT l'envoi plutôt que découverte seulement via une erreur serveur.
   readonly todayIso = new Date().toISOString().slice(0, 10);
 
   // ── State ─────────────────────────────────────────────────────
@@ -100,9 +87,6 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   isActioning   = signal(false);
   planning      = signal<Planning | null>(null);
 
-  // ── Exécution (Collecte directe — PlanningRound déprécié, Prompt 0) ───────
-  // Statistiques calculées directement depuis les Collecte du Planning, jamais saisies —
-  // remplace l'ancien "historique des tournées" (PlanningRound retiré).
   planningStats     = signal<PlanningStats>({ totalHouseholds: 0, householdsCollected: 0, completionRate: 0 });
   isLoadingStats    = signal(false);
   collectes         = signal<PlanningCollecte[]>([]);
@@ -182,23 +166,12 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     return m[this.planning()?.frequency ?? ''] ?? '—';
   });
 
-  // Calculé une seule fois dans PlanningService._locationLabel (quartier du client pour
-  // un planning individuel, zone/secteur commun aux membres pour un groupe, territoire
-  // ciblé pour zone|secteur) — jamais réimplémenté ici pour ne pas diverger de
-  // planning-summary-drawer.ts, qui affiche la même information.
+
   locationLabel = computed(() => this.planning()?.locationLabel ?? '—');
 
   criticalIncidents = computed(() => this.incidents().filter(i => i.severity === 'critical' && !i.resolved).length);
 
-  // ── Notifications : indicateur d'état (Prompt 06 point 2) ──────
-  // Le pipeline unifié notifie désormais automatiquement à chaque transition
-  // (voir dispatchPlanningTransition côté backend) — il n'y a plus de bouton
-  // "envoyer" à déclencher soi-même en usage normal. `notificationSummary`
-  // remplace ce geste par un simple état de fait ; `canResendNotifications`
-  // n'expose le renvoi manuel (`sendPlanningNotification`, conservé côté
-  // backend précisément pour ce cas) que lorsque le planning est sorti du
-  // brouillon mais qu'aucune notification n'a été enregistrée — le signe d'un
-  // échec, pas un chemin d'usage courant.
+
   notificationSummary = computed(() => {
     const notifs = this.notifications();
     if (!notifs.length) return null;
@@ -238,9 +211,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   canDelete   = computed(() => ['brouillon', 'annule'].includes(this.planning()?.status ?? ''));
 
   // ── Charts ────────────────────────────────────────────────────
-  // Chantier simplification Planning→Collecte (Prompt 0) — plus d'estimation inventée
-  // (l'ancien code devinait 60% pour un planning en_cours) : les valeurs viennent
-  // maintenant directement de `planningStats()`, calculées depuis les vraies Collecte.
+
   completionChartData = computed(() => {
     const s = this.planningStats();
     return {
@@ -270,15 +241,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     if (this.leafletMap) this.leafletMap.remove();
   }
 
-  // ── Fetch from API ────────────────────────────────────────────
-  // Toujours un vrai GET /planning/:id, jamais l'entrée du cache de la liste
-  // (this.svc.plannings(), alimentée par GET /planning) : cette dernière ne peuple QUE
-  // equipeIds/quartierId/secteurId (services/planning.js::getPlanningsV2) — ni
-  // clientId ni groupeId, contrairement à GET /planning/:id (getPlanningV2ById).
-  // Servir cette entrée allégée ici affichait "Localisation : —" pour un planning
-  // individuel/groupe tant que la page n'était pas rechargée (le cache ne survit qu'à
-  // l'intérieur d'une même session SPA) — corrigé en ne faisant plus confiance à ce
-  // raccourci pour cette page, qui a besoin des champs réellement peuplés.
+
   private _fetchPlanning(id: string): void {
     this.svc.getPlanning(id).subscribe({
       next: (p) => {
@@ -295,8 +258,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  // Statistiques calculées directement depuis les Collecte du Planning (Prompt 0) —
-  // jamais saisies, jamais un compteur de round intermédiaire.
+ 
   private _loadStats(planningId: string): void {
     this.isLoadingStats.set(true);
     this.svc.getPlanningStats(planningId).subscribe({
@@ -318,9 +280,6 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       next: list => {
         this.collectes.set(list.map((c: any) => this._mapCollecte(c)));
         this.isLoadingCollectes.set(false);
-        // La carte peut déjà exister (chargement lent) ou pas encore (_initMap() la
-        // redessinera lui-même une fois prête) — dans les deux cas ce point de vérité
-        // unique évite de dupliquer la logique de placement des marqueurs.
         this._renderCollectePoints();
       },
       error: () => this.isLoadingCollectes.set(false),
@@ -339,9 +298,6 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       comment: c.comment ?? null,
       latitude: typeof client?.address?.latitude === 'number' ? client.address.latitude : null,
       longitude: typeof client?.address?.longitude === 'number' ? client.address.longitude : null,
-      // Pré-rempli au jour J plutôt que vide — le manager n'a plus qu'à ajuster si la
-      // replanification vise un autre jour (le champ reste modifiable, [min]="todayIso"
-      // interdit toujours une date dans le passé).
       newDate: this.todayIso,
     };
   }
@@ -350,7 +306,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.collectes.update(list => list.map(c => c.id === id ? { ...c, ...patch } : c));
   }
 
-  // Motif/observation par Collecte — jamais un compteur global (Prompt 0, étape 2).
+  
   saveObservation(c: PlanningCollecte): void {
     this.savingObservationId.set(c.id);
     this.svc.setCollecteObservation(c.id, { failureReason: c.failureReason || undefined, comment: c.comment || undefined }).subscribe({
@@ -365,24 +321,14 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  // Rattrapage (Prompt 0, étape 5) — retente directement la Collecte existante, pas de
-  // nouvelle entité ni de sélection multiple à confirmer : une action par Collecte.
-  // `c.newDate` (chantier "redéfinir la date prévue au rattrapage") : pré-rempli au jour J
-  // (_mapCollecte) plutôt que vide, modifiable via l'input date de la ligne — le manager
-  // choisit explicitement une autre date seulement s'il le souhaite. Validée côté backend
-  // (pas dans le passé) — un rejet remonte via l'erreur ci-dessous, jamais silencieusement
-  // ignoré.
+ 
   retryCollecte(c: PlanningCollecte): void {
     const p = this.planning();
     if (!p || this.retryingId()) return;
     this.retryingId.set(c.id);
     this.svc.retryCollecte(p.id, c.id, c.newDate).subscribe({
       next: () => {
-        // formatFrDate (pas new Date(...).toLocaleDateString) : c.newDate est une date
-        // seule (YYYY-MM-DD, valeur native d'un <input type="date">) — un parsing
-        // naïf via `new Date(string)` la traite comme minuit UTC, ce qui peut décaler le
-        // jour affiché d'un cran dans un fuseau horaire négatif (même piège déjà
-        // documenté sur formatFrDate/format.util.ts).
+        
         const detail = c.newDate
           ? `${c.clientName} sera retentée le ${this.formatFrDate(c.newDate)}.`
           : `${c.clientName} sera retentée.`;
@@ -403,12 +349,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this._loadStats(planningId);
     this._loadCollectes(planningId);
 
-    // Corrigé (usage réel) : `getIncidents()` lisait `PlanningIncident`, un
-    // modèle jamais alimenté par aucun code du produit (aucun bouton, aucun
-    // cron n'y écrit jamais) — la section restait donc vide même pour un
-    // planning avec de vrais signalements. Remplacé par les vrais
-    // `Signalement` liés à ce planning (`planningId` dénormalisé exactement
-    // pour ce besoin, voir CONCEPTION_UNIFICATION_PLANNING_SIGNALEMENT.md §1.3).
+   
     this.svc.getPlanningSignalements(planningId).subscribe(signalements => {
       this.incidents.set(signalements.map((s: any) => this._mapSignalementToIncident(s)));
     });

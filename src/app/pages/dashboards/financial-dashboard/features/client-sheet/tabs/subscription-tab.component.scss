@@ -42,8 +42,6 @@
     @include resp.table-to-cards;
   }
 
-  // Reset bouton natif + apparence de lien (remplace un ancien `<a href>` direct — le
-  // PDF est désormais servi via une URL signée récupérée au clic, pas un lien statique).
   &__link-btn {
     border: none;
     background: none;

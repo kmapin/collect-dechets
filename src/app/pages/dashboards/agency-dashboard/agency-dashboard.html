@@ -233,9 +233,6 @@
                       <div class="collection-info">
                         <i class="material-icons">group</i>
                         {{ collecte.clientId?.firstName }} {{ collecte.clientId?.lastName }}
-                        <!-- collectorId (V1) ou équipe du Planning d'origine (V2, code.equipeIds) — voir
-                     getCollecteAssigneeText(). Accès direct .firstName sur collectorId null
-                     (toujours le cas en V2) faisait planter tout le reste de la carte. -->
                         <p><i class="material-icons">person</i> Assigné à : {{ getCollecteAssigneeText(collecte) }}</p>
                         <p><i class="material-icons">apartment</i> Agence : {{ collecte.agencyId?.name ?? "—" }}</p>
                         <p>
@@ -267,9 +264,6 @@
                           <td class="cell-name">
                             {{ collecte.clientId?.firstName }} {{ collecte.clientId?.lastName }}
                           </td>
-                          <!-- collectorId (V1) ou équipe du Planning d'origine (V2, code.equipeIds) — voir
-                       getCollecteAssigneeText(). Accès direct .firstName sur collectorId null
-                       (toujours le cas en V2) faisait planter cette cellule et les suivantes. -->
                           <td class="cell-name">{{ getCollecteAssigneeText(collecte) }}</td>
                           <td>{{ collecte.agencyId?.name ?? "—" }}</td>
                           <td>
@@ -899,10 +893,6 @@
             <div class="section-header">
               <h2>Gestion des Zones de Couverture</h2>
               <div class="section-actions">
-                <!-- <button class="btn btn-primary" (click)="openTariffsModal()">
-                <i class="material-icons">visibility</i>
-                Voir mes tarifs
-              </button> -->
                 <button class="btn btn-primary" (click)="openZoneModalcouverture()">
                   <i class="material-icons">edit_location</i>
                   Ajouter des zones couvertes
@@ -1174,270 +1164,6 @@
 
         <!-- Onglet Clients -->
         <!-- Clients Actifs  -->
-        <!-- @if (activeTab === 'clients') {
-        <div class="clients-tab">
-          <div class="section-header">
-            <h2>Clients Actifs et leurs abonnements</h2>
-            <div class="section-actions">
-              <button class="btn btn-outline search-toggle-btn" (click)="toggleClientsSearch()"
-                [class.active]="showClientsSearch"
-                title="{{ showClientsSearch ? 'Masquer la recherche' : 'Afficher la recherche' }}">
-                <i class="material-icons">{{ showClientsSearch ? 'search_off' : 'search' }}</i>
-                {{ showClientsSearch ? 'Masquer recherche' : 'Rechercher' }}
-              </button>
-            </div>
-          </div>
-          @if (showClientsSearch) {
-          <div class="clients-search-section" [@slideInOut]>
-            <div class="search-container">
-              <div class="search-input-wrapper">
-                <i class="material-icons search-icon">search</i>
-                <input type="text" class="search-input"
-                  placeholder="Rechercher un client par nom, email ou Telephone..." [(ngModel)]="clientsSearch"
-                  (input)="filterClients()" #clientSearchInput />
-                @if (clientsSearch) {
-                <button class="clear-search-btn" (click)="clearClientSearch()" title="Effacer la recherche">
-                  <i class="material-icons">clear</i>
-                </button>
-                }
-              </div>
-            </div>
-            <div class="clients-filters">
-              <div class="filter-group">
-                <label for="clientCityFilter">Ville :</label>
-                <select id="clientCityFilter" class="filter-select" [(ngModel)]="clientsCityFilter"
-                  (change)="filterClients()">
-                  <option value="all">Toutes les villes</option>
-                  @for (city of getUniqueClientCities(); track city) {
-                  <option [value]="city">{{ city }}</option>
-                  }
-                </select>
-              </div>
-              <div class="filter-group">
-                <label for="clientNeighborhoodFilter">Quartier :</label>
-                <select id="clientNeighborhoodFilter" class="filter-select" [(ngModel)]="clientsNeighborhoodFilter"
-                  (change)="filterClients()">
-                  <option value="all">Tous les quartiers</option>
-                  @for (neighborhood of getUniqueClientNeighborhoods(); track
-                  neighborhood) {
-                  <option [value]="neighborhood">{{ neighborhood }}</option>
-                  }
-                </select>
-              </div>
-              <div class="filter-group">
-                <label for="clientStatusFilter">Statut :</label>
-                <select id="clientStatusFilter" class="filter-select" [(ngModel)]="clientsStatusFilter"
-                  (change)="filterClients()">
-                  <option value="all">Tous</option>
-                  <option value="active">Actifs</option>
-                  <option value="suspended">Suspendus</option>
-                  <option value="pending">En attente</option>
-                </select>
-              </div>
-              <div class="filter-group">
-                <label for="clientItemsPerPageFilter">Éléments par page :</label>
-                <select id="clientItemsPerPageFilter" class="filter-select" [value]="clientsItemsPerPage"
-                  (change)="changeClientItemsPerPage(+($any($event.target).value))">
-                  <option [value]="10">10</option>
-                  <option [value]="20">20</option>
-                  <option [value]="50">50</option>
-                  <option [value]="100">100</option>
-                </select>
-              </div>
-            </div>
-            @if (clientsSearch || clientsCityFilter !== 'all' ||
-            clientsNeighborhoodFilter !== 'all' || clientsStatusFilter !==
-            'all') {
-            <div class="search-results-info" [@fadeInOut]>
-              <div class="results-summary">
-                <span class="results-count">
-                  {{ filteredActiveClients.length }} client(s) trouvé(s) @if
-                  (clientsTotalItems > filteredActiveClients.length) {
-                  <span> sur {{ clientsTotalItems }} total </span>
-                  }
-                </span>
-                @if (clientsTotalPages > 1) {
-                <span class="page-info">
-                  Page {{ clientsCurrentPage }} sur {{ clientsTotalPages }}
-                </span>
-                }
-              </div>
-              <button class="reset-filters-btn" (click)="resetClientFilters()">
-                <i class="material-icons">refresh</i>
-                Réinitialiser les filtres
-              </button>
-            </div>
-            }
-          </div>
-          }
-          @if (isLoadingClients || isLoadingFilteredClients) {
-          <app-loading-spinner
-            [message]="isLoadingFilteredClients ? 'Filtrage des clients...' : 'Chargement des clients...'" size="medium"
-            [@fadeInOut]>
-          </app-loading-spinner>
-          } @if (!isLoadingClients) {
-          <div class="clients-table">
-            <p-table [value]="filteredActiveClients" dataKey="_id" [expandedRowKeys]="expandedRows"
-              (onRowExpand)="onRowExpand($event)" (onRowCollapse)="onRowCollapse($event)" class="table">
-              <ng-template #caption>
-                <div class="flex flex-wrap justify-end gap-2">
-                  <p-button label="Afficher tout" text (onClick)="expandAll()" />
-                  <p-button label="Masquer tout" text (onClick)="collapseAll()" />
-                </div>
-              </ng-template>
-              <ng-template #header>
-                <tr>
-                  <th style="width: 5rem"></th>
-                  <th>Nom</th>
-                  <th>Email</th>
-                  <th>Telephone</th>
-                  <th>Adresse</th>
-                  <th>Statut</th>
-                  <th>Action</th>
-                </tr>
-              </ng-template>
-              <ng-template #body let-client let-expanded="expanded">
-                <tr>
-                  <td>
-                    <p-button type="button" pRipple [pRowToggler]="client" [text]="true" severity="secondary"
-                      [rounded]="true" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
-                  </td>
-                  <td>{{ client.firstName }} {{ client.lastName }}</td>
-                  <td>{{ client.email }}</td>
-                  <td>{{ client.phone }}</td>
-                  <td>
-                    {{ client.address.street }}, {{ client.address.neighborhood
-                    }}
-                  </td>
-                  <td>
-                    <span class="status-badge status-active">Actif</span>
-                  </td>
-                  <td>
-                    <button class="action-btn danger" (click)="viewClientDetails(client._id)">
-                      <i class="material-icons">visibility</i>
-                    </button>
-                  </td>
-                </tr>
-              </ng-template>
-              <ng-template #expandedrow let-client>
-                <tr>
-                  <td colspan="7">
-                    <div class="p-4">
-                      <h2>
-                        Historique des abonnements de {{ client.firstName }} {{
-                        client.lastName }}
-                      </h2>
-                      <p-table [value]="client.historyAbonnement" dataKey="id">
-                        <ng-template #header>
-                <tr>
-                  <th pSortableColumn="customer">
-                    <div class="flex items-center gap-2">
-                      Type
-                      <p-sortIcon field="customer" />
-                    </div>
-                  </th>
-                  <th pSortableColumn="date">
-                    <div class="flex items-center gap-2">
-                      Date début
-                      <p-sortIcon field="date" />
-                    </div>
-                  </th>
-                  <th pSortableColumn="dateFin">
-                    <div class="flex items-center gap-2">
-                      Date fin
-                      <p-sortIcon field="date" />
-                    </div>
-                  </th>
-                  <th pSortableColumn="amount">
-                    <div class="flex items-center gap-2">
-                      Montant
-                      <p-sortIcon field="amount" />
-                    </div>
-                  </th>
-                  <th pSortableColumn="amount">
-                    <div class="flex items-center gap-2">
-                      Nombre de mois
-                      <p-sortIcon field="amount" />
-                    </div>
-                  </th>
-                  <th pSortableColumn="status">
-                    <div class="flex items-center gap-2">
-                      Status
-                      <p-sortIcon field="status" />
-                    </div>
-                  </th>
-                </tr>
-              </ng-template>
-              <ng-template #body let-abonnement>
-                <tr>
-                  <td>
-                    {{ abonnement.pricingId.planType.toUpperCase() }}
-                  </td>
-                  <td>
-                    {{ abonnement.createdAt | date : 'dd/MM/yyyy' }}
-                  </td>
-                  <td>
-                    {{ abonnement.endDate | date : 'dd/MM/yyyy' }}
-                  </td>
-                  <td>
-                    {{ abonnement.pricingId.price |
-                    currency:'XOF':'symbol':'1.0-0':'fr-FR' }}
-                  </td>
-                  <td>{{ abonnement.numberMonths }}</td>
-                  <td>
-                    <p-tag [value]="isSubscriptionActiveDisplay(abonnement) ? 'Actif':'Inactif'"
-                      [severity]="getSeverity(isSubscriptionActiveDisplay(abonnement).toString())" />
-                  </td>
-                </tr>
-              </ng-template>
-              <ng-template #emptymessage>
-                <tr>
-                  <td colspan="6">
-                    Il n'y a pas d'abonnement disponible pour ce
-                    client.
-                  </td>
-                </tr>
-              </ng-template>
-            </p-table>
-          </div>
-          </td>
-          </tr>
-          </ng-template>
-          </p-table>
-        </div>
-        }
-        @if (!isLoadingClients && !isLoadingFilteredClients &&
-        filteredActiveClients.length > 0 && clientsTotalPages > 1) {
-        <div class="pagination-section" [@slideFromLeft]>
-          <div class="pagination-info">
-            <span class="pagination-details">
-              Affichage {{ ((clientsCurrentPage - 1) * clientsItemsPerPage) +
-              1 }} à {{ getClientEndItemNumber() }} sur {{ clientsTotalItems
-              }} client(s)
-            </span>
-          </div>
-          <div class="pagination-controls">
-            <button class="pagination-btn" [disabled]="clientsCurrentPage === 1" (click)="previousClientPage()"
-              title="Page précédente">
-              <i class="material-icons">chevron_left</i>
-            </button>
-            <div class="pagination-numbers">
-              @for (page of getClientPaginationPages(); track page) {
-              <button class="pagination-btn page-number" [class.active]="page === clientsCurrentPage"
-                (click)="goToClientPage(page)">
-                {{ page }}
-              </button>
-              }
-            </div>
-            <button class="pagination-btn" [disabled]="clientsCurrentPage === clientsTotalPages"
-              (click)="nextClientPage()" title="Page suivante">
-              <i class="material-icons">chevron_right</i>
-            </button>
-          </div>
-        </div>
-        }
-      </div>
-      } -->
 
         <!-- Onglet Signalements -->
         @if (activeTab === "reports") {
@@ -1458,7 +1184,6 @@
                   <option value="medium">Moyenne</option>
                   <option value="low">Faible</option>
                 </select>
-                <!-- Filtre par origine (Prompt 06 point 3) -->
                 <select [(ngModel)]="origineFilter" (change)="filterIncidents()" class="filter-select">
                   <option value="all">Toutes origines</option>
                   <option value="collecte">Liés à une collecte</option>
@@ -1480,101 +1205,8 @@
                 (assignReportToTeam)="onAssignReportToTeam($event)"
                 (resolvedIncident)="resolveIncident($event)"
               ></app-signalement>
-              <!-- <div class="reports-list">
-            @for (report of agencyReports; track report) {
-            <div class="report-card card">
-              <div class="incident-header">
-                <div
-                  class="incident-severity"
-                  [class]="'severity-' + report?.severity"
-                >
-                  <i class="material-icons"
-                    >{{ getSeverityIcon(report.severity) }}</i>
-                  <span
-                    >{{ getSeverityText(report.severity) ?
-                    getSeverityText(report.severity) : "Faible" }}</span>
-                </div>
-                <div class="incident-status">
-                  <span
-                    class="status-badge"
-                    [class]="'status-' + report.status"
-                  >
-                    {{ getIncidentStatusText(report.status) }}
-                  </span>
-                </div>
-              </div>
-              <h4>
-                {{ report?.client?.firstName }} {{ report?.client?.lastName }}
-              </h4>
-              <div class="incident-content">
-                <h4>{{ getIncidentTypeText(report.type) }}</h4>
-                <p class="incident-description">{{ report.comment }}</p>
-                <p class="incident-date">
-                  Date : {{ report.createdAt | date : "dd/MM/yyyy" }}
-                </p>
-                <p class="incident-date">
-                  Heure : {{ report.createdAt | date : "HH:mm:ss" }}
-                </p>
-              </div>
-              
-              @if (report.photos && report.photos.length) {
-              <div class="report-photos">
-                @for (photo of report.photos; track photo) {
-                <img
-                  [src]="photo"
-                  alt="Photo du signalement"
-                  class="report-photo circular-image"
-                  (click)="openImageModal(photo)"
-                />
-                }
-              </div>
-              } @if (!report.photos || !report.photos.length) {
-              <div>
-                <p><em>Aucune photo associée</em></p>
-              </div>
-              } @if (agencyReports.length === 0) {
-              <div class="empty-state">
-                <i class="material-icons">report_problem</i>
-                <h3>Aucun signalement pour le moment</h3>
-              </div>
-              }
-              <div class="incident-actions">
-                @if (!report.assignedTo) {
-                <button
-                  class="btn btn-accent"
-                  (click)="openAssignModal(report._id)"
-                  (click)="openAssignModal(report._id)"
-                >
-                  <i class="material-icons">assignment_ind</i>
-                  Traiter
-                </button>
-                }
-                @if (report.assignedTo) {
-                <button
-                  class="btn btn-success"
-                  (click)="resolveIncident(report._id)"
-                  (click)="resolveIncident(report._id)"
-                >
-                  <i class="material-icons">check</i>
-                  Résoudre
-                </button>
-                }
-              </div>
-            </div>
-            }
-          </div> -->
             }
             <!-- État vide pour les signalements -->
-            <!-- @if (!isLoadingReports && !agencyReports.length) {
-          <div class="empty-state">
-            <i class="material-icons">report_off</i>
-            <h3>Aucun signalement</h3>
-            <p>
-              Excellent ! Vous n'avez aucun signalement en cours. Les nouveaux
-              signalements apparaîtront ici.
-            </p>
-          </div>
-          } -->
           </div>
         }
 
@@ -1781,8 +1413,6 @@
           </div>
         }
 
-        <!-- Picker d'équipe pour une demande express acceptée (même pattern que
-             le picker d'équipe des signalements, shared_pages/signalement) -->
         @if (showDemandeTeamPicker) {
           <div class="drawer-overlay" (click)="closeDemandeTeamPicker()">
             <div class="drawer-content" (click)="$event.stopPropagation()">
@@ -2639,78 +2269,9 @@
                               </div>
                             </div>
                             <!-- Informations spécifiques -->
-                            <!-- <div class="form-row">
-                          <div class="form-group">
-                            <label class="form-label required">
-                              <mat-icon class="field-icon">way</mat-icon>
-                              Rue
-                            </label>
-                            <input
-                              type="text"
-                              formControlName="street"
-                              class="form-input"
-                              placeholder="Nom de la rue"
-                            />
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label required">
-                              <mat-icon class="field-icon">numbers</mat-icon>
-                              Numéro de porte
-                            </label>
-                            <input
-                              type="text"
-                              formControlName="doorNumber"
-                              class="form-input"
-                              placeholder="ex: 12B"
-                            />
-                          </div>
-                        </div>
-                        <div class="form-row">
-                          <div class="form-group">
-                            <label class="form-label">
-                              <mat-icon class="field-icon">palette</mat-icon>
-                              Couleur de porte
-                            </label>
-                            <select
-                              formControlName="doorColor"
-                              class="form-input"
-                            >
-                              <option value="">Choisir une couleur</option>
-                              <option value="Blanc">Blanc</option>
-                              <option value="Bleu">Bleu</option>
-                              <option value="Rouge">Rouge</option>
-                              <option value="Vert">Vert</option>
-                              <option value="Jaune">Jaune</option>
-                              <option value="Noir">Noir</option>
-                              <option value="Marron">Marron</option>
-                              <option value="Gris">Gris</option>
-                              <option value="Orange">Orange</option>
-                              <option value="Violet">Violet</option>
-                              <option value="Rose">Rose</option>
-                              <option value="Beige">Beige</option>
-                              <option value="Autre">Autre</option>
-                            </select>
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label">
-                              <mat-icon class="field-icon"
-                                >local_post_office</mat-icon
-                              >
-                              Code postal
-                            </label>
-                            <input
-                              type="text"
-                              formControlName="postalCode"
-                              class="form-input"
-                              placeholder="Code postal"
-                            />
-                          </div>
-                        </div> -->
                           </div>
                         </div>
                       }
-                      <!-- Sélection multiple des zones — collecteur ET manager (un manager peut
-                       superviser des zones au même titre qu'un collecteur les couvre). -->
                       @if (
                         employeeForm.get("role")?.value === "collector" || employeeForm.get("role")?.value === "manager"
                       ) {
@@ -2846,7 +2407,6 @@
                         ></textarea>
                         <span class="error-message">{{ getFieldError("tariff", "description") }}</span>
                       </div>
-                      <!-- Chantier Frais plateforme (Prompt F4/F8) : qui supporte le frais plateforme -->
                       <div class="form-group full-width">
                         <label class="form-label required">Frais plateforme à la charge de</label>
                         <select formControlName="feePayer" class="form-select">
@@ -2986,14 +2546,6 @@
               </div>
             </div>
           }
-          <!--
-            Ancien modal d'assignation par employé supprimé (Prompt 06) : appelait
-            assignReport()/onEmployeeToggle(), qui tapaient PUT /reports/:id/assign
-            (route inexistante dans tout le backend) — jamais fonctionnel. Le vrai
-            picker d'équipe (team-based, contrat réel) vit maintenant directement dans
-            <app-signalement> ci-dessus (signalement.ts::openTeamPicker), qui émet
-            (assignReportToTeam) une fois l'équipe confirmée.
-          -->
           <!-- Drawer Mes Tarifs -->
           @if (showTariffsModal) {
             <div class="drawer-overlay" (click)="closeTariffsModal()">
@@ -3026,9 +2578,6 @@
                             <i class="material-icons text-sm align-middle">info</i>
                             {{ tariff.description }}
                           </p>
-                          <!-- Chantier Frais plateforme (Prompt 9/9) : qui supporte les
-                       frais plateforme pour ce tarif, visible directement dans la
-                       liste (pas seulement dans le formulaire d'édition). -->
                           <span class="fee-payer-chip" [class.fee-payer-chip--client]="tariff.feePayer === 'CLIENT'">
                             <i class="material-icons text-sm">{{
                               tariff.feePayer === "CLIENT" ? "person" : "store"
@@ -3153,15 +2702,6 @@
           >
         </div>
         <!-- Historique des souscriptions -->
-        <!-- <div class="form-section" *ngIf="selectedClient?.subscriptionHistory?.length > 0">
-                                    <h4 class="section-title">Historique des souscriptions</h4>
-                                    <div class="subscription-list">
-                                      <div *ngFor="let subscription of selectedClient?.subscriptionHistory" class="subscription-item">
-                                        <span class="subscription-type">{{ subscription.type }}</span>
-                                        <span class="subscription-status" [class]="'status-' + subscription.status">{{ subscription.status }}</span>
-                                      </div>
-                                    </div>
-                                  </div> -->
       </div>
       <div class="drawer-footer">
         <div class="drawer-actions">

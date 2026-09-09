@@ -1,7 +1,3 @@
-/** Coordonnées GPS de référence pour Ouagadougou et le Burkina Faso.
- *  Précision : ~200–500 m pour les quartiers/secteurs (centroïdes estimés).
- *  Format : [latitude, longitude] (WGS-84).
- */
 
 // ─── Villes du Burkina Faso ───────────────────────────────────────────────────
 
@@ -214,10 +210,6 @@ export const OUAGA_COORDS: Record<string, [number, number]> = {
 
 // ─── Résolution multi-niveaux ────────────────────────────────────────────────
 
-/**
- * Cherche les coordonnées dans l'ordre : quartier → secteur → arrondissement → ville.
- * Retourne null si introuvable.
- */
 export function resolveCoords(name: string): [number, number] | null {
   return (
     OUAGA_COORDS[name]       ??

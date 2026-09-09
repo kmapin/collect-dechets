@@ -195,11 +195,6 @@ export const MOCK_ARRONDISSEMENTS: Arrondissement[] = [
 
 
 
-    // { id: '1', name: 'Baskuy', code: 'BAS', city: MOCK_CITIES[0] },
-    // { id: '2', name: 'Bogodogo', code: 'BOG', city: MOCK_CITIES[0] },
-    // { id: '3', name: 'Boulmiougou', code: 'BOU', city: MOCK_CITIES[0] },
-    // { id: '4', name: 'Nongremassom', code: 'NON', city: MOCK_CITIES[0] },
-    // { id: '5', name: 'Sig-Noghin', code: 'SIG', city: MOCK_CITIES[0] },
 
     // Bobo-Dioulasso Arrondissements
     { id: '6', name: 'Do', code: 'DO', city: MOCK_CITIES[1] },
@@ -299,8 +294,6 @@ export const MOCK_ARRONDISSEMENTS: Arrondissement[] = [
     { id: '89', name: 'Sector 4', code: 'S4ZOR', city: MOCK_CITIES[14] },
     { id: '90', name: 'Sector 5', code: 'S5ZOR', city: MOCK_CITIES[14] },
 
-    // ...existing arrondissements for other countries...
-    // Mali Cities
     { id: '91', name: 'Commune I', code: 'COM1', city: MOCK_CITIES[15] },
     { id: '92', name: 'Commune II', code: 'COM2', city: MOCK_CITIES[15] },
     { id: '93', name: 'Commune III', code: 'COM3', city: MOCK_CITIES[15] },

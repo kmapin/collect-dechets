@@ -60,22 +60,20 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       }
     });
 
-    // Redessine le graphique d'évolution dès que planningService.evolution() change
-    // (premier chargement, refresh périodique, ou clic Semaine/Mois) — voir
-    // _buildEvolutionChart().
+
     effect(() => {
       this.planningService.evolution();
       this._buildEvolutionChart();
     });
   }
 
-  // ── Data from service (signals) ────────────────────────────
+
   stats   = this.planningService.stats;
   alerts  = this.planningService.alerts;
   zones   = this.planningService.zones;
   recentPlannings = signal<Planning[]>([]);
 
-  // ── Teams mapped for display ─────────────────────────────────
+
   teams = computed(() =>
     this.planningService.teams().map(t => ({
       id:               t._id,
@@ -88,7 +86,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     }))
   );
 
-  // ── Stat cards ──────────────────────────────────────────────
+
   statCards = computed<StatCard[]>(() => {
     const s = this.stats();
     return [
@@ -131,7 +129,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     ];
   });
 
-  // ── Charts ──────────────────────────────────────────────────
+  //Charts
   typeChartData: any;
   typeChartOptions: any;
   statusChartData: any;
@@ -141,11 +139,11 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   teamWorkloadData: any;
   teamWorkloadOptions: any;
 
-  // ── Notifications overlay ────────────────────────────────────
+  // Notifications overlay 
   notifOpen = signal(false);
   toggleNotif(): void { this.notifOpen.update(v => !v); }
 
-  // ── Évolution des plannings — période (Semaine = 7j, Mois = 30j) ──────────
+  // Évolution des plannings — période (Semaine = 7j, Mois = 30j) 
   evolutionPeriod = signal<'week' | 'month'>('week');
   setEvolutionPeriod(period: 'week' | 'month'): void {
     if (this.evolutionPeriod() === period) return;
@@ -156,7 +154,6 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   private refreshTimer: any;
 
   ngOnInit(): void {
-    // Load all data from real API
     this.planningService.loadStats();
     this.planningService.loadZones();
     this.planningService.loadAlerts();
@@ -164,18 +161,14 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     this.teamService.loadTeams();
     this.planningService.loadPlannings();
 
-    // Wait for data then init charts
+    
     setTimeout(() => {
       this.recentPlannings.set(this.planningService.getRecentPlannings(6));
       this.isLoading.set(false);
       this._initCharts();
     }, 1200);
 
-    // Refresh recent plannings periodically — vrai re-fetch réseau (chantier
-    // "automatiser le statut des plannings") : le backend recalcule désormais le statut
-    // à la lecture (getPlanningsV2), donc un simple re-tri du cache local ne suffit plus
-    // à faire apparaître une transition automatique (planifie -> en_cours -> termine)
-    // sans reload de page.
+   
     this.refreshTimer = setInterval(() => {
       this.planningService.loadPlannings();
       setTimeout(() => {
@@ -194,7 +187,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     const byStatus = this.planningService.planningsByStatus();
     const workload = this.planningService.teamWorkload();
 
-    // ── Donut – par type ──────────────────────────────────────
+    // Donut – par type
     this.typeChartData = {
       labels: ['Client individuel', 'Groupe de clients', 'Par zone', 'Par secteur'],
       datasets: [{
@@ -207,7 +200,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
     this.typeChartOptions = this._donutOptions();
 
-    // ── Donut – par statut ────────────────────────────────────
+    // Donut – par statut 
     this.statusChartData = {
       labels: ['Brouillon', 'Planifié', 'En cours', 'Terminé'],
       datasets: [{
@@ -222,7 +215,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
 
     this._buildEvolutionChart();
 
-    // ── Bar – charge des équipes ──────────────────────────────
+    //  Bar – charge des équipes 
     this.teamWorkloadData = {
       labels: workload.map(t => t.name),
       datasets: [{
@@ -247,11 +240,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
   }
 
-  // ── Line – évolution des plannings (GET /planning/evolution, réel) ─────
-  // Méthode séparée (pas juste un bloc dans _initCharts()) : appelée aussi depuis
-  // l'effect() du constructeur, pour se redessiner dès que planningService.evolution()
-  // change (après un premier chargement OU après un clic sur Semaine/Mois), sans
-  // attendre le prochain tick du minuteur de rafraîchissement (30s).
+
   private _buildEvolutionChart(): void {
     const evolution = this.planningService.evolution();
     this.evolutionChartData = {
@@ -305,7 +294,7 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     };
   }
 
-  // ── UI helpers ──────────────────────────────────────────────
+  //  UI helpers
   getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
     const map: Record<string, any> = {
       planifie: 'info',
@@ -376,9 +365,9 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     return ({ disponible: 'Disponible', en_service: 'En service', indisponible: 'Indisponible' } as Record<string,string>)[status] ?? status;
   }
 
-  // ── Planning status actions ──────────────────────────────────
+  // Planning status actions
 
-  actionLoading = signal<string | null>(null); // ID du planning en cours d'action
+  actionLoading = signal<string | null>(null); 
 
   /** brouillon → planifie */
   publishPlanning(p: Planning): void {

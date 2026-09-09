@@ -1,11 +1,6 @@
 import { of } from 'rxjs';
 import { TerritoryHttpService } from './territory-http.service';
 
-/**
- * Chantier "unifier la géographie" — TerritoryHttpService est le pendant réel (HTTP)
- * de CountriesOrgMockService (en mémoire). Même style que client.service.spec.ts :
- * instanciation manuelle avec un spy HttpClient, pas de TestBed.
- */
 describe('TerritoryHttpService', () => {
   let httpSpy: { get: jasmine.Spy };
   let service: TerritoryHttpService;
@@ -76,12 +71,6 @@ describe('TerritoryHttpService', () => {
     expect(options.params).toEqual({ sectorId: 'sec-1' });
   });
 
-  // Chantier "migrer le frontend" — bug réel trouvé et corrigé : le backend renvoie des
-  // documents Mongoose plats avec `_id` (jamais de virtuel `id`, vérifié directement sur
-  // le modèle), alors que tous les appelants (register.ts, profile.ts, etc.) lisent
-  // `.id` (contrat hérité de CountriesOrgMockService). Sans la normalisation, `.id`
-  // valait toujours `undefined` et chaque niveau de la cascade envoyait un id
-  // "undefined" au niveau suivant, silencieusement vide.
   it("renomme `_id` en `id` sur chaque élément renvoyé par le backend (jamais `undefined`)", () => {
     httpSpy.get.and.returnValue(of([{ _id: 'mongo-id-1', name: 'Ouagadougou', code: 'OUA' }]));
 

@@ -13,9 +13,6 @@ import { Router } from '@angular/router';
 import { PaymentResponse, PaymentStatus } from '../../../models/payment/payment-response.model';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MobileMoneyOperator } from '../../../models/payment/payment-request.model';
-/**
- * Composant de saisie OTP pour validation Orange Money
- */
 @Component({
   selector: 'app-otp-input',
   imports: [
@@ -108,9 +105,6 @@ export class OtpInputComponent implements OnInit {
     }
   }
 
-  /**
-   * Soumet le code OTP
-   */
   onVerifyOtp(): void {
     if (this.otpForm.valid && !this.isProcessing) {
       this.isProcessing = true;
@@ -148,19 +142,10 @@ export class OtpInputComponent implements OnInit {
     }
   }
 
-  /**
-   * Annule la saisie OTP — le parent (mobile-money-form.ts::onCancelOtp) revient déjà
-   * à l'étape précédente du formulaire ; naviguer en plus vers /payment ici sortait
-   * l'utilisateur de la page/du drawer courant (ex. "Abonnement" sur agency-details)
-   * au lieu de le laisser sur place.
-   */
   onCancel(): void {
     this.cancelOtp.emit();
   }
 
-  /**
-   * Retourne le message d'erreur pour le champ OTP
-   */
   getOtpErrorMessage(): string {
     const field = this.otpForm.get('otp');
     

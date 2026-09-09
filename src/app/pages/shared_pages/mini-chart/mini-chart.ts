@@ -13,23 +13,6 @@ import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
-/**
- * Generic Chart.js canvas wrapper — one component for any chart type
- * (doughnut, line, bar, ...). Callers build a `ChartConfiguration` with a
- * small pure "config builder" function (see
- * `municipality-dashboard/charts/*.chart.ts`) and pass it in; this component
- * only owns the canvas lifecycle, loading/empty overlays and responsive
- * sizing. Mirrors `financial-dashboard/shared/chart/finance-chart.component.ts`
- * (same split: generic wrapper + per-chart config builders), minus the
- * accessible data-table fallback that component adds — not needed here.
- *
- * The `<canvas>` stays permanently in the DOM (never behind `@if`): toggling
- * it in/out on the same change-detection cycle as `config` arriving would
- * make `ngOnChanges` fire before `@ViewChild` finds a freshly re-inserted
- * canvas, and the chart would never build. Loading/empty states are
- * overlaid on top instead — see the finance-chart.component.html comment
- * documenting this exact bug.
- */
 @Component({
   selector: 'app-mini-chart',
   standalone: true,

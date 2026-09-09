@@ -1,6 +1,3 @@
-/* ============================================================
-   PLANNING CREATE – Multi-step form
-   ============================================================ */
 
 $green:    #16a34a;
 $green-l:  #22c55e;
@@ -335,8 +332,6 @@ $tr: .2s ease;
   mat-icon { font-size: 16px; width: 16px; height: 16px; }
   strong { font-size: 18px; font-weight: 800; }
 
-  // Chantier "résoudre de vrais clients zone/secteur" — géographie choisie mais
-  // comptage réel indisponible : jamais une estimation, un état neutre explicite.
   &--unavailable {
     background: #f8fafc;
     border-color: #e2e8f0;
@@ -392,8 +387,6 @@ $tr: .2s ease;
   .cr-addr  { display: block; font-size: 11px; color: $text-3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
   .cr-zone  { font-size: 11px; color: $text-2; background: #f1f5f9; padding: 2px 7px; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; display: inline-block; }
   .cr-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
-  // Éligibilité réelle (EligibilityService) — visible avant sélection, pour
-  // éviter que l'agence découvre le rejet seulement à la soumission du planning.
   .cr-eligibility {
     font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap;
     &--ok { background: #dcfce7; color: #16a34a; }
@@ -1376,8 +1369,6 @@ $tr: .2s ease;
   margin-bottom: 16px;
   mat-icon { font-size: 18px; }
 }
-/* Ambre par défaut (avertissement, outrepassable via la case à cocher) —
-   rouge uniquement quand au moins un conflit est réellement bloquant. */
 .conflict-banner {
   border: 1.5px solid #fde68a; border-radius: 12px;
   background: #fffbeb; padding: 14px 16px;

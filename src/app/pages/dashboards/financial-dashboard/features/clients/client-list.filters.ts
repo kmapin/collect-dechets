@@ -7,7 +7,7 @@ export interface ClientListFilters {
   search: string;
 }
 
-// RG6 : la liste met en avant les actifs par défaut.
+// la liste met en avant les actifs par défaut.
 export const CLIENT_LIST_FILTERS_INITIAL: ClientListFilters = {
   statut: ClientStatut.ACTIF,
   search: '',

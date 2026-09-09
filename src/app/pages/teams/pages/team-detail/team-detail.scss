@@ -1,6 +1,3 @@
-// ═══════════════════════════════════════════════════════════
-//  Team Detail
-// ═══════════════════════════════════════════════════════════
 
 $radius: 12px;
 $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
@@ -363,10 +360,6 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   }
 }
 
-// ── Delete dialog ────────────────────────────────────────────
-// z-index 9999/10000 (pas 300/301) : le bandeau d'en-tête global de l'app
-// (.page-header, app.component.ts, z-index:1000) masquait ce dialog — même bug
-// et même correctif qu'agent-payment.component.scss/contracts.component.scss.
 .dlg-backdrop {
   position:fixed; inset:0; z-index:9999;
   background:rgba(15,23,42,.5); backdrop-filter:blur(4px);

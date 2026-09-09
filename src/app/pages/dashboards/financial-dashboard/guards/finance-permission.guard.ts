@@ -5,15 +5,7 @@ import { aLaPermission, FinancePermission } from '../models';
 import { FINANCE_NAV_ITEMS } from '../features/shell/finance-nav.config';
 import { SESSION_SERVICE } from '../data-access/tokens/session.token';
 
-// RBAC financier réel (onglets + droits) — remplace le double garde financeAccessGuard
-// (coupe-circuit droitsFinance, conservé tel quel, toujours composé en premier) +
-// financeAdminGuard (supprimé : son seul appelant, la route roles-admin, porte désormais
-// `data: { permissions: ['roles.view'] }`, un cas parmi d'autres de ce garde générique).
-//
-// Chaque route enfant protégée déclare la ou les clés requises dans `route.data.permissions`
-// (sémantique OU, cf. aLaPermission) — voir financial-dashboard.routes.ts. Le serveur
-// applique la même règle indépendamment (requireFinancePermission) : ce garde n'est qu'un
-// confort d'affichage, jamais la seule barrière.
+
 export const financePermissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const session = inject(SESSION_SERVICE);
   const router = inject(Router);

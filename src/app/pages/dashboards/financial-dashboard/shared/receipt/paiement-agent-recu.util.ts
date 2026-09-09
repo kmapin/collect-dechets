@@ -3,9 +3,6 @@ import { PaiementAgentActionable } from '../../models';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDateTime } from '../../../../../shared/format.util';
 
-// Même bibliothèque (jsPDF) et même palette que services/pdfContrat.js (backend, seul
-// autre PDF de l'app) et ExportClientService (export tabulaire, même module, déjà une
-// dépendance du projet) — aucune nouvelle bibliothèque, aucun 2e système de génération.
 const COULEUR_PRIMAIRE: [number, number, number] = [34, 139, 34];
 const COULEUR_TEXTE: [number, number, number] = [40, 40, 40];
 const COULEUR_GRIS: [number, number, number] = [120, 120, 120];
@@ -30,19 +27,6 @@ function motifPour(paiement: PaiementAgentActionable): string | null {
   return paiement.rejectionReason ?? paiement.failureReason ?? null;
 }
 
-/**
- * Reçu de paiement agent — un seul document jsPDF construit ici, réutilisé à
- * l'IDENTIQUE par "Voir le reçu" et "Télécharger le reçu" (voir agent-payment.
- * component.ts) : jamais deux systèmes de génération distincts pour l'affichage et
- * le téléchargement.
- *
- * Construit uniquement à partir de données déjà chargées (l'historique + la liste
- * d'agents du composant, `PaiementAgent.agentId` référence toujours un
- * `User.role==='collector'`, voir services/paiementAgent.js::payerAgent — "fonction"
- * n'est donc jamais devinée) : aucun aller-retour réseau supplémentaire, donc aucun
- * risque de blocage popup par le navigateur sur "Voir le reçu" (window.open doit
- * rester synchrone avec le clic).
- */
 export function construireRecuPaiementAgent(paiement: PaiementAgentActionable, agentNom: string, agenceNom?: string): jsPDF {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();

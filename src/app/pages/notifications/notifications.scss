@@ -1,7 +1,3 @@
-// .page-header/.container/.page-title/.page-subtitle/.card/.btn* sont des classes
-// globales (src/styles.scss), réutilisées telles quelles — même bandeau dégradé que le
-// reste de l'app (voir notification-settings.scss pour le même principe). Seules les
-// classes préfixées .nf- sont propres à cette page.
 
 .nf-shell {
   display: flex;
@@ -172,8 +168,6 @@ ul.nf-list {
   }
 }
 
-// Une couleur discrète par famille d'événement — jamais d'alarme (--error-color
-// réservé à Supprimer/l'état d'erreur), pour rester sobre comme demandé.
 .nf-icon--Planning { background: rgba(0, 188, 212, 0.12); color: var(--primary-color); }
 .nf-icon--Signalement { background: rgba(255, 112, 67, 0.14); color: var(--accent-color); }
 .nf-icon--Subscribed, .nf-icon--Contrat { background: rgba(76, 175, 80, 0.14); color: var(--secondary-color); }

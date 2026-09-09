@@ -210,13 +210,6 @@
                         placeholder="votre@email.com"
                         #emailInput="ngModel"
                         />
-                        <!-- @if (emailInput.invalid && emailInput.touched) {
-                          <div
-                            class="form-error"
-                            >
-                            Veuillez saisir une adresse email valide
-                          </div>
-                        } -->
                         <!-- Backend validation error -->
                         @if (hasFieldError('email')) {
                           <div
@@ -261,71 +254,6 @@
                         }
                       </div>
                     </div>
-                    <!-- @if (userData.role==='municipality') {
-                      <div class="form-section">
-                        <h3>Informations de la commune</h3>
-                        <div class="form-row">
-                          <div class="form-group">
-                            <label class="form-label" for="region">
-                              <i class="material-icons">markunread_mailbox</i>
-                              Region <span class="required">*</span>
-                            </label>
-                            <select
-                              type="text"
-                              id="region"
-                              name="region"
-                              [(ngModel)]="userData.commune.region"
-                              (ngModelChange)="clearError()"
-                              class="form-control"
-                              placeholder="Nom de la region"
-                              required
-                              >
-                              <option value="">Sélectionner</option>
-                              <option value="region du centre">Region du centre</option>
-                              <option value="region du nord">Region du nord</option>
-                            </select>
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label" for="province">
-                              <i class="material-icons">location_city</i>
-                              Province <span class="required">*</span>
-                            </label>
-                            <select
-                              type="text"
-                              id="province"
-                              name="province"
-                              [(ngModel)]="userData.commune.province"
-                              (ngModelChange)="clearError()"
-                              class="form-control"
-                              placeholder="Nom de la commune"
-                              required
-                              >
-                              <option value="">Sélectionner</option>
-                              <option value="province 1">Province 1</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div class="form-group">
-                          <label class="form-label" for="communeName">
-                            <i class="material-icons">location_city</i>
-                            Commune <span class="required">*</span>
-                          </label>
-                          <select
-                            type="text"
-                            id="communeName"
-                            name="communeName"
-                            [(ngModel)]="userData.commune.name"
-                            (ngModelChange)="clearError()"
-                            class="form-control"
-                            placeholder="Nom de la commune"
-                            required
-                            >
-                            <option value="">Sélectionner</option>
-                            <option value="ouagadoudou">Ouagadoudou</option>
-                          </select>
-                        </div>
-                      </div>
-                    } -->
                     <!-- Adresse (pour les clients) -->
                     <!-- <div class="form-section" *ngIf="userData.role === 'client'"> -->
                     <div class="form-section">

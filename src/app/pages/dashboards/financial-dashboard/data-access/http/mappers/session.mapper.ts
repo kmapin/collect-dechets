@@ -3,18 +3,10 @@ import { Role } from '../../../models/enums';
 import { FinancePermission } from '../../../models/finance-permission';
 import { SessionUtilisateur } from '../../contracts/session.service';
 
-// Défaut `[]` si le champ est absent (backend pas encore migré) — fail-closed : un
-// utilisateur sans `permissions` connues ne doit avoir accès à aucun onglet ni action.
 function _mapPermissions(valeur: unknown): FinancePermission[] {
   return Array.isArray(valeur) ? (valeur as unknown[]).map(String) as FinancePermission[] : [];
 }
 
-// DTO réel : GET /finance/session/moi (controllers/financeUsers.js::getMoi). `role` peut
-// valoir `null` côté serveur si financialRole n'a pas encore été assigné à l'utilisateur —
-// le type Role n'a pas de variante "aucun", mais c'est sans danger : financeAccessGuard se
-// base sur droitsFinance (false par défaut, fermé par défaut) et financeAdminGuard fait une
-// égalité stricte à Role.ADMINISTRATEUR (null ne matche jamais, refusé par défaut aussi).
-// Voir EditRecap.md backend Prompt 10 pour la revue de sécurité complète sur ce point.
 export function mapSessionUtilisateurDto(dto: unknown): SessionUtilisateur {
   const d = dto as Record<string, unknown>;
   const a = d['agence'] as Record<string, unknown> | null | undefined;
@@ -30,8 +22,6 @@ export function mapSessionUtilisateurDto(dto: unknown): SessionUtilisateur {
   };
 }
 
-// DTO réel : GET /finance/session/utilisateurs (F11 admin, controllers/financeUsers.js::
-// getUtilisateurs) — même remarque que ci-dessus sur `role` potentiellement `null`.
 export function mapUtilisateurDto(dto: unknown): Utilisateur {
   const d = dto as Record<string, unknown>;
   return {

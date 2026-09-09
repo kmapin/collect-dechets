@@ -34,13 +34,6 @@ import { aggregateVolume, type VolumeAggregate } from "./utils/volume.util";
 import { MOCK_NETWORK_DELAY_MS } from "./mocks/municipality-mock.constants";
 import type { ChartConfiguration } from "chart.js";
 
-/**
- * Vrai vocabulaire `PlanningV2.typeDechets`/`Collecte.wasteType` (Prompt 08) — remplace
- * les 4 catégories inventées du mock (`WASTE_TYPE_POOL`, mocks/municipality-mock.constants.ts,
- * encore utilisé par les sections Volume/Performance/Fréquence par zone, toujours mockées,
- * hors périmètre de ce prompt). Label + couleur d'affichage uniquement — le backend ne
- * renvoie que la clé d'enum.
- */
 const WASTE_TYPE_DISPLAY: Record<string, { label: string; color: string }> = {
   menagers: { label: 'Ménagers', color: '#4caf50' },
   recyclables: { label: 'Recyclables', color: '#2196f3' },
@@ -49,7 +42,6 @@ const WASTE_TYPE_DISPLAY: Record<string, { label: string; color: string }> = {
   speciaux: { label: 'Spéciaux', color: '#9c27b0' },
 };
 
-/** The Statistiques tab's single shared "Période" selector — see statisticsPeriod. */
 export type StatisticsPeriod = "today" | "week" | "month" | "quarter" | "year";
 
 export interface Incident {
@@ -85,26 +77,12 @@ export interface Incident {
   description: string;
   severity: "Low" | "Medium" | "High" | "Critical";
   date: Date;
-  // "open"/"in_progress"/"resolved" : valeurs réelles de Signalement.status (models/Signalement.js)
-  // pour toute donnée créée depuis la migration. 'Collected'/'Reported'/'Scheduled' ne
-  // subsistent que pour d'éventuelles données historiques Collecte-based non migrées.
   status: "open" | "in_progress" | "resolved" | "pending" | 'Collected' | 'Reported' | 'Scheduled';
-  /** Champ legacy Collecte.resolutionStatus (signalements Collecte-based non migrés
-   * uniquement) — `status` porte directement la progression pour tout signalement récent. */
   resolutionStatus?: "pending" | "in_progress" | "resolved";
-  /** Champ réel Collecte.resolutionTeamId (renommé depuis assignedTeamId, Phase 2 du
-   * nettoyage Planning/Signalement/Assignation) — équipe affectée à la résolution. */
   resolutionTeamId?: { _id: string; name?: string } | null;
   createdAt: Date;
 }
-// Aligné champ-à-champ sur la vraie réponse de GET /api/statistics
-// (services/globalState.js::getDashboardStats + controllers/globalSate.js) — vérifié
-// contre l'implémentation réelle, pas contre la doc OpenAPI seule (Prompt 01,
-// BACKEND_INTEGRATION.md §0.1). `totalRevenue`/`averageRating`/`complianceRate`
-// n'existent nulle part dans le backend actuel — retirés plutôt qu'inventés ; à
-// réintroduire quand Milestone 05 (Agency Performance Metrics) leur donnera une vraie
-// source. `activeAgencies`/`todayCollections`/`completeCollections`/`pendingReports`
-// renommés pour matcher les noms réels des champs API.
+
 export interface CityBreakdownEntry {
   city: string;
   numberOfAgencies?: number;
@@ -131,22 +109,9 @@ export interface MunicipalityStatistics {
   totalCollections: number;
   dailyCollections: number;
   monthlyCollections: number;
-  /**
-   * Collectes du jour avec statut 'Collected'. `services/globalState.js` calcule cette
-   * valeur sous ce nom, mais `controllers/globalSate.js::getDashboardStats()` ne
-   * l'exposait jusqu'ici que sous l'alias `totalCollectionsCollected` (pluriel) — champ
-   * ajouté côté backend (voir EditRecap.md) pour exposer aussi le nom exact attendu ici.
-   */
   dailyCollectionCollected: number;
-  /**
-   * Total de collectes signalées un jour ou l'autre, résolues ou non — voir
-   * pendingReportsCount pour le compte réellement en attente. Même remarque que
-   * ci-dessus : ajouté côté backend en plus de l'alias `totalCollectionsReported`.
-   */
   totalCollectionReported: number;
-  /** Signalements dont resolutionStatus n'est pas 'resolved' — le vrai compte "en attente". */
   pendingReportsCount: number;
-
   monthlyClientSubscriptions: number;
   monthlyClientPercentage: number;
 }
@@ -160,24 +125,16 @@ export interface AgencyAudit {
   zones: number;
   collectionsToday: number;
   completionRate: number;
-  /** null tant qu'aucune entité review/notation n'existe dans le schéma (Prompt 05) — jamais fabriqué à 0. */
   rating: number | null;
-  /** null tant que le conflit de scoping JWT avec le module Finance n'est pas résolu (Prompt 05). */
   revenue: number | null;
   lastAudit: Date;
-  /** null tant qu'aucune règle de conformité définie n'existe (Prompt 05) — jamais fabriqué à 0. */
   complianceScore: number | null;
   issues: string[];
 }
 
 export interface WasteStatistic {
-  /** Vraie clé d'enum backend (menagers|recyclables|verts|encombrants|speciaux, Prompt 08). */
   type: string;
-  /** Libellé français d'affichage (WASTE_TYPE_DISPLAY) — distinct de `type` depuis que
-   * celui-ci est la clé d'enum réelle, pas déjà un libellé comme au temps du mock. */
   label: string;
-  /** Nombre de collectes de ce type dans la fenêtre — PAS un poids en kg (aucune source
-   * réelle de poids nulle part dans le schéma, voir EditRecap.md). */
   quantity: number;
   percentage: number;
   trend: "up" | "down" | "stable";
@@ -212,38 +169,19 @@ export class MunicipalityDashboard  implements OnInit {
 
   isLoadingIncidents = false;
 
-  // "Performance Globale" satisfaction/compliance — GET /municipality/performance-overview
-  // (réel, Prompt 07). Voir loadPerformanceOverview().
   performanceOverview: PerformanceOverview | null = null;
   isLoadingPerformanceOverview = false;
 
-  // Extrait dans un getter (plutôt que performanceOverview?.averageSatisfaction inline dans
-  // le template) : le vérificateur de templates Angular ne narrow pas de façon fiable un
-  // chaînage optionnel multi-niveaux réutilisé dans plusieurs expressions d'un même bloc
-  // @if/@else — ngc/esbuild rejette alors ce que le langage-service jugeait redondant.
-  // Un getter isole le null-check dans du TS classique (narrowing fiable), et le template
-  // ne teste/lit plus qu'un seul identifiant simple.
   get performanceOverviewSatisfaction(): number | null {
     return this.performanceOverview?.averageSatisfaction ?? null;
   }
-  // isPerformanceOverviewMocked / isAgencyPerformanceMocked supprimés (Prompt 15, §7) :
-  // les deux valaient déjà `false` en dur (complianceRate/performance d'agence sont de
-  // vrais agrégats serveur depuis les Prompts 05/07 ; averageSatisfaction reste `null`
-  // honnête plutôt qu'une donnée démo, voir EditRecap.md) — aucun badge "Démo" ne
-  // s'affichait donc plus jamais. Retirés avec leurs 2 usages dans le template plutôt
-  // que laissés comme des indicateurs toujours faux.
   isLoadingWasteStatistics = false;
-  /** Rebuilt only when wasteStatistics actually changes (see loadWasteStatistics()) —
-   * never bind a template method call to [config], it would create a new object every
-   * change-detection cycle and constantly tear down/rebuild the chart (killing hover/tooltips). */
   wasteChartConfig: ChartConfiguration | null = null;
   monthlyTrend: MonthlyTrendPoint[] = [];
   isLoadingMonthlyTrend = false;
   collectionEvolutionConfig: ChartConfiguration | null = null;
 
-  // "Graphiques de performance" — actual vs. target by zone/waste type/team.
-  // Real data since GET /municipality/performance-indicators (team dimension,
-  // not individual collector — see PerformanceGroupType/PerformanceRecord).
+  
   performanceRecords: PerformanceRecord[] = [];
   isLoadingPerformanceIndicators = false;
   performanceGroupBy: PerformanceGroupType = 'zone';
@@ -256,84 +194,43 @@ export class MunicipalityDashboard  implements OnInit {
   performanceWasteTypeOptions: string[] = [];
   performanceTeamOptions: { id: string; name: string }[] = [];
 
-  // "Fréquence de collecte par zone" (Prompt 10) — planned vs. actual cadence per zone.
   zoneFrequencyRecords: ZoneFrequencyRecord[] = [];
   isLoadingZoneFrequency = false;
   zoneFrequencyZoneFilter = 'all';
   zoneFrequencyWasteTypeFilter = 'all';
-  /** false = descending (worst zones first, the default "quickly identify" order). */
   zoneFrequencySortAscending = false;
   zoneFrequencyIndicators: ZoneFrequencyIndicator[] = [];
   zoneFrequencyZoneOptions: string[] = [];
   zoneFrequencyWasteTypeOptions: string[] = [];
 
-  /**
-   * "Volume Global Collecté" (Prompt 12, real backend) — no longer its own fetch or its
-   * own zone/type/collector filters: `GET /municipality/monthly-trend` (Prompt 09,
-   * already loaded for "Évolution des Collectes") is a platform-wide aggregate with no
-   * such dimensions, so this is now recomputed directly from `monthlyTrend` whenever it
-   * loads (see loadMonthlyTrend()) rather than fetched/filtered separately.
-   */
   volumeAggregate: VolumeAggregate | null = null;
 
-  /** "Rapport Global" button (Prompt 15) — client-side PDF assembly, no backend. */
   isGeneratingReport = false;
 
   agencyAudits: AgencyAudit[] = [];
   filteredAgencies: AgencyAudit[] = [];
-  /** Recomputed once in loadAgencyAudits()'s subscribe, not called directly from the
-   * template's @for — getTopPerformingAgencies() maps to brand-new objects each call,
-   * which under `track agency` (by identity) made Angular destroy/recreate this list on
-   * every change-detection cycle (NG0956), churning the DOM forever. */
   topPerformingAgencies: { name: string; completionRate: number }[] = [];
   wasteStatistics: WasteStatistic[] = [];
   zoneStatistics: GroupedZoneStatistics[] = [];
-  /** "Couverture Territoriale" table vs. map toggle (Prompt 13) — additive, table stays available. */
   coverageView: "table" | "map" = "table";
-  /** Même source que zoneStatistics, recalculées ensemble par loadTerritorialCoverage()
-   * (item 6, GET /planning/zone-coverage — coordonnées réelles, Neighborhood.lat/lng). */
   coverageMapZones: CoverageMapZone[] = [];
   incidents: Incident[] = [];
   filteredIncidents: Incident[] = [];
-  /** Recomputed once in loadAllSignalements()'s subscribe — same reason as
-   * topPerformingAgencies above: getIncidentBreakdown() builds new objects each call. */
   incidentBreakdown: { type: string; count: number; percentage: number }[] = [];
 
-  // zoneStatistics: ZoneStatistic[] = [];
+  
 
   // Filters
   agenciesFilter = "";
   complianceFilter = "all";
-  /**
-   * Single shared source of truth for "which period is selected" across the
-   * Statistiques tab (Prompt 12) — a Signal (not a plain property) so every
-   * one of the five load methods below (07–11) reads the exact same value
-   * rather than each keeping its own independent copy. Written only via
-   * onStatisticsPeriodChange(), never directly from the template (ngModel
-   * can't two-way-bind straight to a signal).
-   */
   statisticsPeriod = signal<StatisticsPeriod>("month");
-  /** True while a Période change is fanning out to all five sections at once —
-   * a single coordinating indicator instead of five independently-timed spinners. */
   isRefreshingStatistics = false;
-  /** "Exporter" button (Prompt 16) — client-side export scoped to the Statistiques tab only. */
   statisticsExportFormat: "csv" | "excel" | "pdf" = "csv";
   isExportingStatistics = false;
-  // Aligné sur Signalement.status réel (models/Signalement.js: open|in_progress|resolved) —
-  // 'pending' n'a jamais existé dans cet enum, le filtre "En cours" ne renvoyait donc jamais
-  // rien (même correctif que admin-dashboard.ts::incidentsFilter).
   incidentsFilter: "all" | "open" | "in_progress" | "resolved" = "all";
   severityFilter: "all" | "Low" | "Medium" | "High" | "Critical" = "all";
   searchTerm="";
   neighborhoodFilter="";
-  // incidentsFilter = "all";
-
-  // `getAll: true` (bug corrigé, chantier Rapports/Statistiques) : sans ça,
-  // getAllAgenciesFromApi() retombe sur limit=10 par défaut — l'onglet "Audit Agences"
-  // n'a aucune pagination dans son template (boucle @for sur la totalité de
-  // filteredAgencies), et generateGlobalReport() en tire sa section "Synthèse des
-  // agences", d'où l'incohérence visible avec la carte KPI (source différente, non
-  // tronquée) dans le même PDF.
   agenciesFilterParams: FilterParams = {
       status: this.agenciesFilter,
       search:this.searchTerm,
@@ -344,12 +241,6 @@ export class MunicipalityDashboard  implements OnInit {
     { id: "agencies", label: "Audit Agences", icon: "business", badge: 0 },
     { id: "statistics", label: "Statistiques", icon: "analytics", badge: null },
     { id: "incidents", label: "Incidents", icon: "report_problem", badge: 0 },
-    // {
-    //   id: "communications",
-    //   label: "Communications",
-    //   icon: "campaign",
-    //   badge: null,
-    // },
   ];
   statisticsAdmin: MunicipalityStatistics | null = null;
 
@@ -376,21 +267,11 @@ export class MunicipalityDashboard  implements OnInit {
     this.loadPerformanceIndicators();
     this.loadZoneFrequency();
     this.loadAllSignalements();
-    // showAdminStatistics() déclenche aussi loadTerritorialCoverage() (item 6) une fois sa
-    // réponse reçue — pas d'appel séparé ici.
     this.showAdminStatistics();
     this.loadPerformanceOverview();
     // this.loadIncidents();
   }
 
-  /**
-   * GET /municipality/performance-overview (Prompt 07). `complianceRate` est un vrai
-   * agrégat serveur (Collected / (total - Cancelled), toutes agences) — plus mocké.
-   * `averageSatisfaction` a désormais une vraie source (CollecteRating, chantier
-   * "notation agences") — moyenne des notes toutes agences confondues,
-   * services/municipality.service.js::getPerformanceOverview. Reste `null` tant
-   * qu'aucune note n'existe nulle part, jamais fabriqué en proxy.
-   */
   loadPerformanceOverview(): void {
     this.isLoadingPerformanceOverview = true;
     this.adminService.getPerformanceOverview$().subscribe({
@@ -406,19 +287,6 @@ export class MunicipalityDashboard  implements OnInit {
     });
   }
 
-  /**
-   * Prompt 05 — completionRate/collectionsToday/complianceScore/revenue/rating/issues
-   * viennent maintenant de GET /api/state_agencies/:agencyId/stats (réel, étendu), un
-   * appel par agence (`forkJoin`) puisque cet endpoint n'a pas de variante batch — nombre
-   * d'agences resté faible dans toutes les données vues jusqu'ici (dizaines, pas
-   * milliers), donc le coût N+1 reste négligeable ; à revisiter si ça change.
-   * `complianceScore`/`revenue`/`rating` restent `null` (aucune source réelle nulle part
-   * dans le schéma / conflit de scoping JWT pour revenue — voir EditRecap.md) : jamais
-   * remplacés par 0, le template affiche "Non disponible" pour ces 3 cas précis.
-   * `clients`/`collectors`/`zones` restent sourcés de la liste d'agences elle-même
-   * (inchangé) : ce prompt étend les métriques de performance, pas ces 3 compteurs déjà
-   * réels avant ce correctif.
-   */
   loadAgencyAudits(agenciesFilterParams?: FilterParams ): void {
     this.agencyService.getAllAgenciesFromApi(agenciesFilterParams).subscribe({
       next: (agencies) => {
@@ -472,11 +340,6 @@ export class MunicipalityDashboard  implements OnInit {
     });
   }
 
-  /**
-   * GET /municipality/waste-statistics (Prompt 08) — plus mocké. Le backend ne renvoie
-   * que la clé d'enum réelle (menagers/recyclables/...) ; `WASTE_TYPE_DISPLAY` fournit le
-   * libellé français et la couleur d'affichage, absents de la réponse serveur.
-   */
   loadWasteStatistics(onDone?: () => void): void {
     this.isLoadingWasteStatistics = true;
     const { days } = this.getPeriodConfig(this.statisticsPeriod());
@@ -510,17 +373,6 @@ export class MunicipalityDashboard  implements OnInit {
     return this.wasteStatistics.some((w) => w.quantity > 0);
   }
 
-  /**
-   * GET /municipality/monthly-trend (Prompt 09) — plus mocké. Réutilise côté serveur
-   * exactement la même agrégation de base que loadWasteStatistics() (Prompt 08) : garanti
-   * de ne jamais diverger sur une fenêtre qui se recoupe (exigence explicite du roadmap).
-   */
-  /**
-   * Also drives "Volume Global Collecté" (Prompt 12) — `volumeAggregate` is derived
-   * from this same `trend` array (`aggregateVolume()`), not a separate fetch. Both the
-   * success and error paths recompute it so it never keeps a stale value from a
-   * previous period once this section starts (re)loading.
-   */
   loadMonthlyTrend(onDone?: () => void): void {
     this.isLoadingMonthlyTrend = true;
     const { months } = this.getPeriodConfig(this.statisticsPeriod());
@@ -548,14 +400,6 @@ export class MunicipalityDashboard  implements OnInit {
     return this.monthlyTrend.some((point) => point.totalCollections > 0);
   }
 
-  /**
-   * GET /municipality/performance-indicators (real backend). Team dimension,
-   * not individual collector — see PerformanceGroupType/PerformanceRecord.
-   * `days` (not the mock's `seed` reshuffle) drives the real date-range window
-   * server-side, same convention as loadZoneFrequency()/loadWasteStatistics().
-   * Loads the flat record list once, derives the filter dropdown option lists
-   * from it, then applies whatever filters/grouping are currently selected.
-   */
   loadPerformanceIndicators(onDone?: () => void): void {
     this.isLoadingPerformanceIndicators = true;
     const { days } = this.getPeriodConfig(this.statisticsPeriod());
@@ -581,38 +425,6 @@ export class MunicipalityDashboard  implements OnInit {
     });
   }
 
-  /**
-   * §4 (Prompt 13) — the shared "Période" → parameter translation, and the definitive
-   * record of which Statistiques-tab sections that selection actually affects. Kept up
-   * to date as sections migrate off mock data (most recently Prompt 12); this replaces
-   * five section-local translations with one, per the roadmap's own request.
-   *
-   *  - `days`: a real date-range window (backend computes `from`/`to` from it, or the
-   *    frontend could pass explicit `from`/`to` instead — `days` is the equivalent
-   *    shorthand both server and client already agree on, not a mock stand-in). Sent to:
-   *      - waste breakdown (`GET /waste-statistics`, Prompt 08) — fully period-affected.
-   *      - zone frequency's ACTUAL side only (`GET /zone-frequency`, Prompt 11) —
-   *        `plannedFrequency` in that same response reflects whatever Planning is
-   *        currently most-recently-created per zone/wasteType, REGARDLESS of `days`;
-   *        there's no "planned frequency as of a past date" in the schema. Confirmed
-   *        with the backend (see its own resolvePeriodWindow()/getZoneFrequency
-   *        comments), not silently assumed. Changing Période visibly moves
-   *        `actualFrequency` but never `plannedFrequency` for the same row.
-   *      - waste records (`GET /waste-records`, Prompt 12) — fully period-affected, but
-   *        not currently called by any Statistiques-tab section (no raw-record list UI
-   *        exists yet; the endpoint is available for a future one).
-   *      - performance indicators (`GET /performance-indicators`) — fully period-affected,
-   *        same from/to/days window as waste breakdown/zone frequency (real backend,
-   *        no more mock `seed` reshuffle — removed once that endpoint was built for real).
-   *  - `months`: how many trailing months the evolution chart shows (`GET
-   *    /monthly-trend`, Prompt 09) — fully period-affected, and also what "Volume
-   *    Global Collecté" derives from (Prompt 12: no separate fetch/window of its own,
-   *    see aggregateVolume()). Shorter periods show fewer months rather than
-   *    collapsing to a single point, so the trend line still reads as a trend at every
-   *    period (an explicit judgment call — "today"/"week" don't map onto "months of
-   *    trend" literally, so this degrades gracefully instead of forcing a
-   *    literal-but-useless 1-month chart).
-   */
   private getPeriodConfig(period: StatisticsPeriod): { days: number; months: number } {
     const configs: Record<StatisticsPeriod, { days: number; months: number }> = {
       today: { days: 1, months: 3 },
@@ -629,12 +441,6 @@ export class MunicipalityDashboard  implements OnInit {
     this.applyPerformanceFilters();
   }
 
-  /**
-   * Purely client-side (already-loaded performanceRecords, no new fetch) —
-   * the brief loading flag is a UX-consistency simulation matching how the
-   * other mock-backed sections on this tab show a loading state, not a
-   * real request.
-   */
   applyPerformanceFilters(onDone?: () => void): void {
     this.isLoadingPerformanceIndicators = true;
     setTimeout(() => {
@@ -659,14 +465,6 @@ export class MunicipalityDashboard  implements OnInit {
     return !!this.performanceChartConfig;
   }
 
-  /**
-   * GET /municipality/zone-frequency (Prompt 11, real backend). `days` drives the ACTUAL
-   * side's real date-range window server-side; the PLANNED side reflects current Planning
-   * policy regardless of window. `zoneFrequencyWasteTypeOptions` lists the 5 real enum keys
-   * (WASTE_TYPE_DISPLAY) — the filter's `[value]` must match `record.wasteType`'s raw key,
-   * display via getWasteTypeLabel(). Same load pattern as loadPerformanceIndicators():
-   * fetch the flat records once, derive filter option lists, then apply filters/sort.
-   */
   loadZoneFrequency(onDone?: () => void): void {
     this.isLoadingZoneFrequency = true;
     const { days } = this.getPeriodConfig(this.statisticsPeriod());
@@ -688,10 +486,6 @@ export class MunicipalityDashboard  implements OnInit {
     });
   }
 
-  /**
-   * Purely client-side (already-loaded zoneFrequencyRecords, no new fetch) —
-   * same UX-consistency simulated delay as applyPerformanceFilters().
-   */
   applyZoneFrequencyFilters(onDone?: () => void): void {
     this.isLoadingZoneFrequency = true;
     setTimeout(() => {
@@ -717,7 +511,6 @@ export class MunicipalityDashboard  implements OnInit {
     return this.zoneFrequencyIndicators.length > 0;
   }
 
-  /** Real backend enum (Prompt 11, Planning.frequency) — replaces the mock's former daily/weekly/monthly. */
   getFrequencyLabel(frequency: CollectionFrequency): string {
     const labels: Record<CollectionFrequency, string> = {
       unique: "Ponctuelle",
@@ -730,44 +523,15 @@ export class MunicipalityDashboard  implements OnInit {
     return labels[frequency];
   }
 
-  /** French display label for a real waste-type enum key (WASTE_TYPE_DISPLAY) — the
-   * zone-frequency filter/table work with the raw key (menagers, ...), not a label. */
+  
   getWasteTypeLabel(type: string): string {
     return WASTE_TYPE_DISPLAY[type]?.label ?? type;
   }
 
-  /** `volumeAggregate` is now derived directly in loadMonthlyTrend() (Prompt 12) — see
-   * its own comment for why "Volume Global Collecté" no longer has a separate fetch. */
   hasVolumeData(): boolean {
     return !!this.volumeAggregate && this.volumeAggregate.targetCollections > 0;
   }
 
-  // loadZoneStatistics() supprimée (Prompt 15, §7) : confirmée sans aucun appelant par
-  // grep sur tout `src/` (pas seulement ce fichier) — remplacée depuis par
-  // buildZoneStatisticsFromAdminStats() ci-dessous. `AgencyService.getAgenceStats()`
-  // (qu'elle appelait) N'EST PAS supprimée : `admin-dashboard.ts` a sa PROPRE
-  // `loadZoneStatistics()`, distincte de celle-ci, toujours réellement appelée — la
-  // prémisse du prompt ("confirmée morte") n'était vraie que pour cet appelant-ci, pas
-  // pour la méthode de service elle-même. Vérifié avant de supprimer quoi que ce soit,
-  // pas juste ce fichier.
-
-  /**
-   * Corrigé (chantier Rapports/Statistiques/Performance, item 6 — "Taux de couverture") :
-   * l'ancienne version affichait un badge "0% couvert" figé pour CHAQUE ville (`coverage: 0`
-   * codé en dur, aucune notion de couverture par ville nulle part côté backend) et tirait sa
-   * liste de zones de `MOCK_CITIES` (catalogue statique de 5 pays, sans rapport avec les
-   * données réelles de la plateforme) + des coordonnées mockées
-   * (`MunicipalityMockDataService.getZoneCoordinates()`) pour la carte.
-   *
-   * Remplacé par `getZoneCoverage()` (services/planning.js, corrigé item 2a — renvoie
-   * désormais un vrai tableau par quartier avec lat/lng réelles) : MÊME calcul déjà
-   * exposé et consommé par admin-dashboard.ts::loadZoneStat(), pas de deuxième
-   * implémentation. Granularité par QUARTIER (pas par ville) puisque c'est la maille
-   * réelle de ce calcul — `completionRate` alimente enfin un vrai taux de couverture,
-   * `agenciesCount` (champ additif) une vraie compter d'agences par quartier.
-   * `clients`/`incidents` restent à 0 : aucune source réelle à cette maille (comme avant),
-   * pas de valeur inventée.
-   */
   loadTerritorialCoverage(): void {
     this.adminService.getZoneCoverage$().subscribe({
       next: (res: any) => {
@@ -804,15 +568,6 @@ export class MunicipalityDashboard  implements OnInit {
     });
   }
 
-  /** Liste des signalements, toutes agences confondues (rôle municipality = supervision
-   * plateforme, comme super_admin). <app-signalement> pagine déjà côté client sur
-   * l'intégralité du tableau reçu (pagedIncidents, signalement.ts) — pas de pagination
-   * serveur nécessaire ici. */
-  // Lit désormais le vrai modèle Signalement unifié (GET /api/signalements) — la mutation
-  // Collecte.status='Reported' n'existe plus depuis cette migration (voir models/Signalement.js),
-  // /api/collecte/all?status=Reported ne renverra donc plus jamais rien (même correctif que
-  // admin-dashboard.ts::loadAllSignalements). agencyId omis : 'municipality' est désormais
-  // autorisé côté backend à voir toutes les agences, comme 'super_admin'.
   loadAllSignalements() {
     this.isLoadingIncidents = true;
     this.adminService.getAllSignalements({}).subscribe({
@@ -824,8 +579,6 @@ export class MunicipalityDashboard  implements OnInit {
         console.log("signalements in dashboard", this.filteredIncidents);
         const incidentsTab = this.tabs.find((tab) => tab.id === "incidents");
         if (incidentsTab) {
-          // Compte "non résolus", pas le total brut (cohérent avec la carte KPI
-          // "Incidents non résolus" — voir getUnresolvedReportsCount()).
           incidentsTab.badge = this.getUnresolvedReportsCount();
           this.cd.detectChanges();
         }
@@ -881,17 +634,10 @@ export class MunicipalityDashboard  implements OnInit {
     return Math.round((collected / total) * 100);
   }
 
-  // Aucune source réelle pour un taux de conformité aujourd'hui (ni sur /api/statistics,
-  // ni ailleurs dans l'API — voir Prompt 01). Retourne un état honnête plutôt qu'un calcul
-  // sur une donnée mockée ; à rebrancher quand Milestone 05 (Agency Performance Metrics)
-  // exposera un vrai complianceScore/complianceRate.
   getComplianceText(): string {
     return "Non disponible";
   }
 
-  // statisticsAdmin?.pendingReportsCount (services/globalState.js) compte encore l'ancien
-  // Collecte.status='Reported', resté à 0 depuis la migration vers Signalement — this.incidents
-  // (GET /api/signalements, chargé par loadAllSignalements()) est la seule source fiable.
   getIncidentSeverity(): string {
     const pending = this.getUnresolvedReportsCount();
     if (pending <= 5) return "Faible";
@@ -976,9 +722,6 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   getTopPerformingAgencies(): any[] {
-    // Sort a copy — `this.agencyAudits` now has real completionRate variance
-    // (Prompt 06), so sorting in place here would silently reorder the
-    // Audit Agences tab's own list every time this method runs.
     return [...this.agencyAudits]
       .sort((a, b) => b.completionRate - a.completionRate)
       .slice(0, 5)
@@ -988,22 +731,12 @@ export class MunicipalityDashboard  implements OnInit {
       }));
   }
 
-  /**
-   * `incidents` defaults to `this.incidents` (the full unfiltered set, what the
-   * Statistiques tab's "Incidents par Catégorie" card shows) — generateGlobalReport()
-   * passes `this.filteredIncidents` instead so the report's breakdown matches
-   * whatever the Incidents tab's own filters currently show on screen.
-   */
   getIncidentBreakdown(incidents: Incident[] = this.incidents): { type: string; count: number; percentage: number }[] {
     const total = incidents.length;
     if (total === 0) {
       return [];
     }
 
-    // Grouped by display label (not the raw `type` key) so aliases the
-    // backend may still send — e.g. legacy 'problem' vs 'missed_collection',
-    // both mapped to "Collecte manquée" by getIncidentTypeText() — merge
-    // into a single bucket instead of appearing twice.
     const countsByLabel = new Map<string, number>();
     for (const incident of incidents) {
       const label = this.getIncidentTypeText(incident.type);
@@ -1057,16 +790,11 @@ export class MunicipalityDashboard  implements OnInit {
     this.loadAgencyAudits(this.agenciesFilterParams);
   }
 
-
   filterIncidents(): void {
     this.filteredIncidents = this.incidents.filter((incident) => {
       const statusMatch =
         this.incidentsFilter === "all" ||
         (incident.status ?? "open") === this.incidentsFilter;
-      // Comparaison insensible à la casse : Signalement.severity (models/Signalement.js)
-      // est en minuscules (low|medium|high|critical|other), severityFilter est resté
-      // capitalisé pour l'affichage (Low/Medium/...) — une comparaison stricte ne
-      // matchait donc jamais aucune donnée réelle.
       const severityMatch =
         this.severityFilter === "all" ||
         (incident.severity || "").toLowerCase() === this.severityFilter.toLowerCase();
@@ -1074,32 +802,6 @@ export class MunicipalityDashboard  implements OnInit {
     });
   }
 
-  /**
-   * Wires up Signalement's `assignReport`/`resolvedIncident` outputs (Prompt 17) —
-   * previously unlistened here, so a manager-role user's Assigner/Traiter/Résoudre
-   * clicks inside this dashboard's Incidents tab were silently dropped (the events
-   * fired, nothing downstream reacted). This is a purely local/optimistic mutation
-   * of `incidents` — `filteredIncidents` is then re-derived via filterIncidents() so
-   * the currently active status/severity filters stay respected — no backend call,
-   * matching every other mock-backed feature on this dashboard. Signalement's own
-   * `currentUser?.role === 'manager'` gate on these buttons is untouched here: which
-   * roles can SEE these actions is a product decision, explicitly out of scope for
-   * this prompt.
-   *
-   * TODO(backend): once real assign/resolve endpoints exist, replace this optimistic
-   * local mutation with a real persisted call (and a rollback path if it fails)
-   * instead of mutating `incidents` directly.
-   */
-  /**
-   * incidentId est désormais un Signalement._id (jamais un Collecte._id — un signalement
-   * indépendant n'a pas de collecte à cibler) : PATCH /signalements/:id/assign-team, pas
-   * l'ancienne route Collecte-based (même correctif que admin-dashboard.ts).
-   *
-   * Note : "Seuls les managers peuvent assigner/résoudre" — <app-signalement> ne rend le
-   * bouton "Assigner" que pour `currentUser?.role === 'manager'`, jamais 'municipality' —
-   * ce handler reste donc inatteignable en pratique depuis CE dashboard. Corrigé quand même
-   * par cohérence et au cas où cette règle de visibilité évoluerait.
-   */
   readonly reportAssignmentEnCours = new Set<string>();
   onAssignReport(payload: { incidentId: string; teamId: string }): void {
     if (this.reportAssignmentEnCours.has(payload.incidentId)) return;
@@ -1125,12 +827,6 @@ export class MunicipalityDashboard  implements OnInit {
     });
   }
 
-  /**
-   * incidentId est un Signalement._id : PATCH /signalements/:id/resolve, pas l'ancienne
-   * route Collecte-based (même correctif que admin-dashboard.ts). Note d'inatteignabilité
-   * pratique identique à onAssignReport ci-dessus (bouton "Résoudre" réservé au rôle manager
-   * côté <app-signalement>) — corrigé par cohérence.
-   */
   readonly resolvingIncidentEnCours = new Set<string>();
   onResolvedIncident(incidentId: string): void {
     if (this.resolvingIncidentEnCours.has(incidentId)) return;
@@ -1155,21 +851,7 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   // Action methods
-  /**
-   * Client-side PDF assembly (Prompt 15) — no backend endpoint exists yet, so
-   * this reads whatever's already in component state (same convention as
-   * every other mock-backed section on this dashboard) rather than fetching
-   * anything new. Mirrors the jsPDF/autoTable conventions already established
-   * in team-list.ts/planning-detail.ts (default `jsPDF` import, standalone
-   * `autoTable(doc, {...})`, lazy `await import(...)` so the libraries don't
-   * bloat the initial bundle for a rarely-used action).
-   *
-   * Every section pulls from the CURRENTLY FILTERED/scoped state, not raw
-   * totals: agencies from `filteredAgencies`, incidents from
-   * `filteredIncidents`, and the Statistiques-tab sections from whatever
-   * `statisticsPeriod`/per-section filters are active — so the report matches
-   * what's actually on screen when the user clicks the button.
-   */
+
   async generateGlobalReport(): Promise<void> {
     if (this.isGeneratingReport) {
       return;
@@ -1302,9 +984,6 @@ export class MunicipalityDashboard  implements OnInit {
       const performanceIndicators = aggregatePerformanceRecords(filteredPerformanceRecords, this.performanceGroupBy);
       if (performanceIndicators.length > 0) {
         y = ensureSpace(y);
-        // Real data since GET /municipality/performance-indicators — `actual` computed
-        // from real Collecte, `target` a fixed municipal policy objective (not measured,
-        // see the endpoint's own comment). No longer "(Démo — données simulées)".
         y = sectionTitle("Indicateurs de performance", y);
         autoTable(doc, {
           startY: y,
@@ -1320,9 +999,6 @@ export class MunicipalityDashboard  implements OnInit {
         y = finalY() + 10;
       }
 
-      // Section 6 — Zone frequency (Prompt 10 — `zoneFrequencyIndicators` is already filtered
-      // AND reflects the current sort-order toggle, so it's used directly rather than
-      // re-derived from the raw records, which would silently ignore toggleZoneFrequencySort()).
       if (this.hasZoneFrequencyData()) {
         y = ensureSpace(y);
         y = sectionTitle("Fréquence de collecte par zone", y);
@@ -1341,8 +1017,7 @@ export class MunicipalityDashboard  implements OnInit {
         y = finalY() + 10;
       }
 
-      // Section 7 — Volume global (Prompt 12 — derived from monthlyTrend, reflects statisticsPeriod
-      // via that same load; "Réel"/"Objectif" are collection COUNTS, not a weight — see EditRecap.md)
+     
       if (this.volumeAggregate) {
         y = ensureSpace(y);
         y = sectionTitle("Volume global collecté", y);
@@ -1441,39 +1116,19 @@ export class MunicipalityDashboard  implements OnInit {
     );
   }
 
-  /** Template (ngModelChange) handler — ngModel can't write to a signal directly. */
+  
   onStatisticsPeriodChange(period: StatisticsPeriod): void {
     this.statisticsPeriod.set(period);
     this.updateStatistics();
   }
 
-  /** Guards against a stale fan-out (see updateStatistics()) clearing the
-   * refreshing flag / firing the toast after a newer one has superseded it. */
   private statisticsRefreshToken = 0;
 
-  /**
-   * Fans the shared statisticsPeriod out to all five Prompt 07–11 sections
-   * at once (Prompt 12) — a single coordinating isRefreshingStatistics flag
-   * instead of five independently-timed spinners; the toast now confirms a
-   * real reload rather than being the only effect. Each section's own local
-   * filters (zone/type/collector/groupBy/sort) are left exactly as the user
-   * set them — reloading only re-fetches that section's period-scoped data
-   * and re-applies those existing filters against it (unchanged from how
-   * each load*() already worked).
-   *
-   * A generation token guards against rapidly changing the period twice in a
-   * row: without it, whichever fan-out happens to finish LAST would clear
-   * the flag/fire the toast — even if that's the stale, first-triggered one
-   * completing after a second, newer selection already started its own
-   * fan-out. Only the fan-out matching the CURRENT token is allowed to
-   * finalize.
-   */
+ 
   updateStatistics(): void {
     const token = ++this.statisticsRefreshToken;
     this.isRefreshingStatistics = true;
-    // 4, not 5 (Prompt 12): "Volume Global Collecté" no longer has its own fetch — it's
-    // derived inside loadMonthlyTrend() from the same response, so it completes as part
-    // of that section rather than needing its own fan-out slot.
+
     let remaining = 4;
     const onSectionDone = () => {
       remaining--;
@@ -1488,14 +1143,6 @@ export class MunicipalityDashboard  implements OnInit {
     this.loadZoneFrequency(onSectionDone);
   }
 
-  /**
-   * Whether ANY section on the Statistiques tab currently has data to export —
-   * each underlying `hasXData()` check already reflects that section's own
-   * active filters (e.g. `hasPerformanceIndicatorsData()` is false once
-   * filters narrow its indicators to zero), so this stays accurate without
-   * re-deriving anything. Drives both the "Exporter" button's disabled state
-   * and its empty-state message.
-   */
   hasStatisticsExportData(): boolean {
     return (
       this.hasWasteData() ||
@@ -1506,15 +1153,6 @@ export class MunicipalityDashboard  implements OnInit {
     );
   }
 
-  /**
-   * Statistiques-tab export (Prompt 16) — distinct from generateGlobalReport()
-   * (Prompt 15, the header's broader KPI/agency/incident summary): scoped
-   * ONLY to the five Statistiques-tab sections, each read from whatever's
-   * currently filtered/displayed (same "reflect the screen" rule as the
-   * global report). No new format-specific duplication of the filter logic —
-   * buildStatisticsExportSections() assembles one shared {headers, rows}
-   * shape that all three formats (CSV/Excel/PDF) render from.
-   */
   async exportStatistics(): Promise<void> {
     if (this.isExportingStatistics || !this.hasStatisticsExportData()) {
       return;
@@ -1580,8 +1218,6 @@ export class MunicipalityDashboard  implements OnInit {
       });
     }
 
-    // `zoneFrequencyIndicators` is already filtered AND reflects the current
-    // sort-order toggle (see generateGlobalReport()'s Section 6 comment).
     if (this.hasZoneFrequencyData()) {
       sections.push({
         title: "Fréquence de collecte par zone",
@@ -1614,8 +1250,6 @@ export class MunicipalityDashboard  implements OnInit {
     return sections;
   }
 
-  /** `;` separator + UTF-8 BOM — opens correctly in French-locale Excel, same convention as
-   * ExportClientService.exportToCsv() in the financial dashboard. */
   private exportStatisticsCsv(
     sections: { title: string; headers: string[]; rows: (string | number)[][] }[],
     filenameBase: string
@@ -1638,7 +1272,7 @@ export class MunicipalityDashboard  implements OnInit {
     URL.revokeObjectURL(a.href);
   }
 
-  /** One worksheet per section (SheetJS) — genuinely tabular columns, not a dumped JSON blob. */
+  
   private async exportStatisticsExcel(
     sections: { title: string; headers: string[]; rows: (string | number)[][] }[],
     filenameBase: string
@@ -1647,15 +1281,13 @@ export class MunicipalityDashboard  implements OnInit {
     const workbook = XLSX.utils.book_new();
     sections.forEach((section, index) => {
       const worksheet = XLSX.utils.aoa_to_sheet([section.headers, ...section.rows]);
-      // Excel sheet names: max 31 chars, no reserved characters — index prefix keeps them
-      // unique even if two section titles were to collide after truncation.
       const sheetName = `${index + 1}. ${section.title}`.slice(0, 31);
       XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
     });
     XLSX.writeFile(workbook, `${filenameBase}.xlsx`);
   }
 
-  /** Mirrors generateGlobalReport()'s jsPDF/autoTable conventions (Prompt 15). */
+  
   private async exportStatisticsPdf(
     sections: { title: string; headers: string[]; rows: (string | number)[][] }[],
     filenameBase: string

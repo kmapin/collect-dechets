@@ -78,15 +78,6 @@
           }
 
         </div>
-        <!-- <div class="filter-group">
-      <label class="filter-label">Note minimum</label>
-      <select [(ngModel)]="minRating" (change)="applyFilters()" class="filter-select">
-        <option value="">Toutes</option>
-        <option value="3">3 étoiles et plus</option>
-        <option value="4">4 étoiles et plus</option>
-        <option value="4.5">4.5 étoiles et plus</option>
-      </select>
-    </div> -->
       </div>
       <div class="filters-actions" style="text-align:right; margin-top:8px;">
         <button
@@ -97,14 +88,6 @@
           Réinitialiser
         </button>
       </div>
-      <!-- <div class="flex justify-center lg:justify-end">
-  <button
-    class="group px-4 py-2.5 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-2 font-medium text-sm"
-    (click)="clearFilters()" title="Réinitialiser tous les filtres">
-    <i class="fas fa-undo-alt group-hover:rotate-180 transition-transform duration-300"></i>
-    Réinitialiser
-  </button>
-</div> -->
 
       <div class="view-toggle">
         <button class="view-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">
@@ -115,28 +98,12 @@
           <i class="material-icons">view_list</i>
           Liste
         </button>
-        <!-- <button
-  class="view-btn"
-  [class.active]="viewMode === 'map'"
-  (click)="viewMode = 'map'">
-  <i class="material-icons">map</i>
-  Carte
-</button> -->
       </div>
     </div>
 
     <!-- Résultats -->
     <div class="results-header">
       <h2>{{ filteredAgencies.length }} agence(s) trouvée(s)</h2>
-      <!-- <div class="sort-options">
-  <label>Trier par:</label>
-  <select [(ngModel)]="sortBy" (change)="sortAgencies()" class="sort-select">
-    <option value="name">Nom</option>
-    <option value="rating">Note</option>
-    <option value="price">Prix</option>
-    <option value="clients">Nombre de clients</option>
-  </select>
-</div> -->
     </div>
 
     <div class="container">
@@ -151,10 +118,6 @@
                 [src]="'https://images.pexels.com/photos/3735218/pexels-photo-3735218.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'"
                 [alt]="agency.name">
             </div>
-            <!-- <div class="agency-badge" *ngIf="agency && agency.randomStars >= 1">
-            <i class="material-icons">star</i>
-            Top Rated
-          </div> -->
           </div>
           <div class="agency-content">
             <h3 class="agency-name">{{ agency.name }}</h3>
@@ -182,36 +145,13 @@
                   agency.address.neighborhood || '-' }}</span>
               </div>
               <div class="info-item"></div>
-              <!-- <div class="info-item">
-              <i class="material-icons">people</i>
-              <span>{{ agency.totalClients || 0 }} clients</span>
-            </div> -->
-              <!-- <div class="info-item">
-            <i class="material-icons">build</i>
-            <span>{{ agency.services.length || 0 }} services</span>
-          </div> -->
             </div>
-            <!-- <div class="services-preview">
-        <h4>Services principaux</h4>
-        <div class="services-tags">
-          <span *ngFor="let service of (agency.services || []).slice(0, 3)" class="service-tag">
-            {{ service.name }} - {{ service.price }}€
-          </span>
-          <span *ngIf="(agency.services || []).length > 3" class="service-tag more">
-            +{{ (agency.services || []).length - 3 }} autres
-          </span>
-        </div>
-      </div> -->
           </div>
           <div class="agency-actions">
             <button class="btn btn-secondary" [routerLink]="['/agencies', agency._id]">
               <i class="material-icons">info</i>
               Voir détails
             </button>
-            <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
-      <i class="material-icons">add</i>
-      S'abonner
-    </button> -->
           </div>
         </div>
         }
@@ -232,12 +172,6 @@
               </div>
               <div class="agency-list-info">
                 <h3 class="agency-name text-[--primary-color]">{{ agency.name }}</h3>
-                <!-- <div class="agency-rating">
-              <div class="stars">
-                <i *ngFor="let star of getStars(agency.rating)" class="material-icons star">star</i>
-              </div>
-              <span class="rating-text">{{ agency.rating }}/5</span>
-            </div> -->
                 <div
                   class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full">
                   @for (star of getStars(agency.rating); track $index) {
@@ -254,10 +188,6 @@
                 </div>
                 }
               </div>
-              <!-- <div class="agency-list-price">
-          <span class="price-from">À partir de</span>
-          <span class="price-value">{{ getMinPrice(agency) }}€</span>
-        </div> -->
             </div>
             <p class="agency-description truncate">{{ agency.agencyDescription }}</p>
             <div class="agency-list-details">
@@ -270,10 +200,6 @@
                 <i class="material-icons">people</i>
                 <span>{{ agency.totalClients || 0 }} clients</span>
               </div>
-              <!-- <div class="detail-item">
-        <i class="material-icons">schedule</i>
-        <span>Collecte {{ getFrequencyText(agency) }}</span>
-      </div> -->
             </div>
           </div>
           <div class="agency-list-actions">
@@ -281,9 +207,6 @@
               <i class="material-icons">info</i>
               Voir détails
             </button>
-            <!-- <button class="btn btn-primary" (click)="subscribeToAgency(agency._id)">
-    S'abonner
-  </button> -->
           </div>
         </div>
         }
@@ -342,8 +265,6 @@
   </div>
 
   <div class="pagination-wrapper">
-    <!-- La recherche charge toujours l'intégralité des résultats (getAll:true) —
-         pas de pagination réelle à piloter ici, seulement un résumé. -->
     <div class="pagination-info">
       <b>{{ filteredAgencies.length }}</b> agence(s) affichée(s)
     </div>

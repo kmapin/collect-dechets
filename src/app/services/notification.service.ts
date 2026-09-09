@@ -26,16 +26,6 @@ export class NotificationService {
   private notificationSubject = new Subject<NotificationI>();
   public notifications$ = this.notificationSubject.asObservable();
 
-  // Chantier "Notifications" (inbox réelle) : source UNIQUE du compteur non-lu,
-  // partagée par la cloche du header et la page /notifications. Amorcée par
-  // refreshUnreadCount() (GET /unread-count, valeur autoritaire), puis ajustée
-  // uniquement par les événements socket ci-dessous — jamais de décrément local en
-  // plus de l'écho socket (double comptage sinon), ce qui est sûr maintenant que
-  // chaque route notification n'émet plus qu'à la room de son propriétaire réel.
-  // L'ancien `realtimeNotificationsSubject`/`realtimeNotifications$` (0 consommateur,
-  // 3e liste parallèle jamais lue) a été supprimé plutôt que branché : header.ts et la
-  // page /notifications tiennent chacun leur propre liste, une liste de plus dans ce
-  // service aurait été exactement la duplication de source de vérité à éviter.
   private unreadCountSubject = new BehaviorSubject<number>(0);
   public unreadCount$ = this.unreadCountSubject.asObservable();
 

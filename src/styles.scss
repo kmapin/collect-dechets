@@ -1,9 +1,4 @@
 
-// Include theming for Angular Material with `mat.theme()`.
-// This Sass mixin will define CSS variables that are used for styling Angular Material
-// components according to the Material 3 design spec.
-// Learn more about theming and how to use it for your application's
-// custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 @use "tailwindcss";
 @import 'leaflet/dist/leaflet.css';
@@ -20,14 +15,8 @@ html {
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
   color-scheme: light;
 
-  // Set a default background, font and text colors for the application using
-  // Angular Material's system-level CSS variables. Learn more about these
-  // variables at https://material.angular.dev/guide/system-variables
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
@@ -39,55 +28,8 @@ body {
 /* @import "~leaflet/dist/leaflet.css"; */
 /* @import "flowbite/src/themes/default"; */
 /*Material Icons*/
-/*
-@font-face {
-  font-family: 'Material Icons';
-  font-style: normal;
-  font-weight: 400;
-  src: url('assets/fonts/material-icons/MaterialIcons-Regular.ttf') format('truetype');
-}
-@font-face {
-  font-family: 'Material Icons';
-  font-style: normal;
-  font-weight: 400;
-  src: url('assets/fonts/material-icons/MaterialIcons-Regular.woff') format('woff');
-}
-@font-face {
-  font-family: 'Material Icons';
-  font-style: normal;
-  font-weight: 400;
-  src: url('assets/fonts/material-icons/MaterialIcons-Regular.woff2') format('woff2');
-}
 
-.material-icons {
-  font-family: 'Material Icons';
-  font-size: 24px;
-  line-height: 1;
-  display: inline-block;
-  white-space: nowrap;
-  direction: ltr;
-}
-*/
 
-/*
-Source - https://stackoverflow.com/a
-Posted by MGX
-Retrieved 2026-01-07, License - CC BY-SA 4.0
-gère les bordures des champs de saisie material et
-conflits entre tailwind et material
-*/
-
-/*
-  Fix complet : Angular Material outlined input ↔ Tailwind CSS
-  ─────────────────────────────────────────────────────────────
-  Le outline Material se compose de 3 segments (leading / notch / trailing).
-  Tailwind reset `border-style: solid` sur `*` ce qui force les bordures
-  internes (jonctions entre segments) à s'afficher, cassant l'apparence.
-
-  Solution : cacher explicitement la bordure intérieure de chaque segment.
-  On cible directement les classes MDC sans contrainte de statut afin de
-  couvrir également les champs disabled, focused, error, etc.
-*/
 
 /* segment gauche → pas de bordure droite */
 .mdc-notched-outline__leading {
@@ -110,46 +52,11 @@ conflits entre tailwind et material
   border-left: none;
 }
 
-/*
-  Correctifs de compatibilité Angular Material — CENTRALISÉS ICI.
-  ─────────────────────────────────────────────────────────────
-  Avant d'ajouter un `::ng-deep .mat-mdc-*`/`.mdc-*` dans le SCSS d'un
-  composant pour corriger un rendu Material cassé (pas juste une
-  personnalisation de couleur/taille propre à cette page), vérifie d'abord
-  si le même symptôme n'est pas déjà couvert ici — évite de re-diagnostiquer
-  et re-patcher le même problème dans un nouveau fichier (cf. le fix
-  notched-outline ci-dessus, initialement isolé, maintenant regroupé avec
-  celui-ci).
-*/
 
-/*
-  Anneau de focus double sur un <input matInput> invalide (ex. formulaire
-  mobile-money-form, où ce fix vivait auparavant en local avant d'être
-  généralisé ici). Le <input matInput> reste un <input> HTML natif — le
-  navigateur lui applique sa propre bague de focus native PAR-DESSUS le
-  contour MDC dès que le champ est focus, faute d'un `outline: none`
-  explicite (Material ne le neutralise pas systématiquement selon
-  navigateur/version). Les deux contours se superposent → bordure double.
-  Générique à TOUT champ Material de l'app, pas seulement ce formulaire-là.
-*/
 .mat-mdc-input-element:focus {
   outline: none;
 }
 
-/*
-  Focus visuel cohérent pour TOUS les <input>/<textarea> HTML natifs de l'app
-  (hors Material/PrimeNG, qui gèrent déjà leur propre indicateur de focus —
-  exclus explicitement ci-dessous pour ne jamais leur ajouter une 3e bordure).
-  Beaucoup de composants neutralisent `outline`/`border` sur leurs champs sans
-  toujours reposer un indicateur de focus derrière (certains le font via
-  `:focus-within` sur le conteneur, d'autres pas du tout) — un seul endroit
-  garantit désormais le même contour bleu partout, plutôt que de dépendre de
-  ce que chaque composant a pensé à refaire. `!important` nécessaire : la
-  quasi-totalité des styles de champ dans l'app posent déjà un `outline:none`/
-  `border:none` scopé au composant (donc plus spécifique qu'une règle globale
-  sur la balise `input` seule) — sans lui, cette règle serait systématiquement
-  écrasée exactement comme elle est censée corriger.
-*/
 input:not(.mat-mdc-input-element):not(.p-inputtext):focus,
 textarea:not(.mat-mdc-input-element):not(.p-inputtext):focus {
   outline: 2px solid #3b82f6 !important;
@@ -326,12 +233,6 @@ body {
 }
 
 /* Centrage global pour tous les écrans */
-/* body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  min-height: 100vh;
-} */
 
 .app {
   width: 100%;
@@ -362,13 +263,6 @@ body {
   transform: translateY(-2px);
 }
 
-// Un `transform` sur un ancêtre crée un nouveau bloc de référence pour tout descendant
-// en `position: fixed` — le drawer .drawer-overlay (shared_pages/signalement) rendu à
-// l'intérieur d'une .card devenait alors confiné à cette carte au lieu de couvrir tout le
-// viewport (bug remonté en usage réel, le survol restant actif juste après le clic qui
-// ouvre le drawer). `body.signalement-drawer-open` est posée/retirée par
-// signalement.ts pendant qu'un de ses 3 drawers est ouvert — neutralise ce transform le
-// temps du drawer, sans retirer l'effet de survol des cartes partout ailleurs.
 body.signalement-drawer-open .card:hover {
   transform: none;
 }
@@ -444,12 +338,6 @@ body.signalement-drawer-open .card:hover {
   transform: translateY(-1px);
 }
 
-// Boutons "quick actions" des bannières de dashboard (agency/client/...) — un
-// seul traitement cohérent ("verre dépoli" translucide), commun à tous les
-// dashboards, plutôt qu'une teinte différente par bouton/par page (constat
-// utilisateur : "les couleurs des boutons ne concorde pas" sur plusieurs
-// dashboards). Reste lisible sur n'importe quelle bannière à dégradé coloré ;
-// seule l'icône distingue chaque action, jamais sa couleur de fond.
 .qa-btn {
   display: inline-flex;
   align-items: center;
@@ -625,9 +513,6 @@ body.signalement-drawer-open .card:hover {
   .btn {
     padding: 10px 20px;
   }
-  /* body{
-    font-size: 18px;
-  } */
 }
 
 .navbar {

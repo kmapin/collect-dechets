@@ -80,10 +80,6 @@ export class TeamConflictDetectorComponent implements OnChanges {
   @Input() selectedTeamIds:     string[]    = [];
   @Input() newStartTime:        string      = '08:00';
   @Input() estimatedHouseholds: number      = 0;
-  /**
-   * Teams pre-loaded by the parent. Use a signal-backed setter so computed() is reactive
-   * to changes on this @Input (plain @Input properties don't trigger signal computed).
-   */
   @Input() set externalTeams(val: TeamApi[]) {
     this._externalTeamsSignal.set(val ?? []);
   }

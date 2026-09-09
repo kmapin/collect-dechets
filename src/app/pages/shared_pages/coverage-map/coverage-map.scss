@@ -64,10 +64,6 @@
   }
 }
 
-// Leaflet renders marker popups/tooltips as raw HTML appended outside this
-// component's own template — Angular's emulated view encapsulation never
-// scopes them, so ::ng-deep is required here (same convention already used
-// for popups in admin-dashboard.scss).
 ::ng-deep .coverage-map-popup {
   font-family: inherit;
   min-width: 180px;

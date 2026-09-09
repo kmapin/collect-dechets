@@ -7,16 +7,12 @@ import { FinancePermission, Role, Utilisateur } from '../../models';
 import { SessionService, SessionUtilisateur } from '../contracts/session.service';
 import { mapSessionUtilisateurDto, mapUtilisateurDto } from './mappers/session.mapper';
 
-// Traduction inverse de FINANCIAL_ROLE_TO_FRONTEND (backend, services/financeUsers.js) :
-// l'enum frontend Role (PascalCase) doit repartir en snake_case attendu par le backend.
 const ROLE_TO_BACKEND: Record<Role, 'comptable' | 'manager_terrain' | 'administrateur'> = {
   [Role.COMPTABLE]: 'comptable',
   [Role.MANAGER_TERRAIN]: 'manager_terrain',
   [Role.ADMINISTRATEUR]: 'administrateur',
 };
 
-// Voir client-data.http.service.ts pour la note complète sur le branchement DI et
-// INTEGRATION.md pour la liste des endpoints.
 @Injectable()
 export class SessionHttpService implements SessionService {
   private readonly http = inject(HttpClient);

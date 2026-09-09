@@ -1,28 +1,24 @@
-// ── Enums ───────────────────────────────────────────────────────
+//  Enums 
 export type PlanningType = 'individuel' | 'groupe' | 'zone' | 'secteur';
 export type PlanningStatus = 'brouillon' | 'planifie' | 'en_cours' | 'termine' | 'annule';
-// Suppression du moteur V1 (isRecurring/recurrenceType, backend) — `frequency` est
-// désormais la SEULE source de vérité pour la récurrence, générée automatiquement à la
-// clôture du planning précédent (backend services/planning.js::completePlanning).
+
 export type PlanningFrequency = 'unique' | 'quotidien' | 'hebdomadaire' | 'bimensuel' | 'mensuel';
 export type WasteType = 'menagers' | 'recyclables' | 'verts' | 'encombrants' | 'speciaux';
 
-// ── API V2 — équipe peuplée (l'API renvoie parfois des objets, pas juste des IDs) ──
+
 export interface EquipeRef {
   _id: string;
   name: string;
   status?: string;
 }
 
-// ── API V2 — territoire peuplé (idem) ──────────────────────────
+
 export interface TerritoryRef {
   _id: string;
   name: string;
 }
 
-// ── API V2 — client peuplé (clientId d'un planning individuel, ou un membre de
-// groupeId.clients) — `address` est un sous-document complet (User.address), jamais
-// une chaîne à plat.
+
 export interface PopulatedClientRef {
   _id: string;
   firstName?: string;
@@ -36,7 +32,7 @@ export interface PopulatedClientRef {
   };
 }
 
-// ── API V2 — response ───────────────────────────────────────────
+
 export interface PlanningV2Api {
   _id: string;
   reference: string;
@@ -49,25 +45,18 @@ export interface PlanningV2Api {
   endTime?: string;
   clientsCount?: number;
   estimatedDuration?: number;
-  // Champ principal : une seule équipe
   teamId?: string | null;
-  // Héritage : certains anciens enregistrements ont encore equipeIds
   equipeIds?: (string | EquipeRef)[];
   typeDechets: WasteType[];
   notes?: string;
   agencyId?: string;
   managerId?: string;
-  // L'API peuple parfois ces champs (objet complet) au lieu de renvoyer un simple ID
   clientId?: string | PopulatedClientRef | null;
-  // `clients` est peuplé (objets, pas juste des ids) depuis le chantier "localisation
-  // planning par groupe" — voir PlanningService._locationLabel.
   groupeId?: string | { _id: string; name?: string; clients?: (string | PopulatedClientRef)[] } | null;
   villeId?: string | TerritoryRef;
   arrondissementId?: string | TerritoryRef;
   secteurId?: string | TerritoryRef;
   quartierId?: string | TerritoryRef;
-  // Horodatage réel des transitions de statut (posé par le backend dans
-  // publishPlanning/startPlanning/completePlanning/cancelPlanning)
   publishedAt?: string | null;
   startedAt?: string | null;
   completedAt?: string | null;
@@ -76,7 +65,7 @@ export interface PlanningV2Api {
   updatedAt: string;
 }
 
-// ── API V2 — create / update body ──────────────────────────────
+
 export interface PlanningV2CreateBody {
   type: PlanningType;
   libelle: string;
@@ -98,7 +87,7 @@ export interface PlanningV2CreateBody {
   notes?: string;
 }
 
-// ── API V2 — stats ──────────────────────────────────────────────
+
 export interface PlanningStatsApi {
   totalPlannings: number;
   todayPlannings: number;
@@ -107,7 +96,6 @@ export interface PlanningStatsApi {
   executionRate: number;
 }
 
-// ── API V2 — planning evolution (GET /planning/evolution) ──
 export interface CollectionEvolutionDay {
   dayKey: string;
   label: string;
@@ -115,7 +103,7 @@ export interface CollectionEvolutionDay {
   completedPlannings: number;
 }
 
-// ── API V2 — zone coverage ──────────────────────────────────────
+
 export interface ZoneCoverageApi {
   quartierId: string;
   quartierNom: string;
@@ -127,15 +115,13 @@ export interface ZoneCoverageApi {
   status: string;
 }
 
-// ── API V2 — conflict check ─────────────────────────────────────
+
 export interface ConflictResult {
-  // Absents pour les conflits 'zone'/'client'/'group' (pas liés à une équipe précise).
   equipeId?: string;
   equipeName?: string;
   conflictType: 'schedule' | 'schedule_week' | 'zone' | 'client' | 'group' | string;
   conflictingPlanningRef: string;
   message: string;
-  /** true = ne peut jamais être outrepassé ; false = nécessite acknowledgeConflicts:true pour continuer. */
   blocking: boolean;
 }
 
@@ -152,7 +138,7 @@ export interface ConflictCheckResponse {
   hasBlockingConflict?: boolean;
 }
 
-// ── Team API V2 ─────────────────────────────────────────────────
+
 export interface TeamApiMember {
   _id?: string;
   name: string;
@@ -191,7 +177,7 @@ export interface TeamApi {
   maxClientsPerDay?: number;
 }
 
-// ── Territory ───────────────────────────────────────────────────
+//  Territory
 export interface TerritoryItem {
   _id: string;
   name: string;
@@ -200,11 +186,11 @@ export interface TerritoryItem {
   sectorId?: string;
   latitude?: number;
   longitude?: number;
-  /** Chantier "unifier la géographie" — désormais présent sur les 5 modèles backend. */
+  
   code?: string;
 }
 
-// ── API paginated list wrapper ──────────────────────────────────
+
 export interface ApiListResponse<T> {
   success: boolean;
   data: T[];
@@ -216,7 +202,7 @@ export interface ApiListResponse<T> {
   };
 }
 
-// ── UI Planning (mapped from PlanningV2Api) ─────────────────────
+
 export interface Planning {
   id: string;
   reference: string;
@@ -239,27 +225,18 @@ export interface Planning {
   clientName?: string;
   groupeId?: string;
   groupName?: string;
-  /**
-   * Localisation à afficher, calculée une seule fois ici (PlanningService._locationLabel)
-   * plutôt que dupliquée dans chaque vue (planning-detail, planning-summary-drawer) :
-   * quartier du client pour un planning individuel, zone/secteur commun aux membres pour
-   * un planning groupe (uniquement si tous les membres partagent la même valeur — jamais
-   * une valeur approximative), secteur/quartier/ville pour zone|secteur. '—' si rien de
-   * fiable n'est disponible.
-   */
   locationLabel: string;
   // Scheduling
   date: string;
   startTime: string;
   endTime?: string;
   frequency: PlanningFrequency;
-  // Teams (une seule équipe par planning)
-  teamId?: string | null; // ID pour l'API
-  teams: string[];           // noms pour l'affichage (1 élément max)
-  equipeIds: string[];       // alias dérivé de teamId (rétrocompat)
+  teamId?: string | null; 
+  teams: string[];
+  equipeIds: string[];
   // Waste
-  wasteTypes: string[];  // labels for display
-  typeDechets: WasteType[]; // codes for API
+  wasteTypes: string[];
+  typeDechets: WasteType[];
   // Metrics
   clientsCount?: number;
   estimatedDuration?: number;
@@ -275,7 +252,7 @@ export interface Planning {
   updatedAt: string;
 }
 
-// ── Dashboard Stats (UI) ────────────────────────────────────────
+
 export interface PlanningStats {
   totalPlannings: number;
   todayPlannings: number;
@@ -285,7 +262,7 @@ export interface PlanningStats {
   executionRate: number;
 }
 
-// ── Team (UI, for dashboard) ────────────────────────────────────
+
 export interface PlanningTeam {
   id: string;
   name: string;
@@ -296,7 +273,7 @@ export interface PlanningTeam {
   completionRate: number;
 }
 
-// ── Alert (UI, local only — no API equivalent) ──────────────────
+
 export interface PlanningAlert {
   id: string;
   type: 'warning' | 'danger' | 'info' | 'success';
@@ -306,7 +283,7 @@ export interface PlanningAlert {
   planningRef?: string;
 }
 
-// ── Zone Coverage (UI, mapped from ZoneCoverageApi) ─────────────
+
 export interface ZoneCoverage {
   name: string;
   lat: number;
@@ -317,7 +294,7 @@ export interface ZoneCoverage {
   status: 'active' | 'pending' | 'inactive';
 }
 
-// ── Filter (matches API query params) ──────────────────────────
+
 export interface PlanningFilter {
   type?: PlanningType | 'tous';
   status?: PlanningStatus | 'tous';
@@ -330,7 +307,7 @@ export interface PlanningFilter {
   pageSize?: number;
 }
 
-// ── Sidebar nav ─────────────────────────────────────────────────
+
 export interface NavItem {
   label: string;
   icon: string;
@@ -338,7 +315,7 @@ export interface NavItem {
   badge?: number;
 }
 
-// ── Waste type label map ────────────────────────────────────────
+
 export const WASTE_TYPE_LABELS: Record<WasteType, string> = {
   menagers: 'Déchets ménagers',
   recyclables: 'Recyclables',

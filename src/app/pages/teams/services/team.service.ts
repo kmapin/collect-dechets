@@ -84,9 +84,6 @@ export class TeamService {
   loadCollectors(): void {
     const agencyId = this.agencyId;
     if (!agencyId) return;
-    // includeManagers=true : un manager doit pouvoir apparaître dans la liste
-    // des membres assignables à une équipe, au même titre qu'un collecteur
-    // (backend, services/agencyEmployee.js::getCollectorsByAgency).
     this.http.get<{ data: CollectorUser[] }>(`${this.api}/agency_employees/${agencyId}/collectors`, { params: { includeManagers: 'true' } })
       .pipe(map(r => r.data ?? []), catchError(() => of([])))
       .subscribe(list => this._collectors.set(list));

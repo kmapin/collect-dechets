@@ -42,9 +42,6 @@ export class DashboardComponent {
 
   readonly formatMontant = formatMontantXof;
 
-  // ── Filtres "Montant total des paiements" (chantier Finance/Paiements, item 6) ──
-  // Appliqués à totalCollecte/revenusNets uniquement (voir commentaire backend
-  // FinanceStatsService.getDashboardKpi) — pas à soldeDisponible/enAttente.
   readonly filtreZone = signal('');
   readonly filtrePlanType = signal<'' | 'standard' | 'premium' | 'enterprise'>('');
   readonly filtreClientRecherche = signal('');
@@ -94,7 +91,7 @@ export class DashboardComponent {
     this.onFenetreChange();
   }
 
-  // ── KPI (F1) ──────────────────────────────────────────────────
+  // KPI 
   readonly mode = signal<PeriodSelectorMode>('court');
   readonly kpi = signal<DashboardKpi | null>(null);
   readonly chargementKpi = signal(true);
@@ -105,7 +102,7 @@ export class DashboardComponent {
     return !!k && k.totalCollecte === 0 && k.enAttente === 0 && k.soldeDisponible === 0;
   });
 
-  // ── Graphiques (F2) ───────────────────────────────────────────
+  // Graphiques
   readonly chargementGraphiques = signal(true);
   readonly erreurGraphiques = signal<string | null>(null);
   private readonly stats = signal<FinanceStatsSeries | null>(null);
@@ -161,7 +158,7 @@ export class DashboardComponent {
   }
 
   // Étend l'export au-delà des 6 mois fixes + applique les mêmes filtres zone/client/
-  // type de tarif que les KPI affichés à l'écran (item 6).
+  // type de tarif que les KPI affichés à l'écran.
   exporterCsv(): void {
     const s = this.stats();
     if (!s) return;

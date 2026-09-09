@@ -26,14 +26,6 @@ bootstrapApplication(AppComponent, {
       withFetch(),
       withInterceptors([authInterceptorInterceptor])
     ),
-    // `darkModeSelector` vaut "system" par défaut côté PrimeNG (@primeuix/styled) —
-    // chaque composant PrimeNG (p-table, p-select, p-dialog...) bascule alors seul
-    // sur sa palette sombre dès que l'OS/navigateur du visiteur est en mode sombre
-    // (media query prefers-color-scheme), sans aucun rapport avec le reste de l'app
-    // (Angular Material est explicitement forcé à `color-scheme: light` dans
-    // styles.scss, tout le CSS custom est en dur clair) — d'où des sections
-    // PrimeNG isolées en sombre au milieu d'une page claire, jamais un choix
-    // voulu. `false` fige tout composant PrimeNG en clair, comme le reste de l'app.
     providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: false } } }),
     MessageService,
     { provide: LOCALE_ID, useValue: 'fr-FR' },

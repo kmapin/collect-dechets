@@ -73,12 +73,6 @@ export interface CollectionReport {
   resolution?: string;
   createdAt: Date;
   resolvedAt?: Date;
-  // updatedAt: Date;
-  // scannedAt?: Date;
-  // positionGPS?: {
-  //   latitude: number;
-  //   longitude: number;
-  // };
 }
 
 export enum ReportType {

@@ -1,11 +1,6 @@
 import { FormBuilder } from '@angular/forms';
 import { MobileMoneyFormComponent } from './mobile-money-form';
 
-/**
- * Phase 8 — `onSubmit()` doit transmettre `redevanceId` (présent dans
- * `tarifResponse` pour un paiement de redevance, absent pour un paiement
- * d'abonnement) au `PaymentService`, en plus des champs déjà existants.
- */
 describe('MobileMoneyFormComponent - transmission de redevanceId (Phase 8)', () => {
   let component: MobileMoneyFormComponent;
   let paymentServiceSpy: { processPayment: jasmine.Spy; currentPaymentResponse: any };

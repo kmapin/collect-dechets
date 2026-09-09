@@ -25,12 +25,6 @@ export interface PlatformFeesSummary {
   totalPlatformAmount: number;
 }
 
-/**
- * GET/PUT /finance/fee-config (Prompt F2) — lecture ouverte à manager+super_admin
- * côté backend, mais l'écran qui consomme `updateGlobal$` (Prompt F8) est réservé
- * au Super Admin (voir fee-config-admin.guard.ts) : jamais une agence ne modifie
- * elle-même le taux/montant des frais plateforme.
- */
 @Injectable({ providedIn: 'root' })
 export class FeeConfigService {
   private readonly base = `${environment.apiUrl}/finance`;

@@ -56,10 +56,6 @@
     font-weight: 600;
     color: #475569;
     cursor: pointer;
-    // Les navigateurs appliquent text-align:start directement sur <button> (valeur
-    // explicite, pas héritée) — ça écrase le text-align:right du <th>.data-table__right
-    // parent pour les colonnes triables alignées à droite (ex. Montant). On force
-    // l'héritage pour que l'en-tête s'aligne comme les cellules de la colonne.
     text-align: inherit;
 
     i {

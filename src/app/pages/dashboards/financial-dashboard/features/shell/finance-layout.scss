@@ -1,8 +1,3 @@
-// Reprend le langage visuel des autres dashboards (agency-dashboard.scss) : le
-// dégradé/page-header/container/btn viennent des styles globaux (src/styles.scss) ;
-// header-content/quick-actions/tabs-navigation/tab-btn/tab-badge/tab-content sont
-// scopés au composant côté agency-dashboard, donc reproduits ici à l'identique
-// (mêmes valeurs, mêmes variables CSS) pour un rendu strictement équivalent.
 
 .finance-shell {
   display: flex;

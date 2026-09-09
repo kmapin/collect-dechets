@@ -1,9 +1,3 @@
-/* Styles pour les états vides — définition UNIQUE, réutilisée par tous les
-   onglets (Collectes, Signalements, Engins, etc.) : la rendre plus soignée ici
-   l'améliore partout, pas seulement pour l'onglet où le problème a été repéré.
-   (Deux définitions concurrentes de .empty-state coexistaient dans ce fichier —
-   celle plus bas, non scopée, gagnait partiellement la cascade et rendait
-   l'icône presque invisible à 50% d'opacité ; fusionnées en une seule ici.) */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -18,10 +12,6 @@
   min-height: 200px;
 }
 
-// `> i` (enfant direct) et non `i` (tout descendant) : un bouton d'action à
-// l'intérieur de .empty-state (ex. "Ajouter un Engin") a lui aussi une <i>
-// material-icons — la ciblant par erreur gonflait l'icône du bouton dans un
-// cercle de 72px, rendu absurde signalé ("TROP MOCHE").
 .empty-state > i {
   display: flex;
   align-items: center;
@@ -562,8 +552,6 @@
   flex-wrap: wrap;
 }
 
-// .qa-btn — déplacé dans styles.scss (global) pour être partagé entre tous les
-// dashboards (agency/client/...) avec le même traitement visuel cohérent.
 
 .error-message {
   color: red;
@@ -668,10 +656,6 @@
 }
 
 /* Modal backdrop */
-/* z-index 9999 (pas 999) : le bandeau d'en-tête global de l'app (.page-header,
-   app.component.ts, z-index:1000) pouvait légèrement transparaître au-dessus de ce
-   fond assombri — même correctif qu'agent-payment.component.scss/contracts.
-   component.scss (backdrop -> 9999, contenu -> 10000 juste en dessous). */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -810,7 +794,6 @@
   gap: 6px;
 }
 
-/* Chantier Frais plateforme (Prompt 9/9) — qui supporte les frais de ce tarif */
 .fee-payer-chip {
   display: flex;
   align-items: center;
@@ -837,8 +820,6 @@
   }
 }
 
-/* Demandes express — équipe assignée / planning de suivi (même langage visuel
-   que .fee-payer-chip ci-dessus). */
 .assigned-team-chip {
   display: inline-flex;
   align-items: center;
@@ -864,8 +845,6 @@
   }
 }
 
-/* ---- Team picker (repris de shared_pages/signalement/signalement.scss —
-   même composant visuel, pas de composant partagé extrait pour l'instant) ---- */
 .team-picker-empty {
   color: #9ca3af;
   font-size: 0.85rem;
@@ -946,11 +925,6 @@
   border-radius: 20px;
 }
 
-/* Boutons action — palette adoucie (Prompt 9/9) : les classes globales .btn-secondary/
-   .btn-danger (styles.scss) sont pleines et saturées, pensées pour un CTA isolé, pas
-   pour deux boutons secondaires côte à côte dans une carte de liste — surchargées ici
-   en teintes claires + texte coloré (même langage que .fee-payer-chip juste au-dessus)
-   plutôt que des aplats vifs. */
 .tariff-actions {
   display: flex;
   flex-wrap: wrap;
@@ -3126,9 +3100,6 @@
   border-left: 4px solid var(--error-color);
 }
 
-// Onglet "Avis clients" (note + commentaire) — même structure de liste/carte
-// que .reports-list/.report-card ci-dessus, teinte neutre-or (étoiles) plutôt
-// que la teinte "erreur" utilisée pour les signalements.
 .avis-list {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -3484,11 +3455,6 @@ button:disabled {
   color: var(--white);
 }
 
-// .p-focus{
-//   background: #f8fafc;
-//   border-radius: 8px;
-//   border-color: var(--primary-color);
-// }
 .p-multiselect-filter-container .p-inputtext {
   height: 30px;
   padding: 2px 6px;
@@ -4949,19 +4915,6 @@ button:disabled {
   gap: 0.75rem;
 }
 
-/* .drawer-footer {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      display: flex;
-      gap: .5rem;
-      justify-content: flex-end;
-      align-items: center;
-      padding: .75rem 1rem;
-      border-top: 1px solid var(--surface-border);
-      background: white;
-} */
 /* Responsive Design pour Zone Analytics */
 @media (max-width: 768px) {
   .zone-stats-grid {
@@ -5692,9 +5645,6 @@ select[disabled]:focus {
   text-align: left;
 }
 
-// `> .material-icons` (enfant direct) et non un descendant quelconque : le
-// bouton "Ajouter une zone" a lui aussi une <i class="material-icons"> — la
-// cibler par erreur gonflait son icône "+" à 48px, même bug que .empty-state i.
 .empty-compact-content > .material-icons {
   font-size: 48px;
   color: #9ca3af;
@@ -6063,17 +6013,10 @@ select[disabled]:focus {
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: #fff;
-  // Mobile first : sur un écran étroit, on défile horizontalement plutôt que de
-  // laisser chaque colonne s'écraser (une colonne "Notes" à largeur libre finissait
-  // par afficher un mot par ligne — table illisible et anormalement haute).
   -webkit-overflow-scrolling: touch;
 }
 
 .collectes-table {
-  // `min-width` plutôt que `width: 100%` seul : garde une largeur de colonne
-  // minimale raisonnable même sur mobile, et laisse .collectes-table-wrapper
-  // (overflow-x: auto ci-dessus) gérer le défilement horizontal — mêmes colonnes
-  // lisibles sur mobile que sur desktop, jamais écrasées.
   width: 100%;
   min-width: 720px;
   border-collapse: collapse;
@@ -6125,9 +6068,6 @@ select[disabled]:focus {
     white-space: nowrap;
   }
 
-  // Texte libre (notes client) : largeur bornée avec un retour à la ligne
-  // normal (plusieurs mots par ligne), plutôt qu'une colonne écrasée à la
-  // largeur du mot le plus court — cause du rendu "un mot par ligne" signalé.
   .cell-notes {
     white-space: normal;
     min-width: 160px;
@@ -6208,11 +6148,6 @@ select[disabled]:focus {
   }
 }
 
-// ─── Collecte status badge (table) ───────────────────────────────────────────
-// Filtre de statut "Demandes de collecte express" — remplace le <select>
-// par un groupe de boutons (même palette que .collecte-status-badge
-// ci-dessous, pour que le bouton actif rappelle visuellement le badge
-// des lignes qu'il filtre).
 .status-filter-group {
   display: flex;
   flex-wrap: wrap;
@@ -6395,9 +6330,6 @@ select[disabled]:focus {
   }
 }
 
-/* ════════════════════════════════════════════════
-   Planning Detail Modal (popup calendrier)
-   ════════════════════════════════════════════════ */
 .sched-detail-modal {
   background: #fff;
   border-radius: 14px;
@@ -6570,8 +6502,6 @@ select[disabled]:focus {
   color: #16a34a;
 }
 
-/* Sélecteur de rôle financier (assignation par un administrateur finance) — visible
-   uniquement pour les employés de rôle "manager", cf. agency-dashboard.html. */
 .finance-role-item {
   .finance-role-select {
     flex: 1;

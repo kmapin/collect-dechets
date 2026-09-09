@@ -13,9 +13,6 @@
     color: #94a3b8;
   }
 
-  // Panneau "demandes en attente" (chantier M2, rôle super_admin uniquement) — même
-  // palette que __warning (attention, action requise) mais plus prononcée, en pleine
-  // largeur au-dessus du formulaire.
   &__validation-panel {
     padding: 1rem 1.1rem;
     margin-bottom: 1.5rem;
@@ -74,10 +71,6 @@
     flex-wrap: wrap;
   }
 
-  // Indication du provider (Moov réel / interne) avant soumission — même palette que
-  // __success/__error selon le sens (Moov = information neutre-positive, interne =
-  // information neutre), jamais un avertissement (aucune des deux voies n'est un
-  // problème en soi).
   &__provider-hint {
     display: flex;
     align-items: flex-start;
@@ -104,9 +97,6 @@
       border: 1px solid #e2e8f0;
     }
 
-    // Sélection mixte (agents Moov + internes à la fois) — reprend la teinte
-    // "attention" déjà utilisée par __warning, cohérent avec le fait qu'il faut lire
-    // attentivement la répartition avant de confirmer un paiement groupé.
     &--mixte {
       background: #fff7ed;
       color: #9a3412;
@@ -114,9 +104,6 @@
     }
   }
 
-  // Barre d'actions groupées (chantier "sélection multiple") — même palette que
-  // __validation-panel, en dégradé un peu plus soutenu pour rester visible une fois
-  // une sélection active.
   &__validation-toolbar {
     display: flex;
     align-items: center;
@@ -137,9 +124,6 @@
     align-items: center;
   }
 
-  // Détail par agent après un envoi/traitement (individuel ou groupé) — remplace
-  // l'ancien message de succès unique, qui masquait un échec partiel dès que
-  // plusieurs agents étaient concernés.
   &__result-list {
     list-style: none;
     margin: 0 0 1rem;
@@ -239,8 +223,6 @@
     color: #94a3b8;
   }
 
-  // Liste des numéros de réception (un par agent sélectionné) — même conteneur
-  // scrollable que __agent-list, pour rester cohérent visuellement juste au-dessus.
   &__phone-list {
     display: flex;
     flex-direction: column;
@@ -318,8 +300,6 @@
     color: #64748b;
   }
 
-  // Formulaire compact à gauche, historique qui occupe le reste de la largeur —
-  // évite le grand vide à droite quand .fin-agent-payment n'était pas limité en largeur.
   &__layout {
     display: flex;
     align-items: flex-start;
@@ -334,16 +314,9 @@
 
   &__history {
     flex: 2 1 480px;
-    // min-width: 0, pas 320px : un enfant large (le tableau, 7 colonnes depuis l'ajout
-    // de la colonne Actions) refusait sinon de rétrécir sous sa largeur intrinsèque et
-    // poussait toute la page au-delà du viewport au lieu de faire défiler seulement le
-    // tableau (cf. __table-wrap ci-dessous) — même piège déjà rencontré sur
-    // roles-admin.component.scss/contracts.component.scss.
     min-width: 0;
   }
 
-  // Défilement horizontal scopé au tableau seul (pas toute la page) quand ses 7
-  // colonnes ne tiennent pas dans __history une fois rétréci par le flex ci-dessus.
   &__table-wrap {
     width: 100%;
     overflow-x: auto;
@@ -506,9 +479,6 @@
     gap: 0.6rem;
   }
 
-  // Boutons d'export (PDF/Excel/CSV) — même idiome "icône + libellé" que
-  // monthly-tracking.component.scss/statement.component.scss (autres écrans de ce
-  // module utilisant déjà EXPORT_SERVICE).
   &__export-actions {
     display: flex;
     flex-wrap: wrap;
@@ -579,8 +549,6 @@
     }
   }
 
-  // Motif de rejet (individuel et groupé) — même style que __montant-filter, en plus
-  // large pour un texte libre plutôt qu'un nombre.
   &__reject-motif {
     min-width: 220px;
     flex: 1 1 220px;
@@ -642,22 +610,12 @@
       cursor: not-allowed;
     }
 
-    // Variante "icône + texte" (bouton "Vérifier le statut" dans l'en-tête du
-    // drawer de détail) — même fond/couleur que le bouton icône seule, largeur libre.
     &--wide {
       width: auto;
       padding: 0.4rem 0.7rem;
     }
   }
 
-  // ── Drawer de détail — même vocabulaire que features/contracts/
-  // contracts.component.scss (drawer overlay/drawer/header/close/body), scopé ici.
-  // z-index 9999 (pas 50, comme le drawer de contracts.component.scss dont la même
-  // limite existe déjà — jamais corrigée là-bas, hors périmètre ici) : le bandeau
-  // d'en-tête global de l'app (.page-header, app.component.ts) est fixe en z-index
-  // 1000 et masquait entièrement l'en-tête du drawer, positionné lui aussi à inset:0.
-  // 9999 aligne ce drawer sur .confirm-dialog-overlay (admin-dashboard.scss), déjà
-  // au-dessus de tout sauf le toast global (10001, voir notification.css).
   &__drawer-overlay {
     position: fixed;
     inset: 0;
@@ -811,10 +769,6 @@
   }
 }
 
-// En dessous de 640px, resp.table-to-cards (appelé sur &__table ci-dessus) transforme
-// déjà les lignes en cartes empilées pleine largeur — le min-width:720px de
-// &__table-wrap n'a alors plus lieu d'être : il forcerait un défilement horizontal
-// inutile sur des cartes qui n'en ont pas besoin.
 @media (max-width: 640px) {
   .fin-agent-payment__table-wrap {
     overflow-x: visible;

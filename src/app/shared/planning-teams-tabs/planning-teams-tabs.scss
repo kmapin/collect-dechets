@@ -1,7 +1,3 @@
-// Reproduit à l'identique .tabs-navigation/.tab-btn/.tab-badge de
-// financial-dashboard/features/shell/finance-layout.scss (même valeurs, mêmes
-// variables CSS globales) — convention déjà suivie par agency-dashboard.scss et
-// finance-layout.scss pour un rendu strictement équivalent d'un module à l'autre.
 
 .tabs-navigation {
   display: flex;
@@ -51,9 +47,6 @@
   }
 }
 
-// Actions secondaires (Nouvelle équipe / Aide) — mêmes liens qu'en bas de l'ancien
-// sidebar, mais légèrement atténuées pour rester visuellement secondaires par
-// rapport aux 6 onglets de navigation principaux.
 .tab-btn--secondary {
   font-size: 0.9rem;
   opacity: 0.85;
@@ -81,8 +74,6 @@
   text-align: center;
 }
 
-// Reprend la couleur "en mission" (ambre) de l'ancien sb-status-row--amber, plutôt
-// que le rouge par défaut de .tab-badge — même sémantique de couleur qu'avant.
 .tab-badge--amber {
   background: #f59e0b;
 }

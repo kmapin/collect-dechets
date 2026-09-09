@@ -5,13 +5,6 @@ import { environment } from '../../environments/environment';
 
 export interface ClientApi {
   _id: string;
-  // userId: {
-  //   _id: string;
-  //   email: string;
-  //   role: string;
-  //   isActive: boolean;
-  //   createdAt: string;
-  // };
   userId: string;
   firstName: string;
   lastName: string;
@@ -42,10 +35,6 @@ export interface ClientApi {
   nonPassageReports: any[];
   createdAt: string;
   subscribedAgencyId: string[];
-  // Réellement renvoyé par GET /agency_employees/:agencyId/clients
-  // (services/agencyEmployee.js::getClientsByAgency, calculé via
-  // EligibilityService.checkClientEligibility) — `subscriptionHistory`
-  // ci-dessus n'existe pas côté backend, c'est ce champ qui fait foi.
   eligibility?: { eligible: boolean; source: string; reason: string };
 }
 

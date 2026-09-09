@@ -160,8 +160,6 @@ export class Register implements OnInit {
         this.userData.lastName = this.agency.lastName;
         this.userData.email = this.agency.email;
         this.userData.phone = this.agency.phone;
-        // this.userData.password;
-        // this.userData.confirmPassword;
         this.userData.acceptTerms = this.agency.termsAccepted; // renommé
         this.userData.acceptTerms = this.agency.termsAccepted; // renommé
         this.userData.receiveOffers = this.agency.receiveOffers;
@@ -173,8 +171,6 @@ export class Register implements OnInit {
         this.userData.address.neighborhood = this.agency.address.neighborhood;
         this.userData.address.city = this.agency.address.city;
         this.userData.address.postalCode = this.agency.address.postalCode;
-        // latitude: this.userData.address.latitude;
-        // longitude: this.userData.address.postalCode
 
         this.userData.agencyName = this.agency.agencyName;
         this.userData.agencyDescription = this.agency.agencyDescription
@@ -438,8 +434,6 @@ export class Register implements OnInit {
               response.message.toLowerCase().includes('succès') ||
               response.message.toLowerCase().includes('réussi')
             )) 
-            // ||
-            // !!response.municipality;
 
           if (isSuccess) {
             this.notificationService.showSuccess('Inscription mairie réussie',
@@ -471,8 +465,6 @@ export class Register implements OnInit {
   }
 
   onArrondissementChange(arrondissement?: string) {
-    // Réinitialise les niveaux enfants AVANT de lancer la requête — un changement
-    // rapide de parent n'affiche jamais un enfant obsolète.
     this.secteurss = [];
     this.quartierss = [];
     this.quartiers = [];
@@ -504,13 +496,6 @@ export class Register implements OnInit {
     });
   }
 
-  /**
-   * Coordonnées réelles du quartier choisi (models/neighbourhood.js, chantier
-   * "géolocalisation des quartiers") — remplace les coordonnées de Dakar codées en dur
-   * qui étaient envoyées pour TOUT nouvel utilisateur, quel que soit son quartier réel.
-   * `undefined` (jamais une valeur de repli inventée) si le quartier sélectionné n'a pas
-   * encore été rétro-rempli en coordonnées (voir le commentaire sur Quartier.latitude).
-   */
   private getQuartierCoordinates(): { latitude?: number; longitude?: number } {
     const quartier = this.quartierss.find(q => q.name === this.userData.address.neighborhood);
     return {
@@ -587,32 +572,12 @@ export class Register implements OnInit {
       }
     }
 
-    // Validation spécifique pour les municipalités  
-    // if (this.userData.role === UserRole.MUNICIPALITY) {
-    //   if (!this.userData.commune || !this.userData.commune.name || this.userData.commune.name.trim() === '') {
-    //     this.handleRegistrationError('Le nom de la commune est requis');
-    //     return false;
-    //   }
-    // }
 
-    // Validation arrondissement obligatoire
-    // if (!this.userData.arrondissement) {
-    //   this.notificationService.showError('Erreur', 'L\'arrondissement est requis');
-    //   return false;
-    // }
 
     // Validation spécifique selon le rôle
     if (this.userData.role === UserRole.CLIENT) {
 
       const address = this.userData.address;
-      // if (!address.street || !address.doorNumber || !address.neighborhood || !address.city || !address.postalCode) {
-      //   this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs d\'adresse');
-      //   return false;
-      // }
-      // if (!address.doorColor) {
-      //   this.handleRegistrationError('Veuillez indiquer la couleur de la porte');
-      //   return false;
-      // }
     } else if (this.userData.role === UserRole.MANAGER) {
       // Validation agence
       if (!this.userData.agencyName) {
@@ -620,11 +585,6 @@ export class Register implements OnInit {
         return false;
       }
     } else if (this.userData.role === UserRole.MUNICIPALITY) {
-      // Validation agence
-      // if (!this.userData.agencyName) {
-      //   this.notificationService.showError('Erreur', 'Le nom de l\'agence est requis');
-      //   return false;
-      // }
     } else {
       // Cas improbable, mais au cas où
 
@@ -636,9 +596,6 @@ export class Register implements OnInit {
     return true;
   }
 
-  /**
-   * Convertit les messages techniques du backend en messages conviviaux pour l'utilisateur
-   */
   private getFriendlyMessage(raw: string, isSuccess: boolean = false): string {
     if (!raw) {
       return isSuccess
@@ -675,9 +632,6 @@ export class Register implements OnInit {
     this.router.navigate([route]);
   }
 
-  /**
-   * Handles registration errors and displays appropriate messages
-   */
   private handleRegistrationError(error: string | { [key: string]: string[] } | undefined, fallbackMessage?: string): void {
     this.validationErrors = {};
     this.generalError = '';
@@ -701,24 +655,15 @@ export class Register implements OnInit {
     }
   }
 
-  /**
-   * Gets validation error for a specific field
-   */
   getFieldError(fieldName: string): string {
     const errors = this.validationErrors[fieldName];
     return errors && errors.length > 0 ? errors[0] : '';
   }
 
-  /**
-   * Checks if a field has validation errors
-   */
   hasFieldError(fieldName: string): boolean {
     return this.validationErrors[fieldName] && this.validationErrors[fieldName].length > 0;
   }
 
-  // Chantier "migrer le frontend vers TerritoryHttpService" — le pays reste codé en dur
-  // ("1" = Burkina Faso) : aucun composant ne permettait déjà de le changer, non
-  // modifié ici (hors périmètre de cette migration).
   getAllCountries() {
     this.isLoadingCities = true;
     this.territoryService.getAllCities().subscribe({

@@ -19,13 +19,6 @@ export class FinanceService {
 
   constructor(private http: HttpClient) {}
 
-  // ── Résumé financier ────────────────────────────────────────
-  // Corrigé (chantier Finance/Paiements, item 3) : GET /finance/agency/:id/summary
-  // n'existe pas côté backend (l'agencyId n'est d'ailleurs jamais lu depuis l'URL sur les
-  // routes financières réelles — resolveAgency.js le dérive du JWT) — retombait
-  // silencieusement sur mockSummary() à chaque appel. Réutilise le vrai
-  // GET /finance/dashboard/kpi (financial-dashboard, déjà utilisé par
-  // dashboard.component.ts), pas de nouvelle route créée.
   getFinancialSummary(agencyId?: string): Observable<FinancialSummary> {
     return this.http.get<any>(`${this.api}/finance/dashboard/kpi`).pipe(
       map((kpi) => ({

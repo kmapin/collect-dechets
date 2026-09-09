@@ -193,16 +193,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private async initializeApp() {
-    // Ici vous pouvez ajouter la logique d'initialisation de votre application
-    // Par exemple : charger les données utilisateur, vérifier l'authentification, etc.
     
     try {
       // Simuler l'initialisation de l'application avec un délai minimum
       await new Promise(resolve => setTimeout(resolve, 2500));
       
-      // Ajouter ici d'autres tâches d'initialisation si nécessaire
-      // await this.authService.initializeAuth();
-      // await this.configService.loadConfig();
       
       // Marquer l'application comme chargée
       this.loadingService.setLoading(false);

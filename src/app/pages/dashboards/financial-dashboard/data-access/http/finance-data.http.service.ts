@@ -17,8 +17,6 @@ import {
 } from '../contracts/finance-data.service';
 import { mapDashboardKpiDto, mapPaiementListeDto, mapRepartitionModePaiementDto, mapRetraitDto } from './mappers/finance.mapper';
 
-// Factorisé (item 6) : les 2 endpoints filtrables (kpi, stats) partagent le même trio de
-// query params optionnels.
 function applyMontantTotalFilters(params: HttpParams, filters?: MontantTotalFilter): HttpParams {
   let result = params;
   if (filters?.zone) result = result.set('zone', filters.zone);
@@ -27,9 +25,6 @@ function applyMontantTotalFilters(params: HttpParams, filters?: MontantTotalFilt
   return result;
 }
 
-// Implémentation réelle, câblée en dur sur FINANCE_DATA_SERVICE dans
-// financial-dashboard.routes.ts. enregistrerRetrait attend { montant, customerMsisdn,
-// operator, motif? } — le body exact exigé par le backend (controllers/financeStats.js).
 @Injectable()
 export class FinanceDataHttpService implements FinanceDataService {
   private readonly http = inject(HttpClient);

@@ -31,9 +31,6 @@
     <div class="sig-col sig-col--type">
       <span class="sig-type">{{ getIncidentTypeText(incident.type.toLowerCase()) }}</span>
       <span class="sig-comment" *ngIf="incident.comment">{{ incident.comment }}</span>
-      <!-- Origine (Prompt 06 point 3) : lié à une collecte (avec lien vers le
-           planning associé, quand connu) ou indépendant — jamais une valeur
-           vide/ambiguë. -->
       @if (incident.origine === 'independant') {
         <span class="sig-origine sig-origine--independant">Signalement indépendant</span>
       } @else if (incident.origine === 'collecte') {
@@ -60,9 +57,6 @@
       }
     </div>
 
-    <!-- Assignee : équipe affectée à la résolution du signalement (resolutionTeamId réel,
-         renommé depuis assignedTeamId, Phase 2 du nettoyage — pas collectorId, le
-         collecteur d'origine de la collecte planifiée, sans rapport avec la résolution) -->
     <div class="sig-col sig-col--assignee">
       @if (incident.resolutionTeamId?._id) {
       <div class="sig-person sig-person--assigned">
@@ -126,11 +120,6 @@
 
   } @else {
 
-  <!-- Vue "cards" pour le client (au lieu du tableau ci-dessus, pensé pour
-       l'agence qui doit scanner beaucoup de lignes) — mêmes données, mêmes
-       actions déjà appropriées au rôle client (pas d'assigner/résoudre),
-       simplement présentées comme des cartes plus lisibles pour un usager qui
-       consulte ses quelques propres signalements. -->
   <div class="sig-cards">
     @for (incident of pagedIncidents; track incident._id) {
       <div class="sig-card" [ngClass]="'sig-card--' + incident.severity.toLowerCase()">
@@ -285,9 +274,6 @@
 </div>
 }
 
-<!-- Team picker (Prompt 06) — affecte le signalement à une équipe réelle
-     (PATCH /collectes/:id/assign-team), remplace les 2 anciens boutons qui n'émettaient
-     que l'incident brut sans aucune sélection. -->
 @if (showTeamPickerModal) {
 <div class="drawer-overlay" (click)="closeTeamPicker()">
   <div class="drawer-content" (click)="$event.stopPropagation()">

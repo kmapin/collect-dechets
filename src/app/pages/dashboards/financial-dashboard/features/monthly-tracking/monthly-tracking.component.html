@@ -35,10 +35,6 @@
       </thead>
       <tbody>
         <ng-container *ngIf="!chargement(); else squelette">
-          <!-- "NonGeneree" (aucune facture créée pour ce client cette période) retiré de
-               l'affichage : Montant/Date de paiement y sont toujours vides — trop de colonnes
-               manquantes pour être lisible. items()/nombreAbonnes() restent complets (compte
-               et export CSV inchangés). -->
           <tr *ngFor="let ligne of lignesAffichees()">
             <td data-label="Client">{{ ligne.client.nom }} {{ ligne.client.prenom }}</td>
             <td data-label="Quartier">{{ ligne.client.quartier ?? '—' }}</td>

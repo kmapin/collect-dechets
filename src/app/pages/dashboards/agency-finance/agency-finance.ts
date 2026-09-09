@@ -101,10 +101,6 @@ export class AgencyFinance implements OnInit, OnDestroy {
   pageTx     = 1;
   readonly pageSize = 10;
 
-  // ── Chart ────────────────────────────────────────────────────
-  // 'week' retiré (item 3) : GET /finance/dashboard/stats (FinanceStatsService.
-  // getStatsParPeriode) n'agrège qu'au mois — aucune granularité hebdomadaire réelle
-  // n'existe côté backend, mieux vaut ne pas proposer une option qu'on ne peut pas servir.
   chartPeriod: 'month' | 'year' = 'month';
   chartData:    any = {};
   chartOptions: any = {};

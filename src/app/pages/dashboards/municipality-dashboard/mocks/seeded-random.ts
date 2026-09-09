@@ -1,11 +1,3 @@
-/**
- * Deterministic pseudo-random helpers for mock data generation.
- *
- * `Math.random()` is intentionally never used here: given the same seed,
- * every generator in this folder must produce byte-identical output so
- * charts/tables don't visually "jump" on every reload, and so unit tests
- * can assert on exact values.
- */
 
 export type RandomFn = () => number;
 
@@ -66,12 +58,6 @@ export function chance(random: RandomFn, probability: number): boolean {
   return random() < probability;
 }
 
-/**
- * Derives a stable numeric seed from an arbitrary string (e.g. a real
- * database id). Same id => same seed => same generated values every time,
- * so per-entity mock enrichment doesn't reshuffle on every reload.
- * FNV-1a — simple, fast, good-enough avalanche for this non-cryptographic use.
- */
 export function hashStringToSeed(value: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < value.length; i++) {

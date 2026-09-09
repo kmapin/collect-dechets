@@ -18,10 +18,6 @@ export interface FinanceChartTableRow {
   value: string; // déjà formaté par l'appelant (money.util, etc.)
 }
 
-// Wrapper Chart.js générique et accessible : repli tableau de données (ARIA),
-// squelette de chargement, état vide, animations désactivées si prefers-reduced-motion.
-// Un seul composant pour les trois graphiques F2 (Prompt 8) — chacun ne fait que lui
-// fournir une ChartConfiguration déjà construite (features/dashboard/charts/*).
 @Component({
   selector: 'app-finance-chart',
   standalone: true,

@@ -5,9 +5,6 @@ import { UserRole } from "../../models/user.model";
 import { dashboardRouteForRole, PLANNING_DETAIL_ROLES } from "../../shared/notification-route.util";
 import { map } from "rxjs";
 
-/**
- * Guard pour vérifier que l'utilisateur est authentifié
- */
 
 export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
@@ -24,9 +21,6 @@ export const authGuard: CanActivateFn = () => {
   );
 };
 
-/**
- * Guard pour les utilisateurs (USER minimum)
- */
 export const clientGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -44,9 +38,6 @@ export const clientGuard: CanActivateFn = () => {
   );
 };
 
-/**
- * Guard pour les managers (MANAGER minimum)
- */
 export const managerGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -64,9 +55,6 @@ export const managerGuard: CanActivateFn = () => {
   );
 };
 
-/**
- * Guard pour les administrateurs (ADMIN requis)
- */
 export const adminGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -102,14 +90,6 @@ export const municipalityGuard: CanActivateFn = () => {
   );
 };
 
-/**
- * Guard inverse d'authGuard : un utilisateur déjà connecté ne doit plus pouvoir
- * revenir sur une page publique d'authentification (login) — que ce soit via une
- * URL tapée directement ou via le bouton "précédent" du navigateur, qui redéclenche
- * bien la résolution des guards Angular Router (popstate est intercepté comme
- * n'importe quelle navigation). Redirige vers le dashboard de son rôle, jamais vers
- * la page de connexion.
- */
 export const guestGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -156,20 +136,6 @@ export const adminOrManagerGuard: CanActivateFn = () => {
   );
 };
 
-/**
- * Guard pour /planning/detail/:id — réservé au personnel qui opère réellement le
- * planning (manager/collecteur) : cette page expose des actions de gestion
- * (démarrer/annuler/réaffecter) et la position exacte de chaque client. super_admin,
- * municipality et client n'y ont pas accès — ils obtiennent un résumé en lecture
- * seule (drawer) au clic sur une notification ou un lien "Lié à une collecte" à la
- * place — voir notification-route.util.ts::PLANNING_DETAIL_ROLES, UNIQUE source de
- * vérité pour cette liste de rôles (réutilisée ici, jamais redéfinie), et
- * planning-summary-drawer.ts.
- *
- * Contrairement aux guards ci-dessus, le rôle est vérifié explicitement — un
- * utilisateur authentifié mais du mauvais rôle est redirigé vers SON tableau de
- * bord (jamais laissé passer, jamais renvoyé au login puisqu'il est bien connecté).
- */
 export const agencyStaffOnlyGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);

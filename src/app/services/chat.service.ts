@@ -63,9 +63,6 @@ export class ChatService {
     this.setupWebSocketListeners();
   }
 
-  /**
-   * Configure les listeners pour les événements WebSocket en temps réel
-   */
   private setupWebSocketListeners(): void {
     // Écouter les nouveaux messages
     this.websocketService.onMessageSent().subscribe((socketMessage: SocketMessage) => {
@@ -108,9 +105,6 @@ export class ChatService {
     });
   }
 
-  /**
-   * Convertit un SocketMessage en Message de l'application
-   */
   private convertSocketMessageToMessage(socketMessage: SocketMessage): Message {
     // Trouver le sender depuis mockUsers ou créer un utilisateur temporaire
     const sender = this.mockUsers.find(u => u.id === socketMessage.sender_id) || {
@@ -134,9 +128,6 @@ export class ChatService {
     };
   }
 
-  /**
-   * Met à jour la conversation avec un nouveau message
-   */
   private updateConversationWithNewMessage(message: Message): void {
     const updatedConversations = this.conversationsSubject.value.map(conv =>
       conv.id === message.conversation_id

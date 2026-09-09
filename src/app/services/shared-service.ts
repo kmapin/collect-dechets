@@ -51,12 +51,6 @@ export class SharedService {
 
     updateUser(userId: string | undefined ,userData:any): Observable<any> {
   
-      // if (!this.validateRegistrationData(userData)) {
-      //   return of({ 
-      //     success: false, 
-      //     error: 'Données de registration invalides. Veuillez vérifier tous les champs requis.' 
-      //   });
-      // }
   
     
       // const registrationData = this.prepareRegistrationData(userData);

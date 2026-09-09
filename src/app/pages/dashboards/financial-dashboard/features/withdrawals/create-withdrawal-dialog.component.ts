@@ -19,21 +19,7 @@ interface OperateurInfo {
   disponible: boolean;
 }
 
-// Formulaire de création d'un retrait (F4) — POST /finance/retraits, réellement branché sur
-// le backend (débit wallet + appel Moov Money OU Orange Money réel, voir
-// services/transaction.js::sendUserMoney / _executerCashOutOrangeMoney). Les deux
-// opérateurs sont désormais actifs côté serveur (Orange Money via apiOM.js::CashOut,
-// même connecteur REST/OAuth2 que le paiement client, activé après migration de
-// l'ancienne API XML/mTLS).
-//
-// Rendu en overlay custom (.modal-overlay/.modal-content, cf. admin-dashboard.html et 5
-// autres écrans de l'app), et champs en HTML natif stylé (même convention que
-// agent-payment.component.html/.scss, déjà éprouvée dans ce module) plutôt que
-// mat-form-field/mat-select/mat-input : ces derniers se sont rendus visuellement cassés
-// dans cette app (aucun contour, label superposé au texte saisi) — la coexistence Angular
-// Material (thème M3 + prebuilt M2) + PrimeNG + Flowbite/Tailwind casse le mécanisme CSS
-// (notched outline) dont mat-form-field dépend, alors que mat-button/mat-icon (plus
-// simples, sans ce mécanisme) restent correctement stylés — conservés tels quels.
+// Formulaire de création d'un retrait 
 @Component({
   selector: 'app-create-withdrawal-dialog',
   standalone: true,
@@ -46,7 +32,7 @@ export class CreateWithdrawalDialogComponent {
   private readonly financeData = inject(FINANCE_DATA_SERVICE);
   private readonly feeConfigService = inject(FeeConfigService);
 
-  /** `true` si le retrait a bien été créé, `false` sur annulation — jamais émis 2 fois. */
+  
   @Output() ferme = new EventEmitter<boolean>();
 
   readonly operateurs: OperateurInfo[] = [
@@ -60,10 +46,7 @@ export class CreateWithdrawalDialogComponent {
 
   readonly formatMontant = formatMontantXof;
 
-  // Chantier Frais plateforme (Prompt F5/F8) — frais visibles AVANT la transaction
-  // (décision Checkpoint) : config lue une fois à l'ouverture, jamais recalculée côté
-  // serveur ici — le backend revérifie/fige tout à la soumission (demanderRetrait),
-  // cet aperçu n'est qu'un confort d'affichage, jamais la source de vérité.
+  // Frais plateforme
   private readonly agencyWithdrawalFee = signal<{ enabled: boolean; type: 'FIXED' | 'PERCENTAGE'; value: number } | null>(null);
 
   readonly form = this.fb.nonNullable.group({
@@ -74,10 +57,7 @@ export class CreateWithdrawalDialogComponent {
     feeOption: this.fb.control<FeeOptionRetrait | null>(null, Validators.required),
   });
 
-  // form.value n'est pas un signal (Reactive Forms) — converti explicitement via
-  // toSignal() pour que les aperçus ci-dessous se recalculent réellement à chaque
-  // saisie, au lieu d'être figés à leur valeur d'initialisation (piège classique :
-  // computed() ne réagit qu'à des signaux lus en son sein, jamais à un getter simple).
+  
   private readonly montantSignal = toSignal(this.form.controls.montant.valueChanges, {
     initialValue: this.form.controls.montant.value,
   });
@@ -87,9 +67,6 @@ export class CreateWithdrawalDialogComponent {
       next: (res) => {
         const fee = res?.data?.agencyWithdrawalFee ?? null;
         this.agencyWithdrawalFee.set(fee);
-        // Frais désactivés : Option A/B sont strictement équivalentes (feeAmount=0),
-        // le choix n'a alors aucun effet — on le fixe à 'A' pour satisfaire le
-        // Validators.required sans imposer un choix dénué de sens à l'agence.
         if (!fee?.enabled) this.form.controls.feeOption.setValue('A');
       },
       error: () => this.agencyWithdrawalFee.set(null),
@@ -106,7 +83,7 @@ export class CreateWithdrawalDialogComponent {
     return fee.type === 'PERCENTAGE' ? Math.round((montant * fee.value) / 100) : fee.value;
   }
 
-  /** Aperçu Option A (déduit du montant reçu) — null tant que le montant n'est pas saisi. */
+  /** Aperçu Option A (déduit du montant reçu)*/
   readonly apercuOptionA = computed(() => {
     const montant = this.montantSignal();
     if (!montant || montant <= 0) return null;

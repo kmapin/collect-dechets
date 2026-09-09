@@ -11,12 +11,6 @@ import {
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
 
-/**
- * Structurally compatible with the municipality dashboard's `ZoneStatistic`
- * (+ a coordinate pair) — declared locally, not imported, so this component
- * stays dashboard-agnostic and reusable elsewhere (same convention as
- * `WasteBreakdownItem` in Prompt 07 / the `MiniChart` config-builder split).
- */
 export interface CoverageMapZone {
   id: string;
   name: string;
@@ -29,13 +23,6 @@ export interface CoverageMapZone {
   coverage: number;
 }
 
-// Leaflet map for the "Couverture Territoriale" section (Prompt 13).
-// Reuses the project's already-established Leaflet pattern (see
-// admin-dashboard.ts / team-dashboard.ts: OSM tiles, L.map in
-// ngAfterViewInit, L.circleMarker/L.divIcon for pins) rather than
-// introducing a new mapping library or a different integration style.
-// Presentational only: the caller (municipality-dashboard) owns fetching
-// zoneStatistics and mapping it to CoverageMapZone[].
 @Component({
   selector: 'app-coverage-map',
   standalone: true,
@@ -54,8 +41,6 @@ export class CoverageMap implements AfterViewInit, OnChanges, OnDestroy {
   private markers: L.CircleMarker[] = [];
   private resizeObserver?: ResizeObserver;
   private viewReady = false;
-  /** Set when initMap() runs before the container has a real layout size —
-   * picked up and cleared by the ResizeObserver once it does. See initMap(). */
   private pendingFit: (() => void) | null = null;
 
   get isEmpty(): boolean {
@@ -90,12 +75,6 @@ export class CoverageMap implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   private initMap(): void {
-    // The canvas div stays permanently in the DOM (see coverage-map.html) —
-    // never behind an @if keyed to `isEmpty`/`loading` — so it's always
-    // findable here regardless of which change-detection cycle triggered
-    // this. (Same reasoning as MiniChart/finance-chart.component.html: a
-    // structurally-removed-then-re-added canvas can be invisible to
-    // ngOnChanges/@ViewChild timing.)
     const el = this.mapElRef?.nativeElement;
     if (!el) {
       return;

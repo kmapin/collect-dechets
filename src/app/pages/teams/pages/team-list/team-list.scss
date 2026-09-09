@@ -1,6 +1,3 @@
-// ═══════════════════════════════════════════════════════════
-//  Team List Page
-// ═══════════════════════════════════════════════════════════
 
 $radius: 12px;
 $shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
@@ -11,9 +8,6 @@ $shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   min-height: 100%;
 }
 
-// ── En-tête dégradé (cohérent avec finance/planning/team-dashboard) ──────────
-// .header-content/.quick-actions sont scopés au composant (pas globaux) — valeurs
-// copiées d'agency-dashboard.scss pour un rendu identique.
 .header-content {
   display: flex;
   justify-content: space-between;
@@ -150,8 +144,6 @@ $shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   &.green  { background: var(--secondary-color); }
   &.orange { background: var(--accent-color); }
   &.red    { background: var(--error-color); }
-  // Pas de variable globale équivalente pour ces deux teintes — reprend les couleurs
-  // déjà utilisées par cet écran avant la refonte (Membres / Véhicules actifs).
   &.purple { background: #8b5cf6; }
   &.cyan   { background: #06b6d4; }
 }
@@ -384,10 +376,6 @@ $shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   }
 }
 
-// ── Delete dialog ────────────────────────────────────────────
-// z-index 9999/10000 (pas 300/301) : le bandeau d'en-tête global de l'app
-// (.page-header, app.component.ts, z-index:1000) masquait ce dialog — même bug
-// et même correctif qu'agent-payment.component.scss/contracts.component.scss.
 .dlg-backdrop {
   position: fixed; inset: 0; z-index: 9999;
   background: rgba(15,23,42,.5); backdrop-filter: blur(4px);

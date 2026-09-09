@@ -1,6 +1,3 @@
-// Même vocabulaire visuel que features/clients/client-list.component.scss (module
-// financier) — pas les classes .status-badge/.drawer-*/.client-select-* brutes
-// d'agency-dashboard.scss, dont l'onglet a été déplacé ici.
 
 .fin-contracts {
   &__header {
@@ -121,13 +118,6 @@
     }
   }
 
-  // ── Drawers (redevances / nouveau contrat) ──────────────────────────────
-  // z-index 9999 (pas 50) : le bandeau d'en-tête global de l'app (.page-header,
-  // app.component.ts) est fixe en z-index 1000 et masquait l'en-tête de ce drawer,
-  // lui aussi positionné en inset:0 — même correctif que agent-payment.component.scss
-  // (même bug, signalé par capture d'écran sur ce drawer précis). 9999 aligne ce
-  // drawer sur .confirm-dialog-overlay (admin-dashboard.scss), déjà au-dessus de
-  // tout sauf le toast global (10001, voir notification.css).
   &__drawer-overlay {
     position: fixed;
     inset: 0;

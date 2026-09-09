@@ -13,9 +13,7 @@ import { ErrorStateComponent } from '../../shared/states/error-state.component';
 
 type OngletClientSheet = 'info' | 'facturation' | 'abonnements';
 
-// F7/F8 — Fiche client : onglet Info (toujours visible) + onglets Facturation
-// et Abonnements/Contrats (masqués si le rôle courant n'a pas droitsFinance, RG8 —
-// même règle de visibilité, ces deux onglets exposant des informations de paiement).
+// Fiche client
 @Component({
   selector: 'app-client-sheet',
   standalone: true,

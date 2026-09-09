@@ -21,9 +21,6 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
   font-family: system-ui, sans-serif;
 }
 
-// ══════════════════ EN-TÊTE (dégradé, cohérent avec les autres écrans) ══════
-// .header-content/.quick-actions scopés au composant — valeurs copiées
-// d'agency-dashboard.scss pour un rendu identique aux autres dashboards.
 .header-content {
   display: flex;
   justify-content: space-between;
@@ -74,11 +71,6 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
   &--spin mat-icon { animation: spin .6s linear infinite; }
 }
 
-// ══════════════════ KPI STRIP ══════════════════════════════════════
-// .kpi-row et .av-tabs sont maintenant deux cartes séparées (fond blanc/ombre via la
-// classe globale .card, comme les cartes "Plannings par type/statut" du planning-
-// dashboard) au lieu d'une seule bande continue — .av-strip ne fait plus que les
-// aligner côte à côte avec un espace entre elles.
 .av-strip {
   display: flex; flex-wrap: wrap; align-items: stretch;
   justify-content: space-between;
@@ -137,10 +129,6 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
   &--crit { background: #ef4444; animation: pulse .8s ease infinite; }
 }
 
-// ══════════════════ FILTERS BAR ═══════════════════════════════════
-// Carte compacte (comme .kpi-row/.av-tabs juste au-dessus) qui n'occupe que la
-// largeur de son contenu, plutôt qu'une bande pleine largeur avec une grande
-// zone vide à droite.
 .av-filters {
   width: fit-content;
   max-width: calc(100% - 48px); // 48px = 2 × 24px de marge latérale
@@ -177,8 +165,6 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
 
 // ══════════════════ TIMELINE ══════════════════════════════════════
 .tl-wrap {
-  // 24px de chaque côté, comme .av-strip/.av-filters au-dessus — sans ça la grille
-  // touchait les bords de l'écran alors que les rangées de filtres avaient une marge.
   padding: 0;
   overflow-x: auto;
   min-height: 300px;

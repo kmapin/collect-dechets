@@ -1,10 +1,3 @@
-// ── Design tokens ────────────────────────────────────────────
-// Page en flux normal (plus de `height:100%;overflow:hidden`) : la carte GPS + les 4
-// graphiques (.td-left) ont besoin de bien plus de hauteur que ce qu'un viewport
-// classique laisse une fois le header et les 6 cartes KPI soustraits — les enfermer
-// dans une hauteur fixe forçait un mini-scroll interne qui ne montrait que le haut de
-// la carte GPS. La page défile désormais normalement (comme team-list.scss), la carte
-// et les graphiques s'affichent en entier sans scroll dédié.
 :host {
   display: block;
 }
@@ -54,12 +47,6 @@ $muted:#475569;
   transition: background 300ms, color 300ms;
 }
 
-// ── Header ───────────────────────────────────────────────────
-// Header et cartes KPI reprennent le langage visuel global (agency-dashboard) :
-// .page-header/.container/.stats-grid/.stat-card viennent des styles globaux ou
-// sont scopés ici à l'identique (header-content/quick-actions/stats-grid/stat-*),
-// et utilisent les variables globales (--primary-color, etc.) plutôt que les
-// tokens --td-* réservés au reste de la page (carte, graphiques, colonne droite).
 .header-content {
   display: flex;
   justify-content: space-between;
@@ -152,10 +139,6 @@ $muted:#475569;
   color: var(--text-secondary);
 }
 
-// ── Main body ────────────────────────────────────────────────
-// .td-body-wrap ajoute le même padding horizontal (.container, global) que le header et
-// les cartes KPI au-dessus — sans lui, carte/onglets/graphiques touchaient les bords de
-// l'écran alors que le header/stats-grid avaient une marge, d'où la rupture visuelle.
 .td-body-wrap {
   display: flex;
   flex-direction: column;
@@ -173,9 +156,6 @@ $muted:#475569;
   flex: 1;
   min-width: 0;
   gap: 10px;
-  // Padding vertical seulement — le padding horizontal du .container englobant suffit déjà ;
-  // un padding horizontal ici décalait la carte/les graphiques de 10px par rapport aux
-  // cartes KPI du dessus, qui n'ont pas ce padding supplémentaire.
   padding: 10px 0;
 }
 
@@ -250,8 +230,6 @@ $muted:#475569;
   }
 }
 
-// ── Leaflet map marker pin ────────────────────────────────────
-// These land in global DOM – use ::ng-deep
 :host ::ng-deep .td-pin {
   width: 18px; height: 18px;
   border-radius: 50%;
@@ -358,9 +336,6 @@ $muted:#475569;
   margin-top: 3px;
 }
 
-// Colonne anneau + légende — la légende ne vit plus dans le canvas Chart.js
-// (voir team-dashboard.ts::_execChart()) pour que l'anneau remplisse tout
-// .cc-donut-wrap et reste centré avec l'overlay .cc-donut-center.
 .cc-donut-col {
   display: flex;
   flex-direction: column;

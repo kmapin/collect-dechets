@@ -1,7 +1,3 @@
-// En-tête (.page-header/.container/.header-content/.page-title/.page-subtitle)
-// réutilise le langage visuel global défini dans src/styles.scss — même bandeau
-// dégradé que Tableau de bord financier (finance-layout.html) et les autres
-// dashboards. Pas de redéfinition ici : ce sont des classes globales.
 .ns-shell {
   display: flex;
   flex-direction: column;

@@ -20,11 +20,6 @@ const LABEL_ROLE: Record<Role, string> = {
   [Role.ADMINISTRATEUR]: 'Administrateur',
 };
 
-// F11 admin — RBAC financier réel (onglets + droits), chantier "Gestion des accès".
-// Réservé aux détenteurs de la clé 'roles.view' (voir financial-dashboard.routes.ts) ; les
-// mutations ('roles.manage') sont re-vérifiées côté serveur avec plafond de délégation
-// (FinanceUsersController._resoudreAutoriteDroits) — ce composant ne fait jamais confiance
-// à sa propre UI comme seule barrière.
 @Component({
   selector: 'app-roles-admin',
   standalone: true,
@@ -47,11 +42,6 @@ export class RolesAdminComponent {
   readonly permissionsOnglets = PERMISSIONS_ONGLETS;
   readonly groupesDroits = GROUPES_DROITS_FINANCIERS;
 
-  // Brouillon local des sections "Accès aux onglets" / "Droits financiers" — ces deux
-  // sections ne s'appliquent qu'au clic sur "Enregistrer" (setPermissions remplace la
-  // liste complète : l'appliquer à chaque case cochée écraserait la liste à chaque clic
-  // et empêcherait le bouton "appliquer le préréglage du rôle" ci-dessous). Les sections
-  // "Rôle attribué" et "Accès au module financier" restent instantanées, comme avant.
   private readonly brouillon = signal<Set<FinancePermission>>(new Set());
   readonly enregistrementEnCours = signal(false);
 
@@ -69,10 +59,8 @@ export class RolesAdminComponent {
     () => this.utilisateurs().find(u => u.idUtilisateur === this.selectionId()) ?? null,
   );
 
-  // droitsFinance est un coupe-circuit absolu (RG8, même règle que requireFinancePermission
-  // côté serveur) : cocher un onglet/droit pendant qu'il est désactivé n'aurait aucun effet
-  // réel, donc les sections 3/4 sont désactivées tant que la section 2 n'est pas activée —
-  // pour ne jamais donner l'impression qu'un droit est accordé alors qu'il ne l'est pas.
+  // droitsFinance 
+
   readonly droitsDetaillesActifs = computed(() => this.utilisateurSelectionne()?.droitsFinance ?? false);
 
   readonly modifie = computed(() => {
@@ -89,8 +77,6 @@ export class RolesAdminComponent {
   }
 
   selectionner(utilisateur: Utilisateur): void {
-    // Bloque le changement de sélection tant que le brouillon n'est ni enregistré ni
-    // annulé — le bandeau "modifications non enregistrées" reste affiché à la place.
     if (this.modifie()) return;
     this.selectionId.set(utilisateur.idUtilisateur);
     this.brouillon.set(new Set(utilisateur.permissions));
@@ -128,12 +114,6 @@ export class RolesAdminComponent {
     });
   }
 
-  // ── Sections 3/4 : brouillon des droits détaillés ───────────────────────────────
-
-  // Implicite et non décochable pour un Administrateur (anti-verrouillage de l'écran
-  // d'administration lui-même) — voir PERMISSIONS_GOUVERNANCE. Combiné avec la valeur du
-  // brouillon dans estCoche() ci-dessous : toujours affiché coché pour un administrateur,
-  // même si les données stockées étaient incomplètes.
   estImplicite(cle: FinancePermission): boolean {
     const u = this.utilisateurSelectionne();
     return !!u && u.role === Role.ADMINISTRATEUR && PERMISSIONS_GOUVERNANCE.includes(cle);
@@ -179,10 +159,6 @@ export class RolesAdminComponent {
     if (u) this.brouillon.set(new Set(u.permissions));
   }
 
-  // Le backend renvoie déjà un message FR exploitable tel quel (403 auto-modification,
-  // plafond de délégation dépassé, clé de gouvernance réservée à un administrateur, etc.)
-  // — voir FinanceUsersController. Filet de secours seulement si la réponse est absente
-  // ou dans un format inattendu (ex. coupure réseau).
   private messageErreur(err: HttpErrorResponse): string {
     return err.error?.message ?? 'Action impossible pour le moment.';
   }

@@ -21,9 +21,6 @@
         </div>
       }
 
-      <!-- ══════════════════════════════════════════════════════
-           HERO BANNER
-           ══════════════════════════════════════════════════════ -->
       <div class="tdm-hero" [style.--tc]="team.color">
 
         <!-- Top controls -->
@@ -95,9 +92,6 @@
         </div>
       </div>
 
-      <!-- ══════════════════════════════════════════════════════
-           TAB BAR
-           ══════════════════════════════════════════════════════ -->
       <div class="tdm-tabbar">
         @for (tab of tabs; track tab.key) {
           <button class="tdm-tab" [class.tdm-tab--active]="activeTab() === tab.key" (click)="setTab(tab.key)">
@@ -107,9 +101,6 @@
         }
       </div>
 
-      <!-- ══════════════════════════════════════════════════════
-           TAB CONTENT
-           ══════════════════════════════════════════════════════ -->
       <div class="tdm-body">
 
         <!-- ─────────────── TAB: APERÇU ─────────────── -->
@@ -628,9 +619,6 @@
 
       </div><!-- /tdm-body -->
 
-      <!-- ══════════════════════════════════════════════════════
-           FOOTER ACTIONS
-           ══════════════════════════════════════════════════════ -->
       <div class="tdm-footer">
         <div class="tdm-footer-left">
           <button class="tdm-act tdm-act--primary" (click)="edit.emit(team); close()">

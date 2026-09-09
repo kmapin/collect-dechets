@@ -12,10 +12,6 @@ import {
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { environment } from "../../../environments/environment";
 
-/**
- * Service de gestion des paiements Mobile Money
- * Simule les appels API pour le traitement des paiements
- */
 @Injectable({
   providedIn: "root",
 })
@@ -24,11 +20,6 @@ export class PaymentService {
   /** Réponse du paiement en cours de traitement */
   currentPaymentResponse: PaymentResponse | null = null;
 
-  /**
-   * Simule un appel API pour traiter un paiement Mobile Money
-   * @param request Requête de paiement contenant les informations nécessaires
-   * @returns Observable de la réponse de paiement
-   */
   processPayment(request: PaymentRequest): Observable<PaymentResponse> {
     // Génération d'un ID de transaction unique
     const transactionId = this.generateTransactionId();

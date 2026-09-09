@@ -86,11 +86,6 @@ onSecteurChange(secteur: string) {
   this.applyFilters();
 }
 
-// selectedCity: string = '';
-// selectedSector: string = '';
-// selectedNeighborhood: string = '';
-// minRating: string = '';
-// searchQuery: string = '';
 currentUser!: any ;
 
  private searchSubject = new Subject<string>();
@@ -158,9 +153,6 @@ currentUser!: any ;
   }
 
 
-  /**
-   * Transforme une agence API en objet compatible avec le template
-   */
   private mapApiAgency(apiAgency: any): Agency {
     return {
       _id: apiAgency._id || '',
@@ -205,9 +197,6 @@ currentUser!: any ;
     };
   }
 
-  /**
-   * Charge les agences depuis l'API backend et remplace les données locales
-   */
   loadAgenciesFromApi(): void {
     const payload: any = {
     term: this.searchQuery || '',
@@ -244,13 +233,6 @@ applyFilters(): void {
     neighborhood: this.selectedNeighborhood,
     rating: this.minRating ? parseFloat(this.minRating) : null,
     status: 'active',
-    // maxPrice: this.maxPrice ? parseFloat(this.maxPrice) : null
-    // Sans ceci, le backend retombe sur sa pagination par défaut (limit=10) —
-    // silencieusement, sans qu'aucun contrôle de pagination réel n'existe
-    // dans ce template pour voir la suite (les boutons de page étaient de la
-    // markup statique, jamais câblés). getAll:true (déjà utilisé par
-    // loadAgenciesFromApi() ci-dessus) garantit que le filtrage ne perd
-    // jamais silencieusement des agences au-delà de la première page.
     getAll: true,
   };
 
@@ -318,27 +300,8 @@ applyFilters(): void {
     this.router.navigate(['/agencies', agencyId]);
   }
 
-  // recuperation des tarif a partir du web service
-  // loadTariffsForAgency(): void {
-  //   const userString = localStorage.getItem('currentUser');
-  //   if (userString) {
-  //     const currentUser = JSON.parse(userString);
 
 
-  //     this.agencyService.getAgencyTariffs().subscribe({
-  //       next: (tariffs) => {
-  //         this.agencyTariffs = tariffs;
-  //         console.log('Tarifs récupérés :', tariffs);
-  //       },
-  //       error: (err) => {
-  //         console.error("Erreur lors du chargement des tarifs de l'agence", err);
-  //       }
-  //     });
-  //   } else {
-  //     console.error("Aucun utilisateur trouvé dans le stockage local.");
-  //   }
-  // }
-//recuperation des suggestions venqnt de la base de donnese pour l utilisateur connecté
   onSearchInput(): void {
     this.searchSubject.next(this.searchQuery); // Émet la valeur saisie
   }

@@ -21,13 +21,6 @@ import {
   telechargerRecuPdf,
 } from '../../shared/receipt/paiement-agent-recu.util';
 import { NotificationService } from '../../../../../services/notification.service';
-// Rôle validateur : manager avec financialRole='administrateur' DE L'AGENCE CONCERNÉE
-// (résolu via SESSION_SERVICE, le rôle FINANCIER de ce module), OU super_admin sans
-// restriction d'agence (résolu via le service d'authentification GLOBAL de l'app) — même
-// double condition que controllers/paiementAgent.js::_resoudreAutorisationValidateur.
-// PAS super_admin seul (correction produit : la première implémentation avait calqué le
-// rôle exact d'accepterRetrait, module Retraits, mais la décision réelle pour ce domaine
-// est différente).
 import { AuthService } from '../../../../../services/auth.service';
 import { UserRole } from '../../../../../models/user.model';
 
@@ -39,25 +32,6 @@ interface ResultatAction {
   message: string;
 }
 
-// F5 — Paiement des agents (collecteurs). Chantier M2 : un paiement pour un agent avec
-// un numéro Moov Money fiable (Agent.moovEligible) déclenche désormais un virement RÉEL,
-// mais en 2 temps — la demande (n'importe quel rôle droitsFinance) crée seulement une
-// demande EN_ATTENTE_VALIDATION, aucun débit ni appel Moov avant qu'un rôle distinct
-// (super_admin) ne la valide. Un agent sans numéro Moov fiable reste payé en interne,
-// immédiatement, comme avant ce chantier — jamais silencieux sur laquelle des deux voies
-// s'applique (services/paiementAgent.js::payerAgent renvoie un `libelle` explicite).
-// Le montant à payer reste saisi manuellement (RG10, toujours ouvert — voir
-// docs/PAIEMENT-AGENTS.md).
-//
-// Sélection multiple (demande produit) : un même montant est appliqué à tous les agents
-// sélectionnés (décision confirmée — pas un montant par agent). Chaque paiement/validation
-// reste un appel individuel au backend (aucun endpoint "bulk" — le backend ne traite qu'un
-// paiement à la fois, cf. services/paiementAgent.js), mais exécuté en SÉQUENCE (concatMap,
-// jamais en parallèle) : pour les validations Moov/Orange Money, ça évite de bombarder
-// l'API opérateur de plusieurs appels concurrents (un paiement interne n'a plus cette
-// contrainte depuis qu'il ne débite plus le wallet agence). Chaque élément réussit ou échoue
-// indépendamment — un échec sur un agent n'annule pas les autres, un résumé par agent est
-// affiché à la fin plutôt qu'un unique message de succès/échec global.
 @Component({
   selector: 'app-agent-payment',
   standalone: true,
@@ -72,18 +46,10 @@ export class AgentPaymentComponent {
   private readonly notificationService = inject(NotificationService);
   private readonly exportService = inject(EXPORT_SERVICE);
 
-  // currentUser$ plutôt que getCurrentUser() seul en initialValue : cette route est
-  // accessible dès que droitsFinance est vrai et que 'agent_payments.view' est détenue
-  // (financeAccessGuard + financePermissionGuard, voir financial-dashboard.routes.ts),
-  // donc la session financière a déjà été chargée par le garde avant que ce composant ne
-  // se construise, même convention que client-list/client-sheet/finance-layout de ce module.
   private readonly utilisateurFinance = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
   readonly estValidateur = computed(
     () => this.utilisateurFinance().role === Role.ADMINISTRATEUR || this.authService.hasRole(UserRole.SUPER_ADMIN),
   );
-  // Profondeur de défense (cosmétique) : le serveur refuse déjà POST /finance/agents/
-  // paiements sans agent_payments.create (requireFinancePermission) — masquer le
-  // formulaire évite juste un aller-retour inutile.
   readonly peutCreer = computed(() => aLaPermission(this.utilisateurFinance(), 'agent_payments.create'));
 
   readonly agents = signal<Agent[]>([]);
@@ -92,10 +58,6 @@ export class AgentPaymentComponent {
   readonly historique = signal<PaiementAgent[]>([]);
   readonly chargementHistorique = signal(true);
 
-  // Filtres de l'historique — appliqués CÔTÉ SERVEUR (chantier "filtres côté
-  // backend") : chaque changement relance chargerHistorique() avec les critères
-  // courants (voir onRechercheChange/onMontantMinChange/etc. et appliquerFiltres()
-  // ci-dessous), jamais un filtrage en mémoire d'un lot déjà chargé.
   readonly rechercheAgent = signal('');
   readonly montantMin = signal<number | null>(null);
   readonly statutFiltre = signal<PaiementAgent['status'] | 'all'>('all');
@@ -107,15 +69,10 @@ export class AgentPaymentComponent {
   readonly idsAgentsSelectionnes = signal<string[]>([]);
   readonly montant = signal<number | null>(null);
   readonly etape = signal<Etape>('formulaire');
-  // Recherche dans la liste de sélection des agents — distincte de rechercheAgent
-  // (filtre de l'historique ci-dessous), portée purement locale à cette liste.
   readonly rechercheAgentFormulaire = signal('');
 
   readonly enregistrement = signal(false);
   readonly progressionEnvoi = signal<{ fait: number; total: number } | null>(null);
-  // Détail par agent (succès/échec + message réel du backend) — remplace l'ancien
-  // message de succès unique, désormais trompeur dès que plusieurs agents sont
-  // sélectionnés et qu'une partie seulement réussit.
   readonly resultatsEnvoi = signal<ResultatAction[]>([]);
   readonly erreurEnregistrement = signal<string | null>(null);
 
@@ -123,8 +80,6 @@ export class AgentPaymentComponent {
   readonly formatDate = formatFrDateTime;
   readonly badgeStatut = badgePaiementAgent;
 
-  // Options des filtres statut/mode (historique) — mêmes valeurs que le domaine
-  // backend (models/PaiementAgent.js), jamais un sous-ensemble ou un libellé inventé.
   readonly statutsDisponibles: PaiementAgent['status'][] =
     ['EN_ATTENTE_VALIDATION', 'INITIATED', 'COMPLETED', 'FAILED', 'A_VERIFIER_MANUELLEMENT', 'REJETE'];
   readonly providersDisponibles: PaiementAgent['provider'][] = ['MOOV', 'ORANGE_MONEY', 'INTERNE'];

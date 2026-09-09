@@ -1,6 +1,5 @@
 import { Periode } from '../models';
 
-// Basé sur l'horloge réelle (ARCHITECTURE.md §3) — jamais une valeur figée en dur.
 export function periodeCourante(): Periode {
   const maintenant = new Date();
   return { mois: maintenant.getMonth() + 1, annee: maintenant.getFullYear() };

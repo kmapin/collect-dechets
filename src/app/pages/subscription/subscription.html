@@ -11,10 +11,6 @@
   <div class="container">
     <div class="subscription-content">
 
-      <!-- Bandeau de continuité de service — piloté uniquement par
-           EligibilityService (source='CONTRACT'), jamais recalculé ici. Évite
-           qu'un client sous contrat actif ne voie que le message "Aucun
-           abonnement actif" du bloc Abonnement ci-dessous sans contexte. -->
       @if (showContractContinuityBanner) {
       <div class="subscription-card card eligibility-banner">
         <div class="info-item-agencyName">
@@ -26,8 +22,6 @@
       </div>
       }
 
-      <!-- Bandeau symétrique — non éligible (ni contrat, ni abonnement actif),
-           piloté uniquement par `eligible`/`reason`, jamais recalculé ici. -->
       @if (showIneligibilityBanner) {
       <div class="subscription-card card eligibility-banner eligibility-banner--negative">
         <div class="info-item-agencyName">
@@ -136,8 +130,6 @@
             <span>{{ latestSubscription.agencyId?.phone }}</span>
           </div>
           <div class="actions">
-            <!-- Abonnement déjà actif et payé — rien à payer tant qu'il ne
-                 redevient pas inactif (expiré). -->
             @if (activeSubscription !== latestSubscription) {
             <button class="btn btn-primary" (click)="initiatePayment()">
               <i class="material-icons">payment</i>

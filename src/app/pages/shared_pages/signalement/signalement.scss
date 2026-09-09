@@ -1,6 +1,3 @@
-/* =============================================
-   INCIDENT LIST — Table style
-   ============================================= */
 
 .sig-container {
   background: #ffffff;
@@ -102,7 +99,6 @@
   margin-top: 2px;
 }
 
-/* ---- Origine (Prompt 06) ---- */
 .sig-origine {
   display: inline-flex;
   align-items: center;
@@ -237,9 +233,6 @@
 .sig-action-btn--gray  { background: #f9fafb; color: #6b7280; border: 1px solid #e5e7eb; }
 .sig-action-btn--gray:hover  { background: #f3f4f6; color: #374151; }
 
-/* =============================================
-   INCIDENT LIST — Card style (vue client)
-   ============================================= */
 .sig-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -703,7 +696,6 @@
   justify-content: space-between;
 }
 
-/* ---- Team picker (Prompt 06) ---- */
 .team-picker-empty {
   color: #9ca3af;
   font-size: 0.85rem;
@@ -742,9 +734,6 @@
   background: #eff6ff;
 }
 
-/* Équipe non disponible (status !== 'active') — grisée, jamais masquée : le
-   manager doit comprendre pourquoi une équipe qu'il connaît n'est pas
-   sélectionnable, pas se demander où elle est passée. */
 .team-picker-item--disabled {
   cursor: not-allowed;
   opacity: 0.5;

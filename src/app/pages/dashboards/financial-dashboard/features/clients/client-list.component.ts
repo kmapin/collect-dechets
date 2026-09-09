@@ -15,11 +15,7 @@ import { ClientListFilters, ClientListStatutFiltre, CLIENT_LIST_FILTERS_INITIAL 
 
 const TAILLE_PAGE = 10;
 
-// F6 — Liste globale des clients, statut + situation de paiement, filtrable.
-// RG8 : la colonne "situation paiement" (financière) est masquée si le rôle courant
-// n'a pas droitsFinance — même si, avec la simplification RBAC du Prompt 6, cette route
-// est déjà entièrement bloquée pour ces rôles (voir ARCHITECTURE.md §7). Le composant
-// reste tout de même role-aware pour rester correct si ce garde est assoupli plus tard.
+// Liste globale des clients, statut + situation de paiement, filtrable.
 @Component({
   selector: 'app-client-list',
   standalone: true,

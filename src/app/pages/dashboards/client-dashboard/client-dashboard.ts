@@ -41,17 +41,7 @@ interface PaymentHistory {
   status: "completed" | "pending" | "late" | "cancelled" | "failed";
   description: string;
   method?: string;
-  // Nom de l'agence émettrice (chantier Finance/Paiements, item 4 : "champ utilisateur
-  // par ligne") — un client peut avoir des Contrat/Redevance avec plusieurs agences
-  // (getRedevancesByClient() n'est jamais scopé à une seule agence, contrairement à
-  // getFacturesByClient()), donc utile pour désambiguïser d'un coup d'œil.
   agencyName?: string;
-  // Période RÉELLEMENT concernée par CE paiement précis (chantier "dates début/fin des
-  // exports") — distincte de `date` (l'échéance/le règlement) et de la fenêtre de filtre
-  // 3m/6m/12m (this.paymentHistoryPeriod, une seule par écran, pas par ligne). Signalé en
-  // usage réel : la Description seule ("Redevance — Août 2026"/"Abonnement — premium")
-  // ne suffisait pas à un export exploitable — absent (undefined) si la source réelle
-  // (Redevance.periodeFin ou Subscription) n'a pas pu être résolue, jamais fabriqué.
   periodeDebut?: Date;
   periodeFin?: Date;
 }
@@ -96,9 +86,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     collecteId: ""
   };
 
-  // Demande de passage spontané ("Collecte express") — modèle/service dédié
-  // (DemandeCollecte), sémantiquement distinct d'un Signalement : il s'agit
-  // d'une demande de service, pas d'une réclamation/incident.
   showSpontaneousRequestModal = false;
   isSubmittingSpontaneousRequest = false;
   spontaneousRequestData: { wasteTypes: string[]; notes: string; requestedDate: string } = {
@@ -127,20 +114,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   };
   data: any;
   subscriptions: any[] = [];
-  // Abonnement réellement actif (isActive===true ET endDate dans le futur) —
-  // plus jamais "le dernier élément du tableau" (chantier EligibilityService,
-  // même correctif que pages/subscription/subscription.ts).
   activeSubscription: any = null;
-  // Abonnement le plus récent (actif ou non) — affichage uniquement, pour ne
-  // pas faire disparaître le statut/les dates réels quand rien n'est actif.
   latestSubscription: any = null;
-  // "Mon contrat" (carte de la colonne droite, même patron que activeSubscription) —
-  // sans ceci, le client n'a aucune trace côté dashboard qu'il est lié à une
-  // agence par un Contrat plutôt que (ou en plus) d'un Abonnement.
   activeContrat: Contrat | null = null;
-  // Source unique de vérité pour "ce client bénéficie-t-il du service ?" —
-  // pilote uniquement le bandeau de continuité de service, jamais recalculée
-  // ici (EligibilityService, backend).
   eligibility: EligibilityResult | null = null;
   showRechargeModal: boolean = false;
 
@@ -173,39 +149,21 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     // console.log("Current User", this.currentUser);
     this.loadDashboardData();
 
-    // Point d'entrée du lien footer "Collecte express" (auparavant mort,
-    // href="#") : /dashboard/client?action=collecte-express ouvre directement
-    // le formulaire de demande de passage spontané.
     if (this.route.snapshot.queryParamMap.get('action') === 'collecte-express') {
       this.openSpontaneousRequestModal();
     }
 
-    // Phase 5 : les notifications Abonnement passent désormais par
-    // `notifyUsers` (Phase 3, backend) — donc par ce même canal socket, en
-    // plus du chargement initial ci-dessus (`getUserSubscription()` dans
-    // `getUser()`). Sans ceci, un abonnement qui expire automatiquement
-    // (scheduler minuit) laisse le dashboard afficher un statut "actif"
-    // périmé jusqu'au prochain rechargement manuel de page.
     this.newSubscriptionSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
       if (notification?.type === 'Subscribed') {
         this.getUserSubscription();
         this.loadEligibility();
       }
-      // Même principe pour Contrat (Phase 4 backend) : création, résiliation
-      // automatique (scheduler) ou manuelle doivent se refléter ici sans
-      // rechargement de page.
       if (notification?.type === 'Contrat') {
         this.loadActiveContrat();
         this.loadEligibility();
       }
     });
 
-    // Messagerie temps réel : le backend émet `messageSent` vers l'expéditeur
-    // ET le destinataire (message.controller.js::sendMessage) — jusqu'ici ce
-    // canal n'était jamais écouté ici, donc un message reçu n'apparaissait
-    // qu'après un rechargement manuel de page. On met à jour la conversation
-    // ouverte directement (pas de re-fetch HTTP complet), et on rafraîchit la
-    // liste des conversations/le badge non-lus dans tous les cas.
     this.incomingMessageSub = this.conversationService.onIncomingMessage$().subscribe((message: RealtimeMessage) => {
       this.appendIncomingMessage(message);
       this.userMessages();
@@ -228,9 +186,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       this.getWeeklySchedule();
       this.loadUpcomingPlannings();
       this.loadPlanningHistory();
-      // Dépend de currentUser._id (chantier Finance/Paiements, item 4) — même raison que
-      // loadActiveContrat() ci-dessus : appelée ici, pas depuis loadDashboardData()
-      // (qui s'exécute avant que currentUser$ n'émette).
       this.loadPaymentHistory();
     });
     console.log("Current User", this.currentUser);
@@ -242,11 +197,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     if (!clientId) return;
     this.contratService.getContratsByClient$(clientId).subscribe({
       next: (contrats) => {
-        // Fallback trié par startDate desc (même logique que
-        // pages/subscription/subscription.ts::latestContrat) — plutôt que
-        // contrats[0] brut, dont l'ordre dépend de ce que renvoie le backend et
-        // pouvait faire diverger ce dashboard de l'écran /subscription quand un
-        // client a plusieurs contrats non actifs.
         const sortedByStartDateDesc = [...contrats].sort(
           (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
         );
@@ -288,7 +238,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     return isSubscriptionCurrentlyActive(subscription) ? 'Actif' : 'Expiré';
   }
 
-  /** Piloté uniquement par EligibilityService — jamais recalculé ici (Prompt 0). */
   get showContractContinuityBanner(): boolean {
     return this.eligibility?.source === 'CONTRACT';
   }
@@ -399,13 +348,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     });
   }
 
-  /**
-   * Second pull, complémentaire à `getWeeklySchedule()` ci-dessus — montre les
-   * plannings publiés/en cours qui concernent ce client AVANT même qu'une
-   * Collecte n'existe (qui n'apparaît qu'au démarrage du planning). Comble le
-   * trou où un planning fraîchement publié était invisible côté client malgré
-   * la notification déjà reçue.
-   */
   upcomingPlannings: any[] = [];
   loadUpcomingPlannings() {
     const clientId = this.currentUser?._id || "";
@@ -470,9 +412,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   getTotalUpcomingCollectionsLength() {
-    // const upcomingCollections = this.collectionHistory.filter(
-    //   (col) => col.status === "scheduled"
-    // ).length;
     const now = new Date();
 
     const isCurrentMonth = (date: Date | string) => {
@@ -520,13 +459,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
 
     return Math.round((completed / totalCollections) * 100);
   }
-  // Taux de collectes non complétées — même périmètre (mois en cours,
-  // history + upcoming) que getCompletedCollectionRate()/
-  // getUpcomingCollectionRate() ci-dessus : avant ce correctif, cette méthode
-  // utilisait un dénominateur totalement différent (getMonthlyCollectionsLength(),
-  // qui multiplie par 4) et un numérateur non filtré par mois
-  // (getTotalUnCompletedCollectionLength(), tout l'historique), ce qui faisait
-  // que les 3 pourcentages affichés ensemble ne totalisaient jamais 100%.
   getUncompletedCollectionRate() {
     const now = new Date();
 
@@ -592,9 +524,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
             collectedDate: report.updatedAt ? new Date(report.updatedAt) : null, // si dispo
             status: report.status === "Collected" ? "Completed" : report.status, // adapter au template
             wasteTypes: report.type || ["Déchets ménagers"], // valeur par défaut si absent
-            // Notation agence : `report.rating` est soit null (jamais notée), soit
-            // {_id, stars, comment, createdAt} (voir GET .../collecte-history,
-            // enrichi côté backend — services/collecte.service.js::UserCollecteHistory).
             rating: report.rating?.stars || 0,
             isRated: !!report.rating,
             photos: report.photos,
@@ -606,8 +535,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         console.log("Planning history ==> ", this.collectionHistory);
         this.filteredHistories = [...this.collectionHistory];
         console.log("Filtered histories ==> ", this.filteredHistories);
-        // Appliquer le filtre initial
-        // this.applyHistoryFilter();
       },
       error: (error: any) => {
         console.error(
@@ -626,12 +553,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       next: (response: any[]) => {
         this.subscriptions = response || [];
         console.log("Subscriptions ==>", this.subscriptions);
-        // paymentHistory n'est plus construit depuis les Abonnements (chantier
-        // Finance/Paiements, item 4) — voir loadRedevancesHistory(), la vraie source de
-        // "paiements" (redevances récurrentes), distincte du statut d'un Abonnement.
-        // Abonnement réellement actif — jamais "le dernier élément du
-        // tableau" (chantier EligibilityService, même correctif que
-        // pages/subscription/subscription.ts::getUserSubscription()).
         const sortedByEndDateDesc = [...this.subscriptions].sort(
           (a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
         );
@@ -656,9 +577,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   loadDashboardData(): void {
-    // Charger les données du tableau de bord
-    // loadPaymentHistory() déplacée dans getUser() (dépend de currentUser._id, voir son
-    // propre commentaire) — plus appelée ici.
     this.countUnreadMessages();
     this.userMessages();
     this.loadClientReports();
@@ -777,9 +695,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     this.conversationService.sendMessage$(this.messageData).subscribe({
       next: (sent: any) => {
         this.isSendingChatMessage = false;
-        // Ajout local du message envoyé (retourné par le POST) — remplace
-        // l'ancien re-fetch complet de la conversation ; la vue du
-        // destinataire, elle, se met à jour via onIncomingMessage$ (temps réel).
         this.appendIncomingMessage(sent);
         this.notificationService.showSuccess(
           "Message envoyé",
@@ -807,8 +722,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       ((message.sender === selfId && message.receiver === partnerId) ||
         (message.receiver === selfId && message.sender === partnerId));
     if (!concernsOpenConversation) return;
-    // Évite un doublon si le message est déjà présent (ex: écho socket du
-    // message qu'on vient nous-même d'envoyer et déjà ajouté localement).
     if ((this.receivedMessages || []).some((m: any) => m._id === message._id)) return;
     const normalized = { ...message, read: (message.read ?? false).toString() };
     this.receivedMessages = [...(this.receivedMessages || []), normalized];
@@ -820,12 +733,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
 
   /**Gestion des messages recus par le client connecté fin */
 
-  // ── Historique des paiements (chantier Finance/Paiements, item 4) ────────
-  // Corrigé : branché sur le vrai GET /redevances/client/:clientId
-  // (RedevanceService.getRedevancesByClient$, jamais appelé jusqu'ici) au lieu d'une
-  // liste reconstruite depuis les Abonnements, ou (loadPaymentHistory(), ci-dessus,
-  // supprimée) 2 lignes codées en dur qui coexistaient silencieusement avec les
-  // données réelles.
   private static readonly REDEVANCE_STATUS_MAP: Record<string, PaymentHistory['status']> = {
     paye: 'completed',
     en_attente: 'pending',
@@ -834,8 +741,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     echec: 'failed',
   };
 
-  // Moyen de paiement réel (Transaction.operator, models/transaction.js) — remplace le
-  // libellé générique "Mobile Money" qui ne reflétait pas l'opérateur effectivement utilisé.
   private static readonly OPERATOR_LABEL_MAP: Record<string, string> = {
     ORANGE_MONEY: 'Orange Money',
     MOOV_MONEY: 'Moov Money',
@@ -843,8 +748,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     QRPAY: 'QR Pay',
   };
 
-  // Statuts Transaction (models/transaction.js) — distincts des statuts Redevance
-  // ci-dessus, utilisés pour les paiements d'Abonnement (voir loadPaymentHistory()).
   private static readonly TRANSACTION_STATUS_MAP: Record<string, PaymentHistory['status']> = {
     COMPLETED: 'completed',
     COMPLETED_WITH_ERROR: 'completed',
@@ -857,20 +760,10 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
 
   allPaymentHistory: PaymentHistory[] = [];
   isLoadingPaymentHistory = false;
-  // "Filtres période/statut/client" demandés — le filtre "client" ne s'applique pas ici
-  // (l'utilisateur ne peut voir QUE ses propres paiements) ; conservés "période"+"statut".
   paymentPeriodFilter: 'all' | '3m' | '6m' | '12m' = 'all';
   paymentStatusFilter: 'all' | PaymentHistory['status'] = 'all';
-  // Plage RÉELLEMENT envoyée au backend pour le dernier chargement (chantier "historique
-  // paiements — vraie plage de dates") — `null` pour 'all' (historique complet, jamais de
-  // plage fabriquée). Les exports (PDF/CSV/Excel) lisent CETTE valeur, jamais un recalcul
-  // séparé au moment de l'export : garantit que le document affiche exactement la période
-  // qui a servi à récupérer les données qu'il contient.
   paymentHistoryPeriod: { debut: Date; fin: Date } | null = null;
 
-  // `debut` = aujourd'hui - N mois (jour exact, ex. 20/08/2025 → 20/08/2026 pour "12
-  // derniers mois") — PAS une borne de mois calendaire (Periode) comme dans le module
-  // financier agence : ici la fenêtre est glissante, ancrée sur "aujourd'hui".
   private calculerPeriodePaiement(): { debut: Date; fin: Date } | null {
     const monthsWindow = { '3m': 3, '6m': 6, '12m': 12, all: null } as const;
     const months = monthsWindow[this.paymentPeriodFilter];
@@ -881,19 +774,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     return { debut, fin };
   }
 
-  // "afficher les paiements abonnement ET contrat (redevances)" : la seule source de
-  // "paiement" pour un client était jusqu'ici la Redevance (contrat). Un client sous
-  // Abonnement (pas de contrat) avait donc un historique vide alors qu'il paie bien
-  // chaque mois. Ajout de la Transaction liée à l'Abonnement (Transaction.subscriptionId,
-  // renseigné uniquement pour un paiement Mobile Money — voir services/subscription.js,
-  // le paiement par wallet ne crée aucune Transaction, donc aucun historique possible pour
-  // ce cas précis, pas de données à afficher) via le même GET /transactions/agency/:id déjà
-  // utilisé par le dashboard financier agence (FinanceService.getTransactions), filtré par
-  // userId — aucune nouvelle route backend créée.
-  // Période calculée UNE SEULE FOIS ici et réutilisée pour les deux requêtes ET pour les
-  // exports (this.paymentHistoryPeriod) — jamais recalculée séparément côté export, ce qui
-  // pourrait produire un document affichant une période différente de celle réellement
-  // demandée au backend.
   loadPaymentHistory(): void {
     const clientId = this.currentUser?._id;
     if (!clientId) return;

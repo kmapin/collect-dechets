@@ -36,11 +36,7 @@ export class MonthlyTrackingComponent {
   readonly nombreImpayes = computed(() => this.items().filter(i => i.statut === FactureStatut.IMPAYEE).length);
   readonly nombreAbonnes = computed(() => this.items().length);
 
-  // "NonGeneree" (aucune facture créée pour ce client cette période — pas encore
-  // exigible) n'a presque rien à montrer dans le tableau (Montant/Date de paiement
-  // toujours vides) : signalé comme trop de colonnes vides pour être lisible. Retiré de
-  // l'AFFICHAGE uniquement — `items()`/`nombreAbonnes()` gardent tous les abonnés (le
-  // compte "X impayés / Y abonnés" et l'export CSV restent complets).
+
   readonly lignesAffichees = computed(() => this.items().filter(i => i.statut !== 'NonGeneree'));
 
   constructor() {
@@ -62,11 +58,6 @@ export class MonthlyTrackingComponent {
   }
 
   exporterCsv(): void {
-    // Période EXACTE de l'écran (this.periode(), celle envoyée à getSuiviMensuel() dans
-    // charger()) reportée sur CHAQUE ligne — jusqu'ici seul le nom de fichier portait le
-    // mois/année, le contenu du CSV n'indiquait la période nulle part (signalé : "Excel/
-    // CSV → dates absentes"). Toutes les lignes de cet écran partagent la même période
-    // (suivi MENSUEL, un mois à la fois) : pas une période par ligne différente.
     const { debut, fin } = bornesPeriode(this.periode());
     const optionsDate: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'long', year: 'numeric' };
     const periodeDu = debut.toLocaleDateString('fr-FR', optionsDate);

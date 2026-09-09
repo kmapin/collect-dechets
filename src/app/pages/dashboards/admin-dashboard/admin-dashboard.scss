@@ -779,9 +779,6 @@
   flex-shrink: 0;
   color: var(--white);
 
-  // Manquait entièrement : sans fond coloré, l'icône blanche (color ci-dessus) se
-  // retrouvait sur fond transparent, quasi invisible sur le gris clair de .alert-item —
-  // mêmes couleurs que .severity-badge, pour rester cohérent avec le reste du dashboard.
   &.severity-critical {
     background: #dc2626;
   }
@@ -1109,7 +1106,6 @@
   color: #00838f;
 }
 
-/* Échec technique du paiement (Moov Money) — distinct d'un rejet Super Admin (Prompt 6) */
 .status-failed {
   background: #fdecea;
   color: #c62828;
@@ -1128,9 +1124,6 @@
   padding-bottom: 16px;
   border-bottom: 1px solid var(--medium-gray);
 
-  // Le titre ne doit jamais rétrécir/se scinder sur deux lignes pour laisser de la
-  // place aux filtres — quand ça ne tient pas sur une ligne, c'est le bloc filtres
-  // (large, plusieurs contrôles) qui doit passer à la ligne suivante, pas le titre.
   >h2 {
     flex-shrink: 0;
     white-space: nowrap;
@@ -1942,10 +1935,6 @@ input.filter-select {
   gap: 1.25rem;
 }
 
-/* Label au-dessus de la valeur (plutôt qu'une colonne de 140px à côté) — un
-   label français comme "DERNIÈRE MISE À JOUR" ne tient pas dans 140px, ce qui
-   forçait .info-item à déborder de sa cellule de grille (.info-row) et
-   faisait apparaître un scroll horizontal sur tout le drawer. */
 .info-item {
   display: flex;
   flex-direction: column;
@@ -2460,8 +2449,6 @@ input.filter-select {
       font-size: 1.25rem;
     }
 
-    /* Variante rouge — rejet d'un retrait (motif obligatoire), au lieu de la
-       résolution positive d'un incident (vert par défaut ci-dessus). */
     &.resolve-dialog-icon--danger {
       background: rgba(220, 38, 38, 0.1);
 
@@ -2734,10 +2721,6 @@ input.filter-select {
   gap: 10px 20px;
   margin-bottom: 8px;
 
-  /* Sans ceci, un enfant de grille garde son min-width:auto par défaut — le
-     contenu le plus long (une adresse email, un libellé de date) empêchait
-     la colonne de rétrécir sous sa largeur naturelle et débordait du drawer
-     au lieu de passer à la ligne. */
   >* {
     min-width: 0;
   }
@@ -2812,16 +2795,11 @@ input.filter-select {
     justify-content: center;
   }
 
-  /* 2 colonnes ("Prénom | Nom", "Email | Téléphone"...) redeviennent trop
-     étroites sur un vrai petit écran — une colonne unique reste lisible. */
   .info-row {
     grid-template-columns: 1fr;
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   PAGINATION
-═══════════════════════════════════════════════════════ */
 .pagination-section {
   display: flex;
   justify-content: space-between;
@@ -2941,9 +2919,6 @@ input.filter-select {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   VIEW-MODE TOGGLE (Cartes / Tableau)
-═══════════════════════════════════════════════════════ */
 .view-mode-toggle {
   display: flex;
   align-items: center;
@@ -2984,9 +2959,6 @@ input.filter-select {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   TABLEAU AGENCES (vue tableau admin)
-═══════════════════════════════════════════════════════ */
 .admin-table-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -3045,9 +3017,6 @@ input.filter-select {
   justify-content: center;
 }
 
-/* ═══════════════════════════════════════════════════════
-   ACTION BUTTONS (admin)
-═══════════════════════════════════════════════════════ */
 .action-btn {
   display: inline-flex;
   align-items: center;
@@ -3165,9 +3134,6 @@ input.filter-select {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   DIALOG DE CONFIRMATION (suppression)
-═══════════════════════════════════════════════════════ */
 .confirm-dialog-overlay {
   position: fixed;
   inset: 0;
@@ -3294,10 +3260,6 @@ input.filter-select {
 
 }
 
-// Non-imbriqué sous .confirm-dialog-body : réutilisé tel quel dans le drawer
-// détail retrait (Motif de rejet) hors de tout dialog de confirmation — imbriqué
-// ici, il ne s'appliquait qu'aux dialogs et laissait l'icône/le texte sans
-// mise en page dans le drawer (icône en taille par défaut, pas de flex).
 .confirm-warning {
   display: flex;
   align-items: flex-start;
@@ -3403,8 +3365,6 @@ input.filter-select {
   }
 }
 
-/* Variante verte de l'en-tête .confirm-dialog-header (par défaut rouge, pour la
-   suppression) — utilisée pour l'approbation d'un retrait, une action positive. */
 .confirm-dialog-header--success {
   border-bottom-color: #dcfce7 !important;
   background: linear-gradient(135deg, #f0fdf4, #fff) !important;
@@ -3418,9 +3378,6 @@ input.filter-select {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   HISTORIQUE D'ACTIVITÉ
-═══════════════════════════════════════════════════════ */
 .activity-toggle-header {
   cursor: pointer;
   user-select: none;
@@ -3589,9 +3546,6 @@ input.filter-select {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   BOUTON RESET MDP (dans drawer footer)
-═══════════════════════════════════════════════════════ */
 .btn-reset-pwd {
   padding: 8px 14px;
   border: 1.5px solid #c7d2fe;
@@ -3616,9 +3570,6 @@ input.filter-select {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   DIALOG RÉINITIALISATION MOT DE PASSE
-═══════════════════════════════════════════════════════ */
 .pwd-reset-dialog {
   background: #fff;
   border-radius: 16px;
@@ -4010,9 +3961,6 @@ input.filter-select {
   }
 }
 
-// ══════════════════════════════════════════════════════
-// Onglet Statistiques
-// ══════════════════════════════════════════════════════
 
 // ── KPI cards ──────────────────────────────────────────
 .stat-kpi-grid {
@@ -4225,9 +4173,6 @@ input.filter-select {
   max-width: 100px;
 }
 
-// ══════════════════════════════════════════════════════
-// Carte interactive — couverture territoriale
-// ══════════════════════════════════════════════════════
 
 .territorial-map-card {
   padding: 20px;
@@ -5359,8 +5304,6 @@ input.filter-select {
   }
 }
 
-/* Sélecteur de rôle financier (assignation par le super_admin) — visible uniquement pour
-   les utilisateurs de rôle "manager", onglet Utilisateurs. */
 .finance-role-select {
   padding: 6px 10px;
   border-radius: 10px;
@@ -5387,19 +5330,6 @@ input.filter-select {
   animation: spin 0.8s linear infinite;
 }
 
-/* ═══════════════════════════════════════════════════════
-   DRAWERS DE DÉTAIL — .detail-list/.detail-row remplacent .drawer-info-grid/
-   .info-item pour les listes label/valeur : la grille 2 colonnes se désaligne
-   dès qu'une valeur passe sur 2 lignes (téléphone, email...), la ligne de
-   grille adjacente restant collée en haut — .detail-row est indépendante
-   d'une ligne à l'autre, donc plus aucun désalignement possible. Utilisé par
-   le drawer "Détails de la demande de retrait" ET le drawer "Détails de
-   l'Incident" (section Parties impliquées) — .drawer-info-grid/.info-item
-   restent inchangées pour ne rien casser ailleurs où elles sont encore
-   utilisées telles quelles.
-   .wd-amount-hero/.wd-recent-table restent spécifiques aux retraits (montant
-   net mis en avant, historique des retraits récents).
-═══════════════════════════════════════════════════════ */
 .wd-amount-hero {
   display: flex;
   justify-content: space-between;

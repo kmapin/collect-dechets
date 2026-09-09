@@ -1,8 +1,5 @@
 <p-toast />
 
-<!-- ══════════════════════════════════════════════════════════
-     LOADING SKELETON
-     ══════════════════════════════════════════════════════════ -->
 @if (isLoading()) {
   <div class="pd-skeleton">
     <div class="sk-topbar"></div>
@@ -17,9 +14,6 @@
   </div>
 }
 
-<!-- ══════════════════════════════════════════════════════════
-     NOT FOUND
-     ══════════════════════════════════════════════════════════ -->
 @else if (notFound()) {
   <div class="pd-notfound">
     <div class="nf-icon"><mat-icon>search_off</mat-icon></div>
@@ -31,15 +25,9 @@
   </div>
 }
 
-<!-- ══════════════════════════════════════════════════════════
-     MAIN PAGE
-     ══════════════════════════════════════════════════════════ -->
 @else if (planning()) {
   <div class="pd-root">
 
-    <!-- ──────────────────────────────────────────────────────
-         TOP BAR
-         ────────────────────────────────────────────────────── -->
     <div class="pd-topbar">
       <div class="pd-topbar__left">
         <a routerLink="/planning/dashboard" class="tb-back">
@@ -131,9 +119,6 @@
       </div>
     </div>
 
-    <!-- ──────────────────────────────────────────────────────
-         BODY
-         ────────────────────────────────────────────────────── -->
     <div class="pd-body">
 
       <!-- ── LEFT NAV ─────────────────────────────────────── -->
@@ -422,9 +407,6 @@
             <span class="sec-count">{{ collectes().length }} collecte{{ collectes().length > 1 ? 's' : '' }}</span>
           </div>
 
-          <!-- Statistiques calculées directement depuis les Collecte réelles (Prompt 0) —
-               lecture seule, plus aucune saisie manuelle possible. Cartes KPI identiques à
-               la section Statistiques, pour un rendu cohérent sur toute la page. -->
           <div class="stats-grid stats-grid--compact">
             <div class="kpi-card">
               <div class="kpi-icon" style="background:#3b82f618;color:#3b82f6"><mat-icon>home</mat-icon></div>
@@ -480,9 +462,6 @@
                       </span>
                     </div>
                     @if (c.status === 'Missed') {
-                    <!-- Rattrapage (Prompt 0, étape 5) : motif par tentative, jamais un
-                         compteur global — et une action "Retenter" par collecte, pas de
-                         sélection multiple ni de création de round. -->
                     <div class="rc-item-fields">
                       <select [ngModel]="c.failureReason" (ngModelChange)="updateCollecteField(c.id, {failureReason: $event})">
                         <option [ngValue]="null">Motif d'absence (optionnel)</option>
@@ -498,11 +477,6 @@
                           <mat-icon>save</mat-icon>
                         }
                       </button>
-                      <!-- Nouvelle date prévue (optionnelle) — chantier "permettre de
-                           redéfinir la date prévue lors d'un rattrapage" : omise, la
-                           Collecte garde sa date d'origine (comportement inchangé).
-                           [min]=todayIso : même borne que la validation backend
-                           (jamais dans le passé), visible avant l'envoi. -->
                       <input
                         type="date"
                         class="rc-retry-date"
@@ -647,8 +621,6 @@
               <div class="kpi-lbl">Collectes manquées</div>
             </div>
 
-            <!-- Donut chart — calculé directement depuis les Collecte (Prompt 0),
-                 plus d'estimation devinée pour un planning en_cours. -->
             <div class="chart-card chart-card--donut">
               <h4>Progression collecte</h4>
               <div class="donut-wrap">
@@ -678,9 +650,6 @@
             <span class="sec-count">{{ notifications().length }}</span>
           </div>
 
-          <!-- Indicateur d'état (Prompt 06 point 2) : l'envoi est désormais
-               automatique à chaque transition, plus un bouton à déclencher —
-               ce bandeau reflète simplement ce qui s'est déjà passé. -->
           @if (notificationSummary(); as summary) {
             <div class="notifs-summary notifs-summary--ok">
               <mat-icon>check_circle</mat-icon>
@@ -738,9 +707,6 @@
     </div><!-- /pd-body -->
   </div><!-- /pd-root -->
 
-  <!-- ════════════════════════════════════════════════════════
-       START DIALOG
-       ════════════════════════════════════════════════════════ -->
   @if (showStartDlg()) {
     <div class="dlg-backdrop" (click)="showStartDlg.set(false)"></div>
     <div class="dlg-box dlg-box--start">
@@ -760,13 +726,7 @@
     </div>
   }
 
-  <!-- Chantier simplification Planning→Collecte (Prompt 0) — les dialogues de clôture/
-       affectation/rattrapage de round sont retirés : la section "Suivi des collectes"
-       ci-dessus (stats + liste + rattrapage inline) les remplace intégralement. -->
 
-  <!-- ════════════════════════════════════════════════════════
-       COMPLETE DIALOG
-       ════════════════════════════════════════════════════════ -->
   @if (showCompleteDlg()) {
     <div class="dlg-backdrop" (click)="showCompleteDlg.set(false)"></div>
     <div class="dlg-box dlg-box--success">
@@ -786,9 +746,6 @@
     </div>
   }
 
-  <!-- ════════════════════════════════════════════════════════
-       CANCEL DIALOG
-       ════════════════════════════════════════════════════════ -->
   @if (showCancelDlg()) {
     <div class="dlg-backdrop" (click)="showCancelDlg.set(false)"></div>
     <div class="dlg-box dlg-box--danger">
@@ -804,9 +761,6 @@
     </div>
   }
 
-  <!-- ════════════════════════════════════════════════════════
-       DELETE DIALOG
-       ════════════════════════════════════════════════════════ -->
   @if (showDeleteDlg()) {
     <div class="dlg-backdrop" (click)="showDeleteDlg.set(false)"></div>
     <div class="dlg-box dlg-box--danger">
@@ -826,9 +780,6 @@
     </div>
   }
 
-  <!-- ════════════════════════════════════════════════════════
-       DUPLICATE DIALOG
-       ════════════════════════════════════════════════════════ -->
   @if (showDupDlg()) {
     <div class="dlg-backdrop" (click)="showDupDlg.set(false)"></div>
     <div class="dlg-box">

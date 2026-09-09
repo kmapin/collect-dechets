@@ -19,14 +19,6 @@ import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../services/auth.service';
 import { TerritoryItem } from '../models/planning.model';
 
-// ── Types ──────────────────────────────────────────────────────
-// Chantier "migrer le frontend / résoudre de vrais clients zone/secteur" — `households`/
-// `active` étaient des constantes inventées (40/15 par quartier, 120/45 par secteur même
-// sans quartier chargé) sans AUCUNE contrepartie côté backend (aucun modèle ne stocke de
-// décompte de ménages) : retirées. Le seul nombre affiché désormais (`clientCount`, sur
-// la sélection courante uniquement — jamais sur les 137 nœuds de l'arbre, qui coûterait
-// 137 requêtes) vient de GET /planning/zone-client-count, un vrai comptage de clients
-// réels + éligibles pour la géographie choisie.
 interface ZoneMeta {
   level: 'ville' | 'arrondissement' | 'secteur' | 'quartier';
   id: string;
@@ -77,10 +69,6 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
   loadError     = signal<string | null>(null);
   rawTree       = signal<TreeNode[]>([]);
 
-  // ── Filtered tree ─────────────────────────────────────────────
-  // Chantier "résoudre de vrais clients zone/secteur" — le filtre "Actifs uniquement"
-  // reposait entièrement sur le champ `active` fictif, retiré : plus de second critère,
-  // seulement la recherche par nom.
   filteredTree = computed<TreeNode[]>(() => {
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return this.rawTree();
@@ -89,10 +77,6 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   totalSecteurs = computed<number>(() => this._countByLevel(this.rawTree(), 'secteur'));
 
-  // ── Comptage réel de clients pour la sélection courante ─────────
-  // Chantier "résoudre de vrais clients zone/secteur" — un seul appel réseau, pour le
-  // nœud sélectionné uniquement (jamais un total pré-calculé sur les 137 nœuds de
-  // l'arbre). `null` = en cours de chargement ou indisponible, jamais une estimation.
   selClientCount        = signal<number | null>(null);
   selClientCountLoading = signal(false);
   selClientCountError   = signal<string | null>(null);
@@ -122,9 +106,6 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
   private _loadTerritories(): void {
     this.isLoading.set(true);
     this.loadError.set(null);
-    // Chaque flux dégrade individuellement vers [] pour ne pas bloquer les 3 autres
-    // niveaux si un seul échoue, mais on garde trace de l'échec pour l'afficher —
-    // avant ce chantier, ces `catchError` avalaient l'erreur sans jamais la montrer.
     let anyFailed = false;
     const onLevelError = () => { anyFailed = true; return of([]); };
 

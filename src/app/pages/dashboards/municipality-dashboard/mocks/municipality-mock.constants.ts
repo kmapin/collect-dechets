@@ -1,8 +1,3 @@
-/**
- * Static name/value pools used by the Municipality Dashboard mock generators.
- * Kept separate from the generator functions so the "content" (what names
- * exist) can be tweaked without touching the "logic" (how they're combined).
- */
 import { OUAGA_DATA } from '../../../../data/mock-data';
 import { MOCK_CITIES } from '../../../../data/countries-org.mock';
 import { BF_CITY_COORDS, OUAGA_ARR_COORDS } from '../../../../data/ouaga-coords';
@@ -10,13 +5,6 @@ import type { MunicipalityZone } from './municipality-mock.types';
 
 export const DEFAULT_SEED = 20260801;
 
-/**
- * Real coordinates for the non-Burkina-Faso capitals/major cities also
- * listed in `MOCK_CITIES` (Mali, Niger, Côte d'Ivoire, Ghana) — `ouaga-coords.ts`
- * is scoped to Burkina Faso only (its own name says so), so without this,
- * 8 of the 23 cities the Couverture Territoriale table builds rows for would
- * silently get no map marker at all, even though they're shown in the tabular view.
- */
 const OTHER_COUNTRY_CITY_COORDS: Record<string, [number, number]> = {
   Bamako: [12.6392, -8.0029],
   Sikasso: [11.3167, -5.6667],
@@ -28,17 +16,6 @@ const OTHER_COUNTRY_CITY_COORDS: Record<string, [number, number]> = {
   Kumasi: [6.6885, -1.6244],
 };
 
-/**
- * Coverage Map coordinate lookup, keyed by exact city name. Reinstated as mock
- * (Prompt 14 — decided with the user via AskUserQuestion): a real replacement
- * (`GET /territories/cities`) was built and verified against the live database, but
- * the real `City` collection currently has only 6 documents and ZERO with
- * latitude/longitude populated (confirmed empirically, not assumed) — migrating now
- * would silently turn the map from "shows plausible markers" into "shows nothing at
- * all", a worse regression than staying mock. Kept exactly as before pending real city
- * coordinate data. `Admin.getCities$()` (admin.ts) is already written and ready to
- * swap this back in once that data exists — see EditRecapFront.md, Prompt 14.
- */
 export const ZONE_COORDINATES: Record<string, [number, number]> = {
   ...BF_CITY_COORDS,
   ...OTHER_COUNTRY_CITY_COORDS,
@@ -48,16 +25,7 @@ export const ZONE_COORDINATES: Record<string, [number, number]> = {
 /** Simulated network latency for Observable-returning mock methods, so a loading state is actually visible/testable. */
 export const MOCK_NETWORK_DELAY_MS = 450;
 
-// FULL_HISTORY_DAYS supprimée (Prompt 12) : n'existait que pour `generateWasteRecords()`
-// (supprimée à la même occasion) — plus aucun appelant, toutes les sections qui en
-// dépendaient (Waste Breakdown, Collection Evolution, Volume Global Collecté) sont
-// maintenant réelles.
 
-/**
- * Zones reused as-is from the project's existing Ouagadougou fixture
- * (`OUAGA_DATA`) instead of inventing parallel arrondissement/quartier
- * names — this is the same data already rendered on other screens.
- */
 export const MUNICIPALITY_ZONES: MunicipalityZone[] = OUAGA_DATA.map((entry) => ({
   id: entry.arrondissement.replace(/\s+/g, '-').toLowerCase(),
   name: entry.arrondissement,
@@ -66,11 +34,6 @@ export const MUNICIPALITY_ZONES: MunicipalityZone[] = OUAGA_DATA.map((entry) => 
   quartiers: entry.secteurs.flatMap((s) => s.quartiers),
 }));
 
-/**
- * Agency name pool. The first three match the ones already hand-written
- * (commented out) in `municipality-dashboard.ts::loadAgencyAudits()` so a
- * dev comparing old mock output to this one recognizes the continuity.
- */
 export const AGENCY_NAME_POOL: string[] = [
   'EcoClean Services',
   'GreenWaste Solutions',
@@ -111,14 +74,6 @@ export const COLLECTOR_LAST_NAMES: string[] = [
   'Kiendrébéogo', 'Sanou', 'Bationo', 'Nikiéma', 'Ilboudo', 'Some',
 ];
 
-/**
- * Waste categories reused verbatim (labels + colors) from
- * `municipality-dashboard.ts::loadWasteStatistics()` so the mock layer stays
- * visually consistent with what's already on screen today. `baseSharePct`
- * drives a WEIGHTED pick in generateWasteRecords() (see pickWeighted) —
- * tuned so realized shares land inside household 45–60% / recyclables
- * 15–25% / organic 10–20% / glass 5–10%, per the Waste Breakdown Chart prompt.
- */
 export const WASTE_TYPE_POOL: { label: string; color: string; baseSharePct: number }[] = [
   { label: 'Déchets ménagers', color: '#4caf50', baseSharePct: 52 },
   { label: 'Recyclables', color: '#2196f3', baseSharePct: 20 },
@@ -126,9 +81,6 @@ export const WASTE_TYPE_POOL: { label: string; color: string; baseSharePct: numb
   { label: 'Verre', color: '#00bcd4', baseSharePct: 10 },
 ];
 
-// WASTE_TYPE_TARGET_WEIGHT_KG supprimée (Prompt 12) : "Volume Global Collecté" est
-// désormais dérivé de MonthlyTrendPoint (réel) — plus aucun appelant, aucune source de
-// poids réelle n'existant de toute façon nulle part dans le schéma backend.
 
 export const INCIDENT_TYPE_POOL: Array<'missed_collection' | 'compliance_issue' | 'complaint' | 'technical_issue'> = [
   'missed_collection',

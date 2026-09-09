@@ -1,11 +1,3 @@
-/**
- * Pure, deterministic generator functions for the Municipality Dashboard mocks.
- *
- * Every function here takes its randomness as an explicit `seed` (or a
- * `RandomFn` derived from one) and returns a freshly-built array/object —
- * no module-level mutable state, no `Math.random()`, no reliance on
- * previous calls. Same seed + same params => same output, every time.
- */
 import { UserRole } from '../../../../models/user.model';
 import {
   createSeededRandom,

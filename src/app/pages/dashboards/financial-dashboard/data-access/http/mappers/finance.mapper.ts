@@ -1,20 +1,11 @@
 import { DashboardKpi, Retrait } from '../../../models';
 import { PaiementListe, RepartitionModePaiement } from '../../contracts/finance-data.service';
 
-// Libellés FR des opérateurs exacts renvoyés par le backend (Transaction.operator,
-// models/transaction.js) — même convention que client-dashboard.ts::OPERATOR_LABEL_MAP /
-// admin-dashboard.ts / agency-finance.ts, dupliquée ici faute de module partagé existant
-// pour ce mapping trivial. Réutilisée par mapPaiementListeDto ET
-// mapRepartitionModePaiementDto ci-dessous — les deux affichaient auparavant un bucket
-// générique ("MobileMoney") au lieu de l'opérateur réellement utilisé.
 const OPERATOR_LABELS: Record<string, string> = {
   ORANGE_MONEY: 'Orange Money',
   MOOV_MONEY: 'Moov Money',
   TELECEL_MONEY: 'Telecel Money',
   QRPAY: 'QR Pay',
-  // Paiement de redevance constaté manuellement par l'agence (espèces, etc.), sans
-  // Transaction liée (services/financeStats.js::getRepartitionModePaiement) — pas un
-  // opérateur mobile money, mais doit rester lisible plutôt que retomber sur la clé brute.
   ESPECES_AUTRE: 'Espèces / autre',
 };
 
@@ -24,9 +15,6 @@ function operatorLabel(raw: unknown): string | undefined {
   return OPERATOR_LABELS[operateur] ?? operateur;
 }
 
-// DTO réel capturé sur le backend collecte-dechets (services/financeStats.js::getDashboardKpi) —
-// noms de champs déjà alignés 1:1 côté serveur, conversion = construction explicite typée
-// plutôt qu'un simple cast, pour détecter au runtime un champ manquant/mal typé.
 export function mapDashboardKpiDto(dto: unknown): DashboardKpi {
   const d = dto as Record<string, unknown>;
   return {
@@ -34,8 +22,6 @@ export function mapDashboardKpiDto(dto: unknown): DashboardKpi {
     totalCollecte: Number(d['totalCollecte']),
     revenusNets: Number(d['revenusNets']),
     enAttente: Number(d['enAttente']),
-    // Item 8 — absents avant ce correctif côté backend, `?? 0` seulement pour un DTO
-    // capturé avant le déploiement du correctif (jamais une valeur inventée sinon).
     montantFacture: Number(d['montantFacture'] ?? 0),
     tauxRecouvrement: Number(d['tauxRecouvrement'] ?? 0),
     devise: String(d['devise']),
@@ -43,9 +29,6 @@ export function mapDashboardKpiDto(dto: unknown): DashboardKpi {
   };
 }
 
-// DTO réel : GET /finance/paiements (controllers/financeStats.js::getPaiements). idFacture
-// n'est jamais renvoyé par le backend (pas de lien fiable Transaction↔Facture pour l'instant,
-// voir EditRecap.md backend Prompt 5) — absence honnête plutôt qu'une valeur inventée.
 export function mapPaiementListeDto(dto: unknown): PaiementListe {
   const d = dto as Record<string, unknown>;
   return {
@@ -56,15 +39,12 @@ export function mapPaiementListeDto(dto: unknown): PaiementListe {
     datePaiement: String(d['datePaiement']),
     modePaiement: operatorLabel(d['modePaiement']),
     clientNom: String(d['clientNom']),
-    // Chantier Frais plateforme (Prompt F4/F8) — snapshot figé, voir paiement.model.ts.
     grossAmount: d['grossAmount'] !== undefined && d['grossAmount'] !== null ? Number(d['grossAmount']) : undefined,
     feeType: (d['feeType'] as PaiementListe['feeType']) ?? undefined,
     feeValue: d['feeValue'] !== undefined && d['feeValue'] !== null ? Number(d['feeValue']) : undefined,
     feeAmount: d['feeAmount'] !== undefined && d['feeAmount'] !== null ? Number(d['feeAmount']) : undefined,
     feePayer: (d['feePayer'] as PaiementListe['feePayer']) ?? undefined,
     netAmount: d['netAmount'] !== undefined && d['netAmount'] !== null ? Number(d['netAmount']) : undefined,
-    // platformAmount volontairement non mappé — voir paiement.model.ts.
-    // Période du contrat/abonnement concerné (demande produit) — voir paiement.model.ts.
     dateDebut: d['dateDebut'] !== undefined && d['dateDebut'] !== null ? String(d['dateDebut']) : undefined,
     dateFin: d['dateFin'] !== undefined && d['dateFin'] !== null ? String(d['dateFin']) : undefined,
   };
@@ -91,7 +71,6 @@ export function mapRetraitDto(dto: unknown): Retrait {
     traitePar: optionalString(d['traitePar']),
     dateTraitement: optionalString(d['dateTraitement']),
     motifRejet: optionalString(d['motifRejet']),
-    // Chantier Frais plateforme (Prompt F5/F8) — snapshot figé, voir retrait.model.ts.
     grossAmount: optionalNumber(d['grossAmount']),
     feeType: optionalString(d['feeType']) as Retrait['feeType'],
     feeValue: optionalNumber(d['feeValue']),
@@ -103,15 +82,6 @@ export function mapRetraitDto(dto: unknown): Retrait {
   };
 }
 
-// DTO réel : GET /finance/dashboard/repartition-mode (services/financeStats.js::
-// getRepartitionModePaiement) — groupe par OPÉRATEUR EXACT ('ORANGE_MONEY'/'MOOV_MONEY'/
-// 'TELECEL_MONEY'/'QRPAY'). Demande produit explicite : afficher le moyen de paiement exact
-// plutôt que le bucket générique ModePaiement.MOBILE_MONEY (utilisé ailleurs pour un paiement
-// individuel, Paiement.modePaiement) — un opérateur inconnu retombe sur sa valeur brute plutôt
-// que d'être masqué, pour rester visible côté produit si un nouvel opérateur apparaît.
-// Fonction absente jusqu'ici (le http service castait directement la réponse HTTP, cf.
-// finance-data.http.service.ts) : ajoutée ici plutôt que dans un composant feature/*, comme
-// demandé par le Prompt F1 pour toute différence de forme de données. Câblée au Prompt F4.
 export function mapRepartitionModePaiementDto(dto: unknown[]): RepartitionModePaiement[] {
   const totalParOperateur = new Map<string, number>();
   for (const raw of dto) {

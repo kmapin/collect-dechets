@@ -5,20 +5,9 @@ import { ExportColumn, ExportPdfOptions, ExportService } from '../contracts/expo
 
 const BOM_UTF8 = '﻿';
 
-// Implémentation réelle et unique d'ExportService : export 100% client-side (F2/F10/F12),
-// jamais d'appel serveur — décision assumée, pas un mock temporaire (un export serveur
-// Excel/PDF, spec §1.12, reste TBC et n'a pas d'équivalent Http, voir INTEGRATION.md §4).
-// Anciennement `ExportMockService` dans data-access/mock/ : renommé et déplacé hors de ce
-// dossier lors du nettoyage 100% mocks (le nom "Mock" était trompeur — cette classe ne
-// simule rien, c'est la seule implémentation possible de ce contrat).
-// jsPDF/jspdf-autotable déjà des dépendances du projet (voir agency-finance.ts pour le même
-// pattern) — réutilisées ici plutôt que window.print() : un vrai document PDF téléchargeable,
-// pas une impression de la page courante.
 @Injectable()
 export class ExportClientService implements ExportService {
   exportToCsv<T extends Record<string, unknown>>(rows: T[], columns: ExportColumn<T>[], filename: string): void {
-    // Séparateur `;` + BOM UTF-8 : convention Excel FR (la virgule est le séparateur
-    // décimal en fr-FR, donc `,` casserait l'ouverture directe dans Excel).
     const entete = columns.map(c => this._echapper(c.label)).join(';');
     const lignes = rows.map(row => columns.map(c => this._echapper(row[c.key])).join(';'));
     const contenu = [entete, ...lignes].join('\r\n');

@@ -146,8 +146,6 @@ export class TeamList implements OnInit {
         label: 'Changer le statut',
         icon:  'pi pi-sync',
         items: [
-          // 'En mission' retiré : désormais automatique (Planning en_cours assigné),
-          // voir services/teamV2.js::_computeEffectiveStatus.
           { label: 'Active',      icon: 'pi pi-check-circle', disabled: team.status === 'active',      command: () => this.changeStatus(team, 'active') },
           { label: 'Inactive',    icon: 'pi pi-ban',          disabled: team.status === 'inactive',    command: () => this.changeStatus(team, 'inactive') },
           { label: 'Maintenance', icon: 'pi pi-wrench',       disabled: team.status === 'maintenance', command: () => this.changeStatus(team, 'maintenance') },

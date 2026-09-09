@@ -7,8 +7,6 @@ import { Agent, Page, PageParams, PaiementAgent, PaiementAgentDetail } from '../
 import { AgentDataService, PaiementAgentFilter } from '../contracts/agent-data.service';
 import { mapAgentDto, mapPaiementAgentDetailDto, mapPaiementAgentDto } from './mappers/agent.mapper';
 
-// Implémentation réelle, câblée en dur sur AGENT_DATA_SERVICE dans
-// financial-dashboard.routes.ts — voir INTEGRATION.md pour la liste des endpoints.
 @Injectable()
 export class AgentDataHttpService implements AgentDataService {
   private readonly http = inject(HttpClient);

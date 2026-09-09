@@ -40,11 +40,6 @@ interface ClientOpt {
   address: string;
   zone: string;
   phone?: string;
-  // Éligibilité réelle (EligibilityService, backend) — affichée dans la liste
-  // de sélection pour que l'agence le sache AVANT de choisir un client, plutôt
-  // que de découvrir le rejet seulement à la soumission (createPlanningV2
-  // bloque désormais la création d'un planning individuel pour un client non
-  // éligible, chantier EligibilityService).
   eligible?: boolean;
   eligibilityReason?: string;
 }
@@ -90,15 +85,7 @@ export class PlanningCreate implements OnInit {
 
   readonly today = new Date();
 
-  // Bug remonté en usage réel : la date envoyée à l'API ne correspondait pas toujours à
-  // celle sélectionnée dans le p-datepicker (décalage constaté correspondant à un aller-
-  // retour du Date object par le composant, potentiellement via une sérialisation UTC
-  // interne). Plutôt que de continuer à faire confiance à `this.form.value.date` au moment
-  // de la soumission, on capture la date choisie IMMÉDIATEMENT à la sélection (événement
-  // `(onSelect)`, qui donne le Date object brut du calendrier) et on la fige aussitôt en
-  // chaîne "YYYY-MM-DD" — jamais re-réinterprétée ensuite. Utilisée en priorité à la
-  // soumission ; `_dateToApiStr(v.date)` ne sert plus que de repli si l'utilisateur n'a
-  // jamais interagi avec le picker (ne devrait pas arriver, le champ est requis).
+  
   pickedDateStr = signal<string | null>(null);
 
   onDateSelected(d: Date | null): void {
@@ -132,14 +119,7 @@ export class PlanningCreate implements OnInit {
     { id: 'speciaux',    label: 'Déchets spéciaux', icon: 'warning',     color: '#ef4444', bg: '#fef2f2' },
   ];
 
-  // Moteur V1 legacy supprimé, récurrence V2 câblée (backend
-  // services/planning.js::completePlanning génère automatiquement l'occurrence
-  // suivante à la clôture du planning précédent, selon `frequency`) — les options
-  // récurrentes sont donc réactivées. Le rythme ("tous les X jours") est
-  // entièrement dérivé de `frequency` : plus de sélection de jours de la semaine
-  // ni de date de fin (aucune des deux n'est un concept que le backend implémente
-  // — une série récurrente continue jusqu'à annulation explicite, voir
-  // cancelPlanning côté backend).
+
   readonly frequencies = [
     { value: 'unique',       label: 'Collecte unique' },
     { value: 'quotidien',    label: 'Quotidien' },
@@ -155,7 +135,6 @@ export class PlanningCreate implements OnInit {
   // ── Conflict check ────────────────────────────────────────────
   conflicts         = signal<ConflictResult[]>([]);
   checkingConflicts = signal(false);
-  /** Coché explicitement par l'utilisateur pour outrepasser les conflits NON bloquants (jamais pour les bloquants, qui ne peuvent pas être outrepassés). */
   acknowledgeConflicts = signal(false);
 
   hasBlockingConflict = computed<boolean>(() => this.conflicts().some(c => c.blocking));
@@ -192,11 +171,7 @@ export class PlanningCreate implements OnInit {
   // ── Computed ─────────────────────────────────────────────────
   currentType = computed<string>(() => this.formValue()['type'] ?? '');
 
-  // Chantier "résoudre de vrais clients zone/secteur" — pour zone/secteur, `50` était une
-  // constante inventée (jamais lue depuis la sélection réelle). Remplacée par le vrai
-  // comptage renvoyé par ZoneSelectorComponent (GET /planning/zone-client-count) via
-  // `onZoneSelected()` ci-dessous. `null` = pas encore résolu / indisponible — jamais une
-  // estimation par défaut.
+
   zoneClientCount = signal<number | null>(null);
 
   estimatedHouseholds = computed<number | null>(() => {
@@ -250,7 +225,6 @@ export class PlanningCreate implements OnInit {
   // Alias for template compatibility
   get mockClients() { return this.apiClients(); }
 
-  /** Nom du groupe à afficher dans le récap (fonctionne en mode new et existing). */
   selectedGroupName = computed<string>(() => {
     if (this.groupMode() === 'existing') {
       const g = this.existingGroups().find(x => x._id === this.selectedExistingGroupId());
@@ -277,9 +251,6 @@ export class PlanningCreate implements OnInit {
     this._watchTypeChange();
     this._loadTeams();
     this._loadClients();
-    // Alimente PlanningService.plannings(), dont app-planning-type-selector
-    // dérive le nombre de plannings par type (0 partout sans cet appel,
-    // puisque cette page n'appelait jusqu'ici jamais loadPlannings()).
     this.svc.loadPlannings();
 
     // Détection du mode édition / duplication via query params
@@ -300,11 +271,9 @@ export class PlanningCreate implements OnInit {
     this.isLoadingEdit.set(true);
     this.svc.getPlanning(id).subscribe({
       next: planning => {
-        // Date : construire localement pour éviter le décalage UTC du DatePicker
         const date = this._parsePlanningDate(planning.date);
         this.pickedDateStr.set(date ? this._dateToApiStr(date) : null);
 
-        // clientId et groupeId peuvent être des objets peuplés selon l'API
         const clientRaw: any = (planning as any).clientId;
         const clientIdStr: string = typeof clientRaw === 'object' && clientRaw?._id
           ? clientRaw._id
@@ -505,9 +474,6 @@ export class PlanningCreate implements OnInit {
           eligibilityReason: c.eligibility?.reason,
         })));
         this.isLoadingClients.set(false);
-        // Chargement déclenché par le focus sur un champ encore vide (voir
-        // onClientSearchFocus()) : afficher les suggestions par défaut
-        // maintenant que la liste vient d'arriver, sans attendre une saisie.
         if (!this.clientSearchQuery().trim()) {
           this._showDefaultClientSuggestions();
         }
@@ -548,16 +514,13 @@ export class PlanningCreate implements OnInit {
       if (!raw) return;
       const d = JSON.parse(raw);
       this.form.patchValue(d);
-      // Même précaution que pour l'édition/duplication : `d.date` vient d'un JSON.parse,
-      // donc une chaîne — repasse par le parsing "date seule" sûr plutôt que de faire
-      // confiance à un éventuel round-trip Date déjà fait avant la sauvegarde du brouillon.
       if (typeof d.date === 'string') {
         const parsed = this._parsePlanningDate(d.date);
         this.pickedDateStr.set(parsed ? this._dateToApiStr(parsed) : null);
       }
       if (d.wasteTypes?.length)    this.selectedWasteTypes.set(d.wasteTypes);
       if (d.teams?.length)         this.selectedTeamId.set(d.teams[0] ?? null);
-    } catch { /* ignore */ }
+    } catch {  }
   }
 
   private _syncFormValueSignal(): void {
@@ -627,12 +590,6 @@ export class PlanningCreate implements OnInit {
       case 2: return !!fv['date'] && !!fv['startTime'];
       case 3: return this.selectedWasteTypes().length > 0;
       case 4: return !!this.selectedTeamId();
-      // Un conflit bloquant (même équipe+même jour, client/groupe déjà planifié
-      // cette semaine) empêche TOUJOURS de continuer. Un conflit non-bloquant
-      // (même équipe cette semaine sur un autre jour, même zone déjà couverte)
-      // exige une confirmation explicite de l'utilisateur (case à cocher) —
-      // avant ce correctif, cette étape était toujours valide, ignorant
-      // totalement les conflits détectés.
       case 5:
         if (this.hasBlockingConflict()) return false;
         if (this.hasOnlyWarningConflicts()) return this.acknowledgeConflicts();
@@ -710,7 +667,7 @@ export class PlanningCreate implements OnInit {
     this.filteredClients.set(
       this.apiClients().filter(c => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q))
     );
-    // Also trigger API search if few local results
+    
     if (this.filteredClients().length < 3) {
       this._loadClients(query);
     }
@@ -749,7 +706,7 @@ export class PlanningCreate implements OnInit {
     this.selectedExistingGroupId.set(group._id);
   }
 
-  /** Message d'erreur du domaine ClientGroup — controllers/clientGroup.js renvoie `{success:false, error: "texte"}` (chaîne, pas d'objet imbriqué). */
+  /** Message d'erreur du domaine ClientGroup  */
   private _groupErrorMessage(err: any, fallback: string): string {
     return err?.error?.error ?? fallback;
   }
@@ -760,9 +717,6 @@ export class PlanningCreate implements OnInit {
     this.managingGroupId.set(next);
     this.groupMemberSearchQuery.set('');
     this.groupMemberSuggestions.set([]);
-    // Nécessaire pour proposer des candidats à l'ajout — pas chargé
-    // automatiquement en mode "groupe existant" (seul le mode "individuel" le
-    // déclenchait jusqu'ici).
     if (next && !this.apiClients().length && !this.isLoadingClients()) {
       this._loadClients();
     }
@@ -860,9 +814,6 @@ export class PlanningCreate implements OnInit {
       quartier:        sel.quartier       ?? '',
       quartierId:      sel.quartierId     ?? '',
     }, { emitEvent: true });
-    // ZoneSelectorComponent émet d'abord avec clientCount:null (sélection immédiate),
-    // puis une 2e fois une fois le vrai comptage résolu (voir zone-selector.ts) — les
-    // deux émissions sont reflétées ici, jamais une estimation locale.
     this.zoneClientCount.set(sel.clientCount);
   }
 
@@ -898,7 +849,7 @@ export class PlanningCreate implements OnInit {
     });
   }
 
-  // ── Team add / remove (persiste immédiatement en mode édition) ─
+  
   addTeamChip(teamId: string): void {
     if (!teamId || this.teamSaving()) return;
     if (this.isEditMode()) {
@@ -955,8 +906,7 @@ export class PlanningCreate implements OnInit {
     if (v.arrondissementId)  body.arrondissementId  = v.arrondissementId;
     if (v.secteurId)         body.secteurId         = v.secteurId;
     if (v.quartierId)        body.quartierId        = v.quartierId;
-    // `cc` peut être `null` (zone/secteur : comptage pas encore résolu ou indisponible)
-    // — dans ce cas on n'envoie rien plutôt qu'une estimation, `cc > 0` l'exclut déjà.
+
     const cc = this.estimatedHouseholds();
     if (cc !== null && cc > 0) { body.clientsCount = cc; body.estimatedDuration = Math.ceil(cc * 5); }
     return body;
@@ -998,8 +948,7 @@ export class PlanningCreate implements OnInit {
   calculateEndTime(): void {
     const start = this.form.get('startTime')?.value as string;
     const h = this.estimatedHouseholds();
-    // `h` peut être `null` (zone/secteur : comptage pas encore résolu/indisponible) —
-    // `!h` couvre ce cas comme `0` : pas de calcul auto, l'utilisateur saisit l'heure.
+
     if (!start || !h) return;
     const [hh, mm] = start.split(':').map(Number);
     const endMin   = hh * 60 + mm + Math.ceil(h * 5);
@@ -1047,14 +996,9 @@ export class PlanningCreate implements OnInit {
     if (v.arrondissementId) body.arrondissementId = v.arrondissementId;
     if (v.secteurId)        body.secteurId        = v.secteurId;
     if (v.quartierId)       body.quartierId       = v.quartierId;
-    // Rejeté par le serveur si des conflits bloquants existent, quelle que
-    // soit cette valeur — n'autorise le passage outre que pour les conflits
-    // non-bloquants, et seulement si l'utilisateur les a explicitement
-    // acquittés à l'étape précédente (voir _isStepValid(5)).
+
     body.acknowledgeConflicts = this.acknowledgeConflicts();
 
-    // Métriques calculées côté client — `null` (zone/secteur non résolu/indisponible)
-    // n'envoie jamais de valeur inventée, exclu par `clientsCount > 0` ci-dessous.
     const clientsCount = this.estimatedHouseholds();
     if (clientsCount !== null && clientsCount > 0) {
       body.clientsCount      = clientsCount;

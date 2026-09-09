@@ -29,10 +29,6 @@
 
   // ── Panneau liste ──────────────────────────────────────────────
   &__list-panel {
-    // min-width: 0 indispensable sur un item de grid/flex : sans lui, un enfant large
-    // (ici les tableaux transposés de large contenu) refuse de rétrécir sous sa propre
-    // largeur intrinsèque et pousse toute la carte — voire la page entière — au-delà du
-    // viewport au lieu de faire défiler seulement le tableau (cf. .detail-table-scroll).
     min-width: 0;
     background: var(--white);
     border: 1px solid var(--surface-200, #e2e8f0);
@@ -145,9 +141,6 @@
 
   // ── Panneau détail ─────────────────────────────────────────────
   &__detail {
-    // Même raison que .access-mgmt__list-panel ci-dessus : cet item de grid doit pouvoir
-    // rétrécir sous la largeur intrinsèque des tableaux transposés qu'il contient, sinon
-    // c'est toute la carte (et la page, sur mobile) qui déborde au lieu du seul tableau.
     min-width: 0;
     background: var(--white);
     border: 1px solid var(--surface-200, #e2e8f0);
@@ -305,14 +298,8 @@
   }
 }
 
-// Un onglet/droit par COLONNE, "Onglet"/"Rôle financier"/"Accès"/etc. en en-tête de LIGNE
-// (première colonne, `<th scope="row">`) — défile horizontalement plutôt que verticalement.
 .detail-table-scroll {
   overflow-x: auto;
-  // `overflow-y` explicite : sans lui, la spec CSS force ce second axe à `auto` dès que
-  // `overflow-x` vaut autre chose que `visible`, ce qui faisait apparaître une barre de
-  // défilement verticale parasite (débordant même hors du panneau) alors qu'il n'y a
-  // jamais de contenu à faire défiler verticalement ici.
   overflow-y: hidden;
   max-width: 100%;
   border-radius: 10px;
@@ -323,11 +310,6 @@
 }
 
 .detail-table {
-  // Jamais étiré au-delà de son propre contenu (pas de min-width: 100%, qui forçait
-  // navigateur à répartir l'espace en trop de façon incohérente entre les colonnes,
-  // rendant la mise en page instable/non responsive) — la largeur totale dépend
-  // uniquement du nombre et de la longueur des colonnes ; `.detail-table-scroll` prend le
-  // relais avec un défilement horizontal si ça dépasse l'espace disponible.
   width: max-content;
   max-width: 100%;
   border-collapse: collapse;
@@ -365,8 +347,6 @@
     text-align: center;
   }
 
-  // Section sans effet tant que droitsFinance (section 2) est désactivé — grisée pour ne
-  // jamais donner l'impression qu'un droit coché est réellement accordé.
   &--inactive {
     opacity: 0.55;
 
@@ -479,10 +459,6 @@
     }
   }
 
-  // En dessous de ~600px, les 3 boutons + le spacer se compressaient sur une seule
-  // ligne : le libellé le plus long ("Appliquer les droits par défaut du rôle")
-  // retournait à la ligne sur lui-même en écrasant Annuler/Enregistrer. On empile
-  // plutôt les 3 boutons en pleine largeur.
   @media (max-width: 600px) {
     flex-direction: column;
     align-items: stretch;

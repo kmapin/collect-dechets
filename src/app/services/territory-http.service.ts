@@ -5,27 +5,6 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Country, City, Arrondissement, Sector, Quartier } from '../models/countries-org.model';
 
-// Chantier "unifier la géographie" — pendant réel (HTTP, backend) de
-// CountriesOrgMockService (data/countries-org.mock.ts, en mémoire) : même hiérarchie
-// Country -> City -> Arrondissement -> Sector -> Quartier, mêmes modèles TypeScript
-// (models/countries-org.model.ts), mais lue depuis /api/territories/* au lieu d'un
-// tableau statique — ajouter une ville/un pays devient une opération de données (seed
-// ou back-office), plus un déploiement de code.
-//
-// Différence assumée avec CountriesOrgMockService : un vrai appel réseau est asynchrone
-// (Observable), pas un tableau synchrone — les appelants devront s'adapter à l'async au
-// moment de basculer dessus (délibérément hors périmètre de ce chantier, voir le rapport
-// dans docs/).
-//
-// Le backend renvoie des documents Mongoose plats ({_id, name, code, countryId, ...},
-// vérifié directement : `_id`, jamais `id` — Mongoose n'ajoute pas de virtuel `id` par
-// défaut dans ce projet), pas la forme imbriquée du mock (`city.country`,
-// `quartier.sector.arrondissement...`). `_normalizeId()` ci-dessous renomme `_id` en
-// `id` pour rester compatible avec `Country`/`City`/`Arrondissement`/`Sector`/`Quartier`
-// (mêmes interfaces que CountriesOrgMockService, `id: string`) sans toucher aux dizaines
-// d'appelants déjà écrits contre ce contrat — jamais de `.country`/`.city`/
-// `.arrondissement`/`.sector` imbriqué lu nulle part, seul le comptage plat ({_id, name,
-// code}) est réellement utilisé pour peupler des sélecteurs en cascade.
 function normalizeId<T extends { _id?: string; id?: string }>(item: T): T {
   return item._id ? { ...item, id: item._id } : item;
 }

@@ -22,10 +22,6 @@
               Mon agence
             </button>
           }
-          <!-- <button class="qa-btn" (click)="showReportModal = true">
-            <i class="material-icons">report_problem</i>
-            Signaler un problème
-          </button> -->
           <button class="qa-btn" (click)="openSpontaneousRequestModal()">
             <i class="material-icons">local_shipping</i>
             Collecte express
@@ -78,8 +74,6 @@
             <h3>Collectes de ce mois</h3>
             <p class="stat-value">
               {{calculateMonthlyCollections()}}
-              <!-- {{ getTotalCompletedCollectionsLength() }} / {{
-              getMonthlyCollectionsLength() }} -->
             </p>
             <!-- <span class="stat-detail">{{ getCompletedCollectionRate() }}% de réussite ; {{ getUncompletedCollectionRate() }}% d'échecs</span> -->
             <span class="stat-detail"
@@ -105,16 +99,6 @@
               </div>
             </div>
 
-            <!-- <div class="stat-card card">
-            <div class="stat-icon subscription">
-              <i class="material-icons">card_membership</i>
-            </div>
-            <div class="stat-info">
-              <h3>Abonnement</h3>
-              <p class="stat-value">{{ subscription?.serviceName }}</p>
-              <span class="stat-detail">{{ subscription?.price }}€/mois</span>
-            </div>
-          </div> -->
 
           <div class="stat-card card">
             <div class="stat-icon payment">
@@ -165,9 +149,6 @@
           <!-- Contenu principal -->
           <div class="main-content">
             <div class="left-column">
-              <!-- Plannings à venir : second pull, complémentaire au "Planning de la
-                   semaine" ci-dessous — montre un planning publié AVANT même qu'une
-                   collecte concrète n'existe (qui n'apparaît qu'au démarrage). -->
               @if (upcomingPlannings.length > 0) {
                 <section class="upcoming-collections card">
                   <div class="section-header">
@@ -213,9 +194,6 @@
                     <i class="material-icons">refresh</i>
                     Actualiser
                   </button>
-                  <!-- Point d'entrée séparé pour un signalement indépendant (Prompt 05,
-                       point 4) — accessible sans passer par une collecte précise,
-                       contrairement au bouton "Signaler" par ligne ci-dessous. -->
                   <button
                     class="btn btn-secondary btn-small"
                     (click)="reportIndependentIssue()"
@@ -244,10 +222,6 @@
                           {{ collection?.code?.startTime ? collection?.code?.startTime+ " - "  : ""}}  {{ collection?.code?.endTime ? collection?.code?.endTime : "" }}
                         </p>
                         }
-                        <!-- <p class="collection-address">
-                        <i class="material-icons">location_on</i>
-                        {{ collection.zone }}
-                      </p> -->
                     </div>
                     <div class="collection-status">
                       <span class="status-badge" [class]="'status-scheduled'">
@@ -294,18 +268,6 @@
                   <i class="material-icons">history</i>
                   Historique des collectes
                 </h2>
-                <!-- <div class="filter-controls">
-                <select
-                  [(ngModel)]="historyFilter"
-                  (change)="filterHistory()"
-                  class="filter-select"
-                  >
-                  <option value="all">Toutes</option>
-                  <option value="completed">Réalisées</option>
-                  <option value="missed">Manquées</option>
-                  <option value="cancelled">Annulées</option>
-                </select>
-              </div> -->
             </div>
 
             <div class="history-list">
@@ -390,80 +352,6 @@
             </section>
 
             <!-- Messages -->
-            <!-- <section class="collection-message card">
-            <div class="section-header">
-              <h2>
-                <i class="material-icons">message</i>
-                Messagerie
-              </h2>
-              <div class="filter-controls">
-                <span class="section-count"
-                  >{{ unreadMessageCount }} message(s) non lu(s)</span
-                  >
-                </div>
-              </div>
-
-              <div class="history-list history-message">
-                <div
-                  *ngFor="let message of connectedUserMessages"
-                  class="history-item"
-                  >
-                  <div class="history-date">
-                    <div class="day">
-                      {{ message.timestamp | date : "dd" }}
-                    </div>
-                    <div class="month">
-                      {{ message.timestamp | date : "MMM" }}
-                    </div>
-                  </div>
-                  <div class="history-info">
-                    <h4>{{ message.content }}</h4>
-                    <p class="history-time">
-                      {{ message.timestamp | date : "HH:mm" }}
-                    </p>
-                    <p
-                      class="history-collector"
-                      *ngIf="message.sender !== currentUser?._id"
-                      >
-                      Reçu de
-                      <span class="sender-name">{{
-                        message.senderName
-                      }}</span>
-                    </p>
-                    <p
-                      class="history-collector"
-                      *ngIf="message.sender === currentUser?._id"
-                      >
-                      Moi
-                    </p>
-                  </div>
-                  <div class="history-status">
-                    <span class="status-badge">
-                      {{ message.read === "false" ? "Non lu" : "Lu" }}
-                    </span>
-                    <div
-                      class="history-rating"
-                      *ngIf="message.read === 'false'"
-                      >
-                      <button
-                        class="rate-btn"
-                        (click)="readAndRespondMessage(message)"
-                        *ngIf="!message.rating"
-                        >
-                        Repondre
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div *ngIf="unreadMessageCount === 0" class="empty-state">
-                  <i class="material-icons">history</i>
-                  <h3>Aucun message</h3>
-                  <p>Vos messages apparaîtront ici</p>
-                </div>
-              </div>
-            </section>
-            -->
             <!-- Messages 2 -->
             <section class="collection-message card" #chatMessages>
               <div class="section-header">
@@ -589,17 +477,6 @@
                           </button>
                         </div>
                         <form class="drawer-body">
-                          <!-- <div class="form-group">
-                          <label>Destinataire</label>
-                          <select [(ngModel)]="messageData.receiver" name="receiver" required>
-                            <option value="">Sélectionnez</option>
-                            <option value="missed_collection">Collecte manquée</option>
-                            <option value="compliance_issue">Non-conformité</option>
-                            <option value="technical_issue">Problème technique</option>
-                            <option value="complaint">Réclamation</option>
-                            <option value="other">Autre</option>
-                          </select>
-                        </div>-->
                           <div class="drawer-section">
                             <h4 class="drawer-section-title">
                               <i class="material-icons">message</i> Message
@@ -639,9 +516,6 @@
               </div>
 
               <div class="right-column">
-                <!-- Bandeau de continuité de service — piloté uniquement par
-                     EligibilityService (source='CONTRACT'), jamais recalculé
-                     ici. Même bandeau que pages/subscription/subscription.html. -->
                 @if (showContractContinuityBanner) {
                 <section class="subscription-info card bg-blue-100">
                   <div class="info-item" style="border-bottom: none;">
@@ -653,8 +527,6 @@
                 </section>
                 }
 
-                <!-- Bandeau symétrique — non éligible, piloté uniquement par
-                     `eligible`/`reason`, jamais recalculé ici. -->
                 @if (showIneligibilityBanner) {
                 <section class="subscription-info card bg-blue-100" style="border-left: 4px solid var(--error-color);">
                   <div class="info-item" style="border-bottom: none;">
@@ -711,16 +583,6 @@
                           Voir l'agence
                         </button>
                       </div>
-                      <!-- <div class="subscription-actions">
-                      <button class="btn btn-primary btn-full" (click)="showPaymentModal = true">
-                        <i class="material-icons">payment</i>
-                        Payer maintenant
-                      </button>
-                      <button class="btn btn-secondary btn-small" routerLink="/subscription">
-                        <i class="material-icons">edit</i>
-                        Se réabonner
-                      </button>
-                    </div> -->
                   </div>
                 } @else {
                   <div class="info-item">
@@ -774,31 +636,6 @@
               </section>
 
               <!-- Paiement en ligne -->
-              <!-- <section class="payment-section card">
-              <div class="section-header">
-                <h2>
-                  <i class="material-icons">payment</i>
-                  Paiement
-                </h2>
-              </div>
-
-              <div class="payment-info" *ngIf="activeSubscription">
-                <div class="next-payment">
-                  <h4>Prochain paiement</h4>
-                  <p class="payment-date">{{ getNextPayment(activeSubscription?.endDate) }}</p>
-                  <p class="payment-amount">{{ activeSubscription?.amount }} <sup>F CFA</sup></p>
-                </div>
-
-                <div class="payment-method">
-                  <h4>Mode de paiement</h4>
-                  <div class="payment-card">
-                    <i class="material-icons">credit_card</i>
-                    <span>**** **** **** 1234</span>
-                    <button class="change-btn" (click)="changePaymentMethod()">Modifier</button>
-                  </div>
-                </div>
-              </div>
-            </section> -->
 
             <!-- Historique des paiements -->
             <section class="payment-history card">
@@ -835,9 +672,6 @@
                 </div>
               </div>
 
-              <!-- Filtres période/statut (chantier Finance/Paiements, item 4) — le filtre
-                   "client" demandé ne s'applique pas ici : le client ne voit que ses
-                   propres paiements. -->
               <div class="payment-history-filters">
                 <select [(ngModel)]="paymentPeriodFilter" (change)="loadPaymentHistory()" class="filter-select">
                   <option value="all">Toute la période</option>
@@ -855,8 +689,6 @@
                 </select>
               </div>
 
-              <!-- Même libellé que celui inséré dans le PDF/CSV/Excel exportés — jamais un
-                   texte différent entre l'écran et les documents téléchargés. -->
               <p class="payment-history-periode">{{ periodeCouvertePaiements() }}</p>
 
               <div class="payments-list">
@@ -878,9 +710,6 @@
                       <p class="payment-method-text">
                         {{ payment.method }}<span *ngIf="payment.agencyName"> — {{ payment.agencyName }}</span>
                       </p>
-                      <!-- Même valeur que la colonne "Période concernée" des exports
-                           (periodeConcernee()) — jamais un texte différent entre l'écran
-                           et les documents téléchargés. -->
                       <p class="payment-period-text">Période concernée : {{ periodeConcernee(payment) }}</p>
                     </div>
                     <div class="payment-amount">
@@ -978,12 +807,6 @@
                   </div>
                 }
 
-                <!-- <div class="address-map">
-                <div class="map-placeholder">
-                  <i class="material-icons">map</i>
-                  <p>Localisation précise</p>
-                </div>
-              </div> -->
             </section>
 
             
@@ -1044,10 +867,6 @@
                 <option value="other">Autre</option>
               </select>
             </div>
-            <!--<div class="form-group">
-            <label>Date du problème</label>
-            <input type="date" [(ngModel)]="reportData.date" name="date" required>
-          </div>-->
           </form>
           <div class="drawer-footer">
             <div class="drawer-actions">
@@ -1068,9 +887,6 @@
     </div>
   }
 
-    <!-- Drawer de demande de collecte express (passage spontané, hors planning) —
-         même patron que les drawers admin-dashboard.html (drawer-overlay/drawer-content/
-         drawer-header/drawer-body/drawer-section/drawer-footer). -->
     @if (showSpontaneousRequestModal) {
       <div
         class="drawer-overlay"
@@ -1240,20 +1056,6 @@
                   placeholder="Entrez le montant en FCFA"
                   />
                 </div>
-                <!-- <div class="payment-option" >
-                <input type="radio" id="transfer" name="payment" value="transfer" [disabled]="true">
-                <label for="transfer">
-                  <i class="material-icons">account_balance</i>
-                  Virement bancaire
-                </label>
-              </div>
-              <div class="payment-option">
-                <input type="radio" id="card" name="payment" value="card"  [disabled]="true">
-                <label for="card">
-                  <i class="material-icons">credit_card</i>
-                  Carte bancaire
-                </label>
-              </div> -->
             </div>
             <div class="payment-summary">
               <h4>Récapitulatif</h4>

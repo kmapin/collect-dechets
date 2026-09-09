@@ -6,10 +6,6 @@ import { environment } from '../../environments/environment';
 import { Redevance } from '../models/redevance.model';
 import { ApercuPaiementGroupe, PaiementGroupeRedevance, ReductionType } from '../models/paiement-groupe-redevance.model';
 
-/**
- * Un appel par endpoint `routes/redevanceRoute.js`, même patron que
- * `contrat.service.ts`.
- */
 @Injectable({
   providedIn: 'root',
 })

@@ -5,9 +5,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { PaymentResponse, PaymentStatus } from '../../../models/payment/payment-response.model';
 
-/**
- * Composant affichant le statut d'un paiement Mobile Money
- */
 @Component({
   selector: 'app-payment-status',
   standalone: true,
@@ -23,9 +20,6 @@ export class PaymentStatusComponent {
   /** Référence à l'énumération PaymentStatus pour utilisation dans le template */
   PaymentStatus = PaymentStatus;
 
-  /**
-   * Retourne l'icône appropriée selon le statut du paiement
-   */
   getStatusIcon(): string {
     console.log('paymentResponsev', this.paymentResponse);
     if (!this.paymentResponse) return 'help_outline';
@@ -44,9 +38,6 @@ export class PaymentStatusComponent {
     }
   }
 
-  /**
-   * Retourne la classe CSS appropriée selon le statut du paiement
-   */
   getStatusClass(): string {
     if (!this.paymentResponse) return '';
     

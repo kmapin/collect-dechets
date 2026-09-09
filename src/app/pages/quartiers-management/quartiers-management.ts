@@ -31,16 +31,6 @@ interface QuartierForm {
 
 const EMPTY_FORM: QuartierForm = { name: '', code: '', cityId: '', arrondissementId: '', sectorId: '', latitude: null, longitude: null };
 
-/**
- * "Gestion des quartiers" — chantier "géolocalisation des quartiers". Jusqu'ici, aucune
- * interface ne permettait de créer/modifier un quartier : seul un appel API direct ou le
- * script de seed le pouvait. `latitude`/`longitude` existaient déjà sur le schéma backend
- * (models/neighbourhood.js) mais n'étaient ni exigés ni exposés nulle part côté frontend —
- * la carte "Couverture Territoriale" (admin-dashboard.ts) devait donc s'appuyer sur une
- * table de coordonnées codée en dur (OUAGA_COORDS) faute de vraie donnée. Cette page est le
- * seul point d'entrée réel pour renseigner cette géolocalisation désormais, super_admin
- * uniquement (route gardée par adminGuard, voir app.routes.ts).
- */
 @Component({
   selector: 'app-quartiers-management',
   standalone: true,

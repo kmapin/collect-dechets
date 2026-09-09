@@ -1,6 +1,3 @@
-// Mise en page imprimable du relevé (F10). Le chrome du shell (topbar/onglets) est
-// masqué séparément dans features/shell/finance-layout.scss — un composant ne peut pas,
-// avec l'encapsulation de vues par défaut, cibler du CSS en dehors de son propre template.
 @media print {
   .no-print {
     display: none !important;

@@ -1,6 +1,3 @@
-// ── Formatage de dates lisibles (FR), partagé Teams & Planning ──────
-// Objectif : ne jamais afficher une date ISO brute (ex: 2026-07-08T14:35:22.000Z)
-// dans un template ; toujours passer par une de ces fonctions.
 
 /** Formatte une date (ISO datetime ou YYYY-MM-DD) en date FR lisible, sans heure. */
 export function formatFrDate(date: string | null | undefined, month: 'short' | 'long' | 'numeric' = 'long'): string {
@@ -30,12 +27,6 @@ export function formatFrTime(iso: string | null | undefined): string {
   return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-/**
- * Date relative ("il y a 10 min") — chantier Notifications. Seuils repris
- * d'admin-dashboard.ts pour rester cohérent avec l'unique autre endroit de l'app qui
- * affiche déjà une date relative ; au-delà de 7 jours, délègue à formatFrDateTime plutôt
- * que d'inventer un 3e format ("il y a N semaines/mois").
- */
 export function formatFrRelative(iso: string | null | undefined): string {
   if (!iso) return '—';
   const d = new Date(iso);

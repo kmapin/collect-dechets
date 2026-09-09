@@ -107,11 +107,6 @@ export class Profile implements OnInit, OnDestroy {
   isLoading: boolean = false;
   currentUserId: string | null = null;
 
-  // ── Position géographique réelle (chantier "coordonnées client") ─────────
-  // Setter plutôt qu'un @ViewChild classique : cette carte vit dans une section
-  // affichée seulement `@if (user?.role === 'client')`, donc le <div> n'existe pas
-  // encore au moment de ngOnInit/ngAfterViewInit — le setter est rappelé par Angular
-  // dès que l'élément apparaît réellement dans le DOM (une fois `user` chargé).
   private profileMap?: L.Map;
   private profileMarker?: L.Marker;
   isLocatingMe = false;
@@ -129,13 +124,6 @@ export class Profile implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.currentUserId = this.authService.getCurrentUser()?._id!;
     if(this.currentUserId){
-      // Chantier "migrer le frontend vers TerritoryHttpService" — `getAllCountries()`
-      // était synchrone (CountriesOrgMockService), donc `this.cities` était déjà rempli
-      // avant même que la réponse HTTP de `getUser()` puisse revenir, garantissant que
-      // le pré-remplissage de la cascade (onCityChange -> cityObj = this.cities.find())
-      // trouve toujours la bonne ville. Devenu asynchrone, il faut attendre que
-      // `getAllCountries()` ait fini avant d'appeler `getUser()`, sinon la cascade peut
-      // s'exécuter avant que `this.cities` soit peuplé.
       this.getAllCountries(() => this.getUser(this.currentUserId!));
     }
   }
@@ -181,15 +169,6 @@ export class Profile implements OnInit, OnDestroy {
     }
   }
 
-  // async generateQRCodePDF(data: string): Promise<string> {
-  //   if (!data) return '';
-  //   try {
-  //     return await QRCode.toDataURL(data, { width: 256, margin: 2 });
-  //   } catch (err) {
-  //     console.error('Erreur QRCode:', err);
-  //     return '';
-  //   }
-  // }
 
   getUser(userID: string) {
     this.authService.getUserProfile(userID).subscribe((response: RegisterUserData | null) => {
@@ -201,20 +180,9 @@ export class Profile implements OnInit, OnDestroy {
       if (!this.user.address) {
         this.user.address = {};
       }
-      // Chantier "migrer le frontend vers TerritoryHttpService" — avant ce chantier,
-      // arrondissement/secteur étaient pré-remplis ICI en plus d'être déjà re-déclenchés
-      // par la cascade interne d'onCityChange() (appel HTTP en double, redondant même du
-      // temps du service synchrone). onCityChange() enchaîne désormais tout seul
-      // onArrondissementChange() puis onSecteurChange() une fois chaque étage résolu (si
-      // les valeurs existent sur l'adresse) — un seul déclenchement, jamais deux requêtes
-      // pour le même niveau.
       if (this.user.address.city) {
         this.onCityChange(this.user.address.city);
       }
-      // La carte peut déjà exister si l'utilisateur avait déjà le rôle 'client' au
-      // premier rendu (le setter @ViewChild ne se redéclenche pas juste parce que
-      // `userData` change) — on repositionne alors le marqueur sur la vraie valeur
-      // fraîchement chargée depuis le serveur, plutôt que de la laisser sur 0/0.
       if (this.profileMap) {
         this._setProfileMarkerPosition(
           this.userData.address.latitude || this.DEFAULT_MAP_CENTER[0],
@@ -225,8 +193,6 @@ export class Profile implements OnInit, OnDestroy {
     console.log("Current User", this.user);
   }
 
-  // Centre par défaut (Ouagadougou) — utilisé uniquement tant qu'aucune coordonnée
-  // réelle n'est encore enregistrée pour ce client (latitude/longitude à 0).
   private readonly DEFAULT_MAP_CENTER: [number, number] = [12.3714, -1.5197];
 
   private _initProfileMap(container: HTMLDivElement): void {
@@ -238,10 +204,6 @@ export class Profile implements OnInit, OnDestroy {
       attribution: '© OpenStreetMap', maxZoom: 19,
     }).addTo(this.profileMap);
 
-    // Icône explicite : l'icône par défaut de Leaflet référence des images relatives
-    // (images/marker-icon.png) qui ne survivent pas au bundling Angular — sans ceci le
-    // marqueur s'affiche comme une image cassée. Même contournement déjà utilisé dans
-    // ce projet pour la position utilisateur sur la carte d'accueil (home.ts).
     const pinIcon = L.icon({
       iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
       iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -256,16 +218,10 @@ export class Profile implements OnInit, OnDestroy {
       const pos = this.profileMarker!.getLatLng();
       this._applyPosition(pos.lat, pos.lng);
     });
-    // Cliquer ailleurs sur la carte déplace aussi le marqueur — plus rapide qu'un
-    // glisser-déposer précis pour une première position approximative.
     this.profileMap.on('click', (e: L.LeafletMouseEvent) => {
       this._applyPosition(e.latlng.lat, e.latlng.lng);
     });
 
-    // Le conteneur peut être mesuré avec une taille nulle si la section vient tout
-    // juste de devenir visible (transition CSS/reflow pas encore terminé) — sans ce
-    // recalcul différé, Leaflet peut afficher une carte grise tant qu'aucun geste
-    // utilisateur (zoom/pan) ne force un redraw.
     setTimeout(() => this.profileMap?.invalidateSize(), 200);
   }
 
@@ -280,23 +236,12 @@ export class Profile implements OnInit, OnDestroy {
     this._setProfileMarkerPosition(lat, lng);
   }
 
-  /**
-   * Utilise la géolocalisation réelle de l'appareil (plus précise qu'un
-   * clic approximatif sur la carte) — l'utilisateur doit ensuite cliquer sur
-   * "Modifier le compte" pour persister, exactement comme les autres champs
-   * de ce formulaire (aucun appel réseau supplémentaire introduit ici).
-   */
   useMyLocation(): void {
     if (this.isLocatingMe) return;
     if (!navigator.geolocation) {
       this.notificationService.showError('Erreur', "La géolocalisation n'est pas disponible sur cet appareil.");
       return;
     }
-    // Les navigateurs refusent la géolocalisation hors "contexte sécurisé" (HTTPS, ou
-    // localhost) — sans cette vérification, getCurrentPosition() renvoie un message
-    // d'erreur brut du navigateur ("Only secure origins are allowed...") peu clair pour
-    // l'utilisateur final. Vérifié AVANT l'appel plutôt que découvert seulement via
-    // l'échec, pour donner tout de suite un message exploitable.
     if (!window.isSecureContext) {
       this.notificationService.showError(
         'Géolocalisation indisponible',
@@ -332,69 +277,7 @@ export class Profile implements OnInit, OnDestroy {
     return roleLabels[role] || role;
   }
 
-  // onSave(): void {
-  //   if (this.user.role === "client") {
-  //     const userEdit = {
-  //       firstName: this.user.firstName,
-  //       lastName: this.user.lastName,
-  //       phone: this.user.phone,
-  //       address: {
-  //         street: this.user.address?.street || "",
-  //         doorNumber: this.user.address?.doorNumber || "",
-  //         doorColor: this.user.address?.doorColor || "",
-  //         arrondissement: this.user.address?.arrondissement || "",
-  //         sector: this.user.address?.sector || "",
-  //         neighborhood: this.user.address?.neighborhood || "",
-  //         city: this.user.address?.city || "",
-  //         postalCode: this.user.address?.postalCode || "",
-  //       },
-  //       termsAccepted: !!this.user.termsAccepted,
-  //       receiveOffers: !!this.user.receiveOffers,
-  //     };
       
-  //     this.authService.updateClient(this.user?._id, userEdit).subscribe(
-  //       (response) => {
-  //         // this.notificationService.showSuccess(
-  //         //   "Modification réussie",
-  //         //   "Votre profil a été mis à jour avec succès."
-  //         // );
-  //         this.getUser(this.user?._id); // Recharger les données utilisateur
-  //       },
-  //       (error) => {
-  //         this.notificationService.showError(
-  //           "Erreur",
-  //           "Une erreur est survenue lors de la modification du profil."
-  //         );
-  //       }
-  //     );
-  //   } else if (this.user.role === "agency") {
-  //     const agencyEdit = {
-  //       agencyName: this.user.agencyName,
-  //       agencyDescription: this.user.agencyDescription,
-  //       phone: this.user.phone,
-  //       email: this.user.email,
-  //       serviceZones: this.user.serviceZones || [],
-  //       services: this.user.services || [],
-  //       termsAccepted: !!this.user.termsAccepted,
-  //       receiveOffers: !!this.user.receiveOffers,
-  //     };
-  //     this.authService.updateClient(this.user?._id, agencyEdit).subscribe(
-  //       (response) => {
-  //         // this.notificationService.showSuccess(
-  //         //   "Modification réussie",
-  //         //   "Le profil de l’agence a été mis à jour avec succès."
-  //         // );
-  //         this.getUser(this.user?._id); // Recharger les données utilisateur
-  //       },
-  //       (error) => {
-  //         this.notificationService.showError(
-  //           "Erreur",
-  //           "Une erreur est survenue lors de la modification du profil agence."
-  //         );
-  //       }
-  //     );
-  //   }
-  // }
 
   //Edit agency
   edit: boolean = false;
@@ -468,9 +351,6 @@ export class Profile implements OnInit, OnDestroy {
     const disabled = this.isLoading;
     return disabled;
   }
-  /**
-   * Handles registration errors and displays appropriate messages
-   */
   private handleRegistrationError(
     error: string | { [key: string]: string[] } | undefined,
     fallbackMessage?: string
@@ -516,8 +396,6 @@ export class Profile implements OnInit, OnDestroy {
 
     // Handle AGENCY role using the unified register method
 
-    // Prepare agency registration data
-    // const registrationData: any = this.userData;
     const registrationData: RegisterUserData =
       this.authService.prepareRegistrationData(this.userData);
 

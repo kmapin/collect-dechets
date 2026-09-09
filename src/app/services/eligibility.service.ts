@@ -4,12 +4,6 @@ import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
-/**
- * Miroir de `services/eligibility.service.js` (backend) — source unique de
- * vérité pour "ce client peut-il bénéficier du service de collecte ?". Le
- * frontend ne recalcule jamais cette règle lui-même (Prompt 0 : "Le Planning
- * et tout autre appelant ne doit jamais implémenter lui-même ces règles").
- */
 export type EligibilitySource = 'CONTRACT' | 'SUBSCRIPTION' | 'NONE';
 
 export interface EligibilityResult {
@@ -18,16 +12,6 @@ export interface EligibilityResult {
   reason: string;
 }
 
-/**
- * Fonction pure — même comparaison que `services/eligibility.service.js`
- * (backend) pour déterminer si un Abonnement est actif "maintenant" :
- * `isActive === true` ET `endDate` dans le futur. Comparer `endDate`
- * directement (plutôt que de faire confiance à `isActive` seul) évite
- * d'afficher "Actif" pendant la fenêtre de latence du cron d'expiration
- * (jusqu'à 24h, `services/subscriptionScheduler.js` tourne à minuit).
- * Extraite ici pour être réutilisée par tout affichage qui lisait jusqu'ici
- * `Subscription.isActive` brut (chantier EligibilityService).
- */
 export function isSubscriptionCurrentlyActive(
   subscription: { isActive?: boolean; endDate?: string | Date } | null | undefined,
 ): boolean {

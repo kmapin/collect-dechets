@@ -8,14 +8,6 @@ type FeeBlockKey = 'clientPaymentFee' | 'agencyWithdrawalFee';
 
 const DEFAULT_BLOCK: FeeBlock = { enabled: false, type: 'PERCENTAGE', value: 0 };
 
-/**
- * DÉCISION MÉTIER — GESTION DES FRAIS PLATEFORME (Prompt F8/9, écran 1) — configure
- * CLIENT_PAYMENT_FEE et AGENCY_WITHDRAWAL_FEE (enabled/type/value), plateforme-wide
- * (V1, décision Checkpoint), super_admin uniquement (route gardée par
- * fee-config-admin.guard.ts). Validation client-side EN PLUS de celle du backend
- * (services/feeConfig.js::validateFeeBlock), jamais à sa place — le backend
- * revalide systématiquement, ce formulaire n'est qu'un confort utilisateur.
- */
 @Component({
   selector: 'app-fee-config-settings',
   standalone: true,
@@ -62,12 +54,6 @@ export class FeeConfigSettingsComponent implements OnInit {
     });
   }
 
-  /**
-   * Validation client-side (Règle explicite du Prompt F8 : "en plus de celle déjà
-   * faite côté backend") — mêmes règles que services/feeConfig.js::validateFeeBlock :
-   * un bloc désactivé n'a aucune contrainte sur `value` (comportement neutre côté
-   * FeeService, voir Prompt F3), pas la peine de bloquer sa sauvegarde.
-   */
   blockError(key: FeeBlockKey): string | null {
     const block = this[key];
     if (!block.enabled) return null;

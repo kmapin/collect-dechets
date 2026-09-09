@@ -16,11 +16,6 @@ type PageState = 'loading' | 'ready' | 'error';
 
 const PAGE_SIZE = 20;
 
-// Chantier "Notifications" — page /notifications, inbox réelle branchée sur le backend
-// (aucune donnée mockée). Organisation inspirée de Facebook (Tout/Non lu, liste
-// verticale, icône à gauche, indicateur non-lu) mais entièrement rendue avec le design
-// system existant de l'app (classes globales .container/.card/.btn/.page-header, voir
-// src/styles.scss) — jamais le style visuel de la référence.
 @Component({
   selector: 'app-notifications',
   standalone: true,
@@ -34,8 +29,6 @@ export class NotificationsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  // Rôles sans accès à /planning/detail/:id (voir notification-route.util.ts) : au
-  // clic sur une notification Planning, un résumé s'ouvre en drawer à la place.
   readonly planningSummaryId = signal<string | null>(null);
 
   readonly filter = signal<FilterKey>('all');
@@ -121,8 +114,6 @@ export class NotificationsComponent implements OnInit {
     this.openMenuId.set(null);
   }
 
-  // Marque comme lue (si nécessaire) PUIS navigue — source unique de décision partagée
-  // avec la cloche du header (notification-route.util.ts).
   open(item: NotificationItem): void {
     this.closeMenu();
     if (!item.read) {

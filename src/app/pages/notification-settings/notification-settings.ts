@@ -9,12 +9,6 @@ import {
 } from '../../services/notification-settings.service';
 import { UserRole } from '../../models/user.model';
 
-/**
- * Correspond à l'enum réel `Notification.type` (collecte-dechets-back/models/
- * Notification.js) — ne pas dupliquer/étendre cette liste sans mettre à jour
- * l'enum backend en parallèle, sous peine de proposer des toggles pour des
- * types qui n'existeront jamais.
- */
 const EVENT_TYPES: { key: string; label: string }[] = [
   { key: 'Subscribed', label: "Confirmation d'abonnement" },
   { key: 'Redevance', label: 'Rappel de paiement (échéance)' },
@@ -56,8 +50,6 @@ export class NotificationSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     const user = this.authService.getCurrentUser();
-    // super_admin configure les réglages globaux (plateforme) ; un manager ne
-    // configure que les réglages de SA propre agence — jamais le global.
     this.isGlobal = user?.role === UserRole.SUPER_ADMIN;
     this.agencyId = (user as any)?.agencyId || null;
     this.load();
@@ -92,8 +84,6 @@ export class NotificationSettingsComponent implements OnInit {
   }
 
   isEventEnabled(key: string): boolean {
-    // Absent de la config = activé par défaut (même règle que côté backend,
-    // services/notificationSettings.js::isEmailEnabledForEvent).
     return this.settings.eventsEnabled[key] !== false;
   }
 

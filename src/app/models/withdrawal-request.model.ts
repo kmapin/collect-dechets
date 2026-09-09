@@ -1,12 +1,3 @@
-// ============================================================
-// WITHDRAWAL REQUEST — Validation admin des retraits d'agence
-// ============================================================
-// Réutilise WithdrawalStatus/PaymentMethod déjà déclarés dans finance.model.ts
-// (WithdrawalStatus y était déjà défini mais jamais utilisé nulle part avant cette
-// fonctionnalité) plutôt que d'introduire une 4e nomenclature de statuts dans le projet.
-// "Merchant"/"Shop" du besoin initial correspondent ici aux vraies entités de l'app :
-// une agence (Agency = la "boutique") et son gestionnaire (Employee = le "marchand")
-// demandent le retrait du solde collecté par l'agence.
 import { PaymentMethod, WithdrawalStatus } from './finance.model';
 
 export { WithdrawalStatus, PaymentMethod };
@@ -32,11 +23,6 @@ export interface AdminWithdrawalRequest {
   // ── Retrait demandé ───────────────────────────────────────────
   amount: number;
   currency: string;
-  // Chantier Frais plateforme (Prompt F5/F8) — `fees`/`netAmount` restent les noms
-  // historiques de ce modèle (déjà utilisés par le template), désormais alimentés par
-  // le VRAI snapshot de frais (feeAmount/netAmountReceived) plutôt que hardcodés
-  // `undefined`. Champs enrichis ajoutés à côté pour le détail complet (Prompt F8,
-  // item 3 : "n'affiche pas juste un montant unique opaque").
   fees: number;
   netAmount: number;
   feeType?: 'FIXED' | 'PERCENTAGE';

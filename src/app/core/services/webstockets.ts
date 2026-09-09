@@ -15,11 +15,6 @@ export interface SocketMessage {
   updated_at: Date;
 }
 
-// Chantier Notifications : l'ancienne interface `SocketNotification` déclarée ici
-// (`user_id`/`created_at`/`title`) ne correspondait à AUCUN champ réel du document
-// backend (`models/Notification.js` a `user`/`createdAt`, jamais de `title`) — remplacée
-// par le vrai modèle partagé `NotificationItem`, alias gardé pour ne pas casser un import
-// existant ailleurs.
 export type SocketNotification = NotificationItem;
 
 @Injectable({
@@ -45,20 +40,6 @@ export class Webstockets {
     this.initializeSocket();
   }
 
-  /**
-   * Récupère le JWT courant — même source que `auth-interceptor-interceptor.ts`
-   * (`JSON.parse(localStorage.getItem('currentUser')).token`), PAS la clé
-   * séparée `authWasteToken` (posée par `auth.service.ts` mais jamais relue
-   * nulle part ailleurs dans l'app — un artefact mort).
-   *
-   * Corrigé (usage réel) : jusqu'ici AUCUN token n'était jamais envoyé au
-   * handshake du socket — le serveur (`server.js::io.use`) exige
-   * `socket.handshake.auth.token` et rejette sinon avec "Token manquant".
-   * Chaque tentative de connexion WebSocket échouait donc silencieusement,
-   * pour tout le monde, depuis toujours : `newNotification` (et donc tout le
-   * travail de rafraîchissement temps réel construit dans cette conversation)
-   * n'a jamais pu réellement transiter par socket en usage réel.
-   */
   private _getToken(): string | null {
     try {
       const raw = localStorage.getItem('currentUser');
@@ -69,9 +50,6 @@ export class Webstockets {
     }
   }
 
-  /**
-   * Initialise la connexion socket sans se connecter
-   */
   private initializeSocket(): void {
 
     // Extraire l'URL de base sans '/api'
@@ -83,18 +61,12 @@ export class Webstockets {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5,
-      // Fonction (pas une valeur figée) : réévaluée à CHAQUE tentative de
-      // connexion/reconnexion, pour toujours envoyer le token le plus récent
-      // (ex. après un login qui arrive après la création de ce service).
       auth: (cb: (data: { token: string | null }) => void) => cb({ token: this._getToken() }),
     });
 
     this.setupSocketListeners();
   }
 
-  /**
-   * Configure tous les listeners d'événements socket
-   */
   private setupSocketListeners(): void {
     if (!this.socket) return;
 
@@ -152,9 +124,6 @@ export class Webstockets {
     });
   }
 
-  /**
-   * Connecte le socket au serveur
-   */
   connect(): void {
     if (this.socket && !this.socket.connected) {
       console.log('🔌 Connexion au WebSocket...');
@@ -162,9 +131,6 @@ export class Webstockets {
     }
   }
 
-  /**
-   * Déconnecte le socket du serveur
-   */
   disconnect(): void {
     if (this.socket && this.socket.connected) {
       console.log('🔌 Déconnexion du WebSocket...');
@@ -172,9 +138,6 @@ export class Webstockets {
     }
   }
 
-  /**
-   * Rejoint une room utilisateur (appelé après login)
-   */
   joinRoom(userId: string): void {
     if (this.socket && this.socket.connected) {
       console.log(' Rejoindre la room:', userId);
@@ -184,9 +147,6 @@ export class Webstockets {
     }
   }
 
-  /**
-   * Quitte une room utilisateur
-   */
   leaveRoom(userId: string): void {
     if (this.socket && this.socket.connected) {
       console.log(' Quitter la room:', userId);
@@ -194,18 +154,12 @@ export class Webstockets {
     }
   }
 
-  /**
-   * Émet un événement de typing indicator
-   */
   emitTyping(conversationId: string, userId: string, isTyping: boolean): void {
     if (this.socket && this.socket.connected) {
       this.socket.emit('typing', { conversationId, userId, isTyping });
     }
   }
 
-  // ============================================================
-  // Observables publics pour les messages
-  // ============================================================
   
   onMessageSent(): Observable<SocketMessage> {
     return this.messageSent$.asObservable();
@@ -219,9 +173,6 @@ export class Webstockets {
     return this.messageDeleted$.asObservable();
   }
 
-  // ============================================================
-  // Observables publics pour les notifications
-  // ============================================================
   
   onNewNotification(): Observable<SocketNotification> {
     return this.newNotification$.asObservable();
@@ -239,9 +190,6 @@ export class Webstockets {
     return this.allNotificationsRead$.asObservable();
   }
 
-  // ============================================================
-  // État de connexion
-  // ============================================================
   
   isConnected(): Observable<boolean> {
     return this.connected$.asObservable();

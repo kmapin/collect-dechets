@@ -1,7 +1,3 @@
-// Reprend exactement les liens de l'ancien <app-sidebar> (planningNav + teamsNav,
-// voir shared/app-sidebar/app-sidebar.ts) — même routes, mêmes query params, même
-// correspondance "exact" — seule la présentation change (onglets horizontaux au lieu
-// d'une nav verticale), pas la navigation elle-même.
 export interface PlanningTeamsNavItem {
   route: string;
   label: string;

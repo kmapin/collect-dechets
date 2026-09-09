@@ -1,8 +1,3 @@
-// ── Libellés / couleurs / icônes partagés pour les enums Teams ──────
-// Source unique de vérité : évite que chaque page (list, card, detail,
-// detail-modal, members, form, dashboard, availability) redéfinisse sa
-// propre traduction et dérive (ex: "active" affiché "Active" ici et
-// "Disponible" ailleurs).
 import { TeamStatus, VehicleStatus, VehicleType, MemberAvailability } from './team.model';
 
 export type MissionStatusV = 'brouillon' | 'planifie' | 'en_cours' | 'termine' | 'annule';

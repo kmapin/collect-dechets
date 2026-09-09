@@ -1,9 +1,7 @@
 import { evaluateZoneFrequency, aggregateZoneFrequencyRecords } from './zone-frequency.util';
 import type { ZoneFrequencyRecord } from '../mocks/municipality-mock.types';
 
-// Real backend enum (GET /municipality/zone-frequency, Prompt 11): 'hebdomadaire' (weekly)
-// > 'bimensuel' (twice a month) > 'mensuel' (monthly) > 'unique' (one-time) > 'none' (actual
-// side only, zero real activity) — replaces the mock's former daily/weekly/monthly placeholders.
+
 describe('zone-frequency.util - evaluateZoneFrequency', () => {
   it('flags a zone planned hebdomadaire but only actually served bimensuel as insufficient', () => {
     const result = evaluateZoneFrequency('hebdomadaire', 'bimensuel');
@@ -63,7 +61,7 @@ describe('zone-frequency.util - aggregateZoneFrequencyRecords', () => {
     const result = aggregateZoneFrequencyRecords(records);
     expect(result.length).toBe(1);
     expect(result[0].zoneName).toBe('Zone A');
-    expect(result[0].status).toBe('adequate'); // 3/4 waste types on target — mode is bimensuel/bimensuel
+    expect(result[0].status).toBe('adequate');
     expect(result[0].gap).toBe(0);
   });
 
@@ -76,7 +74,7 @@ describe('zone-frequency.util - aggregateZoneFrequencyRecords', () => {
     ];
 
     const result = aggregateZoneFrequencyRecords(records);
-    expect(result[0].status).toBe('insufficient'); // mode of actual is bimensuel, planned is hebdomadaire
+    expect(result[0].status).toBe('insufficient'); 
     expect(result[0].actualFrequency).toBe('bimensuel');
     expect(result[0].gap).toBe(4 - 2);
   });

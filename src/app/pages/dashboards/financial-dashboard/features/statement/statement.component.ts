@@ -16,9 +16,7 @@ import { EmptyStateComponent } from '../../shared/states/empty-state.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeFacture } from '../../shared/status-badge/status-badge.util';
 
-// F10 — Relevé de paiement à la demande. RG9 : facturé le / payé le / montant.
-// Lancé depuis l'onglet Facturation (F8, via ?idClient=) ou par recherche directe
-// (Scénario 3).
+// Relevé de paiement.
 @Component({
   selector: 'app-statement',
   standalone: true,
@@ -37,8 +35,7 @@ export class StatementComponent {
   readonly resultatsRecherche = signal<Client[]>([]);
   readonly clientSelectionne = signal<Client | null>(null);
 
-  // Plage optionnelle — scope configurable (historique complet par défaut si non
-  // renseignée), spec §1.12 : scope du relevé (complet vs plage) reste TBC.
+  // Plage optionnelle
   readonly debut = signal<Periode | null>(null);
   readonly fin = signal<Periode | null>(null);
 
@@ -69,8 +66,7 @@ export class StatementComponent {
     });
   }
 
-  // Au clic dans le champ (avant toute frappe) : liste des clients de l'agence, pour
-  // parcourir plutôt que de devoir taper un nom au moins partiellement.
+
   onRechercheFocus(): void {
     if (this.recherche().trim()) return;
     this.clientData.getClients({ pageSize: 8 }).subscribe(page => {
@@ -99,9 +95,7 @@ export class StatementComponent {
     this.chargerReleve();
   }
 
-  // Génère un vrai document PDF téléchargeable (jsPDF/autoTable, via ExportService) —
-  // remplace l'ancien window.print() qui imprimait toute la page (toolbar comprise, malgré
-  // les règles @media print) plutôt que produire un relevé exploitable hors de l'app.
+  // Génère un vrai document PDF téléchargeable 
   telechargerPdf(): void {
     const client = this.clientSelectionne();
     if (!client) return;
@@ -119,8 +113,7 @@ export class StatementComponent {
       : undefined;
     const ligneClient = `${client.nom} ${client.prenom}${client.quartier ? ' — ' + client.quartier : ''}`;
 
-    // Même libellé que celui affiché à l'écran (this.libellePeriode, computed) — jamais
-    // un texte différent entre l'interface et le PDF exporté.
+
     const lignePeriode = this.libellePeriode();
 
     this.exportService.exportToPdf(
@@ -140,13 +133,7 @@ export class StatementComponent {
     );
   }
 
-  // Libellé de la période effectivement demandée (mêmes bornes que la requête
-  // GET /finance/factures/releve — jamais un calcul indépendant) : "Historique complet"
-  // si ni debut ni fin ne sont renseignés (jamais une date fabriquée pour ce cas — la
-  // plage est réellement illimitée), sinon "Période du JJ mois AAAA au JJ mois AAAA".
-  // Public (computed, pas juste une méthode privée) : affiché à l'écran (statement.
-  // component.html) ET réutilisé tel quel dans le PDF (telechargerPdf ci-dessus) — une
-  // seule source, jamais un texte différent entre l'écran et le document exporté.
+
   readonly libellePeriode = computed(() => {
     const debut = this.debut();
     const fin = this.fin();

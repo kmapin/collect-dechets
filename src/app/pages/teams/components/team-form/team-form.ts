@@ -28,13 +28,7 @@ export class TeamForm implements OnInit, OnChanges {
   @Input({ required: true }) availableVehicles!: AvailableVehicle[];
   @Input({ required: true }) availableZones!: AvailableZone[];
   @Input() availableCollectors: CollectorUser[] = [];
-  /** Toutes les équipes de l'agence (déjà chargées par le parent) — sert
-   *  uniquement à détecter si un véhicule listé est déjà pris par une autre
-   *  équipe ; aucun appel API supplémentaire. */
   @Input() teams: Team[] = [];
-  // Contrôlé par le parent (seul à connaître l'issue réelle de la requête HTTP,
-  // ce composant ne fait qu'émettre) — remplace l'ancien champ local `saving`
-  // jamais réinitialisé en cas d'erreur (le formulaire restait bloqué indéfiniment).
   @Input() saving = false;
   @Output() save   = new EventEmitter<TeamFormData>();
   @Output() cancel = new EventEmitter<void>();
@@ -46,9 +40,6 @@ export class TeamForm implements OnInit, OnChanges {
     { value: 'manager',   label: 'Manager'    },
     { value: 'collector', label: 'Collecteur' },
   ];
-  // 'on_mission' retiré : désormais dérivé automatiquement d'un Planning
-  // en_cours assigné à l'équipe (backend, services/teamV2.js::_computeEffectiveStatus)
-  // plutôt qu'un choix manuel — voir team-labels.ts pour son affichage (inchangé).
   readonly statuses = [
     { value: 'active',      label: 'Active'      },
     { value: 'inactive',    label: 'Inactive'    },

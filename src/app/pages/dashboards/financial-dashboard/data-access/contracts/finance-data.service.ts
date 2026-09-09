@@ -10,29 +10,16 @@ export interface RetraitFilter {
   search?: string;
 }
 
-// Filtres additifs (chantier Finance/Paiements, item 6 : "Montant total des paiements")
-// sur getDashboardKpi()/getStats() — appliqués uniquement à totalCollecte/revenusNets
-// (soldeDisponible/enAttente restent des soldes de portefeuille, non décomposables par
-// client/zone/tarif). `zone` = quartier en texte libre (Redevance n'a pas de champ zone
-// propre, jointure via le client — même convention que partout ailleurs dans l'app).
 export interface MontantTotalFilter {
   zone?: string;
   idClient?: string;
   planType?: string;
 }
 
-// Restreint à ce que le backend accepte réellement pour un retrait (services/transaction.js::
-// sendUserMoney) : 'TELECEL_MONEY' existe comme opérateur ailleurs dans l'app (vérification
-// de numéro), mais est explicitement rejeté ici — pas encore disponible pour les retraits.
 export type OperateurRetrait = 'MOOV_MONEY' | 'ORANGE_MONEY';
 
-// Chantier Frais plateforme (Prompt F5/F8) — choisi par l'agence À CHAQUE demande
-// (jamais un réglage permanent) : 'A' = frais déduits du montant reçu, 'B' = agence
-// les prend en plus du débit de son wallet. Obligatoire depuis le Prompt F5.
 export type FeeOptionRetrait = 'A' | 'B';
 
-// Série agrégée pour les graphiques F2 — pas un modèle de domaine (Table 20-27),
-// donc définie ici plutôt que dans finance/models (voir Prompt 3 vs Prompt 4/8).
 export interface FinanceStatsSeries {
   labels: string[];
   totalCollecte: number[];
@@ -41,18 +28,11 @@ export interface FinanceStatsSeries {
   facturesImpayees: number[];
 }
 
-// `mode` est le libellé du moyen de paiement RÉEL (opérateur exact — "Orange Money",
-// "Moov Money", "Telecel Money", "QR Pay" — voir mapRepartitionModePaiementDto), pas le
-// bucket générique ModePaiement.MOBILE_MONEY utilisé ailleurs pour un paiement individuel
-// (Paiement.modePaiement) : demande produit explicite de distinguer les opérateurs ici.
 export interface RepartitionModePaiement {
   mode: string;
   montant: number;
 }
 
-// Ligne d'historique F3 : le paiement enrichi du nom client affichable — évite que
-// l'écran Paiements refasse lui-même la jointure client (déjà faite côté backend,
-// comme pour SuiviAbonneMensuel/LigneReleve — voir facture-data.service.ts).
 export interface PaiementListe extends Paiement {
   clientNom: string;
 }

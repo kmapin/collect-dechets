@@ -7,22 +7,13 @@ import { environment } from '../../environments/environment';
 import { AddEmployeeData, RegisterResponse, User } from '../models/user.model';
 import { FilterParams } from '../models/filterParams.model';
 
-// ================================
-// INTERFACES POUR L'ANALYSE DES ZONES
-// ================================
 
-/**
- * Interface pour les statistiques détaillées d'une zone
- */
 export interface ZoneAnalyticsResponse {
   success: boolean;
   data: ZoneStatistics[];
   message?: string;
 }
 
-/**
- * Interface pour les statistiques d'une zone spécifique
- */
 export interface ZoneStatistics {
   zoneId: string;
   zoneName: string;
@@ -54,9 +45,6 @@ export interface ZoneStatistics {
   };
 }
 
-/**
- * Interface pour les paramètres de filtrage des zones
- */
 export interface ZoneAnalyticsFilters {
   agencyId: string;
   zoneIds?: string[];
@@ -65,9 +53,6 @@ export interface ZoneAnalyticsFilters {
   includeInactive?: boolean;
 }
 
-/**
- * Interface pour les recommandations automatiques
- */
 export interface ZoneRecommendationsResponse {
   success: boolean;
   data: ZoneRecommendation[];
@@ -91,9 +76,6 @@ export interface ZoneRecommendation {
   createdAt: string;
 }
 
-/**
- * Interface pour les données de comparaison entre zones
- */
 export interface ZoneComparisonResponse {
   success: boolean;
   data: ZoneComparison[];

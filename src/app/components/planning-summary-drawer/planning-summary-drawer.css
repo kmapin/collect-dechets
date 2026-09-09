@@ -1,9 +1,3 @@
-/* Reproduit exactement .drawer-overlay/.drawer-content/.drawer-header/.drawer-body/
-   .drawer-close-btn de shared_pages/signalement/signalement.scss (le drawer "Détails
-   du signalement") — même overlay, mêmes animations, même mise en page d'en-tête, pour
-   que ce drawer s'ouvre visuellement de la même façon côté client. L'encapsulation de
-   vue Angular empêche de réutiliser directement les classes globales de ce composant
-   frère : on duplique donc les règles nécessaires plutôt que de casser l'isolation. */
 .drawer-overlay {
   position: fixed;
   top: 0;

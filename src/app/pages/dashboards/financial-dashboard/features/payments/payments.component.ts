@@ -10,9 +10,6 @@ import { SearchFilterComponent } from '../../shared/filters/search-filter.compon
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
 
 const TAILLE_PAGE = 10;
-// Écran à fort usage sans export (chantier Rapports/Statistiques, item 4) — même
-// convention que WithdrawalRequestsHttpService::filterWithdrawals() (pageSize élevé pour
-// récupérer le jeu filtré complet, pas seulement la page visible côté écran).
 const TAILLE_PAGE_EXPORT = 1000;
 
 // F3 — Historique des paiements de l'agence.
@@ -35,22 +32,11 @@ export class PaymentsComponent {
   readonly erreur = signal<string | null>(null);
   readonly exportEnCours = signal(false);
 
-  // Chantier Frais plateforme (Prompt F4/F8) : "Montant" seul ne dit pas ce que l'agence
-  // reçoit réellement une fois les frais appliqués — "Frais" et "Net agence" rendent ce
-  // détail visible. `?? '—'` : un paiement antérieur à ce chantier n'a pas ces champs.
   readonly colonnes: DataTableColumn<PaiementListe>[] = [
     { key: 'clientNom', label: 'Client', sortable: true },
     { key: 'montant', label: 'Montant', sortable: true, format: r => formatMontantXof(r.montant) },
-    // L'agence ne doit jamais voir le frais quand il est à la charge du client
-    // (feePayer='CLIENT') — seul le sien (feePayer='AGENCE') reste visible ici.
-    // Sans impact sur "Net agence" ci-dessous : quand le client paie le frais,
-    // netAmount vaut déjà grossAmount (services/fee.js::calculateClientPaymentFee),
-    // donc cette colonne ne révèle rien du frais côté client.
-    // { key: 'feeAmount', label: 'Frais', format: r => (r.feePayer === 'CLIENT' || r.feeAmount === undefined ? '—' : formatMontantXof(r.feeAmount)) },
-    // { key: 'netAmount', label: 'Net agence', format: r => (r.netAmount !== undefined ? formatMontantXof(r.netAmount) : '—') },
     { key: 'datePaiement', label: 'Date', sortable: true, format: r => formatFrDate(r.datePaiement) },
     { key: 'modePaiement', label: 'Mode', format: r => r.modePaiement ?? '—' },
-    // Période du contrat/abonnement concerné par ce paiement (demande produit).
     { key: 'dateDebut', label: 'Date début', format: r => (r.dateDebut ? formatFrDate(r.dateDebut) : '—') },
     { key: 'dateFin', label: 'Date fin', format: r => (r.dateFin ? formatFrDate(r.dateFin) : '—') },
   ];
@@ -79,13 +65,6 @@ export class PaymentsComponent {
     this.charger();
   }
 
-  /**
-   * Export réel (chantier Rapports/Statistiques, item 4 — écran "Paiements" à fort
-   * usage, jusqu'ici sans aucun export). Réutilise EXPORT_SERVICE (même token que
-   * monthly-tracking.component.ts::exporterCsv()) — pas de mécanisme d'export
-   * séparé pour cet écran. Re-fetch avec une pageSize élevée pour exporter le jeu
-   * filtré complet, pas juste `items()` (la page visible, 10 lignes).
-   */
   exporterCsv(): void {
     if (this.exportEnCours()) return;
     this.exportEnCours.set(true);
@@ -101,9 +80,6 @@ export class PaymentsComponent {
           const rows = page.items.map((p) => ({
             client: p.clientNom,
             montant: p.montant,
-            // Même règle que la colonne "Frais" à l'écran ci-dessus.
-            // frais: p.feePayer === 'CLIENT' || p.feeAmount === undefined ? '—' : p.feeAmount,
-            // netAgence: p.netAmount ?? '—',
             date: formatFrDate(p.datePaiement),
             mode: p.modePaiement ?? '—',
             dateDebut: p.dateDebut ? formatFrDate(p.dateDebut) : '—',
@@ -114,8 +90,6 @@ export class PaymentsComponent {
             [
               { key: 'client', label: 'Client' },
               { key: 'montant', label: 'Montant (FCFA)' },
-              // { key: 'frais', label: 'Frais (FCFA)' },
-              // { key: 'netAgence', label: 'Net agence (FCFA)' },
               { key: 'date', label: 'Date' },
               { key: 'mode', label: 'Mode' },
               { key: 'dateDebut', label: 'Date début' },

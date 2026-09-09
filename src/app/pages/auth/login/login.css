@@ -354,10 +354,6 @@ input[type="number"]::-ms-expand {
 
     .login-type-option {
       display: flex;
-      /* Sans ça, un item de grille 1fr ne rétrécit jamais en-dessous du
-         min-content de son contenu (ici le mot "telephone") : sur un écran
-         plus étroit que celui testé, la grille 2 colonnes déborde au lieu de
-         rétrécir. */
       min-width: 0;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -419,8 +415,6 @@ input[type="number"]::-ms-expand {
         max-width: 500px;
       }
 
-      /* Plus assez de place pour afficher le formulaire ET ce panneau côte à
-         côte : masqué plutôt qu'empilé au-dessus du formulaire. */
       .login-info {
         display: none;
       }

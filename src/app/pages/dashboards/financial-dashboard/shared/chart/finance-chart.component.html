@@ -1,14 +1,6 @@
 <div class="fin-chart">
   <h3 class="fin-chart__title">{{ titre }}</h3>
 
-  <!--
-    Le <canvas> reste toujours dans le DOM (jamais retiré par *ngIf) : le squelette et le
-    message vide sont superposés par-dessus plutôt que de le démonter. Sinon, quand
-    `loading` passe à false au même cycle que l'arrivée de `config`, ngOnChanges se
-    déclenche avant que *ngIf ne réinsère le canvas — @ViewChild ne le trouve pas encore
-    et le graphique n'est jamais construit (c'était le bug : graphiques vides malgré des
-    données mock correctes).
-  -->
   <div class="fin-chart__body">
     <div class="fin-chart__canvas-wrap" role="img" [attr.aria-label]="titre">
       <canvas #canvasRef></canvas>

@@ -112,10 +112,6 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
   private _initialized = false;
 
   constructor() {
-    // Se déclenche à l'arrivée réelle des données (chargement initial ou après
-    // un refresh), et à chaque changement ultérieur du signal `teams` — construit
-    // les données dérivées réelles, puis initialise (une fois) ou met à jour
-    // carte/graphiques.
     effect(() => {
       const teams = this.svc.teams();
       if (teams.length === 0) return;
@@ -136,8 +132,6 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this._viewReady = true;
-    // Si les équipes étaient déjà en cache (page visitée après /teams/list par
-    // exemple), l'effect ci-dessus a pu se déclencher avant que la vue soit prête.
     if (!this._initialized && this.svc.teams().length > 0) {
       this._initializeVisuals();
     }
@@ -170,11 +164,6 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
     this.maintAlerts.update(list => list.filter(a => a.id !== id));
   }
 
-  // ── Map ───────────────────────────────────────────────────
-  // Utilise les vraies coordonnées des zones assignées à l'équipe
-  // (Neighbourhood.latitude/longitude côté backend, cf. team.zones[].lat/lng).
-  // Une équipe sans zone géolocalisée n'affiche simplement aucun marqueur —
-  // pas de position inventée.
   private _initMap(): void {
     const el = document.getElementById('td-map');
     if (!el || this._map) return;

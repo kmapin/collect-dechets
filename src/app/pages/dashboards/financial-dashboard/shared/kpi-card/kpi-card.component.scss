@@ -1,11 +1,3 @@
-// Reproduit à l'identique .stat-card/.stat-icon/.stat-info/.stat-value d'agency-dashboard
-// (le host applique aussi la classe globale "card" pour le fond/ombre/radius — voir le
-// template — ces règles-ci ne couvrent que ce que .card ne fournit pas).
-//
-// :host en display:flex (pas le défaut "inline" des éléments custom) : sans ça, la grille
-// .stats-grid étire bien le <app-kpi-card> à la hauteur de la ligne (align-items:stretch),
-// mais le <div class="stat-card"> à l'intérieur ne suit pas cet étirement tout seul — d'où
-// des cartes de hauteurs différentes selon qu'elles ont ou non un sous-texte.
 :host {
   display: flex;
 }

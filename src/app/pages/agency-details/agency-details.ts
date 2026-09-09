@@ -268,20 +268,6 @@ export class AgencyDetails implements OnInit {
     premium: 49.99,
   };
 
-  // submitSubscription() {
-  //   this.subscription.userId = this.currentUser?.id || '';
-  //   this.subscription.agencyId = this.agency?._id || '';
-  //   // Appel API
-  //   this.agencyService.enrollClientToPlan(this.subscription).subscribe({
-  //     next: (res) => {
-  //       this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
-  //       this.showSubscriptionModal = false;
-  //     },
-  //     error: (err) => {
-  //       this.notificationService.showError('Erreur', 'Impossible d\'enregistrer l\'abonnement.');
-  //     }
-  //   });
-  // }
 
   // tariffSelectedMonths: number = 1;
   tariffSelectedMonths: Record<string, number> = {};
@@ -294,12 +280,6 @@ export class AgencyDetails implements OnInit {
   ) {
     const tariff_id: string | undefined = tariffId;
     const numberm_month = numberMonth || 1;
-    // const payload = {
-    //   tariffId,
-    //   numberMonth: numberMonth || 1,
-    //   userId: this.currentUser?._id || this.currentUser?.id || '',
-    //   agencyId: this.agency?._id || '',
-    // };
 
     this.selectedTarif = {
       tarifId: tariff_id,
@@ -314,14 +294,6 @@ export class AgencyDetails implements OnInit {
       this.showPaymentDrawer = true;
     }
 
-    // this.agencyService.enrollClientToPlan(currentUserId, tariff_id, numberm_month).subscribe({
-    //   next: (res) => {
-    //     this.notificationService.showSuccess('Abonnement réussi', 'Votre abonnement a bien été enregistré.');
-    //   },
-    //   error: (err) => {
-    //     this.notificationService.showError('Erreur', err?.error?.error || 'Impossible d\'enregistrer l\'abonnement.');
-    //   }
-    // });
   }
   updateAmount() {
     this.subscription.amount = this.planPrices[this.subscription.plan] || 0;
@@ -399,9 +371,6 @@ export class AgencyDetails implements OnInit {
       },
     });
   }
-  /**
-   * Transforme une agence API en objet compatible avec le template
-   */
   private mapApiAgency(apiAgency: any): Agency {
     return {
       _id: apiAgency._id || "",
@@ -450,9 +419,6 @@ export class AgencyDetails implements OnInit {
     };
   }
 
-  /**
-   * Charge les détails d'une agence depuis l'API backend
-   */
   loadAgencyFromApi(id: string | null): void {
     this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
       if (response.success && response.data) {
@@ -681,35 +647,10 @@ export class AgencyDetails implements OnInit {
   }
   // tariffs: Tariff[] = [];
   isLoading: boolean = false;
-  // loadTariffs(): void {
-  //   this.isLoading = true;
-  //   const agencyId = this.agencyId || this.route.snapshot.paramMap.get('id');
-  //   if (!agencyId) {
-  //     console.error('[DEBUG] Aucun agencyId trouvé pour l’utilisateur courant');
-  //     this.isLoading = false;
-  //     return;
-  //   }
 
-  //   this.agencyService.getAgencyAllTarifs$(agencyId).subscribe({
-  //     next: (data: Tariff[]) => {
-  //       this.tariffs = data;
-  //       console.log('Tarifs récupérés :', this.tariffs);
-  //       this.isLoading = false;
-  //     },
-  //     error: (error) => {
-  //       console.error('[DEBUG] Erreur lors du chargement des tarifs :', error);
-  //       this.isLoading = false;
-  //     }
-  //   });
-  // }
 
   //Edit agency
   edit: boolean = false;
-  // Chantier "migrer le frontend vers TerritoryHttpService" — `onCityChange` peut
-  // se rappeler lui-même en cascade (via `editAgency()`, pour pré-remplir l'édition
-  // d'une agence déjà adressée) : chaque étage n'enchaîne le suivant qu'une fois sa
-  // propre requête résolue (dans le `next` du subscribe), jamais en supposant une
-  // réponse synchrone comme avant.
   onArrondissementChange(arrondissement?: string) {
     this.secteurss = [];
     this.quartierss = [];
@@ -785,9 +726,6 @@ export class AgencyDetails implements OnInit {
     return disabled;
   }
 
-  /**
-   * Handles registration errors and displays appropriate messages
-   */
   private handleRegistrationError(
     error: string | { [key: string]: string[] } | undefined,
     fallbackMessage?: string,
@@ -795,14 +733,6 @@ export class AgencyDetails implements OnInit {
     this.validationErrors = {};
     this.generalError = "";
 
-    // if (typeof error === "object" && error !== null) {
-    //   // Handle field-specific validation errors
-    //   this.validationErrors = error;
-    //   this.notificationService.showError(
-    //     "Erreurs de validation",
-    //     "Veuillez corriger les erreurs dans le formulaire",
-    //   );
-    // } else
     if (typeof error === "string" && error.trim()) {
       // Handle general error message
       this.generalError = error;

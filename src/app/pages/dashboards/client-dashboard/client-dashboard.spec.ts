@@ -1,18 +1,6 @@
 import { Subject } from 'rxjs';
 import { ClientDashboard } from './client-dashboard';
 
-/**
- * Prompt 05 :
- *  - point 1 — l'écran "planning de la semaine" doit rendre les collectes V1 et
- *    V2 de façon identique : `getWeeklySchedule()` ne doit filtrer/transformer
- *    la réponse backend selon aucun champ de version (`schemaVersion`, forme
- *    de `code`, etc.) — un passthrough intégral, vérifié ci-dessous avec un
- *    mélange de formes V1/V2 dans la même réponse.
- *  - points 3/4 — `reportIssue(id)` (bouton par collecte) doit préremplir
- *    `collecteId`, `reportIndependentIssue()` (nouveau point d'entrée séparé)
- *    doit au contraire le vider, et `submitReport()` doit répercuter cette
- *    présence/absence dans l'appel à `clientService.createSignalement`.
- */
 describe('ClientDashboard - planning unifié V1/V2 & signalement (Prompt 05)', () => {
   let component: ClientDashboard;
   let clientServiceSpy: { createSignalement: jasmine.Spy; getClientPlanning: jasmine.Spy; getClientReports: jasmine.Spy };
@@ -56,8 +44,6 @@ describe('ClientDashboard - planning unifié V1/V2 & signalement (Prompt 05)', (
 
     component.getWeeklySchedule();
 
-    // Passthrough intégral : les deux entrées apparaissent, sans qu'aucune ne
-    // soit filtrée/marquée différemment à cause de `schemaVersion`.
     expect(component.weeklySchedule.length).toBe(2);
     expect(component.weeklySchedule).toEqual([v1Shaped, v2Shaped]);
   });
@@ -104,11 +90,6 @@ describe('ClientDashboard - planning unifié V1/V2 & signalement (Prompt 05)', (
   });
 });
 
-/**
- * "Mon contrat" (carte de la colonne droite, même patron que "Mon abonnement") —
- * sans elle, le client n'avait aucune trace côté dashboard qu'il est lié à une
- * agence par un Contrat plutôt que (ou en plus) d'un Abonnement.
- */
 describe('ClientDashboard - "Mon contrat" (carte dashboard + rafraîchissement socket)', () => {
   let component: ClientDashboard;
   let contratServiceSpy: { getContratsByClient$: jasmine.Spy };
@@ -153,9 +134,6 @@ describe('ClientDashboard - "Mon contrat" (carte dashboard + rafraîchissement s
   });
 
   it("un newNotification de type 'Contrat' recharge le contrat automatiquement", () => {
-    // loadDashboardData() appelle plusieurs services non liés à ce test
-    // (clientService, messageService, ...), tous mockés en {} — stubbé pour
-    // isoler la seule chose testée ici : le listener socket posé dans ngOnInit().
     spyOn(component, 'loadDashboardData');
     component.ngOnInit();
     const callsAfterInit = contratServiceSpy.getContratsByClient$.calls.count();

@@ -26,32 +26,16 @@ import { EligibilityService, EligibilityResult, isSubscriptionCurrentlyActive } 
 export class Subscription  implements OnInit, OnDestroy {
     currentUser: RegisterUserData | null = null;
     subscriptions: any[] = [];
-    // Abonnement réellement actif (isActive === true ET endDate dans le futur)
-    // — plus jamais "le dernier élément du tableau" (chantier EligibilityService,
-    // Prompt 0 : "Ne considère jamais subscriptions[subscriptions.length - 1]
-    // comme étant automatiquement l'abonnement actif"). Piloté par les mêmes
-    // champs réels que le backend (services/eligibility.service.js), pas une
-    // seconde règle inventée côté client.
     activeSubscription: any = null;
-    // Abonnement le plus récent (actif ou non) — sert uniquement à afficher un
-    // statut/une date d'expiration réels dans le bloc "Mon Abonnement" quand
-    // aucun abonnement n'est actuellement actif, plutôt que de tout masquer.
     latestSubscription: any = null;
     showPaymentForm = false;
     tarifResponse: any = null;
     private newSubscriptionSub?: RxSubscription;
 
-    // Domaine Contrat — même rôle que client-dashboard.ts::loadActiveContrat(),
-    // absent jusqu'ici de cet écran (cette page n'affichait que l'Abonnement,
-    // jamais le Contrat, cause directe du message "Aucun abonnement actif"
-    // pouvant apparaître à un client pourtant sous contrat actif).
     contrats: Contrat[] = [];
     activeContrat: Contrat | null = null;
     latestContrat: Contrat | null = null;
 
-    // Source unique de vérité pour "ce client bénéficie-t-il du service ?" —
-    // pilote uniquement le bandeau de continuité de service ci-dessous, jamais
-    // recalculée dans ce composant (EligibilityService, backend).
     eligibility: EligibilityResult | null = null;
 
     // Drawer "Envoyer un message à l'agence" (contactSupport())
@@ -81,18 +65,11 @@ constructor(
     this.currentUser = this.authService.getCurrentUser();
     console.log("this.currentUser", this.currentUser);
 
-    // Phase 5 : les notifications Abonnement passent désormais par `notifyUsers`
-    // (Phase 3, backend), donc par ce même canal socket, en plus du chargement
-    // initial ci-dessus — sans ceci, une expiration automatique (scheduler
-    // minuit) ou une souscription faite ailleurs laisse cette page affichée
-    // périmée jusqu'au prochain rechargement manuel.
     this.newSubscriptionSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
       if (notification?.type === 'Subscribed') {
         this.getUserSubscription();
         this.loadEligibility();
       }
-      // Même principe pour Contrat (résiliation/réactivation automatique ou
-      // manuelle) — voir client-dashboard.ts, même pattern déjà en place.
       if (notification?.type === 'Contrat') {
         this.loadActiveContrat();
         this.loadEligibility();
@@ -168,7 +145,6 @@ constructor(
     return isSubscriptionCurrentlyActive(subscription) ? 'Actif' : 'Expiré';
   }
 
-  /** Piloté uniquement par EligibilityService — jamais recalculé ici (Prompt 0). */
   get showContractContinuityBanner(): boolean {
     return this.eligibility?.source === 'CONTRACT';
   }
@@ -188,16 +164,7 @@ constructor(
     return (reason && map[reason]) || "Vous ne bénéficiez actuellement d'aucun service actif.";
   }
 
-  /**
-   * Initie le paiement de l'abonnement via Telecel Money
-   */
   initiatePayment() {
-    // Cible le dernier abonnement connu (même expiré) en secours, pour
-    // permettre le renouvellement d'un abonnement expiré depuis ce même
-    // bouton — ne change QUE la cible du paiement : ce choix ne rend jamais
-    // le client éligible tant que le paiement n'a pas réellement été traité
-    // (EligibilityService/le statut affiché restent basés sur les données
-    // backend réelles, jamais anticipés ici).
     const target = this.activeSubscription || this.latestSubscription;
     if (!target) {
       alert('Aucun abonnement à payer ou à renouveler pour le moment.');
@@ -218,17 +185,11 @@ constructor(
     this.showPaymentForm = true;
   }
 
-  /**
-   * Ferme le formulaire de paiement
-   */
   closePaymentForm() {
     this.showPaymentForm = false;
     this.tarifResponse = null;
   }
 
-  /**
-   * Renouvelle l'abonnement
-   */
   renewSubscription() {
     console.log('Renouvellement d\'abonnement via Telecel Money...');
     this.initiatePayment();

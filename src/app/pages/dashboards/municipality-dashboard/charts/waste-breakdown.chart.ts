@@ -1,12 +1,7 @@
 import { ChartConfiguration } from 'chart.js';
 import type { WasteStatistic } from '../municipality-dashboard';
 
-/**
- * "Collectes par Type de Déchets" — doughnut of waste category vs. tonnage.
- * Chart.js's own legend is disabled: the dashboard already renders a
- * `.chart-legend` from the same `wasteStatistics` array right below the
- * chart, so a second legend inside the canvas would just duplicate it.
- */
+
 export function buildWasteBreakdownConfig(data: WasteStatistic[]): ChartConfiguration {
   const config: ChartConfiguration<'doughnut'> = {
     type: 'doughnut',
@@ -26,8 +21,6 @@ export function buildWasteBreakdownConfig(data: WasteStatistic[]): ChartConfigur
         legend: { display: false },
         tooltip: {
           callbacks: {
-            // `quantity` est un compte de collectes (Prompt 08), pas un poids en kg/t —
-            // aucune source réelle de poids n'existe nulle part dans le schéma.
             label: (ctx) => {
               const item = data[ctx.dataIndex];
               return `${item.label}: ${item.quantity} collecte(s) (${item.percentage}%)`;

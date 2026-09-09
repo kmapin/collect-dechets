@@ -94,8 +94,6 @@ export const routes: Routes = [
       import("./pages/subscription/subscription").then((c) => c.Subscription),
   },
 
-  // Mêmes règles d'accès que la vue Abonnement équivalente ci-dessus (Phase 6,
-  // CONCEPTION_ABONNEMENT_CONTRAT.md §6.2).
   {
     canActivate: [authGuard],
     path: "contrat",
@@ -180,9 +178,6 @@ export const routes: Routes = [
   },
 
   {
-    // Chantier Frais plateforme (Prompt F8/9) — réservé au Super Admin
-    // (feeConfigAdminGuard, pas adminOrManagerGuard : voir son commentaire
-    // pour le bug de court-circuit qu'il évite).
     canActivate: [feeConfigAdminGuard],
     path: "fee-config-settings",
     loadComponent: () =>
@@ -191,10 +186,6 @@ export const routes: Routes = [
       ),
   },
 
-  // ================= MODULE FINANCIAL DASHBOARD (mock-data MVP) =================
-  // RBAC is enforced per-child inside financial-dashboard.routes.ts (financeAccessGuard,
-  // mock session — never the real auth guards), not here: the guard needs SESSION_SERVICE,
-  // which is only provided inside that module's own route tree. See ARCHITECTURE.md §7.
 
   {
     path: "dashboard/financial",
@@ -230,8 +221,6 @@ export const routes: Routes = [
       ),
   },
 
-  // Chantier "géolocalisation des quartiers" — donnée de référence plateforme-wide
-  // (comme fee-config-settings ci-dessus), super_admin uniquement.
   {
     canActivate: [adminGuard],
     path: "quartiers",

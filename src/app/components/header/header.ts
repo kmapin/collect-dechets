@@ -18,8 +18,6 @@ import { PlanningSummaryDrawer } from '../planning-summary-drawer/planning-summa
   styleUrl: './header.css'
 })
 export class Header  implements OnInit, OnDestroy {
-  // Rôles sans accès à /planning/detail/:id (voir notification-route.util.ts) :
-  // au clic sur une notification Planning, on ouvre ce résumé en drawer à la place.
   planningSummaryId: string | null = null;
   currentUser: RegisterUserData | null = null;
   isAuthenticated = false;
@@ -30,11 +28,6 @@ export class Header  implements OnInit, OnDestroy {
     private newNotificationSub?: Subscription;
     private routerEventsSub?: Subscription;
   notifications: NotificationItem[] = [];
-  // Chantier "Notifications" (inbox réelle) : source unique du compteur non-lu,
-  // partagée avec la page /notifications — plus de recalcul local à partir de la
-  // seule liste chargée dans ce dropdown (qui ne voit de toute façon plus tout
-  // l'historique). Le template continue d'appeler `unreadCount()` sans changement,
-  // un signal étant lui aussi invocable comme une fonction.
   readonly unreadCount = toSignal(inject(NotificationService).unreadCount$, { initialValue: 0 });
 
   constructor(
@@ -60,12 +53,6 @@ export class Header  implements OnInit, OnDestroy {
       this.loadNotifications();
     });
 
-    // Prompt 05 point 2 : la cloche se mettait à jour uniquement au chargement
-    // (REST one-shot) — le pipeline planning/signalement unifié (Prompts 03/04)
-    // émet désormais `newNotification` de façon fiable à chaque événement ; on
-    // la répercute ici en direct, sans attendre un refresh manuel. Le contrat
-    // socket (`joinRoom(userId)` + écoute `newNotification`) est déjà correct
-    // côté `auth.service.ts`/`webstockets.ts` — rien à changer là.
     this.newNotificationSub = this.websocketService.onNewNotification().subscribe((notification: NotificationItem) => {
       if (this.notifications.some((n) => n._id === notification._id)) return;
       this.notifications = [notification, ...this.notifications];
@@ -74,10 +61,6 @@ export class Header  implements OnInit, OnDestroy {
 
     this.cdr.detectChanges();
 
-    // Filet de sécurité générique : ferme le menu mobile dès qu'une navigation aboutit,
-    // quel que soit le lien cliqué — plutôt que de dépendre uniquement du
-    // (click)="closeMobileMenu()" posé sur chaque lien individuellement (facile à
-    // oublier sur un futur lien ajouté au menu).
     this.routerEventsSub = this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => {
@@ -95,10 +78,6 @@ export class Header  implements OnInit, OnDestroy {
     this.isScrolled = window.pageYOffset > 50;
   }
 
-  // Chantier "Notifications" : délègue à la même fonction que la page /notifications
-  // (notification-route.util.ts) — une seule copie du mapping rôle→dashboard, pour
-  // qu'elles ne puissent jamais diverger (l'ancien switch en dur ici avait dérivé,
-  // voir navigateToNotification ci-dessous).
   getDashboardRoute(): string {
     return dashboardRouteForRole(this.currentUser?.role ?? null);
   }
@@ -123,24 +102,7 @@ export class Header  implements OnInit, OnDestroy {
       window.location.href = '/login';
     }, 500);
     
-    // this.authService.logout().subscribe({
-    //   next: (response: any) => {
 
-    //     localStorage.removeItem('currentUser');
-    //     console.log('deconnexion', response);
-    //     if (response?.message) {
-    //       console.log('deconnexion', response);
-    //       localStorage.clear()
-    //       this.notificationService.showSuccess(`${response?.message} !`, 'Au revoir, à bientoît !');
-    //       setTimeout(() => {
-    //         window.location.href = '/login';
-    //       }, 500);
-    //     } else {
-    //       console.log('deconnexion', response);
-    //       this.notificationService.showError('Erreur de connexion', response.error);
-    //     }
-    //   }
-    // });
 
   }
 
@@ -157,8 +119,6 @@ export class Header  implements OnInit, OnDestroy {
   }
   loadNotifications(): void {
     if (!this.currentUser) return;
-    // Un dropdown n'a pas besoin de tout l'historique — la page /notifications gère
-    // la pagination complète ; les 10 plus récentes suffisent ici.
     this.notificationService.getMyNotifications$({ page: 1, pageSize: 10 }).subscribe({
       next: (result) => {
         this.notifications = result.items;

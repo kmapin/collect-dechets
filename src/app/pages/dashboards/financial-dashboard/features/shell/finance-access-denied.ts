@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-// Cible de redirection de finance-access.guard.ts — jamais elle-même gardée, pour éviter
-// une boucle de redirection.
+
 @Component({
   selector: 'app-finance-access-denied',
   standalone: true,

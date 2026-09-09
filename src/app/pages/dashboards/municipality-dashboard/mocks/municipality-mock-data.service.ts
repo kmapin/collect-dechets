@@ -18,16 +18,6 @@ import type {
   AgencyPerformanceMetrics,
 } from './municipality-mock.types';
 
-/**
- * Single entry point for every Municipality Dashboard mock fixture.
- *
- * In-memory only (no localStorage/sessionStorage) — fixtures are
- * regenerated from their seed on every app load/injection, per the
- * project's Angular conventions. Every method mirrors, in name and
- * return shape, a real (or planned) backend call so it can be swapped
- * for an HTTP call later without touching call sites beyond the
- * injected service — see the README in this folder for the mapping.
- */
 @Injectable({ providedIn: 'root' })
 export class MunicipalityMockDataService {
   getZones(): MunicipalityZone[] {
@@ -42,54 +32,21 @@ export class MunicipalityMockDataService {
     return generateAgencyAudits(count, seed);
   }
 
-  // getWasteRecords()/getWasteRecords$() supprimées (Prompt 12) : "Volume Global
-  // Collecté" est désormais dérivé de GET /municipality/monthly-trend (réel, Prompt 09)
-  // — voir MunicipalityDashboard.loadMonthlyTrend() / utils/volume.util.ts. GET
-  // /municipality/waste-records (réel, Prompt 12) est la table de faits paginée
-  // équivalente côté backend — plus aucun appelant mock.
 
-  // getWasteStatistics()/getWasteStatistics$() supprimées (Prompt 08) : GET
-  // /municipality/waste-statistics est maintenant réel (voir
-  // MunicipalityDashboard.loadWasteStatistics()) — plus aucun appelant.
 
-  // getMonthlyTrend()/getMonthlyTrend$() supprimées (Prompt 09) : GET
-  // /municipality/monthly-trend est maintenant réel (voir
-  // MunicipalityDashboard.loadMonthlyTrend()) — plus aucun appelant.
 
-  // getIncidents() supprimée (Prompt 06) — plus aucun appelant réel, voir
-  // municipality-mock.generators.ts (generateIncidents() supprimée pour la même raison).
 
   getZoneStatistics(seed: number = DEFAULT_SEED): GroupedZoneStatistics[] {
     return generateGroupedZoneStatistics(seed);
   }
 
-  // getMunicipalityStatistics() supprimée (Prompt 01) : MunicipalityStatistics est
-  // maintenant entièrement réel (GET /api/statistics, voir MunicipalityDashboard.
-  // showAdminStatistics()) — cette méthode n'avait plus aucun appelant.
 
-  // getPerformanceOverview() supprimée (Prompt 07) : GET /municipality/performance-overview
-  // est maintenant réel (voir MunicipalityDashboard.loadPerformanceOverview()) — plus
-  // aucun appelant.
 
   getAgencyPerformanceMetrics(agencyId: string, seed: number = DEFAULT_SEED): AgencyPerformanceMetrics {
     return generateAgencyPerformanceMetrics(agencyId, seed);
   }
 
-  // getWasteTypeLabels()/getPerformanceRecords()/getPerformanceRecords$() supprimées :
-  // GET /municipality/performance-indicators est maintenant réel (voir
-  // MunicipalityDashboard.loadPerformanceIndicators()) — plus aucun appelant. Dimension
-  // "collecteur individuel" (ex-PerformanceRecord.collectorId/collectorName) remplacée
-  // par "équipe" au passage — voir services/municipality.service.js::
-  // getPerformanceIndicators (backend) pour pourquoi.
 
-  /**
-   * Coverage Map — mock coordinates, kept on purpose (Prompt 14, decided with the
-   * user): a real replacement (`Admin.getCities$()` -> GET /territories/cities) exists
-   * and was verified against the live database, but the real `City` collection
-   * currently has only 6 documents and none with latitude/longitude populated —
-   * switching now would turn the map from "plausible markers" into "no markers at
-   * all". Revisit once real city coordinate data exists — see EditRecapFront.md.
-   */
   getZoneCoordinates(zoneName: string): [number, number] | null {
     return ZONE_COORDINATES[zoneName] ?? null;
   }

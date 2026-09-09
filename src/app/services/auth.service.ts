@@ -42,17 +42,6 @@ export class AuthService {
     }
   }
 
-  /**
-   * Rejoint en plus la room de l'agence (`agencyId`) pour le personnel
-   * d'agence (manager/collector) et le super_admin — c'est dans cette room
-   * que les messages entrants d'un client (`receiver: agencyId`) sont émis
-   * (message.controller.js::sendMessage). Sans cet appel, `joinRoom(userId)`
-   * seul ne suffit pas : aucun socket agence ne rejoint jamais cette room,
-   * donc la réception en temps réel des messages clients reste cassée côté
-   * agence même une fois l'écoute `onMessageSent()` branchée côté dashboard.
-   * Le serveur revalide de toute façon le rôle/l'appartenance (server.js,
-   * `socket.on('joinRoom')`) — cet appel ne fait qu'exprimer l'intention.
-   */
   private joinAgencyRoomIfStaff(user: any): void {
     const staffRoles = ['manager', 'collector', 'super_admin'];
     const agencyId = user?.agencyId;

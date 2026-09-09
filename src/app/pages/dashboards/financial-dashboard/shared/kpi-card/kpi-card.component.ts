@@ -1,8 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-// Valeurs alignées sur les variantes de couleur .stat-icon d'agency-dashboard.scss :
-// neutre → primary (bleu), positif → secondary (vert), attention → error (rouge).
 export type KpiCardTone = 'neutre' | 'positif' | 'attention';
 
 @Component({
