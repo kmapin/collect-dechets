@@ -5182,6 +5182,31 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   // recuperations des tarifs liee a une agences
   historyCollecte: any[] = [];
+  historySearchTerm: string = "";
+  historyDateFilter: string = "";
+
+  get filteredHistoryCollecte(): any[] {
+    const term = this.historySearchTerm.trim().toLowerCase();
+    const dateFilter = this.historyDateFilter;
+    return this.historyCollecte.filter((collecte) => {
+      if (term) {
+        const fullName = `${collecte?.clientId?.firstName || ""} ${collecte?.clientId?.lastName || ""}`.toLowerCase();
+        if (!fullName.includes(term)) return false;
+      }
+      if (dateFilter) {
+        const collecteDate = collecte?.collectedAt || collecte?.date;
+        if (!collecteDate) return false;
+        const isoDay = new Date(collecteDate).toISOString().slice(0, 10);
+        if (isoDay !== dateFilter) return false;
+      }
+      return true;
+    });
+  }
+
+  clearHistoryFilters(): void {
+    this.historySearchTerm = "";
+    this.historyDateFilter = "";
+  }
 
   loadCollectHistory(): void {
     this.isLoading = true;
@@ -5237,6 +5262,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   closeHistoryModal(): void {
     this.showHistoryModal = false;
+    this.clearHistoryFilters();
   }
   //modification  du status de l employee
   readonly employeeStatusToggleEnCours = new Set<string>();

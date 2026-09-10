@@ -237,7 +237,7 @@
                         <p><i class="material-icons">apartment</i> Agence : {{ collecte.agencyId?.name ?? "—" }}</p>
                         <p>
                           <i class="material-icons">schedule</i> Scann&#233;e &#224; :
-                          {{ collecte.scannedAt ? (collecte.scannedAt | date: "dd/MM/yyyy HH:mm") : "—" }}
+                          {{ collecte.collectedAt ? (collecte.collectedAt | date: "dd/MM/yyyy HH:mm") : "—" }}
                         </p>
                       </div>
                     </div>
@@ -276,7 +276,7 @@
                           </td>
                           <td>{{ collecte.createdAt | date: "dd/MM/yyyy HH:mm" }}</td>
                           <td>
-                            {{ collecte.scannedAt ? (collecte.scannedAt | date: "dd/MM/yyyy HH:mm") : "&#8212;" }}
+                            {{ collecte.collectedAt ? (collecte.collectedAt | date: "dd/MM/yyyy HH:mm") : "&#8212;" }}
                           </td>
                           <td class="col-actions">
                             @if ((collecte.status || "").toLowerCase() === "scheduled") {
@@ -2737,29 +2737,64 @@
       </div>
       <div class="drawer-body">
         @if (historyCollecte.length) {
-          <div class="drawer-section">
-            <div class="collecte-history-list">
-              @for (collecte of historyCollecte; track collecte) {
-                <div class="collecte-history-item">
-                  <div class="collecte-history-icon">
-                    <i class="material-icons">local_shipping</i>
-                  </div>
-                  <div class="collecte-history-main">
-                    <div class="collecte-history-client">
-                      {{ collecte?.clientId?.firstName }} {{ collecte?.clientId?.lastName }}
-                    </div>
-                    <div class="collecte-history-date">
-                      <i class="material-icons">event</i>
-                      {{ collecte?.scannedAt | date: "dd/MM/yyyy à HH:mm" }}
-                    </div>
-                  </div>
-                  <span class="status-badge" [class]="'status-' + (collecte.status | lowercase)">
-                    {{ collecte.status }}
-                  </span>
-                </div>
+          <div class="history-search-bar">
+            <div class="search-input-wrapper">
+              <i class="material-icons search-icon">search</i>
+              <input
+                type="text"
+                class="search-input"
+                placeholder="Rechercher par nom ou prénom..."
+                [(ngModel)]="historySearchTerm"
+              />
+              @if (historySearchTerm) {
+                <button class="clear-search-btn" (click)="historySearchTerm = ''" title="Effacer la recherche">
+                  <i class="material-icons">clear</i>
+                </button>
               }
             </div>
+            <input
+              type="date"
+              class="search-input history-date-input"
+              [(ngModel)]="historyDateFilter"
+              title="Filtrer par date"
+            />
+            @if (historySearchTerm || historyDateFilter) {
+              <button class="clear-search-btn" (click)="clearHistoryFilters()" title="Réinitialiser les filtres">
+                <i class="material-icons">filter_alt_off</i>
+              </button>
+            }
           </div>
+          @if (filteredHistoryCollecte.length) {
+            <div class="drawer-section">
+              <div class="collecte-history-list">
+                @for (collecte of filteredHistoryCollecte; track collecte) {
+                  <div class="collecte-history-item">
+                    <div class="collecte-history-icon">
+                      <i class="material-icons">local_shipping</i>
+                    </div>
+                    <div class="collecte-history-main">
+                      <div class="collecte-history-client">
+                        {{ collecte?.clientId?.firstName }} {{ collecte?.clientId?.lastName }}
+                      </div>
+                      <div class="collecte-history-date">
+                        <i class="material-icons">event</i>
+                        {{ (collecte?.collectedAt || collecte?.date) | date: "dd/MM/yyyy à HH:mm" }}
+                      </div>
+                    </div>
+                    <span class="status-badge" [class]="'status-' + (collecte.status | lowercase)">
+                      {{ collecte.status }}
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="empty-state">
+              <i class="material-icons">search_off</i>
+              <h3>Aucun résultat</h3>
+              <p>Aucune collecte ne correspond à votre recherche.</p>
+            </div>
+          }
         } @else {
           <div class="empty-state">
             <i class="material-icons">history</i>
