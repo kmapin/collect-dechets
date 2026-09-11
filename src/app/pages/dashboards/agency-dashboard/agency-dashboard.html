@@ -133,13 +133,6 @@
                   <option value="">Tous types</option>
                   <option *ngFor="let type of collectesKpiWasteTypes" [value]="type">{{ type }}</option>
                 </select>
-                <input
-                  type="text"
-                  class="filter-select"
-                  placeholder="Zone/quartier..."
-                  [(ngModel)]="collectesKpiZone"
-                  (change)="filterCollectesKpi()"
-                />
               </div>
             </div>
           </div>
