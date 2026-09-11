@@ -2,16 +2,20 @@
   <!-- Breadcrumb Navigation -->
   <div class="breadcrumb-section">
     <div class="container">
-      <nav class="breadcrumb">
-        <a routerLink="/" class="breadcrumb-item">
-          <i class="material-icons">home</i>
-          Accueil
-        </a>
-        <i class="material-icons breadcrumb-separator">chevron_right</i>
-        <a routerLink="/agencies" class="breadcrumb-item">Agences</a>
-        <i class="material-icons breadcrumb-separator">chevron_right</i>
-        <span class="breadcrumb-item active">{{ agency?.name }}</span>
-      </nav>
+      @if (isFromDashboard) {
+        <app-breadcrumb [items]="agencyBreadcrumbItems"></app-breadcrumb>
+      } @else {
+        <nav class="breadcrumb">
+          <a routerLink="/" class="breadcrumb-item">
+            <i class="material-icons">home</i>
+            Accueil
+          </a>
+          <i class="material-icons breadcrumb-separator">chevron_right</i>
+          <a routerLink="/agencies" class="breadcrumb-item">Agences</a>
+          <i class="material-icons breadcrumb-separator">chevron_right</i>
+          <span class="breadcrumb-item active">{{ agency?.name }}</span>
+        </nav>
+      }
     </div>
   </div>
 

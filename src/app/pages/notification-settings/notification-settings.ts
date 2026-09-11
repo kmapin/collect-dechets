@@ -8,6 +8,8 @@ import {
   NotificationSettingsData,
 } from '../../services/notification-settings.service';
 import { UserRole } from '../../models/user.model';
+import { Breadcrumb, BreadcrumbItem } from '../../shared/breadcrumb/breadcrumb';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../shared/notification-route.util';
 
 const EVENT_TYPES: { key: string; label: string }[] = [
   { key: 'Subscribed', label: "Confirmation d'abonnement" },
@@ -23,7 +25,7 @@ const EVENT_TYPES: { key: string; label: string }[] = [
 @Component({
   selector: 'app-notification-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Breadcrumb],
   templateUrl: './notification-settings.html',
   styleUrl: './notification-settings.scss',
 })
@@ -31,6 +33,7 @@ export class NotificationSettingsComponent implements OnInit {
   eventTypes = EVENT_TYPES;
   isGlobal = false;
   agencyId: string | null = null;
+  breadcrumbItems: BreadcrumbItem[] = [];
   isLoading = true;
   isSaving = false;
   testEmail = '';
@@ -52,6 +55,10 @@ export class NotificationSettingsComponent implements OnInit {
     const user = this.authService.getCurrentUser();
     this.isGlobal = user?.role === UserRole.SUPER_ADMIN;
     this.agencyId = (user as any)?.agencyId || null;
+    this.breadcrumbItems = [
+      { label: dashboardLabelForRole(user?.role), route: dashboardRouteForRole(user?.role), icon: 'home' },
+      { label: 'Paramètres de notifications' },
+    ];
     this.load();
   }
 

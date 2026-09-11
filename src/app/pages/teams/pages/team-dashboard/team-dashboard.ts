@@ -14,6 +14,9 @@ import { TeamService } from '../../services/team.service';
 import { Team } from '../../models/team.model';
 import { teamStatusColor, teamStatusLabel, successRateColor } from '../../models/team-labels';
 import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planning-teams-tabs';
+import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
 
 Chart.register(...registerables);
 
@@ -45,7 +48,7 @@ interface MaintAlert {
 @Component({
   selector: 'app-team-dashboard',
   standalone: true,
-  imports: [CommonModule, MatIconModule, TooltipModule, ToastModule, PlanningTeamsTabs],
+  imports: [CommonModule, MatIconModule, TooltipModule, ToastModule, PlanningTeamsTabs, Breadcrumb],
   providers: [MessageService],
   templateUrl: './team-dashboard.html',
   styleUrl: './team-dashboard.scss',
@@ -54,6 +57,13 @@ export class TeamDashboard implements OnInit, AfterViewInit, OnDestroy {
   readonly router = inject(Router);
   readonly svc    = inject(TeamService);
   private  msg    = inject(MessageService);
+  private  auth   = inject(AuthService);
+
+  readonly breadcrumbItems: BreadcrumbItem[] = [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Équipes', route: '/teams/list' },
+    { label: 'Supervision' },
+  ];
 
   // ── Chart canvas refs ─────────────────────────────────────
   @ViewChild('chartWeekly') chartWeeklyRef!: ElementRef<HTMLCanvasElement>;

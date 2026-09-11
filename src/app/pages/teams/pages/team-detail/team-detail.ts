@@ -20,11 +20,14 @@ import {
   missionStatusColor, missionStatusLabel,
 } from '../../models/team-labels';
 import { formatFrDate } from '../../../../shared/format.util';
+import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
 
 @Component({
   selector: 'app-team-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatIconModule, ToastModule, TooltipModule, TeamForm],
+  imports: [CommonModule, RouterLink, MatIconModule, ToastModule, TooltipModule, TeamForm, Breadcrumb],
   providers: [MessageService],
   templateUrl: './team-detail.html',
   styleUrl: './team-detail.scss',
@@ -36,12 +39,19 @@ export class TeamDetail implements OnInit, OnDestroy {
   private router = inject(Router);
   readonly svc   = inject(TeamService);
   private msg    = inject(MessageService);
+  private auth   = inject(AuthService);
 
   private leafletMap!: L.Map;
 
   isLoading   = signal(true);
   notFound    = signal(false);
   team        = signal<Team | null>(null);
+
+  breadcrumbItems = computed<BreadcrumbItem[]>(() => [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Équipes', route: '/teams/list' },
+    { label: this.team()?.code ?? 'Détail équipe' },
+  ]);
   activeTab   = signal<'members' | 'vehicle' | 'zones' | 'missions'>('members');
   formOpen    = signal(false);
   formSaving  = signal(false);

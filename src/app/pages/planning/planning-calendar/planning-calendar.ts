@@ -19,6 +19,9 @@ import frLocale from '@fullcalendar/core/locales/fr';
 import { PlanningService } from '../services/planning.service';
 import { Planning } from '../models/planning.model';
 import { PlanningTeamsTabs } from '../../../shared/planning-teams-tabs/planning-teams-tabs';
+import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
 
 // ── Constants ─────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
@@ -52,7 +55,7 @@ const TYPE_ICONS: Record<string, string> = {
   imports: [
     CommonModule, RouterLink, FormsModule, MatIconModule,
     TooltipModule, ToastModule, SkeletonModule, FullCalendarModule,
-    PlanningTeamsTabs,
+    PlanningTeamsTabs, Breadcrumb,
   ],
   templateUrl: './planning-calendar.html',
   styleUrl:    './planning-calendar.scss',
@@ -63,6 +66,13 @@ export class PlanningCalendarComponent implements OnInit {
 
   private svc    = inject(PlanningService);
   private router = inject(Router);
+  private auth   = inject(AuthService);
+
+  readonly breadcrumbItems: BreadcrumbItem[] = [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Planning', route: '/planning/dashboard' },
+    { label: 'Calendrier' },
+  ];
 
   // ── Loading ───────────────────────────────────────────────────
   isLoading  = this.svc.loading;

@@ -47,32 +47,10 @@ $tr: .2s ease;
 .pc-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   margin-bottom: 24px;
   flex-wrap: wrap;
-}
-
-.pc-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-
-  .bc-link {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: $text-2;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color $tr;
-    mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    &:hover { color: $green; }
-  }
-
-  .bc-sep { font-size: 16px; color: $text-3; }
-  .bc-current { color: $text-1; font-weight: 600; }
 }
 
 .pc-header-actions {

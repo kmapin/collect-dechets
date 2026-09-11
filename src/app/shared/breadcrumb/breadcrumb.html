@@ -1,0 +1,24 @@
+@if (items.length) {
+  <nav class="app-breadcrumb" [class.app-breadcrumb--on-color]="variant === 'onColor'" aria-label="Fil d'Ariane">
+    @for (item of items; track item.label; let last = $last) {
+      @if (!last && item.route) {
+        <a [routerLink]="item.route" class="app-breadcrumb__link">
+          @if (item.icon) {
+            <i class="material-icons app-breadcrumb__icon">{{ item.icon }}</i>
+          }
+          <span>{{ item.label }}</span>
+        </a>
+      } @else {
+        <span class="app-breadcrumb__current">
+          @if (item.icon) {
+            <i class="material-icons app-breadcrumb__icon">{{ item.icon }}</i>
+          }
+          <span>{{ item.label }}</span>
+        </span>
+      }
+      @if (!last) {
+        <span class="app-breadcrumb__sep" aria-hidden="true">&gt;</span>
+      }
+    }
+  </nav>
+}

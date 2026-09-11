@@ -18,6 +18,9 @@ import { PlanningService } from '../services/planning.service';
 import { Planning, TeamApi } from '../models/planning.model';
 import { AgencyService } from '../../../services/agency.service';
 import { formatFrDate, formatFrDateTime } from '../../../shared/format.util';
+import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
 interface Incident {
   id: string; severity: 'critical' | 'warning' | 'info';
   title: string; description: string; reporter: string;
@@ -53,6 +56,7 @@ interface Notification {
   imports: [
     CommonModule, FormsModule, RouterLink, MatIconModule,
     TimelineModule, ChartModule, TagModule, ToastModule, TooltipModule, SkeletonModule,
+    Breadcrumb,
   ],
   providers: [MessageService],
   templateUrl: './planning-detail.html',
@@ -66,6 +70,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   private svc          = inject(PlanningService);
   private msg          = inject(MessageService);
   private agencySvc    = inject(AgencyService);
+  private auth         = inject(AuthService);
 
   private leafletMap!: L.Map;
 
@@ -86,6 +91,12 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   showDeleteDlg   = signal(false);
   isActioning   = signal(false);
   planning      = signal<Planning | null>(null);
+
+  breadcrumbItems = computed<BreadcrumbItem[]>(() => [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Planning', route: '/planning/dashboard' },
+    { label: this.planning()?.reference ?? 'Détails du planning' },
+  ]);
 
   planningStats     = signal<PlanningStats>({ totalHouseholds: 0, householdsCollected: 0, completionRate: 0 });
   isLoadingStats    = signal(false);

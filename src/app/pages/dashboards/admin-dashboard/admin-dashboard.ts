@@ -2850,7 +2850,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       "Détails",
       "Ouverture des détails de l'agence",
     );
-    this.router.navigate(["/agencies", agencyId]);
+    this.router.navigate(["/agencies", agencyId], { state: { fromDashboard: true } });
   }
   selectedClient: any = null;
 
@@ -3190,7 +3190,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     );
   }
   contactAgency(agencyId?: string): void {
-    this.router.navigate(["/agencies", agencyId]);
+    this.router.navigate(["/agencies", agencyId], { state: { fromDashboard: true } });
     this.notificationService.showInfo(
       "Contact",
       "Ouverture des informations de contact",

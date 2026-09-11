@@ -46,11 +46,6 @@ $bg-white : #fff;
   gap: 6px;
   h1 { font-size: 20px; font-weight: 800; color: $fg; margin: 0; }
 }
-.tph-breadcrumb {
-  font-size: 14px; color: $fg-muted; cursor: pointer;
-  &:hover { color: #3b82f6; text-decoration: underline; }
-}
-.tph-sep { font-size: 18px; color: $fg-light; width: 18px; height: 18px; }
 .tph-right {
   display: flex;
   align-items: center;

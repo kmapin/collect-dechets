@@ -2,14 +2,14 @@
 
 <div class="tc-page container">
 
+  <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
+
   <div class="tc-page-header">
     <div class="tph-left">
       <button class="tph-back" type="button" (click)="cancel()" pTooltip="Retour à la liste" tooltipPosition="bottom">
         <mat-icon>arrow_back</mat-icon>
       </button>
       <div class="tph-title">
-        <span class="tph-breadcrumb" (click)="cancel()">Équipes</span>
-        <mat-icon class="tph-sep">chevron_right</mat-icon>
         <h1>Nouvelle équipe</h1>
       </div>
     </div>

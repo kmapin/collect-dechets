@@ -21,6 +21,22 @@ export function dashboardRouteForRole(role: string | null | undefined): string {
   return (role && DASHBOARD_ROUTE_BY_ROLE[role]) || '/';
 }
 
+// Libellé du premier maillon du fil d'Ariane (app-breadcrumb) — 'Dashboard agence' est le
+// seul libellé explicitement demandé (espace agence) ; les autres rôles ont un intitulé
+// générique pour les pages partagées (ex. notification-settings, module finance) qu'ils
+// peuvent aussi atteindre.
+const DASHBOARD_LABEL_BY_ROLE: Record<string, string> = {
+  client: 'Tableau de bord',
+  manager: 'Dashboard agence',
+  collector: 'Tableau de bord',
+  municipality: 'Tableau de bord',
+  super_admin: 'Tableau de bord',
+};
+
+export function dashboardLabelForRole(role: string | null | undefined): string {
+  return (role && DASHBOARD_LABEL_BY_ROLE[role]) || 'Accueil';
+}
+
 const AGENCY_TAB_BY_TYPE: Record<string, string> = {
   Signalement: 'reports',
   Planning: 'schedules',

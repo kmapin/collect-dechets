@@ -17,6 +17,9 @@ import { PlanningService } from '../services/planning.service';
 import { Planning, PlanningAlert, PlanningStatus } from '../models/planning.model';
 import { TeamService } from '../../teams/services/team.service';
 import { PlanningTeamsTabs } from '../../../shared/planning-teams-tabs/planning-teams-tabs';
+import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
 
 interface StatCard {
   label: string;
@@ -36,13 +39,18 @@ interface StatCard {
     ChartModule, TableModule, ButtonModule, TagModule,
     TooltipModule, SkeletonModule,
     BadgeModule, ProgressBarModule,
-    ToastModule, ConfirmDialogModule,PlanningTeamsTabs
+    ToastModule, ConfirmDialogModule,PlanningTeamsTabs, Breadcrumb
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './planning-dashboard.html',
   styleUrl: './planning-dashboard.scss',
 })
 export class PlanningDashboard implements OnInit, OnDestroy {
+  private auth = inject(AuthService);
+  readonly breadcrumbItems: BreadcrumbItem[] = [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Planning' },
+  ];
   private planningService    = inject(PlanningService);
   private teamService = inject(TeamService)
   private msg     = inject(MessageService);

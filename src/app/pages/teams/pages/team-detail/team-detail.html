@@ -24,11 +24,7 @@
       <a routerLink="/teams/list" class="back-btn">
         <mat-icon>arrow_back</mat-icon>
       </a>
-      <div class="tdh-breadcrumb">
-        <a routerLink="/teams/list">Équipes</a>
-        <mat-icon>chevron_right</mat-icon>
-        <span>{{ team()!.code }}</span>
-      </div>
+      <app-breadcrumb [items]="breadcrumbItems()"></app-breadcrumb>
     </div>
 
     <div class="tdh-main">

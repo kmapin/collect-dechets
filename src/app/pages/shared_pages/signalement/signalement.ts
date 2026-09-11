@@ -266,7 +266,7 @@ export class Signalement implements OnDestroy {
 
   //For Actons butttons
   contactAgency(agencyId?: string): void {
-    this.router.navigate(["/agencies", agencyId]);
+    this.router.navigate(["/agencies", agencyId], { state: { fromDashboard: true } });
     this.notificationService.showInfo(
       "Contact",
       "Ouverture des informations de contact"

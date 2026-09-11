@@ -20,6 +20,8 @@ import {
 } from "../../models/countries-org.model";
 import { Admin } from "../../services/admin";
 import { MobileMoneyFormComponent } from "../payment/mobile-money-form/mobile-money-form";
+import { Breadcrumb, BreadcrumbItem } from "../../shared/breadcrumb/breadcrumb";
+import { dashboardRouteForRole, dashboardLabelForRole } from "../../shared/notification-route.util";
 
 @Component({
   selector: "app-agency-details",
@@ -29,6 +31,7 @@ import { MobileMoneyFormComponent } from "../payment/mobile-money-form/mobile-mo
     ReactiveFormsModule,
     DrawerModule,
     MobileMoneyFormComponent,
+    Breadcrumb,
   ],
   templateUrl: "./agency-details.html",
   styleUrl: "./agency-details.css",
@@ -118,6 +121,36 @@ export class AgencyDetails implements OnInit {
   agencyId: string | null = null;
   agencyIdd: string | null = null;
   currentUser: RegisterUserData | null = null;
+
+  // Le fil d'Ariane dépend de la provenance réelle : un manager qui arrive ici via
+  // "Portail Agence" depuis SON tableau de bord (vérifié par comparaison d'agencyId, donc
+  // fiable même après un rechargement de page) voit "Dashboard agence > Portail agence".
+  // Les autres rôles (admin, municipalité, client) arrivant via une action de LEUR tableau
+  // de bord (repérée par le drapeau `fromDashboard` posé sur la navigation — cf.
+  // admin-dashboard/municipality-dashboard/client-dashboard/signalement) voient
+  // "Leur tableau de bord > {nom de l'agence}". Sans ce drapeau (lien "Agences" public,
+  // accès direct par URL, page d'accueil...), le fil d'Ariane public existant
+  // ("Accueil > Agences > {nom}") reste affiché, ce qui est le comportement correct pour
+  // cet accès-là.
+  get isOwnAgencyView(): boolean {
+    return (
+      this.currentUser?.role === "manager" &&
+      !!this.agencyId &&
+      this.currentUser?.agencyId === this.agencyId
+    );
+  }
+
+  get isFromDashboard(): boolean {
+    return this.isOwnAgencyView || !!(history.state && history.state.fromDashboard);
+  }
+
+  get agencyBreadcrumbItems(): BreadcrumbItem[] {
+    const label = this.isOwnAgencyView ? "Portail agence" : (this.agency?.name || "Agence");
+    return [
+      { label: dashboardLabelForRole(this.currentUser?.role), route: dashboardRouteForRole(this.currentUser?.role), icon: "home" },
+      { label },
+    ];
+  }
   messageData: Message = {
     sender: "",
     receiver: "",
@@ -424,12 +457,6 @@ export class AgencyDetails implements OnInit {
       if (response.success && response.data) {
         console.log("[DEBUG] Agency response:", response.data);
         this.agency = this.mapApiAgency(response.data);
-        this.agencyId = this.agency?.agencyId;
-        if (this.agencyId) {
-          console.log("[DEBUG] Agency details:", this.agency);
-          console.log("[DEBUG] AgencyID details:", this.agencyId);
-          this.loadTariffs(this.agencyId || "");
-        }
       } else {
         console.error("Erreur lors du chargement de l'agence");
         // Fallback vers les données mockées si l'API échoue

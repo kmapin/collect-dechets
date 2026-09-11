@@ -10,17 +10,10 @@
     </div>
   }
 
+  <app-breadcrumb [items]="breadcrumbItems()"></app-breadcrumb>
+
   <!-- =================== HEADER =================== -->
   <div class="pc-header">
-    <div class="pc-breadcrumb">
-      <a routerLink="/planning/dashboard" class="bc-link">
-        <mat-icon>dashboard</mat-icon><span>Planning</span>
-      </a>
-      <mat-icon class="bc-sep">chevron_right</mat-icon>
-      <span class="bc-current">
-        {{ isEditMode() ? 'Modifier le planning' : isDuplicateMode() ? 'Dupliquer le planning' : 'Nouveau planning' }}
-      </span>
-    </div>
     <div class="pc-header-actions">
       @if (draftSaved()) {
         <span class="draft-badge"><mat-icon>cloud_done</mat-icon> Brouillon sauvegardé</span>

@@ -21,6 +21,9 @@ import { PlanningService } from '../../../planning/services/planning.service';
 import { Planning } from '../../../planning/models/planning.model';
 import { teamStatusColor, teamStatusLabel } from '../../models/team-labels';
 import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planning-teams-tabs';
+import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
 
 // ── Local types ──────────────────────────────────────────────────────
 type AvailView = 'timeline' | 'calendar' | 'heatmap' | 'alertes';
@@ -65,7 +68,7 @@ const HEAT_HOURS = Array.from({ length: H_SPAN }, (_, i) => i + H_START);
   standalone: true,
   imports: [
     CommonModule, FormsModule, MatIconModule,
-    TooltipModule, ToastModule, FullCalendarModule, PlanningTeamsTabs,
+    TooltipModule, ToastModule, FullCalendarModule, PlanningTeamsTabs, Breadcrumb,
   ],
   providers: [MessageService],
   templateUrl: './team-availability.html',
@@ -76,6 +79,13 @@ export class TeamAvailability implements OnInit, OnDestroy {
   readonly teamService  = inject(TeamService);
   readonly planningSvc  = inject(PlanningService);
   private  msg          = inject(MessageService);
+  private  auth         = inject(AuthService);
+
+  readonly breadcrumbItems: BreadcrumbItem[] = [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Équipes', route: '/teams/list' },
+    { label: 'Disponibilités' },
+  ];
 
   // ── View & time ───────────────────────────────────────────────────
   view        = signal<AvailView>('timeline');

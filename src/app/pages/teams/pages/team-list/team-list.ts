@@ -21,6 +21,9 @@ import { TeamDetailModal } from '../../components/team-detail-modal/team-detail-
 import { Team, TeamFormData, TeamStatus, TeamMember } from '../../models/team.model';
 import { teamStatusLabel, teamStatusColor, vehicleStatusColor } from '../../models/team-labels';
 import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planning-teams-tabs';
+import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
 
 @Component({
   selector: 'app-team-list',
@@ -28,7 +31,7 @@ import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planni
   imports: [
     CommonModule, FormsModule, MatIconModule,
     TableModule, TooltipModule, ToastModule, SkeletonModule, TagModule, ContextMenuModule,
-    TeamCard, TeamForm, TeamDetailModal, PlanningTeamsTabs,
+    TeamCard, TeamForm, TeamDetailModal, PlanningTeamsTabs, Breadcrumb,
   ],
   providers: [MessageService],
   templateUrl: './team-list.html',
@@ -42,6 +45,12 @@ export class TeamList implements OnInit {
   private  msg    = inject(MessageService);
   private  route  = inject(ActivatedRoute);
   readonly router = inject(Router);
+  private  auth   = inject(AuthService);
+
+  readonly breadcrumbItems: BreadcrumbItem[] = [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Équipes' },
+  ];
 
   constructor() {
     effect(() => {

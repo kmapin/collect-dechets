@@ -1098,7 +1098,7 @@ export class MunicipalityDashboard  implements OnInit {
       "Détails",
       "Ouverture des détails de l'agence"
     );
-    this.router.navigate(["/agencies", agencyId]);
+    this.router.navigate(["/agencies", agencyId], { state: { fromDashboard: true } });
   }
 
   auditAgency(agencyId: string): void {
@@ -1109,7 +1109,7 @@ export class MunicipalityDashboard  implements OnInit {
   }
 
   contactAgency(agencyId?: string): void {
-    this.router.navigate(["/agencies", agencyId]);
+    this.router.navigate(["/agencies", agencyId], { state: { fromDashboard: true } });
     this.notificationService.showInfo(
       "Contact",
       "Ouverture des informations de contact"

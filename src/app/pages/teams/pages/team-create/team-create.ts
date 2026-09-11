@@ -14,6 +14,9 @@ import { debounceTime } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TeamService } from '../../services/team.service';
 import { MemberRole, TeamStatus, TeamMember } from '../../models/team.model';
+import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
 import {
   vehicleTypeIcon, vehicleStatusColor, vehicleStatusLabel,
 } from '../../models/team-labels';
@@ -59,7 +62,7 @@ const DRAFT_KEY = 'sahelys-team-create-draft';
 @Component({
   selector: 'app-team-create',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatIconModule, ToastModule, TooltipModule],
+  imports: [CommonModule, ReactiveFormsModule, MatIconModule, ToastModule, TooltipModule, Breadcrumb],
   providers: [MessageService],
   templateUrl: './team-create.html',
   styleUrl: './team-create.scss',
@@ -68,6 +71,13 @@ export class TeamCreate {
   private fb      = inject(FormBuilder);
   private router  = inject(Router);
   readonly svc    = inject(TeamService);
+  private auth    = inject(AuthService);
+
+  readonly breadcrumbItems: BreadcrumbItem[] = [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Équipes', route: '/teams/list' },
+    { label: 'Nouvelle équipe' },
+  ];
   private msg     = inject(MessageService);
 
   // ── Constants exposed to template ────────────────────────────

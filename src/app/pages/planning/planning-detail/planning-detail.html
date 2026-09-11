@@ -33,13 +33,7 @@
         <a routerLink="/planning/dashboard" class="tb-back">
           <mat-icon>arrow_back</mat-icon>
         </a>
-        <div class="tb-breadcrumb">
-          <a routerLink="/planning/dashboard" class="tb-bc-link">
-            <mat-icon>dashboard</mat-icon><span>Planning</span>
-          </a>
-          <mat-icon class="tb-bc-sep">chevron_right</mat-icon>
-          <span class="tb-bc-current">{{ planning()!.reference }}</span>
-        </div>
+        <app-breadcrumb [items]="breadcrumbItems()"></app-breadcrumb>
       </div>
 
       <div class="pd-topbar__center">

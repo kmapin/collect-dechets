@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { TerritoryHttpService } from '../../services/territory-http.service';
 import { NotificationService } from '../../services/notification.service';
+import { Breadcrumb, BreadcrumbItem } from '../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../shared/notification-route.util';
 
 interface QuartierRow {
   id: string;
@@ -34,11 +37,18 @@ const EMPTY_FORM: QuartierForm = { name: '', code: '', cityId: '', arrondissemen
 @Component({
   selector: 'app-quartiers-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Breadcrumb],
   templateUrl: './quartiers-management.html',
   styleUrl: './quartiers-management.scss',
 })
 export class QuartiersManagementComponent implements OnInit {
+  private auth = inject(AuthService);
+
+  readonly breadcrumbItems: BreadcrumbItem[] = [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Gestion des quartiers' },
+  ];
+
   isLoading = true;
   isSaving = false;
   erreur: string | null = null;

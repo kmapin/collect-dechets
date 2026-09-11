@@ -27,13 +27,7 @@
       <button type="button" class="tb-icon-btn" (click)="toggleSidebar()" pTooltip="Filtres" tooltipPosition="bottom">
         <mat-icon>{{ sidebarOpen() ? 'menu_open' : 'menu' }}</mat-icon>
       </button>
-      <div class="tb-breadcrumb">
-        <a routerLink="/planning/dashboard" class="tb-bc-link">
-          <mat-icon>dashboard</mat-icon><span>Planning</span>
-        </a>
-        <mat-icon class="tb-bc-sep">chevron_right</mat-icon>
-        <span>Calendrier</span>
-      </div>
+      <app-breadcrumb [items]="breadcrumbItems"></app-breadcrumb>
     </div>
 
     <div class="pcal-topbar__center">

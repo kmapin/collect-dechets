@@ -17,6 +17,9 @@ import { PlanningType, WasteType, TeamApi, ConflictResult } from '../models/plan
 import { PlanningTypeSelectorComponent } from '../planning-type-selector/planning-type-selector';
 import { ZoneSelectorComponent, ZoneSelection } from '../zone-selector/zone-selector';
 import { TeamConflictDetectorComponent } from '../team-conflict-detector/team-conflict-detector';
+import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
 
 // ── Local interfaces ────────────────────────────────────────────
 interface StepDef {
@@ -53,6 +56,7 @@ interface ClientOpt {
     PlanningTypeSelectorComponent,
     ZoneSelectorComponent,
     TeamConflictDetectorComponent,
+    Breadcrumb,
   ],
   templateUrl: './planning-create.html',
   styleUrl: './planning-create.scss',
@@ -65,6 +69,7 @@ export class PlanningCreate implements OnInit {
   private svc         = inject(PlanningService);
   private msgSvc      = inject(MessageService);
   private destroyRef  = inject(DestroyRef);
+  private auth        = inject(AuthService);
 
   // ── State ────────────────────────────────────────────────────
   currentStep  = signal(0);
@@ -82,6 +87,12 @@ export class PlanningCreate implements OnInit {
   duplicateId     = signal<string | null>(null);
   isDuplicateMode = computed(() => !!this.duplicateId());
   duplicateRef    = signal<string>('');
+
+  breadcrumbItems = computed<BreadcrumbItem[]>(() => [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Planning', route: '/planning/dashboard' },
+    { label: this.isEditMode() ? 'Modifier le planning' : this.isDuplicateMode() ? 'Dupliquer le planning' : 'Nouveau planning' },
+  ]);
 
   readonly today = new Date();
 

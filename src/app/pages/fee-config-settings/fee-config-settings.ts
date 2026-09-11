@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NotificationService } from '../../services/notification.service';
 import { FeeBlock, FeeConfigData, FeeConfigService, FeeType } from '../../services/fee-config.service';
+import { Breadcrumb, BreadcrumbItem } from '../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../shared/notification-route.util';
 
 type FeeBlockKey = 'clientPaymentFee' | 'agencyWithdrawalFee';
 
@@ -11,11 +14,13 @@ const DEFAULT_BLOCK: FeeBlock = { enabled: false, type: 'PERCENTAGE', value: 0 }
 @Component({
   selector: 'app-fee-config-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Breadcrumb],
   templateUrl: './fee-config-settings.html',
   styleUrl: './fee-config-settings.scss',
 })
 export class FeeConfigSettingsComponent implements OnInit {
+  private auth = inject(AuthService);
+
   isLoading = true;
   isSaving = false;
 
@@ -25,6 +30,11 @@ export class FeeConfigSettingsComponent implements OnInit {
   readonly feeTypes: { value: FeeType; label: string }[] = [
     { value: 'PERCENTAGE', label: 'Pourcentage (%)' },
     { value: 'FIXED', label: 'Montant fixe (FCFA)' },
+  ];
+
+  readonly breadcrumbItems: BreadcrumbItem[] = [
+    { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
+    { label: 'Frais plateforme' },
   ];
 
   constructor(

@@ -17,6 +17,7 @@
             <button
               class="qa-btn"
               routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}"
+              [state]="{ fromDashboard: true }"
               >
               <i class="material-icons">business</i>
               Mon agence
@@ -578,6 +579,7 @@
                         <button
                           class="btn btn-secondary btn-small"
                           routerLink="/agencies/{{ latestSubscription.agencyId?._id }}"
+                          [state]="{ fromDashboard: true }"
                           >
                           <i class="material-icons">visibility</i>
                           Voir l'agence
