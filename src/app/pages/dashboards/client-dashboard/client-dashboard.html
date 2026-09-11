@@ -1103,7 +1103,7 @@
 
     <!-- Modal de notation de l'agence (après une collecte effectuée) -->
     @if (showRatingModal) {
-      <div class="drawer-overlay" (click)="closeRatingModal()">
+      <div class="drawer-overlay">
         <div class="drawer-content rating-modal-content" (click)="$event.stopPropagation()">
           <div class="drawer-header">
             <h3>Noter {{ ratingTarget?.agencyName }}</h3>

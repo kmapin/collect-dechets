@@ -81,7 +81,7 @@
   </div>
 
   <!-- Drawer création/édition -->
-  <div class="qm-drawer-overlay" *ngIf="showForm" (click)="fermerForm()">
+  <div class="qm-drawer-overlay" *ngIf="showForm">
     <div class="qm-drawer" (click)="$event.stopPropagation()">
       <div class="qm-drawer__header">
         <h2>{{ editingId ? 'Modifier le quartier' : 'Nouveau quartier' }}</h2>

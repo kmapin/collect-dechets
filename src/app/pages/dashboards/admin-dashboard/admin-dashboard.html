@@ -2234,7 +2234,7 @@
   </div>
 
   <!-- Drawer Communication -->
-  <div class="drawer-overlay" *ngIf="showCommunicationModal" (click)="showCommunicationModal = false">
+  <div class="drawer-overlay" *ngIf="showCommunicationModal">
     <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Nouvelle Communication</h3>
@@ -2311,7 +2311,7 @@
 </div>
 
 @if(visible1){
-<div class="drawer-overlay" (click)="visible1 = false">
+<div class="drawer-overlay">
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <!-- ── En-tête ── -->
@@ -2606,7 +2606,7 @@
 }
 
 @if (visibleEditUserDrawer) {
-<div class="drawer-overlay" (click)="closeEditUserDrawer()">
+<div class="drawer-overlay">
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <div class="drawer-header">
@@ -2980,7 +2980,7 @@
 }
 
 @if (visibleAddAgentDrawer) {
-<div class="drawer-overlay" (click)="visibleAddAgentDrawer = false">
+<div class="drawer-overlay">
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <!-- En-tête -->
@@ -3115,7 +3115,7 @@
 }
 
 @if (visibleIncidentDrawer && selectedIncident) {
-<div class="drawer-overlay" (click)="visibleIncidentDrawer = false">
+<div class="drawer-overlay">
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <!-- En-tête -->
@@ -3263,7 +3263,7 @@
 }
 
 @if (visibleWithdrawalDetailDrawer) {
-<div class="drawer-overlay" (click)="closeWithdrawalDetailDrawer()">
+<div class="drawer-overlay">
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <div class="drawer-header">

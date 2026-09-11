@@ -86,7 +86,7 @@
   </ng-container>
 
   <!-- Drawer des redevances d'un contrat -->
-  <div class="fin-contracts__drawer-overlay" *ngIf="showRedevancesDrawer()" (click)="closeRedevancesDrawer()">
+  <div class="fin-contracts__drawer-overlay" *ngIf="showRedevancesDrawer()">
     <div class="fin-contracts__drawer" (click)="$event.stopPropagation()">
       <div class="fin-contracts__drawer-header">
         <h3>Redevances — {{ redevancesDrawerContrat() ? contratClientName(redevancesDrawerContrat()!) : '' }}</h3>
@@ -187,7 +187,7 @@
   </div>
 
   <!-- Drawer de création de contrat -->
-  <div class="fin-contracts__drawer-overlay" *ngIf="showCreateModal()" (click)="closeCreateModal()">
+  <div class="fin-contracts__drawer-overlay" *ngIf="showCreateModal()">
     <div class="fin-contracts__drawer" (click)="$event.stopPropagation()">
       <div class="fin-contracts__drawer-header">
         <h3>Nouveau contrat</h3>

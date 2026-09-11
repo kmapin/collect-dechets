@@ -149,7 +149,7 @@
 
   <!-- Formulaire de paiement (redevance) -->
   @if (showPaymentForm && tarifResponse) {
-    <div class="payment-drawer-overlay" (click)="closePaymentForm()">
+    <div class="payment-drawer-overlay">
       <div class="payment-drawer" (click)="$event.stopPropagation()">
         <div class="payment-drawer-header">
           <h2>{{ tarifResponse?.paiementGroupeId ? 'Paiement groupé' : 'Paiement de la redevance' }}</h2>

@@ -161,7 +161,7 @@
 
   <!-- Payment Form Drawer -->
   @if (showPaymentForm && tarifResponse) {
-  <div class="payment-drawer-overlay" (click)="closePaymentForm()">
+  <div class="payment-drawer-overlay">
     <div class="payment-drawer" (click)="$event.stopPropagation()">
       <div class="payment-drawer-header">
         <h2>Paiement de l'abonnement</h2>
@@ -179,7 +179,7 @@
 
   <!-- Drawer "Contactez l'agence" -->
   @if (showContactDrawer) {
-  <div class="contact-drawer-overlay" (click)="closeContactDrawer()">
+  <div class="contact-drawer-overlay">
     <div class="contact-drawer" (click)="$event.stopPropagation()">
       <div class="contact-drawer-header">
         <h2>Envoyer un message à l'agence {{ contactAgencyName }}</h2>

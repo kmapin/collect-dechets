@@ -1399,7 +1399,7 @@
         }
 
         @if (showDemandeTeamPicker) {
-          <div class="drawer-overlay" (click)="closeDemandeTeamPicker()">
+          <div class="drawer-overlay">
             <div class="drawer-content" (click)="$event.stopPropagation()">
               <div class="drawer-header">
                 <h3>Affecter la collecte express à une équipe</h3>
@@ -1557,7 +1557,7 @@
             </div>
             <!-- Message -->
             @if (showMessageModal) {
-              <div class="drawer-overlay" (click)="showMessageModal = false">
+              <div class="drawer-overlay">
                 <div class="drawer-content" (click)="$event.stopPropagation()">
                   <div class="drawer-header">
                     <h3>Décrivez nous votre besoins</h3>
@@ -1864,7 +1864,7 @@
 
             <!-- Drawer Ajouter / Modifier Engin -->
             @if (showVehicleModal) {
-              <div class="drawer-overlay" (click)="closeVehicleModal()">
+              <div class="drawer-overlay">
                 <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                   <div class="drawer-header">
                     <h3>{{ isEditingVehicle ? "Modifier l'engin" : "Ajouter un engin" }}</h3>
@@ -1986,7 +1986,7 @@
           <div class="analytics-content">
             <!-- Drawer Ajouter Employe -->
             @if (showAddEmployeeModal) {
-              <div class="drawer-overlay" (click)="closeAddEmployeeModal()">
+              <div class="drawer-overlay">
                 <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                   <div class="drawer-header">
                     <h3>
@@ -2322,7 +2322,7 @@
 
             <!-- Drawer Ajouter Tarif -->
             @if (showZoneModal) {
-              <div class="drawer-overlay" (click)="showZoneModal = false">
+              <div class="drawer-overlay">
                 <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                   <div class="drawer-header">
                     <h3>
@@ -2434,7 +2434,7 @@
           </div>
 
           @if (selectedSchedule) {
-            <div class="modal-backdrop" (click)="closeModal()">
+            <div class="modal-backdrop">
               <div class="sched-detail-modal" (click)="$event.stopPropagation()">
                 <!-- Header -->
                 <div class="sdm-header">
@@ -2533,7 +2533,7 @@
           }
           <!-- Drawer Mes Tarifs -->
           @if (showTariffsModal) {
-            <div class="drawer-overlay" (click)="closeTariffsModal()">
+            <div class="drawer-overlay">
               <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                 <div class="drawer-header">
                   <h3>
@@ -2601,7 +2601,7 @@
 </div>
 <!-- Drawer Détails du Client -->
 @if (showClientDetailsModal) {
-  <div class="drawer-overlay" (click)="closeClientDetailsModal()">
+  <div class="drawer-overlay">
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Détails du Client</h3>
@@ -2697,7 +2697,7 @@
   </div>
 }
 @if (selectedImage) {
-  <div class="drawer-overlay" (click)="closeImageModal()">
+  <div class="drawer-overlay">
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Image</h3>
@@ -2712,7 +2712,7 @@
   </div>
 }
 @if (showHistoryModal) {
-  <div class="drawer-overlay" (click)="closeHistoryModal()">
+  <div class="drawer-overlay">
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Historique des Collectes</h3>
@@ -2794,7 +2794,7 @@
 
 <!-- Drawer pour gérer les zones -->
 @if (showZoneModalcouverture) {
-  <div class="drawer-overlay" (click)="closeZoneModalcouverture()">
+  <div class="drawer-overlay">
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Définir les zones couvertes</h3>
@@ -2935,7 +2935,7 @@
 
 <!-- Modal de confirmation de suppression -->
 @if (showDeleteConfirmation) {
-  <div class="drawer-overlay" (click)="cancelDeleteEmployee()">
+  <div class="drawer-overlay">
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>

@@ -237,7 +237,7 @@
 </div>
 
 @if (selectedImage) {
-<div class="drawer-overlay" (click)="closeImageModal()">
+<div class="drawer-overlay">
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
       <h3>Photo du signalement</h3>
@@ -275,7 +275,7 @@
 }
 
 @if (showTeamPickerModal) {
-<div class="drawer-overlay" (click)="closeTeamPicker()">
+<div class="drawer-overlay">
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
       <h3>{{ teamPickerIncident?.resolutionTeamId?._id ? 'Réaffecter le signalement' : 'Affecter à une équipe' }}</h3>
@@ -331,7 +331,7 @@
 
 <!-- Détail d'un signalement -->
 @if (visibleIncidentDrawer && detailIncident; as incident) {
-<div class="drawer-overlay" (click)="closeIncidentDrawer()">
+<div class="drawer-overlay">
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
       <h3>Détails du signalement</h3>

@@ -447,7 +447,7 @@
     </div>
   </div>
 
-  <div class="fin-agent-payment__drawer-overlay" *ngIf="showDetailDrawer()" (click)="closeDetailDrawer()">
+  <div class="fin-agent-payment__drawer-overlay" *ngIf="showDetailDrawer()">
     <div class="fin-agent-payment__drawer" (click)="$event.stopPropagation()">
       <div class="fin-agent-payment__drawer-header">
         <h3>Détail du paiement</h3>
