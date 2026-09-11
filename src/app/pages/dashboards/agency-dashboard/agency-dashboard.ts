@@ -4910,57 +4910,55 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   // Méthode pour retirer une zone
+  isRemovingZone = false;
   removeZone(zone: any): void {
-    if (!zone) {
-      console.warn("Zone non définie");
-      return;
-    }
+    if (!zone || this.isRemovingZone) return;
 
-    // Afficher une confirmation avant suppression
     const zoneName = zone.neighborhood || zone.name || zone;
     const confirmed = confirm(
       `Êtes-vous sûr de vouloir retirer la zone "${zoneName}" ?`,
     );
+    if (!confirmed) return;
 
-    if (confirmed) {
-      // Retirer la zone de la liste locale
-      this.zones = this.zones.filter((z) => {
-        // Comparaison robuste selon la structure de l'objet zone
-        if (typeof z === "string" && typeof zone === "string") {
-          return z !== zone;
-        }
-        if (z._id && zone._id) {
-          return z._id !== zone._id;
-        }
-        if (z.id && zone.id) {
-          return z.id !== zone.id;
-        }
-        return z !== zone;
-      });
-
-      // Invalider le cache des valeurs calculées
-      this.invalidateCache();
-
-      // Mettre à jour le badge du tab zones
-      const zonesTab = this.tabs.find((tab) => tab.id === "zones");
-      if (zonesTab) {
-        zonesTab.badge = this.zones.length;
-        this.cdr.detectChanges();
-      }
-
-      // Réinitialiser la zone sélectionnée si c'est celle qui vient d'être retirée
-      if (this.selectedZoneForDisplay === zone) {
-        this.selectedZoneForDisplay = null;
-      }
-
-      // Afficher une notification de succès
-      this.notificationService.showSuccess(
-        "Succès",
-        `La zone "${zoneName}" a été retirée avec succès.`,
-      );
-
-      console.log(`Zone "${zoneName}" retirée. Zones restantes:`, this.zones);
+    const agencyId = this.currentUser?.agencyId;
+    if (!agencyId) {
+      this.notificationService.showError("Erreur", "ID agence manquant.");
+      return;
     }
+
+    this.isRemovingZone = true;
+    this.agencyService.removeAgencyZones$(agencyId, [zoneName]).subscribe({
+      next: (response) => {
+        this.isRemovingZone = false;
+
+        this.zones = response?.data?.zoneActivite ?? this.zones.filter((z) => (z.neighborhood || z.name || z) !== zoneName);
+
+        this.invalidateCache();
+
+        const zonesTab = this.tabs.find((tab) => tab.id === "zones");
+        if (zonesTab) {
+          zonesTab.badge = this.zones.length;
+        }
+
+        if (this.selectedZoneForDisplay === zone) {
+          this.selectedZoneForDisplay = null;
+        }
+        this.cdr.detectChanges();
+
+        this.notificationService.showSuccess(
+          "Succès",
+          `La zone "${zoneName}" a été retirée avec succès.`,
+        );
+      },
+      error: (error) => {
+        this.isRemovingZone = false;
+        console.error("Erreur lors du retrait de la zone :", error);
+        this.notificationService.showError(
+          "Erreur",
+          error?.error?.message || "Impossible de retirer cette zone.",
+        );
+      },
+    });
   }
 
   getInitials(fullName: string) {
@@ -5520,8 +5518,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       return;
     }
 
+    const { city, arrondissement, sector, neighborhood } = this.userData.address;
     const zoneData = {
-      zones: this.userData.address.neighborhood,
+      zones: neighborhood.map((n) => ({ city, arrondissement, sector, neighborhood: n })),
     };
 
     const agencyId = this.currentUser?.agencyId;

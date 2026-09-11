@@ -925,7 +925,7 @@ export class AgencyService {
     );
   }
   // Mise à jour des zones de service pour une agence
-  updateAgencyZones$(agencyId: string, zoneData: { zones: string[] }): Observable<any> {
+  updateAgencyZones$(agencyId: string, zoneData: { zones: { city: string; arrondissement: string; sector: string; neighborhood: string }[] }): Observable<any> {
     const url = `${environment.apiUrl}/agencies/${agencyId}/zone`;
 
     return this.http.patch<any>(url, zoneData).pipe(
@@ -935,6 +935,18 @@ export class AgencyService {
       }),
       catchError(error => {
         console.error("Erreur lors de la mise à jour des zones :", error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Retrait de zones de service pour une agence (par nom de quartier)
+  removeAgencyZones$(agencyId: string, neighborhoods: string[]): Observable<any> {
+    const url = `${environment.apiUrl}/agencies/${agencyId}/zone?delete=true`;
+
+    return this.http.patch<any>(url, { zones: neighborhoods }).pipe(
+      catchError(error => {
+        console.error("Erreur lors de la suppression des zones :", error);
         return throwError(() => error);
       })
     );

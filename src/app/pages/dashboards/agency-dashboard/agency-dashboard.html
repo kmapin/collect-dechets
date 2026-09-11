@@ -966,7 +966,7 @@
                                 </div>
                                 <div class="location-details">
                                   <span class="location-label">Ville</span>
-                                  <span class="location-value">{{ selectedZoneForDisplay.city || "Ouagadougou" }}</span>
+                                  <span class="location-value">{{ selectedZoneForDisplay.city || "Non renseigné" }}</span>
                                 </div>
                               </div>
                               <div class="location-item">
@@ -975,11 +975,7 @@
                                 </div>
                                 <div class="location-details">
                                   <span class="location-label">Arrondissement</span>
-                                  <span class="location-value">{{
-                                    selectedZoneForDisplay.district ||
-                                      selectedZoneForDisplay.arrondissement ||
-                                      "Arrondissement 1"
-                                  }}</span>
+                                  <span class="location-value">{{ selectedZoneForDisplay.arrondissement || "Non renseigné" }}</span>
                                 </div>
                               </div>
                               <div class="location-item">
@@ -988,11 +984,7 @@
                                 </div>
                                 <div class="location-details">
                                   <span class="location-label">Secteur</span>
-                                  <span class="location-value">{{
-                                    selectedZoneForDisplay.sector ||
-                                      selectedZoneForDisplay.secteur ||
-                                      "Secteur " + (zones.indexOf(selectedZoneForDisplay) + 1)
-                                  }}</span>
+                                  <span class="location-value">{{ selectedZoneForDisplay.sector || "Non renseigné" }}</span>
                                 </div>
                               </div>
                             </div>
