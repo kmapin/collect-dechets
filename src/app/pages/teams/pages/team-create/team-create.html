@@ -488,11 +488,7 @@
           <div class="tc-preview-card">
             <!-- Hero banner -->
             <div class="tpc-hero" [style.background]="'linear-gradient(135deg, ' + form.get('color')?.value + 'ee 0%, ' + form.get('color')?.value + '88 100%)'">
-              @if (photoPreview()) {
-                <img [src]="photoPreview()!" alt="" class="tpc-photo" />
-              } @else {
-                <div class="tpc-initials">{{ (form.get('name')?.value ?? 'N').charAt(0) }}</div>
-              }
+              <div class="tpc-initials">{{ (form.get('name')?.value ?? 'N').charAt(0) }}</div>
               <div class="tpc-hero-text">
                 <div class="tpc-name">{{ form.get('name')?.value || '(Sans nom)' }}</div>
                 <div class="tpc-status">{{ form.get('status')?.value }}</div>

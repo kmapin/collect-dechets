@@ -86,10 +86,8 @@ export class TeamCreate {
 
   // ── UI Signals ───────────────────────────────────────────────
   currentStep          = signal(0);
-  photoPreview         = signal<string | null>(null);
   memberSearch         = signal('');
   zoneSearch           = signal('');
-  isDragOver           = signal(false);
   saving               = signal(false);
   autosaveStatus       = signal<'idle' | 'saving' | 'saved'>('idle');
   hasDraft             = signal(!!localStorage.getItem(DRAFT_KEY));
@@ -224,25 +222,6 @@ export class TeamCreate {
     this.currentStep.update(s => s + 1);
   }
   prevStep(): void { if (this.currentStep() > 0) this.currentStep.update(s => s - 1); }
-
-  // ── Photo upload ─────────────────────────────────────────────
-  onPhotoInput(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) this._readPhoto(file);
-  }
-  onDragOver(e: DragEvent): void { e.preventDefault(); this.isDragOver.set(true); }
-  onDragLeave(): void { this.isDragOver.set(false); }
-  onDrop(e: DragEvent): void {
-    e.preventDefault(); this.isDragOver.set(false);
-    const file = e.dataTransfer?.files[0];
-    if (file?.type.startsWith('image/')) this._readPhoto(file);
-  }
-  private _readPhoto(file: File): void {
-    const reader = new FileReader();
-    reader.onload = ev => this.photoPreview.set(ev.target?.result as string);
-    reader.readAsDataURL(file);
-  }
-  removePhoto(): void { this.photoPreview.set(null); }
 
   // ── Vehicle & Zone ───────────────────────────────────────────
   toggleZone(id: string): void {
