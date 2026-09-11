@@ -99,7 +99,6 @@ export class TeamCreate {
   form = this.fb.group({
     // Step 1
     name:        ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-    code:        ['', [Validators.required, Validators.pattern(/^[A-Z]{1,4}-\d{2,4}$/)]],
     supervisor:  ['', Validators.required],
     phone:       [''],
     status:      ['active' as TeamStatus, Validators.required],
@@ -159,8 +158,8 @@ export class TeamCreate {
   });
 
   stepValidity = computed(() => [
-    this.form.get('name')!.valid && this.form.get('code')!.valid && this.form.get('supervisor')!.valid,
-    true,
+    this.form.get('name')!.valid && this.form.get('supervisor')!.valid,
+    !this.vehicleConflict(),
     this.membersArray.length > 0,
     true,
   ]);
@@ -244,19 +243,6 @@ export class TeamCreate {
     reader.readAsDataURL(file);
   }
   removePhoto(): void { this.photoPreview.set(null); }
-
-  // ── Code generation ──────────────────────────────────────────
-  generateCode(): void {
-    const name = (this.form.get('name')?.value ?? '').trim();
-    if (!name) return;
-    const prefix = name.split(/\s+/)
-      .map(w => w[0]?.toUpperCase() ?? '')
-      .join('')
-      .replace(/[^A-Z]/g, '')
-      .slice(0, 3) || 'EQ';
-    const n = this.svc.teams().length + 1;
-    this.form.get('code')!.setValue(`${prefix}-${String(n).padStart(3, '0')}`);
-  }
 
   // ── Vehicle & Zone ───────────────────────────────────────────
   toggleZone(id: string): void {

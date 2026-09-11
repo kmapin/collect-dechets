@@ -71,38 +71,8 @@
 
         <div class="tc-two-cols">
 
-          <!-- ── Left: photo + color ── -->
+          <!-- ── Left: color ── -->
           <div class="tc-col-left">
-
-            <div class="tc-field-group">
-              <label class="tc-label">Photo de l'équipe</label>
-              <div class="tc-dropzone"
-                   [class.tc-dropzone--hover]="isDragOver()"
-                   [class.tc-dropzone--filled]="!!photoPreview()"
-                   (dragover)="onDragOver($event)"
-                   (dragleave)="onDragLeave()"
-                   (drop)="onDrop($event)">
-                @if (photoPreview()) {
-                  <img [src]="photoPreview()!" alt="Photo équipe" class="tc-dropzone__preview" />
-                  <div class="tc-dropzone__overlay">
-                    <button type="button" (click)="removePhoto()" pTooltip="Supprimer la photo">
-                      <mat-icon>delete_outline</mat-icon>
-                    </button>
-                    <label for="photoInput2" pTooltip="Changer la photo" style="cursor:pointer">
-                      <mat-icon>edit</mat-icon>
-                    </label>
-                    <input id="photoInput2" type="file" accept="image/*" (change)="onPhotoInput($event)" hidden />
-                  </div>
-                } @else {
-                  <label class="tc-dropzone__inner" for="photoInput">
-                    <div class="tc-dropzone__icon"><mat-icon>add_photo_alternate</mat-icon></div>
-                    <span class="tc-dropzone__title">Glissez une photo ici</span>
-                    <small class="tc-dropzone__hint">ou cliquez pour parcourir · PNG, JPG max 5 Mo</small>
-                  </label>
-                  <input id="photoInput" type="file" accept="image/*" (change)="onPhotoInput($event)" hidden />
-                }
-              </div>
-            </div>
 
             <div class="tc-field-group">
               <label class="tc-label">Couleur de l'équipe</label>
@@ -137,7 +107,7 @@
                 <div class="tc-input-wrap" [class.error]="hasError('name')" [class.valid]="form.get('name')?.valid && form.get('name')?.touched">
                   <mat-icon>groups</mat-icon>
                   <input formControlName="name" type="text" placeholder="Ex : Équipe Alpha"
-                         (blur)="generateCode()" autocomplete="off" />
+                         autocomplete="off" />
                   @if (form.get('name')?.valid && form.get('name')?.touched) {
                     <mat-icon class="input-ok">check_circle</mat-icon>
                   }
@@ -151,26 +121,6 @@
                 }
               </div>
 
-              <!-- Code -->
-              <div class="tc-field">
-                <label class="tc-label">
-                  Code équipe <span class="req">*</span>
-                  <button type="button" class="tc-label-action" (click)="generateCode()" pTooltip="Générer depuis le nom" tooltipPosition="top">
-                    <mat-icon>auto_fix_high</mat-icon>Générer
-                  </button>
-                </label>
-                <div class="tc-input-wrap" [class.error]="hasError('code')" [class.valid]="form.get('code')?.valid && form.get('code')?.touched">
-                  <mat-icon>tag</mat-icon>
-                  <input formControlName="code" type="text" placeholder="Ex : EQ-001"
-                         style="font-family:monospace;text-transform:uppercase;letter-spacing:1px" />
-                </div>
-                @if (hasError('code')) {
-                  <span class="tc-err">Format attendu : 2-4 lettres + tiret + 2-4 chiffres (ex : EQ-001)</span>
-                }
-              </div>
-            </div>
-
-            <div class="tc-row-2">
               <!-- Chef d'équipe -->
               <div class="tc-field">
                 <label class="tc-label">Chef d'équipe <span class="req">*</span></label>
@@ -182,7 +132,9 @@
                   <span class="tc-err">Chef d'équipe requis</span>
                 }
               </div>
+            </div>
 
+            <div class="tc-row-2">
               <!-- Téléphone -->
               <div class="tc-field">
                 <label class="tc-label">Téléphone</label>
@@ -246,7 +198,7 @@
             <mat-icon>warning_amber</mat-icon>
             <div>
               <strong>Attention :</strong> {{ vehicleConflict() }}
-              <br><small>Vous pouvez quand même continuer, mais vérifiez la disponibilité.</small>
+              <br><small>Choisissez un autre véhicule (ou aucun) pour continuer.</small>
             </div>
           </div>
         }
@@ -543,7 +495,6 @@
               }
               <div class="tpc-hero-text">
                 <div class="tpc-name">{{ form.get('name')?.value || '(Sans nom)' }}</div>
-                <div class="tpc-code">{{ form.get('code')?.value || '—' }}</div>
                 <div class="tpc-status">{{ form.get('status')?.value }}</div>
               </div>
             </div>
@@ -685,6 +636,7 @@
 
         @if (currentStep() < steps.length - 1) {
           <button type="button" class="tc-btn tc-btn--primary"
+                  [disabled]="!isStepComplete(currentStep())"
                   (click)="nextStep()">
             Suivant<mat-icon>arrow_forward</mat-icon>
           </button>

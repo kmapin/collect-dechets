@@ -71,6 +71,20 @@ export class TeamForm implements OnInit, OnChanges {
     const name = this.assignedTeamName(vehicleId);
     return name ? `Déjà assigné à l'équipe « ${name} »` : '';
   }
+
+  /** Raison pour laquelle le véhicule sélectionné ne peut pas être assigné, sinon null. */
+  vehicleConflict(): string | null {
+    const vid = this.form.get('vehicleId')?.value;
+    if (!vid) return null;
+    const other = this.assignedTeamName(vid);
+    if (other) return `Ce véhicule est déjà assigné à l'équipe « ${other} »`;
+    const v = this.availableVehicles.find(x => x.id === vid);
+    if (!v) return null;
+    if (v.status === 'maintenance')  return `${v.plate} est en maintenance`;
+    if (v.status === 'hors_service') return `${v.plate} est hors service`;
+    if (v.status === 'en_service' && !this.isEdit) return `${v.plate} est déjà en service`;
+    return null;
+  }
   memberSearches: string[] = [];
   openDropdownIdx: number | null = null;
 
@@ -173,8 +187,8 @@ export class TeamForm implements OnInit, OnChanges {
   onSubmit(): void {
     if (this.saving) return;
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (this.vehicleConflict()) return;
     const data: TeamFormData = this.form.getRawValue() as TeamFormData;
-    console.log("Team data to save=====>", data)
     this.save.emit(data);
   }
 

@@ -202,6 +202,16 @@
     @if (activeTab === 2) {
       <div class="tf-section">
 
+        @if (vehicleConflict(); as conflict) {
+          <div class="tf-alert tf-alert--warn">
+            <mat-icon>warning_amber</mat-icon>
+            <div>
+              <strong>Attention :</strong> {{ conflict }}
+              <br><small>Choisissez un autre véhicule (ou aucun) pour continuer.</small>
+            </div>
+          </div>
+        }
+
         <!-- Vehicle -->
         <div class="tf-field">
           <label>Véhicule assigné</label>
@@ -278,7 +288,7 @@
           Suivant<mat-icon>arrow_forward</mat-icon>
         </button>
       } @else {
-        <button type="button" class="tf-btn tf-btn--save" [disabled]="saving" (click)="onSubmit()">
+        <button type="button" class="tf-btn tf-btn--save" [disabled]="saving || !!vehicleConflict()" (click)="onSubmit()">
           <mat-icon>{{ saving ? 'hourglass_empty' : 'save' }}</mat-icon>
           {{ saving ? 'Enregistrement…' : (isEdit ? 'Enregistrer' : 'Créer l\'équipe') }}
         </button>

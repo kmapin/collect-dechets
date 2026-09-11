@@ -1,4 +1,14 @@
 
+.tf-alert {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px; margin: 0 0 12px;
+  font-size: 13px; border-radius: 8px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+  strong { font-weight: 700; }
+
+  &--warn { background: #fffbeb; color: #92400e; mat-icon { color: #f59e0b; } }
+}
+
 .tf-backdrop {
   position: fixed; inset: 0; z-index: 9999;
   background: rgba(15,23,42,.5);
