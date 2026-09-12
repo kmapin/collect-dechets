@@ -239,11 +239,11 @@ export class Profile implements OnInit, OnDestroy {
   useMyLocation(): void {
     if (this.isLocatingMe) return;
     if (!navigator.geolocation) {
-      this.notificationService.showError('Erreur', "La géolocalisation n'est pas disponible sur cet appareil.");
+      this.notificationService.showInfo('Info', "La géolocalisation n'est pas disponible sur cet appareil.");
       return;
     }
     if (!window.isSecureContext) {
-      this.notificationService.showError(
+      this.notificationService.showInfo(
         'Géolocalisation indisponible',
         "La géolocalisation nécessite une connexion sécurisée (HTTPS). Placez votre position manuellement sur la carte en attendant.",
       );
@@ -261,7 +261,7 @@ export class Profile implements OnInit, OnDestroy {
         const detail = error.code === error.PERMISSION_DENIED
           ? "Vous avez refusé l'accès à votre position — autorisez la géolocalisation dans les réglages de votre navigateur, ou placez votre position manuellement sur la carte."
           : "Impossible d'obtenir votre position. Placez-la manuellement sur la carte.";
-        this.notificationService.showError('Géolocalisation indisponible', detail);
+        this.notificationService.showInfo('Géolocalisation indisponible', detail);
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );

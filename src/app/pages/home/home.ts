@@ -288,7 +288,7 @@ startLiveNavigation(destLat: number, destLng: number, name: string) {
       }
     },
     (error) => {
-      this.notificationsService.showError('Erreur', 'Impossible de suivre votre position');
+      this.notificationsService.showInfo('Info', 'Impossible de suivre votre position');
     },
     { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
   );
@@ -297,7 +297,7 @@ startLiveNavigation(destLat: number, destLng: number, name: string) {
 
   async showItineraryToAgency(destLat: number, destLng: number, agencyName: string) {
     if (!this.userPosition) {
-      this.notificationsService.showError('Erreur', 'Votre position n\'est pas disponible');
+      this.notificationsService.showInfo('Info', 'Votre position n\'est pas disponible');
       return;
     }
     
@@ -327,10 +327,10 @@ startLiveNavigation(destLat: number, destLng: number, name: string) {
         this.map.fitBounds(this.routeLayer.getBounds());
         this.notificationsService.showSuccess('Itinéraire', `Itinéraire vers ${agencyName} affiché sur la carte.`);
       } else {
-        this.notificationsService.showError('Erreur', 'Aucun itinéraire trouvé');
+        this.notificationsService.showInfo('Info', 'Aucun itinéraire trouvé');
       }
     } catch (err) {
-      this.notificationsService.showError('Erreur', 'Impossible de calculer l\'itinéraire');
+      this.notificationsService.showInfo('Info', 'Impossible de calculer l\'itinéraire');
     }
   }
 
@@ -360,7 +360,7 @@ startLiveNavigation(destLat: number, destLng: number, name: string) {
     });
     this.map.on('locationerror', () => {
       // alert('Impossible d\'obtenir votre position');
-      this.notificationsService.showError('Erreur', 'Impossible d\'obtenir votre position');
+      this.notificationsService.showInfo('Info', 'Impossible d\'obtenir votre position');
 
     });
     this.assignAgenciesCoordinatesAndDisplayOnMap();
@@ -543,7 +543,7 @@ generateRandomStarsList(): void {
           console.log('Données de géocodage:', data);
           if (!data.address) {
             // alert('Impossible de récupérer les informations de localisation');
-            this.notificationsService.showError('Erreur', 'Impossible de récupérer les informations de localisation');
+            this.notificationsService.showInfo('Info', 'Impossible de récupérer les informations de localisation');
             return;
           }
           // Extraction des infos
@@ -569,13 +569,13 @@ generateRandomStarsList(): void {
       (error) => {
         console.error('Geolocation error:', error);
         // alert('Impossible d\'obtenir votre position');
-        this.notificationsService.showError('Erreur', 'La géolocalisation n\'est pas supportée par votre navigateur');
+        this.notificationsService.showInfo('Info', 'La géolocalisation n\'est pas supportée par votre navigateur');
 
       }
     );
   } else {
     // alert('La géolocalisation n\'est pas supportée par votre navigateur');
-    this.notificationsService.showError('Erreur', 'Impossible d\'obtenir votre position');
+    this.notificationsService.showInfo('Info', 'Impossible d\'obtenir votre position');
   }
 }
   showMap:boolean = false;

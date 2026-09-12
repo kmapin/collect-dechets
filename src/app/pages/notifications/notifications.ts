@@ -83,7 +83,7 @@ export class NotificationsComponent implements OnInit {
         },
         error: () => {
           this.loadingMore.set(false);
-          this.notificationService.showError('Erreur', 'Impossible de charger la suite des notifications.');
+          this.notificationService.showInfo('Info', 'Impossible de charger la suite des notifications.');
         },
       });
   }
@@ -136,7 +136,7 @@ export class NotificationsComponent implements OnInit {
     this.notificationService.markAsRead$(item._id).subscribe({
       error: (err: HttpErrorResponse) => {
         this.setLocalRead(item._id, false);
-        this.notificationService.showError('Erreur', err.error?.message ?? 'Impossible de marquer cette notification comme lue.');
+        this.notificationService.showInfo('Info', err.error?.message ?? 'Impossible de marquer cette notification comme lue.');
       },
     });
   }
@@ -149,7 +149,7 @@ export class NotificationsComponent implements OnInit {
       next: () => this.notificationService.showSuccess('Notifications', 'Toutes vos notifications ont été marquées comme lues.'),
       error: (err: HttpErrorResponse) => {
         this.items.set(previous);
-        this.notificationService.showError('Erreur', err.error?.message ?? 'Impossible de marquer toutes les notifications comme lues.');
+        this.notificationService.showInfo('Info', err.error?.message ?? 'Impossible de marquer toutes les notifications comme lues.');
       },
     });
   }
@@ -165,7 +165,7 @@ export class NotificationsComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.items.set(previous);
         this.total.set(previous.length);
-        this.notificationService.showError('Erreur', err.error?.message ?? 'Impossible de supprimer cette notification.');
+        this.notificationService.showInfo('Info', err.error?.message ?? 'Impossible de supprimer cette notification.');
       },
     });
   }

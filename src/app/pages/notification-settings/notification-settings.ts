@@ -123,7 +123,7 @@ export class NotificationSettingsComponent implements OnInit {
   sendTest(): void {
     if (this.isSendingTest) return;
     if (!this.testEmail) {
-      this.notificationService.showError('Erreur', 'Saisissez une adresse email de test.');
+      this.notificationService.showInfo('Info', 'Saisissez une adresse email de test.');
       return;
     }
     this.isSendingTest = true;

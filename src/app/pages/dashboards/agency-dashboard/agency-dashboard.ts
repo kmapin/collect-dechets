@@ -1590,8 +1590,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
           });
         } else {
           this.receivedMessages = [];
-          this.notificationService.showError(
-            "Erreur",
+          this.notificationService.showInfo(
+            "Info",
             "Aucun message, veuillez contacter l'agence !",
           );
         }
@@ -2248,8 +2248,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
             "🔍 [ERROR] Erreur dans la réponse de l'API:",
             response,
           );
-          this.notificationService.showError(
-            "Erreur",
+          this.notificationService.showInfo(
+            "Info",
             "Erreur lors du filtrage des employés",
           );
         }
@@ -2260,8 +2260,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
           "🔍 [ERROR] Erreur lors du filtrage des employés:",
           error,
         );
-        this.notificationService.showError(
-          "Erreur",
+        this.notificationService.showInfo(
+          "Info",
           "Erreur lors du filtrage des employés",
         );
         this.isLoadingFilteredEmployees = false;
@@ -3851,12 +3851,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         this.showClientDetailsModal = true;
       },
       error: (err: any) => {
-        console.error(
-          "Erreur lors de la récupération des détails du client :",
-          err,
-        );
-        this.notificationService.showError(
-          "Erreur",
+       
+        this.notificationService.showInfo(
+          "Info",
           "Impossible de récupérer les détails du client.",
         );
       },
@@ -5975,8 +5972,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
             "Erreur lors du chargement des détails de la zone:",
             error,
           );
-          this.notificationService.showError(
-            "Erreur",
+          this.notificationService.showInfo(
+            "Info",
             "Impossible de charger les détails de la zone",
           );
         },
@@ -6109,9 +6106,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
           }
         },
         error: (error) => {
-          console.error("Erreur lors de l'optimisation de la zone:", error);
-          this.notificationService.showError(
-            "Erreur",
+          this.notificationService.showInfo(
+            "Info",
             "Impossible d'optimiser la zone",
           );
         },
@@ -6166,8 +6162,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         },
         error: (error) => {
           console.error("Erreur lors de la génération du rapport:", error);
-          this.notificationService.showError(
-            "Erreur",
+          this.notificationService.showInfo(
+            "Info",
             "Impossible de générer le rapport",
           );
         },

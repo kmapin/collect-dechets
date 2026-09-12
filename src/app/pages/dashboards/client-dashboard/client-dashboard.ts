@@ -648,8 +648,8 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
           });
         } else {
           this.receivedMessages = [];
-          this.notificationService.showError(
-            "Erreur",
+          this.notificationService.showInfo(
+            "Info",
             "Aucun message, veuillez contacter l'agence !"
           );
         }

@@ -1049,7 +1049,7 @@ export class MunicipalityDashboard  implements OnInit {
       this.notificationService.showSuccess("Rapport généré", "Le rapport global a été téléchargé avec succès.");
     } catch (err) {
       console.error("Erreur lors de la génération du rapport global:", err);
-      this.notificationService.showError("Erreur", "Impossible de générer le rapport global.");
+      this.notificationService.showInfo("Info", "Impossible de générer le rapport global.");
     } finally {
       this.isGeneratingReport = false;
     }
@@ -1173,7 +1173,7 @@ export class MunicipalityDashboard  implements OnInit {
       this.notificationService.showSuccess("Export réussi", "Le fichier des statistiques a été téléchargé.");
     } catch (err) {
       console.error("Erreur lors de l'export des statistiques:", err);
-      this.notificationService.showError("Erreur", "Impossible de générer le fichier d'export.");
+      this.notificationService.showInfo("Info", "Impossible de générer le fichier d'export.");
     } finally {
       this.isExportingStatistics = false;
     }

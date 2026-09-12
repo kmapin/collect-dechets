@@ -216,7 +216,7 @@ constructor(
     if (this.isSendingMessage) return;
     const content = this.contactMessage.trim();
     if (!content) {
-      this.notificationService.showError('Message vide', 'Le contenu du message ne peut pas être vide.');
+      this.notificationService.showInfo('Message vide', 'Le contenu du message ne peut pas être vide.');
       return;
     }
     const agencyId = this.activeSubscription?.agencyId?._id;

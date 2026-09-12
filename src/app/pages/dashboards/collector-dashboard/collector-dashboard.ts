@@ -318,8 +318,8 @@ export class CollectorDashboard  implements OnInit {
           );
         },
         (error) => {
-          this.notificationService.showError(
-            "Erreur",
+          this.notificationService.showInfo(
+            "Info",
             "Impossible d'obtenir la position"
           );
         }
@@ -449,8 +449,8 @@ export class CollectorDashboard  implements OnInit {
         }
       },
       error: () => {
-        this.notificationService.showError(
-          "Erreur",
+        this.notificationService.showInfo(
+          "Info",
           "Aucun client trouvé pour ce QR code."
         );
       },
@@ -531,8 +531,8 @@ export class CollectorDashboard  implements OnInit {
     if (file) {
       // Vérifier que c'est bien une image
       if (!file.type.startsWith("image/")) {
-        this.notificationService.showError(
-          "Erreur",
+        this.notificationService.showInfo(
+          "Info",
           "Veuillez sélectionner une image valide"
         );
         return;
@@ -557,8 +557,8 @@ export class CollectorDashboard  implements OnInit {
       const ctx = canvas.getContext("2d");
 
       if (!ctx) {
-        this.notificationService.showError(
-          "Erreur",
+        this.notificationService.showInfo(
+          "Info",
           "Impossible de traiter l'image"
         );
         return;
@@ -594,7 +594,7 @@ export class CollectorDashboard  implements OnInit {
       this.cameraErrorMessage = 'Erreur d\'accès à la caméra. Veuillez réessayer ou utiliser l\'import d\'image.';
     }
     
-    this.notificationService.showError('Erreur Caméra', this.cameraErrorMessage);
+    this.notificationService.showInfo('Info Caméra', this.cameraErrorMessage);
   }
 
   onCamerasFound(cameras: any[]): void {
@@ -604,7 +604,7 @@ export class CollectorDashboard  implements OnInit {
     if (cameras.length === 0) {
       this.cameraError = true;
       this.cameraErrorMessage = 'Aucune caméra détectée sur cet appareil.';
-      this.notificationService.showError('Erreur Caméra', 'Aucune caméra détectée');
+      this.notificationService.showInfo('Info Caméra', 'Aucune caméra détectée');
     }
   }
 
@@ -631,8 +631,8 @@ export class CollectorDashboard  implements OnInit {
     try {
       // Vérifier si le navigateur supporte la caméra
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        this.notificationService.showError(
-          'Erreur', 
+        this.notificationService.showInfo(
+          'Info',
           'Votre navigateur ne supporte pas l\'accès à la caméra. Veuillez utiliser l\'import d\'image.'
         );
         return;
@@ -641,8 +641,8 @@ export class CollectorDashboard  implements OnInit {
       // Vérifier les permissions
       const hasPermission = await this.checkCameraPermissions();
       if (!hasPermission) {
-        this.notificationService.showError(
-          'Permission refusée', 
+        this.notificationService.showInfo(
+          'Permission refusée',
           'Veuillez autoriser l\'accès à la caméra dans les paramètres de votre navigateur.'
         );
         return;
@@ -655,8 +655,8 @@ export class CollectorDashboard  implements OnInit {
       
     } catch (error) {
       console.error('Erreur lors de l\'ouverture du scanner:', error);
-      this.notificationService.showError(
-        'Erreur', 
+      this.notificationService.showInfo(
+        'Info',
         'Impossible d\'accéder à la caméra. Veuillez utiliser l\'import d\'image.'
       );
     }
