@@ -106,9 +106,8 @@
       <h2>{{ filteredAgencies.length }} agence(s) trouvée(s)</h2>
     </div>
 
-    <div class="container">
-      <!-- Vue grille -->
-      @if (viewMode === 'grid') {
+    <!-- Vue grille -->
+    @if (viewMode === 'grid') {
       <div class="agencies-grid">
         @for (agency of filteredAgencies; track agency) {
         <div class="agency-card card">
@@ -218,7 +217,6 @@
         }
       </div>
       }
-    </div>
 
     <!-- Vue carte -->
     @if (viewMode === 'map') {
