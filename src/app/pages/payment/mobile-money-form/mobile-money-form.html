@@ -37,18 +37,17 @@
               </div>
               }
             </div>
-            @if (paymentForm.get('operator')?.invalid) {
+            @if (paymentForm.get('operator')?.invalid && paymentForm.get('operator')?.touched) {
               <div class="form-error">{{ getErrorMessage('operator') }}</div>
             }
            </div>
           <!-- Numéro de téléphone -->
           <div class="form-group">
             <label class="form-label"><i class="material-icons">phone</i> Numéro de téléphone</label>
-            <input class="form-control" formControlName="phoneNumber" type="tel" required appPhoneInput>
-            @if (paymentForm.get('phoneNumber')?.invalid) {
+            <input class="form-control" formControlName="phoneNumber" type="tel" required appPhoneInput validatePhone>
+            @if (paymentForm.get('phoneNumber')?.invalid && paymentForm.get('phoneNumber')?.touched) {
               <div class="form-error">{{ getErrorMessage('phoneNumber') }}</div>
             }
-            <div class="form-hint">Format: XXXXXXXX</div>
           </div>
           <!-- Nombre de mois (uniquement pour un abonnement à un tarif) -->
           @if (tarifResponse?.numberMonths != null) {
@@ -66,7 +65,7 @@
             <label class="form-label"><i class="material-icons">attach_money</i> Montant (FCFA)</label>
             <input class="form-control" formControlName="amount" type="number" placeholder="0" min="1" max="1000000"
               readonly required>
-            @if (paymentForm.get('amount')?.invalid) {
+            @if (paymentForm.get('amount')?.invalid && paymentForm.get('amount')?.touched) {
               <div class="form-error">{{ getErrorMessage('amount') }}</div>
             }
             <div class="form-hint">Montant maximum: 1,000,000 FCFA</div>
@@ -76,7 +75,7 @@
             <label class="form-label"><i class="material-icons">description</i> Description / Référence</label>
             <textarea class="form-control" formControlName="description" placeholder="Motif du paiement (optionnel)" rows="3"
               maxlength="200"></textarea>
-            @if (paymentForm.get('description')?.invalid) {
+            @if (paymentForm.get('description')?.invalid && paymentForm.get('description')?.touched) {
               <div class="form-error">{{ getErrorMessage('description') }}</div>
             }
             <div class="form-hint form-hint--end">{{ paymentForm.get('description')?.value?.length || 0 }}/200</div>

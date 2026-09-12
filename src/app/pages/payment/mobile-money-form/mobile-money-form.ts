@@ -132,8 +132,7 @@ export class MobileMoneyFormComponent implements OnInit {
     return this.fb.group({
       operator: ['', Validators.required],
       phoneNumber: ['', [
-        Validators.required,
-        Validators.pattern(/^\d{8}$/)
+        Validators.required
       ]],
       amount: [this.tarifResponse?.amount ?? 0, [
         Validators.required,
@@ -206,6 +205,10 @@ export class MobileMoneyFormComponent implements OnInit {
       return 'Ce champ est obligatoire';
     }
     
+    if (field.errors['invalidPhone']) {
+      return 'Numéro de téléphone invalide pour le pays sélectionné';
+    }
+
     if (field.errors['pattern']) {
       return 'Format de numéro invalide';
     }
