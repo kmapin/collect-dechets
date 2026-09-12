@@ -333,7 +333,9 @@ export class AgencyDetails implements OnInit {
         'Rapports et statistiques',
       ],
     },
-    vip: {
+    // Stocké 'enterprise' côté backend (models/pricingAgency.js), affiché "VIP" —
+    // voir agency-dashboard.html (<option value="enterprise">VIP</option>).
+    enterprise: {
       label: 'VIP',
       icon: 'workspace_premium',
       pill: 'Offre sur mesure',
@@ -387,7 +389,7 @@ export class AgencyDetails implements OnInit {
     switch (planType) {
       case 'premium':
         return 'var(--primary-color)';
-      case 'vip':
+      case 'enterprise':
         return 'var(--accent-color)';
       case 'standard':
       default:

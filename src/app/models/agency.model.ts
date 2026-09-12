@@ -196,7 +196,11 @@ export interface Tarif {
   updatedAt?: Date;
   feePayer?: 'CLIENT' | 'AGENCE';
 }
-export type TarifType = 'standard' | 'premium' | 'vip';
+// Doit correspondre exactement à l'enum `planType` du modèle Pricing côté
+// backend (collecte-dechets-back/models/pricingAgency.js) : 'enterprise' y est
+// stocké sous ce nom, affiché "VIP" côté UI (voir agency-dashboard.html et
+// agency-details.ts::TARIFF_PRESENTATION).
+export type TarifType = 'standard' | 'premium' | 'enterprise';
 export enum  EmployeeRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
