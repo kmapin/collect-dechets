@@ -86,17 +86,27 @@
   }
   
   .otp-field {
-    ::ng-deep {
-      input {
-        font-size: 1.5rem;
-        letter-spacing: 0.5rem;
-        text-align: center;
-        font-weight: 600;
-        font-family: monospace;
-      }
+    input {
+      font-size: 1.5rem;
+      letter-spacing: 0.5rem;
+      text-align: center;
+      font-weight: 600;
+      font-family: monospace;
     }
   }
-  
+
+  .form-error {
+    color: var(--error-color);
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+
+  .form-hint {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-top: 4px;
+  }
+
   .error-message {
     display: flex;
     gap: 0.5rem;

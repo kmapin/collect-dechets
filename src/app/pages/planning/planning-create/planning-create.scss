@@ -1208,36 +1208,38 @@ $tr: .2s ease;
 
 .form-inp {
   width: 100%;
-  padding: 10px 12px;
-  border: 1.5px solid $border;
-  border-radius: 8px;
+  // taille de police conservée pour rester cohérent avec le reste du composant (13.5px)
+  padding: 14px 16px;
+  border: 2px solid var(--medium-gray);
+  border-radius: 10px;
   font-size: 13.5px;
   color: $text-1;
   background: $card;
   outline: none;
-  transition: border-color $tr;
+  transition: all 0.3s ease;
   box-sizing: border-box;
 
-  &:focus { border-color: $green; box-shadow: 0 0 0 3px rgba(22,163,74,.1); }
+  &:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1); }
   &::placeholder { color: $text-3; }
 }
 
 .form-ta {
   width: 100%;
-  padding: 10px 12px;
-  border: 1.5px solid $border;
-  border-radius: 8px;
+  // taille de police conservée pour rester cohérent avec le reste du composant (13px)
+  padding: 14px 16px;
+  border: 2px solid var(--medium-gray);
+  border-radius: 10px;
   font-size: 13px;
   color: $text-1;
   background: $card;
   outline: none;
   resize: vertical;
   min-height: 80px;
-  transition: border-color $tr;
+  transition: all 0.3s ease;
   box-sizing: border-box;
   font-family: inherit;
 
-  &:focus { border-color: $green; box-shadow: 0 0 0 3px rgba(22,163,74,.1); }
+  &:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1); }
   &::placeholder { color: $text-3; }
 }
 

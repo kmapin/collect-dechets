@@ -131,16 +131,19 @@
       gap: 6px;
     }
     .form-group-modern input, .form-group-modern select, .form-group-modern textarea {
-      padding: 12px 14px;
+      width: 100%;
+      padding: 16px;
       border: 2px solid var(--medium-gray);
-      border-radius: 8px;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
       font-size: 1rem;
       background: var(--light-gray);
-      transition: border-color 0.2s;
+      transition: all 0.3s ease;
     }
     .form-group-modern input:focus, .form-group-modern select:focus, .form-group-modern textarea:focus {
       outline: none;
       border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
       background: var(--white);
     }
     .form-actions-modern {

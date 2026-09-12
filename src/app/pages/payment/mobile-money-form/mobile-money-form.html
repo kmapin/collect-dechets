@@ -38,64 +38,49 @@
               }
             </div>
             @if (paymentForm.get('operator')?.invalid) {
-              <mat-error>
-                {{ getErrorMessage('operator') }}
-              </mat-error>
+              <div class="form-error">{{ getErrorMessage('operator') }}</div>
             }
            </div>
           <!-- Numéro de téléphone -->
-          <mat-form-field appearance="outline">
-            <mat-label>Numéro de téléphone</mat-label>
-            <input matInput formControlName="phoneNumber" type="tel" required appPhoneInput>
-            <mat-icon matPrefix>phone</mat-icon>
+          <div class="form-group">
+            <label class="form-label"><i class="material-icons">phone</i> Numéro de téléphone</label>
+            <input class="form-control" formControlName="phoneNumber" type="tel" required appPhoneInput>
             @if (paymentForm.get('phoneNumber')?.invalid) {
-              <mat-error>
-                {{ getErrorMessage('phoneNumber') }}
-              </mat-error>
+              <div class="form-error">{{ getErrorMessage('phoneNumber') }}</div>
             }
-            <mat-hint>Format: XXXXXXXX</mat-hint>
-          </mat-form-field>
+            <div class="form-hint">Format: XXXXXXXX</div>
+          </div>
           <!-- Nombre de mois (uniquement pour un abonnement à un tarif) -->
           @if (tarifResponse?.numberMonths != null) {
-            <mat-form-field appearance="outline">
-              <mat-label>Nombre de mois</mat-label>
-              <input matInput type="number" min="1" max="12"
+            <div class="form-group">
+              <label class="form-label"><i class="material-icons">event_repeat</i> Nombre de mois</label>
+              <input class="form-control" type="number" min="1" max="12"
                 [ngModel]="tarifResponse?.numberMonths"
                 (ngModelChange)="onMonthsChange($event)"
                 [ngModelOptions]="{ standalone: true }">
-              <mat-icon matPrefix>event_repeat</mat-icon>
-              <mat-hint>Le montant ci-dessous est recalculé automatiquement</mat-hint>
-            </mat-form-field>
+              <div class="form-hint">Le montant ci-dessous est recalculé automatiquement</div>
+            </div>
           }
           <!-- Montant -->
-          <mat-form-field appearance="outline">
-            <mat-label>Montant</mat-label>
-            <input matInput formControlName="amount" type="number" placeholder="0" min="1" max="1000000"
+          <div class="form-group">
+            <label class="form-label"><i class="material-icons">attach_money</i> Montant (FCFA)</label>
+            <input class="form-control" formControlName="amount" type="number" placeholder="0" min="1" max="1000000"
               readonly required>
-              <mat-icon matPrefix>attach_money</mat-icon>
-              <span matSuffix>FCFA</span>
-              @if (paymentForm.get('amount')?.invalid) {
-                <mat-error>
-                  {{ getErrorMessage('amount') }}
-                </mat-error>
-              }
-              <mat-hint>Montant maximum: 1,000,000 FCFA</mat-hint>
-            </mat-form-field>
-            <!-- Description — non obligatoire (demande produit) -->
-            <mat-form-field appearance="outline">
-              <mat-label>Description / Référence</mat-label>
-              <textarea matInput formControlName="description" placeholder="Motif du paiement (optionnel)" rows="3"
+            @if (paymentForm.get('amount')?.invalid) {
+              <div class="form-error">{{ getErrorMessage('amount') }}</div>
+            }
+            <div class="form-hint">Montant maximum: 1,000,000 FCFA</div>
+          </div>
+          <!-- Description — non obligatoire (demande produit) -->
+          <div class="form-group">
+            <label class="form-label"><i class="material-icons">description</i> Description / Référence</label>
+            <textarea class="form-control" formControlName="description" placeholder="Motif du paiement (optionnel)" rows="3"
               maxlength="200"></textarea>
-              <mat-icon matPrefix>description</mat-icon>
-              @if (paymentForm.get('description')?.invalid) {
-                <mat-error>
-                  {{ getErrorMessage('description') }}
-                </mat-error>
-              }
-              <mat-hint align="end">
-                {{ paymentForm.get('description')?.value?.length || 0 }}/200
-              </mat-hint>
-            </mat-form-field>
+            @if (paymentForm.get('description')?.invalid) {
+              <div class="form-error">{{ getErrorMessage('description') }}</div>
+            }
+            <div class="form-hint form-hint--end">{{ paymentForm.get('description')?.value?.length || 0 }}/200</div>
+          </div>
             <!-- Erreur backend -->
             @if (errorMessage) {
               <div class="backend-error">

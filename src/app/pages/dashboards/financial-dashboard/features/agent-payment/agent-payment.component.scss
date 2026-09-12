@@ -254,9 +254,20 @@
   &__phone-input {
     flex: 1 1 55%;
     min-width: 0;
+    // variante compacte: même bordure que le modèle canonique, padding réduit pour tenir dans la ligne
     padding: 0.4rem 0.6rem;
     font-size: 0.82rem;
+    font-family: 'Inter', sans-serif;
     background: #fff;
+    border: 2px solid var(--medium-gray);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+    }
   }
 
   &__agent-mode {
@@ -373,13 +384,15 @@
       padding: 0.55rem 0.7rem;
       font: inherit;
       font-size: 0.9rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
+      border: 2px solid var(--medium-gray);
+      border-radius: 10px;
       color: #1e293b;
+      transition: all 0.3s ease;
 
-      &:focus-visible {
-        outline: 2px solid #2563eb;
-        outline-offset: 1px;
+      &:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
       }
     }
   }

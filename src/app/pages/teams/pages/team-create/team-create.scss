@@ -198,20 +198,22 @@ $bg-white : #fff;
 
 .tc-input-wrap {
   display: flex; align-items: center; gap: 8px;
-  border: 1.5px solid #e2e8f0; border-radius: $radius-sm;
+  // compact variant: même modèle (bordure/police), padding/rayon réduits pour tenir dans le wizard
+  border: 2px solid var(--medium-gray); border-radius: $radius-sm;
   padding: 0 12px; height: 40px; background: $bg-white;
-  transition: border-color .15s, box-shadow .15s;
+  transition: all 0.3s ease;
   mat-icon { font-size: 17px; width: 17px; height: 17px; color: $fg-light; flex-shrink: 0; }
   input { flex: 1; border: none; outline: none; font-size: 13px; color: $fg; background: transparent; }
-  &:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+  &:focus-within { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1); }
   &.error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
   &.valid { border-color: #16a34a; }
   .input-ok { font-size: 16px; width: 16px; height: 16px; color: #16a34a; flex-shrink: 0; }
 }
 .tc-err { font-size: 11px; color: #ef4444; display: flex; align-items: center; gap: 3px; }
 .tc-textarea-wrap {
-  border: 1.5px solid #e2e8f0; border-radius: $radius-sm; overflow: hidden;
-  &:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+  // compact variant: même modèle (bordure/police), rayon réduit pour tenir dans le wizard
+  border: 2px solid var(--medium-gray); border-radius: $radius-sm; overflow: hidden;
+  &:focus-within { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1); }
   textarea {
     width: 100%; resize: vertical; border: none; outline: none;
     padding: 10px 12px; font-size: 13px; color: $fg; background: transparent;
@@ -462,16 +464,20 @@ $bg-white : #fff;
 .tmr-fields { flex: 1; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .tmr-input {
   flex: 1; min-width: 100px;
-  border: $border; border-radius: 6px; padding: 6px 10px;
+  // compact variant: même bordure/police que le modèle canonique, padding réduit pour tenir dans la ligne
+  border: 2px solid var(--medium-gray); border-radius: 8px; padding: 6px 10px;
   font-size: 12px; color: $fg; outline: none; background: $bg-white;
-  &:focus { border-color: #3b82f6; }
+  transition: all 0.3s ease;
+  &:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1); }
   &--sm   { max-width: 130px; }
   &--err  { border-color: #ef4444; }
 }
 .tmr-select {
-  border: $border; border-radius: 6px; padding: 6px 8px;
+  // compact variant: même bordure/police que le modèle canonique, padding réduit pour tenir dans la ligne
+  border: 2px solid var(--medium-gray); border-radius: 8px; padding: 6px 8px;
   font-size: 12px; color: $fg; outline: none; background: $bg-white; cursor: pointer;
-  &:focus { border-color: #3b82f6; }
+  transition: all 0.3s ease;
+  &:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1); }
 }
 .tmr-del {
   background: transparent; border: none; cursor: pointer; color: $fg-light; display: flex;

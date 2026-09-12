@@ -1439,11 +1439,13 @@
 .form-group input,
 .form-group select,
 .form-group textarea {
-  padding: 12px 16px;
+  width: 100%;
+  padding: 16px;
   border: 2px solid var(--medium-gray);
-  border-radius: 8px;
+  border-radius: 12px;
   font-family: "Inter", sans-serif;
-  transition: border-color 0.3s ease;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
 .form-group input:focus,
@@ -1451,6 +1453,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
 }
 
 .recipients-checkboxes {

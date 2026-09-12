@@ -22,10 +22,10 @@
     </div>
 
     <form [formGroup]="otpForm" (ngSubmit)="onVerifyOtp()">
-      <mat-form-field appearance="outline" class="otp-field">
-        <mat-label>Code OTP</mat-label>
+      <div class="form-group otp-field">
+        <label class="form-label"><i class="material-icons">dialpad</i> Code OTP</label>
         <input
-          matInput
+          class="form-control"
           formControlName="otp"
           placeholder="00000"
           type="text"
@@ -34,14 +34,11 @@
           required
           autocomplete="one-time-code">
 
-          <mat-icon matPrefix>dialpad</mat-icon>
           @if (otpForm.get('otp')?.invalid) {
-            <mat-error>
-              {{ getOtpErrorMessage() }}
-            </mat-error>
+            <div class="form-error">{{ getOtpErrorMessage() }}</div>
           }
-          <mat-hint>Code à 5 ou 6 chiffres</mat-hint>
-        </mat-form-field>
+          <div class="form-hint">Code à 5 ou 6 chiffres</div>
+        </div>
 
         @if (errorMessage) {
           <div class="error-message">

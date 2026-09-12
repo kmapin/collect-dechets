@@ -259,12 +259,20 @@
   select,
   input {
     width: 100%;
-    padding: 0.5rem 0.6rem;
+    // variante compacte: même bordure que le modèle canonique, padding réduit pour la grille
+    padding: 10px 12px;
     font-size: 0.85rem;
     color: #1e293b;
     background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+    }
 
     &:disabled {
       background: #f8fafc;

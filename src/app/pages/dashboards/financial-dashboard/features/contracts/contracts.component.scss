@@ -291,8 +291,15 @@
       margin-top: 0.25rem;
       padding: 0.45rem 0.55rem;
       font-size: 0.85rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
+      border: 2px solid var(--medium-gray);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+      }
     }
   }
 
@@ -327,8 +334,15 @@
       font-size: 0.85rem;
       color: #1e293b;
       background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
+      border: 2px solid var(--medium-gray);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+      }
     }
   }
 
@@ -343,10 +357,11 @@
     gap: 0.5rem;
     padding: 0.5rem 0.6rem;
     background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 10px;
     cursor: pointer;
     text-align: left;
+    transition: all 0.3s ease;
 
     span {
       flex: 1;

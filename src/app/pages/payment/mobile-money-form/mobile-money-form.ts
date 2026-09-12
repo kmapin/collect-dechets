@@ -1,10 +1,7 @@
-import { MatSelectModule } from '@angular/material/select';
 import { Component, EventEmitter, Input, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { PaymentService } from '../../../services/payment/payment.service';
@@ -32,12 +29,9 @@ interface OperatorInfo {
     ReactiveFormsModule,
     FormsModule,
     MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
     MatIconModule,
-    MatSelectModule,
     PaymentStatusComponent,
     OtpInputComponent,
     PhoneInputDirective

@@ -58,9 +58,11 @@ body {
 }
 
 input:not(.mat-mdc-input-element):not(.p-inputtext):focus,
-textarea:not(.mat-mdc-input-element):not(.p-inputtext):focus {
-  outline: 2px solid #3b82f6 !important;
-  outline-offset: -1px !important;
+textarea:not(.mat-mdc-input-element):not(.p-inputtext):focus,
+select:not(.p-inputtext):focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
 }
 
 /* loader global */
@@ -406,17 +408,18 @@ body.signalement-drawer-open .card:hover {
 
 .form-control {
   width: 100%;
-  padding: 12px 16px;
+  padding: 16px;
   border: 2px solid var(--medium-gray);
-  border-radius: 8px;
+  border-radius: 12px;
   font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  transition: border-color 0.3s ease;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
 .form-control:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
 }
 
 .form-label {
