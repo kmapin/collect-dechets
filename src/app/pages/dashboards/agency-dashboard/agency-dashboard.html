@@ -2399,6 +2399,19 @@
                           <option value="CLIENT">Le client (en plus du prix affiché)</option>
                         </select>
                       </div>
+                      @if (!isEditingTariff) {
+                        <div class="form-group full-width">
+                          <label class="form-checkbox-inline">
+                            <input type="checkbox" class="form-checkbox" formControlName="activateNow" />
+                            Activer immédiatement ce tarif
+                          </label>
+                          <span class="form-help-text">
+                            <i class="material-icons">info_outline</i>
+                            Un seul tarif peut être actif à la fois par type — un éventuel autre tarif
+                            {{ tariffForm.get('type')?.value ? ('de type ' + tariffForm.get('type')?.value + ' ') : '' }}déjà actif sera automatiquement désactivé.
+                          </span>
+                        </div>
+                      }
                     </form>
                   </div>
                   <div class="drawer-footer">
@@ -2549,38 +2562,65 @@
                     <app-loading-spinner message="Chargement des tarifs..." size="medium"> </app-loading-spinner>
                   }
                   @if (!isLoadingTariffs && tariffs.length > 0) {
-                    <div class="tariff-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                      @for (tariff of tariffs; track tariff) {
-                        <div class="tariff-card">
-                          <div class="tariff-header">
-                            <h4 class="price">{{ tariff.price | number: "1.0-0" }} FCFA</h4>
-                            <span class="type-chip">
-                              <!-- <i class="material-icons text-sm">category</i> -->
-                              {{ tariff.planType }}
-                            </span>
-                          </div>
-                          <p class="tariff-description">
-                            <i class="material-icons text-sm align-middle">info</i>
-                            {{ tariff.description }}
-                          </p>
-                          <span class="fee-payer-chip" [class.fee-payer-chip--client]="tariff.feePayer === 'CLIENT'">
-                            <i class="material-icons text-sm">{{
-                              tariff.feePayer === "CLIENT" ? "person" : "store"
-                            }}</i>
-                            Frais à la charge {{ tariff.feePayer === "CLIENT" ? "du client" : "de l'agence" }}
-                          </span>
-                          <!-- Boutons daction dans le modal -->
-                          <div class="tariff-actions">
-                            <button class="btn btn-secondary flex items-center gap-1" (click)="editTariff(tariff)">
-                              <i class="material-icons text-base">edit</i>
-                            </button>
-                            <button class="btn btn-danger flex items-center gap-1" [disabled]="isDeleting" (click)="deleteTariff(tariff)">
-                              <i class="material-icons text-base">delete</i>
-                            </button>
-                          </div>
+                    @for (group of tariffsByType; track group.planType) {
+                      <div class="tariff-type-group">
+                        <h4 class="tariff-type-group-title">{{ group.planType }}</h4>
+                        <div class="tariff-cards grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                          @for (tariff of group.tariffs; track tariff) {
+                            <div class="tariff-card" [class.tariff-card--active]="tariff.status === 'active'">
+                              <div class="tariff-header">
+                                <h4 class="price">{{ tariff.price | number: "1.0-0" }} FCFA</h4>
+                                <span class="type-chip">
+                                  {{ tariff.planType }}
+                                </span>
+                              </div>
+                              <span class="tariff-status-badge" [class.tariff-status-badge--active]="tariff.status === 'active'">
+                                <i class="material-icons text-sm">{{ tariff.status === 'active' ? 'check_circle' : 'radio_button_unchecked' }}</i>
+                                {{ tariff.status === 'active' ? 'Actif' : 'Inactif' }}
+                              </span>
+                              <p class="tariff-description">
+                                <i class="material-icons text-sm align-middle">info</i>
+                                {{ tariff.description }}
+                              </p>
+                              <span class="fee-payer-chip" [class.fee-payer-chip--client]="tariff.feePayer === 'CLIENT'">
+                                <i class="material-icons text-sm">{{
+                                  tariff.feePayer === "CLIENT" ? "person" : "store"
+                                }}</i>
+                                Frais à la charge {{ tariff.feePayer === "CLIENT" ? "du client" : "de l'agence" }}
+                              </span>
+                              <!-- Boutons daction dans le modal -->
+                              <div class="tariff-actions">
+                                @if (tariff.status === 'active') {
+                                  <button
+                                    class="btn btn-outline flex items-center gap-1"
+                                    [disabled]="isTogglingTariffStatus"
+                                    (click)="deactivateTariffNow(tariff)"
+                                  >
+                                    <i class="material-icons text-base">visibility_off</i>
+                                    Désactiver
+                                  </button>
+                                } @else {
+                                  <button
+                                    class="btn btn-success flex items-center gap-1"
+                                    [disabled]="isTogglingTariffStatus"
+                                    (click)="requestActivateTariff(tariff)"
+                                  >
+                                    <i class="material-icons text-base">check_circle</i>
+                                    Activer
+                                  </button>
+                                }
+                                <button class="btn btn-secondary flex items-center gap-1" (click)="editTariff(tariff)">
+                                  <i class="material-icons text-base">edit</i>
+                                </button>
+                                <button class="btn btn-danger flex items-center gap-1" [disabled]="isDeleting" (click)="deleteTariff(tariff)">
+                                  <i class="material-icons text-base">delete</i>
+                                </button>
+                              </div>
+                            </div>
+                          }
                         </div>
-                      }
-                    </div>
+                      </div>
+                    }
                   }
                   <!-- État vide pour les tarifs -->
                   @if (!isLoadingTariffs && tariffs.length === 0) {
@@ -2926,6 +2966,46 @@
           <button class="btn btn-primary" [disabled]="isSavingZoneAgency" (click)="addZoneAgency()">
             <i class="material-icons">add</i>
             Ajouter
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal de confirmation d'activation de tarif -->
+@if (showActivateTariffConfirmation) {
+  <div class="drawer-overlay">
+    <div class="drawer-content" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h3>
+          <i class="material-icons">check_circle</i>
+          Activer ce tarif ?
+        </h3>
+        <button class="drawer-close-btn" (click)="cancelActivateTariff()" [disabled]="isTogglingTariffStatus">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <p class="confirmation-text">
+          Le tarif {{ currentlyActiveTariffOfSameType?.planType }} actuellement actif de
+          <strong>{{ currentlyActiveTariffOfSameType?.price | number: "1.0-0" }} FCFA</strong>
+          sera automatiquement désactivé.
+        </p>
+        <p class="warning-text">
+          <i class="material-icons">info</i>
+          Un seul tarif peut être actif à la fois pour un même type.
+        </p>
+      </div>
+      <div class="drawer-footer">
+        <div class="drawer-actions">
+          <button class="btn btn-secondary" (click)="cancelActivateTariff()" [disabled]="isTogglingTariffStatus">
+            <i class="material-icons">close</i>
+            Annuler
+          </button>
+          <button class="btn btn-success" (click)="confirmActivateTariff()" [disabled]="isTogglingTariffStatus">
+            <i class="material-icons">check_circle</i>
+            Activer
           </button>
         </div>
       </div>

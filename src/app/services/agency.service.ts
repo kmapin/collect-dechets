@@ -423,9 +423,27 @@ export class AgencyService {
   getAgencyAllTarifs$(agencyId: string): Observable<Tarif[]> {
     const agency = this.agencies.find(a => a._id === agencyId);
     return this.http.get<Tarif[]>(`${environment.apiUrl}/pricing/${agencyId}`);
-  
+
   }
-  
+
+  // Vue publique : uniquement les tarifs actuellement ACTIFS (un maximum par
+  // planType) — le filtrage est fait côté serveur, jamais côté client.
+  getActiveAgencyTarifs$(agencyId: string): Observable<Tarif[]> {
+    return this.http.get<Tarif[]>(`${environment.apiUrl}/pricing/${agencyId}/public`);
+  }
+
+  // Active ce tarif : le backend désactive automatiquement l'ancien tarif actif
+  // du même planType pour cette agence (un seul actif à la fois par type).
+  activateTariff$(tariffId: string, agencyId: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/pricing/${tariffId}/activate`, { agencyId });
+  }
+
+  // Désactive ce tarif — sans effet de bord, il peut ne rester aucun tarif
+  // actif pour ce planType après cet appel.
+  deactivateTariff$(tariffId: string, agencyId: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/pricing/${tariffId}/deactivate`, { agencyId });
+  }
+
   //delete d un tarif par une agence
   public deleteTarif$(Id: string, agencyId: string): Observable<any> {
     const url = `${environment.apiUrl}/pricing/${Id}`;
@@ -618,7 +636,7 @@ export class AgencyService {
   //   throw new Error('Employee not found');
   // }
 
-  //ajouter un tarifs 
+  //ajouter un tarifs
   addTariff(tariff: Partial<Tarif>): Observable<Tarif | null> {
     const newTariff: Tarif = {
       agencyId: tariff.agencyId || '',
@@ -629,6 +647,10 @@ export class AgencyService {
       createdAt: new Date(),
       updatedAt: new Date(),
       feePayer: tariff.feePayer || 'AGENCE',
+      // Défaut 'inactive' côté schéma backend si omis — mais l'agence choisit
+      // explicitement à la création (case "Activer immédiatement", voir
+      // agency-dashboard.ts::addTariff()).
+      status: tariff.status || 'inactive',
     };
 
     return this.http.post<Tarif>(`${environment.apiUrl}/pricing`, newTariff).pipe(

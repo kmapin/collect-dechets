@@ -411,7 +411,9 @@ export class AgencyDetails implements OnInit {
       return;
     }
 
-    this.agencyService.getAgencyAllTarifs$(agency_id).subscribe({
+    // Vue publique : uniquement les tarifs actifs (filtrage côté serveur) —
+    // jamais tous les tarifs de l'agence, voir GET /pricing/:agencyId/public.
+    this.agencyService.getActiveAgencyTarifs$(agency_id).subscribe({
       next: (response: any) => {
         this.tariffs = response.data;
         this.tariffs.forEach((tariff) => {

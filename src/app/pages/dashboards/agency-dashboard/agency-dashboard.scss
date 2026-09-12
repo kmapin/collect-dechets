@@ -820,6 +820,62 @@
   }
 }
 
+.tariff-type-group {
+  margin-bottom: 24px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.tariff-type-group-title {
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #6b7280);
+  margin: 0 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tariff-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+
+  i {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &--active {
+    background: #dcfce7;
+    color: #166534;
+  }
+}
+
+.tariff-card--active {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.form-checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
 .assigned-team-chip {
   display: inline-flex;
   align-items: center;

@@ -876,6 +876,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       // plateforme pour ce plan, par défaut 'AGENCE' (comportement historique
       // inchangé tant que non explicitement basculé).
       feePayer: ["AGENCE", Validators.required],
+      // Uniquement utilisé à la création (masqué en mode édition, voir template) :
+      // un seul tarif actif par type — si un autre du même type est déjà actif,
+      // il sera automatiquement désactivé par le backend (addTariff()).
+      activateNow: [true],
     });
 
     // Formulaire de zone
@@ -1341,6 +1345,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.isEditingTariff = false;
     this.tariffToUpdate = null;
     this.tariffForm.reset();
+    // FormGroup.reset() sans argument remet chaque contrôle à null, pas à sa
+    // valeur initiale — réappliquer explicitement les défauts attendus à la
+    // création (case "Activer immédiatement" cochée par défaut).
+    this.tariffForm.patchValue({ feePayer: "AGENCE", activateNow: true });
 
     this.showZoneModal = true;
   }
@@ -4177,6 +4185,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         createdAt: new Date(),
         updatedAt: new Date(),
         feePayer: formValue.feePayer || "AGENCE",
+        // Un seul tarif actif par type : si un autre tarif du même planType est
+        // déjà actif pour cette agence, le backend le désactive automatiquement
+        // (services/pricingAgency.js::createPricing).
+        status: formValue.activateNow ? "active" : "inactive",
       };
       console.log("[DEBUG] Tarif:", tarif);
       this.isLoading = true;
@@ -4268,6 +4280,111 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       error: (error) => {
         console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
         this.isLoadingTariffs = false;
+      },
+    });
+  }
+
+  /** Organise tariffs par type (STANDARD/PREMIUM/ENTREPRISE, dans cet ordre)
+   * pour que l'agence voie clairement, par type, quel tarif est actuellement
+   * publié — même logique que zonesByCity (agency-details.ts). */
+  private static readonly TARIFF_TYPE_ORDER = ['standard', 'premium', 'enterprise'];
+
+  get tariffsByType(): { planType: string; tariffs: Tarif[] }[] {
+    const groups = new Map<string, Tarif[]>();
+    for (const tariff of this.tariffs) {
+      const type = tariff.planType || 'standard';
+      if (!groups.has(type)) groups.set(type, []);
+      groups.get(type)!.push(tariff);
+    }
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => {
+        const ia = AgencyDashboard.TARIFF_TYPE_ORDER.indexOf(a);
+        const ib = AgencyDashboard.TARIFF_TYPE_ORDER.indexOf(b);
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+      })
+      .map(([planType, tariffs]) => ({ planType, tariffs }));
+  }
+
+  // ── Activation / désactivation d'un tarif ───────────────────────────────────
+  // Un seul tarif ACTIF par (agence, type) — garanti côté backend (index unique
+  // partiel). Désactiver n'a pas besoin de confirmation (réversible en un clic,
+  // sans effet de bord) ; activer en demande une quand un autre tarif du même
+  // type est déjà actif, car cela le désactivera automatiquement.
+  showActivateTariffConfirmation = false;
+  pendingTariffActivation: Tarif | null = null;
+  currentlyActiveTariffOfSameType: Tarif | null = null;
+  isTogglingTariffStatus = false;
+
+  requestActivateTariff(tariff: Tarif): void {
+    if (!tariff?._id) return;
+    const activeSibling = this.tariffs.find(
+      (t) => t.planType === tariff.planType && t.status === 'active' && t._id !== tariff._id,
+    );
+    if (!activeSibling) {
+      // Aucun autre tarif actif de ce type — pas de bascule à annoncer, on active directement.
+      this.activateTariff(tariff);
+      return;
+    }
+    this.pendingTariffActivation = tariff;
+    this.currentlyActiveTariffOfSameType = activeSibling;
+    this.showActivateTariffConfirmation = true;
+  }
+
+  confirmActivateTariff(): void {
+    if (!this.pendingTariffActivation) return;
+    const tariff = this.pendingTariffActivation;
+    this.showActivateTariffConfirmation = false;
+    this.pendingTariffActivation = null;
+    this.currentlyActiveTariffOfSameType = null;
+    this.activateTariff(tariff);
+  }
+
+  cancelActivateTariff(): void {
+    this.showActivateTariffConfirmation = false;
+    this.pendingTariffActivation = null;
+    this.currentlyActiveTariffOfSameType = null;
+  }
+
+  private activateTariff(tariff: Tarif): void {
+    if (!tariff._id || this.isTogglingTariffStatus) return;
+    const agencyId = this.currentUser?.agencyId;
+    if (!agencyId) return;
+
+    this.isTogglingTariffStatus = true;
+    this.agencyService.activateTariff$(tariff._id, agencyId).subscribe({
+      next: () => {
+        this.isTogglingTariffStatus = false;
+        this.notificationService.showSuccess('Tarif activé', 'Ce tarif est maintenant actif.');
+        this.loadTariffs();
+      },
+      error: (error) => {
+        this.isTogglingTariffStatus = false;
+        this.notificationService.showError(
+          'Erreur',
+          error?.error?.message || "Impossible d'activer ce tarif pour le moment.",
+        );
+      },
+    });
+  }
+
+  deactivateTariffNow(tariff: Tarif): void {
+    if (!tariff._id || this.isTogglingTariffStatus) return;
+    const agencyId = this.currentUser?.agencyId;
+    if (!agencyId) return;
+
+    this.isTogglingTariffStatus = true;
+    this.agencyService.deactivateTariff$(tariff._id, agencyId).subscribe({
+      next: () => {
+        this.isTogglingTariffStatus = false;
+        this.notificationService.showSuccess('Tarif désactivé', "Ce tarif n'est plus visible publiquement.");
+        this.loadTariffs();
+      },
+      error: (error) => {
+        this.isTogglingTariffStatus = false;
+        this.notificationService.showError(
+          'Erreur',
+          error?.error?.message || "Impossible de désactiver ce tarif pour le moment.",
+        );
       },
     });
   }
