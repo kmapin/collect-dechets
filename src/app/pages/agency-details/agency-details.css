@@ -89,6 +89,25 @@
       box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
     }
 
+    .guest-resume-card {
+      background: var(--light-gray);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .guest-resume-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .guest-existing-account-hint {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin: 8px 0 0;
+    }
+
     .form-actions {
       display: flex;
       gap: 12px;

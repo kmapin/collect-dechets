@@ -46,6 +46,14 @@ export class MobileMoneyFormComponent implements OnInit {
   @Output() showPaymentDrawer = new EventEmitter<boolean>();
   @Output() monthsChange = new EventEmitter<number>();
   @Input() tarifResponse: any | null = null;
+  /** Souscription sans compte préalable : le compte a été créé juste avant cette
+   * étape (voir AgencyDetails.continueAsGuest) — affiche "Accéder à mon espace"
+   * plutôt que "Terminer" une fois le paiement réussi. */
+  @Input() isGuestCheckout = false;
+  @Output() accessSpace = new EventEmitter<void>();
+
+  /** Référence à l'énumération pour utilisation dans le template. */
+  PaymentStatus = PaymentStatus;
 
   onMonthsChange(months: number): void {
     this.monthsChange.emit(months);

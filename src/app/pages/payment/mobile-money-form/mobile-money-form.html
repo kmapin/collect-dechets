@@ -142,10 +142,17 @@
       <div>
         <app-payment-status [paymentResponse]="paymentResponse"></app-payment-status>
         <div class="action-buttons">
-          <button mat-raised-button color="primary" (click)="resetForm()" class="new-payment-button">
-            <mat-icon>add</mat-icon>
-            Terminer
-          </button>
+          @if (isGuestCheckout && paymentResponse.status === PaymentStatus.SUCCESS) {
+            <button mat-raised-button color="primary" (click)="accessSpace.emit()" class="new-payment-button">
+              <mat-icon>login</mat-icon>
+              Accéder à mon espace
+            </button>
+          } @else {
+            <button mat-raised-button color="primary" (click)="resetForm()" class="new-payment-button">
+              <mat-icon>add</mat-icon>
+              Terminer
+            </button>
+          }
         </div>
       </div>
     }

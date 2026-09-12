@@ -50,6 +50,80 @@ export class AuthService {
     }
   }
 
+  /** Stocke la session (localStorage + subjects) exactement comme le fait un login
+   * classique — réutilisé par loginUser() et par guestCheckout() (souscription sans
+   * compte préalable), pour ne jamais dupliquer cette logique. */
+  private establishSession(user: any, token?: string): void {
+    const loginData = {
+      ...(token && { token }),
+      ...(user && { user })
+    };
+
+    localStorage.setItem('currentUser', JSON.stringify(loginData));
+    if (token) {
+      localStorage.setItem('authWasteToken', token);
+    }
+
+    this.currentUserSubject.next(user);
+    this.isAuthenticatedSubject.next(true);
+
+    const userId = user?._id || user?.id;
+    if (userId) {
+      this.websocketService.connect();
+      this.websocketService.joinRoom(userId);
+      this.joinAgencyRoomIfStaff(user);
+    }
+  }
+
+  /** Mémorise l'intention de souscription en cours avant de rediriger un visiteur
+   * "cas A" (numéro déjà associé à un compte) vers /login — pour qu'après connexion
+   * il retombe directement sur le paiement de CETTE souscription plutôt que sur le
+   * dashboard générique. Usage unique : consommé (et effacé) par consumePendingSubscriptionIntent(). */
+  setPendingSubscriptionIntent(intent: { agencyId: string; tarifId: string; numberMonths: number; unitPrice: number }): void {
+    sessionStorage.setItem('pendingSubscriptionIntent', JSON.stringify(intent));
+  }
+
+  consumePendingSubscriptionIntent(): { agencyId: string; tarifId: string; numberMonths: number; unitPrice: number } | null {
+    const raw = sessionStorage.getItem('pendingSubscriptionIntent');
+    if (!raw) return null;
+    sessionStorage.removeItem('pendingSubscriptionIntent');
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  /** Souscription sans compte préalable : crée (ou réutilise) un compte "coquille"
+   * pour ce numéro et établit une session, exactement comme un login réussi — le
+   * mot de passe est facultatif (un mot de passe aléatoire est généré côté serveur
+   * si le client ne le saisit pas), jamais bloquant avant le paiement. */
+  guestCheckout(phone: string, firstName?: string, lastName?: string, password?: string): Observable<{
+    success: boolean;
+    existingAccount?: boolean;
+    user?: User;
+    token?: string;
+    resumableTransaction?: any;
+    message?: string;
+    error?: string;
+  }> {
+    return this.http.post<any>(`${environment.apiUrl}/guest-checkout`, { phone, firstName, lastName, password }).pipe(
+      map((response: any) => {
+        if (response?.success && response?.token && response?.user) {
+          this.establishSession(response.user, response.token);
+        }
+        return response;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Guest checkout Error:', error);
+        return of({
+          success: false,
+          error: error.error?.error || error.error?.message || 'Erreur lors de la souscription'
+        });
+      })
+    );
+  }
+
   generateQRCode(clientId: string): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/qrcode/${clientId}`).pipe(
       map((response: any) => {
@@ -88,30 +162,9 @@ export class AuthService {
         if (isSuccess) {
           const user = response.user;
           const token = response.token;
-          
-          // Store data based on what we received
-          const loginData = {
-            ...(token && { token }),
-            ...(user && { user })
-          };
-          
-          localStorage.setItem('currentUser', JSON.stringify(loginData));
-          if (token) {
-            localStorage.setItem('authWasteToken', token);
-          }
-          
-          this.currentUserSubject.next(user);
-          this.isAuthenticatedSubject.next(true);
-          
-          // Connecter le WebSocket et rejoindre la room utilisateur
-          const userId = user._id || user.id;
-          if (userId) {
-            console.log('🔌 Connexion WebSocket après login:', userId);
-            this.websocketService.connect();
-            this.websocketService.joinRoom(userId);
-            this.joinAgencyRoomIfStaff(user);
-          }
-          
+
+          this.establishSession(user, token);
+
           return {
             success: true,
             user: user,

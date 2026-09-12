@@ -193,7 +193,7 @@
                 <div class="service-actions">
                   <button
                     class="btn btn-primary btn-small"
-                    (click)="isLogged()? showLoginRequired() : submitSubscription(currentUser?._id, tariff?._id, 1, tariff.price )"
+                    (click)="submitSubscription(currentUser?._id, tariff?._id, 1, tariff.price)"
                   >
                     <i class="material-icons">add_shopping_cart</i>
                     Souscrire
@@ -690,12 +690,106 @@
       </button>
     </div>
     <div class="drawer-body">
-      @if(showPaymentDrawer && selectedTarif !== null) {
-      <app-mobile-money-form
-        [tarifResponse]="selectedTarif"
-        (showPaymentDrawer)="showPaymentDrawer = $event"
-        (monthsChange)="updateSubscriptionMonths($event)"
-      ></app-mobile-money-form>
+      @if (subscriptionStep === 'phone') {
+        @if (resumableTransaction) {
+          <div class="guest-resume-card">
+            <p>Vous avez une souscription en attente de paiement.</p>
+            <p>
+              <strong>Montant :</strong> {{ resumableTransaction.amount }} FCFA
+            </p>
+            <div class="guest-resume-actions">
+              <button class="btn btn-primary" (click)="resumePendingPayment()">Continuer</button>
+              <button class="btn btn-outline" (click)="startNewSubscription()">Nouvelle souscription</button>
+            </div>
+          </div>
+        } @else {
+          <div class="form-group">
+            <label class="form-label">
+              <i class="material-icons">person</i>
+              Prénom
+            </label>
+            <input
+              class="form-control"
+              type="text"
+              [(ngModel)]="guestFirstName"
+              name="guestFirstName"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">
+              <i class="material-icons">person_outline</i>
+              Nom
+            </label>
+            <input
+              class="form-control"
+              type="text"
+              [(ngModel)]="guestLastName"
+              name="guestLastName"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label required">
+              <i class="material-icons">phone</i>
+              Votre numéro de téléphone *
+            </label>
+            <input
+              class="form-control"
+              type="tel"
+              [(ngModel)]="guestPhone"
+              name="guestPhone"
+              required
+              appPhoneInput
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label required">
+              <i class="material-icons">lock</i>
+              Mot de passe *
+            </label>
+            <input
+              class="form-control"
+              type="password"
+              [(ngModel)]="guestPassword"
+              name="guestPassword"
+              required
+              minlength="8"
+              placeholder="8 caractères minimum"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label required">
+              <i class="material-icons">lock</i>
+              Confirmer le mot de passe *
+            </label>
+            <input
+              class="form-control"
+              type="password"
+              [(ngModel)]="guestConfirmPassword"
+              name="guestConfirmPassword"
+              required
+            />
+          </div>
+          @if (guestCheckoutExistingAccount) {
+            <p class="guest-existing-account-hint">
+              Un compte existe déjà avec ce numéro. Redirection vers la connexion…
+            </p>
+          }
+          <button
+            class="btn btn-primary"
+            [disabled]="isSubmittingGuestPhone || !guestPhone || !guestPassword"
+            (click)="continueAsGuest()"
+          >
+            Continuer
+          </button>
+        }
+      } @else if (subscriptionStep === 'payment' && selectedTarif !== null) {
+        <app-mobile-money-form
+          [tarifResponse]="selectedTarif"
+          [isGuestCheckout]="wasGuestCheckout"
+          (showPaymentDrawer)="showPaymentDrawer = $event"
+          (monthsChange)="updateSubscriptionMonths($event)"
+          (accessSpace)="goToMySpace()"
+        ></app-mobile-money-form>
       }
     </div>
   </div>

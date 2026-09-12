@@ -22,6 +22,7 @@ import { Admin } from "../../services/admin";
 import { MobileMoneyFormComponent } from "../payment/mobile-money-form/mobile-money-form";
 import { Breadcrumb, BreadcrumbItem } from "../../shared/breadcrumb/breadcrumb";
 import { dashboardRouteForRole, dashboardLabelForRole } from "../../shared/notification-route.util";
+import { PhoneInputDirective } from "../../shared/phone-input.directive";
 
 @Component({
   selector: "app-agency-details",
@@ -32,6 +33,7 @@ import { dashboardRouteForRole, dashboardLabelForRole } from "../../shared/notif
     DrawerModule,
     MobileMoneyFormComponent,
     Breadcrumb,
+    PhoneInputDirective,
   ],
   templateUrl: "./agency-details.html",
   styleUrl: "./agency-details.css",
@@ -182,6 +184,26 @@ export class AgencyDetails implements OnInit {
 
   isLogged = signal(false);
 
+  // ── Souscription sans compte préalable (guest checkout) ────────────────────
+  /** 'phone' : demande le numéro avant paiement (visiteur non connecté).
+   * 'payment' : formulaire de paiement habituel (compte réel ou coquille déjà établi). */
+  subscriptionStep: "phone" | "payment" = "payment";
+  guestPhone: string = "";
+  /** Facultatifs — s'ils sont saisis, ils remplacent les placeholders provisoires
+   * ('Client' / numéro de téléphone) posés par défaut sur le compte "coquille". */
+  guestFirstName: string = "";
+  guestLastName: string = "";
+  /** Facultatif — si vide, un mot de passe aléatoire est généré côté serveur (voir
+   * AuthService.guestCheckout) et le client pourra le définir plus tard. */
+  guestPassword: string = "";
+  guestConfirmPassword: string = "";
+  isSubmittingGuestPhone = false;
+  guestCheckoutExistingAccount = false;
+  resumableTransaction: any = null;
+  /** true si la session active provient d'un compte "coquille" créé pour cette
+   * souscription — affiche le CTA "Accéder à mon espace" après paiement réussi. */
+  wasGuestCheckout = false;
+
   isLoadingStatistics: boolean = false;
   statistics: Statistics = {
     totalClientsActifs: 0,
@@ -231,16 +253,20 @@ export class AgencyDetails implements OnInit {
     });
   }
 
-  showLoginRequired() {
-    if (this.isLogged()) {
-      this.notificationService.showWarning(
-        "Accès refusé",
-        "Veuillez vous connecter ou s'inscrire pour accéder à cette page.",
-        3000,
-      );
-      this.router.navigate(["/login"]);
-    }
+  /** Cas A du guest checkout (numéro déjà associé à un compte) : après connexion,
+   * reprend directement la souscription mémorisée avant la redirection vers /login
+   * (voir AuthService.setPendingSubscriptionIntent / login.ts::onLogin) au lieu de
+   * faire recommencer le visiteur depuis le choix de l'abonnement. */
+  private resumeSubscriptionIntentAfterLogin(): void {
+    const intent = (history.state as any)?.resumeSubscription;
+    if (!intent || !this.tariffs.length) return;
+
+    const tariff = this.tariffs.find((t: any) => t._id === intent.tarifId);
+    if (!tariff) return;
+
+    this.submitSubscription(this.currentUser?._id, tariff._id, intent.numberMonths, tariff.price);
   }
+
   loadAgencyDataOnInit(): void {
     this.getAllCountries();
     this.currentUser = this.authService.getCurrentUser();
@@ -287,6 +313,7 @@ export class AgencyDetails implements OnInit {
         });
         console.log("Tarifs récupérés :", response);
         this.isLoading = false;
+        this.resumeSubscriptionIntentAfterLogin();
       },
       error: (error) => {
         // console.error("[DEBUG] Erreur lors du chargement des tarifs :", error);
@@ -336,9 +363,125 @@ export class AgencyDetails implements OnInit {
 
     console.log("selectedTarif==>", this.selectedTarif);
     if (this.selectedTarif !== null) {
+      // isLogged() === true signifie NON authentifié (nom historique conservé) :
+      // un visiteur sans session passe d'abord par l'étape téléphone (souscription
+      // sans compte préalable), un utilisateur déjà connecté va directement au paiement.
+      this.subscriptionStep = this.isLogged() ? "phone" : "payment";
+      this.guestPhone = "";
+      this.guestCheckoutExistingAccount = false;
+      this.resumableTransaction = null;
       this.showPaymentDrawer = true;
     }
 
+  }
+
+  /** Même normalisation que login.ts/register.ts::formatPhone — l'input reste en
+   * théorie déjà "national uniquement" grâce à appPhoneInput (indicatif affiché à
+   * part), mais reste défensif si un numéro est collé avec son indicatif. */
+  private formatGuestPhone(phone: string): string {
+    if (!phone) return '';
+    return String(phone).trim().replace(/\s+/g, '').replace(/^\+?(226|225)?/, '');
+  }
+
+  /** Étape téléphone du guest checkout : crée (ou réutilise) un compte "coquille"
+   * pour ce numéro et établit une session, avec le mot de passe choisi par le
+   * client (obligatoire — c'est celui avec lequel il se reconnectera ensuite).
+   * Voir AuthService.guestCheckout(). */
+  continueAsGuest(): void {
+    if (this.isSubmittingGuestPhone || !this.guestPhone) return;
+
+    if (!this.guestPassword || this.guestPassword.length < 8) {
+      this.notificationService.showError("Erreur", "Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+    if (this.guestPassword !== this.guestConfirmPassword) {
+      this.notificationService.showError("Erreur", "Les mots de passe ne correspondent pas.");
+      return;
+    }
+
+    this.isSubmittingGuestPhone = true;
+    this.guestCheckoutExistingAccount = false;
+
+    const phone = this.formatGuestPhone(this.guestPhone);
+    this.authService.guestCheckout(phone, this.guestFirstName, this.guestLastName, this.guestPassword || undefined).subscribe({
+      next: (response) => {
+        this.isSubmittingGuestPhone = false;
+
+        if (response.existingAccount) {
+          // Cas A : ce numéro appartient déjà à un compte — on ne crée pas de
+          // doublon, on redirige vers la connexion en mémorisant l'intention pour
+          // reprendre exactement cette souscription juste après.
+          this.guestCheckoutExistingAccount = true;
+          this.authService.setPendingSubscriptionIntent({
+            agencyId: this.selectedTarif.agencyId,
+            tarifId: this.selectedTarif.tarifId,
+            numberMonths: this.selectedTarif.numberMonths,
+            unitPrice: this.selectedTarif.unitPrice,
+          });
+          this.notificationService.showInfo(
+            "Compte existant",
+            "Un compte existe déjà avec ce numéro. Connectez-vous pour continuer.",
+          );
+          this.router.navigate(["/login"]);
+          return;
+        }
+
+        if (!response.success || !response.user) {
+          this.notificationService.showError(
+            "Erreur",
+            response.error || "Impossible de continuer avec ce numéro pour le moment.",
+          );
+          return;
+        }
+
+        this.currentUser = response.user;
+        this.wasGuestCheckout = true;
+        this.selectedTarif = { ...this.selectedTarif, userId: response.user._id };
+
+        if (response.resumableTransaction) {
+          // Souscription déjà entamée pour ce numéro (abandon avant paiement) —
+          // proposer de reprendre plutôt que de repartir de zéro.
+          this.resumableTransaction = response.resumableTransaction;
+        } else {
+          this.subscriptionStep = "payment";
+        }
+      },
+      error: () => {
+        this.isSubmittingGuestPhone = false;
+        this.notificationService.showError(
+          "Erreur",
+          "Impossible de continuer avec ce numéro pour le moment.",
+        );
+      },
+    });
+  }
+
+  /** Reprend une souscription abandonnée : passe à l'étape paiement pour le même
+   * tarif déjà connu (le client ne recommence pas depuis le choix de l'abonnement).
+   * Simplification assumée : une nouvelle transaction est initiée plutôt que de
+   * reprendre l'ancienne au milieu de son propre flux OTP (aucune intégration
+   * frontend de /transactions/resend-otp n'existait avant cette fonctionnalité —
+   * l'ajouter uniquement pour ce cas bord aurait représenté un risque disproportionné
+   * par rapport au bénéfice : le client ne perd que la saisie de l'OTP, pas son
+   * abonnement ni son numéro). */
+  resumePendingPayment(): void {
+    if (!this.resumableTransaction) return;
+    this.subscriptionStep = "payment";
+  }
+
+  /** Ignore la souscription en attente et repart d'une souscription neuve pour le
+   * tarif actuellement sélectionné (une nouvelle transaction sera créée). */
+  startNewSubscription(): void {
+    this.resumableTransaction = null;
+    this.subscriptionStep = "payment";
+  }
+
+  /** CTA affiché après paiement réussi pour un compte créé via guest checkout —
+   * la session est déjà active (établie dès l'étape téléphone), il ne reste qu'à
+   * rediriger vers le bon espace selon le rôle. */
+  goToMySpace(): void {
+    const role = this.authService.getCurrentUser()?.role;
+    this.router.navigate([dashboardRouteForRole(role)]);
   }
 
   /** Nombre de mois choisi directement dans le drawer "Abonnement" — recalcule le

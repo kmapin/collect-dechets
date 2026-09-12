@@ -114,6 +114,18 @@ export class Login implements OnInit, OnDestroy {
             `Bienvenue ${welcomeName || 'utilisateur'} !`
           );
           
+          // Souscription sans compte préalable (cas A : le numéro saisi appartenait
+          // déjà à un compte) — reprendre directement le paiement de cette
+          // souscription plutôt que d'atterrir sur le dashboard générique.
+          const pendingIntent = this.authService.consumePendingSubscriptionIntent();
+          if (pendingIntent) {
+            this.router.navigate(['/agencies', pendingIntent.agencyId], {
+              state: { resumeSubscription: pendingIntent },
+              replaceUrl: true,
+            });
+            return;
+          }
+
           // Redirect based on user role
           this.redirectToDashboard(user.role);
         } else {

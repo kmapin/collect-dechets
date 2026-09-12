@@ -2,7 +2,7 @@ import { CellWidthType } from "./../../../../../node_modules/jspdf-autotable/dis
 import { BarcodeFormat } from "@zxing/library";
 import { AfterViewChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { ActivatedRoute, RouterModule, TitleStrategy } from "@angular/router";
+import { ActivatedRoute, Router, RouterModule, TitleStrategy } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { AuthService } from "../../../services/auth.service";
 import { CollectionService } from "../../../services/collection.service";
@@ -140,10 +140,20 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     private route: ActivatedRoute,
     private redevanceService: RedevanceService,
     private exportClientService: ExportClientService,
-    private financeService: FinanceService
+    private financeService: FinanceService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
+    // Garde-fou souscription sans compte préalable (guest checkout) : un compte
+    // "coquille" (status pending_activation) ne doit pas voir un vrai dashboard
+    // tant que le paiement n'est pas confirmé — voir services/subscription.js::
+    // createSubscriptionAfterPayment côté backend pour la bascule vers 'active'.
+    if ((this.authService.getCurrentUser() as any)?.status === 'pending_activation') {
+      this.router.navigate(['/']);
+      return;
+    }
+
     // this.currentUser = this.authService.getCurrentUser();
     this.getUser();
     // console.log("Current User", this.currentUser);
