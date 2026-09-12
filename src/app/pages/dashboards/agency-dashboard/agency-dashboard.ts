@@ -5061,8 +5061,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // adresse n'est de toute façon affiché que pour l'AJOUT d'employé (`@if
   private loadEmployeeAddressDependencies(address: any): void {
     if (!address?.city) return;
-    if (this.cities.length === 0) this.loadCitiesForAddress();
+    // this.cities peut être vide si aucun formulaire n'a encore déclenché son chargement :
+    // loadCitiesForAddress() est asynchrone, donc on ne peut pas résoudre cityObj tant que
+    // la réponse n'est pas revenue — d'où l'attente explicite ici plutôt qu'un find() immédiat.
+    if (this.cities.length === 0) {
+      this.territoryService.getAllCities().subscribe({
+        next: (cities) => {
+          this.cities = cities;
+          this.resolveEmployeeAddressDependencies(address);
+        },
+        error: (err) => { console.error('Erreur chargement des villes :', err); this.cities = []; },
+      });
+    } else {
+      this.resolveEmployeeAddressDependencies(address);
+    }
+  }
 
+  private resolveEmployeeAddressDependencies(address: any): void {
     const cityObj = this.cities.find((c) => c.name === address.city);
     if (!cityObj) return;
 
@@ -5480,11 +5495,67 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   // Initialise les dépendances d'adresse pour la sélection des zones de couverture.
+  //
+  // userData.address est un objet partagé entre plusieurs formulaires de ce composant
+  // (employé, zones...) : sa ville/arrondissement/secteur peuvent donc déjà être renseignés
+  // quand ce drawer s'ouvre, sans qu'aucun (change) n'ait jamais été déclenché pour charger
+  // les listes dépendantes correspondantes — d'où le bug "Ville affichée mais Arrondissement/
+  // Secteur/Quartier vides". On recharge donc la cascade en cas de valeurs déjà présentes.
   private initializeAddressDataForZones(): void {
     this.arrondissements = [];
     this.secteurs = [];
     this.quartiers = [];
-    if (this.cities.length === 0) this.loadCitiesForAddress();
+    if (this.cities.length === 0) {
+      this.territoryService.getAllCities().subscribe({
+        next: (cities) => {
+          this.cities = cities;
+          this.reloadZoneAddressDependencies();
+        },
+        error: (err) => { console.error('Erreur chargement des villes :', err); this.cities = []; },
+      });
+    } else {
+      this.reloadZoneAddressDependencies();
+    }
+  }
+
+  // Recharge arrondissements/secteurs/quartiers pour une ville/arrondissement/secteur déjà
+  // sélectionnés, sans réinitialiser ces sélections (contrairement à onCityChange /
+  // onArrondissementChange, qui répondent à un vrai choix utilisateur et doivent alors
+  // repartir de zéro sur les niveaux inférieurs).
+  private reloadZoneAddressDependencies(): void {
+    const city = this.userData.address.city;
+    if (!city) return;
+    const cityObj = this.cities.find((c) => c.name === city);
+    if (!cityObj) return;
+
+    this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
+      next: (arrondissements) => {
+        this.arrondissements = arrondissements;
+
+        const arrondissement = this.userData.address.arrondissement;
+        if (!arrondissement) return;
+        const arrondissementObj = this.arrondissements.find((a) => a.name === arrondissement);
+        if (!arrondissementObj) return;
+
+        this.territoryService.getSectorsByArrondissement(arrondissementObj.id).subscribe({
+          next: (sectors) => {
+            this.secteurs = sectors;
+
+            const secteur = this.userData.address.sector;
+            if (!secteur) return;
+            const secteurObj = this.secteurs.find((s) => s.name === secteur);
+            if (!secteurObj) return;
+
+            this.territoryService.getNeighborhoodsBySector(secteurObj.id).subscribe({
+              next: (quartiers) => { this.quartiers = quartiers.map((q) => q.name); },
+              error: (err) => { console.error('Erreur chargement des quartiers :', err); this.quartiers = []; },
+            });
+          },
+          error: (err) => { console.error('Erreur chargement des secteurs :', err); this.secteurs = []; },
+        });
+      },
+      error: (err) => { console.error('Erreur chargement des arrondissements :', err); this.arrondissements = []; },
+    });
   }
 
   openZoneModalcouverture(): void {
