@@ -782,6 +782,31 @@ section{
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+
+  i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
+
+  p {
+    line-height: 1.5;
+  }
+}
+
 .card-glow {
   position: absolute;
   top: 0;
