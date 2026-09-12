@@ -242,12 +242,13 @@
         Comparez leurs services, consultez les avis clients et choisissez la
         solution parfaite pour vos besoins.
       </p>
-      <div class="results-badge">
-        <i class="material-icons">business</i>
-        <p class="text-secondary">Vous êtes à</p>
-        <span>{{selectedCity}}</span>
-        <!-- <span>{{ searchResults.length }}Ouagadougou</span> -->
-      </div>
+      @if (hasUsedGeolocation && selectedCity) {
+        <div class="results-badge">
+          <i class="material-icons">business</i>
+          <p class="text-secondary">Vous êtes à</p>
+          <span>{{selectedCity}}</span>
+        </div>
+      }
     </div>
 
 

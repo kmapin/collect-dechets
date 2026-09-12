@@ -168,7 +168,8 @@ export class Home  implements OnInit {
         })
 
         // this.initMap();
-        this.useGeolocations();
+        // Géolocalisation déclenchée uniquement sur clic explicite de "Ma position"
+        // (voir useGeolocations()) — jamais automatiquement au chargement de la page.
         console.log('selected city ==>', this.selectedCity);
 
         
@@ -516,6 +517,10 @@ generateRandomStarsList(): void {
 
   // ...existing properties...
   selectedSearchOption: 'geolocation' | 'zone' | 'advanced' | null = null;
+  /** Devient vrai seulement après une géolocalisation réussie (clic explicite sur
+   * "Ma position") — sert à masquer le badge "Vous êtes à ..." tant que l'utilisateur
+   * n'a rien demandé. */
+  hasUsedGeolocation = false;
 
   // Utility to mark an option active
   selectOption(option: 'geolocation' | 'zone' | 'advanced') {
@@ -547,6 +552,7 @@ generateRandomStarsList(): void {
           const neighborhood = data.address.neighbourhood || '';
           // this.searchQuery = city;
           this.selectedCity = city;
+          this.hasUsedGeolocation = true;
           console.log('selected city geolocated ==>', this.selectedCity);
           if(this.selectedCity){
             this.onCityChange(this.selectedCity);
@@ -556,12 +562,7 @@ generateRandomStarsList(): void {
           // this.searchQuery = city;
           // Tu peux aussi filtrer directement
           this.applyFilters();
-          // alert(`Vous êtes à ${city}, secteur ${sector}, quartier ${neighborhood}`);
-          // this.notificationsService.showSuccess('Localisation réussie', `Vous êtes à ${city}, secteur ${sector}, quartier ${neighborhood}`);
         } catch (err) {
-          console.error('Erreur géocodage:', err);
-          // alert('Impossible de récupérer les informations de localisation');
-        this.notificationsService.showError('Erreur', 'Impossible de récupérer les informations de localisation');
 
         }
       },
