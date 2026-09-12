@@ -283,27 +283,31 @@
                   <p class="agency-description truncate">
                     {{ agency.agencyDescription }}
                   </p>
-                  <div class="agency-rating">
-                    <div class="stars">
-                      @for (star of getStars(agency.rating); track $index) {
-                        <i class="material-icons star">star</i>
+                  @if (agency.rating) {
+                    <div class="agency-rating">
+                      <div class="stars">
+                        @for (star of getStars(agency.rating); track $index) {
+                          <i class="material-icons star">star</i>
+                        }
+                      </div>
+                      <span class="rating-text">{{ agency.rating }}/5</span>
+                      @if (agency.ratingsCount) {
+                        <span class="reviews-count">({{ agency.ratingsCount }} avis)</span>
                       }
                     </div>
-                    <span class="rating-text">{{ agency.rating ?? "—" }}/5</span>
-                    @if (agency.ratingsCount) {
-                      <span class="reviews-count">({{ agency.ratingsCount }} avis)</span>
-                    }
-                  </div>
+                  }
                   <div class="agency-info">
                     <div class="info-item">
                       <i class="material-icons">location_on</i>
                       <span>{{ agency.address.city }}, sect {{ agency.address.sector }},
                       {{ agency.address.neighborhood }}</span>
                     </div>
-                    <div class="info-item">
-                      <i class="material-icons">people</i>
-                      <span>{{ agency.totalClients }} clients</span>
-                    </div>
+                    @if (canSeeClientCount(agency)) {
+                      <div class="info-item">
+                        <i class="material-icons">people</i>
+                        <span>{{ agency.totalClients }} clients</span>
+                      </div>
+                    }
                 </div>
             </div>
             <div class="agency-actions">

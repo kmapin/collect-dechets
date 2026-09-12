@@ -379,6 +379,8 @@
       border-radius: 12px;
       background: var(--light-gray);
       transition: all 0.3s ease;
+      width: 100%;
+      max-width: 420px;
     }
 
     .service-card:hover {

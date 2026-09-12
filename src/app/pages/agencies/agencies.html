@@ -122,12 +122,14 @@
           <div class="agency-content">
             <h3 class="agency-name">{{ agency.name }}</h3>
             <p class="agency-description truncate">{{ agency?.agencyDescription }}</p>
+            @if (agency.rating) {
             <div
               class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full">
               @for (star of getStars(agency.rating); track $index) {
               <i class="material-icons star">star</i>
               }
             </div>
+            }
             @if (currentUser?.agencyId === agency._id) {
             <div
               class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
@@ -172,12 +174,14 @@
               </div>
               <div class="agency-list-info">
                 <h3 class="agency-name text-[--primary-color]">{{ agency.name }}</h3>
+                @if (agency.rating) {
                 <div
                   class="stars agency-ratingTop  text-white bg-primary-200 border border-primary-300 text-primary-800 rounded-full">
                   @for (star of getStars(agency.rating); track $index) {
                   <i class="material-icons star">star</i>
                   }
                 </div>
+                }
                 @if (currentUser?.agencyId === agency._id) {
                 <div
                   class="agency-rating text-white bg-success-200 border border-success-300 text-success-800 rounded-full">
@@ -196,10 +200,12 @@
                 <span>{{ agency.address.city || '-' }}, {{ agency.address.sector || '-' }}, {{
                   agency.address.neighborhood || '-' }}</span>
               </div>
+              @if (canSeeClientCount(agency)) {
               <div class="detail-item">
                 <i class="material-icons">people</i>
                 <span>{{ agency.totalClients || 0 }} clients</span>
               </div>
+              }
             </div>
           </div>
           <div class="agency-list-actions">
@@ -231,14 +237,16 @@
           <div class="map-agency-item">
             <h4>{{ agency.name }}</h4>
             <p>{{ agency.address.city || '-' }}</p>
+            @if (agency.rating) {
             <div class="agency-rating">
               <div class="stars">
-                @for (star of getStars(agency.rating || 0); track star) {
+                @for (star of getStars(agency.rating); track star) {
                 <i class="material-icons star">star</i>
                 }
               </div>
-              <span>{{ agency.rating || 0 }}/5</span>
+              <span>{{ agency.rating }}/5</span>
             </div>
+            }
             <button class="btn btn-primary btn-small" [routerLink]="['/agencies', agency._id]">
               Voir
             </button>

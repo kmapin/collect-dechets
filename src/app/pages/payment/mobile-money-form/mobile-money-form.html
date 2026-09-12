@@ -55,6 +55,18 @@
             }
             <mat-hint>Format: XXXXXXXX</mat-hint>
           </mat-form-field>
+          <!-- Nombre de mois (uniquement pour un abonnement à un tarif) -->
+          @if (tarifResponse?.numberMonths != null) {
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre de mois</mat-label>
+              <input matInput type="number" min="1" max="12"
+                [ngModel]="tarifResponse?.numberMonths"
+                (ngModelChange)="onMonthsChange($event)"
+                [ngModelOptions]="{ standalone: true }">
+              <mat-icon matPrefix>event_repeat</mat-icon>
+              <mat-hint>Le montant ci-dessous est recalculé automatiquement</mat-hint>
+            </mat-form-field>
+          }
           <!-- Montant -->
           <mat-form-field appearance="outline">
             <mat-label>Montant</mat-label>

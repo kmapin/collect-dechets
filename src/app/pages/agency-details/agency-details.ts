@@ -151,6 +151,17 @@ export class AgencyDetails implements OnInit {
       { label },
     ];
   }
+
+  /** Nombre de clients visible seulement pour le manager de CETTE agence, la
+   * municipalité ou le super_admin — jamais pour les clients, les managers d'une
+   * autre agence, ou un visiteur non connecté. */
+  get canSeeClientCount(): boolean {
+    return (
+      this.currentUser?.role === "super_admin" ||
+      this.currentUser?.role === "municipality" ||
+      this.isOwnAgencyView
+    );
+  }
   messageData: Message = {
     sender: "",
     receiver: "",
@@ -319,6 +330,7 @@ export class AgencyDetails implements OnInit {
       userId: currentUserId,
       numberMonths: numberm_month,
       amount: price * numberm_month,
+      unitPrice: price,
       agencyId: this.agencyId ?? this.agency?._id,
     };
 
@@ -328,6 +340,21 @@ export class AgencyDetails implements OnInit {
     }
 
   }
+
+  /** Nombre de mois choisi directement dans le drawer "Abonnement" — recalcule le
+   * montant (prix unitaire × mois) et remplace `selectedTarif` par une nouvelle
+   * référence pour que <app-mobile-money-form> (via ngOnChanges) reprenne le nouveau
+   * montant dans son propre formulaire. */
+  updateSubscriptionMonths(months: number): void {
+    if (!this.selectedTarif) return;
+    const clamped = Math.min(12, Math.max(1, months || 1));
+    this.selectedTarif = {
+      ...this.selectedTarif,
+      numberMonths: clamped,
+      amount: this.selectedTarif.unitPrice * clamped,
+    };
+  }
+
   updateAmount() {
     this.subscription.amount = this.planPrices[this.subscription.plan] || 0;
     this.updateEndDate();

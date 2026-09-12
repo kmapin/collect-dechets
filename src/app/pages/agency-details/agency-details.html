@@ -34,17 +34,19 @@
             <h1 class="agency-name">{{ agency?.name }}</h1>
             <p class="agency-description">{{ agency?.agencyDescription }}</p>
             <div class="agency-meta">
-              <div class="agency-rating">
-                <div class="stars">
-                  @for (star of getStars(agency?.rating); track star) {
-                  <i class="material-icons star">star</i>
+              @if (agency?.rating) {
+                <div class="agency-rating">
+                  <div class="stars">
+                    @for (star of getStars(agency?.rating); track star) {
+                    <i class="material-icons star">star</i>
+                    }
+                  </div>
+                  <span class="rating-text">{{ agency?.rating }}/5</span>
+                  @if (agency?.ratingsCount) {
+                    <span class="reviews-count">({{ agency?.ratingsCount }} avis)</span>
                   }
                 </div>
-                <span class="rating-text">{{ agency?.rating ?? "—" }}/5</span>
-                @if (agency?.ratingsCount) {
-                  <span class="reviews-count">({{ agency?.ratingsCount }} avis)</span>
-                }
-              </div>
+              }
               <div class="agency-status">
                 @if (agency?.status) {
                 <span
@@ -111,7 +113,7 @@
       <div class="content-layout">
         <!-- Left Column - Main Information -->
         <div class="main-column">
-          @if (currentUser?.role === 'super_admin' || currentUser?.role === 'municipality' || (currentUser?.role === 'manager' && currentUser?.agencyId === agency?._id)) {
+          @if (canSeeClientCount) {
           <section class="quick-stats">
             <div class="stat-item">
               <div class="stat-icon">
@@ -188,27 +190,10 @@
                     <span>{{ tariff.numberOfPasses }} passages inclus</span>
                   </div>
                 </div>
-                <div class="form-group" style="margin: 12px 0">
-                  <!-- <label>Nombre de mois :</label> -->
-                  <span class="text-sm font-small text-[--primary-color]"
-                    >Saisir le nombre de mois pour l'abonnement à ce
-                    service</span
-                  >
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    [(ngModel)]="tariffSelectedMonths[tariff?._id!]"
-                    [ngModelOptions]="{ standalone: true }"
-                    (ngModelChange)="tariffSelectedMonths[tariff?._id!] ||= 1"
-                    [name]="'months_' + tariff?._id"
-                    style="width: 80px"
-                  />
-                </div>
                 <div class="service-actions">
                   <button
                     class="btn btn-primary btn-small"
-                    (click)="isLogged()? showLoginRequired() : submitSubscription(currentUser?._id, tariff?._id, tariffSelectedMonths[tariff?._id!], tariff.price )"
+                    (click)="isLogged()? showLoginRequired() : submitSubscription(currentUser?._id, tariff?._id, 1, tariff.price )"
                   >
                     <i class="material-icons">add_shopping_cart</i>
                     Choisir ce tarif
@@ -335,6 +320,7 @@
               </h3>
             </div>
             <div class="stats-content">
+              @if (canSeeClientCount) {
               <div class="stat-row">
                 <div class="stat-icon">
                   <i class="material-icons">people</i>
@@ -344,15 +330,18 @@
                   <span class="stat-label">Clients actifs</span>
                 </div>
               </div>
+              }
+              @if (agency?.rating) {
               <div class="stat-row">
                 <div class="stat-icon">
                   <i class="material-icons">star</i>
                 </div>
                 <div class="stat-details">
-                  <span class="stat-number">{{ agency?.rating ?? "—" }}/5</span>
+                  <span class="stat-number">{{ agency?.rating }}/5</span>
                   <span class="stat-label">Note moyenne</span>
                 </div>
               </div>
+              }
               <div class="stat-row">
                 <div class="stat-icon">
                   <i class="material-icons">event</i>
@@ -378,14 +367,16 @@
               <div class="similar-agency-item">
                 <div class="similar-agency-info">
                   <h4>{{ agency.name }}</h4>
+                  @if (agency.rating) {
                   <div class="similar-agency-rating">
                     <div class="stars">
                       @for (star of getStars(agency.rating); track star) {
                         <i class="material-icons star">star</i>
                       }
                     </div>
-                    <span>{{ agency.rating ?? "—" }}/5</span>
+                    <span>{{ agency.rating }}/5</span>
                   </div>
+                  }
                 </div>
                 <button
                   class="btn btn-secondary btn-small"
@@ -699,11 +690,11 @@
       </button>
     </div>
     <div class="drawer-body">
-      <!-- Zone d'affichage des erreurs améliorée -->
       @if(showPaymentDrawer && selectedTarif !== null) {
       <app-mobile-money-form
         [tarifResponse]="selectedTarif"
         (showPaymentDrawer)="showPaymentDrawer = $event"
+        (monthsChange)="updateSubscriptionMonths($event)"
       ></app-mobile-money-form>
       }
     </div>

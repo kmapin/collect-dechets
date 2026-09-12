@@ -125,9 +125,18 @@ currentUser!: any ;
   getUser(){
    this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
-      
+
     });
-    console.log("Current User", this.currentUser); 
+    console.log("Current User", this.currentUser);
+  }
+
+  /** Nombre de clients visible seulement pour le manager de CETTE agence, la
+   * municipalité ou le super_admin — jamais pour les clients, les managers d'une
+   * autre agence, ou un visiteur non connecté. */
+  canSeeClientCount(agency: any): boolean {
+    if (!this.currentUser) return false;
+    if (this.currentUser.role === 'super_admin' || this.currentUser.role === 'municipality') return true;
+    return this.currentUser.role === 'manager' && this.currentUser.agencyId === agency._id;
   }
 
  

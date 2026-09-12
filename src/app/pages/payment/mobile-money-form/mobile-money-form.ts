@@ -48,7 +48,12 @@ export class MobileMoneyFormComponent implements OnInit {
   @ViewChild(OtpInputComponent) otpComponent?: OtpInputComponent;
 
   @Output() showPaymentDrawer = new EventEmitter<boolean>();
+  @Output() monthsChange = new EventEmitter<number>();
   @Input() tarifResponse: any | null = null;
+
+  onMonthsChange(months: number): void {
+    this.monthsChange.emit(months);
+  }
   /** Formulaire de paiement */
   paymentForm: FormGroup;
   

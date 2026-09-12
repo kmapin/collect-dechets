@@ -10,6 +10,7 @@ import * as L from 'leaflet';
 import { NotificationService } from '../../services/notification.service';
 import { Arrondissement, City, Quartier, Sector } from '../../models/countries-org.model';
 import { TerritoryHttpService } from '../../services/territory-http.service';
+import { AuthService } from '../../services/auth.service';
 
 
 @Component({
@@ -19,6 +20,15 @@ import { TerritoryHttpService } from '../../services/territory-http.service';
   styleUrl: './home.scss'
 })
 export class Home  implements OnInit {
+  /** Nombre de clients visible seulement pour le manager de CETTE agence, la
+   * municipalité ou le super_admin — jamais pour les clients, les managers d'une
+   * autre agence, ou un visiteur non connecté. */
+  canSeeClientCount(agency: Agency): boolean {
+    const user = this.authService.getCurrentUser();
+    if (!user) return false;
+    if (user.role === 'super_admin' || user.role === 'municipality') return true;
+    return user.role === 'manager' && user.agencyId === agency._id;
+  }
   searchQuery = '';
   searchResults: Agency[] = [];
   isSearching = false;
@@ -141,7 +151,8 @@ export class Home  implements OnInit {
     private agencyService: AgencyService,
     private notificationsService: NotificationService,
     private router: Router,
-    private territoryService: TerritoryHttpService
+    private territoryService: TerritoryHttpService,
+    private authService: AuthService
 
   ) {}
 
