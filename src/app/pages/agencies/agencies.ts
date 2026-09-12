@@ -283,6 +283,12 @@ applyFilters(): void {
   clearFilters(): void {
     this.searchQuery = '';
     this.selectedCity = '';
+    this.selectedArrondissement = '';
+    this.selectedSector = '';
+    this.selectedNeighborhood = '';
+    this.arrondissementss = [];
+    this.secteurss = [];
+    this.quartierss = [];
     this.selectedService = '';
     this.maxPrice = '';
     this.minRating = '';
