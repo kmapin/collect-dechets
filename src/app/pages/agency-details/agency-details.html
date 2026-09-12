@@ -173,30 +173,61 @@
             </div>
             <div class="services-grid">
               @for (tariff of tariffs; track tariff) {
-              <div class="service-card">
+              <div
+                class="service-card"
+                [class.service-card--popular]="isPopularTariff(tariff.planType)"
+                [style.--accent]="tariffAccentColor(tariff.planType)"
+              >
+                @if (isPopularTariff(tariff.planType)) {
+                  <span class="service-popular-ribbon">
+                    <i class="material-icons">workspace_premium</i>
+                    {{ getTariffPill(tariff.planType) }}
+                  </span>
+                }
                 <div class="service-header">
-                  <h3>{{ tariff.planType }}</h3>
-                  <div class="service-price">
-                    <span class="price-amount"
-                      >{{ tariff.price }} <sup>FCFA</sup></span
-                    >
-                    <span class="price-period">/mois</span>
+                  <div class="service-icon">
+                    <i class="material-icons">{{ getTariffIcon(tariff.planType) }}</i>
                   </div>
+                  <div class="service-title-group">
+                    <h3>{{ getTariffLabel(tariff.planType) }}</h3>
+                    @if (tariff.description) {
+                      <p class="service-subtitle">{{ tariff.description }}</p>
+                    }
+                  </div>
+                  @if (!isPopularTariff(tariff.planType)) {
+                    <span class="service-plan-pill">{{ getTariffPill(tariff.planType) }}</span>
+                  }
                 </div>
-                <p class="service-description">{{ tariff.description }}</p>
-                <div class="service-details">
+                <div class="service-price">
+                  <span class="price-amount"
+                    >{{ tariff.price }} <sup>FCFA</sup></span
+                  >
+                  <span class="price-period">/mois</span>
+                </div>
+                @if (tariff.numberOfPasses) {
                   <div class="service-frequency">
-                    <i class="material-icons">loop</i>
-                    <span>{{ tariff.numberOfPasses }} passages inclus</span>
+                    <i class="material-icons">group</i>
+                    <span>{{ tariff.numberOfPasses }} passage(s) inclus par mois</span>
                   </div>
-                </div>
+                }
+                @if (getTariffFeatures(tariff.planType).length) {
+                  <ul class="service-features">
+                    @for (feature of getTariffFeatures(tariff.planType); track feature) {
+                      <li>
+                        <i class="material-icons">check_circle</i>
+                        {{ feature }}
+                      </li>
+                    }
+                  </ul>
+                }
                 <div class="service-actions">
                   <button
-                    class="btn btn-primary btn-small"
+                    class="btn service-subscribe-btn"
                     (click)="submitSubscription(currentUser?._id, tariff?._id, 1, tariff.price)"
                   >
-                    <i class="material-icons">add_shopping_cart</i>
-                    Souscrire
+                    <i class="material-icons">shopping_cart</i>
+                    Souscrire maintenant
+                    <i class="material-icons">arrow_forward</i>
                   </button>
                 </div>
               </div>

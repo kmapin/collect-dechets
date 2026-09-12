@@ -301,6 +301,100 @@ export class AgencyDetails implements OnInit {
   // recuperations des tarifs liee a une agences
   tariffs: Tarif[] = [];
 
+  // ── Présentation des cartes de tarifs ───────────────────────────────────────
+  // Le modèle Pricing (backend) ne porte ni libellé, ni icône, ni liste de
+  // fonctionnalités par plan — ce sont des choix purement visuels dérivés de
+  // planType, pas de nouvelles données à faire remonter du backend.
+  private static readonly TARIFF_PRESENTATION: Record<
+    string,
+    { label: string; icon: string; pill: string; popular: boolean; features: string[] }
+  > = {
+    standard: {
+      label: 'Standard',
+      icon: 'eco',
+      pill: 'Formule classique',
+      popular: false,
+      features: [
+        'Collecte régulière de vos déchets',
+        'Suivi de vos collectes en temps réel',
+        'Accès à votre espace client',
+      ],
+    },
+    premium: {
+      label: 'Premium',
+      icon: 'star',
+      pill: 'Le plus populaire',
+      popular: true,
+      features: [
+        'Collecte régulière de vos déchets',
+        'Suivi en temps réel de vos collectes',
+        'Accès à votre espace client',
+        'Assistance prioritaire',
+        'Rapports et statistiques',
+      ],
+    },
+    vip: {
+      label: 'VIP',
+      icon: 'workspace_premium',
+      pill: 'Offre sur mesure',
+      popular: false,
+      features: [
+        'Collecte régulière de vos déchets',
+        'Suivi en temps réel de vos collectes',
+        'Accès à votre espace client',
+        'Assistance dédiée 24/7',
+        'Rapports et statistiques avancés',
+      ],
+    },
+  };
+
+  private tariffPresentation(planType: string) {
+    return (
+      AgencyDetails.TARIFF_PRESENTATION[planType] || {
+        label: planType,
+        icon: 'inventory_2',
+        pill: 'Formule',
+        popular: false,
+        features: [] as string[],
+      }
+    );
+  }
+
+  getTariffLabel(planType: string): string {
+    return this.tariffPresentation(planType).label;
+  }
+
+  getTariffIcon(planType: string): string {
+    return this.tariffPresentation(planType).icon;
+  }
+
+  getTariffPill(planType: string): string {
+    return this.tariffPresentation(planType).pill;
+  }
+
+  isPopularTariff(planType: string): boolean {
+    return this.tariffPresentation(planType).popular;
+  }
+
+  getTariffFeatures(planType: string): string[] {
+    return this.tariffPresentation(planType).features;
+  }
+
+  /** Couleur d'accent par plan — réutilise exclusivement les tokens de couleur déjà
+   * définis dans styles.scss (aucune nouvelle couleur introduite), pour rester
+   * cohérent avec le reste de l'application. */
+  tariffAccentColor(planType: string): string {
+    switch (planType) {
+      case 'premium':
+        return 'var(--primary-color)';
+      case 'vip':
+        return 'var(--accent-color)';
+      case 'standard':
+      default:
+        return 'var(--secondary-color)';
+    }
+  }
+
   //Tarif choisi par le client
   selectedTarif: any | null = null;
 
