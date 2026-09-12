@@ -180,7 +180,7 @@
           <div class="filters-grid">
             <div class="filter-group">
               <label class="filter-label">Ville</label>
-              <select [(ngModel)]="searchQuery" (change)="onCityChange(searchQuery)" class="filter-select">
+              <select [(ngModel)]="selectedCity" (change)="onCityChange(selectedCity)" class="filter-select">
                 <option value="">Aucune ...</option>
                 @for (city of cities; track city.id) {
                   <option [value]="city.name">{{ city.name }}</option>
