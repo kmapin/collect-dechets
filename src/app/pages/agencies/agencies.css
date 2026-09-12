@@ -169,7 +169,13 @@
 
     .agencies-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      /* Les colonnes sont plafonnées à la largeur max de .agency-card (420px) :
+         avec minmax(350px, 1fr), chaque colonne s'étirait jusqu'à occuper tout
+         l'espace disponible alors que la carte elle-même restait à 420px de large,
+         laissant un vide qui se lisait comme un trop grand écart entre les cartes
+         (surtout visible avec peu de résultats sur un écran large). */
+      grid-template-columns: repeat(auto-fit, minmax(300px, 420px));
+      justify-content: start;
       gap: 24px;
     }
 

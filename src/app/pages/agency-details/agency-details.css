@@ -390,7 +390,12 @@
 
     .services-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      /* Colonnes plafonnées à la largeur max de .service-card (420px) : avec
+         minmax(300px, 1fr) chaque colonne s'étirait au-delà de la carte
+         elle-même, laissant un vide qui se lisait comme un trop grand écart
+         entre les cartes (surtout visible avec peu de tarifs). */
+      grid-template-columns: repeat(auto-fit, minmax(280px, 420px));
+      justify-content: start;
       gap: 20px;
     }
 
@@ -929,7 +934,10 @@
         order: -1;
       }
 
-      .services-grid,
+      .services-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 420px));
+      }
+
       .zones-grid {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       }
