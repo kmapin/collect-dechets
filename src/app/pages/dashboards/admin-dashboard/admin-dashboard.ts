@@ -32,6 +32,7 @@ import {
   WithdrawalStatus,
 } from "../../../models/withdrawal-request.model";
 import { ExportClientService } from "../financial-dashboard/data-access/export/export-client.service";
+import { PhoneInputDirective } from "../../../shared/phone-input.directive";
 interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
@@ -215,6 +216,7 @@ interface User {
     LoadingSpinnerComponent,
     DrawerModule,
     PlanningSummaryDrawer,
+    PhoneInputDirective,
   ],
   providers: [ExportClientService],
   templateUrl: "./admin-dashboard.html",

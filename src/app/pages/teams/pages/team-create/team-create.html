@@ -140,7 +140,7 @@
                 <label class="tc-label">Téléphone</label>
                 <div class="tc-input-wrap">
                   <mat-icon>phone</mat-icon>
-                  <input formControlName="phone" type="tel" placeholder="+226 70 00 00 00" />
+                  <input formControlName="phone" type="tel" appPhoneInput />
                 </div>
               </div>
             </div>
@@ -391,7 +391,7 @@
                            [class.tmr-input--err]="memberHasError(i, 'name')"
                            placeholder="Nom complet *" />
                     <input formControlName="phone" type="tel" class="tmr-input tmr-input--sm"
-                           placeholder="Téléphone" />
+                           appPhoneInput />
                     <select formControlName="role" class="tmr-select">
                       @for (r of roles; track r.value) {
                         <option [value]="r.value">{{ r.label }}</option>

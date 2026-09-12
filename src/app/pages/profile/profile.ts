@@ -16,10 +16,11 @@ import {
 } from "../../models/countries-org.model";
 import { TerritoryHttpService } from "../../services/territory-http.service";
 import { SharedService } from "../../services/shared-service";
+import { PhoneInputDirective } from "../../shared/phone-input.directive";
 
 @Component({
   selector: "app-profile",
-  imports: [FormsModule],
+  imports: [FormsModule, PhoneInputDirective],
   templateUrl: "./profile.html",
   styleUrl: "./profile.css",
 })

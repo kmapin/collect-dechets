@@ -241,9 +241,9 @@
                 type="tel"
                 class="fin-agent-payment__phone-input"
                 [name]="'numero-' + agent.idAgent"
-                placeholder="Numéro de réception"
                 [ngModel]="numeroPour(agent)"
                 (ngModelChange)="onNumeroChange(agent.idAgent, $event)"
+                appPhoneInput
               />
             </div>
           </div>

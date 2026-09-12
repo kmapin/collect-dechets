@@ -14,6 +14,7 @@ import { PaymentStatusComponent } from '../payment-status/payment-status';
 import { Router } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OtpInputComponent } from '../otp-input/otp-input';
+import { PhoneInputDirective } from '../../../shared/phone-input.directive';
 
 interface OperatorInfo {
   id: number;
@@ -38,7 +39,8 @@ interface OperatorInfo {
     MatIconModule,
     MatSelectModule,
     PaymentStatusComponent,
-    OtpInputComponent
+    OtpInputComponent,
+    PhoneInputDirective
 ],
   templateUrl: './mobile-money-form.html',
   styleUrls: ['./mobile-money-form.scss']

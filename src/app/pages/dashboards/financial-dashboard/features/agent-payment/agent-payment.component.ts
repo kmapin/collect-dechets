@@ -23,6 +23,7 @@ import {
 import { NotificationService } from '../../../../../services/notification.service';
 import { AuthService } from '../../../../../services/auth.service';
 import { UserRole } from '../../../../../models/user.model';
+import { PhoneInputDirective } from '../../../../../shared/phone-input.directive';
 
 type Etape = 'formulaire' | 'confirmation';
 
@@ -35,7 +36,7 @@ interface ResultatAction {
 @Component({
   selector: 'app-agent-payment',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchFilterComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, SearchFilterComponent, StatusBadgeComponent, PhoneInputDirective],
   templateUrl: './agent-payment.component.html',
   styleUrl: './agent-payment.component.scss',
 })

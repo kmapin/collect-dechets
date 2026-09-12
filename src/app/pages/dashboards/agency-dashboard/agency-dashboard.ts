@@ -83,6 +83,7 @@ import { TagModule } from "primeng/tag";
 import { ToastModule } from "primeng/toast";
 import { RippleModule } from "primeng/ripple";
 import { Signalement } from "../../shared_pages/signalement/signalement";
+import { PhoneInputDirective } from "../../../shared/phone-input.directive";
 import { MultiSelectModule } from 'primeng/multiselect';
 interface Client {
   id: string;
@@ -260,6 +261,7 @@ export enum CollectionStatus1 {
 
 
     Signalement,
+    PhoneInputDirective,
   ],
   templateUrl: "./agency-dashboard.html",
   styleUrl: "./agency-dashboard.scss",

@@ -9,6 +9,7 @@ import { Team, TeamFormData, AvailableVehicle, AvailableZone, MemberRole, Collec
 import {
   vehicleTypeIcon, vehicleStatusColor, vehicleStatusLabel, vehicleTypeLabel,
 } from '../../models/team-labels';
+import { PhoneInputDirective } from '../../../../shared/phone-input.directive';
 
 const TEAM_COLORS = [
   '#3b82f6','#16a34a','#f59e0b','#ef4444',
@@ -19,7 +20,7 @@ const TEAM_COLORS = [
 @Component({
   selector: 'app-team-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatIconModule, TooltipModule],
+  imports: [CommonModule, ReactiveFormsModule, MatIconModule, TooltipModule, PhoneInputDirective],
   templateUrl: './team-form.html',
   styleUrl: './team-form.scss',
 })

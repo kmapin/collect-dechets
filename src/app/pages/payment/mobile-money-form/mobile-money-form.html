@@ -46,7 +46,7 @@
           <!-- Numéro de téléphone -->
           <mat-form-field appearance="outline">
             <mat-label>Numéro de téléphone</mat-label>
-            <input matInput formControlName="phoneNumber" placeholder="226XXXXXXXX" type="tel" required>
+            <input matInput formControlName="phoneNumber" type="tel" required appPhoneInput>
             <mat-icon matPrefix>phone</mat-icon>
             @if (paymentForm.get('phoneNumber')?.invalid) {
               <mat-error>

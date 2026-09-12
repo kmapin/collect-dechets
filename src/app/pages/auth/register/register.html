@@ -233,8 +233,8 @@
                         [(ngModel)]="userData.phone"
                         (ngModelChange)="clearError()"
                         class="form-control"
-                        placeholder="+226 XX XX XX XX"
                         required
+                        appPhoneInput
                         #phoneInput="ngModel"
                         />
                         @if (phoneInput.invalid && phoneInput.touched) {

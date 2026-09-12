@@ -2650,7 +2650,7 @@
             <div class="form-group">
               <label class="form-label">Téléphone</label>
               <input class="form-input" type="tel" [(ngModel)]="selectedUser.phone" name="editPhone"
-                placeholder="+226 XX XX XX XX" />
+                appPhoneInput />
             </div>
             <div class="form-group">
               <label class="form-label">Email</label>
@@ -3023,7 +3023,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">Téléphone *</label>
-            <input class="form-input" type="tel" [(ngModel)]="newAgentData.phone" placeholder="+226 XX XX XX XX" />
+            <input class="form-input" type="tel" [(ngModel)]="newAgentData.phone" appPhoneInput />
           </div>
         </div>
         <div class="form-row">

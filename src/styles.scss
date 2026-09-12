@@ -178,6 +178,25 @@ body {
   height: 8px;
 }
 
+
+:root {
+  --iti-path-flags-1x: url(/intl-tel-input-img/flags.webp);
+  --iti-path-flags-2x: url(/intl-tel-input-img/flags@2x.webp);
+}
+
+
+.iti {
+  display: block;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+}
+
+.iti__selected-dial-code {
+  font-family: inherit;
+  font-size: inherit;
+}
+
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
 }

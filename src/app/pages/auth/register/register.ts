@@ -11,10 +11,11 @@ import { Admin } from '../../../services/admin';
 import { AgencyService } from '../../../services/agency.service';
 import { TerritoryHttpService } from '../../../services/territory-http.service';
 import { Arrondissement, City, Quartier, Sector } from '../../../models/countries-org.model';
+import { PhoneInputDirective } from '../../../shared/phone-input.directive';
 
 @Component({
   selector: 'app-register',
-  imports: [RouterModule, FormsModule],
+  imports: [RouterModule, FormsModule, PhoneInputDirective],
   templateUrl: './register.html',
   styleUrl: './register.css'
 })

@@ -2088,8 +2088,8 @@
                             class="form-input"
                             [class.error]="hasFieldError('employee', 'phone')"
                             [class.valid]="employeeForm.get('phone')?.valid && employeeForm.get('phone')?.touched"
-                            placeholder="+226 XX XX XX XX"
                             autocomplete="off"
+                            appPhoneInput
                           />
                           @if (hasFieldError("employee", "phone")) {
                             <span class="error-message">{{ getFieldError("employee", "phone") }}</span>

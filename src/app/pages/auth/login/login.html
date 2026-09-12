@@ -90,9 +90,9 @@
                     [(ngModel)]="credentials.phone"
                     (ngModelChange)="clearError()"
                     class="form-control"
-                    placeholder="XX XX XX XX"
                     required
                     #phoneInput="ngModel"
+                    #phoneInputEl
                     />
                     @if (phoneInput.invalid && phoneInput.touched) {
                       <div

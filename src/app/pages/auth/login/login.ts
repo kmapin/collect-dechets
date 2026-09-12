@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import intlTelInput from 'intl-tel-input/intlTelInputWithUtils';
+import type { Iti } from 'intl-tel-input';
 import { AuthService } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 
@@ -11,7 +13,7 @@ import { NotificationService } from '../../../services/notification.service';
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
-export class Login implements OnInit {
+export class Login implements OnInit, OnDestroy {
   credentials = {
     email: '',
     phone: '',
@@ -27,6 +29,22 @@ export class Login implements OnInit {
   // Error handling properties
   validationErrors: { [key: string]: string[] } = {};
   generalError: string = '';
+
+  // intl-tel-input : le champ téléphone n'existe dans le DOM que quand
+  // loginType.type === 'phone' (@if), d'où un setter plutôt qu'un @ViewChild
+  // classique — Angular le rappelle à chaque création/destruction de la vue.
+  private phoneIti?: Iti;
+  @ViewChild('phoneInputEl') set phoneInputElRef(el: ElementRef<HTMLInputElement> | undefined) {
+    this.phoneIti?.destroy();
+    this.phoneIti = undefined;
+    if (el) {
+      this.phoneIti = intlTelInput(el.nativeElement, {
+        initialCountry: 'bf',
+        separateDialCode: true,
+      });
+    }
+  }
+
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -34,6 +52,10 @@ export class Login implements OnInit {
   ) { }
 
   ngOnInit(): void {}
+
+  ngOnDestroy(): void {
+    this.phoneIti?.destroy();
+  }
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
@@ -59,7 +81,11 @@ export class Login implements OnInit {
 
     // Basic email validation
 
-    const phoneNumber= this.formatPhone(this.credentials.phone);
+    // intl-tel-input fournit le numéro complet (indicatif + national) une fois le
+    // champ initialisé ; si l'instance n'est pas disponible on retombe sur la valeur
+    // brute du ngModel, exactement comme avant l'intégration de la librairie.
+    const rawPhone = this.phoneIti?.getNumber() || this.credentials.phone;
+    const phoneNumber = this.formatPhone(rawPhone);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[0-9]{8,}$/;
     if (!emailRegex.test(this.credentials.email ) && !phoneRegex.test(phoneNumber) ) {
