@@ -14,7 +14,7 @@
         <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
           <!-- Sélection de l'opérateur -->
            <div class="operator-selection">
-            <label class="form-label">Sélectionnez votre opérateur</label>
+            <label class="form-label">Sélectionnez votre opérateur <span class="required">*</span></label>
             <div class="operators-grid">
               @for (op of operators; track op) {
               <div
@@ -43,7 +43,7 @@
            </div>
           <!-- Numéro de téléphone -->
           <div class="form-group">
-            <label class="form-label"><i class="material-icons">phone</i> Numéro de téléphone</label>
+            <label class="form-label"><i class="material-icons">phone</i> Numéro de téléphone <span class="required">*</span></label>
             <input class="form-control" formControlName="phoneNumber" type="tel" required appPhoneInput validatePhone>
             @if (paymentForm.get('phoneNumber')?.invalid && paymentForm.get('phoneNumber')?.touched) {
               <div class="form-error">{{ getErrorMessage('phoneNumber') }}</div>
@@ -62,7 +62,7 @@
           }
           <!-- Montant -->
           <div class="form-group">
-            <label class="form-label"><i class="material-icons">attach_money</i> Montant (FCFA)</label>
+            <label class="form-label"><i class="material-icons">attach_money</i> Montant (FCFA) <span class="required">*</span></label>
             <input class="form-control" formControlName="amount" type="number" placeholder="0" min="1" max="1000000"
               readonly required>
             @if (paymentForm.get('amount')?.invalid && paymentForm.get('amount')?.touched) {

@@ -1568,7 +1568,7 @@
                   <div class="drawer-body">
                     <form class="report-form">
                       <div class="form-group">
-                        <label>Message</label>
+                        <label>Message <span class="required">*</span></label>
                         <textarea
                           [(ngModel)]="messageData.content"
                           name="content"
@@ -2186,7 +2186,7 @@
                               <div class="form-group">
                                 <label class="form-label required">
                                   <mat-icon class="field-icon">location_city</mat-icon>
-                                  Ville
+                                  Ville *
                                 </label>
                                 <select
                                   formControlName="city"
@@ -2204,7 +2204,7 @@
                               <div class="form-group">
                                 <label class="form-label required">
                                   <mat-icon class="field-icon">business</mat-icon>
-                                  Arrondissement
+                                  Arrondissement *
                                 </label>
                                 <select
                                   formControlName="arrondissement"
@@ -2225,7 +2225,7 @@
                               <div class="form-group">
                                 <label class="form-label required">
                                   <mat-icon class="field-icon">domain</mat-icon>
-                                  Secteur
+                                  Secteur *
                                 </label>
                                 <select
                                   formControlName="sector"
@@ -2243,7 +2243,7 @@
                               <div class="form-group">
                                 <label class="form-label required">
                                   <mat-icon class="field-icon">place</mat-icon>
-                                  Quartier
+                                  Quartier *
                                 </label>
                                 <select formControlName="neighborhood" class="form-input">
                                   <option value="">Choisir un quartier</option>
@@ -2336,7 +2336,7 @@
                     <form id="tariff-form" class="drawer-form" [formGroup]="tariffForm" (ngSubmit)="addTariff()">
                       <!-- Type -->
                       <div class="form-group full-width">
-                        <label class="form-label required">Type</label>
+                        <label class="form-label required">Type *</label>
                         <select
                           formControlName="type"
                           class="form-select"
@@ -2353,7 +2353,7 @@
                       <!-- Prix et Nombre de passages -->
                       <div class="form-row">
                         <div class="form-group">
-                          <label class="form-label required">Prix (FCFA)</label>
+                          <label class="form-label required">Prix (FCFA) *</label>
                           <input
                             type="number"
                             formControlName="price"
@@ -2366,7 +2366,7 @@
                           <span class="error-message">{{ getFieldError("tariff", "price") }}</span>
                         </div>
                         <div class="form-group">
-                          <label class="form-label required">Nombre de passages</label>
+                          <label class="form-label required">Nombre de passages *</label>
                           <input
                             type="number"
                             formControlName="nbPassages"
@@ -2381,7 +2381,7 @@
                       </div>
                       <!-- Description -->
                       <div class="form-group full-width">
-                        <label class="form-label required">Description</label>
+                        <label class="form-label required">Description *</label>
                         <textarea
                           formControlName="description"
                           class="form-textarea"
@@ -2393,7 +2393,7 @@
                         <span class="error-message">{{ getFieldError("tariff", "description") }}</span>
                       </div>
                       <div class="form-group full-width">
-                        <label class="form-label required">Frais plateforme à la charge de</label>
+                        <label class="form-label required">Frais plateforme à la charge de *</label>
                         <select formControlName="feePayer" class="form-select">
                           <option value="AGENCE">L'agence (déduit du montant reçu)</option>
                           <option value="CLIENT">Le client (en plus du prix affiché)</option>

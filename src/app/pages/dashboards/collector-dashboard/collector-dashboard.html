@@ -526,7 +526,7 @@
                                                 Type & collecte concernée
                                               </h4>
                                               <div class="form-group">
-                                                <label>Type d'incident</label>
+                                                <label class="required">Type d'incident *</label>
                                                 <select [(ngModel)]="incidentData.type" name="type" required>
                                                   <option value="">Sélectionnez un type</option>
                                                   <option value="non_compliant">Déchets non conformes</option>
@@ -536,7 +536,7 @@
                                                 </select>
                                               </div>
                                               <div class="form-group">
-                                                <label>Collection concernée</label>
+                                                <label class="required">Collection concernée *</label>
                                                 <select
                                                   [(ngModel)]="incidentData.collectionId"
                                                   name="collectionId"
@@ -552,9 +552,9 @@
                                               </div>
                                             </div>
                                             <div class="drawer-section">
-                                              <h4 class="drawer-section-title">
+                                              <h4 class="drawer-section-title required">
                                                 <i class="material-icons">description</i>
-                                                Description
+                                                Description *
                                               </h4>
                                               <div class="form-group">
                                                 <textarea

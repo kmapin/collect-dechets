@@ -51,7 +51,7 @@
 
         <!-- Status -->
         <div class="tf-field">
-          <label>Statut</label>
+          <label>Statut <span class="req">*</span></label>
           <div class="tf-radio-group">
             @for (s of statuses; track s.value) {
               <label class="tf-radio" [class.tf-radio--active]="form.get('status')!.value === s.value">
@@ -64,7 +64,7 @@
 
         <!-- Color -->
         <div class="tf-field">
-          <label>Couleur de l'équipe</label>
+          <label>Couleur de l'équipe <span class="req">*</span></label>
           <div class="tf-color-palette">
             @for (c of colors; track c) {
               <button type="button"

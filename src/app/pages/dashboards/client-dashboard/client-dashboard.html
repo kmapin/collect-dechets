@@ -479,8 +479,8 @@
                         </div>
                         <form class="drawer-body">
                           <div class="drawer-section">
-                            <h4 class="drawer-section-title">
-                              <i class="material-icons">message</i> Message
+                            <h4 class="drawer-section-title required">
+                              <i class="material-icons">message</i> Message *
                             </h4>
                             <textarea
                               [(ngModel)]="messageData.content"
@@ -832,8 +832,8 @@
           </div>
           <form class="drawer-body" (ngSubmit)="submitReport()">
             <div class="drawer-section">
-              <h4 class="drawer-section-title">
-                <i class="material-icons">report_problem</i> Type de problème
+              <h4 class="drawer-section-title required">
+                <i class="material-icons">report_problem</i> Type de problème *
               </h4>
               <select [(ngModel)]="reportData.type" name="type" required>
                 <option value="">Sélectionnez</option>
@@ -845,8 +845,8 @@
               </select>
             </div>
             <div class="drawer-section">
-              <h4 class="drawer-section-title">
-                <i class="material-icons">notes</i> Description
+              <h4 class="drawer-section-title required">
+                <i class="material-icons">notes</i> Description *
               </h4>
               <textarea
                 [(ngModel)]="reportData.description"
@@ -857,8 +857,8 @@
               ></textarea>
             </div>
             <div class="drawer-section">
-              <h4 class="drawer-section-title">
-                <i class="material-icons">priority_high</i> Etat du problème
+              <h4 class="drawer-section-title required">
+                <i class="material-icons">priority_high</i> Etat du problème *
               </h4>
               <select [(ngModel)]="reportData.severity" name="severity" required>
                 <option value="">Sélectionnez</option>

@@ -147,7 +147,7 @@
 
             <!-- Statut -->
             <div class="tc-field">
-              <label class="tc-label">Statut initial</label>
+              <label class="tc-label">Statut initial <span class="req">*</span></label>
               <div class="tc-status-row">
                 @for (s of [
                   { v: 'active',      l: 'Active',      c: '#16a34a', i: 'play_circle'  },
@@ -407,7 +407,7 @@
 
             <!-- Capacity -->
             <div class="tc-capacity-row">
-              <label class="tc-label">Capacité maximale</label>
+              <label class="tc-label">Capacité maximale <span class="req">*</span></label>
               <div class="tc-capacity-ctrl">
                 <button type="button" class="tc-cap-btn" (click)="decCapacity()">
                   <mat-icon>remove</mat-icon>

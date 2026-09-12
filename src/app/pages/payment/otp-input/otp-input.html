@@ -23,7 +23,7 @@
 
     <form [formGroup]="otpForm" (ngSubmit)="onVerifyOtp()">
       <div class="form-group otp-field">
-        <label class="form-label"><i class="material-icons">dialpad</i> Code OTP</label>
+        <label class="form-label"><i class="material-icons">dialpad</i> Code OTP <span class="required">*</span></label>
         <input
           class="form-control"
           formControlName="otp"
