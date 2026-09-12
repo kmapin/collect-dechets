@@ -1,6 +1,6 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 // eslint-disable-next-line @typescript-eslint/no-deprecated
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -21,7 +21,13 @@ bootstrapApplication(AppComponent, {
   providers: [
     provideAnimations(),   // requis par PrimeNG (p-dialog, p-toast, etc.)
     provideZoneChangeDetection(),
-    provideRouter(routes),
+    provideRouter(
+      routes,
+      withInMemoryScrolling({
+        scrollPositionRestoration: 'top',
+        anchorScrolling: 'enabled',
+      }),
+    ),
     provideHttpClient(
       withFetch(),
       withInterceptors([authInterceptorInterceptor])
