@@ -247,38 +247,147 @@
 
           <!-- Coverage Zones Section -->
           <section class="zones-section card">
-            <div class="section-header">
-              <h2>
-                <i class="material-icons">map</i>
-                Zones de couverture
-              </h2>
-              <span class="section-count"
-                >{{ agencyZones.length || 0 }} zone(s)</span
-              >
-            </div>
-            <div class="zones-grid">
-              <div class="zones-by-city">
-                @for (group of zonesByCity; track group.city) {
-                <div class="city-section">
-                  <h3 class="city-title">{{ group.city }}</h3>
-                  <div class="districts-grid">
-                    @for (district of group.zones; track district.neighborhood) {
-                    <div class="district-card active">
-                      <h4 class="district-name">{{ district.neighborhood }}</h4>
-                      <span class="district-badge active">Zone active</span>
+            @if (agencyZones.length > 0) {
+              <div class="zones-overview">
+                <div class="zones-overview-left">
+                  <div class="zones-overview-header">
+                    <div class="zones-overview-icon">
+                      <i class="material-icons">location_on</i>
                     </div>
+                    <div>
+                      <h2>Zones de couverture</h2>
+                      <p class="zones-overview-subtitle">
+                        Nous intervenons dans plusieurs zones de la ville pour vous offrir un service de proximité, rapide et fiable.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="zones-stats-row">
+                    <div class="zones-stat-box">
+                      <i class="material-icons">location_on</i>
+                      <div class="zones-stat-text">
+                        <strong>{{ distinctArrondissements.length }}</strong>
+                        <span>Arrondissement(s)</span>
+                      </div>
+                    </div>
+                    <div class="zones-stat-box">
+                      <i class="material-icons">apartment</i>
+                      <div class="zones-stat-text">
+                        <strong>{{ totalQuartiers }}</strong>
+                        <span>Quartier(s)</span>
+                      </div>
+                    </div>
+                    <div class="zones-stat-box">
+                      <i class="material-icons">local_shipping</i>
+                      <div class="zones-stat-text">
+                        <strong>100%</strong>
+                        <span>Couverture en cours</span>
+                      </div>
+                    </div>
+                  </div>
+                  <h4 class="zones-chips-title">Nos zones d'intervention</h4>
+                  <div class="zones-chips">
+                    @for (arr of distinctArrondissements; track arr) {
+                      <span class="zone-chip">
+                        <i class="material-icons">check_circle</i>
+                        {{ arr }}
+                      </span>
                     }
                   </div>
                 </div>
-                }
+
+                <div class="zones-overview-right">
+                  <div class="zones-map-card">
+                    <div class="zones-map-header">
+                      <span class="zones-map-title">
+                        <i class="material-icons">location_on</i>
+                        {{ primaryCity }}
+                        <span class="zone-active-badge">Zone active</span>
+                      </span>
+                      <button type="button" class="zones-see-all-btn" (click)="showAllZones = !showAllZones">
+                        {{ showAllZones ? 'Réduire' : 'Voir toutes les zones' }}
+                        <i class="material-icons">arrow_forward</i>
+                      </button>
+                    </div>
+                    <div class="zones-map-illustration">
+                      <div class="zones-map-blob">
+                        <i class="material-icons zones-map-pin">location_on</i>
+                        <span class="zones-map-city-label">{{ primaryCity }}</span>
+                      </div>
+                      @for (label of sampleNeighborhoodsForMap; track label; let i = $index) {
+                        <span class="zones-map-label zones-map-label--{{ i }}">{{ label }}</span>
+                      }
+                    </div>
+                    <div class="zones-feature-list">
+                      <div class="zones-feature-item">
+                        <i class="material-icons">schedule</i>
+                        <div>
+                          <strong>Service disponible</strong>
+                          <span>Tous les jours</span>
+                        </div>
+                      </div>
+                      <div class="zones-feature-item">
+                        <i class="material-icons">location_city</i>
+                        <div>
+                          <strong>Quartiers couverts</strong>
+                          <span>{{ totalQuartiers }} quartier(s)</span>
+                        </div>
+                      </div>
+                      <div class="zones-feature-item">
+                        <i class="material-icons">local_shipping</i>
+                        <div>
+                          <strong>Collecte rapide</strong>
+                          <span>Sous 24 à 48h</span>
+                        </div>
+                      </div>
+                      <div class="zones-feature-item">
+                        <i class="material-icons">verified_user</i>
+                        <div>
+                          <strong>Service fiable</strong>
+                          <span>Équipe professionnelle</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            @if (agencyZones.length === 0) {
-            <div class="empty-state">
-              <i class="material-icons">map</i>
-              <h3>Aucune zone de couverture</h3>
-              <p>Cette agence n'a pas encore défini ses zones de couverture.</p>
-            </div>
+
+              @if (showAllZones) {
+                <div class="zones-full-list">
+                  <div class="section-header">
+                    <h3>Toutes les zones</h3>
+                    <span class="section-count">{{ agencyZones.length }} zone(s)</span>
+                  </div>
+                  <div class="zones-grid">
+                    <div class="zones-by-city">
+                      @for (group of zonesByCity; track group.city) {
+                        <div class="city-section">
+                          <h3 class="city-title">{{ group.city }}</h3>
+                          <div class="districts-grid">
+                            @for (district of group.zones; track district.neighborhood) {
+                              <div class="district-card active">
+                                <h4 class="district-name">{{ district.neighborhood }}</h4>
+                                <span class="district-badge active">Zone active</span>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            } @else {
+              <div class="section-header">
+                <h2>
+                  <i class="material-icons">map</i>
+                  Zones de couverture
+                </h2>
+              </div>
+              <div class="empty-state">
+                <i class="material-icons">map</i>
+                <h3>Aucune zone de couverture</h3>
+                <p>Cette agence n'a pas encore défini ses zones de couverture.</p>
+              </div>
             }
           </section>
         </div>

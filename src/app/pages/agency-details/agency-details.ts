@@ -1135,6 +1135,45 @@ export class AgencyDetails implements OnInit {
     return Array.from(groups.entries()).map(([city, zones]) => ({ city, zones }));
   }
 
+  // ── Aperçu "Zones de couverture" (bloc résumé + carte illustrative) ────────
+  /** Affiche ou non le détail complet (toutes les villes/quartiers) sous
+   * l'aperçu — replié par défaut, comme "Voir toutes les zones" sur la maquette. */
+  showAllZones = false;
+
+  get distinctArrondissements(): string[] {
+    const seen = new Set<string>();
+    for (const zone of this.agencyZones) {
+      if (zone.arrondissement) seen.add(zone.arrondissement);
+    }
+    return Array.from(seen);
+  }
+
+  get totalQuartiers(): number {
+    const seen = new Set<string>();
+    for (const zone of this.agencyZones) {
+      if (zone.neighborhood) seen.add(zone.neighborhood);
+    }
+    return seen.size;
+  }
+
+  /** Ville "vitrine" de la carte illustrative — la première ville couverte. */
+  get primaryCity(): string {
+    return this.zonesByCity[0]?.city || "";
+  }
+
+  /** Jusqu'à 4 quartiers de la ville vitrine, pour les étiquettes autour de
+   * l'illustration (purement décoratif, pas une carte géographique réelle —
+   * aucune coordonnée n'est stockée pour ces zones). */
+  get sampleNeighborhoodsForMap(): string[] {
+    const zones = this.zonesByCity[0]?.zones || [];
+    const seen = new Set<string>();
+    for (const zone of zones) {
+      if (zone.neighborhood) seen.add(zone.neighborhood);
+      if (seen.size >= 4) break;
+    }
+    return Array.from(seen);
+  }
+
   //Zones d'intervention de l'agences
   onZoneActiviteChange(agencyId: string) {
     this.agencyService.getAgencyZones$(agencyId).subscribe({

@@ -388,6 +388,284 @@
       padding: 24px;
     }
 
+    /* Aperçu "Zones de couverture" — réutilise --secondary-color (vert), déjà la
+       couleur de la marque pour tout ce qui est "collecte/environnement" ailleurs
+       dans l'app, plutôt que d'introduire une nouvelle teinte. */
+    .zones-overview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .zones-overview-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .zones-overview-icon {
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: color-mix(in srgb, var(--secondary-color) 15%, white);
+      color: var(--secondary-color);
+    }
+
+    .zones-overview-header h2 {
+      margin: 0 0 4px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .zones-overview-subtitle {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .zones-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .zones-stat-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: color-mix(in srgb, var(--secondary-color) 8%, white);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .zones-stat-box .material-icons {
+      color: var(--secondary-color);
+    }
+
+    .zones-stat-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .zones-stat-text strong {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .zones-stat-text span {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    .zones-chips-title {
+      margin: 0 0 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .zones-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .zone-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: color-mix(in srgb, var(--secondary-color) 12%, white);
+      color: var(--secondary-color);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .zone-chip .material-icons {
+      font-size: 16px;
+    }
+
+    .zones-map-card {
+      background: color-mix(in srgb, var(--secondary-color) 5%, white);
+      border: 1px solid color-mix(in srgb, var(--secondary-color) 20%, white);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .zones-map-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .zones-map-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .zones-map-title .material-icons {
+      color: var(--secondary-color);
+    }
+
+    .zone-active-badge {
+      background: color-mix(in srgb, var(--secondary-color) 18%, white);
+      color: var(--secondary-color);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-left: 4px;
+    }
+
+    .zones-see-all-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--secondary-color);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .zones-see-all-btn .material-icons {
+      font-size: 16px;
+    }
+
+    /* Illustration purement décorative (aucune coordonnée géographique n'est
+       stockée pour ces zones) — un "blob" arrondi avec le nom de la ville au
+       centre et jusqu'à 4 quartiers disposés autour, dans l'esprit d'une carte
+       sans en être une véritable. */
+    .zones-map-illustration {
+      position: relative;
+      height: 220px;
+      margin-bottom: 16px;
+    }
+
+    .zones-map-blob {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 150px;
+      height: 150px;
+      border-radius: 45% 55% 60% 40% / 50% 45% 55% 50%;
+      background: color-mix(in srgb, var(--secondary-color) 25%, white);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .zones-map-pin {
+      color: var(--secondary-color);
+      font-size: 28px;
+    }
+
+    .zones-map-city-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-align: center;
+      padding: 0 8px;
+    }
+
+    .zones-map-label {
+      position: absolute;
+      background: var(--white);
+      border: 1px solid color-mix(in srgb, var(--secondary-color) 30%, white);
+      color: var(--text-primary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      white-space: nowrap;
+    }
+
+    .zones-map-label--0 {
+      top: 4px;
+      left: 20%;
+    }
+
+    .zones-map-label--1 {
+      top: 30%;
+      right: 0;
+    }
+
+    .zones-map-label--2 {
+      bottom: 20%;
+      left: 0;
+    }
+
+    .zones-map-label--3 {
+      bottom: 4px;
+      right: 15%;
+    }
+
+    .zones-feature-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .zones-feature-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .zones-feature-item .material-icons {
+      color: var(--secondary-color);
+      background: color-mix(in srgb, var(--secondary-color) 12%, white);
+      border-radius: 50%;
+      padding: 6px;
+      font-size: 18px;
+    }
+
+    .zones-feature-item div {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .zones-feature-item strong {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+    }
+
+    .zones-feature-item span {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    .zones-full-list {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--medium-gray);
+    }
+
     .services-grid {
       /* Flexbox plutôt que CSS Grid : avec un nombre de tarifs variable et un
          auto-fit/minmax, le nombre de colonnes qui apparaît dépend d'un calcul
@@ -1045,6 +1323,14 @@
     }
 
     @media (max-width: 768px) {
+      .zones-overview {
+        grid-template-columns: 1fr;
+      }
+
+      .zones-feature-list {
+        grid-template-columns: 1fr;
+      }
+
       .agency-header-section {
         padding: 24px 0;
       }
@@ -1121,6 +1407,10 @@
     }
 
     @media (max-width: 480px) {
+      .zones-stats-row {
+        grid-template-columns: 1fr;
+      }
+
       .agency-header-section {
         padding: 20px 0;
       }
