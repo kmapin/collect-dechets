@@ -389,13 +389,13 @@
     }
 
     .services-grid {
-      display: grid;
-      /* Colonnes plafonnées à la largeur max de .service-card (420px) : avec
-         minmax(300px, 1fr) chaque colonne s'étirait au-delà de la carte
-         elle-même, laissant un vide qui se lisait comme un trop grand écart
-         entre les cartes (surtout visible avec peu de tarifs). */
-      grid-template-columns: repeat(auto-fit, minmax(280px, 420px));
-      justify-content: start;
+      /* Flexbox plutôt que CSS Grid : avec un nombre de tarifs variable et un
+         auto-fit/minmax, le nombre de colonnes qui apparaît dépend d'un calcul
+         de seuils par largeur de conteneur peu lisible et fragile d'un breakpoint
+         à l'autre. Ici chaque carte a juste une largeur cible (300px) et
+         s'enroule à la ligne suivante uniquement si la place manque réellement. */
+      display: flex;
+      flex-wrap: wrap;
       gap: 20px;
     }
 
@@ -405,7 +405,7 @@
       border-radius: 12px;
       background: var(--light-gray);
       transition: all 0.3s ease;
-      width: 100%;
+      flex: 1 1 300px;
       max-width: 420px;
     }
 
@@ -934,10 +934,6 @@
         order: -1;
       }
 
-      .services-grid {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 420px));
-      }
-
       .zones-grid {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       }
@@ -973,7 +969,6 @@
         gap: 16px;
       }
 
-      .services-grid,
       .zones-grid {
         grid-template-columns: 1fr;
       }
