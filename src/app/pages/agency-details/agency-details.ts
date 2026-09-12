@@ -24,6 +24,16 @@ import { Breadcrumb, BreadcrumbItem } from "../../shared/breadcrumb/breadcrumb";
 import { dashboardRouteForRole, dashboardLabelForRole } from "../../shared/notification-route.util";
 import { PhoneInputDirective } from "../../shared/phone-input.directive";
 
+/** Zone de couverture telle que renvoyée par GET /agencies/:id/zones (nouveau
+ * modèle, services/agency.js::_mergeZoneDetails) : `city`/`arrondissement`/`sector`
+ * sont absents pour les zones ajoutées avant l'introduction de ce détail. */
+export interface AgencyZone {
+  city?: string;
+  arrondissement?: string;
+  sector?: string;
+  neighborhood: string;
+}
+
 @Component({
   selector: "app-agency-details",
   imports: [
@@ -177,7 +187,7 @@ export class AgencyDetails implements OnInit {
 
   showReportModal = false;
   unreadMessageCount: any;
-  agencyZones: string[] = [];
+  agencyZones: AgencyZone[] = [];
   visible2: boolean = false;
   visible1: boolean = false;
   showPaymentDrawer: boolean = false;
@@ -1012,6 +1022,19 @@ export class AgencyDetails implements OnInit {
         },
       });
     return;
+  }
+
+  /** Regroupe agencyZones par ville réelle (`city`) plutôt que d'afficher un
+   * intitulé "Ouagadougou" figé — les zones héritées d'avant l'introduction de
+   * zoneDetails (sans `city`) sont regroupées sous "Autres". */
+  get zonesByCity(): { city: string; zones: AgencyZone[] }[] {
+    const groups = new Map<string, AgencyZone[]>();
+    for (const zone of this.agencyZones) {
+      const city = zone?.city || "Autres";
+      if (!groups.has(city)) groups.set(city, []);
+      groups.get(city)!.push(zone);
+    }
+    return Array.from(groups.entries()).map(([city, zones]) => ({ city, zones }));
   }
 
   //Zones d'intervention de l'agences

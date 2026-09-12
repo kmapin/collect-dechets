@@ -227,19 +227,19 @@
             </div>
             <div class="zones-grid">
               <div class="zones-by-city">
-                <!-- <div *ngFor="let entry of getDistrictsForActivity() | keyvalue" class="city-section"> -->
+                @for (group of zonesByCity; track group.city) {
                 <div class="city-section">
-                  <h3 class="city-title">Ouagadougou</h3>
+                  <h3 class="city-title">{{ group.city }}</h3>
                   <div class="districts-grid">
-                    @for (district of agencyZones; track district) {
+                    @for (district of group.zones; track district.neighborhood) {
                     <div class="district-card active">
-                      <!-- <div  class="district-card active"> -->
-                      <h4 class="district-name">{{ district}}</h4>
+                      <h4 class="district-name">{{ district.neighborhood }}</h4>
                       <span class="district-badge active">Zone active</span>
                     </div>
                     }
                   </div>
                 </div>
+                }
               </div>
             </div>
             @if (agencyZones.length === 0) {
