@@ -80,6 +80,42 @@
       margin-bottom: 24px;
     }
 
+    /* Bouton "Afficher/Masquer les filtres" : uniquement utile en mobile (voir
+       media query ci-dessous) — sur desktop le bloc Ville/Secteur/Quartier reste
+       toujours visible, ce bouton n'a donc pas lieu d'être affiché. */
+    .filters-toggle-btn {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .filters-toggle-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        background: var(--white);
+        border: 2px solid var(--medium-gray);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .filters-toggle-btn:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+      }
+
+      /* Masqué par défaut en mobile — affiché seulement quand showAdvancedFilters
+         est vrai (classe retirée). Sans effet au-delà de ce breakpoint. */
+      .filters-grid.filters-grid--collapsed {
+        display: none;
+      }
+    }
+
     .filter-group {
       display: flex;
       flex-direction: column;
@@ -166,17 +202,25 @@
       border-radius: 6px;
       font-family: 'Inter', sans-serif;
     }
-
+  
     .agencies-grid {
       display: grid;
-      /* Les colonnes sont plafonnées à la largeur max de .agency-card (420px) :
-         avec minmax(350px, 1fr), chaque colonne s'étirait jusqu'à occuper tout
-         l'espace disponible alors que la carte elle-même restait à 420px de large,
-         laissant un vide qui se lisait comme un trop grand écart entre les cartes
-         (surtout visible avec peu de résultats sur un écran large). */
-      grid-template-columns: repeat(auto-fit, minmax(300px, 420px));
-      justify-content: start;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 24px;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      .agencies-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 600px) {
+      .agencies-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
     }
 
     .agency-card {

@@ -759,12 +759,22 @@ section{
 
 .agencies-grid {
   display: grid;
-  // Colonnes plafonnées à la largeur max de .agency-card (480px) : avec
-  // minmax(400px, 1fr) chaque colonne s'étirait au-delà de la carte elle-même,
-  // laissant un vide qui se lisait comme un trop grand écart entre les cartes.
-  grid-template-columns: repeat(auto-fit, minmax(320px, 480px));
-  justify-content: start;
-  gap: 32px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .agencies-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .agencies-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 .agency-card {

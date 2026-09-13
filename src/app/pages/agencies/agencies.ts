@@ -28,6 +28,10 @@ export class Agencies  implements OnInit {
   minRating = '';
   sortBy = 'name';
   viewMode: 'grid' | 'list' | 'map' = 'grid';
+  // Masqué par défaut en mobile (bouton "Afficher les filtres") — sans effet en
+  // desktop, où le bloc Ville/Secteur/Quartier reste toujours visible (voir la
+  // media query dédiée dans agencies.css).
+  showAdvancedFilters = false;
   agencyTariffs: WasteService[] = [];
   cities: City[] = [];
   suggestions: any[] = [];

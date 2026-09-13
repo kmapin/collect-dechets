@@ -39,7 +39,16 @@
         </div>
       </div>
 
-      <div class="filters-grid">
+      <button
+        type="button"
+        class="filters-toggle-btn"
+        (click)="showAdvancedFilters = !showAdvancedFilters"
+      >
+        <i class="material-icons">{{ showAdvancedFilters ? 'expand_less' : 'tune' }}</i>
+        {{ showAdvancedFilters ? 'Masquer les filtres' : 'Afficher les filtres' }}
+      </button>
+
+      <div class="filters-grid" [class.filters-grid--collapsed]="!showAdvancedFilters">
         <div class="filter-group">
           <label class="filter-label">Ville</label>
           <select [(ngModel)]="selectedCity" (change)="onCityChange(selectedCity)" class="filter-select">
