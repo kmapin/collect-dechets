@@ -3,8 +3,8 @@
   <p class="fin-agent-payment__note">
     Sélectionnez un ou plusieurs agents : le même montant leur sera appliqué. Pour un
     agent avec un numéro Orange Money ou Moov Money reconnu, la demande déclenche un
-    virement réel (Orange Money essayé en premier), mais seulement après validation par
-    un administrateur — aucun virement n'est envoyé à la création. Pour un agent sans
+    virement, mais seulement après validation par
+    un manager (administrateur finan) — aucun virement n'est envoyé à la création. Pour un agent sans
     numéro fiable, le paiement reste interne (effectué hors plateforme) et immédiat, sans
     effet sur le solde de l'agence.
   </p>
@@ -244,6 +244,7 @@
                 [ngModel]="numeroPour(agent)"
                 (ngModelChange)="onNumeroChange(agent.idAgent, $event)"
                 appPhoneInput
+                attachDropdownToBody
               />
             </div>
           </div>

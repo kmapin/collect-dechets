@@ -3,18 +3,7 @@ import { AbstractControl, NG_VALIDATORS, ValidationErrors, Validator } from '@an
 import intlTelInput from 'intl-tel-input/intlTelInputWithUtils';
 import type { Iso2, Iti } from 'intl-tel-input';
 
-// Directive cosmétique (drapeau, indicatif séparé, placeholder = numéro d'exemple du
-// pays sélectionné) : elle ne touche jamais à la valeur portée par ngModel/formControl,
-// qui reste le numéro national tel que tapé — exactement comme avant l'intégration de
-// la librairie. Se pose sur n'importe quel <input> (ngModel, formControlName, y compris
-// dans une *ngFor ou un FormArray : chaque occurrence instancie sa propre directive).
-//
-// [validatePhone] est un opt-in séparé : par défaut la directive ne valide rien (les
-// champs déjà en prod avant son ajout — register/profile/team-create/... — n'avaient
-// souvent aucune validation stricte de format, et le comportement doit rester identique
-// pour eux). Là où on veut que le champ soit invalide tant que ce n'est pas un vrai
-// numéro pour le pays sélectionné (ex: mobile-money-form, où un regex maison figé sur un
-// seul format faisait échouer des numéros pourtant valides), on active `validatePhone`.
+
 @Directive({
   selector: 'input[appPhoneInput]',
   standalone: true,
@@ -24,6 +13,7 @@ import type { Iso2, Iti } from 'intl-tel-input';
 export class PhoneInputDirective implements AfterViewInit, OnDestroy, Validator {
   @Input() initialCountry: Iso2 = 'bf' as Iso2;
   @Input({ transform: booleanAttribute }) validatePhone = false;
+  @Input({ transform: booleanAttribute }) attachDropdownToBody = false;
 
   private iti?: Iti;
   private onValidatorChange?: () => void;
@@ -35,6 +25,7 @@ export class PhoneInputDirective implements AfterViewInit, OnDestroy, Validator 
     this.iti = intlTelInput(this.el.nativeElement, {
       initialCountry: this.initialCountry,
       separateDialCode: true,
+      ...(this.attachDropdownToBody ? { dropdownParent: document.body } : {}),
     });
     // Changer de pays ne modifie pas la valeur de l'input (separateDialCode), donc
     // Angular ne relance pas les validators tout seul dans ce cas précis.
