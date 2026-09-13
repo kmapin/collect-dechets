@@ -119,19 +119,22 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
 }
 
 // ── Tabs ─────────────────────────────────────────────────────
+// Un scroll horizontal masquerait des onglets sans que ce soit visible. Des
+// colonnes de grille égales forceraient en revanche le texte des libellés
+// longs sur 2 lignes ; chaque onglet garde donc sa largeur naturelle (flex,
+// pas de shrink) et passe à la ligne suivante si besoin.
 .td-tabs {
-  display:flex; gap:4px;
+  display:flex; flex-wrap:wrap; gap:4px;
   padding:16px 20px 0;
   background:#fff;
   border-bottom:1px solid #e2e8f0;
-  overflow-x:auto;
 
   button {
-    display:flex; align-items:center; gap:7px;
+    display:flex; align-items:center; justify-content:center; text-align:center; gap:7px;
     padding:10px 16px; border-radius:8px 8px 0 0;
     font-size:13px; font-weight:500; color:#64748b;
     border:none; background:transparent; cursor:pointer;
-    white-space:nowrap; transition:all .15s;
+    flex:0 0 auto; white-space:nowrap; transition:all .15s;
     mat-icon { font-size:17px; width:17px; height:17px; }
     &.active { background:#f8fafc; color:#1e293b; border-bottom:2px solid #1e293b; }
     &:not(.active):hover { background:#f8fafc; }

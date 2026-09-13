@@ -115,20 +115,27 @@
   color: var(--text-secondary);
 }
 
+// 4 onglets : un scroll horizontal les masque sans que ce soit visible. Des
+// colonnes de grille égales forcent en revanche le texte des libellés longs
+// sur 2 lignes, ou débordent du bloc. Chaque onglet garde donc sa largeur
+// naturelle (flex, pas de shrink) et passe à la ligne suivante si besoin.
 .tabs-navigation {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 4px;
   margin-bottom: 24px;
   background: var(--white);
   padding: 4px;
   border-radius: 12px;
   box-shadow: var(--shadow-light);
-  overflow-x: auto;
 }
 
 .tab-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 8px;
   padding: 12px 20px;
   background: transparent;
@@ -137,6 +144,7 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.3s ease;
+  flex: 0 0 auto;
   white-space: nowrap;
   font-weight: 500;
   position: relative;
@@ -1556,16 +1564,6 @@
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
 
-  .tabs-navigation {
-    overflow-x: auto;
-    padding: 8px;
-  }
-
-  .tab-btn {
-    min-width: 120px;
-    padding: 10px 16px;
-  }
-
   .chart-placeholder {
     height: 200px;
   }
@@ -1738,14 +1736,7 @@
     width: 100%;
   }
 
-  .tabs-navigation {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
   .tab-btn {
-    flex: 1;
-    min-width: 100px;
     padding: 8px 12px;
     font-size: 0.9rem;
   }
@@ -1810,18 +1801,12 @@
   }
 
   .tabs-navigation {
-    display: flex;
-    flex-direction: column;
     padding: 4px;
   }
   .tab-btn {
     padding: 6px 8px;
     font-size: 0.8rem;
-    min-width: 80px;
-  }
-
-  .tab-btn span {
-    display: none;
+    min-height: 56px;
   }
 
   .tab-btn i {

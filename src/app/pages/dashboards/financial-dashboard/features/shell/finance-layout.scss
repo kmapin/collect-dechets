@@ -19,20 +19,28 @@
   flex-wrap: wrap;
 }
 
+// 9 onglets : un scroll horizontal les masque sans que ce soit visible. Des
+// colonnes de grille égales forcent en revanche le texte des libellés longs
+// ("Paiement agents", "Suivi mensuel") sur 2 lignes, ou débordent du bloc.
+// Chaque onglet garde donc sa largeur naturelle (flex, pas de shrink) et
+// passe à la ligne suivante quand il ne reste plus de place.
 .tabs-navigation {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 4px;
   margin-bottom: 24px;
   background: var(--white);
   padding: 4px;
   border-radius: 12px;
   box-shadow: var(--shadow-light);
-  overflow-x: auto;
 }
 
 .tab-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 8px;
   padding: 12px 20px;
   background: transparent;
@@ -42,6 +50,7 @@
   text-decoration: none;
   cursor: pointer;
   transition: all 0.3s ease;
+  flex: 0 0 auto;
   white-space: nowrap;
   font-weight: 500;
   position: relative;
@@ -93,10 +102,6 @@
     flex-direction: column;
     text-align: center;
   }
-
-  .tabs-navigation {
-    overflow-x: auto;
-  }
 }
 
 @media (max-width: 768px) {
@@ -107,6 +112,13 @@
   .quick-actions {
     flex-direction: column;
     gap: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tab-btn {
+    padding: 10px 14px;
+    font-size: 13px;
   }
 }
 

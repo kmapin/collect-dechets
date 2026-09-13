@@ -1,19 +1,23 @@
 
+// Contenu hétérogène (liens + séparateur) : flex-wrap plutôt qu'une grille
+// rigide, pour ne pas déformer le séparateur fin entre les deux groupes.
 .tabs-navigation {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
   margin-bottom: 24px;
   background: var(--white);
   padding: 4px;
   border-radius: 12px;
   box-shadow: var(--shadow-light);
-  overflow-x: auto;
 }
 
 .tab-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 8px;
   padding: 12px 20px;
   background: transparent;
@@ -23,7 +27,7 @@
   text-decoration: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  white-space: nowrap;
+  white-space: normal;
   font-weight: 500;
   position: relative;
 
@@ -84,6 +88,6 @@
 
 @media (max-width: 1024px) {
   .tabs-navigation {
-    overflow-x: auto;
+    justify-content: center;
   }
 }
