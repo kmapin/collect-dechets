@@ -1,3 +1,77 @@
+// Bandeau "agence en attente d'activation" (statut Agency = 'inactive', valeur
+// par défaut à la création — models/agency.js). Palette alignée sur
+// .status-suspended (ambre) déjà utilisée ailleurs dans l'app pour un état
+// "en attente", plutôt qu'un rouge d'erreur qui suggérerait un blocage.
+.agency-inactive-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: #fff3e0;
+  border: 1px solid #ffe0b2;
+  border-left: 4px solid #f57c00;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-light);
+}
+
+.aib-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffe0b2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 24px;
+    color: #f57c00;
+  }
+}
+
+.aib-content {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #7c4a03;
+    margin: 0 0 6px;
+  }
+
+  p {
+    font-size: 0.9rem;
+    color: #8a5a12;
+    line-height: 1.5;
+    margin: 0 0 6px;
+  }
+
+  .aib-contact {
+    margin-bottom: 0;
+    font-weight: 500;
+
+    a {
+      color: #f57c00;
+      font-weight: 700;
+      text-decoration: underline;
+
+      &:hover {
+        color: #d97706;
+      }
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .agency-inactive-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;

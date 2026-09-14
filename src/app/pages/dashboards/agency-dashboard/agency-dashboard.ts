@@ -319,6 +319,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   ratingsPage = 1;
   readonly ratingsPageSize = 10;
   agency: Agency | null = null;
+  // Statut RÉEL du document Agence (actif/inactif/supprimé) — distinct de `agency`
+  // ci-dessus, qui est en fait assigné depuis `currentUser` (voir loadAgencyData) et
+  // ne reflète donc pas fiablement ce champ. Une agence est créée `inactive` par
+  // défaut (models/agency.js) tant qu'un admin ne l'a pas validée.
+  agencyStatus: string | null = null;
   activeTab: TabId = "employees"; // Changé pour debug - était "collections"
 
   // Méthode pour changer d'onglet
@@ -1751,6 +1756,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       );
       if (this.currentUser.agencyId) {
         this.loadEmployees(this.currentUser.agencyId);
+        this.agencyService.getAgencyByIdFromApi(this.currentUser.agencyId).subscribe({
+          next: (res) => { this.agencyStatus = res?.data?.status ?? null; },
+          error: () => {},
+        });
       }
     }
     // this.loadServiceZones();

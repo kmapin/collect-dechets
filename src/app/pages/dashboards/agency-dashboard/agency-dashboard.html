@@ -36,6 +36,27 @@
   <!-- Main Content -->
   <div class="container">
     <div class="dashboard-content">
+      @if (agencyStatus === 'inactive') {
+        <div class="agency-inactive-banner">
+          <div class="aib-icon">
+            <i class="material-icons">hourglass_top</i>
+          </div>
+          <div class="aib-content">
+            <h3>Votre agence est en attente d'activation</h3>
+            <p>
+              Elle est en cours de vérification par notre équipe et sera activée prochainement. Vous pouvez
+              continuer à configurer votre espace (employés, zones, tarifs) en attendant — vos clients ne
+              verront votre agence qu'une fois celle-ci activée.
+            </p>
+            <p class="aib-contact">
+              Une question, ou une activation urgente ? Contactez le service client :
+              <a href="tel:+22655540202">55 54 02 02</a>
+              ou
+              <a href="mailto:contact&#64;zerodechet.bf">contact&#64;zerodechet.bf</a>
+            </p>
+          </div>
+        </div>
+      }
       <!-- Statistiques principales -->
       <div class="stats-grid">
         <div class="stat-card card">
