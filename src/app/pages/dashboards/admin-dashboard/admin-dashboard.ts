@@ -2306,6 +2306,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       active: "Active",
       inactive: "Inactive",
       suspended: "Suspendue",
+      deleted: "Supprimée",
     };
     return statusTexts[status as keyof typeof statusTexts] || status;
   }

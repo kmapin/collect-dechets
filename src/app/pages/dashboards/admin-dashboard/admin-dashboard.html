@@ -520,16 +520,19 @@
                     <div class="table-actions">
                       <button class="action-btn" (click)="viewAgencyDetails(agency.id)" title="Détails"><i
                           class="material-icons">visibility</i></button>
-                      <ng-container *ngIf="agency?.status === 'active'; else actTpl">
-                        <button class="action-btn" (click)="contactAgency(agency.id)" title="Contacter"><i
-                            class="material-icons">message</i></button>
-                        <button class="action-btn toggle-btn toggle-active" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="deactivateAgency(agency.id)"
-                          title="Désactiver"><i class="material-icons">block</i></button>
-                      </ng-container>
-                      <ng-template #actTpl>
-                        <button class="action-btn toggle-btn toggle-inactive" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="activateAgency(agency.id)"
-                          title="Activer"><i class="material-icons">check_circle</i></button>
-                      </ng-template>
+                      <!-- Une agence supprimée n'a plus rien à contacter/activer/désactiver. -->
+                      @if (agency.status !== 'deleted') {
+                        <ng-container *ngIf="agency?.status === 'active'; else actTpl">
+                          <button class="action-btn" (click)="contactAgency(agency.id)" title="Contacter"><i
+                              class="material-icons">message</i></button>
+                          <button class="action-btn toggle-btn toggle-active" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="deactivateAgency(agency.id)"
+                            title="Désactiver"><i class="material-icons">block</i></button>
+                        </ng-container>
+                        <ng-template #actTpl>
+                          <button class="action-btn toggle-btn toggle-inactive" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="activateAgency(agency.id)"
+                            title="Activer"><i class="material-icons">check_circle</i></button>
+                        </ng-template>
+                      }
                     </div>
                   </td>
                 </tr>
@@ -627,27 +630,30 @@
                 <button class="cia-btn cia-view" (click)="viewAgencyDetails(agency.id)" title="Voir les détails">
                   <i class="material-icons">visibility</i>
                 </button>
-                <!-- Éditer -->
-                <button class="cia-btn cia-edit" (click)="viewAgencyDetails(agency.id)" title="Modifier">
-                  <i class="material-icons">edit</i>
-                </button>
-                <!-- Toggle actif / inactif -->
-                <ng-container *ngIf="agency?.status === 'active'; else cardActivate">
-                  <button class="cia-btn cia-toggle cia-toggle--on" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="deactivateAgency(agency.id)"
-                    title="Désactiver">
-                    <i class="material-icons">toggle_on</i>
+                <!-- Une agence supprimée n'a plus rien à éditer/activer/re-supprimer. -->
+                @if (agency.status !== 'deleted') {
+                  <!-- Éditer -->
+                  <button class="cia-btn cia-edit" (click)="viewAgencyDetails(agency.id)" title="Modifier">
+                    <i class="material-icons">edit</i>
                   </button>
-                </ng-container>
-                <ng-template #cardActivate>
-                  <button class="cia-btn cia-toggle cia-toggle--off" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="activateAgency(agency.id)"
-                    title="Activer">
-                    <i class="material-icons">toggle_off</i>
+                  <!-- Toggle actif / inactif -->
+                  <ng-container *ngIf="agency?.status === 'active'; else cardActivate">
+                    <button class="cia-btn cia-toggle cia-toggle--on" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="deactivateAgency(agency.id)"
+                      title="Désactiver">
+                      <i class="material-icons">toggle_on</i>
+                    </button>
+                  </ng-container>
+                  <ng-template #cardActivate>
+                    <button class="cia-btn cia-toggle cia-toggle--off" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="activateAgency(agency.id)"
+                      title="Activer">
+                      <i class="material-icons">toggle_off</i>
+                    </button>
+                  </ng-template>
+                  <!-- Supprimer -->
+                  <button class="cia-btn cia-delete" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="deleteAgency(agency.id)" title="Supprimer">
+                    <i class="material-icons">delete</i>
                   </button>
-                </ng-template>
-                <!-- Supprimer -->
-                <button class="cia-btn cia-delete" [disabled]="agencyMutationEnCours.has(agency.id)" (click)="deleteAgency(agency.id)" title="Supprimer">
-                  <i class="material-icons">delete</i>
-                </button>
+                }
               </div>
 
             </div>
