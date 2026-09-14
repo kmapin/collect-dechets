@@ -17,6 +17,8 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  // Aligné à droite en desktop ; centré uniquement en mobile (@media plus bas).
+  justify-content: flex-end;
 }
 
 // 9 onglets : un scroll horizontal les masque sans que ce soit visible. Des
@@ -102,16 +104,18 @@
     flex-direction: column;
     text-align: center;
   }
+
+  // Même traitement que admin-dashboard : les boutons gardent leur largeur
+  // naturelle et passent à la ligne (flex-wrap, hérité de la règle de base),
+  // centrés.
+  .quick-actions {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 768px) {
   .tab-content {
     padding: 3%;
-  }
-
-  .quick-actions {
-    flex-direction: column;
-    gap: 16px;
   }
 }
 

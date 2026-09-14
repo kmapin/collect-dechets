@@ -624,6 +624,8 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  // Aligné à droite en desktop ; centré uniquement en mobile (@media plus bas).
+  justify-content: flex-end;
 }
 
 
@@ -4314,15 +4316,12 @@ button:disabled {
     font-size: 13px;
   }
 
+  // Même traitement que admin-dashboard : les boutons gardent leur largeur
+  // naturelle et passent à la ligne (flex-wrap, hérité de la règle de base),
+  // centrés — au lieu d'un empilement en 1 colonne pleine largeur qui prenait
+  // une hauteur excessive sur mobile.
   .quick-actions {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    gap: 10px;
-  }
-
-  .qa-btn {
-    width: 100%;
+    justify-content: center;
   }
 
   .parent {
@@ -4514,6 +4513,11 @@ button:disabled {
 }
 
 @media (max-width: 480px) {
+  .quick-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+
   .drawer-header h3 {
     font-size: 1.125rem;
   }

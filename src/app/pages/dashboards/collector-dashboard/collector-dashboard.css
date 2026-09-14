@@ -21,6 +21,9 @@
 
 .quick-actions {
   display: flex;
+  flex-wrap: wrap;
+  /* Aligné à droite en desktop ; centré uniquement en mobile (@media plus bas). */
+  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -1238,6 +1241,10 @@
   .header-content {
     flex-direction: column;
     text-align: center;
+  }
+
+  .quick-actions {
+    justify-content: center;
   }
 }
 

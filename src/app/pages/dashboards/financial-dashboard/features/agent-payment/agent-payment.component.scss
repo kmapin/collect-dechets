@@ -216,6 +216,14 @@
 
   &__agent-nom {
     flex: 1;
+    // Sans min-width:0, un nom long empêche ce flex-item de rétrécir sous sa
+    // largeur de contenu : la ligne (et donc toute la carte) déborde du
+    // viewport en mobile, poussant le badge "Orange Money"/"Moov Money" hors
+    // écran au lieu de le laisser sur la même ligne.
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__hint {
@@ -322,6 +330,10 @@
   &__form-card {
     flex: 1 1 340px;
     max-width: 460px;
+    // Sans ça, le flex-basis de 340px reste une largeur MINIMALE implicite
+    // (min-width:auto par défaut) : sur un viewport plus étroit que 340px, la
+    // carte — et avec elle toute la page — déborde horizontalement.
+    min-width: 0;
   }
 
   &__history {

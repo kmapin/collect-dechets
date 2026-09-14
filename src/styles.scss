@@ -436,10 +436,14 @@ body.signalement-drawer-open .card:hover {
   margin:0 0 0 0;
 }
 
+// clamp() plutôt qu'un rem fixe par breakpoint : la taille suit en continu la
+// largeur de l'écran, donc un titre long ("Tableau de Bord Administrateur")
+// ne repasse jamais sur 2 lignes, y compris entre deux breakpoints fixes.
 .page-title {
-  font-size: 2.5rem;
+  font-size: clamp(0.9rem, 4.5vw, 2.5rem);
   font-weight: 700;
   margin-bottom: 8px;
+  white-space: nowrap;
 }
 
 .page-subtitle {
@@ -521,9 +525,6 @@ body.signalement-drawer-open .card:hover {
 @media (max-width: 768px) {
   .container {
     padding: 0 16px;
-  }
-  .page-title {
-    font-size: 2rem;
   }
   .tab-content {
     padding: 3%;

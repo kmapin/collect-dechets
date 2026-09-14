@@ -21,6 +21,9 @@
 
 .quick-actions {
   display: flex;
+  flex-wrap: wrap;
+  // Aligné à droite en desktop ; centré uniquement en mobile (@media plus bas).
+  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -1198,18 +1201,11 @@
   .stats-grid {
     grid-template-columns: 1fr;
   }
+  // Même traitement que admin-dashboard : les boutons gardent leur largeur
+  // naturelle et passent à la ligne (flex-wrap, hérité de la règle de base),
+  // centrés — au lieu d'un empilement en 1 colonne pleine largeur.
   .quick-actions {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-  }
-
-  .qa-btn {
-    width: 100%;
-  }
-
-  .quick-actions .qa-btn:last-child {
-    margin-bottom: 1rem;
+    justify-content: center;
   }
 
   .section-header {

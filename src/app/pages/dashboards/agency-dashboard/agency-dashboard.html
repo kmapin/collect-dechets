@@ -16,6 +16,10 @@
             <i class="material-icons">add_circle</i>
             <span>Ajouter un Tarif</span>
           </button>
+          <button class="qa-btn" [routerLink]="['/planning']">
+            <i class="material-icons">dashboard</i>
+            <span>Gérer plannings &amp; équipes</span>
+          </button>
           <button class="qa-btn" (click)="navigateToAgencyDetails()">
             <i class="material-icons">info</i>
             <span>Portail Agence</span>
@@ -1041,12 +1045,6 @@
           <div class="schedules-tab">
             <div class="section-header">
               <h2>Gestion des Plannings de Collecte</h2>
-              <div class="section-actions">
-                <button class="btn btn-primary" [routerLink]="['/planning']">
-                  <i class="material-icons">dashboard</i>
-                  Gérer plannings &amp; équipes
-                </button>
-              </div>
             </div>
             <div class="schedules-calendar">
               <div class="calendar-header">
