@@ -17,6 +17,7 @@ import { CLIENT_DATA_SERVICE } from '../../data-access/tokens/client-data.token'
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { aLaPermission } from '../../models';
 import { NotificationService } from '../../../../../services/notification.service';
+import { ConfirmDialogService } from '../../../../../services/confirm-dialog.service';
 import { LoadingSpinnerComponent } from '../../../../../components/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeContrat } from '../../shared/status-badge/status-badge.util';
@@ -36,6 +37,7 @@ export class ContractsComponent {
   private readonly clientData = inject(CLIENT_DATA_SERVICE);
   private readonly session = inject(SESSION_SERVICE);
   private readonly notificationService = inject(NotificationService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
   readonly peutCreer = computed(() => aLaPermission(this.currentUser(), 'contracts.create'));
@@ -201,9 +203,15 @@ export class ContractsComponent {
       });
   }
 
-  onResilierContrat(contrat: Contrat): void {
+  async onResilierContrat(contrat: Contrat): Promise<void> {
     if (this.contratMutationEnCours()) return;
-    if (!confirm('Êtes-vous sûr de vouloir résilier ce contrat ?')) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Résilier ce contrat ?',
+      message: 'Êtes-vous sûr de vouloir résilier ce contrat ?',
+      variant: 'danger',
+      confirmLabel: 'Résilier',
+    });
+    if (!ok) return;
     const raison = prompt('Motif de résiliation (optionnel) :') || undefined;
     this.contratMutationEnCours.set(contrat._id);
     this.contratService.resilierContrat$(contrat._id, raison)
@@ -217,9 +225,15 @@ export class ContractsComponent {
       });
   }
 
-  onSuspendreContrat(contrat: Contrat): void {
+  async onSuspendreContrat(contrat: Contrat): Promise<void> {
     if (this.contratMutationEnCours()) return;
-    if (!confirm('Êtes-vous sûr de vouloir suspendre ce contrat ?')) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Suspendre ce contrat ?',
+      message: 'Êtes-vous sûr de vouloir suspendre ce contrat ?',
+      variant: 'primary',
+      confirmLabel: 'Suspendre',
+    });
+    if (!ok) return;
     this.contratMutationEnCours.set(contrat._id);
     this.contratService.suspendreContrat$(contrat._id)
       .pipe(finalize(() => this.contratMutationEnCours.set(null)))
@@ -232,9 +246,15 @@ export class ContractsComponent {
       });
   }
 
-  onReactiverContrat(contrat: Contrat): void {
+  async onReactiverContrat(contrat: Contrat): Promise<void> {
     if (this.contratMutationEnCours()) return;
-    if (!confirm('Êtes-vous sûr de vouloir réactiver ce contrat ?')) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Réactiver ce contrat ?',
+      message: 'Êtes-vous sûr de vouloir réactiver ce contrat ?',
+      variant: 'success',
+      confirmLabel: 'Réactiver',
+    });
+    if (!ok) return;
     this.contratMutationEnCours.set(contrat._id);
     this.contratService.reactiverContrat$(contrat._id)
       .pipe(finalize(() => this.contratMutationEnCours.set(null)))
@@ -380,10 +400,17 @@ export class ContractsComponent {
       });
   }
 
-  onAnnulerPaiementGroupe(): void {
+  async onAnnulerPaiementGroupe(): Promise<void> {
     if (this.paiementGroupeEnCours()) return;
     const proposition = this.paiementGroupeActif();
-    if (!proposition || !confirm('Annuler cette proposition de paiement groupé ?')) return;
+    if (!proposition) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Annuler cette proposition ?',
+      message: 'Annuler cette proposition de paiement groupé ?',
+      variant: 'danger',
+      confirmLabel: 'Annuler la proposition',
+    });
+    if (!ok) return;
     this.paiementGroupeEnCours.set(true);
     this.redevanceService.annulerPropositionPaiementGroupe$(proposition._id)
       .pipe(finalize(() => this.paiementGroupeEnCours.set(false)))
@@ -396,12 +423,18 @@ export class ContractsComponent {
       });
   }
 
-  onPayerManuelPaiementGroupe(): void {
+  async onPayerManuelPaiementGroupe(): Promise<void> {
     if (this.paiementGroupeEnCours()) return;
     const proposition = this.paiementGroupeActif();
     const contrat = this.redevancesDrawerContrat();
     if (!proposition || !contrat) return;
-    if (!confirm(`Confirmer que le paiement groupé de ${proposition.montantAPayer} FCFA a été reçu ?`)) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Confirmer la réception du paiement ?',
+      message: `Confirmer que le paiement groupé de ${proposition.montantAPayer} FCFA a été reçu ?`,
+      variant: 'success',
+      confirmLabel: 'Confirmer',
+    });
+    if (!ok) return;
     this.paiementGroupeEnCours.set(true);
     this.redevanceService.payerManuelPaiementGroupe$(proposition._id)
       .pipe(finalize(() => this.paiementGroupeEnCours.set(false)))
@@ -419,9 +452,15 @@ export class ContractsComponent {
     return labels[status] ?? status;
   }
 
-  onMarquerRedevancePayee(redevance: Redevance): void {
+  async onMarquerRedevancePayee(redevance: Redevance): Promise<void> {
     if (this.redevanceEnCours()) return;
-    if (!confirm(`Confirmer que la redevance "${redevance.periodLabel}" (${redevance.montant} FCFA) a été payée ?`)) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Confirmer le paiement de la redevance ?',
+      message: `Confirmer que la redevance "${redevance.periodLabel}" (${redevance.montant} FCFA) a été payée ?`,
+      variant: 'success',
+      confirmLabel: 'Confirmer',
+    });
+    if (!ok) return;
     this.redevanceEnCours.set(redevance._id);
     this.redevanceService.payerRedevance$(redevance._id)
       .pipe(finalize(() => this.redevanceEnCours.set(null)))

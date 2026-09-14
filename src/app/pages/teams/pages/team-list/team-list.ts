@@ -24,6 +24,7 @@ import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planni
 import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
+import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
 
 @Component({
   selector: 'app-team-list',
@@ -46,6 +47,7 @@ export class TeamList implements OnInit {
   private  route  = inject(ActivatedRoute);
   readonly router = inject(Router);
   private  auth   = inject(AuthService);
+  private  confirmDialog = inject(ConfirmDialogService);
 
   readonly breadcrumbItems: BreadcrumbItem[] = [
     { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
@@ -70,8 +72,6 @@ export class TeamList implements OnInit {
   modalOpen         = signal(false);
   modalLoading      = signal(false);
   editingTeam       = signal<Team | null>(null);
-  deletingTeam      = signal<Team | null>(null);
-  confirmDeleteOpen = signal(false);
   selectedRows      = signal<Team[]>([]);
   ctxTeam           = signal<Team | null>(null);
   contextMenuItems  = signal<MenuItem[]>([]);
@@ -269,19 +269,20 @@ export class TeamList implements OnInit {
     });
   }
 
-  confirmDelete(team: Team): void { this.deletingTeam.set(team); this.confirmDeleteOpen.set(true); }
-
   isDeletingTeam = false;
-  doDelete(): void {
+  async confirmDelete(team: Team): Promise<void> {
     if (this.isDeletingTeam) return;
-    const t = this.deletingTeam();
-    if (!t) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Supprimer l\'équipe ?',
+      message: `${team.name} sera définitivement supprimée. Cette action est irréversible.`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+    });
+    if (!ok) return;
     this.isDeletingTeam = true;
-    this.svc.delete(t.id).pipe(finalize(() => this.isDeletingTeam = false)).subscribe({
+    this.svc.delete(team.id).pipe(finalize(() => this.isDeletingTeam = false)).subscribe({
       next: () => {
-        this.msg.add({ severity: 'warn', summary: 'Supprimé', detail: `${t.name} supprimée` });
-        this.confirmDeleteOpen.set(false);
-        this.deletingTeam.set(null);
+        this.msg.add({ severity: 'warn', summary: 'Supprimé', detail: `${team.name} supprimée` });
       },
       error: err => {
         const detail = err?.error?.error?.message ?? 'Impossible de supprimer cette équipe.';

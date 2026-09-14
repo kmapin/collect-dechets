@@ -1,0 +1,154 @@
+.cfd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.cfd-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10001;
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  width: min(420px, calc(100vw - 32px));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.cfd-box h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.cfd-box p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.cfd-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cfd-icon i {
+  font-size: 28px;
+  color: #3b82f6;
+}
+
+.cfd-icon--danger {
+  background: #fef2f2;
+}
+.cfd-icon--danger i {
+  color: #ef4444;
+}
+
+.cfd-icon--success {
+  background: #f0fdf4;
+}
+.cfd-icon--success i {
+  color: #16a34a;
+}
+
+.cfd-icon--primary {
+  background: #eff6ff;
+}
+.cfd-icon--primary i {
+  color: #3b82f6;
+}
+
+.cfd-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: #475569;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.cfd-detail i {
+  font-size: 16px;
+  color: #94a3b8;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.cfd-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.cfd-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.cfd-btn--ghost {
+  background: #f1f5f9;
+  color: #374151;
+  border-color: #e2e8f0;
+}
+.cfd-btn--ghost:hover {
+  background: #e2e8f0;
+}
+
+.cfd-btn--danger {
+  background: #ef4444;
+  color: #fff;
+}
+.cfd-btn--danger:hover {
+  background: #dc2626;
+}
+
+.cfd-btn--success {
+  background: #16a34a;
+  color: #fff;
+}
+.cfd-btn--success:hover {
+  background: #15803d;
+}
+
+.cfd-btn--primary,
+.cfd-btn--neutral {
+  background: #3b82f6;
+  color: #fff;
+}
+.cfd-btn--primary:hover,
+.cfd-btn--neutral:hover {
+  background: #2563eb;
+}

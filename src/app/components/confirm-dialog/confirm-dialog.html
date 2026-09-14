@@ -1,0 +1,24 @@
+@if (request) {
+  <div class="cfd-backdrop" (click)="onCancelClick()"></div>
+  <div class="cfd-box" [class]="'cfd-box--' + request.variant" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="cfd-icon" [class]="'cfd-icon--' + request.variant">
+      <i class="material-icons">{{ request.icon }}</i>
+    </div>
+    <h3>{{ request.title }}</h3>
+    <p>{{ request.message }}</p>
+    @if (request.detail) {
+      <div class="cfd-detail">
+        <i class="material-icons">info_outline</i>
+        <span>{{ request.detail }}</span>
+      </div>
+    }
+    <div class="cfd-actions">
+      <button type="button" class="cfd-btn cfd-btn--ghost" (click)="onCancelClick()">
+        {{ request.cancelLabel }}
+      </button>
+      <button type="button" class="cfd-btn" [class]="'cfd-btn--' + request.variant" (click)="onConfirmClick()">
+        {{ request.confirmLabel }}
+      </button>
+    </div>
+  </div>
+}

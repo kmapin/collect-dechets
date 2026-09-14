@@ -20,6 +20,7 @@ import { TeamConflictDetectorComponent } from '../team-conflict-detector/team-co
 import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
 // ── Local interfaces ────────────────────────────────────────────
 interface StepDef {
@@ -70,6 +71,7 @@ export class PlanningCreate implements OnInit {
   private msgSvc      = inject(MessageService);
   private destroyRef  = inject(DestroyRef);
   private auth        = inject(AuthService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   // ── State ────────────────────────────────────────────────────
   currentStep  = signal(0);
@@ -734,10 +736,16 @@ export class PlanningCreate implements OnInit {
   }
 
   readonly groupMutationEnCours = signal<string | null>(null);
-  deleteExistingGroup(group: any, event: Event): void {
+  async deleteExistingGroup(group: any, event: Event): Promise<void> {
     event.stopPropagation();
     if (this.groupMutationEnCours()) return;
-    if (!confirm(`Supprimer le groupe "${group.name}" ? Cette action est irréversible.`)) return;
+    const ok = await this.confirmDialog.confirm({
+      title: `Supprimer le groupe "${group.name}" ?`,
+      message: `Supprimer le groupe "${group.name}" ? Cette action est irréversible.`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+    });
+    if (!ok) return;
     this.groupMutationEnCours.set(group._id);
     this.svc.deleteClientGroup(group._id).subscribe({
       next: () => {

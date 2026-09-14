@@ -6,6 +6,7 @@ import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { Footer } from './components/footer/footer';
 import { Header } from './components/header/header';
 import { Notification } from './components/notification/notification';
+import { ConfirmDialog } from './components/confirm-dialog/confirm-dialog';
 import { LoadingService } from './services/loading.service';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -17,7 +18,8 @@ import { filter } from 'rxjs/operators';
     RouterOutlet,
     Header,
     Footer,
-    Notification
+    Notification,
+    ConfirmDialog
 ],
   template: `
     <!-- Indicateur de chargement global avec design personnalisé -->
@@ -46,6 +48,7 @@ import { filter } from 'rxjs/operators';
         </main>
         @if (showFooter) { <app-footer></app-footer> }
         <app-notification></app-notification>
+        <app-confirm-dialog></app-confirm-dialog>
       </div>
     }
     `,

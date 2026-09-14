@@ -23,6 +23,7 @@ import { formatFrDate } from '../../../../shared/format.util';
 import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
+import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
 
 @Component({
   selector: 'app-team-detail',
@@ -40,6 +41,7 @@ export class TeamDetail implements OnInit, OnDestroy {
   readonly svc   = inject(TeamService);
   private msg    = inject(MessageService);
   private auth   = inject(AuthService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   private leafletMap!: L.Map;
 
@@ -55,7 +57,6 @@ export class TeamDetail implements OnInit, OnDestroy {
   activeTab   = signal<'members' | 'vehicle' | 'zones' | 'missions'>('members');
   formOpen    = signal(false);
   formSaving  = signal(false);
-  showDelDlg  = signal(false);
 
   statusColor = computed(() => teamStatusColor(this.team()?.status ?? ''));
   statusLabel = computed(() => this.team() ? teamStatusLabel(this.team()!.status) : '—');
@@ -206,14 +207,20 @@ export class TeamDetail implements OnInit, OnDestroy {
   }
 
   isDeletingTeam = false;
-  doDelete(): void {
+  async doDelete(): Promise<void> {
     if (this.isDeletingTeam) return;
     const t = this.team();
     if (!t) return;
+    const ok = await this.confirmDialog.confirm({
+      title: `Supprimer ${t.name} ?`,
+      message: 'Cette équipe et toutes ses données seront supprimées définitivement.',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+    });
+    if (!ok) return;
     this.isDeletingTeam = true;
     this.svc.delete(t.id).pipe(finalize(() => this.isDeletingTeam = false)).subscribe({
       next: () => {
-        this.showDelDlg.set(false);
         this.router.navigate(['/teams/list']);
       },
       error: err => {

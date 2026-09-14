@@ -356,34 +356,6 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   }
 }
 
-.dlg-backdrop {
-  position:fixed; inset:0; z-index:9999;
-  background:rgba(15,23,42,.5); backdrop-filter:blur(4px);
-}
-.dlg-box {
-  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:10000;
-  background:#fff; border-radius:16px; padding:32px;
-  width:min(420px,calc(100vw - 32px));
-  box-shadow:0 20px 60px rgba(0,0,0,.2);
-  display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px;
-  h3 { font-size:18px; font-weight:700; color:#0f172a; margin:0; }
-  p  { font-size:14px; color:#64748b; margin:0; }
-}
-.dlg-icon {
-  width:56px; height:56px; border-radius:50%; background:#fef2f2;
-  display:flex; align-items:center; justify-content:center;
-  mat-icon { font-size:28px; width:28px; height:28px; color:#ef4444; }
-}
-.dlg-actions { display:flex; gap:10px; width:100%; margin-top:4px; }
-.dlg-btn {
-  flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
-  padding:10px; border-radius:8px;
-  font-size:13px; font-weight:500; cursor:pointer; border:1px solid transparent;
-  mat-icon { font-size:16px; width:16px; height:16px; }
-  &--ghost  { background:#f1f5f9; color:#374151; border-color:#e2e8f0; &:hover { background:#e2e8f0; } }
-  &--danger { background:#ef4444; color:#fff; &:hover { background:#dc2626; } }
-}
-
 // ── Responsive ───────────────────────────────────────────────
 @media (max-width:1024px) {
   .zones-layout { grid-template-columns:1fr; }

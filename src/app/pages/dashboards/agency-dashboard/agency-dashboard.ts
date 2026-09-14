@@ -41,6 +41,7 @@ import {
 } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
+import { ConfirmDialogService } from "../../../services/confirm-dialog.service";
 import {
   User,
   UserRole,
@@ -461,10 +462,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   reports: Report[] = [];
   filteredReports: Report[] = [];
   isDeleting: boolean = false;
-  // Propriétés pour la confirmation de suppression
-  showDeleteConfirmation: boolean = false;
-  employeeToDelete: any = null;
-  currentUserForDeletion: any = null;
   // Propriétés pour l'édition d'employé
   employeeToEdit: any = null;
   isEditingEmployee: boolean = false;
@@ -728,9 +725,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   readonly vehicleDeletionEnCours = new Set<string>();
-  deleteVehicle(vehicle: Vehicle): void {
+  async deleteVehicle(vehicle: Vehicle): Promise<void> {
     if (!vehicle._id || this.vehicleDeletionEnCours.has(vehicle._id)) return;
-    if (!confirm(`Supprimer l'engin ${vehicle.plate} ?`)) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Supprimer cet engin ?',
+      message: `Supprimer l'engin ${vehicle.plate} ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+    });
+    if (!ok) return;
     this.vehicleDeletionEnCours.add(vehicle._id);
     this.vehicleService.remove(vehicle._id).subscribe({
       next: () => {
@@ -812,6 +815,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     private agencyService: AgencyService,
     private collectionService: CollectionService,
     private notificationService: NotificationService,
+    private confirmDialog: ConfirmDialogService,
     private clientService: ClientService,
     private cdr: ChangeDetectorRef,
     private fb: FormBuilder,
@@ -1834,9 +1838,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  deleteEmployee(currentUser: any, employeeId: any): void {
-    this.isDeleting = true;
-
+  async deleteEmployee(currentUser: any, employeeId: any): Promise<void> {
     // Logs pour debugger la structure des données
     console.log(
       "[DEBUG] Structure complète de l'employé à supprimer:",
@@ -1882,77 +1884,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         "employeeIdToDelete:",
         employeeIdToDelete,
       );
-      this.isDeleting = false;
       return;
     }
 
-    // Demander confirmation avec votre système de notification personnalisé
-    this.showDeleteConfirmationDialog(
-      employeeIdToDelete,
-      currentUser,
-      employeeId,
-    );
-  }
-
-  /**
-   * Affiche la confirmation de suppression
-   */
-  showDeleteConfirmationDialog(
-    employeeIdToDelete: string,
-    currentUser: any,
-    employeeData: any,
-  ): void {
     const employeeName =
-      `${employeeData.firstName || employeeData.firstname || ""} ${employeeData.lastName || employeeData.lastname || ""}`.trim();
+      `${employeeId.firstName || employeeId.firstname || ""} ${employeeId.lastName || employeeId.lastname || ""}`.trim();
     const displayName = employeeName || "cet employé";
 
-    // Stocker les données pour la suppression
-    this.employeeToDelete = {
-      id: employeeIdToDelete,
-      data: employeeData,
-      displayName: displayName,
-    };
-    this.currentUserForDeletion = currentUser;
-    this.showDeleteConfirmation = true;
-    this.isDeleting = false; // Reset l'état de suppression
+    const ok = await this.confirmDialog.confirm({
+      title: 'Supprimer cet employé ?',
+      message: `Voulez-vous vraiment supprimer ${displayName} ? Cette action est définitive.`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer définitivement',
+    });
+    if (!ok) return;
 
-    // Afficher un message d'information
-    this.notificationService.showInfo(
-      "Confirmation requise",
-      `Confirmez la suppression de ${displayName}`,
-    );
-  }
-
-  /**
-   * Confirme et procède à la suppression
-   */
-  confirmDeleteEmployee(): void {
-    if (!this.employeeToDelete || !this.currentUserForDeletion) {
-      this.notificationService.showError(
-        "Erreur",
-        "Données de suppression manquantes",
-      );
-      return;
-    }
-
-    this.showDeleteConfirmation = false;
     this.isDeleting = true;
-    this.proceedWithDeletion(
-      this.employeeToDelete.id,
-      this.currentUserForDeletion,
-    );
-  }
-
-  /**
-   * Annule la suppression
-   */
-  cancelDeleteEmployee(): void {
-    this.showDeleteConfirmation = false;
-    this.employeeToDelete = null;
-    this.currentUserForDeletion = null;
-    this.isDeleting = false;
-
-    this.notificationService.showInfo("Annulé", "La suppression a été annulée");
+    this.proceedWithDeletion(employeeIdToDelete, currentUser);
   }
 
   /**
@@ -3833,18 +3781,28 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  deleteZone(zoneId: string): void {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette zone ?")) {
-      this.serviceZones = this.serviceZones.filter((z) => z.id !== zoneId);
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
-    }
+  async deleteZone(zoneId: string): Promise<void> {
+    const ok = await this.confirmDialog.confirm({
+      title: 'Supprimer cette zone ?',
+      message: 'Êtes-vous sûr de vouloir supprimer cette zone ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+    });
+    if (!ok) return;
+    this.serviceZones = this.serviceZones.filter((z) => z.id !== zoneId);
+    // No need to call notificationService.showSuccess here, as it's already handled in the template
   }
 
-  deleteSchedule(scheduleId: string): void {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce planning ?")) {
-      // this.schedules = this.schedules.filter(s => s.id !== scheduleId);
-      // No need to call notificationService.showSuccess here, as it's already handled in the template
-    }
+  async deleteSchedule(scheduleId: string): Promise<void> {
+    const ok = await this.confirmDialog.confirm({
+      title: 'Supprimer ce planning ?',
+      message: 'Êtes-vous sûr de vouloir supprimer ce planning ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+    });
+    if (!ok) return;
+    // this.schedules = this.schedules.filter(s => s.id !== scheduleId);
+    // No need to call notificationService.showSuccess here, as it's already handled in the template
   }
   selectedClient: any = null;
   showClientDetailsModal: boolean = false;
@@ -4310,12 +4268,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // partiel). Désactiver n'a pas besoin de confirmation (réversible en un clic,
   // sans effet de bord) ; activer en demande une quand un autre tarif du même
   // type est déjà actif, car cela le désactivera automatiquement.
-  showActivateTariffConfirmation = false;
-  pendingTariffActivation: Tarif | null = null;
-  currentlyActiveTariffOfSameType: Tarif | null = null;
   isTogglingTariffStatus = false;
 
-  requestActivateTariff(tariff: Tarif): void {
+  async requestActivateTariff(tariff: Tarif): Promise<void> {
     if (!tariff?._id) return;
     const activeSibling = this.tariffs.find(
       (t) => t.planType === tariff.planType && t.status === 'active' && t._id !== tariff._id,
@@ -4325,24 +4280,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       this.activateTariff(tariff);
       return;
     }
-    this.pendingTariffActivation = tariff;
-    this.currentlyActiveTariffOfSameType = activeSibling;
-    this.showActivateTariffConfirmation = true;
-  }
 
-  confirmActivateTariff(): void {
-    if (!this.pendingTariffActivation) return;
-    const tariff = this.pendingTariffActivation;
-    this.showActivateTariffConfirmation = false;
-    this.pendingTariffActivation = null;
-    this.currentlyActiveTariffOfSameType = null;
+    const activePrice = new Intl.NumberFormat('fr-FR').format(activeSibling.price ?? 0);
+    const ok = await this.confirmDialog.confirm({
+      title: 'Activer ce tarif ?',
+      message: `Le tarif ${activeSibling.planType} actuellement actif de ${activePrice} FCFA sera automatiquement désactivé.`,
+      detail: 'Un seul tarif peut être actif à la fois pour un même type.',
+      variant: 'success',
+      confirmLabel: 'Activer',
+    });
+    if (!ok) return;
     this.activateTariff(tariff);
-  }
-
-  cancelActivateTariff(): void {
-    this.showActivateTariffConfirmation = false;
-    this.pendingTariffActivation = null;
-    this.currentlyActiveTariffOfSameType = null;
   }
 
   private activateTariff(tariff: Tarif): void {
@@ -4457,7 +4405,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
 
   // supprimer un planning
-  deletePlanning(schedulesId: string): void {
+  async deletePlanning(schedulesId: string): Promise<void> {
     if (this.isDeleting) return;
     if (!schedulesId) {
       console.warn("Aucun ID de planning fourni.");
@@ -4468,10 +4416,13 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       return;
     }
 
-    // Demander confirmation
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce planning ?")) {
-      return;
-    }
+    const ok = await this.confirmDialog.confirm({
+      title: 'Supprimer ce planning ?',
+      message: 'Êtes-vous sûr de vouloir supprimer ce planning ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+    });
+    if (!ok) return;
 
     this.isDeleting = true;
     console.log("Suppression du planning:", schedulesId);
@@ -5027,14 +4978,17 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   // Méthode pour retirer une zone
   isRemovingZone = false;
-  removeZone(zone: any): void {
+  async removeZone(zone: any): Promise<void> {
     if (!zone || this.isRemovingZone) return;
 
     const zoneName = zone.neighborhood || zone.name || zone;
-    const confirmed = confirm(
-      `Êtes-vous sûr de vouloir retirer la zone "${zoneName}" ?`,
-    );
-    if (!confirmed) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Retirer cette zone ?',
+      message: `Êtes-vous sûr de vouloir retirer la zone "${zoneName}" ?`,
+      variant: 'danger',
+      confirmLabel: 'Retirer',
+    });
+    if (!ok) return;
 
     const agencyId = this.currentUser?.agencyId;
     if (!agencyId) {

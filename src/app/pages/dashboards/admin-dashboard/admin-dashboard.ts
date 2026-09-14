@@ -9,6 +9,7 @@ import { AuthService } from "../../../services/auth.service";
 import { AgencyService } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
+import { ConfirmDialogService } from "../../../services/confirm-dialog.service";
 import { RegisterUserData } from "../../../models/user.model";
 import { Agency } from "../../../models/agency.model";
 import { Collection, CollectionStatus } from "../../../models/collection.model";
@@ -695,6 +696,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     private adminService: Admin,
     private clientService: ClientService,
     private notificationService: NotificationService,
+    private confirmDialog: ConfirmDialogService,
     private sharedService: SharedService,
     private router: Router,
     private cd: ChangeDetectorRef,
@@ -2265,46 +2267,32 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
 
-  // ── Dialog de confirmation suppression communication ─────
-  // Même pattern que showDeleteDialog/userToDelete/confirmDeleteUser() ci-dessus
-  // (dialog custom, pas le confirm() natif du navigateur — cohérent avec le
-  // reste de l'app).
-  showDeleteCommunicationDialog = false;
-  communicationToDelete: Communication | null = null;
-  isDeletingCommunication = false;
-
   /**
-   * Ouvre le dialog de confirmation. Uniquement pour les vraies communications
-   * envoyées (préfixe `communication-`, voir loadCommunications()) — jamais
-   * proposée pour un signalement/alerte planning, qui a son propre cycle de
-   * vie ailleurs dans l'app.
-   */
-  deleteCommunication(comm: Communication): void {
-    this.communicationToDelete = comm;
-    this.showDeleteCommunicationDialog = true;
-  }
-
-  /**
+   * Uniquement pour les vraies communications envoyées (préfixe `communication-`,
+   * voir loadCommunications()) — jamais proposée pour un signalement/alerte
+   * planning, qui a son propre cycle de vie ailleurs dans l'app.
    * Suppression complète (décision produit validée) : disparaît aussi de la
    * cloche/l'historique des destinataires qui l'avaient déjà reçue — pas un
    * simple masquage côté admin.
    */
-  confirmDeleteCommunication(): void {
-    if (!this.communicationToDelete) return;
-    const comm = this.communicationToDelete;
+  async deleteCommunication(comm: Communication): Promise<void> {
+    const ok = await this.confirmDialog.confirm({
+      title: 'Supprimer cette communication ?',
+      message: `Voulez-vous vraiment supprimer "${comm.title}" ? Cette action est définitive et irréversible.`,
+      detail: "Elle disparaîtra aussi de l'historique des destinataires qui l'ont déjà reçue.",
+      variant: 'danger',
+      confirmLabel: 'Supprimer définitivement',
+    });
+    if (!ok) return;
+
     const broadcastId = comm.id.replace("communication-", "");
-    this.isDeletingCommunication = true;
     this.adminService.deleteCommunication$(broadcastId).subscribe({
       next: () => {
         this.communications = this.communications.filter((c) => c.id !== comm.id);
         this.notificationService.showSuccess("Supprimée", "Communication supprimée avec succès");
-        this.showDeleteCommunicationDialog = false;
-        this.communicationToDelete = null;
-        this.isDeletingCommunication = false;
       },
       error: () => {
         this.notificationService.showError("Erreur", "La communication n'a pas pu être supprimée.");
-        this.isDeletingCommunication = false;
       },
     });
   }
@@ -3011,37 +2999,24 @@ export class AdminDashboard implements OnInit, OnDestroy {
     return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   }
 
-  // ── Dialog de confirmation suppression ──────────────────
-  showDeleteDialog    = false;
-  userToDelete: { id: string; name: string; role: string; color: string; initials: string } | null = null;
-  isDeletingUser      = false;
+  async openDeleteDialog(userId: string, displayName: string, role: string): Promise<void> {
+    const ok = await this.confirmDialog.confirm({
+      title: 'Supprimer ce compte ?',
+      message: `Voulez-vous vraiment supprimer le compte de ${displayName} (${this.getUserRole(role)}) ? Cette action est définitive et irréversible.`,
+      detail: 'Toutes les données associées à ce compte seront perdues. Les collectes existantes ne seront pas affectées.',
+      variant: 'danger',
+      confirmLabel: 'Supprimer définitivement',
+    });
+    if (!ok) return;
 
-  openDeleteDialog(userId: string, displayName: string, role: string): void {
-    this.userToDelete = {
-      id: userId,
-      name: displayName,
-      role: this.getUserRole(role),
-      color: this.getRandomColor({ firstName: displayName }),
-      initials: this.getInitials(displayName),
-    };
-    this.showDeleteDialog = true;
-  }
-
-  confirmDeleteUser(): void {
-    if (!this.userToDelete) return;
-    this.isDeletingUser = true;
-    this.adminService.deleteUser(this.userToDelete.id).subscribe({
+    this.adminService.deleteUser(userId).subscribe({
       next: () => {
-        this.notificationService.showSuccess('Supprimé', `Le compte de "${this.userToDelete!.name}" a été supprimé.`);
-        this.showDeleteDialog = false;
-        this.userToDelete = null;
-        this.isDeletingUser = false;
+        this.notificationService.showSuccess('Supprimé', `Le compte de "${displayName}" a été supprimé.`);
         this.visible1 = false;
         this.showAdminUsers(this.usersFilterParams);
       },
       error: (err) => {
         this.notificationService.showError('Erreur', err.error?.message || 'Impossible de supprimer cet utilisateur.');
-        this.isDeletingUser = false;
       }
     });
   }
@@ -3685,9 +3660,15 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
 
-  deleteAgency(id: string) {
+  async deleteAgency(id: string) {
     if (this.agencyMutationEnCours.has(id)) return;
-    if (!confirm("Confirmer la suppression de cette agence ?")) return;
+    const ok = await this.confirmDialog.confirm({
+      title: "Supprimer cette agence ?",
+      message: "Confirmer la suppression de cette agence ?",
+      variant: "danger",
+      confirmLabel: "Supprimer",
+    });
+    if (!ok) return;
     this.agencyMutationEnCours.add(id);
     this.agencyService.deleteAgency(id).subscribe({
       next: (response: any) => {

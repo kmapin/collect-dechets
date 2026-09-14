@@ -7,6 +7,7 @@ import { NotificationService } from '../../services/notification.service';
 import { Breadcrumb, BreadcrumbItem } from '../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../shared/notification-route.util';
+import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 
 interface QuartierRow {
   id: string;
@@ -70,6 +71,7 @@ export class QuartiersManagementComponent implements OnInit {
   constructor(
     private readonly territoryService: TerritoryHttpService,
     private readonly notificationService: NotificationService,
+    private readonly confirmDialog: ConfirmDialogService,
   ) {}
 
   ngOnInit(): void {
@@ -222,9 +224,15 @@ export class QuartiersManagementComponent implements OnInit {
   }
 
   isDeleting = false;
-  supprimer(q: QuartierRow): void {
+  async supprimer(q: QuartierRow): Promise<void> {
     if (this.isDeleting) return;
-    if (!confirm(`Supprimer le quartier "${q.name}" ? Cette action est irréversible.`)) return;
+    const ok = await this.confirmDialog.confirm({
+      title: `Supprimer le quartier "${q.name}" ?`,
+      message: `Supprimer le quartier "${q.name}" ? Cette action est irréversible.`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+    });
+    if (!ok) return;
     this.isDeleting = true;
     this.territoryService.deleteNeighborhood(q.id).subscribe({
       next: () => {

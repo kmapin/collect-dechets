@@ -21,6 +21,7 @@ import { formatFrDate, formatFrDateTime } from '../../../shared/format.util';
 import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 interface Incident {
   id: string; severity: 'critical' | 'warning' | 'info';
   title: string; description: string; reporter: string;
@@ -71,6 +72,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   private msg          = inject(MessageService);
   private agencySvc    = inject(AgencyService);
   private auth         = inject(AuthService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   private leafletMap!: L.Map;
 
@@ -84,11 +86,6 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   isLoading     = signal(true);
   notFound      = signal(false);
   activeSection = signal('info');
-  showCancelDlg   = signal(false);
-  showStartDlg    = signal(false);
-  showCompleteDlg = signal(false);
-  showDupDlg      = signal(false);
-  showDeleteDlg   = signal(false);
   isActioning   = signal(false);
   planning      = signal<Planning | null>(null);
 
@@ -475,10 +472,17 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  startPlanning(): void {
-    this.showStartDlg.set(false);
+  async startPlanning(): Promise<void> {
     const p = this.planning();
     if (!p || this.isActioning()) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Démarrer ce planning ?',
+      message: `Le planning ${p.reference} – ${p.libelle} sera passé en cours. Les équipes seront notifiées.`,
+      icon: 'play_circle',
+      variant: 'primary',
+      confirmLabel: 'Confirmer le démarrage',
+    });
+    if (!ok) return;
     this.isActioning.set(true);
     this.svc.startPlanning(p.id).subscribe({
       next: (res) => {
@@ -494,10 +498,17 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  completePlanning(): void {
-    this.showCompleteDlg.set(false);
+  async completePlanning(): Promise<void> {
     const p = this.planning();
     if (!p || this.isActioning()) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Terminer ce planning ?',
+      message: `Le planning ${p.reference} – ${p.libelle} sera marqué comme terminé. Cette action est irréversible.`,
+      icon: 'task_alt',
+      variant: 'success',
+      confirmLabel: 'Confirmer la fin',
+    });
+    if (!ok) return;
     this.isActioning.set(true);
     this.svc.completePlanning(p.id).subscribe({
       next: (res) => {
@@ -513,10 +524,17 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  cancelPlanning(): void {
-    this.showCancelDlg.set(false);
+  async cancelPlanning(): Promise<void> {
     const p = this.planning();
     if (!p || this.isActioning()) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Annuler ce planning ?',
+      message: `Cette action est irréversible. Le planning ${p.reference} sera marqué comme annulé.`,
+      icon: 'cancel',
+      variant: 'danger',
+      confirmLabel: "Confirmer l'annulation",
+    });
+    if (!ok) return;
     this.isActioning.set(true);
     this.svc.cancelPlanning(p.id).subscribe({
       next: (res) => {
@@ -532,10 +550,17 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
-  deletePlanning(): void {
+  async deletePlanning(): Promise<void> {
     const p = this.planning();
     if (!p || this.isActioning()) return;
-    this.showDeleteDlg.set(false);
+    const ok = await this.confirmDialog.confirm({
+      title: 'Supprimer ce planning ?',
+      message: `Le planning ${p.reference} sera définitivement supprimé. Cette action est irréversible.`,
+      icon: 'delete_forever',
+      variant: 'danger',
+      confirmLabel: 'Supprimer définitivement',
+    });
+    if (!ok) return;
     this.isActioning.set(true);
     this.svc.deletePlanning(p.id).subscribe({
       next: () => {
@@ -555,10 +580,17 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     this.router.navigate(['/planning/create'], { queryParams: { edit: p.id } });
   }
 
-  duplicatePlanning(): void {
-    this.showDupDlg.set(false);
+  async duplicatePlanning(): Promise<void> {
     const p = this.planning();
     if (!p) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Dupliquer ce planning ?',
+      message: `Une copie de ${p.libelle} sera créée pour la semaine prochaine (+7 jours).`,
+      icon: 'content_copy',
+      variant: 'primary',
+      confirmLabel: 'Dupliquer',
+    });
+    if (!ok) return;
     this.router.navigate(['/planning/create'], { queryParams: { duplicate: p.id } });
   }
 
