@@ -731,8 +731,8 @@
                             </span>
                           </td>
                           <td class="cell-email">{{ employee.email }}</td>
-                          <td>{{ employee.phone || "â€”" }}</td>
-                          <!-- <td>{{ employee.hiredAt ? (employee.hiredAt | date:'dd/MM/yyyy') : 'â€”' }}</td> -->
+                          <td>{{ employee.phone || "—" }}</td>
+                          <!-- <td>{{ employee.hiredAt ? (employee.hiredAt | date:'dd/MM/yyyy') : '—' }}</td> -->
                           <td class="col-actions">
                             <div class="table-actions">
                               <button class="action-btn edit" (click)="editEmployee(employee)" title="Modifier">
@@ -833,7 +833,7 @@
                 <div class="pagination-left">
                   <span class="pagination-details">
                     @if (totalEmployees > 0) {
-                      {{ (currentPage - 1) * itemsPerPage + 1 }}â€“{{ getEndItemNumber() }} sur
+                      {{ (currentPage - 1) * itemsPerPage + 1 }}–{{ getEndItemNumber() }} sur
                       <strong>{{ totalEmployees }}</strong> Employe
                     }
                   </span>
