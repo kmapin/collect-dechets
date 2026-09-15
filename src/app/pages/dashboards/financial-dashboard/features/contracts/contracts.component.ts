@@ -205,14 +205,15 @@ export class ContractsComponent {
 
   async onResilierContrat(contrat: Contrat): Promise<void> {
     if (this.contratMutationEnCours()) return;
-    const ok = await this.confirmDialog.confirm({
+    const raisonSaisie = await this.confirmDialog.confirmWithInput({
       title: 'Résilier ce contrat ?',
-      message: 'Êtes-vous sûr de vouloir résilier ce contrat ?',
+      message: 'Êtes-vous sûr de vouloir résilier ce contrat ? Le motif est conservé sur le contrat.',
       variant: 'danger',
       confirmLabel: 'Résilier',
+      inputField: { placeholder: 'Motif de résiliation (optionnel)' },
     });
-    if (!ok) return;
-    const raison = prompt('Motif de résiliation (optionnel) :') || undefined;
+    if (raisonSaisie === null) return;
+    const raison = raisonSaisie || undefined;
     this.contratMutationEnCours.set(contrat._id);
     this.contratService.resilierContrat$(contrat._id, raison)
       .pipe(finalize(() => this.contratMutationEnCours.set(null)))

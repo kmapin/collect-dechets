@@ -96,6 +96,24 @@
   margin-top: 1px;
 }
 
+.cfd-field {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--medium-gray, #e2e8f0);
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #0f172a;
+  text-align: left;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.cfd-field:focus {
+  outline: none;
+  border-color: var(--primary-color, #3b82f6);
+}
+
 .cfd-actions {
   display: flex;
   gap: 10px;
@@ -116,6 +134,11 @@
   cursor: pointer;
   border: 1px solid transparent;
   transition: all 0.15s ease;
+}
+
+.cfd-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .cfd-btn--ghost {

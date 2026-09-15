@@ -12,11 +12,30 @@
         <span>{{ request.detail }}</span>
       </div>
     }
+    @if (request.inputField) {
+      @if (request.inputField.multiline) {
+        <textarea
+          class="cfd-field"
+          rows="3"
+          [placeholder]="request.inputField.placeholder ?? ''"
+          [(ngModel)]="inputValue"
+          autofocus
+        ></textarea>
+      } @else {
+        <input
+          type="text"
+          class="cfd-field"
+          [placeholder]="request.inputField.placeholder ?? ''"
+          [(ngModel)]="inputValue"
+          autofocus
+        />
+      }
+    }
     <div class="cfd-actions">
       <button type="button" class="cfd-btn cfd-btn--ghost" (click)="onCancelClick()">
         {{ request.cancelLabel }}
       </button>
-      <button type="button" class="cfd-btn" [class]="'cfd-btn--' + request.variant" (click)="onConfirmClick()">
+      <button type="button" class="cfd-btn" [class]="'cfd-btn--' + request.variant" [disabled]="!canConfirm" (click)="onConfirmClick()">
         {{ request.confirmLabel }}
       </button>
     </div>

@@ -3093,9 +3093,18 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     });
   }
 
-  rejectDemandeCollecte(demande: DemandeCollecte): void {
+  async rejectDemandeCollecte(demande: DemandeCollecte): Promise<void> {
     if (this.processingDemandeId) return;
-    const rejectionReason = window.prompt("Motif du refus (optionnel) :") || '';
+    // Motif optionnel côté backend (voir services/demandeCollecte.js::rejectDemande,
+    // `rejectionReason || ''`) — le champ reste confirmable vide.
+    const rejectionReason = await this.confirmDialog.confirmWithInput({
+      title: 'Refuser cette demande ?',
+      message: 'Vous pouvez indiquer un motif de refus, il sera communiqué au client.',
+      variant: 'danger',
+      confirmLabel: 'Refuser',
+      inputField: { placeholder: 'Motif du refus (optionnel)' },
+    });
+    if (rejectionReason === null) return;
     this.processingDemandeId = demande._id;
     this.demandeCollecteService.reject(demande._id, rejectionReason).subscribe({
       next: () => {
