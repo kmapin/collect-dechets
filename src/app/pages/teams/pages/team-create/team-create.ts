@@ -18,6 +18,7 @@ import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadc
 import { AuthService } from '../../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
 import { PhoneInputDirective } from '../../../../shared/phone-input.directive';
+import { normalizePhone } from '../../../../shared/phone.util';
 import {
   vehicleTypeIcon, vehicleStatusColor, vehicleStatusLabel,
 } from '../../models/team-labels';
@@ -340,7 +341,7 @@ export class TeamCreate {
       id:           m._id && !m._id.startsWith('LOCAL-') && !m._id.startsWith('NEW-')
                       ? m._id : `LOCAL-${Date.now()}-${i}`,
       name:         m.name,
-      phone:        m.phone || '—',
+      phone:        m.phone ? normalizePhone(m.phone) : '—',
       role:         m.role,
       availability: 'disponible' as const,
       joinedAt:     new Date().toISOString().split('T')[0],
@@ -352,7 +353,7 @@ export class TeamCreate {
       color:       raw.color ?? '#3b82f6',
       description: raw.description ?? '',
       supervisor:  raw.supervisor ?? '',
-      phone:       raw.phone ?? '',
+      phone:       normalizePhone(raw.phone),
       members,
       zones,
       vehicle: vehicle

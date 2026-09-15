@@ -34,6 +34,7 @@ import {
 } from "../../../models/withdrawal-request.model";
 import { ExportClientService } from "../financial-dashboard/data-access/export/export-client.service";
 import { PhoneInputDirective } from "../../../shared/phone-input.directive";
+import { normalizePhone } from "../../../shared/phone.util";
 interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
@@ -3043,7 +3044,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     const updates = {
       firstName: this.selectedUser.firstName?.trim(),
       lastName: this.selectedUser.lastName?.trim(),
-      phone: this.selectedUser.phone?.trim(),
+      phone: normalizePhone(this.selectedUser.phone),
       address: {
         ...(this.selectedUser.address ?? {}),
         street: this.selectedUser.address?.street?.trim() || "",
@@ -3875,7 +3876,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       firstName:    d.firstName,
       lastName:     d.lastName,
       email:        d.email,
-      phone:        d.phone,
+      phone:        normalizePhone(d.phone),
       password:     d.password,
       role:         'municipality',
       acceptTerms:  d.acceptTerms,

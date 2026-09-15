@@ -24,6 +24,7 @@ import { NotificationService } from '../../../../../services/notification.servic
 import { AuthService } from '../../../../../services/auth.service';
 import { UserRole } from '../../../../../models/user.model';
 import { PhoneInputDirective } from '../../../../../shared/phone-input.directive';
+import { normalizePhone } from '../../../../../shared/phone.util';
 
 type Etape = 'formulaire' | 'confirmation';
 
@@ -306,7 +307,7 @@ export class AgentPaymentComponent {
     this.progressionEnvoi.set({ fait: 0, total: ids.length });
 
     this.executerEnSequence(ids, (idAgent, index) => {
-      const numero = this.numerosPersonnalises()[idAgent]?.trim();
+      const numero = normalizePhone(this.numerosPersonnalises()[idAgent]);
       return this.agentData.payerAgent({ idAgent, montant, ...(numero ? { phoneNumber: numero } : {}) }).pipe(
         map(paiement => {
           this.progressionEnvoi.set({ fait: index + 1, total: ids.length });

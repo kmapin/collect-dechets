@@ -6,6 +6,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Agency, Municipality } from '../models/agency.model';
 import { Webstockets } from '../core/services/webstockets';
+import { normalizePhone } from '../shared/phone.util';
 
 @Injectable({
   providedIn: 'root'
@@ -483,7 +484,7 @@ export class AuthService {
       email: userData.email,
       password: userData.password,
       role: userData.role,
-      phone: userData.phone,
+      phone: normalizePhone(userData.phone),
       address: {
         street: userData.address.street || '',
         arrondissement: userData.address.arrondissement,

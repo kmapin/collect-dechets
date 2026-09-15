@@ -34,6 +34,8 @@ export class Home  implements OnInit {
   isSearching = false;
   filteredAgencies: Agency[] = [];
   filteredAgenciesOnMap : Agency[] = [];
+  // Suivi des markers d'agence déjà posés sur la carte
+  private agencyMarkersOnMap: L.Marker[] = [];
   randomStarsList: number[] = [];
   sortBy = 'name';
   maxPrice: string = '';
@@ -180,6 +182,27 @@ export class Home  implements OnInit {
   }
 
   assignAgenciesCoordinatesAndDisplayOnMap(): void {
+    if (!this.map) return;
+    // Retire les markers d'un appel précédent avant d'en reposer — évite les
+    // doublons si les données arrivent après un premier passage (voir l'appel
+    // depuis applyFilters() ci-dessous, qui couvre le cas où la recherche se
+    // termine APRÈS l'ouverture de la carte, alors que initMap() n'appelle
+    // cette méthode qu'une fois, à l'ouverture).
+    this.agencyMarkersOnMap.forEach((m) => this.map.removeLayer(m));
+    this.agencyMarkersOnMap = [];
+    // Sans icône explicite, L.marker() retombe sur L.Icon.Default, qui résout
+    // ses images via un chemin relatif cassé une fois bundlé par Angular/esbuild
+    // (404 silencieux — le marker existe mais reste invisible, seul son alt
+    // "Marker" apparaît si le navigateur affiche le texte de l'image manquante).
+    // Même remède que redIcon plus bas dans ce fichier : une URL CDN explicite.
+    const blueIcon = L.icon({
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
     // Exemple de coordonnées dans Ouagadougou (latitude ~12.35 à 12.40, longitude ~-1.55 à -1.48)
     this.filteredAgenciesOnMap.forEach((agency, i) => {
       // Génère des coordonnées aléatoires dans la zone de Ouagadougou
@@ -192,8 +215,9 @@ export class Home  implements OnInit {
       `;
       // agency.coordinates = { lat, lng };
       // Ajoute un marker sur la carte
-      if (this.map) {
-        const marker = L.marker([lat, lng]).addTo(this.map);
+      {
+        const marker = L.marker([lat, lng], { icon: blueIcon }).addTo(this.map);
+        this.agencyMarkersOnMap.push(marker);
         // Ajoute un bouton avec un id unique basé sur l'index ou l'id de l'agence
         const popupContent = `
           <b>${agency.name}</b><br>
@@ -468,7 +492,15 @@ applyFilters(): void {
     next: (response: any) => {
         console.log("responses filtrées :", response);
         this.filteredAgenciesOnMap = (response.data || []).map((a: any) => this.mapApiAgency(a));
-        
+        // Si la carte est déjà ouverte (ex. l'utilisateur a cliqué "Proximités"
+        // avant la fin de cette recherche), (re)poser les markers avec les
+        // données à jour — initMap() ne les pose lui-même qu'une fois, à
+        // l'ouverture, donc sans ça une recherche terminée après coup ne
+        // les afficherait jamais.
+        if (this.map) {
+          this.assignAgenciesCoordinatesAndDisplayOnMap();
+        }
+
         this.filteredAgencies =this.agencyService.getRandomAgencies((response.data || []).map((a: any) => this.mapApiAgency(a)));
         console.log("Agences filtrées :", this.filteredAgencies);
         this.loading = false;

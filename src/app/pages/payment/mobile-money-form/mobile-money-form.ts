@@ -12,6 +12,7 @@ import { Router } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OtpInputComponent } from '../otp-input/otp-input';
 import { PhoneInputDirective } from '../../../shared/phone-input.directive';
+import { normalizePhone } from '../../../shared/phone.util';
 
 interface OperatorInfo {
   id: number;
@@ -162,8 +163,8 @@ export class MobileMoneyFormComponent implements OnInit {
       
       const request: PaymentRequest = {
         operator: this.paymentForm.value.operator,
-        customerMsisdn: this.paymentForm.value.phoneNumber,
-        phoneNumber: this.paymentForm.value.phoneNumber,
+        customerMsisdn: normalizePhone(this.paymentForm.value.phoneNumber),
+        phoneNumber: normalizePhone(this.paymentForm.value.phoneNumber),
         amount: this.paymentForm.value.amount,
         pricingId : this.tarifResponse?.tarifId,
         walletId: this.tarifResponse?.agencyId,

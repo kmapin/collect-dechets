@@ -20,6 +20,7 @@ import {
   missionStatusColor, missionStatusLabel,
 } from '../../models/team-labels';
 import { formatFrDate } from '../../../../shared/format.util';
+import { normalizePhone } from '../../../../shared/phone.util';
 import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
@@ -175,7 +176,7 @@ export class TeamDetail implements OnInit, OnDestroy {
     const members: TeamMember[] = (data.members ?? []).map((m, i) => ({
       id:           m._id && !m._id.startsWith('LOCAL-') ? m._id : t.members[i]?.id ?? `LOCAL-${Date.now()}-${i}`,
       name:         m.name,
-      phone:        m.phone,
+      phone:        normalizePhone(m.phone),
       role:         m.role,
       availability: 'disponible' as const,
       joinedAt:     t.members[i]?.joinedAt ?? new Date().toISOString().split('T')[0],
@@ -187,7 +188,7 @@ export class TeamDetail implements OnInit, OnDestroy {
       status:      data.status as TeamStatus,
       description: data.description,
       supervisor:  data.supervisor,
-      phone:       data.phone,
+      phone:       normalizePhone(data.phone),
       members,
       zones,
       vehicle: vehicle

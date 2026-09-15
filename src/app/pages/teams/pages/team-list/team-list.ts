@@ -21,6 +21,7 @@ import { TeamDetailModal } from '../../components/team-detail-modal/team-detail-
 import { Team, TeamFormData, TeamStatus, TeamMember } from '../../models/team.model';
 import { teamStatusLabel, teamStatusColor, vehicleStatusColor } from '../../models/team-labels';
 import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planning-teams-tabs';
+import { normalizePhone } from '../../../../shared/phone.util';
 import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
@@ -197,7 +198,7 @@ export class TeamList implements OnInit {
     const members: TeamMember[] = (data.members ?? []).map((m, i) => ({
       id:           m._id && !m._id.startsWith('LOCAL-') ? m._id : `LOCAL-${Date.now()}-${i}`,
       name:         m.name,
-      phone:        m.phone,
+      phone:        normalizePhone(m.phone),
       role:         m.role,
       availability: 'disponible' as const,
       joinedAt:     new Date().toISOString().split('T')[0],
@@ -209,7 +210,7 @@ export class TeamList implements OnInit {
       status:      data.status as TeamStatus,
       description: data.description,
       supervisor:  data.supervisor,
-      phone:       data.phone,
+      phone:       normalizePhone(data.phone),
       members,
       zones,
       vehicle: vehicle

@@ -85,6 +85,7 @@ import { ToastModule } from "primeng/toast";
 import { RippleModule } from "primeng/ripple";
 import { Signalement } from "../../shared_pages/signalement/signalement";
 import { PhoneInputDirective } from "../../../shared/phone-input.directive";
+import { normalizePhone } from "../../../shared/phone.util";
 import { MultiSelectModule } from 'primeng/multiselect';
 interface Client {
   id: string;
@@ -3943,7 +3944,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
         lastName: formValue.lastName,
         email: formValue.email,
         password: formValue.password,
-        phone: formValue.phone,
+        phone: normalizePhone(formValue.phone),
         role: formValue.role as UserRole,
         address: formValue.address as UserAddress,
         agencyId: this.currentUser.agencyId,
@@ -4041,7 +4042,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       firstName: formValue.firstName,
       lastName: formValue.lastName,
       email: formValue.email,
-      phone: formValue.phone,
+      phone: normalizePhone(formValue.phone),
       role: formValue.role as UserRole,
       address: formValue.address as UserAddress,
       agencyId: this.currentUser?.agencyId,
