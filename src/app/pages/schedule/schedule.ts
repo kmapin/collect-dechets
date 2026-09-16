@@ -1,6 +1,10 @@
 import { Component } from '@angular/core';
 
-
+// Phase 10 (audit multi-lieux) — page non fonctionnelle : scheduleItems est une liste
+// fictive codée en dur, identique pour tout visiteur (aucun appel API, aucun endpoint
+// public de calendrier de collecte n'existe côté backend). Le lien "Calendrier collecte" a
+// été retiré du footer public (footer.html) pour ne plus exposer ce contenu fictif ; la
+// route /schedule reste techniquement accessible par URL directe.
 @Component({
   selector: 'app-schedule',
   imports: [],

@@ -253,6 +253,31 @@
       font-size: 14px;
     }
 
+    .lieu-choice-coverage {
+      align-self: flex-start;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .lieu-choice-coverage--success {
+      background: rgba(76, 175, 80, 0.15);
+      color: #2e7d32;
+    }
+
+    .lieu-choice-coverage--danger {
+      background: rgba(244, 67, 54, 0.15);
+      color: #c62828;
+    }
+
+    .lieu-choice-coverage--pending {
+      background: rgba(158, 158, 158, 0.15);
+      color: #616161;
+    }
+
     .lieu-choice-arrow {
       flex-shrink: 0;
       color: var(--text-secondary);

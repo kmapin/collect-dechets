@@ -6,7 +6,7 @@ export interface Collection {
   scheduledDate: Date;
   collectedDate?: Date;
   status: CollectionStatus;
-  address: Address;
+  address: CollectionAddress;
   wasteTypes: WasteType[];
   notes?: string;
   date?: Date;
@@ -101,7 +101,12 @@ export interface WasteType {
   rejectedItems: string[];
 }
 
-export interface Address {
+// Phase 10 (harmonisation) — renommée depuis `Address` : collision de nom avec
+// agency.model.ts::Address (deux types réellement différents). Forme inchangée
+// (pas d'arrondissement/secteur — une Collecte n'a historiquement jamais eu
+// besoin de ces deux champs, un besoin réellement différent, pas une simple
+// duplication à fusionner avec l'interface Address commune).
+export interface CollectionAddress {
   street: string;
   doorNumber: string;
   doorColor?: string;

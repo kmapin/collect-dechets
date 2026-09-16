@@ -541,6 +541,22 @@ export class AgencyDetails implements OnInit {
     return AgencyDetails.LIEU_TYPE_ICONS[lieu.type] ?? 'place';
   }
 
+  /** Même mapping que service-locations.ts::coverageLabel/coverageClass, dupliqué
+   * ici pour la même raison que lieuTypeIcon ci-dessus. Affiché au choix du lieu
+   * (Phase 4 + 5) pour que le client sache si la collecte sera effectivement
+   * assurée à cette adresse avant même de payer. */
+  coverageLabel(status: ServiceLocation['coverageStatus']): string {
+    if (status === 'covered') return 'Couvert';
+    if (status === 'not_covered') return 'Non couvert';
+    return 'Vérification en cours';
+  }
+
+  coverageClass(status: ServiceLocation['coverageStatus']): string {
+    if (status === 'covered') return 'lieu-choice-coverage--success';
+    if (status === 'not_covered') return 'lieu-choice-coverage--danger';
+    return 'lieu-choice-coverage--pending';
+  }
+
   /** Même normalisation que login.ts/register.ts::formatPhone — l'input reste en
    * théorie déjà "national uniquement" grâce à appPhoneInput (indicatif affiché à
    * part), mais reste défensif si un numéro est collé avec son indicatif. */

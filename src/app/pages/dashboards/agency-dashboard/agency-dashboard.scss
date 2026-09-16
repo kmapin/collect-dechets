@@ -6321,6 +6321,26 @@ select[disabled]:focus {
   text-transform: uppercase;
 }
 
+// ─── Lieux de service du client (drawer détails, Phase 10) ────────────────────
+.client-locations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.location-primary-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: rgba(76, 175, 80, 0.15);
+  color: #2e7d32;
+}
+
 // ─── Role badge ───────────────────────────────────────────────────────────────
 .role-badge {
   display: inline-block;

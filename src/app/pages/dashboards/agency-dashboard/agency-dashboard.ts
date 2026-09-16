@@ -14,6 +14,8 @@ import { Webstockets, SocketNotification } from "../../../core/services/webstock
 import { ConversationService, RealtimeMessage } from "../../../services/conversation.service";
 import { isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
 import { DemandeCollecteService, DemandeCollecte } from "../../../services/demande-collecte.service";
+import { ServiceLocationService } from "../../../services/service-location.service";
+import { ServiceLocation } from "../../../models/service-location.model";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import {
@@ -220,8 +222,8 @@ type TabId =
   | "demandes"
   | "messages"
   | "vehicles"
-  | "avis";
-// | "clients"
+  | "avis"
+  | "clients";
 interface Vehicle {
   _id?: string;
   plate: string;
@@ -561,7 +563,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     { id: "employees", label: "Employés", icon: "people", badge: null },
     { id: "zones", label: "Zones", icon: "map", badge: null },
     { id: "schedules", label: "Plannings", icon: "schedule", badge: null },
-    // { id: "clients", label: "Clients", icon: "person", badge: null },
+    { id: "clients", label: "Clients", icon: "person", badge: null },
     { id: "reports", label: "Signalements", icon: "report_problem", badge: 0 },
     { id: "avis", label: "Avis clients", icon: "star", badge: null },
     { id: "demandes", label: "Demandes express", icon: "local_shipping", badge: 0 },
@@ -834,6 +836,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     private websocketService: Webstockets,
     private conversationService: ConversationService,
     private demandeCollecteService: DemandeCollecteService,
+    private serviceLocationService: ServiceLocationService,
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split("T")[0];
@@ -3825,20 +3828,37 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   }
   selectedClient: any = null;
   showClientDetailsModal: boolean = false;
+  // Phase 10 (réactivation du drawer, enrichi des lieux de service du client — multi-lieux).
+  selectedClientLocations: ServiceLocation[] = [];
+  isLoadingSelectedClientLocations = false;
+
   viewClientDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",
       "Récupération des détails du client...",
     );
 
+    this.selectedClientLocations = [];
     this.adminService.getUserById(clientId).subscribe({
       next: (client: any) => {
         this.selectedClient = client?.user;
         console.log("voici les details du client:", client);
         this.showClientDetailsModal = true;
+
+        this.isLoadingSelectedClientLocations = true;
+        this.serviceLocationService.listByClient$(clientId).subscribe({
+          next: ({ data }) => {
+            this.selectedClientLocations = data;
+            this.isLoadingSelectedClientLocations = false;
+          },
+          error: () => {
+            this.selectedClientLocations = [];
+            this.isLoadingSelectedClientLocations = false;
+          },
+        });
       },
       error: (err: any) => {
-       
+
         this.notificationService.showInfo(
           "Info",
           "Impossible de récupérer les détails du client.",
@@ -5060,6 +5080,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   closeClientDetailsModal(): void {
     this.showClientDetailsModal = false;
     this.selectedClient = null;
+    this.selectedClientLocations = [];
   }
   editEmployee(employee: any): void {
     console.log("Édition de l'employé :", employee);

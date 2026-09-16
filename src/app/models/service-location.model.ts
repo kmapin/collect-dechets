@@ -1,3 +1,5 @@
+import { Address } from './address.model';
+
 export type ServiceLocationType =
   | 'maison' | 'boutique' | 'bureau' | 'restaurant' | 'entreprise'
   | 'entrepot' | 'chantier' | 'evenement' | 'autre';
@@ -5,21 +7,9 @@ export type ServiceLocationType =
 export type CoverageStatus = 'covered' | 'pending' | 'not_covered';
 export type ServiceLocationStatus = 'active' | 'inactive' | 'deleted';
 
-// Interface autonome plutôt qu'importée depuis user.model.ts : trois formes
-// d'adresse incompatibles (UserAddress/ClientAddress/Address) y coexistent
-// déjà sans type canonique — ne pas coupler ce nouveau domaine à cet état.
-export interface ServiceLocationAddress {
-  street?: string;
-  arrondissement: string;
-  sector: string;
-  doorNumber?: string;
-  doorColor?: string;
-  neighborhood: string;
-  city: string;
-  postalCode?: string;
-  latitude?: number;
-  longitude?: number;
-}
+// Phase 10 (harmonisation) — alias de l'interface Address commune (voir address.model.ts),
+// dont la forme reprend exactement celle-ci (ServiceLocationAddress en était la base).
+export type ServiceLocationAddress = Address;
 
 export interface ServiceLocation {
   _id: string;

@@ -1,3 +1,5 @@
+import { Address } from './address.model';
+
 export interface User {
   _id?: string;
   userId?: string;
@@ -13,7 +15,6 @@ export interface User {
   acceptTerms: boolean;
   receiveOffers: boolean;
   agencyId?: string;
-  qrToken?: string;
   qrCode?: string;
   nbGestionnaires?: number;
   isOwnerAgency?: boolean;
@@ -32,31 +33,10 @@ export interface User {
   droitsFinance?: boolean;
 }
 
-export interface UserAddress {
-  street: string;
-  arrondissement: string;
-  sector: string;
-  doorNumber: string;
-  doorColor: string;
-  neighborhood: string;
-  city: string;
-  postalCode: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-export interface ClientAddress {
-  street: string;
-  doorNumber: string;
-  doorColor?: string;
-  neighborhood: string;
-  city: string;
-  postalCode: string;
-  latitude?: number;
-  longitude?: number;
-  sector: string;
-  arrondissement?: string;
-}
+// Phase 10 (harmonisation) — alias plutôt qu'interface dupliquée ; voir address.model.ts.
+// ClientAddress (interface dupliquée, jamais utilisée nulle part dans le repo) a été
+// supprimée à cette occasion, confirmée morte par lecture directe.
+export type UserAddress = Address;
 
 export interface UserAgency {
   _id: string;
@@ -106,17 +86,6 @@ export interface CollectorUser extends User {
 export interface MunicipalityUser extends User {
   municipalityId: string;
   permissions: string[];
-}
-
-export interface Address {
-  street: string;
-  doorNumber: string;
-  doorColor?: string;
-  neighborhood: string;
-  city: string;
-  postalCode: string;
-  latitude?: number;
-  longitude?: number;
 }
 
 export interface PaymentMethod {

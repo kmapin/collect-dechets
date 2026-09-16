@@ -65,6 +65,11 @@
                 <button type="button" class="sl-action-btn" (click)="ouvrirEdition(loc)" title="Modifier">
                   <i class="material-icons">edit</i> Modifier
                 </button>
+                @if (loc.status === 'active') {
+                  <button type="button" class="sl-action-btn" (click)="voirQrCode(loc)" title="QR Code">
+                    <i class="material-icons">qr_code_2</i> QR Code
+                  </button>
+                }
                 @if (loc.status === 'active' && !loc.isPrimary) {
                   <button type="button" class="sl-action-btn sl-action-btn--danger" [disabled]="isDeleting" (click)="desactiver(loc)" title="Désactiver">
                     <i class="material-icons">block</i> Désactiver
@@ -282,6 +287,43 @@
               <i class="material-icons">edit</i>
               Modifier
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Drawer QR Code du lieu (Phase 9) -->
+  @if (showQrCode && qrCodeLocation) {
+    <div class="drawer-overlay" (click)="fermerQrCode()">
+      <div class="drawer-content" (click)="$event.stopPropagation()">
+        <div class="drawer-header">
+          <h3>QR Code — {{ qrCodeLocation.name }}</h3>
+          <button type="button" class="drawer-close-btn" (click)="fermerQrCode()">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          <div class="drawer-section sl-qr-section">
+            <p>À présenter au collecteur pour valider une collecte à ce lieu précis.</p>
+            @if (isLoadingQrCode) {
+              <div class="sl-loading">Génération du QR code...</div>
+            } @else if (qrCodeDataUrl) {
+              <img [src]="qrCodeDataUrl" alt="QR code du lieu" class="sl-qr-image" />
+            }
+          </div>
+        </div>
+
+        <div class="drawer-footer">
+          <div class="drawer-actions">
+            <button type="button" class="btn btn-secondary" (click)="fermerQrCode()">Fermer</button>
+            @if (qrCodeDataUrl) {
+              <a class="btn btn-primary" [href]="qrCodeDataUrl" download="qrcode-lieu.png">
+                <i class="material-icons">download</i>
+                Télécharger
+              </a>
+            }
           </div>
         </div>
       </div>

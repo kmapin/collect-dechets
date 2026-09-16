@@ -112,6 +112,12 @@ export class ServiceLocationsComponent implements OnInit {
   showDetail = false;
   detailLocation: ServiceLocation | null = null;
 
+  // Phase 9 — QR code par lieu (coexiste avec le QR compte de profile.ts).
+  showQrCode = false;
+  qrCodeLocation: ServiceLocation | null = null;
+  qrCodeDataUrl: string | null = null;
+  isLoadingQrCode = false;
+
   constructor(
     private readonly serviceLocationService: ServiceLocationService,
     private readonly territoryService: TerritoryHttpService,
@@ -357,6 +363,32 @@ export class ServiceLocationsComponent implements OnInit {
   modifierDepuisDetail(): void {
     if (!this.detailLocation) return;
     this.ouvrirEdition(this.detailLocation);
+  }
+
+  // ── QR code du lieu (Phase 9) ────────────────────────────────────────
+
+  voirQrCode(loc: ServiceLocation): void {
+    this.qrCodeLocation = loc;
+    this.qrCodeDataUrl = null;
+    this.showQrCode = true;
+    this.isLoadingQrCode = true;
+    this.serviceLocationService.getQrCode$(loc._id).subscribe({
+      next: ({ data }) => {
+        this.qrCodeDataUrl = data.qrCode;
+        this.isLoadingQrCode = false;
+      },
+      error: () => {
+        this.isLoadingQrCode = false;
+        this.notificationService.showError('Erreur', 'Impossible de générer le QR code de ce lieu.');
+        this.showQrCode = false;
+      },
+    });
+  }
+
+  fermerQrCode(): void {
+    this.showQrCode = false;
+    this.qrCodeLocation = null;
+    this.qrCodeDataUrl = null;
   }
 
   // ── Désactivation ────────────────────────────────────────────────────

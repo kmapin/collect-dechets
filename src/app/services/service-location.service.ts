@@ -39,4 +39,10 @@ export class ServiceLocationService {
   delete$(id: string): Observable<{ success: boolean; data: ServiceLocation }> {
     return this.http.delete<{ success: boolean; data: ServiceLocation }>(`${this.base}/${id}`);
   }
+
+  /** Phase 9 — QR code de ce lieu précis (coexiste avec le QR compte de profile.ts).
+   * Le token est généré côté serveur au premier appel puis réutilisé tel quel. */
+  getQrCode$(id: string): Observable<{ success: boolean; data: { qrCode: string; qrToken: string } }> {
+    return this.http.get<{ success: boolean; data: { qrCode: string; qrToken: string } }>(`${this.base}/${id}/qr-code`);
+  }
 }

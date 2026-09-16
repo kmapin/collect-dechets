@@ -1167,7 +1167,165 @@
         }
 
         <!-- Onglet Clients -->
-        <!-- Clients Actifs  -->
+        @if (activeTab === "clients") {
+          <div class="clients-tab">
+            <div class="section-header">
+              <h2>Gestion des Clients</h2>
+              <div class="section-actions">
+                <button
+                  class="btn btn-outline search-toggle-btn"
+                  (click)="toggleClientsSearch()"
+                  [class.active]="showClientsSearch"
+                  title="{{ showClientsSearch ? 'Masquer la recherche' : 'Afficher la recherche' }}"
+                >
+                  <i class="material-icons">{{ showClientsSearch ? "search_off" : "search" }}</i>
+                  {{ showClientsSearch ? "Masquer recherche" : "Rechercher" }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Barre de recherche des clients (conditionnelle) -->
+            @if (showClientsSearch) {
+              <div class="employees-search-section">
+                <div class="search-container">
+                  <div class="search-input-wrapper">
+                    <i class="material-icons search-icon">search</i>
+                    <input
+                      type="text"
+                      class="search-input"
+                      placeholder="Rechercher un client par nom, email ou téléphone..."
+                      [(ngModel)]="clientsSearch"
+                      (input)="filterClients()"
+                    />
+                    @if (clientsSearch) {
+                      <button class="clear-search-btn" (click)="clearClientSearch()" title="Effacer la recherche">
+                        <i class="material-icons">clear</i>
+                      </button>
+                    }
+                  </div>
+                </div>
+                <div class="employees-filters">
+                  <div class="filter-group">
+                    <label for="clientCityFilter">Ville :</label>
+                    <select id="clientCityFilter" class="filter-select" [(ngModel)]="clientsCityFilter" (change)="filterClients()">
+                      <option value="all">Toutes les villes</option>
+                      @for (city of getUniqueClientCities(); track city) {
+                        <option [value]="city">{{ city }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="filter-group">
+                    <label for="clientNeighborhoodFilter">Quartier :</label>
+                    <select
+                      id="clientNeighborhoodFilter"
+                      class="filter-select"
+                      [(ngModel)]="clientsNeighborhoodFilter"
+                      (change)="filterClients()"
+                    >
+                      <option value="all">Tous les quartiers</option>
+                      @for (neighborhood of getUniqueClientNeighborhoods(); track neighborhood) {
+                        <option [value]="neighborhood">{{ neighborhood }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+                <div class="search-results-info">
+                  <div class="results-summary">
+                    <span class="results-count">
+                      {{ clientsTotalItems }} client(s) trouvé(s)
+                      @if (clientsTotalPages > 1) {
+                        <span class="page-info"> — Page {{ clientsCurrentPage }} sur {{ clientsTotalPages }} </span>
+                      }
+                    </span>
+                  </div>
+                  <button class="reset-filters-btn" (click)="resetClientFilters()">
+                    <i class="material-icons">refresh</i>
+                    Réinitialiser les filtres
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- Indicateur de chargement -->
+            @if (isLoadingFilteredClients) {
+              <app-loading-spinner message="Chargement des clients..." size="medium"></app-loading-spinner>
+            }
+
+            <!-- Liste des clients -->
+            @if (!isLoadingFilteredClients) {
+              @if (filteredActiveClients?.length) {
+                <div class="employees-grid">
+                  @for (client of filteredActiveClients; track client._id) {
+                    <div class="employee-card card">
+                      <div class="employee-header">
+                        <div class="employee-info">
+                          <h4>{{ client.firstName }} {{ client.lastName }}</h4>
+                          <p class="employee-role">
+                            {{ client.historyAbonnement?.length ? "Abonné" : "Aucun abonnement" }}
+                          </p>
+                        </div>
+                        <div class="employee-avatar">
+                          <div class="rounded-circle text-white font-bold uppercase" [style.background-color]="getRandomColor(client)">
+                            {{ getInitials(client.firstName + " " + client.lastName) }}
+                          </div>
+                        </div>
+                      </div>
+                      <div class="employee-details">
+                        <div class="detail-item">
+                          <i class="material-icons">email</i>
+                          <span>{{ client.email || "Non renseigné" }}</span>
+                        </div>
+                        <div class="detail-item">
+                          <i class="material-icons">phone</i>
+                          <span>{{ client.phone || "Non renseigné" }}</span>
+                        </div>
+                        <div class="detail-item">
+                          <i class="material-icons">location_on</i>
+                          <span>{{ client.address?.neighborhood }}, {{ client.address?.city }}</span>
+                        </div>
+                      </div>
+                      <div class="employee-actions">
+                        <button class="action-btn edit" (click)="viewClientDetails(client._id)" title="Voir les détails">
+                          <i class="material-icons">visibility</i>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Pagination -->
+                @if (clientsTotalPages > 1) {
+                  <div class="pagination-controls">
+                    <button class="pagination-btn" [disabled]="clientsCurrentPage === 1" (click)="previousClientPage()" title="Page précédente">
+                      <i class="material-icons">chevron_left</i>
+                    </button>
+                    <div class="pagination-numbers">
+                      @for (page of getClientPaginationPages(); track page) {
+                        <button class="pagination-btn page-number" [class.active]="page === clientsCurrentPage" (click)="goToClientPage(page)">
+                          {{ page }}
+                        </button>
+                      }
+                    </div>
+                    <button
+                      class="pagination-btn"
+                      [disabled]="clientsCurrentPage === clientsTotalPages"
+                      (click)="nextClientPage()"
+                      title="Page suivante"
+                    >
+                      <i class="material-icons">chevron_right</i>
+                    </button>
+                  </div>
+                }
+              } @else {
+                <div class="empty-state">
+                  <i class="material-icons">person_off</i>
+                  <h3>Aucun client trouvé</h3>
+                  <p>Aucun client ne correspond à vos critères de recherche actuels.</p>
+                </div>
+              }
+            }
+          </div>
+        }
 
         <!-- Onglet Signalements -->
         @if (activeTab === "reports") {
@@ -2715,6 +2873,32 @@
               >
             </div>
           </div>
+        </div>
+        <!-- Lieux de service (multi-lieux, Phase 10) -->
+        <div class="form-section">
+          <h4 class="section-title">Lieux de service</h4>
+          @if (isLoadingSelectedClientLocations) {
+            <p>Chargement des lieux...</p>
+          } @else if (selectedClientLocations.length === 0) {
+            <p>Ce client n'a encore aucun lieu de service actif.</p>
+          } @else {
+            <div class="client-locations-list">
+              @for (loc of selectedClientLocations; track loc._id) {
+                <div class="info-item">
+                  <i class="material-icons">place</i>
+                  <div>
+                    <span class="info-label">
+                      {{ loc.name }}
+                      @if (loc.isPrimary) {
+                        <span class="location-primary-badge">Principal</span>
+                      }
+                    </span>
+                    <span class="info-value">{{ loc.address.neighborhood }}, {{ loc.address.sector }}, {{ loc.address.city }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </div>
         <!-- Statistiques -->
         <div class="form-section">

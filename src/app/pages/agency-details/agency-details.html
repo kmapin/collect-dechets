@@ -950,6 +950,9 @@
                     <i class="material-icons">place</i>
                     {{ lieu.address.neighborhood }}, {{ lieu.address.city }}
                   </span>
+                  <span class="lieu-choice-coverage" [class]="coverageClass(lieu.coverageStatus)">
+                    {{ coverageLabel(lieu.coverageStatus) }}
+                  </span>
                 </span>
                 <span class="lieu-choice-arrow">
                   <i class="material-icons">chevron_right</i>
