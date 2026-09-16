@@ -162,4 +162,10 @@ export class ContratPage implements OnInit, OnDestroy {
   pricing(contrat: Contrat): any {
     return typeof contrat.pricingId === 'object' ? contrat.pricingId : null;
   }
+
+  /** `null` = contrat "compte entier" (couvre tous les lieux du client pour cette agence) —
+   * voir services/eligibility.service.js pour la portée réelle de ce cas. */
+  serviceLocation(contrat: Contrat): any {
+    return typeof contrat.serviceLocationId === 'object' ? contrat.serviceLocationId : null;
+  }
 }

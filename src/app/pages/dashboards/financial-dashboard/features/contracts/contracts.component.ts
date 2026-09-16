@@ -1,12 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, Observable } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../../../services/auth.service';
 import { AgencyService } from '../../../../../services/agency.service';
 import { ContratService } from '../../../../../services/contrat.service';
 import { RedevanceService } from '../../../../../services/redevance.service';
+import { ServiceLocationService } from '../../../../../services/service-location.service';
+import { ServiceLocation } from '../../../../../models/service-location.model';
 import { Contrat, FrequenceCollecte } from '../../../../../models/contrat.model';
 import { Redevance } from '../../../../../models/redevance.model';
 import { ApercuPaiementGroupe, PaiementGroupeRedevance, ReductionType } from '../../../../../models/paiement-groupe-redevance.model';
@@ -34,6 +36,7 @@ export class ContractsComponent {
   private readonly agencyService = inject(AgencyService);
   private readonly contratService = inject(ContratService);
   private readonly redevanceService = inject(RedevanceService);
+  private readonly serviceLocationService = inject(ServiceLocationService);
   private readonly clientData = inject(CLIENT_DATA_SERVICE);
   private readonly session = inject(SESSION_SERVICE);
   private readonly notificationService = inject(NotificationService);
@@ -67,6 +70,24 @@ export class ContractsComponent {
   });
   readonly clientSearch = signal('');
   readonly clientDropdownOpen = signal(false);
+
+  // Contrat couvrant plusieurs lieux (le client demande, l'agence sélectionne les zones
+  // concernées) — un Contrat distinct est créé par lieu sélectionné côté backend, jamais
+  // un contrat unique multi-lieux (voir services/contrat.js::creerContratsMultiLieux).
+  // Sélection vide = comportement inchangé (contrat "compte entier", un seul créé).
+  readonly clientServiceLocations = signal<ServiceLocation[]>([]);
+  readonly isLoadingClientLocations = signal(false);
+  readonly selectedServiceLocationIds = signal<string[]>([]);
+
+  readonly selectedTarifPrice = computed(() => {
+    const pricingId = this.newContrat().pricingId;
+    return this.tariffs().find(t => t._id === pricingId)?.price ?? 0;
+  });
+
+  readonly montantTotalPreview = computed(() => {
+    const nombreLieux = this.selectedServiceLocationIds().length || 1;
+    return this.selectedTarifPrice() * nombreLieux;
+  });
 
   readonly filteredClients = computed(() => {
     const terme = this.clientSearch().trim().toLowerCase();
@@ -141,12 +162,21 @@ export class ContractsComponent {
     return labels[frequence] ?? frequence;
   }
 
+  /** "Tous les lieux" = contrat "compte entier" (serviceLocationId absent — voir
+   * services/eligibility.service.js pour sa portée réelle, limitée au lieu principal). */
+  contratServiceLocationLabel(contrat: Contrat): string {
+    const lieu = contrat.serviceLocationId;
+    return typeof lieu === 'object' && lieu ? lieu.name : 'Tous les lieux';
+  }
+
   // Création 
 
   openCreateModal(): void {
     this.newContrat.set({ clientId: '', pricingId: '', frequenceCollecte: 'monthly', endDate: '' });
     this.clientSearch.set('');
     this.clientDropdownOpen.set(false);
+    this.clientServiceLocations.set([]);
+    this.selectedServiceLocationIds.set([]);
     this.showCreateModal.set(true);
     this.chargerClients();
     this.chargerTarifs();
@@ -164,6 +194,30 @@ export class ContractsComponent {
     this.newContrat.update(v => ({ ...v, clientId: client.idClient }));
     this.clientDropdownOpen.set(false);
     this.clientSearch.set('');
+    this.chargerLieuxClient(client.idClient);
+  }
+
+  private chargerLieuxClient(clientId: string): void {
+    this.selectedServiceLocationIds.set([]);
+    this.clientServiceLocations.set([]);
+    if (!clientId) return;
+    this.isLoadingClientLocations.set(true);
+    this.serviceLocationService.listByClient$(clientId).subscribe({
+      next: ({ data }) => {
+        this.clientServiceLocations.set(data || []);
+        this.isLoadingClientLocations.set(false);
+      },
+      error: () => {
+        this.clientServiceLocations.set([]);
+        this.isLoadingClientLocations.set(false);
+      },
+    });
+  }
+
+  toggleServiceLocationSelection(locationId: string): void {
+    this.selectedServiceLocationIds.update((ids) =>
+      ids.includes(locationId) ? ids.filter((id) => id !== locationId) : [...ids, locationId],
+    );
   }
 
   //  Setters plutôt qu'un binding inline dans le HTML.
@@ -187,13 +241,25 @@ export class ContractsComponent {
       this.notificationService.showError('Erreur', 'Merci de renseigner le client, le plan tarifaire et la fréquence.');
       return;
     }
+
+    const serviceLocationIds = this.selectedServiceLocationIds();
     this.creationContratEnCours.set(true);
-    this.contratService
-      .creerContrat$({ clientId, agencyId, pricingId, frequenceCollecte, endDate: endDate || undefined })
+
+    // Un ou plusieurs lieux sélectionnés -> un Contrat par lieu (montant total = tarif ×
+    // nombre de lieux) ; aucun lieu sélectionné -> comportement historique inchangé (un
+    // seul contrat "compte entier").
+    const requete: Observable<any> = serviceLocationIds.length > 0
+      ? this.contratService.creerContratsMultiLieux$({ clientId, agencyId, pricingId, frequenceCollecte, endDate: endDate || undefined, serviceLocationIds })
+      : this.contratService.creerContrat$({ clientId, agencyId, pricingId, frequenceCollecte, endDate: endDate || undefined });
+
+    requete
       .pipe(finalize(() => this.creationContratEnCours.set(false)))
       .subscribe({
-        next: () => {
-          this.notificationService.showSuccess('Succès', 'Contrat créé avec succès.');
+        next: (res: any) => {
+          const message = serviceLocationIds.length > 0
+            ? `${serviceLocationIds.length} contrat(s) créé(s) avec succès (${res.montantTotal} FCFA au total).`
+            : 'Contrat créé avec succès.';
+          this.notificationService.showSuccess('Succès', message);
           this.closeCreateModal();
           this.charger();
         },

@@ -50,6 +50,10 @@
             <span>{{ contratFrequenceLabel(latestContrat.frequenceCollecte) }}</span>
           </div>
           <div class="info-item">
+            <strong>Lieu de service:</strong>
+            <span>{{ serviceLocationLabel(latestContrat) }}</span>
+          </div>
+          <div class="info-item">
             <strong>Début:</strong>
             <span>{{ latestContrat.startDate | date:'dd/MM/yyyy' }}</span>
           </div>
@@ -111,6 +115,10 @@
           <div class="info-item">
             <strong>Code postal:</strong>
             <span>{{ latestSubscription.agencyId?.address?.postalCode }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Lieu de service:</strong>
+            <span>{{ serviceLocationLabel(latestSubscription) }}</span>
           </div>
           <div class="info-item">
             <strong>Prix:</strong>

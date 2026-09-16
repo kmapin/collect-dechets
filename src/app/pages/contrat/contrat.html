@@ -36,6 +36,14 @@
             <span class="font-semibold text-[--primary-color]">{{ agencyName(contrat) }}</span>
           </div>
           <div class="info-item">
+            <strong>Lieu de service :</strong>
+            @if (serviceLocation(contrat); as lieu) {
+              <span>{{ lieu.name }} — {{ lieu.address.neighborhood }}, {{ lieu.address.city }}</span>
+            } @else {
+              <span><em>Tous vos lieux (contrat compte entier)</em></span>
+            }
+          </div>
+          <div class="info-item">
             <strong>Prix par période :</strong>
             <span class="text-[20px] font-semibold text-[--primary-color]">{{ contrat.prixParPeriode }} <sup>FCFA</sup></span>
           </div>

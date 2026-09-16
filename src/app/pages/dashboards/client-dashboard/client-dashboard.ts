@@ -230,6 +230,13 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     return typeof agency === 'object' ? agency?.name : '';
   }
 
+  /** "Tous vos lieux" = abonnement/contrat "compte entier" (serviceLocationId absent —
+   * voir services/eligibility.service.js pour sa portée réelle, limitée au lieu principal). */
+  serviceLocationLabel(item: { serviceLocationId?: any } | null): string {
+    const lieu = item?.serviceLocationId;
+    return typeof lieu === 'object' && lieu ? lieu.name : 'Tous vos lieux';
+  }
+
   contratFrequenceLabel(frequence?: string): string {
     const map: { [key: string]: string } = { daily: 'Quotidienne', weekly: 'Hebdomadaire', monthly: 'Mensuelle' };
     return frequence ? (map[frequence] || frequence) : '';

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Contrat, CreerContratPayload } from '../models/contrat.model';
+import { Contrat, CreerContratPayload, CreerContratsMultiLieuxPayload, CreerContratsMultiLieuxResponse } from '../models/contrat.model';
 
 @Injectable({
   providedIn: 'root',
@@ -19,6 +19,18 @@ export class ContratService {
       }),
       catchError((error) => {
         console.error('Erreur lors de la création du contrat :', error);
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  /** Un client peut demander qu'un contrat couvre plusieurs de ses lieux en une seule
+   * signature — l'agence sélectionne les lieux, le montant total (tarif × nombre de lieux)
+   * est renvoyé. Crée un Contrat distinct par lieu côté backend (Modèle C préservé). */
+  creerContratsMultiLieux$(payload: CreerContratsMultiLieuxPayload): Observable<CreerContratsMultiLieuxResponse> {
+    return this.http.post<CreerContratsMultiLieuxResponse>(`${environment.apiUrl}/contrats/multi-lieux`, payload).pipe(
+      catchError((error) => {
+        console.error('Erreur lors de la création des contrats multi-lieux :', error);
         return throwError(() => error);
       }),
     );

@@ -49,6 +49,13 @@ export class SubscriptionTabComponent implements OnChanges {
     return typeof agence === 'object' ? agence?.name ?? '—' : '—';
   }
 
+  /** "Tous les lieux" = abonnement/contrat "compte entier" (serviceLocationId absent —
+   * voir services/eligibility.service.js pour sa portée réelle, limitée au lieu principal). */
+  lieuLabel(item: { serviceLocationId?: any }): string {
+    const lieu = item?.serviceLocationId;
+    return typeof lieu === 'object' && lieu ? lieu.name : 'Tous les lieux';
+  }
+
   voirDocument(contrat: Contrat): void {
     this.contratService.getDocumentUrl$(contrat._id).subscribe({
       next: (res) => window.open(res.documentUrl, '_blank'),

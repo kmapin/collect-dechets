@@ -21,6 +21,7 @@
         <thead>
           <tr>
             <th scope="col">Client</th>
+            <th scope="col">Lieu</th>
             <th scope="col">Fréquence</th>
             <th scope="col">Prix / période</th>
             <th scope="col">Statut</th>
@@ -31,6 +32,7 @@
         <tbody>
           <tr *ngFor="let contrat of contrats()">
             <td data-label="Client">{{ contratClientName(contrat) }}</td>
+            <td data-label="Lieu">{{ contratServiceLocationLabel(contrat) }}</td>
             <td data-label="Fréquence">{{ contratFrequenceLabel(contrat.frequenceCollecte) }}</td>
             <td data-label="Prix / période">{{ contrat.prixParPeriode }} FCFA</td>
             <td data-label="Statut">
@@ -89,7 +91,12 @@
   <div class="fin-contracts__drawer-overlay" *ngIf="showRedevancesDrawer()">
     <div class="fin-contracts__drawer" (click)="$event.stopPropagation()">
       <div class="fin-contracts__drawer-header">
-        <h3>Redevances — {{ redevancesDrawerContrat() ? contratClientName(redevancesDrawerContrat()!) : '' }}</h3>
+        <div>
+          <h3>Redevances — {{ redevancesDrawerContrat() ? contratClientName(redevancesDrawerContrat()!) : '' }}</h3>
+          <p class="fin-contracts__hint" *ngIf="redevancesDrawerContrat() as contrat">
+            Lieu : {{ contratServiceLocationLabel(contrat) }}
+          </p>
+        </div>
         <button type="button" class="fin-contracts__drawer-close" (click)="closeRedevancesDrawer()">
           <i class="material-icons" aria-hidden="true">close</i>
         </button>
@@ -231,6 +238,32 @@
           </div>
         </div>
 
+        <div class="fin-contracts__form-group" *ngIf="newContrat().clientId">
+          <label>Lieux concernés (optionnel)</label>
+          <p class="fin-contracts__hint">
+            Aucune sélection = un seul contrat "compte entier". Sélectionner un ou plusieurs
+            lieux crée un contrat par lieu — le montant total est le tarif multiplié par le
+            nombre de lieux sélectionnés.
+          </p>
+          <div class="fin-contracts__loading" *ngIf="isLoadingClientLocations()">Chargement des lieux du client...</div>
+          <div class="fin-contracts__empty" *ngIf="!isLoadingClientLocations() && !clientServiceLocations().length">
+            Ce client n'a encore aucun lieu de service actif.
+          </div>
+          <div class="fin-contracts__location-list" *ngIf="!isLoadingClientLocations() && clientServiceLocations().length">
+            <label class="fin-contracts__location-item" *ngFor="let lieu of clientServiceLocations()">
+              <input
+                type="checkbox"
+                [checked]="selectedServiceLocationIds().includes(lieu._id)"
+                (change)="toggleServiceLocationSelection(lieu._id)"
+              />
+              <span>
+                {{ lieu.name }}
+                <small>{{ lieu.address.neighborhood }}, {{ lieu.address.city }}</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
         <div class="fin-contracts__form-group">
           <label for="contract-pricing">Plan tarifaire</label>
           <select id="contract-pricing" [ngModel]="newContrat().pricingId" (ngModelChange)="setPricingId($event)">
@@ -252,12 +285,20 @@
           <label for="contract-end-date">Date de fin (optionnel)</label>
           <input id="contract-end-date" type="date" [ngModel]="newContrat().endDate" (ngModelChange)="setEndDate($event)" />
         </div>
+
+        <div class="fin-contracts__total-preview" *ngIf="newContrat().pricingId">
+          <span>Montant total</span>
+          <strong>{{ montantTotalPreview() }} FCFA</strong>
+          <small *ngIf="selectedServiceLocationIds().length > 1">
+            ({{ selectedTarifPrice() }} FCFA × {{ selectedServiceLocationIds().length }} lieux)
+          </small>
+        </div>
       </div>
       <div class="fin-contracts__drawer-footer">
         <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Annuler</button>
         <button type="button" class="btn btn-primary" [disabled]="creationContratEnCours()" (click)="onCreerContrat()">
           <i class="material-icons" aria-hidden="true">check</i>
-          Créer le contrat
+          {{ selectedServiceLocationIds().length > 1 ? 'Créer ' + selectedServiceLocationIds().length + ' contrats' : 'Créer le contrat' }}
         </button>
       </div>
     </div>

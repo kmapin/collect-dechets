@@ -145,6 +145,13 @@ constructor(
     return isSubscriptionCurrentlyActive(subscription) ? 'Actif' : 'Expiré';
   }
 
+  /** "Tous vos lieux" = abonnement/contrat "compte entier" (serviceLocationId absent —
+   * voir services/eligibility.service.js pour sa portée réelle, limitée au lieu principal). */
+  serviceLocationLabel(item: { serviceLocationId?: any } | null): string {
+    const lieu = item?.serviceLocationId;
+    return typeof lieu === 'object' && lieu ? lieu.name : 'Tous vos lieux';
+  }
+
   get showContractContinuityBanner(): boolean {
     return this.eligibility?.source === 'CONTRACT';
   }

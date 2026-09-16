@@ -17,6 +17,8 @@ export interface Contrat {
   raisonResiliation: string | null;
   documentUrl: string | null;
   documentPublicId: string | null;
+  /** Absent (contrat "compte entier") ou lieu de service précis (Modèle C, multi-lieux). */
+  serviceLocationId?: string | { _id: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,4 +29,22 @@ export interface CreerContratPayload {
   pricingId: string;
   frequenceCollecte: FrequenceCollecte;
   endDate?: string;
+}
+
+/** Un contrat par lieu sélectionné est créé côté backend (jamais un contrat unique
+ * multi-lieux) — voir services/contrat.js::creerContratsMultiLieux. */
+export interface CreerContratsMultiLieuxPayload {
+  clientId: string;
+  agencyId: string;
+  pricingId: string;
+  frequenceCollecte: FrequenceCollecte;
+  endDate?: string;
+  serviceLocationIds: string[];
+}
+
+export interface CreerContratsMultiLieuxResponse {
+  message: string;
+  contrats: Contrat[];
+  redevances: any[];
+  montantTotal: number;
 }

@@ -8,6 +8,7 @@
         <thead>
           <tr>
             <th scope="col">Plan</th>
+            <th scope="col">Lieu</th>
             <th scope="col">Agence</th>
             <th scope="col">Prix</th>
             <th scope="col">Début</th>
@@ -19,6 +20,7 @@
           <ng-container *ngIf="!chargement(); else squeletteAbonnements">
             <tr *ngFor="let a of abonnements()">
               <td data-label="Plan">{{ a.pricingId?.planType | titlecase }}</td>
+              <td data-label="Lieu">{{ lieuLabel(a) }}</td>
               <td data-label="Agence">{{ a.agencyId?.name || '—' }}</td>
               <td data-label="Prix">{{ formatMontant(a.pricingId?.price ?? 0) }}</td>
               <td data-label="Début">{{ a.startDate ? formatDate(a.startDate) : '—' }}</td>
@@ -28,12 +30,12 @@
               </td>
             </tr>
             <tr *ngIf="!abonnements().length">
-              <td colspan="6" class="subscription-tab__empty">Aucun abonnement pour ce client.</td>
+              <td colspan="7" class="subscription-tab__empty">Aucun abonnement pour ce client.</td>
             </tr>
           </ng-container>
           <ng-template #squeletteAbonnements>
             <tr *ngFor="let i of [0, 1]" aria-hidden="true">
-              <td *ngFor="let c of [0, 1, 2, 3, 4, 5]"><span class="subscription-tab__skeleton-cell"></span></td>
+              <td *ngFor="let c of [0, 1, 2, 3, 4, 5, 6]"><span class="subscription-tab__skeleton-cell"></span></td>
             </tr>
           </ng-template>
         </tbody>
@@ -46,6 +48,7 @@
         <thead>
           <tr>
             <th scope="col">Agence</th>
+            <th scope="col">Lieu</th>
             <th scope="col">Fréquence</th>
             <th scope="col">Prix / période</th>
             <th scope="col">Début</th>
@@ -58,6 +61,7 @@
           <ng-container *ngIf="!chargement(); else squeletteContrats">
             <tr *ngFor="let c of contrats()">
               <td data-label="Agence">{{ agenceNom(c) }}</td>
+              <td data-label="Lieu">{{ lieuLabel(c) }}</td>
               <td data-label="Fréquence">{{ c.frequenceCollecte | titlecase }}</td>
               <td data-label="Prix / période">{{ formatMontant(c.prixParPeriode) }}</td>
               <td data-label="Début">{{ formatDate(c.startDate) }}</td>
@@ -71,12 +75,12 @@
               </td>
             </tr>
             <tr *ngIf="!contrats().length">
-              <td colspan="7" class="subscription-tab__empty">Aucun contrat pour ce client.</td>
+              <td colspan="8" class="subscription-tab__empty">Aucun contrat pour ce client.</td>
             </tr>
           </ng-container>
           <ng-template #squeletteContrats>
             <tr *ngFor="let i of [0, 1]" aria-hidden="true">
-              <td *ngFor="let c of [0, 1, 2, 3, 4, 5, 6]"><span class="subscription-tab__skeleton-cell"></span></td>
+              <td *ngFor="let c of [0, 1, 2, 3, 4, 5, 6, 7]"><span class="subscription-tab__skeleton-cell"></span></td>
             </tr>
           </ng-template>
         </tbody>

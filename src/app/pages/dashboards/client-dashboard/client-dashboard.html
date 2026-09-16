@@ -562,6 +562,7 @@
                       <div class="subscription-service">
                         <h3>Collecte {{ latestSubscription.pricingId?.planType }}</h3>
                         <p>{{ latestSubscription.agencyId?.name }}</p>
+                        <p class="subscription-location">{{ serviceLocationLabel(latestSubscription) }}</p>
                       </div>
                       <div class="subscription-pricing">
                         <div class="price">
@@ -614,6 +615,7 @@
                     <div class="subscription-service">
                       <h3>Collecte {{ contratFrequenceLabel(activeContrat.frequenceCollecte) }}</h3>
                       <p>{{ contratAgencyName() }}</p>
+                      <p class="subscription-location">{{ serviceLocationLabel(activeContrat) }}</p>
                     </div>
                     <div class="subscription-pricing">
                       <div class="price">
