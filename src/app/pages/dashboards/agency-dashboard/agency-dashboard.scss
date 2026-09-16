@@ -6328,6 +6328,24 @@ select[disabled]:focus {
   gap: 12px;
 }
 
+.location-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--primary-color, #2563eb);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  .material-icons {
+    font-size: 14px;
+  }
+}
+
 .location-primary-badge {
   display: inline-block;
   margin-left: 6px;

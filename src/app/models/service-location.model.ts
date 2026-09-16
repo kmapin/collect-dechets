@@ -26,6 +26,10 @@ export interface ServiceLocation {
    * positionné uniquement par la migration Phase 3 pour le lieu issu de l'ancienne
    * adresse de compte (User.address). */
   isPrimary?: boolean;
+  /** Présent uniquement quand `listByClient$` est appelé avec un `agencyId` — abonnement/
+   * contrat actif pour cette agence et ce lieu précis (voir sélecteur de lieu du planning
+   * individuel, planning-create.ts). `undefined` sinon (agencyId non fourni). */
+  eligible?: boolean;
   createdAt: string;
   updatedAt: string;
 }

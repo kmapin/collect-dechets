@@ -23,9 +23,14 @@ export class ServiceLocationService {
   }
 
   /** Phase 7 — manager/super_admin uniquement : lieux actifs d'un client précis
-   * (sélecteur de lieu pour un planning individuel). */
-  listByClient$(clientId: string): Observable<{ success: boolean; data: ServiceLocation[] }> {
-    return this.http.get<{ success: boolean; data: ServiceLocation[] }>(`${this.base}/by-client/${clientId}`);
+   * (sélecteur de lieu pour un planning individuel). `agencyId` optionnel : quand fourni,
+   * chaque lieu renvoyé est annoté `eligible` (abonnement/contrat actif — voir
+   * planning-create.ts, qui filtre dessus pour ne proposer que des lieux planifiables). */
+  listByClient$(clientId: string, agencyId?: string): Observable<{ success: boolean; data: ServiceLocation[] }> {
+    const url = agencyId
+      ? `${this.base}/by-client/${clientId}?agencyId=${encodeURIComponent(agencyId)}`
+      : `${this.base}/by-client/${clientId}`;
+    return this.http.get<{ success: boolean; data: ServiceLocation[] }>(url);
   }
 
   getById$(id: string): Observable<{ success: boolean; data: ServiceLocation }> {

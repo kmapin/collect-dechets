@@ -2894,6 +2894,17 @@
                       }
                     </span>
                     <span class="info-value">{{ loc.address.neighborhood }}, {{ loc.address.sector }}, {{ loc.address.city }}</span>
+                    @if (loc.address.latitude != null && loc.address.longitude != null) {
+                      <a
+                        class="location-map-link"
+                        [href]="'https://www.google.com/maps?q=' + loc.address.latitude + ',' + loc.address.longitude"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        <i class="material-icons">my_location</i>
+                        Voir sur la carte
+                      </a>
+                    }
                   </div>
                 </div>
               }

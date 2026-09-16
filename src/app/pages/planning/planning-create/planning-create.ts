@@ -730,12 +730,16 @@ export class PlanningCreate implements OnInit {
   }
 
   /** Phase 7 — n'affiche un sélecteur que si le client a 2+ lieux actifs (principe
-   * "1 lieu = invisible") ; avec 0 ou 1 lieu, le backend retombe sur isPrimary. */
+   * "1 lieu = invisible") ; avec 0 ou 1 lieu, le backend retombe sur isPrimary.
+   * Ne propose que les lieux éligibles (abonnement/contrat actif pour cette agence) — un
+   * lieu sans abonnement serait de toute façon rejeté à la création du planning
+   * (createPlanningV2), autant ne pas le laisser choisissable ici. */
   private _loadClientServiceLocations(clientId: string): void {
     this.clientServiceLocations.set([]);
     this.selectedServiceLocationId.set(null);
-    this.serviceLocationSvc.listByClient$(clientId).subscribe({
-      next: ({ data }) => this.clientServiceLocations.set(data || []),
+    const agencyId = this.svc.agencyId;
+    this.serviceLocationSvc.listByClient$(clientId, agencyId).subscribe({
+      next: ({ data }) => this.clientServiceLocations.set((data || []).filter((loc) => loc.eligible !== false)),
       error: () => this.clientServiceLocations.set([]),
     });
   }

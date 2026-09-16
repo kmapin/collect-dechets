@@ -184,6 +184,24 @@
                 <input id="sl-postalCode" type="text" [ngModel]="form.postalCode" (ngModelChange)="setField('postalCode', $event)" />
               </div>
             </div>
+            <div class="sl-form-group">
+              <label>
+                <i class="material-icons">my_location</i>
+                Position GPS exacte *
+              </label>
+              <p class="sl-form-hint">
+                Placez précisément ce lieu sur la carte (glissez le repère ou cliquez à l'endroit voulu), ou utilisez
+                la géolocalisation de votre appareil — le collecteur s'appuiera sur cette position pour vous trouver.
+              </p>
+              <button type="button" class="btn btn-secondary btn-small" [disabled]="isLocatingMe" (click)="useMyLocation()">
+                <i class="material-icons">{{ isLocatingMe ? 'hourglass_empty' : 'my_location' }}</i>
+                {{ isLocatingMe ? 'Localisation…' : 'Utiliser ma position actuelle' }}
+              </button>
+              <div #locationMapEl class="sl-map"></div>
+              @if (form.latitude != null && form.longitude != null) {
+                <span class="sl-form-hint">Coordonnées actuelles : {{ form.latitude.toFixed(5) }}, {{ form.longitude.toFixed(5) }}</span>
+              }
+            </div>
           </div>
 
           <div class="drawer-section">
@@ -259,6 +277,19 @@
             }
             @if (detailLocation.address.doorColor || detailLocation.address.doorNumber) {
               <p>Porte : {{ detailLocation.address.doorColor }} {{ detailLocation.address.doorNumber }}</p>
+            }
+            @if (detailLocation.address.latitude != null && detailLocation.address.longitude != null) {
+              <p>
+                Position GPS : {{ detailLocation.address.latitude.toFixed(5) }}, {{ detailLocation.address.longitude.toFixed(5) }}
+                <a
+                  [href]="'https://www.google.com/maps?q=' + detailLocation.address.latitude + ',' + detailLocation.address.longitude"
+                  target="_blank"
+                  rel="noopener"
+                  >Voir sur la carte</a
+                >
+              </p>
+            } @else {
+              <p class="sl-form-hint">Aucune position GPS enregistrée pour ce lieu.</p>
             }
           </div>
 

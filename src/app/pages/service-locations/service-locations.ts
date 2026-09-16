@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import * as L from 'leaflet';
 import { TerritoryHttpService } from '../../services/territory-http.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
@@ -73,7 +74,7 @@ const TYPE_OPTIONS: TypeOption[] = [
   templateUrl: './service-locations.html',
   styleUrl: './service-locations.scss',
 })
-export class ServiceLocationsComponent implements OnInit {
+export class ServiceLocationsComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
 
   readonly breadcrumbItems: BreadcrumbItem[] = [
@@ -109,6 +110,17 @@ export class ServiceLocationsComponent implements OnInit {
   editingId: string | null = null;
   form: ServiceLocationForm = { ...EMPTY_FORM };
 
+  // Position GPS précise du lieu — même convention que profile.ts (carte Leaflet,
+  // repère déplaçable, géolocalisation navigateur) pour que le collecteur retrouve
+  // exactement l'endroit, au-delà du seul quartier/secteur déclaratif.
+  private readonly DEFAULT_MAP_CENTER: [number, number] = [12.3714, -1.5197];
+  private locationMap?: L.Map;
+  private locationMarker?: L.Marker;
+  isLocatingMe = false;
+  @ViewChild('locationMapEl') set locationMapEl(el: ElementRef<HTMLDivElement> | undefined) {
+    if (el && !this.locationMap) this.initLocationMap(el.nativeElement);
+  }
+
   showDetail = false;
   detailLocation: ServiceLocation | null = null;
 
@@ -128,6 +140,10 @@ export class ServiceLocationsComponent implements OnInit {
   ngOnInit(): void {
     this.charger();
     this.chargerVilles();
+  }
+
+  ngOnDestroy(): void {
+    this.locationMap?.remove();
   }
 
   reessayer(): void {
@@ -259,6 +275,75 @@ export class ServiceLocationsComponent implements OnInit {
     this.form = { ...this.form, [field]: value };
   }
 
+  // ── Position GPS (carte Leaflet, même convention que profile.ts) ────────
+
+  private initLocationMap(container: HTMLDivElement): void {
+    const lat = this.form.latitude ?? this.DEFAULT_MAP_CENTER[0];
+    const lng = this.form.longitude ?? this.DEFAULT_MAP_CENTER[1];
+
+    this.locationMap = L.map(container, { center: [lat, lng], zoom: 15, zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap', maxZoom: 19,
+    }).addTo(this.locationMap);
+
+    const pinIcon = L.icon({
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+    this.locationMarker = L.marker([lat, lng], { draggable: true, icon: pinIcon }).addTo(this.locationMap);
+    this.locationMarker.on('dragend', () => {
+      const pos = this.locationMarker!.getLatLng();
+      this.applyPosition(pos.lat, pos.lng);
+    });
+    this.locationMap.on('click', (e: L.LeafletMouseEvent) => {
+      this.applyPosition(e.latlng.lat, e.latlng.lng);
+    });
+
+    setTimeout(() => this.locationMap?.invalidateSize(), 200);
+  }
+
+  private applyPosition(lat: number, lng: number): void {
+    this.form = { ...this.form, latitude: lat, longitude: lng };
+    this.locationMarker?.setLatLng([lat, lng]);
+    this.locationMap?.setView([lat, lng], this.locationMap.getZoom());
+  }
+
+  useMyLocation(): void {
+    if (this.isLocatingMe) return;
+    if (!navigator.geolocation) {
+      this.notificationService.showInfo('Info', "La géolocalisation n'est pas disponible sur cet appareil.");
+      return;
+    }
+    if (!window.isSecureContext) {
+      this.notificationService.showInfo(
+        'Géolocalisation indisponible',
+        "La géolocalisation nécessite une connexion sécurisée (HTTPS). Placez votre position manuellement sur la carte en attendant.",
+      );
+      return;
+    }
+    this.isLocatingMe = true;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.isLocatingMe = false;
+        this.applyPosition(position.coords.latitude, position.coords.longitude);
+        this.notificationService.showSuccess('Position détectée', "Votre position a été placée sur la carte — n'oubliez pas d'enregistrer.");
+      },
+      (error) => {
+        this.isLocatingMe = false;
+        const detail = error.code === error.PERMISSION_DENIED
+          ? "Vous avez refusé l'accès à votre position — autorisez la géolocalisation dans les réglages de votre navigateur, ou placez votre position manuellement sur la carte."
+          : "Impossible d'obtenir votre position. Placez-la manuellement sur la carte.";
+        this.notificationService.showInfo('Géolocalisation indisponible', detail);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
   // ── Formulaire création/édition ─────────────────────────────────────────
 
   ouvrirCreation(): void {
@@ -296,6 +381,13 @@ export class ServiceLocationsComponent implements OnInit {
 
   fermerForm(): void {
     this.showForm = false;
+    // Le conteneur Leaflet disparaît avec le drawer (@if) — détruire l'instance pour
+    // qu'une réouverture (création ou édition suivante) réinitialise une carte propre,
+    // centrée sur la bonne position, plutôt que de garder une référence à un nœud DOM
+    // déjà retiré.
+    this.locationMap?.remove();
+    this.locationMap = undefined;
+    this.locationMarker = undefined;
   }
 
   enregistrer(): void {
@@ -306,6 +398,13 @@ export class ServiceLocationsComponent implements OnInit {
     }
     if (!city || !arrondissement || !sector || !neighborhood) {
       this.notificationService.showError('Erreur', "L'adresse (ville, arrondissement, secteur, quartier) est obligatoire.");
+      return;
+    }
+    if (this.form.latitude == null || this.form.longitude == null) {
+      this.notificationService.showError(
+        'Erreur',
+        "La position GPS exacte est obligatoire — placez le repère sur la carte ou utilisez votre position actuelle, pour que le collecteur retrouve précisément ce lieu.",
+      );
       return;
     }
 
