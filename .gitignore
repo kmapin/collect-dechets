@@ -4,6 +4,7 @@ node_modules
 .env
 .vscode
 Analyse-Dashboard-Financier
+Analyse-Multi-Lieux-Service
 DASHBOARD_FINANCIER.md
 DASHBOARD_MUNICIPALITY.md
 BACKEND_INTEGRATION.md
