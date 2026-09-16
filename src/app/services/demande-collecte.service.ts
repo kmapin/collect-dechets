@@ -10,6 +10,8 @@ export interface DemandeCollecte {
   wasteTypes: string[];
   notes: string;
   requestedDate: string | null;
+  /** Phase 6 — optionnel : null si le client n'a pas précisé de lieu (comportement historique). */
+  serviceLocationId?: string | null;
   status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
   collecteId: {
     _id: string;
@@ -29,7 +31,7 @@ export class DemandeCollecteService {
   constructor(private http: HttpClient) {}
 
   /** Client — crée une demande de passage spontané. L'éligibilité est vérifiée côté serveur (EligibilityService). */
-  create(payload: { agencyId: string; wasteTypes: string[]; notes?: string; requestedDate?: string }): Observable<{ success: boolean; data: DemandeCollecte }> {
+  create(payload: { agencyId: string; wasteTypes: string[]; notes?: string; requestedDate?: string; serviceLocationId?: string }): Observable<{ success: boolean; data: DemandeCollecte }> {
     return this.http.post<{ success: boolean; data: DemandeCollecte }>(this.base, payload);
   }
 

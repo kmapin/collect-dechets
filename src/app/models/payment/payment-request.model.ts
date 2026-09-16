@@ -27,4 +27,8 @@ export interface PaymentRequest {
   redevanceId?: string;
 
   paiementGroupeId?: string;
+
+  /** Phase 5 (multi-lieux) — lieu de service concerné par cet abonnement, le cas
+   * échéant (omis : comportement historique, aucun lieu associé). */
+  serviceLocationId?: string;
 }

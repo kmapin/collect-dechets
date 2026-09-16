@@ -20,6 +20,8 @@ import {
 } from "../../models/countries-org.model";
 import { Admin } from "../../services/admin";
 import { MobileMoneyFormComponent } from "../payment/mobile-money-form/mobile-money-form";
+import { ServiceLocationService } from "../../services/service-location.service";
+import { ServiceLocation, ServiceLocationType } from "../../models/service-location.model";
 import { Breadcrumb, BreadcrumbItem } from "../../shared/breadcrumb/breadcrumb";
 import { dashboardRouteForRole, dashboardLabelForRole } from "../../shared/notification-route.util";
 import { PhoneInputDirective } from "../../shared/phone-input.directive";
@@ -197,7 +199,11 @@ export class AgencyDetails implements OnInit {
   // ── Souscription sans compte préalable (guest checkout) ────────────────────
   /** 'phone' : demande le numéro avant paiement (visiteur non connecté).
    * 'payment' : formulaire de paiement habituel (compte réel ou coquille déjà établi). */
-  subscriptionStep: "phone" | "payment" = "payment";
+  subscriptionStep: "phone" | "lieu" | "payment" = "payment";
+  /** Phase 5 — lieux actifs proposés au choix quand le client authentifié en a 2+
+   * (avec 0 ou 1 lieu, la sélection reste invisible : voir submitSubscription()). */
+  subscriptionLieux: ServiceLocation[] = [];
+  isLoadingLieuxSouscription = false;
   guestPhone: string = "";
   /** Facultatifs — s'ils sont saisis, ils remplacent les placeholders provisoires
    * ('Client' / numéro de téléphone) posés par défaut sur le compte "coquille". */
@@ -239,6 +245,7 @@ export class AgencyDetails implements OnInit {
     private messageService: MessagesService,
     private adminService: Admin,
         private cdr: ChangeDetectorRef,
+    private serviceLocationService: ServiceLocationService,
   ) {
     this.drawerWidth;
     this.loadAgencyDataOnInit();
@@ -470,17 +477,68 @@ export class AgencyDetails implements OnInit {
     };
 
     console.log("selectedTarif==>", this.selectedTarif);
-    if (this.selectedTarif !== null) {
-      // isLogged() === true signifie NON authentifié (nom historique conservé) :
-      // un visiteur sans session passe d'abord par l'étape téléphone (souscription
-      // sans compte préalable), un utilisateur déjà connecté va directement au paiement.
-      this.subscriptionStep = this.isLogged() ? "phone" : "payment";
-      this.guestPhone = "";
-      this.guestCheckoutExistingAccount = false;
-      this.resumableTransaction = null;
-      this.showPaymentDrawer = true;
+    if (this.selectedTarif === null) return;
+
+    this.guestPhone = "";
+    this.guestCheckoutExistingAccount = false;
+    this.resumableTransaction = null;
+    this.showPaymentDrawer = true;
+
+    // isLogged() === true signifie NON authentifié (nom historique conservé) :
+    // un visiteur sans session passe d'abord par l'étape téléphone (souscription
+    // sans compte préalable) — pas encore de lieu à ce stade (aucun compte, donc
+    // aucun ServiceLocation possible), comportement inchangé.
+    if (this.isLogged()) {
+      this.subscriptionStep = "phone";
+      return;
     }
 
+    // Authentifié — Phase 5 : présélectionner automatiquement l'unique lieu actif
+    // (principe "1 lieu = invisible"), ou proposer un choix explicite s'il y en a
+    // plusieurs. Un échec de chargement ne bloque jamais la souscription : on
+    // retombe simplement sur le comportement d'avant Phase 5 (aucun lieu associé).
+    this.isLoadingLieuxSouscription = true;
+    this.serviceLocationService.listMine$().subscribe({
+      next: ({ data }) => {
+        this.isLoadingLieuxSouscription = false;
+        const actifs = (data || []).filter((l) => l.status === 'active');
+        if (actifs.length <= 1) {
+          this.selectedTarif = { ...this.selectedTarif, serviceLocationId: actifs[0]?._id };
+          this.subscriptionStep = "payment";
+        } else {
+          this.subscriptionLieux = actifs;
+          this.subscriptionStep = "lieu";
+        }
+      },
+      error: () => {
+        this.isLoadingLieuxSouscription = false;
+        this.subscriptionStep = "payment";
+      },
+    });
+  }
+
+  /** Phase 5 — choix explicite d'un lieu quand le client en a 2+ (voir submitSubscription()). */
+  choisirLieuPourSouscription(lieu: ServiceLocation): void {
+    this.selectedTarif = { ...this.selectedTarif, serviceLocationId: lieu._id };
+    this.subscriptionStep = "payment";
+  }
+
+  /** Même mapping type -> icône que service-locations.ts::TYPE_OPTIONS, dupliqué
+   * ici pour éviter de coupler ce composant au composant de gestion des lieux. */
+  private static readonly LIEU_TYPE_ICONS: Record<ServiceLocationType, string> = {
+    maison: 'home',
+    boutique: 'storefront',
+    bureau: 'business_center',
+    restaurant: 'restaurant',
+    entreprise: 'apartment',
+    entrepot: 'warehouse',
+    chantier: 'construction',
+    evenement: 'event',
+    autre: 'place',
+  };
+
+  lieuTypeIcon(lieu: ServiceLocation): string {
+    return AgencyDetails.LIEU_TYPE_ICONS[lieu.type] ?? 'place';
   }
 
   /** Même normalisation que login.ts/register.ts::formatPhone — l'input reste en

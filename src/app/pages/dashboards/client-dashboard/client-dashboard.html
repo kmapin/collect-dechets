@@ -770,45 +770,22 @@
                 }
               </div>
             </section>
-            <!-- Adresse de collecte -->
+            <!-- Lieux de service -->
             <section class="collection-address flex flex-col card">
               <div class="section-header">
                 <h2>
                   <i class="material-icons">home</i>
-                  Adresse de collecte
+                  Mes lieux de service
                 </h2>
-                <!-- <button class="btn btn-secondary btn-small" routerLink="/profile" (click)="editAddress()"> -->
-                <button class="btn btn-secondary btn-small" routerLink="/profile">
-                  <i class="material-icons">edit</i>
-                  Modifier
+                <button class="btn btn-secondary btn-small" routerLink="/service-locations">
+                  <i class="material-icons">arrow_forward</i>
+                  Gérer
                 </button>
               </div>
 
-              @if (currentUser) {
-                <div class="address-details">
-                  <div class="address-line">
-                    <i class="material-icons">location_city</i>
-                    <span>{{ currentUser.address?.city }}</span>
-                  </div>
-                  <div class="address-line">
-                    <i class="material-icons">location_on</i>
-                    <span>{{ currentUser?.address.arrondissement }} </span>
-                  </div>
-                  <div class="address-line">
-                    <i class="material-icons">home</i>
-                    <span
-                      >{{ currentUser.address?.sector }}, {{
-                      currentUser.address?.street }}, {{
-                      currentUser.address?.neighborhood }}</span
-                      >
-                    </div>
-                    <div class="address-line">
-                      <i class="material-icons">palette</i>
-                      <span>Porte : {{ currentUser.address?.doorColor }}</span>
-                    </div>
-                  </div>
-                }
-
+              <div class="address-details">
+                <p>Gérez les adresses où vous souhaitez que nos équipes interviennent (maison, boutique, bureau...).</p>
+              </div>
             </section>
 
             
@@ -918,6 +895,19 @@
                 </label>
               }
             </div>
+            @if (spontaneousLocations.length > 1) {
+              <div class="drawer-section">
+                <h4 class="drawer-section-title">
+                  <i class="material-icons">place</i> Pour quel lieu souhaitez-vous une collecte ?
+                </h4>
+                <select [(ngModel)]="spontaneousRequestData.serviceLocationId" name="serviceLocationId">
+                  <option value="">Sélectionner un lieu</option>
+                  @for (lieu of spontaneousLocations; track lieu._id) {
+                    <option [value]="lieu._id">{{ lieu.name }} — {{ lieu.address.neighborhood }}</option>
+                  }
+                </select>
+              </div>
+            }
             <div class="drawer-section">
               <h4 class="drawer-section-title">
                 <i class="material-icons">event</i> Date souhaitée (optionnel)

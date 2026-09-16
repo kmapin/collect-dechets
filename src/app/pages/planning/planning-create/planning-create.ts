@@ -21,6 +21,8 @@ import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrum
 import { AuthService } from '../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
+import { ServiceLocationService } from '../../../services/service-location.service';
+import { ServiceLocation } from '../../../models/service-location.model';
 
 // ── Local interfaces ────────────────────────────────────────────
 interface StepDef {
@@ -68,6 +70,7 @@ export class PlanningCreate implements OnInit {
   private router      = inject(Router);
   private route       = inject(ActivatedRoute);
   private svc         = inject(PlanningService);
+  private serviceLocationSvc = inject(ServiceLocationService);
   private msgSvc      = inject(MessageService);
   private destroyRef  = inject(DestroyRef);
   private auth        = inject(AuthService);
@@ -164,6 +167,12 @@ export class PlanningCreate implements OnInit {
   filteredClients         = signal<ClientOpt[]>([]);
   clientSearchQuery       = signal('');
 
+  // ── Phase 7 (multi-lieux) — lieux du client ciblé (type individuel) ───
+  /** Affiché seulement si 2+ lieux actifs — sinon la sélection reste invisible
+   * (comportement inchangé, le backend retombe sur le lieu isPrimary). */
+  clientServiceLocations  = signal<ServiceLocation[]>([]);
+  selectedServiceLocationId = signal<string | null>(null);
+
   // ── Group mode signals ───────────────────────────────────────
   groupMode               = signal<'new' | 'existing' | null>(null);
   existingGroups          = signal<any[]>([]);
@@ -186,6 +195,8 @@ export class PlanningCreate implements OnInit {
 
 
   zoneClientCount = signal<number | null>(null);
+  /** Phase 7 — additif, affiché à côté de zoneClientCount quand disponible. */
+  zoneServiceLocationCount = signal<number | null>(null);
 
   estimatedHouseholds = computed<number | null>(() => {
     const fv   = this.formValue();
@@ -334,6 +345,14 @@ export class PlanningCreate implements OnInit {
             const cached = this.apiClients().find(c => c.id === clientIdStr);
             if (cached) { this.selectedClients.set([cached]); this.clientSearchQuery.set(cached.name); }
           }
+          // Phase 7 — précharge les lieux du client et présélectionne le lieu déjà
+          // choisi (planning.serviceLocationId, string ou objet peuplé), s'il existe.
+          if (clientIdStr) {
+            this._loadClientServiceLocations(clientIdStr);
+            const lieuRaw: any = (planning as any).serviceLocationId;
+            const lieuIdStr = typeof lieuRaw === 'object' && lieuRaw?._id ? lieuRaw._id : (typeof lieuRaw === 'string' ? lieuRaw : null);
+            if (lieuIdStr) this.selectedServiceLocationId.set(lieuIdStr);
+          }
         }
 
         // Pour le type groupe : reconstituer le groupe sélectionné
@@ -424,6 +443,13 @@ export class PlanningCreate implements OnInit {
           } else if (clientIdStr) {
             const cached = this.apiClients().find(c => c.id === clientIdStr);
             if (cached) { this.selectedClients.set([cached]); this.clientSearchQuery.set(cached.name); }
+          }
+          // Phase 7 — voir _loadPlanningForEdit ci-dessus pour le même traitement.
+          if (clientIdStr) {
+            this._loadClientServiceLocations(clientIdStr);
+            const lieuRaw: any = (planning as any).serviceLocationId;
+            const lieuIdStr = typeof lieuRaw === 'object' && lieuRaw?._id ? lieuRaw._id : (typeof lieuRaw === 'string' ? lieuRaw : null);
+            if (lieuIdStr) this.selectedServiceLocationId.set(lieuIdStr);
           }
         }
 
@@ -558,6 +584,7 @@ export class PlanningCreate implements OnInit {
       this.selectedExistingGroupId.set(null);
       this.existingGroups.set([]);
       this.zoneClientCount.set(null);
+      this.zoneServiceLocationCount.set(null);
     });
   }
 
@@ -691,12 +718,30 @@ export class PlanningCreate implements OnInit {
     this.selectedClients.set([client]);
     this.filteredClients.set([]);
     this.clientSearchQuery.set(client.name);
+    this._loadClientServiceLocations(client.id);
   }
 
   clearClient(): void {
     this.form.patchValue({ clientId: '', clientName: '' });
     this.selectedClients.set([]);
     this.clientSearchQuery.set('');
+    this.clientServiceLocations.set([]);
+    this.selectedServiceLocationId.set(null);
+  }
+
+  /** Phase 7 — n'affiche un sélecteur que si le client a 2+ lieux actifs (principe
+   * "1 lieu = invisible") ; avec 0 ou 1 lieu, le backend retombe sur isPrimary. */
+  private _loadClientServiceLocations(clientId: string): void {
+    this.clientServiceLocations.set([]);
+    this.selectedServiceLocationId.set(null);
+    this.serviceLocationSvc.listByClient$(clientId).subscribe({
+      next: ({ data }) => this.clientServiceLocations.set(data || []),
+      error: () => this.clientServiceLocations.set([]),
+    });
+  }
+
+  selectServiceLocation(id: string): void {
+    this.selectedServiceLocationId.set(id || null);
   }
 
   // ── Group mode ───────────────────────────────────────────────
@@ -834,6 +879,7 @@ export class PlanningCreate implements OnInit {
       quartierId:      sel.quartierId     ?? '',
     }, { emitEvent: true });
     this.zoneClientCount.set(sel.clientCount);
+    this.zoneServiceLocationCount.set(sel.serviceLocationCount ?? null);
   }
 
   // ── Waste types ──────────────────────────────────────────────
@@ -919,7 +965,10 @@ export class PlanningCreate implements OnInit {
       equipeIds:   teamId ? [teamId] : undefined,
       notes:       v.notes || undefined,
     };
-    if (v.clientId)          body.clientId          = v.clientId;
+    if (v.clientId) {
+      body.clientId = v.clientId;
+      if (this.selectedServiceLocationId()) body.serviceLocationId = this.selectedServiceLocationId();
+    }
     if (v.groupName)         body.groupeId          = v.groupName;
     if (v.villeId)           body.villeId           = v.villeId;
     if (v.arrondissementId)  body.arrondissementId  = v.arrondissementId;
@@ -1010,7 +1059,11 @@ export class PlanningCreate implements OnInit {
       notes:       v.notes || undefined,
     };
 
-    if (v.type === 'individuel') body.clientId = v.clientId;
+    if (v.type === 'individuel') {
+      body.clientId = v.clientId;
+      // Optionnel — absent : le backend retombe sur le lieu isPrimary du client.
+      if (this.selectedServiceLocationId()) body.serviceLocationId = this.selectedServiceLocationId();
+    }
     if (v.villeId)          body.villeId          = v.villeId;
     if (v.arrondissementId) body.arrondissementId = v.arrondissementId;
     if (v.secteurId)        body.secteurId        = v.secteurId;

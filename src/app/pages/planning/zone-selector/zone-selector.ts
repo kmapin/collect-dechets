@@ -38,6 +38,9 @@ export interface ZoneSelection {
   label:             string;
   /** null = en cours de chargement ou indisponible — jamais une estimation inventée. */
   clientCount:       number | null;
+  /** Phase 7 (multi-lieux) — additif : un client avec plusieurs lieux dans la zone
+   * compte pour 1 dans clientCount mais peut compter pour plusieurs ici. */
+  serviceLocationCount?: number | null;
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -80,6 +83,8 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
   selClientCount        = signal<number | null>(null);
   selClientCountLoading = signal(false);
   selClientCountError   = signal<string | null>(null);
+  /** Phase 7 — additif, affiché à côté de selClientCount quand disponible. */
+  selServiceLocationCount = signal<number | null>(null);
 
   selBreadcrumb = computed<string[]>(() => {
     const n = this.selectedNode();
@@ -394,7 +399,9 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!agencyId) return;
 
     this.selClientCountLoading.set(true);
-    this.http.get<{ success?: boolean; data?: { count: number } }>(`${this.api}/planning/zone-client-count`, {
+    // Phase 7 — la réponse gagne serviceLocationCount (additif, count/clientCount
+    // inchangés — voir services/planning.js::getZoneClientCount).
+    this.http.get<{ success?: boolean; data?: { count: number; serviceLocationCount?: number } }>(`${this.api}/planning/zone-client-count`, {
       params: {
         agencyId,
         ...(sel.villeId ? { villeId: sel.villeId } : {}),
@@ -407,11 +414,14 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
     ).subscribe((res) => {
       this.selClientCountLoading.set(false);
       const count = res?.data?.count;
+      const serviceLocationCount = res?.data?.serviceLocationCount;
       if (typeof count === 'number') {
         this.selClientCount.set(count);
-        this.selectionChange.emit({ ...sel, clientCount: count });
+        this.selServiceLocationCount.set(typeof serviceLocationCount === 'number' ? serviceLocationCount : null);
+        this.selectionChange.emit({ ...sel, clientCount: count, serviceLocationCount });
       } else {
         this.selClientCountError.set('Nombre de clients indisponible.');
+        this.selServiceLocationCount.set(null);
         this.selectionChange.emit({ ...sel, clientCount: null });
       }
     });
@@ -421,6 +431,7 @@ export class ZoneSelectorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selClientCount.set(null);
     this.selClientCountLoading.set(false);
     this.selClientCountError.set(null);
+    this.selServiceLocationCount.set(null);
   }
 
   // ── Tree helpers ──────────────────────────────────────────────

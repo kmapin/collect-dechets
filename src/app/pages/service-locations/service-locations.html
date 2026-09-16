@@ -1,0 +1,290 @@
+<div class="sl-page">
+  <header class="page-header">
+    <div class="container">
+      <app-breadcrumb [items]="breadcrumbItems" variant="onColor"></app-breadcrumb>
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Mes lieux de service</h1>
+          <p class="page-subtitle">Gérez les adresses où vous souhaitez que nos équipes interviennent (maison, boutique, bureau...).</p>
+        </div>
+        <div class="quick-actions">
+          <button type="button" class="sl-new-btn" (click)="ouvrirCreation()">
+            <i class="material-icons">add_location_alt</i>
+            Ajouter un lieu
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="sl-page__body">
+    @if (erreur) {
+      <div class="sl-error">
+        <i class="material-icons">error_outline</i>
+        {{ erreur }}
+        <button type="button" class="btn btn-secondary" (click)="reessayer()">Réessayer</button>
+      </div>
+    }
+
+    @if (isLoading) {
+      <div class="sl-loading">Chargement de vos lieux de service...</div>
+    }
+
+    @if (!isLoading && !erreur) {
+      <div class="sl-search">
+        <i class="material-icons">search</i>
+        <input type="text" placeholder="Rechercher un lieu..." [ngModel]="search" (ngModelChange)="search = $event; filterer()" />
+      </div>
+
+      @if (filteredLocations.length) {
+        <div class="sl-grid">
+          @for (loc of filteredLocations; track loc._id) {
+            <div class="sl-card">
+              <div class="sl-card__header">
+                <i class="material-icons">{{ typeIcon(loc.type) }}</i>
+                <div class="sl-card__title">
+                  <h3>{{ loc.name }}</h3>
+                  <span class="sl-card__type">{{ typeLabel(loc.type) }}</span>
+                </div>
+              </div>
+              <div class="sl-card__address">
+                <i class="material-icons">location_on</i>
+                <span>{{ loc.address.neighborhood }}, {{ loc.address.sector }}, {{ loc.address.city }}</span>
+              </div>
+              <div class="sl-card__badges">
+                @if (loc.isPrimary) {
+                  <span class="sl-badge sl-badge--primary">Principal</span>
+                }
+                <span class="sl-badge" [class]="statusClass(loc.status)">{{ statusLabel(loc.status) }}</span>
+                <span class="sl-badge" [class]="coverageClass(loc.coverageStatus)">{{ coverageLabel(loc.coverageStatus) }}</span>
+              </div>
+              <div class="sl-card__actions">
+                <button type="button" class="sl-action-btn" (click)="voir(loc)" title="Voir">
+                  <i class="material-icons">visibility</i> Voir
+                </button>
+                <button type="button" class="sl-action-btn" (click)="ouvrirEdition(loc)" title="Modifier">
+                  <i class="material-icons">edit</i> Modifier
+                </button>
+                @if (loc.status === 'active' && !loc.isPrimary) {
+                  <button type="button" class="sl-action-btn sl-action-btn--danger" [disabled]="isDeleting" (click)="desactiver(loc)" title="Désactiver">
+                    <i class="material-icons">block</i> Désactiver
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="material-icons">location_off</i>
+          <h3>Aucun lieu de service</h3>
+          <p>Ajoutez votre premier lieu (maison, boutique, bureau...) pour organiser vos collectes.</p>
+          <button type="button" class="btn btn-primary" (click)="ouvrirCreation()">
+            <i class="material-icons">add_location_alt</i>
+            Ajouter un lieu
+          </button>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Drawer création/édition -->
+  @if (showForm) {
+    <div class="drawer-overlay" (click)="fermerForm()">
+      <div class="drawer-content" (click)="$event.stopPropagation()">
+        <div class="drawer-header">
+          <h3>{{ editingId ? 'Modifier le lieu' : 'Nouveau lieu de service' }}</h3>
+          <button type="button" class="drawer-close-btn" (click)="fermerForm()">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          <div class="drawer-section">
+            <h4 class="drawer-section-title required">
+              <i class="material-icons">badge</i> Informations générales
+            </h4>
+            <div class="sl-form-group">
+              <label for="sl-name">Nom du lieu *</label>
+              <input id="sl-name" type="text" placeholder="ex. Boutique centre-ville" [ngModel]="form.name" (ngModelChange)="setField('name', $event)" />
+            </div>
+            <div class="sl-form-group">
+              <label for="sl-type">Type de lieu *</label>
+              <select id="sl-type" [ngModel]="form.type" (ngModelChange)="setField('type', $event)">
+                <option value="" disabled>Choisir un type</option>
+                @for (opt of typeOptions; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="drawer-section">
+            <h4 class="drawer-section-title required">
+              <i class="material-icons">map</i> Adresse
+            </h4>
+            <div class="sl-form-group">
+              <label for="sl-city">Ville *</label>
+              <select id="sl-city" [ngModel]="form.city" (ngModelChange)="onCityChange($event)">
+                <option value="" disabled>Choisir une ville</option>
+                @for (city of cities; track city.id) {
+                  <option [value]="city.name">{{ city.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="sl-form-group">
+              <label for="sl-arrondissement">Arrondissement *</label>
+              <select id="sl-arrondissement" [ngModel]="form.arrondissement" (ngModelChange)="onArrondissementChange($event)" [disabled]="!form.city">
+                <option value="" disabled>Choisir un arrondissement</option>
+                @for (arr of arrondissements; track arr.id) {
+                  <option [value]="arr.name">{{ arr.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="sl-form-group">
+              <label for="sl-sector">Secteur *</label>
+              <select id="sl-sector" [ngModel]="form.sector" (ngModelChange)="onSectorChange($event)" [disabled]="!form.arrondissement">
+                <option value="" disabled>Choisir un secteur</option>
+                @for (sector of sectors; track sector.id) {
+                  <option [value]="sector.name">{{ sector.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="sl-form-group">
+              <label for="sl-neighborhood">Quartier *</label>
+              <select id="sl-neighborhood" [ngModel]="form.neighborhood" (ngModelChange)="setField('neighborhood', $event)" [disabled]="!form.sector">
+                <option value="" disabled>Choisir un quartier</option>
+                @for (n of neighborhoods; track n.id) {
+                  <option [value]="n.name">{{ n.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="sl-form-row">
+              <div class="sl-form-group">
+                <label for="sl-street">Rue (optionnel)</label>
+                <input id="sl-street" type="text" [ngModel]="form.street" (ngModelChange)="setField('street', $event)" />
+              </div>
+              <div class="sl-form-group">
+                <label for="sl-doorNumber">Numéro de porte (optionnel)</label>
+                <input id="sl-doorNumber" type="text" [ngModel]="form.doorNumber" (ngModelChange)="setField('doorNumber', $event)" />
+              </div>
+            </div>
+            <div class="sl-form-row">
+              <div class="sl-form-group">
+                <label for="sl-doorColor">Couleur de porte (optionnel)</label>
+                <input id="sl-doorColor" type="text" [ngModel]="form.doorColor" (ngModelChange)="setField('doorColor', $event)" />
+              </div>
+              <div class="sl-form-group">
+                <label for="sl-postalCode">Code postal (optionnel)</label>
+                <input id="sl-postalCode" type="text" [ngModel]="form.postalCode" (ngModelChange)="setField('postalCode', $event)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="drawer-section">
+            <h4 class="drawer-section-title">
+              <i class="material-icons">support_agent</i> Contact sur place (optionnel)
+            </h4>
+            <div class="sl-form-group">
+              <label for="sl-contactName">Nom du contact</label>
+              <input id="sl-contactName" type="text" [ngModel]="form.onSiteContactName" (ngModelChange)="setField('onSiteContactName', $event)" />
+            </div>
+            <div class="sl-form-group">
+              <label for="sl-contactPhone">Téléphone du contact</label>
+              <input
+                id="sl-contactPhone"
+                type="tel"
+                [ngModel]="form.onSiteContactPhone"
+                (ngModelChange)="setField('onSiteContactPhone', $event)"
+                appPhoneInput
+                initialCountry="bf"
+                />
+            </div>
+            <div class="sl-form-group">
+              <label for="sl-access">Instructions d'accès</label>
+              <textarea id="sl-access" rows="3" placeholder="ex. Portail bleu, sonner deux fois..." [ngModel]="form.accessInstructions" (ngModelChange)="setField('accessInstructions', $event)"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-footer">
+          <div class="drawer-actions">
+            <button type="button" class="btn btn-secondary" (click)="fermerForm()">Annuler</button>
+            <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="enregistrer()">
+              {{ isSaving ? 'Enregistrement...' : (editingId ? 'Enregistrer' : 'Ajouter le lieu') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Drawer détail (lecture seule) -->
+  @if (showDetail && detailLocation) {
+    <div class="drawer-overlay" (click)="fermerDetail()">
+      <div class="drawer-content" (click)="$event.stopPropagation()">
+        <div class="drawer-header">
+          <h3>{{ detailLocation.name }}</h3>
+          <button type="button" class="drawer-close-btn" (click)="fermerDetail()">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          <div class="drawer-section">
+            <h4 class="drawer-section-title">
+              <i class="material-icons">badge</i> Informations générales
+            </h4>
+            <p><strong>Type :</strong> {{ typeLabel(detailLocation.type) }}</p>
+            <p><strong>Statut :</strong> {{ statusLabel(detailLocation.status) }}</p>
+            <p><strong>Couverture :</strong> {{ coverageLabel(detailLocation.coverageStatus) }}</p>
+            @if (detailLocation.isPrimary) {
+              <p><strong>Lieu principal</strong> — issu de votre adresse de compte</p>
+            }
+          </div>
+
+          <div class="drawer-section">
+            <h4 class="drawer-section-title">
+              <i class="material-icons">map</i> Adresse
+            </h4>
+            <p>{{ detailLocation.address.neighborhood }}, {{ detailLocation.address.sector }}</p>
+            <p>{{ detailLocation.address.arrondissement }}, {{ detailLocation.address.city }}</p>
+            @if (detailLocation.address.street) {
+              <p>{{ detailLocation.address.street }}</p>
+            }
+            @if (detailLocation.address.doorColor || detailLocation.address.doorNumber) {
+              <p>Porte : {{ detailLocation.address.doorColor }} {{ detailLocation.address.doorNumber }}</p>
+            }
+          </div>
+
+          @if (detailLocation.onSiteContactName || detailLocation.onSiteContactPhone || detailLocation.accessInstructions) {
+            <div class="drawer-section">
+              <h4 class="drawer-section-title">
+                <i class="material-icons">support_agent</i> Contact sur place
+              </h4>
+              @if (detailLocation.onSiteContactName) {
+                <p>{{ detailLocation.onSiteContactName }}</p>
+              }
+              @if (detailLocation.onSiteContactPhone) {
+                <p>{{ detailLocation.onSiteContactPhone }}</p>
+              }
+              @if (detailLocation.accessInstructions) {
+                <p>{{ detailLocation.accessInstructions }}</p>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="drawer-footer">
+          <div class="drawer-actions">
+            <button type="button" class="btn btn-secondary" (click)="fermerDetail()">Fermer</button>
+            <button type="button" class="btn btn-primary" (click)="modifierDepuisDetail()">
+              <i class="material-icons">edit</i>
+              Modifier
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

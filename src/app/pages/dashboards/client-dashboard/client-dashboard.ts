@@ -33,6 +33,8 @@ import { DemandeCollecteService } from "../../../services/demande-collecte.servi
 import { RedevanceService } from "../../../services/redevance.service";
 import { ExportClientService } from "../financial-dashboard/data-access/export/export-client.service";
 import { FinanceService } from "../../../services/finance.service";
+import { ServiceLocationService } from "../../../services/service-location.service";
+import { ServiceLocation } from "../../../models/service-location.model";
 
 interface PaymentHistory {
   id: string;
@@ -88,11 +90,15 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
 
   showSpontaneousRequestModal = false;
   isSubmittingSpontaneousRequest = false;
-  spontaneousRequestData: { wasteTypes: string[]; notes: string; requestedDate: string } = {
+  spontaneousRequestData: { wasteTypes: string[]; notes: string; requestedDate: string; serviceLocationId: string } = {
     wasteTypes: [],
     notes: "",
     requestedDate: "",
+    serviceLocationId: "",
   };
+  /** Phase 6 — lieux actifs proposés au choix ; un sélecteur n'est affiché que
+   * s'il y en a 2+ (voir openSpontaneousRequestModal(), principe "1 lieu = invisible"). */
+  spontaneousLocations: ServiceLocation[] = [];
   readonly spontaneousWasteTypeOptions = [
     { value: "menagers", label: "Déchets ménagers" },
     { value: "recyclables", label: "Recyclables" },
@@ -141,7 +147,8 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     private redevanceService: RedevanceService,
     private exportClientService: ExportClientService,
     private financeService: FinanceService,
-    private router: Router
+    private router: Router,
+    private serviceLocationService: ServiceLocationService
   ) {}
 
   ngOnInit(): void {
@@ -1035,8 +1042,23 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
    * du client est vérifiée côté serveur (EligibilityService, source unique).
    */
   openSpontaneousRequestModal(): void {
-    this.spontaneousRequestData = { wasteTypes: [], notes: "", requestedDate: "" };
+    this.spontaneousRequestData = { wasteTypes: [], notes: "", requestedDate: "", serviceLocationId: "" };
+    this.spontaneousLocations = [];
     this.showSpontaneousRequestModal = true;
+
+    this.serviceLocationService.listMine$().subscribe({
+      next: ({ data }) => {
+        const actifs = (data || []).filter((l) => l.status === 'active');
+        this.spontaneousLocations = actifs;
+        if (actifs.length === 1) {
+          this.spontaneousRequestData.serviceLocationId = actifs[0]._id;
+        }
+      },
+      error: () => {
+        // N'empêche jamais l'ouverture du modal — comportement d'avant Phase 6.
+        this.spontaneousLocations = [];
+      },
+    });
   }
 
   toggleSpontaneousWasteType(type: string): void {
@@ -1068,6 +1090,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         wasteTypes: this.spontaneousRequestData.wasteTypes,
         notes: this.spontaneousRequestData.notes,
         requestedDate: this.spontaneousRequestData.requestedDate || undefined,
+        serviceLocationId: this.spontaneousRequestData.serviceLocationId || undefined,
       })
       .subscribe({
         next: () => {
@@ -1329,12 +1352,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     XLSX.writeFile(workbook, `historique-paiements-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
-  editAddress(): void {
-    this.notificationService.showInfo(
-      "Modification",
-      "Redirection vers la modification d'adresse"
-    );
-  }
 
   // Fonction de generation du pdf de l'historique des paiements
   downloadInvoices(): void {

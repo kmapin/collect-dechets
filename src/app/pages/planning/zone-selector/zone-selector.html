@@ -124,6 +124,12 @@
               }
               <span class="met-lbl">Clients</span>
             </div>
+            @if (selServiceLocationCount() !== null) {
+              <div class="sel-metric">
+                <span class="met-val">{{ selServiceLocationCount() }}</span>
+                <span class="met-lbl">Lieux de service</span>
+              </div>
+            }
           </div>
           @if (selClientCountError()) {
             <div class="sel-count-error">

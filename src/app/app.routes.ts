@@ -230,6 +230,15 @@ export const routes: Routes = [
       ),
   },
 
+  {
+    canActivate: [clientGuard],
+    path: "service-locations",
+    loadComponent: () =>
+      import("./pages/service-locations/service-locations").then(
+        (c) => c.ServiceLocationsComponent,
+      ),
+  },
+
   // ================= AUTRES =================
 
   {

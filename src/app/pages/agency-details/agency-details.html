@@ -922,6 +922,42 @@
             Continuer
           </button>
         }
+      } @else if (subscriptionStep === 'lieu') {
+        <div class="lieu-step">
+          <div class="lieu-step-header">
+            <div class="lieu-step-icon">
+              <i class="material-icons">location_on</i>
+            </div>
+            <div>
+              <h4>Pour quel lieu souhaitez-vous cet abonnement ?</h4>
+              <p>Choisissez l'adresse où nos équipes viendront effectuer la collecte.</p>
+            </div>
+          </div>
+          <div class="lieu-choice-list">
+            @for (lieu of subscriptionLieux; track lieu._id) {
+              <button type="button" class="lieu-choice-card" (click)="choisirLieuPourSouscription(lieu)">
+                <span class="lieu-choice-icon">
+                  <i class="material-icons">{{ lieuTypeIcon(lieu) }}</i>
+                </span>
+                <span class="lieu-choice-info">
+                  <span class="lieu-choice-name">
+                    {{ lieu.name }}
+                    @if (lieu.isPrimary) {
+                      <span class="lieu-choice-badge">Principal</span>
+                    }
+                  </span>
+                  <span class="lieu-choice-address">
+                    <i class="material-icons">place</i>
+                    {{ lieu.address.neighborhood }}, {{ lieu.address.city }}
+                  </span>
+                </span>
+                <span class="lieu-choice-arrow">
+                  <i class="material-icons">chevron_right</i>
+                </span>
+              </button>
+            }
+          </div>
+        </div>
       } @else if (subscriptionStep === 'payment' && selectedTarif !== null) {
         <app-mobile-money-form
           [tarifResponse]="selectedTarif"

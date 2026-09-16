@@ -163,6 +163,21 @@
                   </div>
                   <button type="button" class="sc-remove" (click)="clearClient()"><mat-icon>close</mat-icon></button>
                 </div>
+                <!-- Phase 7 (multi-lieux) — affiché seulement si ce client a 2+ lieux actifs ;
+                     avec 0 ou 1 lieu, la sélection reste invisible (repli sur le lieu isPrimary). -->
+                @if (clientServiceLocations().length > 1) {
+                  <div class="form-group">
+                    <label>Pour quel lieu de ce client ?</label>
+                    <select class="form-control"
+                            [value]="selectedServiceLocationId() ?? ''"
+                            (change)="selectServiceLocation($any($event.target).value)">
+                      <option value="">Lieu principal (par défaut)</option>
+                      @for (lieu of clientServiceLocations(); track lieu._id) {
+                        <option [value]="lieu._id">{{ lieu.name }} — {{ lieu.address.neighborhood }}</option>
+                      }
+                    </select>
+                  </div>
+                }
               }
             </div>
           }
