@@ -319,7 +319,7 @@
     </div>
     <div class="drawer-footer">
       <div class="drawer-actions">
-        <button class="btn btn-secondary" (click)="closeTeamPicker()">Annuler</button>
+        <button class="btn btn-outline" (click)="closeTeamPicker()">Annuler</button>
         <button class="btn btn-primary" [disabled]="!selectedTeamId || (teamPickerIncident && assigningIncidentIds.has(teamPickerIncident._id))" (click)="confirmAssignTeam()">
           Confirmer l'affectation
         </button>
@@ -445,7 +445,7 @@
             Contacter l'agence
           </button>
         }
-        <button class="btn btn-secondary" (click)="closeIncidentDrawer()">Fermer</button>
+        <button class="btn btn-outline" (click)="closeIncidentDrawer()">Fermer</button>
       </div>
     </div>
   </div>

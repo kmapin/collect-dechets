@@ -232,7 +232,7 @@
 
         <div class="drawer-footer">
           <div class="drawer-actions">
-            <button type="button" class="btn btn-secondary" (click)="fermerForm()">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerForm()">Annuler</button>
             <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="enregistrer()">
               {{ isSaving ? 'Enregistrement...' : (editingId ? 'Enregistrer' : 'Ajouter le lieu') }}
             </button>
@@ -313,7 +313,7 @@
 
         <div class="drawer-footer">
           <div class="drawer-actions">
-            <button type="button" class="btn btn-secondary" (click)="fermerDetail()">Fermer</button>
+            <button type="button" class="btn btn-outline" (click)="fermerDetail()">Fermer</button>
             <button type="button" class="btn btn-primary" (click)="modifierDepuisDetail()">
               <i class="material-icons">edit</i>
               Modifier
@@ -348,7 +348,7 @@
 
         <div class="drawer-footer">
           <div class="drawer-actions">
-            <button type="button" class="btn btn-secondary" (click)="fermerQrCode()">Fermer</button>
+            <button type="button" class="btn btn-outline" (click)="fermerQrCode()">Fermer</button>
             @if (qrCodeDataUrl) {
               <a class="btn btn-primary" [href]="qrCodeDataUrl" download="qrcode-lieu.png">
                 <i class="material-icons">download</i>

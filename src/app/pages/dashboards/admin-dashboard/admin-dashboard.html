@@ -2303,7 +2303,7 @@
       </form>
       <div class="drawer-footer">
         <div class="drawer-actions">
-          <button type="button" class="btn btn-secondary" (click)="showCommunicationModal = false">
+          <button type="button" class="btn btn-outline" (click)="showCommunicationModal = false">
             Annuler
           </button>
           <button type="button" class="btn btn-primary" [disabled]="isSendingCommunication" (click)="sendCommunication()">
@@ -2709,7 +2709,7 @@
           <i class="material-icons">{{ isSavingUser ? 'hourglass_empty' : 'save' }}</i>
           {{ isSavingUser ? 'Enregistrement...' : 'Enregistrer' }}
         </button>
-        <button class="btn btn-secondary" (click)="closeEditUserDrawer()" [disabled]="isSavingUser">
+        <button class="btn btn-outline" (click)="closeEditUserDrawer()" [disabled]="isSavingUser">
           <i class="material-icons">close</i>
           Annuler
         </button>
@@ -2768,7 +2768,7 @@
       }
     </div>
     <div class="pwd-reset-footer">
-      <button class="btn-cancel" (click)="closePasswordResetDialog()" [disabled]="isSendingReset">Annuler</button>
+      <button class="btn btn-outline" (click)="closePasswordResetDialog()" [disabled]="isSendingReset">Annuler</button>
       <button class="btn-reset-send" (click)="sendPasswordResetEmail()" [disabled]="isSendingReset">
         <i class="material-icons">{{ isSendingReset ? 'hourglass_empty' : 'send' }}</i>
         {{ isSendingReset ? 'Envoi en cours...' : 'Envoyer le lien' }}
@@ -2845,7 +2845,7 @@
       }
     </div>
     <div class="pwd-reset-footer">
-      <button class="btn-cancel" (click)="closePasswordResetDialog()" [disabled]="isSendingReset">Annuler</button>
+      <button class="btn btn-outline" (click)="closePasswordResetDialog()" [disabled]="isSendingReset">Annuler</button>
       <button class="btn-reset-send" (click)="setNewPasswordAdmin()"
         [disabled]="isSendingReset || !newPassword || newPassword !== confirmPassword">
         <i class="material-icons">{{ isSendingReset ? 'hourglass_empty' : 'save' }}</i>
@@ -2882,7 +2882,7 @@
       </div>
     </div>
     <div class="resolve-dialog-footer">
-      <button class="btn-cancel" (click)="resolveDialogVisible = false">Annuler</button>
+      <button class="btn btn-outline" (click)="resolveDialogVisible = false">Annuler</button>
       <button class="btn-reset-send" [disabled]="resolvingIncidentEnCours.has(resolveDialogIncidentId)" (click)="confirmResolveFromDialog()">
         <i class="material-icons">check_circle</i>
         Confirmer la résolution
@@ -3013,7 +3013,7 @@
     <!-- Pied -->
     <div class="drawer-footer">
       <div class="drawer-actions">
-        <button class="btn btn-secondary" (click)="visibleAddAgentDrawer = false" [disabled]="isSubmittingAgent">
+        <button class="btn btn-outline" (click)="visibleAddAgentDrawer = false" [disabled]="isSubmittingAgent">
           Annuler
         </button>
         <button class="btn btn-primary" (click)="submitNewMunicipalityAgent()" [disabled]="isSubmittingAgent">
@@ -3407,7 +3407,7 @@
       </div>
     </div>
     <div class="resolve-dialog-footer">
-      <button class="btn-cancel" (click)="closeRejectWithdrawalDialog()"
+      <button class="btn btn-outline" (click)="closeRejectWithdrawalDialog()"
         [disabled]="isRejectingWithdrawal">Annuler</button>
       <button class="btn-reject-confirm" (click)="confirmRejectWithdrawal()"
         [disabled]="isRejectingWithdrawal || !withdrawalRejectionReason.trim()">

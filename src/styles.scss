@@ -345,6 +345,30 @@ body.signalement-drawer-open .card:hover {
   background: #388e3c;
   transform: translateY(-1px);
 }
+// Style neutre pour les actions de second plan (ex. "Annuler" dans le footer d'une
+// drawer) — jusqu'ici .btn-outline n'existait nulle part en global (seulement scopé
+// dans .delete-confirmation d'agency-dashboard.scss), donc tout bouton l'utilisant
+// ailleurs ne récupérait que le socle nu de .btn (aucune bordure, aucun fond) et
+// s'affichait sans aucun style visible. Un "Annuler" ne doit jamais avoir le même
+// poids visuel qu'une action positive (.btn-primary/.btn-secondary, pleines et
+// colorées) — d'où un contour neutre plutôt qu'un remplissage.
+.btn-outline {
+  background: var(--white);
+  color: var(--text-secondary);
+  border: 2px solid var(--medium-gray);
+}
+
+.btn-outline:hover {
+  background: var(--light-gray);
+  border-color: var(--dark-gray);
+  color: var(--text-primary);
+}
+
+.btn-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
 .btn-success {
   background: var(--success-color);
   color: var(--white);

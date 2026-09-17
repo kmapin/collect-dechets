@@ -117,7 +117,7 @@
               </p>
               <div class="fin-contracts__pg-actions">
                 <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="onPayerManuelPaiementGroupe()">Marquer payé (manuel)</button>
-                <button type="button" class="btn btn-secondary" [disabled]="paiementGroupeEnCours()" (click)="onAnnulerPaiementGroupe()">Annuler la proposition</button>
+                <button type="button" class="btn btn-outline" [disabled]="paiementGroupeEnCours()" (click)="onAnnulerPaiementGroupe()">Annuler la proposition</button>
               </div>
             </div>
           </ng-container>
@@ -159,7 +159,7 @@
 
               <div class="fin-contracts__pg-actions">
                 <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="onCreerPropositionPaiementGroupe()">Créer la proposition</button>
-                <button type="button" class="btn btn-secondary" [disabled]="paiementGroupeEnCours()" (click)="fermerFormPaiementGroupe()">Annuler</button>
+                <button type="button" class="btn btn-outline" [disabled]="paiementGroupeEnCours()" (click)="fermerFormPaiementGroupe()">Annuler</button>
               </div>
             </div>
           </ng-template>
@@ -295,7 +295,7 @@
         </div>
       </div>
       <div class="fin-contracts__drawer-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Annuler</button>
+        <button type="button" class="btn btn-outline" (click)="closeCreateModal()">Annuler</button>
         <button type="button" class="btn btn-primary" [disabled]="creationContratEnCours()" (click)="onCreerContrat()">
           <i class="material-icons" aria-hidden="true">check</i>
           {{ selectedServiceLocationIds().length > 1 ? 'Créer ' + selectedServiceLocationIds().length + ' contrats' : 'Créer le contrat' }}
