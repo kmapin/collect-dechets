@@ -156,11 +156,31 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     // "coquille" (status pending_activation) ne doit pas voir un vrai dashboard
     // tant que le paiement n'est pas confirmé — voir services/subscription.js::
     // createSubscriptionAfterPayment côté backend pour la bascule vers 'active'.
+    //
+    // Bug confirmé : le cache local (établi au moment du guest checkout, AVANT le
+    // paiement) reste bloqué sur 'pending_activation' même après un paiement réussi —
+    // rien ne le rafraîchissait jusqu'ici, obligeant le client à se déconnecter/
+    // reconnecter pour qu'une vraie connexion aille rechercher son statut à jour. On
+    // revérifie donc auprès du backend AVANT de rediriger, plutôt que de faire confiance
+    // à un statut potentiellement obsolète.
     if ((this.authService.getCurrentUser() as any)?.status === 'pending_activation') {
-      this.router.navigate(['/']);
+      this.authService.refreshCurrentUser().subscribe({
+        next: (freshUser) => {
+          if ((freshUser as any)?.status === 'pending_activation') {
+            this.router.navigate(['/']);
+          } else {
+            this.initDashboard();
+          }
+        },
+        error: () => this.router.navigate(['/']),
+      });
       return;
     }
 
+    this.initDashboard();
+  }
+
+  private initDashboard(): void {
     // this.currentUser = this.authService.getCurrentUser();
     this.getUser();
     // console.log("Current User", this.currentUser);

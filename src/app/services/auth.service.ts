@@ -443,10 +443,32 @@ export class AuthService {
     );
   }
   getCurrentUser(): RegisterUserData |null {
-    if(!this.isAuthenticatedSubject.value){ 
+    if(!this.isAuthenticatedSubject.value){
       return null
     }
     return this.currentUserSubject.value;
+  }
+
+  /** Recharge l'utilisateur courant depuis le backend et met à jour le cache
+   * (localStorage + currentUser$) sans toucher au token */
+  refreshCurrentUser(): Observable<RegisterUserData | null> {
+    const cached = this.getCurrentUser();
+    const userId = (cached as any)?._id || (cached as any)?.id;
+    if (!userId) return of(null);
+
+    return this.getUserProfile(userId).pipe(
+      map((response: any) => {
+        const freshUser = response?.data ?? response;
+        if (!freshUser) return null;
+        const stored = localStorage.getItem('currentUser');
+        const loginData = stored ? JSON.parse(stored) : {};
+        loginData.user = freshUser;
+        localStorage.setItem('currentUser', JSON.stringify(loginData));
+        this.currentUserSubject.next(freshUser);
+        return freshUser;
+      }),
+      catchError(() => of(null)),
+    );
   }
 
   hasRole(role: UserRole): boolean {
