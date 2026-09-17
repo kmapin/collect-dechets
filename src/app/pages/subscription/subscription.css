@@ -133,6 +133,28 @@
   justify-content: end;
 }
 
+.subscription-empty {
+  text-align: center;
+  padding: 32px 16px 8px;
+  color: var(--text-secondary, #64748b);
+}
+
+.subscription-empty i {
+  font-size: 40px;
+  opacity: 0.5;
+  margin-bottom: 12px;
+}
+
+.subscription-empty p {
+  margin: 0 0 20px;
+}
+
+.subscription-empty .btn i {
+  font-size: 18px;
+  opacity: 1;
+  margin-bottom: 0;
+}
+
 .payment-drawer-overlay {
   position: fixed;
   top: 0;

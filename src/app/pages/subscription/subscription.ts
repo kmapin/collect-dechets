@@ -197,9 +197,8 @@ constructor(
     this.tarifResponse = null;
   }
 
-  renewSubscription() {
-    console.log('Renouvellement d\'abonnement via Telecel Money...');
-    this.initiatePayment();
+  goToAgencies(): void {
+    this.router.navigate(['/agencies']);
   }
 
   contactSupport() {

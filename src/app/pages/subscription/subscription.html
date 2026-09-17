@@ -150,15 +150,12 @@
           </div>
         </div>
         } @else {
-        <div class="info-item">
-          <span>Aucun abonnement actif.</span>
-        </div>
-        <div class="actions">
-          <button class="btn btn-primary" (click)="renewSubscription()">
-            Configuration
-          </button>
-          <button class="btn btn-secondary" (click)="contactSupport()">
-            Contactez l'agence
+        <div class="subscription-empty">
+          <i class="material-icons">card_membership</i>
+          <p>Vous n'avez pas encore d'abonnement. Choisissez une agence pour souscrire à un service de collecte.</p>
+          <button class="btn btn-primary" (click)="goToAgencies()">
+            <i class="material-icons">storefront</i>
+            Choisir une agence
           </button>
         </div>
         }
