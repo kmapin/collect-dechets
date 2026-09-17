@@ -98,8 +98,16 @@ export class AuthService {
   /** Souscription sans compte préalable : crée (ou réutilise) un compte "coquille"
    * pour ce numéro et établit une session, exactement comme un login réussi — le
    * mot de passe est facultatif (un mot de passe aléatoire est généré côté serveur
-   * si le client ne le saisit pas), jamais bloquant avant le paiement. */
-  guestCheckout(phone: string, firstName?: string, lastName?: string, password?: string): Observable<{
+   * si le client ne le saisit pas), jamais bloquant avant le paiement. `address`
+   * (ville, arrondissement, secteur, quartier) est requise côté backend — sans elle,
+   * l'abonnement resterait "compte entier" au moment du paiement (interdit désormais). */
+  guestCheckout(
+    phone: string,
+    firstName?: string,
+    lastName?: string,
+    password?: string,
+    address?: { city: string; arrondissement: string; sector: string; neighborhood: string },
+  ): Observable<{
     success: boolean;
     existingAccount?: boolean;
     user?: User;
@@ -108,7 +116,7 @@ export class AuthService {
     message?: string;
     error?: string;
   }> {
-    return this.http.post<any>(`${environment.apiUrl}/guest-checkout`, { phone, firstName, lastName, password }).pipe(
+    return this.http.post<any>(`${environment.apiUrl}/guest-checkout`, { phone, firstName, lastName, password, address }).pipe(
       map((response: any) => {
         if (response?.success && response?.token && response?.user) {
           this.establishSession(response.user, response.token);

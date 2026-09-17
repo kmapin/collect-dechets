@@ -909,6 +909,68 @@
               required
             />
           </div>
+          <div class="form-group">
+            <label class="form-label required">
+              <i class="material-icons">location_on</i>
+              Ville *
+            </label>
+            <select
+              class="form-control"
+              [ngModel]="guestAddress.city"
+              (ngModelChange)="onGuestCityChange($event)"
+              name="guestCity"
+            >
+              <option value="" disabled>{{ isLoadingGuestCities ? 'Chargement...' : 'Choisir une ville' }}</option>
+              @for (city of guestCities; track city.id) {
+                <option [value]="city.name">{{ city.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Arrondissement *</label>
+            <select
+              class="form-control"
+              [ngModel]="guestAddress.arrondissement"
+              (ngModelChange)="onGuestArrondissementChange($event)"
+              name="guestArrondissement"
+              [disabled]="!guestAddress.city"
+            >
+              <option value="" disabled>Choisir un arrondissement</option>
+              @for (arr of guestArrondissements; track arr.id) {
+                <option [value]="arr.name">{{ arr.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Secteur *</label>
+            <select
+              class="form-control"
+              [ngModel]="guestAddress.sector"
+              (ngModelChange)="onGuestSectorChange($event)"
+              name="guestSector"
+              [disabled]="!guestAddress.arrondissement"
+            >
+              <option value="" disabled>Choisir un secteur</option>
+              @for (sector of guestSectors; track sector.id) {
+                <option [value]="sector.name">{{ sector.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Quartier *</label>
+            <select
+              class="form-control"
+              [ngModel]="guestAddress.neighborhood"
+              (ngModelChange)="setGuestNeighborhood($event)"
+              name="guestNeighborhood"
+              [disabled]="!guestAddress.sector"
+            >
+              <option value="" disabled>Choisir un quartier</option>
+              @for (n of guestNeighborhoods; track n.id) {
+                <option [value]="n.name">{{ n.name }}</option>
+              }
+            </select>
+          </div>
           @if (guestCheckoutExistingAccount) {
             <p class="guest-existing-account-hint">
               Un compte existe déjà avec ce numéro. Redirection vers la connexion…
@@ -916,7 +978,7 @@
           }
           <button
             class="btn btn-primary"
-            [disabled]="isSubmittingGuestPhone || !guestPhone || !guestPassword"
+            [disabled]="isSubmittingGuestPhone || !guestPhone || !guestPassword || !isGuestAddressComplete"
             (click)="continueAsGuest()"
           >
             Continuer

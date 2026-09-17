@@ -1350,6 +1350,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return this.getDetailedErrorKeys().length > 0;
   }
 
+  /** Bouton "Ajouter un tarif" du footer de la drawer "Liste des tarifs" — ferme cette
+   * liste avant d'ouvrir la drawer de création (openZoneModal()) pour éviter d'empiler
+   * deux overlays de drawer l'un sur l'autre. */
+  openAddTariffFromList(): void {
+    this.showTariffsModal = false;
+    this.openZoneModal();
+  }
+
   openZoneModal(): void {
     this.zoneForm.reset();
     this.editingZone = false;

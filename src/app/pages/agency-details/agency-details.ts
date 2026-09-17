@@ -215,6 +215,23 @@ export class AgencyDetails implements OnInit {
   guestConfirmPassword: string = "";
   isSubmittingGuestPhone = false;
   guestCheckoutExistingAccount = false;
+
+  /** Adresse minimale requise avant paiement (guest checkout) — sans elle,
+   * ensurePrimaryServiceLocation (backend) ne pourrait jamais créer automatiquement le
+   * lieu principal du client au moment de la souscription, qui resterait "compte entier"
+   * (interdit désormais, voir audit du client "Ko LI"). État indépendant de celui de
+   * userData.address (formulaire d'inscription complet), pour ne jamais interférer avec lui. */
+  guestAddress: { city: string; arrondissement: string; sector: string; neighborhood: string } = {
+    city: "", arrondissement: "", sector: "", neighborhood: "",
+  };
+  guestCities: any[] = [];
+  guestArrondissements: any[] = [];
+  guestSectors: any[] = [];
+  guestNeighborhoods: any[] = [];
+  isLoadingGuestCities = false;
+  isLoadingGuestArrondissements = false;
+  isLoadingGuestSectors = false;
+  isLoadingGuestNeighborhoods = false;
   resumableTransaction: any = null;
   /** true si la session active provient d'un compte "coquille" créé pour cette
    * souscription — affiche le CTA "Accéder à mon espace" après paiement réussi. */
@@ -490,6 +507,7 @@ export class AgencyDetails implements OnInit {
     // aucun ServiceLocation possible), comportement inchangé.
     if (this.isLogged()) {
       this.subscriptionStep = "phone";
+      if (!this.guestCities.length) this.loadGuestCities();
       return;
     }
 
@@ -565,9 +583,81 @@ export class AgencyDetails implements OnInit {
     return String(phone).trim().replace(/\s+/g, '').replace(/^\+?(226|225)?/, '');
   }
 
+  // ── Adresse du guest checkout (cascade Ville → Arrondissement → Secteur → Quartier) ──
+  // État indépendant de onCityChange/onArrondissementChange/onSecteurChange plus bas
+  // (ceux-ci pilotent userData.address, le formulaire d'inscription complet — jamais
+  // couplés entre eux pour éviter toute interférence).
+
+  loadGuestCities(): void {
+    this.isLoadingGuestCities = true;
+    this.territoryService.getAllCities().subscribe({
+      next: (cities) => { this.guestCities = cities; this.isLoadingGuestCities = false; },
+      error: () => { this.guestCities = []; this.isLoadingGuestCities = false; },
+    });
+  }
+
+  onGuestCityChange(city: string): void {
+    this.guestAddress = { city, arrondissement: "", sector: "", neighborhood: "" };
+    this.guestArrondissements = [];
+    this.guestSectors = [];
+    this.guestNeighborhoods = [];
+    if (!city) return;
+
+    const cityObj = this.guestCities.find((c: any) => c.name === city);
+    if (!cityObj?.id) return;
+
+    this.isLoadingGuestArrondissements = true;
+    this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
+      next: (arr) => { this.guestArrondissements = arr; this.isLoadingGuestArrondissements = false; },
+      error: () => { this.guestArrondissements = []; this.isLoadingGuestArrondissements = false; },
+    });
+  }
+
+  onGuestArrondissementChange(arrondissement: string): void {
+    this.guestAddress = { ...this.guestAddress, arrondissement, sector: "", neighborhood: "" };
+    this.guestSectors = [];
+    this.guestNeighborhoods = [];
+    if (!arrondissement) return;
+
+    const arrObj = this.guestArrondissements.find((a: any) => a.name === arrondissement);
+    if (!arrObj?.id) return;
+
+    this.isLoadingGuestSectors = true;
+    this.territoryService.getSectorsByArrondissement(arrObj.id).subscribe({
+      next: (sectors) => { this.guestSectors = sectors; this.isLoadingGuestSectors = false; },
+      error: () => { this.guestSectors = []; this.isLoadingGuestSectors = false; },
+    });
+  }
+
+  onGuestSectorChange(sector: string): void {
+    this.guestAddress = { ...this.guestAddress, sector, neighborhood: "" };
+    this.guestNeighborhoods = [];
+    if (!sector) return;
+
+    const sectorObj = this.guestSectors.find((s: any) => s.name === sector);
+    if (!sectorObj?.id) return;
+
+    this.isLoadingGuestNeighborhoods = true;
+    this.territoryService.getNeighborhoodsBySector(sectorObj.id).subscribe({
+      next: (n) => { this.guestNeighborhoods = n; this.isLoadingGuestNeighborhoods = false; },
+      error: () => { this.guestNeighborhoods = []; this.isLoadingGuestNeighborhoods = false; },
+    });
+  }
+
+  setGuestNeighborhood(neighborhood: string): void {
+    this.guestAddress = { ...this.guestAddress, neighborhood };
+  }
+
+  get isGuestAddressComplete(): boolean {
+    const a = this.guestAddress;
+    return !!(a.city && a.arrondissement && a.sector && a.neighborhood);
+  }
+
   /** Étape téléphone du guest checkout : crée (ou réutilise) un compte "coquille"
    * pour ce numéro et établit une session, avec le mot de passe choisi par le
    * client (obligatoire — c'est celui avec lequel il se reconnectera ensuite).
+   * L'adresse est requise (voir ensurePrimaryServiceLocation côté backend) — sans
+   * elle, l'abonnement resterait "compte entier" au moment du paiement.
    * Voir AuthService.guestCheckout(). */
   continueAsGuest(): void {
     if (this.isSubmittingGuestPhone || !this.guestPhone) return;
@@ -580,12 +670,16 @@ export class AgencyDetails implements OnInit {
       this.notificationService.showError("Erreur", "Les mots de passe ne correspondent pas.");
       return;
     }
+    if (!this.isGuestAddressComplete) {
+      this.notificationService.showError("Erreur", "L'adresse (ville, arrondissement, secteur, quartier) est obligatoire.");
+      return;
+    }
 
     this.isSubmittingGuestPhone = true;
     this.guestCheckoutExistingAccount = false;
 
     const phone = this.formatGuestPhone(this.guestPhone);
-    this.authService.guestCheckout(phone, this.guestFirstName, this.guestLastName, this.guestPassword || undefined).subscribe({
+    this.authService.guestCheckout(phone, this.guestFirstName, this.guestLastName, this.guestPassword || undefined, this.guestAddress).subscribe({
       next: (response) => {
         this.isSubmittingGuestPhone = false;
 
