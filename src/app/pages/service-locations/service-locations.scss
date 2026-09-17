@@ -289,6 +289,129 @@
   margin-bottom: 24px;
 }
 
+// ── Drawer détail (lecture seule) ──────────────────────────────────────
+
+.sl-detail-hero {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+
+  > i.material-icons {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: var(--primary-color, #2563eb);
+    border-radius: 10px;
+    flex-shrink: 0;
+    font-size: 1.5rem;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  &__type {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+}
+
+.sl-detail-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.8rem;
+  color: #854d0e;
+  background: #fef9c3;
+  border-radius: 8px;
+
+  i { font-size: 1.1rem; }
+}
+
+.sl-info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.sl-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.7rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+  }
+
+  > i.material-icons {
+    color: #6b7280;
+    font-size: 1.2rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.sl-info-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.sl-info-value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 600;
+  word-break: break-word;
+
+  &--muted {
+    color: #94a3b8;
+    font-weight: 500;
+    font-style: italic;
+  }
+}
+
+.location-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--primary-color, #2563eb);
+  text-decoration: none;
+
+  i.material-icons { font-size: 14px; }
+
+  &:hover { text-decoration: underline; }
+}
+
 .sl-qr-section {
   display: flex;
   flex-direction: column;

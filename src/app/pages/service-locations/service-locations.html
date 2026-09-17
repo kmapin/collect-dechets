@@ -254,43 +254,85 @@
         </div>
 
         <div class="drawer-body">
-          <div class="drawer-section">
-            <h4 class="drawer-section-title">
-              <i class="material-icons">badge</i> Informations générales
-            </h4>
-            <p><strong>Type :</strong> {{ typeLabel(detailLocation.type) }}</p>
-            <p><strong>Statut :</strong> {{ statusLabel(detailLocation.status) }}</p>
-            <p><strong>Couverture :</strong> {{ coverageLabel(detailLocation.coverageStatus) }}</p>
-            @if (detailLocation.isPrimary) {
-              <p><strong>Lieu principal</strong> — issu de votre adresse de compte</p>
-            }
+          <div class="sl-detail-hero">
+            <i class="material-icons">{{ typeIcon(detailLocation.type) }}</i>
+            <div class="sl-detail-hero__info">
+              <span class="sl-detail-hero__type">{{ typeLabel(detailLocation.type) }}</span>
+              <div class="sl-card__badges">
+                @if (detailLocation.isPrimary) {
+                  <span class="sl-badge sl-badge--primary">Principal</span>
+                }
+                <span class="sl-badge" [class]="statusClass(detailLocation.status)">{{ statusLabel(detailLocation.status) }}</span>
+                <span class="sl-badge" [class]="coverageClass(detailLocation.coverageStatus)">{{ coverageLabel(detailLocation.coverageStatus) }}</span>
+              </div>
+            </div>
           </div>
+
+          @if (detailLocation.isPrimary) {
+            <p class="sl-detail-note">
+              <i class="material-icons">info</i>
+              Lieu principal — issu de votre adresse de compte.
+            </p>
+          }
 
           <div class="drawer-section">
             <h4 class="drawer-section-title">
               <i class="material-icons">map</i> Adresse
             </h4>
-            <p>{{ detailLocation.address.neighborhood }}, {{ detailLocation.address.sector }}</p>
-            <p>{{ detailLocation.address.arrondissement }}, {{ detailLocation.address.city }}</p>
-            @if (detailLocation.address.street) {
-              <p>{{ detailLocation.address.street }}</p>
-            }
-            @if (detailLocation.address.doorColor || detailLocation.address.doorNumber) {
-              <p>Porte : {{ detailLocation.address.doorColor }} {{ detailLocation.address.doorNumber }}</p>
-            }
-            @if (detailLocation.address.latitude != null && detailLocation.address.longitude != null) {
-              <p>
-                Position GPS : {{ detailLocation.address.latitude.toFixed(5) }}, {{ detailLocation.address.longitude.toFixed(5) }}
-                <a
-                  [href]="'https://www.google.com/maps?q=' + detailLocation.address.latitude + ',' + detailLocation.address.longitude"
-                  target="_blank"
-                  rel="noopener"
-                  >Voir sur la carte</a
-                >
-              </p>
-            } @else {
-              <p class="sl-form-hint">Aucune position GPS enregistrée pour ce lieu.</p>
-            }
+            <div class="sl-info-grid">
+              <div class="sl-info-item">
+                <i class="material-icons">location_on</i>
+                <div>
+                  <span class="sl-info-label">Quartier</span>
+                  <span class="sl-info-value">{{ detailLocation.address.neighborhood }}, {{ detailLocation.address.sector }}</span>
+                </div>
+              </div>
+              <div class="sl-info-item">
+                <i class="material-icons">location_city</i>
+                <div>
+                  <span class="sl-info-label">Ville</span>
+                  <span class="sl-info-value">{{ detailLocation.address.arrondissement }}, {{ detailLocation.address.city }}</span>
+                </div>
+              </div>
+              @if (detailLocation.address.street) {
+                <div class="sl-info-item">
+                  <i class="material-icons">signpost</i>
+                  <div>
+                    <span class="sl-info-label">Rue</span>
+                    <span class="sl-info-value">{{ detailLocation.address.street }}</span>
+                  </div>
+                </div>
+              }
+              @if (detailLocation.address.doorColor || detailLocation.address.doorNumber) {
+                <div class="sl-info-item">
+                  <i class="material-icons">door_front</i>
+                  <div>
+                    <span class="sl-info-label">Porte</span>
+                    <span class="sl-info-value">{{ detailLocation.address.doorColor }} {{ detailLocation.address.doorNumber }}</span>
+                  </div>
+                </div>
+              }
+              <div class="sl-info-item">
+                <i class="material-icons">my_location</i>
+                <div>
+                  <span class="sl-info-label">Position GPS</span>
+                  @if (detailLocation.address.latitude != null && detailLocation.address.longitude != null) {
+                    <span class="sl-info-value">{{ detailLocation.address.latitude.toFixed(5) }}, {{ detailLocation.address.longitude.toFixed(5) }}</span>
+                    <a
+                      class="location-map-link"
+                      [href]="'https://www.google.com/maps?q=' + detailLocation.address.latitude + ',' + detailLocation.address.longitude"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      <i class="material-icons">open_in_new</i>
+                      Voir sur la carte
+                    </a>
+                  } @else {
+                    <span class="sl-info-value sl-info-value--muted">Aucune position enregistrée</span>
+                  }
+                </div>
+              </div>
+            </div>
           </div>
 
           @if (detailLocation.onSiteContactName || detailLocation.onSiteContactPhone || detailLocation.accessInstructions) {
@@ -298,15 +340,35 @@
               <h4 class="drawer-section-title">
                 <i class="material-icons">support_agent</i> Contact sur place
               </h4>
-              @if (detailLocation.onSiteContactName) {
-                <p>{{ detailLocation.onSiteContactName }}</p>
-              }
-              @if (detailLocation.onSiteContactPhone) {
-                <p>{{ detailLocation.onSiteContactPhone }}</p>
-              }
-              @if (detailLocation.accessInstructions) {
-                <p>{{ detailLocation.accessInstructions }}</p>
-              }
+              <div class="sl-info-grid">
+                @if (detailLocation.onSiteContactName) {
+                  <div class="sl-info-item">
+                    <i class="material-icons">person</i>
+                    <div>
+                      <span class="sl-info-label">Nom du contact</span>
+                      <span class="sl-info-value">{{ detailLocation.onSiteContactName }}</span>
+                    </div>
+                  </div>
+                }
+                @if (detailLocation.onSiteContactPhone) {
+                  <div class="sl-info-item">
+                    <i class="material-icons">phone</i>
+                    <div>
+                      <span class="sl-info-label">Téléphone</span>
+                      <span class="sl-info-value">{{ detailLocation.onSiteContactPhone }}</span>
+                    </div>
+                  </div>
+                }
+                @if (detailLocation.accessInstructions) {
+                  <div class="sl-info-item">
+                    <i class="material-icons">directions</i>
+                    <div>
+                      <span class="sl-info-label">Instructions d'accès</span>
+                      <span class="sl-info-value">{{ detailLocation.accessInstructions }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
             </div>
           }
         </div>
