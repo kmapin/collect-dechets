@@ -3314,23 +3314,27 @@
 
     @if (selectedWithdrawal?.status === WithdrawalStatus.PENDING) {
     <div class="drawer-footer">
-      <button class="btn btn-success" (click)="openApproveWithdrawalDialog(selectedWithdrawal!)">
-        <i class="material-icons">check_circle</i> Approuver
-      </button>
-      <button class="btn btn-danger" (click)="openRejectWithdrawalDialog(selectedWithdrawal!)">
-        <i class="material-icons">cancel</i> Rejeter
-      </button>
+      <div class="drawer-actions">
+        <button class="btn btn-success" (click)="openApproveWithdrawalDialog(selectedWithdrawal!)">
+          <i class="material-icons">check_circle</i> Approuver
+        </button>
+        <button class="btn btn-danger" (click)="openRejectWithdrawalDialog(selectedWithdrawal!)">
+          <i class="material-icons">cancel</i> Rejeter
+        </button>
+      </div>
     </div>
     }
 
     @if (selectedWithdrawal?.status === WithdrawalStatus.TO_VERIFY) {
     <div class="drawer-footer">
-      <button class="btn btn-success" (click)="openConfirmVirementDialog(selectedWithdrawal!, 'effectue')">
-        <i class="material-icons">check_circle</i> Confirmer virement effectué
-      </button>
-      <button class="btn btn-danger" (click)="openConfirmVirementDialog(selectedWithdrawal!, 'non_effectue')">
-        <i class="material-icons">cancel</i> Confirmer virement non effectué
-      </button>
+      <div class="drawer-actions">
+        <button class="btn btn-success" (click)="openConfirmVirementDialog(selectedWithdrawal!, 'effectue')">
+          <i class="material-icons">check_circle</i> Confirmer virement effectué
+        </button>
+        <button class="btn btn-danger" (click)="openConfirmVirementDialog(selectedWithdrawal!, 'non_effectue')">
+          <i class="material-icons">cancel</i> Confirmer virement non effectué
+        </button>
+      </div>
     </div>
     }
 

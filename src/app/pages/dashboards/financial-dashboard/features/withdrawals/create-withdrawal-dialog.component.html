@@ -13,7 +13,7 @@
       {{ message }}
     </div>
 
-    <form class="fin-create-withdrawal__form" *ngIf="etape() === 'formulaire'" [formGroup]="form" (ngSubmit)="passerAConfirmation()">
+    <form id="create-withdrawal-form" class="fin-create-withdrawal__form" *ngIf="etape() === 'formulaire'" [formGroup]="form" (ngSubmit)="passerAConfirmation()">
       <div class="fin-create-withdrawal__field">
         <label for="retrait-operator">Opérateur *</label>
         <select id="retrait-operator" formControlName="operator" required>
@@ -69,10 +69,6 @@
           {{ messageErreur('feeOption') }}
         </span>
       </div>
-      <div class="fin-create-withdrawal__actions">
-        <button mat-button type="button" (click)="annuler()">Annuler</button>
-        <button mat-flat-button color="primary" type="submit">Continuer</button>
-      </div>
     </form>
 
     <div class="fin-create-withdrawal__confirmation" *ngIf="etape() === 'confirmation'">
@@ -119,14 +115,23 @@
         </div>
       </dl>
 
-      <div class="fin-create-withdrawal__actions">
+    </div>
+    </div>
+
+    <div class="drawer-footer" *ngIf="etape() === 'formulaire'">
+      <div class="drawer-actions">
+        <button mat-button type="button" (click)="annuler()">Annuler</button>
+        <button mat-flat-button color="primary" type="submit" form="create-withdrawal-form">Continuer</button>
+      </div>
+    </div>
+    <div class="drawer-footer" *ngIf="etape() === 'confirmation'">
+      <div class="drawer-actions">
         <button mat-button type="button" (click)="retourFormulaire()" [disabled]="enregistrement()">Modifier</button>
         <button mat-flat-button color="primary" type="button" (click)="confirmer()" [disabled]="enregistrement()">
           <mat-spinner *ngIf="enregistrement()" diameter="18" class="fin-create-withdrawal__spinner" />
           {{ enregistrement() ? 'Enregistrement…' : 'Confirmer le retrait' }}
         </button>
       </div>
-    </div>
     </div>
   </div>
 </div>

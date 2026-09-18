@@ -109,18 +109,20 @@
             <h4 class="drawer-section-title required">
               <i class="material-icons">badge</i> Informations générales
             </h4>
-            <div class="sl-form-group">
-              <label for="sl-name">Nom du lieu *</label>
-              <input id="sl-name" type="text" placeholder="ex. Boutique centre-ville" [ngModel]="form.name" (ngModelChange)="setField('name', $event)" />
-            </div>
-            <div class="sl-form-group">
-              <label for="sl-type">Type de lieu *</label>
-              <select id="sl-type" [ngModel]="form.type" (ngModelChange)="setField('type', $event)">
-                <option value="" disabled>Choisir un type</option>
-                @for (opt of typeOptions; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
+            <div class="sl-form-row">
+              <div class="sl-form-group">
+                <label for="sl-name">Nom du lieu *</label>
+                <input id="sl-name" type="text" placeholder="ex. Boutique centre-ville" [ngModel]="form.name" (ngModelChange)="setField('name', $event)" />
+              </div>
+              <div class="sl-form-group">
+                <label for="sl-type">Type de lieu *</label>
+                <select id="sl-type" [ngModel]="form.type" (ngModelChange)="setField('type', $event)">
+                  <option value="" disabled>Choisir un type</option>
+                  @for (opt of typeOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              </div>
             </div>
           </div>
 
@@ -128,41 +130,45 @@
             <h4 class="drawer-section-title required">
               <i class="material-icons">map</i> Adresse
             </h4>
-            <div class="sl-form-group">
-              <label for="sl-city">Ville *</label>
-              <select id="sl-city" [ngModel]="form.city" (ngModelChange)="onCityChange($event)">
-                <option value="" disabled>Choisir une ville</option>
-                @for (city of cities; track city.id) {
-                  <option [value]="city.name">{{ city.name }}</option>
-                }
-              </select>
+            <div class="sl-form-row">
+              <div class="sl-form-group">
+                <label for="sl-city">Ville *</label>
+                <select id="sl-city" [ngModel]="form.city" (ngModelChange)="onCityChange($event)">
+                  <option value="" disabled>Choisir une ville</option>
+                  @for (city of cities; track city.id) {
+                    <option [value]="city.name">{{ city.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="sl-form-group">
+                <label for="sl-arrondissement">Arrondissement *</label>
+                <select id="sl-arrondissement" [ngModel]="form.arrondissement" (ngModelChange)="onArrondissementChange($event)" [disabled]="!form.city">
+                  <option value="" disabled>Choisir un arrondissement</option>
+                  @for (arr of arrondissements; track arr.id) {
+                    <option [value]="arr.name">{{ arr.name }}</option>
+                  }
+                </select>
+              </div>
             </div>
-            <div class="sl-form-group">
-              <label for="sl-arrondissement">Arrondissement *</label>
-              <select id="sl-arrondissement" [ngModel]="form.arrondissement" (ngModelChange)="onArrondissementChange($event)" [disabled]="!form.city">
-                <option value="" disabled>Choisir un arrondissement</option>
-                @for (arr of arrondissements; track arr.id) {
-                  <option [value]="arr.name">{{ arr.name }}</option>
-                }
-              </select>
-            </div>
-            <div class="sl-form-group">
-              <label for="sl-sector">Secteur *</label>
-              <select id="sl-sector" [ngModel]="form.sector" (ngModelChange)="onSectorChange($event)" [disabled]="!form.arrondissement">
-                <option value="" disabled>Choisir un secteur</option>
-                @for (sector of sectors; track sector.id) {
-                  <option [value]="sector.name">{{ sector.name }}</option>
-                }
-              </select>
-            </div>
-            <div class="sl-form-group">
-              <label for="sl-neighborhood">Quartier *</label>
-              <select id="sl-neighborhood" [ngModel]="form.neighborhood" (ngModelChange)="setField('neighborhood', $event)" [disabled]="!form.sector">
-                <option value="" disabled>Choisir un quartier</option>
-                @for (n of neighborhoods; track n.id) {
-                  <option [value]="n.name">{{ n.name }}</option>
-                }
-              </select>
+            <div class="sl-form-row">
+              <div class="sl-form-group">
+                <label for="sl-sector">Secteur *</label>
+                <select id="sl-sector" [ngModel]="form.sector" (ngModelChange)="onSectorChange($event)" [disabled]="!form.arrondissement">
+                  <option value="" disabled>Choisir un secteur</option>
+                  @for (sector of sectors; track sector.id) {
+                    <option [value]="sector.name">{{ sector.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="sl-form-group">
+                <label for="sl-neighborhood">Quartier *</label>
+                <select id="sl-neighborhood" [ngModel]="form.neighborhood" (ngModelChange)="setField('neighborhood', $event)" [disabled]="!form.sector">
+                  <option value="" disabled>Choisir un quartier</option>
+                  @for (n of neighborhoods; track n.id) {
+                    <option [value]="n.name">{{ n.name }}</option>
+                  }
+                </select>
+              </div>
             </div>
             <div class="sl-form-row">
               <div class="sl-form-group">
