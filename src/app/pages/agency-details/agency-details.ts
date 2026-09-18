@@ -213,6 +213,8 @@ export class AgencyDetails implements OnInit {
    * AuthService.guestCheckout) et le client pourra le définir plus tard. */
   guestPassword: string = "";
   guestConfirmPassword: string = "";
+  showGuestPassword = false;
+  showGuestConfirmPassword = false;
   isSubmittingGuestPhone = false;
   guestCheckoutExistingAccount = false;
 
@@ -651,6 +653,14 @@ export class AgencyDetails implements OnInit {
   get isGuestAddressComplete(): boolean {
     const a = this.guestAddress;
     return !!(a.city && a.arrondissement && a.sector && a.neighborhood);
+  }
+
+  toggleGuestPasswordVisibility(field: 'password' | 'confirm'): void {
+    if (field === 'password') {
+      this.showGuestPassword = !this.showGuestPassword;
+    } else {
+      this.showGuestConfirmPassword = !this.showGuestConfirmPassword;
+    }
   }
 
   /** Étape téléphone du guest checkout : crée (ou réutilise) un compte "coquille"

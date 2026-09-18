@@ -843,29 +843,31 @@
             </div>
           </div>
         } @else {
-          <div class="form-group">
-            <label class="form-label">
-              <i class="material-icons">person</i>
-              Prénom
-            </label>
-            <input
-              class="form-control"
-              type="text"
-              [(ngModel)]="guestFirstName"
-              name="guestFirstName"
-            />
-          </div>
-          <div class="form-group">
-            <label class="form-label">
-              <i class="material-icons">person_outline</i>
-              Nom
-            </label>
-            <input
-              class="form-control"
-              type="text"
-              [(ngModel)]="guestLastName"
-              name="guestLastName"
-            />
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="material-icons">person</i>
+                Prénom
+              </label>
+              <input
+                class="form-control"
+                type="text"
+                [(ngModel)]="guestFirstName"
+                name="guestFirstName"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">
+                <i class="material-icons">person_outline</i>
+                Nom
+              </label>
+              <input
+                class="form-control"
+                type="text"
+                [(ngModel)]="guestLastName"
+                name="guestLastName"
+              />
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label required">
@@ -881,108 +883,117 @@
               appPhoneInput
             />
           </div>
-          <div class="form-group">
-            <label class="form-label required">
-              <i class="material-icons">lock</i>
-              Mot de passe *
-            </label>
-            <input
-              class="form-control"
-              type="password"
-              [(ngModel)]="guestPassword"
-              name="guestPassword"
-              required
-              minlength="8"
-              placeholder="8 caractères minimum"
-            />
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required">
+                <i class="material-icons">lock</i>
+                Mot de passe *
+              </label>
+              <div class="password-input">
+                <input
+                  class="form-control"
+                  [type]="showGuestPassword ? 'text' : 'password'"
+                  [(ngModel)]="guestPassword"
+                  name="guestPassword"
+                  required
+                  minlength="8"
+                  placeholder="8 caractères minimum"
+                />
+                <button type="button" class="password-toggle" (click)="toggleGuestPasswordVisibility('password')">
+                  <i class="material-icons">{{ showGuestPassword ? 'visibility_off' : 'visibility' }}</i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label required">
+                <i class="material-icons">lock</i>
+                Confirmer le mot de passe *
+              </label>
+              <div class="password-input">
+                <input
+                  class="form-control"
+                  [type]="showGuestConfirmPassword ? 'text' : 'password'"
+                  [(ngModel)]="guestConfirmPassword"
+                  name="guestConfirmPassword"
+                  required
+                />
+                <button type="button" class="password-toggle" (click)="toggleGuestPasswordVisibility('confirm')">
+                  <i class="material-icons">{{ showGuestConfirmPassword ? 'visibility_off' : 'visibility' }}</i>
+                </button>
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label required">
-              <i class="material-icons">lock</i>
-              Confirmer le mot de passe *
-            </label>
-            <input
-              class="form-control"
-              type="password"
-              [(ngModel)]="guestConfirmPassword"
-              name="guestConfirmPassword"
-              required
-            />
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required">
+                <i class="material-icons">location_on</i>
+                Ville *
+              </label>
+              <select
+                class="form-control"
+                [ngModel]="guestAddress.city"
+                (ngModelChange)="onGuestCityChange($event)"
+                name="guestCity"
+              >
+                <option value="" disabled>{{ isLoadingGuestCities ? 'Chargement...' : 'Choisir une ville' }}</option>
+                @for (city of guestCities; track city.id) {
+                  <option [value]="city.name">{{ city.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label required">Arrondissement *</label>
+              <select
+                class="form-control"
+                [ngModel]="guestAddress.arrondissement"
+                (ngModelChange)="onGuestArrondissementChange($event)"
+                name="guestArrondissement"
+                [disabled]="!guestAddress.city"
+              >
+                <option value="" disabled>Choisir un arrondissement</option>
+                @for (arr of guestArrondissements; track arr.id) {
+                  <option [value]="arr.name">{{ arr.name }}</option>
+                }
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label required">
-              <i class="material-icons">location_on</i>
-              Ville *
-            </label>
-            <select
-              class="form-control"
-              [ngModel]="guestAddress.city"
-              (ngModelChange)="onGuestCityChange($event)"
-              name="guestCity"
-            >
-              <option value="" disabled>{{ isLoadingGuestCities ? 'Chargement...' : 'Choisir une ville' }}</option>
-              @for (city of guestCities; track city.id) {
-                <option [value]="city.name">{{ city.name }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label required">Arrondissement *</label>
-            <select
-              class="form-control"
-              [ngModel]="guestAddress.arrondissement"
-              (ngModelChange)="onGuestArrondissementChange($event)"
-              name="guestArrondissement"
-              [disabled]="!guestAddress.city"
-            >
-              <option value="" disabled>Choisir un arrondissement</option>
-              @for (arr of guestArrondissements; track arr.id) {
-                <option [value]="arr.name">{{ arr.name }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label required">Secteur *</label>
-            <select
-              class="form-control"
-              [ngModel]="guestAddress.sector"
-              (ngModelChange)="onGuestSectorChange($event)"
-              name="guestSector"
-              [disabled]="!guestAddress.arrondissement"
-            >
-              <option value="" disabled>Choisir un secteur</option>
-              @for (sector of guestSectors; track sector.id) {
-                <option [value]="sector.name">{{ sector.name }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label required">Quartier *</label>
-            <select
-              class="form-control"
-              [ngModel]="guestAddress.neighborhood"
-              (ngModelChange)="setGuestNeighborhood($event)"
-              name="guestNeighborhood"
-              [disabled]="!guestAddress.sector"
-            >
-              <option value="" disabled>Choisir un quartier</option>
-              @for (n of guestNeighborhoods; track n.id) {
-                <option [value]="n.name">{{ n.name }}</option>
-              }
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required">Secteur *</label>
+              <select
+                class="form-control"
+                [ngModel]="guestAddress.sector"
+                (ngModelChange)="onGuestSectorChange($event)"
+                name="guestSector"
+                [disabled]="!guestAddress.arrondissement"
+              >
+                <option value="" disabled>Choisir un secteur</option>
+                @for (sector of guestSectors; track sector.id) {
+                  <option [value]="sector.name">{{ sector.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label required">Quartier *</label>
+              <select
+                class="form-control"
+                [ngModel]="guestAddress.neighborhood"
+                (ngModelChange)="setGuestNeighborhood($event)"
+                name="guestNeighborhood"
+                [disabled]="!guestAddress.sector"
+              >
+                <option value="" disabled>Choisir un quartier</option>
+                @for (n of guestNeighborhoods; track n.id) {
+                  <option [value]="n.name">{{ n.name }}</option>
+                }
+              </select>
+            </div>
           </div>
           @if (guestCheckoutExistingAccount) {
             <p class="guest-existing-account-hint">
               Un compte existe déjà avec ce numéro. Redirection vers la connexion…
             </p>
           }
-          <button
-            class="btn btn-primary"
-            [disabled]="isSubmittingGuestPhone || !guestPhone || !guestPassword || !isGuestAddressComplete"
-            (click)="continueAsGuest()"
-          >
-            Continuer
-          </button>
         }
       } @else if (subscriptionStep === 'lieu') {
         <div class="lieu-step">
@@ -1033,6 +1044,24 @@
         ></app-mobile-money-form>
       }
     </div>
+    @if (subscriptionStep === 'phone' && !resumableTransaction) {
+      <div class="drawer-footer">
+        <div class="drawer-actions">
+          <button
+            class="btn btn-primary"
+            [disabled]="isSubmittingGuestPhone || !guestPhone || !guestPassword || !isGuestAddressComplete"
+            (click)="continueAsGuest()"
+          >
+            @if (isSubmittingGuestPhone) {
+              <i class="material-icons">hourglass_empty</i>
+            } @else {
+              <i class="material-icons">arrow_forward</i>
+            }
+            {{ isSubmittingGuestPhone ? 'Envoi...' : 'Continuer' }}
+          </button>
+        </div>
+      </div>
+    }
   </div>
 </div>
 }

@@ -10,6 +10,23 @@ input[readonly] {
   cursor: default;
 }
 
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+
+  .form-group { margin-bottom: 20px; }
+
+  // Pas de "Nombre de mois" (paiement hors abonnement) : le Montant occupe toute la ligne.
+  .form-group:only-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .fee-info-banner {
   display: flex;
   gap: 10px;

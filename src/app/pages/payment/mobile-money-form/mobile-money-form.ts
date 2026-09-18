@@ -106,6 +106,13 @@ export class MobileMoneyFormComponent implements OnInit {
     private router: Router
   ) {
     this.paymentForm = this.createForm();
+    // Masquer l'erreur backend (ex. "Solde client insuffisant") dès que l'utilisateur
+    // modifie le formulaire, plutôt que de la laisser affichée jusqu'à la prochaine soumission.
+    this.paymentForm.valueChanges.subscribe(() => {
+      if (this.errorMessage) {
+        this.errorMessage = '';
+      }
+    });
   }
 
   ngOnInit(): void {

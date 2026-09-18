@@ -1401,6 +1401,18 @@
       position: relative;
     }
 
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+    }
+
 
 .districts-grid {
   display: grid;
