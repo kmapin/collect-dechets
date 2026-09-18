@@ -43,8 +43,7 @@ export class ForgotPassword {
     this.resetForm = this.formBuilder.group({
       newPassword: ['', [
         Validators.required,
-        Validators.minLength(8),
-        this.strongPasswordValidator
+        Validators.minLength(8)
       ]],
       confirmNewPassword: ['', [Validators.required]]
     }, {
@@ -81,8 +80,6 @@ export class ForgotPassword {
       if (previousInput) previousInput.focus();
     }
   }
-
-
   strongPasswordValidator(control: any) {
     const value = control.value;
     if (!value) return null;
@@ -90,7 +87,6 @@ export class ForgotPassword {
 
     return strongPasswordPattern.test(value) ? null : { weakPassword: true };
   }
-
 
 
   // ------------------------ Switcher entre les pages
@@ -133,7 +129,7 @@ export class ForgotPassword {
         this.goToCodePage();
       },
       error: (err) => {
-        this.errorMessage = err?.error || "Erreur lors de l'envoi du code";
+        this.errorMessage = err?.error?.message || "Erreur lors de l'envoi du code";
         this.loading = false;
       }
     });
@@ -165,7 +161,7 @@ export class ForgotPassword {
         }
       },
       error: (err) => {
-        this.errorMessage = err?.error || 'Erreur lors de la vérification';
+        this.errorMessage = err?.error?.message || 'Erreur lors de la vérification';
         this.loading = false;
       }
     });
@@ -182,7 +178,7 @@ export class ForgotPassword {
         this.loading = false;
       },
       error: (err) => {
-        this.errorMessage = err?.error || 'Erreur lors de l’envoi';
+        this.errorMessage = err?.error?.message || 'Erreur lors de l’envoi';
         this.loading = false;
       }
     });
@@ -215,7 +211,7 @@ export class ForgotPassword {
       },
       error: (err) => {
         this.loading = false;
-        this.errorMessage = err?.error?.error || 'Erreur lors de la réinitialisation.';
+        this.errorMessage = err?.error?.message || err?.error?.error || 'Erreur lors de la réinitialisation.';
       }
     });
   }

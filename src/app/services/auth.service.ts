@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 import { ClientUser, User, UserRole, RegisterUserData, RegisterResponse, UserAddress } from '../models/user.model';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Agency, Municipality } from '../models/agency.model';
 import { Webstockets } from '../core/services/webstockets';
@@ -313,16 +313,18 @@ export class AuthService {
     return this.http.post<any>(`${environment.apiUrl}/verify-reset-code`, { email, code }).pipe(
       map(response => {
         console.log('API > VerifyCode:', response);
-        if (response?.resetToken) {
+        // Le backend renvoie `sessionToken` (voir controllers/auth.js::verifyResetCode),
+        // jamais `resetToken` — d'où le "Code invalide" affiché malgré un 200 OK.
+        if (response?.success && response?.sessionToken) {
           return {
             success: true,
             message: response.message,
-            resetToken: response.resetToken
+            resetToken: response.sessionToken
           };
         } else {
           return {
             success: false,
-            error: response?.error || 'Code invalide'
+            error: response?.error || response?.message || 'Code invalide'
           };
         }
       })
@@ -338,23 +340,22 @@ export class AuthService {
     token: string
   ): Observable<{ success: boolean; message?: string; error?: string }> {
 
-    console.log('Envoi à API :', {
-      newPassword,
-      confirmNewPassword,
-      tokenUrl: `${environment.apiUrl}/reset-password/${token}`
-    });
-    return this.http.post<any>(`${environment.apiUrl}/reset-password/${token}`, {
-      newPassword,
-      confirmNewPassword
-    }).pipe(
+    // Le backend (routes/auth.route.js: POST /api/reset-password) attend le token de
+    // session dans l'en-tête `x-reset-token` (pas dans l'URL) et un seul champ `password`
+    // dans le corps (controllers/auth.js::resetPassword) — `confirmNewPassword` n'est
+    // qu'une validation côté client (passwordsMatchValidator dans forgot-password.ts).
+    const headers = new HttpHeaders({ 'x-reset-token': token });
+    return this.http.post<any>(`${environment.apiUrl}/reset-password`, {
+      password: newPassword
+    }, { headers }).pipe(
       tap(response => {
-        console.log('Response de l`\'API:', response);
+        console.log('Response de l\'API:', response);
       }),
       map(response => {
         const parsed = {
           success: response?.success !== false,
           message: response?.message,
-          error: response?.error
+          error: response?.error || (response?.success === false ? response?.message : undefined)
         };
         return parsed;
       })
