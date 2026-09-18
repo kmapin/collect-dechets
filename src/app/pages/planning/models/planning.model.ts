@@ -291,7 +291,7 @@ export interface ZoneCoverage {
   planningsCount: number;
   teamsAssigned: number;
   completionRate: number;
-  status: 'active' | 'pending' | 'inactive';
+  status: 'active' | 'attention' | 'inactive';
 }
 
 

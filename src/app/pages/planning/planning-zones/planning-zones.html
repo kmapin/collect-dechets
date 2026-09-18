@@ -1,0 +1,60 @@
+<header class="page-header">
+  <div class="container">
+    <app-breadcrumb [items]="breadcrumbItems" variant="onColor"></app-breadcrumb>
+    <div class="header-content">
+      <div class="welcome-section">
+        <h1 class="page-title">Zones couvertes</h1>
+        <p class="page-subtitle">Carte de couverture des quartiers desservis par vos plannings de collecte.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="pz-container container">
+  @if (isLoading()) {
+    <div class="pz-loading">Chargement des zones…</div>
+  } @else if (!zones().length) {
+    <div class="empty-state">
+      <i class="material-icons">map</i>
+      <h3>Aucune zone couverte</h3>
+      <p>Aucun planning n'est encore rattaché à un quartier.</p>
+    </div>
+  } @else {
+    <div class="pz-layout">
+      <div class="pz-map-card">
+        <div #mapEl class="pz-map"></div>
+      </div>
+
+      <div class="pz-list-card">
+        <h3>{{ zones().length }} zone(s) couverte(s)</h3>
+        @if (ungeolocatedCount > 0) {
+          <p class="pz-geo-hint">
+            <i class="material-icons">info_outline</i>
+            {{ ungeolocatedCount }} quartier(s) sans position GPS ne peuvent pas être placés sur la carte
+            (à renseigner dans la gestion des quartiers).
+          </p>
+        }
+        <div class="pz-zone-list">
+          @for (zone of zones(); track zone.name) {
+            <button
+              type="button"
+              class="pz-zone-row"
+              [disabled]="zone.lat == null || zone.lng == null"
+              (click)="focusZone(zone)"
+            >
+              <span class="pz-zone-dot" [style.background]="statusColor(zone.status)"></span>
+              <span class="pz-zone-info">
+                <span class="pz-zone-name">{{ zone.name }}</span>
+                <span class="pz-zone-meta">
+                  {{ zone.planningsCount }} planning(s) · {{ zone.teamsAssigned }} équipe(s)
+                  · {{ statusLabel(zone.status) }}
+                </span>
+              </span>
+              <span class="pz-zone-rate">{{ zone.completionRate }}%</span>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

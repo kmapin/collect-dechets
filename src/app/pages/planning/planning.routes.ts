@@ -51,8 +51,8 @@ export const PLANNING_ROUTES: Routes = [
       {
         path: 'zones',
         loadComponent: () =>
-          import('./dashboard/planning-dashboard').then(m => m.PlanningDashboard),
-        title: 'Planning – Zones',
+          import('./planning-zones/planning-zones').then(m => m.PlanningZones),
+        title: 'Planning – Zones couvertes',
       },
       {
         path: 'sectors',

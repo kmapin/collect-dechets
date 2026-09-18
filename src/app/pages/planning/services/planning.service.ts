@@ -41,6 +41,7 @@ export class PlanningService {
   private _teams      = signal<TeamApi[]>([]);
   private _alerts     = signal<PlanningAlert[]>([]);
   private _zones      = signal<ZoneCoverage[]>([]);
+  private _zonesLoading = signal(false);
   private _statsApi   = signal<PlanningStatsApi | null>(null);
   private _evolution  = signal<CollectionEvolutionDay[]>([]);
   private _loading    = signal(false);
@@ -51,6 +52,7 @@ export class PlanningService {
   readonly teams     = this._teams.asReadonly();
   readonly alerts    = this._alerts.asReadonly();
   readonly zones     = this._zones.asReadonly();
+  readonly zonesLoading = this._zonesLoading.asReadonly();
   readonly evolution = this._evolution.asReadonly();
   readonly loading   = this._loading.asReadonly();
   readonly error     = this._error.asReadonly();
@@ -125,19 +127,17 @@ export class PlanningService {
   loadZones(): void {
     const agencyId = this.agencyId;
     const params = agencyId ? new HttpParams().set('agencyId', agencyId) : new HttpParams();
+    this._zonesLoading.set(true);
     this.http.get<{ success: boolean; data: ZoneCoverageApi[] }>(
       `${this.api}/planning/zone-coverage`, { params }
     ).pipe(
       catchError(() => of(null))
     ).subscribe(res => {
-      // Corrigé (usage réel, TypeError "res.data.map is not a function") :
-      // le backend (`services/planning.js::getZoneCoverage`, voir son propre
-      // commentaire "ATTENTION" détaillé) renvoie UN SEUL objet agrégat, pas
-      // un tableau par quartier — un écart déjà documenté côté backend entre
-      // l'implémentation réelle et ce que le Swagger/ce service attendent,
-      // jamais corrigé. Le vrai correctif (réécrire `getZoneCoverage` pour
-      // qu'elle renvoie vraiment un tableau par quartier avec coordonnées) est
-      // un chantier séparé — celui-ci se contente d'arrêter le crash.
+      this._zonesLoading.set(false);
+      // `services/planning.js::getZoneCoverage` renvoie bien un tableau par quartier
+      // avec lat/lng réels (Neighbourhood.latitude/longitude, saisis obligatoirement
+      // dans quartiers-management) — Array.isArray reste une garde défensive normale
+      // face à un éventuel échec silencieux (catchError ci-dessus renvoie `null`).
       if (Array.isArray(res?.data)) {
         this._zones.set(res.data.map(z => ({
           name:           z.quartierNom,
@@ -146,7 +146,7 @@ export class PlanningService {
           planningsCount: z.planningsCount,
           teamsAssigned:  z.equipesAssigned,
           completionRate: z.completionRate,
-          status:         (z.status as 'active' | 'pending' | 'inactive') ?? 'active',
+          status:         (z.status as 'active' | 'attention' | 'inactive') ?? 'active',
         })));
       }
     });

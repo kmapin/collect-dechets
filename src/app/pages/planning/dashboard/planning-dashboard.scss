@@ -792,9 +792,9 @@ $shadow-md: 0 4px 24px rgba(0,0,0,0.1);
     border-radius: 50%;
     flex-shrink: 0;
 
-    &.zone-active  { background: $green; }
-    &.zone-pending { background: $amber; }
-    &.zone-inactive{ background: $text-3; }
+    &.zone-active    { background: $green; }
+    &.zone-attention { background: $amber; }
+    &.zone-inactive  { background: $text-3; }
   }
 
   .zone-name { font-size: 12px; font-weight: 500; color: $text-1; min-width: 70px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -811,9 +811,9 @@ $shadow-md: 0 4px 24px rgba(0,0,0,0.1);
       border-radius: 3px;
       transition: width 0.6s ease;
 
-      &.zone-bar-active  { background: $green; }
-      &.zone-bar-pending { background: $amber; }
-      &.zone-bar-inactive{ background: $text-3; }
+      &.zone-bar-active    { background: $green; }
+      &.zone-bar-attention { background: $amber; }
+      &.zone-bar-inactive  { background: $text-3; }
     }
   }
 
