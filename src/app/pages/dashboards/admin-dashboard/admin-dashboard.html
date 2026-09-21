@@ -1017,7 +1017,7 @@
                         <i class="material-icons">{{ user?.data?.status === 'active' ? 'toggle_on' : 'toggle_off' }}</i>
                       </button>
                       <button class="action-btn danger" *ngIf="user?._id !== currentUser?._id"
-                        (click)="quickDeleteUser(user?._id, (user?.data?.firstName || '') + ' ' + (user?.data?.lastName || ''))"
+                        (click)="quickDeleteUser(user?._id, (user?.data?.firstName || '') + ' ' + (user?.data?.lastName || ''), user?.data?.role || '')"
                         title="Supprimer">
                         <i class="material-icons">delete</i>
                       </button>

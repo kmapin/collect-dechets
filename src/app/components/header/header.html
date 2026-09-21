@@ -156,10 +156,12 @@
               </div>
             </div>
             <div class="dropdown-divider"></div>
-            <a [routerLink]="getDashboardRoute()" class="dropdown-item">
-              <i class="material-icons">dashboard</i>
-              <span>Tableau de bord</span>
-            </a>
+            @if (!(currentUser.role === 'client' && currentUser.status && currentUser.status !== 'active')) {
+              <a [routerLink]="getDashboardRoute()" class="dropdown-item">
+                <i class="material-icons">dashboard</i>
+                <span>Tableau de bord</span>
+              </a>
+            }
             <a routerLink="/profile" class="dropdown-item">
               <i class="material-icons">person</i>
               <span>Mon profil</span>
@@ -266,14 +268,16 @@
             </div>
           </div>
           <div class="mobile-user-actions">
-            <a
-              [routerLink]="getDashboardRoute()"
-              class="mobile-nav-link"
-              (click)="closeMobileMenu()"
-            >
-              <i class="material-icons">dashboard</i>
-              <span>Tableau de bord</span>
-            </a>
+            @if (!(currentUser.role === 'client' && currentUser.status && currentUser.status !== 'active')) {
+              <a
+                [routerLink]="getDashboardRoute()"
+                class="mobile-nav-link"
+                (click)="closeMobileMenu()"
+              >
+                <i class="material-icons">dashboard</i>
+                <span>Tableau de bord</span>
+              </a>
+            }
             <a
               routerLink="/profile"
               class="mobile-nav-link"
