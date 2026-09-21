@@ -26,15 +26,11 @@ import { EligibilityService, EligibilityResult, isSubscriptionCurrentlyActive } 
 export class Subscription  implements OnInit, OnDestroy {
     currentUser: RegisterUserData | null = null;
     subscriptions: any[] = [];
-    activeSubscription: any = null;
-    latestSubscription: any = null;
     showPaymentForm = false;
     tarifResponse: any = null;
     private newSubscriptionSub?: RxSubscription;
 
     contrats: Contrat[] = [];
-    activeContrat: Contrat | null = null;
-    latestContrat: Contrat | null = null;
 
     eligibility: EligibilityResult | null = null;
 
@@ -42,6 +38,11 @@ export class Subscription  implements OnInit, OnDestroy {
     showContactDrawer = false;
     contactMessage = '';
     isSendingMessage = false;
+    /** Abonnement ciblé par le drawer de contact — un client multi-lieux peut avoir des
+     * abonnements auprès d'agences différentes, jamais une seule "agence active" globale. */
+    private contactTarget: any = null;
+    /** Abonnement ciblé par le paiement en cours (voir initiatePayment). */
+    private paymentTarget: any = null;
 
 constructor(
     private authService: AuthService,
@@ -87,12 +88,6 @@ constructor(
     this.agencyService.getUserSubscription(userID).subscribe({
       next: (response: any[]) => {
         this.subscriptions = response || [];
-        const sortedByEndDateDesc = [...this.subscriptions].sort(
-          (a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
-        );
-        this.activeSubscription = sortedByEndDateDesc.find((sub) => isSubscriptionCurrentlyActive(sub)) || null;
-        this.latestSubscription = sortedByEndDateDesc[0] || null;
-        console.log("Active subscription ==>", this.activeSubscription);
       },
       error: (err) => {
         console.error('Erreur lors du chargement des abonnements', err);
@@ -100,22 +95,45 @@ constructor(
     });
   }
 
-  /** "Mon contrat" — même rôle que client-dashboard.ts::loadActiveContrat(). */
+  /** Contrats du client — plus affichés ici (page dédiée /contrat), seulement utilisés
+   * pour conditionner le bouton "Voir mes contrats". */
   loadActiveContrat(): void {
     const clientId = this.currentUser?._id;
     if (!clientId) return;
     this.contratService.getContratsByClient$(clientId).subscribe({
       next: (contrats) => {
         this.contrats = contrats;
-        this.activeContrat = contrats.find((c) => c.status === 'actif') || null;
-        const sortedByStartDateDesc = [...contrats].sort(
-          (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-        );
-        this.latestContrat = this.activeContrat || sortedByStartDateDesc[0] || null;
       },
       error: (err) => {
         console.error('Erreur lors du chargement des contrats', err);
       },
+    });
+  }
+
+  /** Clé de regroupement par lieu — "compte entier" (serviceLocationId absent) groupé à
+   * part, sinon l'id du lieu (qu'il soit populé en objet ou déjà une chaîne). */
+  private lieuKey(item: { serviceLocationId?: any } | null): string {
+    const lieu = item?.serviceLocationId;
+    if (!lieu) return 'compte-entier';
+    return typeof lieu === 'object' ? lieu._id : lieu;
+  }
+
+  /** Un client peut avoir un abonnement actif PAR LIEU (Modèle C) — n'afficher que le
+   * dernier ne montrait qu'un seul lieu sur plusieurs. Un par lieu (le plus récent),
+   * trié lieu principal d'abord. */
+  get subscriptionsToDisplay(): any[] {
+    const byLieu = new Map<string, any>();
+    for (const sub of this.subscriptions) {
+      const key = this.lieuKey(sub);
+      const current = byLieu.get(key);
+      if (!current || new Date(sub.endDate).getTime() > new Date(current.endDate).getTime()) {
+        byLieu.set(key, sub);
+      }
+    }
+    return Array.from(byLieu.values()).sort((a, b) => {
+      const aPrimary = typeof a.serviceLocationId === 'object' && a.serviceLocationId?.isPrimary ? 0 : 1;
+      const bPrimary = typeof b.serviceLocationId === 'object' && b.serviceLocationId?.isPrimary ? 0 : 1;
+      return aPrimary - bPrimary;
     });
   }
 
@@ -128,21 +146,14 @@ constructor(
     });
   }
 
-  /** Même mapping que client-dashboard.ts::contratStatusLabel() — une seule vérité de libellé pour ce statut. */
-  contratStatusLabel(status?: string): string {
-    const map: { [key: string]: string } = { actif: 'Actif', suspendu: 'Suspendu', resilie: 'Résilié' };
-    return status ? (map[status] || status) : '';
-  }
-
-  contratFrequenceLabel(frequence?: string): string {
-    const map: { [key: string]: string } = { daily: 'Quotidienne', weekly: 'Hebdomadaire', monthly: 'Mensuelle' };
-    return frequence ? (map[frequence] || frequence) : '';
-  }
-
   /** Seul champ réel disponible sur Subscription (isActive) — pas de statut "annulé"/"suspendu" distinct en base (models/subscription.js). */
   subscriptionStatusLabel(subscription: any): string {
     if (!subscription) return '';
     return isSubscriptionCurrentlyActive(subscription) ? 'Actif' : 'Expiré';
+  }
+
+  isSubscriptionActive(subscription: any): boolean {
+    return isSubscriptionCurrentlyActive(subscription);
   }
 
   /** "Tous vos lieux" = abonnement/contrat "compte entier" (serviceLocationId absent —
@@ -171,21 +182,24 @@ constructor(
     return (reason && map[reason]) || "Vous ne bénéficiez actuellement d'aucun service actif.";
   }
 
-  initiatePayment() {
-    const target = this.activeSubscription || this.latestSubscription;
-    if (!target) {
-      alert('Aucun abonnement à payer ou à renouveler pour le moment.');
-      return;
-    }
+  /** `subscription` : celui de la carte sur laquelle le client a cliqué "Payer" — jamais
+   * un "abonnement actif" global, un client multi-lieux ayant un abonnement par lieu. */
+  initiatePayment(subscription: any) {
+    if (!subscription) return;
+    this.paymentTarget = subscription;
 
-    // Préparer les données pour le paiement
+    // Préparer les données pour le paiement — serviceLocationId propagé explicitement
+    // pour que le renouvellement reste rattaché à CE lieu (sinon resolveServiceLocationForSubscription
+    // retomberait sur le lieu principal du client, potentiellement un autre lieu).
+    const lieu = subscription.serviceLocationId;
     this.tarifResponse = {
-      tarifId: target.pricingId._id,
-      agencyId: target.agencyId._id,
+      tarifId: subscription.pricingId._id,
+      agencyId: subscription.agencyId._id,
       userId: this.currentUser?._id,
       numberMonths: '1', // Un mois par défaut
-      amount: target.pricingId.price,
-      planType: target.pricingId.planType
+      amount: subscription.pricingId.price,
+      planType: subscription.pricingId.planType,
+      serviceLocationId: typeof lieu === 'object' ? lieu?._id : lieu,
     };
 
     console.log('Tarif response prepared:', this.tarifResponse);
@@ -201,21 +215,29 @@ constructor(
     this.router.navigate(['/agencies']);
   }
 
-  contactSupport() {
-    if (!this.activeSubscription?.agencyId?._id) {
-      alert('Aucune agence associée à contacter pour le moment.');
+  goToContracts(): void {
+    this.router.navigate(['/contrat']);
+  }
+
+  /** `subscription` : celle de la carte sur laquelle "Contactez l'agence" a été cliqué —
+   * un client multi-lieux peut être rattaché à des agences différentes selon le lieu. */
+  contactSupport(subscription: any) {
+    if (!subscription?.agencyId?._id) {
+      this.notificationService.showInfo('Info', 'Aucune agence associée à contacter pour le moment.');
       return;
     }
+    this.contactTarget = subscription;
     this.showContactDrawer = true;
   }
 
   closeContactDrawer() {
     this.showContactDrawer = false;
     this.contactMessage = '';
+    this.contactTarget = null;
   }
 
   get contactAgencyName(): string {
-    return this.activeSubscription?.agencyId?.name || '';
+    return this.contactTarget?.agencyId?.name || '';
   }
 
   sendContactMessage() {
@@ -225,7 +247,7 @@ constructor(
       this.notificationService.showInfo('Message vide', 'Le contenu du message ne peut pas être vide.');
       return;
     }
-    const agencyId = this.activeSubscription?.agencyId?._id;
+    const agencyId = this.contactTarget?.agencyId?._id;
     if (!this.currentUser?._id || !agencyId) {
       this.notificationService.showError('Erreur', 'Impossible d\'envoyer le message pour le moment.');
       return;

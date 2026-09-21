@@ -1,9 +1,9 @@
 <div class="subscription-page">
   <div class="page-header">
     <div class="container">
-      <h1 class="page-title">Mon Abonnement</h1>
+      <h1 class="page-title">Mes Abonnements</h1>
       <p class="page-subtitle">
-        Gérez votre abonnement et vos services de collecte
+        Gérez vos abonnements et vos services de collecte
       </p>
     </div>
   </div>
@@ -33,134 +33,114 @@
       </div>
       }
 
-      <!-- MON CONTRAT -->
-      <div class="subscription-card card">
-        <h1 class="text-[28px] font-semibold text-[--primary-color]">
-          Mon Contrat
-        </h1>
-        @if (latestContrat) {
-        <div class="subscription-info">
-          <div class="plan-summary">
-            <span class="status-badge" [class.active]="latestContrat.status === 'actif'">
-              {{ contratStatusLabel(latestContrat.status) }}
-            </span>
+      <!-- MES CONTRATS : plus de rendu détaillé ici, juste un renvoi vers la page dédiée -->
+      @if (contrats.length) {
+        <section class="subscription-section">
+          <div class="subscription-card card contracts-link-card">
+            <div class="contracts-link-text">
+              <i class="material-icons">description</i>
+              <span>Vous avez {{ contrats.length }} contrat(s) associé(s) à votre compte.</span>
+            </div>
+            <button class="btn btn-secondary" (click)="goToContracts()">
+              <i class="material-icons">visibility</i>
+              Voir mes contrats
+            </button>
           </div>
-          <div class="info-item">
-            <strong>Fréquence de collecte:</strong>
-            <span>{{ contratFrequenceLabel(latestContrat.frequenceCollecte) }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Lieu de service:</strong>
-            <span>{{ serviceLocationLabel(latestContrat) }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Début:</strong>
-            <span>{{ latestContrat.startDate | date:'dd/MM/yyyy' }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Fin:</strong>
-            <span>{{ latestContrat.endDate ? (latestContrat.endDate | date:'dd/MM/yyyy') : 'Non définie' }}</span>
-          </div>
-          @if (latestContrat.status === 'resilie' && latestContrat.raisonResiliation) {
-          <div class="info-item">
-            <strong>Motif de résiliation:</strong>
-            <span>{{ latestContrat.raisonResiliation }}</span>
-          </div>
-          }
-        </div>
-        } @else {
-        <div class="info-item">
-          <span>Aucun contrat associé à votre compte.</span>
-        </div>
-        }
-      </div>
+        </section>
+      }
 
       <!-- MON ABONNEMENT -->
-      <div class="subscription-card card">
-        <h1 class="text-[28px] font-semibold text-[--primary-color]">
-          Mon Abonnement
+      <section class="subscription-section">
+        <h1 class="text-[32px] font-semibold text-[--primary-color]">
+          Mes Abonnements
         </h1>
-        <!-- ...existing code... -->
-        @if (latestSubscription) {
-        <div class="subscription-info">
-          <div class="plan-summary">
-            <span class="plan-badge" [ngClass]="latestSubscription.pricingId.planType">
-              @switch (latestSubscription.pricingId.planType) {
-              @case ('premium') {
-              <i class="material-icons" style="font-size: 32px; color: gold">star</i>
-              }
-              @case ('standard') {
-              <i class="material-icons" style="font-size: 32px; color: #2196f3">star_half</i>
-              }
-              @case ('basic') {
-              <i class="material-icons" style="font-size: 32px; color: #9e9e9e">star_outline</i>
-              }
-              }
-              {{ latestSubscription.pricingId.planType | titlecase }}
-            </span>
-            <span class="status-badge" [class.active]="activeSubscription === latestSubscription">
-              {{ subscriptionStatusLabel(latestSubscription) }}
-            </span>
-          </div>
-          <div class="info-item-agencyName">
-            <strong>Agence:</strong>
-            <span class="font-semibold text-[--primary-color]">{{ latestSubscription.agencyId?.name }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Adresses:</strong>
-            <span>{{ latestSubscription.agencyId?.address?.city }} - {{
-              latestSubscription.agencyId?.address?.neighborhood }} - {{
-              latestSubscription.agencyId?.address?.sector }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Code postal:</strong>
-            <span>{{ latestSubscription.agencyId?.address?.postalCode }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Lieu de service:</strong>
-            <span>{{ serviceLocationLabel(latestSubscription) }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Prix:</strong>
-            <span class="text-[20px] font-semibold text-[--primary-color]">{{ latestSubscription.pricingId.price }}
-              <sup class="tex-black">FCFA</sup>/ Mois</span>
-          </div>
-          <div class="info-item">
-            <strong>Début:</strong>
-            <span>{{ latestSubscription.startDate | date:'dd/MM/yyyy' }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Fin:</strong>
-            <span>{{ latestSubscription.endDate | date:'dd/MM/yyyy' }}</span>
-          </div>
-          <div class="contact-info">
-            <strong>Contacts:</strong>
-            <span>{{ latestSubscription.agencyId?.phone }}</span>
-          </div>
-          <div class="actions">
-            @if (activeSubscription !== latestSubscription) {
-            <button class="btn btn-primary" (click)="initiatePayment()">
-              <i class="material-icons">payment</i>
-              Payer par mobile Money
-            </button>
+        @if (subscriptionsToDisplay.length) {
+          <div class="subscription-grid">
+            @for (subscription of subscriptionsToDisplay; track subscription._id) {
+              <div class="subscription-card card">
+                <div class="subscription-info">
+                  <div class="plan-summary">
+                    <span class="plan-badge" [ngClass]="subscription.pricingId.planType">
+                      @switch (subscription.pricingId.planType) {
+                      @case ('premium') {
+                      <i class="material-icons" style="font-size: 32px; color: gold">star</i>
+                      }
+                      @case ('standard') {
+                      <i class="material-icons" style="font-size: 32px; color: #2196f3">star_half</i>
+                      }
+                      @case ('basic') {
+                      <i class="material-icons" style="font-size: 32px; color: #9e9e9e">star_outline</i>
+                      }
+                      }
+                      {{ subscription.pricingId.planType | titlecase }}
+                    </span>
+                    <span class="status-badge" [class.active]="isSubscriptionActive(subscription)">
+                      {{ subscriptionStatusLabel(subscription) }}
+                    </span>
+                  </div>
+                  <div class="info-item-agencyName">
+                    <strong>Agence:</strong>
+                    <span class="font-semibold text-[--primary-color]">{{ subscription.agencyId?.name }}</span>
+                  </div>
+                  <div class="info-item">
+                    <strong>Adresses:</strong>
+                    <span>{{ subscription.agencyId?.address?.city }} - {{
+                      subscription.agencyId?.address?.neighborhood }} - {{
+                      subscription.agencyId?.address?.sector }}</span>
+                  </div>
+                  <div class="info-item">
+                    <strong>Code postal:</strong>
+                    <span>{{ subscription.agencyId?.address?.postalCode }}</span>
+                  </div>
+                  <div class="info-item">
+                    <strong>Lieu de service:</strong>
+                    <span>{{ serviceLocationLabel(subscription) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <strong>Prix:</strong>
+                    <span class="text-[20px] font-semibold text-[--primary-color]">{{ subscription.pricingId.price }}
+                      <sup class="tex-black">FCFA</sup>/ Mois</span>
+                  </div>
+                  <div class="info-item">
+                    <strong>Début:</strong>
+                    <span>{{ subscription.startDate | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <strong>Fin:</strong>
+                    <span>{{ subscription.endDate | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                  <div class="contact-info">
+                    <strong>Contacts:</strong>
+                    <span>{{ subscription.agencyId?.owner?.phone || 'Non renseigné' }}</span>
+                  </div>
+                  <div class="actions">
+                    @if (!isSubscriptionActive(subscription)) {
+                    <button class="btn btn-primary" (click)="initiatePayment(subscription)">
+                      <i class="material-icons">payment</i>
+                      Payer par mobile Money
+                    </button>
+                    }
+                    <button class="btn btn-secondary" (click)="contactSupport(subscription)">
+                      Contactez l'agence
+                    </button>
+                  </div>
+                </div>
+              </div>
             }
-            <button class="btn btn-secondary" (click)="contactSupport()">
-              Contactez l'agence
+          </div>
+        } @else {
+        <div class="subscription-card card">
+          <div class="subscription-empty">
+            <i class="material-icons">card_membership</i>
+            <p>Vous n'avez pas encore d'abonnement. Choisissez une agence pour souscrire à un service de collecte.</p>
+            <button class="btn btn-primary" (click)="goToAgencies()">
+              <i class="material-icons">storefront</i>
+              Choisir une agence
             </button>
           </div>
-        </div>
-        } @else {
-        <div class="subscription-empty">
-          <i class="material-icons">card_membership</i>
-          <p>Vous n'avez pas encore d'abonnement. Choisissez une agence pour souscrire à un service de collecte.</p>
-          <button class="btn btn-primary" (click)="goToAgencies()">
-            <i class="material-icons">storefront</i>
-            Choisir une agence
-          </button>
         </div>
         }
-        <!-- ...existing code... -->
-      </div>
+      </section>
     </div>
   </div>
 

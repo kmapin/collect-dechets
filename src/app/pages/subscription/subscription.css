@@ -4,7 +4,7 @@
 }
 
 .subscription-content {
-  max-width: 600px;
+  max-width: 1100px;
   margin: 24px auto 0;
 }
 
@@ -12,12 +12,97 @@
   padding: 32px;
 }
 
-.subscription-card+.subscription-card {
+.subscription-section {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.subscription-section+.subscription-section {
   margin-top: 24px;
 }
 
+/* Mobile first : empilé par défaut, sur une ligne dès que la largeur le permet. */
+.contracts-link-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.contracts-link-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary, #1e293b);
+}
+
+.contracts-link-text i {
+  color: var(--primary-color);
+}
+
+.contracts-link-card .btn {
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .contracts-link-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .contracts-link-card .btn {
+    width: auto;
+  }
+}
+
+/* Mobile first : une colonne par défaut, plusieurs cartes côte à côte dès que la
+   largeur le permet (un client multi-lieux a un abonnement/contrat par lieu). */
+.subscription-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* Cartes de même hauteur (alignées sur la plus grande de la ligne) : le contenu
+   s'étire en colonne pour que le bouton reste ancré en bas quel que soit le texte
+   (ex. "Domicile" vs "Boutique WENDKOUNI") au lieu de laisser un vide inégal. */
+.subscription-grid .subscription-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.subscription-grid .subscription-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.subscription-grid .actions {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+@media (min-width: 700px) {
+  .subscription-section {
+    max-width: none;
+  }
+
+  .subscription-grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  }
+}
+
+/* Espacement avant la section suivante — jamais via un sélecteur de fratrie "+" sur
+   .subscription-card : à l'intérieur de .subscription-grid, les cartes d'une même
+   ligne SONT des frères DOM adjacents, un tel sélecteur les décalait verticalement
+   les unes par rapport aux autres. */
 .eligibility-banner {
   padding: 20px 32px;
+  margin-bottom: 24px;
   border-left: 4px solid var(--success-color);
 }
 
