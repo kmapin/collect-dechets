@@ -3839,6 +3839,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // Phase 10 (réactivation du drawer, enrichi des lieux de service du client — multi-lieux).
   selectedClientLocations: ServiceLocation[] = [];
   isLoadingSelectedClientLocations = false;
+  /** Nombre de souscriptions ACTUELLES du client auprès de cette agence — un par lieu
+   * (Modèle C), pas le nombre brut d'enregistrements historiques (renouvellements inclus). */
+  selectedClientSubscriptionsCount = 0;
 
   viewClientDetails(clientId: string): void {
     this.notificationService.showInfo(
@@ -3847,6 +3850,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     );
 
     this.selectedClientLocations = [];
+    this.selectedClientSubscriptionsCount = 0;
     this.adminService.getUserById(clientId).subscribe({
       next: (client: any) => {
         this.selectedClient = client?.user;
@@ -3862,6 +3866,30 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
           error: () => {
             this.selectedClientLocations = [];
             this.isLoadingSelectedClientLocations = false;
+          },
+        });
+
+        const agencyId = this.agency?.agencyId;
+        this.agencyService.getUserSubscription(clientId).subscribe({
+          next: (subs: any[]) => {
+            const scoped = (subs || []).filter(
+              (s) => !agencyId || s.agencyId?._id === agencyId || s.agencyId === agencyId,
+            );
+            // Une souscription par lieu (la plus récente) — même convention que
+            // subscription.ts::subscriptionsToDisplay, pas le total brut de l'historique.
+            const byLieu = new Map<string, any>();
+            for (const s of scoped) {
+              const lieu = s.serviceLocationId;
+              const key = lieu ? (typeof lieu === 'object' ? lieu._id : lieu) : 'compte-entier';
+              const current = byLieu.get(key);
+              if (!current || new Date(s.endDate).getTime() > new Date(current.endDate).getTime()) {
+                byLieu.set(key, s);
+              }
+            }
+            this.selectedClientSubscriptionsCount = byLieu.size;
+          },
+          error: () => {
+            this.selectedClientSubscriptionsCount = 0;
           },
         });
       },
@@ -5089,6 +5117,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.showClientDetailsModal = false;
     this.selectedClient = null;
     this.selectedClientLocations = [];
+    this.selectedClientSubscriptionsCount = 0;
   }
   editEmployee(employee: any): void {
     console.log("Édition de l'employé :", employee);
