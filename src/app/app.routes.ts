@@ -9,6 +9,14 @@ export const routes: Routes = [
   },
 
   {
+    path: "indisponible",
+    loadComponent: () =>
+      import("./pages/service-unavailable/service-unavailable").then(
+        (c) => c.ServiceUnavailable,
+      ),
+  },
+
+  {
     path: "agencies",
     loadComponent: () =>
       import("./pages/agencies/agencies").then((c) => c.Agencies),

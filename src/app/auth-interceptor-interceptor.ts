@@ -21,6 +21,14 @@ export const authInterceptorInterceptor: HttpInterceptorFn = (req: HttpRequest<u
     catchError((error: HttpErrorResponse) => {
       console.error("[JWTI-ERROR] ", error)
 
+      // Panne serveur (502/503/504) ou requête réseau qui n'aboutit pas du tout
+      // (status 0 : "Failed to fetch", DNS, CORS bloqué...) — redirige vers une page
+      // dédiée plutôt que de laisser chaque écran échouer silencieusement à sa façon.
+      const estPanneServeur = error.status === 0 || [502, 503, 504].includes(error.status);
+      if (estPanneServeur && !router.url.startsWith('/indisponible')) {
+        router.navigateByUrl('/indisponible');
+      }
+
       // if (error.status === 408 || error.status === 401 || error.status === 403) {
       // if (error.status === 403) {
       //   notificationService.showSuccess("Deconnexion","Votre session a expiré, Vous allez être déconnecté dans quelques instants");

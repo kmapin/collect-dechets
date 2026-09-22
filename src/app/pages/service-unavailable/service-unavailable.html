@@ -1,0 +1,53 @@
+<div class="su-page">
+  <div class="su-background">
+    <div class="su-blob su-blob-1"></div>
+    <div class="su-blob su-blob-2"></div>
+  </div>
+
+  <div class="su-card">
+    @if (!isBackOnline) {
+      <div class="su-icon">
+        <i class="material-icons">cloud_off</i>
+      </div>
+      <span class="su-badge">Erreur serveur</span>
+      <h1>Service momentanément indisponible</h1>
+      <p class="su-text">
+        Nos serveurs ne répondent pas pour le moment. C'est temporaire — notre équipe a été alertée.
+        Vous pouvez patienter, une nouvelle tentative automatique aura lieu dans quelques secondes.
+      </p>
+
+      <div class="su-retry-info">
+        @if (isChecking) {
+          <i class="material-icons spin">sync</i>
+          <span>Vérification en cours...</span>
+        } @else {
+          <i class="material-icons">schedule</i>
+          <span>Nouvelle tentative dans {{ secondsToNextRetry }}s</span>
+        }
+      </div>
+
+      <div class="su-actions">
+        <button type="button" class="su-btn su-btn-primary" [disabled]="isChecking" (click)="verifierConnexion()">
+          <i class="material-icons">{{ isChecking ? 'hourglass_empty' : 'refresh' }}</i>
+          Réessayer maintenant
+        </button>
+        <button type="button" class="su-btn su-btn-outline" (click)="retourAccueil()">
+          <i class="material-icons">home</i>
+          Retour à l'accueil
+        </button>
+      </div>
+
+      @if (attemptCount > 2) {
+        <p class="su-hint">
+          Le problème persiste ? Contactez le support technique si la situation ne se résout pas rapidement.
+        </p>
+      }
+    } @else {
+      <div class="su-icon su-icon-success">
+        <i class="material-icons">check_circle</i>
+      </div>
+      <h1>Connexion rétablie</h1>
+      <p class="su-text">Le service est de nouveau disponible. Redirection en cours...</p>
+    }
+  </div>
+</div>
