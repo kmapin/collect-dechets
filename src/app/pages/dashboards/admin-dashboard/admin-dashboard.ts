@@ -560,9 +560,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
   };
 
   // ── Vue Agences / Utilisateurs / Incidents ──────────────
-  agenciesViewMode:  'card' | 'table' = 'card';
-  usersViewMode:     'card' | 'table' = 'card';
-  incidentsViewMode: 'card' | 'table' = 'card';
+  agenciesViewMode:  'card' | 'table' = 'table';
+  usersViewMode:     'card' | 'table' = 'table';
+  incidentsViewMode: 'card' | 'table' = 'table';
 
   // ── Pagination Agences ───────────────────────────────────
   agenciesCurrentPage  = 1;
