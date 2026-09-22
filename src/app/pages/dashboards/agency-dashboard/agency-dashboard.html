@@ -911,6 +911,26 @@
             <div class="section-header">
               <h2>Gestion des Zones de Couverture</h2>
               <div class="section-actions">
+                <div class="view-mode-toggle">
+                  <button
+                    class="view-mode-btn"
+                    [class.active]="zoneViewMode === 'card'"
+                    (click)="zoneViewMode = 'card'"
+                    title="Vue cartes"
+                  >
+                    <i class="material-icons">grid_view</i>
+                    <span>Cartes</span>
+                  </button>
+                  <button
+                    class="view-mode-btn"
+                    [class.active]="zoneViewMode === 'table'"
+                    (click)="zoneViewMode = 'table'"
+                    title="Vue tableau"
+                  >
+                    <i class="material-icons">table_rows</i>
+                    <span>Tableau</span>
+                  </button>
+                </div>
                 <button class="btn btn-primary" (click)="openZoneModalcouverture()">
                   <i class="material-icons">edit_location</i>
                   Ajouter des zones couvertes
@@ -938,6 +958,49 @@
                 </div>
                 <!-- Affichage compact des zones -->
                 @if (zones.length > 0) {
+                  @if (zoneViewMode === "table") {
+                    <div class="employees-table-wrapper">
+                      <table class="employees-table">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Quartier</th>
+                            <th>Ville</th>
+                            <th>Arrondissement</th>
+                            <th>Secteur</th>
+                            <th>Statut</th>
+                            <th class="col-actions">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (zone of zones; track zone; let i = $index) {
+                            <tr>
+                              <td>{{ i + 1 }}</td>
+                              <td class="cell-name">{{ zone.neighborhood || zone }}</td>
+                              <td>{{ zone.city || "—" }}</td>
+                              <td>{{ zone.arrondissement || "—" }}</td>
+                              <td>{{ zone.sector || "—" }}</td>
+                              <td>
+                                <span class="status-badge-table status-active">Actif</span>
+                              </td>
+                              <td class="col-actions">
+                                <div class="table-actions">
+                                  <button
+                                    class="action-btn danger"
+                                    title="Retirer cette zone"
+                                    (click)="removeZone(zone)"
+                                  >
+                                    <i class="material-icons">remove_circle</i>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                  @if (zoneViewMode === "card") {
                   <div class="zones-compact-container">
                     <!-- Liste compacte des zones -->
                     <div class="zones-compact-list">
@@ -1018,6 +1081,7 @@
                       </div>
                     }
                   </div>
+                  }
                 }
                 <!-- État vide compact -->
                 @if (zones.length === 0) {
@@ -1045,7 +1109,104 @@
           <div class="schedules-tab">
             <div class="section-header">
               <h2>Gestion des Plannings de Collecte</h2>
+              <div class="section-actions">
+                <div class="view-mode-toggle">
+                  <button
+                    class="view-mode-btn"
+                    [class.active]="scheduleViewMode === 'card'"
+                    (click)="scheduleViewMode = 'card'"
+                    title="Vue cartes"
+                  >
+                    <i class="material-icons">grid_view</i>
+                    <span>Cartes</span>
+                  </button>
+                  <button
+                    class="view-mode-btn"
+                    [class.active]="scheduleViewMode === 'table'"
+                    (click)="scheduleViewMode = 'table'"
+                    title="Vue tableau"
+                  >
+                    <i class="material-icons">table_rows</i>
+                    <span>Tableau</span>
+                  </button>
+                </div>
+              </div>
             </div>
+
+            @if (scheduleViewMode === "table") {
+              <div class="employees-table-wrapper">
+                <table class="employees-table">
+                  <thead>
+                    <tr>
+                      <th>Référence</th>
+                      <th>Libellé</th>
+                      <th>Zone</th>
+                      <th>Date</th>
+                      <th>Horaire</th>
+                      <th>Équipe</th>
+                      <th>Statut</th>
+                      <th class="col-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (schedule of schedules; track schedule._id) {
+                      <tr>
+                        <td class="cell-name">{{ schedule.reference || "—" }}</td>
+                        <td>{{ schedule.libelle || "—" }}</td>
+                        <td>{{ getZoneName(schedule) }}</td>
+                        <td>{{ schedule.date ? (schedule.date | date: "dd/MM/yyyy") : "—" }}</td>
+                        <td>{{ schedule.startTime }}{{ schedule.endTime ? " – " + schedule.endTime : "" }}</td>
+                        <td>{{ schedule.teamName || (schedule.teamIds?.length ? "Équipe assignée" : "—") }}</td>
+                        <td>
+                          <span class="sched-status-badge sched-status-{{ schedule.status }}">
+                            {{
+                              schedule.status === "brouillon"
+                                ? "Brouillon"
+                                : schedule.status === "planifie"
+                                  ? "Planifié"
+                                  : schedule.status === "en_cours"
+                                    ? "En cours"
+                                    : schedule.status === "termine"
+                                      ? "Terminé"
+                                      : schedule.status === "annule"
+                                        ? "Annulé"
+                                        : schedule.status
+                            }}
+                          </span>
+                        </td>
+                        <td class="col-actions">
+                          <div class="table-actions">
+                            <button class="action-btn edit" (click)="openScheduleDetails(schedule)" title="Voir le détail">
+                              <i class="material-icons">visibility</i>
+                            </button>
+                            <button class="action-btn edit" (click)="editSchedule(schedule)" title="Modifier">
+                              <i class="material-icons">edit</i>
+                            </button>
+                            <button
+                              class="action-btn danger"
+                              [disabled]="isDeleting"
+                              (click)="deletePlanning(schedule._id)"
+                              title="Supprimer"
+                            >
+                              <i class="material-icons">delete</i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              @if (!schedules.length) {
+                <div class="empty-state">
+                  <i class="material-icons">event_busy</i>
+                  <h3>Aucun planning</h3>
+                  <p>Aucun planning de collecte pour l'instant</p>
+                </div>
+              }
+            }
+
+            @if (scheduleViewMode === "card") {
             <div class="schedules-calendar">
               <div class="calendar-header">
                 <button class="calendar-nav" (click)="previousWeek()">
@@ -1163,6 +1324,7 @@
                 </div>
               </div>
             </div>
+            }
           </div>
         }
 
@@ -1172,6 +1334,26 @@
             <div class="section-header">
               <h2>Gestion des Clients</h2>
               <div class="section-actions">
+                <div class="view-mode-toggle">
+                  <button
+                    class="view-mode-btn"
+                    [class.active]="clientViewMode === 'card'"
+                    (click)="clientViewMode = 'card'"
+                    title="Vue cartes"
+                  >
+                    <i class="material-icons">grid_view</i>
+                    <span>Cartes</span>
+                  </button>
+                  <button
+                    class="view-mode-btn"
+                    [class.active]="clientViewMode === 'table'"
+                    (click)="clientViewMode = 'table'"
+                    title="Vue tableau"
+                  >
+                    <i class="material-icons">table_rows</i>
+                    <span>Tableau</span>
+                  </button>
+                </div>
                 <button
                   class="btn btn-outline search-toggle-btn"
                   (click)="toggleClientsSearch()"
@@ -1254,44 +1436,96 @@
             <!-- Liste des clients -->
             @if (!isLoadingFilteredClients) {
               @if (filteredActiveClients?.length) {
-                <div class="employees-grid">
-                  @for (client of filteredActiveClients; track client._id) {
-                    <div class="employee-card card">
-                      <div class="employee-header">
-                        <div class="employee-info">
-                          <h4>{{ client.firstName }} {{ client.lastName }}</h4>
-                          <p class="employee-role">
-                            {{ client.historyAbonnement?.length ? "Abonné" : "Aucun abonnement" }}
-                          </p>
-                        </div>
-                        <div class="employee-avatar">
-                          <div class="rounded-circle text-white font-bold uppercase" [style.background-color]="getRandomColor(client)">
-                            {{ getInitials(client.firstName + " " + client.lastName) }}
+                @if (clientViewMode === "card") {
+                  <div class="employees-grid">
+                    @for (client of filteredActiveClients; track client._id) {
+                      <div class="employee-card card">
+                        <div class="employee-header">
+                          <div class="employee-info">
+                            <h4>{{ client.firstName }} {{ client.lastName }}</h4>
+                            <p class="employee-role">
+                              {{ client.historyAbonnement?.length ? "Abonné" : "Aucun abonnement" }}
+                            </p>
+                          </div>
+                          <div class="employee-avatar">
+                            <div class="rounded-circle text-white font-bold uppercase" [style.background-color]="getRandomColor(client)">
+                              {{ getInitials(client.firstName + " " + client.lastName) }}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div class="employee-details">
-                        <div class="detail-item">
-                          <i class="material-icons">email</i>
-                          <span>{{ client.email || "Non renseigné" }}</span>
+                        <div class="employee-details">
+                          <div class="detail-item">
+                            <i class="material-icons">email</i>
+                            <span>{{ client.email || "Non renseigné" }}</span>
+                          </div>
+                          <div class="detail-item">
+                            <i class="material-icons">phone</i>
+                            <span>{{ client.phone || "Non renseigné" }}</span>
+                          </div>
+                          <div class="detail-item">
+                            <i class="material-icons">location_on</i>
+                            <span>{{ client.address?.neighborhood }}, {{ client.address?.city }}</span>
+                          </div>
                         </div>
-                        <div class="detail-item">
-                          <i class="material-icons">phone</i>
-                          <span>{{ client.phone || "Non renseigné" }}</span>
-                        </div>
-                        <div class="detail-item">
-                          <i class="material-icons">location_on</i>
-                          <span>{{ client.address?.neighborhood }}, {{ client.address?.city }}</span>
+                        <div class="employee-actions">
+                          <button class="action-btn edit" (click)="viewClientDetails(client._id)" title="Voir les détails">
+                            <i class="material-icons">visibility</i>
+                          </button>
                         </div>
                       </div>
-                      <div class="employee-actions">
-                        <button class="action-btn edit" (click)="viewClientDetails(client._id)" title="Voir les détails">
-                          <i class="material-icons">visibility</i>
-                        </button>
-                      </div>
-                    </div>
-                  }
-                </div>
+                    }
+                  </div>
+                }
+
+                @if (clientViewMode === "table") {
+                  <div class="employees-table-wrapper">
+                    <table class="employees-table">
+                      <thead>
+                        <tr>
+                          <th>Client</th>
+                          <th>Statut</th>
+                          <th>Email</th>
+                          <th>Telephone</th>
+                          <th>Adresse</th>
+                          <th class="col-actions">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (client of filteredActiveClients; track client._id) {
+                          <tr>
+                            <td class="cell-employee">
+                              <div class="table-avatar-wrap">
+                                <div class="table-avatar-initials" [style.background-color]="getRandomColor(client)">
+                                  {{ getInitials(client.firstName + " " + client.lastName) }}
+                                </div>
+                                <span class="name-text">{{ client.firstName }} {{ client.lastName }}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <span
+                                class="status-badge-table"
+                                [class.status-active]="!!client.historyAbonnement?.length"
+                                [class.status-inactive]="!client.historyAbonnement?.length"
+                              >
+                                {{ client.historyAbonnement?.length ? "Abonné" : "Aucun abonnement" }}
+                              </span>
+                            </td>
+                            <td class="cell-email">{{ client.email || "Non renseigné" }}</td>
+                            <td>{{ client.phone || "Non renseigné" }}</td>
+                            <td>{{ client.address?.neighborhood }}, {{ client.address?.city }}</td>
+                            <td class="col-actions">
+                              <div class="table-actions">
+                                <button class="action-btn edit" (click)="viewClientDetails(client._id)" title="Voir les détails">
+                                  <i class="material-icons">visibility</i>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
 
                 <!-- Pagination -->
                 @if (clientsTotalPages > 1) {
@@ -1377,6 +1611,28 @@
           <div class="avis-tab">
             <div class="section-header">
               <h2>Avis clients</h2>
+              <div class="section-actions">
+                <div class="view-mode-toggle">
+                  <button
+                    class="view-mode-btn"
+                    [class.active]="avisViewMode === 'card'"
+                    (click)="avisViewMode = 'card'"
+                    title="Vue cartes"
+                  >
+                    <i class="material-icons">grid_view</i>
+                    <span>Cartes</span>
+                  </button>
+                  <button
+                    class="view-mode-btn"
+                    [class.active]="avisViewMode === 'table'"
+                    (click)="avisViewMode = 'table'"
+                    title="Vue tableau"
+                  >
+                    <i class="material-icons">table_rows</i>
+                    <span>Tableau</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             @if (isLoadingRatings) {
@@ -1392,6 +1648,40 @@
             }
 
             @if (!isLoadingRatings && agencyRatings.length) {
+              @if (avisViewMode === "table") {
+                <div class="employees-table-wrapper">
+                  <table class="employees-table">
+                    <thead>
+                      <tr>
+                        <th>Client</th>
+                        <th>Note</th>
+                        <th>Commentaire</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (avis of agencyRatings; track avis._id) {
+                        <tr>
+                          <td class="cell-name">{{ avis.clientId?.firstName }} {{ avis.clientId?.lastName }}</td>
+                          <td>
+                            <span class="avis-stars">
+                              @for (s of getStars(avis.stars); track $index) {
+                                <i class="material-icons">star</i>
+                              }
+                              @for (s of getStars(5 - avis.stars); track $index) {
+                                <i class="material-icons">star_border</i>
+                              }
+                            </span>
+                          </td>
+                          <td class="cell-email">{{ avis.comment || "—" }}</td>
+                          <td>{{ avis.createdAt | date: "dd/MM/yyyy" }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+              @if (avisViewMode === "card") {
               <div class="avis-list">
                 @for (avis of agencyRatings; track avis._id) {
                   <div class="avis-card card">
@@ -1413,6 +1703,7 @@
                   </div>
                 }
               </div>
+              }
 
               @if (ratingsTotalPages > 1) {
                 <div class="pagination">
@@ -1873,8 +2164,8 @@
 
             <!-- Vue Tableau -->
             @if (vehicleViewMode === "table") {
-              <div class="vehicles-table-wrapper">
-                <table class="vehicles-table">
+              <div class="employees-table-wrapper">
+                <table class="employees-table">
                   <thead>
                     <tr>
                       <th>Type</th>

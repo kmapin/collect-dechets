@@ -430,6 +430,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   totalEmployees: number = 0;
   totalPages: number = 0;
   employeeViewMode: 'card' | 'table' = 'table';
+  clientViewMode: 'card' | 'table' = 'table';
 
   // Propriétés vue / pagination collectes
   collecteViewMode: 'card' | 'table' = 'table';
@@ -608,6 +609,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   ];
 
   vehicleViewMode: 'card' | 'table' = 'table';
+  zoneViewMode: 'card' | 'table' = 'table';
+  scheduleViewMode: 'card' | 'table' = 'table';
+  avisViewMode: 'card' | 'table' = 'table';
   showVehicleModal = false;
   isEditingVehicle = false;
   isSavingVehicle = false;

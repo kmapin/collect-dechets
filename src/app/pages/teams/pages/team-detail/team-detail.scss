@@ -343,6 +343,10 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
 
 // ── Tab empty ────────────────────────────────────────────────
 .tab-empty {
+  // Quand c'est le seul enfant de .members-grid (display:grid), il n'occupait que la
+  // largeur de la première colonne (280px) au lieu de toute la ligne — d'où le rendu
+  // non centré malgré align-items:center sur cet élément lui-même.
+  grid-column: 1 / -1;
   display:flex; flex-direction:column; align-items:center; gap:12px;
   padding:60px 20px; color:#94a3b8; text-align:center;
   mat-icon { font-size:48px; width:48px; height:48px; }
