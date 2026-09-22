@@ -427,12 +427,25 @@
                   <i class="material-icons">{{ showEmployeesSearch ? "search_off" : "search" }}</i>
                   {{ showEmployeesSearch ? "Masquer recherche" : "Rechercher" }}
                 </button>
+                <button type="button" class="btn btn-outline" (click)="telechargerModeleEmployes()">
+                  <i class="material-icons">download</i>
+                  Télécharger le modèle
+                </button>
+                <button type="button" class="btn btn-outline" (click)="showImportEmployeesModal = true">
+                  <i class="material-icons">upload_file</i>
+                  Importer Excel
+                </button>
                 <button class="btn btn-primary" (click)="openAddEmployeeModal()">
                   <i class="material-icons">person_add</i>
                   Ajouter Employe
                 </button>
               </div>
             </div>
+
+            @if (showImportEmployeesModal) {
+              <app-excel-import type="employees" (fermer)="showImportEmployeesModal = false" (importReussi)="onEmployeesImported()"></app-excel-import>
+            }
+
             <!-- Barre de recherche des Employes (conditionnelle) -->
             @if (showEmployeesSearch) {
               <div class="employees-search-section" [@slideInOut]>
@@ -1363,8 +1376,20 @@
                   <i class="material-icons">{{ showClientsSearch ? "search_off" : "search" }}</i>
                   {{ showClientsSearch ? "Masquer recherche" : "Rechercher" }}
                 </button>
+                <button type="button" class="btn btn-outline" (click)="telechargerModeleClients()">
+                  <i class="material-icons">download</i>
+                  Télécharger le modèle
+                </button>
+                <button type="button" class="btn btn-primary" (click)="showImportClientsModal = true">
+                  <i class="material-icons">upload_file</i>
+                  Importer Excel
+                </button>
               </div>
             </div>
+
+            @if (showImportClientsModal) {
+              <app-excel-import type="clients" (fermer)="showImportClientsModal = false" (importReussi)="onClientsImported()"></app-excel-import>
+            }
 
             <!-- Barre de recherche des clients (conditionnelle) -->
             @if (showClientsSearch) {

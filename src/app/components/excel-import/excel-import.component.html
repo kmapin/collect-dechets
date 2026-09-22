@@ -1,0 +1,221 @@
+<div class="drawer-overlay" (click)="fermerDrawer()">
+  <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
+    <div class="drawer-header">
+      <h3>{{ titre }}</h3>
+      <button type="button" class="drawer-close-btn" (click)="fermerDrawer()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Étape 1 : dépôt du fichier -->
+      @if (etape === 'depot') {
+        <div class="ei-steps">
+          <div class="ei-step"><span class="ei-step-num">1</span> Télécharger le modèle</div>
+          <div class="ei-step"><span class="ei-step-num">2</span> Remplir le fichier Excel</div>
+          <div class="ei-step"><span class="ei-step-num">3</span> Importer le fichier</div>
+          <div class="ei-step"><span class="ei-step-num">4</span> Vérifier les données</div>
+          <div class="ei-step"><span class="ei-step-num">5</span> Confirmer</div>
+        </div>
+
+        <button type="button" class="btn btn-outline ei-template-btn" [disabled]="isDownloadingTemplate" (click)="telechargerModele()">
+          <i class="material-icons">{{ isDownloadingTemplate ? 'hourglass_empty' : 'download' }}</i>
+          {{ isDownloadingTemplate ? 'Génération...' : 'Télécharger le modèle Excel' }}
+        </button>
+
+        <div
+          class="ei-dropzone"
+          [class.dragover]="isDragOver"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave()"
+          (drop)="onDrop($event)"
+          (click)="fileInput.click()"
+        >
+          @if (isAnalyzing) {
+            <i class="material-icons spin">sync</i>
+            <p>Analyse du fichier en cours...</p>
+          } @else {
+            <i class="material-icons">cloud_upload</i>
+            <p>Déposez votre fichier Excel ici</p>
+            <p class="ei-dropzone-sub">ou cliquez pour sélectionner un fichier (.xlsx, .xls)</p>
+          }
+          <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onFileSelected($event)" />
+        </div>
+
+        @if (erreurGenerale) {
+          <div class="ei-error-banner">
+            <i class="material-icons">error_outline</i>
+            <span>{{ erreurGenerale }}</span>
+          </div>
+        }
+      }
+
+      <!-- Étape 2 : aperçu + erreurs -->
+      @if (etape === 'apercu' && apercu) {
+        <div class="ei-summary">
+          <div class="ei-summary-item">
+            <span class="ei-summary-value">{{ apercu.resume.total }}</span>
+            <span class="ei-summary-label">Total</span>
+          </div>
+          <div class="ei-summary-item ei-summary-ok">
+            <span class="ei-summary-value">{{ apercu.resume.valides }}</span>
+            <span class="ei-summary-label">Valides</span>
+          </div>
+          <div class="ei-summary-item ei-summary-warn">
+            <span class="ei-summary-value">{{ apercu.resume.doublons }}</span>
+            <span class="ei-summary-label">Doublons</span>
+          </div>
+          <div class="ei-summary-item ei-summary-danger">
+            <span class="ei-summary-value">{{ apercu.resume.erreurs }}</span>
+            <span class="ei-summary-label">Erreurs</span>
+          </div>
+        </div>
+
+        @if (apercu.colonnesInconnues.length) {
+          <div class="ei-warning-banner">
+            <i class="material-icons">info</i>
+            <span>Colonne(s) non reconnue(s) et ignorée(s) : {{ apercu.colonnesInconnues.join(', ') }}</span>
+          </div>
+        }
+
+        <div class="ei-table-wrapper">
+          <table class="ei-table">
+            <thead>
+              <tr>
+                <th>Ligne</th>
+                <th>Nom</th>
+                <th>Téléphone</th>
+                <th>Statut</th>
+                <th>Détail</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of apercu.lignes; track ligne.ligne) {
+                <tr [class]="'ei-row-' + ligne.statut">
+                  <td>{{ ligne.ligne }}</td>
+                  <td>{{ ligne.donnees.firstName }} {{ ligne.donnees.lastName }}</td>
+                  <td>{{ ligne.donnees.phone }}</td>
+                  <td>
+                    @if (ligne.statut === 'valide') {
+                      <span class="ei-badge ei-badge-ok"><i class="material-icons">check_circle</i> Valide</span>
+                    }
+                    @if (ligne.statut === 'doublon') {
+                      <span class="ei-badge ei-badge-warn"><i class="material-icons">warning</i> Doublon</span>
+                    }
+                    @if (ligne.statut === 'erreur') {
+                      <span class="ei-badge ei-badge-danger"><i class="material-icons">cancel</i> Erreur</span>
+                    }
+                  </td>
+                  <td class="ei-detail-cell">
+                    @if (ligne.statut === 'doublon') {
+                      <span>Déjà existant ou en double dans le fichier</span>
+                    }
+                    @if (ligne.erreurs.length) {
+                      <span>{{ ligne.erreurs[0].message }}@if (ligne.erreurs.length > 1) { (+{{ ligne.erreurs.length - 1 }}) }</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="ei-confirm-banner">
+          <p>
+            <strong>{{ lignesImportables.length }}</strong> {{ lignesImportables.length > 1 ? libelleEntitePluriel : libelleEntite }} peuvent être importé(s).
+            @if (apercu.resume.doublons) { {{ apercu.resume.doublons }} doublon(s) seront ignorés. }
+            @if (apercu.resume.erreurs) { {{ apercu.resume.erreurs }} ligne(s) contiennent des erreurs. }
+          </p>
+        </div>
+      }
+
+      <!-- Étape 3 : résultat de l'import -->
+      @if (etape === 'resultat' && resultat) {
+        <div class="ei-result">
+          <i class="material-icons ei-result-icon">task_alt</i>
+          <h4>Importation terminée</h4>
+          <div class="ei-summary">
+            <div class="ei-summary-item ei-summary-ok">
+              <span class="ei-summary-value">{{ resultat.importes }}</span>
+              <span class="ei-summary-label">{{ resultat.importes > 1 ? libelleEntitePluriel : libelleEntite }} importé(s)</span>
+            </div>
+            <div class="ei-summary-item ei-summary-warn">
+              <span class="ei-summary-value">{{ resultat.doublons }}</span>
+              <span class="ei-summary-label">Doublons</span>
+            </div>
+            <div class="ei-summary-item ei-summary-danger">
+              <span class="ei-summary-value">{{ resultat.erreurs }}</span>
+              <span class="ei-summary-label">Erreurs</span>
+            </div>
+          </div>
+        </div>
+
+        @if (resultat.importes) {
+          <div class="ei-table-wrapper">
+            <table class="ei-table">
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Téléphone</th>
+                  <th>Mot de passe généré</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ligne of resultat.lignes; track ligne.ligne) {
+                  @if (ligne.statut === 'importe') {
+                    <tr>
+                      <td>{{ ligne.donnees.firstName }} {{ ligne.donnees.lastName }}</td>
+                      <td>{{ ligne.donnees.phone }}</td>
+                      <td><code>{{ ligne.motDePasseGenere }}</code></td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="ei-hint">
+            Transmettez ce mot de passe à chaque {{ libelleEntite }} pour sa première connexion (numéro de téléphone + mot de passe ci-dessus).
+          </p>
+        }
+      }
+    </div>
+
+    <div class="drawer-footer">
+      <div class="drawer-actions">
+        @if (etape === 'apercu') {
+          <button type="button" class="btn btn-outline" (click)="recommencer()">
+            <i class="material-icons">restart_alt</i>
+            Choisir un autre fichier
+          </button>
+          @if (aDesLignesRejetees) {
+            <button type="button" class="btn btn-outline" [disabled]="isDownloadingReport" (click)="telechargerRapportErreurs()">
+              <i class="material-icons">download</i>
+              Rapport des erreurs
+            </button>
+          }
+          <button type="button" class="btn btn-primary" [disabled]="!lignesImportables.length || isImporting" (click)="confirmer()">
+            @if (isImporting) {
+              <i class="material-icons spin">sync</i>
+              Importation...
+            } @else {
+              <i class="material-icons">check</i>
+              Importer {{ lignesImportables.length }} {{ lignesImportables.length > 1 ? libelleEntitePluriel : libelleEntite }}
+            }
+          </button>
+        }
+        @if (etape === 'resultat') {
+          @if (aDesLignesRejetees) {
+            <button type="button" class="btn btn-outline" [disabled]="isDownloadingReport" (click)="telechargerRapportErreurs()">
+              <i class="material-icons">download</i>
+              Rapport des erreurs
+            </button>
+          }
+          <button type="button" class="btn btn-primary" (click)="fermerDrawer()">Terminer</button>
+        }
+        @if (etape === 'depot') {
+          <button type="button" class="btn btn-outline" (click)="fermerDrawer()">Annuler</button>
+        }
+      </div>
+    </div>
+  </div>
+</div>

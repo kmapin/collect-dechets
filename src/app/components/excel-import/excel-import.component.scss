@@ -1,0 +1,336 @@
+// Composant autonome (standalone) : reprend sa propre copie du patron drawer déjà
+// utilisé partout dans l'app (même duplication que service-locations.scss,
+// agency-details.css, etc. — chaque composant porte son propre CSS de drawer).
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer-content {
+  background: #fff;
+  width: 480px;
+  max-width: 90vw;
+  height: 100%;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawer-content-wide {
+  width: 760px;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+  }
+}
+
+.drawer-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 1.5rem;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+
+  &:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.drawer-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+// ── Étapes ──────────────────────────────────────────────────────────────
+
+.ei-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+}
+
+.ei-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #1e3a8a;
+}
+
+.ei-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ei-template-btn {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+// ── Dropzone ────────────────────────────────────────────────────────────
+
+.ei-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 40px 20px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #64748b;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &:hover, &.dragover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+
+  i.material-icons {
+    font-size: 40px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+
+  p { margin: 0; font-weight: 600; color: #334155; }
+}
+
+.ei-dropzone-sub {
+  font-weight: 400 !important;
+  font-size: 0.8rem;
+  color: #94a3b8 !important;
+}
+
+.ei-error-banner, .ei-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.ei-error-banner {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.ei-warning-banner {
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fde047;
+  margin-bottom: 16px;
+}
+
+// ── Résumé (Total / Valides / Doublons / Erreurs) ────────────────────────
+
+.ei-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ei-summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.ei-summary-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ei-summary-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ei-summary-ok .ei-summary-value { color: #16a34a; }
+.ei-summary-warn .ei-summary-value { color: #d97706; }
+.ei-summary-danger .ei-summary-value { color: #dc2626; }
+
+// ── Table d'aperçu / résultat ─────────────────────────────────────────────
+
+.ei-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.ei-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+
+  thead tr { background: #f8fafc; position: sticky; top: 0; }
+
+  th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  td {
+    padding: 9px 12px;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+  }
+}
+
+.ei-row-erreur td:first-child { border-left: 3px solid #dc2626; }
+.ei-row-doublon td:first-child { border-left: 3px solid #d97706; }
+.ei-row-valide td:first-child { border-left: 3px solid #16a34a; }
+
+.ei-detail-cell {
+  max-width: 220px;
+  white-space: normal;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.ei-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+
+  i.material-icons { font-size: 14px; }
+}
+
+.ei-badge-ok { background: #dcfce7; color: #166534; }
+.ei-badge-warn { background: #fef9c3; color: #854d0e; }
+.ei-badge-danger { background: #fee2e2; color: #991b1b; }
+
+.ei-confirm-banner {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: #334155;
+
+  p { margin: 0; }
+}
+
+// ── Résultat final ─────────────────────────────────────────────────────
+
+.ei-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.ei-result-icon {
+  font-size: 48px;
+  color: #16a34a;
+  margin-bottom: 8px;
+}
+
+.ei-result h4 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+
+.ei-hint {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .drawer-content, .drawer-content-wide {
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .ei-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

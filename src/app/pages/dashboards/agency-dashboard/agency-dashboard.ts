@@ -87,6 +87,8 @@ import { ToastModule } from "primeng/toast";
 import { RippleModule } from "primeng/ripple";
 import { Signalement } from "../../shared_pages/signalement/signalement";
 import { PhoneInputDirective } from "../../../shared/phone-input.directive";
+import { ExcelImportComponent } from "../../../components/excel-import/excel-import.component";
+import { AgencyImportService } from "../../../services/agency-import.service";
 import { normalizePhone } from "../../../shared/phone.util";
 import { MultiSelectModule } from 'primeng/multiselect';
 interface Client {
@@ -266,6 +268,7 @@ export enum CollectionStatus1 {
 
     Signalement,
     PhoneInputDirective,
+    ExcelImportComponent,
   ],
   templateUrl: "./agency-dashboard.html",
   styleUrl: "./agency-dashboard.scss",
@@ -484,6 +487,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   // Modals
   showAddEmployeeModal = false;
+  showImportClientsModal = false;
+  showImportEmployeesModal = false;
   showPassword = false;
   showConfirmPassword = false;
   employeeFormError: string | null = null;
@@ -827,6 +832,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     private agencyService: AgencyService,
     private collectionService: CollectionService,
     private notificationService: NotificationService,
+    private agencyImportService: AgencyImportService,
     private confirmDialog: ConfirmDialogService,
     private clientService: ClientService,
     private cdr: ChangeDetectorRef,
@@ -2448,6 +2454,41 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       this.clientsCurrentPage * this.clientsItemsPerPage,
       this.clientsTotalItems,
     );
+  }
+
+  onClientsImported(): void {
+    this.showImportClientsModal = false;
+    this.filterClients();
+  }
+
+  onEmployeesImported(): void {
+    this.showImportEmployeesModal = false;
+    this.filterEmployees();
+  }
+
+  private telechargerModele(type: 'clients' | 'employees'): void {
+    const nomFichier = type === 'clients' ? 'clients_modele.xlsx' : 'employes_modele.xlsx';
+    this.agencyImportService.downloadTemplate$(type).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.download = nomFichier;
+        lien.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.notificationService.showError('Erreur', 'Impossible de télécharger le modèle Excel.');
+      },
+    });
+  }
+
+  telechargerModeleClients(): void {
+    this.telechargerModele('clients');
+  }
+
+  telechargerModeleEmployes(): void {
+    this.telechargerModele('employees');
   }
 
   // === MÉTHODES DE FILTRAGE ET RECHERCHE DES CLIENTS ===
