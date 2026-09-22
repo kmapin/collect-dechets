@@ -3972,7 +3972,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
       case "client":
         return plural ? "Clients" : "Client";
       case "manager":
-        return plural ? "Manageurs" : "Manageur";
+        return plural ? "Managers" : "Manager";
       case "collector":
         return plural ? "Collecteurs" : "Collecteur";
       case "municipality":
