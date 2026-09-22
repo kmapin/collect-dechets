@@ -13,7 +13,8 @@ import { SearchFilterComponent } from '../../shared/filters/search-filter.compon
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
 import { ClientListFilters, ClientListStatutFiltre, CLIENT_LIST_FILTERS_INITIAL } from './client-list.filters';
 
-const TAILLE_PAGE = 10;
+const TAILLE_PAGE_DEFAUT = 10;
+const TAILLES_PAGE_DISPONIBLES = [5, 10, 20, 50, 100];
 
 // Liste globale des clients, statut + situation de paiement, filtrable.
 @Component({
@@ -34,6 +35,8 @@ export class ClientListComponent {
 
   readonly filtres = signal<ClientListFilters>({ ...CLIENT_LIST_FILTERS_INITIAL });
   readonly page = signal(1);
+  readonly itemsPerPage = signal(TAILLE_PAGE_DEFAUT);
+  readonly taillesPageDisponibles = TAILLES_PAGE_DISPONIBLES;
 
   readonly items = signal<Client[]>([]);
   readonly total = signal(0);
@@ -47,7 +50,13 @@ export class ClientListComponent {
   readonly ClientStatut = ClientStatut;
 
   get totalPages(): number {
-    return Math.max(1, Math.ceil(this.total() / TAILLE_PAGE));
+    return Math.max(1, Math.ceil(this.total() / this.itemsPerPage()));
+  }
+
+  /** Dernier numéro d'élément affiché sur la page courante (texte "X–Y sur Z") — même
+   * modèle que agency-dashboard.ts::getClientEndItemNumber. */
+  get finDePage(): number {
+    return Math.min(this.page() * this.itemsPerPage(), this.total());
   }
 
   constructor() {
@@ -71,6 +80,31 @@ export class ClientListComponent {
     if (page < 1 || page > this.totalPages) return;
     this.page.set(page);
     this.charger();
+  }
+
+  changerTaillePage(taille: number): void {
+    this.itemsPerPage.set(taille);
+    this.page.set(1);
+    this.charger();
+  }
+
+  /** Fenêtre glissante de 5 numéros de page autour de la page courante — même algorithme
+   * que agency-dashboard.ts::getClientPaginationPages. */
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+
+    let start = Math.max(1, this.page() - half);
+    const end = Math.min(this.totalPages, start + maxPagesToShow - 1);
+    if (end - start + 1 < maxPagesToShow) {
+      start = Math.max(1, end - maxPagesToShow + 1);
+    }
+
+    for (let i = start; i <= end; i += 1) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   reessayer(): void {
@@ -100,7 +134,7 @@ export class ClientListComponent {
     this.clientData
       .getClients({
         page: this.page(),
-        pageSize: TAILLE_PAGE,
+        pageSize: this.itemsPerPage(),
         filter: { statut, search: search || undefined },
       })
       .subscribe({

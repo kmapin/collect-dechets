@@ -1,6 +1,9 @@
 export type AgencyImportType = 'clients' | 'employees';
 
-export type ImportRowStatut = 'valide' | 'erreur' | 'doublon' | 'importe';
+// 'existant' : client uniquement — le téléphone correspond à un client déjà en base, aucun
+// nouveau compte n'est créé mais un abonnement (obligatoirement fourni pour ce statut) lui
+// sera rattaché à la confirmation. Jamais utilisé pour les employés.
+export type ImportRowStatut = 'valide' | 'existant' | 'erreur' | 'doublon' | 'importe';
 
 export interface ImportRowError {
   champ: string;
@@ -18,6 +21,18 @@ export interface ImportRow {
   erreurs: ImportRowError[];
   userId?: string;
   motDePasseGenere?: string;
+  // Abonnement (clients uniquement, facultatif dans le fichier) :
+  subscriptionId?: string;
+  /** true si l'abonnement existait déjà (aucun nouvel abonnement créé — anti-doublon). */
+  abonnementDejaExistant?: boolean;
+  /** Renseigné si le client a bien été créé/rattaché mais que l'abonnement, lui, a échoué. */
+  abonnementErreur?: string;
+  // Contrat (clients uniquement, facultatif, indépendant de l'abonnement) :
+  contratId?: string;
+  /** true si un contrat actif existait déjà pour ce lieu (aucun nouveau contrat créé). */
+  contratDejaExistant?: boolean;
+  /** Renseigné si le client a bien été créé/rattaché mais que le contrat, lui, a échoué. */
+  contratErreur?: string;
 }
 
 export interface ImportResume {
@@ -25,6 +40,9 @@ export interface ImportResume {
   valides: number;
   doublons: number;
   erreurs: number;
+  // Présent uniquement pour l'import clients (jamais pour les employés) — voir
+  // services/agencyImport.js::recapitulatif côté backend.
+  existants?: number;
 }
 
 export interface ImportPreviewResponse {

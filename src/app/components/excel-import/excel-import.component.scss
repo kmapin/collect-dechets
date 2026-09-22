@@ -181,7 +181,10 @@
 
 .ei-summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  // auto-fit (pas repeat(4,1fr)) : l'import clients ajoute une vignette "Abonnements à
+  // rattacher" (voir resume.existants), absente pour les employés — le nombre de
+  // vignettes varie donc selon `type`.
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 10px;
   margin-bottom: 16px;
 }
@@ -260,11 +263,17 @@
 .ei-row-erreur td:first-child { border-left: 3px solid #dc2626; }
 .ei-row-doublon td:first-child { border-left: 3px solid #d97706; }
 .ei-row-valide td:first-child { border-left: 3px solid #16a34a; }
+.ei-row-existant td:first-child { border-left: 3px solid #16a34a; }
 
 .ei-detail-cell {
   max-width: 220px;
   white-space: normal;
   color: #64748b;
+  font-size: 0.78rem;
+}
+
+.ei-hint-inline {
+  color: #94a3b8;
   font-size: 0.78rem;
 }
 

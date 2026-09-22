@@ -1552,27 +1552,70 @@
                   </div>
                 }
 
-                <!-- Pagination -->
-                @if (clientsTotalPages > 1) {
-                  <div class="pagination-controls">
-                    <button class="pagination-btn" [disabled]="clientsCurrentPage === 1" (click)="previousClientPage()" title="Page précédente">
-                      <i class="material-icons">chevron_left</i>
-                    </button>
-                    <div class="pagination-numbers">
-                      @for (page of getClientPaginationPages(); track page) {
-                        <button class="pagination-btn page-number" [class.active]="page === clientsCurrentPage" (click)="goToClientPage(page)">
-                          {{ page }}
-                        </button>
-                      }
+                <!-- Pagination Clients (même modèle que la pagination Employés) -->
+                @if (!isLoadingClients && !isLoadingFilteredClients && clientsTotalItems > 0) {
+                  <div class="pagination-section">
+                    <div class="pagination-left">
+                      <span class="pagination-details">
+                        @if (clientsTotalItems > 0) {
+                          {{ (clientsCurrentPage - 1) * clientsItemsPerPage + 1 }}–{{ getClientEndItemNumber() }} sur
+                          <strong>{{ clientsTotalItems }}</strong> client(s)
+                        }
+                      </span>
+                      <div class="per-page-group">
+                        <label class="per-page-label">Afficher</label>
+                        <select
+                          class="per-page-select"
+                          [value]="clientsItemsPerPage"
+                          (change)="changeClientItemsPerPage(+$any($event.target).value)"
+                        >
+                          <option [value]="5">5</option>
+                          <option [value]="10">10</option>
+                          <option [value]="20">20</option>
+                          <option [value]="50">50</option>
+                          <option [value]="100">100</option>
+                        </select>
+                        <span class="per-page-label">par page</span>
+                      </div>
                     </div>
-                    <button
-                      class="pagination-btn"
-                      [disabled]="clientsCurrentPage === clientsTotalPages"
-                      (click)="nextClientPage()"
-                      title="Page suivante"
-                    >
-                      <i class="material-icons">chevron_right</i>
-                    </button>
+                    @if (clientsTotalPages > 1) {
+                      <div class="pagination-controls">
+                        <button
+                          class="pagination-btn"
+                          [disabled]="clientsCurrentPage === 1"
+                          (click)="goToClientPage(1)"
+                          title="Première page"
+                        >
+                          <i class="material-icons">first_page</i>
+                        </button>
+                        <button class="pagination-btn" [disabled]="clientsCurrentPage === 1" (click)="previousClientPage()" title="Page précédente">
+                          <i class="material-icons">chevron_left</i>
+                        </button>
+                        <div class="pagination-numbers">
+                          @for (page of getClientPaginationPages(); track page) {
+                            <button class="pagination-btn page-number" [class.active]="page === clientsCurrentPage" (click)="goToClientPage(page)">
+                              {{ page }}
+                            </button>
+                          }
+                        </div>
+                        <button
+                          class="pagination-btn"
+                          [disabled]="clientsCurrentPage === clientsTotalPages"
+                          (click)="nextClientPage()"
+                          title="Page suivante"
+                        >
+                          <i class="material-icons">chevron_right</i>
+                        </button>
+                        <button
+                          class="pagination-btn"
+                          [disabled]="clientsCurrentPage === clientsTotalPages"
+                          (click)="goToClientPage(clientsTotalPages)"
+                          title="Dernière page"
+                        >
+                          <i class="material-icons">last_page</i>
+                        </button>
+                      </div>
+                    }
                   </div>
                 }
               } @else {

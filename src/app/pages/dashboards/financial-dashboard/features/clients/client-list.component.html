@@ -77,10 +77,45 @@
       </tbody>
     </table>
 
-    <nav class="fin-pagination" *ngIf="totalPages > 1" aria-label="Pagination des clients">
-      <button type="button" [disabled]="page() <= 1" (click)="changerPage(page() - 1)">Précédent</button>
-      <span>Page {{ page() }} / {{ totalPages }}</span>
-      <button type="button" [disabled]="page() >= totalPages" (click)="changerPage(page() + 1)">Suivant</button>
-    </nav>
+    <!-- Pagination (même modèle que la liste Clients/Employés du dashboard agence) -->
+    <div class="fin-clients__pagination" *ngIf="total() > 0">
+      <div class="fin-clients__pagination-left">
+        <span class="fin-clients__pagination-details">
+          {{ (page() - 1) * itemsPerPage() + 1 }}–{{ finDePage }} sur <strong>{{ total() }}</strong> client(s)
+        </span>
+        <div class="fin-clients__per-page">
+          <label>Afficher</label>
+          <select [value]="itemsPerPage()" (change)="changerTaillePage(+$any($event.target).value)">
+            <option *ngFor="let taille of taillesPageDisponibles" [value]="taille">{{ taille }}</option>
+          </select>
+          <span>par page</span>
+        </div>
+      </div>
+      <nav class="fin-pagination" *ngIf="totalPages > 1" aria-label="Pagination des clients">
+        <button type="button" [disabled]="page() <= 1" (click)="changerPage(1)" title="Première page">
+          <i class="material-icons">first_page</i>
+        </button>
+        <button type="button" [disabled]="page() <= 1" (click)="changerPage(page() - 1)" title="Page précédente">
+          <i class="material-icons">chevron_left</i>
+        </button>
+        <span class="fin-pagination__numbers">
+          <button
+            type="button"
+            *ngFor="let p of getPageNumbers()"
+            class="fin-pagination__page-number"
+            [class.active]="p === page()"
+            (click)="changerPage(p)"
+          >
+            {{ p }}
+          </button>
+        </span>
+        <button type="button" [disabled]="page() >= totalPages" (click)="changerPage(page() + 1)" title="Page suivante">
+          <i class="material-icons">chevron_right</i>
+        </button>
+        <button type="button" [disabled]="page() >= totalPages" (click)="changerPage(totalPages)" title="Dernière page">
+          <i class="material-icons">last_page</i>
+        </button>
+      </nav>
+    </div>
   </div>
 </section>

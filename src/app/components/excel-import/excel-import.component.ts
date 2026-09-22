@@ -57,8 +57,10 @@ export class ExcelImportComponent {
     return this.type === 'clients' ? 'clients_modele.xlsx' : 'employes_modele.xlsx';
   }
 
+  // 'existant' (clients uniquement) : aucun nouveau compte, mais l'abonnement fourni sur la
+  // ligne doit quand même être envoyé à la confirmation pour être rattaché au client existant.
   get lignesImportables(): ImportRow[] {
-    return this.apercu?.lignes.filter((l) => l.statut === 'valide') ?? [];
+    return this.apercu?.lignes.filter((l) => l.statut === 'valide' || l.statut === 'existant') ?? [];
   }
 
   get aDesLignesRejetees(): boolean {

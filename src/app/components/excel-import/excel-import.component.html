@@ -61,6 +61,12 @@
             <span class="ei-summary-value">{{ apercu.resume.valides }}</span>
             <span class="ei-summary-label">Valides</span>
           </div>
+          @if (apercu.resume.existants !== undefined) {
+            <div class="ei-summary-item ei-summary-ok">
+              <span class="ei-summary-value">{{ apercu.resume.existants }}</span>
+              <span class="ei-summary-label">Abonnements à rattacher</span>
+            </div>
+          }
           <div class="ei-summary-item ei-summary-warn">
             <span class="ei-summary-value">{{ apercu.resume.doublons }}</span>
             <span class="ei-summary-label">Doublons</span>
@@ -99,6 +105,9 @@
                     @if (ligne.statut === 'valide') {
                       <span class="ei-badge ei-badge-ok"><i class="material-icons">check_circle</i> Valide</span>
                     }
+                    @if (ligne.statut === 'existant') {
+                      <span class="ei-badge ei-badge-ok"><i class="material-icons">link</i> Client existant</span>
+                    }
                     @if (ligne.statut === 'doublon') {
                       <span class="ei-badge ei-badge-warn"><i class="material-icons">warning</i> Doublon</span>
                     }
@@ -107,6 +116,9 @@
                     }
                   </td>
                   <td class="ei-detail-cell">
+                    @if (ligne.statut === 'existant') {
+                      <span>Client déjà inscrit — seul l'abonnement sera rattaché, aucun nouveau compte créé</span>
+                    }
                     @if (ligne.statut === 'doublon') {
                       <span>Déjà existant ou en double dans le fichier</span>
                     }
@@ -122,7 +134,8 @@
 
         <div class="ei-confirm-banner">
           <p>
-            <strong>{{ lignesImportables.length }}</strong> {{ lignesImportables.length > 1 ? libelleEntitePluriel : libelleEntite }} peuvent être importé(s).
+            <strong>{{ apercu.resume.valides }}</strong> {{ apercu.resume.valides > 1 ? libelleEntitePluriel : libelleEntite }} peuvent être importé(s).
+            @if (apercu.resume.existants) { {{ apercu.resume.existants }} abonnement(s) seront rattachés à des clients déjà existants. }
             @if (apercu.resume.doublons) { {{ apercu.resume.doublons }} doublon(s) seront ignorés. }
             @if (apercu.resume.erreurs) { {{ apercu.resume.erreurs }} ligne(s) contiennent des erreurs. }
           </p>
@@ -158,6 +171,8 @@
                   <th>Nom</th>
                   <th>Téléphone</th>
                   <th>Mot de passe généré</th>
+                  @if (type === 'clients') { <th>Abonnement</th> }
+                  @if (type === 'clients') { <th>Contrat</th> }
                 </tr>
               </thead>
               <tbody>
@@ -166,7 +181,36 @@
                     <tr>
                       <td>{{ ligne.donnees.firstName }} {{ ligne.donnees.lastName }}</td>
                       <td>{{ ligne.donnees.phone }}</td>
-                      <td><code>{{ ligne.motDePasseGenere }}</code></td>
+                      <td>
+                        @if (ligne.motDePasseGenere) { <code>{{ ligne.motDePasseGenere }}</code> }
+                        @else { <span class="ei-hint-inline">— (client déjà existant)</span> }
+                      </td>
+                      @if (type === 'clients') {
+                        <td>
+                          @if (ligne.abonnementErreur) {
+                            <span class="ei-badge ei-badge-danger">Échec : {{ ligne.abonnementErreur }}</span>
+                          } @else if (ligne.subscriptionId && ligne.abonnementDejaExistant) {
+                            <span class="ei-badge ei-badge-warn">Déjà actif</span>
+                          } @else if (ligne.subscriptionId) {
+                            <span class="ei-badge ei-badge-ok">Rattaché</span>
+                          } @else {
+                            <span class="ei-hint-inline">—</span>
+                          }
+                        </td>
+                      }
+                      @if (type === 'clients') {
+                        <td>
+                          @if (ligne.contratErreur) {
+                            <span class="ei-badge ei-badge-danger">Échec : {{ ligne.contratErreur }}</span>
+                          } @else if (ligne.contratId && ligne.contratDejaExistant) {
+                            <span class="ei-badge ei-badge-warn">Déjà actif</span>
+                          } @else if (ligne.contratId) {
+                            <span class="ei-badge ei-badge-ok">Rattaché</span>
+                          } @else {
+                            <span class="ei-hint-inline">—</span>
+                          }
+                        </td>
+                      }
                     </tr>
                   }
                 }
