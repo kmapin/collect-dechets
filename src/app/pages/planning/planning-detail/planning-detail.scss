@@ -111,13 +111,21 @@ $shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
 $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
 
 // ── Root ────────────────────────────────────────────────────
+// Layout "sidebar fixe / contenu scrollable" : `.pd-root` a une hauteur VIEWPORT
+// définie (pas un `min-height`, ni un `%` d'un ancêtre — .app/.main-content/
+// .planning-shell/.planning-content au-dessus n'ont pas tous une hauteur définie,
+// donc un % ici pourrait se recalculer en `auto` selon l'ancêtre et casser tout le
+// reste). `overflow: hidden` garantit que .pd-root ne déborde jamais lui-même — seul
+// .pd-content (voir plus bas) défile ; .pd-topbar et .pd-sidenav n'ont donc plus besoin
+// de `position: sticky` (fragile ici, cf. commit précédent) : ils sont simplement HORS
+// de la zone qui défile.
 .pd-root {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: calc(100vh - 64px); // 64px = hauteur du header global fixe, voir app.component.ts .main-content { margin-top: 64px }
   background: #f8fafc;
   font-family: inherit;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 // ── Skeleton ────────────────────────────────────────────────
@@ -177,8 +185,11 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
 
 // ── Top Bar ─────────────────────────────────────────────────
 .pd-topbar {
-  position: sticky;
-  top: 0; z-index: 50;
+  // Pas de position:sticky : .pd-root a une hauteur fixe et seul .pd-content défile
+  // (voir plus haut) — .pd-topbar, hors de cette zone, reste donc déjà visible en
+  // permanence sans aucun positionnement particulier.
+  flex-shrink: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -303,9 +314,10 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px);
+  // Fixe : occupe toute la hauteur de .pd-body (déjà bornée par .pd-root), ne défile
+  // jamais avec .pd-content. overflow-y:auto reste utile pour son propre contenu si la
+  // liste de navigation devient un jour plus longue que l'espace disponible.
+  height: 100%;
   overflow-y: auto;
   background: #fff;
   border-right: 1px solid #e2e8f0;
@@ -347,6 +359,9 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
 .pd-content {
   flex: 1;
   min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -358,7 +373,9 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
   display: flex;
   flex-direction: column;
   gap: 20px;
-  scroll-margin-top: 80px;
+  // Petite marge de confort pour scrollTo() (planning-detail.ts) — .pd-topbar n'étant
+  // plus sticky au-dessus de .pd-content, il n'y a plus besoin de compenser sa hauteur ici.
+  scroll-margin-top: 16px;
 }
 
 .sec-header {
@@ -934,7 +951,20 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
   .stats-grid--compact { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
-  .pd-content { padding: 16px; }
+  // Le header global fixe change de hauteur ici (85px, voir app.component.ts
+  // .main-content { margin-top: 85px } sous ce même breakpoint) et .pd-topbar devient
+  // multi-lignes (hauteur variable) : le calcul figé de .pd-root n'a plus de sens. Le
+  // sidenav est de toute façon déjà masqué (display:none dès 1024px), donc plus besoin
+  // du scroll interne — on revient au défilement normal de la page sur mobile.
+  .pd-root {
+    height: auto;
+    overflow: visible;
+  }
+  .pd-content {
+    height: auto;
+    overflow: visible;
+    padding: 16px;
+  }
 
   .pd-topbar {
     position: static;
