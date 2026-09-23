@@ -1,9 +1,17 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Contrat, CreerContratPayload, CreerContratsMultiLieuxPayload, CreerContratsMultiLieuxResponse } from '../models/contrat.model';
+import { Page } from '../pages/dashboards/financial-dashboard/models';
+
+export interface ContratsAgenceFiltre {
+  page?: number;
+  pageSize?: number;
+  statut?: string;
+  search?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -74,12 +82,24 @@ export class ContratService {
     );
   }
 
-  getContratsByAgence$(agencyId: string): Observable<Contrat[]> {
-    return this.http.get<Contrat[]>(`${environment.apiUrl}/contrats/agence/${agencyId}`).pipe(
-      map((response) => response ?? []),
+  /** Pagination + filtres (statut, recherche client) — même convention `{items, total,
+   * page, pageSize}` que CLIENT_DATA_SERVICE.getClients (voir services/contrat.js pour le
+   * pendant backend). */
+  getContratsByAgence$(agencyId: string, filtre?: ContratsAgenceFiltre): Observable<Page<Contrat>> {
+    const pageSize = filtre?.pageSize ?? 10;
+    const vide: Page<Contrat> = { items: [], total: 0, page: filtre?.page ?? 1, pageSize };
+
+    let params = new HttpParams();
+    if (filtre?.page) params = params.set('page', filtre.page);
+    if (filtre?.pageSize) params = params.set('pageSize', filtre.pageSize);
+    if (filtre?.statut) params = params.set('statut', filtre.statut);
+    if (filtre?.search) params = params.set('search', filtre.search);
+
+    return this.http.get<Page<Contrat>>(`${environment.apiUrl}/contrats/agence/${agencyId}`, { params }).pipe(
+      map((response) => response ?? vide),
       catchError((error) => {
         console.error("Erreur lors de la récupération des contrats de l'agence :", error);
-        return of([]);
+        return of(vide);
       }),
     );
   }

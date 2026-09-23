@@ -329,13 +329,12 @@
                       <label class="per-page-label">Afficher</label>
                       <select
                         class="per-page-select"
-                        [value]="collectesItemsPerPage"
                         (change)="changeCollectesItemsPerPage(+$any($event.target).value)"
                       >
-                        <option [value]="5">5</option>
-                        <option [value]="10">10</option>
-                        <option [value]="20">20</option>
-                        <option [value]="50">50</option>
+                        <option [value]="5" [selected]="collectesItemsPerPage === 5">5</option>
+                        <option [value]="10" [selected]="collectesItemsPerPage === 10">10</option>
+                        <option [value]="20" [selected]="collectesItemsPerPage === 20">20</option>
+                        <option [value]="50" [selected]="collectesItemsPerPage === 50">50</option>
                       </select>
                       <span class="per-page-label">par page</span>
                     </div>
@@ -562,13 +561,12 @@
                     <select
                       id="itemsPerPageFilter"
                       class="filter-select"
-                      [value]="itemsPerPage"
                       (change)="changeItemsPerPage(+$any($event.target).value)"
                     >
-                      <option [value]="10">10</option>
-                      <option [value]="20">20</option>
-                      <option [value]="50">50</option>
-                      <option [value]="100">100</option>
+                      <option [value]="10" [selected]="itemsPerPage === 10">10</option>
+                      <option [value]="20" [selected]="itemsPerPage === 20">20</option>
+                      <option [value]="50" [selected]="itemsPerPage === 50">50</option>
+                      <option [value]="100" [selected]="itemsPerPage === 100">100</option>
                     </select>
                   </div>
                 </div>
@@ -854,14 +852,13 @@
                     <label class="per-page-label">Afficher</label>
                     <select
                       class="per-page-select"
-                      [value]="itemsPerPage"
                       (change)="changeItemsPerPage(+$any($event.target).value)"
                     >
-                      <option [value]="5">5</option>
-                      <option [value]="10">10</option>
-                      <option [value]="20">20</option>
-                      <option [value]="50">50</option>
-                      <option [value]="100">100</option>
+                      <option [value]="5" [selected]="itemsPerPage === 5">5</option>
+                      <option [value]="10" [selected]="itemsPerPage === 10">10</option>
+                      <option [value]="20" [selected]="itemsPerPage === 20">20</option>
+                      <option [value]="50" [selected]="itemsPerPage === 50">50</option>
+                      <option [value]="100" [selected]="itemsPerPage === 100">100</option>
                     </select>
                     <span class="per-page-label">par page</span>
                   </div>
@@ -1566,14 +1563,13 @@
                         <label class="per-page-label">Afficher</label>
                         <select
                           class="per-page-select"
-                          [value]="clientsItemsPerPage"
                           (change)="changeClientItemsPerPage(+$any($event.target).value)"
                         >
-                          <option [value]="5">5</option>
-                          <option [value]="10">10</option>
-                          <option [value]="20">20</option>
-                          <option [value]="50">50</option>
-                          <option [value]="100">100</option>
+                          <option [value]="5" [selected]="clientsItemsPerPage === 5">5</option>
+                          <option [value]="10" [selected]="clientsItemsPerPage === 10">10</option>
+                          <option [value]="20" [selected]="clientsItemsPerPage === 20">20</option>
+                          <option [value]="50" [selected]="clientsItemsPerPage === 50">50</option>
+                          <option [value]="100" [selected]="clientsItemsPerPage === 100">100</option>
                         </select>
                         <span class="per-page-label">par page</span>
                       </div>

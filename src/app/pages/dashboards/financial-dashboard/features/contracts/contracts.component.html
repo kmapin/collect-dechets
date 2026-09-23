@@ -1,10 +1,18 @@
 <section class="fin-contracts" aria-label="Contrats">
   <div class="fin-contracts__header">
     <h2>Contrats</h2>
+    <app-search-filter placeholder="Nom, prénom, téléphone…" [value]="filtreSearch()" (valueChange)="onRechercheChange($event)" />
     <button *ngIf="peutCreer()" type="button" class="btn btn-primary" (click)="openCreateModal()">
       <i class="material-icons" aria-hidden="true">add</i>
       Nouveau contrat
     </button>
+  </div>
+
+  <div class="fin-contracts__tabs" role="tablist" aria-label="Filtrer par statut">
+    <button type="button" role="tab" [class.active]="filtreStatut() === 'actif'" (click)="changerFiltreStatut('actif')">Actifs</button>
+    <button type="button" role="tab" [class.active]="filtreStatut() === 'suspendu'" (click)="changerFiltreStatut('suspendu')">Suspendus</button>
+    <button type="button" role="tab" [class.active]="filtreStatut() === 'resilie'" (click)="changerFiltreStatut('resilie')">Résiliés</button>
+    <button type="button" role="tab" [class.active]="filtreStatut() === 'Tous'" (click)="changerFiltreStatut('Tous')">Tous</button>
   </div>
 
   <app-loading-spinner *ngIf="chargement()" message="Chargement des contrats..." size="medium" />
@@ -78,12 +86,54 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Pagination (même modèle que la liste Clients) -->
+      <div class="fin-contracts__pagination" *ngIf="total() > 0">
+        <div class="fin-contracts__pagination-left">
+          <span class="fin-contracts__pagination-details">
+            {{ (page() - 1) * itemsPerPage() + 1 }}–{{ finDePage }} sur <strong>{{ total() }}</strong> contrat(s)
+          </span>
+          <div class="fin-contracts__per-page">
+            <label>Afficher</label>
+            <select (change)="changerTaillePage(+$any($event.target).value)">
+              <option *ngFor="let taille of taillesPageDisponibles" [value]="taille" [selected]="taille === itemsPerPage()">{{ taille }}</option>
+            </select>
+            <span>par page</span>
+          </div>
+        </div>
+        <nav class="fin-pagination" *ngIf="totalPages > 1" aria-label="Pagination des contrats">
+          <button type="button" [disabled]="page() <= 1" (click)="changerPage(1)" title="Première page">
+            <i class="material-icons">first_page</i>
+          </button>
+          <button type="button" [disabled]="page() <= 1" (click)="changerPage(page() - 1)" title="Page précédente">
+            <i class="material-icons">chevron_left</i>
+          </button>
+          <span class="fin-pagination__numbers">
+            <button
+              type="button"
+              *ngFor="let p of getPageNumbers()"
+              class="fin-pagination__page-number"
+              [class.active]="p === page()"
+              (click)="changerPage(p)"
+            >
+              {{ p }}
+            </button>
+          </span>
+          <button type="button" [disabled]="page() >= totalPages" (click)="changerPage(page() + 1)" title="Page suivante">
+            <i class="material-icons">chevron_right</i>
+          </button>
+          <button type="button" [disabled]="page() >= totalPages" (click)="changerPage(totalPages)" title="Dernière page">
+            <i class="material-icons">last_page</i>
+          </button>
+        </nav>
+      </div>
     </div>
 
     <div class="fin-contracts__empty" *ngIf="!contrats().length">
       <i class="material-icons" aria-hidden="true">description</i>
       <h3>Aucun contrat</h3>
-      <p>Aucun contrat n'a encore été créé pour cette agence.</p>
+      <p *ngIf="filtreStatut() === 'Tous' && !filtreSearch()">Aucun contrat n'a encore été créé pour cette agence.</p>
+      <p *ngIf="filtreStatut() !== 'Tous' || filtreSearch()">Aucun contrat ne correspond à vos critères de recherche.</p>
     </div>
   </ng-container>
 

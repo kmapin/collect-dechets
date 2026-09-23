@@ -14,7 +14,7 @@ import { Redevance } from '../../../../../models/redevance.model';
 import { ApercuPaiementGroupe, PaiementGroupeRedevance, ReductionType } from '../../../../../models/paiement-groupe-redevance.model';
 import { Tarif } from '../../../../../models/agency.model';
 import { formatFrDate } from '../../../../../shared/format.util';
-import { Client } from '../../models';
+import { Client, Page } from '../../models';
 import { CLIENT_DATA_SERVICE } from '../../data-access/tokens/client-data.token';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { aLaPermission } from '../../models';
@@ -23,11 +23,12 @@ import { ConfirmDialogService } from '../../../../../services/confirm-dialog.ser
 import { LoadingSpinnerComponent } from '../../../../../components/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeContrat } from '../../shared/status-badge/status-badge.util';
+import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
 
 @Component({
   selector: 'app-contracts',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingSpinnerComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, LoadingSpinnerComponent, StatusBadgeComponent, SearchFilterComponent],
   templateUrl: './contracts.component.html',
   styleUrl: './contracts.component.scss',
 })
@@ -52,6 +53,24 @@ export class ContractsComponent {
   readonly contrats = signal<Contrat[]>([]);
   readonly chargement = signal(true);
   readonly erreur = signal<string | null>(null);
+
+  // Pagination + filtres (même modèle que ClientListComponent) :
+  private static readonly TAILLE_PAGE_DEFAUT = 10;
+  private static readonly TAILLES_PAGE_DISPONIBLES = [5, 10, 20, 50, 100];
+  readonly taillesPageDisponibles = ContractsComponent.TAILLES_PAGE_DISPONIBLES;
+  readonly page = signal(1);
+  readonly itemsPerPage = signal(ContractsComponent.TAILLE_PAGE_DEFAUT);
+  readonly total = signal(0);
+  readonly filtreStatut = signal<'actif' | 'suspendu' | 'resilie' | 'Tous'>('Tous');
+  readonly filtreSearch = signal('');
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.total() / this.itemsPerPage()));
+  }
+
+  get finDePage(): number {
+    return Math.min(this.page() * this.itemsPerPage(), this.total());
+  }
 
   readonly creationContratEnCours = signal(false);
   readonly contratMutationEnCours = signal<string | null>(null);
@@ -140,16 +159,68 @@ export class ContractsComponent {
     }
     this.chargement.set(true);
     this.erreur.set(null);
-    this.contratService.getContratsByAgence$(agencyId).subscribe({
-      next: contrats => {
-        this.contrats.set(contrats);
-        this.chargement.set(false);
-      },
-      error: () => {
-        this.erreur.set('Impossible de charger les contrats pour le moment.');
-        this.chargement.set(false);
-      },
-    });
+    const statut = this.filtreStatut();
+    this.contratService
+      .getContratsByAgence$(agencyId, {
+        page: this.page(),
+        pageSize: this.itemsPerPage(),
+        statut: statut === 'Tous' ? undefined : statut,
+        search: this.filtreSearch() || undefined,
+      })
+      .subscribe({
+        next: (resultat: Page<Contrat>) => {
+          this.contrats.set(resultat.items);
+          this.total.set(resultat.total);
+          this.chargement.set(false);
+        },
+        error: () => {
+          this.erreur.set('Impossible de charger les contrats pour le moment.');
+          this.chargement.set(false);
+        },
+      });
+  }
+
+  changerFiltreStatut(statut: 'actif' | 'suspendu' | 'resilie' | 'Tous'): void {
+    this.filtreStatut.set(statut);
+    this.page.set(1);
+    this.charger();
+  }
+
+  onRechercheChange(search: string): void {
+    this.filtreSearch.set(search);
+    this.page.set(1);
+    this.charger();
+  }
+
+  changerPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.page.set(page);
+    this.charger();
+  }
+
+  changerTaillePage(taille: number): void {
+    this.itemsPerPage.set(taille);
+    this.page.set(1);
+    this.charger();
+  }
+
+  /** Fenêtre glissante de 5 numéros de page — même algorithme que
+   * ClientListComponent (financial-dashboard) et agency-dashboard.ts::getClientPaginationPages. */
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+
+    let start = Math.max(1, this.page() - half);
+    const end = Math.min(this.totalPages, start + maxPagesToShow - 1);
+    if (end - start + 1 < maxPagesToShow) {
+      start = Math.max(1, end - maxPagesToShow + 1);
+    }
+
+    for (let i = start; i <= end; i += 1) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   contratClientName(contrat: Contrat): string {
