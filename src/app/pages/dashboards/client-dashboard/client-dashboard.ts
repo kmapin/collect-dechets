@@ -28,7 +28,7 @@ import { Webstockets, SocketNotification } from "../../../core/services/webstock
 import { ConversationService, RealtimeMessage } from "../../../services/conversation.service";
 import { ContratService } from "../../../services/contrat.service";
 import { Contrat } from "../../../models/contrat.model";
-import { EligibilityService, EligibilityResult, isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
+import { EligibilityService, EligibilityResult, isContratCurrentlyActive } from "../../../services/eligibility.service";
 import { DemandeCollecteService } from "../../../services/demande-collecte.service";
 import { RedevanceService } from "../../../services/redevance.service";
 import { ExportClientService } from "../financial-dashboard/data-access/export/export-client.service";
@@ -119,9 +119,12 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     content: "",
   };
   data: any;
-  subscriptions: any[] = [];
+  // Fusion Subscription -> Contrat : activeSubscription est désormais dérivé de la
+  // liste de Contrat (voir loadActiveContrat) plutôt que d'un appel séparé à l'ex
+  // agencyService.getUserSubscription. Typé `any` (comme le reste de ce composant)
+  // pour laisser le template accéder librement à pricingId/agencyId peuplés, sans
+  // lutter contre le typage union de Contrat.
   activeSubscription: any = null;
-  latestSubscription: any = null;
   activeContrat: Contrat | null = null;
   eligibility: EligibilityResult | null = null;
   showRechargeModal: boolean = false;
@@ -190,12 +193,11 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       this.openSpontaneousRequestModal();
     }
 
+    // type: 'Subscribed' conservé (texte utilisateur inchangé) — désigne désormais une
+    // création/renouvellement de Contrat (fusion Subscription -> Contrat), même source
+    // que type: 'Contrat'.
     this.newSubscriptionSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
-      if (notification?.type === 'Subscribed') {
-        this.getUserSubscription();
-        this.loadEligibility();
-      }
-      if (notification?.type === 'Contrat') {
+      if (notification?.type === 'Subscribed' || notification?.type === 'Contrat') {
         this.loadActiveContrat();
         this.loadEligibility();
       }
@@ -216,7 +218,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   getUser() {
     this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
-      this.getUserSubscription();
       this.loadActiveContrat();
       this.loadEligibility();
       this.getClientWallet();
@@ -228,7 +229,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     console.log("Current User", this.currentUser);
   }
 
-  /** "Mon contrat" — même rôle que getUserSubscription() ci-dessus, pour le domaine Contrat. */
+  /** "Mon contrat" ET "Mon abonnement" — fusion Subscription -> Contrat : une seule
+   * source (Contrat) alimente désormais les deux cartes, remplace l'ex
+   * getUserSubscription() (agencyService.getUserSubscription, supprimé). */
   loadActiveContrat(): void {
     const clientId = this.currentUser?._id;
     if (!clientId) return;
@@ -238,9 +241,15 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
           (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
         );
         this.activeContrat = sortedByStartDateDesc.find((c) => c.status === 'actif') || sortedByStartDateDesc[0] || null;
+
+        const sortedByEndDateDesc = [...contrats].sort(
+          (a, b) => new Date(b.endDate || 0).getTime() - new Date(a.endDate || 0).getTime()
+        );
+        this.activeSubscription = sortedByEndDateDesc.find((c) => isContratCurrentlyActive(c)) || null;
       },
       error: () => {
         this.activeContrat = null;
+        this.activeSubscription = null;
       },
     });
   }
@@ -274,12 +283,6 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       next: (result) => { this.eligibility = result; },
       error: () => { this.eligibility = null; },
     });
-  }
-
-  /** Même mapping que pages/subscription/subscription.ts::subscriptionStatusLabel() — seul champ réel disponible sur Subscription (isActive). */
-  subscriptionStatusLabel(subscription: any): string {
-    if (!subscription) return '';
-    return isSubscriptionCurrentlyActive(subscription) ? 'Actif' : 'Expiré';
   }
 
   get showContractContinuityBanner(): boolean {
@@ -589,31 +592,12 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
     });
   }
 
-  // Afficher abonnement
-  getUserSubscription() {
-    const userID = this.currentUser?._id || "";
-    if (!userID) return;
-    this.agencyService.getUserSubscription(userID).subscribe({
-      next: (response: any[]) => {
-        this.subscriptions = response || [];
-        console.log("Subscriptions ==>", this.subscriptions);
-        const sortedByEndDateDesc = [...this.subscriptions].sort(
-          (a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
-        );
-        this.activeSubscription = sortedByEndDateDesc.find((sub) => isSubscriptionCurrentlyActive(sub)) || null;
-        this.latestSubscription = sortedByEndDateDesc[0] || null;
-        console.log("Active subscription ==>", this.activeSubscription);
-        console.log("Payment history ==>", this.paymentHistory);
-      },
-      error: (err) => {
-        console.error("Erreur lors du chargement des abonnements", err);
-      },
-    });
-  }
-
+  /** Fusion Subscription -> Contrat : /subscription retirée, le flux de paiement réel
+   * (formulaire Mobile Money) vit désormais sur /contrat — voir
+   * pages/contrat/contrat.ts::initiatePayment(). Remplace le stub précédent (non
+   * implémenté). */
   renewSubscription() {
-    // Logique pour renouveler l'abonnement
-    alert("Fonction de renouvellement d'abonnement à implémenter.");
+    this.router.navigate(['/contrat']);
   }
   contactSupport() {
     // Logique pour contacter le support
@@ -835,7 +819,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
             startDate: periode?.debut.toISOString(),
             endDate: periode?.fin.toISOString(),
           }).pipe(
-            map((res: any) => (res?.data || []).filter((t: any) => !!t.subscriptionId)),
+            // Fusion Subscription -> Contrat : `contratId` pour les paiements récents,
+            // `subscriptionId` conservé en fallback pour l'historique pré-fusion.
+            map((res: any) => (res?.data || []).filter((t: any) => !!(t.contratId || t.subscriptionId))),
             catchError(() => of([] as any[]))
           )
         : of([] as any[]),
@@ -936,7 +922,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   // }
 
   getNextPayment(paiementDate: string | null): string {
-    paiementDate = paiementDate || this.activeSubscription?.endDate;
+    paiementDate = paiementDate || this.activeSubscription?.endDate || null;
     if (!paiementDate) return "Aucun paiement prévu";
     // return this.activeSubscription?.endDate.toLocaleDateString('fr-FR', {
     return (

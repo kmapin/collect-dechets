@@ -2692,9 +2692,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
   filterClients(): void {
     this.filteredClients = this.clientsAudits.filter((client) => {
+      // `active_subscription` n'est jamais peuplé (voir showAdminClients() plus bas,
+      // bug pré-existant indépendant de la fusion Subscription -> Contrat — jamais
+      // câblé sur une vraie source de données). Garde ajoutée pour ne plus planter
+      // (TypeError sur .map d'undefined) plutôt que de résoudre la fonctionnalité,
+      // hors périmètre de cette migration.
       const statusMatch =
         this.clientsFilter === "all" ||
-        client?.active_subscription
+        (client?.active_subscription ?? [])
           .map((sub: any) => sub.status)
           .includes(this.clientsFilter);
       let complianceMatch = true;

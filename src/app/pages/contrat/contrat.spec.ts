@@ -8,6 +8,7 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
   let redevanceServiceSpy: { getRedevancesByContrat$: jasmine.Spy; getPropositionActivePaiementGroupe$: jasmine.Spy };
   let newNotification$: Subject<any>;
   let websocketServiceSpy: { onNewNotification: jasmine.Spy };
+  let eligibilityServiceSpy: { checkEligibility$: jasmine.Spy };
 
   const CONTRATS = [
     { _id: 'c1', clientId: 'client-1', agencyId: { _id: 'a1', name: 'Agence Test' }, pricingId: { _id: 'p1', price: 5000, planType: 'standard' }, frequenceCollecte: 'monthly', status: 'actif', prixParPeriode: 5000, passagesParPeriode: 4, startDate: '2026-01-01', endDate: null, documentUrl: null, documentPublicId: null },
@@ -33,8 +34,13 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
       }),
     };
     websocketServiceSpy = { onNewNotification: jasmine.createSpy('onNewNotification').and.returnValue(newNotification$.asObservable()) };
+    eligibilityServiceSpy = {
+      checkEligibility$: jasmine.createSpy('checkEligibility$').and.returnValue({
+        subscribe: ({ next }: any) => { next && next({ eligible: true, source: null, reason: null }); return { unsubscribe: () => {} }; },
+      }),
+    };
 
-    component = new ContratPage(authServiceSpy as any, contratServiceSpy as any, redevanceServiceSpy as any, websocketServiceSpy as any);
+    component = new ContratPage(authServiceSpy as any, contratServiceSpy as any, redevanceServiceSpy as any, websocketServiceSpy as any, eligibilityServiceSpy as any);
   });
 
   it('ngOnInit() charge les contrats du client courant', () => {
@@ -53,11 +59,20 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
     expect(contratServiceSpy.getContratsByClient$.calls.count()).toBe(callsAfterInit + 1);
   });
 
-  it("un newNotification d'un autre type (ex. 'Subscribed') ne recharge PAS les contrats", () => {
+  it("un newNotification de type 'Subscribed' recharge aussi la liste (fusion Subscription -> Contrat)", () => {
     component.ngOnInit();
     const callsAfterInit = contratServiceSpy.getContratsByClient$.calls.count();
 
     newNotification$.next({ type: 'Subscribed', message: 'Abonnement' });
+
+    expect(contratServiceSpy.getContratsByClient$.calls.count()).toBe(callsAfterInit + 1);
+  });
+
+  it("un newNotification d'un type non lié (ex. 'Planning') ne recharge PAS les contrats", () => {
+    component.ngOnInit();
+    const callsAfterInit = contratServiceSpy.getContratsByClient$.calls.count();
+
+    newNotification$.next({ type: 'Planning', message: 'Planning modifié' });
 
     expect(contratServiceSpy.getContratsByClient$.calls.count()).toBe(callsAfterInit);
   });
@@ -122,6 +137,32 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
     expect(component.showPaymentForm).toBe(false);
     expect(component.tarifResponse).toBeNull();
     expect(redevanceServiceSpy.getRedevancesByContrat$.calls.count()).toBe(callsBeforeClose + 1);
+  });
+
+  it('peutPayerParMobileMoney(contrat) : vrai seulement pour un contrat né d\'un paiement (numberMonths renseigné)', () => {
+    expect(component.peutPayerParMobileMoney({ numberMonths: 3 } as any)).toBe(true);
+    expect(component.peutPayerParMobileMoney({ numberMonths: null } as any)).toBe(false);
+    expect(component.peutPayerParMobileMoney({} as any)).toBe(false);
+  });
+
+  it('initiatePayment(contrat) prépare tarifResponse (tarifId/agencyId, pas redevanceId) et ouvre le formulaire', () => {
+    component.currentUser = { _id: 'client-1' };
+    const contrat = {
+      _id: 'c1',
+      pricingId: { _id: 'p1', price: 5000, planType: 'standard' },
+      agencyId: { _id: 'a1', name: 'Agence Test' },
+      serviceLocationId: { _id: 'loc1' },
+      numberMonths: 3,
+    } as any;
+
+    component.initiatePayment(contrat);
+
+    expect(component.showPaymentForm).toBe(true);
+    expect(component.tarifResponse.redevanceId).toBeUndefined();
+    expect(component.tarifResponse.tarifId).toBe('p1');
+    expect(component.tarifResponse.agencyId).toBe('a1');
+    expect(component.tarifResponse.amount).toBe(5000);
+    expect(component.tarifResponse.userId).toBe('client-1');
   });
 
   it('ngOnDestroy() se désabonne du socket (pas de fuite mémoire)', () => {

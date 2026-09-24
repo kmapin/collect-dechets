@@ -189,9 +189,9 @@
                         <td>
                           @if (ligne.abonnementErreur) {
                             <span class="ei-badge ei-badge-danger">Échec : {{ ligne.abonnementErreur }}</span>
-                          } @else if (ligne.subscriptionId && ligne.abonnementDejaExistant) {
+                          } @else if (ligne.contratId && ligne.abonnementDejaExistant) {
                             <span class="ei-badge ei-badge-warn">Déjà actif</span>
-                          } @else if (ligne.subscriptionId) {
+                          } @else if (ligne.contratId) {
                             <span class="ei-badge ei-badge-ok">Rattaché</span>
                           } @else {
                             <span class="ei-hint-inline">—</span>

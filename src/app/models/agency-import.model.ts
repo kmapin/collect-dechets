@@ -21,13 +21,14 @@ export interface ImportRow {
   erreurs: ImportRowError[];
   userId?: string;
   motDePasseGenere?: string;
-  // Abonnement (clients uniquement, facultatif dans le fichier) :
-  subscriptionId?: string;
   /** true si l'abonnement existait déjà (aucun nouvel abonnement créé — anti-doublon). */
   abonnementDejaExistant?: boolean;
   /** Renseigné si le client a bien été créé/rattaché mais que l'abonnement, lui, a échoué. */
   abonnementErreur?: string;
-  // Contrat (clients uniquement, facultatif, indépendant de l'abonnement) :
+  // Fusion Subscription -> Contrat : les colonnes Excel "Abonnement" et "Contrat"
+  // créent toutes les deux un Contrat désormais — un seul id partagé (contratId).
+  // Si les deux colonnes ciblent le même (client, agence, lieu), la 2e retrouve
+  // simplement le contrat déjà créé par la 1ère (jamais deux entités).
   contratId?: string;
   /** true si un contrat actif existait déjà pour ce lieu (aucun nouveau contrat créé). */
   contratDejaExistant?: boolean;

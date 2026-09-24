@@ -4,7 +4,9 @@ import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
-export type EligibilitySource = 'CONTRACT' | 'SUBSCRIPTION' | 'NONE';
+// Fusion Subscription -> Contrat : 'SUBSCRIPTION' retiré, Contrat est désormais la
+// seule source d'éligibilité (voir services/eligibility.service.js côté backend).
+export type EligibilitySource = 'CONTRACT' | 'NONE';
 
 export interface EligibilityResult {
   eligible: boolean;
@@ -12,11 +14,12 @@ export interface EligibilityResult {
   reason: string;
 }
 
-export function isSubscriptionCurrentlyActive(
-  subscription: { isActive?: boolean; endDate?: string | Date } | null | undefined,
+// Fusion Subscription -> Contrat : remplace l'ex `isSubscriptionCurrentlyActive`
+// (isActive booléen) — un Contrat est actif via son `status` (enum), pas un booléen.
+export function isContratCurrentlyActive(
+  contrat: { status?: string } | null | undefined,
 ): boolean {
-  if (!subscription || subscription.isActive !== true) return false;
-  return new Date(subscription.endDate as string | Date).getTime() > Date.now();
+  return contrat?.status === 'actif';
 }
 
 @Injectable({

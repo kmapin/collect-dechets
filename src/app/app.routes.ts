@@ -96,10 +96,12 @@ export const routes: Routes = [
   },
 
   {
-    canActivate: [authGuard],
+    // Fusion Subscription -> Contrat : la page dédiée a été retirée (doublon quasi
+    // complet de /contrat une fois les deux domaines fusionnés — voir /contrat pour
+    // le paiement/renouvellement). Route conservée en redirection pour ne pas casser
+    // les anciens liens (notifications, marque-pages, navigation existante).
     path: "subscription",
-    loadComponent: () =>
-      import("./pages/subscription/subscription").then((c) => c.Subscription),
+    redirectTo: "contrat",
   },
 
   {

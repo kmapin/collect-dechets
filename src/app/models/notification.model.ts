@@ -11,7 +11,10 @@ export type NotificationType =
   | 'AgencyAdd'
   | 'Unsubscribed';
 
-export type NotificationTargetKind = 'planning' | 'signalement' | 'contrat' | 'subscription' | 'redevance' | 'retrait';
+// Fusion Subscription -> Contrat : 'subscription' retiré — une notification type:
+// 'Subscribed' (texte utilisateur inchangé) cible désormais un Contrat (kind: 'contrat'),
+// voir services/notification.service.js::TARGET_RESOLUTION_ORDER côté backend.
+export type NotificationTargetKind = 'planning' | 'signalement' | 'contrat' | 'redevance' | 'retrait';
 
 export interface NotificationTarget {
   kind: NotificationTargetKind;
@@ -39,7 +42,6 @@ export interface NotificationItem {
   relatedPlanning?: string | null;
   relatedSignalement?: string | null;
   relatedContrat?: string | null;
-  relatedSubscription?: string | null;
   relatedRedevance?: string | null;
   relatedRetrait?: string | null;
 }

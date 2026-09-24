@@ -55,10 +55,10 @@ export function resolveNotificationNavigation(
   }
 
   if (role === 'client') {
-    if (notif.type === 'Subscribed' || notif.target?.kind === 'subscription') {
-      return { commands: ['/subscription'] };
-    }
-    if (notif.type === 'Contrat' || notif.target?.kind === 'contrat') {
+    // Fusion Subscription -> Contrat : /subscription retirée (page dédiée fusionnée dans
+    // /contrat) — type:'Subscribed' (texte utilisateur inchangé côté notification) route
+    // désormais directement vers /contrat, comme type:'Contrat'.
+    if (notif.type === 'Subscribed' || notif.type === 'Contrat' || notif.target?.kind === 'contrat') {
       return { commands: ['/contrat'] };
     }
   }

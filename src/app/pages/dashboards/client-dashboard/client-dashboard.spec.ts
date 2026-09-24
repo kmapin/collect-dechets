@@ -22,13 +22,15 @@ describe('ClientDashboard - planning unifié V1/V2 & signalement (Prompt 05)', (
       clientServiceSpy as any,
       { showSuccess: () => {}, showError: () => {}, showInfo: () => {} } as any,
       {} as any,
-      {} as any,
       { onNewNotification: () => new Subject().asObservable() } as any,
+      {} as any,
       {} as any,
       { checkEligibility$: () => ({ subscribe: () => {} }) } as any,
       {} as any,
       { snapshot: { queryParamMap: { get: () => null } } } as any,
       { getRedevancesByClient$: () => ({ subscribe: () => {} }) } as any,
+      {} as any,
+      {} as any,
       {} as any,
       {} as any
     );
@@ -108,20 +110,22 @@ describe('ClientDashboard - "Mon contrat" (carte dashboard + rafraîchissement s
     websocketServiceSpy = { onNewNotification: jasmine.createSpy('onNewNotification').and.returnValue(newNotification$.asObservable()) };
 
     component = new ClientDashboard(
-      { currentUser$: new Subject() } as any,
-      {} as any,
+      { currentUser$: new Subject(), getCurrentUser: () => ({ _id: 'client-1', agencyId: 'agency-1' }) } as any,
       {} as any,
       {} as any,
       {} as any,
       {} as any,
       websocketServiceSpy as any,
+      { onIncomingMessage$: () => new Subject().asObservable() } as any,
       contratServiceSpy as any,
       { checkEligibility$: () => ({ subscribe: () => {} }) } as any,
-      { listForClient: () => ({ subscribe: () => {} }) } as any,
+      {} as any,
       { snapshot: { queryParamMap: { get: () => null } } } as any,
       { getRedevancesByClient$: () => ({ subscribe: () => {} }) } as any,
       {} as any,
       {} as any,
+      {} as any,
+      { listForClient: () => ({ subscribe: () => {} }) } as any,
     );
     component.currentUser = { _id: 'client-1', agencyId: 'agency-1' };
   });

@@ -7,15 +7,37 @@
   </div>
 
   <div class="container">
+    @if (showContractContinuityBanner) {
+      <div class="contrat-card card eligibility-banner">
+        <div class="info-item-agencyName">
+          <i class="material-icons" style="color: var(--success-color)">verified</i>
+          <span class="font-semibold text-[--primary-color]">
+            Vous bénéficiez actuellement du service dans le cadre de votre contrat actif.
+          </span>
+        </div>
+      </div>
+    }
+
+    @if (showIneligibilityBanner) {
+      <div class="contrat-card card eligibility-banner eligibility-banner--negative">
+        <div class="info-item-agencyName">
+          <i class="material-icons" style="color: var(--error-color)">error_outline</i>
+          <span class="font-semibold text-[--primary-color]">
+            {{ ineligibilityMessage() }}
+          </span>
+        </div>
+      </div>
+    }
+
     <div class="contrat-content">
       @if (isLoading) {
-        <div class="contrat-card card">
+        <div class="contrat-card contrat-card--full card">
           <p>Chargement de vos contrats...</p>
         </div>
       }
 
       @if (!isLoading && contrats.length === 0) {
-        <div class="contrat-card card">
+        <div class="contrat-card contrat-card--full card">
           <div class="info-item">
             <span>Vous n'avez aucun contrat pour le moment.</span>
           </div>
@@ -69,6 +91,12 @@
               <button class="btn btn-primary" (click)="telechargerDocument(contrat)">
                 <i class="material-icons">picture_as_pdf</i>
                 Télécharger le document
+              </button>
+            }
+            @if (peutPayerParMobileMoney(contrat) && !isContratActif(contrat)) {
+              <button class="btn btn-primary" (click)="initiatePayment(contrat)">
+                <i class="material-icons">payment</i>
+                Payer/Renouveler par Mobile Money
               </button>
             }
           </div>
@@ -160,7 +188,11 @@
     <div class="payment-drawer-overlay">
       <div class="payment-drawer" (click)="$event.stopPropagation()">
         <div class="payment-drawer-header">
-          <h2>{{ tarifResponse?.paiementGroupeId ? 'Paiement groupé' : 'Paiement de la redevance' }}</h2>
+          <h2>
+            {{ tarifResponse?.paiementGroupeId ? 'Paiement groupé'
+              : tarifResponse?.redevanceId ? 'Paiement de la redevance'
+              : 'Paiement de l\'abonnement' }}
+          </h2>
           <button class="close-btn" (click)="closePaymentForm()">
             <i class="material-icons">close</i>
           </button>

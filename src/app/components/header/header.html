@@ -171,7 +171,7 @@
               <span>Notifications</span>
             </a>
             @if (currentUser.role === 'client') {
-            <a routerLink="/subscription" class="dropdown-item">
+            <a routerLink="/contrat" class="dropdown-item">
               <i class="material-icons">card_membership</i>
               <span>Mes abonnements</span>
             </a>
@@ -296,7 +296,7 @@
             </a>
             @if (currentUser.role === 'client') {
             <a
-              routerLink="/subscription"
+              routerLink="/contrat"
               class="mobile-nav-link"
               (click)="closeMobileMenu()"
             >

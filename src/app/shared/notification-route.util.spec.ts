@@ -37,10 +37,10 @@ describe('notification-route.util', () => {
       }
     });
 
-    it('client + Subscribed -> /subscription (sa propre ressource, sans id)', () => {
+    it('client + Subscribed -> /contrat (fusion Subscription -> Contrat, /subscription retirée)', () => {
       const notif = { type: 'Subscribed' as const, target: null };
       expect(resolveNotificationNavigation(notif, '/dashboard/client', 'client')).toEqual({
-        commands: ['/subscription'],
+        commands: ['/contrat'],
       });
     });
 

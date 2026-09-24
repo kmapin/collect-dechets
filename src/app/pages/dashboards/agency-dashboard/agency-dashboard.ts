@@ -12,7 +12,7 @@ import {
 } from "@angular/core";
 import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
 import { ConversationService, RealtimeMessage } from "../../../services/conversation.service";
-import { isSubscriptionCurrentlyActive } from "../../../services/eligibility.service";
+import { isContratCurrentlyActive } from "../../../services/eligibility.service";
 import { DemandeCollecteService, DemandeCollecte } from "../../../services/demande-collecte.service";
 import { ServiceLocationService } from "../../../services/service-location.service";
 import { ServiceLocation } from "../../../models/service-location.model";
@@ -2521,9 +2521,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
           const clients = response.data;
 
-          // 🔥 Requêtes abonnements par client
+          // 🔥 Requêtes abonnements (Contrat) par client — fusion Subscription -> Contrat
           const subscriptionsRequests = clients.map((client: any) =>
-            this.agencyService.getUserSubscription(client._id).pipe(
+            this.agencyService.getContratsClient(client._id).pipe(
               map((subs: any[]) => ({
                 ...client,
                 historyAbonnement:
@@ -3914,20 +3914,21 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
           },
         });
 
+        // Fusion Subscription -> Contrat
         const agencyId = this.agency?.agencyId;
-        this.agencyService.getUserSubscription(clientId).subscribe({
+        this.agencyService.getContratsClient(clientId).subscribe({
           next: (subs: any[]) => {
             const scoped = (subs || []).filter(
               (s) => !agencyId || s.agencyId?._id === agencyId || s.agencyId === agencyId,
             );
-            // Une souscription par lieu (la plus récente) — même convention que
+            // Un contrat par lieu (le plus récent) — même convention que
             // subscription.ts::subscriptionsToDisplay, pas le total brut de l'historique.
             const byLieu = new Map<string, any>();
             for (const s of scoped) {
               const lieu = s.serviceLocationId;
               const key = lieu ? (typeof lieu === 'object' ? lieu._id : lieu) : 'compte-entier';
               const current = byLieu.get(key);
-              if (!current || new Date(s.endDate).getTime() > new Date(current.endDate).getTime()) {
+              if (!current || new Date(s.endDate || 0).getTime() > new Date(current.endDate || 0).getTime()) {
                 byLieu.set(key, s);
               }
             }
@@ -6501,8 +6502,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  isSubscriptionActiveDisplay(abonnement: any): boolean {
-    return isSubscriptionCurrentlyActive(abonnement);
+  isSubscriptionActiveDisplay(contrat: any): boolean {
+    return isContratCurrentlyActive(contrat);
   }
 
   // Utiliser une API tierce pour générer le QR code

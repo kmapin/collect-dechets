@@ -68,7 +68,9 @@ export enum UserRole {
 }
 
 export interface ClientUser extends User {
-  subscriptionId?: string;
+  // Fusion Subscription -> Contrat : remplace l'ex `subscriptionId` (aligné sur
+  // models/User.js côté backend).
+  contratId?: string;
   paymentMethod?: PaymentMethod;
 }
 

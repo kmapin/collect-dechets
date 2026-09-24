@@ -123,7 +123,7 @@
                   @if (showContractContinuityBanner) {
                   <sub>Vous êtes couvert par votre contrat actif — voir "Mes contrats" ci-dessous.</sub>
                   } @else {
-                  <sub>Consultez "Mes abonnements" ci-dessous pour souscrire.</sub>
+                  <sub>Consultez "Mon contrat" ci-dessous pour souscrire.</sub>
                   }
                 </p>
               }
@@ -539,62 +539,7 @@
                 </section>
                 }
 
-                <!-- Informations d'abonnement -->
-                <section class="subscription-info card bg-blue-100">
-                  <div class="section-header">
-                    <h2>
-                      <i class="material-icons">card_membership</i>
-                      Mes abonnements
-                    </h2>
-                    <button
-                      class="btn btn-secondary btn-small"
-                      routerLink="/subscription"
-                      >
-                      <i class="material-icons">visibility</i>
-                      Voir plus
-                    </button>
-                  </div>
-
-                  @if (latestSubscription) {
-                    <div
-                      class="subscription-details"
-                      >
-                      <div class="subscription-service">
-                        <h3>Collecte {{ latestSubscription.pricingId?.planType }}</h3>
-                        <p>{{ latestSubscription.agencyId?.name }}</p>
-                        <p class="subscription-location">{{ serviceLocationLabel(latestSubscription) }}</p>
-                      </div>
-                      <div class="subscription-pricing">
-                        <div class="price">
-                          {{ latestSubscription.pricingId?.price }} <sup>F CFA</sup>
-                        </div>
-                        <div class="frequency">par mois</div>
-                      </div>
-                      <div class="subscription-status">
-                        <span
-                          class="status-badge"
-                          [class]="'status-' + (activeSubscription === latestSubscription ? 'active' : 'inactive')"
-                          >
-                          {{ subscriptionStatusLabel(latestSubscription) }}
-                        </span>
-                        <button
-                          class="btn btn-secondary btn-small"
-                          routerLink="/agencies/{{ latestSubscription.agencyId?._id }}"
-                          [state]="{ fromDashboard: true }"
-                          >
-                          <i class="material-icons">visibility</i>
-                          Voir l'agence
-                        </button>
-                      </div>
-                  </div>
-                } @else {
-                  <div class="info-item">
-                    <span>Aucun abonnement actif.</span>
-                  </div>
-                }
-              </section>
-
-              <!-- Informations de contrat -->
+                <!-- Informations de contrat -->
               <section class="subscription-info card bg-blue-100">
                 <div class="section-header">
                   <h2>

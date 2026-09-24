@@ -3,47 +3,7 @@
 
   <ng-container *ngIf="!erreur()">
     <section class="subscription-tab__section">
-      <h3>Abonnements</h3>
-      <table class="subscription-tab__table">
-        <thead>
-          <tr>
-            <th scope="col">Plan</th>
-            <th scope="col">Lieu</th>
-            <th scope="col">Agence</th>
-            <th scope="col">Prix</th>
-            <th scope="col">Début</th>
-            <th scope="col">Fin</th>
-            <th scope="col">Statut</th>
-          </tr>
-        </thead>
-        <tbody>
-          <ng-container *ngIf="!chargement(); else squeletteAbonnements">
-            <tr *ngFor="let a of abonnements()">
-              <td data-label="Plan">{{ a.pricingId?.planType | titlecase }}</td>
-              <td data-label="Lieu">{{ lieuLabel(a) }}</td>
-              <td data-label="Agence">{{ a.agencyId?.name || '—' }}</td>
-              <td data-label="Prix">{{ formatMontant(a.pricingId?.price ?? 0) }}</td>
-              <td data-label="Début">{{ a.startDate ? formatDate(a.startDate) : '—' }}</td>
-              <td data-label="Fin">{{ a.endDate ? formatDate(a.endDate) : '—' }}</td>
-              <td data-label="Statut">
-                <app-status-badge [label]="badgeAbonnement(isSubscriptionCurrentlyActive(a)).label" [icon]="badgeAbonnement(isSubscriptionCurrentlyActive(a)).icon" [variant]="badgeAbonnement(isSubscriptionCurrentlyActive(a)).variant" />
-              </td>
-            </tr>
-            <tr *ngIf="!abonnements().length">
-              <td colspan="7" class="subscription-tab__empty">Aucun abonnement pour ce client.</td>
-            </tr>
-          </ng-container>
-          <ng-template #squeletteAbonnements>
-            <tr *ngFor="let i of [0, 1]" aria-hidden="true">
-              <td *ngFor="let c of [0, 1, 2, 3, 4, 5, 6]"><span class="subscription-tab__skeleton-cell"></span></td>
-            </tr>
-          </ng-template>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="subscription-tab__section">
-      <h3>Contrats</h3>
+      <h3>Abonnements &amp; Contrats</h3>
       <table class="subscription-tab__table">
         <thead>
           <tr>

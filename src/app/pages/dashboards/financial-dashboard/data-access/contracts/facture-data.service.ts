@@ -10,7 +10,9 @@ export interface SuiviMensuelFilter {
   impayeesSeulement?: boolean;
 }
 
-export type SourceEligibilite = 'CONTRACT' | 'SUBSCRIPTION' | 'NONE';
+// Fusion Subscription -> Contrat : 'SUBSCRIPTION' retiré, Contrat est désormais la
+// seule source d'éligibilité (voir services/eligibility.service.js côté backend).
+export type SourceEligibilite = 'CONTRACT' | 'NONE';
 
 export interface SituationPaiementClient {
   idClient: string;

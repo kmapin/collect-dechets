@@ -57,10 +57,6 @@ export class ClientService {
     return this.http.put(`${environment.apiUrl}/agences/clients/${clientId}/validate`, {});
   }
 
-  subscribeToAgencyPlan(data: any) {
-    return this.http.post(`${environment.apiUrl}/agences/clients/subscription`, data);
-  }
-
 
   getAllClients(): Observable<any> {
     let requestParams = new HttpParams().append('role', 'client');

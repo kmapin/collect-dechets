@@ -6,6 +6,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { AddEmployeeData, RegisterResponse, User } from '../models/user.model';
 import { FilterParams } from '../models/filterParams.model';
+import { Contrat } from '../models/contrat.model';
 
 
 export interface ZoneAnalyticsResponse {
@@ -568,33 +569,27 @@ export class AgencyService {
     return this.currentUserSubject.value;
   }
 
-  // Enroll a client to an agency plan (côté gestion agence — pas à confondre avec
-  // ClientService.subscribeToAgencyPlan(), méthode distincte du domaine client).
-  enrollClientToPlan(currentUser: string | undefined, tariffId: string | undefined, numberMonths: number) {
-    console.log("API, SubcriptionPayload ==>", currentUser, tariffId, numberMonths);
-    return this.http.post(`${environment.apiUrl}/subscription/subscribe/${currentUser}/pricing/${tariffId}/${numberMonths}`, {});
-  }
-
-  //Get user Subscription from an agency
-  getUserSubscription(userId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/subscription/client/${userId}`).pipe(
-      map(response => {
-        console.log("API- Get subscriptions==>", response);
-        return response || [];
-      })
+  // Fusion Subscription -> Contrat : remplace l'ex `getUserSubscription` (endpoint
+  // /subscription/client/:userId conservé côté backend uniquement pour compat, plus
+  // appelé ici) — Contrat est désormais la seule source de vérité pour "Mes
+  // abonnements"/"Mes contrats" côté client.
+  getContratsClient(userId: string): Observable<Contrat[]> {
+    return this.http.get<Contrat[]>(`${environment.apiUrl}/contrats/client/${userId}`).pipe(
+      map(response => response || [])
     );
   }
 
   /**
-   * Abonnements d'un client, scopés à l'agence de l'appelant (`resolveAgency`,
-   * JWT). Un client peut être abonné auprès de plusieurs agences ;
-   * `getUserSubscription` ci-dessus renvoie tout son historique (légitime pour
+   * Contrats d'un client, scopés à l'agence de l'appelant (`resolveAgency`,
+   * JWT). Un client peut être sous contrat auprès de plusieurs agences ;
+   * `getContratsClient` ci-dessus renvoie tout son historique (légitime pour
    * la page "Mon abonnement" côté client) — utiliser ce endpoint-ci pour le
-   * dashboard financier, qui ne doit jamais voir les abonnements de ce client
-   * avec une agence tierce.
+   * dashboard financier, qui ne doit jamais voir les contrats de ce client
+   * avec une agence tierce. Fusion Subscription -> Contrat : remplace l'ex
+   * `getUserSubscriptionPourMonAgence` (/finance/abonnements/... déprécié).
    */
-  getUserSubscriptionPourMonAgence(userId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/finance/abonnements/client/${userId}`).pipe(
+  getContratsClientPourMonAgence(userId: string): Observable<Contrat[]> {
+    return this.http.get<Contrat[]>(`${environment.apiUrl}/finance/contrats/client/${userId}`).pipe(
       map(response => response || []),
       catchError(() => of([])),
     );

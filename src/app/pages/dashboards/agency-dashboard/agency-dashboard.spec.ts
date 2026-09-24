@@ -44,9 +44,10 @@ describe('AgencyDashboard - signalements unifiés (Prompt 06)', () => {
       {} as any,
       notificationServiceSpy as any,
       {} as any,
+      {} as any,
+      {} as any,
       { detectChanges: () => {} } as any,
       new FormBuilder(),
-      {} as any,
       {} as any,
       {} as any,
       { fragment: { subscribe: () => {} }, queryParams: { subscribe: () => {} } } as any,
@@ -54,6 +55,8 @@ describe('AgencyDashboard - signalements unifiés (Prompt 06)', () => {
       {} as any,
       {} as any,
       websocketServiceSpy as any,
+      {} as any,
+      {} as any,
       {} as any,
     );
     component.currentUser = { _id: 'manager-1', agencyId: 'agency-1' } as any;

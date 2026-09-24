@@ -16,7 +16,6 @@ export function badgeStatutClient(statut: ClientStatut): BadgeInfo {
 
 const LABEL_SOURCE: Record<SourceEligibilite, string> = {
   CONTRACT: 'Contrat',
-  SUBSCRIPTION: 'Abonnement',
   NONE: '',
 };
 
@@ -42,18 +41,14 @@ export function badgeSuiviMensuel(statut: FactureStatut | 'NonGeneree'): BadgeIn
   return badgeFacture(statut);
 }
 
-// Onglet "Abonnements & Contrats" de la fiche client — domaine `Subscription`
-// (app/services/agency.service.ts::getUserSubscription) et `Contrat`
-// (app/services/contrat.service.ts), distincts du domaine Facture ci-dessus.
-export function badgeAbonnement(isActive: boolean): BadgeInfo {
-  return isActive
-    ? { label: 'Actif', icon: 'check_circle', variant: 'success' }
-    : { label: 'Inactif', icon: 'block', variant: 'neutral' };
-}
-
-export function badgeContrat(statut: 'actif' | 'suspendu' | 'resilie'): BadgeInfo {
+// Onglet "Abonnements & Contrats" de la fiche client (app/services/contrat.service.ts)
+// — fusion Subscription -> Contrat : Contrat est désormais l'unique domaine, distinct
+// du domaine Facture ci-dessus. `badgeAbonnement` (ex domaine Subscription) retiré,
+// remplacé partout par `badgeContrat`.
+export function badgeContrat(statut: 'actif' | 'suspendu' | 'resilie' | 'expire'): BadgeInfo {
   if (statut === 'actif') return { label: 'Actif', icon: 'check_circle', variant: 'success' };
   if (statut === 'suspendu') return { label: 'Suspendu', icon: 'pause_circle', variant: 'warning' };
+  if (statut === 'expire') return { label: 'Expiré', icon: 'schedule', variant: 'warning' };
   return { label: 'Résilié', icon: 'cancel', variant: 'danger' };
 }
 
