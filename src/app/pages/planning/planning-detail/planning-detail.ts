@@ -108,6 +108,64 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
     return code ? (FAILURE_REASON_LABELS[code] ?? code) : '—';
   }
 
+  // ── Collectes : switch carte/tableau, filtres, pagination — 100% client-side, la
+  // liste complète est déjà chargée en un seul appel (voir _loadCollectes) exactement
+  // comme le modèle déjà utilisé pour Clients/Employés dans agency-dashboard.ts.
+  collecteViewMode      = signal<'card' | 'table'>('table');
+  collecteSearch        = signal('');
+  collecteStatusFilter  = signal<'all' | 'Collected' | 'Missed'>('all');
+  collectePage          = signal(1);
+  collecteItemsPerPage  = signal(10);
+
+  filteredCollectes = computed(() => {
+    const terme = this.collecteSearch().trim().toLowerCase();
+    const statut = this.collecteStatusFilter();
+    return this.collectes().filter((c) => {
+      if (statut !== 'all' && c.status !== statut) return false;
+      if (!terme) return true;
+      return c.clientName.toLowerCase().includes(terme) || c.clientNeighborhood.toLowerCase().includes(terme);
+    });
+  });
+  collectesTotalItems = computed(() => this.filteredCollectes().length);
+  collectesTotalPages = computed(() => Math.max(1, Math.ceil(this.collectesTotalItems() / this.collecteItemsPerPage())));
+  pagedCollectes = computed(() => {
+    const page = Math.min(this.collectePage(), this.collectesTotalPages());
+    const start = (page - 1) * this.collecteItemsPerPage();
+    return this.filteredCollectes().slice(start, start + this.collecteItemsPerPage());
+  });
+
+  changeCollecteStatusFilter(statut: 'all' | 'Collected' | 'Missed'): void {
+    this.collecteStatusFilter.set(statut);
+    this.collectePage.set(1);
+  }
+  onCollecteSearchChange(terme: string): void {
+    this.collecteSearch.set(terme);
+    this.collectePage.set(1);
+  }
+  changeCollecteItemsPerPage(taille: number): void {
+    this.collecteItemsPerPage.set(taille);
+    this.collectePage.set(1);
+  }
+  goToCollectePage(page: number): void {
+    if (page >= 1 && page <= this.collectesTotalPages()) this.collectePage.set(page);
+  }
+  nextCollectePage(): void { this.goToCollectePage(this.collectePage() + 1); }
+  previousCollectePage(): void { this.goToCollectePage(this.collectePage() - 1); }
+  getCollectePaginationPages(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+    const total = this.collectesTotalPages();
+    let start = Math.max(1, this.collectePage() - half);
+    const end = Math.min(total, start + maxPagesToShow - 1);
+    if (end - start + 1 < maxPagesToShow) start = Math.max(1, end - maxPagesToShow + 1);
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  }
+  getCollecteEndItemNumber(): number {
+    return Math.min(this.collectePage() * this.collecteItemsPerPage(), this.collectesTotalItems());
+  }
+
   // ── Teams (real API data) ─────────────────────────────────────
   allTeams         = signal<TeamApi[]>([]);
   isLoadingTeams   = signal(false);
@@ -191,6 +249,63 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   canResendNotifications = computed(() =>
     this.planning()?.status !== 'brouillon' && this.notifications().length === 0
   );
+
+  // ── Notifications : switch carte/tableau, filtres, pagination — même modèle
+  // client-side que les Collectes ci-dessus (liste déjà chargée en une fois).
+  notifViewMode     = signal<'card' | 'table'>('table');
+  notifSearch       = signal('');
+  notifStatusFilter = signal<'all' | 'sent' | 'delivered' | 'read' | 'failed'>('all');
+  notifPage         = signal(1);
+  notifItemsPerPage = signal(10);
+
+  filteredNotifications = computed(() => {
+    const terme = this.notifSearch().trim().toLowerCase();
+    const statut = this.notifStatusFilter();
+    return this.notifications().filter((n) => {
+      if (statut !== 'all' && n.status !== statut) return false;
+      if (!terme) return true;
+      return n.recipient.toLowerCase().includes(terme) || n.message.toLowerCase().includes(terme);
+    });
+  });
+  notifsTotalItems = computed(() => this.filteredNotifications().length);
+  notifsTotalPages = computed(() => Math.max(1, Math.ceil(this.notifsTotalItems() / this.notifItemsPerPage())));
+  pagedNotifications = computed(() => {
+    const page = Math.min(this.notifPage(), this.notifsTotalPages());
+    const start = (page - 1) * this.notifItemsPerPage();
+    return this.filteredNotifications().slice(start, start + this.notifItemsPerPage());
+  });
+
+  changeNotifStatusFilter(statut: 'all' | 'sent' | 'delivered' | 'read' | 'failed'): void {
+    this.notifStatusFilter.set(statut);
+    this.notifPage.set(1);
+  }
+  onNotifSearchChange(terme: string): void {
+    this.notifSearch.set(terme);
+    this.notifPage.set(1);
+  }
+  changeNotifItemsPerPage(taille: number): void {
+    this.notifItemsPerPage.set(taille);
+    this.notifPage.set(1);
+  }
+  goToNotifPage(page: number): void {
+    if (page >= 1 && page <= this.notifsTotalPages()) this.notifPage.set(page);
+  }
+  nextNotifPage(): void { this.goToNotifPage(this.notifPage() + 1); }
+  previousNotifPage(): void { this.goToNotifPage(this.notifPage() - 1); }
+  getNotifPaginationPages(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+    const total = this.notifsTotalPages();
+    let start = Math.max(1, this.notifPage() - half);
+    const end = Math.min(total, start + maxPagesToShow - 1);
+    if (end - start + 1 < maxPagesToShow) start = Math.max(1, end - maxPagesToShow + 1);
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  }
+  getNotifEndItemNumber(): number {
+    return Math.min(this.notifPage() * this.notifItemsPerPage(), this.notifsTotalItems());
+  }
 
   isResendingNotifications = signal(false);
 

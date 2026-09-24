@@ -408,6 +408,173 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
   font-size: 12px; font-weight: 600;
 }
 
+// ── Switch carte/tableau, filtres, pagination (Collectes / Notifications) ─────
+// Composant autonome (encapsulation de vue Angular) : reprend sa propre copie des
+// classes déjà établies dans agency-dashboard.scss (.view-mode-toggle/.view-mode-btn,
+// .employees-table-wrapper/.employees-table, .pagination-section et consorts) — même
+// design, pas de nouvelle convention.
+.view-mode-toggle {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+  margin-left: auto;
+}
+.view-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+
+  mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+
+  &.active {
+    background: #fff;
+    color: #1e293b;
+    box-shadow: 0 1px 4px rgba(0,0,0,.1);
+    font-weight: 600;
+  }
+  &:hover:not(.active) { background: #e2e8f0; color: #334155; }
+}
+
+.sec-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.sec-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: $radius-sm;
+  background: #fff;
+  min-width: 220px;
+  flex: 1 1 220px;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: #94a3b8; }
+  input {
+    flex: 1; border: none; outline: none; font-size: 13px; color: #1e293b; background: transparent;
+    &::placeholder { color: #94a3b8; }
+  }
+}
+.sec-filter-pills {
+  display: flex;
+  gap: 4px;
+
+  button {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s, color .15s;
+
+    &:hover { background: #e2e8f0; }
+    &.active { background: #1e293b; color: #fff; }
+  }
+}
+.rc-hint-inline { color: #94a3b8; font-size: 12px; }
+.rc-item-fields--table { flex-wrap: wrap; }
+
+.employees-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+.employees-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  thead tr { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+  th { padding: 12px 14px; text-align: left; font-weight: 600; color: #475569; white-space: nowrap; }
+  tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background .15s;
+    &:last-child { border-bottom: none; }
+    &:hover { background: #f8fafc; }
+  }
+  td { padding: 11px 14px; color: #334155; vertical-align: middle; }
+  .col-actions { width: 1%; }
+  .cell-truncate { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+.pagination-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 0 4px;
+}
+.pagination-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.pagination-details { font-size: 0.84rem; color: #64748b; strong { color: #1e293b; } }
+.per-page-group { display: flex; align-items: center; gap: 6px; }
+.per-page-label { font-size: 0.82rem; color: #64748b; }
+.per-page-select {
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  &:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+}
+.pagination-controls { display: flex; align-items: center; gap: 8px; }
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  color: #374151;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all .2s ease;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover:not(:disabled) { background: #f3f4f6; border-color: #9ca3af; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+  &.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+}
+.pagination-numbers { display: flex; gap: 4px; }
+.page-number { min-width: 32px; height: 32px; font-weight: 500; }
+
+@media (max-width: 768px) {
+  .pagination-section { flex-direction: column; align-items: stretch; text-align: center; }
+  .view-mode-toggle { margin-left: 0; }
+}
+
 .info-grid {
   display: grid;
   grid-template-columns: 280px 1fr;
