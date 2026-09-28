@@ -493,6 +493,28 @@ $shadow-hover: 0 4px 20px rgba(0,0,0,.10);
 .rc-hint-inline { color: #94a3b8; font-size: 12px; }
 .rc-item-fields--table { flex-wrap: wrap; }
 
+.table-avatar-wrap { display: flex; align-items: center; gap: 10px; }
+.table-avatar-initials {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; color: #fff;
+  flex-shrink: 0; text-transform: uppercase;
+}
+.action-btn {
+  width: 36px; height: 36px;
+  border: none;
+  background: rgba(107,114,128,.1);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all .2s ease;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover:not(:disabled) { background: rgba(107,114,128,.18); }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+
 .employees-table-wrapper {
   width: 100%;
   overflow-x: auto;

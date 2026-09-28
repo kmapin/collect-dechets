@@ -555,6 +555,18 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
 
   teamMembersCount(t: TeamApi): number { return t.members?.length ?? t.collectors?.length ?? 0; }
 
+  // ── Équipe affectée : switch carte/tableau (au plus 1 ligne — un seul teamId par
+  // planning, voir assignedTeams() — donc pas de pagination/filtre ici). ──
+  teamViewMode = signal<'card' | 'table'>('table');
+
+  teamMembersNames(t: TeamApi): string {
+    return t.members?.length ? t.members.map((m) => m.name).join(', ') : '—';
+  }
+  teamVehicleLabel(t: TeamApi): string {
+    const v = t.vehicleId;
+    return v && typeof v === 'object' ? `${v.plate} · ${v.model}` : '—';
+  }
+
   teamStatusBadgeColor(status: string): string {
     return ({ active: '#16a34a', on_mission: '#f59e0b', inactive: '#ef4444', maintenance: '#64748b' } as Record<string,string>)[status] ?? '#94a3b8';
   }

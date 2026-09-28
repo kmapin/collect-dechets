@@ -222,6 +222,14 @@
           <div class="sec-header">
             <mat-icon class="sec-icon" style="--ic:#8b5cf6">groups</mat-icon>
             <h2>Équipe affectée</h2>
+            <div class="view-mode-toggle">
+              <button type="button" class="view-mode-btn" [class.active]="teamViewMode() === 'card'" (click)="teamViewMode.set('card')" title="Vue cartes">
+                <mat-icon>grid_view</mat-icon><span>Cartes</span>
+              </button>
+              <button type="button" class="view-mode-btn" [class.active]="teamViewMode() === 'table'" (click)="teamViewMode.set('table')" title="Vue tableau">
+                <mat-icon>table_rows</mat-icon><span>Tableau</span>
+              </button>
+            </div>
             @if (canEditTeams()) {
               <button type="button" class="sec-action-btn" (click)="openAddTeamDrawer()">
                 <mat-icon>{{ assignedTeams().length > 0 ? 'swap_horiz' : 'add' }}</mat-icon>
@@ -246,6 +254,51 @@
                   <mat-icon>add</mat-icon> Affecter une équipe
                 </button>
               }
+            </div>
+          } @else if (teamViewMode() === 'table') {
+            <div class="employees-table-wrapper">
+              <table class="employees-table">
+                <thead>
+                  <tr>
+                    <th>Équipe</th>
+                    <th>Statut</th>
+                    <th>Membres</th>
+                    <th>Véhicule</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (team of assignedTeams(); track team._id) {
+                    <tr>
+                      <td>
+                        <div class="table-avatar-wrap">
+                          <div class="table-avatar-initials" [style.background-color]="teamStatusBadgeColor(team.status)">
+                            {{ team.name.substring(0,2).toUpperCase() }}
+                          </div>
+                          <span class="name-text">{{ team.name }}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="tc-status" [style.color]="teamStatusBadgeColor(team.status)">
+                          <span class="tc-dot" [style.background]="teamStatusBadgeColor(team.status)"></span>
+                          {{ teamStatusBadgeLabel(team.status) }}
+                        </span>
+                      </td>
+                      <td>{{ teamMembersNames(team) }}</td>
+                      <td>{{ teamVehicleLabel(team) }}</td>
+                      <td class="col-actions">
+                        @if (canEditTeams()) {
+                          <button type="button" class="action-btn" [disabled]="teamSaving()" (click)="removeTeam()" pTooltip="Retirer du planning" tooltipPosition="top">
+                            <mat-icon>person_remove</mat-icon>
+                          </button>
+                        } @else {
+                          <span class="rc-hint-inline">—</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
           } @else {
             <div class="teams-grid">

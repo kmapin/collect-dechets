@@ -145,22 +145,39 @@ export class ContratPage implements OnInit, OnDestroy {
    * initiatePayment() — un contrat "à la durée" (numberMonths renseigné, né d'un
    * paiement) se paie/se renouvelle par Mobile Money, jamais par une Redevance
    * (contrairement à un contrat classique facturé à la Redevance, cf. payerRedevance
-   * ci-dessus). Un mois de plus par défaut à chaque clic — même comportement que
-   * l'ex page /subscription. */
+   * ci-dessus). Un mois par défaut, modifiable dans le formulaire (cf.
+   * onPaymentMonthsChange) — le nombre de mois demandé au client EST le nombre de
+   * redevances mensuelles générées côté serveur (voir _genererRedevancesPeriodiques). */
   initiatePayment(contrat: Contrat): void {
     if (!contrat) return;
     const pricing = this.pricing(contrat);
     const lieu = contrat.serviceLocationId;
+    const unitPrice = pricing?.price ?? contrat.prixParPeriode;
     this.tarifResponse = {
       tarifId: pricing?._id ?? contrat.pricingId,
       agencyId: this.agencyId(contrat),
       userId: this.currentUser?._id,
-      numberMonths: '1',
-      amount: pricing?.price ?? contrat.prixParPeriode,
+      numberMonths: 1,
+      unitPrice,
+      amount: unitPrice,
       planType: pricing?.planType,
       serviceLocationId: typeof lieu === 'object' ? lieu?._id : lieu,
     };
     this.showPaymentForm = true;
+  }
+
+  /** Même logique que pages/agency-details/agency-details.ts::updateSubscriptionMonths()
+   * — le champ "Nombre de mois" du formulaire de paiement (mobile-money-form) recalcule
+   * le montant (prix unitaire × mois) ; sans ce recalcul, le montant réellement soumis
+   * resterait celui d'un seul mois quel que soit le nombre affiché. */
+  onPaymentMonthsChange(months: number): void {
+    if (!this.tarifResponse) return;
+    const clamped = Math.min(12, Math.max(1, months || 1));
+    this.tarifResponse = {
+      ...this.tarifResponse,
+      numberMonths: clamped,
+      amount: this.tarifResponse.unitPrice * clamped,
+    };
   }
 
   /** Un "Payer/Renouveler" n'a de sens que pour un contrat né d'un paiement (période

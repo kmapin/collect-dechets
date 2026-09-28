@@ -198,7 +198,8 @@
           </button>
         </div>
         <div class="payment-drawer-body">
-          <app-mobile-money-form [tarifResponse]="tarifResponse" (showPaymentDrawer)="showPaymentForm = $event">
+          <app-mobile-money-form [tarifResponse]="tarifResponse" (showPaymentDrawer)="showPaymentForm = $event"
+            (monthsChange)="onPaymentMonthsChange($event)">
           </app-mobile-money-form>
         </div>
       </div>

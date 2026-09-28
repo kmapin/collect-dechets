@@ -163,6 +163,42 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
     expect(component.tarifResponse.agencyId).toBe('a1');
     expect(component.tarifResponse.amount).toBe(5000);
     expect(component.tarifResponse.userId).toBe('client-1');
+    expect(component.tarifResponse.numberMonths).toBe(1);
+    expect(component.tarifResponse.unitPrice).toBe(5000);
+  });
+
+  it('onPaymentMonthsChange(months) recalcule le montant (prix unitaire × mois) — le nombre de mois demandé au client est bien celui payé', () => {
+    component.currentUser = { _id: 'client-1' };
+    const contrat = {
+      _id: 'c1',
+      pricingId: { _id: 'p1', price: 5000, planType: 'standard' },
+      agencyId: { _id: 'a1', name: 'Agence Test' },
+      serviceLocationId: { _id: 'loc1' },
+      numberMonths: 3,
+    } as any;
+    component.initiatePayment(contrat);
+
+    component.onPaymentMonthsChange(4);
+
+    expect(component.tarifResponse.numberMonths).toBe(4);
+    expect(component.tarifResponse.amount).toBe(20000);
+  });
+
+  it('onPaymentMonthsChange(months) borne le nombre de mois entre 1 et 12', () => {
+    component.currentUser = { _id: 'client-1' };
+    component.initiatePayment({
+      _id: 'c1',
+      pricingId: { _id: 'p1', price: 5000, planType: 'standard' },
+      agencyId: { _id: 'a1', name: 'Agence Test' },
+      numberMonths: 3,
+    } as any);
+
+    component.onPaymentMonthsChange(0);
+    expect(component.tarifResponse.numberMonths).toBe(1);
+
+    component.onPaymentMonthsChange(50);
+    expect(component.tarifResponse.numberMonths).toBe(12);
+    expect(component.tarifResponse.amount).toBe(60000);
   });
 
   it('ngOnDestroy() se désabonne du socket (pas de fuite mémoire)', () => {
