@@ -235,7 +235,12 @@
                     <mat-icon>{{ vehicleTypeIcon(v.type) }}</mat-icon>
                   </div>
                   <div class="tvc-title">
-                    <span class="tvc-plate">{{ v.plate }}</span>
+                    <span class="tvc-plate">
+                      {{ v.plate }}
+                      @if (assignedTeamName(v.id); as assignedTeam) {
+                        <span class="tvc-assigned-dot" [pTooltip]="assignedVehicleTooltip(v.id)" tooltipPosition="top"></span>
+                      }
+                    </span>
                     <span class="tvc-status-badge" [style.color]="vehicleStatusColor(v.status)">
                       <span class="tvc-dot" [style.background]="vehicleStatusColor(v.status)"></span>
                       {{ vehicleStatusLabel(v.status) }}

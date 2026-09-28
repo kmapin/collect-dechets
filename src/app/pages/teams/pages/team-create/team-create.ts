@@ -11,7 +11,7 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { debounceTime } from 'rxjs/operators';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { TeamService } from '../../services/team.service';
 import { MemberRole, TeamStatus, TeamMember } from '../../models/team.model';
 import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
@@ -129,10 +129,34 @@ export class TeamCreate {
 
   get membersArray(): FormArray { return this.form.get('members') as FormArray; }
 
+  // Reactive Forms ne sont PAS des signaux : lire form.get(x).value/.valid dans un
+  // computed() ne crée aucune dépendance suivie par Angular, donc ces computed ne se
+  // recalculaient jamais après la première évaluation (bouton "Suivant" bloqué en
+  // permanence dès que le formulaire était modifié). formLive() n'est là que pour être
+  // lu au début de chaque computed concerné, afin de forcer sa réévaluation à chaque
+  // changement du formulaire (valeur OU validité — .push()/.removeAt() sur membersArray
+  // déclenchent aussi valueChanges sur le FormGroup parent).
+  private formLive = toSignal(this.form.valueChanges, { initialValue: this.form.value });
+
   // ── Computed ─────────────────────────────────────────────────
+  /** Nom de l'équipe qui détient déjà ce véhicule, sinon null — même vérification que
+   * team-form.ts::assignedTeamName (le drawer de création/édition rapide). Pas d'équipe
+   * à exclure ici : on est en création, aucune équipe existante n'est "la nôtre". */
+  assignedTeamName(vehicleId: string): string | null {
+    const other = this.svc.teams().find(t => t.vehicle?.id === vehicleId);
+    return other ? other.name : null;
+  }
+  assignedVehicleTooltip(vehicleId: string): string {
+    const name = this.assignedTeamName(vehicleId);
+    return name ? `Déjà assigné à l'équipe « ${name} »` : '';
+  }
+
   vehicleConflict = computed(() => {
+    this.formLive();
     const vid = this.form.get('vehicleId')?.value;
     if (!vid) return null;
+    const assignedTo = this.assignedTeamName(vid);
+    if (assignedTo) return `Ce véhicule est déjà assigné à l'équipe « ${assignedTo} »`;
     const v = this.svc.availableVehicles().find(x => x.id === vid);
     if (!v) return null;
     if (v.status === 'maintenance')  return `${v.plate} est en maintenance`;
@@ -142,6 +166,7 @@ export class TeamCreate {
   });
 
   selectedVehicle = computed(() => {
+    this.formLive();
     const vid = this.form.get('vehicleId')?.value;
     return this.svc.availableVehicles().find(v => v.id === vid) ?? null;
   });
@@ -163,16 +188,20 @@ export class TeamCreate {
   });
 
   selectedZones = computed(() => {
+    this.formLive();
     const ids = (this.form.get('zoneIds')?.value ?? []) as string[];
     return this.svc.availableZones().filter(z => ids.includes(z.id));
   });
 
-  stepValidity = computed(() => [
-    this.form.get('name')!.valid && this.form.get('supervisor')!.valid,
-    !this.vehicleConflict(),
-    this.membersArray.length > 0,
-    true,
-  ]);
+  stepValidity = computed(() => {
+    this.formLive();
+    return [
+      this.form.get('name')!.valid && this.form.get('supervisor')!.valid,
+      !this.vehicleConflict(),
+      this.membersArray.length > 0,
+      true,
+    ];
+  });
 
   constructor() {
     // Load real collectors from API for step 3 member selection
@@ -180,6 +209,10 @@ export class TeamCreate {
     // Load vehicles and zones from API for step 2
     this.svc.loadAvailableVehiclesFromApi();
     this.svc.loadAvailableZonesFromApi();
+    // Toutes les équipes existantes — nécessaire pour vehicleConflict() ci-dessous
+    // (même vérification "véhicule déjà assigné à une équipe" que team-form.ts,
+    // le drawer de création/édition rapide).
+    this.svc.loadTeams();
     // Watch for collectors from the service and map to CandidateMember
     // We read the signal in an effect-like manner via the template's computed
     this._syncCandidatesFromApi();

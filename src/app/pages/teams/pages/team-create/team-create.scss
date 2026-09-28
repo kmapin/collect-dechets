@@ -309,6 +309,15 @@ $bg-white : #fff;
   font-size: 11px; font-weight: 500;
 }
 .tvc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.tvc-assigned-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: #ef4444;
+  cursor: help;
+  vertical-align: middle;
+}
 .tvc-check { position: absolute; top: 10px; right: 10px; color: #3b82f6; font-size: 18px; width: 18px; height: 18px; }
 .tvc-model { font-size: 12px; color: $fg-muted; margin: 0 0 8px; }
 .tvc-meta {
