@@ -58,7 +58,7 @@ $shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
   font-size: 13px; font-weight: 500; cursor: pointer;
   transition: background .15s, color .15s;
   &:hover { background: #e2e8f0; }
-  &.active { background: #1e293b; color: #fff; }
+  &.active { background: $text-2; color: #fff; }
 }
 .ch-pill-count {
   padding: 1px 7px;
