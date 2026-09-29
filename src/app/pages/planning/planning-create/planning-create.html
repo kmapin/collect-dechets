@@ -152,9 +152,6 @@
                         <button type="button" class="view-mode-btn" [class.active]="icsViewMode() === 'card'" (click)="setIcsViewMode('card')" title="Vue cartes">
                           <mat-icon>grid_view</mat-icon><span>Cartes</span>
                         </button>
-                        <button type="button" class="view-mode-btn" disabled pTooltip="Bientôt disponible" tooltipPosition="top">
-                          <mat-icon>map</mat-icon><span>Carte interactive</span>
-                        </button>
                       </div>
                     </div>
 
@@ -393,9 +390,6 @@
                           </button>
                           <button type="button" class="view-mode-btn" [class.active]="gcsViewMode() === 'card'" (click)="setGcsViewMode('card')" title="Vue cartes">
                             <mat-icon>grid_view</mat-icon><span>Cartes</span>
-                          </button>
-                          <button type="button" class="view-mode-btn" disabled pTooltip="Bientôt disponible" tooltipPosition="top">
-                            <mat-icon>map</mat-icon><span>Carte interactive</span>
                           </button>
                         </div>
                       </div>
