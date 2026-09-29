@@ -21,9 +21,17 @@ interface HistoryRow {
   statusColor: string;
   date: string | null;
   reference?: string;
-  wasteTypes?: string[];
+  location?: string;
   rating?: number;
   planningId?: string;
+}
+
+/** `serviceLocationId` est peuplé (name/type) sur les Collecte (voir
+ * SERVICE_LOCATION_POPULATE côté back) mais reste un simple ObjectId — ou `null`
+ * pour les plannings groupe/zone/secteur (models/planning.js:131-140) — sur les
+ * Planning pas encore matérialisés en Collecte ("à venir"). */
+function serviceLocationLabel(serviceLocationId: any): string | undefined {
+  return typeof serviceLocationId === 'object' && serviceLocationId ? serviceLocationId.name : undefined;
 }
 
 // Collecte.status (models/Collecte.js) -> libellé + couleur d'affichage. 'Scheduled' n'apparaît
@@ -152,7 +160,7 @@ export class ClientHistory implements OnInit {
         statusColor: bucket === 'en_cours' ? '#f59e0b' : '#3b82f6',
         date: p.date ?? null,
         reference: p.reference,
-        wasteTypes: p.wasteTypes,
+        location: serviceLocationLabel(p.serviceLocationId),
         planningId: p._id,
       };
     });
@@ -163,7 +171,7 @@ export class ClientHistory implements OnInit {
       statusLabel: 'En cours',
       statusColor: '#f59e0b',
       date: c.date ?? null,
-      wasteTypes: c.type,
+      location: serviceLocationLabel(c.serviceLocationId),
       planningId: typeof c.code === 'object' ? c.code?._id : c.code,
     }));
 
@@ -177,7 +185,7 @@ export class ClientHistory implements OnInit {
         statusLabel: meta.label,
         statusColor: meta.color,
         date: h.date ?? h.createdAt ?? null,
-        wasteTypes: h.type,
+        location: serviceLocationLabel(h.serviceLocationId),
         rating: h.rating?.stars,
         planningId: typeof h.code === 'object' ? h.code?._id : h.code,
       };

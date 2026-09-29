@@ -58,7 +58,7 @@
             <tr>
               <th>Date</th>
               <th>Statut</th>
-              <th>Type de déchets</th>
+              <th>Lieu</th>
               <th>Note</th>
               <th class="col-actions">Actions</th>
             </tr>
@@ -72,7 +72,7 @@
                     {{ row.statusLabel }}
                   </span>
                 </td>
-                <td>{{ (row.wasteTypes && row.wasteTypes.length) ? row.wasteTypes.join(', ') : '—' }}</td>
+                <td>{{ row.location ?? '—' }}</td>
                 <td>
                   @if (row.rating) {
                     <span class="ch-rating"><i class="material-icons">star</i>{{ row.rating }}/5</span>
