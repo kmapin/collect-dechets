@@ -275,10 +275,6 @@
             <input type="checkbox" [checked]="member.active" (change)="toggleActive(member)"/>
             <span class="mct-track"><span class="mct-thumb"></span></span>
           </label>
-          <button class="mca-btn" pTooltip="Affecter véhicule" tooltipPosition="top"
-                  (click)="vehicleTarget.set(member)">
-            <mat-icon>local_shipping</mat-icon>
-          </button>
           <button class="mca-btn mca-btn--del" pTooltip="Retirer de l'équipe" tooltipPosition="top"
                   (click)="deleteTarget.set(member)">
             <mat-icon>person_remove</mat-icon>
@@ -304,7 +300,6 @@
             <th>Rôle</th>
             <th>Téléphone</th>
             <th>Zone</th>
-            <th>Véhicule</th>
             <th>Disponibilité</th>
             <th>Perf.</th>
             <th class="col-actions">Actions</th>
@@ -331,7 +326,6 @@
               </td>
               <td>{{ member.phone }}</td>
               <td [pTooltip]="memberZoneTooltip(member)" tooltipPosition="top">{{ memberZone(member) }}</td>
-              <td>{{ memberVehicle(member) || '—' }}</td>
               <td>
                 <span [style.color]="availColor(member.availability)" style="display:flex;align-items:center;gap:6px;font-weight:600">
                   <span class="mc-avail-dot" [style.background]="availColor(member.availability)" style="position:static"></span>
@@ -342,9 +336,6 @@
                 {{ member.performance.successRate }}%
               </td>
               <td class="col-actions">
-                <button class="action-btn" pTooltip="Affecter véhicule" tooltipPosition="top" (click)="vehicleTarget.set(member)">
-                  <mat-icon>local_shipping</mat-icon>
-                </button>
                 <button class="action-btn" pTooltip="Retirer de l'équipe" tooltipPosition="top" (click)="deleteTarget.set(member)">
                   <mat-icon>person_remove</mat-icon>
                 </button>
@@ -505,66 +496,6 @@
 
 
 </aside>
-
-<!-- ══════════════════════ VEHICLE ASSIGN MODAL ════════════════════ -->
-@if (vehicleTarget()) {
-  <div class="vm-bg" (click)="vehicleTarget.set(null)"></div>
-  <div class="vm-modal">
-    <div class="vmm-head">
-      <div class="vmm-ico"><mat-icon>local_shipping</mat-icon></div>
-      <div>
-        <h3>Affecter un véhicule</h3>
-        <p>{{ vehicleTarget()!.name }}</p>
-      </div>
-      <button class="vmm-close" (click)="vehicleTarget.set(null)"><mat-icon>close</mat-icon></button>
-    </div>
-    <div class="vmm-list">
-      <!-- No vehicle -->
-      <button class="vmc"
-              [class.vmc--on]="!vehicleTarget()!.vehicleId"
-              (click)="assignVehicle('')">
-        <div class="vmc-ico vmc-ico--none"><mat-icon>block</mat-icon></div>
-        <div class="vmc-info">
-          <div class="vmc-plate">Aucun véhicule</div>
-          <div class="vmc-model">Désaffecter</div>
-        </div>
-        <mat-icon class="vmc-check">check_circle</mat-icon>
-      </button>
-
-      <!-- Team vehicle -->
-      @if (team()?.vehicle) {
-        <button class="vmc"
-                [class.vmc--on]="vehicleTarget()!.vehicleId === team()!.vehicle!.id"
-                (click)="assignVehicle(team()!.vehicle!.id)">
-          <div class="vmc-ico"><mat-icon>local_shipping</mat-icon></div>
-          <div class="vmc-info">
-            <div class="vmc-plate">{{ team()!.vehicle!.plate }}</div>
-            <div class="vmc-model">{{ team()!.vehicle!.model }} · {{ team()!.vehicle!.capacityTons }}T</div>
-            <div class="vmc-status" [style.color]="vhStatusColor(team()!.vehicle!.status)">
-              {{ vhStatusLabel(team()!.vehicle!.status) }} · véhicule équipe
-            </div>
-          </div>
-          <mat-icon class="vmc-check">check_circle</mat-icon>
-        </button>
-      }
-
-      <!-- Available vehicles -->
-      @for (v of svc.availableVehicles(); track v.id) {
-        <button class="vmc"
-                [class.vmc--on]="vehicleTarget()!.vehicleId === v.id"
-                (click)="assignVehicle(v.id)">
-          <div class="vmc-ico"><mat-icon>local_shipping</mat-icon></div>
-          <div class="vmc-info">
-            <div class="vmc-plate">{{ v.plate }}</div>
-            <div class="vmc-model">{{ v.model }} · {{ v.capacityTons }}T</div>
-            <div class="vmc-status" [style.color]="vhStatusColor(v.status)">{{ vhStatusLabel(v.status) }}</div>
-          </div>
-          <mat-icon class="vmc-check">check_circle</mat-icon>
-        </button>
-      }
-    </div>
-  </div>
-}
 
 <!-- ══════════════════════ DELETE CONFIRM ══════════════════════════ -->
 @if (deleteTarget()) {

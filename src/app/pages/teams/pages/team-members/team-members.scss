@@ -386,7 +386,7 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 16px 0;
+  padding: 16px 24px;
 }
 
 .tms-card {
@@ -447,8 +447,8 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 0 0 4px;
-  padding: 7px 0;
+  margin: 0 24px 4px;
+  padding: 7px 12px;
   background: #eff6ff;
   border: 1px dashed #bfdbfe;
   border-radius: 8px;
@@ -466,7 +466,7 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 0;
+  padding: 12px 24px;
 }
 
 // ── Member card ───────────────────────────────────────────────────
@@ -1779,7 +1779,7 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   }
 
   .tm-stats {
-    padding: 12px 0;
+    padding: 12px 14px;
     gap: 8px;
   }
 
@@ -1789,6 +1789,19 @@ $ease: cubic-bezier(.4, 0, .2, 1);
 
   .tm-list {
     padding: 10px 14px;
+  }
+
+  .tm-drag-hint {
+    margin: 0 14px 4px;
+  }
+
+  .employees-table-wrapper {
+    width: calc(100% - 28px);
+    margin: 10px 14px;
+  }
+
+  .pagination-section {
+    padding: 10px 14px 4px;
   }
 
   .mc {
@@ -1869,7 +1882,8 @@ $ease: cubic-bezier(.4, 0, .2, 1);
 }
 
 .employees-table-wrapper {
-  width: 100%;
+  width: calc(100% - 48px);
+  margin: 12px 24px;
   overflow-x: auto;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
@@ -1898,7 +1912,7 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 14px 0 4px;
+  padding: 14px 24px 4px;
 }
 .pagination-left {
   display: flex;

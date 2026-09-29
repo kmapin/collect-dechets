@@ -12,7 +12,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TeamService } from '../../services/team.service';
 import { Team, TeamMember, MemberRole, MemberAvailability } from '../../models/team.model';
-import { memberAvailabilityLabel, vehicleStatusColor, vehicleStatusLabel } from '../../models/team-labels';
+import { memberAvailabilityLabel } from '../../models/team-labels';
 import { formatFrDate } from '../../../../shared/format.util';
 
 // ── Local types ──────────────────────────────────────────────────
@@ -66,7 +66,6 @@ export class TeamMembers implements OnInit {
 
   addOpen    = signal(false);
   roleMenuId = signal<string | null>(null);
-  vehicleTarget = signal<RichMember | null>(null);
   deleteTarget  = signal<RichMember | null>(null);
   saving        = signal(false);
 
@@ -195,19 +194,6 @@ export class TeamMembers implements OnInit {
   // ── Active toggle ─────────────────────────────────────────────
   toggleActive(m: RichMember): void {
     this._patch(m.id, { active: !m.active });
-  }
-
-  // ── Vehicle ───────────────────────────────────────────────────
-  assignVehicle(vehicleId: string): void {
-    const m = this.vehicleTarget();
-    if (!m) return;
-    this._patch(m.id, { vehicleId: vehicleId || undefined });
-    const plate = vehicleId
-      ? (this.svc.availableVehicles().find(v => v.id === vehicleId)?.plate
-        ?? this.team()?.vehicle?.plate ?? vehicleId)
-      : 'aucun';
-    this.msg.add({ severity: 'success', summary: 'Véhicule affecté', detail: `${m.name} → ${plate}` });
-    this.vehicleTarget.set(null);
   }
 
   // ── Add member ────────────────────────────────────────────────
@@ -339,12 +325,6 @@ export class TeamMembers implements OnInit {
   availLabel(a: string): string {
     return memberAvailabilityLabel(a);
   }
-  vhStatusColor(s: string): string {
-    return vehicleStatusColor(s);
-  }
-  vhStatusLabel(s: string): string {
-    return vehicleStatusLabel(s);
-  }
   teamStatusColor(s: string): string {
     return ({ active: '#16a34a', inactive: '#94a3b8', on_mission: '#f59e0b', maintenance: '#ef4444' } as Record<string, string>)[s] ?? '#64748b';
   }
@@ -368,11 +348,9 @@ export class TeamMembers implements OnInit {
     if (teamZone) return teamZone.ville ? `${teamZone.name} – ${teamZone.ville}` : teamZone.name;
     return '—';
   }
+  /** Le véhicule est affecté à l'équipe, jamais à un membre individuellement —
+   * seul le manager (au volant du véhicule d'équipe) l'affiche ici. */
   memberVehicle(m: RichMember): string {
-    if (m.vehicleId) {
-      const v = this.svc.availableVehicles().find(v => v.id === m.vehicleId);
-      return v ? `${v.plate} · ${v.model}` : '—';
-    }
     if (m.role === 'manager' && this.team()?.vehicle) {
       const v = this.team()!.vehicle!;
       return `${v.plate} · ${v.model}`;
