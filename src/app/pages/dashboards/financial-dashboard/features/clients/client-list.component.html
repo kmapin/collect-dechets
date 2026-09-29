@@ -58,7 +58,9 @@
               <app-status-badge [label]="badgeStatut(client.statut).label" [icon]="badgeStatut(client.statut).icon" [variant]="badgeStatut(client.statut).variant" />
             </td>
             <td data-label="Situation paiement" *ngIf="afficherColonneFinance()">
+              <span *ngIf="chargementSituations()" class="fin-clients__skeleton-cell"></span>
               <app-status-badge
+                *ngIf="!chargementSituations()"
                 [label]="badgeSituation(situationDe(client.idClient)).label"
                 [icon]="badgeSituation(situationDe(client.idClient)).icon"
                 [variant]="badgeSituation(situationDe(client.idClient)).variant"

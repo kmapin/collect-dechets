@@ -12,6 +12,7 @@
     <button type="button" role="tab" [class.active]="filtreStatut() === 'actif'" (click)="changerFiltreStatut('actif')">Actifs</button>
     <button type="button" role="tab" [class.active]="filtreStatut() === 'suspendu'" (click)="changerFiltreStatut('suspendu')">Suspendus</button>
     <button type="button" role="tab" [class.active]="filtreStatut() === 'resilie'" (click)="changerFiltreStatut('resilie')">Résiliés</button>
+    <button type="button" role="tab" [class.active]="filtreStatut() === 'expire'" (click)="changerFiltreStatut('expire')">Expirés</button>
     <button type="button" role="tab" [class.active]="filtreStatut() === 'Tous'" (click)="changerFiltreStatut('Tous')">Tous</button>
   </div>
 

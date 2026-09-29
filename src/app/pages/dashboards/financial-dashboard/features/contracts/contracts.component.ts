@@ -61,7 +61,7 @@ export class ContractsComponent {
   readonly page = signal(1);
   readonly itemsPerPage = signal(ContractsComponent.TAILLE_PAGE_DEFAUT);
   readonly total = signal(0);
-  readonly filtreStatut = signal<'actif' | 'suspendu' | 'resilie' | 'Tous'>('Tous');
+  readonly filtreStatut = signal<'actif' | 'suspendu' | 'resilie' | 'expire' | 'Tous'>('Tous');
   readonly filtreSearch = signal('');
 
   get totalPages(): number {
@@ -180,7 +180,7 @@ export class ContractsComponent {
       });
   }
 
-  changerFiltreStatut(statut: 'actif' | 'suspendu' | 'resilie' | 'Tous'): void {
+  changerFiltreStatut(statut: 'actif' | 'suspendu' | 'resilie' | 'expire' | 'Tous'): void {
     this.filtreStatut.set(statut);
     this.page.set(1);
     this.charger();

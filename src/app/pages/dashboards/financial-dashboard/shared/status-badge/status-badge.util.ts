@@ -9,9 +9,9 @@ export interface BadgeInfo {
 }
 
 export function badgeStatutClient(statut: ClientStatut): BadgeInfo {
-  return statut === ClientStatut.ACTIF
-    ? { label: 'Actif', icon: 'check_circle', variant: 'success' }
-    : { label: 'Inactif', icon: 'block', variant: 'neutral' };
+  if (statut === ClientStatut.ACTIF) return { label: 'Actif', icon: 'check_circle', variant: 'success' };
+  if (statut === ClientStatut.EN_ATTENTE) return { label: 'En attente', icon: 'hourglass_empty', variant: 'warning' };
+  return { label: 'Inactif', icon: 'block', variant: 'neutral' };
 }
 
 const LABEL_SOURCE: Record<SourceEligibilite, string> = {

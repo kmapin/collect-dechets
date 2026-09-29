@@ -41,6 +41,7 @@ export class ClientListComponent {
   readonly items = signal<Client[]>([]);
   readonly total = signal(0);
   readonly chargement = signal(true);
+  readonly chargementSituations = signal(true);
   readonly erreur = signal<string | null>(null);
   private readonly situationParClient = signal<Map<string, SituationPaiementClient>>(new Map());
 
@@ -121,8 +122,14 @@ export class ClientListComponent {
 
   private chargerSituations(): void {
     this.factureData.getSituationClients().subscribe({
-      next: situations => this.situationParClient.set(new Map(situations.map(s => [s.idClient, s]))),
-      error: () => this.situationParClient.set(new Map()),
+      next: situations => {
+        this.situationParClient.set(new Map(situations.map(s => [s.idClient, s])));
+        this.chargementSituations.set(false);
+      },
+      error: () => {
+        this.situationParClient.set(new Map());
+        this.chargementSituations.set(false);
+      },
     });
   }
 
