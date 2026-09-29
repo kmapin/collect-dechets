@@ -227,12 +227,12 @@
     <div class="drawer-footer">
       <div class="drawer-actions">
         @if (etape === 'apercu') {
-          <button type="button" class="btn btn-outline" (click)="recommencer()">
+          <button type="button" class="btn btn-outline" [disabled]="isImporting" (click)="recommencer()">
             <i class="material-icons">restart_alt</i>
             Choisir un autre fichier
           </button>
           @if (aDesLignesRejetees) {
-            <button type="button" class="btn btn-outline" [disabled]="isDownloadingReport" (click)="telechargerRapportErreurs()">
+            <button type="button" class="btn btn-outline" [disabled]="isDownloadingReport || isImporting" (click)="telechargerRapportErreurs()">
               <i class="material-icons">download</i>
               Rapport des erreurs
             </button>
