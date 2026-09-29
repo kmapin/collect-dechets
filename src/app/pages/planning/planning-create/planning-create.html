@@ -113,72 +113,211 @@
           @if (form.get('type')?.value === 'individuel') {
             <div class="target-section">
               <div class="form-group">
-                <label class="form-lbl">Rechercher un client <span class="req">*</span></label>
-                <div class="search-wrap">
-                  <mat-icon class="search-icon">search</mat-icon>
-                  <input class="search-inp" type="text" placeholder="Nom, adresse…"
-                         [value]="clientSearchQuery()"
-                         (focus)="onClientSearchFocus()"
-                         (input)="searchClients($any($event.target).value)" />
-                  @if (selectedClients().length > 0) {
-                    <button type="button" class="clear-search" (click)="clearClient()">
-                      <mat-icon>close</mat-icon>
+                <label class="form-lbl">Sélectionner le client <span class="req">*</span></label>
+
+                <div class="gcs-layout">
+
+                  <!-- ── Filtres ───────────────────────────────── -->
+                  <aside class="gcs-filters">
+                    <h4 class="gcs-filters-title"><mat-icon>filter_list</mat-icon>Filtres</h4>
+                    <div class="gcs-field">
+                      <mat-icon>search</mat-icon>
+                      <input type="text" placeholder="Rechercher un client…"
+                             [value]="icsSearch()" (input)="onIcsSearchChange($any($event.target).value)" />
+                    </div>
+                    <div class="gcs-field-group">
+                      <label>Quartier / Zone</label>
+                      <select (change)="onIcsNeighborhoodChange($any($event.target).value)">
+                        <option value="all" [selected]="icsNeighborhood() === 'all'">Tous les quartiers</option>
+                        @for (n of icsNeighborhoodOptions(); track n) {
+                          <option [value]="n" [selected]="icsNeighborhood() === n">{{ n }}</option>
+                        }
+                      </select>
+                    </div>
+                    <button type="button" class="gcs-reset-btn" (click)="resetIcsFilters()">
+                      <mat-icon>restart_alt</mat-icon>Réinitialiser les filtres
                     </button>
-                  }
-                </div>
-                @if (filteredClients().length > 0) {
-                  <div class="client-results">
-                    @for (c of filteredClients(); track c.id) {
-                      <div class="cr-item" (click)="selectClient(c)">
-                        <div class="cr-avatar">{{ c.name.charAt(0) }}</div>
-                        <div class="cr-info">
-                          <span class="cr-name">{{ c.name }}</span>
-                          <span class="cr-addr">{{ c.address }}</span>
+                  </aside>
+
+                  <!-- ── Liste centrale ────────────────────────── -->
+                  <div class="gcs-main">
+                    <div class="gcs-main-header">
+                      <span class="gcs-count-label">
+                        @if (icsLoading()) { Chargement… } @else { {{ icsTotal() }} client{{ icsTotal() > 1 ? 's' : '' }} disponible{{ icsTotal() > 1 ? 's' : '' }} }
+                      </span>
+                      <div class="view-mode-toggle">
+                        <button type="button" class="view-mode-btn" [class.active]="icsViewMode() === 'list'" (click)="setIcsViewMode('list')" title="Vue liste">
+                          <mat-icon>view_list</mat-icon><span>Liste</span>
+                        </button>
+                        <button type="button" class="view-mode-btn" [class.active]="icsViewMode() === 'card'" (click)="setIcsViewMode('card')" title="Vue cartes">
+                          <mat-icon>grid_view</mat-icon><span>Cartes</span>
+                        </button>
+                        <button type="button" class="view-mode-btn" disabled pTooltip="Bientôt disponible" tooltipPosition="top">
+                          <mat-icon>map</mat-icon><span>Carte interactive</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="gcs-sort-row">
+                      <label>Trier par</label>
+                      <select (change)="setIcsSort($any($event.target).value)">
+                        <option value="name_asc" [selected]="icsSort() === 'name_asc'">Nom (A → Z)</option>
+                        <option value="name_desc" [selected]="icsSort() === 'name_desc'">Nom (Z → A)</option>
+                      </select>
+                    </div>
+
+                    @if (icsLoading()) {
+                      <div class="groups-loading">
+                        <mat-icon class="spin">autorenew</mat-icon>
+                        <span>Chargement des clients…</span>
+                      </div>
+                    } @else if (!icsClients().length) {
+                      <div class="groups-empty">
+                        <mat-icon>info_outline</mat-icon>
+                        <span>Aucun client ne correspond à ces critères.</span>
+                      </div>
+                    } @else {
+
+                      @if (icsViewMode() === 'list') {
+                        <div class="employees-table-wrapper">
+                          <table class="employees-table">
+                            <thead>
+                              <tr>
+                                <th class="gcs-col-check"></th>
+                                <th>Client</th>
+                                <th>Quartier</th>
+                                <th>Éligibilité</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (c of icsSortedClients(); track c.id) {
+                                <tr [class.gcs-row--selected]="isClientSelected(c.id)" style="cursor:pointer" (click)="selectClient(c)">
+                                  <td class="gcs-col-check">
+                                    <input type="radio" name="icsClient" [checked]="isClientSelected(c.id)" (click)="$event.stopPropagation(); selectClient(c)" />
+                                  </td>
+                                  <td>
+                                    <div class="table-avatar-wrap">
+                                      <div class="table-avatar-initials" style="background:#3b82f6">{{ c.name.charAt(0) }}</div>
+                                      <span class="name-text">{{ c.name }}</span>
+                                    </div>
+                                  </td>
+                                  <td>{{ c.neighborhood || c.zone || '—' }}</td>
+                                  <td>
+                                    @if (c.eligible !== undefined) {
+                                      <span class="cr-eligibility"
+                                            [class.cr-eligibility--ok]="c.eligible"
+                                            [class.cr-eligibility--ko]="!c.eligible"
+                                            [pTooltip]="eligibilityReasonLabel(c.eligibilityReason)" tooltipPosition="left">
+                                        {{ c.eligible ? 'Éligible' : 'Non éligible' }}
+                                      </span>
+                                    } @else {
+                                      <span class="rc-hint-inline">—</span>
+                                    }
+                                  </td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
                         </div>
-                        <div class="cr-badges">
-                          <span class="cr-zone">{{ c.zone }}</span>
-                          @if (c.eligible !== undefined) {
-                            <span class="cr-eligibility"
-                                  [class.cr-eligibility--ok]="c.eligible"
-                                  [class.cr-eligibility--ko]="!c.eligible"
-                                  [pTooltip]="eligibilityReasonLabel(c.eligibilityReason)" tooltipPosition="left">
-                              {{ c.eligible ? 'Éligible' : 'Non éligible' }}
-                            </span>
+                      }
+
+                      @if (icsViewMode() === 'card') {
+                        <div class="clients-grid">
+                          @for (c of icsSortedClients(); track c.id) {
+                            <div class="gc-card" [class.selected]="isClientSelected(c.id)" (click)="selectClient(c)">
+                              <div class="gc-avatar">{{ c.name.charAt(0) }}</div>
+                              <span class="gc-name">{{ c.name }}</span>
+                              <span class="gc-zone">{{ c.neighborhood || c.zone }}</span>
+                              @if (isClientSelected(c.id)) {
+                                <div class="gc-check"><mat-icon>check</mat-icon></div>
+                              }
+                            </div>
                           }
                         </div>
+                      }
+
+                      <div class="pagination-section">
+                        <div class="pagination-left">
+                          <span class="pagination-details">
+                            {{ (icsPage() - 1) * icsPageSize() + 1 }}–{{ icsEndItem() }} sur <strong>{{ icsTotal() }}</strong> client(s)
+                          </span>
+                          <div class="per-page-group">
+                            <label class="per-page-label">Voir</label>
+                            <select class="per-page-select" (change)="changeIcsPageSize(+$any($event.target).value)">
+                              <option [value]="10" [selected]="icsPageSize() === 10">10</option>
+                              <option [value]="20" [selected]="icsPageSize() === 20">20</option>
+                              <option [value]="50" [selected]="icsPageSize() === 50">50</option>
+                              <option [value]="100" [selected]="icsPageSize() === 100">100</option>
+                            </select>
+                            <span class="per-page-label">par page</span>
+                          </div>
+                        </div>
+                        @if (icsTotalPages() > 1) {
+                          <div class="pagination-controls">
+                            <button class="pagination-btn" [disabled]="icsPage() === 1" (click)="goToIcsPage(1)" title="Première page"><mat-icon>first_page</mat-icon></button>
+                            <button class="pagination-btn" [disabled]="icsPage() === 1" (click)="previousIcsPage()" title="Page précédente"><mat-icon>chevron_left</mat-icon></button>
+                            <div class="pagination-numbers">
+                              @for (page of getIcsPaginationPages(); track page) {
+                                <button class="pagination-btn page-number" [class.active]="page === icsPage()" (click)="goToIcsPage(page)">{{ page }}</button>
+                              }
+                            </div>
+                            <button class="pagination-btn" [disabled]="icsPage() === icsTotalPages()" (click)="nextIcsPage()" title="Page suivante"><mat-icon>chevron_right</mat-icon></button>
+                            <button class="pagination-btn" [disabled]="icsPage() === icsTotalPages()" (click)="goToIcsPage(icsTotalPages())" title="Dernière page"><mat-icon>last_page</mat-icon></button>
+                          </div>
+                        }
                       </div>
                     }
                   </div>
-                }
-              </div>
-              @if (selectedClients().length > 0) {
-                <div class="selected-client-card">
-                  <div class="sc-avatar">{{ selectedClients()[0].name.charAt(0) }}</div>
-                  <div class="sc-info">
-                    <span class="sc-name">{{ selectedClients()[0].name }}</span>
-                    <span class="sc-addr">{{ selectedClients()[0].address }}</span>
-                    @if (selectedClients()[0].phone) {
-                      <span class="sc-phone"><mat-icon>phone</mat-icon>{{ selectedClients()[0].phone }}</span>
-                    }
-                  </div>
-                  <button type="button" class="sc-remove" (click)="clearClient()"><mat-icon>close</mat-icon></button>
-                </div>
-                <!-- Phase 7 (multi-lieux) — affiché seulement si ce client a 2+ lieux actifs ;
-                     avec 0 ou 1 lieu, la sélection reste invisible (repli sur le lieu isPrimary). -->
-                @if (clientServiceLocations().length > 1) {
-                  <div class="form-group">
-                    <label>Pour quel lieu de ce client ?</label>
-                    <select class="form-control"
-                            [value]="selectedServiceLocationId() ?? ''"
-                            (change)="selectServiceLocation($any($event.target).value)">
-                      <option value="">Lieu principal (par défaut)</option>
-                      @for (lieu of clientServiceLocations(); track lieu._id) {
-                        <option [value]="lieu._id">{{ lieu.name }} — {{ lieu.address.neighborhood }}</option>
+
+                  <!-- ── Panneau droit : client sélectionné ────── -->
+                  <aside class="gcs-selected-panel">
+                    <h4 class="gcs-selected-title"><mat-icon>person</mat-icon>Client sélectionné</h4>
+                    @if (selectedClients().length > 0) {
+                      <div class="selected-client-card">
+                        <div class="sc-avatar">{{ selectedClients()[0].name.charAt(0) }}</div>
+                        <div class="sc-info">
+                          <span class="sc-name">{{ selectedClients()[0].name }}</span>
+                          <span class="sc-addr">{{ selectedClients()[0].address }}</span>
+                          @if (selectedClients()[0].phone) {
+                            <span class="sc-phone"><mat-icon>phone</mat-icon>{{ selectedClients()[0].phone }}</span>
+                          }
+                        </div>
+                        <button type="button" class="sc-remove" (click)="clearClient()"><mat-icon>close</mat-icon></button>
+                      </div>
+                      <!-- Phase 7 (multi-lieux) — affiché seulement si ce client a 2+ lieux actifs ;
+                           avec 0 ou 1 lieu, la sélection reste invisible (repli sur le lieu isPrimary). -->
+                      @if (clientServiceLocations().length > 1) {
+                        <div class="form-group">
+                          <label>Pour quel lieu de ce client ?</label>
+                          <select class="form-control"
+                                  [value]="selectedServiceLocationId() ?? ''"
+                                  (change)="selectServiceLocation($any($event.target).value)">
+                            <option value="">Lieu principal (par défaut)</option>
+                            @for (lieu of clientServiceLocations(); track lieu._id) {
+                              <option [value]="lieu._id">{{ lieu.name }} — {{ lieu.address.neighborhood }}</option>
+                            }
+                          </select>
+                        </div>
                       }
-                    </select>
-                  </div>
-                }
-              }
+                    } @else {
+                      <p class="gcs-selected-empty">Aucun client sélectionné pour l'instant.</p>
+                    }
+                    <div class="gcs-confirm-banner" [class.warn]="!selectedClients().length">
+                      <mat-icon>{{ selectedClients().length ? 'check_circle' : 'warning_amber' }}</mat-icon>
+                      <span>
+                        @if (selectedClients().length) {
+                          Client sélectionné
+                          <br><small>Vous avez choisi {{ selectedClients()[0].name }} pour ce planning.</small>
+                        } @else {
+                          Aucun client sélectionné
+                          <br><small>Choisissez un client dans la liste pour continuer.</small>
+                        }
+                      </span>
+                    </div>
+                  </aside>
+
+                </div>
+              </div>
             </div>
           }
 
@@ -214,22 +353,192 @@
                 </div>
                 <div class="form-group">
                   <label class="form-lbl">Sélectionner les clients <span class="req">*</span></label>
-                  <div class="clients-grid">
-                    @for (c of mockClients; track c.id) {
-                      <div class="gc-card" [class.selected]="isClientSelected(c.id)" (click)="toggleGroupClient(c)">
-                        <div class="gc-avatar">{{ c.name.charAt(0) }}</div>
-                        <span class="gc-name">{{ c.name }}</span>
-                        <span class="gc-zone">{{ c.zone }}</span>
-                        @if (isClientSelected(c.id)) {
-                          <div class="gc-check"><mat-icon>check</mat-icon></div>
-                        }
+
+                  <div class="gcs-layout">
+
+                    <!-- ── Filtres ───────────────────────────────── -->
+                    <aside class="gcs-filters">
+                      <h4 class="gcs-filters-title"><mat-icon>filter_list</mat-icon>Filtres</h4>
+                      <div class="gcs-field">
+                        <mat-icon>search</mat-icon>
+                        <input type="text" placeholder="Rechercher un client…"
+                               [value]="gcsSearch()" (input)="onGcsSearchChange($any($event.target).value)" />
                       </div>
-                    }
-                  </div>
-                  <div class="sel-count" [class.warn]="selectedClients().length < 2">
-                    <mat-icon>groups</mat-icon>
-                    {{ selectedClients().length }} client(s) sélectionné(s)
-                    @if (selectedClients().length < 2) { <span class="min-warn">– min. 2 requis</span> }
+                      <div class="gcs-field-group">
+                        <label>Quartier / Zone</label>
+                        <select (change)="onGcsNeighborhoodChange($any($event.target).value)">
+                          <option value="all" [selected]="gcsNeighborhood() === 'all'">Tous les quartiers</option>
+                          @for (n of gcsNeighborhoodOptions(); track n) {
+                            <option [value]="n" [selected]="gcsNeighborhood() === n">{{ n }}</option>
+                          }
+                        </select>
+                      </div>
+                      <button type="button" class="gcs-reset-btn" (click)="resetGcsFilters()">
+                        <mat-icon>restart_alt</mat-icon>Réinitialiser les filtres
+                      </button>
+                    </aside>
+
+                    <!-- ── Liste centrale ────────────────────────── -->
+                    <div class="gcs-main">
+                      <div class="gcs-main-header">
+                        <span class="gcs-count-label">
+                          @if (gcsLoading()) { Chargement… } @else { {{ gcsTotal() }} client{{ gcsTotal() > 1 ? 's' : '' }} disponible{{ gcsTotal() > 1 ? 's' : '' }} }
+                        </span>
+                        <button type="button" class="gcs-select-all-btn" [disabled]="!gcsClients().length" (click)="selectAllGcsOnPage()">
+                          <mat-icon>done_all</mat-icon>Tout sélectionner
+                        </button>
+                        <div class="view-mode-toggle">
+                          <button type="button" class="view-mode-btn" [class.active]="gcsViewMode() === 'list'" (click)="setGcsViewMode('list')" title="Vue liste">
+                            <mat-icon>view_list</mat-icon><span>Liste</span>
+                          </button>
+                          <button type="button" class="view-mode-btn" [class.active]="gcsViewMode() === 'card'" (click)="setGcsViewMode('card')" title="Vue cartes">
+                            <mat-icon>grid_view</mat-icon><span>Cartes</span>
+                          </button>
+                          <button type="button" class="view-mode-btn" disabled pTooltip="Bientôt disponible" tooltipPosition="top">
+                            <mat-icon>map</mat-icon><span>Carte interactive</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="gcs-sort-row">
+                        <label>Trier par</label>
+                        <select (change)="setGcsSort($any($event.target).value)">
+                          <option value="name_asc" [selected]="gcsSort() === 'name_asc'">Nom (A → Z)</option>
+                          <option value="name_desc" [selected]="gcsSort() === 'name_desc'">Nom (Z → A)</option>
+                        </select>
+                      </div>
+
+                      @if (gcsLoading()) {
+                        <div class="groups-loading">
+                          <mat-icon class="spin">autorenew</mat-icon>
+                          <span>Chargement des clients…</span>
+                        </div>
+                      } @else if (!gcsClients().length) {
+                        <div class="groups-empty">
+                          <mat-icon>info_outline</mat-icon>
+                          <span>Aucun client ne correspond à ces critères.</span>
+                        </div>
+                      } @else {
+
+                        @if (gcsViewMode() === 'list') {
+                          <div class="employees-table-wrapper">
+                            <table class="employees-table">
+                              <thead>
+                                <tr>
+                                  <th class="gcs-col-check"></th>
+                                  <th>Client</th>
+                                  <th>Quartier</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (c of gcsSortedClients(); track c.id) {
+                                  <tr [class.gcs-row--selected]="isClientSelected(c.id)" style="cursor:pointer" (click)="toggleGroupClient(c)">
+                                    <td class="gcs-col-check">
+                                      <input type="checkbox" [checked]="isClientSelected(c.id)" (click)="$event.stopPropagation(); toggleGroupClient(c)" />
+                                    </td>
+                                    <td>
+                                      <div class="table-avatar-wrap">
+                                        <div class="table-avatar-initials" style="background:#8b5cf6">{{ c.name.charAt(0) }}</div>
+                                        <span class="name-text">{{ c.name }}</span>
+                                      </div>
+                                    </td>
+                                    <td>{{ c.neighborhood || c.zone || '—' }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        }
+
+                        @if (gcsViewMode() === 'card') {
+                          <div class="clients-grid">
+                            @for (c of gcsSortedClients(); track c.id) {
+                              <div class="gc-card" [class.selected]="isClientSelected(c.id)" (click)="toggleGroupClient(c)">
+                                <div class="gc-avatar">{{ c.name.charAt(0) }}</div>
+                                <span class="gc-name">{{ c.name }}</span>
+                                <span class="gc-zone">{{ c.neighborhood || c.zone }}</span>
+                                @if (isClientSelected(c.id)) {
+                                  <div class="gc-check"><mat-icon>check</mat-icon></div>
+                                }
+                              </div>
+                            }
+                          </div>
+                        }
+
+                        <div class="pagination-section">
+                          <div class="pagination-left">
+                            <span class="pagination-details">
+                              {{ (gcsPage() - 1) * gcsPageSize() + 1 }}–{{ gcsEndItem() }} sur <strong>{{ gcsTotal() }}</strong> client(s)
+                            </span>
+                            <div class="per-page-group">
+                              <label class="per-page-label">Voir</label>
+                              <select class="per-page-select" (change)="changeGcsPageSize(+$any($event.target).value)">
+                                <option [value]="10" [selected]="gcsPageSize() === 10">10</option>
+                                <option [value]="20" [selected]="gcsPageSize() === 20">20</option>
+                                <option [value]="50" [selected]="gcsPageSize() === 50">50</option>
+                                <option [value]="100" [selected]="gcsPageSize() === 100">100</option>
+                              </select>
+                              <span class="per-page-label">par page</span>
+                            </div>
+                          </div>
+                          @if (gcsTotalPages() > 1) {
+                            <div class="pagination-controls">
+                              <button class="pagination-btn" [disabled]="gcsPage() === 1" (click)="goToGcsPage(1)" title="Première page"><mat-icon>first_page</mat-icon></button>
+                              <button class="pagination-btn" [disabled]="gcsPage() === 1" (click)="previousGcsPage()" title="Page précédente"><mat-icon>chevron_left</mat-icon></button>
+                              <div class="pagination-numbers">
+                                @for (page of getGcsPaginationPages(); track page) {
+                                  <button class="pagination-btn page-number" [class.active]="page === gcsPage()" (click)="goToGcsPage(page)">{{ page }}</button>
+                                }
+                              </div>
+                              <button class="pagination-btn" [disabled]="gcsPage() === gcsTotalPages()" (click)="nextGcsPage()" title="Page suivante"><mat-icon>chevron_right</mat-icon></button>
+                              <button class="pagination-btn" [disabled]="gcsPage() === gcsTotalPages()" (click)="goToGcsPage(gcsTotalPages())" title="Dernière page"><mat-icon>last_page</mat-icon></button>
+                            </div>
+                          }
+                        </div>
+                      }
+
+                      <div class="gcs-footer-actions">
+                        <span class="gcs-footer-count">{{ selectedClients().length }} client(s) sélectionné(s)</span>
+                        <button type="button" class="gcs-deselect-btn" [disabled]="!selectedClients().length" (click)="clearSelectedClients()">
+                          <mat-icon>close</mat-icon>Désélectionner
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- ── Panneau droit : clients sélectionnés ──── -->
+                    <aside class="gcs-selected-panel">
+                      <h4 class="gcs-selected-title"><mat-icon>groups</mat-icon>Clients sélectionnés ({{ selectedClients().length }})</h4>
+                      @if (!selectedClients().length) {
+                        <p class="gcs-selected-empty">Aucun client sélectionné pour l'instant.</p>
+                      } @else {
+                        <div class="gcs-selected-list">
+                          @for (c of selectedClients(); track c.id) {
+                            <div class="gcs-chip">
+                              <div class="gcs-chip-avatar">{{ c.name.charAt(0) }}</div>
+                              <div class="gcs-chip-info">
+                                <span class="gcs-chip-name">{{ c.name }}</span>
+                                <span class="gcs-chip-meta">{{ c.neighborhood || c.zone || '—' }}</span>
+                              </div>
+                              <button type="button" class="gcs-chip-remove" (click)="toggleGroupClient(c)" pTooltip="Retirer" tooltipPosition="top">
+                                <mat-icon>close</mat-icon>
+                              </button>
+                            </div>
+                          }
+                        </div>
+                      }
+                      <div class="gcs-confirm-banner" [class.warn]="selectedClients().length < 2">
+                        <mat-icon>{{ selectedClients().length < 2 ? 'warning_amber' : 'check_circle' }}</mat-icon>
+                        <span>
+                          {{ selectedClients().length }} client(s) sélectionné(s)
+                          @if (selectedClients().length < 2) {
+                            <br><small>Minimum 2 clients requis pour ce planning.</small>
+                          } @else {
+                            <br><small>Vous avez choisi {{ selectedClients().length }} client(s) pour ce planning.</small>
+                          }
+                        </span>
+                      </div>
+                    </aside>
+
                   </div>
                 </div>
               }

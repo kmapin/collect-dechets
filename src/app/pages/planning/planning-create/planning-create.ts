@@ -48,6 +48,10 @@ interface ClientOpt {
   phone?: string;
   eligible?: boolean;
   eligibilityReason?: string;
+  /** Quartier réel (User.address.neighborhood) — distinct de `zone` (arrondissement),
+   * peuplé uniquement par _loadGcsClients/_loadGcsNeighborhoodOptions (grille de sélection
+   * de groupe), jamais par _loadClients (recherche "individuel", non touchée). */
+  neighborhood?: string;
 }
 
 @Component({
@@ -183,6 +187,54 @@ export class PlanningCreate implements OnInit {
   managingGroupId       = signal<string | null>(null);
   groupMemberSearchQuery = signal('');
   groupMemberSuggestions = signal<ClientOpt[]>([]);
+
+  // ── Grille de sélection clients (groupe "nouveau") — filtres/tri/pagination/vue.
+  // État dédié, séparé de apiClients/_loadClients (recherche "individuel", non touchée).
+  gcsClients        = signal<ClientOpt[]>([]);
+  gcsTotal          = signal(0);
+  gcsPage           = signal(1);
+  gcsPageSize       = signal(20);
+  gcsLoading        = signal(false);
+  gcsSearch         = signal('');
+  gcsNeighborhood   = signal('all');
+  gcsNeighborhoodOptions = signal<string[]>([]);
+  gcsSort           = signal<'name_asc' | 'name_desc'>('name_asc');
+  gcsViewMode       = signal<'list' | 'card'>('list');
+  private gcsSearchDebounce?: ReturnType<typeof setTimeout>;
+  private gcsNeighborhoodsLoaded = false;
+
+  gcsTotalPages = computed(() => Math.max(1, Math.ceil(this.gcsTotal() / this.gcsPageSize())));
+  gcsEndItem    = computed(() => Math.min(this.gcsPage() * this.gcsPageSize(), this.gcsTotal()));
+  gcsSortedClients = computed(() => {
+    const list = [...this.gcsClients()];
+    const dir = this.gcsSort() === 'name_asc' ? 1 : -1;
+    return list.sort((a, b) => a.name.localeCompare(b.name) * dir);
+  });
+
+  // ── Grille de sélection client (individuel) — même modèle que gcs* ci-dessus, mais
+  // sélection UNIQUE : réutilise selectClient()/clearClient() (déjà existants, gèrent
+  // aussi le formControl clientId/clientName et le sélecteur de lieu Phase 7) au lieu de
+  // toggleGroupClient — jamais remplacés, pour ne pas toucher _validateTarget/submitForm.
+  icsClients        = signal<ClientOpt[]>([]);
+  icsTotal          = signal(0);
+  icsPage           = signal(1);
+  icsPageSize       = signal(20);
+  icsLoading        = signal(false);
+  icsSearch         = signal('');
+  icsNeighborhood   = signal('all');
+  icsNeighborhoodOptions = signal<string[]>([]);
+  icsSort           = signal<'name_asc' | 'name_desc'>('name_asc');
+  icsViewMode       = signal<'list' | 'card'>('list');
+  private icsSearchDebounce?: ReturnType<typeof setTimeout>;
+  private icsNeighborhoodsLoaded = false;
+
+  icsTotalPages = computed(() => Math.max(1, Math.ceil(this.icsTotal() / this.icsPageSize())));
+  icsEndItem    = computed(() => Math.min(this.icsPage() * this.icsPageSize(), this.icsTotal()));
+  icsSortedClients = computed(() => {
+    const list = [...this.icsClients()];
+    const dir = this.icsSort() === 'name_asc' ? 1 : -1;
+    return list.sort((a, b) => a.name.localeCompare(b.name) * dir);
+  });
 
   // ── Form signal (for computed) ───────────────────────────────
   formValue = signal<Record<string, any>>({});
@@ -585,6 +637,7 @@ export class PlanningCreate implements OnInit {
       this.existingGroups.set([]);
       this.zoneClientCount.set(null);
       this.zoneServiceLocationCount.set(null);
+      if (this.form.get('type')?.value === 'individuel') this._ensureIcsLoaded();
     });
   }
 
@@ -752,6 +805,13 @@ export class PlanningCreate implements OnInit {
   setGroupMode(mode: 'new' | 'existing'): void {
     this.groupMode.set(mode);
     if (mode === 'existing') this._loadExistingGroups();
+    if (mode === 'new') {
+      this._loadGcsClients();
+      if (!this.gcsNeighborhoodsLoaded) {
+        this.gcsNeighborhoodsLoaded = true;
+        this._loadGcsNeighborhoodOptions();
+      }
+    }
   }
 
   private _loadExistingGroups(): void {
@@ -869,6 +929,197 @@ export class PlanningCreate implements OnInit {
     );
   }
   isClientSelected(id: string): boolean { return this.selectedClients().some(c => c.id === id); }
+
+  // ── Grille de sélection clients (groupe "nouveau") ────────────
+  private _loadGcsClients(): void {
+    this.gcsLoading.set(true);
+    this.svc.getClientsForAgencyPaged({
+      term: this.gcsSearch().trim() || undefined,
+      neighborhood: this.gcsNeighborhood() !== 'all' ? this.gcsNeighborhood() : undefined,
+      page: this.gcsPage(),
+      limit: this.gcsPageSize(),
+    }).subscribe(({ items, total }) => {
+      this.gcsClients.set(items.map((c: any) => ({
+        id:           c._id,
+        name:         `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim(),
+        address:      [c.address?.neighborhood, c.address?.city].filter(Boolean).join(', '),
+        zone:         c.address?.arrondissement ?? '',
+        neighborhood: c.address?.neighborhood ?? '',
+        phone:        c.phone,
+      })));
+      this.gcsTotal.set(total);
+      this.gcsLoading.set(false);
+    });
+  }
+
+  /** Chargement ponctuel (sans page/limit — comportement déjà supporté par
+   * getClientsForAgency, inchangé) pour déduire les quartiers réellement présents chez
+   * les clients de l'agence, indépendamment de la pagination de la grille. */
+  private _loadGcsNeighborhoodOptions(): void {
+    this.svc.getClientsForAgency({}).subscribe(clients => {
+      const set = new Set<string>();
+      for (const c of clients) {
+        const n = c.address?.neighborhood;
+        if (n) set.add(n);
+      }
+      this.gcsNeighborhoodOptions.set([...set].sort((a, b) => a.localeCompare(b)));
+    });
+  }
+
+  onGcsSearchChange(value: string): void {
+    this.gcsSearch.set(value);
+    if (this.gcsSearchDebounce) clearTimeout(this.gcsSearchDebounce);
+    this.gcsSearchDebounce = setTimeout(() => {
+      this.gcsPage.set(1);
+      this._loadGcsClients();
+    }, 350);
+  }
+  onGcsNeighborhoodChange(value: string): void {
+    this.gcsNeighborhood.set(value);
+    this.gcsPage.set(1);
+    this._loadGcsClients();
+  }
+  resetGcsFilters(): void {
+    this.gcsSearch.set('');
+    this.gcsNeighborhood.set('all');
+    this.gcsPage.set(1);
+    this._loadGcsClients();
+  }
+  setGcsSort(sort: 'name_asc' | 'name_desc'): void {
+    this.gcsSort.set(sort);
+  }
+  setGcsViewMode(mode: 'list' | 'card'): void {
+    this.gcsViewMode.set(mode);
+  }
+  changeGcsPageSize(size: number): void {
+    this.gcsPageSize.set(size);
+    this.gcsPage.set(1);
+    this._loadGcsClients();
+  }
+  goToGcsPage(page: number): void {
+    if (page < 1 || page > this.gcsTotalPages()) return;
+    this.gcsPage.set(page);
+    this._loadGcsClients();
+  }
+  nextGcsPage(): void { this.goToGcsPage(this.gcsPage() + 1); }
+  previousGcsPage(): void { this.goToGcsPage(this.gcsPage() - 1); }
+  getGcsPaginationPages(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+    const total = this.gcsTotalPages();
+    let start = Math.max(1, this.gcsPage() - half);
+    const end = Math.min(total, start + maxPagesToShow - 1);
+    if (end - start + 1 < maxPagesToShow) start = Math.max(1, end - maxPagesToShow + 1);
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  }
+  /** Sélectionne les clients de la page courante non encore sélectionnés — pas
+   * l'intégralité des clients de l'agence (potentiellement ~1000), pour rester simple
+   * et prévisible. */
+  selectAllGcsOnPage(): void {
+    const cur = this.selectedClients();
+    const ids = new Set(cur.map(c => c.id));
+    const toAdd = this.gcsClients().filter(c => !ids.has(c.id));
+    if (toAdd.length) this.selectedClients.set([...cur, ...toAdd]);
+  }
+  clearSelectedClients(): void {
+    this.selectedClients.set([]);
+  }
+
+  // ── Grille de sélection client (individuel) ───────────────────
+  private _loadIcsClients(): void {
+    this.icsLoading.set(true);
+    this.svc.getClientsForAgencyPaged({
+      term: this.icsSearch().trim() || undefined,
+      neighborhood: this.icsNeighborhood() !== 'all' ? this.icsNeighborhood() : undefined,
+      page: this.icsPage(),
+      limit: this.icsPageSize(),
+    }).subscribe(({ items, total }) => {
+      this.icsClients.set(items.map((c: any) => ({
+        id:                c._id,
+        name:              `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim(),
+        address:           [c.address?.neighborhood, c.address?.city].filter(Boolean).join(', '),
+        zone:              c.address?.arrondissement ?? '',
+        neighborhood:      c.address?.neighborhood ?? '',
+        phone:             c.phone,
+        eligible:          c.eligibility?.eligible,
+        eligibilityReason: c.eligibility?.reason,
+      })));
+      this.icsTotal.set(total);
+      this.icsLoading.set(false);
+    });
+  }
+
+  /** Chargement ponctuel (mêmes garanties que _loadGcsNeighborhoodOptions ci-dessus). */
+  private _loadIcsNeighborhoodOptions(): void {
+    this.svc.getClientsForAgency({}).subscribe(clients => {
+      const set = new Set<string>();
+      for (const c of clients) {
+        const n = c.address?.neighborhood;
+        if (n) set.add(n);
+      }
+      this.icsNeighborhoodOptions.set([...set].sort((a, b) => a.localeCompare(b)));
+    });
+  }
+
+  /** Appelé une seule fois quand on arrive sur le type "individuel" (voir _watchTypeChange). */
+  private _ensureIcsLoaded(): void {
+    this._loadIcsClients();
+    if (!this.icsNeighborhoodsLoaded) {
+      this.icsNeighborhoodsLoaded = true;
+      this._loadIcsNeighborhoodOptions();
+    }
+  }
+
+  onIcsSearchChange(value: string): void {
+    this.icsSearch.set(value);
+    if (this.icsSearchDebounce) clearTimeout(this.icsSearchDebounce);
+    this.icsSearchDebounce = setTimeout(() => {
+      this.icsPage.set(1);
+      this._loadIcsClients();
+    }, 350);
+  }
+  onIcsNeighborhoodChange(value: string): void {
+    this.icsNeighborhood.set(value);
+    this.icsPage.set(1);
+    this._loadIcsClients();
+  }
+  resetIcsFilters(): void {
+    this.icsSearch.set('');
+    this.icsNeighborhood.set('all');
+    this.icsPage.set(1);
+    this._loadIcsClients();
+  }
+  setIcsSort(sort: 'name_asc' | 'name_desc'): void {
+    this.icsSort.set(sort);
+  }
+  setIcsViewMode(mode: 'list' | 'card'): void {
+    this.icsViewMode.set(mode);
+  }
+  changeIcsPageSize(size: number): void {
+    this.icsPageSize.set(size);
+    this.icsPage.set(1);
+    this._loadIcsClients();
+  }
+  goToIcsPage(page: number): void {
+    if (page < 1 || page > this.icsTotalPages()) return;
+    this.icsPage.set(page);
+    this._loadIcsClients();
+  }
+  nextIcsPage(): void { this.goToIcsPage(this.icsPage() + 1); }
+  previousIcsPage(): void { this.goToIcsPage(this.icsPage() - 1); }
+  getIcsPaginationPages(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+    const total = this.icsTotalPages();
+    let start = Math.max(1, this.icsPage() - half);
+    const end = Math.min(total, start + maxPagesToShow - 1);
+    if (end - start + 1 < maxPagesToShow) start = Math.max(1, end - maxPagesToShow + 1);
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  }
 
   // ── Zone selector output ─────────────────────────────────────
   onZoneSelected(sel: ZoneSelection): void {

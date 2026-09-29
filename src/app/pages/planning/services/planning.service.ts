@@ -258,6 +258,28 @@ export class PlanningService {
     );
   }
 
+  /** Même endpoint que getClientsForAgency (déjà corrigé côté backend pour renvoyer
+   * totalItems/totalPages, voir services/agencyEmployee.js::getClientsByAgency), mais
+   * conserve le total et accepte le filtre `neighborhood` — pour la grille paginée de
+   * sélection de clients (planning-create, étape "Nouveau groupe"). Addition à côté de
+   * getClientsForAgency, jamais une modification de celle-ci (ses appelants actuels —
+   * recherche "individuel" notamment — ne doivent pas changer de comportement). */
+  getClientsForAgencyPaged(params: { term?: string; neighborhood?: string; page?: number; limit?: number }): Observable<{ items: any[]; total: number }> {
+    const agencyId = this.agencyId;
+    if (!agencyId) return of({ items: [], total: 0 });
+    let httpParams = new HttpParams();
+    if (params.term)        httpParams = httpParams.set('term', params.term);
+    if (params.neighborhood) httpParams = httpParams.set('neighborhood', params.neighborhood);
+    if (params.page)        httpParams = httpParams.set('page', String(params.page));
+    if (params.limit)       httpParams = httpParams.set('limit', String(params.limit));
+    return this.http.get<{ success: boolean; data: any[]; totalItems?: number }>(
+      `${this.api}/agency_employees/${agencyId}/clients`, { params: httpParams }
+    ).pipe(
+      map(r => ({ items: r.data ?? [], total: r.totalItems ?? (r.data ?? []).length })),
+      catchError(() => of({ items: [], total: 0 })),
+    );
+  }
+
   // ── CRUD ──────────────────────────────────────────────────────
 
   createPlanning(body: PlanningV2CreateBody): Observable<Planning> {

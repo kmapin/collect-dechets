@@ -121,16 +121,13 @@
                 }
               </div>
 
-              <!-- Chef d'équipe -->
+              <!-- Chef d'équipe (facultatif, aligné sur le drawer) -->
               <div class="tc-field">
-                <label class="tc-label">Chef d'équipe <span class="req">*</span></label>
-                <div class="tc-input-wrap" [class.error]="hasError('supervisor')" [class.valid]="form.get('supervisor')?.valid && form.get('supervisor')?.touched">
+                <label class="tc-label">Chef d'équipe</label>
+                <div class="tc-input-wrap" [class.valid]="form.get('supervisor')?.value">
                   <mat-icon>person</mat-icon>
                   <input formControlName="supervisor" type="text" placeholder="Nom du superviseur" />
                 </div>
-                @if (hasError('supervisor')) {
-                  <span class="tc-err">Chef d'équipe requis</span>
-                }
               </div>
             </div>
 

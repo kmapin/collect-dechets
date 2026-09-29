@@ -36,8 +36,11 @@ $tr: .2s ease;
 
 /* ---- Wrapper ---- */
 .pc-wrapper {
-  max-width: 860px;
-  margin: 0 auto;
+  // Pleine largeur de l'écran, comme team-create.html (.tc-page.container — .container
+  // global de styles.scss est déjà en max-width:100%) : l'ancien plafond à 860px centré
+  // laissait de grandes marges vides, en particulier avec la grille de sélection clients
+  // 3 colonnes (filtres/tableau/panneau) qui a vraiment besoin de la largeur disponible.
+  max-width: 100%;
   padding: 24px 20px 80px;
   background: $surface;
   min-height: 100%;
@@ -1398,8 +1401,237 @@ $tr: .2s ease;
 }
 .publish-hint { font-size: 12px; color: $text-2; }
 
+/* ---- Grille de sélection clients (groupe "nouveau") — préfixe gcs- ---- */
+.gcs-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr 260px;
+  gap: 20px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+.gcs-filters {
+  background: $card;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gcs-filters-title {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0; font-size: 14px; font-weight: 700; color: $text-1;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: $text-3; }
+}
+.gcs-field {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid $border;
+  border-radius: 8px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: $text-3; flex-shrink: 0; }
+  input { flex: 1; border: none; outline: none; font-size: 13px; color: $text-1; background: transparent;
+    &::placeholder { color: $text-3; } }
+}
+.gcs-field-group {
+  display: flex; flex-direction: column; gap: 6px;
+  label { font-size: 12px; font-weight: 600; color: $text-2; }
+  select {
+    padding: 8px 10px; border: 1px solid $border; border-radius: 8px;
+    font-size: 13px; color: $text-1; background: #fff; cursor: pointer;
+    &:focus { outline: 2px solid $blue; border-color: transparent; }
+  }
+}
+.gcs-reset-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid $border; border-radius: 8px;
+  background: $surface; color: $text-2;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: background $tr;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover { background: #eef2f7; }
+}
+
+.gcs-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gcs-main-header {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+}
+.gcs-count-label { font-size: 13px; font-weight: 600; color: $text-2; }
+.gcs-select-all-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 12px;
+  border: 1px solid $border; border-radius: 8px;
+  background: #fff; color: $blue;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: background $tr;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover:not(:disabled) { background: #eff6ff; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+.gcs-sort-row {
+  display: flex; align-items: center; gap: 8px;
+  label { font-size: 12px; color: $text-2; }
+  select {
+    padding: 6px 10px; border: 1px solid $border; border-radius: 8px;
+    font-size: 12px; color: $text-1; background: #fff; cursor: pointer;
+  }
+}
+.gcs-col-check { width: 36px; text-align: center; }
+.gcs-row--selected td { background: #f0fdf4; }
+.rc-hint-inline { color: $text-3; font-size: 12px; }
+/* Copie autonome (hors .cr-item) de la pastille d'éligibilité, réutilisée dans le
+   nouveau tableau de sélection individuelle — le style existant était imbriqué sous
+   .cr-item (ancien dropdown de recherche), jamais applicable dans une <td> de tableau. */
+.cr-eligibility {
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap;
+  &--ok { background: #dcfce7; color: #16a34a; }
+  &--ko { background: #fee2e2; color: #dc2626; }
+}
+.gcs-footer-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 4px;
+}
+.gcs-footer-count { font-size: 12px; color: $text-2; font-weight: 600; }
+.gcs-deselect-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 7px 14px;
+  border: 1px solid #fecaca; border-radius: 8px;
+  background: #fef2f2; color: $red;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  &:hover:not(:disabled) { background: #fee2e2; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+.gcs-selected-panel {
+  background: $card;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 12px;
+}
+.gcs-selected-title {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0; font-size: 14px; font-weight: 700; color: $text-1;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: $purple; }
+}
+.gcs-selected-empty { font-size: 12px; color: $text-3; margin: 0; }
+.gcs-selected-list {
+  display: flex; flex-direction: column; gap: 8px;
+  max-height: 420px; overflow-y: auto;
+}
+.gcs-chip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px;
+  border: 1px solid $border; border-radius: 10px;
+  background: $surface;
+}
+.gcs-chip-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: $purple; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.gcs-chip-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gcs-chip-name { font-size: 12px; font-weight: 600; color: $text-1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcs-chip-meta { font-size: 11px; color: $text-3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcs-chip-remove {
+  width: 24px; height: 24px; border: none; border-radius: 50%;
+  background: transparent; color: $text-3; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background $tr, color $tr;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  &:hover { background: #fee2e2; color: $red; }
+}
+.gcs-confirm-banner {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f0fdf4; color: #166534;
+  font-size: 12px; font-weight: 600;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+  small { font-weight: 400; color: #15803d; }
+  &.warn {
+    background: #fffbeb; color: #92400e;
+    small { color: #b45309; }
+  }
+}
+
+/* ---- View-mode toggle + table + pagination (copies locales, même design que les
+   autres écrans de cette session : agency-dashboard, financial-dashboard, planning-detail) ---- */
+.view-mode-toggle {
+  display: flex; align-items: center; background: $surface; border-radius: 8px; padding: 3px; gap: 2px;
+}
+.view-mode-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 12px; border: none; background: transparent; border-radius: 6px;
+  font-size: 12px; color: $text-2; cursor: pointer; transition: background $tr, color $tr;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &.active { background: #fff; color: $text-1; box-shadow: 0 1px 4px rgba(0,0,0,.1); font-weight: 600; }
+  &:hover:not(.active):not(:disabled) { background: #e2e8f0; color: $text-2; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+
+.employees-table-wrapper {
+  width: 100%; overflow-x: auto;
+  border-radius: $radius; border: 1px solid $border; background: $card;
+}
+.employees-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  thead tr { background: $surface; border-bottom: 2px solid $border; }
+  th { padding: 10px 14px; text-align: left; font-weight: 600; color: $text-2; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid #f1f5f9; transition: background $tr; &:last-child { border-bottom: none; } &:hover { background: $surface; } }
+  td { padding: 9px 14px; color: #334155; vertical-align: middle; }
+}
+.table-avatar-wrap { display: flex; align-items: center; gap: 10px; }
+.table-avatar-initials {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; text-transform: uppercase;
+}
+.name-text { font-size: 13px; color: $text-1; }
+
+.pagination-section {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 12px; padding: 10px 0 2px;
+}
+.pagination-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.pagination-details { font-size: 12px; color: $text-2; strong { color: $text-1; } }
+.per-page-group { display: flex; align-items: center; gap: 6px; }
+.per-page-label { font-size: 12px; color: $text-2; }
+.per-page-select {
+  padding: 4px 8px; border: 1px solid $border; border-radius: 6px;
+  font-size: 12px; background: #fff; color: $text-1; cursor: pointer;
+  &:focus { outline: 2px solid $blue; border-color: transparent; }
+}
+.pagination-controls { display: flex; align-items: center; gap: 6px; }
+.pagination-btn {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 32px; height: 32px; padding: 4px;
+  border: 1px solid #d1d5db; background: #fff; border-radius: 6px;
+  color: #374151; font-size: 13px; cursor: pointer; transition: all $tr;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover:not(:disabled) { background: #f3f4f6; border-color: #9ca3af; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+  &.active { background: $blue; border-color: $blue; color: #fff; }
+}
+.pagination-numbers { display: flex; gap: 4px; }
+.page-number { min-width: 28px; height: 28px; font-weight: 500; }
+
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
+  .gcs-layout { grid-template-columns: 1fr; }
+  .gcs-selected-panel { position: static; }
   .pc-wrapper { padding: 16px 12px 80px; }
   .type-grid  { grid-template-columns: 1fr; }
   .waste-grid { grid-template-columns: repeat(3, 1fr); }

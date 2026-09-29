@@ -1,5 +1,5 @@
 import {
-  Component, inject, signal, computed,
+  Component, inject, signal, computed, effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -109,7 +109,9 @@ export class TeamCreate {
   form = this.fb.group({
     // Step 1
     name:        ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-    supervisor:  ['', Validators.required],
+    // Facultatif, aligné sur team-form.ts (le drawer) — certaines équipes n'ont
+    // temporairement pas de chef assigné.
+    supervisor:  [''],
     phone:       [''],
     status:      ['active' as TeamStatus, Validators.required],
     color:       [TEAM_COLORS[0]],
@@ -213,8 +215,8 @@ export class TeamCreate {
     // (même vérification "véhicule déjà assigné à une équipe" que team-form.ts,
     // le drawer de création/édition rapide).
     this.svc.loadTeams();
-    // Watch for collectors from the service and map to CandidateMember
-    // We read the signal in an effect-like manner via the template's computed
+    // Recopie réactive de svc.collectors() (API réelle) vers apiCandidates, dès que la
+    // liste arrive — remplace un ancien setTimeout(1500) qui devinait le délai réseau.
     this._syncCandidatesFromApi();
 
     // Autosave on form changes
@@ -410,21 +412,29 @@ export class TeamCreate {
   cancel(): void { this.router.navigate(['/teams/list']); }
 
   // ── Private ─────────────────────────────────────────────────
+  /** effect() plutôt qu'un setTimeout à délai fixe : se redéclenche exactement quand
+   * svc.collectors() reçoit sa réponse (peu importe si l'API met 200ms ou 3s), et à
+   * chaque futur rafraîchissement. Rôle dérivé du vrai `c.role` de l'API
+   * (agency_employees/:id/collectors?includeManagers=true) au lieu d'être figé à
+   * 'collector'/'Collecteur' pour tout le monde — les vrais managers s'affichaient donc
+   * comme "Collecteur" dans "Personnel disponible". */
   private _syncCandidatesFromApi(): void {
-    // Poll once after a short delay to let the API response arrive
-    setTimeout(() => {
+    effect(() => {
       const apiCollectors = this.svc.collectors();
       if (apiCollectors.length > 0) {
         this.apiCandidates.set(
-          apiCollectors.map(c => ({
-            id:    c._id,
-            name:  `${c.firstName} ${c.lastName}`.trim(),
-            phone: c.phone ?? '',
-            role:  'collector' as MemberRole,
-            label: 'Collecteur',
-          }))
+          apiCollectors.map(c => {
+            const role: MemberRole = c.role === 'manager' ? 'manager' : 'collector';
+            return {
+              id:    c._id,
+              name:  `${c.firstName} ${c.lastName}`.trim(),
+              phone: c.phone ?? '',
+              role,
+              label: role === 'manager' ? 'Manager' : 'Collecteur',
+            };
+          })
         );
       }
-    }, 1500);
+    });
   }
 }
