@@ -88,6 +88,14 @@
           <mat-icon>filter_list_off</mat-icon>
         </button>
       }
+      <div class="view-mode-toggle">
+        <button type="button" class="view-mode-btn" [class.active]="viewMode() === 'card'" (click)="viewMode.set('card')" title="Vue cartes">
+          <mat-icon>grid_view</mat-icon><span>Cartes</span>
+        </button>
+        <button type="button" class="view-mode-btn" [class.active]="viewMode() === 'table'" (click)="viewMode.set('table')" title="Vue tableau">
+          <mat-icon>table_rows</mat-icon><span>Tableau</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -142,12 +150,13 @@
   }
 
   <!-- ══════════════════════════ MEMBER LIST ═════════════════════ -->
+  @if (viewMode() === 'card') {
   <div class="tm-list"
        cdkDropList
        [cdkDropListData]="members()"
        (cdkDropListDropped)="onDrop($event)">
 
-    @for (member of filteredMembers(); track member.id) {
+    @for (member of pagedMembers(); track member.id) {
       <div class="mc"
            cdkDrag
            [cdkDragData]="member"
@@ -282,24 +291,122 @@
       </div><!-- /mc -->
     }
 
-    <!-- empty state -->
-    @if (filteredMembers().length === 0) {
-      <div class="tm-empty">
-        <mat-icon>group_off</mat-icon>
-        <p>Aucun membre trouvé</p>
-        @if (search() || roleFilter() || availFilter() || activeOnly()) {
-          <button class="empty-btn" (click)="clearFilters()">
-            <mat-icon>filter_list_off</mat-icon>Effacer les filtres
-          </button>
-        } @else {
-          <button class="empty-btn empty-btn--primary" (click)="openAdd()">
-            <mat-icon>person_add</mat-icon>Ajouter le premier membre
-          </button>
-        }
-      </div>
-    }
-
   </div><!-- /tm-list -->
+  }
+
+  <!-- ══════════════════════════ MEMBER TABLE ═════════════════════ -->
+  @if (viewMode() === 'table' && pagedMembers().length) {
+    <div class="employees-table-wrapper">
+      <table class="employees-table">
+        <thead>
+          <tr>
+            <th>Membre</th>
+            <th>Rôle</th>
+            <th>Téléphone</th>
+            <th>Zone</th>
+            <th>Véhicule</th>
+            <th>Disponibilité</th>
+            <th>Perf.</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (member of pagedMembers(); track member.id) {
+            <tr [class.mc--inactive]="!member.active">
+              <td>
+                <div class="table-avatar-wrap">
+                  <div class="table-avatar-initials" [style.background-color]="roleMeta(member.role).color">
+                    {{ initials(member.name) }}
+                  </div>
+                  <span class="name-text">{{ member.name }}</span>
+                  @if (!member.active) {
+                    <span class="mc-badge mc-badge--off">Inactif</span>
+                  }
+                </div>
+              </td>
+              <td>
+                <span class="mc-role-btn" [style.background]="roleMeta(member.role).color + '15'" [style.color]="roleMeta(member.role).color">
+                  <mat-icon>{{ roleMeta(member.role).icon }}</mat-icon>{{ roleMeta(member.role).label }}
+                </span>
+              </td>
+              <td>{{ member.phone }}</td>
+              <td [pTooltip]="memberZoneTooltip(member)" tooltipPosition="top">{{ memberZone(member) }}</td>
+              <td>{{ memberVehicle(member) || '—' }}</td>
+              <td>
+                <span [style.color]="availColor(member.availability)" style="display:flex;align-items:center;gap:6px;font-weight:600">
+                  <span class="mc-avail-dot" [style.background]="availColor(member.availability)" style="position:static"></span>
+                  {{ availLabel(member.availability) }}
+                </span>
+              </td>
+              <td [style.color]="perfColor(member.performance.successRate)" style="font-weight:600">
+                {{ member.performance.successRate }}%
+              </td>
+              <td class="col-actions">
+                <button class="action-btn" pTooltip="Affecter véhicule" tooltipPosition="top" (click)="vehicleTarget.set(member)">
+                  <mat-icon>local_shipping</mat-icon>
+                </button>
+                <button class="action-btn" pTooltip="Retirer de l'équipe" tooltipPosition="top" (click)="deleteTarget.set(member)">
+                  <mat-icon>person_remove</mat-icon>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- empty state -->
+  @if (filteredMembers().length === 0) {
+    <div class="tm-empty">
+      <mat-icon>group_off</mat-icon>
+      <p>Aucun membre trouvé</p>
+      @if (search() || roleFilter() || availFilter() || activeOnly()) {
+        <button class="empty-btn" (click)="clearFilters()">
+          <mat-icon>filter_list_off</mat-icon>Effacer les filtres
+        </button>
+      } @else {
+        <button class="empty-btn empty-btn--primary" (click)="openAdd()">
+          <mat-icon>person_add</mat-icon>Ajouter le premier membre
+        </button>
+      }
+    </div>
+  }
+
+  <!-- pagination -->
+  @if (membersTotalItems() > 0) {
+    <div class="pagination-section">
+      <div class="pagination-left">
+        <span class="pagination-details">
+          {{ (page() - 1) * itemsPerPage() + 1 }}–{{ getEndItemNumber() }} sur
+          <strong>{{ membersTotalItems() }}</strong> membre(s)
+        </span>
+        <div class="per-page-group">
+          <label class="per-page-label">Afficher</label>
+          <select class="per-page-select" (change)="changeItemsPerPage(+$any($event.target).value)">
+            <option [value]="5" [selected]="itemsPerPage() === 5">5</option>
+            <option [value]="10" [selected]="itemsPerPage() === 10">10</option>
+            <option [value]="20" [selected]="itemsPerPage() === 20">20</option>
+            <option [value]="50" [selected]="itemsPerPage() === 50">50</option>
+          </select>
+          <span class="per-page-label">par page</span>
+        </div>
+      </div>
+      @if (membersTotalPages() > 1) {
+        <div class="pagination-controls">
+          <button class="pagination-btn" [disabled]="page() === 1" (click)="goToPage(1)" title="Première page"><mat-icon>first_page</mat-icon></button>
+          <button class="pagination-btn" [disabled]="page() === 1" (click)="previousPage()" title="Page précédente"><mat-icon>chevron_left</mat-icon></button>
+          <div class="pagination-numbers">
+            @for (p of getPaginationPages(); track p) {
+              <button class="pagination-btn page-number" [class.active]="p === page()" (click)="goToPage(p)">{{ p }}</button>
+            }
+          </div>
+          <button class="pagination-btn" [disabled]="page() === membersTotalPages()" (click)="nextPage()" title="Page suivante"><mat-icon>chevron_right</mat-icon></button>
+          <button class="pagination-btn" [disabled]="page() === membersTotalPages()" (click)="goToPage(membersTotalPages())" title="Dernière page"><mat-icon>last_page</mat-icon></button>
+        </div>
+      }
+    </div>
+  }
 
 </div><!-- /tm-root -->
 

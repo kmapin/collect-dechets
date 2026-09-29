@@ -59,6 +59,11 @@ export class TeamMembers implements OnInit {
   availFilter = signal<MemberAvailability | ''>('');
   activeOnly  = signal(false);
 
+  // ── Vue tableau + pagination (même modèle que planning-detail) ──
+  viewMode     = signal<'card' | 'table'>('table');
+  page         = signal(1);
+  itemsPerPage = signal(10);
+
   addOpen    = signal(false);
   roleMenuId = signal<string | null>(null);
   vehicleTarget = signal<RichMember | null>(null);
@@ -81,8 +86,11 @@ export class TeamMembers implements OnInit {
   });
 
   // ── Computed ──────────────────────────────────────────────────
+  // Le glisser-déposer ne réordonne que la page affichée : désactivé dès qu'un
+  // filtre est actif OU qu'il y a plus d'une page (l'ordre inter-pages serait faux).
   canDragDrop = computed(() =>
     !this.search() && !this.roleFilter() && !this.availFilter() && !this.activeOnly()
+    && this.membersTotalPages() === 1
   );
 
   filteredMembers = computed(() => {
@@ -95,6 +103,14 @@ export class TeamMembers implements OnInit {
     if (a) list = list.filter(m => m.availability === a);
     if (this.activeOnly()) list = list.filter(m => m.active);
     return list;
+  });
+
+  membersTotalItems = computed(() => this.filteredMembers().length);
+  membersTotalPages = computed(() => Math.max(1, Math.ceil(this.membersTotalItems() / this.itemsPerPage())));
+  pagedMembers = computed(() => {
+    const page = Math.min(this.page(), this.membersTotalPages());
+    const start = (page - 1) * this.itemsPerPage();
+    return this.filteredMembers().slice(start, start + this.itemsPerPage());
   });
 
   // Employees from agency not yet in the team
@@ -282,6 +298,32 @@ export class TeamMembers implements OnInit {
   clearFilters(): void {
     this.search.set(''); this.roleFilter.set('');
     this.availFilter.set(''); this.activeOnly.set(false);
+    this.page.set(1);
+  }
+
+  // ── Pagination (même modèle que planning-detail) ─────────────
+  changeItemsPerPage(taille: number): void {
+    this.itemsPerPage.set(taille);
+    this.page.set(1);
+  }
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.membersTotalPages()) this.page.set(page);
+  }
+  nextPage(): void { this.goToPage(this.page() + 1); }
+  previousPage(): void { this.goToPage(this.page() - 1); }
+  getPaginationPages(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+    const total = this.membersTotalPages();
+    let start = Math.max(1, this.page() - half);
+    const end = Math.min(total, start + maxPagesToShow - 1);
+    if (end - start + 1 < maxPagesToShow) start = Math.max(1, end - maxPagesToShow + 1);
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  }
+  getEndItemNumber(): number {
+    return Math.min(this.page() * this.itemsPerPage(), this.membersTotalItems());
   }
 
   // ── Display helpers ───────────────────────────────────────────
