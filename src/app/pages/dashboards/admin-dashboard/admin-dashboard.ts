@@ -26,6 +26,7 @@ import { PlanningSummaryDrawer } from "../../../components/planning-summary-draw
 import { Arrondissement, City, Quartier, Sector } from "../../../models/countries-org.model";
 import { TerritoryHttpService } from "../../../services/territory-http.service";
 import { WithdrawalRequestsHttpService } from "../../../services/withdrawal-requests-http.service";
+import { saveFilters, loadFilters } from "../../../shared/filter-persistence.util";
 import {
   AdminWithdrawalRequest,
   PaymentMethod,
@@ -490,19 +491,31 @@ export class AdminDashboard implements OnInit, OnDestroy {
   incidentsTotalItems   = 0;
 
   // ── Onglet Retraits (validation admin des demandes de retrait d'agence) ──
+  // Filtres persistés en sessionStorage tant que l'utilisateur ne clique pas
+  // "Réinitialiser les filtres" (voir shared/filter-persistence.util.ts).
+  private readonly WITHDRAWAL_FILTERS_KEY = 'adminDashboard.withdrawalFilters';
+  private static readonly WITHDRAWAL_FILTERS_DEFAULTS = {
+    search: '',
+    statusFilter: 'all' as WithdrawalStatus | 'all',
+    agencyFilter: 'all',
+    dateFrom: '',
+    dateTo: '',
+    page: 1,
+  };
+  private _persistedWithdrawalFilters = loadFilters(this.WITHDRAWAL_FILTERS_KEY, AdminDashboard.WITHDRAWAL_FILTERS_DEFAULTS);
   withdrawalRequests:        AdminWithdrawalRequest[] = [];
   isLoadingWithdrawals       = false;
   withdrawalsErrorMessage:   string | null = null;
-  withdrawalSearchTerm       = '';
-  withdrawalStatusFilter:    WithdrawalStatus | 'all' = 'all';
-  withdrawalAgencyFilter     = 'all';
-  withdrawalDateFrom         = '';
-  withdrawalDateTo           = '';
+  withdrawalSearchTerm       = this._persistedWithdrawalFilters.search;
+  withdrawalStatusFilter:    WithdrawalStatus | 'all' = this._persistedWithdrawalFilters.statusFilter;
+  withdrawalAgencyFilter     = this._persistedWithdrawalFilters.agencyFilter;
+  withdrawalDateFrom         = this._persistedWithdrawalFilters.dateFrom;
+  withdrawalDateTo           = this._persistedWithdrawalFilters.dateTo;
   withdrawalAgencyOptions:   { id: string; name: string }[] = [];
   readonly WithdrawalStatus  = WithdrawalStatus; // exposé au template pour les comparaisons de statut
 
   // Pagination Retraits
-  withdrawalsCurrentPage  = 1;
+  withdrawalsCurrentPage  = this._persistedWithdrawalFilters.page;
   withdrawalsTotalPages   = 1;
   withdrawalsItemsPerPage = 10;
   withdrawalsTotalItems   = 0;
@@ -787,6 +800,15 @@ export class AdminDashboard implements OnInit, OnDestroy {
   loadWithdrawalRequests(): void {
     this.isLoadingWithdrawals = true;
     this.withdrawalsErrorMessage = null;
+
+    saveFilters(this.WITHDRAWAL_FILTERS_KEY, {
+      search: this.withdrawalSearchTerm,
+      statusFilter: this.withdrawalStatusFilter,
+      agencyFilter: this.withdrawalAgencyFilter,
+      dateFrom: this.withdrawalDateFrom,
+      dateTo: this.withdrawalDateTo,
+      page: this.withdrawalsCurrentPage,
+    });
 
     const filter: WithdrawalRequestFilter = {
       search:   this.withdrawalSearchTerm || undefined,

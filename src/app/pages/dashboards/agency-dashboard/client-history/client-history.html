@@ -36,6 +36,9 @@
       <button type="button" class="ch-pill" [class.active]="statusFilter() === 'terminee'" (click)="setStatusFilter('terminee')">
         Terminées <span class="ch-pill-count">{{ counts().terminee }}</span>
       </button>
+      <button type="button" class="ch-pill" [class.active]="statusFilter() === 'manquee'" (click)="setStatusFilter('manquee')">
+        Manquées <span class="ch-pill-count">{{ counts().manquee }}</span>
+      </button>
     </div>
 
     @if (isLoading()) {

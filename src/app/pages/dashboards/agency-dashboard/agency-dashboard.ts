@@ -1,4 +1,5 @@
 import { Agency } from "./../../../models/agency.model";
+import { saveFilters, loadFilters, hasNonDefaultFilters } from "../../../shared/filter-persistence.util";
 import { catchError, forkJoin, map, of, switchMap, Subscription } from "rxjs";
 import {
   AfterViewChecked,
@@ -409,17 +410,31 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   isEditing: boolean = false;
   allEmployees: Employees[] = [];
   filteredEmployees: Employees[] = [];
-  // Propriétés pour la recherche et le filtrage des employés
-  employeesSearch: string = "";
-  employeesRoleFilter: string = "all";
-  employeesStatusFilter: string = "all";
-  showEmployeesSearch: boolean = false;
+  // Propriétés pour la recherche et le filtrage des employés — persistés en
+  // sessionStorage (tant que l'utilisateur ne clique pas "Réinitialiser les
+  // filtres") pour survivre à une navigation hors de ce composant.
+  private readonly EMPLOYEE_FILTERS_KEY = 'agencyDashboard.employeeFilters';
+  private static readonly EMPLOYEE_FILTERS_DEFAULTS = {
+    search: "",
+    roleFilter: "all",
+    statusFilter: "all",
+    cityFilter: "",
+    neighborhoodFilter: "",
+    arrondissementFilter: "",
+    sectorFilter: null as number | null,
+  };
+  private _persistedEmployeeFilters = loadFilters(this.EMPLOYEE_FILTERS_KEY, AgencyDashboard.EMPLOYEE_FILTERS_DEFAULTS);
+  employeesSearch: string = this._persistedEmployeeFilters.search;
+  employeesRoleFilter: string = this._persistedEmployeeFilters.roleFilter;
+  employeesStatusFilter: string = this._persistedEmployeeFilters.statusFilter;
+  // Panneau rouvert automatiquement si des filtres persistés sont encore actifs.
+  showEmployeesSearch: boolean = hasNonDefaultFilters(this._persistedEmployeeFilters, AgencyDashboard.EMPLOYEE_FILTERS_DEFAULTS);
 
   // Nouveaux filtres basés sur l'API backend
-  employeesCityFilter: string = "";
-  employeesNeighborhoodFilter: string = "";
-  employeesArrondissementFilter: string = "";
-  employeesSectorFilter: number | null = null;
+  employeesCityFilter: string = this._persistedEmployeeFilters.cityFilter;
+  employeesNeighborhoodFilter: string = this._persistedEmployeeFilters.neighborhoodFilter;
+  employeesArrondissementFilter: string = this._persistedEmployeeFilters.arrondissementFilter;
+  employeesSectorFilter: number | null = this._persistedEmployeeFilters.sectorFilter;
 
   // Données pour les filtres (utilisant le même système que l'enregistrement)
   availableEmployeeCities: City[] = [];
@@ -446,16 +461,27 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // Chargement des données
   isLoadingFilteredEmployees: boolean = false;
 
-  // Propriétés pour la recherche et le filtrage des clients
-  clientsSearch: string = "";
-  clientsCityFilter: string = "all"; // Nouveau filtre par ville
-  clientsNeighborhoodFilter: string = "all";
-  clientsStatusFilter: string = "all";
-  showClientsSearch: boolean = false;
+  // Propriétés pour la recherche et le filtrage des clients — persistées en
+  // sessionStorage (voir employeesSearch ci-dessus pour l'explication).
+  private readonly CLIENT_FILTERS_KEY = 'agencyDashboard.clientFilters';
+  private static readonly CLIENT_FILTERS_DEFAULTS = {
+    search: "",
+    cityFilter: "all",
+    neighborhoodFilter: "all",
+    statusFilter: "all",
+    page: 1,
+  };
+  private _persistedClientFilters = loadFilters(this.CLIENT_FILTERS_KEY, AgencyDashboard.CLIENT_FILTERS_DEFAULTS);
+  clientsSearch: string = this._persistedClientFilters.search;
+  clientsCityFilter: string = this._persistedClientFilters.cityFilter; // Nouveau filtre par ville
+  clientsNeighborhoodFilter: string = this._persistedClientFilters.neighborhoodFilter;
+  clientsStatusFilter: string = this._persistedClientFilters.statusFilter;
+  // Panneau rouvert automatiquement si des filtres persistés sont encore actifs.
+  showClientsSearch: boolean = hasNonDefaultFilters(this._persistedClientFilters, AgencyDashboard.CLIENT_FILTERS_DEFAULTS);
   filteredActiveClients: any;
 
   // Variables pour la pagination des clients
-  clientsCurrentPage: number = 1;
+  clientsCurrentPage: number = this._persistedClientFilters.page;
   clientsItemsPerPage: number = 10;
   clientsTotalItems: number = 0;
   clientsTotalPages: number = 0;
@@ -2088,6 +2114,16 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
    * Filtre les employés - utilise l'API backend seulement si des filtres sont appliqués
    */
   filterEmployees(): void {
+    saveFilters(this.EMPLOYEE_FILTERS_KEY, {
+      search: this.employeesSearch,
+      roleFilter: this.employeesRoleFilter,
+      statusFilter: this.employeesStatusFilter,
+      cityFilter: this.employeesCityFilter,
+      neighborhoodFilter: this.employeesNeighborhoodFilter,
+      arrondissementFilter: this.employeesArrondissementFilter,
+      sectorFilter: this.employeesSectorFilter,
+    });
+
     // Détecter si des filtres sont réellement appliqués
     const hasRealFilters =
       (this.employeesSearch && this.employeesSearch.trim()) ||
@@ -2498,6 +2534,14 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
    */
   filterClients(): void {
     if (!this.agency?.agencyId) return;
+
+    saveFilters(this.CLIENT_FILTERS_KEY, {
+      search: this.clientsSearch,
+      cityFilter: this.clientsCityFilter,
+      neighborhoodFilter: this.clientsNeighborhoodFilter,
+      statusFilter: this.clientsStatusFilter,
+      page: this.clientsCurrentPage,
+    });
 
     this.isLoadingFilteredClients = true;
 

@@ -10,7 +10,7 @@ import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadc
 import { dashboardLabelForRole, dashboardRouteForRole } from '../../../../shared/notification-route.util';
 import { formatFrDate } from '../../../../shared/format.util';
 
-type Bucket = 'a_venir' | 'en_cours' | 'terminee';
+type Bucket = 'a_venir' | 'en_cours' | 'terminee' | 'manquee';
 type StatusFilter = 'all' | Bucket;
 
 interface HistoryRow {
@@ -39,6 +39,7 @@ const BUCKET_LABELS: Record<Bucket, string> = {
   a_venir: 'À venir',
   en_cours: 'En cours',
   terminee: 'Terminée',
+  manquee: 'Manquée',
 };
 
 @Component({
@@ -81,6 +82,7 @@ export class ClientHistory implements OnInit {
       a_venir: list.filter(r => r.bucket === 'a_venir').length,
       en_cours: list.filter(r => r.bucket === 'en_cours').length,
       terminee: list.filter(r => r.bucket === 'terminee').length,
+      manquee: list.filter(r => r.bucket === 'manquee').length,
     };
   });
 
@@ -159,9 +161,10 @@ export class ClientHistory implements OnInit {
     const fromHistory: HistoryRow[] = (history || []).map((h) => {
       const status = h.status === 'Collected' ? 'Completed' : h.status;
       const meta = HISTORY_STATUS_LABELS[status] ?? { label: status, color: '#94a3b8' };
+      const bucket: Bucket = status === 'Missed' ? 'manquee' : 'terminee';
       return {
         id: h._id,
-        bucket: 'terminee' as const,
+        bucket,
         statusLabel: meta.label,
         statusColor: meta.color,
         date: h.date ?? h.createdAt ?? null,
