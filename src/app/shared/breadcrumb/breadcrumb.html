@@ -2,7 +2,7 @@
   <nav class="app-breadcrumb" [class.app-breadcrumb--on-color]="variant === 'onColor'" aria-label="Fil d'Ariane">
     @for (item of items; track item.label; let last = $last) {
       @if (!last && item.route) {
-        <a [routerLink]="item.route" class="app-breadcrumb__link">
+        <a [routerLink]="item.route" [queryParams]="item.queryParams" class="app-breadcrumb__link">
           @if (item.icon) {
             <i class="material-icons app-breadcrumb__icon">{{ item.icon }}</i>
           }

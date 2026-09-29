@@ -3888,6 +3888,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
    * (Modèle C), pas le nombre brut d'enregistrements historiques (renouvellements inclus). */
   selectedClientSubscriptionsCount = 0;
 
+  viewClientCollecteHistory(clientId: string): void {
+    this.router.navigate(['/dashboard/agency/clients', clientId, 'historique']);
+  }
+
   viewClientDetails(clientId: string): void {
     this.notificationService.showInfo(
       "Détails",

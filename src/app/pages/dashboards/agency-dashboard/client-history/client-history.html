@@ -1,0 +1,96 @@
+<div class="ch-page">
+  <app-breadcrumb [items]="breadcrumbItems()"></app-breadcrumb>
+
+  <div class="ch-header">
+    <button type="button" class="ch-back" (click)="goBackToClients()" title="Retour à la liste des clients">
+      <i class="material-icons">arrow_back</i>
+    </button>
+    <div class="ch-header-info">
+      <h1>
+        @if (client(); as c) {
+          Historique des collectes — {{ c.firstName }} {{ c.lastName }}
+        } @else {
+          Historique des collectes
+        }
+      </h1>
+      @if (client(); as c) {
+        <p class="ch-subtitle">
+          @if (c.phone) { <span><i class="material-icons">phone</i>{{ c.phone }}</span> }
+          @if (c.address?.neighborhood) { <span><i class="material-icons">location_on</i>{{ c.address.neighborhood }}, {{ c.address.city }}</span> }
+        </p>
+      }
+    </div>
+  </div>
+
+  <div class="ch-card">
+    <div class="ch-filters">
+      <button type="button" class="ch-pill" [class.active]="statusFilter() === 'all'" (click)="setStatusFilter('all')">
+        Toutes <span class="ch-pill-count">{{ counts().all }}</span>
+      </button>
+      <button type="button" class="ch-pill" [class.active]="statusFilter() === 'a_venir'" (click)="setStatusFilter('a_venir')">
+        À venir <span class="ch-pill-count">{{ counts().a_venir }}</span>
+      </button>
+      <button type="button" class="ch-pill" [class.active]="statusFilter() === 'en_cours'" (click)="setStatusFilter('en_cours')">
+        En cours <span class="ch-pill-count">{{ counts().en_cours }}</span>
+      </button>
+      <button type="button" class="ch-pill" [class.active]="statusFilter() === 'terminee'" (click)="setStatusFilter('terminee')">
+        Terminées <span class="ch-pill-count">{{ counts().terminee }}</span>
+      </button>
+    </div>
+
+    @if (isLoading()) {
+      <div class="ch-empty">
+        <i class="material-icons spin">autorenew</i>
+        <p>Chargement de l'historique…</p>
+      </div>
+    } @else if (!filteredRows().length) {
+      <div class="ch-empty">
+        <i class="material-icons">event_busy</i>
+        <p>{{ counts().all ? 'Aucune collecte ne correspond à ce filtre.' : "Aucune collecte n'a encore été enregistrée pour ce client." }}</p>
+      </div>
+    } @else {
+      <div class="employees-table-wrapper">
+        <table class="employees-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Statut</th>
+              <th>Type de déchets</th>
+              <th>Note</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredRows(); track row.id) {
+              <tr>
+                <td>{{ formatFrDate(row.date) }}</td>
+                <td>
+                  <span class="ch-status-badge" [style.background]="row.statusColor + '18'" [style.color]="row.statusColor">
+                    {{ row.statusLabel }}
+                  </span>
+                </td>
+                <td>{{ (row.wasteTypes && row.wasteTypes.length) ? row.wasteTypes.join(', ') : '—' }}</td>
+                <td>
+                  @if (row.rating) {
+                    <span class="ch-rating"><i class="material-icons">star</i>{{ row.rating }}/5</span>
+                  } @else {
+                    <span class="ch-hint">—</span>
+                  }
+                </td>
+                <td class="col-actions">
+                  @if (row.planningId) {
+                    <button class="action-btn" (click)="goToPlanning(row.planningId)" title="Voir le planning">
+                      <i class="material-icons">visibility</i>
+                    </button>
+                  } @else {
+                    <span class="ch-hint">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

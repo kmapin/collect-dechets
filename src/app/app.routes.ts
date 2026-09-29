@@ -162,6 +162,15 @@ export const routes: Routes = [
 
   {
     canActivate: [adminOrManagerGuard],
+    path: "dashboard/agency/clients/:id/historique",
+    loadComponent: () =>
+      import("./pages/dashboards/agency-dashboard/client-history/client-history").then(
+        (c) => c.ClientHistory,
+      ),
+  },
+
+  {
+    canActivate: [adminOrManagerGuard],
     path: "dashboard/agency/finance",
     loadComponent: () =>
       import("./pages/dashboards/agency-finance/agency-finance").then(

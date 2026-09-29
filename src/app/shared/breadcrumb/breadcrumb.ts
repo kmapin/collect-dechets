@@ -7,6 +7,8 @@ export interface BreadcrumbItem {
   route?: string | any[];
   /** Icône Material (nom de la ligature, ex. 'home') affichée avant le libellé. */
   icon?: string;
+  /** Query params du lien (ex. { tab: 'clients' } pour rouvrir un onglet précis). */
+  queryParams?: Record<string, any>;
 }
 
 @Component({
