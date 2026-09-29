@@ -687,9 +687,63 @@
             } @else {
               <span class="sec-count">{{ incidents().length }}</span>
             }
+            @if (incidents().length > 0) {
+              <div class="view-mode-toggle">
+                <button type="button" class="view-mode-btn" [class.active]="incidentsViewMode() === 'card'" (click)="incidentsViewMode.set('card')" title="Vue cartes">
+                  <mat-icon>grid_view</mat-icon><span>Cartes</span>
+                </button>
+                <button type="button" class="view-mode-btn" [class.active]="incidentsViewMode() === 'table'" (click)="incidentsViewMode.set('table')" title="Vue tableau">
+                  <mat-icon>table_rows</mat-icon><span>Tableau</span>
+                </button>
+              </div>
+            }
           </div>
 
-          @if (incidents().length > 0) {
+          @if (incidents().length === 0) {
+            <div class="teams-empty">
+              <mat-icon>task_alt</mat-icon>
+              <p>Aucun incident signalé pour ce planning.</p>
+            </div>
+          } @else if (incidentsViewMode() === 'table') {
+            <div class="employees-table-wrapper">
+              <table class="employees-table">
+                <thead>
+                  <tr>
+                    <th>Sévérité</th>
+                    <th>Titre</th>
+                    <th>Signalé par</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (inc of incidents(); track inc.id) {
+                    <tr>
+                      <td>
+                        <span class="inc-badge" [style.background]="incidentColor(inc.severity) + '18'" [style.color]="incidentColor(inc.severity)">
+                          {{ incidentLabel(inc.severity) }}
+                        </span>
+                      </td>
+                      <td>
+                        <div class="cell-truncate" [pTooltip]="inc.description" tooltipPosition="top">{{ inc.title }}</div>
+                      </td>
+                      <td>{{ inc.reporter }}</td>
+                      <td>{{ formatFrDateTime(inc.reportedAt) }}</td>
+                      <td>
+                        @if (inc.resolved) {
+                          <span class="inc-resolved">
+                            <mat-icon>check_circle</mat-icon>Résolu {{ formatFrDateTime(inc.resolvedAt) }}
+                          </span>
+                        } @else {
+                          <span class="rc-hint-inline">En cours</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
             <div class="incidents-list">
               @for (inc of incidents(); track inc.id) {
                 <div class="incident-card" [class.incident-card--resolved]="inc.resolved"
@@ -721,11 +775,6 @@
                   </div>
                 </div>
               }
-            </div>
-          } @else {
-            <div class="teams-empty">
-              <mat-icon>task_alt</mat-icon>
-              <p>Aucun incident signalé pour ce planning.</p>
             </div>
           }
         </section>
