@@ -153,6 +153,34 @@ export class ContratService {
     );
   }
 
+  /** Le client agit sur SON contrat — jamais de réactivation côté client (voir
+   * routes/contratRoute.js, réservée à l'agence). */
+  resilierContratClient$(contratId: string, raisonResiliation?: string): Observable<{ message: string; contrat: Contrat }> {
+    return this.http.patch<any>(`${environment.apiUrl}/contrats/${contratId}/client/resilier`, { raisonResiliation }).pipe(
+      map((response) => {
+        console.log('API > resilierContratClient$:', response);
+        return response;
+      }),
+      catchError((error) => {
+        console.error('Erreur lors de la résiliation du contrat :', error);
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  suspendreContratClient$(contratId: string): Observable<{ message: string; contrat: Contrat }> {
+    return this.http.patch<any>(`${environment.apiUrl}/contrats/${contratId}/client/suspendre`, {}).pipe(
+      map((response) => {
+        console.log('API > suspendreContratClient$:', response);
+        return response;
+      }),
+      catchError((error) => {
+        console.error('Erreur lors de la suspension du contrat :', error);
+        return throwError(() => error);
+      }),
+    );
+  }
+
   /** `telecharger=true` renvoie directement le buffer PDF (pas du JSON) — voir controllers/contrat.js::genererDocument. */
   genererDocument$(contratId: string, telecharger = false): Observable<{ message: string; documentUrl: string } | Blob> {
     const url = `${environment.apiUrl}/contrats/${contratId}/document${telecharger ? '?telecharger=true' : ''}`;

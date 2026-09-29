@@ -99,6 +99,18 @@
                 Payer/Renouveler par Mobile Money
               </button>
             }
+            @if (peutSuspendre(contrat)) {
+              <button class="btn btn-secondary" [disabled]="contratMutationEnCours === contrat._id" (click)="onSuspendreContrat(contrat)">
+                <i class="material-icons">pause_circle</i>
+                Suspendre
+              </button>
+            }
+            @if (peutResilier(contrat)) {
+              <button class="btn btn-danger" [disabled]="contratMutationEnCours === contrat._id" (click)="onResilierContrat(contrat)">
+                <i class="material-icons">cancel</i>
+                Résilier
+              </button>
+            }
           </div>
 
           @if (selectedContratId === contrat._id) {

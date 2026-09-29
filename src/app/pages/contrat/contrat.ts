@@ -10,6 +10,8 @@ import { PaiementGroupeRedevance } from '../../models/paiement-groupe-redevance.
 import { Webstockets, SocketNotification } from '../../core/services/webstockets';
 import { MobileMoneyFormComponent } from '../payment/mobile-money-form/mobile-money-form';
 import { EligibilityService, EligibilityResult, isContratCurrentlyActive } from '../../services/eligibility.service';
+import { ConfirmDialogService } from '../../services/confirm-dialog.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-contrat',
@@ -28,6 +30,7 @@ export class ContratPage implements OnInit, OnDestroy {
   showPaymentForm = false;
   tarifResponse: any = null;
   eligibility: EligibilityResult | null = null;
+  contratMutationEnCours: string | null = null;
   private newContratSub?: RxSubscription;
 
   constructor(
@@ -36,6 +39,8 @@ export class ContratPage implements OnInit, OnDestroy {
     private redevanceService: RedevanceService,
     private websocketService: Webstockets,
     private eligibilityService: EligibilityService,
+    private confirmDialog: ConfirmDialogService,
+    private notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -190,6 +195,61 @@ export class ContratPage implements OnInit, OnDestroy {
     return isContratCurrentlyActive(contrat);
   }
 
+  peutSuspendre(contrat: Contrat): boolean {
+    return contrat.status === 'actif';
+  }
+
+  peutResilier(contrat: Contrat): boolean {
+    return contrat.status === 'actif' || contrat.status === 'suspendu';
+  }
+
+  async onSuspendreContrat(contrat: Contrat): Promise<void> {
+    if (this.contratMutationEnCours) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Suspendre ce contrat ?',
+      message: 'La collecte sera interrompue jusqu\'à ce que vous le réactiviez auprès de votre agence.',
+      variant: 'primary',
+      confirmLabel: 'Suspendre',
+    });
+    if (!ok) return;
+    this.contratMutationEnCours = contrat._id;
+    this.contratService.suspendreContratClient$(contrat._id).subscribe({
+      next: () => {
+        this.contratMutationEnCours = null;
+        this.notificationService.showSuccess('Succès', 'Contrat suspendu avec succès.');
+        this.loadContrats();
+      },
+      error: (err: any) => {
+        this.contratMutationEnCours = null;
+        this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de suspendre le contrat.');
+      },
+    });
+  }
+
+  async onResilierContrat(contrat: Contrat): Promise<void> {
+    if (this.contratMutationEnCours) return;
+    const raisonSaisie = await this.confirmDialog.confirmWithInput({
+      title: 'Résilier ce contrat ?',
+      message: 'Cette action est définitive : vous ne bénéficierez plus du service dans le cadre de ce contrat.',
+      variant: 'danger',
+      confirmLabel: 'Résilier',
+      inputField: { placeholder: 'Motif de résiliation (optionnel)' },
+    });
+    if (raisonSaisie === null) return;
+    this.contratMutationEnCours = contrat._id;
+    this.contratService.resilierContratClient$(contrat._id, raisonSaisie || undefined).subscribe({
+      next: () => {
+        this.contratMutationEnCours = null;
+        this.notificationService.showSuccess('Succès', 'Contrat résilié avec succès.');
+        this.loadContrats();
+      },
+      error: (err: any) => {
+        this.contratMutationEnCours = null;
+        this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de résilier le contrat.');
+      },
+    });
+  }
+
   private agencyId(contrat: Contrat): string {
     const agence = contrat.agencyId as any;
     return typeof agence === 'object' ? agence?._id : agence;
@@ -247,7 +307,7 @@ export class ContratPage implements OnInit, OnDestroy {
   }
 
   statusLabel(status: string): string {
-    const map: { [key: string]: string } = { actif: 'Actif', suspendu: 'Suspendu', resilie: 'Résilié' };
+    const map: { [key: string]: string } = { actif: 'Actif', suspendu: 'Suspendu', resilie: 'Résilié', expire: 'Expiré' };
     return map[status] || status;
   }
 
