@@ -198,6 +198,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
 
   // ── Mock detail data (incidents, activities, notifications) ───
   incidents     = signal<Incident[]>([]);
+  incidentsViewMode = signal<'card' | 'table'>('table');
   activities    = signal<ActivityEvent[]>([]);
   notifications = signal<Notification[]>([]);
 

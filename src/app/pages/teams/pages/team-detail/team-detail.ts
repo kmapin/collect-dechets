@@ -68,6 +68,7 @@ export class TeamDetail implements OnInit, OnDestroy {
     };
   }
   activeTab   = signal<'members' | 'vehicle' | 'zones' | 'missions'>('members');
+  missionsViewMode = signal<'card' | 'table'>('table');
   formOpen    = signal(false);
   formSaving  = signal(false);
 

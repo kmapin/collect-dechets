@@ -300,39 +300,94 @@
 
     <!-- ── ZONES ──────────────────────────────────────────── -->
     @if (activeTab() === 'zones') {
-      <div class="zones-layout">
-        <div class="zones-list">
-          @for (z of team()!.zones; track z.id) {
-            <div class="zone-card">
-              <div class="zc-icon" [style.background]="team()!.color + '18'" [style.color]="team()!.color">
-                <mat-icon>location_on</mat-icon>
-              </div>
-              <div class="zc-info">
-                <div class="zc-name" [title]="z.name" pTooltip="{{ z.name }}" tooltipPosition="top">{{ z.name }}</div>
-                <div class="zc-meta">{{ z.ville }}@if(z.arrondissement){ · {{ z.arrondissement }} }</div>
-                @if (z.householdsCount > 0) {
-                  <div class="zc-households"><mat-icon>home</mat-icon>{{ z.householdsCount | number }} ménages</div>
-                }
-              </div>
-            </div>
-          }
-          @if (team()!.zones.length === 0) {
-            <div class="tab-empty">
-              <mat-icon>map_off</mat-icon>
-              <p>Aucune zone assignée</p>
-            </div>
-          }
+      @if (team()!.zones.length === 0) {
+        <div class="tab-empty">
+          <mat-icon>map_off</mat-icon>
+          <p>Aucune zone assignée</p>
         </div>
-        @if (team()!.zones.length > 0) {
+      } @else {
+        <div class="zones-layout">
+          <div class="zones-list">
+            @for (z of team()!.zones; track z.id) {
+              <div class="zone-card">
+                <div class="zc-icon" [style.background]="team()!.color + '18'" [style.color]="team()!.color">
+                  <mat-icon>location_on</mat-icon>
+                </div>
+                <div class="zc-info">
+                  <div class="zc-name" [title]="z.name" pTooltip="{{ z.name }}" tooltipPosition="top">{{ z.name }}</div>
+                  <div class="zc-meta">{{ z.ville }}@if(z.arrondissement){ · {{ z.arrondissement }} }</div>
+                  @if (z.householdsCount > 0) {
+                    <div class="zc-households"><mat-icon>home</mat-icon>{{ z.householdsCount | number }} ménages</div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
           <div class="zones-map-wrap">
             <div #mapEl class="td-map"></div>
           </div>
-        }
-      </div>
+        </div>
+      }
     }
 
     <!-- ── MISSIONS ───────────────────────────────────────── -->
     @if (activeTab() === 'missions') {
+      @if (team()!.recentMissions.length > 0) {
+        <div class="members-tab-header">
+          <span class="mth-count">{{ team()!.recentMissions.length }} mission{{ team()!.recentMissions.length !== 1 ? 's' : '' }} récente{{ team()!.recentMissions.length !== 1 ? 's' : '' }}</span>
+          <div class="view-mode-toggle">
+            <button type="button" class="view-mode-btn" [class.active]="missionsViewMode() === 'card'" (click)="missionsViewMode.set('card')" title="Vue cartes">
+              <mat-icon>grid_view</mat-icon><span>Cartes</span>
+            </button>
+            <button type="button" class="view-mode-btn" [class.active]="missionsViewMode() === 'table'" (click)="missionsViewMode.set('table')" title="Vue tableau">
+              <mat-icon>table_rows</mat-icon><span>Tableau</span>
+            </button>
+          </div>
+        </div>
+      }
+      @if (missionsViewMode() === 'table' && team()!.recentMissions.length > 0) {
+        <div class="employees-table-wrapper">
+          <table class="employees-table">
+            <thead>
+              <tr>
+                <th>Référence</th>
+                <th>Statut</th>
+                <th>Zone</th>
+                <th>Date</th>
+                <th>Progression</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of team()!.recentMissions; track m.id) {
+                <tr>
+                  <td class="cell-truncate">{{ m.reference }}</td>
+                  <td>
+                    <span class="mr-status-badge" [style.background]="missionStatusColor(m.status) + '18'" [style.color]="missionStatusColor(m.status)">
+                      {{ missionStatusLabel(m.status) }}
+                    </span>
+                  </td>
+                  <td>{{ m.zone }}</td>
+                  <td>{{ formatMissionDate(m.date) }}</td>
+                  <td>
+                    @if (m.totalHouseholds > 0) {
+                      {{ m.householdsCollected }}/{{ m.totalHouseholds }} ménages
+                    } @else {
+                      <span class="rc-hint-inline">—</span>
+                    }
+                  </td>
+                  <td class="col-actions">
+                    <a class="action-btn" [routerLink]="['/planning/detail', m.id]" [state]="missionBreadcrumbState()" pTooltip="Voir le planning" tooltipPosition="top">
+                      <mat-icon>open_in_new</mat-icon>
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      @if (missionsViewMode() === 'card') {
       <div class="missions-list">
         @for (m of team()!.recentMissions; track m.id) {
           <div class="mission-row">
@@ -370,13 +425,14 @@
             </div>
           </div>
         }
-        @if (team()!.recentMissions.length === 0) {
-          <div class="tab-empty">
-            <mat-icon>flag_circle</mat-icon>
-            <p>Aucune mission récente</p>
-          </div>
-        }
       </div>
+      }
+      @if (team()!.recentMissions.length === 0) {
+        <div class="tab-empty">
+          <mat-icon>flag_circle</mat-icon>
+          <p>Aucune mission récente</p>
+        </div>
+      }
     }
 
   </div><!-- /td-tab-body -->
