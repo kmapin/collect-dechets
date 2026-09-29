@@ -9,6 +9,7 @@ import { AuthService } from '../../../../services/auth.service';
 import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
 import { dashboardLabelForRole, dashboardRouteForRole } from '../../../../shared/notification-route.util';
 import { formatFrDate } from '../../../../shared/format.util';
+import { withBreadcrumbTrail } from '../../../../shared/breadcrumb-trail.util';
 
 type Bucket = 'a_venir' | 'en_cours' | 'terminee' | 'manquee';
 type StatusFilter = 'all' | Bucket;
@@ -105,7 +106,15 @@ export class ClientHistory implements OnInit {
 
   goToPlanning(planningId: string | undefined): void {
     if (!planningId) return;
-    this.router.navigate(['/planning/detail', planningId]);
+    const c = this.client();
+    const trail = [
+      { label: 'Clients', route: '/dashboard/agency', queryParams: { tab: 'clients' } },
+      {
+        label: c ? `${c.firstName} ${c.lastName}` : 'Historique des collectes',
+        route: `/dashboard/agency/clients/${this.clientId}/historique`,
+      },
+    ];
+    this.router.navigate(['/planning/detail', planningId], withBreadcrumbTrail(trail));
   }
 
   goBackToClients(): void {

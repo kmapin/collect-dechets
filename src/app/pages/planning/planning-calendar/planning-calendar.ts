@@ -22,6 +22,7 @@ import { PlanningTeamsTabs } from '../../../shared/planning-teams-tabs/planning-
 import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
+import { withBreadcrumbTrail } from '../../../shared/breadcrumb-trail.util';
 
 // ── Constants ─────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
@@ -204,7 +205,10 @@ export class PlanningCalendarComponent implements OnInit {
     const ev = this.selectedEvent();
     if (!ev) return;
     this.closePopup();
-    this.router.navigate(['/planning/detail', ev.id]);
+    this.router.navigate(['/planning/detail', ev.id], withBreadcrumbTrail([
+      { label: 'Planning', route: '/planning/dashboard' },
+      { label: 'Calendrier', route: '/planning/calendar' },
+    ]));
   }
 
   editEvent(): void {

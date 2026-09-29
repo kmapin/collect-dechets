@@ -55,6 +55,18 @@ export class TeamDetail implements OnInit, OnDestroy {
     { label: 'Équipes', route: '/teams/list' },
     { label: this.team()?.code ?? 'Détail équipe' },
   ]);
+
+  /** Chemin réel à transmettre au détail d'un planning ouvert depuis l'onglet
+   * "Missions" de cette équipe — voir shared/breadcrumb-trail.util.ts. */
+  missionBreadcrumbState(): { breadcrumbTrail: BreadcrumbItem[] } {
+    const t = this.team();
+    return {
+      breadcrumbTrail: [
+        { label: 'Équipes', route: '/teams/list' },
+        { label: t?.code ?? 'Détail équipe', route: t ? ['/teams/detail', t.id] : '/teams/list' },
+      ],
+    };
+  }
   activeTab   = signal<'members' | 'vehicle' | 'zones' | 'missions'>('members');
   formOpen    = signal(false);
   formSaving  = signal(false);

@@ -346,6 +346,7 @@
                   {{ missionStatusLabel(m.status) }}
                 </span>
                 <a class="mr-detail-link" [routerLink]="['/planning/detail', m.id]"
+                   [state]="missionBreadcrumbState()"
                    pTooltip="Voir le planning" tooltipPosition="top">
                   <mat-icon>open_in_new</mat-icon>
                 </a>

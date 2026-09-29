@@ -22,6 +22,7 @@ import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrum
 import { AuthService } from '../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
+import { readBreadcrumbTrail } from '../../../shared/breadcrumb-trail.util';
 interface Incident {
   id: string; severity: 'critical' | 'warning' | 'info';
   title: string; description: string; reporter: string;
@@ -89,9 +90,14 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   isActioning   = signal(false);
   planning      = signal<Planning | null>(null);
 
+  // Chemin réel emprunté pour arriver ici (ex: depuis l'historique d'un client),
+  // transporté via router state — voir shared/breadcrumb-trail.util.ts. Absent
+  // si on arrive directement (liste des plannings, URL, notification, ...).
+  private incomingTrail = readBreadcrumbTrail();
+
   breadcrumbItems = computed<BreadcrumbItem[]>(() => [
     { label: dashboardLabelForRole(this.auth.getCurrentUser()?.role), route: dashboardRouteForRole(this.auth.getCurrentUser()?.role), icon: 'home' },
-    { label: 'Planning', route: '/planning/dashboard' },
+    ...(this.incomingTrail ?? [{ label: 'Planning', route: '/planning/dashboard' }]),
     { label: this.planning()?.reference ?? 'Détails du planning' },
   ]);
 
