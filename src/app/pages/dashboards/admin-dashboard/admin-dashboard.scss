@@ -1178,6 +1178,57 @@ input.filter-select {
   border-color: var(--primary-color);
 }
 
+// ── Sélecteur collecteur avec recherche (remplace un <select> à liste longue) ──
+.wr-collector-filter {
+  position: relative;
+}
+.wr-collector-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.wr-collector-dropdown {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-height: 220px;
+  overflow-y: auto;
+
+  li {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:hover {
+      background: #f3f4f6;
+    }
+  }
+}
+.wr-collector-empty {
+  color: #94a3b8;
+  cursor: default !important;
+
+  &:hover {
+    background: none !important;
+  }
+}
+
 .agencies-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));

@@ -1587,10 +1587,30 @@
               [(ngModel)]="wasteRecordsZoneFilter"
               (change)="filterWasteRecords()"
               />
-            <select [(ngModel)]="wasteRecordsCollectorId" (change)="filterWasteRecords()" class="filter-select">
-              <option value="">Tous les collecteurs</option>
-              <option *ngFor="let c of collectorsAudits" [value]="c._id">{{ c.firstName }} {{ c.lastName }}</option>
-            </select>
+            <div class="wr-collector-filter">
+              <input
+                type="text"
+                class="filter-select"
+                placeholder="Tous les collecteurs"
+                [(ngModel)]="wasteRecordsCollectorSearch"
+                (input)="openWasteRecordsCollectorDropdown()"
+                (focus)="openWasteRecordsCollectorDropdown()"
+                />
+              <button
+                type="button"
+                *ngIf="wasteRecordsCollectorId"
+                class="wr-collector-clear"
+                (click)="selectWasteRecordsCollector(null)"
+                title="Retirer le filtre collecteur"
+                >×</button>
+              <ul class="wr-collector-dropdown" *ngIf="wasteRecordsCollectorDropdownOpen">
+                <li (click)="selectWasteRecordsCollector(null)">Tous les collecteurs</li>
+                <li *ngFor="let c of wasteRecordsCollectorSuggestions" (click)="selectWasteRecordsCollector(c)">
+                  {{ c.firstName }} {{ c.lastName }}
+                </li>
+                <li *ngIf="!wasteRecordsCollectorSuggestions.length" class="wr-collector-empty">Aucun collecteur trouvé</li>
+              </ul>
+            </div>
           </div>
 
           <app-loading-spinner *ngIf="isLoadingWasteRecords" message="Chargement des collectes..." size="medium"></app-loading-spinner>

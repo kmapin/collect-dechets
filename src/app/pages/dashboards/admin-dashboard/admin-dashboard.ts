@@ -391,6 +391,31 @@ export class AdminDashboard implements OnInit, OnDestroy {
   wasteRecordsCollectorId = '';
   readonly wasteRecordsWasteTypes = ['menagers', 'recyclables', 'verts', 'encombrants', 'speciaux'];
 
+  // Sélecteur collecteur avec recherche (remplace le <select> — même modèle que
+  // dashboard.component.html::fin-dashboard__client-filter, mais filtrage local
+  // puisque collectorsAudits est déjà entièrement chargé en mémoire).
+  wasteRecordsCollectorSearch = '';
+  wasteRecordsCollectorDropdownOpen = false;
+
+  get wasteRecordsCollectorSuggestions(): any[] {
+    const term = this.wasteRecordsCollectorSearch.trim().toLowerCase();
+    if (!term) return this.collectorsAudits;
+    return this.collectorsAudits.filter((c) =>
+      `${c.firstName ?? ''} ${c.lastName ?? ''}`.toLowerCase().includes(term)
+    );
+  }
+
+  openWasteRecordsCollectorDropdown(): void {
+    this.wasteRecordsCollectorDropdownOpen = true;
+  }
+
+  selectWasteRecordsCollector(c: any | null): void {
+    this.wasteRecordsCollectorId = c ? c._id : '';
+    this.wasteRecordsCollectorSearch = c ? `${c.firstName} ${c.lastName}` : '';
+    this.wasteRecordsCollectorDropdownOpen = false;
+    this.filterWasteRecords();
+  }
+
   planningSummaryId: string | null = null;
   viewWasteRecordPlanning(record: any): void {
     if (record?.planningId) this.planningSummaryId = record.planningId;
