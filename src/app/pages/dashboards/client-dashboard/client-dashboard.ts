@@ -76,6 +76,52 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   subscription: Subscription | null = null;
 
   historyFilter = "all";
+
+  // ── Switch cartes/tableau + pagination (Historique des collectes) — même modèle
+  // que planning-detail.ts (Collectes/Notifications) ─────────────────────────────
+  historyViewMode: 'card' | 'table' = 'table';
+  historyPage = 1;
+  historyItemsPerPage = 10;
+
+  get historyTotalItems(): number {
+    return (this.filteredHistories || []).length;
+  }
+  get historyTotalPages(): number {
+    return Math.max(1, Math.ceil(this.historyTotalItems / this.historyItemsPerPage));
+  }
+  get pagedHistories(): any[] {
+    const page = Math.min(this.historyPage, this.historyTotalPages);
+    const start = (page - 1) * this.historyItemsPerPage;
+    return (this.filteredHistories || []).slice(start, start + this.historyItemsPerPage);
+  }
+  changeHistoryItemsPerPage(taille: number): void {
+    this.historyItemsPerPage = taille;
+    this.historyPage = 1;
+  }
+  goToHistoryPage(page: number): void {
+    if (page >= 1 && page <= this.historyTotalPages) this.historyPage = page;
+  }
+  nextHistoryPage(): void { this.goToHistoryPage(this.historyPage + 1); }
+  previousHistoryPage(): void { this.goToHistoryPage(this.historyPage - 1); }
+  getHistoryPaginationPages(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+    const total = this.historyTotalPages;
+    let start = Math.max(1, this.historyPage - half);
+    const end = Math.min(total, start + maxPagesToShow - 1);
+    if (end - start + 1 < maxPagesToShow) start = Math.max(1, end - maxPagesToShow + 1);
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  }
+  getHistoryEndItemNumber(): number {
+    return Math.min(this.historyPage * this.historyItemsPerPage, this.historyTotalItems);
+  }
+
+  // ── Switch cartes/tableau (Planning de la semaine) — une seule semaine, pas de
+  // pagination (même choix que planning-detail.ts pour la section Équipe) ────────
+  weeklyViewMode: 'card' | 'table' = 'table';
+
   showReportModal = false;
   showPaymentModal = false;
 
@@ -581,6 +627,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         );
         console.log("Planning history ==> ", this.collectionHistory);
         this.filteredHistories = [...this.collectionHistory];
+        this.historyPage = 1;
         console.log("Filtered histories ==> ", this.filteredHistories);
       },
       error: (error: any) => {

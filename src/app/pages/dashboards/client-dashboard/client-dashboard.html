@@ -188,6 +188,14 @@
                     <i class="material-icons">schedule</i>
                     Planning de la semaine
                   </h2>
+                  <div class="view-mode-toggle">
+                    <button type="button" class="view-mode-btn" [class.active]="weeklyViewMode === 'card'" (click)="weeklyViewMode = 'card'" title="Vue cartes">
+                      <i class="material-icons">grid_view</i><span>Cartes</span>
+                    </button>
+                    <button type="button" class="view-mode-btn" [class.active]="weeklyViewMode === 'table'" (click)="weeklyViewMode = 'table'" title="Vue tableau">
+                      <i class="material-icons">table_rows</i><span>Tableau</span>
+                    </button>
+                  </div>
                   <button
                     class="btn btn-secondary btn-small"
                     (click)="refreshCollections()"
@@ -204,7 +212,49 @@
                   </button>
                 </div>
 
-                <div class="collections-list">
+                @if (weeklyViewMode === 'table' && weeklySchedule.length) {
+                  <div class="employees-table-wrapper">
+                    <table class="employees-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Type</th>
+                          <th>Heure</th>
+                          <th>Statut</th>
+                          <th class="col-actions">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (collection of weeklySchedule; track collection) {
+                          <tr>
+                            <td>{{ collection.date | date : "dd/MM/yyyy" }}</td>
+                            <td>Collecte standard</td>
+                            <td>{{ collection?.code?.startTime ? collection?.code?.startTime + " - " : "" }}{{ collection?.code?.endTime ? collection?.code?.endTime : "" }}</td>
+                            <td>
+                              <span class="status-badge" [class]="'status-scheduled'">
+                                {{ getStatusText(collection.status) }}
+                              </span>
+                            </td>
+                            <td class="col-actions">
+                              @if (collection.status === 'in_progress') {
+                                <button class="action-btn" (click)="trackCollection(collection._id)" title="Suivre">
+                                  <i class="material-icons">location_on</i>
+                                </button>
+                              }
+                              @if (collection.status === 'Scheduled' || collection.status === 'In_progress') {
+                                <button class="action-btn" (click)="reportIssue(collection._id)" title="Signaler">
+                                  <i class="material-icons">report</i>
+                                </button>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+
+                <div class="collections-list" *ngIf="weeklyViewMode === 'card'">
                   @for (collection of weeklySchedule; track collection) {
                     <div
                       class="collection-item"
@@ -251,6 +301,7 @@
                     </div>
                   </div>
                 }
+                </div>
 
                 @if (weeklySchedule.length === 0) {
                   <div class="empty-state">
@@ -259,7 +310,6 @@
                     <p>Vos prochaines collectes de la semaine apparaîtront ici</p>
                   </div>
                 }
-              </div>
             </section>
 
             <!-- Historique des collectes -->
@@ -269,10 +319,69 @@
                   <i class="material-icons">history</i>
                   Historique des collectes
                 </h2>
+                <div class="view-mode-toggle">
+                  <button type="button" class="view-mode-btn" [class.active]="historyViewMode === 'card'" (click)="historyViewMode = 'card'" title="Vue cartes">
+                    <i class="material-icons">grid_view</i><span>Cartes</span>
+                  </button>
+                  <button type="button" class="view-mode-btn" [class.active]="historyViewMode === 'table'" (click)="historyViewMode = 'table'" title="Vue tableau">
+                    <i class="material-icons">table_rows</i><span>Tableau</span>
+                  </button>
+                </div>
             </div>
 
-            <div class="history-list">
-              @for (collection of filteredHistories; track collection) {
+            @if (historyViewMode === 'table' && pagedHistories.length) {
+              <div class="employees-table-wrapper">
+                <table class="employees-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Prévue le</th>
+                      <th>Collectée le</th>
+                      <th>Statut</th>
+                      <th class="col-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (collection of pagedHistories; track collection) {
+                      <tr>
+                        <td>{{ getWasteTypeName(collection.wasteTypes) }}</td>
+                        <td>{{ collection.scheduledDate | date : "dd/MM/yyyy HH:mm" }}</td>
+                        <td>{{ collection.collectedDate ? (collection.collectedDate | date : "dd/MM/yyyy HH:mm") : '—' }}</td>
+                        <td>
+                          <span class="status-badge" [class]="'status-'+collection.status.toLowerCase()">
+                            {{ getStatusText(collection.status) }}
+                          </span>
+                        </td>
+                        <td class="col-actions">
+                          @if (collection.status.toLowerCase() === 'completed') {
+                            @if (collection.isRated) {
+                              <div class="stars" title="Votre note">
+                                @for (star of getStars(collection.rating || 0); track star) {
+                                  <i class="material-icons star">star</i>
+                                }
+                              </div>
+                            } @else {
+                              <button class="action-btn" (click)="rateCollection(collection.id)" title="Noter">
+                                <i class="material-icons">star_rate</i>
+                              </button>
+                            }
+                          } @else if (collection.status.toLowerCase() === 'missed') {
+                            <button class="action-btn" (click)="reportIssue(collection.id)" title="Signaler">
+                              <i class="material-icons">report</i>
+                            </button>
+                          } @else {
+                            <span class="rc-hint-inline">—</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            <div class="history-list" *ngIf="historyViewMode === 'card'">
+              @for (collection of pagedHistories; track collection) {
                 <div
                   class="history-item"
                   >
@@ -341,15 +450,49 @@
                     </div>
                   </div>
                 }
-
-                @if (filteredHistories?.length === 0) {
-                  <div class="empty-state">
-                    <i class="material-icons">history</i>
-                    <h3>Aucun historique</h3>
-                    <p>Vos collectes passées apparaîtront ici</p>
-                  </div>
-                }
               </div>
+
+              @if (filteredHistories?.length === 0) {
+                <div class="empty-state">
+                  <i class="material-icons">history</i>
+                  <h3>Aucun historique</h3>
+                  <p>Vos collectes passées apparaîtront ici</p>
+                </div>
+              }
+
+              @if (historyTotalItems > 0) {
+                <div class="pagination-section">
+                  <div class="pagination-left">
+                    <span class="pagination-details">
+                      {{ (historyPage - 1) * historyItemsPerPage + 1 }}–{{ getHistoryEndItemNumber() }} sur
+                      <strong>{{ historyTotalItems }}</strong> collecte(s)
+                    </span>
+                    <div class="per-page-group">
+                      <label class="per-page-label">Afficher</label>
+                      <select class="per-page-select" (change)="changeHistoryItemsPerPage(+$any($event.target).value)">
+                        <option [value]="5" [selected]="historyItemsPerPage === 5">5</option>
+                        <option [value]="10" [selected]="historyItemsPerPage === 10">10</option>
+                        <option [value]="20" [selected]="historyItemsPerPage === 20">20</option>
+                        <option [value]="50" [selected]="historyItemsPerPage === 50">50</option>
+                      </select>
+                      <span class="per-page-label">par page</span>
+                    </div>
+                  </div>
+                  @if (historyTotalPages > 1) {
+                    <div class="pagination-controls">
+                      <button class="pagination-btn" [disabled]="historyPage === 1" (click)="goToHistoryPage(1)" title="Première page"><i class="material-icons">first_page</i></button>
+                      <button class="pagination-btn" [disabled]="historyPage === 1" (click)="previousHistoryPage()" title="Page précédente"><i class="material-icons">chevron_left</i></button>
+                      <div class="pagination-numbers">
+                        @for (page of getHistoryPaginationPages(); track page) {
+                          <button class="pagination-btn page-number" [class.active]="page === historyPage" (click)="goToHistoryPage(page)">{{ page }}</button>
+                        }
+                      </div>
+                      <button class="pagination-btn" [disabled]="historyPage === historyTotalPages" (click)="nextHistoryPage()" title="Page suivante"><i class="material-icons">chevron_right</i></button>
+                      <button class="pagination-btn" [disabled]="historyPage === historyTotalPages" (click)="goToHistoryPage(historyTotalPages)" title="Dernière page"><i class="material-icons">last_page</i></button>
+                    </div>
+                  }
+                </div>
+              }
             </section>
 
             <!-- Messages -->
