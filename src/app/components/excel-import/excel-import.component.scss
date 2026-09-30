@@ -60,6 +60,8 @@
   flex: 1;
   overflow-y: auto;
   padding: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .drawer-footer {
@@ -162,6 +164,7 @@
   padding: 10px 14px;
   border-radius: 8px;
   font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
 .ei-error-banner {
@@ -187,6 +190,7 @@
   grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 10px;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .ei-summary-item {
@@ -221,10 +225,11 @@
 .ei-table-wrapper {
   width: 100%;
   overflow-x: auto;
+  overflow-y: auto;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  max-height: 320px;
-  overflow-y: auto;
+  flex: 1;
+  min-height: 220px;
 }
 
 .ei-table {
@@ -301,6 +306,7 @@
   border-radius: 10px;
   font-size: 0.85rem;
   color: #334155;
+  flex-shrink: 0;
 
   p { margin: 0; }
 }
@@ -313,6 +319,7 @@
   align-items: center;
   text-align: center;
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .ei-result-icon {
@@ -331,6 +338,7 @@
   margin-top: 12px;
   font-size: 0.8rem;
   color: #64748b;
+  flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
