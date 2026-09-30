@@ -1,6 +1,6 @@
 import { ClientStatut, FactureStatut, PaiementAgentStatus } from '../../models';
 import { StatusBadgeVariant } from './status-badge.component';
-import { SourceEligibilite } from '../../data-access/contracts/facture-data.service';
+import { RaisonEligibilite, SourceEligibilite } from '../../data-access/contracts/facture-data.service';
 
 export interface BadgeInfo {
   label: string;
@@ -20,11 +20,14 @@ const LABEL_SOURCE: Record<SourceEligibilite, string> = {
 };
 
 export function badgeSituationPaiement(
-  { aJour, moisRetard, source }: { aJour: boolean; moisRetard: number; source: SourceEligibilite },
+  { aJour, moisRetard, source, reason }: { aJour: boolean; moisRetard: number; source: SourceEligibilite; reason?: RaisonEligibilite },
 ): BadgeInfo {
   if (aJour) return { label: `À jour (${LABEL_SOURCE[source]})`, icon: 'check_circle', variant: 'success' };
   if (moisRetard === 1) return { label: '1 mois de retard', icon: 'warning', variant: 'warning' };
   if (moisRetard > 1) return { label: `${moisRetard} mois de retard`, icon: 'error', variant: 'danger' };
+  // Distingue un contrat qui a existé (et a expiré) d'un client qui n'en a jamais eu —
+  // les deux tombaient auparavant dans le même "Aucun abonnement/contrat actif" générique.
+  if (reason === 'CONTRACT_EXPIRED') return { label: 'Contrat expiré', icon: 'schedule', variant: 'warning' };
   return { label: 'Aucun abonnement/contrat actif', icon: 'block', variant: 'neutral' };
 }
 

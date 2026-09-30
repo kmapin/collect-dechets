@@ -14,11 +14,17 @@ export interface SuiviMensuelFilter {
 // seule source d'éligibilité (voir services/eligibility.service.js côté backend).
 export type SourceEligibilite = 'CONTRACT' | 'NONE';
 
+// ELIGIBILITY_REASON (services/eligibility.service.js) — distingue un contrat expiré
+// d'un client qui n'en a jamais eu, plutôt qu'un "Aucun abonnement/contrat actif"
+// générique pour les deux cas.
+export type RaisonEligibilite = 'ACTIVE_CONTRACT' | 'CONTRACT_EXPIRED' | 'NO_ACTIVE_CONTRACT';
+
 export interface SituationPaiementClient {
   idClient: string;
   moisRetard: number; // RG4 — cumulé jusqu'à la dernière facture générée
   aJour: boolean;
   source: SourceEligibilite;
+  reason?: RaisonEligibilite;
 }
 
 export abstract class FactureDataService {

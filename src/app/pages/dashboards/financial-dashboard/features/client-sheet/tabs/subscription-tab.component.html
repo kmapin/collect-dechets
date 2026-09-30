@@ -3,7 +3,7 @@
 
   <ng-container *ngIf="!erreur()">
     <section class="subscription-tab__section">
-      <h3>Abonnements &amp; Contrats</h3>
+      <h3>Abonnements(Contrats)</h3>
       <table class="subscription-tab__table">
         <thead>
           <tr>
@@ -30,8 +30,17 @@
                 <app-status-badge [label]="badgeContrat(c.status).label" [icon]="badgeContrat(c.status).icon" [variant]="badgeContrat(c.status).variant" />
               </td>
               <td data-label="Document">
-                <button *ngIf="c.documentUrl" type="button" class="subscription-tab__link-btn" (click)="voirDocument(c)">Voir le PDF</button>
-                <span *ngIf="!c.documentUrl">—</span>
+                <button *ngIf="c.documentPublicId" type="button" class="subscription-tab__link-btn" (click)="voirDocument(c)">Voir le PDF</button>
+                <button
+                  *ngIf="!c.documentPublicId && peutGerer()"
+                  type="button"
+                  class="subscription-tab__link-btn"
+                  [disabled]="contratMutationEnCours() === c._id"
+                  (click)="onGenererDocument(c)"
+                >
+                  {{ contratMutationEnCours() === c._id ? 'Génération…' : 'Générer' }}
+                </button>
+                <span *ngIf="!c.documentPublicId && !peutGerer()">—</span>
               </td>
             </tr>
             <tr *ngIf="!contrats().length">
