@@ -36,6 +36,13 @@
               <span class="psd-value">{{ typeLabels[p.type] ?? p.type }}</span>
             </div>
           </div>
+          <div class="psd-item" *ngIf="p.clientName">
+            <i class="material-icons">person</i>
+            <div>
+              <span class="psd-label">Client</span>
+              <span class="psd-value">{{ p.clientName }}</span>
+            </div>
+          </div>
           <div class="psd-item">
             <i class="material-icons">place</i>
             <div>

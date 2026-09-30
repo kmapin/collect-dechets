@@ -1601,7 +1601,6 @@
                 <tr>
                   <th>Agence</th>
                   <th>Zone</th>
-                  <th>Collecteur</th>
                   <th>Type de déchet</th>
                   <th>Statut</th>
                   <th>Date</th>
@@ -1612,7 +1611,6 @@
                 <tr *ngFor="let record of wasteRecords">
                   <td>{{ record.agencyName || '—' }}</td>
                   <td>{{ record.zoneName || '—' }}</td>
-                  <td>{{ getWasteRecordCollectorName(record.collectorId) }}</td>
                   <td>{{ record.wasteType }}</td>
                   <td>
                     <span class="status-badge" [class]="'cstatus-' + (record.status || '').toLowerCase()">

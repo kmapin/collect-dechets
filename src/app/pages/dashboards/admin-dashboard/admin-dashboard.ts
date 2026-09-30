@@ -427,12 +427,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.loadWasteRecords(1);
   }
 
-  getWasteRecordCollectorName(collectorId: string | null): string {
-    if (!collectorId) return '—';
-    const collector = this.collectorsAudits.find((c: any) => c._id === collectorId);
-    return collector ? `${collector.firstName} ${collector.lastName}` : '—';
-  }
-
   /** Libellé FR d'un statut Collecte (models/Collecte.js, back) — affiché brut jusqu'ici. */
   getWasteRecordStatusText(status?: string): string {
     const statusTexts: Record<string, string> = {
