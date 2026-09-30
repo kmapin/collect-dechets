@@ -12,10 +12,12 @@ import { MobileMoneyFormComponent } from '../payment/mobile-money-form/mobile-mo
 import { EligibilityService, EligibilityResult, isContratCurrentlyActive } from '../../services/eligibility.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { NotificationService } from '../../services/notification.service';
+import { Breadcrumb, BreadcrumbItem } from '../../shared/breadcrumb/breadcrumb';
+import { dashboardLabelForRole, dashboardRouteForRole } from '../../shared/notification-route.util';
 
 @Component({
   selector: 'app-contrat',
-  imports: [CommonModule, MobileMoneyFormComponent],
+  imports: [CommonModule, MobileMoneyFormComponent, Breadcrumb],
   templateUrl: './contrat.html',
   styleUrl: './contrat.css',
 })
@@ -32,6 +34,14 @@ export class ContratPage implements OnInit, OnDestroy {
   eligibility: EligibilityResult | null = null;
   contratMutationEnCours: string | null = null;
   private newContratSub?: RxSubscription;
+
+  get breadcrumbItems(): BreadcrumbItem[] {
+    const role = this.currentUser?.role;
+    return [
+      { label: dashboardLabelForRole(role), route: dashboardRouteForRole(role), icon: 'home' },
+      { label: 'Mes Contrats' },
+    ];
+  }
 
   constructor(
     private authService: AuthService,
