@@ -76,6 +76,84 @@
     }
   }
 
+  &__periode-perso {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  &__periode-input {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.82rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    color: #1e293b;
+
+    &:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 1px;
+    }
+  }
+
+  &__periode-sep {
+    color: #94a3b8;
+    font-size: 0.85rem;
+  }
+
+  &__periode-apply {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #374151;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+
+    &:hover {
+      background: #e5e7eb;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+    }
+  }
+
+  &__periode-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+
+    i {
+      font-size: 1.1rem;
+    }
+
+    &:hover {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+    }
+  }
+
+  &__periode-error {
+    margin: -0.5rem 0 0.75rem;
+    font-size: 0.8rem;
+    color: #dc2626;
+  }
+
   &__export-btn {
     display: inline-flex;
     align-items: center;

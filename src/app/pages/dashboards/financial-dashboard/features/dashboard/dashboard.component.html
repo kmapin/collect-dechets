@@ -94,16 +94,45 @@
   </ng-container>
 
   <div class="fin-dashboard__stats-header">
-    <h2>Statistiques ({{ nombreMoisGraphiques() }} derniers mois)</h2>
+    <h2>Statistiques ({{ labelPeriodeGraphiques() }})</h2>
     <div class="fin-dashboard__fenetre-group">
       <button
         *ngFor="let n of optionsFenetre"
         type="button"
         class="fin-dashboard__fenetre-btn"
-        [class.fin-dashboard__fenetre-btn--active]="nombreMoisGraphiques() === n"
+        [class.fin-dashboard__fenetre-btn--active]="periodeMode() === 'fenetre' && nombreMoisGraphiques() === n"
         (click)="setFenetre(n)"
       >
         {{ n }} mois
+      </button>
+    </div>
+    <div class="fin-dashboard__periode-perso">
+      <input
+        type="month"
+        class="fin-dashboard__periode-input"
+        [ngModel]="customDebutMois()"
+        (ngModelChange)="customDebutMois.set($event)"
+        aria-label="Mois de début"
+      />
+      <span class="fin-dashboard__periode-sep">→</span>
+      <input
+        type="month"
+        class="fin-dashboard__periode-input"
+        [ngModel]="customFinMois()"
+        (ngModelChange)="customFinMois.set($event)"
+        aria-label="Mois de fin"
+      />
+      <button type="button" class="fin-dashboard__periode-apply" (click)="appliquerPeriodePersonnalisee()">
+        Appliquer
+      </button>
+      <button
+        type="button"
+        class="fin-dashboard__periode-reset"
+        *ngIf="periodeMode() === 'personnalisee' || customDebutMois() || customFinMois()"
+        (click)="reinitialiserPeriodePersonnalisee()"
+        title="Réinitialiser la période personnalisée"
+      >
+        <i class="material-icons" aria-hidden="true">refresh</i>
       </button>
     </div>
     <button type="button" class="fin-dashboard__export-btn" (click)="exporterCsv()">
@@ -111,6 +140,7 @@
       Exporter (CSV)
     </button>
   </div>
+  <p class="fin-dashboard__periode-error" *ngIf="erreurPeriodePersonnalisee() as message">{{ message }}</p>
 
   <app-error-state *ngIf="erreurGraphiques() as message" [message]="message" (retry)="reessayerGraphiques()" />
 

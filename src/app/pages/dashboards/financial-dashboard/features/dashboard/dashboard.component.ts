@@ -9,7 +9,8 @@ import { CLIENT_DATA_SERVICE } from '../../data-access/tokens/client-data.token'
 import { Client } from '../../models/client.model';
 import { FinanceStatsSeries, MontantTotalFilter, RepartitionModePaiement } from '../../data-access/contracts/finance-data.service';
 import { formatMontantXof } from '../../utils/money.util';
-import { periodeCourante, plageDerniersMois } from '../../utils/periode.util';
+import { periodeCourante, plageDerniersMois, labelPeriodeFr } from '../../utils/periode.util';
+import { Periode } from '../../models';
 import { KpiCardComponent } from '../../shared/kpi-card/kpi-card.component';
 import { PeriodSelectorComponent, PeriodSelectorMode } from '../../shared/period-selector/period-selector.component';
 import { FinanceChartComponent, FinanceChartTableRow } from '../../shared/chart/finance-chart.component';
@@ -82,13 +83,68 @@ export class DashboardComponent {
   readonly nombreMoisGraphiques = signal(6);
   readonly optionsFenetre = [6, 12, 24];
 
+  // Période personnalisée (en plus des fenêtres fixes 6/12/24 mois) : deux <input
+  // type="month"> (format natif "AAAA-MM"), appliquée seulement au clic sur "Appliquer"
+  // pour ne pas relancer les requêtes à chaque frappe.
+  readonly periodeMode = signal<'fenetre' | 'personnalisee'>('fenetre');
+  readonly customDebutMois = signal('');
+  readonly customFinMois = signal('');
+  readonly erreurPeriodePersonnalisee = signal<string | null>(null);
+  private periodePersonnalisee: { debut: Periode; fin: Periode } | null = null;
+
+  readonly labelPeriodeGraphiques = computed(() => {
+    if (this.periodeMode() === 'personnalisee' && this.periodePersonnalisee) {
+      return `du ${labelPeriodeFr(this.periodePersonnalisee.debut)} au ${labelPeriodeFr(this.periodePersonnalisee.fin)}`;
+    }
+    return `${this.nombreMoisGraphiques()} derniers mois`;
+  });
+
   onFenetreChange(): void {
     this.chargerGraphiques();
   }
 
   setFenetre(n: number): void {
     this.nombreMoisGraphiques.set(n);
+    this.periodeMode.set('fenetre');
+    this.periodePersonnalisee = null;
+    this.erreurPeriodePersonnalisee.set(null);
     this.onFenetreChange();
+  }
+
+  private parseMoisInput(value: string): Periode | null {
+    const [anneeStr, moisStr] = (value || '').split('-');
+    const annee = Number(anneeStr);
+    const mois = Number(moisStr);
+    if (!annee || !mois || mois < 1 || mois > 12) return null;
+    return { annee, mois };
+  }
+
+  appliquerPeriodePersonnalisee(): void {
+    const debut = this.parseMoisInput(this.customDebutMois());
+    const fin = this.parseMoisInput(this.customFinMois());
+    if (!debut || !fin) {
+      this.erreurPeriodePersonnalisee.set('Choisissez un mois de début et un mois de fin.');
+      return;
+    }
+    if (debut.annee * 12 + debut.mois > fin.annee * 12 + fin.mois) {
+      this.erreurPeriodePersonnalisee.set('Le mois de début doit précéder le mois de fin.');
+      return;
+    }
+    this.erreurPeriodePersonnalisee.set(null);
+    this.periodePersonnalisee = { debut, fin };
+    this.periodeMode.set('personnalisee');
+    this.chargerGraphiques();
+  }
+
+  reinitialiserPeriodePersonnalisee(): void {
+    this.customDebutMois.set('');
+    this.customFinMois.set('');
+    this.erreurPeriodePersonnalisee.set(null);
+    if (this.periodeMode() === 'personnalisee') {
+      this.periodePersonnalisee = null;
+      this.periodeMode.set('fenetre');
+      this.chargerGraphiques();
+    }
   }
 
   // KPI 
@@ -157,6 +213,12 @@ export class DashboardComponent {
     this.chargerGraphiques();
   }
 
+  private plageActive(): { debut: Periode; fin: Periode } {
+    return this.periodeMode() === 'personnalisee' && this.periodePersonnalisee
+      ? this.periodePersonnalisee
+      : plageDerniersMois(this.nombreMoisGraphiques());
+  }
+
   // Étend l'export au-delà des 6 mois fixes + applique les mêmes filtres zone/client/
   // type de tarif que les KPI affichés à l'écran.
   exporterCsv(): void {
@@ -176,7 +238,7 @@ export class DashboardComponent {
         { key: 'facturesPayees', label: 'Factures payées' },
         { key: 'facturesImpayees', label: 'Factures impayées' },
       ],
-      `stats-financieres-${this.nombreMoisGraphiques()}mois-${periodeCourante().annee}-${periodeCourante().mois}`,
+      `stats-financieres-${this.periodeMode() === 'personnalisee' ? 'periode' : this.nombreMoisGraphiques() + 'mois'}-${periodeCourante().annee}-${periodeCourante().mois}`,
     );
   }
 
@@ -200,7 +262,7 @@ export class DashboardComponent {
   private chargerGraphiques(): void {
     this.chargementGraphiques.set(true);
     this.erreurGraphiques.set(null);
-    const plage = plageDerniersMois(this.nombreMoisGraphiques());
+    const plage = this.plageActive();
     const filtres = this.filtresActifs;
 
     this.financeData.getStats(plage, filtres).subscribe({
