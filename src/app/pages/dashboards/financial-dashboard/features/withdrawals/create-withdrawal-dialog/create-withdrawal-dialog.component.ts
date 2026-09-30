@@ -6,10 +6,10 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
-import { FeeOptionRetrait, OperateurRetrait } from '../../data-access/contracts/finance-data.service';
-import { formatMontantXof } from '../../utils/money.util';
-import { FeeConfigService } from '../../../../../services/fee-config.service';
+import { FINANCE_DATA_SERVICE } from '../../../data-access/tokens/finance-data.token';
+import { FeeOptionRetrait, OperateurRetrait } from '../../../data-access/contracts/finance-data.service';
+import { formatMontantXof } from '../../../utils/money.util';
+import { FeeConfigService } from '../../../../../../services/fee-config.service';
 
 type Etape = 'formulaire' | 'confirmation';
 

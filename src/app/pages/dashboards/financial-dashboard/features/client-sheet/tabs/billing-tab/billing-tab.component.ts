@@ -1,13 +1,13 @@
 import { Component, inject, Input, OnChanges, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Facture } from '../../../models';
-import { FACTURE_DATA_SERVICE } from '../../../data-access/tokens/facture-data.token';
-import { formatMontantXof } from '../../../utils/money.util';
-import { formatFrDate } from '../../../../../../shared/format.util';
-import { StatusBadgeComponent } from '../../../shared/status-badge/status-badge.component';
-import { badgeFacture } from '../../../shared/status-badge/status-badge.util';
-import { ErrorStateComponent } from '../../../shared/states/error-state.component';
+import { Facture } from '../../../../models';
+import { FACTURE_DATA_SERVICE } from '../../../../data-access/tokens/facture-data.token';
+import { formatMontantXof } from '../../../../utils/money.util';
+import { formatFrDate } from '../../../../../../../shared/format.util';
+import { StatusBadgeComponent } from '../../../../shared/status-badge/status-badge.component';
+import { badgeFacture } from '../../../../shared/status-badge/status-badge.util';
+import { ErrorStateComponent } from '../../../../shared/states/error-state/error-state.component';
 
 // Facturation
 @Component({

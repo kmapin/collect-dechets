@@ -9,8 +9,8 @@ import { SituationPaiementClient } from '../../data-access/contracts/facture-dat
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeSituationPaiement, badgeStatutClient } from '../../shared/status-badge/status-badge.util';
-import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
-import { ErrorStateComponent } from '../../shared/states/error-state.component';
+import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
+import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
 import { ClientListFilters, ClientListStatutFiltre, CLIENT_LIST_FILTERS_INITIAL } from './client-list.filters';
 
 const TAILLE_PAGE_DEFAUT = 10;

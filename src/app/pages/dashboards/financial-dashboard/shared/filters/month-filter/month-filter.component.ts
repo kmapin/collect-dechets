@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Periode } from '../../models';
+import { Periode } from '../../../models';
 
 // Sélecteur de mois natif (<input type="month">) — F4 : filtre des retraits par période.
 @Component({

@@ -2,16 +2,16 @@ import { Component, computed, inject, Input, OnChanges, signal } from '@angular/
 import { CommonModule } from '@angular/common';
 import { catchError, finalize, of } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ContratService } from '../../../../../../services/contrat.service';
-import { Contrat } from '../../../../../../models/contrat.model';
-import { formatMontantXof } from '../../../utils/money.util';
-import { formatFrDate } from '../../../../../../shared/format.util';
-import { StatusBadgeComponent } from '../../../shared/status-badge/status-badge.component';
-import { badgeContrat } from '../../../shared/status-badge/status-badge.util';
-import { ErrorStateComponent } from '../../../shared/states/error-state.component';
-import { NotificationService } from '../../../../../../services/notification.service';
-import { SESSION_SERVICE } from '../../../data-access/tokens/session.token';
-import { aLaPermission } from '../../../models';
+import { ContratService } from '../../../../../../../services/contrat.service';
+import { Contrat } from '../../../../../../../models/contrat.model';
+import { formatMontantXof } from '../../../../utils/money.util';
+import { formatFrDate } from '../../../../../../../shared/format.util';
+import { StatusBadgeComponent } from '../../../../shared/status-badge/status-badge.component';
+import { badgeContrat } from '../../../../shared/status-badge/status-badge.util';
+import { ErrorStateComponent } from '../../../../shared/states/error-state/error-state.component';
+import { NotificationService } from '../../../../../../../services/notification.service';
+import { SESSION_SERVICE } from '../../../../data-access/tokens/session.token';
+import { aLaPermission } from '../../../../models';
 
 // Fusion Subscription -> Contrat : "Abonnements" et "Contrats" étaient deux sections
 // séparées (deux appels API distincts vers deux entités) ; Contrat est désormais la

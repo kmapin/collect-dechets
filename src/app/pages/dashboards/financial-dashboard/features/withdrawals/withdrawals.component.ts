@@ -10,10 +10,10 @@ import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDate } from '../../../../../shared/format.util';
 import { DataTableColumn, DataTableComponent } from '../../shared/data-table/data-table.component';
-import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
-import { MonthFilterComponent } from '../../shared/filters/month-filter.component';
-import { ErrorStateComponent } from '../../shared/states/error-state.component';
-import { CreateWithdrawalDialogComponent } from './create-withdrawal-dialog.component';
+import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
+import { MonthFilterComponent } from '../../shared/filters/month-filter/month-filter.component';
+import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
+import { CreateWithdrawalDialogComponent } from './create-withdrawal-dialog/create-withdrawal-dialog.component';
 
 const TAILLE_PAGE = 10;
 

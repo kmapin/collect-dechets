@@ -8,7 +8,7 @@ import { periodeCourante, bornesPeriode } from '../../utils/periode.util';
 import { MonthSelectorComponent } from '../../shared/month-selector/month-selector.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeSuiviMensuel } from '../../shared/status-badge/status-badge.util';
-import { ErrorStateComponent } from '../../shared/states/error-state.component';
+import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
 
 const TAILLE_PAGE_MAX = 200; // pas de pagination sur cet écran (F12) : ~48 clients au plus
 

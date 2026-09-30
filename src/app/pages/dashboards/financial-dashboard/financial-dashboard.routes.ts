@@ -30,13 +30,13 @@ export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
       { provide: SESSION_SERVICE, useClass: SessionHttpService },
       { provide: EXPORT_SERVICE, useClass: ExportClientService },
     ],
-    loadComponent: () => import('./features/shell/finance-layout').then(m => m.FinanceLayout),
+    loadComponent: () => import('./features/shell/finance-layout/finance-layout').then(m => m.FinanceLayout),
     children: [
       { path: '', redirectTo: 'statistiques', pathMatch: 'full' },
       {
         path: 'acces-refuse',
         loadComponent: () =>
-          import('./features/shell/finance-access-denied').then(m => m.FinanceAccessDenied),
+          import('./features/shell/finance-access-denied/finance-access-denied').then(m => m.FinanceAccessDenied),
         title: 'Accès restreint',
       },
       {

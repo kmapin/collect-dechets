@@ -1,8 +1,8 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Client } from '../../../models';
-import { StatusBadgeComponent } from '../../../shared/status-badge/status-badge.component';
-import { badgeStatutClient } from '../../../shared/status-badge/status-badge.util';
+import { Client } from '../../../../models';
+import { StatusBadgeComponent } from '../../../../shared/status-badge/status-badge.component';
+import { badgeStatutClient } from '../../../../shared/status-badge/status-badge.util';
 
 // Informations générales du client, lecture seule.
 @Component({

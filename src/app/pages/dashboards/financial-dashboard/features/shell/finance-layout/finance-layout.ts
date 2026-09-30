@@ -2,12 +2,12 @@ import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
-import { FINANCE_NAV_ITEMS } from './finance-nav.config';
-import { aLaPermission } from '../../models';
-import { Breadcrumb, BreadcrumbItem } from '../../../../../shared/breadcrumb/breadcrumb';
-import { AuthService } from '../../../../../services/auth.service';
-import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../../shared/notification-route.util';
+import { SESSION_SERVICE } from '../../../data-access/tokens/session.token';
+import { FINANCE_NAV_ITEMS } from '../finance-nav.config';
+import { aLaPermission } from '../../../models';
+import { Breadcrumb, BreadcrumbItem } from '../../../../../../shared/breadcrumb/breadcrumb';
+import { AuthService } from '../../../../../../services/auth.service';
+import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../../../shared/notification-route.util';
 
 
 @Component({

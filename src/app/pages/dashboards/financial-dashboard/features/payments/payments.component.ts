@@ -6,8 +6,8 @@ import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDate } from '../../../../../shared/format.util';
 import { DataTableColumn, DataTableComponent } from '../../shared/data-table/data-table.component';
-import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
-import { ErrorStateComponent } from '../../shared/states/error-state.component';
+import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
+import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
 
 const TAILLE_PAGE = 10;
 const TAILLE_PAGE_EXPORT = 1000;

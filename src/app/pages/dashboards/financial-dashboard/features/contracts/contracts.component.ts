@@ -23,7 +23,7 @@ import { ConfirmDialogService } from '../../../../../services/confirm-dialog.ser
 import { LoadingSpinnerComponent } from '../../../../../components/loading-spinner/loading-spinner.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeContrat } from '../../shared/status-badge/status-badge.util';
-import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
+import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
 
 @Component({
   selector: 'app-contracts',

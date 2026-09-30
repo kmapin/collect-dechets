@@ -9,10 +9,10 @@ import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../utils/money.util';
 import { bornesPeriode } from '../../utils/periode.util';
 import { formatFrDate } from '../../../../../shared/format.util';
-import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
-import { MonthFilterComponent } from '../../shared/filters/month-filter.component';
-import { ErrorStateComponent } from '../../shared/states/error-state.component';
-import { EmptyStateComponent } from '../../shared/states/empty-state.component';
+import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
+import { MonthFilterComponent } from '../../shared/filters/month-filter/month-filter.component';
+import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
+import { EmptyStateComponent } from '../../shared/states/empty-state/empty-state.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeFacture } from '../../shared/status-badge/status-badge.util';
 

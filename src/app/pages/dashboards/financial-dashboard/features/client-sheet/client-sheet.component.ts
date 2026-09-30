@@ -6,10 +6,10 @@ import { map } from 'rxjs';
 import { Client } from '../../models';
 import { CLIENT_DATA_SERVICE } from '../../data-access/tokens/client-data.token';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
-import { InfoTabComponent } from './tabs/info-tab.component';
-import { BillingTabComponent } from './tabs/billing-tab.component';
-import { SubscriptionTabComponent } from './tabs/subscription-tab.component';
-import { ErrorStateComponent } from '../../shared/states/error-state.component';
+import { InfoTabComponent } from './tabs/info-tab/info-tab.component';
+import { BillingTabComponent } from './tabs/billing-tab/billing-tab.component';
+import { SubscriptionTabComponent } from './tabs/subscription-tab/subscription-tab.component';
+import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
 
 type OngletClientSheet = 'info' | 'facturation' | 'abonnements';
 

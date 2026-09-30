@@ -11,7 +11,7 @@ import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
 import { ExportColumn } from '../../data-access/contracts/export.service';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDateTime } from '../../../../../shared/format.util';
-import { SearchFilterComponent } from '../../shared/filters/search-filter.component';
+import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgePaiementAgent } from '../../shared/status-badge/status-badge.util';
 import {
