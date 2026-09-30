@@ -687,6 +687,8 @@ export class AdminDashboard implements OnInit, OnDestroy {
   // ── Drawer Ajout Agent de Mairie ──
   visibleAddAgentDrawer = false;
   isSubmittingAgent     = false;
+  showAgentPassword        = false;
+  showAgentConfirmPassword = false;
   newAgentData = {
     firstName: '', lastName: '', email: '', phone: '',
     password: '', confirmPassword: '',
@@ -3838,6 +3840,8 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.agentArrondissements = [];
     this.agentSectors         = [];
     this.agentNeighborhoods   = [];
+    this.showAgentPassword        = false;
+    this.showAgentConfirmPassword = false;
     this.visibleAddAgentDrawer = true;
     this.territoryService.getAllCities().subscribe({
       next: (cities) => { this.agentCities = cities; },
