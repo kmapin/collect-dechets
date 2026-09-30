@@ -27,6 +27,7 @@ import type {
 } from "./mocks/municipality-mock.types";
 import { buildWasteBreakdownConfig } from "./charts/waste-breakdown.chart";
 import { buildCollectionEvolutionConfig } from "./charts/collection-evolution.chart";
+import { TerritorySelectComponent, toTerritoryOptions } from "../../../shared/territory-select/territory-select";
 import { buildPerformanceIndicatorsConfig } from "./charts/performance-indicators.chart";
 import { comparePerformance, aggregatePerformanceRecords } from "./utils/performance.util";
 import { aggregateZoneFrequencyRecords } from "./utils/zone-frequency.util";
@@ -159,11 +160,12 @@ export interface GroupedZoneStatistics {
 
 @Component({
   selector: 'app-municipality-dashboard',
-  imports: [CommonModule, RouterModule, FormsModule, Signalement, MiniChart, CoverageMap],
+  imports: [CommonModule, RouterModule, FormsModule, Signalement, MiniChart, CoverageMap, TerritorySelectComponent],
   templateUrl: './municipality-dashboard.html',
   styleUrl: './municipality-dashboard.scss'
 })
 export class MunicipalityDashboard  implements OnInit {
+  readonly toTerritoryOptions = toTerritoryOptions;
   currentUser: RegisterUserData | null = null;
   activeTab = "overview";
 

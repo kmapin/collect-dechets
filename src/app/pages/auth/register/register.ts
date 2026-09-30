@@ -12,10 +12,11 @@ import { AgencyService } from '../../../services/agency.service';
 import { TerritoryHttpService } from '../../../services/territory-http.service';
 import { Arrondissement, City, Quartier, Sector } from '../../../models/countries-org.model';
 import { PhoneInputDirective } from '../../../shared/phone-input.directive';
+import { TerritorySelectComponent, toTerritoryOptions } from '../../../shared/territory-select/territory-select';
 
 @Component({
   selector: 'app-register',
-  imports: [RouterModule, FormsModule, PhoneInputDirective],
+  imports: [RouterModule, FormsModule, PhoneInputDirective, TerritorySelectComponent],
   templateUrl: './register.html',
   styleUrl: './register.css'
 })
@@ -79,6 +80,8 @@ export class Register implements OnInit {
   };
 
 
+
+  readonly toTerritoryOptions = toTerritoryOptions;
 
   arrondissementss: Arrondissement[] = [];
   cities: City[] = [];

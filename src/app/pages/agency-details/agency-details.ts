@@ -25,6 +25,7 @@ import { ServiceLocation, ServiceLocationType } from "../../models/service-locat
 import { Breadcrumb, BreadcrumbItem } from "../../shared/breadcrumb/breadcrumb";
 import { dashboardRouteForRole, dashboardLabelForRole } from "../../shared/notification-route.util";
 import { PhoneInputDirective } from "../../shared/phone-input.directive";
+import { TerritorySelectComponent, toTerritoryOptions } from "../../shared/territory-select/territory-select";
 
 /** Zone de couverture telle que renvoyée par GET /agencies/:id/zones (nouveau
  * modèle, services/agency.js::_mergeZoneDetails) : `city`/`arrondissement`/`sector`
@@ -46,11 +47,14 @@ export interface AgencyZone {
     MobileMoneyFormComponent,
     Breadcrumb,
     PhoneInputDirective,
+    TerritorySelectComponent,
   ],
   templateUrl: "./agency-details.html",
   styleUrl: "./agency-details.css",
 })
 export class AgencyDetails implements OnInit {
+  readonly toTerritoryOptions = toTerritoryOptions;
+
   userData = {
     _id: "",
     firstName: "",

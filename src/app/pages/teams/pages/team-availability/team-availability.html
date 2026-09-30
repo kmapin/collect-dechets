@@ -106,10 +106,13 @@
 
     <div class="avf-field">
       <mat-icon>location_city</mat-icon>
-      <select [ngModel]="zoneFilter()" (ngModelChange)="zoneFilter.set($event)">
-        <option value="">Toutes les villes</option>
-        @for (z of allZones(); track z) { <option [value]="z">{{ z }}</option> }
-      </select>
+      <app-territory-select
+        [options]="toTerritoryOptions(allZones())"
+        [value]="zoneFilter() || null"
+        allLabel="Toutes les villes"
+        placeholder="Toutes les villes"
+        (valueChange)="zoneFilter.set($any($event) ?? '')"
+        />
     </div>
 
     <div class="avf-field">

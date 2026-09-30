@@ -22,6 +22,7 @@ import { Planning } from '../../../planning/models/planning.model';
 import { teamStatusColor, teamStatusLabel } from '../../models/team-labels';
 import { PlanningTeamsTabs } from '../../../../shared/planning-teams-tabs/planning-teams-tabs';
 import { Breadcrumb, BreadcrumbItem } from '../../../../shared/breadcrumb/breadcrumb';
+import { TerritorySelectComponent, toTerritoryOptions } from '../../../../shared/territory-select/territory-select';
 import { AuthService } from '../../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../../shared/notification-route.util';
 
@@ -69,12 +70,14 @@ const HEAT_HOURS = Array.from({ length: H_SPAN }, (_, i) => i + H_START);
   imports: [
     CommonModule, FormsModule, MatIconModule,
     TooltipModule, ToastModule, FullCalendarModule, PlanningTeamsTabs, Breadcrumb,
+    TerritorySelectComponent,
   ],
   providers: [MessageService],
   templateUrl: './team-availability.html',
   styleUrl:    './team-availability.scss',
 })
 export class TeamAvailability implements OnInit, OnDestroy {
+  readonly toTerritoryOptions = toTerritoryOptions;
   readonly router       = inject(Router);
   readonly teamService  = inject(TeamService);
   readonly planningSvc  = inject(PlanningService);

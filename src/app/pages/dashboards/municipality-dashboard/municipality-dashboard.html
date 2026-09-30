@@ -482,13 +482,13 @@
 
                 <div class="performance-filters">
                   <label for="perf-zone">Zone</label>
-                  <select id="perf-zone" class="filter-select" [(ngModel)]="performanceZoneFilter"
-                    (change)="applyPerformanceFilters()">
-                    <option value="all">Toutes les zones</option>
-                    @for (zone of performanceZoneOptions; track zone) {
-                    <option [value]="zone">{{ zone }}</option>
-                    }
-                  </select>
+                  <app-territory-select
+                    [options]="toTerritoryOptions(performanceZoneOptions)"
+                    [value]="performanceZoneFilter === 'all' ? null : performanceZoneFilter"
+                    allLabel="Toutes les zones"
+                    placeholder="Toutes les zones"
+                    (valueChange)="performanceZoneFilter = $any($event) ?? 'all'; applyPerformanceFilters()"
+                    />
 
                   <label for="perf-waste-type">Type de déchet</label>
                   <select id="perf-waste-type" class="filter-select" [(ngModel)]="performanceWasteTypeFilter"
@@ -538,13 +538,13 @@
               <div class="performance-toolbar">
                 <div class="performance-filters">
                   <label for="freq-zone">Zone</label>
-                  <select id="freq-zone" class="filter-select" [(ngModel)]="zoneFrequencyZoneFilter"
-                    (change)="applyZoneFrequencyFilters()">
-                    <option value="all">Toutes les zones</option>
-                    @for (zone of zoneFrequencyZoneOptions; track zone) {
-                    <option [value]="zone">{{ zone }}</option>
-                    }
-                  </select>
+                  <app-territory-select
+                    [options]="toTerritoryOptions(zoneFrequencyZoneOptions)"
+                    [value]="zoneFrequencyZoneFilter === 'all' ? null : zoneFrequencyZoneFilter"
+                    allLabel="Toutes les zones"
+                    placeholder="Toutes les zones"
+                    (valueChange)="zoneFrequencyZoneFilter = $any($event) ?? 'all'; applyZoneFrequencyFilters()"
+                    />
 
                   <label for="freq-waste-type">Type de déchet</label>
                   <select id="freq-waste-type" class="filter-select" [(ngModel)]="zoneFrequencyWasteTypeFilter"

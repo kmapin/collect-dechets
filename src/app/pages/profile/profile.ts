@@ -17,14 +17,17 @@ import {
 import { TerritoryHttpService } from "../../services/territory-http.service";
 import { SharedService } from "../../services/shared-service";
 import { PhoneInputDirective } from "../../shared/phone-input.directive";
+import { TerritorySelectComponent, toTerritoryOptions } from "../../shared/territory-select/territory-select";
 
 @Component({
   selector: "app-profile",
-  imports: [FormsModule, PhoneInputDirective],
+  imports: [FormsModule, PhoneInputDirective, TerritorySelectComponent],
   templateUrl: "./profile.html",
   styleUrl: "./profile.css",
 })
 export class Profile implements OnInit, OnDestroy {
+  readonly toTerritoryOptions = toTerritoryOptions;
+
   userData: RegisterUserData = {
     _id: "",
     id: "",

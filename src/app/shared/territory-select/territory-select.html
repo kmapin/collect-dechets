@@ -1,0 +1,30 @@
+<div class="ts-wrap">
+  <input
+    type="text"
+    class="ts-input"
+    [class.ts-input--disabled]="disabled"
+    [placeholder]="displayLabel || placeholder"
+    [(ngModel)]="search"
+    [disabled]="disabled"
+    (focus)="openDropdown()"
+    (blur)="closeDropdown()"
+  />
+  @if (value !== null && value !== undefined && value !== '' && !disabled) {
+    <button type="button" class="ts-clear" (mousedown)="$event.preventDefault(); clear()" title="Effacer">×</button>
+  }
+  @if (dropdownOpen) {
+    <ul class="ts-dropdown">
+      @if (allLabel) {
+        <li (mousedown)="$event.preventDefault(); choose(null)">{{ allLabel }}</li>
+      }
+      @for (opt of suggestions; track opt.value) {
+        <li [class.ts-item--active]="opt.value === value" (mousedown)="$event.preventDefault(); choose(opt)">
+          {{ opt.label }}
+        </li>
+      }
+      @if (!suggestions.length) {
+        <li class="ts-empty">Aucun résultat</li>
+      }
+    </ul>
+  }
+</div>

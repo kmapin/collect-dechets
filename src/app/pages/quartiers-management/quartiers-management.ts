@@ -8,6 +8,7 @@ import { Breadcrumb, BreadcrumbItem } from '../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../shared/notification-route.util';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
+import { TerritorySelectComponent, toTerritoryOptionsById } from '../../shared/territory-select/territory-select';
 
 interface QuartierRow {
   id: string;
@@ -38,11 +39,12 @@ const EMPTY_FORM: QuartierForm = { name: '', code: '', cityId: '', arrondissemen
 @Component({
   selector: 'app-quartiers-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, Breadcrumb],
+  imports: [CommonModule, FormsModule, Breadcrumb, TerritorySelectComponent],
   templateUrl: './quartiers-management.html',
   styleUrl: './quartiers-management.scss',
 })
 export class QuartiersManagementComponent implements OnInit {
+  readonly toTerritoryOptionsById = toTerritoryOptionsById;
   private auth = inject(AuthService);
 
   readonly breadcrumbItems: BreadcrumbItem[] = [

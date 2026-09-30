@@ -133,41 +133,44 @@
             <div class="sl-form-row">
               <div class="sl-form-group">
                 <label for="sl-city">Ville *</label>
-                <select id="sl-city" [ngModel]="form.city" (ngModelChange)="onCityChange($event)">
-                  <option value="" disabled>Choisir une ville</option>
-                  @for (city of cities; track city.id) {
-                    <option [value]="city.name">{{ city.name }}</option>
-                  }
-                </select>
+                <app-territory-select
+                  [options]="toTerritoryOptions(cities)"
+                  [value]="form.city"
+                  placeholder="Choisir une ville"
+                  (valueChange)="onCityChange($any($event))"
+                  />
               </div>
               <div class="sl-form-group">
                 <label for="sl-arrondissement">Arrondissement *</label>
-                <select id="sl-arrondissement" [ngModel]="form.arrondissement" (ngModelChange)="onArrondissementChange($event)" [disabled]="!form.city">
-                  <option value="" disabled>Choisir un arrondissement</option>
-                  @for (arr of arrondissements; track arr.id) {
-                    <option [value]="arr.name">{{ arr.name }}</option>
-                  }
-                </select>
+                <app-territory-select
+                  [options]="toTerritoryOptions(arrondissements)"
+                  [value]="form.arrondissement"
+                  placeholder="Choisir un arrondissement"
+                  [disabled]="!form.city"
+                  (valueChange)="onArrondissementChange($any($event))"
+                  />
               </div>
             </div>
             <div class="sl-form-row">
               <div class="sl-form-group">
                 <label for="sl-sector">Secteur *</label>
-                <select id="sl-sector" [ngModel]="form.sector" (ngModelChange)="onSectorChange($event)" [disabled]="!form.arrondissement">
-                  <option value="" disabled>Choisir un secteur</option>
-                  @for (sector of sectors; track sector.id) {
-                    <option [value]="sector.name">{{ sector.name }}</option>
-                  }
-                </select>
+                <app-territory-select
+                  [options]="toTerritoryOptions(sectors)"
+                  [value]="form.sector"
+                  placeholder="Choisir un secteur"
+                  [disabled]="!form.arrondissement"
+                  (valueChange)="onSectorChange($any($event))"
+                  />
               </div>
               <div class="sl-form-group">
                 <label for="sl-neighborhood">Quartier *</label>
-                <select id="sl-neighborhood" [ngModel]="form.neighborhood" (ngModelChange)="setField('neighborhood', $event)" [disabled]="!form.sector">
-                  <option value="" disabled>Choisir un quartier</option>
-                  @for (n of neighborhoods; track n.id) {
-                    <option [value]="n.name">{{ n.name }}</option>
-                  }
-                </select>
+                <app-territory-select
+                  [options]="toTerritoryOptions(neighborhoods)"
+                  [value]="form.neighborhood"
+                  placeholder="Choisir un quartier"
+                  [disabled]="!form.sector"
+                  (valueChange)="setField('neighborhood', $any($event))"
+                  />
               </div>
             </div>
             <div class="sl-form-row">

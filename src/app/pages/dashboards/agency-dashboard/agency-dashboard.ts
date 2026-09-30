@@ -92,6 +92,7 @@ import { ExcelImportComponent } from "../../../components/excel-import/excel-imp
 import { AgencyImportService } from "../../../services/agency-import.service";
 import { normalizePhone } from "../../../shared/phone.util";
 import { MultiSelectModule } from 'primeng/multiselect';
+import { TerritorySelectComponent, TerritoryOption, toTerritoryOptions, toTerritoryOptionsById } from "../../../shared/territory-select/territory-select";
 interface Client {
   id: string;
   name: string;
@@ -270,6 +271,7 @@ export enum CollectionStatus1 {
     Signalement,
     PhoneInputDirective,
     ExcelImportComponent,
+    TerritorySelectComponent,
   ],
   templateUrl: "./agency-dashboard.html",
   styleUrl: "./agency-dashboard.scss",
@@ -309,6 +311,16 @@ export enum CollectionStatus1 {
   encapsulation: ViewEncapsulation.None
 })
 export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
+  readonly toTerritoryOptions = toTerritoryOptions;
+  readonly toTerritoryOptionsById = toTerritoryOptionsById;
+
+  /** availableEmployeeSectors utilise un id numérique ([ngValue]="+sector.id" dans
+   * l'ancien select) — mapping dédié plutôt que toTerritoryOptionsById (qui garderait
+   * l'id en string) pour rester compatible avec employeesSectorFilter: number | null. */
+  employeeSectorOptions(): TerritoryOption[] {
+    return this.availableEmployeeSectors.map((s: any) => ({ value: +s.id, label: `Secteur ${s.name}` }));
+  }
+
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
 
   employeeForm!: FormGroup;

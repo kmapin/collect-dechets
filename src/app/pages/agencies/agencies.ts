@@ -11,14 +11,17 @@ import { TerritoryHttpService } from '../../services/territory-http.service';
 import { AuthService } from '../../services/auth.service';
 import { PaginatorModule } from 'primeng/paginator';
 import { MatIconModule } from '@angular/material/icon';
+import { TerritorySelectComponent, toTerritoryOptions } from '../../shared/territory-select/territory-select';
 
 @Component({
   selector: 'app-agencies',
-  imports: [RouterModule, FormsModule, PaginatorModule, MatIconModule],
+  imports: [RouterModule, FormsModule, PaginatorModule, MatIconModule, TerritorySelectComponent],
   templateUrl: './agencies.html',
   styleUrl: './agencies.css'
 })
 export class Agencies  implements OnInit {
+  readonly toTerritoryOptions = toTerritoryOptions;
+
   agencies: SearchAgency = { data: [], pagination: {} };
   filteredAgencies: Agency[] = [];
   searchQuery = '';

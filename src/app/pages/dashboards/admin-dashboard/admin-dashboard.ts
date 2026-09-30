@@ -36,6 +36,7 @@ import {
 import { ExportClientService } from "../financial-dashboard/data-access/export/export-client.service";
 import { PhoneInputDirective } from "../../../shared/phone-input.directive";
 import { normalizePhone } from "../../../shared/phone.util";
+import { TerritorySelectComponent, toTerritoryOptions } from "../../../shared/territory-select/territory-select";
 interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
@@ -220,12 +221,14 @@ interface User {
     DrawerModule,
     PlanningSummaryDrawer,
     PhoneInputDirective,
+    TerritorySelectComponent,
   ],
   providers: [ExportClientService],
   templateUrl: "./admin-dashboard.html",
   styleUrl: "./admin-dashboard.scss",
 })
 export class AdminDashboard implements OnInit, OnDestroy {
+  readonly toTerritoryOptions = toTerritoryOptions;
 
   // ── Chart.js references ───────────────────────────────────
   @ViewChild('incidentsChart') incidentsChartRef!: ElementRef<HTMLCanvasElement>;

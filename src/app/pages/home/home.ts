@@ -11,15 +11,17 @@ import { NotificationService } from '../../services/notification.service';
 import { Arrondissement, City, Quartier, Sector } from '../../models/countries-org.model';
 import { TerritoryHttpService } from '../../services/territory-http.service';
 import { AuthService } from '../../services/auth.service';
+import { TerritorySelectComponent, toTerritoryOptions } from '../../shared/territory-select/territory-select';
 
 
 @Component({
   selector: 'app-home',
-  imports: [RouterModule, FormsModule],
+  imports: [RouterModule, FormsModule, TerritorySelectComponent],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })
 export class Home  implements OnInit {
+  readonly toTerritoryOptions = toTerritoryOptions;
   /** Nombre de clients visible seulement pour le manager de CETTE agence, la
    * municipalité ou le super_admin — jamais pour les clients, les managers d'une
    * autre agence, ou un visiteur non connecté. */

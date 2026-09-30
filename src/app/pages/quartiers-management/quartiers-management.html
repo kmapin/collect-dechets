@@ -104,26 +104,34 @@
 
         <div class="qm-form-group">
           <label for="qm-city">Ville *</label>
-          <select id="qm-city" [ngModel]="form.cityId" (ngModelChange)="onCityChange($event)">
-            <option value="" disabled>Choisir une ville</option>
-            <option *ngFor="let city of cities" [value]="city.id">{{ city.name }}</option>
-          </select>
+          <app-territory-select
+            [options]="toTerritoryOptionsById(cities)"
+            [value]="form.cityId"
+            placeholder="Choisir une ville"
+            (valueChange)="onCityChange($any($event))"
+            />
         </div>
 
         <div class="qm-form-group">
           <label for="qm-arrondissement">Arrondissement *</label>
-          <select id="qm-arrondissement" [ngModel]="form.arrondissementId" (ngModelChange)="onArrondissementChange($event)" [disabled]="!form.cityId">
-            <option value="" disabled>Choisir un arrondissement</option>
-            <option *ngFor="let arr of formArrondissements" [value]="arr.id">{{ arr.name }}</option>
-          </select>
+          <app-territory-select
+            [options]="toTerritoryOptionsById(formArrondissements)"
+            [value]="form.arrondissementId"
+            placeholder="Choisir un arrondissement"
+            [disabled]="!form.cityId"
+            (valueChange)="onArrondissementChange($any($event))"
+            />
         </div>
 
         <div class="qm-form-group">
           <label for="qm-sector">Secteur *</label>
-          <select id="qm-sector" [ngModel]="form.sectorId" (ngModelChange)="onSectorChange($event)" [disabled]="!form.arrondissementId">
-            <option value="" disabled>Choisir un secteur</option>
-            <option *ngFor="let sector of formSectors" [value]="sector.id">{{ sector.name }}</option>
-          </select>
+          <app-territory-select
+            [options]="toTerritoryOptionsById(formSectors)"
+            [value]="form.sectorId"
+            placeholder="Choisir un secteur"
+            [disabled]="!form.arrondissementId"
+            (valueChange)="onSectorChange($any($event))"
+            />
         </div>
 
         <div class="qm-form-row">

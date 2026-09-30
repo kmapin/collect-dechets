@@ -470,64 +470,46 @@
                 <div class="employees-filters">
                   <div class="filter-group">
                     <label for="cityFilter">Ville :</label>
-                    <select
-                      id="cityFilter"
-                      class="filter-select"
-                      [(ngModel)]="employeesCityFilter"
-                      (change)="onEmployeeCityFilterChange()"
-                    >
-                      <option value="">Toutes les villes</option>
-                      @for (city of availableEmployeeCities; track city) {
-                        <option [value]="city.id">{{ city.name }}</option>
-                      }
-                    </select>
+                    <app-territory-select
+                      [options]="toTerritoryOptionsById(availableEmployeeCities)"
+                      [value]="employeesCityFilter || null"
+                      allLabel="Toutes les villes"
+                      placeholder="Toutes les villes"
+                      (valueChange)="employeesCityFilter = $any($event) ?? ''; onEmployeeCityFilterChange()"
+                      />
                   </div>
                   <div class="filter-group">
                     <label for="arrondissementFilter">Arrondissement :</label>
-                    <select
-                      id="arrondissementFilter"
-                      class="filter-select"
-                      [(ngModel)]="employeesArrondissementFilter"
-                      (change)="onEmployeeArrondissementFilterChange()"
+                    <app-territory-select
+                      [options]="toTerritoryOptionsById(availableEmployeeArrondissements)"
+                      [value]="employeesArrondissementFilter || null"
+                      allLabel="Tous les arrondissements"
+                      placeholder="Tous les arrondissements"
                       [disabled]="!employeesCityFilter"
-                    >
-                      <option value="">Tous les arrondissements</option>
-                      @for (arrond of availableEmployeeArrondissements; track arrond) {
-                        <option [value]="arrond.id">{{ arrond.name }}</option>
-                      }
-                    </select>
+                      (valueChange)="employeesArrondissementFilter = $any($event) ?? ''; onEmployeeArrondissementFilterChange()"
+                      />
                   </div>
                   <div class="filter-group">
                     <label for="sectorFilter">Secteur :</label>
-                    <select
-                      id="sectorFilter"
-                      class="filter-select"
-                      [(ngModel)]="employeesSectorFilter"
-                      (change)="onEmployeeSectorFilterChange()"
+                    <app-territory-select
+                      [options]="employeeSectorOptions()"
+                      [value]="employeesSectorFilter"
+                      allLabel="Tous les secteurs"
+                      placeholder="Tous les secteurs"
                       [disabled]="!employeesArrondissementFilter"
-                    >
-                      <option [ngValue]="null">Tous les secteurs</option>
-                      @for (sector of availableEmployeeSectors; track sector) {
-                        <option [ngValue]="+sector.id">Secteur {{ sector.name }}</option>
-                      }
-                    </select>
+                      (valueChange)="employeesSectorFilter = $any($event); onEmployeeSectorFilterChange()"
+                      />
                   </div>
                   <div class="filter-group">
                     <label for="neighborhoodFilter">Quartier :</label>
-                    <select
-                      id="neighborhoodFilter"
-                      class="filter-select"
-                      [(ngModel)]="employeesNeighborhoodFilter"
-                      (change)="filterEmployees()"
+                    <app-territory-select
+                      [options]="toTerritoryOptions(availableEmployeeNeighborhoods)"
+                      [value]="employeesNeighborhoodFilter || null"
+                      allLabel="Tous les quartiers"
+                      placeholder="Tous les quartiers"
                       [disabled]="availableEmployeeNeighborhoods.length === 0"
-                    >
-                      <option value="">Tous les quartiers</option>
-                      @for (neighborhood of availableEmployeeNeighborhoods; track neighborhood) {
-                        <option [value]="neighborhood.name">
-                          {{ neighborhood.name }}
-                        </option>
-                      }
-                    </select>
+                      (valueChange)="employeesNeighborhoodFilter = $any($event) ?? ''; filterEmployees()"
+                      />
                   </div>
                   <div class="filter-group">
                     <label for="roleFilter">Role :</label>
@@ -1411,26 +1393,23 @@
                 <div class="employees-filters">
                   <div class="filter-group">
                     <label for="clientCityFilter">Ville :</label>
-                    <select id="clientCityFilter" class="filter-select" [(ngModel)]="clientsCityFilter" (change)="filterClients()">
-                      <option value="all">Toutes les villes</option>
-                      @for (city of getUniqueClientCities(); track city) {
-                        <option [value]="city">{{ city }}</option>
-                      }
-                    </select>
+                    <app-territory-select
+                      [options]="toTerritoryOptions(getUniqueClientCities())"
+                      [value]="clientsCityFilter === 'all' ? null : clientsCityFilter"
+                      allLabel="Toutes les villes"
+                      placeholder="Toutes les villes"
+                      (valueChange)="clientsCityFilter = $any($event) ?? 'all'; filterClients()"
+                      />
                   </div>
                   <div class="filter-group">
                     <label for="clientNeighborhoodFilter">Quartier :</label>
-                    <select
-                      id="clientNeighborhoodFilter"
-                      class="filter-select"
-                      [(ngModel)]="clientsNeighborhoodFilter"
-                      (change)="filterClients()"
-                    >
-                      <option value="all">Tous les quartiers</option>
-                      @for (neighborhood of getUniqueClientNeighborhoods(); track neighborhood) {
-                        <option [value]="neighborhood">{{ neighborhood }}</option>
-                      }
-                    </select>
+                    <app-territory-select
+                      [options]="toTerritoryOptions(getUniqueClientNeighborhoods())"
+                      [value]="clientsNeighborhoodFilter === 'all' ? null : clientsNeighborhoodFilter"
+                      allLabel="Tous les quartiers"
+                      placeholder="Tous les quartiers"
+                      (valueChange)="clientsNeighborhoodFilter = $any($event) ?? 'all'; filterClients()"
+                      />
                   </div>
                 </div>
                 <div class="search-results-info">
