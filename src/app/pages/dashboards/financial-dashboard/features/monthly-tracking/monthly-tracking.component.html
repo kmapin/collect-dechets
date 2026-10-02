@@ -14,7 +14,7 @@
       {{ nombreImpayes() }} impayés / {{ nombreAbonnes() }} abonnés
     </span>
 
-    <button type="button" class="fin-monthly__export-btn" (click)="exporterCsv()" [disabled]="!items().length">
+    <button type="button" class="fin-monthly__export-btn" (click)="exporterCsv()" [disabled]="exportEnCours() || !total()">
       <i class="material-icons" aria-hidden="true">download</i>
       Exporter (CSV)
     </button>
@@ -35,7 +35,7 @@
       </thead>
       <tbody>
         <ng-container *ngIf="!chargement(); else squelette">
-          <tr *ngFor="let ligne of lignesAffichees()">
+          <tr *ngFor="let ligne of items()">
             <td data-label="Client">{{ ligne.client.nom }} {{ ligne.client.prenom }}</td>
             <td data-label="Quartier">{{ ligne.client.quartier ?? '—' }}</td>
             <td data-label="Montant">{{ ligne.facture ? formatMontant(ligne.facture.montant) : '—' }}</td>
@@ -45,7 +45,7 @@
             </td>
             <td data-label="Date de paiement">{{ ligne.facture?.datePaiement ? (ligne.facture!.datePaiement | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
           </tr>
-          <tr *ngIf="!lignesAffichees().length">
+          <tr *ngIf="!items().length">
             <td colspan="5" class="fin-monthly__empty">Aucune facture générée pour cette période.</td>
           </tr>
         </ng-container>
@@ -56,5 +56,46 @@
         </ng-template>
       </tbody>
     </table>
+
+    <!-- Pagination (même modèle que la liste Clients du dashboard financier) -->
+    <div class="fin-monthly__pagination" *ngIf="total() > 0">
+      <div class="fin-monthly__pagination-left">
+        <span class="fin-monthly__pagination-details">
+          {{ (page() - 1) * itemsPerPage() + 1 }}–{{ finDePage }} sur <strong>{{ total() }}</strong> abonné(s)
+        </span>
+        <div class="fin-monthly__per-page">
+          <label>Afficher</label>
+          <select (change)="changerTaillePage(+$any($event.target).value)">
+            <option *ngFor="let taille of taillesPageDisponibles" [value]="taille" [selected]="taille === itemsPerPage()">{{ taille }}</option>
+          </select>
+          <span>par page</span>
+        </div>
+      </div>
+      <nav class="fin-pagination" *ngIf="totalPages > 1" aria-label="Pagination du suivi mensuel">
+        <button type="button" [disabled]="page() <= 1" (click)="changerPage(1)" title="Première page">
+          <i class="material-icons">first_page</i>
+        </button>
+        <button type="button" [disabled]="page() <= 1" (click)="changerPage(page() - 1)" title="Page précédente">
+          <i class="material-icons">chevron_left</i>
+        </button>
+        <span class="fin-pagination__numbers">
+          <button
+            type="button"
+            *ngFor="let p of getPageNumbers()"
+            class="fin-pagination__page-number"
+            [class.active]="p === page()"
+            (click)="changerPage(p)"
+          >
+            {{ p }}
+          </button>
+        </span>
+        <button type="button" [disabled]="page() >= totalPages" (click)="changerPage(page() + 1)" title="Page suivante">
+          <i class="material-icons">chevron_right</i>
+        </button>
+        <button type="button" [disabled]="page() >= totalPages" (click)="changerPage(totalPages)" title="Dernière page">
+          <i class="material-icons">last_page</i>
+        </button>
+      </nav>
+    </div>
   </div>
 </section>

@@ -10,7 +10,9 @@ import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.com
 import { badgeSuiviMensuel } from '../../shared/status-badge/status-badge.util';
 import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
 
-const TAILLE_PAGE_MAX = 200; // pas de pagination sur cet écran (F12) : ~48 clients au plus
+const TAILLE_PAGE_DEFAUT = 20;
+const TAILLES_PAGE_DISPONIBLES = [5, 10, 20, 50, 100];
+const TAILLE_PAGE_EXPORT = 1000;
 
 // F12 — Suivi mensuel des abonnés : qui a payé / qui n'a pas payé pour un mois donné.
 @Component({
@@ -27,8 +29,13 @@ export class MonthlyTrackingComponent {
   readonly periode = signal<Periode>(periodeCourante());
   readonly impayeesSeulement = signal(false);
   readonly items = signal<SuiviAbonneMensuel[]>([]);
+  readonly page = signal(1);
+  readonly itemsPerPage = signal(TAILLE_PAGE_DEFAUT);
+  readonly taillesPageDisponibles = TAILLES_PAGE_DISPONIBLES;
+  readonly total = signal(0);
   readonly chargement = signal(true);
   readonly erreur = signal<string | null>(null);
+  readonly exportEnCours = signal(false);
 
   readonly badgeSuivi = badgeSuiviMensuel;
   readonly formatMontant = formatMontantXof;
@@ -36,8 +43,15 @@ export class MonthlyTrackingComponent {
   readonly nombreImpayes = computed(() => this.items().filter(i => i.statut === FactureStatut.IMPAYEE).length);
   readonly nombreAbonnes = computed(() => this.items().length);
 
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.total() / this.itemsPerPage()));
+  }
 
-  readonly lignesAffichees = computed(() => this.items().filter(i => i.statut !== 'NonGeneree'));
+  /** Dernier numéro d'élément affiché sur la page courante (texte "X–Y sur Z") — même
+   * modèle que client-list.component.ts::finDePage. */
+  get finDePage(): number {
+    return Math.min(this.page() * this.itemsPerPage(), this.total());
+  }
 
   constructor() {
     this.charger();
@@ -45,12 +59,45 @@ export class MonthlyTrackingComponent {
 
   onPeriodeChange(periode: Periode): void {
     this.periode.set(periode);
+    this.page.set(1);
     this.charger();
   }
 
   onToggleImpayeesSeulement(): void {
     this.impayeesSeulement.update(v => !v);
+    this.page.set(1);
     this.charger();
+  }
+
+  changerPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.page.set(page);
+    this.charger();
+  }
+
+  changerTaillePage(taille: number): void {
+    this.itemsPerPage.set(taille);
+    this.page.set(1);
+    this.charger();
+  }
+
+  /** Fenêtre glissante de 5 numéros de page autour de la page courante — même algorithme
+   * que client-list.component.ts::getPageNumbers. */
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+
+    let start = Math.max(1, this.page() - half);
+    const end = Math.min(this.totalPages, start + maxPagesToShow - 1);
+    if (end - start + 1 < maxPagesToShow) {
+      start = Math.max(1, end - maxPagesToShow + 1);
+    }
+
+    for (let i = start; i <= end; i += 1) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   reessayer(): void {
@@ -58,33 +105,53 @@ export class MonthlyTrackingComponent {
   }
 
   exporterCsv(): void {
+    if (this.exportEnCours()) return;
+    this.exportEnCours.set(true);
+
     const { debut, fin } = bornesPeriode(this.periode());
     const optionsDate: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'long', year: 'numeric' };
     const periodeDu = debut.toLocaleDateString('fr-FR', optionsDate);
     const periodeAu = fin.toLocaleDateString('fr-FR', optionsDate);
 
-    const rows = this.items().map(ligne => ({
-      client: `${ligne.client.nom} ${ligne.client.prenom}`,
-      quartier: ligne.client.quartier ?? '',
-      periodeDu,
-      periodeAu,
-      montant: ligne.facture?.montant ?? 0,
-      statut: ligne.statut,
-      moisRetard: ligne.moisRetard,
-    }));
-    this.exportService.exportToCsv(
-      rows,
-      [
-        { key: 'client', label: 'Client' },
-        { key: 'quartier', label: 'Quartier' },
-        { key: 'periodeDu', label: 'Période du' },
-        { key: 'periodeAu', label: 'Au' },
-        { key: 'montant', label: 'Montant (FCFA)' },
-        { key: 'statut', label: 'Statut' },
-        { key: 'moisRetard', label: 'Mois de retard' },
-      ],
-      `suivi-mensuel-${this.periode().annee}-${this.periode().mois}`,
-    );
+    this.factureData
+      .getSuiviMensuel(this.periode(), {
+        page: 1,
+        pageSize: TAILLE_PAGE_EXPORT,
+        filter: this.impayeesSeulement() ? { impayeesSeulement: true } : undefined,
+      })
+      .subscribe({
+        next: page => {
+          this.exportEnCours.set(false);
+          const rows = page.items
+            .filter(ligne => ligne.statut !== 'NonGeneree')
+            .map(ligne => ({
+              client: `${ligne.client.nom} ${ligne.client.prenom}`,
+              quartier: ligne.client.quartier ?? '',
+              periodeDu,
+              periodeAu,
+              montant: ligne.facture?.montant ?? 0,
+              statut: ligne.statut,
+              moisRetard: ligne.moisRetard,
+            }));
+          this.exportService.exportToCsv(
+            rows,
+            [
+              { key: 'client', label: 'Client' },
+              { key: 'quartier', label: 'Quartier' },
+              { key: 'periodeDu', label: 'Période du' },
+              { key: 'periodeAu', label: 'Au' },
+              { key: 'montant', label: 'Montant (FCFA)' },
+              { key: 'statut', label: 'Statut' },
+              { key: 'moisRetard', label: 'Mois de retard' },
+            ],
+            `suivi-mensuel-${this.periode().annee}-${this.periode().mois}`,
+          );
+        },
+        error: () => {
+          this.exportEnCours.set(false);
+          this.erreur.set("Impossible d'exporter le suivi mensuel pour le moment.");
+        },
+      });
   }
 
   private charger(): void {
@@ -93,12 +160,14 @@ export class MonthlyTrackingComponent {
 
     this.factureData
       .getSuiviMensuel(this.periode(), {
-        pageSize: TAILLE_PAGE_MAX,
+        page: this.page(),
+        pageSize: this.itemsPerPage(),
         filter: this.impayeesSeulement() ? { impayeesSeulement: true } : undefined,
       })
       .subscribe({
         next: page => {
           this.items.set(page.items);
+          this.total.set(page.total);
           this.chargement.set(false);
         },
         error: () => {
