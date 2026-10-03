@@ -25,4 +25,12 @@ describe('ADMINISTRATION_ROUTES (navigation Administration + refresh direct des 
   it('le shell Administration reste protégé par administrationAccessGuard', () => {
     expect(ADMINISTRATION_ROUTES[0].canActivate?.length).toBe(1);
   });
+
+  it("la route administration-permissions existe, charge AdministrationPermissions en lazy et utilise administrationPermissionGuard (pas rolesAccessGuard — écran sans contenu finance)", () => {
+    const route = enfants.find((r) => r.path === 'administration-permissions');
+    expect(route).withContext('route administration-permissions introuvable').toBeTruthy();
+    expect(route?.loadComponent).toBeTruthy();
+    expect(route?.canActivate?.length).toBe(1);
+    expect((route?.data as any)?.permissions).toEqual(['roles.view']);
+  });
 });

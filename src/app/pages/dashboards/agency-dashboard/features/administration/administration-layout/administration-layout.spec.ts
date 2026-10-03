@@ -35,4 +35,14 @@ describe('AdministrationLayout.navItems (navigation Administration — visibilit
     expect(routes).toContain('roles-access');
     expect(routes).not.toContain('employees');
   });
+
+  it('affiche Permissions Administration pour un titulaire de roles.view ADMINISTRATION', () => {
+    const composant = construire({ role: 'manager', administrationPermissions: ['roles.view'], droitsFinance: false, financePermissions: [] });
+    expect(composant.navItems().map((i) => i.route)).toContain('administration-permissions');
+  });
+
+  it('masque Permissions Administration pour un titulaire de roles.view FINANCE uniquement (contrairement à Rôles & Accès, cet onglet est strictement Administration)', () => {
+    const composant = construire({ role: 'manager', administrationPermissions: [], droitsFinance: true, financePermissions: ['roles.view'] });
+    expect(composant.navItems().map((i) => i.route)).not.toContain('administration-permissions');
+  });
 });

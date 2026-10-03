@@ -1,0 +1,228 @@
+<section class="access-mgmt" aria-label="Droits financiers — managers, toutes agences" *ngIf="!chargement(); else squelette">
+  <div class="access-mgmt__body">
+    <aside class="access-mgmt__list-panel">
+      <div class="access-mgmt__list-header">
+        <h3>Managers</h3>
+        <span class="access-mgmt__count">{{ utilisateursFiltres().length }}</span>
+      </div>
+
+      <div class="access-mgmt__search">
+        <i class="material-icons" aria-hidden="true">search</i>
+        <input
+          type="text"
+          placeholder="Rechercher un manager ou une agence..."
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+        />
+      </div>
+
+      <ul class="access-mgmt__list">
+        <li
+          *ngFor="let u of utilisateursFiltres()"
+          [class.selected]="u.idUtilisateur === utilisateurSelectionne()?.idUtilisateur"
+          (click)="selectionner(u)"
+        >
+          <span class="avatar op-manager">{{ initiales(u.identifiants) }}</span>
+          <span class="info">
+            <span class="name">{{ u.identifiants }}</span>
+            <span class="agence-name">{{ u.agenceNom }}</span>
+          </span>
+        </li>
+        <li *ngIf="utilisateursFiltres().length === 0" class="access-mgmt__empty">
+          Aucun manager ne correspond à la recherche.
+        </li>
+      </ul>
+    </aside>
+
+    <div class="access-mgmt__detail" *ngIf="utilisateurSelectionne() as u">
+      <div class="detail-header">
+        <span class="avatar avatar--lg op-manager">{{ initiales(u.identifiants) }}</span>
+        <div>
+          <h3>{{ u.identifiants }}</h3>
+          <span class="role-badge op-manager">{{ u.agenceNom }}</span>
+        </div>
+      </div>
+
+      <p class="dirty-banner" *ngIf="modifie()">
+        <i class="material-icons" aria-hidden="true">warning</i>
+        Modifications non enregistrées — enregistrez ou annulez avant de sélectionner un autre manager.
+      </p>
+
+      <div class="detail-section">
+        <h4>1. Rôle attribué</h4>
+        <p class="detail-section__hint">Changer de rôle réinitialise les droits détaillés ci-dessous sur le modèle du nouveau rôle.</p>
+        <div class="detail-table-scroll">
+          <table class="detail-table">
+            <tbody>
+              <tr>
+                <th scope="row">Rôle financier</th>
+                <td>Aucun</td>
+                <td *ngFor="let r of rolesFinance">{{ labelRoleFinance[r] }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Attribution</th>
+                <td class="detail-table__check-cell">
+                  <button
+                    type="button"
+                    class="check-btn"
+                    [class.checked]="!u.financialRole"
+                    [attr.aria-pressed]="!u.financialRole"
+                    aria-label="Retirer le rôle financier"
+                    (click)="changerRole(u, null)"
+                  >
+                    <i class="material-icons" aria-hidden="true">{{ !u.financialRole ? 'check_box' : 'check_box_outline_blank' }}</i>
+                  </button>
+                </td>
+                <td class="detail-table__check-cell" *ngFor="let r of rolesFinance">
+                  <button
+                    type="button"
+                    class="check-btn"
+                    [class.checked]="u.financialRole === r"
+                    [attr.aria-pressed]="u.financialRole === r"
+                    [attr.aria-label]="'Attribuer le rôle ' + labelRoleFinance[r]"
+                    (click)="changerRole(u, r)"
+                  >
+                    <i class="material-icons" aria-hidden="true">{{ u.financialRole === r ? 'check_box' : 'check_box_outline_blank' }}</i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h4>2. Accès au module financier</h4>
+        <p class="detail-section__hint">
+          Interrupteur général : décoché, le manager perd l'accès à tout le module
+          quels que soient ses droits détaillés ci-dessous.
+        </p>
+        <div class="detail-table-scroll">
+          <table class="detail-table">
+            <tbody>
+              <tr>
+                <th scope="row">Droit</th>
+                <td>Accès aux données financières</td>
+              </tr>
+              <tr>
+                <th scope="row">Activation</th>
+                <td class="detail-table__check-cell">
+                  <button
+                    type="button"
+                    class="check-btn"
+                    [class.checked]="u.droitsFinance"
+                    [attr.aria-pressed]="u.droitsFinance"
+                    aria-label="Activer les droits financiers"
+                    (click)="basculerDroitsFinance(u)"
+                  >
+                    <i class="material-icons" aria-hidden="true">{{ u.droitsFinance ? 'check_box' : 'check_box_outline_blank' }}</i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h4>3. Accès aux onglets</h4>
+        <p class="detail-section__hint">Onglets du tableau de bord financier visibles pour ce manager.</p>
+        <p class="detail-section__hint detail-section__hint--warning" *ngIf="!u.droitsFinance">
+          <i class="material-icons" aria-hidden="true">info</i>
+          Sans effet tant que "Accès au module financier" (section 2) n'est pas activé.
+        </p>
+        <div class="detail-table-scroll">
+          <table class="detail-table" [class.detail-table--inactive]="!u.droitsFinance">
+            <tbody>
+              <tr>
+                <th scope="row">Onglet</th>
+                <td *ngFor="let onglet of permissionsOnglets">{{ onglet.label }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Accès</th>
+                <td class="detail-table__check-cell" *ngFor="let onglet of permissionsOnglets">
+                  <button
+                    type="button"
+                    class="check-btn"
+                    [class.checked]="estCoche(onglet.cle)"
+                    [class.disabled]="estImplicite(onglet.cle) || !u.droitsFinance"
+                    [disabled]="estImplicite(onglet.cle) || !u.droitsFinance"
+                    [attr.aria-pressed]="estCoche(onglet.cle)"
+                    [attr.aria-label]="'Autoriser l\'accès à l\'onglet ' + onglet.label"
+                    (click)="basculerPermission(onglet.cle)"
+                  >
+                    <i class="material-icons" aria-hidden="true">{{ estCoche(onglet.cle) ? 'check_box' : 'check_box_outline_blank' }}</i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h4>4. Droits financiers détaillés</h4>
+        <p class="detail-section__hint">Actions autorisées au-delà de la simple consultation d'un onglet.</p>
+        <p class="detail-section__hint detail-section__hint--warning" *ngIf="!u.droitsFinance">
+          <i class="material-icons" aria-hidden="true">info</i>
+          Sans effet tant que "Accès au module financier" (section 2) n'est pas activé.
+        </p>
+        <div class="detail-table-scroll" *ngFor="let groupe of groupesDroitsFinanciers">
+          <table class="detail-table" [class.detail-table--inactive]="!u.droitsFinance">
+            <tbody>
+              <tr>
+                <th scope="row">{{ groupe.titre }}</th>
+                <td *ngFor="let droit of groupe.droits">{{ droit.label }}</td>
+              </tr>
+              <tr>
+                <th scope="row">Accès</th>
+                <td class="detail-table__check-cell" *ngFor="let droit of groupe.droits">
+                  <button
+                    type="button"
+                    class="check-btn"
+                    [class.checked]="estCoche(droit.cle)"
+                    [class.disabled]="estImplicite(droit.cle) || !u.droitsFinance"
+                    [disabled]="estImplicite(droit.cle) || !u.droitsFinance"
+                    [attr.aria-pressed]="estCoche(droit.cle)"
+                    [attr.aria-label]="'Autoriser : ' + droit.label"
+                    (click)="basculerPermission(droit.cle)"
+                  >
+                    <i class="material-icons" aria-hidden="true">{{ estCoche(droit.cle) ? 'check_box' : 'check_box_outline_blank' }}</i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="detail-actions">
+        <button type="button" class="detail-actions__ghost" [disabled]="!u.droitsFinance" (click)="appliquerPreregleRole()">
+          Appliquer les droits par défaut du rôle
+        </button>
+        <div class="detail-actions__spacer"></div>
+        <button type="button" class="detail-actions__ghost" [disabled]="!modifie()" (click)="annuler()">Annuler</button>
+        <button
+          type="button"
+          class="detail-actions__primary"
+          [disabled]="!modifie() || enregistrementEnCours()"
+          (click)="enregistrer()"
+        >
+          <i class="material-icons" aria-hidden="true">save</i>
+          Enregistrer les droits financiers
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #squelette>
+  <div class="access-mgmt__body">
+    <aside class="access-mgmt__list-panel">
+      <div class="access-mgmt__skeleton-line" *ngFor="let i of [0, 1, 2, 3, 4]"></div>
+    </aside>
+    <div class="access-mgmt__detail access-mgmt__detail--skeleton">
+      <div class="access-mgmt__skeleton-line" *ngFor="let i of [0, 1, 2]"></div>
+    </div>
+  </div>
+</ng-template>

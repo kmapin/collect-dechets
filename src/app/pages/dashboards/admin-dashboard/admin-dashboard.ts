@@ -37,6 +37,7 @@ import { ExportClientService } from "../financial-dashboard/data-access/export/e
 import { PhoneInputDirective } from "../../../shared/phone-input.directive";
 import { normalizePhone } from "../../../shared/phone.util";
 import { TerritorySelectComponent, toTerritoryOptions } from "../../../shared/territory-select/territory-select";
+import { ADMINISTRATION_PERMISSIONS, DEFAULT_OWNER_PERMISSIONS } from "../agency-dashboard/features/administration/models/administration-permission";
 interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
@@ -2492,6 +2493,54 @@ export class AdminDashboard implements OnInit, OnDestroy {
         this.financialRoleEnCours.delete(user._id);
         console.error("Erreur lors de l'assignation du rôle financier :", error);
         this.notificationService.showError('Erreur', "Impossible d'assigner le rôle financier.");
+      },
+    });
+  }
+
+  // Permissions Administration (employés / rôles & accès) — pendant du rôle financier
+  // ci-dessus, même écran plateforme entière (adminGuard), même override agencyId par ligne.
+  // administrationPermissions est un tableau (pas une valeur unique comme financialRole) :
+  // exposé ici sous forme de 3 préréglages plutôt que 6 cases à cocher, pour un geste aussi
+  // simple qu'un <select> de rôle financier — le réglage fin reste possible via
+  // dashboard/admin/roles-access (onglet Permissions Administration, mêmes préréglages
+  // DEFAULT_OWNER_PERMISSIONS/ADMINISTRATION_PERMISSIONS réutilisés là-bas).
+
+  getAdministrationPresetValue(permissions: string[] | null | undefined): string {
+    const ensemble = new Set(permissions || []);
+    if (ensemble.size === 0) return '';
+    const memeEnsemble = (cles: string[]) => cles.length === ensemble.size && cles.every((c) => ensemble.has(c));
+    if (memeEnsemble(ADMINISTRATION_PERMISSIONS)) return 'employees_roles';
+    if (memeEnsemble(DEFAULT_OWNER_PERMISSIONS)) return 'employees';
+    // Préréglage non standard (modifié finement via Rôles et accès) — affiché tel quel,
+    // l'option correspondante est désactivée pour ne pas pouvoir le "re-sélectionner" sans
+    // changer réellement de valeur.
+    return 'custom';
+  }
+
+  readonly administrationPermissionsEnCours = new Set<string>();
+  assignAdministrationPermissions(user: any, value: string): void {
+    if (this.administrationPermissionsEnCours.has(user._id)) return;
+    const permissions =
+      value === 'employees_roles' ? ADMINISTRATION_PERMISSIONS :
+      value === 'employees' ? DEFAULT_OWNER_PERMISSIONS :
+      [];
+    const cibleAgencyId = user?.agencyId?._id || user?.agencyId;
+    this.administrationPermissionsEnCours.add(user._id);
+    this.agencyService.setEmployeeAdministrationPermissions$(user._id, permissions, cibleAgencyId).subscribe({
+      next: () => {
+        this.administrationPermissionsEnCours.delete(user._id);
+        user.administrationPermissions = permissions;
+        this.notificationService.showSuccess(
+          'Succès',
+          permissions.length
+            ? `Permissions Administration mises à jour pour ${user.firstName} ${user.lastName}.`
+            : `Permissions Administration retirées à ${user.firstName} ${user.lastName}.`,
+        );
+      },
+      error: (error) => {
+        this.administrationPermissionsEnCours.delete(user._id);
+        console.error("Erreur lors de l'assignation des permissions Administration :", error);
+        this.notificationService.showError('Erreur', "Impossible d'assigner les permissions Administration.");
       },
     });
   }

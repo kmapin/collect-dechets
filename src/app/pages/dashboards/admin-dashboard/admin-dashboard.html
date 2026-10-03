@@ -26,6 +26,10 @@
             <i class="material-icons">add_location_alt</i>
             Gestion des quartiers
           </button>
+          <button class="qa-btn" routerLink="/dashboard/admin/roles-access">
+            <i class="material-icons">admin_panel_settings</i>
+            Droits financiers & Administration
+          </button>
         </div>
       </div>
     </div>
@@ -930,6 +934,15 @@
                         <option value="manager_terrain">Manager terrain</option>
                         <option value="administrateur">Administrateur</option>
                       </select>
+                      <select *ngIf="user.data?.role === 'manager'" class="finance-role-select"
+                        [ngModel]="getAdministrationPresetValue(user.data?.administrationPermissions)"
+                        [disabled]="administrationPermissionsEnCours.has(user.data?._id)"
+                        (ngModelChange)="assignAdministrationPermissions(user.data, $event)" title="Permissions Administration">
+                        <option value="">Aucun accès Administration</option>
+                        <option value="employees">Gérer les employés</option>
+                        <option value="employees_roles">Gérer les employés + rôles</option>
+                        <option value="custom" disabled>Personnalisé (voir Rôles et accès)</option>
+                      </select>
                     </div>
                   </td>
                 </tr>
@@ -1030,6 +1043,15 @@
                         <option value="comptable">Comptable</option>
                         <option value="manager_terrain">Manager terrain</option>
                         <option value="administrateur">Administrateur</option>
+                      </select>
+                      <select *ngIf="user?.data?.role === 'manager'" class="finance-role-select"
+                        [ngModel]="getAdministrationPresetValue(user?.data?.administrationPermissions)"
+                        [disabled]="administrationPermissionsEnCours.has(user.data?._id)"
+                        (ngModelChange)="assignAdministrationPermissions(user.data, $event)" title="Permissions Administration">
+                        <option value="">Aucun accès Administration</option>
+                        <option value="employees">Gérer les employés</option>
+                        <option value="employees_roles">Gérer les employés + rôles</option>
+                        <option value="custom" disabled>Personnalisé (voir Rôles et accès)</option>
                       </select>
                     </div>
                   </mat-card-content>

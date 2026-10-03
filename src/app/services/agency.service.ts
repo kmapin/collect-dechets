@@ -884,6 +884,54 @@ export class AgencyService {
       })
     );
   }
+
+  // Bascule l'accès au module financier d'un employé (indépendant du rôle financier —
+  // suspend/restaure l'accès sans effacer le rôle attribué). Même pattern agencyId que
+  // setEmployeeFinancialRole$ ci-dessus.
+  toggleEmployeeDroitsFinance$(employeeId: string, agencyId?: string): Observable<any> {
+    const url = `${environment.apiUrl}/finance/session/utilisateurs/${employeeId}/droits-finance`;
+    let params = new HttpParams();
+    if (agencyId) params = params.set('agencyId', agencyId);
+    return this.http.patch<any>(url, {}, { params }).pipe(
+      catchError((error) => {
+        console.error("Erreur lors de la bascule des droits financiers:", error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Remplace intégralement les droits financiers détaillés (onglets + actions) d'un
+  // employé — pendant finance de setEmployeeAdministrationPermissions$ ci-dessous. Même
+  // plafond de délégation côté serveur (routes/financeUsersRoute.js).
+  setEmployeeFinancePermissions$(employeeId: string, permissions: string[], agencyId?: string): Observable<any> {
+    const url = `${environment.apiUrl}/finance/session/utilisateurs/${employeeId}/permissions`;
+    let params = new HttpParams();
+    if (agencyId) params = params.set('agencyId', agencyId);
+    return this.http.patch<any>(url, { permissions }, { params }).pipe(
+      catchError((error) => {
+        console.error("Erreur lors de l'assignation des droits financiers détaillés:", error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Pendant de setEmployeeFinancialRole$ ci-dessus, pour le catalogue indépendant
+  // administrationPermissions (module Administration — employés / rôles & accès, voir
+  // config/administrationPermissions.js backend). Remplace intégralement le tableau de
+  // permissions — réservé aux titulaires de roles.manage côté serveur (ou super_admin,
+  // toujours autorisé). Même `agencyId` optionnel pour l'override cross-agence du dashboard
+  // admin (voir resolveAgency.js backend).
+  setEmployeeAdministrationPermissions$(employeeId: string, permissions: string[], agencyId?: string): Observable<any> {
+    const url = `${environment.apiUrl}/administration/session/utilisateurs/${employeeId}/permissions`;
+    let params = new HttpParams();
+    if (agencyId) params = params.set('agencyId', agencyId);
+    return this.http.patch<any>(url, { permissions }, { params }).pipe(
+      catchError((error) => {
+        console.error("Erreur lors de l'assignation des permissions Administration:", error);
+        return throwError(() => error);
+      })
+    );
+  }
   updateEmployee$(id: string, employeeData: any): Observable<Employee> {
     const url = `${environment.apiUrl}/agences/employees/${id}`;
     return this.http.put<Employee>(url, employeeData).pipe(

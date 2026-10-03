@@ -1,0 +1,142 @@
+<section class="access-mgmt" aria-label="Permissions Administration">
+  <header class="access-mgmt__header">
+    <h2>Permissions Administration</h2>
+    <p>Gérez les permissions du module Administration (employés, rôles & accès) des membres de l'agence.</p>
+  </header>
+
+  <div class="access-mgmt__body" *ngIf="!chargement(); else squelette">
+    <aside class="access-mgmt__list-panel">
+      <div class="access-mgmt__list-header">
+        <h3>Personnel</h3>
+        <span class="access-mgmt__count">{{ utilisateursFiltres().length }}</span>
+      </div>
+
+      <div class="access-mgmt__search">
+        <i class="material-icons" aria-hidden="true">search</i>
+        <input
+          type="text"
+          placeholder="Rechercher..."
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+        />
+      </div>
+
+      <select
+        class="access-mgmt__filter"
+        aria-label="Filtrer par rôle"
+        [ngModel]="filtreRole()"
+        (ngModelChange)="filtreRole.set($event)"
+      >
+        <option value="">Rôle : Tous</option>
+        <option value="manager">Manager</option>
+        <option value="collector">Collecteur</option>
+      </select>
+
+      <ul class="access-mgmt__list">
+        <li
+          *ngFor="let u of utilisateursFiltres()"
+          [class.selected]="u.idUtilisateur === utilisateurSelectionne()?.idUtilisateur"
+          (click)="selectionner(u)"
+        >
+          <span class="avatar" [ngClass]="'op-' + u.role">{{ initiales(u.identifiants) }}</span>
+          <span class="info">
+            <span class="name">{{ u.identifiants }}</span>
+            <span class="role-badge" [ngClass]="'op-' + u.role">{{ labelRoleOperationnel[u.role] || u.role }}</span>
+          </span>
+        </li>
+        <li *ngIf="utilisateursFiltres().length === 0" class="access-mgmt__empty">
+          Aucun utilisateur ne correspond à la recherche.
+        </li>
+      </ul>
+    </aside>
+
+    <div class="access-mgmt__detail" *ngIf="utilisateurSelectionne() as u">
+      <div class="detail-header">
+        <span class="avatar avatar--lg" [ngClass]="'op-' + u.role">{{ initiales(u.identifiants) }}</span>
+        <div>
+          <h3>{{ u.identifiants }}</h3>
+          <span class="role-badge" [ngClass]="'op-' + u.role">{{ labelRoleOperationnel[u.role] || u.role }}</span>
+        </div>
+      </div>
+
+      <p class="dirty-banner" *ngIf="modifie()">
+        <i class="material-icons" aria-hidden="true">warning</i>
+        Modifications non enregistrées — enregistrez ou annulez avant de sélectionner un autre utilisateur.
+      </p>
+
+      <p class="dirty-banner dirty-banner--info" *ngIf="!peutModifier()">
+        <i class="material-icons" aria-hidden="true">visibility</i>
+        <ng-container *ngIf="u.role === 'super_admin'; else pasPermission">
+          Les permissions d'un super_admin ne sont pas modifiables.
+        </ng-container>
+        <ng-template #pasPermission>
+          Lecture seule — permission « roles.manage » requise pour modifier.
+        </ng-template>
+      </p>
+
+      <div class="detail-section" *ngFor="let groupe of groupesDroitsAdministration">
+        <h4>{{ groupe.titre }}</h4>
+        <div class="detail-table-scroll">
+          <table class="detail-table">
+            <tbody>
+              <tr>
+                <th scope="row">Droit</th>
+                <td *ngFor="let droit of groupe.droits">
+                  {{ droit.label }}
+                  <i
+                    class="material-icons gouvernance-icon"
+                    *ngIf="estGouvernance(droit.cle)"
+                    title="Clé de gouvernance — réservée à super_admin"
+                    >shield</i
+                  >
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Accès</th>
+                <td class="detail-table__check-cell" *ngFor="let droit of groupe.droits">
+                  <button
+                    type="button"
+                    class="check-btn"
+                    [class.checked]="estCoche(droit.cle)"
+                    [class.disabled]="!peutModifier()"
+                    [disabled]="!peutModifier()"
+                    [attr.aria-pressed]="estCoche(droit.cle)"
+                    [attr.aria-label]="'Autoriser : ' + droit.label"
+                    (click)="basculerPermission(droit.cle)"
+                  >
+                    <i class="material-icons" aria-hidden="true">{{ estCoche(droit.cle) ? 'check_box' : 'check_box_outline_blank' }}</i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="detail-actions" *ngIf="peutModifier()">
+        <div class="detail-actions__spacer"></div>
+        <button type="button" class="detail-actions__ghost" [disabled]="!modifie()" (click)="annuler()">Annuler</button>
+        <button
+          type="button"
+          class="detail-actions__primary"
+          [disabled]="!modifie() || enregistrementEnCours()"
+          (click)="enregistrer()"
+        >
+          <i class="material-icons" aria-hidden="true">save</i>
+          Enregistrer les permissions Administration
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #squelette>
+    <div class="access-mgmt__body">
+      <aside class="access-mgmt__list-panel">
+        <div class="access-mgmt__skeleton-line" *ngFor="let i of [0, 1, 2, 3, 4]"></div>
+      </aside>
+      <div class="access-mgmt__detail access-mgmt__detail--skeleton">
+        <div class="access-mgmt__skeleton-line" *ngFor="let i of [0, 1, 2]"></div>
+      </div>
+    </div>
+  </ng-template>
+</section>

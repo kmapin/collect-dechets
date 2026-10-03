@@ -1,18 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { NotificationService } from '../../../../../../services/notification.service';
 import { AuthService } from '../../../../../../services/auth.service';
-import { AdministrationUsersService, UtilisateurAdministration } from '../services/administration-users.service';
-import {
-  AdministrationPermission,
-  GROUPES_DROITS_ADMINISTRATION,
-  PERMISSIONS_GOUVERNANCE as ADMIN_PERMISSIONS_GOUVERNANCE,
-  aLaPermissionAdministration,
-} from '../models/administration-permission';
+import { AdministrationUsersService } from '../services/administration-users.service';
 import { SESSION_SERVICE } from '../../../../financial-dashboard/data-access/tokens/session.token';
 import {
   FinancePermission,
@@ -22,22 +17,19 @@ import {
   PRESETS_ROLE,
   Role,
   Utilisateur,
-  aLaPermissionDepuisUser,
 } from '../../../../financial-dashboard/models';
 
 /**
- * Écran "Rôles et accès" d'Administration — fusionne deux écrans historiquement séparés :
- * - Section Finance : déplacée telle quelle depuis financial-dashboard/features/
- *   roles-admin/roles-admin.component.ts (mêmes méthodes/comportement, même service
- *   SESSION_SERVICE — désormais fourni en racine, voir main.ts — pour ne pas dupliquer
- *   le moteur de permissions finance).
- * - Section Administration : reprend l'écran plus simple construit précédemment dans ce
- *   module (AdministrationUsersService), inchangé.
- * Les deux domaines restent des systèmes de permissions INDÉPENDANTS côté backend
- * (financePermissions vs administrationPermissions) — cet écran ne fait que les
- * présenter côte à côte pour la même personne sélectionnée, sans les mélanger : chaque
- * section appelle uniquement son propre service, avec son propre état "modifié"/
- * "enregistrement en cours".
+ * Écran "Droits financiers" d'Administration — déplacé tel quel depuis financial-dashboard/
+ * features/roles-admin/roles-admin.component.ts (mêmes méthodes/comportement, même service
+ * SESSION_SERVICE — fourni en racine, voir main.ts — pour ne pas dupliquer le moteur de
+ * permissions finance). Le volet Administration (jadis affiché en bas de cet écran) a sa
+ * propre page dédiée depuis l'ajout de l'onglet "Permissions Administration" (voir
+ * administration-permissions/) — l'afficher aussi ici aurait été redondant. Cet écran
+ * continue toutefois d'interroger AdministrationUsersService.getUtilisateurs() pour une
+ * seule raison : en dériver roleOperationnel (manager/collector), utile à l'avatar, au
+ * badge de rôle et au filtre de la liste Personnel — jamais pour éditer des permissions
+ * d'administration, qui n'existent plus sur cet écran.
  */
 
 const LABEL_ROLE_FINANCE: Record<Role, string> = {
@@ -57,16 +49,17 @@ interface UtilisateurCombine {
   identifiants: string;
   /** Rôle opérationnel (manager/collector/...), depuis le domaine Administration —
    * vide si cette personne n'apparaît que côté Finance (ne devrait pas arriver en
-   * pratique, les deux domaines listant le même personnel d'agence). */
+   * pratique, les deux domaines listant le même personnel d'agence). Utilisé seulement
+   * pour l'avatar/le badge/le filtre de la liste — plus aucune permission Administration
+   * n'est éditée sur cet écran (voir administration-permissions/). */
   roleOperationnel: string;
   finance: Utilisateur | null;
-  administration: UtilisateurAdministration | null;
 }
 
 @Component({
   selector: 'app-administration-roles-access',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './roles-access.html',
   styleUrl: './roles-access.scss',
 })
@@ -81,7 +74,6 @@ export class RolesAccess {
   readonly rolesFinance = Object.values(Role);
   readonly permissionsOnglets = PERMISSIONS_ONGLETS;
   readonly groupesDroitsFinanciers = GROUPES_DROITS_FINANCIERS;
-  readonly groupesDroitsAdministration = GROUPES_DROITS_ADMINISTRATION;
 
   readonly utilisateurs = signal<UtilisateurCombine[]>([]);
   readonly chargement = signal(true);
@@ -95,21 +87,9 @@ export class RolesAccess {
   readonly accesAdministrationDisponible = signal(false);
 
   private readonly brouillonFinance = signal<Set<FinancePermission>>(new Set());
-  private readonly brouillonAdministration = signal<Set<AdministrationPermission>>(new Set());
   readonly enregistrementFinanceEnCours = signal(false);
-  readonly enregistrementAdministrationEnCours = signal(false);
-
-  // Calculés une fois à la construction (snapshot du token courant) — après
-  // l'affectation des propriétés de paramètres du constructeur, jamais en initialiseur
-  // de champ (voir employees-list.ts pour le même piège déjà rencontré/corrigé).
-  readonly peutGererAdministration: boolean;
-  readonly peutGererFinance: boolean;
 
   constructor() {
-    const currentUser = this.authService.getCurrentUser();
-    this.peutGererAdministration = aLaPermissionAdministration(currentUser as any, 'roles.manage');
-    this.peutGererFinance = aLaPermissionDepuisUser(currentUser as any, 'roles.manage');
-
     this.charger();
   }
 
@@ -137,20 +117,10 @@ export class RolesAccess {
     return u.permissions.some((cle) => !projet.has(cle));
   });
 
-  readonly modifieAdministration = computed(() => {
-    const u = this.utilisateurSelectionne()?.administration;
-    if (!u) return false;
-    const actuel = u.permissions as AdministrationPermission[];
-    const projet = this.brouillonAdministration();
-    if (actuel.length !== projet.size) return true;
-    return actuel.some((cle) => !projet.has(cle));
-  });
-
   selectionner(u: UtilisateurCombine): void {
-    if (this.modifieFinance() || this.modifieAdministration()) return;
+    if (this.modifieFinance()) return;
     this.selectionId.set(u.idUtilisateur);
     this.brouillonFinance.set(new Set(u.finance?.permissions ?? []));
-    this.brouillonAdministration.set(new Set((u.administration?.permissions ?? []) as AdministrationPermission[]));
   }
 
   initiales(identifiants: string): string {
@@ -232,56 +202,6 @@ export class RolesAccess {
     if (u) this.brouillonFinance.set(new Set(u.permissions));
   }
 
-  // ── Section Administration (reprise de l'écran existant) ──────────────────────────
-
-  estGouvernanceAdministration(cle: AdministrationPermission): boolean {
-    return ADMIN_PERMISSIONS_GOUVERNANCE.includes(cle);
-  }
-
-  estCocheAdministration(cle: AdministrationPermission): boolean {
-    return this.brouillonAdministration().has(cle);
-  }
-
-  /** Désactivé (pas juste masqué) sur une cible super_admin ou l'appelant lui-même — le
-   * backend refuserait de toute façon (controllers/administrationUsers.js). */
-  peutModifierAdministration(): boolean {
-    const u = this.utilisateurSelectionne();
-    if (!u || !u.administration) return false;
-    const estSoiMeme = u.idUtilisateur === this.authService.getCurrentUser()?._id;
-    const estSuperAdmin = u.roleOperationnel === 'super_admin';
-    return this.peutGererAdministration && !estSoiMeme && !estSuperAdmin;
-  }
-
-  basculerPermissionAdministration(cle: AdministrationPermission): void {
-    if (!this.peutModifierAdministration()) return;
-    const projet = new Set(this.brouillonAdministration());
-    if (projet.has(cle)) projet.delete(cle);
-    else projet.add(cle);
-    this.brouillonAdministration.set(projet);
-  }
-
-  enregistrerAdministration(): void {
-    const u = this.utilisateurSelectionne();
-    if (!u) return;
-    this.enregistrementAdministrationEnCours.set(true);
-    this.administrationUsersService.setPermissions(u.idUtilisateur, [...this.brouillonAdministration()]).subscribe({
-      next: () => {
-        this.enregistrementAdministrationEnCours.set(false);
-        this.notification.showSuccess('Permissions mises à jour', 'Les accès Administration de cet utilisateur ont été enregistrés.');
-        this.charger();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.enregistrementAdministrationEnCours.set(false);
-        this.notification.showError('Permissions non enregistrées', this.messageErreur(err));
-      },
-    });
-  }
-
-  annulerAdministration(): void {
-    const u = this.utilisateurSelectionne()?.administration;
-    if (u) this.brouillonAdministration.set(new Set(u.permissions as AdministrationPermission[]));
-  }
-
   // ── Chargement combiné ──────────────────────────────────────────────────────────
 
   private messageErreur(err: HttpErrorResponse): string {
@@ -308,7 +228,6 @@ export class RolesAccess {
           identifiants: u.identifiants,
           roleOperationnel: u.role,
           finance: null,
-          administration: u,
         });
       });
       (finance ?? []).forEach((u) => {
@@ -321,7 +240,6 @@ export class RolesAccess {
             identifiants: u.identifiants,
             roleOperationnel: '',
             finance: u,
-            administration: null,
           });
         }
       });
@@ -336,7 +254,6 @@ export class RolesAccess {
       const selectionne = liste.find((u) => u.idUtilisateur === this.selectionId());
       if (selectionne) {
         this.brouillonFinance.set(new Set(selectionne.finance?.permissions ?? []));
-        this.brouillonAdministration.set(new Set((selectionne.administration?.permissions ?? []) as AdministrationPermission[]));
       }
     });
   }

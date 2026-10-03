@@ -38,7 +38,13 @@ export const PERMISSIONS_ONGLETS: OngletPermission[] = [
   { cle: 'statements.view', label: 'Relevé', route: 'statement' },
   { cle: 'agent_payments.view', label: 'Paiement agents', route: 'agent-payment' },
   { cle: 'contracts.view', label: 'Contrats', route: 'contracts' },
-  { cle: 'roles.view', label: 'Rôles & droits', route: 'roles-admin' },
+  // Libellé "Gérer les droits financiers" (pas "Rôles & droits") : il n'existe plus
+  // d'onglet "Rôles & droits" dans le dashboard financier — déplacé vers Administration
+  // (voir agency-dashboard/features/administration/roles-access/). Cette clé reste utile
+  // ici : c'est la même clé de gouvernance (roles.view) qui conditionne l'accès à cet
+  // écran désormais externe, affichée dans ce tableau pour rester cohérente avec les
+  // autres onglets plutôt que d'être retirée silencieusement.
+  { cle: 'roles.view', label: 'Gérer les droits financiers', route: 'roles-access' },
 ];
 
 export interface DroitFinancier {

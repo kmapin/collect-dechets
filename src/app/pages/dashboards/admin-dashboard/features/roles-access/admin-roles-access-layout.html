@@ -1,0 +1,34 @@
+<div class="admin-roles-access-page">
+  <div class="page-header">
+    <div class="container">
+      <app-breadcrumb [items]="breadcrumbItems" variant="onColor"></app-breadcrumb>
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Droits financiers & Administration</h1>
+          <p class="page-subtitle">Managers de toutes les agences</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <nav class="tabs-navigation" role="tablist" aria-label="Navigation Droits financiers & Administration">
+      <a
+        *ngFor="let item of navItems"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        #rla="routerLinkActive"
+        class="tab-btn"
+        role="tab"
+        [attr.aria-selected]="rla.isActive"
+      >
+        <i class="material-icons">{{ item.icon }}</i>
+        {{ item.label }}
+      </a>
+    </nav>
+
+    <div class="tab-content">
+      <router-outlet />
+    </div>
+  </div>
+</div>

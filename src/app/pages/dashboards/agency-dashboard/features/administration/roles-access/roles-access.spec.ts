@@ -1,4 +1,5 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { RolesAccess } from './roles-access';
 import { SESSION_SERVICE } from '../../../../financial-dashboard/data-access/tokens/session.token';
@@ -8,7 +9,7 @@ import { AuthService } from '../../../../../../services/auth.service';
 import { Role, Utilisateur } from '../../../../financial-dashboard/models';
 import { SessionService } from '../../../../financial-dashboard/data-access/contracts/session.service';
 
-describe('RolesAccess (écran fusionné Finance + Administration)', () => {
+describe('RolesAccess (écran "Droits financiers" — plus de section Administration, voir administration-permissions/)', () => {
   let sessionSpy: jasmine.SpyObj<SessionService>;
   let administrationUsersSpy: jasmine.SpyObj<AdministrationUsersService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;
@@ -46,7 +47,7 @@ describe('RolesAccess (écran fusionné Finance + Administration)', () => {
       financeOk ? of([utilisateurFinance]) : throwError(() => new Error('403')),
     );
 
-    administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs', 'setPermissions']);
+    administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs']);
     administrationUsersSpy.getUtilisateurs.and.returnValue(
       administrationOk ? of([utilisateurAdministration]) : throwError(() => new Error('403')),
     );
@@ -69,35 +70,71 @@ describe('RolesAccess (écran fusionné Finance + Administration)', () => {
 
   // ── Affichage des permissions / fusion des deux listes ──────────────────────────
   describe('chargement et fusion des listes (affichage des permissions)', () => {
-    it('fusionne un utilisateur présent dans les deux domaines en une seule ligne par idUtilisateur', () => {
+    it('fusionne un utilisateur présent dans les deux domaines en une seule ligne par idUtilisateur (données Administration utilisées seulement pour roleOperationnel)', () => {
       const composant = construire();
       expect(composant.utilisateurs().length).toBe(1);
       const u = composant.utilisateurs()[0];
       expect(u.finance).toEqual(utilisateurFinance);
-      expect(u.administration).toEqual(utilisateurAdministration);
+      expect(u.roleOperationnel).toBe('manager');
       expect(composant.chargement()).toBe(false);
     });
 
-    it('sélectionne automatiquement le premier utilisateur après chargement et affiche ses permissions', () => {
+    it('sélectionne automatiquement le premier utilisateur après chargement et affiche ses droits financiers', () => {
       const composant = construire();
       expect(composant.utilisateurSelectionne()?.idUtilisateur).toBe('u1');
       expect(composant.estCocheFinance('transactions.view' as any)).toBe(true);
-      expect(composant.estCocheAdministration('employees.view' as any)).toBe(true);
-      expect(composant.estCocheAdministration('employees.delete' as any)).toBe(false);
     });
 
-    it('accès finance disponible mais administration en échec (403) -> seule la section finance est exposée', () => {
+    it('accès finance disponible mais administration en échec (403) -> accesAdministrationDisponible() false, le filtre par rôle se masque, mais la section finance reste exposée', () => {
       const composant = construire({ administrationOk: false });
       expect(composant.accesFinanceDisponible()).toBe(true);
       expect(composant.accesAdministrationDisponible()).toBe(false);
-      expect(composant.utilisateurs()[0].administration).toBeNull();
     });
 
-    it('accès administration disponible mais finance en échec (403) -> seule la section administration est exposée (préserve le fonctionnement si finance est indisponible)', () => {
+    it('accès administration disponible mais finance en échec (403) -> accesFinanceDisponible() false (préserve le fonctionnement si finance est indisponible)', () => {
       const composant = construire({ financeOk: false });
       expect(composant.accesFinanceDisponible()).toBe(false);
       expect(composant.accesAdministrationDisponible()).toBe(true);
       expect(composant.utilisateurs()[0].finance).toBeNull();
+    });
+  });
+
+  // ── Message affiché quand l'APPELANT n'a pas accès à la finance ────────────────
+  // Pas de cas "ni finance ni administration" testé ici : architecturalement
+  // impossible d'atteindre ce message dans cet état — utilisateurSelectionne() (qui
+  // englobe ce bloc) exige qu'au moins un des deux domaines ait renvoyé des données, donc
+  // accesFinanceDisponible() faux ICI implique nécessairement accesAdministrationDisponible()
+  // vrai (voir le commentaire dans roles-access.html).
+  describe("message d'accès refusé (finance indisponible pour l'appelant, pas pour la personne sélectionnée)", () => {
+    it('finance indisponible mais administration disponible -> message avec lien vers Permissions Administration (pas "aucune information... pour cet utilisateur", trompeur)', () => {
+      sessionSpy = jasmine.createSpyObj<SessionService>('SessionService', ['getUtilisateurs', 'toggleDroitsFinance', 'setFinancialRole', 'setPermissions']);
+      sessionSpy.getUtilisateurs.and.returnValue(throwError(() => new Error('403')));
+      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs']);
+      administrationUsersSpy.getUtilisateurs.and.returnValue(of([utilisateurAdministration]));
+      notificationSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError']);
+      authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser']);
+      authServiceSpy.getCurrentUser.and.returnValue({ _id: 'moi', role: 'manager' } as any);
+
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          { provide: SESSION_SERVICE, useValue: sessionSpy },
+          { provide: AdministrationUsersService, useValue: administrationUsersSpy },
+          { provide: NotificationService, useValue: notificationSpy },
+          { provide: AuthService, useValue: authServiceSpy },
+        ],
+      });
+
+      const fixture = TestBed.createComponent(RolesAccess);
+      fixture.detectChanges();
+
+      const message = fixture.nativeElement.querySelector('p.access-mgmt__empty');
+      expect(message).withContext('message "accès refusé" introuvable').toBeTruthy();
+      expect(message.textContent).toContain("Vous n'avez pas accès au module financier");
+      expect(message.textContent).not.toContain('Aucune information financière disponible pour cet utilisateur');
+      const lien: HTMLAnchorElement = message.querySelector('a');
+      expect(lien).withContext('lien vers Permissions Administration introuvable').toBeTruthy();
+      expect(lien.getAttribute('ng-reflect-router-link') || lien.getAttribute('href')).toBeTruthy();
     });
   });
 
@@ -112,7 +149,7 @@ describe('RolesAccess (écran fusionné Finance + Administration)', () => {
 
       sessionSpy = jasmine.createSpyObj<SessionService>('SessionService', ['getUtilisateurs', 'toggleDroitsFinance', 'setFinancialRole', 'setPermissions']);
       sessionSpy.getUtilisateurs.and.returnValue(of([]));
-      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs', 'setPermissions']);
+      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs']);
       administrationUsersSpy.getUtilisateurs.and.returnValue(of(utilisateursAdmin));
       notificationSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError']);
       authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser']);
@@ -180,7 +217,7 @@ describe('RolesAccess (écran fusionné Finance + Administration)', () => {
 
       sessionSpy = jasmine.createSpyObj<SessionService>('SessionService', ['getUtilisateurs', 'toggleDroitsFinance', 'setFinancialRole', 'setPermissions']);
       sessionSpy.getUtilisateurs.and.returnValue(of([]));
-      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs', 'setPermissions']);
+      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs']);
       administrationUsersSpy.getUtilisateurs.and.returnValue(of(utilisateursAdmin));
       notificationSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError']);
       authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser']);
@@ -229,6 +266,10 @@ describe('RolesAccess (écran fusionné Finance + Administration)', () => {
       expect(fixture.nativeElement.querySelector('.access-mgmt__empty')).toBeTruthy();
     });
 
+    it("n'affiche plus aucun contenu Administration (section retirée, désormais sur son propre onglet)", () => {
+      expect(fixture.nativeElement.textContent).not.toContain('Permissions Administration');
+    });
+
     function selectionnerRole(valeur: string): void {
       const select: HTMLSelectElement = fixture.nativeElement.querySelector('.access-mgmt__filter');
       select.value = valeur;
@@ -268,7 +309,7 @@ describe('RolesAccess (écran fusionné Finance + Administration)', () => {
     beforeEach(() => {
       sessionSpy = jasmine.createSpyObj<SessionService>('SessionService', ['getUtilisateurs', 'toggleDroitsFinance', 'setFinancialRole', 'setPermissions']);
       sessionSpy.getUtilisateurs.and.returnValue(of([utilisateurFinance]));
-      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs', 'setPermissions']);
+      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs']);
       administrationUsersSpy.getUtilisateurs.and.returnValue(throwError(() => new Error('403')));
       notificationSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError']);
       authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser']);
@@ -305,69 +346,6 @@ describe('RolesAccess (écran fusionné Finance + Administration)', () => {
     });
   });
 
-  // ── Modification des permissions ────────────────────────────────────────────────
-  describe('modification des permissions (brouillon + enregistrement)', () => {
-    it('basculerPermissionAdministration ajoute/retire la clé du brouillon et modieAdministration() détecte le changement', () => {
-      const composant = construire();
-      expect(composant.modifieAdministration()).toBe(false);
-      composant.basculerPermissionAdministration('employees.create' as any);
-      expect(composant.estCocheAdministration('employees.create' as any)).toBe(true);
-      expect(composant.modifieAdministration()).toBe(true);
-    });
-
-    it('annulerAdministration restaure le brouillon aux permissions enregistrées', () => {
-      const composant = construire();
-      composant.basculerPermissionAdministration('employees.create' as any);
-      composant.annulerAdministration();
-      expect(composant.modifieAdministration()).toBe(false);
-      expect(composant.estCocheAdministration('employees.create' as any)).toBe(false);
-    });
-
-    it('enregistrerAdministration appelle AdministrationUsersService.setPermissions avec le bon id et le bon brouillon', () => {
-      const composant = construire();
-      administrationUsersSpy.setPermissions.and.returnValue(of(utilisateurAdministration));
-      composant.basculerPermissionAdministration('employees.create' as any);
-      composant.enregistrerAdministration();
-      expect(administrationUsersSpy.setPermissions).toHaveBeenCalledWith(
-        'u1',
-        jasmine.arrayContaining(['employees.view', 'employees.create']),
-      );
-      expect(notificationSpy.showSuccess).toHaveBeenCalled();
-    });
-
-    it("peutModifierAdministration() est false sur l'utilisateur appelant lui-même (anti auto-escalade)", () => {
-      const composant = construire({ currentUser: { _id: 'u1', role: 'manager', administrationPermissions: ['roles.manage'] } });
-      expect(composant.peutModifierAdministration()).toBe(false);
-    });
-
-    it('peutModifierAdministration() est false sur une cible super_admin', () => {
-      const adminSuperAdmin: UtilisateurAdministration = { ...utilisateurAdministration, role: 'super_admin' };
-      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs', 'setPermissions']);
-      administrationUsersSpy.getUtilisateurs.and.returnValue(of([adminSuperAdmin]));
-      sessionSpy = jasmine.createSpyObj<SessionService>('SessionService', ['getUtilisateurs', 'toggleDroitsFinance', 'setFinancialRole', 'setPermissions']);
-      sessionSpy.getUtilisateurs.and.returnValue(of([utilisateurFinance]));
-      notificationSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError']);
-      authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser']);
-      authServiceSpy.getCurrentUser.and.returnValue({ _id: 'moi', role: 'manager', administrationPermissions: ['roles.manage'] } as any);
-
-      TestBed.configureTestingModule({
-        providers: [
-          { provide: SESSION_SERVICE, useValue: sessionSpy },
-          { provide: AdministrationUsersService, useValue: administrationUsersSpy },
-          { provide: NotificationService, useValue: notificationSpy },
-          { provide: AuthService, useValue: authServiceSpy },
-        ],
-      });
-      const composant = TestBed.runInInjectionContext(() => new RolesAccess());
-      expect(composant.peutModifierAdministration()).toBe(false);
-    });
-
-    it("peutModifierAdministration() est false si l'appelant n'a pas roles.manage", () => {
-      const composant = construire({ currentUser: { _id: 'moi', role: 'manager', administrationPermissions: [] } });
-      expect(composant.peutModifierAdministration()).toBe(false);
-    });
-  });
-
   // ── Fonctionnement des permissions financières (section déplacée) ──────────────
   describe('fonctionnement des permissions financières (comportement inchangé après le déplacement)', () => {
     it('basculerDroitsFinance appelle session.toggleDroitsFinance avec le bon id', () => {
@@ -389,7 +367,7 @@ describe('RolesAccess (écran fusionné Finance + Administration)', () => {
       const utilisateurSansDroits: Utilisateur = { ...utilisateurFinance, droitsFinance: false, permissions: [] };
       sessionSpy = jasmine.createSpyObj<SessionService>('SessionService', ['getUtilisateurs', 'toggleDroitsFinance', 'setFinancialRole', 'setPermissions']);
       sessionSpy.getUtilisateurs.and.returnValue(of([utilisateurSansDroits]));
-      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs', 'setPermissions']);
+      administrationUsersSpy = jasmine.createSpyObj('AdministrationUsersService', ['getUtilisateurs']);
       administrationUsersSpy.getUtilisateurs.and.returnValue(of([utilisateurAdministration]));
       notificationSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError']);
       authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentUser']);
@@ -418,16 +396,15 @@ describe('RolesAccess (écran fusionné Finance + Administration)', () => {
 
   // ── Blocage du changement de sélection si une modification est en cours ────────
   describe('protection contre la perte de modifications non enregistrées', () => {
-    it("selectionner() n'a aucun effet si une modification Administration est en attente", () => {
+    it("selectionner() n'a aucun effet si une modification Finance est en attente", () => {
       const composant = construire();
-      composant.basculerPermissionAdministration('employees.create' as any);
+      composant.basculerPermissionFinance('transactions.create' as any);
       const idAvant = composant.utilisateurSelectionne()?.idUtilisateur;
       composant.selectionner({
         idUtilisateur: 'u2',
         identifiants: 'bob@agence.com',
         roleOperationnel: 'collector',
         finance: null,
-        administration: null,
       });
       expect(composant.utilisateurSelectionne()?.idUtilisateur).toBe(idAvant);
     });

@@ -1,0 +1,96 @@
+// Même bannière que admin-dashboard.html (.page-header/.page-title/.page-subtitle/
+// .container sont globales, voir src/styles.scss, reprises telles quelles sans surcharge
+// locale) — .header-content/.welcome-section/.tabs-navigation/.tab-btn/.tab-content sont
+// en revanche définies localement (encapsulation de vue Angular), reprises à l'identique
+// de admin-dashboard.scss / administration-layout.scss (module Administration côté agence)
+// plutôt que dupliquées globalement.
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 0;
+}
+
+.welcome-section {
+  h1 {
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.tabs-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin: 24px 0;
+  background: var(--white);
+  padding: 4px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-light);
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-weight: 500;
+
+  i {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: var(--light-gray);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--primary-color);
+    color: var(--white);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.tab-content {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-light);
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .tab-content {
+    padding: 3%;
+  }
+}
+
+@media (max-width: 600px) {
+  .tab-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}

@@ -252,6 +252,18 @@ export const routes: Routes = [
       ),
   },
 
+  // Pendant plateforme entière de dashboard/agency/administration — personnel = managers de
+  // toutes agences. Deux onglets séparés (finance / administration-permissions), même
+  // scission que côté agence — voir admin-roles-access.routes.ts.
+  {
+    canActivate: [adminGuard],
+    path: "dashboard/admin/roles-access",
+    loadChildren: () =>
+      import("./pages/dashboards/admin-dashboard/features/roles-access/admin-roles-access.routes").then(
+        (m) => m.ADMIN_ROLES_ACCESS_ROUTES,
+      ),
+  },
+
   {
     canActivate: [adminGuard],
     path: "quartiers",

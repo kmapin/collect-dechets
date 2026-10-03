@@ -25,7 +25,18 @@ export const ADMINISTRATION_ROUTES: Routes = [
         // financial-dashboard/features/roles-admin/) — voir guards/roles-access.guard.ts.
         canActivate: [rolesAccessGuard],
         loadComponent: () => import('./roles-access/roles-access').then((m) => m.RolesAccess),
-        title: 'Administration — Rôles & Accès',
+        title: 'Administration — Droits financiers',
+      },
+      {
+        path: 'administration-permissions',
+        // administrationPermissionGuard standard (pas rolesAccessGuard) : contrairement à
+        // roles-access, cette page n'affiche jamais rien côté finance — un titulaire de
+        // roles.view finance uniquement n'a pas de raison d'y accéder.
+        canActivate: [administrationPermissionGuard],
+        data: { permissions: ['roles.view'] },
+        loadComponent: () =>
+          import('./administration-permissions/administration-permissions').then((m) => m.AdministrationPermissions),
+        title: 'Administration — Permissions Administration',
       },
       { path: '**', redirectTo: 'employees' },
     ],

@@ -1,6 +1,6 @@
 <section class="access-mgmt" aria-label="Gestion des accès">
   <header class="access-mgmt__header">
-    <h2>Rôles et accès</h2>
+    <h2>Droits financiers</h2>
     <p>Gérez les droits financiers et les permissions du module Administration des membres de l'agence.</p>
   </header>
 
@@ -67,15 +67,13 @@
         </div>
       </div>
 
-      <p class="dirty-banner" *ngIf="modifieFinance() || modifieAdministration()">
+      <p class="dirty-banner" *ngIf="modifieFinance()">
         <i class="material-icons" aria-hidden="true">warning</i>
         Modifications non enregistrées — enregistrez ou annulez avant de sélectionner un autre utilisateur.
       </p>
 
       <!-- ═══════════════ Section Finance (déplacée depuis financial-dashboard) ═══════════════ -->
       <ng-container *ngIf="accesFinanceDisponible() && u.finance as uf">
-        <h3 class="domain-title">Droits financiers</h3>
-
         <div class="detail-section">
           <h4>1. Rôle attribué</h4>
           <p class="detail-section__hint">Changer de rôle réinitialise les droits détaillés ci-dessous sur le modèle du nouveau rôle.</p>
@@ -229,78 +227,24 @@
         </div>
       </ng-container>
 
-      <!-- ═══════════════ Section Administration ═══════════════ -->
-      <ng-container *ngIf="accesAdministrationDisponible() && u.administration as ua">
-        <h3 class="domain-title">Permissions Administration</h3>
-
-        <p class="dirty-banner dirty-banner--info" *ngIf="!peutModifierAdministration()">
-          <i class="material-icons" aria-hidden="true">visibility</i>
-          <ng-container *ngIf="u.roleOperationnel === 'super_admin'; else pasPermissionAdmin">
-            Les permissions d'un super_admin ne sont pas modifiables.
-          </ng-container>
-          <ng-template #pasPermissionAdmin>
-            Lecture seule — permission « roles.manage » (Administration) requise pour modifier.
-          </ng-template>
-        </p>
-
-        <div class="detail-section" *ngFor="let groupe of groupesDroitsAdministration">
-          <h4>{{ groupe.titre }}</h4>
-          <div class="detail-table-scroll">
-            <table class="detail-table">
-              <tbody>
-                <tr>
-                  <th scope="row">Droit</th>
-                  <td *ngFor="let droit of groupe.droits">
-                    {{ droit.label }}
-                    <i
-                      class="material-icons gouvernance-icon"
-                      *ngIf="estGouvernanceAdministration(droit.cle)"
-                      title="Clé de gouvernance — réservée à super_admin"
-                      >shield</i
-                    >
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">Accès</th>
-                  <td class="detail-table__check-cell" *ngFor="let droit of groupe.droits">
-                    <button
-                      type="button"
-                      class="check-btn"
-                      [class.checked]="estCocheAdministration(droit.cle)"
-                      [class.disabled]="!peutModifierAdministration()"
-                      [disabled]="!peutModifierAdministration()"
-                      [attr.aria-pressed]="estCocheAdministration(droit.cle)"
-                      [attr.aria-label]="'Autoriser : ' + droit.label"
-                      (click)="basculerPermissionAdministration(droit.cle)"
-                    >
-                      <i class="material-icons" aria-hidden="true">{{ estCocheAdministration(droit.cle) ? 'check_box' : 'check_box_outline_blank' }}</i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="detail-actions" *ngIf="peutModifierAdministration()">
-          <div class="detail-actions__spacer"></div>
-          <button type="button" class="detail-actions__ghost" [disabled]="!modifieAdministration()" (click)="annulerAdministration()">
-            Annuler
-          </button>
-          <button
-            type="button"
-            class="detail-actions__primary"
-            [disabled]="!modifieAdministration() || enregistrementAdministrationEnCours()"
-            (click)="enregistrerAdministration()"
-          >
-            <i class="material-icons" aria-hidden="true">save</i>
-            Enregistrer les permissions Administration
-          </button>
-        </div>
-      </ng-container>
-
-      <p class="access-mgmt__empty" *ngIf="!accesFinanceDisponible() && !accesAdministrationDisponible()">
-        Aucune information disponible pour cet utilisateur.
+      <!--
+        Pas de section Administration ici — elle a son propre onglet dédié depuis l'ajout
+        de "Permissions Administration" (voir administration-permissions/). L'afficher
+        aussi ici serait redondant : chaque onglet ne touche plus qu'à son propre domaine.
+      -->
+      <!--
+        Déclenché par l'ACCÈS DE L'APPELANT (pas par les données de la personne
+        sélectionnée) — un détenteur de roles.view Administration sans roles.view Finance
+        peut atteindre cette page (voir rolesAccessGuard) mais n'a ici rien à consulter.
+        Pas de branche "aucun accès du tout" : un utilisateur n'est sélectionnable que si
+        l'un des deux domaines a renvoyé des données (voir utilisateurSelectionne() plus
+        haut, qui englobe ce bloc) — si accesFinanceDisponible() est faux ICI, c'est donc
+        forcément accesAdministrationDisponible() qui est vrai.
+      -->
+      <p class="access-mgmt__empty" *ngIf="!accesFinanceDisponible()">
+        Vous n'avez pas accès au module financier. Pour gérer les permissions
+        Administration du personnel, rendez-vous sur l'onglet
+        <a routerLink="../administration-permissions">Permissions Administration</a>.
       </p>
     </div>
   </div>
