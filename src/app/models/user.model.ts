@@ -31,6 +31,11 @@ export interface User {
   // Droits financiers (dashboard financier) — séparés du rôle opérationnel `role` ci-dessus.
   financialRole?: 'comptable' | 'manager_terrain' | 'administrateur' | null;
   droitsFinance?: boolean;
+  // Permissions du module Administration (employés / rôles & accès) — catalogue
+  // indépendant de financePermissions ci-dessus (voir backend config/
+  // administrationPermissions.js). Pas de champ "activé" séparé : le tableau vide est
+  // la seule valeur par défaut, comme côté backend.
+  administrationPermissions?: string[];
 }
 
 // Phase 10 (harmonisation) — alias plutôt qu'interface dupliquée ; voir address.model.ts.
@@ -152,6 +157,11 @@ export interface RegisterUserData {
   // Droits financiers (dashboard financier) — séparés du rôle opérationnel `role` ci-dessus.
   financialRole?: 'comptable' | 'manager_terrain' | 'administrateur' | null;
   droitsFinance?: boolean;
+  // Permissions du module Administration (employés / rôles & accès) — catalogue
+  // indépendant de financePermissions ci-dessus (voir backend config/
+  // administrationPermissions.js). Pas de champ "activé" séparé : le tableau vide est
+  // la seule valeur par défaut, comme côté backend.
+  administrationPermissions?: string[];
 }
 
 // Interface for adding employee to agency

@@ -1,0 +1,178 @@
+<div class="employees-page">
+  <div class="toolbar">
+    <div class="search-group">
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Rechercher par nom, email ou téléphone…"
+        [ngModel]="terme()"
+        (ngModelChange)="terme.set($event)"
+        (keyup.enter)="rechercher()"
+      />
+      <button class="btn btn-secondary" type="button" (click)="rechercher()">
+        <i class="material-icons">search</i>
+        Rechercher
+      </button>
+
+      <select
+        class="role-filter"
+        [ngModel]="filtreRole()"
+        (ngModelChange)="changerFiltreRole($event)"
+      >
+        <option value="">Tous les rôles</option>
+        <option value="manager">Manager</option>
+        <option value="collector">Collecteur</option>
+      </select>
+    </div>
+
+    @if (peutCreer) {
+      <button class="btn btn-primary" type="button" (click)="ouvrirCreation()">
+        <i class="material-icons">person_add</i>
+        Ajouter un employé
+      </button>
+    }
+  </div>
+
+  @if (etat() === 'loading') {
+    <div class="placeholder-state">
+      <i class="material-icons">hourglass_empty</i>
+      <p>Chargement des employés…</p>
+    </div>
+  } @else if (etat() === 'error') {
+    <div class="placeholder-state placeholder-state--error">
+      <i class="material-icons">error_outline</i>
+      <p>{{ messageErreur() }}</p>
+      <button class="btn btn-secondary" type="button" (click)="charger()">Réessayer</button>
+    </div>
+  } @else if (!employes().length) {
+    <div class="placeholder-state">
+      <i class="material-icons">group_off</i>
+      <p>{{ terme() || filtreRole() ? 'Aucun employé ne correspond à ces critères.' : 'Aucun employé pour le moment.' }}</p>
+    </div>
+  } @else {
+    <!-- Même design que la liste Clients du dashboard agence (agency-dashboard.html,
+         section @if (clientViewMode === "table")) : avatar coloré + initiales, badge
+         rôle/statut en pastille, boutons d'action circulaires, pagination identique. -->
+    <div class="employees-table-wrapper">
+      <table class="employees-table">
+        <thead>
+          <tr>
+            <th>Employé</th>
+            <th>Rôle</th>
+            <th>Statut</th>
+            <th>Email</th>
+            <th>Téléphone</th>
+            <th>Adresse</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (employe of employes(); track employe._id) {
+            <tr>
+              <td class="cell-employee">
+                <div class="table-avatar-wrap">
+                  <div class="table-avatar-initials" [style.background-color]="couleurAvatar(employe)">
+                    {{ initiales(employe) }}
+                  </div>
+                  <span class="name-text">{{ employe.firstName }} {{ employe.lastName }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="status-badge-table" [class]="'role-' + employe.role">{{ labelRole(employe.role) }}</span>
+              </td>
+              <td>
+                <span
+                  class="status-badge-table"
+                  [class.status-active]="employe.status === 'active'"
+                  [class.status-inactive]="employe.status !== 'active'"
+                >
+                  {{ labelStatut(employe.status) }}
+                </span>
+              </td>
+              <td class="cell-email">{{ employe.email || 'Non renseigné' }}</td>
+              <td>{{ employe.phone }}</td>
+              <td>{{ adresseLabel(employe) }}</td>
+              <td class="col-actions">
+                <div class="table-actions">
+                  @if (peutModifier) {
+                    <button class="action-btn edit" type="button" title="Modifier" (click)="ouvrirEdition(employe)">
+                      <i class="material-icons">edit</i>
+                    </button>
+                  }
+                  @if (peutSupprimer) {
+                    <button class="action-btn danger" type="button" title="Supprimer" (click)="supprimer(employe)">
+                      <i class="material-icons">delete</i>
+                    </button>
+                  }
+                  @if (!peutModifier && !peutSupprimer) {
+                    <span class="hint">Lecture seule</span>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination — même modèle que la liste Clients (agency-dashboard.html,
+         section "Pagination Clients"). -->
+    <div class="pagination-section">
+      <div class="pagination-left">
+        <span class="pagination-details">
+          {{ debutItem() }}–{{ finItem() }} sur <strong>{{ total() }}</strong> employé(s)
+        </span>
+        <div class="per-page-group">
+          <label class="per-page-label">Afficher</label>
+          <select class="per-page-select" [ngModel]="limit()" (ngModelChange)="changerLimit(+$event)">
+            <option [ngValue]="5">5</option>
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="20">20</option>
+            <option [ngValue]="50">50</option>
+          </select>
+          <span class="per-page-label">par page</span>
+        </div>
+      </div>
+      @if (totalPages() > 1) {
+        <div class="pagination-controls">
+          <button class="pagination-btn" [disabled]="page() === 1" (click)="allerPage(1)" title="Première page">
+            <i class="material-icons">first_page</i>
+          </button>
+          <button class="pagination-btn" [disabled]="page() === 1" (click)="pageePrecedente()" title="Page précédente">
+            <i class="material-icons">chevron_left</i>
+          </button>
+          <div class="pagination-numbers">
+            @for (p of numerosDePages(); track p) {
+              <button class="pagination-btn page-number" [class.active]="p === page()" (click)="allerPage(p)">
+                {{ p }}
+              </button>
+            }
+          </div>
+          <button class="pagination-btn" [disabled]="page() === totalPages()" (click)="pageSuivante()" title="Page suivante">
+            <i class="material-icons">chevron_right</i>
+          </button>
+          <button class="pagination-btn" [disabled]="page() === totalPages()" (click)="allerPage(totalPages())" title="Dernière page">
+            <i class="material-icons">last_page</i>
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (afficherFormulaire()) {
+  <div class="employee-drawer-overlay" (click)="fermerFormulaire()">
+    <div class="employee-drawer" (click)="$event.stopPropagation()">
+      <div class="employee-drawer-header">
+        <h2>{{ employeEnEdition() ? 'Modifier l\'employé' : 'Ajouter un employé' }}</h2>
+        <button class="close-btn" type="button" (click)="fermerFormulaire()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="employee-drawer-body">
+        <app-employee-form [employee]="employeEnEdition()" (saved)="surEnregistrement()" (cancelled)="fermerFormulaire()">
+        </app-employee-form>
+      </div>
+    </div>
+  </div>
+}

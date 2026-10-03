@@ -9,6 +9,8 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
   let newNotification$: Subject<any>;
   let websocketServiceSpy: { onNewNotification: jasmine.Spy };
   let eligibilityServiceSpy: { checkEligibility$: jasmine.Spy };
+  let confirmDialogSpy: { confirm: jasmine.Spy; confirmWithInput: jasmine.Spy };
+  let notificationServiceSpy: { showSuccess: jasmine.Spy; showError: jasmine.Spy };
 
   const CONTRATS = [
     { _id: 'c1', clientId: 'client-1', agencyId: { _id: 'a1', name: 'Agence Test' }, pricingId: { _id: 'p1', price: 5000, planType: 'standard' }, frequenceCollecte: 'monthly', status: 'actif', prixParPeriode: 5000, passagesParPeriode: 4, startDate: '2026-01-01', endDate: null, documentUrl: null, documentPublicId: null },
@@ -39,8 +41,24 @@ describe('ContratPage - vue client "Mes contrats" (Phase 6)', () => {
         subscribe: ({ next }: any) => { next && next({ eligible: true, source: null, reason: null }); return { unsubscribe: () => {} }; },
       }),
     };
+    confirmDialogSpy = {
+      confirm: jasmine.createSpy('confirm').and.returnValue(Promise.resolve(false)),
+      confirmWithInput: jasmine.createSpy('confirmWithInput').and.returnValue(Promise.resolve(null)),
+    };
+    notificationServiceSpy = {
+      showSuccess: jasmine.createSpy('showSuccess'),
+      showError: jasmine.createSpy('showError'),
+    };
 
-    component = new ContratPage(authServiceSpy as any, contratServiceSpy as any, redevanceServiceSpy as any, websocketServiceSpy as any, eligibilityServiceSpy as any);
+    component = new ContratPage(
+      authServiceSpy as any,
+      contratServiceSpy as any,
+      redevanceServiceSpy as any,
+      websocketServiceSpy as any,
+      eligibilityServiceSpy as any,
+      confirmDialogSpy as any,
+      notificationServiceSpy as any,
+    );
   });
 
   it('ngOnInit() charge les contrats du client courant', () => {

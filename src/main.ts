@@ -13,6 +13,8 @@ import { authInterceptorInterceptor } from './app/auth-interceptor-interceptor';
 import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
+import { SESSION_SERVICE } from './app/pages/dashboards/financial-dashboard/data-access/tokens/session.token';
+import { SessionHttpService } from './app/pages/dashboards/financial-dashboard/data-access/http/session.http.service';
 
 registerLocaleData(localeFr);
 registerLocaleData(localeFr, 'fr-FR');
@@ -35,5 +37,10 @@ bootstrapApplication(AppComponent, {
     providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: false } } }),
     MessageService,
     { provide: LOCALE_ID, useValue: 'fr-FR' },
+    // Fourni au niveau racine (plutôt que seulement dans financial-dashboard.routes.ts)
+    // pour que le "moteur" de permissions finance (SessionService) soit réutilisable
+    // depuis n'importe quelle route, notamment Administration -> Rôles et accès —
+    // "le même moteur de permissions partout" plutôt qu'une seconde instance dupliquée.
+    { provide: SESSION_SERVICE, useClass: SessionHttpService },
   ],
 }).catch(err => console.error(err));

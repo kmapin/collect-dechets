@@ -7,13 +7,11 @@ import { CLIENT_DATA_SERVICE } from './data-access/tokens/client-data.token';
 import { FACTURE_DATA_SERVICE } from './data-access/tokens/facture-data.token';
 import { FINANCE_DATA_SERVICE } from './data-access/tokens/finance-data.token';
 import { AGENT_DATA_SERVICE } from './data-access/tokens/agent-data.token';
-import { SESSION_SERVICE } from './data-access/tokens/session.token';
 import { EXPORT_SERVICE } from './data-access/tokens/export.token';
 import { ClientDataHttpService } from './data-access/http/client-data.http.service';
 import { FactureDataHttpService } from './data-access/http/facture-data.http.service';
 import { FinanceDataHttpService } from './data-access/http/finance-data.http.service';
 import { AgentDataHttpService } from './data-access/http/agent-data.http.service';
-import { SessionHttpService } from './data-access/http/session.http.service';
 import { ExportClientService } from './data-access/export/export-client.service';
 import { financeAccessGuard } from './guards/finance-access.guard';
 import { financePermissionGuard } from './guards/finance-permission.guard';
@@ -27,7 +25,9 @@ export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
       { provide: FACTURE_DATA_SERVICE, useClass: FactureDataHttpService },
       { provide: FINANCE_DATA_SERVICE, useClass: FinanceDataHttpService },
       { provide: AGENT_DATA_SERVICE, useClass: AgentDataHttpService },
-      { provide: SESSION_SERVICE, useClass: SessionHttpService },
+      // SESSION_SERVICE n'est plus fourni ici : il est désormais fourni au niveau racine
+      // (main.ts) pour être réutilisable hors de ce module (Administration -> Rôles et
+      // accès notamment) sans dupliquer l'enregistrement.
       { provide: EXPORT_SERVICE, useClass: ExportClientService },
     ],
     loadComponent: () => import('./features/shell/finance-layout/finance-layout').then(m => m.FinanceLayout),
@@ -105,13 +105,12 @@ export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
         loadComponent: () => import('./features/contracts/contracts.component').then(m => m.ContractsComponent),
         title: 'Contrats',
       },
-      {
-        path: 'roles-admin',
-        canActivate: [financeAccessGuard, financePermissionGuard],
-        data: { permissions: ['roles.view'] },
-        loadComponent: () => import('./features/roles-admin/roles-admin.component').then(m => m.RolesAdminComponent),
-        title: 'Rôles & droits',
-      },
+      // Déplacé vers Administration -> Rôles et accès (gère désormais les droits
+      // financiers ET les permissions du module Administration dans un même écran) —
+      // redirection conservée pour ne pas casser un ancien lien/favori, plutôt qu'une
+      // suppression sèche (toutes les références internes ont été migrées : voir
+      // finance-nav.config.ts, qui ne pointe plus vers "roles-admin").
+      { path: 'roles-admin', redirectTo: '/dashboard/agency/administration/roles-access' },
       { path: '**', redirectTo: 'statistiques' },
     ],
   },

@@ -103,3 +103,20 @@ export function aLaPermission(u: UtilisateurAvecPermissions | null | undefined, 
   if (!u || !u.droitsFinance) return false;
   return cles.some(c => u.permissions.includes(c));
 }
+
+/**
+ * Variante de aLaPermission() pour un objet User "brut" (ex. AuthService.getCurrentUser())
+ * plutôt qu'un SessionUtilisateur — mêmes règles, juste adaptée aux noms de champs du
+ * modèle User global (financePermissions, pas permissions). Ajoutée pour le module
+ * Administration (guards/rôles-access combiné finance+administration) : ne change rien
+ * à aLaPermission() ni à son usage existant dans le reste du module finance.
+ */
+export function aLaPermissionDepuisUser(
+  u: { droitsFinance?: boolean; financePermissions?: string[] } | null | undefined,
+  ...cles: FinancePermission[]
+): boolean {
+  return aLaPermission(
+    { droitsFinance: !!u?.droitsFinance, permissions: (u?.financePermissions || []) as FinancePermission[] },
+    ...cles,
+  );
+}

@@ -1,0 +1,129 @@
+<form class="employee-form" [formGroup]="form" (ngSubmit)="soumettre()">
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Prénom <span class="required">*</span></label>
+      <input class="form-control" type="text" formControlName="firstName" />
+      @if (champInvalide('firstName')) {
+        <div class="form-error">Le prénom est requis (2 caractères minimum).</div>
+      }
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nom <span class="required">*</span></label>
+      <input class="form-control" type="text" formControlName="lastName" />
+      @if (champInvalide('lastName')) {
+        <div class="form-error">Le nom est requis (2 caractères minimum).</div>
+      }
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Téléphone <span class="required">*</span></label>
+      <input class="form-control" type="tel" formControlName="phone" />
+      @if (champInvalide('phone')) {
+        <div class="form-error">Le téléphone est requis.</div>
+      }
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-control" type="email" formControlName="email" />
+      @if (champInvalide('email')) {
+        <div class="form-error">Adresse email invalide.</div>
+      }
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Rôle <span class="required">*</span></label>
+    <select class="form-control" formControlName="role">
+      <option value="">Sélectionner un rôle</option>
+      @for (r of roles; track r) {
+        <option [value]="r">{{ r === 'manager' ? 'Manager' : 'Collecteur' }}</option>
+      }
+    </select>
+    @if (champInvalide('role')) {
+      <div class="form-error">Le rôle est requis.</div>
+    }
+  </div>
+
+  @if (!estEdition) {
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Mot de passe <span class="required">*</span></label>
+        <input class="form-control" type="password" formControlName="password" />
+        @if (champInvalide('password')) {
+          <div class="form-error">6 caractères minimum.</div>
+        }
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirmer le mot de passe <span class="required">*</span></label>
+        <input class="form-control" type="password" formControlName="confirmPassword" />
+        @if (form.errors?.['passwordMismatch'] && form.get('confirmPassword')?.touched) {
+          <div class="form-error">Les mots de passe ne correspondent pas.</div>
+        }
+      </div>
+    </div>
+  }
+
+  <fieldset class="address-fieldset" formGroupName="address">
+    <legend>Adresse</legend>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Ville <span class="required">*</span></label>
+        <input class="form-control" type="text" formControlName="city" />
+        @if (champAdresseInvalide('city')) {
+          <div class="form-error">La ville est requise.</div>
+        }
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quartier <span class="required">*</span></label>
+        <input class="form-control" type="text" formControlName="neighborhood" />
+        @if (champAdresseInvalide('neighborhood')) {
+          <div class="form-error">Le quartier est requis.</div>
+        }
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Arrondissement <span class="required">*</span></label>
+        <input class="form-control" type="text" formControlName="arrondissement" />
+        @if (champAdresseInvalide('arrondissement')) {
+          <div class="form-error">L'arrondissement est requis.</div>
+        }
+      </div>
+      <div class="form-group">
+        <label class="form-label">Secteur <span class="required">*</span></label>
+        <input class="form-control" type="text" formControlName="sector" />
+        @if (champAdresseInvalide('sector')) {
+          <div class="form-error">Le secteur est requis.</div>
+        }
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Numéro de porte</label>
+        <input class="form-control" type="text" formControlName="doorNumber" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Couleur de porte</label>
+        <input class="form-control" type="text" formControlName="doorColor" />
+      </div>
+    </div>
+  </fieldset>
+
+  @if (erreurApi) {
+    <div class="backend-error">
+      <i class="material-icons">error_outline</i>
+      <span>{{ erreurApi }}</span>
+    </div>
+  }
+
+  <div class="form-actions">
+    <button class="btn btn-secondary" type="button" (click)="annuler()" [disabled]="enregistrementEnCours">
+      Annuler
+    </button>
+    <button class="btn btn-primary" type="submit" [disabled]="enregistrementEnCours">
+      {{ enregistrementEnCours ? 'Enregistrement…' : (estEdition ? 'Enregistrer' : 'Créer l\'employé') }}
+    </button>
+  </div>
+</form>

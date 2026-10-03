@@ -1,0 +1,34 @@
+<div class="administration-shell">
+  <header class="page-header">
+    <div class="container">
+      <app-breadcrumb [items]="breadcrumbItems" variant="onColor"></app-breadcrumb>
+      <div class="header-content">
+        <div class="welcome-section">
+          <h1 class="page-title">Administration</h1>
+          <p class="page-subtitle">Employés, rôles et accès de l'agence</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav class="tabs-navigation" role="tablist" aria-label="Navigation administration">
+      <a
+        *ngFor="let item of navItems()"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        #rla="routerLinkActive"
+        class="tab-btn"
+        role="tab"
+        [attr.aria-selected]="rla.isActive"
+      >
+        <i class="material-icons">{{ item.icon }}</i>
+        {{ item.label }}
+      </a>
+    </nav>
+
+    <div class="tab-content">
+      <router-outlet />
+    </div>
+  </div>
+</div>

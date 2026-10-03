@@ -17,5 +17,8 @@ export const FINANCE_NAV_ITEMS: FinanceNavItem[] = [
   { route: 'statement', label: 'Relevé', icon: 'receipt_long', permissions: ['statements.view'] },
   { route: 'agent-payment', label: 'Paiement agents', icon: 'badge', permissions: ['agent_payments.view'] },
   { route: 'contracts', label: 'Contrats', icon: 'description', permissions: ['contracts.view'] },
-  { route: 'roles-admin', label: 'Rôles & droits', icon: 'admin_panel_settings', permissions: ['roles.view'] },
+  // "Rôles & droits" déplacé vers Administration -> Rôles et accès (gère désormais
+  // droits financiers + permissions Administration dans un même écran) — plus d'onglet
+  // dédié ici, voir financial-dashboard.routes.ts (redirection conservée sur l'ancienne
+  // URL) et agency-dashboard/features/administration/roles-access/.
 ];

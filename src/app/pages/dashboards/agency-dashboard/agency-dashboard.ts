@@ -48,17 +48,13 @@ import { ConfirmDialogService } from "../../../services/confirm-dialog.service";
 import {
   User,
   UserRole,
-  AddEmployeeData,
-  UserAddress,
   RegisterUserData,
 } from "../../../models/user.model";
 import {
-  Employee,
   Employees,
   ServiceZone,
   ServiceZones,
   CollectionSchedule,
-  EmployeeRole,
   WasteService,
   tarif,
   Tarif,
@@ -87,10 +83,8 @@ import { TagModule } from "primeng/tag";
 import { ToastModule } from "primeng/toast";
 import { RippleModule } from "primeng/ripple";
 import { Signalement } from "../../shared_pages/signalement/signalement";
-import { PhoneInputDirective } from "../../../shared/phone-input.directive";
 import { ExcelImportComponent } from "../../../components/excel-import/excel-import.component";
 import { AgencyImportService } from "../../../services/agency-import.service";
-import { normalizePhone } from "../../../shared/phone.util";
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TerritorySelectComponent, TerritoryOption, toTerritoryOptions, toTerritoryOptionsById } from "../../../shared/territory-select/territory-select";
 interface Client {
@@ -219,7 +213,6 @@ interface DashboardTab {
 
 type TabId =
   | "collections"
-  | "employees"
   | "zones"
   | "schedules"
   | "reports"
@@ -269,7 +262,6 @@ export enum CollectionStatus1 {
 
 
     Signalement,
-    PhoneInputDirective,
     ExcelImportComponent,
     TerritorySelectComponent,
   ],
@@ -314,16 +306,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   readonly toTerritoryOptions = toTerritoryOptions;
   readonly toTerritoryOptionsById = toTerritoryOptionsById;
 
-  /** availableEmployeeSectors utilise un id numérique ([ngValue]="+sector.id" dans
-   * l'ancien select) — mapping dédié plutôt que toTerritoryOptionsById (qui garderait
-   * l'id en string) pour rester compatible avec employeesSectorFilter: number | null. */
-  employeeSectorOptions(): TerritoryOption[] {
-    return this.availableEmployeeSectors.map((s: any) => ({ value: +s.id, label: `Secteur ${s.name}` }));
-  }
 
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
 
-  employeeForm!: FormGroup;
   tariffForm!: FormGroup;
   zoneForm!: FormGroup;
   messageForm!: FormGroup;
@@ -343,7 +328,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // ne reflète donc pas fiablement ce champ. Une agence est créée `inactive` par
   // défaut (models/agency.js) tant qu'un admin ne l'a pas validée.
   agencyStatus: string | null = null;
-  activeTab: TabId = "employees"; // Changé pour debug - était "collections"
+  activeTab: TabId = "collections";
 
   // Méthode pour changer d'onglet
   setActiveTab(tabId: TabId): void {
@@ -352,7 +337,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   collectors: Employees[] = [];
   zonesAgency: ServiceZone[] = [];
-  manager: Employees[] = [];
   incidentsFilter = "all";
   severityFilter = "all";
   origineFilter = "all";
@@ -416,50 +400,8 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
   collections: Collection[] = [];
   filteredCollections: Collection[] = [];
-  employees: Employee[] = [];
   tarif: tarif[] = [];
-  editingEmployeeId: string | null = null;
   isEditing: boolean = false;
-  allEmployees: Employees[] = [];
-  filteredEmployees: Employees[] = [];
-  // Propriétés pour la recherche et le filtrage des employés — persistés en
-  // sessionStorage (tant que l'utilisateur ne clique pas "Réinitialiser les
-  // filtres") pour survivre à une navigation hors de ce composant.
-  private readonly EMPLOYEE_FILTERS_KEY = 'agencyDashboard.employeeFilters';
-  private static readonly EMPLOYEE_FILTERS_DEFAULTS = {
-    search: "",
-    roleFilter: "all",
-    statusFilter: "all",
-    cityFilter: "",
-    neighborhoodFilter: "",
-    arrondissementFilter: "",
-    sectorFilter: null as number | null,
-  };
-  private _persistedEmployeeFilters = loadFilters(this.EMPLOYEE_FILTERS_KEY, AgencyDashboard.EMPLOYEE_FILTERS_DEFAULTS);
-  employeesSearch: string = this._persistedEmployeeFilters.search;
-  employeesRoleFilter: string = this._persistedEmployeeFilters.roleFilter;
-  employeesStatusFilter: string = this._persistedEmployeeFilters.statusFilter;
-  // Panneau rouvert automatiquement si des filtres persistés sont encore actifs.
-  showEmployeesSearch: boolean = hasNonDefaultFilters(this._persistedEmployeeFilters, AgencyDashboard.EMPLOYEE_FILTERS_DEFAULTS);
-
-  // Nouveaux filtres basés sur l'API backend
-  employeesCityFilter: string = this._persistedEmployeeFilters.cityFilter;
-  employeesNeighborhoodFilter: string = this._persistedEmployeeFilters.neighborhoodFilter;
-  employeesArrondissementFilter: string = this._persistedEmployeeFilters.arrondissementFilter;
-  employeesSectorFilter: number | null = this._persistedEmployeeFilters.sectorFilter;
-
-  // Données pour les filtres (utilisant le même système que l'enregistrement)
-  availableEmployeeCities: City[] = [];
-  availableEmployeeArrondissements: Arrondissement[] = [];
-  availableEmployeeSectors: Sector[] = [];
-  availableEmployeeNeighborhoods: Quartier[] = [];
-
-  // Propriétés de pagination employés
-  currentPage: number = 1;
-  itemsPerPage: number = 5;
-  totalEmployees: number = 0;
-  totalPages: number = 0;
-  employeeViewMode: 'card' | 'table' = 'table';
   clientViewMode: 'card' | 'table' = 'table';
 
   // Propriétés vue / pagination collectes
@@ -470,8 +412,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   collectesTotalPages: number = 0;
   pagedCollectes: any[] = [];
 
-  // Chargement des données
-  isLoadingFilteredEmployees: boolean = false;
 
   // Propriétés pour la recherche et le filtrage des clients — persistées en
   // sessionStorage (voir employeesSearch ci-dessus pour l'explication).
@@ -512,9 +452,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   reports: Report[] = [];
   filteredReports: Report[] = [];
   isDeleting: boolean = false;
-  // Propriétés pour l'édition d'employé
-  employeeToEdit: any = null;
-  isEditingEmployee: boolean = false;
   // Filters
   collectionsFilter = "all";
   selectedZone = "";
@@ -524,13 +461,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   analyticsFilter = "all";
 
   // Modals
-  showAddEmployeeModal = false;
   showImportClientsModal = false;
-  showImportEmployeesModal = false;
-  showPassword = false;
-  showConfirmPassword = false;
-  employeeFormError: string | null = null;
-  employeeFormDetailedErrors: any = {};
   Object = Object; // Pour utiliser Object.keys dans le template
   showZoneModal = false;
   showZoneModalcouverture = false;
@@ -541,14 +472,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
 
 
   // Propriétés temporaires pour compatibilité (à supprimer après migration du template)
-  newEmployee: any = {
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    role: "",
-    zones: [],
-  };
   newTariff: any = {
     type: "",
     price: "",
@@ -604,7 +527,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       icon: "local_shipping",
       badge: 0,
     },
-    { id: "employees", label: "Employés", icon: "people", badge: null },
     { id: "zones", label: "Zones", icon: "map", badge: null },
     { id: "schedules", label: "Plannings", icon: "schedule", badge: null },
     { id: "clients", label: "Clients", icon: "person", badge: null },
@@ -896,37 +818,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   }
   // Initialisation de tous les formulaires réactifs
   private initializeForms(): void {
-    // Formulaire d'employé - selon le schéma Swagger requis
-    this.employeeForm = this.fb.group(
-      {
-        firstName: ["", [Validators.required, Validators.minLength(2)]],
-        lastName: ["", [Validators.required, Validators.minLength(2)]],
-        // Optionnel côté backend (services/auth.js::registerUser accepte email
-        // undefined, connexion possible par téléphone seul) — l'astérisque
-        // required était une contrainte frontend uniquement, sans contrepartie.
-        email: ["", [Validators.email]],
-        password: ["", [Validators.required, Validators.minLength(6)]],
-        confirmPassword: ["", [Validators.required]],
-        phone: ["", [Validators.required, Validators.pattern(/^[0-9+\-\s]+$/)]],
-        role: ["", Validators.required],
-        // Address fields (requis selon le schéma)
-        address: this.fb.group({
-          street: [""],
-          arrondissement: ["", Validators.required],
-          sector: ["", Validators.required],
-          doorNumber: [""],
-          doorColor: [""],
-          neighborhood: ["", Validators.required],
-          city: ["", Validators.required],
-          postalCode: [""],
-          latitude: [null],
-          longitude: [null],
-        }),
-        zones: [[]], // Validation dynamique selon le rôle
-      },
-      { validators: this.passwordMatchValidator },
-    );
-
     // Formulaire de tarif
     this.tariffForm = this.fb.group({
       type: ["", Validators.required],
@@ -967,7 +858,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // Configuration de la gestion des erreurs pour tous les formulaires
   private setupFormErrorHandling(): void {
     const forms = [
-      { form: this.employeeForm, name: "employee" },
       { form: this.tariffForm, name: "tariff" },
       { form: this.zoneForm, name: "zone" },
       { form: this.messageForm, name: "message" },
@@ -1150,10 +1040,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       (control) => control.touched || control.dirty,
     );
 
-    // Également vérifier si le modal vient d'être ouvert
-    const isModalJustOpened = this.showAddEmployeeModal && !hasAnyInteraction;
-
-    return !hasAnyInteraction || isModalJustOpened;
+    return !hasAnyInteraction;
   }
 
   // Méthode récursive pour obtenir tous les contrôles d'un formulaire
@@ -1175,8 +1062,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   // Méthode utilitaire pour obtenir le FormGroup par nom
   private getFormByName(formName: string): FormGroup | null {
     switch (formName) {
-      case "employee":
-        return this.employeeForm;
       case "tariff":
         return this.tariffForm;
       case "zone":
@@ -1189,214 +1074,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   // Méthodes pour gérer les modals
-  openAddEmployeeModal(): void {
-    // S'assurer qu'on n'est pas en mode modification
-    this.isEditingEmployee = false;
-    this.employeeToEdit = null;
 
-    // Ajuster les validateurs pour le mode ajout
-    this.adjustValidatorsForEdit();
 
-    // Réinitialiser complètement le formulaire
-    this.employeeForm.reset();
 
-    // Marquer tous les contrôles comme non touchés et propres (incluant les contrôles imbriqués)
-    this.markFormGroupAsUntouchedAndPristine(this.employeeForm);
 
-    // Réinitialiser les erreurs
-    this.employeeFormError = null;
-    this.employeeFormDetailedErrors = {};
-
-    // Nettoyer TOUTES les erreurs du formulaire employé du cache
-    Object.keys(this.formErrors).forEach((key) => {
-      if (key.startsWith("employee_")) {
-        delete this.formErrors[key];
-      }
-    });
-
-    // Réinitialiser les états des mots de passe
-    this.showPassword = false;
-    this.showConfirmPassword = false;
-
-    // Initialiser les données mock pour l'adresse
-    this.initializeAddressDataForEmployee();
-
-    // Ouvrir le modal
-    this.showAddEmployeeModal = true;
-
-    // Petite temporisation pour s'assurer que l'état est bien réinitialisé
-    setTimeout(() => {
-      this.markFormGroupAsUntouchedAndPristine(this.employeeForm);
-      // Force la suppression des erreurs après l'ouverture
-      Object.keys(this.formErrors).forEach((key) => {
-        if (key.startsWith("employee_")) {
-          delete this.formErrors[key];
-        }
-      });
-    }, 50);
-  }
-
-  // Méthode pour ouvrir le drawer (utilisée par editEmployee)
-  private openEmployeeDrawer(): void {
-    this.showAddEmployeeModal = true;
-  }
-
-  // Méthode utilitaire pour marquer un FormGroup et tous ses contrôles comme non touchés et propres
-  private markFormGroupAsUntouchedAndPristine(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach((key) => {
-      const control = formGroup.get(key);
-      if (control) {
-        if (control instanceof FormGroup) {
-          // Si c'est un groupe imbriqué (comme address), traiter récursivement
-          this.markFormGroupAsUntouchedAndPristine(control);
-        } else {
-          // Marquer le contrôle comme non touché et propre
-          control.markAsUntouched();
-          control.markAsPristine();
-          control.updateValueAndValidity({ emitEvent: false });
-        }
-      }
-    });
-
-    // Marquer le formulaire lui-même
-    formGroup.markAsUntouched();
-    formGroup.markAsPristine();
-  }
-
-  closeAddEmployeeModal(): void {
-    // Fermer le modal
-    this.showAddEmployeeModal = false;
-
-    // Réinitialiser le formulaire
-    this.employeeForm.reset();
-    this.markFormGroupAsUntouchedAndPristine(this.employeeForm);
-
-    // Réinitialiser les états
-    this.showPassword = false;
-    this.showConfirmPassword = false;
-    this.employeeFormError = null;
-    this.employeeFormDetailedErrors = {};
-
-    // Réinitialiser l'état d'édition
-    this.isEditingEmployee = false;
-    this.employeeToEdit = null;
-
-    // Nettoyer les erreurs du cache
-    Object.keys(this.formErrors).forEach((key) => {
-      if (key.startsWith("employee_")) {
-        delete this.formErrors[key];
-      }
-    });
-  }
-
-  togglePasswordVisibility(): void {
-    this.showPassword = !this.showPassword;
-  }
-
-  toggleConfirmPasswordVisibility(): void {
-    this.showConfirmPassword = !this.showConfirmPassword;
-  }
-
-  // Validateur personnalisé pour la correspondance des mots de passe
-  passwordMatchValidator(form: FormGroup) {
-    const password = form.get("password");
-    const confirmPassword = form.get("confirmPassword");
-
-    if (
-      password &&
-      confirmPassword &&
-      password.value !== confirmPassword.value
-    ) {
-      confirmPassword.setErrors({ passwordMismatch: true });
-    } else if (confirmPassword?.hasError("passwordMismatch")) {
-      confirmPassword.setErrors(null);
-    }
-
-    return null;
-  }
-
-  // Gérer la validation des zones en fonction du rôle
-  onRoleChange(): void {
-    const zonesControl = this.employeeForm.get("zones");
-
-    if (zonesControl) {
-      // Les zones sont toujours optionnelles, pour tous les rôles — un
-      // manager peut désormais se voir assigner des zones au même titre
-      // qu'un collecteur (auparavant vidées de force dès que le rôle
-      // sélectionné était 'manager', empêchant toute assignation réelle).
-      zonesControl.clearValidators();
-      zonesControl.updateValueAndValidity();
-    }
-  }
-
-  // Vérifier si le formulaire employé est valide
-  isEmployeeFormValid(): boolean {
-    // Vérifier les champs de base
-    const baseFieldsValid =
-      this.employeeForm.get("firstName")?.valid &&
-      this.employeeForm.get("lastName")?.valid &&
-      this.employeeForm.get("email")?.valid &&
-      this.employeeForm.get("phone")?.valid &&
-      this.employeeForm.get("role")?.valid;
-
-    if (!baseFieldsValid) {
-      return false;
-    }
-
-    // En mode modification, les mots de passe sont optionnels
-    if (this.isEditingEmployee) {
-      // Si un mot de passe est saisi, il doit être valide
-      const password = this.employeeForm.get("password")?.value;
-      const confirmPassword = this.employeeForm.get("confirmPassword")?.value;
-
-      if (password && password.length > 0) {
-        // Si un mot de passe est saisi, vérifier qu'il est valide
-        if (password.length < 6) {
-          return false;
-        }
-        // Et que la confirmation correspond
-        if (password !== confirmPassword) {
-          return false;
-        }
-      }
-
-      return true; // Valide en mode modification si champs de base OK
-    } else {
-      // En mode ajout, tout doit être valide y compris les mots de passe
-      return this.employeeForm.valid;
-    }
-  }
-
-  // Vérifier si un champ a une erreur spécifique du backend
-  hasBackendFieldError(fieldName: string): boolean {
-    return (
-      this.employeeFormDetailedErrors &&
-      this.employeeFormDetailedErrors[fieldName]
-    );
-  }
-
-  // Obtenir l'erreur backend pour un champ spécifique
-  getBackendFieldError(fieldName: string): string {
-    return this.employeeFormDetailedErrors?.[fieldName] || "";
-  }
-
-  // Effacer les erreurs backend quand l'utilisateur modifie un champ
-  clearBackendErrors(): void {
-    this.employeeFormError = null;
-    this.employeeFormDetailedErrors = {};
-  }
-
-  // Helper pour obtenir les clés des erreurs détaillées
-  getDetailedErrorKeys(): string[] {
-    return this.employeeFormDetailedErrors
-      ? Object.keys(this.employeeFormDetailedErrors)
-      : [];
-  }
-
-  // Vérifier s'il y a des erreurs détaillées
-  hasDetailedErrors(): boolean {
-    return this.getDetailedErrorKeys().length > 0;
-  }
 
   /** Bouton "Ajouter un tarif" du footer de la drawer "Liste des tarifs" — ferme cette
    * liste avant d'ouvrir la drawer de création (openZoneModal()) pour éviter d'empiler
@@ -1446,38 +1127,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.loadZones(this.currentUser);
   }
 
-  // Méthode pour gérer la sélection multiple des zones pour les employés
-  toggleZoneSelection(zoneId: string, event: any): void {
-    const zonesControl = this.employeeForm.get("zones");
-    if (!zonesControl) return;
-
-    let currentZones = zonesControl.value || [];
-
-    if (event.target.checked) {
-      if (!currentZones.includes(zoneId)) {
-        currentZones.push(zoneId);
-      }
-    } else {
-      currentZones = currentZones.filter((id: string) => id !== zoneId);
-    }
-
-    zonesControl.setValue(currentZones);
-    zonesControl.markAsTouched();
-  }
-
-  // Méthode pour vérifier si une zone est sélectionnée
-  isZoneSelected(zoneId: string): boolean {
-    const zones = this.employeeForm.get("zones")?.value || [];
-    return zones.includes(zoneId);
-  }
-
-  // Méthode utilitaire pour afficher les zones sélectionnées
-  getSelectedZonesText(): string {
-    const zones = this.employeeForm.get("zones")?.value || [];
-    if (zones.length === 0) return "Aucune zone sélectionnée";
-    if (zones.length === 1) return "1 zone sélectionnée";
-    return `${zones.length} zones sélectionnées`;
-  }
 
   private newSignalementSub?: Subscription;
   private incomingMessageSub?: Subscription;
@@ -1541,22 +1190,9 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       this.countUnreadMessages();
     });
 
-    // Initialiser la liste filtrée des employés
-    this.filteredEmployees = [...this.allEmployees];
-    console.log(
-      "🔍 [DEBUG] ngOnInit - filteredEmployees initialisés:",
-      this.filteredEmployees.length,
-    );
-
-    this.initializeFiltersData();
-
     console.log("this.currentUser", this.currentUser);
     this.loadAgencyStatistics(this.currentUser);
     this.loadAgencyData();
-    console.log(" APPEL EXPLICITE de loadEmployees depuis ngOnInit");
-    if (this.currentUser?.agencyId) {
-      this.loadEmployees(this.currentUser.agencyId);
-    }
     console.log(" APPEL EXPLICITE de loadCollectors depuis ngOnInit");
     if (this.currentUser?.agencyId) {
       this.loadCollectors(this.currentUser.agencyId);
@@ -1810,12 +1446,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       // this.agency = { _id: 'agency1', agencyName: 'Agence Demo' } as any;
       this.agency = this.currentUser as any;
       console.log("[loadAgencyData] agency simulée:", this.agency);
-      console.log(
-        " Appel de loadEmployees avec agencyId:",
-        this.currentUser.agencyId,
-      );
       if (this.currentUser.agencyId) {
-        this.loadEmployees(this.currentUser.agencyId);
         this.agencyService.getAgencyByIdFromApi(this.currentUser.agencyId).subscribe({
           next: (res) => { this.agencyStatus = res?.data?.status ?? null; },
           error: () => {},
@@ -1875,14 +1506,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
             this.collectors,
           );
 
-          // Mettre à jour le badge des collecteurs
-          const collectorsTab = this.tabs.find((tab) => tab.id === "employees");
-          if (collectorsTab) {
-            collectorsTab.badge = this.collectors.length;
-
-            this.cdr.detectChanges();
-          }
-
           // Log chaque collecteur individuellement
           this.collectors.forEach((collector, index) => {
             console.log(` Collecteur ${index + 1}:`, {
@@ -1907,118 +1530,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  async deleteEmployee(currentUser: any, employeeId: any): Promise<void> {
-    // Logs pour debugger la structure des données
-    console.log(
-      "[DEBUG] Structure complète de l'employé à supprimer:",
-      employeeId,
-    );
-    console.log("[DEBUG] Type de l'employé:", typeof employeeId);
-    console.log("[DEBUG] Clés de l'objet employé:", Object.keys(employeeId));
-    console.log("[DEBUG] CurrentUser:", currentUser);
-
-    // Identifier l'ID de l'employé selon la structure des données
-    let employeeIdToDelete = null;
-
-    // Essayer différentes structures possibles
-    if (employeeId?._id) {
-      employeeIdToDelete = employeeId._id;
-      console.log("[DEBUG] Utilisation de employeeId._id:", employeeIdToDelete);
-    } else if (employeeId?.userId?._id) {
-      employeeIdToDelete = employeeId.userId._id;
-      console.log(
-        "[DEBUG] Utilisation de employeeId.userId._id:",
-        employeeIdToDelete,
-      );
-    } else if (employeeId?.id) {
-      employeeIdToDelete = employeeId.id;
-      console.log("[DEBUG] Utilisation de employeeId.id:", employeeIdToDelete);
-    } else if (typeof employeeId === "string") {
-      employeeIdToDelete = employeeId;
-      console.log(
-        "[DEBUG] employeeId est déjà une string:",
-        employeeIdToDelete,
-      );
-    }
-
-    // Vérification des IDs nécessaires
-    if (!currentUser?._id || !employeeIdToDelete) {
-      this.notificationService.showError(
-        "Erreur",
-        "Impossible d'identifier l'employé à supprimer",
-      );
-      console.error(
-        "[DEBUG] Échec validation - currentUser._id:",
-        currentUser?._id,
-        "employeeIdToDelete:",
-        employeeIdToDelete,
-      );
-      return;
-    }
-
-    const employeeName =
-      `${employeeId.firstName || employeeId.firstname || ""} ${employeeId.lastName || employeeId.lastname || ""}`.trim();
-    const displayName = employeeName || "cet employé";
-
-    const ok = await this.confirmDialog.confirm({
-      title: 'Supprimer cet employé ?',
-      message: `Voulez-vous vraiment supprimer ${displayName} ? Cette action est définitive.`,
-      variant: 'danger',
-      confirmLabel: 'Supprimer définitivement',
-    });
-    if (!ok) return;
-
-    this.isDeleting = true;
-    this.proceedWithDeletion(employeeIdToDelete, currentUser);
-  }
-
-  /**
-   * Procède à la suppression de l'employé
-   */
-  proceedWithDeletion(employeeIdToDelete: string, currentUser: any): void {
-    console.log(
-      "[DEBUG] Suppression de l'employé avec ID:",
-      employeeIdToDelete,
-    );
-
-    this.agencyService.deleteEmployee(employeeIdToDelete).subscribe({
-      next: (response) => {
-        console.log("[DEBUG] Réponse suppression:", response);
-        this.isDeleting = false;
-
-        if (response.success) {
-          this.notificationService.showSuccess(
-            "Succès",
-            response.message || "L'employé a été supprimé avec succès.",
-          );
-
-          // Recharger la liste des employés pour refléter la suppression
-          if (currentUser?.agencyId) {
-            this.loadEmployees(currentUser.agencyId);
-            // Recharger les collecteurs car un collecteur peut avoir été supprimé
-            this.loadCollectors(currentUser.agencyId);
-          }
-        } else {
-          // Gérer les erreurs de response
-          const errorMessage =
-            typeof response.error === "string"
-              ? response.error
-              : "Erreur lors de la suppression de l'employé";
-
-          this.notificationService.showError("Erreur", errorMessage);
-        }
-      },
-      error: (error) => {
-        this.isDeleting = false;
-        console.error("[ERROR] Erreur lors de la suppression:", error);
-        this.notificationService.showError(
-          "Erreur",
-          "Une erreur s'est produite lors de la suppression de l'employé.",
-        );
-      },
-    });
-  }
-
   assignIncident(reportId: string): void {
     this.notificationService.showInfo(
       "Attribution",
@@ -2027,431 +1538,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return;
   }
 
-  employeesNbrs!: number;
-  activesEmployeesNbrs!: number;
-  zoneLength!: number;
-  getZoneLengthByEmployeeId(employeeId: string): number {
-    const employee = this.allEmployees.find((emp) => emp._id === employeeId);
-    this.zoneLength = employee ? employee.zones.length : 0;
-    console.log("Employee found for zone length:", this.zoneLength);
-    return this.zoneLength;
-  }
-
-  loadEmployees(agencyId: string): void {
-    console.log(" DÉBUT loadEmployees - Chargement des employés");
-    console.log(" AgencyId reçu:", agencyId);
-
-    if (agencyId) {
-      this.isLoadingEmployees = true;
-      console.log(
-        " Appel du service getEmployeeAgency$ avec agencyId:",
-        agencyId,
-      );
-
-      this.agencyService.getEmployeeAgency$(agencyId).subscribe({
-        next: (employees) => {
-          console.log(" SUCCÈS - Réponse employés reçue:", employees);
-
-          // Extraire les employés depuis la nouvelle structure de l'API
-          if ((employees as any)?.data) {
-            const data = (employees as any).data;
-            // Combiner managers, gestionnaires et collectors
-            this.allEmployees = [
-              ...(data.managers || []),
-              ...(data.gestionnaires || []),
-              ...(data.collectors || []),
-            ];
-            console.log(" Employés extraits et combinés:", this.allEmployees);
-            console.log("   - Managers:", data.managers?.length || 0);
-            console.log("   - Gestionnaires:", data.gestionnaires?.length || 0);
-            console.log("   - Collecteurs:", data.collectors?.length || 0);
-          } else if (Array.isArray(employees)) {
-            this.allEmployees = employees;
-            console.log(" Employés reçus directement:", this.allEmployees);
-          } else {
-            console.warn("Format de réponse inattendu:", employees);
-            this.allEmployees = [];
-          }
-
-          console.log("loadEmployees > Total final:", this.allEmployees);
-
-          // Pagination côté client – afficher seulement la première page
-          this.totalEmployees = this.allEmployees.length;
-          this.currentPage = 1;
-          this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
-          this.filteredEmployees = this.allEmployees.slice(0, this.itemsPerPage);
-          console.log(
-            `Employés initialisés : page 1/${this.totalPages}, ${this.filteredEmployees.length} affichés sur ${this.totalEmployees}`,
-          );
-
-          // COMMENTÉ : Utilisation immédiate de l'API backend au chargement
-          // this.filterEmployees();
-
-          const employeesTab = this.tabs.find((tab) => tab.id === "employees");
-          if (employeesTab) {
-            employeesTab.badge = this.allEmployees.length;
-            console.log("Badge employés mis à jour:", this.allEmployees.length);
-            this.cdr.detectChanges();
-          }
-          this.isLoadingEmployees = false;
-
-          console.log("🔍 [DEBUG] FIN loadEmployees - État final:");
-          console.log("  - allEmployees:", this.allEmployees.length);
-          console.log("  - filteredEmployees:", this.filteredEmployees.length);
-          console.log("  - isLoadingEmployees:", this.isLoadingEmployees);
-          console.log("FIN loadEmployees - Succès");
-        },
-        error: (error) => {
-          console.log(" ERREUR lors du chargement des employés:");
-          console.error(" Détails de l'erreur:", error);
-          console.error(
-            " URL utilisée: /api/agencies/" + agencyId + "/employees",
-          );
-          console.error("Erreur lors du chargement des employés :", error);
-          this.notificationService.showError(
-            "Erreur",
-            "Impossible de charger les employés. Veuillez réessayer.",
-          );
-          this.isLoadingEmployees = false;
-          console.log(" FIN loadEmployees - Échec");
-        },
-      });
-    } else {
-      console.warn(" Aucun ID d'agence disponible.");
-      console.log(" agencyId reçu:", agencyId);
-    }
-  }
-
-  /**
-   * Filtre les employés - utilise l'API backend seulement si des filtres sont appliqués
-   */
-  filterEmployees(): void {
-    saveFilters(this.EMPLOYEE_FILTERS_KEY, {
-      search: this.employeesSearch,
-      roleFilter: this.employeesRoleFilter,
-      statusFilter: this.employeesStatusFilter,
-      cityFilter: this.employeesCityFilter,
-      neighborhoodFilter: this.employeesNeighborhoodFilter,
-      arrondissementFilter: this.employeesArrondissementFilter,
-      sectorFilter: this.employeesSectorFilter,
-    });
-
-    // Détecter si des filtres sont réellement appliqués
-    const hasRealFilters =
-      (this.employeesSearch && this.employeesSearch.trim()) ||
-      (this.employeesCityFilter &&
-        this.employeesCityFilter !== "all" &&
-        this.employeesCityFilter.trim()) ||
-      (this.employeesNeighborhoodFilter &&
-        this.employeesNeighborhoodFilter !== "all" &&
-        this.employeesNeighborhoodFilter.trim()) ||
-      (this.employeesArrondissementFilter &&
-        this.employeesArrondissementFilter !== "all" &&
-        this.employeesArrondissementFilter.trim()) ||
-      (this.employeesSectorFilter !== null &&
-        this.employeesSectorFilter !== undefined) ||
-      (this.employeesRoleFilter && this.employeesRoleFilter !== "all");
-
-    const agencyId = this.authService.getCurrentUser()?.agencyId;
-    if (!agencyId) {
-      console.warn("Aucun ID d'agence disponible pour le filtrage");
-      this.filterEmployeesLocally();
-      return;
-    }
-
-    // Si aucun filtre backend n'est appliqué, utiliser le filtrage local
-    if (!hasRealFilters) {
-      this.filterEmployeesLocally();
-      return;
-    }
-
-    this.isLoadingFilteredEmployees = true;
-
-    // Paramètres selon le Swagger exact
-    const filters: any = {
-      limit: this.itemsPerPage,
-    };
-
-    // Paramètres de filtrage selon le Swagger
-    if (this.employeesSearch?.trim()) {
-      filters.term = this.employeesSearch.trim();
-    }
-    if (this.employeesCityFilter?.trim()) {
-      filters.city = this.employeesCityFilter.trim();
-    }
-    if (this.employeesNeighborhoodFilter?.trim()) {
-      filters.neighborhood = this.employeesNeighborhoodFilter.trim();
-    }
-    if (this.employeesArrondissementFilter?.trim()) {
-      filters.arrondissement = this.employeesArrondissementFilter.trim();
-    }
-    if (
-      this.employeesSectorFilter !== null &&
-      this.employeesSectorFilter !== undefined
-    ) {
-      filters.sector = this.employeesSectorFilter;
-    }
-    if (this.employeesRoleFilter && this.employeesRoleFilter !== "all") {
-      filters.role = this.employeesRoleFilter;
-    }
-
-    this.agencyService.getFilteredEmployees(agencyId, filters).subscribe({
-      next: (response) => {
-        console.log("🔍 [DEBUG] Réponse complète de l'API:", response);
-
-        if (response.success) {
-          // La réponse API groupe les employés par rôle
-          let employees: any[] = [];
-
-          if (response.data) {
-            console.log(
-              "🔍 [DEBUG] Structure de response.data:",
-              response.data,
-            );
-
-            // Extraire tous les employés des différents groupes de rôles
-            if (
-              response.data.managers &&
-              Array.isArray(response.data.managers)
-            ) {
-              console.log(
-                `🔍 [DEBUG] Managers trouvés: ${response.data.managers.length}`,
-              );
-              employees.push(...response.data.managers);
-            }
-            if (
-              response.data.collectors &&
-              Array.isArray(response.data.collectors)
-            ) {
-              console.log(
-                `🔍 [DEBUG] Collectors trouvés: ${response.data.collectors.length}`,
-              );
-              employees.push(...response.data.collectors);
-            }
-            if (
-              response.data.gestionnaires &&
-              Array.isArray(response.data.gestionnaires)
-            ) {
-              console.log(
-                `🔍 [DEBUG] Gestionnaires trouvés: ${response.data.gestionnaires.length}`,
-              );
-              employees.push(...response.data.gestionnaires);
-            }
-            // Ajouter d'autres rôles si nécessaire
-            if (
-              response.data.employees &&
-              Array.isArray(response.data.employees)
-            ) {
-              console.log(
-                `🔍 [DEBUG] Employees génériques trouvés: ${response.data.employees.length}`,
-              );
-              employees.push(...response.data.employees);
-            }
-          } else {
-            console.warn("🔍 [DEBUG] Aucune donnée dans response.data");
-          }
-
-          console.log(
-            `🔍 [DEBUG] Total employés extraits: ${employees.length}`,
-          );
-
-          // Appliquer le filtre de statut côté client
-          if (
-            this.employeesStatusFilter &&
-            this.employeesStatusFilter !== "all"
-          ) {
-            const isActive = this.employeesStatusFilter === "active";
-            const beforeStatus = employees.length;
-            employees = employees.filter(
-              (employee) => employee.isActive === isActive,
-            );
-            console.log(
-              `🔍 [DEBUG] Après filtre statut (${this.employeesStatusFilter}): ${beforeStatus} -> ${employees.length}`,
-            );
-          }
-
-          this.filteredEmployees = employees;
-          this.totalEmployees = employees.length;
-          this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
-          console.log(
-            `🔍 [DEBUG] Employés finalement affichés: ${this.filteredEmployees.length}`,
-          );
-          console.log(
-            "🔍 [DEBUG] Employés dans filteredEmployees:",
-            this.filteredEmployees,
-          );
-        } else {
-          console.error(
-            "🔍 [ERROR] Erreur dans la réponse de l'API:",
-            response,
-          );
-          this.notificationService.showInfo(
-            "Info",
-            "Erreur lors du filtrage des employés",
-          );
-        }
-        this.isLoadingFilteredEmployees = false;
-      },
-      error: (error) => {
-        console.error(
-          "🔍 [ERROR] Erreur lors du filtrage des employés:",
-          error,
-        );
-        this.notificationService.showInfo(
-          "Info",
-          "Erreur lors du filtrage des employés",
-        );
-        this.isLoadingFilteredEmployees = false;
-        // En cas d'erreur, utiliser le filtrage local comme fallback
-        this.filterEmployeesLocally();
-      },
-    });
-  }
-
-  /**
-   * Méthode de filtrage local - gère les filtres de rôle et statut + pagination locale
-   */
-  private filterEmployeesLocally(): void {
-    console.log("Début du filtrage local avec:", {
-      search: this.employeesSearch,
-      roleFilter: this.employeesRoleFilter,
-      statusFilter: this.employeesStatusFilter,
-      totalEmployees: this.allEmployees.length,
-    });
-
-    let filtered = [...this.allEmployees];
-
-    // Filtrage par texte de recherche
-    if (this.employeesSearch && this.employeesSearch.trim()) {
-      const searchTerm = this.employeesSearch.toLowerCase().trim();
-      filtered = filtered.filter(
-        (employee) =>
-          employee.firstName?.toLowerCase().includes(searchTerm) ||
-          employee.lastName?.toLowerCase().includes(searchTerm) ||
-          employee.email?.toLowerCase().includes(searchTerm) ||
-          this.getRoleText(employee.role)?.toLowerCase().includes(searchTerm) ||
-          `${employee.firstName} ${employee.lastName}`
-            .toLowerCase()
-            .includes(searchTerm),
-      );
-    }
-
-    // Filtrage par rôle
-    if (this.employeesRoleFilter && this.employeesRoleFilter !== "all") {
-      filtered = filtered.filter(
-        (employee) => employee.role === this.employeesRoleFilter,
-      );
-    }
-
-    // Filtrage par statut
-    if (this.employeesStatusFilter && this.employeesStatusFilter !== "all") {
-      const isActive = this.employeesStatusFilter === "active";
-      filtered = filtered.filter((employee) => employee.isActive === isActive);
-    }
-
-    // Calcul de la pagination
-    this.totalEmployees = filtered.length;
-    this.totalPages = Math.ceil(this.totalEmployees / this.itemsPerPage);
-
-    // S'assurer que currentPage est valide
-    if (this.currentPage > this.totalPages && this.totalPages > 0) {
-      this.currentPage = this.totalPages;
-    }
-    if (this.currentPage < 1) {
-      this.currentPage = 1;
-    }
-
-    // Appliquer la pagination
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    this.filteredEmployees = filtered.slice(startIndex, endIndex);
-
-    console.log(
-      "Employés filtrés localement:",
-      this.filteredEmployees.length,
-      "sur",
-      this.totalEmployees,
-      "total (page",
-      this.currentPage,
-      "sur",
-      this.totalPages,
-      ")",
-    );
-  }
-
-  /**
-   * Efface la recherche des employés
-   */
-  clearEmployeeSearch(): void {
-    this.employeesSearch = "";
-    this.filterEmployees();
-  }
-
-  /**
-   * Remet à zéro tous les filtres des employés
-   */
-  resetEmployeeFilters(): void {
-    this.employeesSearch = "";
-    this.employeesRoleFilter = "all";
-    this.employeesStatusFilter = "all";
-    this.employeesCityFilter = "";
-    this.employeesNeighborhoodFilter = "";
-    this.employeesArrondissementFilter = "";
-    this.employeesSectorFilter = null;
-    this.currentPage = 1;
-    this.filterEmployees();
-  }
-
-  /**
-   * Bascule l'affichage de la section de recherche des employés
-   */
-  toggleEmployeesSearch(): void {
-    this.showEmployeesSearch = !this.showEmployeesSearch;
-
-    // Si on ferme la section, on remet à zéro les filtres
-    if (!this.showEmployeesSearch) {
-      this.resetEmployeeFilters();
-    }
-  }
-
-  /**
-   * Navigue vers la page précédente
-   */
-  goToPreviousPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.filterEmployees();
-    }
-  }
-
-  /**
-   * Navigue vers la page suivante
-   */
-  goToNextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.filterEmployees();
-    }
-  }
-
-  /**
-   * Navigue vers une page spécifique
-   */
-  goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
-      this.currentPage = page;
-      this.filterEmployees();
-    }
-  }
-
-  /**
-   * Change le nombre d'éléments par page
-   */
-  changeItemsPerPage(newSize: number): void {
-    this.itemsPerPage = newSize;
-    this.currentPage = 1; // Reset à la première page
-    this.filterEmployees();
-  }
 
   /**
    * Change le nombre d'éléments par page pour les clients
@@ -2460,38 +1546,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.clientsItemsPerPage = newSize;
     this.clientsCurrentPage = 1; // Reset à la première page
     this.filterClients();
-  }
-
-  /**
-   * Génère la liste des numéros de pages pour la pagination
-   */
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisiblePages = 5;
-
-    let startPage = Math.max(
-      1,
-      this.currentPage - Math.floor(maxVisiblePages / 2),
-    );
-    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
-
-    // Ajuster le début si on est proche de la fin
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return pages;
-  }
-
-  /**
-   * Calcule le numéro du dernier élément affiché sur la page actuelle
-   */
-  getEndItemNumber(): number {
-    return Math.min(this.currentPage * this.itemsPerPage, this.totalEmployees);
   }
 
   /**
@@ -2507,11 +1561,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   onClientsImported(): void {
     this.showImportClientsModal = false;
     this.filterClients();
-  }
-
-  onEmployeesImported(): void {
-    this.showImportEmployeesModal = false;
-    this.filterEmployees();
   }
 
   private telechargerModele(type: 'clients' | 'employees'): void {
@@ -2535,9 +1584,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.telechargerModele('clients');
   }
 
-  telechargerModeleEmployes(): void {
-    this.telechargerModele('employees');
-  }
 
   // === MÉTHODES DE FILTRAGE ET RECHERCHE DES CLIENTS ===
 
@@ -2870,149 +1916,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     return clientCities;
-  }
-
-  /**
-   * Obtenir la liste des quartiers uniques des employés
-   */
-  getUniqueEmployeeNeighborhoods(): string[] {
-    return this.availableEmployeeNeighborhoods.map((q) => q.name).sort();
-  }
-
-  /**
-   * Chantier "migrer le frontend vers TerritoryHttpService" — agrège les quartiers de
-   * plusieurs secteurs en un seul flux (remplace la boucle `forEach` + `push`
-   * synchrone, qui supposait une réponse immédiate).
-   */
-  private _aggregateNeighborhoodsForSectors(sectors: Sector[]) {
-    if (!sectors.length) return of([] as Quartier[]);
-    return forkJoin(sectors.map((s) => this.territoryService.getNeighborhoodsBySector(s.id))).pipe(
-      map((lists) => lists.flat()),
-    );
-  }
-
-  /**
-   * Initialise les données pour les filtres (même système que l'enregistrement)
-   */
-  initializeFiltersData(): void {
-    // Chantier "migrer le frontend vers TerritoryHttpService" — l'id "1" (ville
-    // "Ouagadougou" dans CountriesOrgMockService) était un id de mock, jamais un vrai
-    // `_id` Mongo : recherché par nom une fois les vraies villes chargées, plutôt que
-    // fabriqué. Si "Ouagadougou" n'est pas trouvée, les arrondissements/quartiers par
-    // défaut restent simplement vides (l'utilisateur choisit une ville).
-    this.territoryService.getAllCities().subscribe({
-      next: (cities) => {
-        this.availableEmployeeCities = cities;
-        const ouaga = cities.find((c) => c.name === 'Ouagadougou');
-        if (!ouaga) return;
-        this.territoryService.getArrondissementsByCity(ouaga.id).subscribe({
-          next: (arr) => { this.availableEmployeeArrondissements = arr; },
-          error: () => { this.availableEmployeeArrondissements = []; },
-        });
-        this.loadAllNeighborhoodsForCity(ouaga.id);
-      },
-      error: () => { this.availableEmployeeCities = []; },
-    });
-  }
-
-  /**
-   * Charge tous les quartiers d'une ville donnée — enchaîne arrondissements -> secteurs
-   * -> quartiers (un `forkJoin` par niveau), puis aplatit, au lieu des boucles
-   * `forEach`+`push` synchrones d'avant ce chantier.
-   */
-  loadAllNeighborhoodsForCity(cityId: string): void {
-    this.availableEmployeeNeighborhoods = [];
-    this.territoryService.getArrondissementsByCity(cityId).pipe(
-      switchMap((arrondissements) => {
-        if (!arrondissements.length) return of([] as Quartier[]);
-        return forkJoin(
-          arrondissements.map((arr) =>
-            this.territoryService.getSectorsByArrondissement(arr.id).pipe(
-              switchMap((sectors) => this._aggregateNeighborhoodsForSectors(sectors)),
-            ),
-          ),
-        ).pipe(map((lists) => lists.flat()));
-      }),
-    ).subscribe({
-      next: (neighborhoods) => { this.availableEmployeeNeighborhoods = neighborhoods; },
-      error: () => { this.availableEmployeeNeighborhoods = []; },
-    });
-  }
-
-  /**
-   * Gère le changement de ville pour les filtres employés
-   */
-  onEmployeeCityFilterChange(): void {
-    // Réinitialiser les filtres dépendants
-    this.employeesArrondissementFilter = "";
-    this.employeesSectorFilter = null;
-    this.employeesNeighborhoodFilter = "";
-    this.availableEmployeeArrondissements = [];
-    this.availableEmployeeSectors = [];
-    this.availableEmployeeNeighborhoods = [];
-
-    if (this.employeesCityFilter) {
-      // Charger les arrondissements de la ville sélectionnée
-      this.territoryService.getArrondissementsByCity(this.employeesCityFilter).subscribe({
-        next: (arr) => { this.availableEmployeeArrondissements = arr; },
-        error: () => { this.availableEmployeeArrondissements = []; },
-      });
-      this.loadAllNeighborhoodsForCity(this.employeesCityFilter);
-    }
-
-    // `filterEmployees()` ne dépend que des VALEURS de filtre sélectionnées (ids/texte),
-    // pas des listes de dropdown ci-dessus — appelé immédiatement, comme avant.
-    this.filterEmployees();
-  }
-
-  /**
-   * Gère le changement d'arrondissement pour les filtres employés
-   */
-  onEmployeeArrondissementFilterChange(): void {
-    // Réinitialiser les filtres dépendants
-    this.employeesSectorFilter = null;
-    this.employeesNeighborhoodFilter = "";
-    this.availableEmployeeSectors = [];
-    this.availableEmployeeNeighborhoods = [];
-
-    if (this.employeesArrondissementFilter) {
-      // Charger les secteurs de l'arrondissement sélectionné, puis leurs quartiers
-      this.territoryService.getSectorsByArrondissement(this.employeesArrondissementFilter).pipe(
-        switchMap((sectors) => {
-          this.availableEmployeeSectors = sectors;
-          return this._aggregateNeighborhoodsForSectors(sectors);
-        }),
-      ).subscribe({
-        next: (neighborhoods) => { this.availableEmployeeNeighborhoods = neighborhoods; },
-        error: () => { this.availableEmployeeSectors = []; this.availableEmployeeNeighborhoods = []; },
-      });
-    }
-
-    this.filterEmployees();
-  }
-
-  /**
-   * Gère le changement de secteur pour les filtres employés
-   */
-  onEmployeeSectorFilterChange(): void {
-    this.employeesNeighborhoodFilter = "";
-
-    if (this.employeesSectorFilter) {
-      // Charger les quartiers du secteur sélectionné
-      const sectorId = this.employeesSectorFilter.toString();
-      this.territoryService.getNeighborhoodsBySector(sectorId).subscribe({
-        next: (quartiers) => { this.availableEmployeeNeighborhoods = quartiers; },
-        error: () => { this.availableEmployeeNeighborhoods = []; },
-      });
-    } else if (this.employeesArrondissementFilter) {
-      // Si aucun secteur sélectionné, charger tous les quartiers de l'arrondissement
-      this._aggregateNeighborhoodsForSectors(this.availableEmployeeSectors).subscribe({
-        next: (neighborhoods) => { this.availableEmployeeNeighborhoods = neighborhoods; },
-        error: () => { this.availableEmployeeNeighborhoods = []; },
-      });
-    }
-
-    this.filterEmployees();
   }
 
   /**
@@ -3532,15 +2435,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return new Array(Math.floor(rating)).fill(0);
   }
 
-  getEmployeeStatusText(status: string): string {
-    const statusTexts: Record<string, string> = {
-      active: "Actif",
-      inactive: "Inactif",
-      deleted: "Supprimé"
-    };
-    return statusTexts[status] || status;
-  }
-
   getStatusText(status: CollectionStatus): string {
     const statusTexts = {
       [CollectionStatus.SCHEDULED]: "Programmée",
@@ -3584,67 +2478,11 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       : "Inconnu";
   }
 
-  getRoleText(role: string): string {
-    const roleTexts = {
-      admin: "Administrateur",
-      manager: "Manager",
-      collector: "Collecteur",
-    };
-    return roleTexts[role as keyof typeof roleTexts] || role;
-  }
-
-  // Droits financiers (dashboard financier) — distinct du rôle opérationnel ci-dessus.
-  get estAdministrateurFinance(): boolean {
-    return this.currentUser?.financialRole === 'administrateur';
-  }
-
-  getFinancialRoleText(financialRole: string | null | undefined): string {
-    const labels = {
-      comptable: 'Comptable',
-      manager_terrain: 'Manager terrain',
-      administrateur: 'Administrateur',
-    };
-    return financialRole ? (labels[financialRole as keyof typeof labels] || financialRole) : 'Aucun';
-  }
-
-  // Assigne/retire le rôle financier d'un employé (select "Aucun" => financialRole=null,
-  // ce qui révoque aussi droitsFinance côté backend). Réservé aux administrateurs finance
-  // (estAdministrateurFinance ci-dessus), contrôle rejoué côté serveur de toute façon.
-  readonly financialRoleEnCours = new Set<string>();
-  assignFinancialRole(employee: any, value: string): void {
-    if (this.financialRoleEnCours.has(employee._id)) return;
-    const financialRole = value || null;
-    this.financialRoleEnCours.add(employee._id);
-    this.agencyService.setEmployeeFinancialRole$(employee._id, financialRole as any).subscribe({
-      next: () => {
-        this.financialRoleEnCours.delete(employee._id);
-        employee.financialRole = financialRole;
-        this.notificationService.showSuccess(
-          'Succès',
-          financialRole
-            ? `Rôle financier "${this.getFinancialRoleText(financialRole)}" assigné à ${employee.firstName} ${employee.lastName}.`
-            : `Rôle financier retiré à ${employee.firstName} ${employee.lastName}.`,
-        );
-      },
-      error: (error) => {
-        this.financialRoleEnCours.delete(employee._id);
-        console.error("Erreur lors de l'assignation du rôle financier :", error);
-        this.notificationService.showError('Erreur', "Impossible d'assigner le rôle financier.");
-      },
-    });
-  }
 
   getZoneName(schedule: any): string {
     if (!schedule) return 'Zone inconnue';
     return schedule.zone || schedule.quartier || schedule.secteur || schedule.ville
       || schedule.libelle || 'Zone inconnue';
-  }
-
-  getEmployeeName(employeeId: string): string {
-    const employee = this.employees.find((e) => e.id === employeeId);
-    return employee
-      ? `${employee.firstName} ${employee.lastName}`
-      : "Employé inconnu";
   }
 
   getSubscriptionStatusText(status: string): string {
@@ -4051,12 +2889,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     // No need to call notificationService.showInfo here, as it's already handled in the template
   }
 
-  // Form methods - DEPRECATED: Utiliser toggleZoneSelection à la place
-  toggleZoneAssignment(zoneId: string, event: any): void {
-    // Rediriger vers la nouvelle méthode reactive form
-    this.toggleZoneSelection(zoneId, event);
-  }
-
   /**
    * Convertit les messages techniques du backend en messages conviviaux pour l'utilisateur
    */
@@ -4084,216 +2916,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return isSuccess
       ? "Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter."
       : raw;
-  }
-
-  addEmployee(): void {
-    // console.log('Tentative d\'ajout d\'employé...');
-    // console.log('Formulaire valide ?', this.employeeForm.valid);
-    // console.log('isEmployeeFormValid ?', this.isEmployeeFormValid());
-    // console.log('currentUser.agencyId ?', this.currentUser?.agencyId);
-
-    if (this.isLoading) return;
-
-    if (this.isEmployeeFormValid() && this.currentUser?.agencyId) {
-      const formValue = this.employeeForm.value;
-
-      // Vérifier si on est en mode modification ou création
-      if (
-        this.isEditingEmployee &&
-        this.employeeToEdit &&
-        this.employeeToEdit._id
-      ) {
-        // Mode modification - utiliser updateEmployee
-        this.isLoading = true;
-        this.updateEmployeeData(this.employeeToEdit._id);
-        return;
-      }
-
-      // Mode création - continuer avec la logique normale
-      const employeeData: AddEmployeeData = {
-        firstName: formValue.firstName,
-        lastName: formValue.lastName,
-        email: formValue.email,
-        password: formValue.password,
-        phone: normalizePhone(formValue.phone),
-        role: formValue.role as UserRole,
-        address: formValue.address as UserAddress,
-        agencyId: this.currentUser.agencyId,
-      };
-
-      this.isLoading = true;
-      this.agencyService.addEmployeeToAgency(employeeData).subscribe({
-        next: (response: any) => {
-          this.isLoading = false;
-          console.log("[DEBUG] Réponse inscription employee:", response);
-
-          if (response.success) {
-            // Succès - réinitialiser les erreurs
-            this.employeeFormError = null;
-            this.employeeFormDetailedErrors = {};
-
-            this.notificationService.showSuccess(
-              "Employé ajouté avec succès",
-              response.message || "L'employé a été créé avec succès !",
-            );
-
-            //  Recharger la liste après ajout
-            if (this.currentUser?.agencyId) {
-              this.loadEmployees(this.currentUser.agencyId);
-              // Recharger les collecteurs car le rôle peut avoir changé
-              this.loadCollectors(this.currentUser.agencyId);
-            }
-            this.employeeForm.reset();
-            this.showAddEmployeeModal = false;
-          } else {
-            // Erreur - afficher les erreurs exactes du backend
-
-            this.employeeFormError =
-              response.error || "Erreur lors de l'ajout de l'employé";
-            this.employeeFormDetailedErrors = response.detailedErrors || {};
-
-            console.error(
-              "Message affiché à l'utilisateur:",
-              this.employeeFormError,
-            );
-            console.error(
-              "Erreurs détaillées affichées:",
-              this.employeeFormDetailedErrors,
-            );
-
-            // Afficher aussi une notification
-            this.notificationService.showError(
-              "Erreur lors de l'ajout",
-              this.employeeFormError || "Erreur inconnue",
-            );
-          }
-        },
-        error: (errorResponse) => {
-          this.isLoading = false;
-          console.log("=== ERREUR HTTP ===");
-          console.log("Erreur complète:", errorResponse);
-
-          if (errorResponse.error) {
-            this.employeeFormError = errorResponse.error;
-            this.employeeFormDetailedErrors =
-              errorResponse.detailedErrors || {};
-          } else {
-            this.employeeFormError = "Erreur de communication avec le serveur";
-            this.employeeFormDetailedErrors = {};
-          }
-
-          console.log(
-            "Message d'erreur final (dashboard):",
-            this.employeeFormError,
-          );
-
-          this.notificationService.showError(
-            "Erreur lors de l'ajout",
-            this.employeeFormError || "Erreur inconnue",
-          );
-        },
-      });
-    } else {
-      // Formulaire invalide, marquer tous les champs comme touchés pour afficher les erreurs
-      this.employeeForm.markAllAsTouched();
-      this.updateFormErrors(this.employeeForm, "employee");
-      this.notificationService.showError(
-        "Formulaire invalide",
-        "Veuillez corriger les erreurs dans le formulaire",
-      );
-    }
-  }
-
-  // Nouvelle méthode pour la modification d'employé
-  updateEmployeeData(employeeId: string): void {
-    console.log("Tentative de modification d'employé:", employeeId);
-
-    const formValue = this.employeeForm.value;
-    const employeeData: Partial<AddEmployeeData> = {
-      firstName: formValue.firstName,
-      lastName: formValue.lastName,
-      email: formValue.email,
-      phone: normalizePhone(formValue.phone),
-      role: formValue.role as UserRole,
-      address: formValue.address as UserAddress,
-      agencyId: this.currentUser?.agencyId,
-    };
-
-    // Inclure le mot de passe seulement s'il est fourni
-    if (formValue.password && formValue.password.trim() !== "") {
-      employeeData.password = formValue.password;
-    }
-
-    this.agencyService.updateEmployee(employeeId, employeeData).subscribe({
-      next: (response: any) => {
-        this.isLoading = false;
-        console.log("[DEBUG] Réponse modification employee:", response);
-
-        if (response.success) {
-          // Succès - réinitialiser les erreurs
-          this.employeeFormError = null;
-          this.employeeFormDetailedErrors = {};
-
-          this.notificationService.showSuccess(
-            "Employé modifié avec succès",
-            response.message || "L'employé a été modifié avec succès !",
-          );
-
-          //  Recharger la liste après modification
-          if (this.currentUser?.agencyId) {
-            this.loadEmployees(this.currentUser.agencyId);
-            // Recharger les collecteurs car le rôle peut avoir changé
-            this.loadCollectors(this.currentUser.agencyId);
-          }
-
-          // Fermer le drawer et réinitialiser
-          this.closeAddEmployeeModal();
-        } else {
-          // Erreur - afficher les erreurs exactes du backend
-          this.employeeFormError =
-            response.error || "Erreur lors de la modification de l'employé";
-          this.employeeFormDetailedErrors = response.detailedErrors || {};
-
-          console.error(
-            "Message affiché à l'utilisateur:",
-            this.employeeFormError,
-          );
-          console.error(
-            "Erreurs détaillées affichées:",
-            this.employeeFormDetailedErrors,
-          );
-
-          // Afficher aussi une notification
-          this.notificationService.showError(
-            "Erreur lors de la modification",
-            this.employeeFormError || "Erreur inconnue",
-          );
-        }
-      },
-      error: (errorResponse) => {
-        this.isLoading = false;
-        console.log("=== ERREUR HTTP MODIFICATION ===");
-        console.log("Erreur complète:", errorResponse);
-
-        if (errorResponse.error) {
-          this.employeeFormError = errorResponse.error;
-          this.employeeFormDetailedErrors = errorResponse.detailedErrors || {};
-        } else {
-          this.employeeFormError = "Erreur de communication avec le serveur";
-          this.employeeFormDetailedErrors = {};
-        }
-
-        console.log(
-          "Message d'erreur final (dashboard):",
-          this.employeeFormError,
-        );
-
-        this.notificationService.showError(
-          "Erreur lors de la modification",
-          this.employeeFormError || "Erreur inconnue",
-        );
-      },
-    });
   }
 
   //creation ou modification d un tarif
@@ -5225,142 +3847,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.selectedClientLocations = [];
     this.selectedClientSubscriptionsCount = 0;
   }
-  editEmployee(employee: any): void {
-    console.log("Édition de l'employé :", employee);
-
-    // Configurer le mode édition
-    this.isEditingEmployee = true;
-    this.employeeToEdit = { ...employee };
-
-    // Pré-remplir le formulaire avec les données de l'employé (SANS les mots de passe)
-    this.employeeForm.patchValue({
-      firstName: employee.firstName || "",
-      lastName: employee.lastName || "",
-      email: employee.email || "",
-      phone: employee.phone || "",
-      role: employee.role || "",
-      password: "", // Ne jamais pré-remplir le mot de passe
-      confirmPassword: "", // Ne jamais pré-remplir la confirmation
-      zones: employee.zones || [],
-      address: {
-        city: employee.address?.city || "",
-        arrondissement: employee.address?.arrondissement || "",
-        sector: employee.address?.sector || "",
-        neighborhood: employee.address?.neighborhood || "",
-        street: employee.address?.street || "",
-        doorNumber: employee.address?.doorNumber || "",
-        doorColor: employee.address?.doorColor || "",
-        postalCode: employee.address?.postalCode || "",
-      },
-    });
-
-    // Charger les dépendances de l'adresse si elles existent
-    if (employee.address?.city) {
-      this.loadEmployeeAddressDependencies(employee.address);
-    }
-
-    // Ajuster les validateurs pour le mode modification
-    this.adjustValidatorsForEdit();
-
-    // Ouvrir le drawer d'ajout/modification d'employé
-    this.openEmployeeDrawer();
-
-    this.notificationService.showInfo(
-      "Modification",
-      "Formulaire ouvert pour modification",
-    );
-  }
-
-  // Méthode pour ajuster les validateurs selon le mode (ajout/modification)
-  private adjustValidatorsForEdit(): void {
-    const passwordControl = this.employeeForm.get("password");
-    const confirmPasswordControl = this.employeeForm.get("confirmPassword");
-
-    if (this.isEditingEmployee) {
-      // En mode modification : les mots de passe deviennent optionnels
-      passwordControl?.clearValidators(); // Complètement optionnel
-      confirmPasswordControl?.clearValidators(); // Complètement optionnel
-
-      // Si un mot de passe est saisi, il doit être valide (min 6 caractères)
-      passwordControl?.setValidators((control) => {
-        if (!control.value || control.value === "") {
-          return null; // Valide si vide
-        }
-        return control.value.length >= 6
-          ? null
-          : {
-            minlength: {
-              requiredLength: 6,
-              actualLength: control.value.length,
-            },
-          };
-      });
-    } else {
-      // En mode ajout : les mots de passe sont obligatoires
-      passwordControl?.setValidators([
-        Validators.required,
-        Validators.minLength(6),
-      ]);
-      confirmPasswordControl?.setValidators([Validators.required]);
-    }
-
-    // Mettre à jour la validité
-    passwordControl?.updateValueAndValidity();
-    confirmPasswordControl?.updateValueAndValidity();
-  }
-
-  // Recharge, pour un employé existant (mode édition), les arrondissements/secteurs/
-  // quartiers correspondant à son adresse déjà enregistrée — même référentiel réel
-  // (TerritoryHttpService) que le reste de la cascade ci-dessus. Note : ce bloc
-  // adresse n'est de toute façon affiché que pour l'AJOUT d'employé (`@if
-  private loadEmployeeAddressDependencies(address: any): void {
-    if (!address?.city) return;
-    // this.cities peut être vide si aucun formulaire n'a encore déclenché son chargement :
-    // loadCitiesForAddress() est asynchrone, donc on ne peut pas résoudre cityObj tant que
-    // la réponse n'est pas revenue — d'où l'attente explicite ici plutôt qu'un find() immédiat.
-    if (this.cities.length === 0) {
-      this.territoryService.getAllCities().subscribe({
-        next: (cities) => {
-          this.cities = cities;
-          this.resolveEmployeeAddressDependencies(address);
-        },
-        error: (err) => { console.error('Erreur chargement des villes :', err); this.cities = []; },
-      });
-    } else {
-      this.resolveEmployeeAddressDependencies(address);
-    }
-  }
-
-  private resolveEmployeeAddressDependencies(address: any): void {
-    const cityObj = this.cities.find((c) => c.name === address.city);
-    if (!cityObj) return;
-
-    this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
-      next: (arrondissements) => {
-        this.arrondissements = arrondissements;
-        if (!address.arrondissement) return;
-
-        const arrObj = arrondissements.find((a) => a.name === address.arrondissement);
-        if (!arrObj) return;
-        this.territoryService.getSectorsByArrondissement(arrObj.id).subscribe({
-          next: (sectors) => {
-            this.secteurs = sectors;
-            if (!address.sector) return;
-
-            const secteurObj = sectors.find((s) => s.name === address.sector);
-            if (!secteurObj) return;
-            this.territoryService.getNeighborhoodsBySector(secteurObj.id).subscribe({
-              next: (quartiers) => { this.quartiers = quartiers.map((q) => q.name); },
-              error: () => { this.quartiers = []; },
-            });
-          },
-          error: () => { this.secteurs = []; },
-        });
-      },
-      error: () => { this.arrondissements = []; },
-    });
-  }
-
   // recuperations des collecte par jour d une agences
   dayCollectes: any;
 
@@ -5530,41 +4016,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.showHistoryModal = false;
     this.clearHistoryFilters();
   }
-  //modification  du status de l employee
-  readonly employeeStatusToggleEnCours = new Set<string>();
-  toggleEmployeeStatus(employee: any): void {
-    if (this.employeeStatusToggleEnCours.has(employee._id)) return;
-    console.log("Toggle employee status:", employee);
-    // const updatedStatus = !employee.isActive;
-    this.employeeStatusToggleEnCours.add(employee._id);
-    this.agencyService
-      .updateEmployeeStatus$(employee._id)
-      .subscribe({
-        next: (response: any) => {
-          this.employeeStatusToggleEnCours.delete(employee._id);
-          // employee.isActive = updatedStatus;
-
-          // Recharger les collecteurs si c'est un collecteur dont le statut a changé
-          if (employee.role === "collector" && this.currentUser?.agencyId) {
-            this.loadCollectors(this.currentUser.agencyId);
-          }
-          console.log("employee status change: ", response)
-          this.notificationService.showSuccess(
-            "Succès",
-            response.message
-          );
-          this.loadEmployees(this.currentUser?.agencyId!);
-        },
-        error: (error) => {
-          this.employeeStatusToggleEnCours.delete(employee._id);
-          console.error("Erreur lors de la mise à jour du statut :", error);
-          this.notificationService.showError(
-            "Erreur",
-            "Impossible de mettre à jour le statut de l'employé.",
-          );
-        },
-      });
-  }
 
   //methode de verification de la disponibilite de l employee
   checkCollectorAvailability(
@@ -5667,85 +4118,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       next: (arrondissements) => { this.arrondissements = arrondissements; },
       error: (err) => { console.error('Erreur chargement des arrondissements :', err); this.arrondissements = []; },
     });
-  }
-
-  // Méthodes spécifiques pour le formulaire d'employé
-  onEmployeeCityChange(event: Event) {
-    const selectedCity = (event.target as HTMLSelectElement)?.value;
-    this.arrondissements = [];
-    this.secteurs = [];
-    this.quartiers = [];
-    this.employeeForm.patchValue({
-      address: { arrondissement: "", sector: "", neighborhood: "" },
-    });
-
-    const cityObj = this.cities.find((c) => c.name === selectedCity);
-    if (!cityObj) {
-      this.employeeForm.get("address.arrondissement")?.disable();
-      this.employeeForm.get("address.sector")?.disable();
-      this.employeeForm.get("address.neighborhood")?.disable();
-      return;
-    }
-
-    this.employeeForm.get("address.arrondissement")?.enable();
-    this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
-      next: (arrondissements) => { this.arrondissements = arrondissements; },
-      error: (err) => { console.error('Erreur chargement des arrondissements :', err); this.arrondissements = []; },
-    });
-  }
-
-  onEmployeeArrondissementChange(event: Event) {
-    const arrondissement = (event.target as HTMLSelectElement)?.value;
-    this.quartiers = [];
-    if (!arrondissement) {
-      this.secteurs = [];
-      this.employeeForm.get("address.sector")?.disable();
-      this.employeeForm.get("address.neighborhood")?.disable();
-      return;
-    }
-
-    const arrondissementObj = this.arrondissements.find((arr) => arr.name === arrondissement);
-    if (!arrondissementObj) return;
-
-    this.employeeForm.get("address.sector")?.enable();
-    this.employeeForm.get("address.sector")?.setValue("");
-    this.employeeForm.get("address.neighborhood")?.setValue("");
-    this.employeeForm.get("address.neighborhood")?.disable();
-    this.territoryService.getSectorsByArrondissement(arrondissementObj.id).subscribe({
-      next: (sectors) => { this.secteurs = sectors; },
-      error: (err) => { console.error('Erreur chargement des secteurs :', err); this.secteurs = []; },
-    });
-  }
-
-  onEmployeeSecteurChange(event: Event) {
-    const secteur = (event.target as HTMLSelectElement)?.value;
-    if (!secteur) {
-      this.quartiers = [];
-      this.employeeForm.get("address.neighborhood")?.disable();
-      return;
-    }
-
-    const secteurObj = this.secteurs.find((s) => s.name === secteur);
-    if (!secteurObj) return;
-
-    this.employeeForm.get("address.neighborhood")?.enable();
-    this.employeeForm.get("address.neighborhood")?.setValue("");
-    this.territoryService.getNeighborhoodsBySector(secteurObj.id).subscribe({
-      next: (quartiers) => { this.quartiers = quartiers.map((q) => q.name); },
-      error: (err) => { console.error('Erreur chargement des quartiers :', err); this.quartiers = []; },
-    });
-  }
-
-  // Initialise les dépendances d'adresse pour le formulaire d'ajout d'employé.
-  private initializeAddressDataForEmployee(): void {
-    this.arrondissements = [];
-    this.secteurs = [];
-    this.quartiers = [];
-    if (this.cities.length === 0) this.loadCitiesForAddress();
-
-    this.employeeForm.get("address.arrondissement")?.disable();
-    this.employeeForm.get("address.sector")?.disable();
-    this.employeeForm.get("address.neighborhood")?.disable();
   }
 
   // Initialise les dépendances d'adresse pour la sélection des zones de couverture.
@@ -6027,8 +4399,10 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     }
 
     const totalClients = this.activeClients.length;
-    const maxCapacity =
-      this.allEmployees.filter((emp) => emp.role === "collector").length * 50; // 50 clients par collecteur
+    // this.collectors (peuplé par loadCollectors(), toujours actif) remplace l'ancien
+    // allEmployees.filter(role === "collector") — même liste de collecteurs, sans
+    // dépendre de l'ancien état employés supprimé avec l'onglet.
+    const maxCapacity = this.collectors.length * 50; // 50 clients par collecteur
     if (maxCapacity === 0) {
       this._cachedWorkloadPercentage = 0;
     } else {

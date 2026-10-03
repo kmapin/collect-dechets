@@ -178,6 +178,18 @@ export const routes: Routes = [
       ),
   },
 
+  // Sous-module routé Administration (employés / rôles & accès) — même pattern que
+  // dashboard/financial ci-dessous : aucun guard au niveau du montage, la protection
+  // est posée à l'intérieur d'administration.routes.ts (administrationAccessGuard sur
+  // le shell, administrationPermissionGuard par sous-page).
+  {
+    path: "dashboard/agency/administration",
+    loadChildren: () =>
+      import(
+        "./pages/dashboards/agency-dashboard/features/administration/administration.routes"
+      ).then((m) => m.ADMINISTRATION_ROUTES),
+  },
+
   {
     canActivate: [adminOrManagerGuard],
     path: "notification-settings",

@@ -1,3 +1,9 @@
+// Base reprise telle quelle de financial-dashboard/features/roles-admin/
+// roles-admin.component.scss (composant déplacé ici) — classes génériques
+// (.detail-table, .check-btn, etc.) réutilisées sans changement pour la nouvelle
+// section Administration ; seules les classes liées au rôle opérationnel (.op-*) et au
+// titre de domaine (.domain-title) sont nouvelles.
+
 .access-mgmt {
   &__header {
     margin: 0 0 1.25rem;
@@ -27,7 +33,6 @@
     }
   }
 
-  // ── Panneau liste ──────────────────────────────────────────────
   &__list-panel {
     min-width: 0;
     background: var(--white);
@@ -37,6 +42,11 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    // Plafond indépendant du panneau détail (qui peut être bien plus grand,
+    // sections 1-4) : passé cette hauteur, la liste Personnel défile en
+    // interne (voir __list : flex + min-height:0 + overflow-y:auto) plutôt que
+    // de s'étirer jusqu'à la hauteur du détail ou de pousser la page.
+    max-height: 70vh;
   }
 
   &__list-header {
@@ -105,7 +115,13 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    max-height: 32rem;
+    // flex:1 (plutôt qu'une hauteur maximale fixe) pour que la liste occupe tout
+    // l'espace vertical du panneau. min-height:0 est indispensable ici : un
+    // enfant flex ne peut sinon jamais rétrécir sous la hauteur de son contenu,
+    // ce qui empêche overflow-y:auto de déclencher le défilement (la liste
+    // déborde silencieusement du panneau au lieu de scroller).
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
 
     li {
@@ -139,7 +155,6 @@
     }
   }
 
-  // ── Panneau détail ─────────────────────────────────────────────
   &__detail {
     min-width: 0;
     background: var(--white);
@@ -163,7 +178,7 @@
   }
 }
 
-// ── Avatar & badges de rôle ────────────────────────────────────────
+// ── Avatar & badges de RÔLE OPÉRATIONNEL (nouveau — liste combinée) ────────────────
 .avatar {
   flex-shrink: 0;
   display: inline-flex;
@@ -183,16 +198,16 @@
     font-size: 1.05rem;
   }
 
-  &.role-Comptable {
-    background: var(--accent-color, #ff7043);
+  &.op-manager {
+    background: var(--primary-color, #3b82f6);
   }
 
-  &.role-ManagerTerrain {
+  &.op-collector {
     background: var(--secondary-color, #4caf50);
   }
 
-  &.role-Administrateur {
-    background: var(--primary-color, #3b82f6);
+  &.op-super_admin {
+    background: var(--accent-color, #ff7043);
   }
 }
 
@@ -219,19 +234,19 @@
   padding: 0.05rem 0.5rem;
   border-radius: 999px;
 
-  &.role-Comptable {
-    color: #c2410c;
-    background: #ffedd5;
+  &.op-manager {
+    color: #1d4ed8;
+    background: #dbeafe;
   }
 
-  &.role-ManagerTerrain {
+  &.op-collector {
     color: #15803d;
     background: #dcfce7;
   }
 
-  &.role-Administrateur {
-    color: #1d4ed8;
-    background: #dbeafe;
+  &.op-super_admin {
+    color: #c2410c;
+    background: #ffedd5;
   }
 }
 
@@ -249,6 +264,17 @@
   }
 }
 
+// Sépare visuellement les deux domaines (Finance / Administration) dans le même
+// panneau de détail.
+.domain-title {
+  margin: 0.5rem 0 0;
+  padding-top: 1rem;
+  border-top: 2px solid var(--surface-200, #e2e8f0);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--surface-800, #1e293b);
+}
+
 .detail-section {
   border-top: 1px solid var(--surface-100, #f1f5f9);
   padding-top: 1rem;
@@ -258,25 +284,6 @@
     font-size: 0.88rem;
     font-weight: 700;
     color: var(--primary-color, #2563eb);
-  }
-
-  label {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--surface-500, #64748b);
-    margin-bottom: 0.3rem;
-  }
-
-  select {
-    width: 100%;
-    max-width: 22rem;
-    padding: 0.5rem 0.6rem;
-    font-size: 0.85rem;
-    color: var(--surface-800, #1e293b);
-    background: var(--white);
-    border: 1px solid var(--surface-200, #e2e8f0);
-    border-radius: 8px;
   }
 
   &__hint {
@@ -386,7 +393,14 @@
   }
 }
 
-// ── Bandeau "modifications non enregistrées" ────────────────────────
+.gouvernance-icon {
+  font-size: 0.95rem !important;
+  color: var(--error-color, #dc2626);
+  vertical-align: middle;
+  margin-left: 0.2rem;
+}
+
+// ── Bandeaux ────────────────────────────────────────────────────────
 .dirty-banner {
   display: flex;
   align-items: center;
@@ -404,9 +418,19 @@
     font-size: 1.1rem;
     color: var(--accent-color, #ff7043);
   }
+
+  &--info {
+    color: #334155;
+    background: var(--surface-50, #f8fafc);
+    border-color: var(--surface-200, #e2e8f0);
+
+    i {
+      color: var(--surface-500, #64748b);
+    }
+  }
 }
 
-// ── Barre d'actions (sections 3/4) ───────────────────────────────────
+// ── Barre d'actions ───────────────────────────────────
 .detail-actions {
   display: flex;
   align-items: center;
