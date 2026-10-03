@@ -1,37 +1,142 @@
 <div class="employees-page">
   <div class="toolbar">
-    <div class="search-group">
-      <input
-        class="search-input"
-        type="text"
-        placeholder="Rechercher par nom, email ou téléphone…"
-        [ngModel]="terme()"
-        (ngModelChange)="terme.set($event)"
-        (keyup.enter)="rechercher()"
-      />
-      <button class="btn btn-secondary" type="button" (click)="rechercher()">
-        <i class="material-icons">search</i>
-        Rechercher
-      </button>
+    <h2 class="toolbar-title">Gestion des Employés</h2>
 
-      <select
-        class="role-filter"
-        [ngModel]="filtreRole()"
-        (ngModelChange)="changerFiltreRole($event)"
-      >
-        <option value="">Tous les rôles</option>
-        <option value="manager">Manager</option>
-        <option value="collector">Collecteur</option>
-      </select>
+    <div class="view-mode-toggle">
+      <button type="button" class="view-mode-btn" [class.active]="vueMode() === 'card'" (click)="basculerVue('card')">
+        <i class="material-icons">grid_view</i>
+        <span>Cartes</span>
+      </button>
+      <button type="button" class="view-mode-btn" [class.active]="vueMode() === 'table'" (click)="basculerVue('table')">
+        <i class="material-icons">table_rows</i>
+        <span>Tableau</span>
+      </button>
     </div>
+
+    <button
+      type="button"
+      class="btn btn-outline search-toggle-btn"
+      [class.active]="afficherFiltres()"
+      (click)="basculerFiltres()"
+      title="{{ afficherFiltres() ? 'Masquer la recherche' : 'Afficher la recherche' }}"
+    >
+      <i class="material-icons">{{ afficherFiltres() ? 'search_off' : 'search' }}</i>
+      {{ afficherFiltres() ? 'Masquer recherche' : 'Rechercher' }}
+    </button>
+
+    <button type="button" class="btn btn-outline" (click)="telechargerModele()">
+      <i class="material-icons">download</i>
+      Télécharger le modèle
+    </button>
+
+    <button type="button" class="btn btn-primary" (click)="ouvrirImportExcel()">
+      <i class="material-icons">upload_file</i>
+      Importer Excel
+    </button>
 
     @if (peutCreer) {
       <button class="btn btn-primary" type="button" (click)="ouvrirCreation()">
         <i class="material-icons">person_add</i>
-        Ajouter un employé
+        Ajouter Employé
       </button>
     }
   </div>
+
+  @if (afficherFiltres()) {
+    <div class="filters-panel">
+      <div class="search-row">
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Rechercher un employé par nom, email ou téléphone…"
+          [ngModel]="terme()"
+          (ngModelChange)="terme.set($event)"
+          (keyup.enter)="rechercher()"
+        />
+        <button class="btn btn-secondary" type="button" (click)="rechercher()">
+          <i class="material-icons">search</i>
+          Rechercher
+        </button>
+        <button class="btn btn-outline" type="button" (click)="reinitialiserFiltres()">
+          <i class="material-icons">restart_alt</i>
+          Réinitialiser
+        </button>
+      </div>
+
+      <div class="filters-grid">
+        <div class="filter-field">
+          <label>Ville :</label>
+          <app-territory-select
+            [options]="villesDisponibles()"
+            [value]="filtreVille()"
+            (valueChange)="changerFiltreVille($event)"
+            allLabel="Toutes les villes"
+            placeholder="Toutes les villes"
+          />
+        </div>
+        <div class="filter-field">
+          <label>Arrondissement :</label>
+          <app-territory-select
+            [options]="arrondissementsDisponibles()"
+            [value]="filtreArrondissement()"
+            [disabled]="!filtreVille()"
+            (valueChange)="changerFiltreArrondissement($event)"
+            allLabel="Tous les arrondissements"
+            placeholder="Tous les arrondissements"
+          />
+        </div>
+        <div class="filter-field">
+          <label>Secteur :</label>
+          <app-territory-select
+            [options]="secteursDisponibles()"
+            [value]="filtreSecteur()"
+            [disabled]="!filtreArrondissement()"
+            (valueChange)="changerFiltreSecteur($event)"
+            allLabel="Tous les secteurs"
+            placeholder="Tous les secteurs"
+          />
+        </div>
+        <div class="filter-field">
+          <label>Quartier :</label>
+          <app-territory-select
+            [options]="quartiersDisponibles()"
+            [value]="filtreQuartier()"
+            [disabled]="!filtreSecteur()"
+            (valueChange)="changerFiltreQuartier($event)"
+            allLabel="Tous les quartiers"
+            placeholder="Tous les quartiers"
+          />
+        </div>
+        <div class="filter-field">
+          <label>Role :</label>
+          <select class="role-filter" [ngModel]="filtreRole()" (ngModelChange)="changerFiltreRole($event)">
+            <option value="">Tous les Roles</option>
+            <option value="manager">Manager</option>
+            <option value="collector">Collecteur</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Statut :</label>
+          <select class="role-filter" [ngModel]="filtreStatut()" (ngModelChange)="changerFiltreStatut($event)">
+            <option value="">Tous</option>
+            <option value="active">Actif</option>
+            <option value="inactive">Inactif</option>
+            <option value="pending_activation">En attente</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-field filter-field--per-page">
+        <label>Éléments par page :</label>
+        <select class="per-page-select" [ngModel]="limit()" (ngModelChange)="changerLimit(+$event)">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+        </select>
+      </div>
+    </div>
+  }
 
   @if (etat() === 'loading') {
     <div class="placeholder-state">
@@ -49,7 +154,7 @@
       <i class="material-icons">group_off</i>
       <p>{{ terme() || filtreRole() ? 'Aucun employé ne correspond à ces critères.' : 'Aucun employé pour le moment.' }}</p>
     </div>
-  } @else {
+  } @else if (vueMode() === 'table') {
     <!-- Même design que la liste Clients du dashboard agence (agency-dashboard.html,
          section @if (clientViewMode === "table")) : avatar coloré + initiales, badge
          rôle/statut en pastille, boutons d'action circulaires, pagination identique. -->
@@ -114,7 +219,53 @@
         </tbody>
       </table>
     </div>
+  } @else {
+    <!-- Vue Cartes — même données que la vue Tableau, présentation en grille. -->
+    <div class="employees-card-grid">
+      @for (employe of employes(); track employe._id) {
+        <div class="employee-card">
+          <div class="employee-card-header">
+            <div class="table-avatar-initials employee-card-avatar" [style.background-color]="couleurAvatar(employe)">
+              {{ initiales(employe) }}
+            </div>
+            <div class="employee-card-identity">
+              <span class="name-text">{{ employe.firstName }} {{ employe.lastName }}</span>
+              <span class="status-badge-table" [class]="'role-' + employe.role">{{ labelRole(employe.role) }}</span>
+            </div>
+            <span
+              class="status-badge-table employee-card-status"
+              [class.status-active]="employe.status === 'active'"
+              [class.status-inactive]="employe.status !== 'active'"
+            >
+              {{ labelStatut(employe.status) }}
+            </span>
+          </div>
+          <div class="employee-card-body">
+            <p><i class="material-icons">email</i>{{ employe.email || 'Non renseigné' }}</p>
+            <p><i class="material-icons">phone</i>{{ employe.phone }}</p>
+            <p><i class="material-icons">location_on</i>{{ adresseLabel(employe) || 'Non renseignée' }}</p>
+          </div>
+          <div class="employee-card-actions">
+            @if (peutModifier) {
+              <button class="action-btn edit" type="button" title="Modifier" (click)="ouvrirEdition(employe)">
+                <i class="material-icons">edit</i>
+              </button>
+            }
+            @if (peutSupprimer) {
+              <button class="action-btn danger" type="button" title="Supprimer" (click)="supprimer(employe)">
+                <i class="material-icons">delete</i>
+              </button>
+            }
+            @if (!peutModifier && !peutSupprimer) {
+              <span class="hint">Lecture seule</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
 
+  @if (etat() === 'loaded' && employes().length) {
     <!-- Pagination — même modèle que la liste Clients (agency-dashboard.html,
          section "Pagination Clients"). -->
     <div class="pagination-section">
@@ -173,6 +324,14 @@
         <app-employee-form [employee]="employeEnEdition()" (saved)="surEnregistrement()" (cancelled)="fermerFormulaire()">
         </app-employee-form>
       </div>
+    </div>
+  </div>
+}
+
+@if (afficherImportExcel()) {
+  <div class="employee-drawer-overlay" (click)="fermerImportExcel()">
+    <div class="employee-drawer" (click)="$event.stopPropagation()">
+      <app-excel-import type="employees" (fermer)="fermerImportExcel()" (importReussi)="surImportReussi()"></app-excel-import>
     </div>
   </div>
 }

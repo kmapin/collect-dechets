@@ -3,20 +3,39 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { EmployeeAdministrationService } from '../employee-administration.service';
-import { Employee, EmployeeRole } from '../employee.model';
+import { Employee, EmployeeRole, EmployeeStatus } from '../employee.model';
 import { EmployeeForm } from '../employee-form/employee-form';
 import { AuthService } from '../../../../../../../services/auth.service';
 import { ConfirmDialogService } from '../../../../../../../services/confirm-dialog.service';
 import { NotificationService } from '../../../../../../../services/notification.service';
 import { SharedService } from '../../../../../../../services/shared-service';
+import { TerritoryHttpService } from '../../../../../../../services/territory-http.service';
+import { AgencyImportService } from '../../../../../../../services/agency-import.service';
+import { ExcelImportComponent } from '../../../../../../../components/excel-import/excel-import.component';
+import { TerritorySelectComponent, TerritoryOption, toTerritoryOptionsById } from '../../../../../../../shared/territory-select/territory-select';
 import { aLaPermissionAdministration } from '../../models/administration-permission';
 
 type EtatChargement = 'loading' | 'loaded' | 'error';
+type VueMode = 'card' | 'table';
 
+/**
+ * Parité avec l'ancien écran "Gestion des Employés" du agency-dashboard monolithique
+ * (retiré en Phase F de ce module, voir agency-dashboard.ts/html avant le commit
+ * 9e0ab2b) : vue Cartes/Tableau, recherche repliable, filtres géographiques en cascade
+ * (Ville -> Arrondissement -> Secteur -> Quartier, via TerritoryHttpService — même
+ * service que quartiers-management.ts/zone-selector), filtre Statut, téléchargement du
+ * modèle Excel et import Excel (ExcelImportComponent/AgencyImportService, génériques et
+ * déjà backend-complets pour 'employees', voir routes/agencyImportRoute.js côté
+ * serveur). Contrairement à l'ancien écran (filtrage 100% client sur une liste chargée
+ * en une fois), les filtres géographiques/statut sont ici envoyés au backend
+ * (services/employeesAdministration.js::list) pour rester corrects avec la pagination
+ * serveur déjà en place — pas de régression de correction pour un gain de parité
+ * cosmétique.
+ */
 @Component({
   selector: 'app-employees-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, EmployeeForm],
+  imports: [CommonModule, FormsModule, EmployeeForm, ExcelImportComponent, TerritorySelectComponent],
   templateUrl: './employees-list.html',
   styleUrl: './employees-list.scss',
 })
@@ -27,13 +46,35 @@ export class EmployeesList {
 
   readonly terme = signal('');
   readonly filtreRole = signal<EmployeeRole | ''>('');
+  readonly filtreStatut = signal<EmployeeStatus | ''>('');
   readonly page = signal(1);
   readonly limit = signal(10);
   readonly total = signal(0);
   readonly totalPages = signal(1);
 
+  readonly vueMode = signal<VueMode>('table');
+  readonly afficherFiltres = signal(true);
+
+  // Filtres géographiques en cascade — les SIGNALS ci-dessous stockent l'ID Territory
+  // (nécessaire pour enchaîner getArrondissementsByCity(id) etc., voir quartiers-
+  // management.ts, même service). Le backend, lui, filtre sur address.city/
+  // arrondissement/sector/neighborhood — des chaînes LIBRES sur User (jamais une
+  // référence vers les collections Territory) — donc on résout l'id vers son nom
+  // (resoudreNomParId ci-dessous) juste avant d'appeler charger(), jamais en stockant
+  // le nom directement dans ces signals.
+  readonly filtreVille = signal('');
+  readonly filtreArrondissement = signal('');
+  readonly filtreSecteur = signal('');
+  readonly filtreQuartier = signal('');
+
+  readonly villesDisponibles = signal<TerritoryOption[]>([]);
+  readonly arrondissementsDisponibles = signal<TerritoryOption[]>([]);
+  readonly secteursDisponibles = signal<TerritoryOption[]>([]);
+  readonly quartiersDisponibles = signal<TerritoryOption[]>([]);
+
   readonly afficherFormulaire = signal(false);
   readonly employeEnEdition = signal<Employee | null>(null);
+  readonly afficherImportExcel = signal(false);
 
   // Lu une fois à la construction (snapshot du token courant, pas un flux réactif) —
   // calculé APRÈS l'affectation des propriétés de paramètres du constructeur, jamais en
@@ -49,6 +90,8 @@ export class EmployeesList {
     private confirmDialog: ConfirmDialogService,
     private notification: NotificationService,
     private sharedService: SharedService,
+    private territoryService: TerritoryHttpService,
+    private agencyImportService: AgencyImportService,
   ) {
     const currentUser = this.authService.getCurrentUser();
     this.peutCreer = aLaPermissionAdministration(currentUser as any, 'employees.create');
@@ -56,12 +99,32 @@ export class EmployeesList {
     this.peutSupprimer = aLaPermissionAdministration(currentUser as any, 'employees.delete');
 
     this.charger();
+    this.chargerVilles();
+  }
+
+  /** Résout un id Territory sélectionné vers son NOM (label de l'option correspondante)
+   * — c'est le nom, jamais l'id, qui est envoyé au backend (voir commentaire sur les
+   * signals filtreVille/etc. plus haut). Chaîne vide si rien n'est sélectionné ou si
+   * l'id ne correspond à aucune option chargée. */
+  private resoudreNomParId(id: string, options: TerritoryOption[]): string {
+    if (!id) return '';
+    return options.find((o) => o.value === id)?.label ?? '';
   }
 
   charger(): void {
     this.etat.set('loading');
     this.employeeAdministrationService
-      .list({ term: this.terme(), role: this.filtreRole(), page: this.page(), limit: this.limit() })
+      .list({
+        term: this.terme(),
+        role: this.filtreRole(),
+        city: this.resoudreNomParId(this.filtreVille(), this.villesDisponibles()),
+        arrondissement: this.resoudreNomParId(this.filtreArrondissement(), this.arrondissementsDisponibles()),
+        sector: this.resoudreNomParId(this.filtreSecteur(), this.secteursDisponibles()),
+        neighborhood: this.resoudreNomParId(this.filtreQuartier(), this.quartiersDisponibles()),
+        status: this.filtreStatut(),
+        page: this.page(),
+        limit: this.limit(),
+      })
       .subscribe({
         next: (resultat) => {
           this.employes.set(resultat.data);
@@ -83,6 +146,139 @@ export class EmployeesList {
 
   changerFiltreRole(role: EmployeeRole | ''): void {
     this.filtreRole.set(role);
+    this.page.set(1);
+    this.charger();
+  }
+
+  changerFiltreStatut(statut: EmployeeStatus | ''): void {
+    this.filtreStatut.set(statut);
+    this.page.set(1);
+    this.charger();
+  }
+
+  basculerVue(mode: VueMode): void {
+    this.vueMode.set(mode);
+  }
+
+  basculerFiltres(): void {
+    this.afficherFiltres.set(!this.afficherFiltres());
+  }
+
+  // ── Filtres géographiques en cascade ────────────────────────────────────────────
+  // Même principe que l'ancien onEmployeeCityFilterChange/onEmployeeArrondissementFilterChange/
+  // onEmployeeSectorFilterChange (agency-dashboard.ts, avant Phase F) : choisir un niveau
+  // réinitialise tous les niveaux enfants et recharge leurs options, jamais leur valeur.
+
+  private chargerVilles(): void {
+    this.territoryService.getAllCities().subscribe({
+      next: (villes) => this.villesDisponibles.set(toTerritoryOptionsById(villes)),
+      error: () => this.villesDisponibles.set([]),
+    });
+  }
+
+  changerFiltreVille(ville: string | number | null): void {
+    this.filtreVille.set((ville as string) || '');
+    this.filtreArrondissement.set('');
+    this.filtreSecteur.set('');
+    this.filtreQuartier.set('');
+    this.arrondissementsDisponibles.set([]);
+    this.secteursDisponibles.set([]);
+    this.quartiersDisponibles.set([]);
+
+    if (this.filtreVille()) {
+      this.territoryService.getArrondissementsByCity(this.filtreVille()).subscribe({
+        next: (arr) => this.arrondissementsDisponibles.set(toTerritoryOptionsById(arr)),
+        error: () => this.arrondissementsDisponibles.set([]),
+      });
+    }
+    this.page.set(1);
+    this.charger();
+  }
+
+  changerFiltreArrondissement(arrondissement: string | number | null): void {
+    this.filtreArrondissement.set((arrondissement as string) || '');
+    this.filtreSecteur.set('');
+    this.filtreQuartier.set('');
+    this.secteursDisponibles.set([]);
+    this.quartiersDisponibles.set([]);
+
+    if (this.filtreArrondissement()) {
+      this.territoryService.getSectorsByArrondissement(this.filtreArrondissement()).subscribe({
+        next: (secteurs) => this.secteursDisponibles.set(toTerritoryOptionsById(secteurs)),
+        error: () => this.secteursDisponibles.set([]),
+      });
+    }
+    this.page.set(1);
+    this.charger();
+  }
+
+  changerFiltreSecteur(secteur: string | number | null): void {
+    this.filtreSecteur.set((secteur as string) || '');
+    this.filtreQuartier.set('');
+    this.quartiersDisponibles.set([]);
+
+    if (this.filtreSecteur()) {
+      this.territoryService.getNeighborhoodsBySector(this.filtreSecteur()).subscribe({
+        next: (quartiers) => this.quartiersDisponibles.set(toTerritoryOptionsById(quartiers)),
+        error: () => this.quartiersDisponibles.set([]),
+      });
+    }
+    this.page.set(1);
+    this.charger();
+  }
+
+  changerFiltreQuartier(quartier: string | number | null): void {
+    this.filtreQuartier.set((quartier as string) || '');
+    this.page.set(1);
+    this.charger();
+  }
+
+  reinitialiserFiltres(): void {
+    this.terme.set('');
+    this.filtreRole.set('');
+    this.filtreStatut.set('');
+    this.filtreVille.set('');
+    this.filtreArrondissement.set('');
+    this.filtreSecteur.set('');
+    this.filtreQuartier.set('');
+    this.arrondissementsDisponibles.set([]);
+    this.secteursDisponibles.set([]);
+    this.quartiersDisponibles.set([]);
+    this.page.set(1);
+    this.charger();
+  }
+
+  // ── Export du modèle / import Excel ─────────────────────────────────────────────
+  // AgencyImportService/ExcelImportComponent sont génériques (type: 'employees'), déjà
+  // utilisés tels quels par la liste Clients du dashboard agence — réutilisés ici sans
+  // duplication, le backend (routes/agencyImportRoute.js) gère déjà ce type.
+
+  telechargerModele(): void {
+    this.agencyImportService.downloadTemplate$('employees').subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.download = 'employes_modele.xlsx';
+        lien.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.notification.showError('Erreur', 'Impossible de télécharger le modèle Excel.');
+      },
+    });
+  }
+
+  ouvrirImportExcel(): void {
+    this.afficherImportExcel.set(true);
+  }
+
+  fermerImportExcel(): void {
+    this.afficherImportExcel.set(false);
+  }
+
+  surImportReussi(): void {
+    this.afficherImportExcel.set(false);
     this.page.set(1);
     this.charger();
   }

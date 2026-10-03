@@ -21,10 +21,25 @@ export class EmployeeAdministrationService {
 
   constructor(private http: HttpClient) {}
 
-  list(params: { term?: string; role?: EmployeeRole | ''; page?: number; limit?: number } = {}): Observable<EmployeesListResult> {
+  list(params: {
+    term?: string;
+    role?: EmployeeRole | '';
+    city?: string;
+    arrondissement?: string;
+    sector?: string;
+    neighborhood?: string;
+    status?: 'active' | 'inactive' | 'pending_activation' | '';
+    page?: number;
+    limit?: number;
+  } = {}): Observable<EmployeesListResult> {
     let httpParams = new HttpParams();
     if (params.term) httpParams = httpParams.set('term', params.term);
     if (params.role) httpParams = httpParams.set('role', params.role);
+    if (params.city) httpParams = httpParams.set('city', params.city);
+    if (params.arrondissement) httpParams = httpParams.set('arrondissement', params.arrondissement);
+    if (params.sector) httpParams = httpParams.set('sector', params.sector);
+    if (params.neighborhood) httpParams = httpParams.set('neighborhood', params.neighborhood);
+    if (params.status) httpParams = httpParams.set('status', params.status);
     httpParams = httpParams.set('page', String(params.page ?? 1));
     httpParams = httpParams.set('limit', String(params.limit ?? 10));
 

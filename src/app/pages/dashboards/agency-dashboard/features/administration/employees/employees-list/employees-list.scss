@@ -1,17 +1,179 @@
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-.search-group {
+.toolbar-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+  margin-right: auto;
+}
+
+// Reprise telle quelle de agency-dashboard.scss (onglet Clients, même motif
+// Cartes/Tableau) — encapsulation de vue Angular empêche de réutiliser la classe
+// définie là-bas directement.
+.view-mode-toggle {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.view-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+
+  .material-icons {
+    font-size: 1rem;
+  }
+
+  &.active {
+    background: #ffffff;
+    color: #1e293b;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+  }
+
+  &:hover:not(.active) {
+    background: #e2e8f0;
+    color: #334155;
+  }
+}
+
+.search-toggle-btn.active {
+  background: var(--primary-color);
+  color: var(--white);
+  border-color: var(--primary-color);
+}
+
+// ── Panneau de filtres repliable (bascule via "Masquer/Afficher recherche") ──────────
+.filters-panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.search-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  flex: 1 1 auto;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+  }
+
+  &--per-page {
+    max-width: 200px;
+  }
+}
+
+// ── Vue Cartes ───────────────────────────────────────────────────────────────────────
+.employees-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.employee-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.employee-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.employee-card-avatar {
+  width: 42px;
+  height: 42px;
+  font-size: 0.85rem;
+}
+
+.employee-card-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.employee-card-status {
+  margin-left: auto;
+}
+
+.employee-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #475569;
+
+  p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .material-icons {
+    font-size: 1rem;
+    color: #94a3b8;
+    flex-shrink: 0;
+  }
+}
+
+.employee-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
 }
 
 .search-input {
@@ -374,7 +536,7 @@
   background: var(--white);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
 }
 
@@ -384,6 +546,7 @@
   align-items: center;
   padding: 20px 24px;
   border-bottom: 1px solid var(--light-gray);
+  flex-shrink: 0;
 
   h2 {
     margin: 0;
@@ -408,6 +571,13 @@
   }
 }
 
+// Pas de padding/scroll ici : app-employee-form gère lui-même son découpage
+// champs-scrollables / actions-fixes (voir :host, employee-form.scss) — ce wrapper ne
+// fait que lui laisser toute la hauteur restante du drawer.
 .employee-drawer-body {
-  padding: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }

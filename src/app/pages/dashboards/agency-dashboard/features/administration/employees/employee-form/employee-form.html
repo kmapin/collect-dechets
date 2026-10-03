@@ -1,4 +1,5 @@
 <form class="employee-form" [formGroup]="form" (ngSubmit)="soumettre()">
+  <div class="employee-form-fields">
   <div class="form-row">
     <div class="form-group">
       <label class="form-label">Prénom <span class="required">*</span></label>
@@ -70,32 +71,55 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Ville <span class="required">*</span></label>
-        <input class="form-control" type="text" formControlName="city" />
+        <app-territory-select
+          [options]="villesOptions"
+          [value]="selectedVilleId"
+          (valueChange)="changerVille($event)"
+          placeholder="Sélectionner une ville"
+        />
         @if (champAdresseInvalide('city')) {
           <div class="form-error">La ville est requise.</div>
         }
       </div>
       <div class="form-group">
-        <label class="form-label">Quartier <span class="required">*</span></label>
-        <input class="form-control" type="text" formControlName="neighborhood" />
-        @if (champAdresseInvalide('neighborhood')) {
-          <div class="form-error">Le quartier est requis.</div>
+        <label class="form-label">Arrondissement <span class="required">*</span></label>
+        <app-territory-select
+          [options]="arrondissementsOptions"
+          [value]="selectedArrondissementId"
+          [disabled]="!selectedVilleId"
+          (valueChange)="changerArrondissement($event)"
+          placeholder="Sélectionner un arrondissement"
+        />
+        @if (champAdresseInvalide('arrondissement')) {
+          <div class="form-error">L'arrondissement est requis.</div>
         }
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Arrondissement <span class="required">*</span></label>
-        <input class="form-control" type="text" formControlName="arrondissement" />
-        @if (champAdresseInvalide('arrondissement')) {
-          <div class="form-error">L'arrondissement est requis.</div>
+        <label class="form-label">Secteur <span class="required">*</span></label>
+        <app-territory-select
+          [options]="secteursOptions"
+          [value]="selectedSecteurId"
+          [disabled]="!selectedArrondissementId"
+          (valueChange)="changerSecteur($event)"
+          placeholder="Sélectionner un secteur"
+        />
+        @if (champAdresseInvalide('sector')) {
+          <div class="form-error">Le secteur est requis.</div>
         }
       </div>
       <div class="form-group">
-        <label class="form-label">Secteur <span class="required">*</span></label>
-        <input class="form-control" type="text" formControlName="sector" />
-        @if (champAdresseInvalide('sector')) {
-          <div class="form-error">Le secteur est requis.</div>
+        <label class="form-label">Quartier <span class="required">*</span></label>
+        <app-territory-select
+          [options]="quartiersOptions"
+          [value]="selectedQuartierId"
+          [disabled]="!selectedSecteurId"
+          (valueChange)="changerQuartier($event)"
+          placeholder="Sélectionner un quartier"
+        />
+        @if (champAdresseInvalide('neighborhood')) {
+          <div class="form-error">Le quartier est requis.</div>
         }
       </div>
     </div>
@@ -117,13 +141,14 @@
       <span>{{ erreurApi }}</span>
     </div>
   }
+  </div>
 
   <div class="form-actions">
-    <button class="btn btn-secondary" type="button" (click)="annuler()" [disabled]="enregistrementEnCours">
-      Annuler
-    </button>
     <button class="btn btn-primary" type="submit" [disabled]="enregistrementEnCours">
       {{ enregistrementEnCours ? 'Enregistrement…' : (estEdition ? 'Enregistrer' : 'Créer l\'employé') }}
+    </button>
+    <button class="btn btn-secondary" type="button" (click)="annuler()" [disabled]="enregistrementEnCours">
+      Annuler
     </button>
   </div>
 </form>
