@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { Client } from '../../models';
@@ -17,7 +17,7 @@ type OngletClientSheet = 'info' | 'facturation' | 'abonnements';
 @Component({
   selector: 'app-client-sheet',
   standalone: true,
-  imports: [CommonModule, InfoTabComponent, BillingTabComponent, SubscriptionTabComponent, ErrorStateComponent],
+  imports: [CommonModule, RouterModule, InfoTabComponent, BillingTabComponent, SubscriptionTabComponent, ErrorStateComponent],
   templateUrl: './client-sheet.component.html',
   styleUrl: './client-sheet.component.scss',
 })
@@ -37,7 +37,16 @@ export class ClientSheetComponent {
   readonly client = signal<Client | null>(null);
   readonly chargement = signal(true);
   readonly erreur = signal<string | null>(null);
-  readonly ongletActif = signal<OngletClientSheet>('info');
+  // ?onglet=facturation : retour depuis la page Redevances (voir
+  // redevances.component.ts::retour et billing-tab.component.ts::allerVersPaiementManuel)
+  // — rouvre directement sur Facturation plutôt que sur Informations par défaut. Filtré
+  // par afficherFacturation() comme le fait déjà changerOnglet() pour un clic manuel.
+  readonly ongletActif = signal<OngletClientSheet>(
+    (() => {
+      const onglet = this.route.snapshot.queryParamMap.get('onglet');
+      return (onglet === 'facturation' || onglet === 'abonnements') && this.afficherFacturation() ? onglet : 'info';
+    })(),
+  );
 
   constructor() {
     this.charger();

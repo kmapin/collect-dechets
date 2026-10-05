@@ -1,6 +1,7 @@
 import { ClientStatut, FactureStatut, PaiementAgentStatus } from '../../models';
 import { StatusBadgeVariant } from './status-badge.component';
 import { RaisonEligibilite, SourceEligibilite } from '../../data-access/contracts/facture-data.service';
+import { RedevanceStatus } from '../../../../../models/redevance.model';
 
 export interface BadgeInfo {
   label: string;
@@ -53,6 +54,26 @@ export function badgeContrat(statut: 'actif' | 'suspendu' | 'resilie' | 'expire'
   if (statut === 'suspendu') return { label: 'Suspendu', icon: 'pause_circle', variant: 'warning' };
   if (statut === 'expire') return { label: 'Expiré', icon: 'schedule', variant: 'warning' };
   return { label: 'Résilié', icon: 'cancel', variant: 'danger' };
+}
+
+// Page "Redevances" d'un contrat (features/redevances/) — remplace le libellé texte brut
+// ad hoc (ex redevanceStatusLabel() de contracts.component.ts) par la même convention
+// badge que le reste du module.
+export function badgeRedevance(statut: RedevanceStatus): BadgeInfo {
+  switch (statut) {
+    case 'paye':
+      return { label: 'Payée', icon: 'check_circle', variant: 'success' };
+    case 'en_attente':
+      return { label: 'En attente', icon: 'hourglass_empty', variant: 'warning' };
+    case 'retard':
+      return { label: 'En retard', icon: 'error', variant: 'danger' };
+    case 'echec':
+      return { label: 'Échec', icon: 'cancel', variant: 'danger' };
+    case 'annule':
+      return { label: 'Annulée', icon: 'block', variant: 'neutral' };
+    default:
+      return { label: statut, icon: 'help_outline', variant: 'neutral' };
+  }
 }
 
 // Historique "Paiement agents" (F5, chantier M2 — paiement réel Moov Money).

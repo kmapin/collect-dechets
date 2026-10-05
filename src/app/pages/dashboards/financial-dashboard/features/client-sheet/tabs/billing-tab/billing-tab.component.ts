@@ -43,6 +43,16 @@ export class BillingTabComponent implements OnChanges {
     this.router.navigate(['/dashboard/financial/statement'], { queryParams: { idClient: this.idClient } });
   }
 
+  /** Ouvre la page Redevances du contrat couvrant cette facture, pour y enregistrer un
+   * paiement manuel — `depuis`/`idClient` permettent à cette page de proposer un retour
+   * "Fiche client" plutôt que son "Contrats" par défaut (voir redevances.component.ts). */
+  allerVersPaiementManuel(facture: Facture): void {
+    if (!facture.contratId) return;
+    this.router.navigate(['/dashboard/financial/contracts', facture.contratId, 'redevances'], {
+      queryParams: { depuis: 'client', idClient: this.idClient },
+    });
+  }
+
   private charger(): void {
     if (!this.idClient) return;
     this.chargement.set(true);

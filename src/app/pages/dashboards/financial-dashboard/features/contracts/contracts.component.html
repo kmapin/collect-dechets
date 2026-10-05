@@ -70,9 +70,9 @@
             </td>
             <td data-label="Actions" *ngIf="peutGerer()">
               <div class="fin-contracts__row-actions">
-                <button type="button" class="fin-contracts__action-btn" (click)="openRedevancesDrawer(contrat)" title="Voir les redevances">
+                <a [routerLink]="['/dashboard/financial/contracts', contrat._id, 'redevances']" class="fin-contracts__action-btn" title="Voir les redevances">
                   <i class="material-icons" aria-hidden="true">receipt_long</i>
-                </button>
+                </a>
                 <button *ngIf="contrat.status === 'actif'" type="button" class="fin-contracts__action-btn" [disabled]="!!contratMutationEnCours()" (click)="onSuspendreContrat(contrat)" title="Suspendre">
                   <i class="material-icons" aria-hidden="true">pause_circle</i>
                 </button>
@@ -137,112 +137,6 @@
       <p *ngIf="filtreStatut() !== 'Tous' || filtreSearch()">Aucun contrat ne correspond à vos critères de recherche.</p>
     </div>
   </ng-container>
-
-  <!-- Drawer des redevances d'un contrat -->
-  <div class="fin-contracts__drawer-overlay" *ngIf="showRedevancesDrawer()">
-    <div class="fin-contracts__drawer" (click)="$event.stopPropagation()">
-      <div class="fin-contracts__drawer-header">
-        <div>
-          <h3>Redevances — {{ redevancesDrawerContrat() ? contratClientName(redevancesDrawerContrat()!) : '' }}</h3>
-          <p class="fin-contracts__hint" *ngIf="redevancesDrawerContrat() as contrat">
-            Lieu : {{ contratServiceLocationLabel(contrat) }}
-          </p>
-        </div>
-        <button type="button" class="fin-contracts__drawer-close" (click)="closeRedevancesDrawer()">
-          <i class="material-icons" aria-hidden="true">close</i>
-        </button>
-      </div>
-      <div class="fin-contracts__drawer-body">
-
-        <!-- Paiement groupé + réduction -->
-        <div class="fin-contracts__paiement-groupe" *ngIf="peutGerer()">
-          <ng-container *ngIf="paiementGroupeActif() as proposition; else pasDePropositionActive">
-            <div class="fin-contracts__pg-card">
-              <div class="fin-contracts__pg-header">
-                <i class="material-icons" aria-hidden="true">local_offer</i>
-                <strong>Proposition de paiement groupé en attente</strong>
-              </div>
-              <p>{{ proposition.redevanceIds.length }} redevance(s) — {{ proposition.montantTotalAvantReduction }} FCFA
-                <ng-container *ngIf="proposition.montantReduction > 0"> − {{ proposition.montantReduction }} FCFA de réduction</ng-container>
-                = <strong>{{ proposition.montantAPayer }} FCFA</strong> à payer
-              </p>
-              <div class="fin-contracts__pg-actions">
-                <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="onPayerManuelPaiementGroupe()">Marquer payé (manuel)</button>
-                <button type="button" class="btn btn-outline" [disabled]="paiementGroupeEnCours()" (click)="onAnnulerPaiementGroupe()">Annuler la proposition</button>
-              </div>
-            </div>
-          </ng-container>
-          <ng-template #pasDePropositionActive>
-            <button *ngIf="!showPaiementGroupeForm()" type="button" class="btn btn-secondary" (click)="ouvrirFormPaiementGroupe()">
-              <i class="material-icons" aria-hidden="true">local_offer</i>
-              Configurer un paiement groupé
-            </button>
-
-            <div class="fin-contracts__pg-card" *ngIf="showPaiementGroupeForm()">
-              <div class="fin-contracts__pg-header">
-                <strong>Nouvelle proposition de paiement groupé</strong>
-              </div>
-
-              <label class="fin-contracts__pg-checkbox">
-                <input type="checkbox" [checked]="paiementGroupeForm().genererTout" (change)="setGenererTout($any($event.target).checked)" />
-                Générer aussi les échéances futures jusqu'à la fin du contrat
-              </label>
-
-              <div class="fin-contracts__pg-row">
-                <label>
-                  Réduction
-                  <select [ngModel]="paiementGroupeForm().reductionType" (ngModelChange)="setReductionType($event)">
-                    <option value="pourcentage">Pourcentage (%)</option>
-                    <option value="montant">Montant fixe (FCFA)</option>
-                  </select>
-                </label>
-                <label>
-                  Valeur
-                  <input type="number" min="0" [ngModel]="paiementGroupeForm().reductionValeur" (ngModelChange)="setReductionValeur($event)" />
-                </label>
-              </div>
-
-              <app-loading-spinner *ngIf="chargementApercu()" message="Calcul de l'aperçu..." size="small" />
-              <p class="fin-contracts__pg-apercu" *ngIf="!chargementApercu() && paiementGroupeApercu() as apercu">
-                Total : {{ apercu.montantTotal }} FCFA → <strong>{{ montantApresReductionApercu() }} FCFA</strong> après réduction
-                ({{ apercu.redevancesExistantes.length + apercu.redevancesAGenerer.length }} redevance(s))
-              </p>
-
-              <div class="fin-contracts__pg-actions">
-                <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="onCreerPropositionPaiementGroupe()">Créer la proposition</button>
-                <button type="button" class="btn btn-outline" [disabled]="paiementGroupeEnCours()" (click)="fermerFormPaiementGroupe()">Annuler</button>
-              </div>
-            </div>
-          </ng-template>
-        </div>
-
-        <app-loading-spinner *ngIf="chargementRedevances()" message="Chargement des redevances..." size="medium" />
-        <div class="fin-contracts__empty" *ngIf="!chargementRedevances() && !redevancesDrawerList().length">
-          <i class="material-icons" aria-hidden="true">receipt_long</i>
-          <h3>Aucune redevance</h3>
-          <p>Aucune redevance n'a encore été générée pour ce contrat.</p>
-        </div>
-        <div class="fin-contracts__redevance" *ngFor="let redevance of redevancesDrawerList()">
-          <div class="fin-contracts__redevance-period">
-            <strong>{{ redevance.periodLabel }}</strong>
-            <span>Échéance : {{ formatDate(redevance.dateEcheance) }}</span>
-          </div>
-          <div class="fin-contracts__redevance-amount">{{ redevance.montant }} FCFA</div>
-          <span class="fin-contracts__redevance-status">{{ redevanceStatusLabel(redevance.status) }}</span>
-          <button
-            *ngIf="peutGerer() && (redevance.status === 'en_attente' || redevance.status === 'retard')"
-            type="button"
-            class="fin-contracts__action-btn"
-            [disabled]="!!redevanceEnCours()"
-            (click)="onMarquerRedevancePayee(redevance)"
-            title="Marquer comme payée"
-          >
-            <i class="material-icons" aria-hidden="true">check_circle</i>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Drawer de création de contrat -->
   <div class="fin-contracts__drawer-overlay" *ngIf="showCreateModal()">

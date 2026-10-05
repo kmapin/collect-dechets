@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Redevance } from '../models/redevance.model';
+import { PaiementManuelRedevancePayload, Redevance } from '../models/redevance.model';
 import { ApercuPaiementGroupe, PaiementGroupeRedevance, ReductionType } from '../models/paiement-groupe-redevance.model';
 
 @Injectable({
@@ -81,9 +81,11 @@ export class RedevanceService {
     );
   }
 
-  /** `transactionId` omis pour un paiement manuel (espèces, etc.) constaté par l'agence, sans Transaction associée. */
-  payerRedevance$(redevanceId: string, transactionId?: string): Observable<{ message: string; redevance: Redevance }> {
-    return this.http.patch<any>(`${environment.apiUrl}/redevances/${redevanceId}/payer`, transactionId ? { transactionId } : {}).pipe(
+  /** `payload` vide (ou `transactionId` seul) pour l'ancien comportement (paiement
+   * instantané, date du jour) ; `datePaiement`/`montantRecu`/`commentaire` pour le
+   * formulaire "Paiement manuel" (voir redevances.component.ts). */
+  payerRedevance$(redevanceId: string, payload: PaiementManuelRedevancePayload = {}): Observable<{ message: string; redevance: Redevance }> {
+    return this.http.patch<any>(`${environment.apiUrl}/redevances/${redevanceId}/payer`, payload).pipe(
       map((response) => {
         console.log('API > payerRedevance$:', response);
         return response;
@@ -139,9 +141,11 @@ export class RedevanceService {
     );
   }
 
-  /** Paiement constaté manuellement par l'agence (espèces, etc.) — sans Transaction associée. */
-  payerManuelPaiementGroupe$(paiementGroupeId: string): Observable<{ message: string; proposition: PaiementGroupeRedevance }> {
-    return this.http.patch<any>(`${environment.apiUrl}/redevances/paiement-groupe/${paiementGroupeId}/payer-manuel`, {}).pipe(
+  /** Paiement constaté manuellement par l'agence (espèces, etc.) — sans Transaction associée.
+   * `datePaiement` est propagé à chaque redevance couverte ; `montantRecu`/`commentaire`
+   * sont stockés sur le lot (jamais alloués individuellement, voir redevances.component.ts). */
+  payerManuelPaiementGroupe$(paiementGroupeId: string, payload: PaiementManuelRedevancePayload = {}): Observable<{ message: string; proposition: PaiementGroupeRedevance }> {
+    return this.http.patch<any>(`${environment.apiUrl}/redevances/paiement-groupe/${paiementGroupeId}/payer-manuel`, payload).pipe(
       catchError((error) => {
         console.error('Erreur lors du paiement groupé manuel :', error);
         return throwError(() => error);

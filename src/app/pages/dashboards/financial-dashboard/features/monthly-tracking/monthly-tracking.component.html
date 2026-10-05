@@ -31,6 +31,7 @@
           <th scope="col">Montant</th>
           <th scope="col">Statut</th>
           <th scope="col">Date de paiement</th>
+          <th scope="col">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -44,14 +45,26 @@
                 [variant]="badgeSuivi(ligne.statut).variant" />
             </td>
             <td data-label="Date de paiement">{{ ligne.facture?.datePaiement ? (ligne.facture!.datePaiement | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+            <td data-label="Actions">
+              <button
+                *ngIf="ligne.statut === 'Impayée' && ligne.facture?.contratId"
+                type="button"
+                class="fin-monthly__action-btn"
+                (click)="allerVersPaiementManuel(ligne)"
+                title="Enregistrer un paiement manuel"
+              >
+                <i class="material-icons" aria-hidden="true">payments</i>
+                Paiement manuel
+              </button>
+            </td>
           </tr>
           <tr *ngIf="!items().length">
-            <td colspan="5" class="fin-monthly__empty">Aucune facture générée pour cette période.</td>
+            <td colspan="6" class="fin-monthly__empty">Aucune facture générée pour cette période.</td>
           </tr>
         </ng-container>
         <ng-template #squelette>
           <tr *ngFor="let i of [0, 1, 2, 3, 4, 5]" aria-hidden="true">
-            <td *ngFor="let c of [0, 1, 2, 3, 5]"><span class="fin-monthly__skeleton-cell"></span></td>
+            <td *ngFor="let c of [0, 1, 2, 3, 4, 5]"><span class="fin-monthly__skeleton-cell"></span></td>
           </tr>
         </ng-template>
       </tbody>

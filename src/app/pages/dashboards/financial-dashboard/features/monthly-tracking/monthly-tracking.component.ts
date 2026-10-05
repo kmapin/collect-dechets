@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FactureStatut, Periode, SuiviAbonneMensuel } from '../../models';
 import { FACTURE_DATA_SERVICE } from '../../data-access/tokens/facture-data.token';
 import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
@@ -25,8 +26,13 @@ const TAILLE_PAGE_EXPORT = 1000;
 export class MonthlyTrackingComponent {
   private readonly factureData = inject(FACTURE_DATA_SERVICE);
   private readonly exportService = inject(EXPORT_SERVICE);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
-  readonly periode = signal<Periode>(periodeCourante());
+  // ?mois=...&annee=... : retour depuis la page Redevances (voir
+  // allerVersPaiementManuel ci-dessous et redevances.component.ts::retour) — rouvre sur
+  // le même mois consulté avant de cliquer "Paiement manuel", pas sur le mois courant.
+  readonly periode = signal<Periode>(this.periodeInitiale());
   readonly impayeesSeulement = signal(false);
   readonly items = signal<SuiviAbonneMensuel[]>([]);
   readonly page = signal(1);
@@ -55,6 +61,14 @@ export class MonthlyTrackingComponent {
 
   constructor() {
     this.charger();
+  }
+
+  private periodeInitiale(): Periode {
+    const params = this.route.snapshot.queryParamMap;
+    const mois = Number(params.get('mois'));
+    const annee = Number(params.get('annee'));
+    if (mois >= 1 && mois <= 12 && annee > 0) return { mois, annee };
+    return periodeCourante();
   }
 
   onPeriodeChange(periode: Periode): void {
@@ -102,6 +116,18 @@ export class MonthlyTrackingComponent {
 
   reessayer(): void {
     this.charger();
+  }
+
+  /** Ouvre la page Redevances du contrat couvrant cette ligne, pour y enregistrer un
+   * paiement manuel — `depuis=suivi-mensuel` + le mois/année consultés (voir
+   * redevances.component.ts::retour) pour que le retour rouvre CETTE page Suivi mensuel
+   * sur le même mois, plutôt que la fiche client ou les Contrats. */
+  allerVersPaiementManuel(ligne: SuiviAbonneMensuel): void {
+    if (!ligne.facture?.contratId) return;
+    const { mois, annee } = this.periode();
+    this.router.navigate(['/dashboard/financial/contracts', ligne.facture.contratId, 'redevances'], {
+      queryParams: { depuis: 'suivi-mensuel', mois, annee },
+    });
   }
 
   exporterCsv(): void {

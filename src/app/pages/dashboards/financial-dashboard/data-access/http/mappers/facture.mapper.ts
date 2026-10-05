@@ -6,6 +6,7 @@ export function mapFactureDto(dto: unknown): Facture {
   return {
     idFacture: String(d['idFacture']),
     idClient: String(d['idClient']),
+    contratId: d['contratId'] !== undefined && d['contratId'] !== null ? String(d['contratId']) : null,
     periode: d['periode'] as { mois: number; annee: number },
     montant: Number(d['montant']),
     statut: d['statut'] as FactureStatut,
@@ -31,6 +32,7 @@ export function mapSuiviAbonneMensuelDto(dto: unknown): SuiviAbonneMensuel {
     facture: f ? {
       idFacture: String(f['idFacture']),
       idClient: String(f['idClient']),
+      contratId: f['contratId'] !== undefined && f['contratId'] !== null ? String(f['contratId']) : null,
       periode: f['periode'] as { mois: number; annee: number },
       montant: Number(f['montant']),
       statut: f['statut'] as FactureStatut,

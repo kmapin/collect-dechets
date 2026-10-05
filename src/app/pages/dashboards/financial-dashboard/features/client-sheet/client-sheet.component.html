@@ -2,6 +2,13 @@
   <app-error-state *ngIf="erreur() as message" [message]="message" (retry)="reessayer()" />
 
   <ng-container *ngIf="!erreur()">
+    <div class="fin-client-sheet__breadcrumb">
+      <a routerLink="/dashboard/financial/clients" class="fin-client-sheet__back">
+        <i class="material-icons" aria-hidden="true">arrow_back</i>
+        Clients
+      </a>
+    </div>
+
     <header class="fin-client-sheet__header">
       <h2 *ngIf="client() as c">{{ c.nom }} {{ c.prenom }}</h2>
       <div class="fin-client-sheet__skeleton-title" *ngIf="chargement()" aria-hidden="true"></div>

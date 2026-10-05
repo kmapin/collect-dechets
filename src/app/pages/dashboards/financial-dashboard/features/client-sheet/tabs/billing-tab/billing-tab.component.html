@@ -16,6 +16,7 @@
         <th scope="col">Montant</th>
         <th scope="col">Statut</th>
         <th scope="col">Date de paiement</th>
+        <th scope="col">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -27,14 +28,26 @@
             <app-status-badge [label]="badgeFacture(f.statut).label" [icon]="badgeFacture(f.statut).icon" [variant]="badgeFacture(f.statut).variant" />
           </td>
           <td data-label="Date de paiement">{{ f.datePaiement ? formatDate(f.datePaiement) : '—' }}</td>
+          <td data-label="Actions">
+            <button
+              *ngIf="f.statut === 'Impayée' && f.contratId"
+              type="button"
+              class="billing-tab__action-btn"
+              (click)="allerVersPaiementManuel(f)"
+              title="Enregistrer un paiement manuel"
+            >
+              <i class="material-icons" aria-hidden="true">payments</i>
+              Paiement manuel
+            </button>
+          </td>
         </tr>
         <tr *ngIf="!factures().length">
-          <td colspan="4" class="billing-tab__empty">Aucune facture générée pour ce client.</td>
+          <td colspan="5" class="billing-tab__empty">Aucune facture générée pour ce client.</td>
         </tr>
       </ng-container>
       <ng-template #squelette>
         <tr *ngFor="let i of [0, 1, 2]" aria-hidden="true">
-          <td *ngFor="let c of [0, 1, 2, 3]"><span class="billing-tab__skeleton-cell"></span></td>
+          <td *ngFor="let c of [0, 1, 2, 3, 4]"><span class="billing-tab__skeleton-cell"></span></td>
         </tr>
       </ng-template>
     </tbody>

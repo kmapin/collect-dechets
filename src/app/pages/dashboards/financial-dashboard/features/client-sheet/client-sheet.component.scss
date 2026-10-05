@@ -1,4 +1,26 @@
 .fin-client-sheet {
+  &__breadcrumb {
+    margin-bottom: 0.75rem;
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    i {
+      font-size: 1.1rem;
+    }
+  }
+
   &__header {
     margin-bottom: 1rem;
 

@@ -105,6 +105,13 @@ export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
         loadComponent: () => import('./features/contracts/contracts.component').then(m => m.ContractsComponent),
         title: 'Contrats',
       },
+      {
+        path: 'contracts/:contratId/redevances',
+        canActivate: [financeAccessGuard, financePermissionGuard],
+        data: { permissions: ['contracts.view'] },
+        loadComponent: () => import('./features/redevances/redevances.component').then(m => m.RedevancesComponent),
+        title: 'Redevances',
+      },
       // Déplacé vers Administration -> Rôles et accès (gère désormais les droits
       // financiers ET les permissions du module Administration dans un même écran) —
       // redirection conservée pour ne pas casser un ancien lien/favori, plutôt qu'une

@@ -20,6 +20,12 @@ export interface PaiementGroupeRedevance {
   modePaiement: ModePaiementGroupe;
   transactionId: string | null;
   datePaiement: string | null;
+  // Paiement manuel constaté par l'agence (espèces, chèque...) : montant réellement reçu
+  // pour l'ensemble du lot (peut différer de montantAPayer) et note libre — mêmes champs
+  // que Redevance.montantRecu/commentairePaiement, au niveau du lot (jamais alloués aux
+  // redevances individuelles couvertes).
+  montantRecu?: number | null;
+  commentairePaiement?: string | null;
   creeParUserId: string;
   createdAt: string;
   updatedAt: string;

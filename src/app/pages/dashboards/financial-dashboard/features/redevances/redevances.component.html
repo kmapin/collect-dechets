@@ -1,0 +1,245 @@
+<section class="fin-redevances" aria-label="Redevances du contrat">
+  <div class="fin-redevances__breadcrumb">
+    <a [routerLink]="retour().lien" [queryParams]="retour().queryParams" class="fin-redevances__back">
+      <i class="material-icons" aria-hidden="true">arrow_back</i>
+      {{ retour().label }}
+    </a>
+  </div>
+
+  <app-loading-spinner *ngIf="chargementContrat()" message="Chargement du contrat..." size="medium" />
+
+  <div class="fin-redevances__error" role="alert" *ngIf="erreur() as message">
+    <i class="material-icons" aria-hidden="true">error_outline</i>
+    {{ message }}
+    <button type="button" class="btn btn-secondary" (click)="reessayer()">Réessayer</button>
+  </div>
+
+  <ng-container *ngIf="!chargementContrat() && !erreur() && contrat() as c">
+    <div class="fin-redevances__header">
+      <div>
+        <h2>Redevances — {{ contratClientName(c) }}</h2>
+        <p class="fin-redevances__hint">
+          Lieu : {{ contratServiceLocationLabel(c) }} · Fréquence : {{ contratFrequenceLabel(c.frequenceCollecte) }} · Prix / période : {{ c.prixParPeriode }} FCFA
+        </p>
+      </div>
+    </div>
+
+    <!-- Résumé -->
+    <div class="fin-redevances__summary">
+      <div class="fin-redevances__summary-item">
+        <span class="fin-redevances__summary-value">{{ resume().total }}</span>
+        <span class="fin-redevances__summary-label">Redevance(s)</span>
+      </div>
+      <div class="fin-redevances__summary-item fin-redevances__summary-ok">
+        <span class="fin-redevances__summary-value">{{ resume().payees }}</span>
+        <span class="fin-redevances__summary-label">Payées</span>
+      </div>
+      <div class="fin-redevances__summary-item fin-redevances__summary-danger">
+        <span class="fin-redevances__summary-value">{{ resume().enRetard }}</span>
+        <span class="fin-redevances__summary-label">En retard</span>
+      </div>
+      <div class="fin-redevances__summary-item fin-redevances__summary-warn">
+        <span class="fin-redevances__summary-value">{{ resume().montantDu }} FCFA</span>
+        <span class="fin-redevances__summary-label">Montant dû</span>
+      </div>
+    </div>
+
+    <!-- Paiement groupé + réduction -->
+    <div class="fin-redevances__paiement-groupe" *ngIf="peutGerer()">
+      <ng-container *ngIf="paiementGroupeActif() as proposition; else pasDePropositionActive">
+        <div class="fin-redevances__pg-card">
+          <div class="fin-redevances__pg-header">
+            <i class="material-icons" aria-hidden="true">local_offer</i>
+            <strong>Proposition de paiement groupé en attente</strong>
+          </div>
+          <p>{{ proposition.redevanceIds.length }} redevance(s) — {{ proposition.montantTotalAvantReduction }} FCFA
+            <ng-container *ngIf="proposition.montantReduction > 0"> − {{ proposition.montantReduction }} FCFA de réduction</ng-container>
+            = <strong>{{ proposition.montantAPayer }} FCFA</strong> à payer
+          </p>
+          <div class="fin-redevances__pg-actions">
+            <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="ouvrirPaiementManuelGroupe(proposition)">Paiement manuel</button>
+            <button type="button" class="btn btn-outline" [disabled]="paiementGroupeEnCours()" (click)="onAnnulerPaiementGroupe()">Annuler la proposition</button>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #pasDePropositionActive>
+        <button *ngIf="!showPaiementGroupeForm()" type="button" class="btn btn-secondary" (click)="ouvrirFormPaiementGroupe()">
+          <i class="material-icons" aria-hidden="true">local_offer</i>
+          Configurer un paiement groupé
+        </button>
+
+        <div class="fin-redevances__pg-card" *ngIf="showPaiementGroupeForm()">
+          <div class="fin-redevances__pg-header">
+            <strong>Nouvelle proposition de paiement groupé</strong>
+          </div>
+
+          <label class="fin-redevances__pg-checkbox">
+            <input type="checkbox" [checked]="paiementGroupeForm().genererTout" (change)="setGenererTout($any($event.target).checked)" />
+            Générer aussi les échéances futures jusqu'à la fin du contrat
+          </label>
+
+          <div class="fin-redevances__pg-row">
+            <label>
+              Réduction
+              <select [ngModel]="paiementGroupeForm().reductionType" (ngModelChange)="setReductionType($event)">
+                <option value="pourcentage">Pourcentage (%)</option>
+                <option value="montant">Montant fixe (FCFA)</option>
+              </select>
+            </label>
+            <label>
+              Valeur
+              <input type="number" min="0" [ngModel]="paiementGroupeForm().reductionValeur" (ngModelChange)="setReductionValeur($event)" />
+            </label>
+          </div>
+
+          <app-loading-spinner *ngIf="chargementApercu()" message="Calcul de l'aperçu..." size="small" />
+          <p class="fin-redevances__pg-apercu" *ngIf="!chargementApercu() && paiementGroupeApercu() as apercu">
+            Total : {{ apercu.montantTotal }} FCFA → <strong>{{ montantApresReductionApercu() }} FCFA</strong> après réduction
+            ({{ apercu.redevancesExistantes.length + apercu.redevancesAGenerer.length }} redevance(s))
+          </p>
+
+          <div class="fin-redevances__pg-actions">
+            <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="onCreerPropositionPaiementGroupe()">Créer la proposition</button>
+            <button type="button" class="btn btn-outline" [disabled]="paiementGroupeEnCours()" (click)="fermerFormPaiementGroupe()">Annuler</button>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Filtres par statut -->
+    <div class="fin-redevances__tabs" role="tablist" aria-label="Filtrer par statut">
+      <button type="button" role="tab" [class.active]="filtreStatut() === 'Tous'" (click)="changerFiltreStatut('Tous')">Toutes</button>
+      <button type="button" role="tab" [class.active]="filtreStatut() === 'en_attente'" (click)="changerFiltreStatut('en_attente')">En attente</button>
+      <button type="button" role="tab" [class.active]="filtreStatut() === 'retard'" (click)="changerFiltreStatut('retard')">En retard</button>
+      <button type="button" role="tab" [class.active]="filtreStatut() === 'paye'" (click)="changerFiltreStatut('paye')">Payées</button>
+    </div>
+
+    <app-loading-spinner *ngIf="chargementRedevances()" message="Chargement des redevances..." size="medium" />
+
+    <div class="fin-redevances__table-wrap" *ngIf="!chargementRedevances() && redevancesFiltrees().length">
+      <table class="fin-redevances__table">
+        <thead>
+          <tr>
+            <th scope="col">Période</th>
+            <th scope="col">Échéance</th>
+            <th scope="col">Montant</th>
+            <th scope="col">Statut</th>
+            <th scope="col">Payé le</th>
+            <th scope="col">Montant reçu</th>
+            <th scope="col">Commentaire</th>
+            <th scope="col" *ngIf="peutGerer()">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let redevance of redevancesFiltrees()">
+            <td data-label="Période">{{ redevance.periodLabel }}</td>
+            <td data-label="Échéance">{{ formatDate(redevance.dateEcheance) }}</td>
+            <td data-label="Montant">{{ redevance.montant }} FCFA</td>
+            <td data-label="Statut">
+              <app-status-badge [label]="badgeRedevance(redevance.status).label" [icon]="badgeRedevance(redevance.status).icon" [variant]="badgeRedevance(redevance.status).variant" />
+            </td>
+            <td data-label="Payé le">{{ redevance.datePaiement ? formatDate(redevance.datePaiement) : '—' }}</td>
+            <td data-label="Montant reçu">{{ redevance.montantRecu != null ? redevance.montantRecu + ' FCFA' : '—' }}</td>
+            <td data-label="Commentaire" class="fin-redevances__comment-cell">{{ redevance.commentairePaiement || '—' }}</td>
+            <td data-label="Actions" *ngIf="peutGerer()">
+              <button
+                *ngIf="redevance.status === 'en_attente' || redevance.status === 'retard'"
+                type="button"
+                class="fin-redevances__action-btn"
+                [disabled]="!!redevanceEnCours()"
+                (click)="ouvrirPaiementManuel(redevance)"
+                title="Enregistrer un paiement manuel"
+              >
+                <i class="material-icons" aria-hidden="true">payments</i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="fin-redevances__empty" *ngIf="!chargementRedevances() && !redevancesFiltrees().length">
+      <i class="material-icons" aria-hidden="true">receipt_long</i>
+      <h3>Aucune redevance</h3>
+      <p *ngIf="filtreStatut() === 'Tous'">Aucune redevance n'a encore été générée pour ce contrat.</p>
+      <p *ngIf="filtreStatut() !== 'Tous'">Aucune redevance ne correspond à ce filtre.</p>
+    </div>
+  </ng-container>
+
+  <!-- Drawer "Paiement manuel" — remplace l'ancienne simple confirmation "Marquer comme payée" -->
+  <div class="fin-redevances__drawer-overlay" *ngIf="showPaiementManuelDrawer()">
+    <div class="fin-redevances__drawer" (click)="$event.stopPropagation()">
+      <div class="fin-redevances__drawer-header">
+        <h3>Paiement manuel</h3>
+        <button type="button" class="fin-redevances__drawer-close" (click)="fermerPaiementManuel()">
+          <i class="material-icons" aria-hidden="true">close</i>
+        </button>
+      </div>
+      <div class="fin-redevances__drawer-body" *ngIf="paiementManuelCible() as cible">
+        <p class="fin-redevances__hint" *ngIf="cible.type === 'redevance'">
+          Période : <strong>{{ cible.redevance.periodLabel }}</strong> · Montant dû : <strong>{{ cible.redevance.montant }} FCFA</strong>
+        </p>
+        <p class="fin-redevances__hint" *ngIf="cible.type === 'groupe'">
+          Paiement groupé — <strong>{{ cible.proposition.redevanceIds.length }} redevance(s)</strong> · Montant à payer : <strong>{{ cible.proposition.montantAPayer }} FCFA</strong>
+        </p>
+
+        <div class="fin-redevances__form-group">
+          <label>Client</label>
+          <input type="text" [value]="contrat() ? contratClientName(contrat()!) : ''" disabled />
+        </div>
+
+        <div class="fin-redevances__form-group">
+          <label for="paiement-date">Date de paiement *</label>
+          <input
+            id="paiement-date"
+            type="date"
+            [max]="dateDuJour"
+            [ngModel]="paiementManuelForm().datePaiement"
+            (ngModelChange)="setDatePaiement($event)"
+          />
+        </div>
+
+        <div class="fin-redevances__form-group">
+          <label for="paiement-montant">Somme reçue (FCFA) *</label>
+          <input
+            id="paiement-montant"
+            type="number"
+            min="1"
+            [ngModel]="paiementManuelForm().montantRecu"
+            (ngModelChange)="setMontantRecu($event)"
+          />
+          <p class="fin-redevances__hint" *ngIf="cible.type === 'redevance' && paiementManuelForm().montantRecu && paiementManuelForm().montantRecu !== cible.redevance.montant">
+            Différent du montant dû ({{ cible.redevance.montant }} FCFA) — un règlement partiel ou une surcharge sera enregistré tel quel.
+          </p>
+          <p class="fin-redevances__hint" *ngIf="cible.type === 'groupe' && paiementManuelForm().montantRecu && paiementManuelForm().montantRecu !== cible.proposition.montantAPayer">
+            Différent du montant à payer ({{ cible.proposition.montantAPayer }} FCFA) — enregistré tel quel.
+          </p>
+        </div>
+
+        <div class="fin-redevances__form-group">
+          <label for="paiement-commentaire">Commentaire (optionnel)</label>
+          <textarea
+            id="paiement-commentaire"
+            rows="3"
+            maxlength="500"
+            placeholder="Ex : payé en espèces au bureau, chèque n°..."
+            [ngModel]="paiementManuelForm().commentaire"
+            (ngModelChange)="setCommentaire($event)"
+          ></textarea>
+        </div>
+      </div>
+      <div class="fin-redevances__drawer-footer">
+        <button type="button" class="btn btn-outline" (click)="fermerPaiementManuel()">Annuler</button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="paiementManuelEnCours() || paiementManuelInvalide()"
+          (click)="onConfirmerPaiementManuel()"
+        >
+          <i class="material-icons" aria-hidden="true">check</i>
+          Confirmer le paiement
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
