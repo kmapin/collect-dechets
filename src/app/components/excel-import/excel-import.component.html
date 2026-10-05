@@ -171,7 +171,6 @@
                   <th>Nom</th>
                   <th>Téléphone</th>
                   <th>Mot de passe généré</th>
-                  @if (type === 'clients') { <th>Abonnement</th> }
                   @if (type === 'clients') { <th>Contrat</th> }
                 </tr>
               </thead>
@@ -185,19 +184,6 @@
                         @if (ligne.motDePasseGenere) { <code>{{ ligne.motDePasseGenere }}</code> }
                         @else { <span class="ei-hint-inline">— (client déjà existant)</span> }
                       </td>
-                      @if (type === 'clients') {
-                        <td>
-                          @if (ligne.abonnementErreur) {
-                            <span class="ei-badge ei-badge-danger">Échec : {{ ligne.abonnementErreur }}</span>
-                          } @else if (ligne.contratId && ligne.abonnementDejaExistant) {
-                            <span class="ei-badge ei-badge-warn">Déjà actif</span>
-                          } @else if (ligne.contratId) {
-                            <span class="ei-badge ei-badge-ok">Rattaché</span>
-                          } @else {
-                            <span class="ei-hint-inline">—</span>
-                          }
-                        </td>
-                      }
                       @if (type === 'clients') {
                         <td>
                           @if (ligne.contratErreur) {
