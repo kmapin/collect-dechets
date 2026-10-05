@@ -145,8 +145,13 @@
       <!-- Étape 3 : résultat de l'import -->
       @if (etape === 'resultat' && resultat) {
         <div class="ei-result">
-          <i class="material-icons ei-result-icon">task_alt</i>
-          <h4>Importation terminée</h4>
+          @if (resultat.importes > 0) {
+            <i class="material-icons ei-result-icon">task_alt</i>
+            <h4>Importation terminée</h4>
+          } @else {
+            <i class="material-icons ei-result-icon ei-result-icon-danger">error_outline</i>
+            <h4>Aucun {{ libelleEntite }} importé</h4>
+          }
           <div class="ei-summary">
             <div class="ei-summary-item ei-summary-ok">
               <span class="ei-summary-value">{{ resultat.importes }}</span>
@@ -163,49 +168,81 @@
           </div>
         </div>
 
-        @if (resultat.importes) {
+        <!-- resultat.total (pas resultat.importes) : une ligne initialement acceptée à
+        l'aperçu peut repasser en 'erreur' à la confirmation (ex : le contrat n'a pas pu être
+        rattaché à un client déjà existant) — elle doit rester visible avec son motif, pas
+        disparaître parce qu'aucune ligne n'a au final été importée. -->
+        @if (resultat.total) {
           <div class="ei-table-wrapper">
             <table class="ei-table">
               <thead>
                 <tr>
                   <th>Nom</th>
                   <th>Téléphone</th>
+                  <th>Statut</th>
                   <th>Mot de passe généré</th>
                   @if (type === 'clients') { <th>Contrat</th> }
+                  <th>Détail</th>
                 </tr>
               </thead>
               <tbody>
                 @for (ligne of resultat.lignes; track ligne.ligne) {
-                  @if (ligne.statut === 'importe') {
-                    <tr>
-                      <td>{{ ligne.donnees.firstName }} {{ ligne.donnees.lastName }}</td>
-                      <td>{{ ligne.donnees.phone }}</td>
-                      <td>
-                        @if (ligne.motDePasseGenere) { <code>{{ ligne.motDePasseGenere }}</code> }
-                        @else { <span class="ei-hint-inline">— (client déjà existant)</span> }
-                      </td>
-                      @if (type === 'clients') {
-                        <td>
-                          @if (ligne.contratErreur) {
-                            <span class="ei-badge ei-badge-danger">Échec : {{ ligne.contratErreur }}</span>
-                          } @else if (ligne.contratId && ligne.contratDejaExistant) {
-                            <span class="ei-badge ei-badge-warn">Déjà actif</span>
-                          } @else if (ligne.contratId) {
-                            <span class="ei-badge ei-badge-ok">Rattaché</span>
-                          } @else {
-                            <span class="ei-hint-inline">—</span>
-                          }
-                        </td>
+                  <tr [class]="'ei-row-' + ligne.statut">
+                    <td>{{ ligne.donnees.firstName }} {{ ligne.donnees.lastName }}</td>
+                    <td>{{ ligne.donnees.phone }}</td>
+                    <td>
+                      @if (ligne.statut === 'importe') {
+                        <span class="ei-badge ei-badge-ok"><i class="material-icons">check_circle</i> Importé</span>
                       }
-                    </tr>
-                  }
+                      @if (ligne.statut === 'erreur') {
+                        <span class="ei-badge ei-badge-danger"><i class="material-icons">cancel</i> Erreur</span>
+                      }
+                      @if (ligne.statut === 'doublon') {
+                        <span class="ei-badge ei-badge-warn"><i class="material-icons">warning</i> Doublon</span>
+                      }
+                    </td>
+                    <td>
+                      @if (ligne.statut === 'importe' && ligne.motDePasseGenere) {
+                        <code>{{ ligne.motDePasseGenere }}</code>
+                      } @else if (ligne.statut === 'importe') {
+                        <span class="ei-hint-inline">— (client déjà existant)</span>
+                      } @else {
+                        <span class="ei-hint-inline">—</span>
+                      }
+                    </td>
+                    @if (type === 'clients') {
+                      <td>
+                        @if (ligne.statut !== 'importe') {
+                          <span class="ei-hint-inline">—</span>
+                        } @else if (ligne.contratErreur) {
+                          <span class="ei-badge ei-badge-danger">Échec : {{ ligne.contratErreur }}</span>
+                        } @else if (ligne.contratId && ligne.contratDejaExistant) {
+                          <span class="ei-badge ei-badge-warn">Déjà actif</span>
+                        } @else if (ligne.contratId) {
+                          <span class="ei-badge ei-badge-ok">Rattaché</span>
+                        } @else {
+                          <span class="ei-hint-inline">—</span>
+                        }
+                      </td>
+                    }
+                    <td class="ei-detail-cell">
+                      @if (ligne.statut === 'erreur') {
+                        <span>{{ ligne.contratErreur || ligne.erreurs[0]?.message || 'Erreur inconnue' }}</span>
+                      }
+                      @if (ligne.statut === 'doublon') {
+                        <span>Déjà existant ou en double dans le fichier</span>
+                      }
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
           </div>
-          <p class="ei-hint">
-            Transmettez ce mot de passe à chaque {{ libelleEntite }} pour sa première connexion (numéro de téléphone + mot de passe ci-dessus).
-          </p>
+          @if (resultat.importes) {
+            <p class="ei-hint">
+              Transmettez ce mot de passe à chaque {{ libelleEntite }} pour sa première connexion (numéro de téléphone + mot de passe ci-dessus).
+            </p>
+          }
         }
       }
     </div>
