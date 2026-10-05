@@ -144,11 +144,11 @@
   </div>
 
   <div class="form-actions">
-    <button class="btn btn-primary" type="submit" [disabled]="enregistrementEnCours">
-      {{ enregistrementEnCours ? 'Enregistrement…' : (estEdition ? 'Enregistrer' : 'Créer l\'employé') }}
-    </button>
     <button class="btn btn-secondary" type="button" (click)="annuler()" [disabled]="enregistrementEnCours">
       Annuler
+    </button>
+    <button class="btn btn-primary" type="submit" [disabled]="enregistrementEnCours">
+      {{ enregistrementEnCours ? 'Enregistrement…' : (estEdition ? 'Enregistrer' : 'Créer l\'employé') }}
     </button>
   </div>
 </form>
