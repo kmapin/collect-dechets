@@ -539,22 +539,6 @@
     }
   }
 
-  &__reset-filters-btn {
-    padding: 0.45rem 0.75rem;
-    font: inherit;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #2563eb;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-decoration: underline;
-
-    &:hover {
-      color: #1d4ed8;
-    }
-  }
-
   &__montant-filter {
     width: 160px;
     padding: 0.45rem 0.75rem;

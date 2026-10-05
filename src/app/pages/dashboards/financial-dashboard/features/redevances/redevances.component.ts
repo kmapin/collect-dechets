@@ -53,7 +53,10 @@ export class RedevancesComponent {
   private readonly confirmDialog = inject(ConfirmDialogService);
 
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
-  readonly peutGerer = computed(() => aLaPermission(this.currentUser(), 'contracts.manage'));
+  // Droit dédié, distinct de 'contracts.manage' (résiliation/suspension/réactivation,
+  // géré par contracts.component.ts) — tout ce que cette page gate (paiement groupé,
+  // paiement manuel d'une redevance) est une action de paiement, pas de gestion de contrat.
+  readonly peutPayerManuel = computed(() => aLaPermission(this.currentUser(), 'contracts.pay_manual'));
 
   readonly badgeRedevance = badgeRedevance;
   readonly formatDate = formatFrDate;

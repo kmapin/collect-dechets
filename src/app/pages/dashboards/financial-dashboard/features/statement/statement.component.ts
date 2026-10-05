@@ -11,16 +11,25 @@ import { bornesPeriode } from '../../utils/periode.util';
 import { formatFrDate } from '../../../../../shared/format.util';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
 import { MonthFilterComponent } from '../../shared/filters/month-filter/month-filter.component';
+import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
 import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
 import { EmptyStateComponent } from '../../shared/states/empty-state/empty-state.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeFacture } from '../../shared/status-badge/status-badge.util';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../shared/filter-persistence.util';
+
+const FILTERS_KEY = 'financialDashboard.statement';
+interface StatementFilters {
+  debut: Periode | null;
+  fin: Periode | null;
+}
+const FILTERS_DEFAULTS: StatementFilters = { debut: null, fin: null };
 
 // Relevé de paiement.
 @Component({
   selector: 'app-statement',
   standalone: true,
-  imports: [CommonModule, SearchFilterComponent, MonthFilterComponent, ErrorStateComponent, EmptyStateComponent, StatusBadgeComponent],
+  imports: [CommonModule, SearchFilterComponent, MonthFilterComponent, ResetFiltersButtonComponent, ErrorStateComponent, EmptyStateComponent, StatusBadgeComponent],
   templateUrl: './statement.component.html',
   styleUrls: ['./statement.component.scss', './statement-print.scss'],
 })
@@ -35,9 +44,13 @@ export class StatementComponent {
   readonly resultatsRecherche = signal<Client[]>([]);
   readonly clientSelectionne = signal<Client | null>(null);
 
-  // Plage optionnelle
-  readonly debut = signal<Periode | null>(null);
-  readonly fin = signal<Periode | null>(null);
+  // Plage optionnelle — persistée en sessionStorage (voir shared/filter-persistence.util.ts)
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly debut = signal<Periode | null>(this.persistedFiltres.debut);
+  readonly fin = signal<Periode | null>(this.persistedFiltres.fin);
+  readonly filtresNonDefaut = computed(() =>
+    hasNonDefaultFilters({ debut: this.debut(), fin: this.fin() }, FILTERS_DEFAULTS),
+  );
 
   readonly lignes = signal<LigneReleve[]>([]);
   readonly rechercheEffectuee = signal(false);
@@ -93,6 +106,13 @@ export class StatementComponent {
 
   reessayer(): void {
     this.chargerReleve();
+  }
+
+  resetFiltres(): void {
+    this.debut.set(FILTERS_DEFAULTS.debut);
+    this.fin.set(FILTERS_DEFAULTS.fin);
+    saveFilters(FILTERS_KEY, { ...FILTERS_DEFAULTS });
+    if (this.clientSelectionne()) this.chargerReleve();
   }
 
   // Génère un vrai document PDF téléchargeable 
@@ -162,6 +182,7 @@ export class StatementComponent {
 
     this.chargement.set(true);
     this.erreur.set(null);
+    saveFilters(FILTERS_KEY, { debut: this.debut(), fin: this.fin() });
     const plage = this.debut() || this.fin() ? { debut: this.debut() ?? undefined, fin: this.fin() ?? undefined } : undefined;
 
     this.factureData.getReleve(client.idClient, plage).subscribe({

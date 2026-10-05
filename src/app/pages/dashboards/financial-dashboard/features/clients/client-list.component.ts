@@ -10,8 +10,15 @@ import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeSituationPaiement, badgeStatutClient } from '../../shared/status-badge/status-badge.util';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
+import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
 import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
 import { ClientListFilters, ClientListStatutFiltre, CLIENT_LIST_FILTERS_INITIAL } from './client-list.filters';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../shared/filter-persistence.util';
+
+// Persistance sessionStorage — même clé/convention que agency-dashboard.ts (voir
+// shared/filter-persistence.util.ts) : les filtres survivent à une navigation (ex: ouvrir
+// une fiche client puis revenir) mais pas à la fermeture de l'onglet du navigateur.
+const FILTERS_KEY = 'financialDashboard.clients';
 
 const TAILLE_PAGE_DEFAUT = 10;
 const TAILLES_PAGE_DISPONIBLES = [5, 10, 20, 50, 100];
@@ -20,7 +27,7 @@ const TAILLES_PAGE_DISPONIBLES = [5, 10, 20, 50, 100];
 @Component({
   selector: 'app-client-list',
   standalone: true,
-  imports: [CommonModule, StatusBadgeComponent, SearchFilterComponent, ErrorStateComponent],
+  imports: [CommonModule, StatusBadgeComponent, SearchFilterComponent, ResetFiltersButtonComponent, ErrorStateComponent],
   templateUrl: './client-list.component.html',
   styleUrl: './client-list.component.scss',
 })
@@ -33,7 +40,8 @@ export class ClientListComponent {
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
   readonly afficherColonneFinance = computed(() => this.currentUser().droitsFinance);
 
-  readonly filtres = signal<ClientListFilters>({ ...CLIENT_LIST_FILTERS_INITIAL });
+  readonly filtres = signal<ClientListFilters>(loadFilters(FILTERS_KEY, CLIENT_LIST_FILTERS_INITIAL));
+  readonly filtresNonDefaut = computed(() => hasNonDefaultFilters(this.filtres(), CLIENT_LIST_FILTERS_INITIAL));
   readonly page = signal(1);
   readonly itemsPerPage = signal(TAILLE_PAGE_DEFAUT);
   readonly taillesPageDisponibles = TAILLES_PAGE_DISPONIBLES;
@@ -112,6 +120,12 @@ export class ClientListComponent {
     this.charger();
   }
 
+  resetFiltres(): void {
+    this.filtres.set({ ...CLIENT_LIST_FILTERS_INITIAL });
+    this.page.set(1);
+    this.charger();
+  }
+
   ouvrirFiche(idClient: string): void {
     this.router.navigate(['/dashboard/financial/clients', idClient]);
   }
@@ -137,6 +151,7 @@ export class ClientListComponent {
     this.chargement.set(true);
     this.erreur.set(null);
     const { statut, search } = this.filtres();
+    saveFilters(FILTERS_KEY, this.filtres());
 
     this.clientData
       .getClients({

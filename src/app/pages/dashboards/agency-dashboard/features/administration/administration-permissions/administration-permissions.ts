@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -11,12 +11,17 @@ import {
   PERMISSIONS_GOUVERNANCE,
   aLaPermissionAdministration,
 } from '../models/administration-permission';
+import { ResetFiltersButtonComponent } from '../../../../financial-dashboard/shared/filters/reset-filters-button/reset-filters-button.component';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../../shared/filter-persistence.util';
 
 const LABEL_ROLE_OPERATIONNEL: Record<string, string> = {
   manager: 'Manager',
   collector: 'Collecteur',
   super_admin: 'Super admin',
 };
+
+const FILTERS_KEY = 'agencyAdministration.administrationPermissions';
+const FILTERS_DEFAULTS = { recherche: '', filtreRole: '' };
 
 /**
  * Écran dédié, UNIQUEMENT au domaine Administration — contrairement à roles-access/ (qui
@@ -30,7 +35,7 @@ const LABEL_ROLE_OPERATIONNEL: Record<string, string> = {
 @Component({
   selector: 'app-administration-permissions',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ResetFiltersButtonComponent],
   templateUrl: './administration-permissions.html',
   styleUrl: './administration-permissions.scss',
 })
@@ -44,8 +49,12 @@ export class AdministrationPermissions {
 
   readonly utilisateurs = signal<UtilisateurAdministration[]>([]);
   readonly chargement = signal(true);
-  readonly recherche = signal('');
-  readonly filtreRole = signal('');
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly recherche = signal(this.persistedFiltres.recherche);
+  readonly filtreRole = signal(this.persistedFiltres.filtreRole);
+  readonly filtresNonDefaut = computed(() => hasNonDefaultFilters(
+    { recherche: this.recherche(), filtreRole: this.filtreRole() }, FILTERS_DEFAULTS,
+  ));
   private readonly selectionId = signal<string | null>(null);
 
   private readonly brouillon = signal<Set<AdministrationPermission>>(new Set());
@@ -60,7 +69,13 @@ export class AdministrationPermissions {
     const currentUser = this.authService.getCurrentUser();
     this.peutGerer = aLaPermissionAdministration(currentUser as any, 'roles.manage');
 
+    effect(() => saveFilters(FILTERS_KEY, { recherche: this.recherche(), filtreRole: this.filtreRole() }));
     this.charger();
+  }
+
+  resetFiltres(): void {
+    this.recherche.set(FILTERS_DEFAULTS.recherche);
+    this.filtreRole.set(FILTERS_DEFAULTS.filtreRole);
   }
 
   readonly utilisateursFiltres = computed(() => {

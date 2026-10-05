@@ -12,10 +12,19 @@ import { formatFrDate } from '../../../../../shared/format.util';
 import { DataTableColumn, DataTableComponent } from '../../shared/data-table/data-table.component';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
 import { MonthFilterComponent } from '../../shared/filters/month-filter/month-filter.component';
+import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
 import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
 import { CreateWithdrawalDialogComponent } from './create-withdrawal-dialog/create-withdrawal-dialog.component';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../shared/filter-persistence.util';
 
 const TAILLE_PAGE = 10;
+
+const FILTERS_KEY = 'financialDashboard.withdrawals';
+interface WithdrawalsFilters {
+  recherche: string;
+  periode: Periode | null;
+}
+const FILTERS_DEFAULTS: WithdrawalsFilters = { recherche: '', periode: null };
 
 
 const LIBELLES_STATUT: Record<string, string> = {
@@ -41,6 +50,7 @@ function libelleStatut(statut?: string): string {
     DataTableComponent,
     SearchFilterComponent,
     MonthFilterComponent,
+    ResetFiltersButtonComponent,
     ErrorStateComponent,
     MatButtonModule,
     MatIconModule,
@@ -58,8 +68,12 @@ export class WithdrawalsComponent {
   
   readonly peutCreer = computed(() => aLaPermission(this.currentUser(), 'withdrawals.create'));
 
-  readonly recherche = signal('');
-  readonly periode = signal<Periode | null>(null);
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly recherche = signal(this.persistedFiltres.recherche);
+  readonly periode = signal<Periode | null>(this.persistedFiltres.periode);
+  readonly filtresNonDefaut = computed(() =>
+    hasNonDefaultFilters({ recherche: this.recherche(), periode: this.periode() }, FILTERS_DEFAULTS),
+  );
   readonly page = signal(1);
   readonly items = signal<Retrait[]>([]);
   readonly total = signal(0);
@@ -112,6 +126,13 @@ export class WithdrawalsComponent {
     this.charger();
   }
 
+  resetFiltres(): void {
+    this.recherche.set(FILTERS_DEFAULTS.recherche);
+    this.periode.set(FILTERS_DEFAULTS.periode);
+    this.page.set(1);
+    this.charger();
+  }
+
   ouvrirNouveauRetrait(): void {
     this.afficherFormulaireCreation.set(true);
   }
@@ -127,6 +148,7 @@ export class WithdrawalsComponent {
   private charger(): void {
     this.chargement.set(true);
     this.erreur.set(null);
+    saveFilters(FILTERS_KEY, { recherche: this.recherche(), periode: this.periode() });
 
     this.financeData
       .getRetraits({

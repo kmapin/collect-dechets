@@ -16,6 +16,8 @@
       {{ nombreImpayes() }} impayés / {{ nombreAbonnes() }} abonnés
     </span>
 
+    <app-reset-filters-button [visible]="filtresNonDefaut()" (reset)="resetFiltres()" />
+
     <button type="button" class="fin-monthly__export-btn" (click)="exporterCsv()" [disabled]="exportEnCours() || !total()">
       <i class="material-icons" aria-hidden="true">download</i>
       Exporter (CSV)
@@ -33,7 +35,7 @@
           <th scope="col">Montant</th>
           <th scope="col">Statut</th>
           <th scope="col">Date de paiement</th>
-          <th scope="col">Actions</th>
+          <th scope="col" *ngIf="peutPayerManuel()">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -47,7 +49,7 @@
                 [variant]="badgeSuivi(ligne.statut).variant" />
             </td>
             <td data-label="Date de paiement">{{ ligne.facture?.datePaiement ? (ligne.facture!.datePaiement | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
-            <td data-label="Actions">
+            <td data-label="Actions" *ngIf="peutPayerManuel()">
               <button
                 *ngIf="ligne.statut === 'Impayée' && ligne.facture?.contratId"
                 type="button"
@@ -61,7 +63,7 @@
             </td>
           </tr>
           <tr *ngIf="!items().length">
-            <td colspan="6" class="fin-monthly__empty">Aucune facture générée pour cette période.</td>
+            <td [attr.colspan]="peutPayerManuel() ? 6 : 5" class="fin-monthly__empty">Aucune facture générée pour cette période.</td>
           </tr>
         </ng-container>
         <ng-template #squelette>

@@ -16,7 +16,7 @@
         <th scope="col">Montant</th>
         <th scope="col">Statut</th>
         <th scope="col">Date de paiement</th>
-        <th scope="col">Actions</th>
+        <th scope="col" *ngIf="peutPayerManuel()">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -28,7 +28,7 @@
             <app-status-badge [label]="badgeFacture(f.statut).label" [icon]="badgeFacture(f.statut).icon" [variant]="badgeFacture(f.statut).variant" />
           </td>
           <td data-label="Date de paiement">{{ f.datePaiement ? formatDate(f.datePaiement) : '—' }}</td>
-          <td data-label="Actions">
+          <td data-label="Actions" *ngIf="peutPayerManuel()">
             <button
               *ngIf="f.statut === 'Impayée' && f.contratId"
               type="button"
@@ -42,7 +42,7 @@
           </td>
         </tr>
         <tr *ngIf="!factures().length">
-          <td colspan="5" class="billing-tab__empty">Aucune facture générée pour ce client.</td>
+          <td [attr.colspan]="peutPayerManuel() ? 5 : 4" class="billing-tab__empty">Aucune facture générée pour ce client.</td>
         </tr>
       </ng-container>
       <ng-template #squelette>

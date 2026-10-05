@@ -16,6 +16,7 @@ export type FinancePermission =
   | 'contracts.view'
   | 'contracts.create'
   | 'contracts.manage'
+  | 'contracts.pay_manual'
   | 'roles.view'
   | 'roles.manage';
 
@@ -73,6 +74,7 @@ export const GROUPES_DROITS_FINANCIERS: GroupeDroitsFinanciers[] = [
     droits: [
       { cle: 'contracts.create', label: 'Créer un contrat' },
       { cle: 'contracts.manage', label: 'Résilier / suspendre / réactiver un contrat' },
+      { cle: 'contracts.pay_manual', label: 'Enregistrer un paiement manuel' },
     ],
   },
   { titre: 'Gouvernance', droits: [{ cle: 'roles.manage', label: "Gérer les niveaux d'accès financiers" }] },
@@ -87,7 +89,7 @@ export const PRESETS_ROLE: Record<Role, FinancePermission[]> = {
     'monthly_tracking.view', 'monthly_tracking.generate',
     'statements.view',
     'agent_payments.view', 'agent_payments.create',
-    'contracts.view', 'contracts.create', 'contracts.manage',
+    'contracts.view', 'contracts.create', 'contracts.manage', 'contracts.pay_manual',
   ],
   [Role.MANAGER_TERRAIN]: [
     'dashboard.view', 'payments.view', 'clients.view',

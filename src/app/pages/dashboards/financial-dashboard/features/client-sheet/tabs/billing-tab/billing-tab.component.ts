@@ -1,8 +1,10 @@
-import { Component, inject, Input, OnChanges, signal } from '@angular/core';
+import { Component, computed, inject, Input, OnChanges, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Facture } from '../../../../models';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { aLaPermission, Facture } from '../../../../models';
 import { FACTURE_DATA_SERVICE } from '../../../../data-access/tokens/facture-data.token';
+import { SESSION_SERVICE } from '../../../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../../../utils/money.util';
 import { formatFrDate } from '../../../../../../../shared/format.util';
 import { StatusBadgeComponent } from '../../../../shared/status-badge/status-badge.component';
@@ -20,6 +22,13 @@ import { ErrorStateComponent } from '../../../../shared/states/error-state/error
 export class BillingTabComponent implements OnChanges {
   private readonly factureData = inject(FACTURE_DATA_SERVICE);
   private readonly router = inject(Router);
+  private readonly session = inject(SESSION_SERVICE);
+
+  private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
+  // Même droit que la page Redevances (redevances.component.ts::peutPayerManuel), distinct
+  // de 'contracts.manage' — le bouton "Paiement manuel" ouvre cette même page, gardée côté
+  // serveur par 'contracts.pay_manual' (routes/redevanceRoute.js::/payer).
+  readonly peutPayerManuel = computed(() => aLaPermission(this.currentUser(), 'contracts.pay_manual'));
 
   @Input({ required: true }) idClient!: string;
 

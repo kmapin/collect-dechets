@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
 import { PaiementListe } from '../../data-access/contracts/finance-data.service';
@@ -7,16 +7,21 @@ import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDate } from '../../../../../shared/format.util';
 import { DataTableColumn, DataTableComponent } from '../../shared/data-table/data-table.component';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
+import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
 import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../shared/filter-persistence.util';
 
 const TAILLE_PAGE = 10;
 const TAILLE_PAGE_EXPORT = 1000;
+
+const FILTERS_KEY = 'financialDashboard.payments';
+const FILTERS_DEFAULTS = { recherche: '' };
 
 // F3 — Historique des paiements de l'agence.
 @Component({
   selector: 'app-payments',
   standalone: true,
-  imports: [CommonModule, DataTableComponent, SearchFilterComponent, ErrorStateComponent],
+  imports: [CommonModule, DataTableComponent, SearchFilterComponent, ResetFiltersButtonComponent, ErrorStateComponent],
   templateUrl: './payments.component.html',
   styleUrl: './payments.component.scss',
 })
@@ -24,7 +29,8 @@ export class PaymentsComponent {
   private readonly financeData = inject(FINANCE_DATA_SERVICE);
   private readonly exportService = inject(EXPORT_SERVICE);
 
-  readonly recherche = signal('');
+  readonly recherche = signal(loadFilters(FILTERS_KEY, FILTERS_DEFAULTS).recherche);
+  readonly filtresNonDefaut = computed(() => hasNonDefaultFilters({ recherche: this.recherche() }, FILTERS_DEFAULTS));
   readonly page = signal(1);
   readonly items = signal<PaiementListe[]>([]);
   readonly total = signal(0);
@@ -62,6 +68,12 @@ export class PaymentsComponent {
   }
 
   reessayer(): void {
+    this.charger();
+  }
+
+  resetFiltres(): void {
+    this.recherche.set(FILTERS_DEFAULTS.recherche);
+    this.page.set(1);
     this.charger();
   }
 
@@ -108,6 +120,7 @@ export class PaymentsComponent {
   private charger(): void {
     this.chargement.set(true);
     this.erreur.set(null);
+    saveFilters(FILTERS_KEY, { recherche: this.recherche() });
 
     this.financeData
       .getPaiements({

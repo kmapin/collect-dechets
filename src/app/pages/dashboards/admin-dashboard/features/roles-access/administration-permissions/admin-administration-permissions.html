@@ -16,6 +16,8 @@
         />
       </div>
 
+      <app-reset-filters-button [visible]="filtresNonDefaut()" (reset)="resetFiltres()" />
+
       <ul class="access-mgmt__list">
         <li
           *ngFor="let u of utilisateursFiltres()"

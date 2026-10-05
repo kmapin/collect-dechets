@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -12,14 +12,19 @@ import {
   PRESETS_ROLE,
   Role,
 } from '../../../../financial-dashboard/models';
+import { ResetFiltersButtonComponent } from '../../../../financial-dashboard/shared/filters/reset-filters-button/reset-filters-button.component';
 import { FINANCIAL_ROLE_FRONTEND_VERS_BACKEND, ManagerRoleAccess } from '../shared/manager-role-access.model';
 import { ManagerRoleAccessListService } from '../shared/manager-role-access-list.service';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../../shared/filter-persistence.util';
 
 const LABEL_ROLE_FINANCE: Record<Role, string> = {
   [Role.COMPTABLE]: 'Comptable',
   [Role.MANAGER_TERRAIN]: 'Manager terrain',
   [Role.ADMINISTRATEUR]: 'Administrateur',
 };
+
+const FILTERS_KEY = 'adminDashboard.financeAccess';
+const FILTERS_DEFAULTS = { recherche: '' };
 
 /**
  * Onglet "Droits financiers" du dashboard super_admin — pendant plateforme entière des
@@ -33,7 +38,7 @@ const LABEL_ROLE_FINANCE: Record<Role, string> = {
 @Component({
   selector: 'app-admin-finance-access',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ResetFiltersButtonComponent],
   templateUrl: './admin-finance-access.html',
   styleUrl: '../admin-roles-access-shared.scss',
 })
@@ -49,14 +54,21 @@ export class AdminFinanceAccess {
 
   readonly utilisateurs = signal<ManagerRoleAccess[]>([]);
   readonly chargement = signal(true);
-  readonly recherche = signal('');
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly recherche = signal(this.persistedFiltres.recherche);
+  readonly filtresNonDefaut = computed(() => hasNonDefaultFilters({ recherche: this.recherche() }, FILTERS_DEFAULTS));
   private readonly selectionId = signal<string | null>(null);
 
   private readonly brouillon = signal<Set<FinancePermission>>(new Set());
   readonly enregistrementEnCours = signal(false);
 
   constructor() {
+    effect(() => saveFilters(FILTERS_KEY, { recherche: this.recherche() }));
     this.charger();
+  }
+
+  resetFiltres(): void {
+    this.recherche.set(FILTERS_DEFAULTS.recherche);
   }
 
   readonly utilisateursFiltres = computed(() => {

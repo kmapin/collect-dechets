@@ -1,26 +1,37 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FactureStatut, Periode, SuiviAbonneMensuel } from '../../models';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { aLaPermission, FactureStatut, Periode, SuiviAbonneMensuel } from '../../models';
 import { FACTURE_DATA_SERVICE } from '../../data-access/tokens/facture-data.token';
 import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
+import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../utils/money.util';
 import { periodeCourante, bornesPeriode } from '../../utils/periode.util';
 import { MonthSelectorComponent } from '../../shared/month-selector/month-selector.component';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
+import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeSuiviMensuel } from '../../shared/status-badge/status-badge.util';
 import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../shared/filter-persistence.util';
 
 const TAILLE_PAGE_DEFAUT = 20;
 const TAILLES_PAGE_DISPONIBLES = [5, 10, 20, 50, 100];
 const TAILLE_PAGE_EXPORT = 1000;
 
+const FILTERS_KEY = 'financialDashboard.monthlyTracking';
+interface MonthlyTrackingFilters {
+  impayeesSeulement: boolean;
+  recherche: string;
+}
+const FILTERS_DEFAULTS: MonthlyTrackingFilters = { impayeesSeulement: false, recherche: '' };
+
 // F12 — Suivi mensuel des abonnés : qui a payé / qui n'a pas payé pour un mois donné.
 @Component({
   selector: 'app-monthly-tracking',
   standalone: true,
-  imports: [CommonModule, MonthSelectorComponent, SearchFilterComponent, StatusBadgeComponent, ErrorStateComponent],
+  imports: [CommonModule, MonthSelectorComponent, SearchFilterComponent, ResetFiltersButtonComponent, StatusBadgeComponent, ErrorStateComponent],
   templateUrl: './monthly-tracking.component.html',
   styleUrl: './monthly-tracking.component.scss',
 })
@@ -29,13 +40,24 @@ export class MonthlyTrackingComponent {
   private readonly exportService = inject(EXPORT_SERVICE);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly session = inject(SESSION_SERVICE);
+
+  private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
+  // Même droit que la page Redevances (redevances.component.ts::peutPayerManuel), distinct
+  // de 'contracts.manage' — le bouton "Paiement manuel" ouvre cette même page, gardée côté
+  // serveur par 'contracts.pay_manual' (routes/redevanceRoute.js::/payer).
+  readonly peutPayerManuel = computed(() => aLaPermission(this.currentUser(), 'contracts.pay_manual'));
 
   // ?mois=...&annee=... : retour depuis la page Redevances (voir
   // allerVersPaiementManuel ci-dessous et redevances.component.ts::retour) — rouvre sur
   // le même mois consulté avant de cliquer "Paiement manuel", pas sur le mois courant.
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
   readonly periode = signal<Periode>(this.periodeInitiale());
-  readonly impayeesSeulement = signal(false);
-  readonly recherche = signal('');
+  readonly impayeesSeulement = signal(this.persistedFiltres.impayeesSeulement);
+  readonly recherche = signal(this.persistedFiltres.recherche);
+  readonly filtresNonDefaut = computed(() =>
+    hasNonDefaultFilters({ impayeesSeulement: this.impayeesSeulement(), recherche: this.recherche() }, FILTERS_DEFAULTS),
+  );
   readonly items = signal<SuiviAbonneMensuel[]>([]);
   readonly page = signal(1);
   readonly itemsPerPage = signal(TAILLE_PAGE_DEFAUT);
@@ -126,6 +148,14 @@ export class MonthlyTrackingComponent {
     this.charger();
   }
 
+  resetFiltres(): void {
+    this.impayeesSeulement.set(FILTERS_DEFAULTS.impayeesSeulement);
+    this.recherche.set(FILTERS_DEFAULTS.recherche);
+    this.periode.set(periodeCourante());
+    this.page.set(1);
+    this.charger();
+  }
+
   /** Ouvre la page Redevances du contrat couvrant cette ligne, pour y enregistrer un
    * paiement manuel — `depuis=suivi-mensuel` + le mois/année consultés (voir
    * redevances.component.ts::retour) pour que le retour rouvre CETTE page Suivi mensuel
@@ -191,6 +221,7 @@ export class MonthlyTrackingComponent {
   private charger(): void {
     this.chargement.set(true);
     this.erreur.set(null);
+    saveFilters(FILTERS_KEY, { impayeesSeulement: this.impayeesSeulement(), recherche: this.recherche() });
 
     this.factureData
       .getSuiviMensuel(this.periode(), {

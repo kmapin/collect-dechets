@@ -16,6 +16,8 @@
         />
       </div>
 
+      <app-reset-filters-button [visible]="filtresNonDefaut()" (reset)="resetFiltres()" />
+
       <ul class="access-mgmt__list">
         <li
           *ngFor="let u of utilisateursFiltres()"
@@ -57,7 +59,7 @@
               <tr>
                 <th scope="row">Rôle financier</th>
                 <td>Aucun</td>
-                <td *ngFor="let r of rolesFinance">{{ labelRoleFinance[r] }}</td>
+                <td *ngFor="let r of rolesFinance">{{ labelRoleFinance[r]! }}</td>
               </tr>
               <tr>
                 <th scope="row">Attribution</th>
@@ -79,7 +81,7 @@
                     class="check-btn"
                     [class.checked]="u.financialRole === r"
                     [attr.aria-pressed]="u.financialRole === r"
-                    [attr.aria-label]="'Attribuer le rôle ' + labelRoleFinance[r]"
+                    [attr.aria-label]="'Attribuer le rôle ' + labelRoleFinance[r]!"
                     (click)="changerRole(u, r)"
                   >
                     <i class="material-icons" aria-hidden="true">{{ u.financialRole === r ? 'check_box' : 'check_box_outline_blank' }}</i>

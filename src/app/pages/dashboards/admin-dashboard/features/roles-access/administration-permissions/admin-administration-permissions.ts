@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -15,6 +15,11 @@ import {
 } from '../../../../agency-dashboard/features/administration/models/administration-permission';
 import { ManagerRoleAccess } from '../shared/manager-role-access.model';
 import { ManagerRoleAccessListService } from '../shared/manager-role-access-list.service';
+import { ResetFiltersButtonComponent } from '../../../../financial-dashboard/shared/filters/reset-filters-button/reset-filters-button.component';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../../shared/filter-persistence.util';
+
+const FILTERS_KEY = 'adminDashboard.administrationPermissions';
+const FILTERS_DEFAULTS = { recherche: '' };
 
 /**
  * Onglet "Permissions Administration" du dashboard super_admin — pendant plateforme
@@ -25,7 +30,7 @@ import { ManagerRoleAccessListService } from '../shared/manager-role-access-list
 @Component({
   selector: 'app-admin-administration-permissions',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ResetFiltersButtonComponent],
   templateUrl: './admin-administration-permissions.html',
   styleUrl: '../admin-roles-access-shared.scss',
 })
@@ -39,7 +44,9 @@ export class AdminAdministrationPermissions {
 
   readonly utilisateurs = signal<ManagerRoleAccess[]>([]);
   readonly chargement = signal(true);
-  readonly recherche = signal('');
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly recherche = signal(this.persistedFiltres.recherche);
+  readonly filtresNonDefaut = computed(() => hasNonDefaultFilters({ recherche: this.recherche() }, FILTERS_DEFAULTS));
   private readonly selectionId = signal<string | null>(null);
 
   private readonly brouillon = signal<Set<AdministrationPermission>>(new Set());
@@ -55,7 +62,12 @@ export class AdminAdministrationPermissions {
     const currentUser = this.authService.getCurrentUser();
     this.peutGerer = aLaPermissionAdministration(currentUser as any, 'roles.manage');
 
+    effect(() => saveFilters(FILTERS_KEY, { recherche: this.recherche() }));
     this.charger();
+  }
+
+  resetFiltres(): void {
+    this.recherche.set(FILTERS_DEFAULTS.recherche);
   }
 
   readonly utilisateursFiltres = computed(() => {

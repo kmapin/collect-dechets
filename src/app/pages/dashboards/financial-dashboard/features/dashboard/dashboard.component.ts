@@ -16,9 +16,40 @@ import { PeriodSelectorComponent, PeriodSelectorMode } from '../../shared/period
 import { FinanceChartComponent, FinanceChartTableRow } from '../../shared/chart/finance-chart.component';
 import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
 import { EmptyStateComponent } from '../../shared/states/empty-state/empty-state.component';
+import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
 import { buildCollectedOverTimeConfig } from './charts/collected-over-time.chart';
 import { buildPaidVsUnpaidConfig } from './charts/paid-vs-unpaid.chart';
 import { buildRevenueBreakdownConfig } from './charts/revenue-breakdown.chart';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../shared/filter-persistence.util';
+
+const FILTERS_KEY = 'financialDashboard.dashboard';
+interface DashboardFilters {
+  filtreZone: string;
+  filtrePlanType: '' | 'standard' | 'premium' | 'enterprise';
+  filtreClientId: string | null;
+  filtreClientLabel: string;
+  mode: PeriodSelectorMode;
+  nombreMoisGraphiques: number;
+  periodeMode: 'fenetre' | 'personnalisee';
+  customDebutMois: string;
+  customFinMois: string;
+}
+const FILTERS_DEFAULTS: DashboardFilters = {
+  filtreZone: '',
+  filtrePlanType: '',
+  filtreClientId: null,
+  filtreClientLabel: '',
+  mode: 'court',
+  nombreMoisGraphiques: 6,
+  periodeMode: 'fenetre',
+  customDebutMois: '',
+  customFinMois: '',
+};
+const KPI_FILTERS_DEFAULTS = {
+  filtreZone: FILTERS_DEFAULTS.filtreZone,
+  filtrePlanType: FILTERS_DEFAULTS.filtrePlanType,
+  filtreClientId: FILTERS_DEFAULTS.filtreClientId,
+};
 
 // F1 (cartes KPI) + F2 (graphiques longue durée + export) du tableau de bord financier.
 @Component({
@@ -32,6 +63,7 @@ import { buildRevenueBreakdownConfig } from './charts/revenue-breakdown.chart';
     FinanceChartComponent,
     ErrorStateComponent,
     EmptyStateComponent,
+    ResetFiltersButtonComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
@@ -43,12 +75,17 @@ export class DashboardComponent {
 
   readonly formatMontant = formatMontantXof;
 
-  readonly filtreZone = signal('');
-  readonly filtrePlanType = signal<'' | 'standard' | 'premium' | 'enterprise'>('');
-  readonly filtreClientRecherche = signal('');
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly filtreZone = signal(this.persistedFiltres.filtreZone);
+  readonly filtrePlanType = signal<'' | 'standard' | 'premium' | 'enterprise'>(this.persistedFiltres.filtrePlanType);
+  readonly filtreClientRecherche = signal(this.persistedFiltres.filtreClientLabel);
   readonly filtreClientSelectionne = signal<Client | null>(null);
   readonly clientsSuggeres = signal<Client[]>([]);
   readonly clientDropdownOuvert = signal(false);
+  readonly filtresNonDefaut = computed(() => hasNonDefaultFilters(
+    { filtreZone: this.filtreZone(), filtrePlanType: this.filtrePlanType(), filtreClientId: this.filtreClientSelectionne()?.idClient ?? null },
+    KPI_FILTERS_DEFAULTS,
+  ));
 
   private get filtresActifs(): MontantTotalFilter {
     return {
@@ -59,8 +96,33 @@ export class DashboardComponent {
   }
 
   onFiltresChange(): void {
+    this.persisterFiltres();
     this.chargerKpi();
     this.chargerGraphiques();
+  }
+
+  resetFiltres(): void {
+    this.filtreZone.set(FILTERS_DEFAULTS.filtreZone);
+    this.filtrePlanType.set(FILTERS_DEFAULTS.filtrePlanType);
+    this.filtreClientSelectionne.set(null);
+    this.filtreClientRecherche.set(FILTERS_DEFAULTS.filtreClientLabel);
+    this.clientsSuggeres.set([]);
+    this.clientDropdownOuvert.set(false);
+    this.onFiltresChange();
+  }
+
+  private persisterFiltres(): void {
+    saveFilters(FILTERS_KEY, {
+      filtreZone: this.filtreZone(),
+      filtrePlanType: this.filtrePlanType(),
+      filtreClientId: this.filtreClientSelectionne()?.idClient ?? null,
+      filtreClientLabel: this.filtreClientRecherche(),
+      mode: this.mode(),
+      nombreMoisGraphiques: this.nombreMoisGraphiques(),
+      periodeMode: this.periodeMode(),
+      customDebutMois: this.customDebutMois(),
+      customFinMois: this.customFinMois(),
+    });
   }
 
   rechercherClients(): void {
@@ -80,15 +142,15 @@ export class DashboardComponent {
   }
 
   // ── Fenêtre des graphiques/export (item 6 : "au-delà de la fenêtre fixe de 6 mois") ──
-  readonly nombreMoisGraphiques = signal(6);
+  readonly nombreMoisGraphiques = signal(this.persistedFiltres.nombreMoisGraphiques);
   readonly optionsFenetre = [6, 12, 24];
 
   // Période personnalisée (en plus des fenêtres fixes 6/12/24 mois) : deux <input
   // type="month"> (format natif "AAAA-MM"), appliquée seulement au clic sur "Appliquer"
   // pour ne pas relancer les requêtes à chaque frappe.
-  readonly periodeMode = signal<'fenetre' | 'personnalisee'>('fenetre');
-  readonly customDebutMois = signal('');
-  readonly customFinMois = signal('');
+  readonly periodeMode = signal<'fenetre' | 'personnalisee'>(this.persistedFiltres.periodeMode);
+  readonly customDebutMois = signal(this.persistedFiltres.customDebutMois);
+  readonly customFinMois = signal(this.persistedFiltres.customFinMois);
   readonly erreurPeriodePersonnalisee = signal<string | null>(null);
   private periodePersonnalisee: { debut: Periode; fin: Periode } | null = null;
 
@@ -108,6 +170,7 @@ export class DashboardComponent {
     this.periodeMode.set('fenetre');
     this.periodePersonnalisee = null;
     this.erreurPeriodePersonnalisee.set(null);
+    this.persisterFiltres();
     this.onFenetreChange();
   }
 
@@ -133,6 +196,7 @@ export class DashboardComponent {
     this.erreurPeriodePersonnalisee.set(null);
     this.periodePersonnalisee = { debut, fin };
     this.periodeMode.set('personnalisee');
+    this.persisterFiltres();
     this.chargerGraphiques();
   }
 
@@ -143,6 +207,7 @@ export class DashboardComponent {
     if (this.periodeMode() === 'personnalisee') {
       this.periodePersonnalisee = null;
       this.periodeMode.set('fenetre');
+      this.persisterFiltres();
       this.chargerGraphiques();
     }
   }
@@ -196,12 +261,28 @@ export class DashboardComponent {
   );
 
   constructor() {
+    // Rehydratation de la période personnalisée persistée (periodePersonnalisee n'est
+    // pas stocké tel quel — seuls customDebutMois/customFinMois le sont, recalculés ici
+    // avec le même parseMoisInput qu'appliquerPeriodePersonnalisee).
+    if (this.periodeMode() === 'personnalisee') {
+      const debut = this.parseMoisInput(this.customDebutMois());
+      const fin = this.parseMoisInput(this.customFinMois());
+      this.periodePersonnalisee = debut && fin ? { debut, fin } : null;
+      if (!this.periodePersonnalisee) this.periodeMode.set('fenetre');
+    }
+    if (this.persistedFiltres.filtreClientId) {
+      this.clientData.getClient(this.persistedFiltres.filtreClientId).subscribe({
+        next: client => this.filtreClientSelectionne.set(client),
+        error: () => {},
+      });
+    }
     this.chargerKpi();
     this.chargerGraphiques();
   }
 
   onModeChange(mode: PeriodSelectorMode): void {
     this.mode.set(mode);
+    this.persisterFiltres();
     this.chargerKpi();
   }
 

@@ -12,6 +12,7 @@ import { ExportColumn } from '../../data-access/contracts/export.service';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDateTime } from '../../../../../shared/format.util';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
+import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgePaiementAgent } from '../../shared/status-badge/status-badge.util';
 import {
@@ -25,6 +26,25 @@ import { AuthService } from '../../../../../services/auth.service';
 import { UserRole } from '../../../../../models/user.model';
 import { PhoneInputDirective } from '../../../../../shared/phone-input.directive';
 import { normalizePhone } from '../../../../../shared/phone.util';
+import { loadFilters, saveFilters } from '../../../../../shared/filter-persistence.util';
+
+const FILTERS_KEY = 'financialDashboard.agentPayments';
+interface AgentPaymentFilters {
+  rechercheAgent: string;
+  montantMin: number | null;
+  statutFiltre: PaiementAgent['status'] | 'all';
+  providerFiltre: PaiementAgent['provider'] | 'all';
+  dateDebutFiltre: string | null;
+  dateFinFiltre: string | null;
+}
+const FILTERS_DEFAULTS: AgentPaymentFilters = {
+  rechercheAgent: '',
+  montantMin: null,
+  statutFiltre: 'all',
+  providerFiltre: 'all',
+  dateDebutFiltre: null,
+  dateFinFiltre: null,
+};
 
 type Etape = 'formulaire' | 'confirmation';
 
@@ -37,7 +57,7 @@ interface ResultatAction {
 @Component({
   selector: 'app-agent-payment',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchFilterComponent, StatusBadgeComponent, PhoneInputDirective],
+  imports: [CommonModule, FormsModule, SearchFilterComponent, ResetFiltersButtonComponent, StatusBadgeComponent, PhoneInputDirective],
   templateUrl: './agent-payment.component.html',
   styleUrl: './agent-payment.component.scss',
 })
@@ -60,12 +80,13 @@ export class AgentPaymentComponent {
   readonly historique = signal<PaiementAgent[]>([]);
   readonly chargementHistorique = signal(true);
 
-  readonly rechercheAgent = signal('');
-  readonly montantMin = signal<number | null>(null);
-  readonly statutFiltre = signal<PaiementAgent['status'] | 'all'>('all');
-  readonly providerFiltre = signal<PaiementAgent['provider'] | 'all'>('all');
-  readonly dateDebutFiltre = signal<string | null>(null); // YYYY-MM-DD
-  readonly dateFinFiltre = signal<string | null>(null); // YYYY-MM-DD
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly rechercheAgent = signal(this.persistedFiltres.rechercheAgent);
+  readonly montantMin = signal<number | null>(this.persistedFiltres.montantMin);
+  readonly statutFiltre = signal<PaiementAgent['status'] | 'all'>(this.persistedFiltres.statutFiltre);
+  readonly providerFiltre = signal<PaiementAgent['provider'] | 'all'>(this.persistedFiltres.providerFiltre);
+  readonly dateDebutFiltre = signal<string | null>(this.persistedFiltres.dateDebutFiltre); // YYYY-MM-DD
+  readonly dateFinFiltre = signal<string | null>(this.persistedFiltres.dateFinFiltre); // YYYY-MM-DD
 
   // ── Formulaire de demande (sélection multiple, montant partagé) ─────────────────
   readonly idsAgentsSelectionnes = signal<string[]>([]);
@@ -172,6 +193,14 @@ export class AgentPaymentComponent {
   );
 
   private appliquerFiltres(): void {
+    saveFilters(FILTERS_KEY, {
+      rechercheAgent: this.rechercheAgent(),
+      montantMin: this.montantMin(),
+      statutFiltre: this.statutFiltre(),
+      providerFiltre: this.providerFiltre(),
+      dateDebutFiltre: this.dateDebutFiltre(),
+      dateFinFiltre: this.dateFinFiltre(),
+    });
     this.chargerHistorique();
   }
 

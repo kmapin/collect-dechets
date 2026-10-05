@@ -17,6 +17,14 @@ export class MonthFilterComponent {
 
   valeur = ''; // format natif "YYYY-MM"
 
+  // Permet au parent de préremplir/réinitialiser le mois affiché (ex: filtres persistés
+  // en sessionStorage ou bouton "Réinitialiser les filtres") sans dupliquer la conversion
+  // Periode <-> "YYYY-MM" dans chaque composant appelant.
+  @Input()
+  set periode(value: Periode | null) {
+    this.valeur = value ? `${value.annee}-${String(value.mois).padStart(2, '0')}` : '';
+  }
+
   onChange(valeur: string): void {
     this.valeur = valeur;
     if (!valeur) {

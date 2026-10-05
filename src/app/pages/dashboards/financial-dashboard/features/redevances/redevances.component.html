@@ -45,7 +45,7 @@
     </div>
 
     <!-- Paiement groupé + réduction -->
-    <div class="fin-redevances__paiement-groupe" *ngIf="peutGerer()">
+    <div class="fin-redevances__paiement-groupe" *ngIf="peutPayerManuel()">
       <ng-container *ngIf="paiementGroupeActif() as proposition; else pasDePropositionActive">
         <div class="fin-redevances__pg-card">
           <div class="fin-redevances__pg-header">
@@ -127,7 +127,7 @@
             <th scope="col">Payé le</th>
             <th scope="col">Montant reçu</th>
             <th scope="col">Commentaire</th>
-            <th scope="col" *ngIf="peutGerer()">Actions</th>
+            <th scope="col" *ngIf="peutPayerManuel()">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -141,7 +141,7 @@
             <td data-label="Payé le">{{ redevance.datePaiement ? formatDate(redevance.datePaiement) : '—' }}</td>
             <td data-label="Montant reçu">{{ redevance.montantRecu != null ? redevance.montantRecu + ' FCFA' : '—' }}</td>
             <td data-label="Commentaire" class="fin-redevances__comment-cell">{{ redevance.commentairePaiement || '—' }}</td>
-            <td data-label="Actions" *ngIf="peutGerer()">
+            <td data-label="Actions" *ngIf="peutPayerManuel()">
               <button
                 *ngIf="redevance.status === 'en_attente' || redevance.status === 'retard'"
                 type="button"

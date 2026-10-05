@@ -2,6 +2,7 @@
   <div class="fin-contracts__header">
     <h2>Contrats</h2>
     <app-search-filter placeholder="Nom, prénom, téléphone…" [value]="filtreSearch()" (valueChange)="onRechercheChange($event)" />
+    <app-reset-filters-button [visible]="filtresNonDefaut()" (reset)="resetFiltres()" />
     <button *ngIf="peutCreer()" type="button" class="btn btn-primary" (click)="openCreateModal()">
       <i class="material-icons" aria-hidden="true">add</i>
       Nouveau contrat
@@ -35,7 +36,7 @@
             <th scope="col">Prix / période</th>
             <th scope="col">Statut</th>
             <th scope="col">Document</th>
-            <th scope="col" *ngIf="peutGerer()">Actions</th>
+            <th scope="col" *ngIf="peutVoirColonneActions()">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -68,18 +69,18 @@
                 <i class="material-icons" aria-hidden="true">description</i>
               </button>
             </td>
-            <td data-label="Actions" *ngIf="peutGerer()">
+            <td data-label="Actions" *ngIf="peutVoirColonneActions()">
               <div class="fin-contracts__row-actions">
                 <a [routerLink]="['/dashboard/financial/contracts', contrat._id, 'redevances']" class="fin-contracts__action-btn" title="Voir les redevances">
                   <i class="material-icons" aria-hidden="true">receipt_long</i>
                 </a>
-                <button *ngIf="contrat.status === 'actif'" type="button" class="fin-contracts__action-btn" [disabled]="!!contratMutationEnCours()" (click)="onSuspendreContrat(contrat)" title="Suspendre">
+                <button *ngIf="contrat.status === 'actif' && peutGerer()" type="button" class="fin-contracts__action-btn" [disabled]="!!contratMutationEnCours()" (click)="onSuspendreContrat(contrat)" title="Suspendre">
                   <i class="material-icons" aria-hidden="true">pause_circle</i>
                 </button>
-                <button *ngIf="contrat.status === 'suspendu'" type="button" class="fin-contracts__action-btn" [disabled]="!!contratMutationEnCours()" (click)="onReactiverContrat(contrat)" title="Réactiver">
+                <button *ngIf="contrat.status === 'suspendu' && peutGerer()" type="button" class="fin-contracts__action-btn" [disabled]="!!contratMutationEnCours()" (click)="onReactiverContrat(contrat)" title="Réactiver">
                   <i class="material-icons" aria-hidden="true">play_circle</i>
                 </button>
-                <button *ngIf="contrat.status !== 'resilie'" type="button" class="fin-contracts__action-btn fin-contracts__action-btn--danger" [disabled]="!!contratMutationEnCours()" (click)="onResilierContrat(contrat)" title="Résilier">
+                <button *ngIf="contrat.status !== 'resilie' && peutGerer()" type="button" class="fin-contracts__action-btn fin-contracts__action-btn--danger" [disabled]="!!contratMutationEnCours()" (click)="onResilierContrat(contrat)" title="Résilier">
                   <i class="material-icons" aria-hidden="true">cancel</i>
                 </button>
               </div>

@@ -22,11 +22,20 @@ import { LoadingSpinnerComponent } from '../../../../../components/loading-spinn
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeContrat } from '../../shared/status-badge/status-badge.util';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
+import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../shared/filter-persistence.util';
+
+const FILTERS_KEY = 'financialDashboard.contracts';
+interface ContractsFilters {
+  statut: 'actif' | 'suspendu' | 'resilie' | 'expire' | 'Tous';
+  search: string;
+}
+const FILTERS_DEFAULTS: ContractsFilters = { statut: 'Tous', search: '' };
 
 @Component({
   selector: 'app-contracts',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent, SearchFilterComponent],
+  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent, SearchFilterComponent, ResetFiltersButtonComponent],
   templateUrl: './contracts.component.html',
   styleUrl: './contracts.component.scss',
 })
@@ -42,7 +51,14 @@ export class ContractsComponent {
 
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
   readonly peutCreer = computed(() => aLaPermission(this.currentUser(), 'contracts.create'));
+  // Résiliation / suspension / réactivation / génération de document — gestion du contrat
+  // lui-même, distincte du droit de paiement manuel (voir peutPayerManuel ci-dessous).
   readonly peutGerer = computed(() => aLaPermission(this.currentUser(), 'contracts.manage'));
+  // Droit dédié au paiement manuel (redevances.component.ts::peutPayerManuel) — n'autorise
+  // PAS la résiliation/suspension/réactivation, juste l'accès au lien "Voir les redevances"
+  // qui mène à la page où ce paiement s'effectue.
+  readonly peutPayerManuel = computed(() => aLaPermission(this.currentUser(), 'contracts.pay_manual'));
+  readonly peutVoirColonneActions = computed(() => this.peutGerer() || this.peutPayerManuel());
 
   readonly badgeContrat = badgeContrat;
   readonly formatDate = formatFrDate;
@@ -58,8 +74,12 @@ export class ContractsComponent {
   readonly page = signal(1);
   readonly itemsPerPage = signal(ContractsComponent.TAILLE_PAGE_DEFAUT);
   readonly total = signal(0);
-  readonly filtreStatut = signal<'actif' | 'suspendu' | 'resilie' | 'expire' | 'Tous'>('Tous');
-  readonly filtreSearch = signal('');
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly filtreStatut = signal<'actif' | 'suspendu' | 'resilie' | 'expire' | 'Tous'>(this.persistedFiltres.statut);
+  readonly filtreSearch = signal(this.persistedFiltres.search);
+  readonly filtresNonDefaut = computed(() =>
+    hasNonDefaultFilters({ statut: this.filtreStatut(), search: this.filtreSearch() }, FILTERS_DEFAULTS),
+  );
 
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.total() / this.itemsPerPage()));
@@ -123,6 +143,13 @@ export class ContractsComponent {
     this.charger();
   }
 
+  resetFiltres(): void {
+    this.filtreStatut.set(FILTERS_DEFAULTS.statut);
+    this.filtreSearch.set(FILTERS_DEFAULTS.search);
+    this.page.set(1);
+    this.charger();
+  }
+
   private agencyId(): string | undefined {
     return this.authService.getCurrentUser()?.agencyId;
   }
@@ -137,6 +164,7 @@ export class ContractsComponent {
     this.chargement.set(true);
     this.erreur.set(null);
     const statut = this.filtreStatut();
+    saveFilters(FILTERS_KEY, { statut, search: this.filtreSearch() });
     this.contratService
       .getContratsByAgence$(agencyId, {
         page: this.page(),

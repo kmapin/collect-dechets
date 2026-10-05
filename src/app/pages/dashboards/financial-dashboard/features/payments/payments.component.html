@@ -2,6 +2,7 @@
   <div class="fin-payments__header">
     <h2>Paiements</h2>
     <app-search-filter placeholder="Rechercher un client…" [value]="recherche()" (valueChange)="onRechercheChange($event)" />
+    <app-reset-filters-button [visible]="filtresNonDefaut()" (reset)="resetFiltres()" />
     <button type="button" (click)="exporterCsv()" [disabled]="exportEnCours()">Exporter (CSV)</button>
   </div>
 

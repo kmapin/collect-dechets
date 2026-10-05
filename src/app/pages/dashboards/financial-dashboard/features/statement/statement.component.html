@@ -12,8 +12,9 @@
     </div>
 
     <div class="fin-statement__plage" *ngIf="clientSelectionne()">
-      <app-month-filter label="Depuis" (periodeChange)="onDebutChange($event)" />
-      <app-month-filter label="Jusqu'à" (periodeChange)="onFinChange($event)" />
+      <app-month-filter label="Depuis" [periode]="debut()" (periodeChange)="onDebutChange($event)" />
+      <app-month-filter label="Jusqu'à" [periode]="fin()" (periodeChange)="onFinChange($event)" />
+      <app-reset-filters-button [visible]="filtresNonDefaut()" (reset)="resetFiltres()" />
     </div>
 
     <button type="button" class="fin-statement__print-btn" (click)="telechargerPdf()" *ngIf="lignes().length">

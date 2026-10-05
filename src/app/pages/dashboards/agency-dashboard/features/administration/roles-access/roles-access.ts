@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -9,6 +9,7 @@ import { NotificationService } from '../../../../../../services/notification.ser
 import { AuthService } from '../../../../../../services/auth.service';
 import { AdministrationUsersService } from '../services/administration-users.service';
 import { SESSION_SERVICE } from '../../../../financial-dashboard/data-access/tokens/session.token';
+import { ResetFiltersButtonComponent } from '../../../../financial-dashboard/shared/filters/reset-filters-button/reset-filters-button.component';
 import {
   FinancePermission,
   GROUPES_DROITS_FINANCIERS,
@@ -18,6 +19,10 @@ import {
   Role,
   Utilisateur,
 } from '../../../../financial-dashboard/models';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../../shared/filter-persistence.util';
+
+const FILTERS_KEY = 'agencyAdministration.rolesAccess';
+const FILTERS_DEFAULTS = { recherche: '', filtreRole: '' };
 
 /**
  * Écran "Droits financiers" d'Administration — déplacé tel quel depuis financial-dashboard/
@@ -59,7 +64,7 @@ interface UtilisateurCombine {
 @Component({
   selector: 'app-administration-roles-access',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ResetFiltersButtonComponent],
   templateUrl: './roles-access.html',
   styleUrl: './roles-access.scss',
 })
@@ -77,8 +82,12 @@ export class RolesAccess {
 
   readonly utilisateurs = signal<UtilisateurCombine[]>([]);
   readonly chargement = signal(true);
-  readonly recherche = signal('');
-  readonly filtreRole = signal('');
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly recherche = signal(this.persistedFiltres.recherche);
+  readonly filtreRole = signal(this.persistedFiltres.filtreRole);
+  readonly filtresNonDefaut = computed(() => hasNonDefaultFilters(
+    { recherche: this.recherche(), filtreRole: this.filtreRole() }, FILTERS_DEFAULTS,
+  ));
   private readonly selectionId = signal<string | null>(null);
 
   // Dépend des droits de L'APPELANT (pas de la personne sélectionnée) — un appel 403 sur
@@ -90,7 +99,13 @@ export class RolesAccess {
   readonly enregistrementFinanceEnCours = signal(false);
 
   constructor() {
+    effect(() => saveFilters(FILTERS_KEY, { recherche: this.recherche(), filtreRole: this.filtreRole() }));
     this.charger();
+  }
+
+  resetFiltres(): void {
+    this.recherche.set(FILTERS_DEFAULTS.recherche);
+    this.filtreRole.set(FILTERS_DEFAULTS.filtreRole);
   }
 
   readonly utilisateursFiltres = computed(() => {
@@ -134,10 +149,17 @@ export class RolesAccess {
 
   // ── Section Finance (reprise de financial-dashboard/features/roles-admin/) ────────
 
-  changerRoleFinance(u: UtilisateurCombine, role: Role): void {
+  // role=null retire le rôle financier (et donc tous les droits qui en dépendent) — même
+  // capacité que l'écran "Droits financiers" du dashboard super_admin (voir
+  // admin-finance-access.ts::changerRole), qui manquait ici : seuls Comptable/Manager
+  // terrain/Administrateur étaient sélectionnables, jamais "Aucun".
+  changerRoleFinance(u: UtilisateurCombine, role: Role | null): void {
     this.session.setFinancialRole(u.idUtilisateur, role).subscribe({
       next: () => {
-        this.notification.showSuccess('Rôle mis à jour', `${u.identifiants} est maintenant ${this.labelRoleFinance[role]}.`);
+        this.notification.showSuccess(
+          'Rôle mis à jour',
+          role ? `${u.identifiants} est maintenant ${this.labelRoleFinance[role]}.` : `Rôle financier retiré à ${u.identifiants}.`,
+        );
         this.charger();
       },
       error: (err: HttpErrorResponse) => this.notification.showError('Rôle non mis à jour', this.messageErreur(err)),

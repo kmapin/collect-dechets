@@ -40,6 +40,8 @@
         <option value="collector">Collecteur</option>
       </select>
 
+      <app-reset-filters-button [visible]="filtresNonDefaut()" (reset)="resetFiltres()" />
+
       <ul class="access-mgmt__list">
         <li
           *ngFor="let u of utilisateursFiltres()"
@@ -82,10 +84,23 @@
               <tbody>
                 <tr>
                   <th scope="row">Rôle financier</th>
+                  <td>Aucun</td>
                   <td *ngFor="let r of rolesFinance">{{ labelRoleFinance[r] }}</td>
                 </tr>
                 <tr>
                   <th scope="row">Attribution</th>
+                  <td class="detail-table__check-cell">
+                    <button
+                      type="button"
+                      class="check-btn"
+                      [class.checked]="!uf.role"
+                      [attr.aria-pressed]="!uf.role"
+                      aria-label="Retirer le rôle financier"
+                      (click)="changerRoleFinance(u, null)"
+                    >
+                      <i class="material-icons" aria-hidden="true">{{ !uf.role ? 'check_box' : 'check_box_outline_blank' }}</i>
+                    </button>
+                  </td>
                   <td class="detail-table__check-cell" *ngFor="let r of rolesFinance">
                     <button
                       type="button"

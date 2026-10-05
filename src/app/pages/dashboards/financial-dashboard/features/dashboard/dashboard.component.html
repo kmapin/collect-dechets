@@ -40,6 +40,8 @@
         </li>
       </ul>
     </div>
+
+    <app-reset-filters-button [visible]="filtresNonDefaut()" (reset)="resetFiltres()" />
   </div>
 
   <app-error-state *ngIf="erreurKpi() as message" [message]="message" (retry)="reessayerKpi()" />

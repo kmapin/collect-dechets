@@ -2,6 +2,7 @@
   <div class="fin-clients__header">
     <h2>Clients</h2>
     <app-search-filter placeholder="Nom, prénom, quartier…" [value]="filtres().search" (valueChange)="onRechercheChange($event)" />
+    <app-reset-filters-button [visible]="filtresNonDefaut()" (reset)="resetFiltres()" />
   </div>
 
   <div class="fin-clients__tabs" role="tablist" aria-label="Filtrer par statut">

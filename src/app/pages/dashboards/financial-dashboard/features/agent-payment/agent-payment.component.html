@@ -360,9 +360,7 @@
             (ngModelChange)="onDateFinFiltreChange($event)"
             aria-label="Date de fin"
           />
-          <button type="button" class="fin-agent-payment__reset-filters-btn" (click)="reinitialiserFiltres()">
-            Réinitialiser
-          </button>
+          <app-reset-filters-button [visible]="filtresActifs()" (reset)="reinitialiserFiltres()" />
         </div>
       </div>
       <div class="fin-agent-payment__table-wrap">

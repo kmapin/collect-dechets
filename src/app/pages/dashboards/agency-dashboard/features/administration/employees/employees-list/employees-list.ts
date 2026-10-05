@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -14,9 +14,26 @@ import { AgencyImportService } from '../../../../../../../services/agency-import
 import { ExcelImportComponent } from '../../../../../../../components/excel-import/excel-import.component';
 import { TerritorySelectComponent, TerritoryOption, toTerritoryOptionsById } from '../../../../../../../shared/territory-select/territory-select';
 import { aLaPermissionAdministration } from '../../models/administration-permission';
+import { ResetFiltersButtonComponent } from '../../../../../financial-dashboard/shared/filters/reset-filters-button/reset-filters-button.component';
+import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../../../shared/filter-persistence.util';
 
 type EtatChargement = 'loading' | 'loaded' | 'error';
 type VueMode = 'card' | 'table';
+
+const FILTERS_KEY = 'agencyAdministration.employees';
+interface EmployeesFilters {
+  terme: string;
+  filtreRole: EmployeeRole | '';
+  filtreStatut: EmployeeStatus | '';
+  filtreVille: string;
+  filtreArrondissement: string;
+  filtreSecteur: string;
+  filtreQuartier: string;
+}
+const FILTERS_DEFAULTS: EmployeesFilters = {
+  terme: '', filtreRole: '', filtreStatut: '',
+  filtreVille: '', filtreArrondissement: '', filtreSecteur: '', filtreQuartier: '',
+};
 
 /**
  * Parité avec l'ancien écran "Gestion des Employés" du agency-dashboard monolithique
@@ -35,7 +52,7 @@ type VueMode = 'card' | 'table';
 @Component({
   selector: 'app-employees-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, EmployeeForm, ExcelImportComponent, TerritorySelectComponent],
+  imports: [CommonModule, FormsModule, EmployeeForm, ExcelImportComponent, TerritorySelectComponent, ResetFiltersButtonComponent],
   templateUrl: './employees-list.html',
   styleUrl: './employees-list.scss',
 })
@@ -44,9 +61,15 @@ export class EmployeesList {
   readonly etat = signal<EtatChargement>('loading');
   readonly messageErreur = signal('');
 
-  readonly terme = signal('');
-  readonly filtreRole = signal<EmployeeRole | ''>('');
-  readonly filtreStatut = signal<EmployeeStatus | ''>('');
+  private readonly persistedFiltres = loadFilters(FILTERS_KEY, FILTERS_DEFAULTS);
+  readonly terme = signal(this.persistedFiltres.terme);
+  readonly filtreRole = signal<EmployeeRole | ''>(this.persistedFiltres.filtreRole);
+  readonly filtreStatut = signal<EmployeeStatus | ''>(this.persistedFiltres.filtreStatut);
+  readonly filtresNonDefaut = computed(() => hasNonDefaultFilters({
+    terme: this.terme(), filtreRole: this.filtreRole(), filtreStatut: this.filtreStatut(),
+    filtreVille: this.filtreVille(), filtreArrondissement: this.filtreArrondissement(),
+    filtreSecteur: this.filtreSecteur(), filtreQuartier: this.filtreQuartier(),
+  }, FILTERS_DEFAULTS));
   readonly page = signal(1);
   readonly limit = signal(10);
   readonly total = signal(0);
@@ -62,10 +85,10 @@ export class EmployeesList {
   // référence vers les collections Territory) — donc on résout l'id vers son nom
   // (resoudreNomParId ci-dessous) juste avant d'appeler charger(), jamais en stockant
   // le nom directement dans ces signals.
-  readonly filtreVille = signal('');
-  readonly filtreArrondissement = signal('');
-  readonly filtreSecteur = signal('');
-  readonly filtreQuartier = signal('');
+  readonly filtreVille = signal(this.persistedFiltres.filtreVille);
+  readonly filtreArrondissement = signal(this.persistedFiltres.filtreArrondissement);
+  readonly filtreSecteur = signal(this.persistedFiltres.filtreSecteur);
+  readonly filtreQuartier = signal(this.persistedFiltres.filtreQuartier);
 
   readonly villesDisponibles = signal<TerritoryOption[]>([]);
   readonly arrondissementsDisponibles = signal<TerritoryOption[]>([]);
@@ -113,6 +136,11 @@ export class EmployeesList {
 
   charger(): void {
     this.etat.set('loading');
+    saveFilters(FILTERS_KEY, {
+      terme: this.terme(), filtreRole: this.filtreRole(), filtreStatut: this.filtreStatut(),
+      filtreVille: this.filtreVille(), filtreArrondissement: this.filtreArrondissement(),
+      filtreSecteur: this.filtreSecteur(), filtreQuartier: this.filtreQuartier(),
+    });
     this.employeeAdministrationService
       .list({
         term: this.terme(),
@@ -171,8 +199,48 @@ export class EmployeesList {
 
   private chargerVilles(): void {
     this.territoryService.getAllCities().subscribe({
-      next: (villes) => this.villesDisponibles.set(toTerritoryOptionsById(villes)),
+      next: (villes) => {
+        this.villesDisponibles.set(toTerritoryOptionsById(villes));
+        this.restaurerCascadeGeo();
+      },
       error: () => this.villesDisponibles.set([]),
+    });
+  }
+
+  /** Recharge les options Arrondissement/Secteur/Quartier correspondant à des filtres
+   * géographiques restaurés depuis sessionStorage (voir FILTERS_KEY/persistedFiltres) —
+   * au premier chargement, ces listes d'options sont vides tant que ce niveau parent n'a
+   * jamais été sélectionné interactivement (seul changerFiltreVille/etc. les peuple
+   * normalement). Reconstitue la cascade sans modifier les valeurs déjà restaurées, puis
+   * relance charger() pour que les noms résolus (resoudreNomParId) soient enfin corrects. */
+  private restaurerCascadeGeo(): void {
+    if (!this.filtreVille()) return;
+    this.territoryService.getArrondissementsByCity(this.filtreVille()).subscribe({
+      next: (arr) => {
+        this.arrondissementsDisponibles.set(toTerritoryOptionsById(arr));
+        if (!this.filtreArrondissement()) {
+          this.charger();
+          return;
+        }
+        this.territoryService.getSectorsByArrondissement(this.filtreArrondissement()).subscribe({
+          next: (secteurs) => {
+            this.secteursDisponibles.set(toTerritoryOptionsById(secteurs));
+            if (!this.filtreSecteur()) {
+              this.charger();
+              return;
+            }
+            this.territoryService.getNeighborhoodsBySector(this.filtreSecteur()).subscribe({
+              next: (quartiers) => {
+                this.quartiersDisponibles.set(toTerritoryOptionsById(quartiers));
+                this.charger();
+              },
+              error: () => { this.quartiersDisponibles.set([]); this.charger(); },
+            });
+          },
+          error: () => { this.secteursDisponibles.set([]); this.charger(); },
+        });
+      },
+      error: () => { this.arrondissementsDisponibles.set([]); this.charger(); },
     });
   }
 
