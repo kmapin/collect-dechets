@@ -5,6 +5,8 @@
   </div>
 
   <div class="fin-monthly__toolbar">
+    <app-search-filter placeholder="Nom, prénom, téléphone…" [value]="recherche()" (valueChange)="onRechercheChange($event)" />
+
     <label class="fin-monthly__toggle">
       <input type="checkbox" [checked]="impayeesSeulement()" (change)="onToggleImpayeesSeulement()" />
       Impayés uniquement

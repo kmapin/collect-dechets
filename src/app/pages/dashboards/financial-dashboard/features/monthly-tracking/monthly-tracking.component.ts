@@ -7,6 +7,7 @@ import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
 import { formatMontantXof } from '../../utils/money.util';
 import { periodeCourante, bornesPeriode } from '../../utils/periode.util';
 import { MonthSelectorComponent } from '../../shared/month-selector/month-selector.component';
+import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { badgeSuiviMensuel } from '../../shared/status-badge/status-badge.util';
 import { ErrorStateComponent } from '../../shared/states/error-state/error-state.component';
@@ -19,7 +20,7 @@ const TAILLE_PAGE_EXPORT = 1000;
 @Component({
   selector: 'app-monthly-tracking',
   standalone: true,
-  imports: [CommonModule, MonthSelectorComponent, StatusBadgeComponent, ErrorStateComponent],
+  imports: [CommonModule, MonthSelectorComponent, SearchFilterComponent, StatusBadgeComponent, ErrorStateComponent],
   templateUrl: './monthly-tracking.component.html',
   styleUrl: './monthly-tracking.component.scss',
 })
@@ -34,6 +35,7 @@ export class MonthlyTrackingComponent {
   // le même mois consulté avant de cliquer "Paiement manuel", pas sur le mois courant.
   readonly periode = signal<Periode>(this.periodeInitiale());
   readonly impayeesSeulement = signal(false);
+  readonly recherche = signal('');
   readonly items = signal<SuiviAbonneMensuel[]>([]);
   readonly page = signal(1);
   readonly itemsPerPage = signal(TAILLE_PAGE_DEFAUT);
@@ -79,6 +81,12 @@ export class MonthlyTrackingComponent {
 
   onToggleImpayeesSeulement(): void {
     this.impayeesSeulement.update(v => !v);
+    this.page.set(1);
+    this.charger();
+  }
+
+  onRechercheChange(recherche: string): void {
+    this.recherche.set(recherche);
     this.page.set(1);
     this.charger();
   }
@@ -143,7 +151,7 @@ export class MonthlyTrackingComponent {
       .getSuiviMensuel(this.periode(), {
         page: 1,
         pageSize: TAILLE_PAGE_EXPORT,
-        filter: this.impayeesSeulement() ? { impayeesSeulement: true } : undefined,
+        filter: { impayeesSeulement: this.impayeesSeulement() || undefined, search: this.recherche() || undefined },
       })
       .subscribe({
         next: page => {
@@ -188,7 +196,7 @@ export class MonthlyTrackingComponent {
       .getSuiviMensuel(this.periode(), {
         page: this.page(),
         pageSize: this.itemsPerPage(),
-        filter: this.impayeesSeulement() ? { impayeesSeulement: true } : undefined,
+        filter: { impayeesSeulement: this.impayeesSeulement() || undefined, search: this.recherche() || undefined },
       })
       .subscribe({
         next: page => {

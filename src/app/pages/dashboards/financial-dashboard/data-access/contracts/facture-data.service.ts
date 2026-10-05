@@ -8,6 +8,7 @@ export interface FactureFilter {
 
 export interface SuiviMensuelFilter {
   impayeesSeulement?: boolean;
+  search?: string; // recherche libre : nom / prénom / téléphone du client
 }
 
 // Fusion Subscription -> Contrat : 'SUBSCRIPTION' retiré, Contrat est désormais la

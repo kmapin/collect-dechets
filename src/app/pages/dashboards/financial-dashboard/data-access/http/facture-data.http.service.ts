@@ -45,8 +45,9 @@ export class FactureDataHttpService implements FactureDataService {
     if (params?.page) httpParams = httpParams.set('page', params.page);
     if (params?.pageSize) httpParams = httpParams.set('pageSize', params.pageSize);
     if (params?.filter?.impayeesSeulement) httpParams = httpParams.set('impayeesSeulement', true);
+    if (params?.filter?.search) httpParams = httpParams.set('search', params.filter.search);
 
-    // GET /finance/factures/suivi-mensuel?mois=&annee=&page=&pageSize=&impayeesSeulement=
+    // GET /finance/factures/suivi-mensuel?mois=&annee=&page=&pageSize=&impayeesSeulement=&search=
     return this.http
       .get<{ items: unknown[]; total: number; page: number; pageSize: number }>(`${this.base}/suivi-mensuel`, { params: httpParams })
       .pipe(map(res => ({ items: res.items.map(mapSuiviAbonneMensuelDto), total: res.total, page: res.page, pageSize: res.pageSize })));
