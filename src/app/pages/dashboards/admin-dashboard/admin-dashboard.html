@@ -925,24 +925,6 @@
                         title="Supprimer">
                         <i class="material-icons">delete</i>
                       </button>
-                      <select *ngIf="user.data?.role === 'manager'" class="finance-role-select"
-                        [ngModel]="user.data?.financialRole || ''"
-                        [disabled]="financialRoleEnCours.has(user.data?._id)"
-                        (ngModelChange)="assignFinancialRole(user.data, $event)" title="Rôle financier">
-                        <option value="">Aucun rôle financier</option>
-                        <option value="comptable">Comptable</option>
-                        <option value="manager_terrain">Manager terrain</option>
-                        <option value="administrateur">Administrateur</option>
-                      </select>
-                      <select *ngIf="user.data?.role === 'manager'" class="finance-role-select"
-                        [ngModel]="getAdministrationPresetValue(user.data?.administrationPermissions)"
-                        [disabled]="administrationPermissionsEnCours.has(user.data?._id)"
-                        (ngModelChange)="assignAdministrationPermissions(user.data, $event)" title="Permissions Administration">
-                        <option value="">Aucun accès Administration</option>
-                        <option value="employees">Gérer les employés</option>
-                        <option value="employees_roles">Gérer les employés + rôles</option>
-                        <option value="custom" disabled>Personnalisé (voir Rôles et accès)</option>
-                      </select>
                     </div>
                   </td>
                 </tr>
@@ -1035,24 +1017,6 @@
                         title="Supprimer">
                         <i class="material-icons">delete</i>
                       </button>
-                      <select *ngIf="user?.data?.role === 'manager'" class="finance-role-select"
-                        [ngModel]="user?.data?.financialRole || ''"
-                        [disabled]="financialRoleEnCours.has(user.data?._id)"
-                        (ngModelChange)="assignFinancialRole(user.data, $event)" title="Rôle financier">
-                        <option value="">Aucun rôle financier</option>
-                        <option value="comptable">Comptable</option>
-                        <option value="manager_terrain">Manager terrain</option>
-                        <option value="administrateur">Administrateur</option>
-                      </select>
-                      <select *ngIf="user?.data?.role === 'manager'" class="finance-role-select"
-                        [ngModel]="getAdministrationPresetValue(user?.data?.administrationPermissions)"
-                        [disabled]="administrationPermissionsEnCours.has(user.data?._id)"
-                        (ngModelChange)="assignAdministrationPermissions(user.data, $event)" title="Permissions Administration">
-                        <option value="">Aucun accès Administration</option>
-                        <option value="employees">Gérer les employés</option>
-                        <option value="employees_roles">Gérer les employés + rôles</option>
-                        <option value="custom" disabled>Personnalisé (voir Rôles et accès)</option>
-                      </select>
                     </div>
                   </mat-card-content>
                 </mat-card>
