@@ -231,8 +231,8 @@
                 <mat-icon class="tvo-icon"
                   [style.color]="vehicleStatusColor(v.status)">{{ vehicleTypeIcon(v.type) }}</mat-icon>
                 <div>
-                  <span class="tvo-name" [pTooltip]="v.plate" tooltipPosition="top">
-                    <span class="tvo-plate-text">{{ v.plate }}</span>
+                  <span class="tvo-name">
+                    <span class="tvo-plate-text" [pTooltip]="v.plate" tooltipPosition="top">{{ v.plate }}</span>
                     @if (assignedTeamName(v.id); as assignedTeam) {
                       <span class="tvo-assigned-dot"
                             [pTooltip]="assignedVehicleTooltip(v.id)"

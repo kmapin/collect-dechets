@@ -1166,6 +1166,13 @@ body > .p-datepicker-panel {
   min-height: 260px;
 }
 
+// Tooltip PrimeNG (pTooltip) — appendé au body par défaut, comme le datepicker ci-dessus,
+// avec un z-index par défaut trop faible pour passer au-dessus des drawers/modales de
+// l'app (team-form, confirm-dialog, etc. montent jusqu'à 10000-10001).
+.p-tooltip {
+  z-index: 10001 !important;
+}
+
 // Conteneurs du formulaire : ne pas clipper les overlays flottants
 .pc-step-content,
 .steps-body,
