@@ -1,6 +1,6 @@
 <!-- Mobile overlay -->
 @if (mobileOpen()) {
-  <div class="sb-overlay" (click)="closeMobile()"></div>
+  <div class="sb-overlay" appScrollLock (click)="closeMobile()"></div>
 }
 
 <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
