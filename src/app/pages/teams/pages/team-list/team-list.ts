@@ -106,7 +106,6 @@ export class TeamList implements OnInit {
 
   readonly skeletonRows = Array(8).fill(0);
   readonly teamStatuses = [
-    { value: '',           label: 'Tous',         color: '#64748b' },
     { value: 'active',     label: 'Active',        color: '#16a34a' },
     { value: 'inactive',   label: 'Inactive',      color: '#94a3b8' },
     { value: 'on_mission', label: 'En mission',    color: '#f59e0b' },

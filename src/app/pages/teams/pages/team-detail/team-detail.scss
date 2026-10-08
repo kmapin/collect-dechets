@@ -17,9 +17,9 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
   min-height:60vh; gap:16px; color:#64748b;
   mat-icon { font-size:48px; width:48px; height:48px; color:#94a3b8; }
   h2 { font-size:22px; font-weight:700; color:#1e293b; margin:0; }
-  a  { display:flex; align-items:center; gap:6px; padding:10px 20px; border-radius:8px; background:#1e293b; color:#fff; text-decoration:none; font-size:14px; font-weight:500;
+  a  { display:flex; align-items:center; gap:6px; padding:10px 20px; border-radius:8px; background:#3b82f6; color:#fff; text-decoration:none; font-size:14px; font-weight:500;
     mat-icon { font-size:18px; width:18px; height:18px; }
-    &:hover { background:#334155; }
+    &:hover { background:#2563eb; }
   }
 }
 
@@ -158,10 +158,10 @@ $shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
 .mth-manage-btn {
   display:inline-flex; align-items:center; gap:6px;
   padding:8px 16px; border-radius:10px;
-  background:#0f172a; color:#fff; font-size:13px; font-weight:600;
+  background:#3b82f6; color:#fff; font-size:13px; font-weight:600;
   text-decoration:none; transition:background .18s;
   mat-icon { font-size:17px; width:17px; height:17px; }
-  &:hover { background:#1e293b; }
+  &:hover { background:#2563eb; }
 }
 
 // ── Members grid ──────────────────────────────────────────────

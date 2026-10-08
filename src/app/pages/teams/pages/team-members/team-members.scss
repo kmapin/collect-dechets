@@ -126,7 +126,7 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   height: 38px;
   padding: 0 16px;
   border-radius: 10px;
-  background: #0f172a;
+  background: #3b82f6;
   color: #fff;
   border: none;
   cursor: pointer;
@@ -140,7 +140,7 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   }
 
   &:hover {
-    background: #1e293b;
+    background: #2563eb;
     transform: translateY(-1px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, .18);
   }
@@ -245,12 +245,12 @@ $ease: cubic-bezier(.4, 0, .2, 1);
 
   &:hover {
     border-color: var(--cc, #64748b);
-    color: var(--cc, #0f172a);
+    color: var(--cc, #3b82f6);
   }
 
   &--active {
-    background: var(--cc, #0f172a);
-    border-color: var(--cc, #0f172a);
+    background: var(--cc, #3b82f6);
+    border-color: var(--cc, #3b82f6);
     color: #fff;
   }
 
@@ -948,12 +948,12 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   }
 
   &--primary {
-    background: #0f172a;
-    border-color: #0f172a;
+    background: #3b82f6;
+    border-color: #3b82f6;
     color: #fff;
 
     &:hover {
-      background: #1e293b;
+      background: #2563eb;
     }
   }
 }
@@ -1234,11 +1234,11 @@ $ease: cubic-bezier(.4, 0, .2, 1);
   }
 
   &--primary {
-    background: #0f172a;
+    background: #3b82f6;
     color: #fff;
 
     &:hover {
-      background: #1e293b;
+      background: #2563eb;
     }
 
     &:disabled {

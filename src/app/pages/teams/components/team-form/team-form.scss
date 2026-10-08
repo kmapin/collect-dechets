@@ -75,7 +75,7 @@
     border: none; background: transparent; cursor: pointer;
     transition: all .15s;
     mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    &.active { background: #1e293b; color: #fff; }
+    &.active { background: #3b82f6; color: #fff; }
     &:not(.active):hover { background: #f1f5f9; }
   }
 }
@@ -153,7 +153,11 @@ textarea {
   font-size: 13px; color: #64748b;
   transition: all .15s;
   input[type="radio"] { display: none; }
-  &--active { border-color: #1e293b; background: #1e293b; color: #fff; }
+  &--active {
+    border-color: #3b82f6; background: #3b82f6;
+    color: #fff !important;
+    span { color: #fff !important; }
+  }
 }
 
 // Color palette
@@ -343,6 +347,6 @@ textarea {
 
   &--ghost    { background: #f1f5f9; color: #374151; border-color: #e2e8f0; &:hover { background: #e2e8f0; } }
   &--secondary { background: #f1f5f9; color: #374151; border-color: #e2e8f0; &:hover { background: #e2e8f0; } }
-  &--primary  { background: #1e293b; color: #fff; &:hover { background: #334155; } }
+  &--primary  { background: #3b82f6; color: #fff; &:hover { background: #2563eb; } }
   &--save     { background: #16a34a; color: #fff; &:hover { background: #15803d; } &:disabled { opacity: .6; cursor: not-allowed; } }
 }
