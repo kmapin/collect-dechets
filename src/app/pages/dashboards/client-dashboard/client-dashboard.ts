@@ -18,6 +18,7 @@ import { ClientService } from "../../../services/client.service";
 import { map, forkJoin, of } from "rxjs";
 import { catchError } from "rxjs/operators";
 import { AgencyService } from "../../../services/agency.service";
+import { ScrollLockDirective } from "../../../shared/scroll-lock.directive";
 import { Message } from "../../../models/message.model";
 import { MatIcon } from "@angular/material/icon";
 import jsPDF from "jspdf";
@@ -60,7 +61,7 @@ interface Subscription {
 
 @Component({
   selector: 'app-client-dashboard',
-  imports: [CommonModule, RouterModule, FormsModule, MatIcon, Signalement],
+  imports: [CommonModule, RouterModule, FormsModule, MatIcon, Signalement, ScrollLockDirective],
   providers: [ExportClientService],
   templateUrl: './client-dashboard.html',
   styleUrl: './client-dashboard.scss'

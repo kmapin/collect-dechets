@@ -1,5 +1,6 @@
 import { Agency } from "./../../../models/agency.model";
 import { saveFilters, loadFilters, hasNonDefaultFilters } from "../../../shared/filter-persistence.util";
+import { ScrollLockDirective } from "../../../shared/scroll-lock.directive";
 import { catchError, forkJoin, map, of, switchMap, Subscription } from "rxjs";
 import {
   AfterViewChecked,
@@ -264,6 +265,7 @@ export enum CollectionStatus1 {
     Signalement,
     ExcelImportComponent,
     TerritorySelectComponent,
+    ScrollLockDirective,
   ],
   templateUrl: "./agency-dashboard.html",
   styleUrl: "./agency-dashboard.scss",

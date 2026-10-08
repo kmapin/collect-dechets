@@ -510,7 +510,7 @@
 
                                   <!-- Modal de signalement d'incident -->
                                   @if (showIncidentModal) {
-                                    <div class="drawer-overlay">
+                                    <div class="drawer-overlay" appScrollLock>
                                       <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                                         <div class="drawer-header">
                                           <h3>Signaler un incident</h3>
@@ -631,7 +631,7 @@
 
                                     <!-- Modal QR Scanner -->
                                     @if (showQrScanner) {
-                                      <div class="drawer-overlay">
+                                      <div class="drawer-overlay" appScrollLock>
                                         <div class="drawer-content" (click)="$event.stopPropagation()">
                                           <div class="drawer-header">
                                             <h3>Scanner un QR Code</h3>
@@ -703,7 +703,7 @@
                                     }
                                       <!-- Modal infos client scanné -->
                                       @if (showClientModal) {
-                                        <div class="drawer-overlay">
+                                        <div class="drawer-overlay" appScrollLock>
                                           <div class="drawer-content" (click)="$event.stopPropagation()">
                                             <div class="drawer-header">
                                               <h3>Informations du client</h3>

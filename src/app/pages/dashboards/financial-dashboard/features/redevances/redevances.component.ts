@@ -10,6 +10,7 @@ import { Contrat } from '../../../../../models/contrat.model';
 import { Redevance } from '../../../../../models/redevance.model';
 import { ApercuPaiementGroupe, PaiementGroupeRedevance, ReductionType } from '../../../../../models/paiement-groupe-redevance.model';
 import { formatFrDate } from '../../../../../shared/format.util';
+import { ScrollLockDirective } from '../../../../../shared/scroll-lock.directive';
 import { aLaPermission } from '../../models';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { NotificationService } from '../../../../../services/notification.service';
@@ -40,7 +41,7 @@ type CiblePaiementManuel =
 @Component({
   selector: 'app-redevances',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent, ScrollLockDirective],
   templateUrl: './redevances.component.html',
   styleUrl: './redevances.component.scss',
 })

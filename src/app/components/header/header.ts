@@ -8,12 +8,13 @@ import { NotificationService } from '../../services/notification.service';
 import { Webstockets } from '../../core/services/webstockets';
 import { NotificationItem, notificationTypeLabel } from '../../models/notification.model';
 import { resolveNotificationNavigation, dashboardRouteForRole } from '../../shared/notification-route.util';
+import { ScrollLockDirective } from '../../shared/scroll-lock.directive';
 import { MatIconModule } from '@angular/material/icon';
 import { filter, Subscription } from 'rxjs';
 import { PlanningSummaryDrawer } from '../planning-summary-drawer/planning-summary-drawer';
 @Component({
   selector: 'app-header',
-  imports: [CommonModule, RouterModule, MatIconModule, PlanningSummaryDrawer],
+  imports: [CommonModule, RouterModule, MatIconModule, PlanningSummaryDrawer, ScrollLockDirective],
   templateUrl: './header.html',
   styleUrl: './header.css'
 })

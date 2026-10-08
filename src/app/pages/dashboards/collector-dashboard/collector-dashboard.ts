@@ -14,6 +14,7 @@ import { RegisterUserData, User } from "../../../models/user.model";
 import { ZXingScannerModule } from "@zxing/ngx-scanner";
 import { BarcodeFormat } from "@zxing/library";
 import { ClientService, ClientApi } from "../../../services/client.service";
+import { ScrollLockDirective } from "../../../shared/scroll-lock.directive";
 
 interface CollectionPoint {
   id: string;
@@ -51,7 +52,7 @@ interface IncidentReport {
 
 @Component({
   selector: 'app-collector-dashboard',
-  imports: [CommonModule, FormsModule, RouterModule, ZXingScannerModule],
+  imports: [CommonModule, FormsModule, RouterModule, ZXingScannerModule, ScrollLockDirective],
   templateUrl: './collector-dashboard.html',
   styleUrl: './collector-dashboard.css'
 })

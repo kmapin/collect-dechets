@@ -167,7 +167,7 @@
   </ng-container>
 
   <!-- Drawer "Paiement manuel" — remplace l'ancienne simple confirmation "Marquer comme payée" -->
-  <div class="fin-redevances__drawer-overlay" *ngIf="showPaiementManuelDrawer()">
+  <div class="fin-redevances__drawer-overlay" appScrollLock *ngIf="showPaiementManuelDrawer()">
     <div class="fin-redevances__drawer" (click)="$event.stopPropagation()">
       <div class="fin-redevances__drawer-header">
         <h3>Paiement manuel</h3>

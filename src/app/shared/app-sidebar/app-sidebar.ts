@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { TooltipModule } from 'primeng/tooltip';
 import { TeamService } from '../../pages/teams/services/team.service';
+import { ScrollLockDirective } from '../scroll-lock.directive';
 
 interface SideNav {
   label: string;
@@ -18,7 +19,7 @@ interface SideNav {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, MatIconModule, TooltipModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive, MatIconModule, TooltipModule, ScrollLockDirective],
   templateUrl: './app-sidebar.html',
   styleUrl:    './app-sidebar.scss',
 })

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AgencyImportService } from '../../services/agency-import.service';
 import { NotificationService } from '../../services/notification.service';
 import { AgencyImportType, ImportConfirmResponse, ImportPreviewResponse, ImportRow } from '../../models/agency-import.model';
+import { ScrollLockDirective } from '../../shared/scroll-lock.directive';
 
 type Etape = 'depot' | 'apercu' | 'resultat';
 
@@ -12,7 +13,7 @@ type Etape = 'depot' | 'apercu' | 'resultat';
 @Component({
   selector: 'app-excel-import',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ScrollLockDirective],
   templateUrl: './excel-import.component.html',
   styleUrl: './excel-import.component.scss',
 })

@@ -198,7 +198,7 @@
 
   <!-- Formulaire de paiement (redevance) -->
   @if (showPaymentForm && tarifResponse) {
-    <div class="payment-drawer-overlay">
+    <div class="payment-drawer-overlay" appScrollLock>
       <div class="payment-drawer" (click)="$event.stopPropagation()">
         <div class="payment-drawer-header">
           <h2>

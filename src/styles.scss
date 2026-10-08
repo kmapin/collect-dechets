@@ -1144,6 +1144,13 @@ body.signalement-drawer-open .card:hover {
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
+// Appliqué sur <body> tant qu'un drawer/modale plein écran est ouvert (voir
+// agency-dashboard.ts::viewClientDetails/closeClientDetailsModal) — empêche de scroller
+// la page recouverte et masque sa barre de scroll pendant que le drawer est affiché.
+body.body-scroll-lock {
+  overflow: hidden;
+}
+
 // ── PrimeNG DatePicker 20 — Correctifs globaux ────────────────
 
 // Panel flottant : z-index élevé pour passer au-dessus de tout

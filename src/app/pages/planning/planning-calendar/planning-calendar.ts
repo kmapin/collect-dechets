@@ -23,6 +23,7 @@ import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrum
 import { AuthService } from '../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
 import { withBreadcrumbTrail } from '../../../shared/breadcrumb-trail.util';
+import { ScrollLockDirective } from '../../../shared/scroll-lock.directive';
 
 // ── Constants ─────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
@@ -56,7 +57,7 @@ const TYPE_ICONS: Record<string, string> = {
   imports: [
     CommonModule, RouterLink, FormsModule, MatIconModule,
     TooltipModule, ToastModule, SkeletonModule, FullCalendarModule,
-    PlanningTeamsTabs, Breadcrumb,
+    PlanningTeamsTabs, Breadcrumb, ScrollLockDirective,
   ],
   templateUrl: './planning-calendar.html',
   styleUrl:    './planning-calendar.scss',

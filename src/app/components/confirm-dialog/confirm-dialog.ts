@@ -2,10 +2,11 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ConfirmDialogService, ConfirmRequest } from '../../services/confirm-dialog.service';
+import { ScrollLockDirective } from '../../shared/scroll-lock.directive';
 
 @Component({
   selector: 'app-confirm-dialog',
-  imports: [FormsModule],
+  imports: [FormsModule, ScrollLockDirective],
   templateUrl: './confirm-dialog.html',
   styleUrl: './confirm-dialog.css',
 })

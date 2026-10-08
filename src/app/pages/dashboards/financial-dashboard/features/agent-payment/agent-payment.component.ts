@@ -11,6 +11,7 @@ import { EXPORT_SERVICE } from '../../data-access/tokens/export.token';
 import { ExportColumn } from '../../data-access/contracts/export.service';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDateTime } from '../../../../../shared/format.util';
+import { ScrollLockDirective } from '../../../../../shared/scroll-lock.directive';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
 import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
@@ -57,7 +58,7 @@ interface ResultatAction {
 @Component({
   selector: 'app-agent-payment',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchFilterComponent, ResetFiltersButtonComponent, StatusBadgeComponent, PhoneInputDirective],
+  imports: [CommonModule, FormsModule, SearchFilterComponent, ResetFiltersButtonComponent, StatusBadgeComponent, PhoneInputDirective, ScrollLockDirective],
   templateUrl: './agent-payment.component.html',
   styleUrl: './agent-payment.component.scss',
 })

@@ -2245,7 +2245,7 @@
   </div>
 
   <!-- Drawer Communication -->
-  <div class="drawer-overlay" *ngIf="showCommunicationModal">
+  <div class="drawer-overlay" appScrollLock *ngIf="showCommunicationModal">
     <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Nouvelle Communication</h3>
@@ -2322,7 +2322,7 @@
 </div>
 
 @if(visible1){
-<div class="drawer-overlay">
+<div class="drawer-overlay" appScrollLock>
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <!-- ── En-tête ── -->
@@ -2617,7 +2617,7 @@
 }
 
 @if (visibleEditUserDrawer) {
-<div class="drawer-overlay">
+<div class="drawer-overlay" appScrollLock>
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <div class="drawer-header">
@@ -2726,7 +2726,7 @@
 
 <!-- ═══════ Dialog Réinitialisation Mot de Passe ═══════ -->
 @if (showPasswordResetDialog) {
-<div class="confirm-dialog-overlay" (click)="closePasswordResetDialog()">
+<div class="confirm-dialog-overlay" appScrollLock (click)="closePasswordResetDialog()">
   <div class="pwd-reset-dialog" (click)="$event.stopPropagation()">
 
     <!-- En-tête -->
@@ -2864,7 +2864,7 @@
 }
 
 @if (resolveDialogVisible) {
-<div class="confirm-dialog-overlay" (click)="resolveDialogVisible = false">
+<div class="confirm-dialog-overlay" appScrollLock (click)="resolveDialogVisible = false">
   <div class="resolve-dialog" (click)="$event.stopPropagation()">
     <div class="resolve-dialog-header">
       <div class="resolve-dialog-icon">
@@ -2898,7 +2898,7 @@
 }
 
 @if (visibleAddAgentDrawer) {
-<div class="drawer-overlay">
+<div class="drawer-overlay" appScrollLock>
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <!-- En-tête -->
@@ -3051,7 +3051,7 @@
 }
 
 @if (visibleIncidentDrawer && selectedIncident) {
-<div class="drawer-overlay">
+<div class="drawer-overlay" appScrollLock>
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <!-- En-tête -->
@@ -3199,7 +3199,7 @@
 }
 
 @if (visibleWithdrawalDetailDrawer) {
-<div class="drawer-overlay">
+<div class="drawer-overlay" appScrollLock>
   <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
 
     <div class="drawer-header">
@@ -3366,7 +3366,7 @@
 }
 
 @if (showApproveWithdrawalDialog && withdrawalToApprove) {
-<div class="confirm-dialog-overlay" (click)="closeApproveWithdrawalDialog()">
+<div class="confirm-dialog-overlay" appScrollLock (click)="closeApproveWithdrawalDialog()">
   <div class="confirm-dialog-box" (click)="$event.stopPropagation()">
 
     <div class="confirm-dialog-header confirm-dialog-header--success">
@@ -3410,7 +3410,7 @@
 }
 
 @if (showRejectWithdrawalDialog && withdrawalToReject) {
-<div class="confirm-dialog-overlay" (click)="closeRejectWithdrawalDialog()">
+<div class="confirm-dialog-overlay" appScrollLock (click)="closeRejectWithdrawalDialog()">
   <div class="resolve-dialog" (click)="$event.stopPropagation()">
     <div class="resolve-dialog-header">
       <div class="resolve-dialog-icon resolve-dialog-icon--danger">
@@ -3447,7 +3447,7 @@
 }
 
 @if (showConfirmVirementDialog && withdrawalToConfirmVirement && virementConfirmMode) {
-<div class="confirm-dialog-overlay" (click)="closeConfirmVirementDialog()">
+<div class="confirm-dialog-overlay" appScrollLock (click)="closeConfirmVirementDialog()">
   <div class="confirm-dialog-box" (click)="$event.stopPropagation()">
 
     <div class="confirm-dialog-header" [class.confirm-dialog-header--success]="virementConfirmMode === 'effectue'">

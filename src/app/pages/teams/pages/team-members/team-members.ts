@@ -14,6 +14,7 @@ import { TeamService } from '../../services/team.service';
 import { Team, TeamMember, MemberRole, MemberAvailability } from '../../models/team.model';
 import { memberAvailabilityLabel } from '../../models/team-labels';
 import { formatFrDate } from '../../../../shared/format.util';
+import { ScrollLockDirective } from '../../../../shared/scroll-lock.directive';
 
 // ── Local types ──────────────────────────────────────────────────
 interface RichMember extends TeamMember {
@@ -37,7 +38,7 @@ const AVAILS: { value: MemberAvailability; label: string; icon: string; color: s
   standalone: true,
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule, MatIconModule,
-    DragDropModule, TooltipModule, ToastModule,
+    DragDropModule, TooltipModule, ToastModule, ScrollLockDirective,
   ],
   providers: [MessageService],
   templateUrl: './team-members.html',

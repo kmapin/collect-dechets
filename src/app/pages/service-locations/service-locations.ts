@@ -11,6 +11,7 @@ import { dashboardRouteForRole, dashboardLabelForRole } from '../../shared/notif
 import { PhoneInputDirective } from '../../shared/phone-input.directive';
 import { normalizePhone } from '../../shared/phone.util';
 import { ServiceLocationService } from '../../services/service-location.service';
+import { ScrollLockDirective } from '../../shared/scroll-lock.directive';
 import { ServiceLocation, ServiceLocationType, CreateServiceLocationPayload } from '../../models/service-location.model';
 import { TerritorySelectComponent, toTerritoryOptions } from '../../shared/territory-select/territory-select';
 
@@ -71,7 +72,7 @@ const TYPE_OPTIONS: TypeOption[] = [
 @Component({
   selector: 'app-service-locations',
   standalone: true,
-  imports: [CommonModule, FormsModule, Breadcrumb, PhoneInputDirective, TerritorySelectComponent],
+  imports: [CommonModule, FormsModule, Breadcrumb, PhoneInputDirective, TerritorySelectComponent, ScrollLockDirective],
   templateUrl: './service-locations.html',
   styleUrl: './service-locations.scss',
 })

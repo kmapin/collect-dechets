@@ -611,6 +611,7 @@
                   @if (showMessageModal) {
                     <div
                       class="drawer-overlay"
+                      appScrollLock
                       (click)="showMessageModal = false"
                       >
                       <div class="drawer-content" (click)="$event.stopPropagation()">
@@ -888,6 +889,7 @@
     @if (showReportModal) {
       <div
         class="drawer-overlay"
+        appScrollLock
         (click)="showReportModal = false"
         >
         <div class="drawer-content" (click)="$event.stopPropagation()">
@@ -959,6 +961,7 @@
     @if (showSpontaneousRequestModal) {
       <div
         class="drawer-overlay"
+        appScrollLock
         (click)="showSpontaneousRequestModal = false"
         >
         <div class="drawer-content" (click)="$event.stopPropagation()">
@@ -1039,6 +1042,7 @@
   @if (showPaymentModal) {
     <div
       class="drawer-overlay"
+      appScrollLock
       (click)="showPaymentModal = false"
       >
       <div class="drawer-content" (click)="$event.stopPropagation()">
@@ -1107,6 +1111,7 @@
   @if (showRechargeModal) {
     <div
       class="drawer-overlay"
+      appScrollLock
       (click)="showRechargeModal = false"
       >
       <div class="drawer-content" (click)="$event.stopPropagation()">
@@ -1185,7 +1190,7 @@
 
     <!-- Modal de notation de l'agence (après une collecte effectuée) -->
     @if (showRatingModal) {
-      <div class="drawer-overlay">
+      <div class="drawer-overlay" appScrollLock>
         <div class="drawer-content rating-modal-content" (click)="$event.stopPropagation()">
           <div class="drawer-header">
             <h3>Noter {{ ratingTarget?.agencyName }}</h3>

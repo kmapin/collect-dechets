@@ -13,11 +13,12 @@ import { EligibilityService, EligibilityResult, isContratCurrentlyActive } from 
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { NotificationService } from '../../services/notification.service';
 import { Breadcrumb, BreadcrumbItem } from '../../shared/breadcrumb/breadcrumb';
+import { ScrollLockDirective } from '../../shared/scroll-lock.directive';
 import { dashboardLabelForRole, dashboardRouteForRole } from '../../shared/notification-route.util';
 
 @Component({
   selector: 'app-contrat',
-  imports: [CommonModule, MobileMoneyFormComponent, Breadcrumb],
+  imports: [CommonModule, MobileMoneyFormComponent, Breadcrumb, ScrollLockDirective],
   templateUrl: './contrat.html',
   styleUrl: './contrat.css',
 })

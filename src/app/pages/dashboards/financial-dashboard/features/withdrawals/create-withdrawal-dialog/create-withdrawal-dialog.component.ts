@@ -10,6 +10,7 @@ import { FINANCE_DATA_SERVICE } from '../../../data-access/tokens/finance-data.t
 import { FeeOptionRetrait, OperateurRetrait } from '../../../data-access/contracts/finance-data.service';
 import { formatMontantXof } from '../../../utils/money.util';
 import { FeeConfigService } from '../../../../../../services/fee-config.service';
+import { ScrollLockDirective } from '../../../../../../shared/scroll-lock.directive';
 
 type Etape = 'formulaire' | 'confirmation';
 
@@ -23,7 +24,7 @@ interface OperateurInfo {
 @Component({
   selector: 'app-create-withdrawal-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, ScrollLockDirective],
   templateUrl: './create-withdrawal-dialog.component.html',
   styleUrl: './create-withdrawal-dialog.component.scss',
 })

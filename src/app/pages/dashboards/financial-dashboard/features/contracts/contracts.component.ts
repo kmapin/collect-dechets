@@ -24,6 +24,7 @@ import { badgeContrat } from '../../shared/status-badge/status-badge.util';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
 import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
 import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../shared/filter-persistence.util';
+import { ScrollLockDirective } from '../../../../../shared/scroll-lock.directive';
 
 const FILTERS_KEY = 'financialDashboard.contracts';
 interface ContractsFilters {
@@ -35,7 +36,7 @@ const FILTERS_DEFAULTS: ContractsFilters = { statut: 'Tous', search: '' };
 @Component({
   selector: 'app-contracts',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent, SearchFilterComponent, ResetFiltersButtonComponent],
+  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent, SearchFilterComponent, ResetFiltersButtonComponent, ScrollLockDirective],
   templateUrl: './contracts.component.html',
   styleUrl: './contracts.component.scss',
 })

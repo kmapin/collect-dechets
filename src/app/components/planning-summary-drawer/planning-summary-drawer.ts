@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { PlanningService } from '../../pages/planning/services/planning.service';
 import { Planning } from '../../pages/planning/models/planning.model';
 import { formatFrDate } from '../../shared/format.util';
+import { ScrollLockDirective } from '../../shared/scroll-lock.directive';
 
 const STATUS_LABELS: Partial<Record<string, string>> = {
   brouillon: 'Brouillon', planifie: 'Planifié', en_cours: 'En cours', termine: 'Terminé', annule: 'Annulé',
@@ -16,7 +17,7 @@ const TYPE_LABELS: Partial<Record<string, string>> = {
 @Component({
   selector: 'app-planning-summary-drawer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ScrollLockDirective],
   templateUrl: './planning-summary-drawer.html',
   styleUrl: './planning-summary-drawer.css',
 })

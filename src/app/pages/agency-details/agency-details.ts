@@ -19,6 +19,7 @@ import {
   Sector,
 } from "../../models/countries-org.model";
 import { Admin } from "../../services/admin";
+import { ScrollLockDirective } from "../../shared/scroll-lock.directive";
 import { MobileMoneyFormComponent } from "../payment/mobile-money-form/mobile-money-form";
 import { ServiceLocationService } from "../../services/service-location.service";
 import { ServiceLocation, ServiceLocationType } from "../../models/service-location.model";
@@ -48,6 +49,7 @@ export interface AgencyZone {
     Breadcrumb,
     PhoneInputDirective,
     TerritorySelectComponent,
+    ScrollLockDirective,
   ],
   templateUrl: "./agency-details.html",
   styleUrl: "./agency-details.css",

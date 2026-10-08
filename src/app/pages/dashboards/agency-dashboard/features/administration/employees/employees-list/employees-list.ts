@@ -16,6 +16,7 @@ import { TerritorySelectComponent, TerritoryOption, toTerritoryOptionsById } fro
 import { aLaPermissionAdministration } from '../../models/administration-permission';
 import { ResetFiltersButtonComponent } from '../../../../../financial-dashboard/shared/filters/reset-filters-button/reset-filters-button.component';
 import { hasNonDefaultFilters, loadFilters, saveFilters } from '../../../../../../../shared/filter-persistence.util';
+import { ScrollLockDirective } from '../../../../../../../shared/scroll-lock.directive';
 
 type EtatChargement = 'loading' | 'loaded' | 'error';
 type VueMode = 'card' | 'table';
@@ -52,7 +53,7 @@ const FILTERS_DEFAULTS: EmployeesFilters = {
 @Component({
   selector: 'app-employees-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, EmployeeForm, ExcelImportComponent, TerritorySelectComponent, ResetFiltersButtonComponent],
+  imports: [CommonModule, FormsModule, EmployeeForm, ExcelImportComponent, TerritorySelectComponent, ResetFiltersButtonComponent, ScrollLockDirective],
   templateUrl: './employees-list.html',
   styleUrl: './employees-list.scss',
 })

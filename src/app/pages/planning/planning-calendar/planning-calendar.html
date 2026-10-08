@@ -202,7 +202,7 @@
 </div>
 
 @if (popupOpen() && selectedEvent()) {
-<div class="ev-backdrop" (click)="closePopup()"></div>
+<div class="ev-backdrop" appScrollLock (click)="closePopup()"></div>
 <div class="ev-popup" [@.disabled]="true">
 
   <!-- Header -->

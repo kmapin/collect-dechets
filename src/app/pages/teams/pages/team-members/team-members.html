@@ -403,7 +403,7 @@
 
 <!-- ═══════════════════════ ADD MEMBER DRAWER ════════════════════ -->
 @if (addOpen()) {
-  <div class="drawer-overlay"></div>
+  <div class="drawer-overlay" appScrollLock></div>
 }
 <aside class="tm-drawer" [class.tm-drawer--open]="addOpen()">
 
@@ -499,7 +499,7 @@
 
 <!-- ══════════════════════ DELETE CONFIRM ══════════════════════════ -->
 @if (deleteTarget()) {
-  <div class="del-bg" (click)="deleteTarget.set(null)"></div>
+  <div class="del-bg" appScrollLock (click)="deleteTarget.set(null)"></div>
   <div class="del-modal">
     <div class="del-ico"><mat-icon>person_remove</mat-icon></div>
     <h3>Retirer ce membre ?</h3>

@@ -140,7 +140,7 @@
   </ng-container>
 
   <!-- Drawer de création de contrat -->
-  <div class="fin-contracts__drawer-overlay" *ngIf="showCreateModal()">
+  <div class="fin-contracts__drawer-overlay" appScrollLock *ngIf="showCreateModal()">
     <div class="fin-contracts__drawer" (click)="$event.stopPropagation()">
       <div class="fin-contracts__drawer-header">
         <h3>Nouveau contrat</h3>

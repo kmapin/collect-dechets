@@ -95,7 +95,7 @@
 
   <!-- Drawer création/édition -->
   @if (showForm) {
-    <div class="drawer-overlay" (click)="fermerForm()">
+    <div class="drawer-overlay" appScrollLock (click)="fermerForm()">
       <div class="drawer-content" (click)="$event.stopPropagation()">
         <div class="drawer-header">
           <h3>{{ editingId ? 'Modifier le lieu' : 'Nouveau lieu de service' }}</h3>
@@ -253,7 +253,7 @@
 
   <!-- Drawer détail (lecture seule) -->
   @if (showDetail && detailLocation) {
-    <div class="drawer-overlay" (click)="fermerDetail()">
+    <div class="drawer-overlay" appScrollLock (click)="fermerDetail()">
       <div class="drawer-content" (click)="$event.stopPropagation()">
         <div class="drawer-header">
           <h3>{{ detailLocation.name }}</h3>
@@ -397,7 +397,7 @@
 
   <!-- Drawer QR Code du lieu (Phase 9) -->
   @if (showQrCode && qrCodeLocation) {
-    <div class="drawer-overlay" (click)="fermerQrCode()">
+    <div class="drawer-overlay" appScrollLock (click)="fermerQrCode()">
       <div class="drawer-content" (click)="$event.stopPropagation()">
         <div class="drawer-header">
           <h3>QR Code — {{ qrCodeLocation.name }}</h3>

@@ -23,6 +23,7 @@ import { AuthService } from '../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { readBreadcrumbTrail } from '../../../shared/breadcrumb-trail.util';
+import { ScrollLockDirective } from '../../../shared/scroll-lock.directive';
 interface Incident {
   id: string; severity: 'critical' | 'warning' | 'info';
   title: string; description: string; reporter: string;
@@ -59,6 +60,7 @@ interface Notification {
     CommonModule, FormsModule, RouterLink, MatIconModule,
     TimelineModule, ChartModule, TagModule, ToastModule, TooltipModule, SkeletonModule,
     Breadcrumb,
+    ScrollLockDirective,
   ],
   providers: [MessageService],
   templateUrl: './planning-detail.html',

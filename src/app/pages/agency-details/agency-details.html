@@ -535,7 +535,7 @@
 </div>
 
 @if(visible2){
-<div class="drawer-overlay">
+<div class="drawer-overlay" appScrollLock>
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
       <h3>Modifier votre agence</h3>
@@ -747,7 +747,7 @@
 
 <!--Messagerie-->
 @if(showReportModal){
-<div class="drawer-overlay">
+<div class="drawer-overlay" appScrollLock>
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
       <h3>Envoyer un message à l'agence {{agency.name}}</h3>
@@ -794,7 +794,7 @@
   </div>
 </div>
 } @if(showPaymentDrawer && selectedTarif !== null) {
-<div class="drawer-overlay">
+<div class="drawer-overlay" appScrollLock>
   <div class="drawer-content" (click)="$event.stopPropagation()">
     <div class="drawer-header">
       <h3>Abonnement</h3>

@@ -37,6 +37,7 @@ import { ExportClientService } from "../financial-dashboard/data-access/export/e
 import { PhoneInputDirective } from "../../../shared/phone-input.directive";
 import { normalizePhone } from "../../../shared/phone.util";
 import { TerritorySelectComponent, toTerritoryOptions } from "../../../shared/territory-select/territory-select";
+import { ScrollLockDirective } from "../../../shared/scroll-lock.directive";
 interface AdminStatistics {
   totalAgencies: number;
   totalActiveAgencies: number;
@@ -222,6 +223,7 @@ interface User {
     PlanningSummaryDrawer,
     PhoneInputDirective,
     TerritorySelectComponent,
+    ScrollLockDirective,
   ],
   providers: [ExportClientService],
   templateUrl: "./admin-dashboard.html",

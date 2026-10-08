@@ -7,6 +7,7 @@ import { AuthService } from '../../../services/auth.service';
 import { AgencyService } from '../../../services/agency.service';
 import { RegisterUserData } from '../../../models/user.model';
 import { PLANNING_DETAIL_ROLES } from '../../../shared/notification-route.util';
+import { ScrollLockDirective } from '../../../shared/scroll-lock.directive';
 import { PlanningSummaryDrawer } from '../../../components/planning-summary-drawer/planning-summary-drawer';
 interface Incident {
   _id: string;
@@ -62,7 +63,7 @@ interface Incident {
 }
 @Component({
   selector: 'app-signalement',
-  imports: [CommonModule, FormsModule, RouterModule, PlanningSummaryDrawer],
+  imports: [CommonModule, FormsModule, RouterModule, PlanningSummaryDrawer, ScrollLockDirective],
   templateUrl: './signalement.html',
   styleUrl: './signalement.scss',
 })

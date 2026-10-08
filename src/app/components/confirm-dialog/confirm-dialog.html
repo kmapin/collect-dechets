@@ -1,5 +1,5 @@
 @if (request) {
-  <div class="cfd-backdrop" (click)="onCancelClick()"></div>
+  <div class="cfd-backdrop" appScrollLock (click)="onCancelClick()"></div>
   <div class="cfd-box" [class]="'cfd-box--' + request.variant" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
     <div class="cfd-icon" [class]="'cfd-icon--' + request.variant">
       <i class="material-icons">{{ request.icon }}</i>

@@ -1410,7 +1410,7 @@
         }
 
         @if (showDemandeTeamPicker) {
-          <div class="drawer-overlay">
+          <div class="drawer-overlay" appScrollLock>
             <div class="drawer-content" (click)="$event.stopPropagation()">
               <div class="drawer-header">
                 <h3>Affecter la collecte express à une équipe</h3>
@@ -1568,7 +1568,7 @@
             </div>
             <!-- Message -->
             @if (showMessageModal) {
-              <div class="drawer-overlay">
+              <div class="drawer-overlay" appScrollLock>
                 <div class="drawer-content" (click)="$event.stopPropagation()">
                   <div class="drawer-header">
                     <h3>Décrivez nous votre besoins</h3>
@@ -1875,7 +1875,7 @@
 
             <!-- Drawer Ajouter / Modifier Engin -->
             @if (showVehicleModal) {
-              <div class="drawer-overlay">
+              <div class="drawer-overlay" appScrollLock>
                 <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                   <div class="drawer-header">
                     <h3>{{ isEditingVehicle ? "Modifier l'engin" : "Ajouter un engin" }}</h3>
@@ -1999,7 +1999,7 @@
           <div class="analytics-content">
             <!-- Drawer Ajouter Tarif -->
             @if (showZoneModal) {
-              <div class="drawer-overlay">
+              <div class="drawer-overlay" appScrollLock>
                 <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                   <div class="drawer-header">
                     <h3>
@@ -2225,7 +2225,7 @@
           }
           <!-- Drawer Mes Tarifs -->
           @if (showTariffsModal) {
-            <div class="drawer-overlay">
+            <div class="drawer-overlay" appScrollLock>
               <div class="drawer-content drawer-content-wide" (click)="$event.stopPropagation()">
                 <div class="drawer-header">
                   <h3>
@@ -2328,7 +2328,7 @@
 </div>
 <!-- Drawer Détails du Client -->
 @if (showClientDetailsModal) {
-  <div class="drawer-overlay">
+  <div class="drawer-overlay" appScrollLock>
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Détails du Client</h3>
@@ -2461,7 +2461,7 @@
   </div>
 }
 @if (selectedImage) {
-  <div class="drawer-overlay">
+  <div class="drawer-overlay" appScrollLock>
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Image</h3>
@@ -2476,7 +2476,7 @@
   </div>
 }
 @if (showHistoryModal) {
-  <div class="drawer-overlay">
+  <div class="drawer-overlay" appScrollLock>
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Historique des Collectes</h3>
@@ -2558,7 +2558,7 @@
 
 <!-- Drawer pour gérer les zones -->
 @if (showZoneModalcouverture) {
-  <div class="drawer-overlay">
+  <div class="drawer-overlay" appScrollLock>
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <h3>Définir les zones couvertes</h3>

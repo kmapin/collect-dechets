@@ -309,7 +309,7 @@
 </div>
 
 @if (afficherFormulaire()) {
-  <div class="employee-drawer-overlay" (click)="fermerFormulaire()">
+  <div class="employee-drawer-overlay" appScrollLock (click)="fermerFormulaire()">
     <div class="employee-drawer" (click)="$event.stopPropagation()">
       <div class="employee-drawer-header">
         <h2>{{ employeEnEdition() ? 'Modifier l\'employé' : 'Ajouter un employé' }}</h2>
@@ -326,7 +326,7 @@
 }
 
 @if (afficherImportExcel()) {
-  <div class="employee-drawer-overlay" (click)="fermerImportExcel()">
+  <div class="employee-drawer-overlay" appScrollLock (click)="fermerImportExcel()">
     <div class="employee-drawer" (click)="$event.stopPropagation()">
       <app-excel-import type="employees" (fermer)="fermerImportExcel()" (importReussi)="surImportReussi()"></app-excel-import>
     </div>
