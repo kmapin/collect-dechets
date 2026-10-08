@@ -2710,13 +2710,13 @@
 
     <div class="drawer-footer">
       <div class="drawer-actions">
-        <button class="btn btn-success" (click)="saveUserChanges()" [disabled]="isSavingUser">
-          <i class="material-icons">{{ isSavingUser ? 'hourglass_empty' : 'save' }}</i>
-          {{ isSavingUser ? 'Enregistrement...' : 'Enregistrer' }}
-        </button>
         <button class="btn btn-outline" (click)="closeEditUserDrawer()" [disabled]="isSavingUser">
           <i class="material-icons">close</i>
           Annuler
+        </button>
+        <button class="btn btn-success" (click)="saveUserChanges()" [disabled]="isSavingUser">
+          <i class="material-icons">{{ isSavingUser ? 'hourglass_empty' : 'save' }}</i>
+          {{ isSavingUser ? 'Enregistrement...' : 'Enregistrer' }}
         </button>
       </div>
     </div>

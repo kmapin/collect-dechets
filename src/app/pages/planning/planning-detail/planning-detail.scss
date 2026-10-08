@@ -88,10 +88,10 @@
   mat-icon { font-size: 13px; width: 13px; height: 13px; }
 }
 .tmd-footer {
-  display: flex; gap: 10px; padding: 16px; border-top: 1px solid #f1f5f9;
+  display: flex; justify-content: flex-end; gap: 10px; padding: 16px; border-top: 1px solid #f1f5f9;
 }
 .tmd-cancel-btn {
-  flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 10px 20px; border: 1px solid #e2e8f0; border-radius: 8px;
   background: #fff; color: #64748b; font-size: 14px; cursor: pointer;
   &:hover { background: #f8fafc; }
 }
