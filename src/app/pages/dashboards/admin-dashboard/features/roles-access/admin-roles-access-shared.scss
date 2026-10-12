@@ -121,8 +121,14 @@
   }
 
   &__detail {
-    // min-width: 0;
-    min-height: 70vh;
+    // Nécessaire : item de grille (.access-mgmt__body, 320px 1fr) — sans min-width:0, la
+    // taille minimale automatique de la piste 1fr se cale sur le contenu le plus large
+    // (le tableau de droits), qui déborde alors de la section au lieu de défiler dans
+    // .detail-table-scroll (overflow-x:auto).
+    min-width: 0;
+    // Pas de min-height fixe : avec les sections en onglets (une seule visible à la
+    // fois), un contenu court forcé à 70vh laissait un grand vide avant la barre
+    // d'actions — le panneau doit épouser sa hauteur réelle, barre d'actions comprise.
     background: var(--white);
     border: 1px solid var(--surface-200, #e2e8f0);
     border-radius: 12px;
