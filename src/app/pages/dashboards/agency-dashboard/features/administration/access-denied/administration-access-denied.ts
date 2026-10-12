@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../../../../services/auth.service';
+import { dashboardRouteForRole } from '../../../../../../shared/notification-route.util';
 
 // Pendant de FinanceAccessDenied (financial-dashboard/features/shell/finance-access-denied/)
 // — même principe : laisser le manager ENTRER dans le module plutôt que de le rediriger
@@ -13,7 +15,7 @@ import { RouterLink } from '@angular/router';
       <i class="material-icons" aria-hidden="true">lock</i>
       <h2>Accès restreint</h2>
       <p>Vous n'avez pas les droits nécessaires pour consulter le contenu de cette page.</p>
-      <a routerLink="/dashboard/agency">Retour au tableau de bord</a>
+      <a [routerLink]="dashboardRoute">Retour au tableau de bord</a>
     </div>
   `,
   styles: [`
@@ -35,4 +37,7 @@ import { RouterLink } from '@angular/router';
     }
   `],
 })
-export class AdministrationAccessDenied {}
+export class AdministrationAccessDenied {
+  private readonly authService = inject(AuthService);
+  readonly dashboardRoute = dashboardRouteForRole(this.authService.getCurrentUser()?.role);
+}

@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../../../../services/auth.service';
+import { dashboardRouteForRole } from '../../../../../../shared/notification-route.util';
 
 
 @Component({
@@ -11,7 +13,7 @@ import { RouterLink } from '@angular/router';
       <i class="material-icons" aria-hidden="true">lock</i>
       <h2>Accès restreint</h2>
       <p>Votre rôle actuel n'a pas accès aux données financières de l'agence (RG8).</p>
-      <a routerLink="/">Retour à l'accueil</a>
+      <a [routerLink]="dashboardRoute">Retour au tableau de bord</a>
     </div>
   `,
   styles: [`
@@ -33,4 +35,7 @@ import { RouterLink } from '@angular/router';
     }
   `],
 })
-export class FinanceAccessDenied {}
+export class FinanceAccessDenied {
+  private readonly authService = inject(AuthService);
+  readonly dashboardRoute = dashboardRouteForRole(this.authService.getCurrentUser()?.role);
+}
