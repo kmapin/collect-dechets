@@ -475,7 +475,8 @@
 /* Contenu du drawer */
 .drawer-content {
   background: white;
-  width: 480px;
+  width: 680px;
+  max-width: 90vw;
   height: 100%;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
   display: flex;

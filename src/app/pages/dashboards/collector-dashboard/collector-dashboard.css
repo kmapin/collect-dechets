@@ -1068,7 +1068,7 @@
 
 .drawer-content {
   background: var(--white);
-  width: 480px;
+  width: 680px;
   max-width: 90vw;
   height: 100%;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
@@ -1080,6 +1080,7 @@
 
 .drawer-content-wide {
   width: 680px;
+  max-width: 90vw;
 }
 
 @keyframes slideInRightDrawer {
@@ -1160,7 +1161,8 @@
 }
 
 @media (max-width: 768px) {
-  .drawer-content {
+  .drawer-content,
+  .drawer-content-wide {
     width: 100%;
     max-width: 100vw;
   }
