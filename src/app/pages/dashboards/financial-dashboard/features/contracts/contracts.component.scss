@@ -254,6 +254,21 @@
   }
 
   // ── Formulaire "Nouveau contrat" ─────────────────────────────────────────
+  &__form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+
+    .fin-contracts__form-group {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
   &__form-group {
     margin-bottom: 1rem;
 

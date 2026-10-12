@@ -66,7 +66,7 @@ export const FINANCIAL_DASHBOARD_ROUTES: Routes = [
         canActivate: [financeAccessGuard, financePermissionGuard],
         data: { permissions: ['clients.view'] },
         loadComponent: () => import('./features/clients/client-list.component').then(m => m.ClientListComponent),
-        title: 'Clients',
+        title: 'Abonnés',
       },
       {
         path: 'clients/:idClient',

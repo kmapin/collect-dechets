@@ -210,26 +210,19 @@
           </div>
         </div>
 
-        <div class="fin-contracts__form-group">
-          <label for="contract-pricing">Plan tarifaire</label>
-          <select id="contract-pricing" [ngModel]="newContrat().pricingId" (ngModelChange)="setPricingId($event)">
-            <option value="">Sélectionner un plan</option>
-            <option *ngFor="let tarif of tariffs()" [value]="tarif._id">{{ tarif.planType }} — {{ tarif.price }} FCFA</option>
-          </select>
-        </div>
+        <div class="fin-contracts__form-row">
+          <div class="fin-contracts__form-group">
+            <label for="contract-pricing">Plan tarifaire</label>
+            <select id="contract-pricing" [ngModel]="newContrat().pricingId" (ngModelChange)="setPricingId($event)">
+              <option value="">Sélectionner un plan</option>
+              <option *ngFor="let tarif of tariffs()" [value]="tarif._id">{{ tarif.planType }} — {{ tarif.price }} FCFA</option>
+            </select>
+          </div>
 
-        <div class="fin-contracts__form-group">
-          <label for="contract-frequence">Fréquence de collecte</label>
-          <select id="contract-frequence" [ngModel]="newContrat().frequenceCollecte" (ngModelChange)="setFrequenceCollecte($event)">
-            <option value="daily">Quotidienne</option>
-            <option value="weekly">Hebdomadaire</option>
-            <option value="monthly">Mensuelle</option>
-          </select>
-        </div>
-
-        <div class="fin-contracts__form-group">
-          <label for="contract-end-date">Date de fin (optionnel)</label>
-          <input id="contract-end-date" type="date" [ngModel]="newContrat().endDate" (ngModelChange)="setEndDate($event)" />
+          <div class="fin-contracts__form-group">
+            <label for="contract-end-date">Date de fin (optionnel)</label>
+            <input id="contract-end-date" type="date" [ngModel]="newContrat().endDate" (ngModelChange)="setEndDate($event)" />
+          </div>
         </div>
 
         <div class="fin-contracts__total-preview" *ngIf="newContrat().pricingId">

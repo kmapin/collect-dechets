@@ -97,6 +97,11 @@ export class ContractsComponent {
   readonly showCreateModal = signal(false);
   readonly clients = signal<Client[]>([]);
   readonly tariffs = signal<Tarif[]>([]);
+  // frequenceCollecte : champ requis par le backend (controllers/contrat.js) mais la
+  // facturation est TOUJOURS mensuelle quel que soit le contrat (voir
+  // services/contratScheduler.js::calculerProchaineDateEcheance, qui ignore ce paramètre
+  // et avance systématiquement d'un mois) — plus de sélecteur dans le formulaire, on
+  // envoie 'monthly' sans jamais le faire varier.
   readonly newContrat = signal<{ clientId: string; pricingId: string; frequenceCollecte: FrequenceCollecte; endDate: string }>({
     clientId: '',
     pricingId: '',
@@ -300,10 +305,6 @@ export class ContractsComponent {
   //  Setters plutôt qu'un binding inline dans le HTML.
   setPricingId(pricingId: string): void {
     this.newContrat.update(v => ({ ...v, pricingId }));
-  }
-
-  setFrequenceCollecte(frequenceCollecte: FrequenceCollecte): void {
-    this.newContrat.update(v => ({ ...v, frequenceCollecte }));
   }
 
   setEndDate(endDate: string): void {

@@ -675,7 +675,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
     // },
     { id: "agencies", label: "Agences", icon: "business", badge: null },
     // { id: "collectors", label: "Collecteurs", icon: "business", badge: null },
-    // { id: "clients", label: "Clients", icon: "business", badge: null },
     { id: "all_users", label: "Utilisateurs", icon: "person", badge: null },
     { id: "statistics", label: "Statistiques", icon: "analytics", badge: null },
     { id: "collectes", label: "Collectes", icon: "local_shipping", badge: null },

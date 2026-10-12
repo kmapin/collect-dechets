@@ -34,7 +34,7 @@ export const PERMISSIONS_ONGLETS: OngletPermission[] = [
   { cle: 'dashboard.view', label: 'Statistiques', route: 'statistiques' },
   { cle: 'payments.view', label: 'Paiements', route: 'payments' },
   { cle: 'withdrawals.view', label: 'Retraits', route: 'withdrawals' },
-  { cle: 'clients.view', label: 'Clients', route: 'clients' },
+  { cle: 'clients.view', label: 'Abonnés', route: 'clients' },
   { cle: 'monthly_tracking.view', label: 'Suivi mensuel', route: 'monthly-tracking' },
   { cle: 'statements.view', label: 'Relevé', route: 'statement' },
   { cle: 'agent_payments.view', label: 'Paiement agents', route: 'agent-payment' },
