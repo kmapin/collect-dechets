@@ -121,7 +121,8 @@
   }
 
   &__detail {
-    min-width: 0;
+    // min-width: 0;
+    min-height: 70vh;
     background: var(--white);
     border: 1px solid var(--surface-200, #e2e8f0);
     border-radius: 12px;
@@ -416,6 +417,10 @@
   gap: 0.6rem;
   padding-top: 1rem;
   border-top: 1px solid var(--surface-100, #f1f5f9);
+  margin-top: auto;
+  &--presets {
+    margin-top: 0;
+  }
 
   &__spacer {
     flex: 1;
