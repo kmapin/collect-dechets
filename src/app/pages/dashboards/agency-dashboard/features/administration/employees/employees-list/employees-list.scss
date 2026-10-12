@@ -531,7 +531,10 @@
 }
 
 .employee-drawer {
-  width: min(560px, 100%);
+  // Même largeur que .drawer-content-wide (agency-dashboard.scss, drawer "Ajouter un
+  // engin") — aligné sur ce modèle de référence pour tous les drawers de formulaire.
+  width: 680px;
+  max-width: 90vw;
   height: 100%;
   background: var(--white);
   display: flex;
@@ -545,16 +548,23 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid var(--light-gray);
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
   flex-shrink: 0;
 
   h2 {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
   }
 }
 
 .close-btn {
+  // Annule le position:fixed du .close-btn global (styles.scss) : sans top/right définis,
+  // il sort du flux et quitte sa place dans le header flex (space-between), au lieu de
+  // rester à droite du titre comme prévu.
+  position: static;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -565,6 +575,7 @@
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
+  flex-shrink: 0;
 
   &:hover {
     background: var(--light-gray);

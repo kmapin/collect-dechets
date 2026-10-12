@@ -37,6 +37,8 @@ export class EmployeeForm implements OnChanges, OnInit {
   form: FormGroup;
   enregistrementEnCours = false;
   erreurApi = '';
+  afficherMotDePasse = false;
+  afficherConfirmationMotDePasse = false;
 
   // Filtres géographiques en cascade (même service/pattern que employees-list.ts et
   // quartiers-management.ts) — toute la hiérarchie est chargée en une fois (4 appels
@@ -241,6 +243,14 @@ export class EmployeeForm implements OnChanges, OnInit {
       },
       { validators: passwordMatchValidator() },
     );
+  }
+
+  basculerAffichageMotDePasse(): void {
+    this.afficherMotDePasse = !this.afficherMotDePasse;
+  }
+
+  basculerAffichageConfirmationMotDePasse(): void {
+    this.afficherConfirmationMotDePasse = !this.afficherConfirmationMotDePasse;
   }
 
   champInvalide(nomChamp: string): boolean {

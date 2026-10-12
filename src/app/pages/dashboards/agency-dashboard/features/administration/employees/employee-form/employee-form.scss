@@ -29,7 +29,7 @@
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
 
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
@@ -40,13 +40,11 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-bottom: 14px;
 }
 
 .form-label {
-  font-size: 0.85rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .required {
@@ -54,20 +52,72 @@
 }
 
 .form-control {
-  padding: 10px 12px;
-  border: 1px solid var(--light-gray);
-  border-radius: 8px;
-  font-size: 0.95rem;
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--medium-gray);
+  border-radius: 12px;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+  }
+}
+
+// Afficher/masquer le mot de passe — même convention que login.html/register.html
+// (.password-input/.password-toggle), avec un padding-right ajouté pour ne pas laisser le
+// texte saisi passer sous le bouton œil (le .form-control de ce formulaire est plus
+// large/arrondi que celui des pages auth).
+.password-input {
+  position: relative;
+
+  .form-control {
+    padding-right: 48px;
+  }
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+
+  &:hover {
+    color: var(--text-primary);
   }
 }
 
 .form-error {
   font-size: 0.78rem;
   color: var(--error-color);
+}
+
+// app-territory-select (Ville/Arrondissement/Secteur/Quartier) a son propre style
+// (territory-select.scss, partagé par 14 écrans) — overridé ici en ::ng-deep pour que ses
+// champs ressemblent aux .form-control de CE formulaire (sans toucher aux autres écrans
+// qui utilisent le composant).
+::ng-deep .address-fieldset .ts-input {
+  padding: 16px 30px 16px 16px;
+  border: 2px solid var(--medium-gray);
+  border-radius: 12px;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+
+  &:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+  }
 }
 
 .address-fieldset {
@@ -103,8 +153,24 @@
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 12px;
   flex-shrink: 0;
-  padding: 14px 24px;
-  border-top: 1px solid var(--light-gray);
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+
+  .btn .material-icons {
+    font-size: 18px;
+    vertical-align: text-bottom;
+  }
+
+  .spin {
+    display: inline-block;
+    animation: employee-form-spin 1s linear infinite;
+  }
+}
+
+@keyframes employee-form-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
