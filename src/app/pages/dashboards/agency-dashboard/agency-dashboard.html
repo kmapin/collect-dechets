@@ -2379,7 +2379,7 @@
             <div>
               <span class="info-label">Adresse complète</span>
               <span class="info-value"
-                >{{ selectedClient?.address?.street }}, {{ selectedClient?.address?.neighborhood }}</span
+                >{{ selectedClient?.address?.street ? selectedClient?.address?.street + ', ' : '' }}{{ selectedClient?.address?.neighborhood }}</span
               >
             </div>
           </div>
