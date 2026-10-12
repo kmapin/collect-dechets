@@ -1,16 +1,27 @@
 import { Routes } from '@angular/router';
-import { administrationAccessGuard } from './guards/administration-access.guard';
 import { administrationPermissionGuard } from './guards/administration-permission.guard';
 import { rolesAccessGuard } from './guards/roles-access.guard';
 
 export const ADMINISTRATION_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [administrationAccessGuard],
+    // Pas de garde sur le shell lui-même (même principe que FinanceLayout, qui n'en a
+    // jamais eu) : la protection est posée par sous-page (administrationPermissionGuard/
+    // rolesAccessGuard ci-dessous), qui redirigent chacune vers 'acces-refuse' quand
+    // aucun onglet n'est accessible. Mettre une garde ICI empêcherait justement cette
+    // page 'acces-refuse' (un enfant de ce même shell) d'être atteinte sans redéclencher
+    // cette garde — boucle de redirection infinie déjà rencontrée, voir l'historique de
+    // ce fichier / administrationAccessGuard (supprimé, devenu inutile).
     loadComponent: () =>
       import('./administration-layout/administration-layout').then((m) => m.AdministrationLayout),
     children: [
       { path: '', redirectTo: 'employees', pathMatch: 'full' },
+      {
+        path: 'acces-refuse',
+        loadComponent: () =>
+          import('./access-denied/administration-access-denied').then((m) => m.AdministrationAccessDenied),
+        title: 'Administration — Accès restreint',
+      },
       {
         path: 'employees',
         canActivate: [administrationPermissionGuard],

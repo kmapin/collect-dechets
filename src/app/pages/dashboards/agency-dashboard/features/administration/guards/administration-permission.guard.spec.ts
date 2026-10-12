@@ -42,10 +42,10 @@ describe('administrationPermissionGuard (filtrage par permission, par sous-page)
     expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/dashboard/agency/administration/employees']);
   });
 
-  it("aucune permission du tout -> redirige hors du module (vers /dashboard/agency)", () => {
+  it("aucune permission du tout -> redirige vers la page 'Accès restreint' du module (pas hors du module)", () => {
     configurer({ role: 'client', administrationPermissions: [] });
     executerGuard(['employees.view']);
-    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/dashboard/agency']);
+    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/dashboard/agency/administration/acces-refuse']);
   });
 
   it('super_admin -> toujours autorisé sur toute sous-page', () => {

@@ -27,6 +27,6 @@ export const rolesAccessGuard: CanActivateFn = () => {
   }
 
   console.warn('Accès refusé: aucune permission roles.view (administration ou finance)');
-  router.navigate(['/dashboard/agency']);
+  router.navigate(['/dashboard/agency/administration/acces-refuse']);
   return false;
 };

@@ -26,6 +26,6 @@ export const administrationPermissionGuard: CanActivateFn = (route: ActivatedRou
   return router.createUrlTree([
     premierOngletAutorise
       ? `/dashboard/agency/administration/${premierOngletAutorise.route}`
-      : '/dashboard/agency',
+      : '/dashboard/agency/administration/acces-refuse',
   ]);
 };

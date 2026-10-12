@@ -206,10 +206,14 @@ export class AgencyDetails implements OnInit {
   /** 'phone' : demande le numéro avant paiement (visiteur non connecté).
    * 'payment' : formulaire de paiement habituel (compte réel ou coquille déjà établi). */
   subscriptionStep: "phone" | "lieu" | "payment" = "payment";
-  /** Phase 5 — lieux actifs proposés au choix quand le client authentifié en a 2+
-   * (avec 0 ou 1 lieu, la sélection reste invisible : voir submitSubscription()). */
+  /** Phase 5 — lieux actifs proposés au choix quand le client authentifié en a 2+. */
   subscriptionLieux: ServiceLocation[] = [];
   isLoadingLieuxSouscription = false;
+  /** Lieu effectivement attaché à la souscription en cours — toujours renseigné dès
+   * qu'un lieu existe (0/1 lieu : présélection automatique ; 2+ : choix explicite via
+   * choisirLieuPourSouscription()), pour pouvoir l'afficher sur l'étape paiement plutôt
+   * que de laisser le client sans aucune confirmation du lieu réellement utilisé. */
+  selectedLieu: ServiceLocation | null = null;
   guestPhone: string = "";
   /** Facultatifs — s'ils sont saisis, ils remplacent les placeholders provisoires
    * ('Client' / numéro de téléphone) posés par défaut sur le compte "coquille". */
@@ -508,6 +512,7 @@ export class AgencyDetails implements OnInit {
     this.guestCheckoutExistingAccount = false;
     this.resumableTransaction = null;
     this.showPaymentDrawer = true;
+    this.selectedLieu = null;
 
     // isLogged() === true signifie NON authentifié (nom historique conservé) :
     // un visiteur sans session passe d'abord par l'étape téléphone (souscription
@@ -529,6 +534,7 @@ export class AgencyDetails implements OnInit {
         this.isLoadingLieuxSouscription = false;
         const actifs = (data || []).filter((l) => l.status === 'active');
         if (actifs.length <= 1) {
+          this.selectedLieu = actifs[0] ?? null;
           this.selectedTarif = { ...this.selectedTarif, serviceLocationId: actifs[0]?._id };
           this.subscriptionStep = "payment";
         } else {
@@ -539,12 +545,17 @@ export class AgencyDetails implements OnInit {
       error: () => {
         this.isLoadingLieuxSouscription = false;
         this.subscriptionStep = "payment";
+        this.notificationService.showWarning(
+          "Lieu non vérifié",
+          "Impossible de récupérer vos lieux de service pour le moment — la souscription continue sans lieu associé. Vous pourrez le renseigner plus tard depuis votre espace.",
+        );
       },
     });
   }
 
   /** Phase 5 — choix explicite d'un lieu quand le client en a 2+ (voir submitSubscription()). */
   choisirLieuPourSouscription(lieu: ServiceLocation): void {
+    this.selectedLieu = lieu;
     this.selectedTarif = { ...this.selectedTarif, serviceLocationId: lieu._id };
     this.subscriptionStep = "payment";
   }

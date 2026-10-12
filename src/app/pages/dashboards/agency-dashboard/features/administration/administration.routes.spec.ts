@@ -22,8 +22,15 @@ describe('ADMINISTRATION_ROUTES (navigation Administration + refresh direct des 
     expect(route?.canActivate?.length).toBe(1);
   });
 
-  it('le shell Administration reste protégé par administrationAccessGuard', () => {
-    expect(ADMINISTRATION_ROUTES[0].canActivate?.length).toBe(1);
+  it("le shell Administration lui-même n'a plus de garde dédiée (même principe que FinanceLayout) — la protection est posée par sous-page, pour qu'un accès direct à 'acces-refuse' (un enfant de ce même shell) n'ait pas à retraverser une garde qui le renverrait vers... lui-même (boucle de redirection infinie, régression déjà rencontrée)", () => {
+    expect(ADMINISTRATION_ROUTES[0].canActivate ?? []).toEqual([]);
+  });
+
+  it("la route acces-refuse existe, charge AdministrationAccessDenied en lazy, et n'a aucune garde", () => {
+    const route = enfants.find((r) => r.path === 'acces-refuse');
+    expect(route).withContext('route acces-refuse introuvable').toBeTruthy();
+    expect(route?.loadComponent).toBeTruthy();
+    expect(route?.canActivate ?? []).toEqual([]);
   });
 
   it("la route administration-permissions existe, charge AdministrationPermissions en lazy et utilise administrationPermissionGuard (pas rolesAccessGuard — écran sans contenu finance)", () => {

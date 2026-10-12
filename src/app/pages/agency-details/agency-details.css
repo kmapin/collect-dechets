@@ -189,6 +189,22 @@
       transform: translateY(0);
     }
 
+    /* Confirmation statique du lieu déjà attaché (étape paiement, 0/1 lieu —
+       voir agency-details.ts::submitSubscription) — même contenu que
+       .lieu-choice-card mais non cliquable, rien à choisir à ce stade. */
+    .lieu-selected-banner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      background: var(--white);
+      border: 2px solid var(--medium-gray);
+      border-radius: 14px;
+      font-family: 'Inter', sans-serif;
+    }
+
     .lieu-choice-icon {
       flex-shrink: 0;
       width: 46px;
