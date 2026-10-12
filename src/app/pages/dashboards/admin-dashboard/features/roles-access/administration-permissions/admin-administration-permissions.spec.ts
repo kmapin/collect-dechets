@@ -173,7 +173,7 @@ describe('AdminAdministrationPermissions — via le DOM réel', () => {
     boutonEmployesRoles!.click();
     fixture.detectChanges();
 
-    const caseRolesManage: HTMLButtonElement = fixture.nativeElement.querySelector('[aria-label="Autoriser : Gérer les rôles & accès du personnel"]');
+    const caseRolesManage: HTMLButtonElement = fixture.nativeElement.querySelector('[aria-label="Autoriser : Administrer les droits d\'accès des employés"]');
     expect(caseRolesManage.classList).toContain('checked');
   });
 });

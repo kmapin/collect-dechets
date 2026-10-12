@@ -53,8 +53,8 @@ export const GROUPES_DROITS_ADMINISTRATION: { titre: string; droits: DroitAdmini
   {
     titre: 'Gouvernance',
     droits: [
-      { cle: 'roles.view', label: "Voir les rôles & accès du personnel" },
-      { cle: 'roles.manage', label: "Gérer les rôles & accès du personnel" },
+      { cle: 'roles.view', label: "Consulter les droits d'accès des employés" },
+      { cle: 'roles.manage', label: "Administrer les droits d'accès des employés" },
     ],
   },
 ];
